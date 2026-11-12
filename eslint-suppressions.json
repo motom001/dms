@@ -1553,11 +1553,6 @@
       "count": 1
     }
   },
-  "web/src/einrichtung/Bereich.tsx": {
-    "ablago/bausteine": {
-      "count": 3
-    }
-  },
   "web/src/einrichtung/Beschriftung.tsx": {
     "ablago/bausteine": {
       "count": 3
@@ -1568,7 +1563,7 @@
       "count": 13
     },
     "ablago/bausteine": {
-      "count": 85
+      "count": 83
     },
     "complexity": {
       "count": 3
@@ -1628,10 +1623,7 @@
   },
   "web/src/profil/Abwesenheit.tsx": {
     "ablago/bausteine": {
-      "count": 11
-    },
-    "complexity": {
-      "count": 1
+      "count": 10
     }
   },
   "web/src/profil/ApiSchluessel.tsx": {
@@ -1750,7 +1742,7 @@
   },
   "web/src/werkbank/Automatisierungen.tsx": {
     "ablago/bausteine": {
-      "count": 55
+      "count": 54
     },
     "complexity": {
       "count": 2
@@ -1760,14 +1752,13 @@
     }
   },
   "web/src/werkbank/Benutzer.tsx": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    },
     "ablago/bausteine": {
-      "count": 17
-    },
-    "complexity": {
-      "count": 1
+      "count": 3
+    }
+  },
+  "web/src/werkbank/BenutzerEditor.tsx": {
+    "ablago/bausteine": {
+      "count": 5
     }
   },
   "web/src/werkbank/Berechtigungen.tsx": {
@@ -1790,7 +1781,7 @@
   },
   "web/src/werkbank/Datenschutz.tsx": {
     "ablago/bausteine": {
-      "count": 26
+      "count": 25
     },
     "complexity": {
       "count": 2
@@ -1869,7 +1860,7 @@
   },
   "web/src/werkbank/Nummernkreise.tsx": {
     "ablago/bausteine": {
-      "count": 12
+      "count": 10
     },
     "complexity": {
       "count": 2
@@ -1945,7 +1936,7 @@
   },
   "web/src/werkbank/Postfaecher.tsx": {
     "ablago/bausteine": {
-      "count": 29
+      "count": 28
     },
     "complexity": {
       "count": 2
@@ -2002,7 +1993,7 @@
   },
   "web/src/werkbank/Stempel.tsx": {
     "ablago/bausteine": {
-      "count": 12
+      "count": 10
     }
   },
   "web/src/werkbank/Systemkonten.tsx": {

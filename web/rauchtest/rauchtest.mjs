@@ -522,8 +522,9 @@ rauchtest('Werkbank: Stempel-Vorlage aus der Mitte öffnen (#990)', { als: LENA 
   await s.waitForURL(/\/werkbank\/stempel\/kopie$/);
   const bearbeitung = s.getByRole('region', { name: 'Bearbeitung' });
   await bearbeitung.getByRole('heading', { name: /^Kopie für/, level: 1 }).waitFor();
-  // Live-Vorschau (#799) und Speicherleiste rechts.
+  // Live-Vorschau (#799) und Speicherleiste rechts; bestehende Vorlagen öffnen zugeklappt mit Sprungleiste (#1000).
   await bearbeitung.getByRole('heading', { name: 'Vorschau' }).waitFor();
+  await bearbeitung.getByRole('navigation', { name: 'Bereiche der Vorlage' }).getByRole('button', { name: 'Alle aufklappen' }).click();
   await bearbeitung.getByRole('textbox', { name: 'Name' }).fill('Kopie für Rauchtest');
   await bearbeitung.getByRole('button', { name: 'Vorlage speichern' }).click();
   await bearbeitung.locator('.hinweis.gut').getByText('Gespeichert.').waitFor();
@@ -532,6 +533,44 @@ rauchtest('Werkbank: Stempel-Vorlage aus der Mitte öffnen (#990)', { als: LENA 
   await s.goto(BASIS + '/werkbank/stempel?offen=entwurf');
   await s.waitForURL(/\/werkbank\/stempel\/entwurf$/);
   await bearbeitung.getByRole('heading', { name: 'Entwurf', level: 1 }).waitFor();
+});
+
+// Editor rechts: Sprungleiste und Bereiche (#1000) – wie beim Mappentyp auch bei Nummernkreisen, Postfächern und Benutzern.
+// „Alle aufklappen“ merkt sich das Gerät; ein Fehler beim Speichern markiert und öffnet den betroffenen Bereich.
+rauchtest('Werkbank: Sprungleiste und Bereiche in allen Editoren (#1000)', { als: LENA, erwartet: [{ status: 422, pfad: /^\/api\/werkbank\/postfaecher$/ }] }, async (s) => {
+  await s.goto(BASIS + '/ablage/start');
+  await verwalten(s);
+  const bearbeitung = s.getByRole('region', { name: 'Bearbeitung' });
+  await s.goto(BASIS + '/werkbank/nummernkreise/archivnummer');
+  const leiste = bearbeitung.getByRole('navigation', { name: 'Bereiche des Nummernkreises' });
+  for (const name of ['Grunddaten', 'Stand', 'Aufkleber drucken', 'Verwendet in']) await leiste.getByRole('button', { name, exact: true }).waitFor();
+  await leiste.getByRole('button', { name: 'Alle aufklappen' }).click();
+  await bearbeitung.getByRole('textbox', { name: 'Name' }).waitFor();
+  await s.reload();
+  await bearbeitung.getByRole('textbox', { name: 'Name' }).waitFor();
+  await leiste.getByRole('button', { name: 'Alle zuklappen' }).waitFor();
+  // Tastatur: Enter auf einem Sprung setzt den Fokus auf den Kopf des Bereichs, Tab geht im Bereich weiter.
+  await leiste.getByRole('button', { name: 'Stand', exact: true }).focus();
+  await s.keyboard.press('Enter');
+  await s.waitForFunction(() => document.activeElement?.id === 'stand-kopf', null, { timeout: 5000 });
+  assert.equal(await s.evaluate(() => document.activeElement?.closest('[data-sprungleiste]') === null), true, 'Fokus nicht mehr in der Sprungleiste');
+  // Neues Postfach: alles offen, ohne „Stand“; ohne Namen und Benutzer meldet der Server Grunddaten und Verbindung.
+  await s.goto(BASIS + '/werkbank/postfaecher/neu');
+  const pf = bearbeitung.getByRole('navigation', { name: 'Bereiche des Postfachs' });
+  await pf.getByRole('button', { name: 'Abholen', exact: true }).waitFor();
+  await bearbeitung.getByRole('checkbox', { name: 'Automatisch abrufen' }).waitFor();
+  assert.equal(await pf.getByRole('button', { name: 'Stand', exact: true }).count(), 0, 'Ein neues Postfach hat noch keinen Stand');
+  await bearbeitung.getByRole('textbox', { name: 'Server' }).fill('imap.example.org');
+  await s.getByRole('button', { name: 'Postfach anlegen' }).click();
+  await pf.getByRole('button', { name: /^Grunddaten/ }).and(s.locator('[title="Grunddaten: Fehler"]')).waitFor();
+  await pf.getByRole('button', { name: /^Verbindung/ }).and(s.locator('[title="Verbindung: Fehler"]')).waitFor();
+  assert.equal(await pf.locator('[title="Abholen: Fehler"]').count(), 0, 'Abholen hat keinen Fehler');
+  // Benutzer: die Bereiche aus dem Vorschlag in #1000.
+  await s.goto(BASIS + '/werkbank/benutzer');
+  await s.getByRole('region', { name: 'Elemente' }).getByRole('link', { name: /^Lena/ }).first().click();
+  const bl = bearbeitung.getByRole('navigation', { name: 'Bereiche des Benutzers' });
+  for (const name of ['Grunddaten', 'Rollen und Rechte', 'Vertretung', 'Anmeldung und Sicherheit']) await bl.getByRole('button', { name, exact: true }).waitFor();
+  await bearbeitung.locator('.ueber', { hasText: /^Benutzer$/ }).waitFor();
 });
 
 // Wiederherstellen (Abschnitt der Sicherung) antwortet außerhalb des Wartungsmodus mit 409 – das ist gewollt.
@@ -928,7 +967,7 @@ test('Musterseite der Bausteine: Bilder, axe ohne Verstoß (#967)', { timeout: 1
     k.on('weberror', (e) => fehler.push(`Fehler in der Seite: ${e.error().message}`));
   };
   const { bilder, verstoesse } = await musterAufnehmen(browser, { basis: BASIS, ziel: MUSTERORDNER, beobachte });
-  assert.equal(bilder.length, 10, `Bilder der Musterseite: ${bilder.join(', ')}`);
+  assert.equal(bilder.length, 12, `Bilder der Musterseite: ${bilder.join(', ')}`);
   assert.deepEqual(verstoesse, [], `axe meldet Verstöße auf der Musterseite:\n${verstoesse.join('\n')}`);
   assert.deepEqual(fehler, [], 'Fehler im Browser auf der Musterseite');
 });
@@ -1124,6 +1163,8 @@ rauchtest('Ablage und Werkbank: Die Seite rollt nicht unter der Dreiteilung, ver
   await s.goto(BASIS + '/werkbank/automatisierungen');
   await s.getByRole('region', { name: 'Elemente' }).getByRole('link', { name: /Rauchtest Vertrag angelegt/ }).click();
   const bearbeitung = s.getByRole('region', { name: 'Bearbeitung' });
+  // „Ausprobieren“ ist ein Bereich (#1000): über die Sprungleiste aufklappen.
+  await bearbeitung.getByRole('navigation', { name: 'Bereiche der Automatisierung' }).getByRole('button', { name: 'Ausprobieren' }).click();
   const suche = bearbeitung.getByLabel('Mappe suchen …');
   await suche.waitFor();
   await s.waitForLoadState('networkidle');

@@ -1,3 +1,4 @@
+import { Bereich, type Klappe } from '../bausteine';
 import { t, tn } from '../sprache';
 import { useEffect, useState, type ReactNode } from 'react';
 import { beschreibeRegelBedingung, type Wirkung } from '../../../shared/src/rechte';
@@ -8,7 +9,6 @@ import {
 import type { Sicht, SichtDaten } from '../../../shared/src/sichten';
 import { api } from '../api';
 import { useDaten } from '../daten';
-import { Bereich, type Klappe } from '../einrichtung/Bereich';
 import { Hilfe } from '../Hilfe';
 import { Link } from '../ort';
 import { Ansage, umgestellt, useZiehen, ziehTasten } from '../ziehen';

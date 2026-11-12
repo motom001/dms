@@ -4,7 +4,9 @@ With an **automation**, Ablago does something by itself: **if** something happen
 
 ![Workbench → Automations: list and editor](bilder/werkbank-automatisierungen.png)
 
-On the left are all automations with name, short form ("If Contract: Cancel by in 30 days → task to Responsible"), on/off, number in the order and the last run. On the right you build them from cards – three areas one below the other, connected with arrows:
+On the left are all automations with name, short form ("If Contract: Cancel by in 30 days → task to Responsible"), on/off, number in the order and the last run. On the right, an automation is organised like a [folder type](mappentypen.md#aufbau-des-editors): the **jump bar** with **Expand all / Collapse all** at the top, below it the areas **Basic details** (name, order, description) **→ When** (with the And conditions) **→ Then → Try out → History → Change history**; the last three only exist after creating. Collapsed, each area shows a summary, such as the trigger or the Then cards; your device remembers what you expand per automation. **Save automation** at the bottom saves basic details, When and Then at once. Whatever does not fit is shown in the area it belongs to; for a saved automation the area is also marked red, and an error on saving expands it. **On/off**, **Copy**, **Try out** and **Restore** take effect immediately.
+
+In *When* and *Then* you build the automation from cards:
 
 | Area | What goes in |
 |---|---|
@@ -70,7 +72,7 @@ The card **Schedule** triggers on the chosen **weekdays** at the chosen **time**
 
 ## Adding, re-ordering, removing cards {#karten-hinzufugen-umsortieren-entfernen}
 
-- **With the mouse or on the phone:** expand the **card stock**, search for a card and **drag** it into its area (long-press on the phone) – or simply click it.
+- **With the mouse or on the phone:** expand the **card stock** (at the top of the area *When*), search for a card and **drag** it into its area (long-press on the phone) – or simply click it.
 - **With the keyboard:** in every area **+ Card** – open the selection, choose a card. You re-order Then cards by their handle `⠿` with **Alt+↑/↓**, with the mouse by dragging.
 - **Remove** is on every card.
 
@@ -115,7 +117,7 @@ If there are several automations for the same trigger, they run by their **order
 ![Run history with the steps of a run](bilder/werkbank-automatisierung-verlauf.png)
 
 - **Try out:** choose a folder and **Run** – as if the event had happened. You choose the folder as in a link field: type part of the title and click a hit. Only folders of the If card's folder type that the account "Automation" may see are offered – with all others the automation couldn't run anyway. With **Dry run**, Ablago only shows what would happen ("Would send task to 1 person: …") and changes nothing.
-- **Run history:** looks like a folder's history: per run one line with date and time, the trigger (e.g. "Folder created", "Dry run", "Repetition"), a summary, the result (*completed*, *doesn't apply*, *skipped*, *failed*) and the number of cards. Expanded, a table **Card · Result · Details** shows what every card did; if something went wrong, the reason is at the card that failed. With **Expand all** / **Collapse all** you see everything at once. If the automation is running right now while the editor is open, this run is expanded and the cards are ticked off **live**; cards not yet reached show "waiting".
+- **Run history:** looks like a folder's history: per run one line with date and time, the trigger (e.g. "Folder created", "Dry run", "Repetition"), a summary, the result (*completed*, *doesn't apply*, *skipped*, *failed*) and the number of cards. Expanded, a table **Card · Result · Details** shows what every card did; if something went wrong, the reason is at the card that failed. With **Expand all entries** / **Collapse all entries** you see everything at once. If the automation is running right now while the editor is open, this run is expanded and the cards are ticked off **live**; cards not yet reached show "waiting".
 - **Failed runs** remain. Above the list of automations it then says, for example, "1 run has failed: Report new users, 04.11.26, 04:48"; with several runs, **Show** only shows the affected automations. **Repeat all** runs them again, **Don't repeat** removes them from the notice – in the run history they remain as "failed – not repeated (who, when)"; nothing is deleted. You have the same choice per run in the expanded run history. **Dry runs** don't count; their result is only in the run history. The [Workbench overview](uebersicht.md) also reports failed runs.
 - **Change history:** every saved **version** with time, who and what changed ("changed: Name, Then: Task / notification"); the current one is marked "current". Expanded, a table **What · before · after** shows the differences to the version before. **Restore** brings back an earlier state – after a confirmation it becomes a new version; the current state is kept.
 
@@ -173,6 +175,6 @@ The reminder of the notice period comes with the **Household** package ("Cancell
 
 ![Editor in dark appearance](bilder/werkbank-automatisierung-dunkel.png)
 
-On the phone, the list comes first, the editor after tapping; there you add cards most easily with **+ Card**.
+On the phone, the list comes first, the editor after tapping – the jump bar at the top, the areas below collapsed as with the folder type; there you add cards most easily with **+ Card**.
 
 ![Automation on the phone](bilder/werkbank-automatisierung-handy.png){ width="320" }

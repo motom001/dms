@@ -1034,8 +1034,6 @@ body:has(.gezogen) { cursor: grabbing; user-select: none; -webkit-user-select: n
 /* Abwesenheit (#78) */
 .abwesend-punkt { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--warn); margin-left: 6px; vertical-align: middle; }
 .menuekopf a.chip { text-decoration: none; align-self: flex-start; }
-.gefahrenzone { border-color: var(--schlecht); }
-.gefahrenzone h2 { color: var(--schlecht); }
 .eintrag.werk.grau { opacity: .6; }
 .knopf.gefahr { background: var(--schlecht); border-color: var(--schlecht); color: var(--schlecht-tinte); }
 .knopf.gefahr:disabled { opacity: .45; }
@@ -1207,30 +1205,10 @@ label.wahlkarte { flex-direction: row; align-items: center; gap: 10px; }
 .regelsumme:hover strong { color: var(--akzent); }
 .rechtknopf:disabled { opacity: .45; cursor: not-allowed; }
 
-/* Mappentyp-Editor: einklappbare Bereiche und Sprungleiste (#144) */
-.bereich { scroll-margin-top: 110px; }
-.bereich.zu { gap: 4px; padding-block: 12px; }
-.bereichkopf { display: flex; flex-direction: column; gap: 2px; }
-.bereichkopf h2 { display: flex; align-items: center; gap: 8px; margin: 0; }
-.bereichknopf { display: inline-flex; align-items: center; gap: 8px; background: none; border: 0; padding: 0; font: inherit; color: inherit; cursor: pointer; text-align: left; }
-.bereichknopf:hover { color: var(--akzent); }
-.bereichknopf .pfeil { display: inline-block; width: 1em; color: var(--leise); transition: transform .15s; }
-.bereich:not(.zu) .bereichknopf .pfeil { transform: rotate(90deg); }
-.bereichkurz { margin: 0 0 0 calc(1em + 8px); font-size: calc(12.5px * var(--skala, 1)); overflow-wrap: anywhere; }
-.bereichinhalt { display: flex; flex-direction: column; gap: 14px; }
-.bereichinhalt[hidden] { display: none; }
-.bereichtext { font-size: calc(12.5px * var(--skala, 1)); max-width: 75ch; margin: 0; }
-.bereich.mitfehler { border-color: var(--schlecht); }
-.sprungleiste { position: sticky; top: 52px; z-index: 4; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 8px 10px; background: var(--flaeche); border: 1px solid var(--linie); border-radius: var(--r); }
-.sprungleiste .sprung { background: var(--senke); border: 1px solid var(--linie); border-radius: 999px; padding: 3px 10px; font-size: calc(12.5px * var(--skala, 1)); color: var(--tinte); cursor: pointer; display: inline-flex; align-items: center; gap: 5px; }
-.sprungleiste .sprung.an { border-color: var(--linie-stark); font-weight: 600; }
-.sprungleiste .sprung.fehler { border-color: var(--schlecht); color: var(--schlecht); background: var(--schlecht-zart); }
-.sprungleiste .fehlerpunkt { font-weight: 700; }
-.sprungleiste .luecke { flex: 1; }
+/* Einklappbare Bereiche und Sprungleiste (#144) stehen seit #1000 im Baustein Bereiche (web/src/bausteine/bereiche). */
 /* Mappentyp- und Ansichten-Editor (#372): Abstand zwischen Kopf (z. B. „Mappentyp kopieren“), Sprungleiste und Bereichen wie auf den übrigen Werkbank-Seiten. */
 .editorform { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
 .verwendetliste { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 3px; }
-@media (max-width: 700px) { .sprungleiste { position: static; } }
 
 /* Berechtigungen an Sichten (#148): geerbte Regeln schreibgeschützt */
 .geerbt { display: flex; flex-direction: column; gap: 6px; }
@@ -2046,7 +2024,8 @@ ul.sitzungsliste.festhoehe { border: 1px solid var(--linie); border-radius: var(
 .dokansicht-kopf { margin: 0; padding: 6px 10px; border-bottom: 1px solid var(--linie); background: var(--flaeche, transparent); display: flex; gap: 4px; align-items: center; flex-wrap: wrap; }
 
 /* Automatisierungen (#675): Wenn · Und · Dann untereinander, Karten auf- und zuklappbar, Schritte leuchten im Lauf auf. */
-.automatisierung-bereich { border: 1px solid var(--linie); border-radius: var(--r); background: var(--senke); padding: 10px 12px; margin: 4px 0; }
+/* Ablagestelle in „Wenn“, „Und“ und „Dann“: ohne eigenen Kasten, der Bereich ist das Blatt (#1000). */
+.automatisierung-bereich { border-radius: var(--r); margin: 4px 0; }
 .automatisierung-bereich > .zeile { justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
 .automatisierung-bereich .h3 { margin: 0; }
 .automatisierung-pfeil { text-align: center; color: var(--leise); font-size: 1.2rem; line-height: 1; }

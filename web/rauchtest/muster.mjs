@@ -7,7 +7,8 @@
  *   muster-hell, muster-dunkel, muster-handy, muster-handy-dunkel – die ganze Seite;
  *   muster-feld, muster-feld-dunkel – der Bereich „Feld“;
  *   muster-feld-fokus, muster-feld-fokus-dunkel – Maus über einem Feld, Tastaturfokus im nächsten;
- *   muster-knopf, muster-knopf-dunkel – der Bereich „Knopf“ (#968) mit allen Arten und Zuständen, Hover und Fokus stehend.
+ *   muster-knopf, muster-knopf-dunkel – der Bereich „Knopf“ (#968) mit allen Arten und Zuständen, Hover und Fokus stehend;
+ *   muster-bereiche, muster-bereiche-dunkel – der Bereich „Bereiche“ (#1000): Sprungleiste, zugeklappt, unter drei Bereichen.
  *
  * Im Handy-Kontext (390 px, Touch: `pointer: coarse`) misst `tippflaechenPruefen` jedes Bedienelement der Seite
  * (#1027, Musterkatalog D6): Jedes muss eine eigene Tippfläche von mindestens 44 × 44 px haben.
@@ -197,6 +198,7 @@ export async function musterAufnehmen(browser, { basis, ziel, gebiet = 'de-DE', 
         await s.mouse.move(0, 0);
         await s.evaluate(() => (document.activeElement instanceof HTMLElement) && document.activeElement.blur());
         await foto(s.locator('#knopf'), `muster-knopf${suffix}`);
+        await foto(s.locator('#bereiche'), `muster-bereiche${suffix}`);
       }
     } finally {
       await k.close();

@@ -4,7 +4,9 @@ Mit einer **Automatisierung** erledigt Ablago etwas von selbst: **Wenn** etwas p
 
 ![Werkbank → Automatisierungen: Liste und Editor](bilder/werkbank-automatisierungen.png)
 
-Links stehen alle Automatisierungen mit Name, Kurzform („Wenn Vertrag: Kündigung bis in 30 Tagen → Aufgabe an Verantwortlich“), an/aus, Nummer in der Reihenfolge und dem letzten Lauf. Rechts baust du sie aus Karten zusammen – drei Bereiche untereinander, verbunden mit Pfeilen:
+Links stehen alle Automatisierungen mit Name, Kurzform („Wenn Vertrag: Kündigung bis in 30 Tagen → Aufgabe an Verantwortlich“), an/aus, Nummer in der Reihenfolge und dem letzten Lauf. Rechts ist eine Automatisierung wie ein [Mappentyp](mappentypen.md#aufbau-des-editors) gegliedert: oben die **Sprungleiste** mit **Alle aufklappen / Alle zuklappen**, darunter die Bereiche **Grunddaten** (Name, Reihenfolge, Beschreibung) **→ Wenn** (mit den Und-Bedingungen) **→ Dann → Ausprobieren → Verlauf → Änderungsverlauf**; die letzten drei gibt es erst nach dem Anlegen. Eingeklappt zeigt jeder Bereich eine Kurzinfo, etwa den Auslöser oder die Dann-Karten; was du aufklappst, merkt sich dein Gerät je Automatisierung. **Automatisierung speichern** unten speichert Grunddaten, Wenn und Dann auf einmal. Was nicht passt, steht im Bereich, zu dem es gehört; bei einer gespeicherten Automatisierung ist der Bereich zusätzlich rot markiert, und ein Fehler beim Speichern klappt ihn auf. **An/aus**, **Kopieren**, **Ausprobieren** und **Wiederherstellen** wirken sofort.
+
+In *Wenn* und *Dann* baust du die Automatisierung aus Karten zusammen:
 
 | Bereich | Was hinein gehört |
 |---|---|
@@ -70,7 +72,7 @@ Die Karte **Zeitplan** löst an den gewählten **Wochentagen** zur gewählten **
 
 ## Karten hinzufügen, umsortieren, entfernen
 
-- **Mit der Maus oder am Handy:** **Kartenvorrat** aufklappen, nach einer Karte suchen und sie in ihren Bereich **ziehen** (am Handy lange drücken) – oder einfach anklicken.
+- **Mit der Maus oder am Handy:** **Kartenvorrat** (oben im Bereich *Wenn*) aufklappen, nach einer Karte suchen und sie in ihren Bereich **ziehen** (am Handy lange drücken) – oder einfach anklicken.
 - **Mit der Tastatur:** in jedem Bereich **+ Karte** – Auswahl öffnen, Karte wählen. Dann-Karten sortierst du über ihren Griff `⠿` mit **Alt+↑/↓** um, per Maus durch Ziehen.
 - **Entfernen** steht an jeder Karte.
 
@@ -115,7 +117,7 @@ Gibt es mehrere Automatisierungen für denselben Auslöser, laufen sie nach ihre
 ![Verlauf mit den Schritten eines Laufs](bilder/werkbank-automatisierung-verlauf.png)
 
 - **Ausprobieren:** Mappe wählen und **Ausführen** – als wäre das Ereignis eingetreten. Die Mappe wählst du wie in einem Verweisfeld: Tippe einen Teil des Titels und klicke auf einen Treffer. Angeboten werden nur Mappen vom Mappentyp der Wenn-Karte, die das Konto „Automatisierung“ sehen darf – mit allen anderen könnte die Automatisierung ohnehin nicht laufen. Mit **Probelauf** zeigt Ablago nur, was passieren würde („Würde Aufgabe an 1 Person senden: …“), und ändert nichts.
-- **Verlauf:** sieht aus wie die Historie einer Mappe: je Lauf eine Zeile mit Datum und Uhrzeit, dem Auslöser (z. B. „Mappe angelegt“, „Probelauf“, „Wiederholung“), einer Zusammenfassung, dem Ergebnis (*abgeschlossen*, *trifft nicht zu*, *übersprungen*, *fehlgeschlagen*) und der Zahl der Karten. Aufgeklappt zeigt eine Tabelle **Karte · Ergebnis · Einzelheiten**, was jede Karte getan hat; ist etwas schiefgegangen, steht der Grund bei der Karte, die gescheitert ist. Mit **Alle aufklappen** / **Alle zuklappen** siehst du alles auf einmal. Läuft die Automatisierung gerade, während der Editor offen ist, ist dieser Lauf aufgeklappt und die Karten werden **live** abgehakt; Karten, die noch nicht dran waren, stehen auf „wartet“.
+- **Verlauf:** sieht aus wie die Historie einer Mappe: je Lauf eine Zeile mit Datum und Uhrzeit, dem Auslöser (z. B. „Mappe angelegt“, „Probelauf“, „Wiederholung“), einer Zusammenfassung, dem Ergebnis (*abgeschlossen*, *trifft nicht zu*, *übersprungen*, *fehlgeschlagen*) und der Zahl der Karten. Aufgeklappt zeigt eine Tabelle **Karte · Ergebnis · Einzelheiten**, was jede Karte getan hat; ist etwas schiefgegangen, steht der Grund bei der Karte, die gescheitert ist. Mit **Alle Einträge aufklappen** / **Alle Einträge zuklappen** siehst du alles auf einmal. Läuft die Automatisierung gerade, während der Editor offen ist, ist dieser Lauf aufgeklappt und die Karten werden **live** abgehakt; Karten, die noch nicht dran waren, stehen auf „wartet“.
 - **Fehlgeschlagene Läufe** bleiben stehen. Über der Liste der Automatisierungen steht dann zum Beispiel „1 Lauf ist fehlgeschlagen: Neue Benutzer melden, 04.11.26, 04:48“; bei mehreren Läufen zeigt **Anzeigen** nur die betroffenen Automatisierungen. **Alle wiederholen** führt sie noch einmal aus, **Nicht wiederholen** nimmt sie aus dem Hinweis – im Verlauf bleiben sie als „fehlgeschlagen – nicht wiederholt (wer, wann)“ stehen, gelöscht wird nichts. Dieselbe Wahl hast du je Lauf im aufgeklappten Verlauf. **Probeläufe** zählen nicht mit; ihr Ergebnis steht nur im Verlauf. Die [Übersicht der Werkbank](uebersicht.md) meldet fehlgeschlagene Läufe ebenfalls.
 - **Änderungsverlauf:** jede gespeicherte **Version** mit Zeit, wer und was sich geändert hat („geändert: Name, Dann: Aufgabe / Benachrichtigung“); die aktuelle ist mit „aktuell“ gekennzeichnet. Aufgeklappt zeigt eine Tabelle **Was · vorher · nachher** die Unterschiede zur Version davor. **Wiederherstellen** holt einen früheren Stand zurück – nach einer Rückfrage wird daraus eine neue Version, der jetzige Stand bleibt erhalten.
 
@@ -173,6 +175,6 @@ Die Erinnerung an die Kündigungsfrist bringt das Paket **Haushalt** mit („Kü
 
 ![Editor in dunkler Darstellung](bilder/werkbank-automatisierung-dunkel.png)
 
-Am Handy steht erst die Liste, nach dem Antippen der Editor; Karten fügst du dort am einfachsten mit **+ Karte** hinzu.
+Am Handy steht erst die Liste, nach dem Antippen der Editor – oben die Sprungleiste, darunter die Bereiche zugeklappt wie beim Mappentyp; Karten fügst du dort am einfachsten mit **+ Karte** hinzu.
 
 ![Automatisierung am Handy](bilder/werkbank-automatisierung-handy.png){ width="320" }

@@ -1,7 +1,7 @@
 import { createHash, randomUUID } from 'node:crypto';
 import type postgres from 'postgres';
 import {
-  AUTOMATISIERUNG_GRENZEN, ausloeserSchluessel, automatisierungsProbleme, bereinigeAutomatisierung, kontextTyp, kurzform, REIHENFOLGE,
+  AUTOMATISIERUNG_GRENZEN, ausloeserSchluessel, automatisierungsProbleme, automatisierungsProblemOrte, bereinigeAutomatisierung, kontextTyp, kurzform, REIHENFOLGE,
   type Angehalten, type Automatisierung, type AutomatisierungAnsicht, type AutomatisierungDaten, type DannArt, type DannKarte,
   type Empfaenger, type Fassung, type Fehlschlag, type Herkunft, type Kontextdaten, type Lauf, type LaufZustand, type Schritt, type UndKarte, erreichteDaten,
   PERSONEN_IM_EREIGNIS, paketKarteLeer, DMS_POST,
@@ -772,9 +772,11 @@ export class Automatisierungen {
   /** Speichern geht nur mit gültigem Stand (Fehler mit Gründen); eine neue Automatisierung startet ausgeschaltet. */
   private async pruefe(d: AutomatisierungDaten, wer?: { herkunft: Herkunft; paketId?: string | null; alt?: DannKarte[] }) {
     const k = await this.kontext();
-    const p = automatisierungsProbleme(d, k);
-    if (p.length) throw new Fachfehler(422, p[0], { probleme: p });
-    for (const x of [...d.dann, ...d.sonst]) if (x.art !== 'stopp' && !DANN_AUSFUEHRER[x.art]) throw new Fachfehler(422, t('automatisierung.karte.unbekannt', { art: x.art }));
+    // Mit dem Bereich im Editor (#1000), damit die Oberfläche ihn öffnet.
+    const o = automatisierungsProblemOrte(d, k);
+    const p = [...new Set(o.map((x) => x.text))];
+    if (p.length) throw new Fachfehler(422, p[0], { probleme: p, orte: [...new Set(o.map((x) => x.ort))] });
+    for (const x of [...d.dann, ...d.sonst]) if (x.art !== 'stopp' && !DANN_AUSFUEHRER[x.art]) throw new Fachfehler(422, t('automatisierung.karte.unbekannt', { art: x.art }), { orte: ['dann'] });
     if (wer) this.pruefePaketKarten(d, wer, k);
   }
 
@@ -787,11 +789,11 @@ export class Automatisierungen {
     const vorher = new Set((wer.alt ?? []).flatMap((x) => (x.art === 'paket' ? [x.paket] : [])));
     for (const x of [...d.dann, ...d.sonst]) {
       if (x.art !== 'paket') continue;
-      if (wer.herkunft === 'paket') { if (x.paket !== wer.paketId) throw new Fachfehler(422, t('automatisierung.paket.nur-eigenes')); continue; }
+      if (wer.herkunft === 'paket') { if (x.paket !== wer.paketId) throw new Fachfehler(422, t('automatisierung.paket.nur-eigenes'), { orte: ['dann'] }); continue; }
       if (vorher.has(x.paket)) continue;
       const p = k.pakete?.find((y) => y.id === x.paket);
-      if (!p) throw new Fachfehler(422, t('automatisierung.paket.nicht-installiert', { paket: x.paket }));
-      if (!p.zeitplan) throw new Fachfehler(422, t('automatisierung.paket.ohne-zeitplan', { name: p.name }));
+      if (!p) throw new Fachfehler(422, t('automatisierung.paket.nicht-installiert', { paket: x.paket }), { orte: ['dann'] });
+      if (!p.zeitplan) throw new Fachfehler(422, t('automatisierung.paket.ohne-zeitplan', { name: p.name }), { orte: ['dann'] });
     }
   }
 

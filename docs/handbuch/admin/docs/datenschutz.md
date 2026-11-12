@@ -138,7 +138,7 @@ In der Mitte stehen alle Auskünfte mit Person, Datum und **Zustand**:
 
 Solange eine Auskunft offen ist (angefragt, in Arbeit, bereit), steht die **Antwortfrist** dabei („noch 12 Tage“, überfällig rot). Über der Liste steht das Suchfeld (Person und Zustand, [wie überall in der Werkbank](uebersicht.md#suchen-und-filtern)), darunter der Haken **Nur offene zeigen** – er ist vorgegeben. Nimmst du ihn weg, siehst du auch Zugestelltes und Gelöschtes. Blendet der Haken etwas aus und die Liste ist leer, sagt Ablago das: „Keine offenen Auskünfte. **Alle zeigen**“. Oben rechts steht **+ Neu**: Rechts öffnet sich der Assistent (siehe [unten](#auskunft-nach-art-15-dsgvo)).
 
-Wählst du eine Auskunft, steht rechts alles an einer Stelle: **Angaben** (Person, Erstellt, Antwortfrist, Inhalt), **Zustellen …**, **Herunterladen** und **Löschen** (der Nachweis bleibt), die **Abruf-Links** mit Zustand und **Zurückziehen** und der **Verlauf** – erstellt, zugestellt, abgerufen, falscher Code. Der Verlauf kommt aus der Historie der Person und enthält nur Zahlen, keine Inhalte.
+Wählst du eine Auskunft, steht rechts alles an einer Stelle – gegliedert wie ein [Mappentyp](mappentypen.md#aufbau-des-editors), mit **Sprungleiste** und **Alle aufklappen / Alle zuklappen**: **Angaben** (Person, Erstellt, Antwortfrist, Inhalt), **Zustellen** (solange die Datei bereitliegt: **Zustellen …**, **Herunterladen** und **Löschen** – der Nachweis bleibt), die **Abruf-Links** mit Zustand und **Zurückziehen** (sobald es welche gibt) und der **Verlauf** – erstellt, zugestellt, abgerufen, falscher Code. Eingeklappt zeigt jeder Bereich eine Kurzinfo, etwa „Liegt bereit bis …“ oder „2 Links“; zu Beginn sind alle Bereiche offen; was du zuklappst, merkt sich dein Gerät je Auskunft. Gibt es weniger als drei Bereiche (etwa bei einer Anfrage), stehen sie ohne Sprungleiste offen da. Alles hier wirkt sofort – zu speichern gibt es nichts. Der Verlauf kommt aus der Historie der Person und enthält nur Zahlen, keine Inhalte.
 
 ### Vorgaben für jede Auskunft { #einstellungen }
 
@@ -208,7 +208,7 @@ Nur **Administratoren**. Ein eigenes Recht „Auskunft erteilen“ gibt es (noch
 
 ## Auskunft zustellen
 
-Die fertige Auskunft schickst du direkt aus Ablago – in der [Liste](#liste) die Auskunft wählen, rechts **Zustellen …** (oder gleich nach dem Erzeugen). Zwei Wege:
+Die fertige Auskunft schickst du direkt aus Ablago – in der [Liste](#liste) die Auskunft wählen, rechts im Bereich *Zustellen* **Zustellen …** (oder gleich nach dem Erzeugen; dann steht der Bereich schon offen). Zwei Wege:
 
 | | Abruf-Link mit Abrufcode | ZIP per E-Mail |
 | --- | --- | --- |

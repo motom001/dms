@@ -4,10 +4,19 @@ Unter **Werkbank → Benutzer** legst du fest, wer sich anmelden darf, mit welch
 
 ![Ein Benutzer in der Werkbank](bilder/werkbank-benutzer.png)
 
+## Aufbau des Editors { #aufbau-des-editors }
+
+Ein Benutzer ist rechts wie ein [Mappentyp](mappentypen.md#aufbau-des-editors) gegliedert: oben die **Sprungleiste** mit **Alle aufklappen / Alle zuklappen**, darunter die Bereiche **Grunddaten → Rollen und Rechte → Vertretung → Anmeldung und Sicherheit → Zugang**. Eingeklappt zeigt jeder Bereich eine Kurzinfo, etwa „2 Rollen“, „Gesamte Verwaltung“ oder „vertreten durch Jonas“. Was du aufklappst, merkt sich dein Gerät je Benutzer. Bei dir selbst fehlt *Zugang*, solange du aktiv bist – dich selbst kannst du weder sperren noch nachstellen.
+
+- **Ein Speichern für alles:** Name, Rollen, Verwaltungsrecht und Vertretung speichert **Benutzer speichern** in der Leiste unten auf einmal; **Verwerfen** (oder Esc) nimmt alle Änderungen zurück. Scheitert ein Teil – etwa weil die frische Anmeldung für das Verwaltungsrecht abgebrochen wurde –, ist das Vorige gespeichert, und der Bereich mit dem Fehler ist rot markiert und aufgeklappt. Die Meldung steht einmal an der Leiste und sagt, was gespeichert ist und was nicht – etwa „Gespeichert: Name, Rollen. Nicht gespeichert: Verwaltungsrecht – …“.
+- **Sofort wirkt**, was eine eigene Handlung ist: Passwort-Link erzeugen, Zwei-Faktor und Passkeys zurücksetzen, Geräte abmelden, Aufgaben an den Vertreter geben, Fehler nachstellen, deaktivieren und aktivieren.
+
+![Ein Benutzer am Handy: Sprungleiste oben, Bereiche zugeklappt](bilder/werkbank-benutzer-handy.png){ width="320" }
+
 ## Benutzer einladen
 
 1. **+ Neu**
-2. E-Mail-Adresse und Name eintragen, bei Bedarf **Rollen** anhaken. Ein Verwaltungsrecht vergibst du danach bei der Person (nur mit „Gesamte Verwaltung“).
+2. Unter *Grunddaten* E-Mail-Adresse und Name eintragen, unter *Rollen und Rechte* bei Bedarf **Rollen** anhaken. Ein Verwaltungsrecht vergibst du danach bei der Person (nur mit „Gesamte Verwaltung“).
 3. **Benutzer anlegen und einladen** – ohne E-Mail-Versand heißt der Knopf **Benutzer anlegen**. **Entwurf verwerfen** bricht ab.
 
 ![Neuen Benutzer anlegen](bilder/werkbank-benutzer-neu.png)
@@ -38,9 +47,9 @@ Mit E-Mail-Versand fordern Benutzer den Link selbst an. Ohne E-Mail-Versand erze
 - Den **Namen** änderst du direkt beim Benutzer. Die E-Mail-Adresse ändert jeder Benutzer selbst unter Mein Konto (mit seinem Passwort).
     - Ist unter [Anmeldung über einen Anbieter](anmeldeschutz.md#anmeldung-uber-einen-anbieter-openid-connect) eine **Gruppe für „Gesamte Verwaltung“** gesetzt, folgt dieses Recht bei jeder Anmeldung über den Anbieter der Gruppe: Wer in der Gruppe ist, bekommt es, wer nicht mehr dazugehört, verliert es (die letzte Person behält es). Eine Auswahl einzelner Bereiche bleibt unberührt.
 - An Konten von Personen, die **verwalten dürfen**, kommst du nur mit **„Gesamte Verwaltung“** heran: Passwort-Link, Zwei-Faktor zurücksetzen, deaktivieren, löschen und „Als … anmelden“.
-- <span id="abwesenheit"></span>**Abwesenheit** – wie unter „Mein Konto“ des Benutzers (siehe [Benutzerhandbuch](https://help.ablago.app/benutzer/profil/#abwesenheit)): an/aus, von, bis, Vertreter. Du kannst sie für andere eintragen, etwa bei Krankheit, und mit **Alle offenen Aufgaben an ‹Vertreter› geben** seine Aufgaben abgeben. Das steht in der Historie seiner Benutzer-Mappe. Willst du sie auf mehrere Personen verteilen, nimm die [Sammel-Weitergabe](aufgaben.md#mehrere-aufgaben-auf-einmal-weitergeben) unter Werkbank → Aufgaben (Filter *Empfänger*).
-- <span id="zugang-sperren"></span>**Zugang sperren** (ganz unten) – **Benutzer deaktivieren** sperrt den Zugang sofort und beendet alle Sitzungen, nach einer Rückfrage. Die Mappe bleibt erhalten und behält den Namen; er erscheint überall *kursiv und durchgestrichen* (mit dem Hinweis „deaktiviert seit …“ beim Darüberfahren, für Screenreader „(deaktiviert)“). Alle Verweise auf ihn (z. B. als Verantwortlicher) bleiben gültig.
-    - Das geht nur, wenn ein **Vertreter** hinterlegt ist und der Benutzer **keine offenen Aufgaben** mehr hat. Fehlt etwas, nennt der Abschnitt den Grund; Vertreter wählen und Aufgaben abgeben geht direkt darüber unter *Abwesenheit*.
+- <span id="abwesenheit"></span>**Abwesenheit** (Bereich *Vertretung*) – wie unter „Mein Konto“ des Benutzers (siehe [Benutzerhandbuch](https://help.ablago.app/benutzer/profil/#abwesenheit)): an/aus, von, bis, Vertreter. Du kannst sie für andere eintragen, etwa bei Krankheit, und speicherst sie mit **Benutzer speichern**. Mit **Alle offenen Aufgaben an ‹Vertreter› geben** gibst du seine Aufgaben sofort ab – erst nach dem Speichern einer geänderten Abwesenheit. Das steht in der Historie seiner Benutzer-Mappe. Willst du sie auf mehrere Personen verteilen, nimm die [Sammel-Weitergabe](aufgaben.md#mehrere-aufgaben-auf-einmal-weitergeben) unter Werkbank → Aufgaben (Filter *Empfänger*).
+- <span id="zugang-sperren"></span>**Zugang sperren** (Bereich *Zugang*, ganz unten) – **Benutzer deaktivieren** sperrt den Zugang sofort und beendet alle Sitzungen, nach einer Rückfrage. Die Mappe bleibt erhalten und behält den Namen; er erscheint überall *kursiv und durchgestrichen* (mit dem Hinweis „deaktiviert seit …“ beim Darüberfahren, für Screenreader „(deaktiviert)“). Alle Verweise auf ihn (z. B. als Verantwortlicher) bleiben gültig.
+    - Das geht nur, wenn ein **Vertreter** hinterlegt ist und der Benutzer **keine offenen Aufgaben** mehr hat. Fehlt etwas, nennt der Abschnitt den Grund; Vertreter wählen und Aufgaben abgeben geht im Bereich *Vertretung*.
     - Der Vertreter bleibt hinterlegt und wirkt **dauerhaft**: Was noch für den Deaktivierten entsteht (z. B. „passt nicht“ an Mappen, die er angelegt hat, oder eine Erwähnung in einem alten Text), bekommt der Vertreter.
     - **Benutzer aktivieren** macht es rückgängig; der Abschnitt zeigt dann, seit wann er deaktiviert ist.
 - **Einladung löschen** geht nur, solange die Einladung nie angenommen wurde – etwa bei einer vertippten Adresse. Wer sich schon angemeldet hat, wird deaktiviert statt gelöscht, damit „angelegt von“ und Verweise erhalten bleiben.
@@ -56,13 +65,13 @@ Mindestens eine aktive Person, die sich anmelden kann, behält immer **„Gesamt
 
 ## Sitzungen
 
-Beim Benutzer steht, auf welchen Geräten er angemeldet ist – mit Gerät, Browser und letzter Aktivität. Einzelne Sitzungen beendest du mit **Abmelden**, etwa wenn ein Gerät verloren ging. Ist er auf mehreren Geräten angemeldet, beendet **Überall abmelden** alle Sitzungen auf einmal.
+Im Bereich *Anmeldung und Sicherheit* steht, auf welchen Geräten der Benutzer angemeldet ist – mit Gerät, Browser und letzter Aktivität. Einzelne Sitzungen beendest du mit **Abmelden**, etwa wenn ein Gerät verloren ging. Ist er auf mehreren Geräten angemeldet, beendet **Überall abmelden** alle Sitzungen auf einmal.
 
 Darüber steht, ob er die [Zwei-Faktor-Anmeldung](anmeldeschutz.md#zwei-faktor-anmeldung) eingerichtet hat. **Zurücksetzen** entfernt sie, z. B. nach einem verlorenen Handy. Darunter steht, wie viele [Passkeys](anmeldeschutz.md#passkeys) er hat; **Zurücksetzen** im Block **Passkeys** entfernt alle.
 
 ## Was sieht ein Benutzer?
 
-Mit **Anzeigen** unter *Was sieht ein Benutzer?* siehst du je Mappentyp, wie viele Mappen der Benutzer nach den gespeicherten [Berechtigungen](berechtigungen.md) lesen darf, mit einigen Beispielen. Es gelten immer die Alltagsrechte der Person – im Verwaltungsmodus sähe sie alles. Willst du wissen, *warum* er eine bestimmte Mappe sieht oder nicht, nutze den [Testlauf](berechtigungen.md#testlauf) am Mappentyp.
+Mit **Anzeigen** unter *Was sieht dieser Benutzer?* (Bereich *Rollen und Rechte*) siehst du je Mappentyp, wie viele Mappen der Benutzer nach den gespeicherten [Berechtigungen](berechtigungen.md) lesen darf, mit einigen Beispielen. Es gelten immer die Alltagsrechte der Person – im Verwaltungsmodus sähe sie alles. Willst du wissen, *warum* er eine bestimmte Mappe sieht oder nicht, nutze den [Testlauf](berechtigungen.md#testlauf) am Mappentyp.
 
 ## Fehler nachstellen
 
@@ -89,7 +98,7 @@ Jeder Benutzer hat eine Mappe des [Systemmappentyps](mappentypen.md#systemmappen
 Neben der **Systemrolle** *Mitglied*, die jeder hat, kann ein Benutzer beliebig viele **Rollen** haben – fachliche Zuständigkeiten wie „Steuern und Finanzen“.
 
 - **Rollen anlegen, umbenennen, löschen** geschieht in der Ablage in der Ansicht *Rolle* – wer das darf, regeln die [Berechtigungen](berechtigungen.md) am Mappentyp *Rolle* (ohne Regeln: jeder Benutzer). Rollennamen sind eindeutig.
-- **Zuordnen** geht nur hier in der Benutzerverwaltung (Haken bei *Rollen*). Die Mappe einer Rolle zeigt im Register *Benutzer*, wer sie hat.
+- **Zuordnen** geht nur hier in der Benutzerverwaltung (Haken bei *Rollen* im Bereich *Rollen und Rechte*, gespeichert mit **Benutzer speichern**). Die Mappe einer Rolle zeigt im Register *Benutzer*, wer sie hat.
 - **Mitglied** ist eine **Systemrolle**: Sie erscheint als Rollen-Mappe, jeder Benutzer hat sie, und sie lässt sich weder umbenennen noch löschen. Die frühere Systemrolle *Administrator* ist seit dieser Version eine gewöhnliche Rolle ohne Mitglieder – Regeln, die sie nennen, bleiben gültig; brauchst du sie nicht, lösch sie.
 - **Rolle löschen**, die Benutzer haben: erlaubt – die Zuordnung fällt weg. Verweist noch ein Feld auf die Rolle (z. B. „verantwortliche Rolle“), muss dieser Verweis zuerst weg.
 - Rollen lassen sich nicht verschachteln.

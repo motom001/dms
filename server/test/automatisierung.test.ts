@@ -7,7 +7,7 @@
 import assert from 'node:assert/strict';
 import { fileURLToPath } from 'node:url';
 import { after, before, describe, it } from 'node:test';
-import { automatisierungsProbleme, bereinigeAutomatisierung, kurzform } from '../../shared/src/automatisierung';
+import { automatisierungsProblemOrte, automatisierungsProbleme, bereinigeAutomatisierung, kurzform } from '../../shared/src/automatisierung';
 import type { KatalogEreignis } from '../../shared/src/ereignisse';
 import { heuteIn, verschiebe } from '../../shared/src/sichten';
 import { Automatisierungen, pgAutomatisierungRepo, speicherAutomatisierungRepo } from '../src/automatisierung';
@@ -65,6 +65,13 @@ describe('Automatisierungen (#674): Modell', () => {
     assert.match(automatisierungsProbleme({ ...a, dann: [] }, k).join(), /mindestens eine Dann-Karte/);
     assert.match(automatisierungsProbleme({ ...a, und: { modus: 'alle', karten: [{ art: 'ansicht', sicht: 'weg' }] } }, k).join(), /Ansicht/);
     assert.ok(!k.benutzer.some((b) => b.name === 'Automatisierung'), 'Systemkonto steht nicht in der Auswahl');
+    // Jedes Problem mit seinem Bereich im Editor (#1000): Grunddaten, Wenn (mit Und) oder Dann.
+    const orte = (x: typeof a) => [...new Set(automatisierungsProblemOrte(x, k).map((p) => p.ort))].sort();
+    assert.deepEqual(orte({ ...a, name: '' }), ['grunddaten']);
+    assert.deepEqual(orte({ ...a, wenn: { ...a.wenn, feld: 'gibts' } as never }), ['wenn']);
+    assert.deepEqual(orte({ ...a, und: { modus: 'alle', karten: [{ art: 'ansicht', sicht: 'weg' }] } }), ['wenn'], 'Und-Bedingungen stehen bei Wenn');
+    assert.deepEqual(orte({ ...a, name: '', dann: [] }), ['dann', 'grunddaten']);
+    assert.deepEqual(automatisierungsProbleme({ ...a, name: '', dann: [] }, k), automatisierungsProblemOrte({ ...a, name: '', dann: [] }, k).map((p) => p.text), 'dieselben Texte');
   });
 });
 
@@ -72,6 +79,8 @@ describe('Automatisierungen (#674): Verwalten', () => {
   it('nur gültig speicherbar, neu ausgeschaltet, Änderungsverlauf mit Wiederherstellen, Konflikt bei veraltetem Stand', async () => {
     const { motor, vertrag, admin } = await aufbau();
     await assert.rejects(motor.lege({ name: '', wenn: { art: 'mappe.angelegt' }, dann: [] }, admin.id), /Namen/);
+    // Die Antwort nennt die Bereiche des Editors (#1000), damit die Oberfläche sie öffnet.
+    await assert.rejects(motor.lege({ name: '', wenn: { art: 'mappe.angelegt' }, dann: [] }, admin.id), (e: { details?: { orte?: string[] } }) => (assert.deepEqual(e.details?.orte, ['grunddaten', 'dann']), true));
     const a = await motor.lege({ name: 'Neu', wenn: { art: 'mappe.angelegt', typ: vertrag.id }, dann: [stopp] }, admin.id);
     assert.equal(a.aktiv, false);
     assert.equal(a.reihenfolge, 50);

@@ -62,17 +62,22 @@ describe('Werkbank → Stempel in der Dreiteilung (#990)', () => {
     // Seiten-Hilfe direkt hinter der Überschrift (#985), nicht mehr am Ende der Beschreibung.
     assert.match(html, new RegExp(`<h1>${liste[0].name} <a class="hilfesymbol"[^>]*>.*?</a></h1>`));
     assert.doesNotMatch(/<p class="leise">.*?<\/p>/.exec(html)?.[0] ?? '', /hilfesymbol/);
-    assert.ok(html.includes('class="blatt stempeleditor"'));
+    assert.ok(html.includes('class="editorform stempeleditor"'));
+    // Sprungleiste und Bereiche wie beim Mappentyp (#1000).
+    assert.ok(html.includes('data-sprungleiste'), 'Sprungleiste');
+    for (const b of ['grunddaten', 'aussehen', 'vorschau', 'verwendet']) assert.ok(html.includes(`data-bereich="${b}"`), b);
     assert.ok(html.includes('id="stempel-text"') && html.includes('id="stempel-lage"'));
     assert.ok(html.includes('stempelvorschau'), 'Live-Vorschau (#799)');
     assert.ok(html.includes('speicherleiste'));
-    assert.ok(html.includes('textknopf gefahr'), 'Löschen als Gefahr-Link links');
+    assert.match(html, /data-knopf="link"[^>]*>(?:<[^>]+>)*Vorlage löschen/, 'Löschen als Gefahr-Link links');
+    assert.match(html, /class="textknopf [^"]*gefahr"/, 'in Gefahrfarbe');
   });
 
   it('rechts: neue Vorlage ohne Löschen; unbekannte Vorlage mit Hinweis', () => {
     const neu = zeichne(h(StempelEditor, { z: stempelZ(liste), id: 'neu' }));
     assert.match(neu, /<h1>Neue Vorlage <a class="hilfesymbol"/);
-    assert.ok(!neu.includes('textknopf gefahr'));
+    assert.ok(!neu.includes('Vorlage löschen'));
+    assert.ok(!neu.includes('data-bereich="verwendet"'), 'neu ohne „Verwendet in“ (#1000)');
     assert.ok(zeichne(h(StempelEditor, { z: stempelZ(liste), id: 'gibtsnicht' })).includes('Diese Vorlage gibt es nicht (mehr).'));
   });
 });

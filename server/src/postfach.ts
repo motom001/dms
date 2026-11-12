@@ -119,6 +119,9 @@ const NEU: Omit<Postfach, 'id'> = {
 
 const text = (v: unknown, max = 250) => (typeof v === 'string' ? v.trim().slice(0, max) : '');
 
+/** Bereich des Postfach-Editors, zu dem ein Prüffehler gehört (#1000) – steht als `details.orte` in der Antwort. */
+export type PostfachOrt = 'grunddaten' | 'verbindung' | 'abholen';
+
 /** Eingaben prüfen; ein leeres Passwort behält das bisherige. */
 export function pruefePostfach(x: unknown, alt: Postfach | null, verschluessele: (k: string) => string): Postfach {
   const o = (x && typeof x === 'object' ? x : {}) as Record<string, unknown>;
@@ -129,31 +132,34 @@ export function pruefePostfach(x: unknown, alt: Postfach | null, verschluessele:
   const v = (o.verschluesselung ?? basis.verschluesselung) as Verschluesselung;
   const abstand = o.abstand === undefined ? basis.abstand : Math.round(Number(o.abstand));
   const nachher = (o.nachher ?? basis.nachher) as Nachher;
+  // Jeder Fehler mit seinem Bereich im Editor (#1000): Grunddaten, Verbindung oder Abholen.
   const fehler: string[] = [];
-  if (!name) fehler.push(t('meldungen.postfach.bitte-einen-namen-angeben'));
-  if (!/^[a-z0-9.-]+$/i.test(server)) fehler.push(t('meldungen.postfach.server-z-b-imap'));
-  if (!Number.isInteger(port) || port < 1 || port > 65535) fehler.push(t('meldungen.postfach.port-1-bis-65535'));
-  if (!['ssl', 'starttls', 'keine'].includes(v)) fehler.push(t('meldungen.postfach.verschluesselung-ssl-tls-starttls'));
-  if (v === 'keine' && o.unverschluesseltBestaetigt !== true && basis.verschluesselung !== 'keine') fehler.push(t('meldungen.postfach.ohne-verschluesselung-gehen-passwort'));
-  if (!Number.isInteger(abstand) || abstand < 1 || abstand > 1440) fehler.push(t('meldungen.postfach.abrufabstand-1-bis-1440'));
-  if (!['verschieben', 'gelesen', 'loeschen'].includes(nachher)) fehler.push(t('meldungen.postfach.nach-dem-uebernehmen-verschieben'));
+  const orte = new Set<PostfachOrt>();
+  const melde = (ort: PostfachOrt, text: string) => { fehler.push(text); orte.add(ort); };
+  if (!name) melde('grunddaten', t('meldungen.postfach.bitte-einen-namen-angeben'));
+  if (!/^[a-z0-9.-]+$/i.test(server)) melde('verbindung', t('meldungen.postfach.server-z-b-imap'));
+  if (!Number.isInteger(port) || port < 1 || port > 65535) melde('verbindung', t('meldungen.postfach.port-1-bis-65535'));
+  if (!['ssl', 'starttls', 'keine'].includes(v)) melde('verbindung', t('meldungen.postfach.verschluesselung-ssl-tls-starttls'));
+  if (v === 'keine' && o.unverschluesseltBestaetigt !== true && basis.verschluesselung !== 'keine') melde('verbindung', t('meldungen.postfach.ohne-verschluesselung-gehen-passwort'));
+  if (!Number.isInteger(abstand) || abstand < 1 || abstand > 1440) melde('abholen', t('meldungen.postfach.abrufabstand-1-bis-1440'));
+  if (!['verschieben', 'gelesen', 'loeschen'].includes(nachher)) melde('abholen', t('meldungen.postfach.nach-dem-uebernehmen-verschieben'));
   const absender = o.absender === undefined ? basis.absender
     : (Array.isArray(o.absender) ? o.absender : String(o.absender ?? '').split(/[\s,;]+/)).map((a) => String(a).trim().toLowerCase().replace(/^@/, '')).filter(Boolean).slice(0, 100);
-  if (absender.some((a) => !/^[^\s@]+@[^\s@]+\.[^\s@]+$|^[^\s@]+\.[^\s@]+$/.test(a))) fehler.push(t('meldungen.postfach.absender-adressen-name-example'));
+  if (absender.some((a) => !/^[^\s@]+@[^\s@]+\.[^\s@]+$|^[^\s@]+\.[^\s@]+$/.test(a))) melde('abholen', t('meldungen.postfach.absender-adressen-name-example'));
   const benutzer = o.benutzer === undefined ? basis.benutzer : text(o.benutzer, 200);
-  if (!benutzer) fehler.push(t('meldungen.postfach.bitte-den-benutzernamen-des'));
+  if (!benutzer) melde('verbindung', t('meldungen.postfach.bitte-den-benutzernamen-des'));
   // Steuerzeichen (#358): Der Benutzername steht bei OAuth im XOAUTH2-Feld „user=…“.
-  else if (/[\x00-\x1f\x7f]/.test(benutzer)) fehler.push(t('meldungen.postfach.benutzername-ohne-zeilenumbrueche'));
+  else if (/[\x00-\x1f\x7f]/.test(benutzer)) melde('verbindung', t('meldungen.postfach.benutzername-ohne-zeilenumbrueche'));
   const anmeldung = (o.anmeldung ?? basis.anmeldung ?? 'passwort') as Anmeldeart;
-  if (!['passwort', 'oauth'].includes(anmeldung)) fehler.push(t('meldungen.postfach.anmeldung-passwort-oder-oauth'));
+  if (!['passwort', 'oauth'].includes(anmeldung)) melde('verbindung', t('meldungen.postfach.anmeldung-passwort-oder-oauth'));
   const anbieter = (o.anbieter ?? basis.anbieter ?? 'microsoft') as OAuthAnbieter;
-  if (anmeldung === 'oauth' && !OAUTH_ANBIETER.includes(anbieter)) fehler.push(t('meldungen.postfach.anbieter-microsoft-google-oder'));
-  if (anmeldung === 'oauth' && v === 'keine') fehler.push(t('meldungen.postfach.oauth-2-0-nur'));
+  if (anmeldung === 'oauth' && !OAUTH_ANBIETER.includes(anbieter)) melde('verbindung', t('meldungen.postfach.anbieter-microsoft-google-oder'));
+  if (anmeldung === 'oauth' && v === 'keine') melde('verbindung', t('meldungen.postfach.oauth-2-0-nur'));
   const neuesPasswort = anmeldung === 'passwort' && typeof o.passwort === 'string' && o.passwort !== '' ? o.passwort.slice(0, 500) : null;
-  if (anmeldung === 'passwort' && !neuesPasswort && !basis.passwort) fehler.push(t('meldungen.postfach.bitte-das-passwort-bei'));
+  if (anmeldung === 'passwort' && !neuesPasswort && !basis.passwort) melde('verbindung', t('meldungen.postfach.bitte-das-passwort-bei'));
   // Das gespeicherte Passwort geht nur an den Server, für den es eingegeben wurde (#358, Sicherheits-Review).
-  else if (anmeldung === 'passwort' && !neuesPasswort && alt && alt.anmeldung !== 'oauth' && !gleicherServer(alt, { server, port, verschluesselung: v })) fehler.push(t('meldungen.postfach.server-port-oder-verschluesselung'));
-  if (fehler.length) throw new Fachfehler(422, fehler.join(' '));
+  else if (anmeldung === 'passwort' && !neuesPasswort && alt && alt.anmeldung !== 'oauth' && !gleicherServer(alt, { server, port, verschluesselung: v })) melde('verbindung', t('meldungen.postfach.server-port-oder-verschluesselung'));
+  if (fehler.length) throw new Fachfehler(422, fehler.join(' '), { orte: [...orte] });
   return {
     ...basis, name, server, port, verschluesselung: v, benutzer, abstand, nachher, absender, anmeldung,
     ...(anmeldung === 'oauth' ? { anbieter } : { anbieter: undefined }),
@@ -248,7 +254,7 @@ export class Postfaecher {
     const l = await this.liste();
     const alt = id ? l.find((p) => p.id === id) ?? null : null;
     if (id && !alt) throw new Fachfehler(404, t('meldungen.postfach.dieses-postfach-gibt-es'));
-    if (x && typeof x === 'object' && typeof (x as { fuer?: unknown }).fuer === 'string' && (x as { fuer: string }).fuer && !(await this.d.dienst.eingangskanaele.gibtMappe((x as { fuer: string }).fuer))) throw new Fachfehler(422, t('meldungen.postfach.diesen-benutzer-gibt-es'));
+    if (x && typeof x === 'object' && typeof (x as { fuer?: unknown }).fuer === 'string' && (x as { fuer: string }).fuer && !(await this.d.dienst.eingangskanaele.gibtMappe((x as { fuer: string }).fuer))) throw new Fachfehler(422, t('meldungen.postfach.diesen-benutzer-gibt-es'), { orte: ['grunddaten'] });
     const neu = pruefePostfach(x, alt, this.d.verschluessele);
     await this.speichereListe(alt ? l.map((p) => (p.id === alt.id ? neu : p)) : [...l, neu]);
     // Verbindung oder Ordner geändert: wieder von vorn zählen (Message-IDs schützen vor Doppelten).

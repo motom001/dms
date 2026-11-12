@@ -10,6 +10,7 @@ import { api } from '../api';
 import { useDaten } from '../daten';
 import { useKonto } from '../konto';
 import { Hilfe } from '../Hilfe';
+import { Knopf } from '../bausteine';
 import { t, tn } from '../sprache';
 import type { Hilfeort } from '../../../shared/src/hilfe';
 import { gebietsschema } from '../../../shared/src/sprache';
@@ -31,10 +32,6 @@ export function AbwesenheitFormular({ benutzerId, wer, wert, offeneAufgaben, spe
   const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
   const [sendet, setSendet] = useState(false);
   const geaendert = JSON.stringify(a) !== JSON.stringify(wert);
-  const vertreter = d.personen.find((p) => p.id === wert.vertreterId);
-  const kandidaten = d.personen.filter((p) => p.aktiv !== false && p.id !== benutzerId);
-  const du = wer === 'du';
-  const wirkt = abwesenheitWirkt(wert, heuteIn());
 
   async function tu(f: () => Promise<string>) {
     setSendet(true); setMeldung(undefined);
@@ -46,6 +43,44 @@ export function AbwesenheitFormular({ benutzerId, wer, wert, offeneAufgaben, spe
   return (
     <form className="blatt" onSubmit={(e) => { e.preventDefault(); void tu(async () => { await speichern(a); return a.an ? t('profil.abwesenheit.abwesenheit-gespeichert') : t('profil.abwesenheit.abwesenheit-ausgeschaltet'); }); }}>
       <h2 className="h3">{tn('profil.abwesenheit.abwesenheit', { hilfe: <Hilfe ort={hilfe} /> })}</h2>
+      <AbwesenheitFelder a={a} setA={setA} wert={wert} wer={wer} benutzerId={benutzerId} offeneAufgaben={offeneAufgaben} />
+      {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
+      <div className="knoepfe">
+        <AufgabenUebergeben wert={wert} offeneAufgaben={offeneAufgaben} gesperrt={sendet || geaendert} uebergeben={() => tu(async () => uebergebenText(await uebergeben(), d.personen.find((p) => p.id === wert.vertreterId)?.name))} />
+        <button className="knopf primaer" disabled={sendet || !geaendert}>{sendet ? t('profil.abwesenheit.speichere') : t('profil.abwesenheit.speichern')}</button>
+      </div>
+    </form>
+  );
+}
+
+/** Ergebnis von „Alle offenen Aufgaben an … geben“. */
+export const uebergebenText = (r: { uebergeben: number }, vertreter?: string) => t('profil.abwesenheit.aufgaben-an-gegeben', { anzahl: r.uebergeben, wert: vertreter ?? t('profil.abwesenheit.den-vertreter') });
+
+/** „Alle offenen Aufgaben an … geben“ (#78): Sofortaktion – erst nach dem Speichern einer geänderten Abwesenheit. */
+export function AufgabenUebergeben({ wert, offeneAufgaben, gesperrt, uebergeben }: { wert: Abwesenheit; offeneAufgaben: number; gesperrt: boolean; uebergeben: () => Promise<unknown> }) {
+  const d = useDaten();
+  if (!wert.vertreterId || offeneAufgaben <= 0) return null;
+  const vertreter = d.personen.find((p) => p.id === wert.vertreterId);
+  return (
+    <Knopf gesperrt={gesperrt} title={gesperrt ? t('profil.abwesenheit.erst-speichern') : undefined} onClick={uebergeben}>
+      {t('profil.abwesenheit.alle-offenen-aufgaben-an', { offeneAufgaben, wert: vertreter?.name ?? t('profil.abwesenheit.vertreter-2') })}</Knopf>
+  );
+}
+
+/**
+ * Die Angaben der Abwesenheit (#78) ohne Formular: im eigenen Profil im Formular oben, in der Werkbank (#1000) im
+ * Bereich „Vertretung“ des Benutzers, den die Speicherleiste des Benutzers mitspeichert.
+ */
+export function AbwesenheitFelder({ a, setA, wert, wer, benutzerId, offeneAufgaben }: {
+  a: Abwesenheit; setA: (a: Abwesenheit) => void; wert: Abwesenheit; wer: 'du' | string; benutzerId: string; offeneAufgaben: number;
+}) {
+  const d = useDaten();
+  const vertreter = d.personen.find((p) => p.id === wert.vertreterId);
+  const kandidaten = d.personen.filter((p) => p.aktiv !== false && p.id !== benutzerId);
+  const du = wer === 'du';
+  const wirkt = abwesenheitWirkt(wert, heuteIn());
+  return (
+    <>
       <p className="leise">{t('profil.abwesenheit.solange-abwesend-gehen-neue', { wert: du ? t('profil.abwesenheit.du') : wer, wert2: du ? t('profil.abwesenheit.bist') : t('profil.abwesenheit.ist') })}</p>
       {wert.an && <div className={`hinweis ${wirkt ? 'warn' : 'info'}`}><p>{t('profil.abwesenheit.vertreten-durch', { wert: du ? t('profil.abwesenheit.du-bist') : t('profil.abwesenheit.ist-2', { wer }), wert2: wirkt ? t('profil.abwesenheit.abwesend') : t('profil.abwesenheit.demnaechst-abwesend'), zeitraumText: zeitraumText(wert), wert3: vertreter?.name ?? '–' })}</p></div>}
       <label className="haken"><input type="checkbox" checked={a.an} onChange={(e) => setA({ ...a, an: e.target.checked })} /><span>{t('profil.abwesenheit.abwesend-2')}</span></label>
@@ -63,16 +98,7 @@ export function AbwesenheitFormular({ benutzerId, wer, wert, offeneAufgaben, spe
             {kandidaten.map((p) => <option key={p.id} value={p.id}>{p.name}{p.abwesend ? ` (${p.abwesend.wirkt ? 'abwesend' : t('profil.abwesenheit.demnaechst-abwesend')})` : ''}</option>)}
           </select></label>
       </div>
-      {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
-      <div className="knoepfe">
-        {wert.vertreterId && offeneAufgaben > 0 && (
-          <button type="button" className="knopf" disabled={sendet || geaendert} title={geaendert ? t('profil.abwesenheit.erst-speichern') : undefined}
-            onClick={() => void tu(async () => { const r = await uebergeben(); return t('profil.abwesenheit.aufgaben-an-gegeben', { anzahl: r.uebergeben, wert: vertreter?.name ?? t('profil.abwesenheit.den-vertreter') }); })}>
-            {t('profil.abwesenheit.alle-offenen-aufgaben-an', { offeneAufgaben, wert: vertreter?.name ?? t('profil.abwesenheit.vertreter-2') })}</button>
-        )}
-        <button className="knopf primaer" disabled={sendet || !geaendert}>{sendet ? t('profil.abwesenheit.speichere') : t('profil.abwesenheit.speichern')}</button>
-      </div>
-    </form>
+    </>
   );
 }
 

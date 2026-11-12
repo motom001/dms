@@ -18,7 +18,9 @@ The templates are under **Workbench → Stamps**. At the start there are five (t
 
 ![Workbench → Stamps](bilder/werkbank-stempel.png)
 
-Like folder types or number ranges, the templates are listed **in the middle** – each with name, text with placeholders and position, followed by the folder types that use it. A click opens the template **on the right** with all settings and the [preview](#vorschau); at the bottom you save or discard the changes, and **Delete template** is at the bottom left. With **+ New** at the top of the middle column you create one:
+![A template on the phone: jump bar and areas](bilder/werkbank-stempel-handy.png){ width="320" }
+
+Like folder types or number ranges, the templates are listed **in the middle** – each with name, text with placeholders and position, followed by the folder types that use it. A click opens the template **on the right**, organised like a [folder type](mappentypen.md#aufbau-des-editors): the **jump bar** with **Expand all / Collapse all** at the top, below it the areas **Basic details** (name and text) **→ Appearance → Preview → Used in**. Collapsed, each area shows a summary, such as "Diagonal · Red · 70 %"; your device remembers what you expand per template, a new template is fully expanded. At the bottom you save or discard all changes at once, and **Delete template** is at the bottom left; a missing name or an unknown placeholder marks the basic details red. With **+ New** at the top of the middle column you create one:
 
 | Detail | Meaning |
 | --- | --- |
@@ -50,7 +52,7 @@ All placeholders work with **All pages** as with **Only the first page**. An exa
 
 ### Preview { #vorschau }
 
-Below the details, the preview shows the stamp on four made-up sample receipts side by side (on the phone one below the other): an invoice with text, a table with amounts, a coloured form and a grey scan of a till receipt. Every change to text, position, colour, size, opacity and "like ink" shows up immediately in all four images. You see page 1 as it would be passed out; with **All pages** the same setting applies to every page.
+The area *Preview* shows the stamp on four made-up sample receipts side by side (on the phone one below the other): an invoice with text, a table with amounts, a coloured form and a grey scan of a till receipt. Every change to text, position, colour, size, opacity and "like ink" shows up immediately in all four images. You see page 1 as it would be passed out; with **All pages** the same setting applies to every page.
 
 You can edit the stamp directly in the preview:
 

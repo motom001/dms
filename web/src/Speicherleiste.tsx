@@ -57,7 +57,7 @@ export function useEntwurf<T>(gespeichert: T, aktuell: T, o: { neu?: boolean; zu
  * rechts „Verwerfen“ als Textknopf und der Hauptknopf mit dem Gegenstand im Namen.
  * Ohne `speichern` ist der Hauptknopf ein Submit-Knopf des umgebenden Formulars.
  */
-export function Speicherleiste({ ent, gegenstand, sendet, ungueltig, speicherbar, speichern, links, weitere, meldung, haupttext }: {
+export function Speicherleiste({ ent, gegenstand, sendet, ungueltig, speicherbar, speichern, links, weitere, meldung, haupttext, formular }: {
   ent: Entwurf;
   gegenstand?: string;
   sendet?: boolean;
@@ -71,6 +71,11 @@ export function Speicherleiste({ ent, gegenstand, sendet, ungueltig, speicherbar
   meldung?: { art: string; text: string };
   /** Eigene Beschriftung des Hauptknopfs (selten; sonst „<Gegenstand> anlegen/speichern“). */
   haupttext?: string;
+  /**
+   * `id` des Formulars, wenn die Leiste außerhalb davon steht (#1000): Editoren mit Bereichen haben unten eine Leiste
+   * für alles, während Bereiche mit eigenen Sofortaktionen (eigene kleine Formulare) nicht im Formular liegen dürfen.
+   */
+  formular?: string;
 }) {
   const k = leistenknoepfe({ neu: ent.neu, geaendert: ent.geaendert, sendet, ungueltig, speicherbar }, gegenstand);
   return (
@@ -80,7 +85,7 @@ export function Speicherleiste({ ent, gegenstand, sendet, ungueltig, speicherbar
       <div className="knoepfe">
         {weitere}
         <button type="button" className="textknopf" disabled={!k.verwerfen.aktiv} title={k.verwerfen.titel} onClick={() => void ent.verwerfen()}>{k.verwerfen.text}</button>
-        <button type={speichern ? 'button' : 'submit'} className="knopf primaer" disabled={!k.haupt.aktiv} onClick={speichern}>{sendet || !haupttext ? k.haupt.text : haupttext}</button>
+        <button type={speichern ? 'button' : 'submit'} form={speichern ? undefined : formular} className="knopf primaer" disabled={!k.haupt.aktiv} onClick={speichern}>{sendet || !haupttext ? k.haupt.text : haupttext}</button>
       </div>
     </div>
   );

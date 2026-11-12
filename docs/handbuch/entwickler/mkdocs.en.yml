@@ -81,6 +81,7 @@ nav:
       - Table: bausteine-tabelle.md
       - Search: bausteine-suche.md
       - Toggle: bausteine-umschalter.md
+      - Areas: bausteine-bereiche.md
   - Release: release.md
   - Core:
       - Architecture: aufbau.md

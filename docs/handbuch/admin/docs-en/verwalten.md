@@ -4,7 +4,7 @@ Ablago has **no separate "Administrator" account**. Administering is a permissio
 
 ## The administration permission { #das-verwaltungsrecht }
 
-Under **Workbench → Users → person** there is the section **Administration**:
+Under **Workbench → Users → person**, the area *Roles and rights* contains the section **Administration**; it is saved with **Save user**:
 
 - **May administer Ablago** – without this tick, the person has neither the workbench nor the entry "Administer Ablago".
 - Below it a tree with the workbench's areas, structured by the groups of the sidebar. At the very top is **Full administration**: all areas, including those added in later versions. [Use](nutzung.md) is not in the tree – it always belongs to Full administration.

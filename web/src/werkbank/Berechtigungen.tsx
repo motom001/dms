@@ -1,3 +1,4 @@
+import { Bereich, type Klappe } from '../bausteine';
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { Mappentyp } from '../../../shared/src/model';
 import { bedingungsfelder, beschreibeBedingung, OPERATOREN_JE_ART, type Bedingung, type Bedingungsfeld } from '../../../shared/src/sichten';
@@ -14,7 +15,6 @@ import { Hilfe } from '../Hilfe';
 import { Link } from '../ort';
 import { Ansage, umgestellt, useZiehen, ziehTasten } from '../ziehen';
 import { FeldBedingung, MappenSuche } from './Sichten';
-import { Bereich, type Klappe } from '../einrichtung/Bereich';
 import { passendesErgebnis, testlaufSchluessel, type TestlaufErgebnis } from '../../../shared/src/testlauf';
 import { TestBenutzerWahl, TestMappeWahl, useTestlauf } from './TestlaufWahl';
 import { gebietsschema } from '../../../shared/src/sprache';
@@ -409,7 +409,7 @@ export function TestlaufBlatt({ typId, entwurf, klappe }: { typId: string; entwu
 
 /* ---------- Was sieht Benutzer X? (#125) ---------- */
 
-/* ---------- Was sieht ein Benutzer? (#125, #146: in der Benutzerverwaltung) ---------- */
+/* ---------- Was sieht ein Benutzer? (#125, #146: in der Benutzerverwaltung, seit #1000 im Bereich „Rollen und Rechte“) ---------- */
 
 export function WasSiehtBlatt({ benutzerId, admin }: { benutzerId: string; admin: boolean }) {
   // Ergebnis an den Benutzer gebunden (#371): nie die Liste eines anderen Benutzers zeigen.
@@ -425,8 +425,8 @@ export function WasSiehtBlatt({ benutzerId, admin }: { benutzerId: string; admin
     return () => { aktuell = false; };
   }, [an, benutzerId, admin]);
   return (
-    <section className="blatt" id="was-sieht">
-      <h2 className="h3">{t('werkbank.berechtigungen.was-sieht-dieser-benutzer')} <Hilfe ort="benutzer.wasSieht" /></h2>
+    <section id="was-sieht" aria-labelledby="was-sieht-titel">
+      <h3 className="h4" id="was-sieht-titel">{t('werkbank.berechtigungen.was-sieht-dieser-benutzer')} <Hilfe ort="benutzer.wasSieht" /></h3>
       {admin
         ? <p className="leise">{t('konten.verwaltende.berechtigungen.modus')}</p>
         : <>

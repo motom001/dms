@@ -77,7 +77,7 @@
   "ui.fehlgeschlagen.einer": "1 Lauf ist fehlgeschlagen: {name}, {zeit}.",
   "ui.fehlgeschlagen_one": "{anzahl} Lauf ist fehlgeschlagen.",
   "ui.fehlgeschlagen_other": "{anzahl} Läufe sind fehlgeschlagen.",
-  "ui.gegenstand": "die Automatisierung",
+  "ui.gegenstand": "Automatisierung",
   "ui.geloescht": "Gelöscht.",
   "ui.gespeichert": "Gespeichert.",
   "ui.herkunft.dms": "von Ablago",
@@ -417,5 +417,9 @@
   "vorlage.ui.uebersicht_one": "{anzahl} geplanter Ablauf ist angehalten.",
   "vorlage.ui.uebersicht_other": "{anzahl} geplante Abläufe sind angehalten.",
   "vorlage.ui.uebersicht.text": "Die Person, die ihn angelegt hat, ist deaktiviert oder darf die Mappe nicht mehr lesen. Er läuft erst, wenn du ihn fortsetzt – mit ihren dann gültigen Rechten.",
-  "vorlage.ui.uebersicht.knopf": "Zu den Automatisierungsvorlagen"
+  "vorlage.ui.uebersicht.knopf": "Zu den Automatisierungsvorlagen",
+  "ui.bereiche": "Bereiche der Automatisierung",
+  "ui.bereich.grunddaten": "Grunddaten",
+  "ui.bereich.reihenfolge": "Reihenfolge {reihenfolge}",
+  "ui.bereich.zuletzt": "zuletzt {zeit}"
 }

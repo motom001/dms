@@ -6,7 +6,7 @@ import { rueckfrage } from '../rueckfrage';
 import { t } from '../sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
 
-/** Anmeldemittel einer Person in Werkbank → Benutzer: Zwei-Faktor-Anmeldung (#242) und Passkeys (#811). */
+/** Anmeldemittel einer Person in Werkbank → Benutzer: Zwei-Faktor-Anmeldung (#242) und Passkeys (#811) – seit #1000 im Bereich „Anmeldung und Sicherheit“. */
 
 /** Passkeys der Person (#811): wie viele, und alle zurücksetzen (z. B. Handy verloren, neue Adresse). */
 export function PasskeysVon({ b }: { b: Benutzer }) {
@@ -22,8 +22,8 @@ export function PasskeysVon({ b }: { b: Benutzer }) {
     return { art: 'gut' as const, text: t('werkbank.benutzer.zurueckgesetzt') };
   };
   return (
-    <div className="blatt" id="passkeys-von">
-      <h2 className="h3">{t('werkbank.benutzer.passkeys')}</h2>
+    <div id="passkeys-von">
+      <h3 className="h4">{t('werkbank.benutzer.passkeys')}</h3>
       {anzahl === null ? (fehler ? <p className="fehlertext">{fehler}</p> : <p className="leise">{t('werkbank.benutzer.lade')}</p>)
         : anzahl > 0 ? <>
           <p>{t('werkbank.benutzer.passkeys.anzahl', { anzahl })}</p>
@@ -41,8 +41,8 @@ export function ZweifaktorVon({ b }: { b: Benutzer }) {
   useEffect(() => { void laden(); }, [laden]);
   const name = b.name || b.email;
   return (
-    <div className="blatt">
-      <h2 className="h3">{t('werkbank.benutzer.zwei-faktor-anmeldung')}</h2>
+    <div>
+      <h3 className="h4">{t('werkbank.benutzer.zwei-faktor-anmeldung')}</h3>
       {!stand ? !meldung && <p className="leise">{t('werkbank.benutzer.lade')}</p> : stand.aktiv ? <>
         <p><span className="chip gut punkt">{t('werkbank.benutzer.eingerichtet')}</span>{stand.seit && <> {' '}{t('werkbank.benutzer.seit-2', { datum: new Date(stand.seit).toLocaleDateString(gebietsschema()) })}</>} {' '}{t('werkbank.benutzer.wiederherstellungscodes-uebrig', { codesUebrig: stand.codesUebrig })}</p>
         <div className="knoepfe"><Knopf className="gefahr-rand" onClick={async () => {
