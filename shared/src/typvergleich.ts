@@ -24,6 +24,8 @@ const NAMEN: Record<string, string> = {
   name: 'Name', art: 'Art', felder: 'Felder', quellen: 'Quellen', quelle: t('gemeinsam.typvergleich.tabelle'),
   ausgeblendet: t('gemeinsam.typvergleich.ausgeblendet'), abschnitte: t('gemeinsam.typvergleich.abschnitte'),
 };
+/** Name einer Eigenschaft eines Felds oder Registers, z. B. „Auswahlwerte“ (auch für die Fassungen, #1006). */
+export const eigenschaftName = (k: string): string => NAMEN[k] ?? k;
 /** Leere Werte (undefined, null, false, '', []) gelten als „nicht gesetzt“ – Speichern ohne Änderung zählt nicht. */
 const leer = (v: unknown) => v === undefined || v === null || v === false || v === '' || (Array.isArray(v) && !v.length);
 const sauber = (o: Record<string, unknown>) => Object.fromEntries(Object.entries(o).filter(([, v]) => !leer(v)).sort(([a], [b]) => a.localeCompare(b)));

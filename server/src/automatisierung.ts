@@ -3,7 +3,7 @@ import type postgres from 'postgres';
 import {
   AUTOMATISIERUNG_GRENZEN, ausloeserSchluessel, automatisierungsProbleme, automatisierungsProblemOrte, bereinigeAutomatisierung, kontextTyp, kurzform, REIHENFOLGE,
   type Angehalten, type Automatisierung, type AutomatisierungAnsicht, type AutomatisierungDaten, type DannArt, type DannKarte,
-  type Empfaenger, type Fassung, type Fehlschlag, type Herkunft, type Kontextdaten, type Lauf, type LaufZustand, type Schritt, type UndKarte, erreichteDaten,
+  type Empfaenger, type Fehlschlag, type Herkunft, type Kontextdaten, type Lauf, type LaufZustand, type Schritt, type UndKarte, erreichteDaten,
   PERSONEN_IM_EREIGNIS, paketKarteLeer, DMS_POST,
 } from '../../shared/src/automatisierung';
 import { EREIGNISKATALOG, OHNE_WENN, type KatalogEreignis } from '../../shared/src/ereignisse';
@@ -61,14 +61,13 @@ const HAENGT_MIN = 10;
 export interface AutomatisierungRepo {
   liste(): Promise<Array<Automatisierung & { letzterTag: string | null }>>;
   hole(id: string): Promise<(Automatisierung & { letzterTag: string | null }) | undefined>;
-  /** Neu anlegen (version 1) samt erster Fassung. */
+  /** Neu anlegen (version 1). Die Fassungen (#1006) hält `Automatisierungen` fest, nicht das Repo. */
   lege(a: Automatisierung): Promise<void>;
-  /** Neue Fassung speichern; false, wenn inzwischen jemand anderes gespeichert hat (version ≠ erwartet). */
+  /** Speichern; false, wenn inzwischen jemand anderes gespeichert hat (version ≠ erwartet). */
   speichere(id: string, d: AutomatisierungDaten & { aktiv: boolean }, von: string | null, erwartet: number): Promise<boolean>;
-  /** Zustand ohne neue Fassung (an/aus von selbst, angehalten, letzter geprüfter Tag). */
+  /** Zustand (an/aus von selbst, angehalten, letzter geprüfter Tag). */
   setze(id: string, d: { aktiv?: boolean; angehalten?: Angehalten | null; letzterTag?: string; herkunft?: Herkunft }): Promise<void>;
   loesche(id: string): Promise<void>;
-  fassungen(id: string): Promise<Fassung[]>;
   /** Lauf anlegen; null, wenn es zu dieser Automatisierung und diesem Ereignis schon einen gibt. */
   beginne(l: Lauf): Promise<boolean>;
   aktualisiere(id: string, d: Partial<Pick<Lauf, 'zustand' | 'schritte' | 'fehler' | 'beendet' | 'mappeId'>>): Promise<void>;
@@ -90,22 +89,18 @@ type Gespeichert = Automatisierung & { letzterTag: string | null };
 
 export function speicherAutomatisierungRepo(uhr: () => number = Date.now): AutomatisierungRepo {
   const autos = new Map<string, Gespeichert>();
-  const fassungen = new Map<string, Fassung[]>();
   const laeufe: Lauf[] = [];
   const jetzt = () => new Date(uhr()).toISOString();
-  const daten = (a: AutomatisierungDaten & { aktiv: boolean }) => structuredClone({ name: a.name, beschreibung: a.beschreibung, reihenfolge: a.reihenfolge, wenn: a.wenn, und: a.und, dann: a.dann, sonst: a.sonst, aktiv: a.aktiv });
   return {
     async liste() { return [...autos.values()].map((a) => structuredClone(a)).sort((a, b) => a.reihenfolge - b.reihenfolge || a.name.localeCompare(b.name, 'de')); },
     async hole(id) { const a = autos.get(id); return a && structuredClone(a); },
     async lege(a) {
       autos.set(a.id, { ...structuredClone(a), letzterTag: null });
-      fassungen.set(a.id, [{ version: a.version, zeit: a.geaendert, von: a.geaendertVon, daten: daten(a) }]);
     },
     async speichere(id, d, von, erwartet) {
       const a = autos.get(id);
       if (!a || a.version !== erwartet) return false;
       Object.assign(a, structuredClone(d), { version: a.version + 1, geaendert: jetzt(), geaendertVon: von });
-      fassungen.get(id)!.push({ version: a.version, zeit: a.geaendert, von, daten: daten(a) });
       return true;
     },
     async setze(id, d) {
@@ -116,8 +111,7 @@ export function speicherAutomatisierungRepo(uhr: () => number = Date.now): Autom
       if (d.letzterTag !== undefined) a.letzterTag = d.letzterTag;
       if (d.herkunft !== undefined) a.herkunft = d.herkunft;
     },
-    async loesche(id) { autos.delete(id); fassungen.delete(id); for (let i = laeufe.length - 1; i >= 0; i--) if (laeufe[i].automatisierungId === id) laeufe.splice(i, 1); },
-    async fassungen(id) { return structuredClone([...(fassungen.get(id) ?? [])].reverse()); },
+    async loesche(id) { autos.delete(id); for (let i = laeufe.length - 1; i >= 0; i--) if (laeufe[i].automatisierungId === id) laeufe.splice(i, 1); },
     async beginne(l) {
       if (laeufe.some((x) => x.automatisierungId === l.automatisierungId && x.ereignisId === l.ereignisId)) return false;
       laeufe.push(structuredClone(l));
@@ -170,7 +164,6 @@ const alsLauf = (r: any): Lauf => ({
 export function pgAutomatisierungRepo(sql: postgres.Sql, haushaltId: string): AutomatisierungRepo {
   const json = (w: unknown) => sql.json(w as postgres.JSONValue);
   const nurDaten = (a: AutomatisierungDaten) => ({ beschreibung: a.beschreibung, wenn: a.wenn, und: a.und, dann: a.dann, sonst: a.sonst });
-  const fassung = (a: AutomatisierungDaten & { aktiv: boolean }) => ({ name: a.name, reihenfolge: a.reihenfolge, aktiv: a.aktiv, ...nurDaten(a) });
   return {
     async liste() { return (await sql`SELECT * FROM automatisierungen WHERE haushalt_id = ${haushaltId} ORDER BY reihenfolge, name, id`).map(alsAuto); },
     async hole(id) {
@@ -179,23 +172,16 @@ export function pgAutomatisierungRepo(sql: postgres.Sql, haushaltId: string): Au
       return r ? alsAuto(r) : undefined;
     },
     async lege(a) {
-      await sql.begin(async (tx) => {
-        await tx`INSERT INTO automatisierungen (id, haushalt_id, name, reihenfolge, daten, aktiv, angehalten, herkunft, paket_id, version, erstellt, erstellt_von, geaendert, geaendert_von)
-          VALUES (${a.id}, ${haushaltId}, ${a.name}, ${a.reihenfolge}, ${json(nurDaten(a))}, ${a.aktiv}, ${a.angehalten ? json(a.angehalten) : null}, ${a.herkunft}, ${a.paketId ?? null},
-            ${a.version}, ${a.erstellt}, ${a.erstelltVon}, ${a.geaendert}, ${a.geaendertVon})`;
-        await tx`INSERT INTO automatisierung_fassungen (automatisierung_id, version, daten, von, zeit) VALUES (${a.id}, ${a.version}, ${json(fassung(a))}, ${a.geaendertVon}, ${a.geaendert})`;
-      });
+      await sql`INSERT INTO automatisierungen (id, haushalt_id, name, reihenfolge, daten, aktiv, angehalten, herkunft, paket_id, version, erstellt, erstellt_von, geaendert, geaendert_von)
+        VALUES (${a.id}, ${haushaltId}, ${a.name}, ${a.reihenfolge}, ${json(nurDaten(a))}, ${a.aktiv}, ${a.angehalten ? json(a.angehalten) : null}, ${a.herkunft}, ${a.paketId ?? null},
+          ${a.version}, ${a.erstellt}, ${a.erstelltVon}, ${a.geaendert}, ${a.geaendertVon})`;
     },
     async speichere(id, d, von, erwartet) {
       if (!istUuid(id)) return false;
-      return sql.begin(async (tx) => {
-        const [r] = await tx`UPDATE automatisierungen SET name = ${d.name}, reihenfolge = ${d.reihenfolge}, daten = ${json(nurDaten(d))}, aktiv = ${d.aktiv},
-          version = version + 1, geaendert = now(), geaendert_von = ${von}
-          WHERE haushalt_id = ${haushaltId} AND id = ${id} AND version = ${erwartet} RETURNING version`;
-        if (!r) return false;
-        await tx`INSERT INTO automatisierung_fassungen (automatisierung_id, version, daten, von) VALUES (${id}, ${r.version}, ${json(fassung(d))}, ${von})`;
-        return true;
-      });
+      const [r] = await sql`UPDATE automatisierungen SET name = ${d.name}, reihenfolge = ${d.reihenfolge}, daten = ${json(nurDaten(d))}, aktiv = ${d.aktiv},
+        version = version + 1, geaendert = now(), geaendert_von = ${von}
+        WHERE haushalt_id = ${haushaltId} AND id = ${id} AND version = ${erwartet} RETURNING version`;
+      return !!r;
     },
     async setze(id, d) {
       if (!istUuid(id)) return;
@@ -207,12 +193,6 @@ export function pgAutomatisierungRepo(sql: postgres.Sql, haushaltId: string): Au
         WHERE haushalt_id = ${haushaltId} AND id = ${id}`;
     },
     async loesche(id) { if (istUuid(id)) await sql`DELETE FROM automatisierungen WHERE haushalt_id = ${haushaltId} AND id = ${id}`; },
-    async fassungen(id) {
-      if (!istUuid(id)) return [];
-      return (await sql`SELECT f.* FROM automatisierung_fassungen f JOIN automatisierungen a ON a.id = f.automatisierung_id
-        WHERE a.haushalt_id = ${haushaltId} AND f.automatisierung_id = ${id} ORDER BY f.version DESC LIMIT 100`)
-        .map((r) => ({ version: r.version, zeit: iso(r.zeit)!, von: r.von ?? null, daten: r.daten }));
-    },
     async beginne(l) {
       const r = await sql`INSERT INTO automatisierung_laeufe (id, haushalt_id, automatisierung_id, ereignis_id, art, daten, mappe_id, zustand, trocken, test, schritte, fehler, wiederholt_von, gestartet)
         VALUES (${l.id}, ${haushaltId}, ${l.automatisierungId}, ${l.ereignisId}, ${l.art}, ${json(l.daten)}, ${istUuid(l.mappeId) ? l.mappeId : null}, ${l.zustand},
@@ -375,6 +355,21 @@ function umzugFuer(d: AutomatisierungDaten, postTyp: string | null = null): stri
 }
 const UMZUG_IDS = new Set<string>([UMZUG_VERTRETUNG, ...Object.values(UMZUG)]);
 
+/** Stand einer Automatisierung in einer Fassung (#1006). */
+const fassungsStand = (a: AutomatisierungDaten & { aktiv: boolean }) => ({ name: a.name, beschreibung: a.beschreibung, reihenfolge: a.reihenfolge, aktiv: a.aktiv, wenn: a.wenn, und: a.und, dann: a.dann, sonst: a.sonst });
+
+/** Das Repo mit Fassungen (#1006): nach Anlegen, Speichern und an/aus festhalten, beim Löschen mit Vermerk. */
+function mitFassungen(repo: AutomatisierungRepo, dienst: Dienst): AutomatisierungRepo {
+  const halte = (id: string) => dienst.kern.fassungen.halte('automatisierung', id);
+  return {
+    ...repo,
+    async lege(a) { await repo.lege(a); await halte(a.id); },
+    async speichere(id, d, von, erwartet) { const ok = await repo.speichere(id, d, von, erwartet); if (ok) await halte(id); return ok; },
+    async setze(id, d) { await repo.setze(id, d); if (d.aktiv !== undefined) await halte(id); },
+    async loesche(id) { await dienst.kern.fassungen.geloescht('automatisierung', id, () => repo.loesche(id)); },
+  };
+}
+
 /** Id einer mitgelieferten Automatisierung – nach einem Umzug (#1084, `ersetzt`) die aus der früheren Paket-Id. */
 function paketAutomatisierungId(p: InstalliertesPaket, schluessel: string, vorhanden: Automatisierung[]): string {
   return [p.id, ...(p.ersetzt ?? [])].map((k) => uuidAus(`paket|${k}|${schluessel}`)).find((k) => vorhanden.some((a) => a.id === k)) ?? uuidAus(`paket|${p.id}|${schluessel}`);
@@ -386,6 +381,7 @@ export class Automatisierungen {
   /** Merker für den Zeitplan, wenn es keinen Einstellungsspeicher gibt (Tests). */
   private merkerOhneSpeicher = new Map<string, string>();
   constructor(private d: AutomatisierungDeps) {
+    this.d = { ...d, repo: mitFassungen(d.repo, d.dienst) };
     d.dienst.automatisierungenVon = async (kontoId) => {
       const konto = await this.konto().catch(() => null);
       return konto?.id === kontoId ? (await this.d.repo.liste()).filter((a) => a.herkunft !== 'paket').map((a) => ({ id: a.id, name: a.name, ...(a.aktiv && a.angehalten ? { angehalten: true } : {}) })) : [];
@@ -404,7 +400,28 @@ export class Automatisierungen {
       return a && a.wenn.art === 'zeitplan' ? { uhrzeit: a.wenn.uhrzeit } : null;
     };
     // Vollexport: Automatisierungen mit ihrem Änderungsverlauf (die Läufe sind Protokoll und bleiben draußen).
-    d.dienst.automatisierungenExport = async () => Promise.all((await this.d.repo.liste()).map(async (a) => ({ ...a, fassungen: await this.d.repo.fassungen(a.id) })));
+    // Die Fassungen (#1006) stehen seit #1006 in struktur/fassungen.json; hier wie bisher je Automatisierung (Nummer als version).
+    d.dienst.automatisierungenExport = async () => Promise.all((await this.d.repo.liste()).map(async (a) => ({
+      ...a, fassungen: (await d.dienst.kern.repo.fassungen('automatisierung', a.id)).map((f) => ({ version: f.nr, zeit: f.zeit, von: f.urheber.art === 'person' ? f.urheber.id : null, daten: f.daten })),
+    })));
+    this.fassungenAnmelden();
+  }
+  /**
+   * Fassungen (#1006): Name, Beschreibung, Reihenfolge, an/aus, Wenn, Und, Dann und Sonst – nicht der Zustand (angehalten,
+   * letzter Tag). Wiederherstellen über das normale Speichern (dieselben Prüfungen): Passt die Fassung nicht mehr zum
+   * heutigen Stand (Feld oder Ansicht weg), meldet Ablago das wie beim Speichern, statt sie still zu ändern.
+   */
+  private fassungenAnmelden() {
+    this.d.dienst.fassungen.registriere({
+      art: 'automatisierung',
+      stand: async (id) => { const a = await this.d.repo.hole(id); return a && { name: a.name, daten: fassungsStand(a) }; },
+      alle: async () => (await this.d.repo.liste()).map((a) => a.id),
+      stelleHer: async (id, daten, o) => {
+        const a = await this.gibt(id);
+        await this.aendere(id, { ...bereinigeAutomatisierung(daten), aktiv: (daten as { aktiv?: unknown }).aktiv === true, version: a.version }, o.von.id);
+      },
+      kontext: async () => ({ automatisierung: await this.kontext() }),
+    });
   }
   private jetzt() { return this.d.uhr?.() ?? Date.now(); }
   private iso() { return new Date(this.jetzt()).toISOString(); }
@@ -684,7 +701,7 @@ export class Automatisierungen {
     const entfernt: string[] = [];
     const uebernommen: string[] = [];
     for (const a of (await this.d.repo.liste()).filter((x) => x.herkunft === 'dms')) {
-      const nieEin = !a.aktiv && a.geaendertVon === null && !(await this.d.repo.fassungen(a.id)).some((f) => f.daten.aktiv);
+      const nieEin = !a.aktiv && a.geaendertVon === null && !(await this.d.dienst.kern.repo.fassungen('automatisierung', a.id)).some((f) => (f.daten as { aktiv?: unknown }).aktiv === true);
       if (nieEin) { await this.d.repo.loesche(a.id); entfernt.push(a.name); }
       else { await this.d.repo.setze(a.id, { herkunft: 'eigen' }); uebernommen.push(a.name); }
     }
@@ -845,19 +862,6 @@ export class Automatisierungen {
   async kopiere(id: string, von: string | null): Promise<AutomatisierungAnsicht> {
     const a = await this.gibt(id);
     return this.lege({ ...a, name: t('automatisierung.kopie', { name: a.name }).slice(0, AUTOMATISIERUNG_GRENZEN.name), aktiv: false, reihenfolge: a.reihenfolge }, von, 'eigen');
-  }
-
-  async fassungen(id: string): Promise<Fassung[]> { await this.gibt(id); return this.d.repo.fassungen(id); }
-
-  /** Eine frühere Fassung wird die neueste (ausgeschaltet, wenn sie nicht mehr gültig ist). */
-  async stelleWieder(id: string, version: number, von: string | null): Promise<AutomatisierungAnsicht> {
-    const a = await this.gibt(id);
-    const f = (await this.d.repo.fassungen(id)).find((x) => x.version === version);
-    if (!f) throw new Fachfehler(404, t('automatisierung.fassung.fehlt'));
-    const d = bereinigeAutomatisierung(f.daten);
-    const gueltig = !automatisierungsProbleme(d, await this.kontext()).length;
-    if (!(await this.d.repo.speichere(id, { ...d, aktiv: gueltig && f.daten.aktiv }, von, a.version))) throw new Fachfehler(409, t('automatisierung.konflikt'));
-    return this.hole(id);
   }
 
   async laeufe(id: string, anzahl = 50): Promise<Lauf[]> { await this.gibt(id); return this.d.repo.laeufe(id, Math.max(1, Math.min(AUTOMATISIERUNG_GRENZEN.verlauf, anzahl))); }

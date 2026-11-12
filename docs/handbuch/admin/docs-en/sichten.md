@@ -6,7 +6,7 @@ You maintain views under **Workbench → Views**. On the left is the tree, on th
 
 ![A view with a condition in the workbench](bilder/werkbank-sichten.png)
 
-As with the [Folder type](mappentypen.md#aufbau-des-editors), the editor is divided into areas: **Basics → folder types → Result list → Conditions → Permissions → Test run**. Every area can be collapsed and then shows a short summary, e.g. the parent view, the folder types or "inherits from "House" · 1 own rule". A new view is fully expanded, an existing one starts collapsed; your device remembers what you expand. The jump bar at the top leads to every area and marks areas with errors.
+As with the [Folder type](mappentypen.md#aufbau-des-editors), the editor is divided into areas: **Basics → folder types → Result list → Conditions → Permissions → Test run → Versions** ([who changed what](fassungen.md)). Every area can be collapsed and then shows a short summary, e.g. the parent view, the folder types or "inherits from "House" · 1 own rule". A new view is fully expanded, an existing one starts collapsed; your device remembers what you expand. The jump bar at the top leads to every area and marks areas with errors.
 
 ## Basics {#grunddaten}
 

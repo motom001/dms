@@ -767,6 +767,8 @@ input.kurz { width: 7em; }
 .historie .vergleich { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
 .historie .mehrzeilig { white-space: pre-wrap; }
 .historie-kopf { display: flex; gap: 12px; justify-content: flex-end; margin-bottom: 4px; }
+/* Am Handy (#1027): „Alle aufklappen / Alle zuklappen“ mit 44 px Tippfläche (#1006: auch in den Fassungen). */
+@media (pointer: coarse) { .historie-kopf .textknopf { min-height: 44px; display: inline-flex; align-items: center; } }
 .historie-alles { margin-bottom: 4px; }
 .historie .wann { color: var(--leise); font-variant-numeric: tabular-nums; font-size: calc(12.5px * var(--skala, 1)); min-width: 8.5em; }
 .historie .wer { color: var(--leise); font-size: calc(12.5px * var(--skala, 1)); min-width: 8em; }

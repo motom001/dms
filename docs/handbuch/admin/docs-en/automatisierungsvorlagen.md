@@ -37,7 +37,7 @@ Below:
 - **Try it out:** choose a folder and the answers – Ablago shows what would happen (with your rights as the person) and who would not be allowed to see something. Nothing is created.
 - **In use on:** all open runs of the template with a link to the folder, date and person. Titles appear only for folders you may read.
 - **History:** applied, planned, ran, paused, deleted, resumed – with time and person. It is kept for 30 days or 200 entries per template.
-- **Change history:** every saved version, with **Restore this version**.
+- **Versions:** who changed what and when, compare two versions and restore an earlier one – as for all settings in the Workbench, see [Versions](fassungen.md). **Reset to delivery** is itself a version; deleted own templates are listed with a deletion note below the list.
 
 ## Security {#sicherheit}
 

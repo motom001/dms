@@ -2,7 +2,7 @@ import { feldLabel, optionText } from '../../../shared/src/beschriftung';
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import {
   AUTOMATISIERUNG_GRENZEN, automatisierungsProblemOrte, EREIGNIS_PERSON, PERSONEN_IM_EREIGNIS, kontextTyp, kurzform, paketKarteLeer, platzhalterFuer, REIHENFOLGE, WENN_EREIGNISSE, WOCHENTAGE, zeitplanFuerPaket, zeitplanText,
-  type AutomatisierungAnsicht, type AutomatisierungDaten, type AutomatisierungOrt, type DannKarte, type Empfaenger, type Fassung, type Fehlschlag, type Kontextdaten,
+  type AutomatisierungAnsicht, type AutomatisierungDaten, type AutomatisierungOrt, type DannKarte, type Empfaenger, type Fehlschlag, type Kontextdaten,
   type Lauf, type Schritt, type UndKarte, type WennKarte,
 } from '../../../shared/src/automatisierung';
 import { EREIGNISKATALOG, ereignisSchluessel, type Ereignisgruppe } from '../../../shared/src/ereignisse';
@@ -21,7 +21,7 @@ import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 import { Ansage, umgestellt, useZiehen, ziehTasten } from '../ziehen';
 import { FeldBedingung } from './Sichten';
 import { gebietsschema } from '../../../shared/src/sprache';
-import { Bereich, Feld, FeldGruppe, fehlerBereiche, HakenFeld, Knopf, KnopfLink, useBereiche, type BereichListe, type Klappe } from '../bausteine';
+import { GeloeschteEintraege, Bereich, Fassungen, Feld, FeldGruppe, fehlerBereiche, HakenFeld, Knopf, KnopfLink, useBereiche, type BereichListe, type Klappe } from '../bausteine';
 
 /**
  * Werkbank → Ablage aufbauen → Automatisierungen (#675): Mitte die Liste (Name, Kurzform, an/aus, letzter Lauf,
@@ -152,6 +152,7 @@ export function AutomatisierungenListe({ z, offen }: { z: AutomatisierungenZusta
             ))
           : <ul className="mappenliste">{liste.map((a) => eintrag(a))}</ul>}
       </>}
+      <GeloeschteEintraege art="automatisierung" />
     </>
   );
 }
@@ -194,7 +195,7 @@ type AutoBereich = 'grunddaten' | 'wenn' | 'dann' | 'ausprobieren' | 'verlauf' |
 function automatisierungBereiche(gespeichert: boolean): BereichListe<AutoBereich> {
   return [
     ['grunddaten', t('automatisierung.ui.bereich.grunddaten')], ['wenn', t('automatisierung.ui.wenn')], ['dann', t('automatisierung.ui.dann')],
-    ...(gespeichert ? [['ausprobieren', t('automatisierung.ui.wiedergeben')], ['verlauf', t('automatisierung.ui.verlauf')], ['fassungen', t('automatisierung.ui.fassungen')]] as const : []),
+    ...(gespeichert ? [['ausprobieren', t('automatisierung.ui.wiedergeben')], ['verlauf', t('automatisierung.ui.verlauf')], ['fassungen', t('oberflaeche.fassungen.titel')]] as const : []),
   ];
 }
 
@@ -342,7 +343,7 @@ export function AutomatisierungEditor({ z, id }: { z: AutomatisierungenZustand; 
       {a && <>
         <Wiedergeben a={a} typ={kontextTyp(a.wenn, k.typen)} nachher={() => void z.laden()} klappe={klappe('ausprobieren')} />
         <Verlauf a={a} k={k} d={d.typ} klappe={klappe('verlauf')} />
-        <Fassungen a={a} k={k} nachher={() => void z.laden()} klappe={klappe('fassungen')} />
+        <Fassungen art="automatisierung" eintrag={a.id} stand={a.version} nachher={() => z.laden()} klappe={klappe('fassungen')} />
       </>}
       <Speicherleiste ent={ent} gegenstand={t('automatisierung.ui.gegenstand')} sendet={sendet} ungueltig={probleme.length > 0} formular="auto-formular"
         meldung={meldung?.art === 'schlecht' ? meldung : undefined}
@@ -881,76 +882,6 @@ function Verlauf({ a, klappe }: { a: AutomatisierungAnsicht; k: Kontextdaten; d:
       {fehler && <p className="fehlertext">{fehler}</p>}
       {laufend && <p className="leise klein" role="status">{t('automatisierung.ui.verlauf.laeuft')}</p>}
       {!laeufe ? <p className="leise">{t('automatisierung.ui.lade')}</p> : !laeufe.length ? <p className="leise">{t('automatisierung.ui.verlauf.leer')}</p> : <Eintragsliste eintraege={eintraege} />}
-    </Bereich>
-  );
-}
-
-type FassungDaten = Fassung['daten'];
-
-/** Was sich zwischen zwei Versionen geändert hat (#707): Name, Beschreibung, Reihenfolge, an/aus, Wenn, Und, je Dann- und Sonst-Karte. */
-function unterschiede(alt: FassungDaten | null, neu: FassungDaten, k: Kontextdaten, titelVon: (id: string) => string): Array<{ was: string; vorher: string; nachher: string }> {
-  const zeilen: Array<{ was: string; vorher: string; nachher: string }> = [];
-  const neben = (was: string, v: string, n: string) => { if (v !== n) zeilen.push({ was, vorher: v, nachher: n }); };
-  const typA = alt ? kontextTyp(alt.wenn, k.typen) : null;
-  const typN = kontextTyp(neu.wenn, k.typen);
-  const wenn = (x: FassungDaten) => kurzform({ ...x, und: { modus: 'alle', karten: [] }, dann: [] }, k, ereignisName).replace(/^Wenn /, '').replace(/ → .*$/, '');
-  const und = (x: FassungDaten, typ: Mappentyp | null) => x.und.karten.map((u) => undKurz(u, typ, k, titelVon)).join(x.und.modus === 'alle' ? ' · ' : ` ${t('automatisierung.ui.verlauf.oder')} `);
-  const karte = (x: DannKarte | undefined, typ: Mappentyp | null) => !x ? '' : x.art === 'aufgabe' ? `${dannKurz(x, typ, k)}${x.text ? ` · „${x.text}“` : ''}` : x.art === 'stopp' ? vorratName({ bereich: 'dann', art: 'stopp' }) : dannKurz(x, typ, k);
-  neben(t('automatisierung.ui.verlauf.name'), alt?.name ?? '', neu.name);
-  neben(t('automatisierung.ui.verlauf.beschreibung'), alt?.beschreibung ?? '', neu.beschreibung);
-  neben(t('automatisierung.ui.verlauf.reihenfolge'), alt ? String(alt.reihenfolge) : '', String(neu.reihenfolge));
-  neben(t('automatisierung.ui.verlauf.anaus'), alt ? (alt.aktiv ? t('automatisierung.ui.an') : t('automatisierung.ui.aus')) : '', neu.aktiv ? t('automatisierung.ui.an') : t('automatisierung.ui.aus'));
-  neben(t('automatisierung.ui.wenn'), alt ? wenn(alt) : '', wenn(neu));
-  neben(t('automatisierung.ui.und'), alt ? und(alt, typA) : '', und(neu, typN));
-  for (const bereich of ['dann', 'sonst'] as const) {
-    const ids = [...new Set([...(alt?.[bereich] ?? []).map((x) => x.id), ...neu[bereich].map((x) => x.id)])];
-    for (const id of ids) {
-      const v = alt?.[bereich].find((x) => x.id === id) as DannKarte | undefined;
-      const n = neu[bereich].find((x) => x.id === id) as DannKarte | undefined;
-      const art = (n ?? v)!.art;
-      neben(`${t.frei(`automatisierung.ui.${bereich}`)}: ${vorratName({ bereich: 'dann', art })}`, karte(v, typA), karte(n, typN));
-    }
-    const reihe = (x: FassungDaten | null) => (x?.[bereich] ?? []).map((y) => y.id).join(',');
-    if (alt && reihe(alt) !== reihe(neu) && alt[bereich].length === neu[bereich].length) zeilen.push({ was: t.frei(`automatisierung.ui.${bereich}`), vorher: t('automatisierung.ui.verlauf.reihenfolge-alt'), nachher: t('automatisierung.ui.verlauf.reihenfolge-neu') });
-  }
-  return zeilen;
-}
-
-/** Änderungsverlauf (#707): Versionen wie die Historie einer Mappe; aufgeklappt Was · Vorher · Nachher und „Wiederherstellen“. */
-function Fassungen({ a, k, nachher, klappe }: { a: AutomatisierungAnsicht; k: Kontextdaten; nachher: () => void; klappe: Klappe }) {
-  const d = useDaten();
-  const [liste, setListe] = useState<Fassung[] | null>(null);
-  const [fehler, setFehler] = useState<string>();
-  useEffect(() => { api.automatisierungFassungen(a.id).then(setListe).catch((e) => setFehler((e as Error).message)); }, [a.id, a.version]);
-  const neueste = liste?.[0]?.version ?? a.version;
-  const eintraege: Listeneintrag[] = (liste ?? []).map((f, i) => {
-    const vorher = liste![i + 1]?.daten ?? null;
-    const zeilen = unterschiede(vorher, f.daten, k, (id) => d.person(id));
-    const aktuell = f.version === a.version;
-    return {
-      id: f.version, wann: zeit(f.zeit), wer: f.von ? d.person(f.von) : '–',
-      was: <><strong>{t('automatisierung.ui.version', { version: f.version })}</strong>{vorher ? (zeilen.length ? `: ${t('automatisierung.ui.verlauf.geaendert', { was: zeilen.map((z) => z.was).join(', ') })}` : '') : `: ${t('automatisierung.ui.verlauf.angelegt')}`}</>,
-      zustand: aktuell ? <span className="chip gut">{t('automatisierung.ui.version.aktuell')}</span> : undefined,
-      mehr: vorher ? t('automatisierung.ui.verlauf.aenderungen', { anzahl: zeilen.length }) : undefined,
-      label: t('automatisierung.ui.version', { version: f.version }),
-      inhalt: <>
-        {zeilen.length > 0 && (
-          <table className="aenderungen">
-            <thead><tr><th>{t('automatisierung.ui.verlauf.was')}</th><th>{t('automatisierung.ui.verlauf.vorher')}</th><th>{t('automatisierung.ui.verlauf.nachher')}</th></tr></thead>
-            <tbody>{zeilen.map((z, j) => <tr key={j}><td>{z.was}</td><td className={z.vorher ? '' : 'leise'}>{z.vorher || '–'}</td><td className={z.nachher ? '' : 'leise'}>{z.nachher || '–'}</td></tr>)}</tbody>
-          </table>
-        )}
-        {!aktuell && <div className="knoepfe"><Knopf groesse="klein" onClick={async () => {
-          if (!(await rueckfrage({ titel: t('automatisierung.ui.version.frage', { version: f.version }), text: t('automatisierung.ui.version.text', { version: f.version, neu: neueste + 1 }), ja: t('automatisierung.ui.version.ja') }))) return;
-          try { await api.automatisierungFassungWiederherstellen(a.id, f.version); nachher(); } catch (e) { setFehler((e as Error).message); }
-        }}>{t('automatisierung.ui.version.ja')}</Knopf></div>}
-      </>,
-    };
-  });
-  return (
-    <Bereich id="fassungen" titel={t('automatisierung.ui.fassungen')} klappe={klappe} kurz={t('automatisierung.ui.version', { version: a.version })}>
-      {fehler && <p className="fehlertext">{fehler}</p>}
-      {!liste ? <p className="leise">{t('automatisierung.ui.lade')}</p> : <Eintragsliste eintraege={eintraege} />}
     </Bereich>
   );
 }

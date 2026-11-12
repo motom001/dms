@@ -8,7 +8,8 @@
  *   muster-feld, muster-feld-dunkel – der Bereich „Feld“;
  *   muster-feld-fokus, muster-feld-fokus-dunkel – Maus über einem Feld, Tastaturfokus im nächsten;
  *   muster-knopf, muster-knopf-dunkel – der Bereich „Knopf“ (#968) mit allen Arten und Zuständen, Hover und Fokus stehend;
- *   muster-bereiche, muster-bereiche-dunkel – der Bereich „Bereiche“ (#1000): Sprungleiste, zugeklappt, unter drei Bereichen.
+ *   muster-bereiche, muster-bereiche-dunkel – der Bereich „Bereiche“ (#1000): Sprungleiste, zugeklappt, unter drei Bereichen;
+ *   muster-fassungen, muster-fassungen-dunkel – der Bereich „Fassungen“ (#1006): Liste, leer, gelöschte Einträge.
  *
  * Im Handy-Kontext (390 px, Touch: `pointer: coarse`) misst `tippflaechenPruefen` jedes Bedienelement der Seite
  * (#1027, Musterkatalog D6): Jedes muss eine eigene Tippfläche von mindestens 44 × 44 px haben.
@@ -67,7 +68,10 @@ export const TIPP_AUSNAHMEN = {};
 export async function tippflaechenPruefen(seite) {
   const elemente = await seite.evaluate((ausnahmen) => {
     const AUSWAHL = 'a[href], button, input:not([type="hidden"]), select, textarea, summary, [role="button"], [tabindex]:not([tabindex="-1"])';
-    const alle = [...document.querySelectorAll(AUSWAHL)].filter((el) => el.getClientRects().length > 0 && !Object.keys(ausnahmen).some((a) => el.matches(a)));
+    // Inhalt zugeklappter Einzelheiten (<details> ohne open, außer ihrem summary) ist nicht zu sehen – auch wenn Chromium
+    // ihm eine leere Fläche gibt (#1006: Fassungen in der Musterseite).
+    const verborgen = (el) => { const d = el.closest('details:not([open])'); return !!d && !(el.matches('summary') && el.parentElement === d); };
+    const alle = [...document.querySelectorAll(AUSWAHL)].filter((el) => el.getClientRects().length > 0 && !verborgen(el) && !Object.keys(ausnahmen).some((a) => el.matches(a)));
     alle.forEach((el, i) => { el.dataset.tippnr = String(i); });
     return alle.length;
   }, TIPP_AUSNAHMEN);
@@ -199,6 +203,7 @@ export async function musterAufnehmen(browser, { basis, ziel, gebiet = 'de-DE', 
         await s.evaluate(() => (document.activeElement instanceof HTMLElement) && document.activeElement.blur());
         await foto(s.locator('#knopf'), `muster-knopf${suffix}`);
         await foto(s.locator('#bereiche'), `muster-bereiche${suffix}`);
+        await foto(s.locator('#fassungen'), `muster-fassungen${suffix}`);
       }
     } finally {
       await k.close();

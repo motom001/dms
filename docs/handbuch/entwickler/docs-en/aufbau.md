@@ -932,7 +932,7 @@ That way it recognises its own changes and can limit chains. A package isn't not
 
 ## Automations (#674) { #automatisierungen }
 
-Small routines without code: **When · And · Then** (Otherwise comes with stage 2). Model and checks in `shared/src/automatisierung.ts`, engine and storage in `server/src/automatisierung.ts` (tables `automatisierungen`, `automatisierung_fassungen`, `automatisierung_laeufe`, migration 061), texts in `shared/src/sprachen/de/automatisierung.json`.
+Small routines without code: **When · And · Then** (Otherwise comes with stage 2). Model and checks in `shared/src/automatisierung.ts`, engine and storage in `server/src/automatisierung.ts` (tables `automatisierungen` and `automatisierung_laeufe`, migration 061; versions since #1006 in `fassungen`, migration 103), texts in `shared/src/sprachen/de/automatisierung.json`.
 
 **Model**
 
@@ -966,7 +966,7 @@ Small routines without code: **When · And · Then** (Otherwise comes with stage
 - No self-triggering (own changes don't trigger the same automation), chains at most 3 deep, brake at 30 runs per minute (then paused), run time 60 s, 200 automations, 20 cards per area, history of 200 runs or 30 days.
 - **Working comes before automating:** if something is missing (folder type, field, view), that never blocks work – the automation turns red and is paused (`angehalten.grund = 'fehlerhaft'`), at the latest on the next run or schedule pass. Saving only works with a valid state.
 - Demo data and examples trigger nothing (`ohneEreignisse`); during maintenance and restore the dispatcher rests. After a restore all switched-on automations are paused until an admin switches them on again.
-- Saving with `version` (outdated state → 409); every version is kept in `automatisierung_fassungen` and can be restored. In the full export: `struktur/automatisierungen.json` with change history; all tables in the backup.
+- Saving with `version` (outdated state → 409). Versions as for all Workbench settings (#1006, `server/src/fassungen/`, table `fassungen`): restoring goes through the normal save. In the full export: `struktur/automatisierungen.json` (each automation with its versions, `version` = number of the version) and `struktur/fassungen.json`; all tables in the backup.
 
 ## Automation templates and folder runs (#1044) { #ablaufvorlagen }
 
@@ -975,7 +975,7 @@ An **automation template** is an automation with gaps that you apply to one fold
 **Model**
 
 - **Template** (`Ablaufvorlage`): `wann` (`sofort`, `datum` – asked when applying –, `in` with `anzahl` and `einheit`), `fragen` (`empfaenger`, `datum`, `text`), `karten` – only `aufgabe` (`VORLAGEN_KARTEN`, task or notification) with recipients `frage` (the answer), `selbst` (who applies), `ersteller` (who created the folder) or `feld` (reference to users; only with fixed `typen`). `vorlagenEingabeFehler` rejects anything else (no silent clean-up), `vorlagenProbleme` checks the structure.
-- **Key** instead of id: core defaults `aufgabe_vergeben`, `erinnern` (`KERN_VORLAGEN`, `kernVorlage()`), from packages `paket:schluessel`, own ones `eigen:<uuid>`. A core default is only stored (`ablaufvorlagen`, versions in `ablaufvorlage_fassungen`) once an admin changes it or a package **overlays** it with `ersetzt` – then under its key; without a row the core default applies. Runs name the key (`mappen_ablaeufe.vorlage`) and stay valid whoever delivers the template.
+- **Key** instead of id: core defaults `aufgabe_vergeben`, `erinnern` (`KERN_VORLAGEN`, `kernVorlage()`), from packages `paket:schluessel`, own ones `eigen:<uuid>`. A core default is only stored (`ablaufvorlagen`; versions like all Workbench settings in `fassungen`, kind `ablaufvorlage`, since migration 107) once an admin changes it or a package **overlays** it with `ersetzt` – then under its key; without a row the core default applies. Runs name the key (`mappen_ablaeufe.vorlage`) and stay valid whoever delivers the template.
 - **Folder run** (`MappenAblauf`, table `mappen_ablaeufe`, formerly `erinnerungen`): template, folder, answers (`empfaengerId`, `text`), `datum` (when it runs), `erstelltVon` (the person) and `angehalten`. “Straight away” creates none.
 
 **Flow**
@@ -1036,7 +1036,7 @@ curl -i -H "Authorization: Bearer dms_…" -H 'If-None-Match: "z42-mJ3x0Qe7Kq9VZ
 
 ## Reporting to the outside { #nach-aussen-melden }
 
-Ablago does **not** report changed numbers on its own: clients query `GET /api/v1/ich/zaehler` with `If-None-Match` (see above). The separate counter webhook (#627: `server/src/webhook.ts`, tables `webhooks` and `webhook_meldungen`, setting `webhook_ziele`, Workbench → Webhooks, My account) was removed with #991 – two ways for the same thing contradict "the same thing in one place" (pattern C9). Migration 102 drops the tables and the setting; old backups can still be restored, because the restore runs the migrations afterwards.
+Ablago does **not** report changed numbers on its own: clients query `GET /api/v1/ich/zaehler` with `If-None-Match` (see above). The separate counter webhook (#627: `server/src/webhook.ts`, tables `webhooks` and `webhook_meldungen`, setting `webhook_ziele`, Workbench → Webhooks, My account) was removed with #991 – two ways for the same thing contradict "the same thing in one place" (pattern C9). Migration 106 drops the tables and the setting; old backups can still be restored, because the restore runs the migrations afterwards.
 
 Whoever wants to report something to the outside in future uses an [automation](#automatisierungen) with the Then card "Call URL" (#671). It brings its own protection for destinations; nothing from the old webhook (destination list, signature, outbox) is reused for it.
 

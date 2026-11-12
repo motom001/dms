@@ -46,7 +46,7 @@ export const EXPORT_TABELLEN: Record<string, string> = {
   synonyme: t('meldungen.vollexport.struktur-synonyme-json-356'),
   notfallkontakte: t('meldungen.vollexport.struktur-notfallkontakte-json'),
   automatisierungen: t('meldungen.vollexport.struktur-automatisierungen-json-674'),
-  automatisierung_fassungen: t('meldungen.vollexport.struktur-automatisierungen-json-674-2'),
+  fassungen: t('meldungen.vollexport.struktur-fassungen-json'),
   automatisierung_laeufe: t('meldungen.vollexport.nicht-enthalten-laeufe-der'),
   benutzer: t('meldungen.vollexport.struktur-benutzer-json-ohne'),
   benutzer_einstellungen: t('meldungen.vollexport.struktur-benutzer-json-einstellungen'),
@@ -58,7 +58,6 @@ export const EXPORT_TABELLEN: Record<string, string> = {
   aufgaben: t('meldungen.vollexport.daten-aufgaben-jsonl-und'),
   mappen_ablaeufe: t('meldungen.vollexport.daten-ablaeufe-jsonl-und'),
   ablaufvorlagen: t('meldungen.vollexport.struktur-ablaufvorlagen-json'),
-  ablaufvorlage_fassungen: t('meldungen.vollexport.struktur-ablaufvorlagen-json-2'),
   ablauf_verlauf: t('meldungen.vollexport.nicht-enthalten-ablauf-verlauf'),
   historie: 'daten/historie.jsonl',
   favoriten: 'daten/favoriten.csv',
@@ -133,6 +132,8 @@ export interface ExportQuelle {
    * deren Adresse in den aufgenommenen Mappen steht. Fehlt, wenn es keine gibt.
    */
   notfallkontakte?(): Promise<unknown[]>;
+  /** Fassungen der Werkbank (#1006) samt Löschvermerken; fehlt bei Auskunft und persönlichem Export. */
+  fassungen?(): Promise<unknown[]>;
   mappen(typId: string): Promise<Mappe[]>;
   papierkorb(): Promise<PapierkorbEintrag[]>;
   /** Einzeln gelöschte Dokumente (#344); fehlt bei älteren Quellen. */
@@ -391,6 +392,7 @@ async function schreibeExport(q: ExportQuelle, w: Schreiber, name: string, opt: 
     const k = await q.notfallkontakte();
     if (k.length) await w.schreibe('struktur/notfallkontakte.json', json(k));
   }
+  if (q.fassungen) await w.schreibe('struktur/fassungen.json', json(await q.fassungen()));
   await w.schreibe('struktur/benutzer.json', json(b.benutzer));
 
   // Daten je Mappentyp
@@ -603,7 +605,7 @@ Alles hier lässt sich ohne Ablago lesen. **Der Export ist unverschlüsselt** �
 | Ordner/Datei | Inhalt |
 | --- | --- |
 | \`manifest.json\` | Formatversion, Anzahlen, Größe und SHA-256 jeder Datei, wo jede Tabelle steht |
-| \`struktur/\` | Mappentypen (Felder, Register, Titelvorlagen, Berechtigungen, Archiv), Ansichten, Nummernkreise, Designs, Benutzer (ohne Passwörter), Notfallkontakte (\`notfallkontakte.json\`, falls vorhanden) |
+| \`struktur/\` | Mappentypen (Felder, Register, Titelvorlagen, Berechtigungen, Archiv), Ansichten, Nummernkreise, Designs, Benutzer (ohne Passwörter), Notfallkontakte (\`notfallkontakte.json\`, falls vorhanden); \`fassungen.json\` = Fassungen der Werkbank (wer wann was geändert hat, samt Löschvermerken, ohne Geheimnisse) |
 | \`daten/<typ>.csv\` | je Mappentyp eine Tabelle: eine Zeile je Mappe, eine Spalte je Feldschlüssel; Verweise als Id und \`_titel\`, bei mehreren Zieltypen dazu \`_typ\` |
 | \`daten/<typ>.jsonl\` | dasselbe verlustfrei als JSON Lines (eine Mappe je Zeile) |
 | \`daten/<typ>.xlsx\` | dasselbe für Excel/LibreOffice, mit Spaltenüberschriften |

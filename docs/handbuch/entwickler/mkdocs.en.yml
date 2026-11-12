@@ -82,6 +82,7 @@ nav:
       - Search: bausteine-suche.md
       - Toggle: bausteine-umschalter.md
       - Areas: bausteine-bereiche.md
+      - Versions: bausteine-fassungen.md
   - Release: release.md
   - Core:
       - Architecture: aufbau.md

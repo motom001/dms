@@ -932,7 +932,7 @@ Damit erkennt sie ihre eigenen Änderungen und kann Ketten begrenzen. Ein Paket 
 
 ## Automatisierungen (#674) { #automatisierungen }
 
-Kleine Abläufe ohne Code: **Wenn · Und · Dann** (Sonst kommt mit Stufe 2). Modell und Prüfungen in `shared/src/automatisierung.ts`, Motor und Speicher in `server/src/automatisierung.ts` (Tabellen `automatisierungen`, `automatisierung_fassungen`, `automatisierung_laeufe`, Migration 061), Texte in `shared/src/sprachen/de/automatisierung.json`.
+Kleine Abläufe ohne Code: **Wenn · Und · Dann** (Sonst kommt mit Stufe 2). Modell und Prüfungen in `shared/src/automatisierung.ts`, Motor und Speicher in `server/src/automatisierung.ts` (Tabellen `automatisierungen` und `automatisierung_laeufe`, Migration 061; die Fassungen seit #1006 in `fassungen`, Migration 108), Texte in `shared/src/sprachen/de/automatisierung.json`.
 
 **Modell**
 
@@ -966,7 +966,7 @@ Kleine Abläufe ohne Code: **Wenn · Und · Dann** (Sonst kommt mit Stufe 2). Mo
 - Keine Selbstauslösung (eigene Änderungen lösen dieselbe Automatisierung nicht aus), Ketten höchstens 3 tief, Bremse 30 Läufe je Minute (dann angehalten), Laufzeit 60 s, 200 Automatisierungen, je Bereich 20 Karten, Verlauf 200 Läufe bzw. 30 Tage.
 - **Bearbeiten geht vor Automatisierung:** Fehlt etwas (Mappentyp, Feld, Ansicht), blockiert das nie das Arbeiten – die Automatisierung wird rot und angehalten (`angehalten.grund = 'fehlerhaft'`), spätestens beim nächsten Lauf oder Zeitplan-Durchgang. Speichern geht nur mit gültigem Stand.
 - Demo-Daten und Beispiele lösen nichts aus (`ohneEreignisse`), in Wartung und Wiederherstellung ruht der Verteiler. Nach einer Wiederherstellung sind alle eingeschalteten Automatisierungen angehalten, bis ein Admin sie wieder einschaltet.
-- Speichern mit `version` (veralteter Stand → 409); jede Fassung steht in `automatisierung_fassungen` und lässt sich wiederherstellen. Im Vollexport: `struktur/automatisierungen.json` mit Änderungsverlauf; in der Sicherung alle Tabellen.
+- Speichern mit `version` (veralteter Stand → 409). Fassungen wie bei allen Einstellungen der Werkbank (#1006, `server/src/fassungen/`, Tabelle `fassungen`): wiederherstellen über das normale Speichern. Im Vollexport: `struktur/automatisierungen.json` (je Automatisierung ihre Fassungen, `version` = Nummer der Fassung) und `struktur/fassungen.json`; in der Sicherung alle Tabellen.
 
 ## Automatisierungsvorlagen und Mappen-Abläufe (#1044) { #ablaufvorlagen }
 
@@ -975,7 +975,7 @@ Eine **Automatisierungsvorlage** ist eine Automatisierung mit Lücken, die man a
 **Modell**
 
 - **Vorlage** (`Ablaufvorlage`): `wann` (`sofort`, `datum` – beim Anwenden gefragt –, `in` mit `anzahl` und `einheit`), `fragen` (`empfaenger`, `datum`, `text`), `karten` – nur `aufgabe` (`VORLAGEN_KARTEN`, Aufgabe oder Benachrichtigung) mit Empfängern `frage` (die Antwort), `selbst` (wer anwendet), `ersteller` (wer die Mappe angelegt hat) oder `feld` (Verweis auf Benutzer; nur mit festen `typen`). `vorlagenEingabeFehler` lehnt alles andere ab (keine stille Bereinigung), `vorlagenProbleme` prüft den Aufbau.
-- **Kennung** statt Id: Kern-Vorgaben `aufgabe_vergeben`, `erinnern` (`KERN_VORLAGEN`, `kernVorlage()`), aus Paketen `paket:schluessel`, eigene `eigen:<uuid>`. Gespeichert (`ablaufvorlagen`, Fassungen in `ablaufvorlage_fassungen`) wird eine Kern-Vorgabe erst, wenn ein Admin sie ändert oder ein Paket sie mit `ersetzt` **überlagert** – dann unter ihrer Kennung; ohne Zeile gilt die Vorgabe des Kerns. Abläufe nennen die Kennung (`mappen_ablaeufe.vorlage`) und bleiben gültig, wer auch immer die Vorlage gerade liefert.
+- **Kennung** statt Id: Kern-Vorgaben `aufgabe_vergeben`, `erinnern` (`KERN_VORLAGEN`, `kernVorlage()`), aus Paketen `paket:schluessel`, eigene `eigen:<uuid>`. Gespeichert (`ablaufvorlagen`; Fassungen wie alle Einstellungen der Werkbank in `fassungen`, Art `ablaufvorlage`, seit Migration 109) wird eine Kern-Vorgabe erst, wenn ein Admin sie ändert oder ein Paket sie mit `ersetzt` **überlagert** – dann unter ihrer Kennung; ohne Zeile gilt die Vorgabe des Kerns. Abläufe nennen die Kennung (`mappen_ablaeufe.vorlage`) und bleiben gültig, wer auch immer die Vorlage gerade liefert.
 - **Mappen-Ablauf** (`MappenAblauf`, Tabelle `mappen_ablaeufe`, früher `erinnerungen`): Vorlage, Mappe, Antworten (`empfaengerId`, `text`), `datum` (wann er läuft), `erstelltVon` (die Person) und `angehalten`. „Sofort“ legt keinen an.
 
 **Ablauf**
@@ -1036,7 +1036,7 @@ curl -i -H "Authorization: Bearer dms_…" -H 'If-None-Match: "z42-mJ3x0Qe7Kq9VZ
 
 ## Nach außen melden { #nach-aussen-melden }
 
-Ablago meldet geänderte Zahlen **nicht** von sich aus: Clients fragen `GET /api/v1/ich/zaehler` mit `If-None-Match` ab (siehe oben). Den eigenen Zähler-Webhook (#627: `server/src/webhook.ts`, Tabellen `webhooks` und `webhook_meldungen`, Einstellung `webhook_ziele`, Werkbank → Webhooks, Mein Konto) hat #991 ausgebaut – zwei Wege für dasselbe widersprechen „gleiche Sache an einer Stelle“ (Muster C9). Migration 102 löscht Tabellen und Einstellung; alte Sicherungen spielen sich weiter ein, weil die Wiederherstellung die Migrationen danach nachholt.
+Ablago meldet geänderte Zahlen **nicht** von sich aus: Clients fragen `GET /api/v1/ich/zaehler` mit `If-None-Match` ab (siehe oben). Den eigenen Zähler-Webhook (#627: `server/src/webhook.ts`, Tabellen `webhooks` und `webhook_meldungen`, Einstellung `webhook_ziele`, Werkbank → Webhooks, Mein Konto) hat #991 ausgebaut – zwei Wege für dasselbe widersprechen „gleiche Sache an einer Stelle“ (Muster C9). Migration 106 löscht Tabellen und Einstellung; alte Sicherungen spielen sich weiter ein, weil die Wiederherstellung die Migrationen danach nachholt.
 
 Wer künftig etwas nach außen melden will, nimmt eine [Automatisierung](#automatisierungen) mit der Dann-Karte „URL aufrufen“ (#671). Sie bringt ihren eigenen Schutz für Ziele mit; nichts vom alten Webhook (Ziel-Liste, Signatur, Ausgangskorb) wird dafür weiterverwendet.
 

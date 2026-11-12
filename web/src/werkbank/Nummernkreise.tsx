@@ -2,7 +2,7 @@ import { type FormEvent, useCallback, useEffect, useState } from 'react';
 import { api, speichereDatei, type Auftrag, type NummernkreisAnsicht } from '../api';
 import { useDaten } from '../daten';
 import { geheZu, Link, loeseWache } from '../ort';
-import { Speicherleiste, useEntwurf } from '../Speicherleiste';
+import { Speicherleiste, useEntwurf, useGespeichertNachziehen } from '../Speicherleiste';
 import { Hilfe } from '../Hilfe';
 import { Listenkopf } from '../Listenkopf';
 import { NEUBEGINN_TEXT, pruefeMuster, formatiereNummer, datumIn, kreisVon, neubeginn as neubeginnVon } from '../../../shared/src/nummernkreis';
@@ -10,7 +10,7 @@ import { rueckfrage } from '../rueckfrage';
 import { fortschrittText } from '../../../shared/src/auftrag';
 import { t, tn } from '../sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
-import { abfangen, Bereich, Feld, Fundstellen, Hervorgehoben, KeineTreffer, Knopf, KnopfLink, ListenSuche, PaketFilter, useBereiche, useListenSuche, type BereicheZustand, type BereichListe } from '../bausteine';
+import { GeloeschteEintraege, abfangen, Bereich, Fassungen, Feld, Fundstellen, Hervorgehoben, KeineTreffer, Knopf, KnopfLink, ListenSuche, PaketFilter, useBereiche, useListenSuche, type BereicheZustand, type BereichListe } from '../bausteine';
 import { paketVonKreis, paketWahl, quellenKreis } from './listensuche';
 import type { InstalliertesPaket } from '../../../shared/src/pakete';
 
@@ -62,6 +62,7 @@ export function NummernkreiseListe({ z, offen, pakete = [] }: { z: NummernkreisZ
           ))}
         </ul>
       )}
+      <GeloeschteEintraege art="nummernkreis" />
     </>
   );
 }
@@ -72,10 +73,10 @@ function nummernkreisBereiche(k: NummernkreisAnsicht | undefined): BereichListe<
   return [
     ['grunddaten', t('werkbank.nummernkreise.bereich.grunddaten')], ['stand', t('werkbank.nummernkreise.stand')],
     ...(k.schluessel === 'archivnummer' ? [['aufkleber', t('werkbank.nummernkreise.aufkleber-drucken')] as const] : []),
-    ['verwendet', t('werkbank.nummernkreise.verwendet-in')],
+    ['verwendet', t('werkbank.nummernkreise.verwendet-in')], ['fassungen', t('oberflaeche.fassungen.titel')],
   ];
 }
-type NkBereich = 'grunddaten' | 'stand' | 'aufkleber' | 'verwendet';
+type NkBereich = 'grunddaten' | 'stand' | 'aufkleber' | 'verwendet' | 'fassungen';
 
 export function NummernkreisEditor({ z, schluessel }: { z: NummernkreisZustand; schluessel: string }) {
   const neu = schluessel === 'neu';
@@ -88,6 +89,8 @@ export function NummernkreisEditor({ z, schluessel }: { z: NummernkreisZustand; 
   const ent = useEntwurf(gespeichert, e, { neu, liste: '/werkbank/nummernkreise', zuruecksetzen: () => { setE(gespeichert); setMeldung(undefined); setSpeicherFehler(false); } });
   // Sprungleiste und Bereiche (#1000) wie beim Mappentyp; gemerkt je Nummernkreis.
   const b = useBereiche(nummernkreisBereiche(k), 'nummernkreis', neu ? null : schluessel);
+  // Nach dem Wiederherstellen einer Fassung (#1006): den neuen Stand übernehmen, solange hier nichts geändert ist.
+  useGespeichertNachziehen(gespeichert, e, setE);
   if (!neu && !k) return z.liste ? <div className="leer"><p>{t('werkbank.nummernkreise.diesen-nummernkreis-gibt-es')}</p></div> : <p className="leise">{t('werkbank.nummernkreise.lade')}</p>;
   const musterFehler = pruefeMuster(e.muster);
   const heute = datumIn(new Date());
@@ -136,6 +139,7 @@ export function NummernkreisEditor({ z, schluessel }: { z: NummernkreisZustand; 
         </Bereich>
       </form>
       {k && <NummernkreisStand k={k} z={z} b={b} tu={tu} />}
+      {k && <Fassungen art="nummernkreis" eintrag={k.schluessel} stand={JSON.stringify(gespeichert)} nachher={() => z.laden()} klappe={b.klappe('fassungen')} />}
       <Speicherleiste ent={ent} gegenstand={t('werkbank.nummernkreise.nummernkreis-2')} sendet={sendet} ungueltig={!!musterFehler} formular="nk-formular"
         links={!neu && <Knopf art="link" className="gefahr" gesperrt={k!.verwendet.length > 0} title={k!.verwendet.length ? t('werkbank.nummernkreise.wird-noch-verwendet') : undefined}
           onClick={async () => { if (await rueckfrage({ titel: t('werkbank.nummernkreise.nummernkreis-loeschen', { name: k!.name }), ja: t('werkbank.nummernkreise.loeschen'), gefahr: true })) void tu(async () => { z.setListe(await api.nummernkreisLoeschen(k!.schluessel)); loeseWache(); geheZu('/werkbank/nummernkreise', true); return t('werkbank.nummernkreise.geloescht'); }); }}>{t('werkbank.nummernkreise.nummernkreis-loeschen-2')}</Knopf>} />

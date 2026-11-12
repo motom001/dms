@@ -1,4 +1,4 @@
-import type { Systemkonto, Benutzer } from '../../shared/src/model';
+import type { Systemkonto, Benutzer, Mappentyp } from '../../shared/src/model';
 import type { Dateispeicher } from './dateispeicher';
 import { Auftraege } from './auftrag';
 import { kontext, protokoll } from './protokoll';
@@ -42,6 +42,7 @@ import { TextsatzDienst } from './textsatz';
 import { PaketAktionen } from './paketaktionen';
 import { ORGANISATION_BEREICH } from '../../shared/src/organisation';
 import type { MailText } from './mail';
+import { Fassungen, mitFassungen, nummernkreisGegenstand, sichtGegenstand, stempelGegenstand, typGegenstand } from './fassungen';
 
 /** Was mit dem Konto geschieht, wenn eine Benutzer-Mappe den Papierkorb verlässt (#43). */
 export interface KontenHaken {
@@ -168,6 +169,7 @@ export class Dienst {
   readonly volltexte: VolltextDienst;
   /** Stempel-Vorlagen (#394, #1077). */
   readonly stempelvorlagen: Stempelvorlagen;
+
   /** PDF bearbeiten (#335, #1077). */
   readonly pdfBearbeiten: PdfBearbeiten;
   /** PDF verkleinern (#393, #1077). */
@@ -281,7 +283,7 @@ export class Dienst {
     if (typeof grundRepo.mappenstand === 'function' && typeof grundRepo.erhoeheMappenstand === 'function') {
       this.mappenstand.verbinde({ lies: () => grundRepo.mappenstand!(), erhoehe: () => grundRepo.erhoeheMappenstand!() });
     }
-    this.kern = new Kern({ repo: this.stand.umhuelle(grundRepo, this.mappenstand), dateien, einstellungen: opt.einstellungen, stand: this.stand, wecke: () => this.ereignisse.wecke(), ausstatten: () => this.systemausstattung.anlegen(), zugriff: (ich) => this.rechtepruefung.zugriff(ich) });
+    this.kern = new Kern({ repo: this.stand.umhuelle(mitFassungen(grundRepo, () => this.fassungen), this.mappenstand), dateien, einstellungen: opt.einstellungen, stand: this.stand, wecke: () => this.ereignisse.wecke(), ausstatten: () => this.systemausstattung.anlegen(), zugriff: (ich) => this.rechtepruefung.zugriff(ich), fassungen: () => this.fassungen.fuerKern() });
     this.rechtepruefung = new ZugriffDienst(this.kern, { kiSperre: (p) => this.ki.kiSperre(p), konten: () => this.konten });
     this.mappentypen = new MappentypenDienst(this.kern, {
       mitStempel: (typen) => this.ausgang.mitStempel(typen), pruefeStempelTyp: (v) => this.stempelvorlagen.pruefeStempelTyp(v), setzeStempelTyp: (id, st) => this.stempelvorlagen.setzeStempelTyp(id, st),
@@ -340,6 +342,32 @@ export class Dienst {
     this.ereignisse.abonniere('pakete', (e) => this.ereignisseDienst.ereignisAnPakete(e));
     // Volltext aus Paketen (#614): zuständige Pakete mit dms:volltext, Ereignis datei.volltext an genau dieses.
     this.paketVolltext = new PaketVolltext({ pakete: () => this.repo.listePakete(), melde: (paket, daten) => this.ereignisseDienst.auftrag(paket, 'datei.volltext', daten) });
+  }
+
+  /**
+   * Fassungen (#1006): Mappentypen, Ansichten, Nummernkreise, Stempel-Vorlagen und Automatisierungsvorlagen hier; die
+   * übrigen melden sich selbst an. Die Repo-Hülle (`mitFassungen`, im Konstruktor) hält nach jeder Änderung an Typen,
+   * Ansichten, Nummernkreisen und Automatisierungsvorlagen die Fassung fest – auf jedem Weg, auch in Transaktionen.
+   */
+  get fassungen(): Fassungen { return this.fassungenDienst ??= this.baueFassungen(); }
+  private fassungenDienst?: Fassungen;
+  private baueFassungen(): Fassungen {
+    const f = new Fassungen(this.kern, { einstellung: () => this.einstellungen });
+    const a = {
+      amTyp: async (id: string) => {
+        const erk = (await this.mappentypen.typErkennungen())[id];
+        return { stempel: (await this.stempelvorlagen.stempelDaten()).typen[id] ?? null, ausDokument: erk?.ausDokument ?? null, autoZuordnen: !!erk?.auto };
+      },
+      aendereTyp: (id: string, e: Record<string, unknown>) => this.mappentypen.aendereTyp(id, e),
+      unpassendMit: (typ: Mappentyp) => this.passung.unpassendMit(typ),
+      aendereSicht: (id: string, e: Record<string, unknown>) => this.sichtenVerwaltung.aendereSicht(id, e),
+      speichereNummernkreis: (e: Record<string, unknown>, von: string) => this.nummernkreise.speichereNummernkreis(e, von),
+      stempelVorlagen: () => this.stempelvorlagen.stempelVorlagen(),
+      speichereStempelVorlage: (id: string, e: Record<string, unknown>, von: string) => this.stempelvorlagen.speichereStempelVorlage(id, e, von),
+      repo: () => this.kern.repo,
+    };
+    for (const g of [typGegenstand(a), sichtGegenstand(a), nummernkreisGegenstand(a), stempelGegenstand(a), this.ablaeufe.fassungsGegenstand()]) f.registriere(g);
+    return f;
   }
   /** Dokumente (#1075): die Klassen in dokumente/; was noch im Dienst liegt, kommt über die Anschlüsse. */
   private baueDokumente() {

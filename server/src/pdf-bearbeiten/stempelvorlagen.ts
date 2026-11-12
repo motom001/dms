@@ -47,6 +47,7 @@ export class Stempelvorlagen {
     if (Object.keys(fehler).length) throw new Fachfehler(422, Object.values(fehler).join(' '), { felder: fehler });
     d.vorlagen = alt ? d.vorlagen.map((x) => (x.id === v.id ? v : x)) : [...d.vorlagen, v];
     await this.schreibeStempelDaten(d);
+    await this.kern.fassungen.halte('stempel', v.id);
     protokoll.modul('werkbank').info(alt ? 'Stempel-Vorlage geändert' : 'Stempel-Vorlage angelegt', { name: v.name, text: v.text, von });
     return d.vorlagen;
   }
@@ -63,7 +64,8 @@ export class Stempelvorlagen {
     const laufwerk = (await this.einstellungen?.lies('webdav')) as { stempel?: unknown } | null;
     if ((laufwerk && 'stempel' in laufwerk ? laufwerk.stempel : WEBDAV_VORLAGE) === id) throw new Fachfehler(409, t('api.webdav.vorlage-in-gebrauch', { name: v.name }));
     d.vorlagen = d.vorlagen.filter((x) => x.id !== id);
-    await this.schreibeStempelDaten(d);
+    // Fassungen (#1006): die letzte bleibt mit Löschvermerk.
+    await this.kern.fassungen.geloescht('stempel', id, () => this.schreibeStempelDaten(d));
     protokoll.modul('werkbank').info('Stempel-Vorlage gelöscht', { name: v.name, von });
     return d.vorlagen;
   }

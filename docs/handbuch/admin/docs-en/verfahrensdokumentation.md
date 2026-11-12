@@ -2,7 +2,7 @@
 
 Anyone in Germany who keeps books or has to keep records – including with a cash-basis accounting (Einnahmen-Überschuss-Rechnung), e.g. for freelance work, a small business or photovoltaics run as a business – needs a **procedure documentation** (*Verfahrensdokumentation*) under the **GoBD**: a description of how receipts are created, get into the system, are kept, protected and found again. The GoBD don't apply to purely private households; with letting or tradespeople's invoices, order doesn't hurt anyway.
 
-Software alone is never "GoBD-compliant" – only the procedure as described and practised makes it so. Ablago **supports** this: history of every change, checksums of the files, the [archive mode](archiv.md) with a deletion lock until the end of the period, versions instead of overwriting, permissions, encrypted backup with test restore.
+Software alone is never "GoBD-compliant" – only the procedure as described and practised makes it so. Ablago **supports** this: history of every change, [versions](fassungen.md) of the settings (who changed folder types, permissions, views … when and how), checksums of the files, the [archive mode](archiv.md) with a deletion lock until the end of the period, versions instead of overwriting, permissions, encrypted backup with test restore.
 
 ## The template {#die-vorlage}
 

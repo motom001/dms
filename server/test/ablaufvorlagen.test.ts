@@ -200,11 +200,19 @@ function verhalten(name: string, repos?: () => Promise<{ repo: Repo; konto: Kont
 
     it('Werkbank: ändern mit Änderungsverlauf, Zurücksetzen, nur erlaubte Karten, eigene löschen erst ohne offene Abläufe', async () => {
       const { d, lena, m, admin } = await aufbau(await repos?.());
-      const v = await d.ablaeufe.aendereVorlage('aufgabe_vergeben', { name: 'Bitte erledigen', version: 0 }, admin.id);
+      const als = <T>(id: string, f: () => Promise<T>) => d.kern.mitFassungsKontext({ urheber: { art: 'person', id } }, f);
+      const v = await als(admin.id, () => d.ablaeufe.aendereVorlage('aufgabe_vergeben', { name: 'Bitte erledigen', version: 0 }, admin.id));
       assert.equal(v.name, 'Bitte erledigen'); assert.equal(v.herkunft, 'kern'); assert.equal(v.version, 1);
       await assert.rejects(d.ablaeufe.aendereVorlage('aufgabe_vergeben', { karten: [{ art: 'url', adresse: 'https://example.org' }], version: 1 }, admin.id), status(422));
-      assert.equal((await d.ablaeufe.fassungen('aufgabe_vergeben')).length, 1);
-      assert.equal((await d.ablaeufe.zuruecksetzen('aufgabe_vergeben')).name, kernVorlage('aufgabe_vergeben').name);
+      // Fassungen (#1006): gemeinsamer Mechanismus; Zurücksetzen ist eine Fassung (die Kern-Vorgabe gilt wieder), kein Löschen.
+      assert.equal((await d.fassungen.liste('ablaufvorlage', 'aufgabe_vergeben')).fassungen.length, 1);
+      assert.equal((await als(lena.id, () => d.ablaeufe.zuruecksetzen('aufgabe_vergeben'))).name, kernVorlage('aufgabe_vergeben').name);
+      const f = await d.fassungen.liste('ablaufvorlage', 'aufgabe_vergeben');
+      assert.deepEqual(f.fassungen.map((x) => [x.nr, x.name, !!x.geloescht]), [[2, kernVorlage('aufgabe_vergeben').name, false], [1, 'Bitte erledigen', false]]);
+      assert.deepEqual(f.fassungen[0].aenderungen, [`Name „Bitte erledigen“ → „${kernVorlage('aufgabe_vergeben').name}“`]);
+      await als(admin.id, () => d.fassungen.stelleWiederHer('ablaufvorlage', 'aufgabe_vergeben', 1, { stand: f.stand }, { id: admin.id, email: null }));
+      assert.equal((await d.ablaeufe.vorlage('aufgabe_vergeben')).name, 'Bitte erledigen', 'über das normale Speichern wiederhergestellt');
+      assert.equal((await d.fassungen.liste('ablaufvorlage', 'aufgabe_vergeben')).fassungen[0].wiederhergestellt, 1);
       const eigen = await d.ablaeufe.legeVorlage({ name: 'Später ansehen', wann: { art: 'in', anzahl: 2, einheit: 'wochen' }, fragen: [], karten: [{ art: 'aufgabe', als: 'benachrichtigung', empfaenger: [{ art: 'selbst' }], text: 'Ansehen: {titel}' }] }, admin.id);
       const a = (await d.ablaeufe.anwenden(m.id, eigen.kennung, {}, lena.id)).ablauf!;
       assert.equal((await d.ablaeufe.benutzt(eigen.kennung)).length, 1);
@@ -214,6 +222,7 @@ function verhalten(name: string, repos?: () => Promise<{ repo: Repo; konto: Kont
       // Benachrichtigung gebündelt an Lena.
       assert.ok((await d.kern.repo.offeneAufgaben({ mappeIds: [m.id] })).some((x) => x.empfaengerId === lena.id && x.text === 'Ansehen: Strom'));
       await d.ablaeufe.loescheVorlage(eigen.kennung);
+      assert.deepEqual((await d.fassungen.geloeschte(['ablaufvorlage'])).map((x) => x.name), ['Später ansehen'], 'Löschvermerk');
       await d.ablaeufe.schalteVorlage('erinnern', false, admin.id);
       await assert.rejects(d.ablaeufe.anwenden(m.id, 'erinnern', { datum: in_(1), text: 'x' }, lena.id), status(409));
     });
@@ -251,10 +260,10 @@ if (url) {
       const { pgRepo } = await import('../src/repo-pg');
       const { pgKontoRepo } = await import('../src/konto-repo');
       const db = await eigeneDatenbank('ablaufvorlagen_umstellung', { migrieren: false });
-      // Stand vor 105.
+      // Stand vor 105. Die Tabelle der Fassungen (#1006) kommt dazu, weil der heutige Code beim Anlegen von Typ und Mappe Fassungen schreibt.
       const vorher = mkdtempSync(join(tmpdir(), 'migrationen-'));
       try {
-        for (const f of readdirSync(MIGRATIONEN).filter((x) => x.endsWith('.sql') && x < '105')) copyFileSync(join(MIGRATIONEN, f), join(vorher, f));
+        for (const f of readdirSync(MIGRATIONEN).filter((x) => x.endsWith('.sql') && (x < '105' || x.endsWith('_fassungen.sql') && !x.includes('ablaufvorlage')))) copyFileSync(join(MIGRATIONEN, f), join(vorher, f));
         await migriere(db.sql, vorher, () => {});
       } finally { rmSync(vorher, { recursive: true, force: true }); }
       const sql = db.sql;
@@ -293,6 +302,42 @@ if (url) {
       assert.deepEqual(auf.map((x) => [x.art, x.text, x.empfaengerId, x.datum]).sort(), [
         ['erinnerung', 'Ohne Ersteller', jonas.id, in_(1)], ['erinnerung', 'Vom Systemkonto', lena.id, in_(1)], ['erinnerung', 'Von Lena für Jonas', jonas.id, in_(1)],
       ].sort());
+    });
+  });
+
+  describe('Fassungen in die gemeinsame Tabelle (#1006, Migration 109)', () => {
+    it('Änderungsverlauf aus ablaufvorlage_fassungen: Nummer, Zeit, Stand und Person bleiben; ohne Person Paket bzw. Ablago', async () => {
+      const { migriere } = await import('../src/db');
+      const { pgRepo } = await import('../src/repo-pg');
+      const db = await eigeneDatenbank('ablaufvorlagen_fassungen', { migrieren: false });
+      const vorher = mkdtempSync(join(tmpdir(), 'migrationen-'));
+      try {
+        for (const f of readdirSync(MIGRATIONEN).filter((x) => x.endsWith('.sql') && x < '109')) copyFileSync(join(MIGRATIONEN, f), join(vorher, f));
+        await migriere(db.sql, vorher, () => {});
+      } finally { rmSync(vorher, { recursive: true, force: true }); }
+      const sql = db.sql;
+      const [h] = await sql`SELECT id FROM haushalte LIMIT 1`;
+      const haushalt = h.id as string;
+      const person = '00000000-0000-4000-8000-0000000b1044';
+      const stand = (name: string) => sql.json({ name, reihenfolge: 50, aktiv: true, beschreibung: '', typen: [], wann: { art: 'sofort' }, fragen: [], karten: [] });
+      await sql`INSERT INTO ablaufvorlagen (haushalt_id, kennung, name, daten, herkunft, paket_id, version) VALUES
+        (${haushalt}, 'eigen:a', 'Später', '{}'::jsonb, 'eigen', NULL, 2), (${haushalt}, 'probe:wv', 'Wiedervorlage', '{}'::jsonb, 'paket', 'probe', 1)`;
+      await sql`INSERT INTO ablaufvorlage_fassungen (haushalt_id, kennung, version, daten, von, zeit) VALUES
+        (${haushalt}, 'eigen:a', 1, ${stand('Erst')}, ${person}, '2026-10-01T00:00:00Z'), (${haushalt}, 'eigen:a', 2, ${stand('Später')}, ${person}, '2026-10-02T00:00:00Z'),
+        (${haushalt}, 'probe:wv', 1, ${stand('Wiedervorlage')}, NULL, '2026-10-03T00:00:00Z'), (${haushalt}, 'erinnern', 1, ${stand('Erinnern alt')}, NULL, '2026-10-04T00:00:00Z')`;
+      await migriere(sql, MIGRATIONEN, () => {});
+      const rows = await sql`SELECT eintrag, nr, name, urheber, zeit FROM fassungen WHERE art = 'ablaufvorlage' ORDER BY eintrag, nr`;
+      assert.deepEqual(rows.map((r) => [r.eintrag, r.nr, r.name, r.urheber]), [
+        ['eigen:a', 1, 'Erst', { art: 'person', id: person }], ['eigen:a', 2, 'Später', { art: 'person', id: person }],
+        ['erinnern', 1, 'Erinnern alt', { art: 'system' }], ['probe:wv', 1, 'Wiedervorlage', { art: 'paket', id: 'probe' }],
+      ]);
+      assert.equal(new Date(rows[0].zeit as string).toISOString(), '2026-10-01T00:00:00.000Z');
+      assert.equal((await sql`SELECT to_regclass('ablaufvorlage_fassungen') AS t`)[0].t, null);
+      // Danach: Abgleich über den gemeinsamen Mechanismus – die zurückgesetzte Kern-Vorgabe bekommt ihren heutigen Stand.
+      const d = new Dienst(pgRepo(sql, haushalt), speicherDateien(), { einstellungen: speicherEinstellungen() });
+      assert.ok((await d.fassungen.abgleich('0.0.0-test')) > 0);
+      const l = await d.fassungen.liste('ablaufvorlage', 'erinnern');
+      assert.deepEqual([l.fassungen[0].nr, l.fassungen[0].name], [2, kernVorlage('erinnern').name]);
     });
   });
 }

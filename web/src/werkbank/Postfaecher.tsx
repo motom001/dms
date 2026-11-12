@@ -3,12 +3,12 @@ import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { api, type OAuthAnbieter, type OAuthAppEingabe, type OAuthAppsStand, type OAuthStatus, type PostfachAnsicht, type PostfachEingabe } from '../api';
 import { useDaten } from '../daten';
 import { geheZu, Link, loeseWache } from '../ort';
-import { Speicherleiste, useEntwurf } from '../Speicherleiste';
+import { Speicherleiste, useEntwurf, useGespeichertNachziehen } from '../Speicherleiste';
 import { Hilfe } from '../Hilfe';
 import { Listenkopf } from '../Listenkopf';
 import { rueckfrage } from '../rueckfrage';
 import { gebietsschema } from '../../../shared/src/sprache';
-import { Bereich, fehlerBereiche, Knopf, KnopfLink, useBereiche, type BereichListe, type Klappe, type KnopfErgebnis } from '../bausteine';
+import { GeloeschteEintraege, Bereich, Fassungen, fehlerBereiche, Knopf, KnopfLink, useBereiche, type BereichListe, type Klappe, type KnopfErgebnis } from '../bausteine';
 
 /**
  * Werkbank → Postfächer (#196): Mails per IMAP abholen, jede Mail wird neue Post.
@@ -95,18 +95,19 @@ export function PostfaecherListe({ z, offen }: { z: PostfachZustand; offen?: str
           ))}
         </ul>
       )}
+      <GeloeschteEintraege art="postfach" />
     </>
   );
 }
 
 /** Bereiche eines Postfachs (#1000): Anmeldung beim Anbieter nur mit OAuth, der Stand erst nach dem Anlegen. */
-type PostfachBereich = 'grunddaten' | 'verbindung' | 'abholen' | 'anbieter' | 'stand';
+type PostfachBereich = 'grunddaten' | 'verbindung' | 'abholen' | 'anbieter' | 'stand' | 'fassungen';
 function postfachBereiche(oauth: boolean, gespeichert: boolean): BereichListe<PostfachBereich> {
   return [
     ['grunddaten', t('werkbank.postfaecher.bereich.grunddaten')], ['verbindung', t('werkbank.postfaecher.bereich.verbindung')],
     ...(oauth ? [['anbieter', t('werkbank.postfaecher.anmeldung-per-oauth-2')] as const] : []),
     ['abholen', t('werkbank.postfaecher.bereich.abholen')],
-    ...(gespeichert ? [['stand', t('werkbank.postfaecher.stand')] as const] : []),
+    ...(gespeichert ? [['stand', t('werkbank.postfaecher.stand')] as const, ['fassungen', t('oberflaeche.fassungen.titel')] as const] : []),
   ];
 }
 
@@ -124,6 +125,8 @@ export function PostfachEditor({ z, id }: { z: PostfachZustand; id: string }) {
   const liste = postfachBereiche(e.anmeldung === 'oauth', !!vorhanden);
   // Sprungleiste und Bereiche (#1000) wie beim Mappentyp; gemerkt je Postfach. Zurück vom Anbieter: dessen Bereich offen.
   const b = useBereiche(liste, 'postfach', vorhanden ? id : null);
+  // Nach dem Wiederherstellen einer Fassung (#1006).
+  useGespeichertNachziehen(gespeichert, e, setE);
   useEffect(() => { if (rueckkehr && e.anmeldung === 'oauth') b.oeffne(['anbieter']); }, []); // eslint-disable-line react-hooks/exhaustive-deps -- nur beim Zurückkommen vom Anbieter
   if (id !== 'neu' && !vorhanden) return z.liste ? <div className="leer"><p>{t('werkbank.postfaecher.dieses-postfach-gibt-es')}</p></div> : <p className="leise">{t('werkbank.postfaecher.lade')}</p>;
   const setze = (x: Partial<PostfachEingabe>) => setE({ ...e, ...x });
@@ -224,6 +227,7 @@ export function PostfachEditor({ z, id }: { z: PostfachZustand; id: string }) {
         </Bereich>
       </form>
       {vorhanden && <PostfachStand p={vorhanden} klappe={klappe('stand')} geaendert={ent.geaendert} abrufen={abrufen} />}
+      {vorhanden && <Fassungen art="postfach" eintrag={vorhanden.id} stand={JSON.stringify(gespeichert)} nachher={() => z.laden()} klappe={klappe('fassungen')} />}
       <Speicherleiste ent={ent} gegenstand={t('werkbank.postfaecher.postfach')} sendet={sendet} formular="pf-formular"
         links={vorhanden && <Knopf art="link" className="gefahr" onClick={loeschen}>{t('werkbank.postfaecher.postfach-entfernen-2')}</Knopf>} />
     </div>

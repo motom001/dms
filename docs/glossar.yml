@@ -22,7 +22,7 @@
 # Neue Begriffe kommen mit dem Release hierher (Qualitätskontrolle).
 # Die Personas: docs/handbuch/entwickler/docs/personas.md
 
-stand: '2026-11-11'
+stand: '2026-11-12'
 
 begriffe:
 
@@ -911,6 +911,14 @@ begriffe:
     begegnet: admin
     nicht_verwenden: [Impersonation, Vertretung beenden]
     code: Vertretung
+  - begriff: Fassung
+    bereich: werkbank
+    beschreibung: Ein gespeicherter Stand eines Eintrags der Werkbank – Mappentyp (mit Rechte-Regeln), Ansicht, Nummernkreis, Stempel-Vorlage, Postfach, Paket-Einstellungen oder Automatisierung – mit Zeitpunkt, wer gespeichert hat (Person, Paket mit Version, Automatisierung, Update von Ablago) und einer lesbaren Liste der Änderungen. Jedes Speichern ergibt eine Fassung; dieselbe Person innerhalb von 10 Minuten bleibt eine. Zwei Fassungen lassen sich vergleichen, eine frühere wiederherstellen – das ist selbst eine neue Fassung. Wird ein Eintrag gelöscht, bleibt seine letzte Fassung mit Löschvermerk als Nachweis.
+    einsteiger: erklaeren
+    begegnet: admin
+    nicht_verwenden: [Version (für Einstellungen), Revision, Änderungsverlauf]
+    verwandt: [Version, Version von Ablago]
+    code: fassungen, Fassungen
 
   # ---------- Betrieb und Sicherheit ----------
   - begriff: Haushalt

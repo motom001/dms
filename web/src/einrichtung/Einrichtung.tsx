@@ -7,7 +7,7 @@ import { VorbelegenEditor } from './Vorbelegen';
 import { TeilEinstellung } from './Teil';
 import { kreisImStandard } from '../../../shared/src/nummernkreis';
 import { moeglicheQuellen, moeglicheZielFelder } from '../../../shared/src/folgtaus';
-import { type ChangeEvent, Fragment, useEffect, useRef, useState } from 'react';
+import { type ChangeEvent, Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import { Ansage, umgestellt, useZiehen, ziehTasten } from '../ziehen';
 import {
   ABSCHNITT_TITEL_MAX, ERKENNBAR_AN_MAX, FELDTYPEN, feldtypName, freierSchluessel, INDEXPLATZHALTER, istIndexplatzhalter, REGISTERARTEN, HISTORIENGRUPPEN, historiengruppeName, historiengruppenVon, type Historiengruppe, SYSTEMSPALTEN, type Systemspalte, schluesselAus, standardRegister, titelAus, trefferlistenVon, VERWEISARTEN, vorlageFelder, wirksameVorlage, pruefeTitelFilter,
@@ -41,7 +41,7 @@ import type { ErkennungStand } from '../api';
 import { artenFuer, artVon, AUS_DOKUMENT_STANDARD, BESCHRIFTUNG_MAX, ENGINE_EINGEBAUT, ERKENNUNG_FELDTYPEN, ERKENNUNG_HINWEIS_MAX, ERKENNUNGSARTEN, WIEDERFINDEN_FELDTYPEN, type AusDokument, type Erkennungsart } from '../../../shared/src/erkennung';
 import { gebietsschema } from '../../../shared/src/sprache';
 import { leseZeitraum, zeitraumText } from '../../../shared/src/feldarten';
-import { abfangen, Bereich, Knopf, useBereiche, type Klappe } from '../bausteine';
+import { abfangen, Bereich, Fassungen, Knopf, useBereiche, type BereichListe, type Klappe } from '../bausteine';
 import { ArchivLeer, mitStichtag } from './ArchivLeer';
 
 /** Entfernen im Editor wirkt erst beim Speichern (#136). */
@@ -67,6 +67,8 @@ type EntwurfRegister = Omit<Register, 'felder' | 'abschnitte'> & { _uid: string;
 export const TYP_BEREICHE = [
   ['grunddaten', t('mappentypen.bereich.grunddaten')], ['felder', t('mappentypen.bereich.felder')], ['titel', t('mappentypen.bereich.titel')], ['trefferlisten', t('mappentypen.bereich.trefferlisten')],
   ['register', t('mappentypen.bereich.register')], ['archiv', t('mappentypen.bereich.archivmodus')], ['stempel', t('mappentypen.bereich.stempel-beim-weitergeben')], ['erkennung', t('mappentypen.bereich.erkennung')], ['berechtigungen', t('mappentypen.bereich.berechtigungen')], ['testlauf', t('mappentypen.bereich.testlauf')], ['pakete', t('mappentypen.bereich.pakete')], ['ki', t('mappentypen.bereich.ki')],
+  // Fassungen (#1006): wer wann was geändert hat – erst nach dem Anlegen.
+  ['fassungen', t('oberflaeche.fassungen.titel')],
 ] as const;
 export type TypBereich = (typeof TYP_BEREICHE)[number][0];
 
@@ -218,7 +220,8 @@ export function TypEditor({ typ, vorlage }: { typ?: Mappentyp; vorlage?: Mappent
   const [ansage, setAnsage] = useState('');
 
   // Bereiche (#144, Baustein seit #1000): neu = alle offen, bestehend = zu bzw. wie zuletzt auf diesem Gerät.
-  const bereiche = useBereiche(TYP_BEREICHE, 'typ', typ?.id ?? null);
+  const typBereiche: BereichListe<TypBereich> = useMemo(() => (neu ? TYP_BEREICHE.filter(([k]) => k !== 'fassungen') : TYP_BEREICHE), [neu]);
+  const bereiche = useBereiche(typBereiche, 'typ', typ?.id ?? null);
   const [fehlerOrte, setFehlerOrte] = useState<Set<TypBereich>>(new Set());
   const oeffne = bereiche.oeffne;
   // Drag & Drop (#74): Felder umsortieren oder auf ein Feldregister ziehen; ändert nur den Entwurf.
@@ -528,6 +531,7 @@ export function TypEditor({ typ, vorlage }: { typ?: Mappentyp; vorlage?: Mappent
       <TestlaufBlatt typId={gespeichert?.id ?? ''} entwurf={e.berechtigungen} klappe={klappe('testlauf')} />
       {typ?.system !== 'benutzer' && <PaketeAmTyp typId={gespeichert?.id ?? ''} klappe={klappe('pakete')} />}
       {typ?.system !== 'benutzer' && <KiAmTyp typId={gespeichert?.id ?? ''} klappe={klappe('ki')} />}
+      {gespeichert && <Fassungen art="typ" eintrag={gespeichert.id} stand={gespeichert.geaendert} nachher={() => d.neuLaden()} klappe={klappe('fassungen')} />}
 
       <Speicherleiste ent={ent} gegenstand={t('mappentypen.editor.mappentyp')} sendet={sendet} meldung={meldung ? { art: fehler ? 'schlecht' : 'gut', text: meldung } : undefined}
         links={neu || system ? undefined : <button type="button" className="textknopf gefahr" onClick={() => void loeschen()}>{t('mappentypen.editor.mappentyp-loeschen')}</button>} />

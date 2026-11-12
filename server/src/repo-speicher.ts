@@ -1,8 +1,9 @@
+import type { GespeicherteFassung } from '../../shared/src/fassungen';
 import { volltextHerkunft } from '../../shared/src/volltext';
 import { randomUUID } from 'node:crypto';
 import { lesbar, werte } from '../../shared/src/rechte';
 import { kannTerminHaben } from '../../shared/src/fristen';
-import type { AblaufVerlauf, Ablaufvorlage, AblaufvorlageDaten, MappenAblauf } from '../../shared/src/ablaufvorlagen';
+import type { AblaufVerlauf, Ablaufvorlage, MappenAblauf } from '../../shared/src/ablaufvorlagen';
 import { umschluesseleTief } from './tresor';
 import { datumIn, ziehe, type Nummernkreis } from '../../shared/src/nummernkreis';
 import type { InstalliertesPaket } from '../../shared/src/pakete';
@@ -28,6 +29,9 @@ export function speicherRepo(): Repo {
   const typen = new Map<string, Mappentyp>();
   const mappen = new Map<string, Mappe>();
   const kreise = new Map<string, Nummernkreis>();
+  /** Fassungen (#1006): je „art|eintrag“ in Reihenfolge der Nummer. */
+  const fassungen = new Map<string, GespeicherteFassung[]>();
+  const fassungenVon = (art: string, eintrag: string) => fassungen.get(`${art}|${eintrag}`) ?? [];
   const links = new Map<string, AuskunftLinkIntern>();
   const pakete = new Map<string, InstalliertesPaket>();
   const paketCode = new Map<string, Array<{ name: string; inhalt: Buffer }>>();
@@ -84,7 +88,6 @@ export function speicherRepo(): Repo {
   const mitMappeE = (e: MappenAblauf): MappenAblauf => ({ ...kopie(e), mappeTitel: mappen.get(e.mappeId)?.titel ?? '', typId: mappen.get(e.mappeId)?.typId });
   /** Automatisierungsvorlagen (#1044): gespeicherte Vorlagen, Änderungsverlauf, Verlauf. */
   const vorlagen = new Map<string, Ablaufvorlage>();
-  const vorlagenFassungen: Array<{ kennung: string; version: number; zeit: string; von: string | null; daten: AblaufvorlageDaten & { aktiv: boolean } }> = [];
   let ablaufVerlauf: AblaufVerlauf[] = [];
   /** Änderungshistorie (#57). */
   const historie: Historieneintrag[] = [];
@@ -924,17 +927,10 @@ export function speicherRepo(): Repo {
     async speichereAblaufvorlage(v, von, erwartet) {
       const da = vorlagen.get(v.kennung);
       if (erwartet === null ? !!da : !da || da.version !== erwartet) return false;
-      const frueher = Math.max(0, ...vorlagenFassungen.filter((f) => f.kennung === v.kennung).map((f) => f.version));
-      const version = erwartet === null ? frueher + 1 : erwartet + 1;
-      vorlagen.set(v.kennung, { ...kopie(v), version, geaendert: jetzt(), geaendertVon: von });
-      const { beschreibung, typen, wann, fragen, karten, name, reihenfolge, aktiv } = v;
-      vorlagenFassungen.push({ kennung: v.kennung, version, zeit: jetzt(), von, daten: kopie({ name, reihenfolge, aktiv, beschreibung, typen, wann, fragen, karten }) });
+      vorlagen.set(v.kennung, { ...kopie(v), version: erwartet === null ? 1 : erwartet + 1, geaendert: jetzt(), geaendertVon: von });
       return true;
     },
     async loescheAblaufvorlage(kennung) { vorlagen.delete(kennung); },
-    async ablaufvorlageFassungen(kennung) {
-      return vorlagenFassungen.filter((f) => f.kennung === kennung).sort((a, b) => b.version - a.version).slice(0, 100).map((f) => ({ version: f.version, zeit: f.zeit, von: f.von, daten: kopie(f.daten) }));
-    },
     async vermerkeAblauf(e) { ablaufVerlauf.push({ ...kopie(e), zeit: e.zeit || jetzt() }); },
     async ablaufVerlauf(f) {
       return ablaufVerlauf.filter((e) => (!f.vorlage || e.vorlage === f.vorlage) && (!f.mappeId || e.mappeId === f.mappeId))
@@ -1021,6 +1017,46 @@ export function speicherRepo(): Repo {
       }
       return m;
     },
+    async fassungen(art, eintrag, max = Infinity) { return kopie([...fassungenVon(art, eintrag)].reverse().slice(0, max)); },
+    async zaehleFassungen(art, eintrag) { return fassungenVon(art, eintrag).length; },
+    async fassung(art, eintrag, nr) { const f = fassungenVon(art, eintrag).find((x) => x.nr === nr); return f && kopie(f); },
+    async letzteFassungen(art) {
+      const m = new Map<string, GespeicherteFassung>();
+      for (const [k, l] of fassungen) if (k.startsWith(`${art}|`) && l.length) m.set(l[l.length - 1].eintrag, kopie(l[l.length - 1]));
+      return m;
+    },
+    async legeFassungAn(f) {
+      const k = `${f.art}|${f.eintrag}`;
+      const l = fassungen.get(k) ?? [];
+      if (l.some((x) => x.nr === f.nr)) throw new Error(`Fassung ${k} ${f.nr} gibt es schon`);
+      l.push(kopie(f));
+      l.sort((a, b) => a.nr - b.nr);
+      fassungen.set(k, l);
+    },
+    async schreibeFassungFort(art, eintrag, nr, d) {
+      const f = fassungenVon(art, eintrag).find((x) => x.nr === nr);
+      if (f) Object.assign(f, kopie({ name: d.name, daten: d.daten, bis: d.bis }));
+    },
+    async loescheFassung(art, eintrag, nr) {
+      const l = fassungenVon(art, eintrag);
+      const i = l.findIndex((x) => x.nr === nr);
+      if (i >= 0) l.splice(i, 1);
+    },
+    async vermerkeLoeschung(art, eintrag, vermerk) {
+      const l = fassungenVon(art, eintrag);
+      if (!l.length) return;
+      const letzte = l[l.length - 1];
+      letzte.geloescht = kopie(vermerk);
+      fassungen.set(`${art}|${eintrag}`, [letzte]);
+    },
+    async geloeschteFassungen(arten) {
+      return kopie([...fassungen.values()].map((l) => l[l.length - 1]).filter((f) => f?.geloescht && arten.includes(f.art))
+        .sort((a, b) => b.geloescht!.zeit.localeCompare(a.geloescht!.zeit)));
+    },
+    async alleFassungen() {
+      return kopie([...fassungen.values()].flat().sort((a, b) => a.art.localeCompare(b.art) || a.eintrag.localeCompare(b.eintrag) || a.nr - b.nr));
+    },
+
     async historieAufraeumen(vor) {
       const weg = new Set(historie.filter((h) => h.art === 'endgueltig' && h.zeit < vor && !mappen.has(h.mappeId) && !korb.has(h.mappeId)).map((h) => h.mappeId));
       const vorher = historie.length;

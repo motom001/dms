@@ -86,6 +86,7 @@ nav:
       - Encryption: verschluesselung.md
   - Workbench:
       - Workbench and overview: uebersicht.md
+      - "Versions: who changed what?": fassungen.md
       - Building your Library:
           - "Use (private or work)": nutzung.md
           - Folder types: mappentypen.md

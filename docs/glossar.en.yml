@@ -388,6 +388,9 @@ begriffe:
   Fehler nachstellen:
     begriff: Reproduce a problem
     beschreibung: An administrator temporarily works under another user's account to see a problem. "Back to your own account" returns.
+  Fassung:
+    begriff: Version (of a setting)
+    beschreibung: A saved state of an entry in the Workbench – folder type (with its permission rules), view, number sequence, stamp template, mailbox, package settings or automation – with the time, who saved it (a person, a package with its version, an automation, an update of Ablago) and a readable list of changes. Every save creates a version; the same person within 10 minutes stays one. Two versions can be compared and an earlier one restored – which is itself a new version. When an entry is deleted, its last version stays with a deletion note as a record.
   Haushalt:
     begriff: Household
     beschreibung: The template under "Customise the workbench" for home – lean, only what a family needs for setting up and backing up. Since 04.11.2026 the whole installation is neutrally called "Library" (Ablage); "Mandant" only appears in the code.

@@ -1,7 +1,7 @@
 import type { Aufgabe, Ausschnitt, FallEnde, FallOhneLeserecht, Dokument, DokumentVersion, Herkunft, Historienart, Historieneintrag, Mappe, Notiz, MappenBezug, Mappentyp, MappentypDaten, OcrStandArt, Systemtyp, Werte } from '../../shared/src/model';
 import type { Klausel, Sicht, SichtDaten } from '../../shared/src/sichten';
 import type { Ausdruck, Lesefilter, Regelwerk } from '../../shared/src/rechte';
-import type { Ablaufvorlage, AblaufAngehalten, AblaufVerlauf, AblaufvorlageDaten, MappenAblauf } from '../../shared/src/ablaufvorlagen';
+import type { Ablaufvorlage, AblaufAngehalten, AblaufVerlauf, MappenAblauf } from '../../shared/src/ablaufvorlagen';
 import type { Nummernkreis } from '../../shared/src/nummernkreis';
 import type { InstalliertesPaket } from '../../shared/src/pakete';
 import type { SprachBeschriftung, Sprachtexte } from '../../shared/src/sprachpaket';
@@ -11,6 +11,7 @@ import type { Fundstelle } from './geheimnisse';
 import type { LoeschDokument, LoeschEintrag, LoeschFilter } from '../../shared/src/loeschprotokoll';
 import type { Varianten } from '../../shared/src/suche';
 import type { Seitensprache } from '../../shared/src/seitensprachen';
+import type { FassungArt, GespeicherteFassung, Loeschvermerk } from '../../shared/src/fassungen';
 import type { Leerseiten } from '../../shared/src/leerseiten';
 import type { Notfallkontakt } from '../../shared/src/notfallkontakte';
 import { t } from './sprache';
@@ -728,12 +729,14 @@ export interface Repo {
   /** Löscht ihn; true nur für den, der ihn gelöscht hat (mehrere Server: genau einer lässt ihn laufen). */
   loescheAblauf(id: string): Promise<boolean>;
 
-  /* ---------- Automatisierungsvorlagen (#1044): gespeicherte Vorlagen, Änderungsverlauf, Verlauf der Abläufe ---------- */
+  /* ---------- Automatisierungsvorlagen (#1044): gespeicherte Vorlagen, Verlauf der Abläufe ---------- */
   ablaufvorlagen(): Promise<Ablaufvorlage[]>;
-  /** Neu (`erwartet` null; false, wenn es die Kennung schon gibt) oder geändert (nur mit passender Fassung); mit Änderungsverlauf. */
+  /**
+   * Neu (`erwartet` null; false, wenn es die Kennung schon gibt) oder geändert (nur mit passender `version`). Die Fassungen
+   * (#1006) hält die Repo-Hülle fest (`fassungen/huelle.ts`), nicht das Repo.
+   */
   speichereAblaufvorlage(v: Ablaufvorlage, von: string | null, erwartet: number | null): Promise<boolean>;
   loescheAblaufvorlage(kennung: string): Promise<void>;
-  ablaufvorlageFassungen(kennung: string): Promise<Array<{ version: number; zeit: string; von: string | null; daten: AblaufvorlageDaten & { aktiv: boolean } }>>;
   vermerkeAblauf(e: AblaufVerlauf): Promise<void>;
   ablaufVerlauf(f: { vorlage?: string; mappeId?: string; anzahl: number }): Promise<AblaufVerlauf[]>;
   /** Bremse (#1044): Einträge einer Person seit `seit` mit diesen Arten. */
@@ -791,6 +794,26 @@ export interface Repo {
   historieArt(art: Historienart, max: number): Promise<Historieneintrag[]>;
   /** Löscht die Historie von Mappen, die vor diesem Zeitpunkt endgültig gelöscht wurden. */
   historieAufraeumen(vor: string): Promise<number>;
+
+  /* ---------- Fassungen (#1006) ---------- */
+  /** Fassungen eines Eintrags, neueste zuerst; höchstens `max`. */
+  fassungen(art: FassungArt, eintrag: string, max?: number): Promise<GespeicherteFassung[]>;
+  /** Anzahl Fassungen eines Eintrags. */
+  zaehleFassungen(art: FassungArt, eintrag: string): Promise<number>;
+  /** Eine Fassung; undefined, wenn es sie nicht gibt. */
+  fassung(art: FassungArt, eintrag: string, nr: number): Promise<GespeicherteFassung | undefined>;
+  /** Die neueste Fassung je Eintrag einer Art (Abgleich beim Start). */
+  letzteFassungen(art: FassungArt): Promise<Map<string, GespeicherteFassung>>;
+  legeFassungAn(f: GespeicherteFassung): Promise<void>;
+  /** Fassung fortschreiben (Zusammenfassen): Stand, Name und letzte Änderung. */
+  schreibeFassungFort(art: FassungArt, eintrag: string, nr: number, d: Pick<GespeicherteFassung, 'name' | 'daten' | 'bis'>): Promise<void>;
+  loescheFassung(art: FassungArt, eintrag: string, nr: number): Promise<void>;
+  /** Eintrag gelöscht: nur die neueste Fassung bleibt, mit Löschvermerk. */
+  vermerkeLoeschung(art: FassungArt, eintrag: string, vermerk: Loeschvermerk): Promise<void>;
+  /** Gelöschte Einträge mit ihrer letzten Fassung, neueste Löschung zuerst. */
+  geloeschteFassungen(arten: readonly FassungArt[]): Promise<GespeicherteFassung[]>;
+  /** Alle Fassungen (Vollexport), nach Art, Eintrag und Nummer. */
+  alleFassungen(): Promise<GespeicherteFassung[]>;
 }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;

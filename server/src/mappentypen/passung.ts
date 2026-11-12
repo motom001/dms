@@ -27,7 +27,25 @@ export class Passung {
   async pruefePassung(typId: string): Promise<number> {
     const typ = await this.repo.holeTyp(typId);
     if (!typ) return 0;
-    const mappen = await this.repo.listeMappen(typId);
+    const ergebnis = await this.ergebnis(typ);
+    const geaendert = ergebnis.filter((e) => e.problem !== e.alt || e.passtAlt === undefined).map(({ id, problem }) => ({ id, problem }));
+    await this.repo.setzePassung(geaendert);
+    // Passt eine Mappe nicht, hat ihr Ersteller eine Aufgabe (#54); passt sie wieder, ist sie erledigt.
+    await this.passungsAufgaben(geaendert);
+    return ergebnis.filter((e) => e.problem).length;
+  }
+
+  /**
+   * Fassungen (#1006): Wie viele Mappen passten nicht, wenn der Typ so aussähe – ohne zu speichern (Hinweis vor dem
+   * Wiederherstellen einer Fassung). Zählt nur Mappen, die heute passen.
+   */
+  async unpassendMit(typ: Mappentyp): Promise<number> {
+    return (await this.ergebnis(typ)).filter((e) => e.problem && !e.alt).length;
+  }
+
+  /** Passung aller Mappen eines Typs gegen diese Definition (nur rechnen). */
+  private async ergebnis(typ: Mappentyp): Promise<Array<{ id: string; problem: string | null; alt: string | null; passtAlt: boolean | undefined }>> {
+    const mappen = await this.repo.listeMappen(typ.id);
     const typVon = await this.repo.typenVon(mappen.flatMap((m) => verweiseVon(typ, m.werte).map((v) => v.zielId)).filter(istUuid));
     // Eindeutige Felder: gleiche Werte im Arbeitsspeicher suchen statt je Mappe in der Datenbank.
     const gleiche = new Map<string, Map<string, Mappe[]>>();
@@ -44,7 +62,7 @@ export class Passung {
     // Anzeige-Bedingungen (#1033): Was eine Mappe nicht zeigt, ist nicht Pflicht – wie beim Speichern.
     const merkmale = await this.kern.merkmale();
     const eigeneOrganisation = await this.eigeneOrganisation(typ);
-    const ergebnis = mappen.map((m) => {
+    return mappen.map((m) => {
       const p = pruefeMitAnzeige(typ, m.werte, {
         merkmale, eigeneOrganisation,
         typVon: (id) => typVon.get(id),
@@ -55,11 +73,6 @@ export class Passung {
       });
       return { id: m.id, problem: ersterGrund(typ, p), alt: m.problem ?? null, passtAlt: m.passt };
     });
-    const geaendert = ergebnis.filter((e) => e.problem !== e.alt || e.passtAlt === undefined).map(({ id, problem }) => ({ id, problem }));
-    await this.repo.setzePassung(geaendert);
-    // Passt eine Mappe nicht, hat ihr Ersteller eine Aufgabe (#54); passt sie wieder, ist sie erledigt.
-    await this.passungsAufgaben(geaendert);
-    return ergebnis.filter((e) => e.problem).length;
   }
 
   /** „zeigt auf eine eigene Organisation“ (#995): nur nachschlagen, wenn der Typ so eine Bedingung hat. */

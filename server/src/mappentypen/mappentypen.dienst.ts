@@ -163,6 +163,9 @@ export class MappentypenDienst {
     if (hatAd) await this.setzeTypErkennung(t.id, { ausDokument: liesAusDokument((eingabe as { ausDokument: unknown }).ausDokument) });
     // Post automatisch zuordnen (#337), Standard aus.
     if (!!eingabe && typeof eingabe === 'object' && 'autoZuordnen' in eingabe) await this.setzeTypErkennung(t.id, { auto: (eingabe as { autoZuordnen: unknown }).autoZuordnen === true && !t.system });
+    // Fassungen (#1006): Stempel und Erkennung liegen in den Einstellungen – den Typ danach noch einmal festhalten
+    // (dieselbe Anfrage, dieselbe Fassung).
+    if (hat || hatAd || (!!eingabe && typeof eingabe === 'object' && 'autoZuordnen' in eingabe)) await this.kern.fassungen.halte('typ', t.id);
     return (await this.mitStempel([t]))[0];
   }
 

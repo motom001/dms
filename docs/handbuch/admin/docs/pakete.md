@@ -248,6 +248,7 @@ Manche Pakete brauchen Einstellungen – etwa Regeln, nach denen sie Post zuordn
 - Beim **Speichern** prüft Ablago Mappentyp, Pflichtfelder, Auswahlwerte und ob Verweise existieren, und zeigt Fehler am Feld.
 - **Aktionen** des Pakets erscheinen als Knöpfe (z. B. „Regeln jetzt anwenden“), die Antwort des Pakets steht darüber. Eine Zeitgrenze verhindert, dass ein Knopf hängt.
 - Der **Status** (letzter Lauf, Meldungen) kommt vom Paket selbst und ist schreibgeschützt.
+- Darunter stehen die **[Fassungen](fassungen.md)**: wer wann welche Einstellung geändert hat – auch das Paket selbst beim Installieren oder Aktualisieren. Geheimnisse erscheinen nur als „geändert“, nie mit Wert.
 
 **Lebenszyklus:**
 

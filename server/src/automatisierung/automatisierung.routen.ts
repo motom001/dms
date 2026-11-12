@@ -28,8 +28,7 @@ export function automatisierungRouten(k: RoutenKontext): Route[] {
     { methode: 'GET', pfad: '/api/werkbank/automatisierungen/:id/laeufe', zugang: 'admin', handler: async (a) => ok(await autos().laeufe(a.params.id, Number((a.query as { anzahl?: unknown }).anzahl) || 50)) },
     { methode: 'POST', pfad: '/api/werkbank/automatisierungen/:id/wiederholen', zugang: 'admin', handler: async (a) => ok(await autos().wiederholeAlle(a.params.id)) },
     { methode: 'GET', pfad: '/api/werkbank/automatisierungen/:id/testmappen', zugang: 'admin', handler: async (a) => ok(await autos().testmappen(a.params.id, (a.query as { suche?: unknown }).suche)) },
-    { methode: 'GET', pfad: '/api/werkbank/automatisierungen/:id/fassungen', zugang: 'admin', handler: async (a) => ok(await autos().fassungen(a.params.id)) },
-    { methode: 'POST', pfad: '/api/werkbank/automatisierungen/:id/fassungen/:version', zugang: 'admin', handler: async (a) => ok(await autos().stelleWieder(a.params.id, Number(a.params.version), ich(a).id)) },
+    // Fassungen (#1006): fassungen/fassungen.routen.ts, für alle Gegenstände gleich.
     { methode: 'POST', pfad: '/api/werkbank/automatisierungen/:id/wiedergeben', zugang: 'admin', handler: async (a) => {
       const e = b(a) as { mappeId?: unknown; trocken?: unknown };
       return ok(await autos().wiedergeben(a.params.id, e.mappeId, e.trocken !== false));

@@ -74,3 +74,4 @@ The workflow **Handbuch** takes the same screenshots in the jobs `bilder (de)` a
 | [Search](bausteine-suche.md) | The search field of all lists and the pattern “list in the middle: search field on top, filters below” with number of results, places found and package filter |
 | [Toggle](bausteine-umschalter.md) | Segmented button: two to four equal choices, exactly one on – such as “Ask · Search” on the start page |
 | [Areas](bausteine-bereiche.md) | The pattern “editor on the right: jump bar + areas”: jump bar with “Expand all”, areas to expand and collapse, memory per device, errors open their area |
+| [Versions](bausteine-fassungen.md) | Who changed what and when: list with readable changes, compare two versions, restore with a preview; deleted entries below a list |

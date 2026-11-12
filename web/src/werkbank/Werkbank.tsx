@@ -56,7 +56,7 @@ import { filterAusAdresse } from '../../../shared/src/aufgabenfilter';
 import { istOffen } from '../../../shared/src/auskunft';
 import { useBeiWiederErreichbar } from '../erreichbar';
 import { gebietsschema } from '../../../shared/src/sprache';
-import { Fundstellen, Hervorgehoben, KeineTreffer, KnopfLink, ListenSuche, PaketFilter, useListenSuche } from '../bausteine';
+import { GeloeschteEintraege, Fundstellen, Hervorgehoben, KeineTreffer, KnopfLink, ListenSuche, PaketFilter, useListenSuche } from '../bausteine';
 import { paketVonTyp, paketWahl, quellenTyp } from './listensuche';
 import { uebergeordneterTyp } from '../../../shared/src/teile';
 import { typName } from '../../../shared/src/beschriftung';
@@ -436,6 +436,7 @@ function TypenListe({ offen, pakete }: { offen?: string; pakete: InstalliertesPa
               );
             })}
           </ul>}
+      <GeloeschteEintraege art="typ" />
     </>
   );
 }
