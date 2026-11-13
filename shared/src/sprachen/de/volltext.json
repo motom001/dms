@@ -102,6 +102,8 @@
   "werkbank.archiv.keins": "Kein Paket für die Archivfassung installiert.",
   "werkbank.archiv.paket": "Paket {paket}",
   "werkbank.archiv.zaehler": "{fertig} fertig · {wartet} warten · {ausgelassen} ausgelassen · {fehler} mit Fehler",
+  "werkbank.archiv.vorschau": "Vorschaubilder aus der Archivfassung werden nachgeholt: {erledigt} erstellt, noch {offen} offen. Das läuft im Hintergrund mit Nachrang; Ablago bleibt bedienbar.",
+  "werkbank.archiv.vorschau.fertig": "Vorschaubilder aus der Archivfassung nachgeholt: {erledigt} erstellt, {ohne} ohne Bild.",
   "werkbank.archiv.dokument": "Dokument",
   "werkbank.archiv.grund": "Grund",
   "werkbank.archiv.keine": "Keine Dokumente mit Fehler oder ausgelassen.",

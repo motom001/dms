@@ -47,7 +47,7 @@ import { Einrichtungscode } from './einrichtungscode';
 import { einrichtungsmodus } from './einrichtungsmodus';
 import { Einrichtung } from './einrichtung';
 import { bestimmeMandant, mandantNamen } from './mandant';
-import { ordnerAblage, Vorschaubilder } from './vorschau';
+import { ordnerAblage, Vorschaubilder, type NachlaufStand } from './vorschau';
 import { Dateiumwandlung, fassungsOrdner, ordnerFassungen, zieheFassungenUm } from './dateiumwandlung';
 import { PdfEntsperren } from './entsperren';
 import { Archivfassung, archivOrdner, ordnerArchiv, woerterOrdner } from './archivfassung';
@@ -438,6 +438,13 @@ texterkennung.volltextPaket = dienst.paketVolltext;
 // Wortpositionen der Texterkennung daneben. Der Kern meldet Dokumente erst mit feststehendem Volltext.
 const archivfassung = new Archivfassung(dienst.dokumentArchiv.archivAnbindung(ordnerArchiv(archivOrdner(ordner.dateien, cfg.haushalt), woerterOrdner(ordner.dateien, cfg.haushalt))));
 dienst.dokumentArchiv.verbindeArchivfassung(archivfassung);
+// Vorschaubild auch aus der Archivfassung (#1216): als letzte Quelle; Stand des Nachlaufs für alle Prozesse im Kurzzustand.
+vorschau.archiv = { info: (sha) => archivfassung.info(sha), lies: (sha) => archivfassung.lies(sha) };
+vorschau.nachlaufSpeicher = {
+  lies: async () => ((await zustandDb.lies('vorschau-nachlauf', 'stand'))?.wert ?? null) as NachlaufStand | null,
+  schreibe: (s) => zustandDb.setze('vorschau-nachlauf', 'stand', s, Date.now() + 7 * 24 * 60 * 60_000),
+};
+dienst.dokumentArchiv.verbindeVorschau(vorschau);
 // Tägliche Zusammenfassung der offenen Aufgaben (#54).
 const typName = async (id: string | undefined) => (await dienst.mappentypen.listeTypen()).find((t) => t.id === id)?.name ?? '';
 const aufgabenmail = new Aufgabenmail({
@@ -811,6 +818,12 @@ if (leiter) {
   wiederkehrend('notfallkontakte', 5 * 60_000, () => {
     if (wartung.aktiv || wiederherstellung.laeuft()) return;
     void nurEiner('notfallkontakte', () => dienst.notfallkontakte.zustellen()).catch((e) => log.warn('Info-Mails an Notfallkontakte nicht verschickt', { fehler: (e as Error).message }));
+  });
+  // Vorschaubilder aus der Archivfassung für den Bestand (#1216): Dateien mit Archivfassung ohne Bild nachholen – mit
+  // Nachrang in der Warteschlange der Vorschaubilder (Pause vor jedem Bild), je Lauf ein Stapel; nur ein Prozess zugleich.
+  wiederkehrend('vorschau-archiv', 10 * 60_000, () => {
+    if (wartung.aktiv || wiederherstellung.laeuft()) return;
+    void nurEiner('vorschau-archiv', () => dienst.dokumentArchiv.vorschauNachlauf()).catch((e) => log.warn('Vorschaubilder aus Archivfassungen nicht nachgeholt', { fehler: (e as Error).message }));
   });
   // Abgelaufenes aus dem Kurzzustand (#744) wegräumen – Fehlversuche, Tickets, Merker.
   wiederkehrend('kurzzustand', 10 * 60_000, () => void nurEiner('kurzzustand', () => zustandDb.raeumeAuf()).catch((e) => log.warn('Kurzzustand nicht aufgeräumt', { fehler: (e as Error).message })));

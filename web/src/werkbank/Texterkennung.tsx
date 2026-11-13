@@ -230,6 +230,10 @@ function ArchivBlock({ s }: { s: OcrStatus }) {
         <p>{a.pakete.map((p) => <Link key={p.id} to={`/werkbank/pakete/${p.id}`} className="verweis">{tx('volltext.werkbank.archiv.paket', { paket: `${p.name} ${p.version}` })}</Link>)}</p>
         <p className="klein">{tx('volltext.werkbank.archiv.zaehler', { fertig: a.zaehler.fertig, wartet: a.zaehler.wartet, ausgelassen: a.zaehler.ausgelassen, fehler: a.zaehler.fehler })}</p>
       </>}
+      {/* Nachlauf der Vorschaubilder für den Bestand (#1216): Fortschritt, danach das Ergebnis des letzten Laufs. */}
+      {a.vorschau && (a.vorschau.offen > 0
+        ? <p className="leise klein" role="status">{tx('volltext.werkbank.archiv.vorschau', { erledigt: zahl(a.vorschau.erledigt), offen: zahl(a.vorschau.offen) })}</p>
+        : a.vorschau.erledigt + a.vorschau.ohne > 0 && <p className="leise klein">{tx('volltext.werkbank.archiv.vorschau.fertig', { erledigt: zahl(a.vorschau.erledigt), ohne: zahl(a.vorschau.ohne) })}</p>)}
       {a.pakete.length > 0 && (!a.liste.length ? <p className="leise klein">{tx('volltext.werkbank.archiv.keine')}</p> : (
         <table className="tabelle klein">
           <thead><tr><th>{tx('volltext.werkbank.archiv.dokument')}</th><th>{tx('volltext.werkbank.archiv.grund')}</th></tr></thead>

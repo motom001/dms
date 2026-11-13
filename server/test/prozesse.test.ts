@@ -234,6 +234,8 @@ describe('Weitere Prozesse geben Arbeit an den Leiter (#745)', () => {
     (te as { anstossen(): void }).anstossen();
     const doc = { sha256: 'a'.repeat(64), mime: 'application/pdf', groesse: 10, name: 'brief.pdf', mappeId: 'm', id: 'd' };
     assert.equal((vs as unknown as { einreihen(x: unknown[]): number }).einreihen([doc]), 1);
+    // Neue Archivfassung (#1216): kommt über die Schnittstelle in jedem Prozess an, das Bild entsteht im Leiter.
+    assert.equal((vs as unknown as { ausArchiv(x: unknown[]): number }).ausArchiv([{ ...doc, mime: 'message/rfc822', name: 'Termin.eml' }]), 1);
     assert.equal(await (vs as unknown as { nachholen(x: unknown[]): Promise<number> }).nachholen([doc]), 2);
     d.ereignisse.wecke();
     assert.equal(await d.ereignisse.verteile(), 0, 'weitere Prozesse verteilen nie selbst');
@@ -242,7 +244,7 @@ describe('Weitere Prozesse geben Arbeit an den Leiter (#745)', () => {
     const s = await (si as unknown as { starte(a: string, v: string): Promise<{ lauf: unknown }> }).starte('manuell', 'lena@example.org');
     assert.deepEqual(s.lauf, lauf);
     assert.equal(lokal.anstossen + lokal.verteilt, 0, 'nichts läuft im eigenen Prozess');
-    assert.deepEqual(gemeldet.map(([n]) => n), ['texterkennung.anstossen', 'vorschau.einreihen', 'ereignisse.wecke', 'ereignisse.wecke']);
+    assert.deepEqual(gemeldet.map(([n]) => n), ['texterkennung.anstossen', 'vorschau.einreihen', 'vorschau.ausArchiv', 'ereignisse.wecke', 'ereignisse.wecke']);
     assert.deepEqual(gemeldet[1][1], [{ sha256: doc.sha256, mime: doc.mime, groesse: 10, name: 'brief.pdf' }], 'nur, was die Vorschau braucht');
     assert.deepEqual(gerufen.map(([n]) => n), ['spiegel', 'vorschau.nachholen', 'postfach.abrufen', 'eingang.pruefe', 'sicherung.starte']);
     // Spiegel vom Leiter: laeuft()/aktuellerLauf() ohne Warten.

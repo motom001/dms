@@ -25,7 +25,7 @@ A file may be up to 100 MB in size.
 
 ## Viewing and downloading {#ansehen-und-herunterladen}
 
-Next to every PDF and image (JPEG, PNG) there is a **small preview of the first page**. That way you recognise at a glance, even with meaningless names like "Scan_2026-10-12.pdf" or "IMG_4711.jpg", which is the invoice and which the photo of the meter. The image is created in the background shortly after uploading; until then – and for other files such as Word or Excel – the file extension is shown there. Only those who may see the document see the preview. The previews also appear next to the documents when **assigning a post**.
+Next to every PDF and image (JPEG, PNG) there is a **small preview of the first page**. That way you recognise at a glance, even with meaningless names like "Scan_2026-10-12.pdf" or "IMG_4711.jpg", which is the invoice and which the photo of the meter. The image is created in the background shortly after uploading; until then – and for other files such as Word or Excel – the file extension is shown there. If a file has an archive version (PDF/A, e.g. an **email**), the image shows its first page once it is ready; on hovering it then says "Preview from a package's converted version". Only those who may see the document see the preview. The previews also appear next to the documents when **assigning a post**.
 
 - **PDFs and images:** a click anywhere on the row shows the document **directly below it**, a second click closes it. Only one document is ever open. By keyboard: Tab to the name, then Enter. The icon **↗** opens it in a new browser tab.
 - **All other files** (e.g. Word, Excel) can only be downloaded and then opened in their program.
