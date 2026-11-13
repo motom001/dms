@@ -65,7 +65,7 @@ Deine Bestätigung gilt nur für **genau die Rechte, die du gesehen hast**. Änd
 
 **Nachträglich:** Unter **Werkbank → Pakete → *Paket*** stehen die Ergänzungen, die es dazu im Katalog gibt (z. B. **Weitere Sprachen** bei der Texterkennung), mit **Auswählen …** – danach derselbe Ablauf. Die Seite der [Texterkennung](texterkennung.md#weitere-sprachen) schlägt Sprachen vor, die in deinen Dokumenten vorkommen.
 
-Mappentypen aus Paketen tragen in **Werkbank → Mappentypen** den Hinweis **Paket …**. Du kannst sie danach wie jeden anderen Mappentyp anpassen.
+Mappentypen aus Paketen tragen in **Werkbank → Mappentypen** hinter dem Namen einen Chip mit Paket-Symbol und dem Namen des Pakets; ein Klick in der Seite des Mappentyps führt zum Paket. Du kannst sie danach wie jeden anderen Mappentyp anpassen.
 
 ### Über die Katalog-Webseite
 

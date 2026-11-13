@@ -18,7 +18,7 @@ You find them under **Workbench → Build the library → Automation templates**
 
 ## List and editor {#liste-und-editor}
 
-The middle lists all templates with **on/off**, origin (from Ablago, your own, from package), a short form (“On the chosen date → To do for the chosen person”) and the number of **open runs**. On the right you set:
+The middle lists all templates with **on/off**, origin as a chip (**Ablago** or the package's name; your own without a chip), a short form (“On the chosen date → To do for the chosen person”) and the number of **open runs**. On the right you set:
 
 | Field | Meaning |
 |---|---|
@@ -30,7 +30,7 @@ The middle lists all templates with **on/off**, origin (from Ablago, your own, f
 
 A card’s text knows the placeholders of [automations](automatisierungen.md) (`{titel}`, `{mappentyp}`, `{heute}`, `{datum}`, the fields of the folder type), plus `{eingabe}` (the text typed when applying), `{person}` (who applies it) and `{empfaenger}`. A template that asks for the text needs `{eingabe}` in a card.
 
-**Switch off** takes the template out of the “Folder” menu – runs already planned still happen. You can delete your own templates once no open runs depend on them; reset Ablago’s with **Reset to delivered version**.
+The **switch** at the top of the editor (off) takes the template out of the “Folder” menu – runs already planned still happen. You can delete your own templates once no open runs depend on them; reset Ablago’s with **Reset to delivered version**.
 
 Below:
 

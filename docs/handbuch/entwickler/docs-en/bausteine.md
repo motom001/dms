@@ -55,6 +55,8 @@ On a phone the finger hits, not the mouse pointer. So every control of a buildin
 | ⓘ at a locked `Knopf` | stays small to the eye; touch target 44 × 44 px |
 | `Speicherleiste` | all buttons on one line; “… delete” only shows its icon (the name stays for screen readers) |
 | `Reiter` | each tab at least 44 px high; the row scrolls sideways, the page does not |
+| `Schalter` | at least 44 px high, the label toggles too |
+| `PaketChip` as a link | stays small to the eye; invisible touch target 44 px high |
 
 **The rule:** touch targets never overlap – not in a row of buttons or a group of checkboxes either. Whoever uses a building block writes nothing for this; one-off solutions with `@media (pointer: coarse)` in `styles.css` are only left for places without a building block. New building blocks set their touch target in their own stylesheet, also only with `(pointer: coarse)`, so the desktop stays unchanged.
 
@@ -91,6 +93,8 @@ The workflow **Handbuch** takes the same screenshots in the jobs `bilder (de)` a
 | [Button](bausteine-knopf.md) | Every button: kinds main (blue), create (green, “+ …”), secondary, danger (with a confirmation), link; disabled in two forms, “working”, result and error at the button; plus the confirmation |
 | [Save bar](bausteine-speicherleiste.md) | At the bottom of every form: “… delete” on the left, state, “Discard” with a border and the blue main button; draft with Esc and a warning when leaving |
 | [Tabs](bausteine-reiter.md) | Tabs above some content, one active look, keyboard and `aria` following WAI-ARIA |
+| [Switch](bausteine-schalter.md) | Something is on or off (function, service, automation) – sliding switch; choices and options stay checkboxes |
+| [Package chip](bausteine-paketchip.md) | Origin from a package: icon and name after the name, tooltip with version, link to the package page |
 | [Inputs with a unit](bausteine-einheit.md) | Period (number and unit, singular/plural) and percentage (number with “%”) for the field kinds period and percentage |
 | [Table](bausteine-tabelle.md) | Rows with columns, each leading to a page; wide a table, narrow a list with the first two columns (field kind table) |
 | [Search](bausteine-suche.md) | The search field of all lists and the pattern “list in the middle: search field on top, filters below” with number of results, places found and package filter |

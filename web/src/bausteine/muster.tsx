@@ -14,6 +14,8 @@ import { BereicheMuster } from './bereiche/muster';
 import { FassungenMuster } from './fassungen/muster';
 import { SpeicherleisteMuster } from './speicherleiste/muster';
 import { ReiterMuster } from './reiter/muster';
+import { SchalterMuster } from './schalter/muster';
+import { PaketChipMuster } from './paketchip/muster';
 import { Rueckfragen } from './rueckfrage/Rueckfrage';
 import s from './muster.module.css';
 
@@ -32,6 +34,8 @@ const BAUSTEINE: Musterbereich[] = [
   { id: 'knopf', titel: () => t('oberflaeche.muster.knopf.titel'), text: () => t('oberflaeche.muster.knopf.text'), Muster: KnopfMuster },
   { id: 'speicherleiste', titel: () => t('oberflaeche.muster.leiste.titel'), text: () => t('oberflaeche.muster.leiste.text'), Muster: SpeicherleisteMuster },
   { id: 'reiter', titel: () => t('oberflaeche.muster.reiter.titel'), text: () => t('oberflaeche.muster.reiter.text'), Muster: ReiterMuster },
+  { id: 'schalter', titel: () => t('oberflaeche.muster.schalter.titel'), text: () => t('oberflaeche.muster.schalter.text'), Muster: SchalterMuster },
+  { id: 'paketchip', titel: () => t('oberflaeche.muster.paketchip.titel'), text: () => t('oberflaeche.muster.paketchip.text'), Muster: PaketChipMuster },
   { id: 'einheit', titel: () => t('oberflaeche.muster.einheit.titel'), text: () => t('oberflaeche.muster.einheit.text'), Muster: EinheitMuster },
   { id: 'tabelle', titel: () => t('oberflaeche.muster.tabelle.titel'), text: () => t('oberflaeche.muster.tabelle.text'), Muster: TabelleMuster },
   { id: 'suche', titel: () => t('oberflaeche.muster.suche.titel'), text: () => t('oberflaeche.muster.suche.text'), Muster: SucheMuster },

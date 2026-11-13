@@ -42,11 +42,10 @@ const ent = useEntwurf(gespeichert, e, { neu, zuruecksetzen: () => setE(gespeich
 | `formular` | `id` des Formulars, wenn die Leiste außerhalb steht (Editoren mit [Bereichen](bausteine-bereiche.md)) |
 | `weitere` | weitere Knöpfe vor „Verwerfen“ (z. B. „Als Standard festlegen“) |
 | `meldung`, `haupttext` | Meldung statt des Stands; eigene Beschriftung des Hauptknopfs (selten) |
-| `links` | freier Platz links – nur noch Bestand; „… löschen“ gehört nach `loeschen` |
 
 ## Bestand { #bestand }
 
-Die Mappe hat noch eine eigene Leiste in `MappeFormular.tsx` (grünes „Speichern“, kleines „Mappe löschen“); sie zieht in #1211 auf diesen Baustein um. In der Werkbank stehen „… löschen“-Knöpfe noch als roter Link unter `links`; die Bereichs-Issues #1213 und #1214 stellen sie auf `loeschen` um. `web/src/Speicherleiste.tsx` leitet auf den Baustein weiter, damit die Formulare ihren Import behalten.
+Die Mappe hat noch eine eigene Leiste in `MappeFormular.tsx` (grünes „Speichern“, „Mappe löschen“ als Link); sie zieht in #1211 auf diesen Baustein um. Alle Formulare der Werkbank nutzen `loeschen` (#1210: Mappentyp, Ansicht, Nummernkreis, Stempel, Design, Postfach, Automatisierung, Ablaufvorlage, Gleichbedeutende Wörter, Client-Secret im Anmeldeschutz); den früheren freien Platz `links` gibt es nicht mehr. `web/src/Speicherleiste.tsx` leitet auf den Baustein weiter, damit die Formulare ihren Import behalten.
 
 ![Bereich „Speicherleiste“ dunkel](bilder/muster-speicherleiste-dunkel.png){ loading=lazy }
 

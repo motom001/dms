@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { Schalter } from '../bausteine';
 import { api, type WebdavEinstellung, type WebdavStand } from '../api';
 import { Hilfe } from '../Hilfe';
 import { Speicherleiste, useEntwurf } from '../Speicherleiste';
@@ -51,8 +52,9 @@ export function WebdavPanel({ z }: { z: WebdavZustand }) {
       {!s.https && <div className="hinweis warn"><p>{tn('werkbank.webdav.die-adresse-von-ablago', { code: <code>{'https://'}</code> })}</p></div>}
       <form className="blatt" onSubmit={(x) => { x.preventDefault(); void speichern(); }} onKeyDown={ent.tasten}>
         <h2 className="h3">{t('werkbank.webdav.einstellungen')}</h2>
-        <label className="haken"><input id="webdav-aktiv" type="checkbox" checked={e.aktiv} onChange={(x) => setE({ ...e, aktiv: x.target.checked })} />
-          <span>{tn('werkbank.webdav.webdav-laufwerk-einschalten', { klein: <small className="leise">{tn('werkbank.webdav.ausgeschaltet-antwortet-mit-nicht', { code: <code>{'/webdav/'}</code> })}</small> })}</span></label>
+        {/* An/aus als Schalter (#1188); was „aus“ heißt, steht darunter. */}
+        <Schalter id="webdav-aktiv" an={e.aktiv} setze={(an) => setE({ ...e, aktiv: an })} beschriftung={t('werkbank.webdav.schalter')}
+          hinweis={tn('werkbank.webdav.ausgeschaltet-antwortet-mit-nicht', { code: <code>{'/webdav/'}</code> })} />
         {/* Stempel beim Lesen (#722): Vorgabe ist die mitgelieferte Vorlage; Pflicht-Stempel der Mappentypen gelten immer. */}
         <label className="eigenschaft"><span>{t('werkbank.webdav.stempel')} <Hilfe ort="webdav.stempel" /></span>
           <select id="webdav-stempel" value={e.stempel ?? ''} onChange={(x) => setE({ ...e, stempel: x.target.value || null })}>
@@ -67,7 +69,7 @@ export function WebdavPanel({ z }: { z: WebdavZustand }) {
       <div className="blatt">
         <h2 className="h3">{t('werkbank.webdav.stand')}</h2>
         <dl className="eigenschaften">
-          <dt>{t('werkbank.webdav.zustand')}</dt><dd>{s.einstellung.aktiv ? (s.einstellung.nurLesend ? t('werkbank.webdav.stand.nur-lesend') : t('werkbank.webdav.eingeschaltet')) : t('werkbank.webdav.ausgeschaltet')}</dd>
+          {/* Kein „Zustand: eingeschaltet“ mehr (#1188): Den zeigt der Schalter oben. */}
           <dt>{t('werkbank.webdav.stempel')}</dt><dd>{s.einstellung.stempel ? s.vorlagen.find((v) => v.id === s.einstellung.stempel)?.name ?? s.einstellung.stempel : t('werkbank.webdav.stempel.aus')}</dd>
           <dt>{t('werkbank.webdav.adresse-zum-einbinden')}</dt><dd><code>{s.adresse}</code></dd>
           <dt>{t('werkbank.webdav.anfragen-seit-dem-start')}</dt><dd>{s.anfragen}</dd>

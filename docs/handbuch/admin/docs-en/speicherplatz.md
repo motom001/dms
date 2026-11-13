@@ -148,7 +148,7 @@ Every shrunk document has the entry "PDF edited: shrunk from … to …" in its 
 
 ### Shrinking new PDFs automatically {#neue-pdfs-automatisch-verkleinern}
 
-Below it: **Shrink new PDFs when filing** above a size (default 5 MB) at a level. **The default is off.** Switched on, it applies to new PDFs from outside – uploading, [Intake folder](eingangsordner.md), [mailboxes](postfaecher.md), interface and [WebDAV](webdav.md) –, not to PDFs edited in Ablago. Then **only the shrunk PDF** is stored; the original doesn't go into Ablago. If it brings less than 10 % or the file can't be read, it is filed as it came. The entry "Document uploaded" in the history then says "Shrunk: automatically from … to …".
+Below it: the switch **Shrink new PDFs automatically** above a size (default 5 MB) at a level. **The default is off.** Switched on, it applies to new PDFs from outside – uploading, [Intake folder](eingangsordner.md), [mailboxes](postfaecher.md), interface and [WebDAV](webdav.md) –, not to PDFs edited in Ablago. Then **only the shrunk PDF** is stored; the original doesn't go into Ablago. If it brings less than 10 % or the file can't be read, it is filed as it came. The entry "Document uploaded" in the history then says "Shrunk: automatically from … to …".
 
 !!! note "Technology: no Ghostscript"
     Ablago shrinks without Ghostscript (whose licence is AGPL). The images are recalculated by **pdftoppm** from poppler (in the image anyway for text recognition and thumbnails), the PDF's structure is optimised by **qpdf** (Apache-2.0, in the image since version 0.93.0). Whoever builds their own image includes `apk add qpdf` – without qpdf shrinking also works, the files just get a little less small.

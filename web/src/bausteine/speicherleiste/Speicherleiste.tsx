@@ -96,8 +96,6 @@ export interface SpeicherleisteProps {
   speichern?: () => void;
   /** Fester Platz links für „… löschen“ (#1210). */
   loeschen?: SpeicherleisteLoeschen;
-  /** Freier Platz links (Bestand; „… löschen“ gehört nach `loeschen`). */
-  links?: ReactNode;
   /** Weitere Knöpfe rechts, vor „Verwerfen“ (z. B. „Als Standard festlegen“). */
   weitere?: ReactNode;
   meldung?: { art: string; text: string };
@@ -115,7 +113,7 @@ export interface SpeicherleisteProps {
  * Mappentyp-Editor). Links „… löschen“, in der Mitte der Status, rechts „Verwerfen“ und der Hauptknopf mit dem
  * Gegenstand im Namen. Ohne `speichern` ist der Hauptknopf ein Submit-Knopf des umgebenden Formulars.
  */
-export function Speicherleiste({ ent, gegenstand, sendet, ungueltig, speicherbar, speichern, loeschen, links, weitere, meldung, haupttext, formular }: SpeicherleisteProps) {
+export function Speicherleiste({ ent, gegenstand, sendet, ungueltig, speicherbar, speichern, loeschen, weitere, meldung, haupttext, formular }: SpeicherleisteProps) {
   const k = leistenknoepfe({ neu: ent.neu, geaendert: ent.geaendert, sendet, ungueltig, speicherbar }, gegenstand);
   // Beschriftung ohne „Speichere …“: Während des Sendens zeigt der Knopf „läuft“ mit diesem Text darüber.
   const ruhig = leistenknoepfe({ neu: ent.neu, geaendert: ent.geaendert, ungueltig, speicherbar }, gegenstand);
@@ -126,7 +124,6 @@ export function Speicherleiste({ ent, gegenstand, sendet, ungueltig, speicherbar
           <span className={s.loeschtext}>{loeschen.text}</span>
         </Knopf>
       )}
-      {links}
       <span className={`status ${meldung?.art === 'schlecht' ? 'schlecht' : ''}`} role="status">{meldung?.text ?? k.status}</span>
       <div className={`knoepfe ${s.knoepfe}`}>
         {weitere}

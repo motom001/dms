@@ -24,7 +24,7 @@ You share the folder `eingang` on the NAS for the scanner (SMB), e.g. as a subfo
 
 Under **Workbench → intake folder**:
 
-- **Check intake folder** – on or off (default: on).
+- **Intake folder** (switch) – on or off (default: on).
 - **Check interval** – how often Ablago looks, 5 to 3600 seconds (default: 30).
 - **After taking over** – delete the file or move it to `erledigt/`. Whoever sets up the intake folder anew is offered **delete**: the file is in the post afterwards anyway. If there already is an `erledigt/` and nothing was ever saved, moving stays as before.
 - **Skip duplicate files** – if exactly this file (same checksum) is already in Ablago, no post is created; the file is tidied away like one taken over and listed as "duplicate – skipped" (default: off).

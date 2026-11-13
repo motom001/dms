@@ -155,7 +155,7 @@ Unter **Werkbank → Anmeldeschutz → Anmeldung über einen Anbieter** trägst 
 - **Client-Secret** – leer lassen bei öffentlichen Clients, die kein Secret haben. Ist schon eines gespeichert, lässt ein leeres Feld es unverändert; **Secret löschen** entfernt es,
 - **Beschriftung des Knopfes** auf der Anmeldeseite.
 
-Dann klickst du auf **Verbindung prüfen**. Danach **Eingeschaltet – Knopf auf der Anmeldeseite** ankreuzen und speichern. Das Client-Secret liegt mit dem [Schlüssel von Ablago](verschluesselung.md) verschlüsselt in der Datenbank.
+Dann klickst du auf **Verbindung prüfen**. Danach den Schalter **Anmeldung über diesen Anbieter** einschalten und speichern. Das Client-Secret liegt mit dem [Schlüssel von Ablago](verschluesselung.md) verschlüsselt in der Datenbank.
 
 - **Zuordnung:** über die E-Mail-Adresse. Gibt es sie in Ablago nicht, lehnt das Ablago ab – außer **Unbekannte Adressen als neue Benutzer anlegen** ist an; dann entsteht ein Benutzer – mit „Gesamte Verwaltung“ oder ohne Verwaltungsrecht, je nach **Neue Benutzer verwalten**. Bei Entra ID dient auch der Anmeldename (UPN) als Adresse.
 - **Gruppe für „Gesamte Verwaltung“:** Ist sie gesetzt, folgt „Gesamte Verwaltung“ bei jeder Anmeldung der Gruppe: Wer in der Gruppe ist, bekommt sie, wer nicht mehr dazugehört, verliert sie. Die letzte Person mit „Gesamte Verwaltung“ behält sie. Eine Auswahl einzelner Bereiche bleibt unberührt (siehe [Wer darf Ablago verwalten?](verwalten.md)).

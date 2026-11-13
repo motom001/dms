@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { Schalter } from '../bausteine';
 import { setzeErlaubteSprachen, sprachname } from '../../../shared/src/beschriftung';
 import { AUSGANGSSPRACHE, EINGEBAUTE_SPRACHEN, sprache } from '../../../shared/src/sprache';
 import { Link } from '../ort';
@@ -127,10 +128,7 @@ function InhalteUebersetzen() {
       {meldung && <div className={`hinweis ${meldung.art}`} role="status"><p>{meldung.text}</p></div>}
       {s && !s.pakete.length && <p className="leise">{t('werkbank.uebersetzen.kein-paket')}</p>}
       {s && s.pakete.length > 0 && <>
-        <label className="haken">
-          <input type="checkbox" id="uebersetzen-an" checked={s.einstellung.an} disabled={sendet} onChange={(x) => void setze({ an: x.target.checked })} />
-          <span>{t('werkbank.uebersetzen.an')}</span>
-        </label>
+        <Schalter id="uebersetzen-an" an={s.einstellung.an} gesperrt={sendet} setze={(an) => setze({ an })} beschriftung={t('werkbank.uebersetzen.an')} />
         <label className="eigenschaft"><span>{t('werkbank.uebersetzen.paket')}</span>
           <select id="uebersetzen-paket" value={s.einstellung.paket ?? ''} disabled={sendet || !s.einstellung.an} onChange={(x) => void setze({ paket: x.target.value || null, abfluss: false })}>
             <option value="">{t('werkbank.uebersetzen.automatisch')}</option>

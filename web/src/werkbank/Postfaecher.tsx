@@ -8,7 +8,7 @@ import { Hilfe } from '../Hilfe';
 import { Listenkopf } from '../Listenkopf';
 import { rueckfrage } from '../rueckfrage';
 import { gebietsschema } from '../../../shared/src/sprache';
-import { GeloeschteEintraege, Bereich, Fassungen, fehlerBereiche, Knopf, KnopfLink, useBereiche, type BereichListe, type Klappe, type KnopfErgebnis } from '../bausteine';
+import { GeloeschteEintraege, Bereich, Fassungen, fehlerBereiche, Knopf, KnopfLink, Schalter, useBereiche, type BereichListe, type Klappe, type KnopfErgebnis } from '../bausteine';
 
 /**
  * Werkbank → Postfächer (#196): Mails per IMAP abholen, jede Mail wird neue Post.
@@ -168,7 +168,7 @@ export function PostfachEditor({ z, id }: { z: PostfachZustand; id: string }) {
     } finally { await z.laden(); }
   }
   async function loeschen() {
-    if (!vorhanden || !(await rueckfrage({ titel: t('werkbank.postfaecher.postfach-entfernen', { name: vorhanden.name }), text: t('werkbank.postfaecher.die-mails-im-postfach'), ja: t('werkbank.postfaecher.entfernen'), gefahr: true }))) return;
+    if (!vorhanden) return;
     try { await api.postfachLoeschen(vorhanden.id); await z.laden(); loeseWache(); geheZu('/werkbank/postfaecher'); } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); }
   }
 
@@ -187,7 +187,7 @@ export function PostfachEditor({ z, id }: { z: PostfachZustand; id: string }) {
       <form id="pf-formular" className="editorform" onSubmit={absenden} onKeyDown={ent.tasten}>
         <Bereich id="grunddaten" titel={t('werkbank.postfaecher.bereich.grunddaten')} klappe={klappe('grunddaten')}
           kurz={[e.name, e.aktiv ? t('werkbank.postfaecher.bereich.an') : t('werkbank.postfaecher.aus')].filter(Boolean).join(' · ')}>
-          <label className="haken"><input id="pf-aktiv" type="checkbox" checked={e.aktiv} onChange={(x) => setze({ aktiv: x.target.checked })} /><span>{t('werkbank.postfaecher.abrufen')}</span></label>
+          <Schalter id="pf-aktiv" an={e.aktiv} setze={(an) => setze({ aktiv: an })} beschriftung={t('werkbank.postfaecher.schalter')} />
           <div className="raster">
             <label className="eigenschaft"><span>{t('werkbank.postfaecher.name')}</span><input id="pf-name" value={e.name} maxLength={80} placeholder={t('werkbank.postfaecher.z-b-rechnungen')} onChange={(x) => setze({ name: x.target.value })} /></label>
             <label className="eigenschaft"><span>{tn('werkbank.postfaecher.fuer', { klein: <small>{t('werkbank.postfaecher.optional-steht-an-jeder')}</small> })}</span>
@@ -229,7 +229,11 @@ export function PostfachEditor({ z, id }: { z: PostfachZustand; id: string }) {
       {vorhanden && <PostfachStand p={vorhanden} klappe={klappe('stand')} geaendert={ent.geaendert} abrufen={abrufen} />}
       {vorhanden && <Fassungen art="postfach" eintrag={vorhanden.id} stand={JSON.stringify(gespeichert)} nachher={() => z.laden()} klappe={klappe('fassungen')} />}
       <Speicherleiste ent={ent} gegenstand={t('werkbank.postfaecher.postfach')} sendet={sendet} formular="pf-formular"
-        links={vorhanden && <Knopf art="link" className="gefahr" onClick={loeschen}>{t('werkbank.postfaecher.postfach-entfernen-2')}</Knopf>} />
+        loeschen={vorhanden ? {
+          text: t('werkbank.postfaecher.postfach-entfernen-2'),
+          rueckfrage: { titel: t('werkbank.postfaecher.postfach-entfernen', { name: vorhanden.name }), text: t('werkbank.postfaecher.die-mails-im-postfach'), ja: t('werkbank.postfaecher.entfernen') },
+          onClick: loeschen,
+        } : undefined} />
     </div>
   );
 }

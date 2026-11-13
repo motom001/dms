@@ -1561,7 +1561,7 @@
       "count": 13
     },
     "ablago/bausteine": {
-      "count": 83
+      "count": 82
     },
     "complexity": {
       "count": 3
@@ -1694,7 +1694,7 @@
   },
   "web/src/werkbank/Ablaufvorlagen.tsx": {
     "ablago/knopf-farben": {
-      "count": 2
+      "count": 1
     }
   },
   "web/src/werkbank/AbsenderBereinigen.tsx": {
@@ -1712,7 +1712,7 @@
       "count": 3
     },
     "ablago/bausteine": {
-      "count": 14
+      "count": 12
     },
     "react-hooks/exhaustive-deps": {
       "count": 1
@@ -1720,7 +1720,7 @@
   },
   "web/src/werkbank/Ansicht.tsx": {
     "ablago/bausteine": {
-      "count": 4
+      "count": 3
     }
   },
   "web/src/werkbank/Archiv.tsx": {
@@ -1748,10 +1748,7 @@
   },
   "web/src/werkbank/Automatisierungen.tsx": {
     "ablago/bausteine": {
-      "count": 54
-    },
-    "ablago/knopf-farben": {
-      "count": 1
+      "count": 53
     },
     "complexity": {
       "count": 2
@@ -1817,16 +1814,13 @@
     "ablago/bausteine": {
       "count": 10
     },
-    "ablago/knopf-farben": {
-      "count": 1
-    },
     "complexity": {
       "count": 1
     }
   },
   "web/src/werkbank/Eingangsordner.tsx": {
     "ablago/bausteine": {
-      "count": 9
+      "count": 8
     },
     "complexity": {
       "count": 1
@@ -1864,7 +1858,7 @@
   },
   "web/src/werkbank/MailVersand.tsx": {
     "ablago/bausteine": {
-      "count": 13
+      "count": 12
     },
     "complexity": {
       "count": 1
@@ -1876,9 +1870,6 @@
   "web/src/werkbank/Nummernkreise.tsx": {
     "ablago/bausteine": {
       "count": 10
-    },
-    "ablago/knopf-farben": {
-      "count": 1
     },
     "complexity": {
       "count": 2
@@ -1957,10 +1948,7 @@
   },
   "web/src/werkbank/Postfaecher.tsx": {
     "ablago/bausteine": {
-      "count": 28
-    },
-    "ablago/knopf-farben": {
-      "count": 1
+      "count": 27
     },
     "complexity": {
       "count": 2
@@ -1983,7 +1971,7 @@
   },
   "web/src/werkbank/Sicherung.tsx": {
     "ablago/bausteine": {
-      "count": 12
+      "count": 10
     },
     "complexity": {
       "count": 2
@@ -1996,7 +1984,7 @@
   },
   "web/src/werkbank/Sichten.tsx": {
     "ablago/bausteine": {
-      "count": 39
+      "count": 38
     },
     "complexity": {
       "count": 1
@@ -2012,15 +2000,12 @@
   },
   "web/src/werkbank/Sprachen.tsx": {
     "ablago/bausteine": {
-      "count": 4
+      "count": 3
     }
   },
   "web/src/werkbank/Stempel.tsx": {
     "ablago/bausteine": {
       "count": 10
-    },
-    "ablago/knopf-farben": {
-      "count": 1
     }
   },
   "web/src/werkbank/Systemkonten.tsx": {
@@ -2053,7 +2038,7 @@
   },
   "web/src/werkbank/Verkleinern.tsx": {
     "ablago/bausteine": {
-      "count": 9
+      "count": 8
     },
     "complexity": {
       "count": 1
@@ -2069,7 +2054,7 @@
   },
   "web/src/werkbank/Vollexport.tsx": {
     "ablago/bausteine": {
-      "count": 8
+      "count": 7
     },
     "complexity": {
       "count": 1
@@ -2085,7 +2070,7 @@
   },
   "web/src/werkbank/Webdav.tsx": {
     "ablago/bausteine": {
-      "count": 3
+      "count": 2
     }
   },
   "web/src/werkbank/Werkbank.tsx": {
@@ -2093,11 +2078,6 @@
       "count": 1
     },
     "max-lines-per-function": {
-      "count": 1
-    }
-  },
-  "web/src/werkbank/Woerter.tsx": {
-    "ablago/knopf-farben": {
       "count": 1
     }
   },

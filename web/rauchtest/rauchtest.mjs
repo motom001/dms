@@ -151,7 +151,8 @@ function knopfWaechter() {
  * Rauchtest scheitern. `text` und `pfad` sind reguläre Ausdrücke.
  */
 const KNOPF_AUSNAHMEN = [
-  { art: 'anlegen-ohne-plus', text: /^Notfallkontakt hinzufügen$/, pfad: /^\/werkbank\/verschluesselung$/, issue: '#1214' },
+  // Werkbank → Verschlüsselung und derselbe Abschnitt im Einrichtungsassistenten (Pfad „/“).
+  { art: 'anlegen-ohne-plus', text: /^Notfallkontakt hinzufügen$/, pfad: /^\/(werkbank\/verschluesselung)?$/, issue: '#1214' },
 ];
 const knopfAusnahme = (f) => KNOPF_AUSNAHMEN.find((a) => a.art === f.art && a.text.test(f.text) && (!a.pfad || a.pfad.test(f.pfad)));
 const genutzteAusnahmen = new Set();
@@ -616,7 +617,8 @@ rauchtest('Werkbank: Sprungleiste und Bereiche in allen Editoren (#1000)', { als
   await s.goto(BASIS + '/werkbank/postfaecher/neu');
   const pf = bearbeitung.getByRole('navigation', { name: 'Bereiche des Postfachs' });
   await pf.getByRole('button', { name: 'Abholen', exact: true }).waitFor();
-  await bearbeitung.getByRole('checkbox', { name: 'Automatisch abrufen' }).waitFor();
+  // An/aus als Schalter (#1188), nicht als Haken.
+  await bearbeitung.getByRole('switch', { name: 'Automatischer Abruf' }).waitFor();
   assert.equal(await pf.getByRole('button', { name: 'Stand', exact: true }).count(), 0, 'Ein neues Postfach hat noch keinen Stand');
   await bearbeitung.getByRole('textbox', { name: 'Server' }).fill('imap.example.org');
   await s.getByRole('button', { name: 'Postfach anlegen' }).click();
@@ -1041,7 +1043,7 @@ test('Musterseite der Bausteine: Bilder, axe ohne Verstoß (#967)', { timeout: 3
     k.on('weberror', (e) => fehler.push(`Fehler in der Seite: ${e.error().message}`));
   };
   const { bilder, verstoesse } = await musterAufnehmen(browser, { basis: BASIS, ziel: MUSTERORDNER, beobachte });
-  assert.equal(bilder.length, 18, `Bilder der Musterseite: ${bilder.join(', ')}`);
+  assert.equal(bilder.length, 22, `Bilder der Musterseite: ${bilder.join(', ')}`);
   assert.deepEqual(verstoesse, [], `axe meldet Verstöße auf der Musterseite:\n${verstoesse.join('\n')}`);
   assert.deepEqual(fehler, [], 'Fehler im Browser auf der Musterseite');
 });

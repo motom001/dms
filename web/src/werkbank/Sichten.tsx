@@ -19,13 +19,12 @@ import { Hilfe } from '../Hilfe';
 import { Listenkopf } from '../Listenkopf';
 import { elternkette, SichtBerechtigungen, SichtTestlauf } from './SichtRechte';
 import { sichtRegelProblem, sichtRegelwerkVon } from '../../../shared/src/sichtrechte';
-import { rueckfrage } from '../rueckfrage';
 import { ANSICHT_SYMBOLE } from '../../../shared/src/ansichtsymbole';
 import { AnsichtSymbol } from '../Symbol';
 import { t, tn } from '../sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
-import { GeloeschteEintraege, Bereich, Fassungen, FeldGruppe, Fundstellen, Hervorgehoben, KeineTreffer, KnopfLink, ListenSuche, PaketFilter, Suchfeld, useBereiche, useListenSuche, ZeitraumEingabe, type Klappe, type ZeitraumRoh } from '../bausteine';
-import { paketVonSicht, paketWahl, quellenSicht } from './listensuche';
+import { GeloeschteEintraege, Bereich, Fassungen, FeldGruppe, Fundstellen, Hervorgehoben, KeineTreffer, KnopfLink, ListenSuche, PaketChip, PaketFilter, Suchfeld, useBereiche, useListenSuche, ZeitraumEingabe, type Klappe, type ZeitraumRoh } from '../bausteine';
+import { paketHerkunft, paketVonSicht, paketWahl, quellenSicht } from './listensuche';
 import type { InstalliertesPaket } from '../../../shared/src/pakete';
 import type { Zeitraumeinheit } from '../../../shared/src/feldarten';
 
@@ -136,7 +135,7 @@ export function SichtenListe({ offen, pakete = [] }: { offen?: string; pakete?: 
               const f = fund.get(s.id);
               const inhalt = (
                 <Link to={`/werkbank/sichten/${s.id}`} className={`eintrag werk ${offen === s.id ? 'an' : ''}`}>
-                    <span className="titel">{tiefe > 0 && !such.aktiv && <span className="leise" aria-hidden="true">└ </span>}<Hervorgehoben teile={f?.titel} text={s.name} /></span>
+                    <span className="titel">{tiefe > 0 && !such.aktiv && <span className="leise" aria-hidden="true">└ </span>}<Hervorgehoben teile={f?.titel} text={s.name} /><PaketChip paket={paketHerkunft(paketVonSicht(s, pakete), pakete)} inLink /></span>
                     <span className="unter">
                       {zeigtAlleTypen(s) ? t('werkbank.sichten.alle-mappentypen') : eintrag2.length ? eintrag2.map((x) => x.name).join(', ') : t('werkbank.sichten.nur-zum-gruppieren')}
                       {s.bedingungen.length > 0 && t('werkbank.sichten.bedingungen', { anzahl: s.bedingungen.length })}
@@ -251,8 +250,6 @@ export function SichtEditor({ id }: { id: string }) {
     finally { setSendet(false); }
   }
   async function loeschen() {
-    const hinweis = untersichten ? t('werkbank.sichten.ihre-unteransichten-ruecken-eine', { anzahl: untersichten }) : '';
-    if (!(await rueckfrage({ titel: t('werkbank.sichten.ansicht-loeschen', { name: vorhanden!.name }), text: t('werkbank.sichten.mappen-werden-nicht-geloescht', { hinweis }), ja: t('werkbank.sichten.loeschen'), gefahr: true }))) return;
     try { await api.sichtLoeschen(id); loeseWache(); await d.neuLaden(); geheZu('/werkbank/sichten'); }
     catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); }
   }
@@ -331,7 +328,11 @@ export function SichtEditor({ id }: { id: string }) {
       </div>
 
       <Speicherleiste ent={ent} gegenstand={t('werkbank.sichten.ansicht')} sendet={sendet} meldung={meldung}
-        links={!neu && <button type="button" className="textknopf gefahr" onClick={() => void loeschen()}>{t('werkbank.sichten.ansicht-loeschen-2')}</button>} />
+        loeschen={!neu ? {
+          text: t('werkbank.sichten.ansicht-loeschen-2'),
+          rueckfrage: { titel: t('werkbank.sichten.ansicht-loeschen', { name: vorhanden!.name }), text: t('werkbank.sichten.mappen-werden-nicht-geloescht', { hinweis: untersichten ? t('werkbank.sichten.ihre-unteransichten-ruecken-eine', { anzahl: untersichten }) : '' }), ja: t('werkbank.sichten.loeschen') },
+          onClick: loeschen,
+        } : undefined} />
     </form>
   );
 }

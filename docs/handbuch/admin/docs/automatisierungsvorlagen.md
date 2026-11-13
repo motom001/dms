@@ -18,7 +18,7 @@ Du findest sie unter **Werkbank → Ablage aufbauen → Automatisierungsvorlagen
 
 ## Liste und Editor
 
-In der Mitte stehen alle Vorlagen mit **an/aus**, Herkunft (von Ablago, eigene, aus Paket), Kurzform („Am gewählten Datum → Aufgabe an die gewählte Person“) und der Zahl der **offenen Abläufe**. Rechts stellst du ein:
+In der Mitte stehen alle Vorlagen mit **an/aus**, Herkunft als Chip (**Ablago** oder der Name des Pakets; eigene ohne Chip), Kurzform („Am gewählten Datum → Aufgabe an die gewählte Person“) und der Zahl der **offenen Abläufe**. Rechts stellst du ein:
 
 | Feld | Bedeutung |
 |---|---|
@@ -30,7 +30,7 @@ In der Mitte stehen alle Vorlagen mit **an/aus**, Herkunft (von Ablago, eigene, 
 
 Im Text einer Karte gibt es die Platzhalter wie bei den [Automatisierungen](automatisierungen.md) (`{titel}`, `{mappentyp}`, `{heute}`, `{datum}`, die Felder des Mappentyps), dazu `{eingabe}` (der Text, den man beim Anwenden schreibt), `{person}` (wer anwendet) und `{empfaenger}`. Eine Vorlage, die nach dem Text fragt, braucht `{eingabe}` in einer Karte.
 
-**Ausschalten** nimmt die Vorlage aus dem Menü „Mappe“ – schon geplante Abläufe laufen trotzdem. Eigene Vorlagen löschst du, sobald keine offenen Abläufe mehr an ihr hängen; Vorlagen von Ablago setzt du mit **Auf Auslieferung zurücksetzen** zurück.
+Der **Schalter** oben im Editor (aus) nimmt die Vorlage aus dem Menü „Mappe“ – schon geplante Abläufe laufen trotzdem. Eigene Vorlagen löschst du, sobald keine offenen Abläufe mehr an ihr hängen; Vorlagen von Ablago setzt du mit **Auf Auslieferung zurücksetzen** zurück.
 
 Darunter:
 

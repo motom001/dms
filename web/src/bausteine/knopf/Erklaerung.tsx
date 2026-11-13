@@ -8,7 +8,7 @@ import s from './Knopf.module.css';
  * (#423, #424): Grund, Liste der betroffenen Einträge, „Stattdessen“ mit Knöpfen.
  *
  * Der Knopf ist gestrichelt mit Schloss; daneben steht ein kleines ⓘ. Klick auf den Knopf oder das ⓘ öffnet die
- * Erklärung direkt am Knopf, Esc und ein Klick daneben schließen sie (Esc gibt den Fokus an den Knopf zurück). Für
+ * Erklärung direkt am Knopf (darüber), Esc und ein Klick daneben schließen sie (Esc gibt den Fokus an den Knopf zurück). Für
  * Screenreader hängt der Grund am Knopf (`aria-describedby`), auch wenn die Erklärung zu ist. Kein „?“: Das führt ins
  * Handbuch (C7) – ⓘ erklärt genau diesen Fall in dieser Ablage.
  */
@@ -27,17 +27,21 @@ export interface KnopfSperre {
 
 const klassen = (...k: Array<string | false | undefined | null>) => k.filter(Boolean).join(' ');
 
-/** Lage der Erklärung: unter dem Knopf, oben, wenn unten kein Platz ist; waagerecht nie über den Bildschirmrand. */
+/**
+ * Lage der Erklärung (#1210, Wunsch Thomas): über dem Knopf – so verlängert sie am Ende der Seite die Seite nicht.
+ * Nach unten nur, wenn oben im sichtbaren Bereich nicht genug Platz ist (und unten mehr). Waagerecht nie über den
+ * Bildschirmrand.
+ */
 function useLage(offen: boolean, gruppe: RefObject<HTMLSpanElement | null>, feld: RefObject<HTMLDivElement | null>) {
-  const [lage, setLage] = useState({ oben: false, versatz: 0 });
+  const [lage, setLage] = useState({ oben: true, versatz: 0 });
   useLayoutEffect(() => {
     if (!offen || !gruppe.current || !feld.current || typeof window === 'undefined') return;
     const g = gruppe.current.getBoundingClientRect();
     const f = feld.current.getBoundingClientRect();
     const rand = 16;
-    // Nur, wenn der Knopf im Bild steht (z. B. in der Speicherleiste am unteren Rand): Eine schon offen gezeichnete
-    // Erklärung weiter unten auf der Seite (Musterseite) öffnet sich nach unten, wo Platz ist.
-    const oben = g.bottom <= window.innerHeight && g.bottom + f.height + 8 > window.innerHeight && g.top - f.height - 8 > 0;
+    const platzOben = g.top - 8;
+    const platzUnten = window.innerHeight - g.bottom - 8;
+    const oben = platzOben >= f.height || platzOben >= platzUnten;
     let versatz = 0;
     if (g.left + f.width > window.innerWidth - rand) versatz = window.innerWidth - rand - f.width - g.left;
     if (g.left + versatz < rand) versatz = rand - g.left;

@@ -14,6 +14,7 @@ import { uebergeordneterTyp } from '../../../shared/src/teile';
 import { t } from '../sprache';
 
 type Pakete = readonly Pick<InstalliertesPaket, 'id' | 'name' | 'typen' | 'sichten'>[];
+type PaketeMitVersion = readonly Pick<InstalliertesPaket, 'id' | 'name' | 'version'>[];
 
 /** Paket, aus dem ein Mappentyp stammt: das installierte Paket, das ihn mitgebracht hat, sonst der Teil vor „:“ der Kennung (#1084). */
 export function paketVonTyp(typ: Pick<Mappentyp, 'id' | 'paket'>, pakete: Pakete): string | null {
@@ -37,6 +38,12 @@ export function paketVonKreis(k: Pick<NummernkreisAnsicht, 'verwendet'>, typen: 
 }
 /** Name eines Pakets zum Anzeigen (unbekannte Id: die Id selbst). */
 export const paketName = (id: string, pakete: Pakete) => pakete.find((p) => p.id === id)?.name ?? id;
+/** Herkunft für den Baustein PaketChip (#1192): Name und Version aus den installierten Paketen; ohne Id nichts. */
+export function paketHerkunft(id: string | null | undefined, pakete: PaketeMitVersion) {
+  if (!id) return null;
+  const p = pakete.find((x) => x.id === id);
+  return { id, name: p?.name ?? id, version: p?.version ?? null };
+}
 /** Pakete für den Filter: die Ids, die in der Liste vorkommen, mit Namen, nach Namen sortiert. */
 export const paketWahl = (ids: readonly string[], pakete: Pakete) =>
   ids.map((id) => ({ id, name: paketName(id, pakete) })).sort((a, b) => a.name.localeCompare(b.name));

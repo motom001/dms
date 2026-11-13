@@ -84,6 +84,8 @@ nav:
       - Knopf: bausteine-knopf.md
       - Speicherleiste: bausteine-speicherleiste.md
       - Reiter: bausteine-reiter.md
+      - Schalter: bausteine-schalter.md
+      - PaketChip: bausteine-paketchip.md
       - Eingaben mit Einheit: bausteine-einheit.md
       - Tabelle: bausteine-tabelle.md
       - Suche: bausteine-suche.md

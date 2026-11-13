@@ -36,7 +36,7 @@
   "werkbank.titel": "Suche: Tippfehler und Wörterverzeichnis",
   "werkbank.text": "Wie die Suche mit Tippfehlern, anderen Schreibweisen und gleichbedeutenden Wörtern umgeht. Umlaute (Gebühr, Gebuhr), ß (Straße, Strasse) und Bindestriche (Kfz-Versicherung, Kfzversicherung) gleicht die Suche immer aus.",
   "werkbank.unscharf": "Tippfehler",
-  "werkbank.unscharf.an": "Bei keinem Treffer ähnliche Schreibweisen zeigen und „Meintest du …?“ vorschlagen",
+  "werkbank.unscharf.schalter": "Ähnliche Schreibweisen („Meintest du …?“)",
   "werkbank.unscharf.text": "Findet die Suche nichts, sucht sie mit ähnlichen Wörtern aus deiner Ablage weiter, z. B. „Waschmaschine“ statt „Waschmaschiene“. Genaue Treffer gehen immer vor.",
   "werkbank.woerter_one": "Das Wörterverzeichnis kennt {anzahl} Wort.",
   "werkbank.woerter_other": "Das Wörterverzeichnis kennt {anzahl} Wörter.",

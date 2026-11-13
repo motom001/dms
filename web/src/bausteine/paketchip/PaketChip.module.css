@@ -1,0 +1,8 @@
+/* PaketChip (#1192): wie .chip (styles.css), mit Paket-Symbol; als Link mit Akzent beim Darüberfahren. Nur Tokens. */
+.chip { display: inline-flex; align-items: center; gap: 4px; margin-left: 6px; padding: 1px 8px; border: 1px solid var(--linie); border-radius: 999px; background: var(--senke); color: var(--leise); font-size: calc(11.5px * var(--skala, 1)); font-weight: 600; line-height: 1.5; white-space: nowrap; vertical-align: middle; text-decoration: none; }
+.symbol { width: 1em; height: 1em; flex: none; }
+.link { cursor: pointer; }
+.link:hover { border-color: var(--akzent); color: var(--akzent); }
+.link:focus-visible { outline: 2px solid var(--akzent); outline-offset: 2px; }
+/* Am Handy 44 px Tippfläche für den Link, optisch klein (#1027). */
+@media (pointer: coarse) { .link { position: relative; } .link::before { content: ""; position: absolute; inset: -12px -4px; } }

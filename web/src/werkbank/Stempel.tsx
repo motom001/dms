@@ -3,7 +3,6 @@ import { api } from '../api';
 import { useDaten } from '../daten';
 import { geheZu, Link, loeseWache } from '../ort';
 import { Listenkopf } from '../Listenkopf';
-import { rueckfrage } from '../rueckfrage';
 import { Speicherleiste, useEntwurf, useGespeichertNachziehen } from '../Speicherleiste';
 import { merkeStempelVorlagen } from '../ablage/Stempel';
 import { beispielWerte, PlatzhalterKnoepfe, StempelVorschau } from '../ablage/StempelVorschau';
@@ -111,7 +110,6 @@ export function StempelEditor({ z, id }: { z: StempelZustand; id: string }) {
     } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); b.oeffne(['grunddaten']); } finally { setSendet(false); }
   }
   async function loeschen() {
-    if (!(await rueckfrage({ titel: t('werkbank.stempel.vorlage-loeschen', { name: v!.name }), text: t('werkbank.stempel.bereits-weitergegebene-kopien'), ja: t('werkbank.stempel.loeschen'), gefahr: true }))) return;
     try { z.setListe(await api.stempelVorlageLoeschen(v!.id)); loeseWache(); geheZu('/werkbank/stempel', true); } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); }
   }
   // Fehler stehen bei Name und Text – also in den Grunddaten; ebenso ein Fehler beim Speichern (#1000).
@@ -148,7 +146,12 @@ export function StempelEditor({ z, id }: { z: StempelZustand; id: string }) {
       )}
       {v && <Fassungen art="stempel" eintrag={v.id} stand={JSON.stringify(gespeichert)} nachher={() => z.laden()} klappe={b.klappe('fassungen')} />}
       <Speicherleiste ent={ent} gegenstand={t('werkbank.stempel.vorlage')} sendet={sendet} ungueltig={Object.keys(fehler).length > 0}
-        links={!neu && <Knopf art="link" className="gefahr" gesperrt={genutzt.length > 0 && t('werkbank.stempel.ein-mappentyp-verwendet-sie')} onClick={loeschen}>{t('werkbank.stempel.vorlage-loeschen-2')}</Knopf>} />
+        loeschen={!neu ? {
+          text: t('werkbank.stempel.vorlage-loeschen-2'),
+          rueckfrage: { titel: t('werkbank.stempel.vorlage-loeschen', { name: v!.name }), text: t('werkbank.stempel.bereits-weitergegebene-kopien'), ja: t('werkbank.stempel.loeschen') },
+          gesperrt: genutzt.length > 0 && t('werkbank.stempel.ein-mappentyp-verwendet-sie'),
+          onClick: loeschen,
+        } : undefined} />
     </form>
   );
 }

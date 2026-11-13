@@ -42,11 +42,10 @@ const ent = useEntwurf(gespeichert, e, { neu, zuruecksetzen: () => setE(gespeich
 | `formular` | `id` of the form when the bar is outside it (editors with [areas](bausteine-bereiche.md)) |
 | `weitere` | further buttons before “Discard” (e.g. “Set as default”) |
 | `meldung`, `haupttext` | message instead of the state; own label for the main button (rare) |
-| `links` | free place on the left – existing code only; “… delete” belongs in `loeschen` |
 
 ## Existing code { #bestand }
 
-The folder still has its own bar in `MappeFormular.tsx` (green “Save”, small “Delete folder”); it moves to this building block in #1211. In the Workbench, “… delete” buttons are still red links under `links`; the area issues #1213 and #1214 convert them to `loeschen`. `web/src/Speicherleiste.tsx` forwards to the building block so the forms keep their import.
+The folder still has its own bar in `MappeFormular.tsx` (green “Save”, “Delete folder” as a link); it moves to this building block in #1211. All Workbench forms use `loeschen` (#1210: folder type, view, number sequence, stamp, design, mailbox, automation, workflow template, synonyms, client secret in sign-in protection); the former free place `links` is gone. `web/src/Speicherleiste.tsx` forwards to the building block so the forms keep their import.
 
 ![“Save bar” section, dark](bilder/muster-speicherleiste-dunkel.png){ loading=lazy }
 

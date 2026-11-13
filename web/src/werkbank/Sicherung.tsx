@@ -1,4 +1,4 @@
-import { Knopf } from '../bausteine';
+import { Knopf, Schalter } from '../bausteine';
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { Symbol } from '../Symbol';
 import { api, type ExternStand, type ExternZustand, type Notfallblattstand, type ProbeStand, type SicherungEintrag, type SicherungsPlan, type SicherungStand, type SicherungsZustand, type WhLauf } from '../api';
@@ -356,7 +356,7 @@ function Zeitplan({ plan, notfallblatt, mitNotfallblatt, gespeichert }: { plan: 
   return (
     <form className="blatt" id="zeitplan" onSubmit={(x) => { x.preventDefault(); void speichern(); }} onKeyDown={ent.tasten}>
       <h2 className="h3">{t('werkbank.sicherung.zeitplan-und-aufbewahrung')} <Hilfe ort="sicherung.zeitplan" /></h2>
-      <label className="haken"><input type="checkbox" checked={p.aktiv} disabled={!p.aktiv && !notfallblatt} onChange={(e) => setP({ ...p, aktiv: e.target.checked })} /><span>{t('werkbank.sicherung.automatisch-sichern')}</span></label>
+      <Schalter an={p.aktiv} gesperrt={!p.aktiv && !notfallblatt} setze={(an) => setP({ ...p, aktiv: an })} beschriftung={t('werkbank.sicherung.schalter')} />
       {/* #993 (Thomas 10.11.2026): ohne das Wort „Notfallblatt“; der Link nur für die, die die Verschlüsselung verwalten. */}
       {!notfallblatt && !p.aktiv && <p className="leise klein">{t('werkbank.sicherung.erst-wenn-verschluesselung-fertig')}{' '}
         {mitNotfallblatt ? <Link to={NOTFALLBLATT_SEITE} className="knopf klein">{t('werkbank.sicherung.zur-verschluesselung')}</Link> : t('werkbank.sicherung.keine-berechtigung-verschluesselung')}</p>}
@@ -419,7 +419,7 @@ function Probe({ stand, lauf, sicherungen, gesperrt, neuLaden }: { stand: ProbeS
       </dl>
       {lauf?.art === 'probe' && (laeuft || lauf.status === 'fehler') && <Schritte schritte={lauf.schritte} />}
       <div className="raster">
-        <label className="haken"><input type="checkbox" checked={plan.aktiv} onChange={(e) => setPlan({ ...plan, aktiv: e.target.checked })} /><span>{t('werkbank.sicherung.woechentlich-automatisch')}</span></label>
+        <Schalter an={plan.aktiv} setze={(an) => setPlan({ ...plan, aktiv: an })} beschriftung={t('werkbank.sicherung.woechentlich-automatisch')} />
         <label className="eigenschaft"><span>{t('werkbank.sicherung.wochentag')}</span>
           <select value={plan.wochentag} onChange={(e) => setPlan({ ...plan, wochentag: Number(e.target.value) })}>{TAGE.slice(1).map((text, i) => <option key={text} value={i + 1}>{text}</option>)}</select></label>
         <label className="eigenschaft"><span>{t('werkbank.sicherung.uhrzeit')}</span><input type="time" value={plan.uhrzeit} onChange={(e) => setPlan({ ...plan, uhrzeit: e.target.value })} /></label>

@@ -55,6 +55,8 @@ Am Handy trifft der Finger, nicht der Mauszeiger. Darum hat jedes Bedienelement 
 | ⓘ am gesperrten `Knopf` | bleibt optisch klein; Tippfläche 44 × 44 px |
 | `Speicherleiste` | alle Knöpfe in einer Zeile; „… löschen“ zeigt nur sein Symbol (der Name bleibt für Screenreader) |
 | `Reiter` | jeder Reiter mindestens 44 px hoch; die Reihe rollt waagerecht, die Seite nicht |
+| `Schalter` | mindestens 44 px hoch, die Beschriftung schaltet mit |
+| `PaketChip` als Link | bleibt optisch klein; unsichtbare Tippfläche 44 px hoch |
 
 **Die Regel:** Tippflächen überlappen sich nie – auch nicht in einer Knopfreihe oder einer Gruppe von Haken. Wer einen Baustein benutzt, schreibt dafür nichts selbst; Einzellösungen mit `@media (pointer: coarse)` in `styles.css` gibt es nur noch für Stellen ohne Baustein. Neue Bausteine legen ihre Tippfläche in ihrem eigenen Stylesheet fest, ebenfalls nur bei `(pointer: coarse)`, damit der Desktop unverändert bleibt.
 
@@ -91,6 +93,8 @@ Dieselben Bilder nimmt der Workflow **Handbuch** in den Jobs `bilder (de)` und `
 | [Knopf](bausteine-knopf.md) | Jeder Knopf: Arten Haupt (blau), Anlegen (grün, „+ …“), Neben, Gefahr (mit Rückfrage), Link; gesperrt in zwei Formen, „läuft“, Ergebnis und Fehler am Knopf; dazu die Rückfrage |
 | [Speicherleiste](bausteine-speicherleiste.md) | Unten in jedem Formular: „… löschen“ links, Status, „Verwerfen“ mit Rand und der blaue Hauptknopf; Entwurf mit Esc und Warnung beim Verlassen |
 | [Reiter](bausteine-reiter.md) | Register über einem Inhalt, ein aktives Aussehen, Tastatur und `aria` nach WAI-ARIA |
+| [Schalter](bausteine-schalter.md) | Etwas ist an oder aus (Funktion, Dienst, Automatisierung) – Schiebeschalter; für Auswahl und Optionen bleibt der Haken |
+| [PaketChip](bausteine-paketchip.md) | Herkunft aus einem Paket: Symbol und Name hinter dem Namen, Tooltip mit Version, Link zur Paketseite |
 | [Eingaben mit Einheit](bausteine-einheit.md) | Zeitraum (Zahl und Einheit, Einzahl/Mehrzahl) und Prozent (Zahl mit „%“) für die Feldarten Zeitraum und Prozent |
 | [Tabelle](bausteine-tabelle.md) | Zeilen mit Spalten, jede führt zu einer Seite; breit eine Tabelle, schmal eine Liste mit den ersten zwei Spalten (Feldart Tabelle) |
 | [Suche](bausteine-suche.md) | Das Suchfeld aller Listen und das Muster „Liste in der Mitte: Suchfeld oben, Filter darunter“ mit Trefferzahl, Fundstellen und Paketfilter |

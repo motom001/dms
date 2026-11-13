@@ -421,7 +421,11 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
     ? (d.zaehler.papierkorbTage ? t('ablage.mappeformular.aufloesen-hinweis') : t('ablage.mappeformular.aufloesen-hinweis-ohne-korb'))
     : zuordnen?.aufloesen === false ? t('ablage.mappeformular.aufloesen-gesperrt') : '';
   const loeschKnopf = loeschenZeigen ? <LoeschKnopf sperre={loeschSperre} loeschen={() => void loeschen()}
-    wege={mitVerknuepften && <Knopf groesse="klein" onClick={mitVerknuepften}>{t('ablage.mappeformular.mit-verknuepften-mappen-loeschen')}</Knopf>} /> : <span />;
+    // „Mit verknüpften Mappen löschen …“ (#424) ist ein schwerer Eingriff: Gefahr mit eigener Rückfrage, danach wie
+    // bisher das Lösch-Fenster mit der Auswahl (#1210, Wunsch Thomas).
+    wege={mitVerknuepften && <Knopf art="gefahr" groesse="klein" symbol="geloescht" onClick={mitVerknuepften}
+      rueckfrage={{ titel: t('ablage.mappeformular.mit-verknuepften.frage', { titelOder: titelOder(mappe?.titel) }), text: t('ablage.mappeformular.mit-verknuepften.text'), ja: t('ablage.mappeformular.mit-verknuepften.ja') }}>
+      {t('ablage.mappeformular.mit-verknuepften-mappen-loeschen')}</Knopf>} /> : <span />;
   // Sprung aus der Suche nach einer Archivnummer (#345): ?register=… öffnet das Register.
   // Erwähnung in einer Notiz (#427): gleich den Register „Notizen“.
   const [aktiv, setAktiv] = useState(() => startRegister(register, new URLSearchParams(location.search).get('register'), details?.aufgaben, ich.id));

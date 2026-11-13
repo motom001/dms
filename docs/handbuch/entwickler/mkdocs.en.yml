@@ -79,6 +79,8 @@ nav:
       - Button: bausteine-knopf.md
       - Save bar: bausteine-speicherleiste.md
       - Tabs: bausteine-reiter.md
+      - Switch: bausteine-schalter.md
+      - Package chip: bausteine-paketchip.md
       - Inputs with a unit: bausteine-einheit.md
       - Table: bausteine-tabelle.md
       - Search: bausteine-suche.md

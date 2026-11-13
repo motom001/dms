@@ -12,7 +12,9 @@
  *   muster-fassungen, muster-fassungen-dunkel – der Bereich „Fassungen“ (#1006): Liste, leer, gelöschte Einträge;
  *   muster-speicherleiste, muster-speicherleiste-dunkel – der Bereich „Speicherleiste“ (#1210): „… löschen“ links,
  *     Verwerfen mit Rand, Hauptknopf blau, gesperrt aus einem Grund;
- *   muster-reiter, muster-reiter-dunkel – der Bereich „Reiter“ (#1210).
+ *   muster-reiter, muster-reiter-dunkel – der Bereich „Reiter“ (#1210);
+ *   muster-schalter, muster-schalter-dunkel – der Bereich „Schalter“ (#1188);
+ *   muster-paketchip, muster-paketchip-dunkel – der Bereich „PaketChip“ (#1192).
  *
  * Im Handy-Kontext (390 px, Touch: `pointer: coarse`) misst `tippflaechenPruefen` jedes Bedienelement der Seite
  * (#1027, Musterkatalog D6): Jedes muss eine eigene Tippfläche von mindestens 44 × 44 px haben.
@@ -209,6 +211,8 @@ export async function musterAufnehmen(browser, { basis, ziel, gebiet = 'de-DE', 
         await foto(s.locator('#fassungen'), `muster-fassungen${suffix}`);
         await foto(s.locator('#speicherleiste'), `muster-speicherleiste${suffix}`);
         await foto(s.locator('#reiter'), `muster-reiter${suffix}`);
+        await foto(s.locator('#schalter'), `muster-schalter${suffix}`);
+        await foto(s.locator('#paketchip'), `muster-paketchip${suffix}`);
       }
     } finally {
       await k.close();

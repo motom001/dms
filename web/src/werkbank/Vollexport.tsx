@@ -1,4 +1,4 @@
-import { Knopf, type KnopfErgebnis } from '../bausteine';
+import { Knopf, Schalter, type KnopfErgebnis } from '../bausteine';
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { api, type Auftrag, type ExportUmzug, type KontaktZuordnung, type VollexportStand } from '../api';
 import { t, tn } from '../sprache';
@@ -116,8 +116,8 @@ export function VollexportPanel({ z }: { z: VollexportZustand }) {
       </div>
       <div className="blatt">
         <h2 className="h3">{t('werkbank.vollexport.meine-daten-exportieren')}</h2>
-        <label className="haken"><input type="checkbox" checked={s.persoenlich} onChange={(e) => void tu(async () => { await api.persoenlicherExport(e.target.checked); await z.laden(); return e.target.checked ? t('werkbank.vollexport.benutzer-duerfen-ihre-daten') : t('werkbank.vollexport.meine-daten-exportieren-abgeschaltet'); })} />
-          <span>{tn('werkbank.vollexport.benutzer-duerfen-ihre-eigenen', { klein: <small className="hilfe">{t('werkbank.vollexport.mein-konto-konto-meine')}</small> })}</span></label>
+        <Schalter an={s.persoenlich} beschriftung={t('werkbank.vollexport.schalter')} hinweis={t('werkbank.vollexport.mein-konto-konto-meine')}
+          setze={(an) => tu(async () => { await api.persoenlicherExport(an); await z.laden(); return an ? t('werkbank.vollexport.benutzer-duerfen-ihre-daten') : t('werkbank.vollexport.meine-daten-exportieren-abgeschaltet'); })} />
       </div>
       <div className="blatt" id="exporte">
         <h2 className="h3">{t('werkbank.vollexport.vorhandene-exporte')}</h2>

@@ -400,7 +400,6 @@ export function TypEditor({ typ, vorlage }: { typ?: Mappentyp; vorlage?: Mappent
 
   async function loeschen() {
     if (neu) { loeseWache(); geheZu('/werkbank/typen'); return; }
-    if (!(await rueckfrage({ titel: t('mappentypen.editor.mappentyp-endgueltig-loeschen', { name: e.name }), text: t('mappentypen.editor.das-laesst-sich-nicht'), ja: t('mappentypen.editor.endgueltig-loeschen'), gefahr: true }))) return;
     try {
       await api.typLoeschen(e.id);
       loeseWache(); await d.neuLaden(); geheZu('/werkbank/typen');
@@ -534,7 +533,11 @@ export function TypEditor({ typ, vorlage }: { typ?: Mappentyp; vorlage?: Mappent
       {gespeichert && <Fassungen art="typ" eintrag={gespeichert.id} stand={gespeichert.geaendert} nachher={() => d.neuLaden()} klappe={klappe('fassungen')} />}
 
       <Speicherleiste ent={ent} gegenstand={t('mappentypen.editor.mappentyp')} sendet={sendet} meldung={meldung ? { art: fehler ? 'schlecht' : 'gut', text: meldung } : undefined}
-        links={neu || system ? undefined : <button type="button" className="textknopf gefahr" onClick={() => void loeschen()}>{t('mappentypen.editor.mappentyp-loeschen')}</button>} />
+        loeschen={neu || system ? undefined : {
+          text: t('mappentypen.editor.mappentyp-loeschen'),
+          rueckfrage: { titel: t('mappentypen.editor.mappentyp-endgueltig-loeschen', { name: e.name }), text: t('mappentypen.editor.das-laesst-sich-nicht'), ja: t('mappentypen.editor.endgueltig-loeschen') },
+          onClick: loeschen,
+        }} />
     </form>
   );
 }

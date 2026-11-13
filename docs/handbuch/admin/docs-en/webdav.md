@@ -8,7 +8,7 @@ This is **stage 1: reading and filing**. Deleting, renaming, moving and editing 
 
 Under **Workbench → WebDAV drive**:
 
-- **Switch on WebDAV drive** – default: **off**. When switched off, Ablago answers under `/webdav/` with "not found", as if the drive didn't exist.
+- **WebDAV drive** (switch) – default: **off**. When switched off, Ablago answers under `/webdav/` with "not found", as if the drive didn't exist.
 - **Stamp when reading** – *No stamp* or a [stamp template](stempel.md). Default: the built-in template *From Ablago (drive)*. See [below](#stempel-beim-lesen).
 - **Read only** – for all users: browsing and opening yes, filing, changing and deleting no. See [below](#nur-lesend).
 - **Status** – the address for connecting (Ablago's address from *Email and address* plus `/webdav/`), the number of requests since the start and the limit per user.

@@ -57,8 +57,8 @@ import { filterAusAdresse } from '../../../shared/src/aufgabenfilter';
 import { istOffen } from '../../../shared/src/auskunft';
 import { useBeiWiederErreichbar } from '../erreichbar';
 import { gebietsschema } from '../../../shared/src/sprache';
-import { GeloeschteEintraege, Fundstellen, Hervorgehoben, KeineTreffer, KnopfLink, ListenSuche, PaketFilter, useListenSuche } from '../bausteine';
-import { paketVonTyp, paketWahl, quellenTyp } from './listensuche';
+import { GeloeschteEintraege, Fundstellen, Hervorgehoben, KeineTreffer, KnopfLink, ListenSuche, PaketChip, PaketFilter, useListenSuche } from '../bausteine';
+import { paketHerkunft, paketVonTyp, paketWahl, quellenTyp } from './listensuche';
 import { uebergeordneterTyp } from '../../../shared/src/teile';
 import { typName } from '../../../shared/src/beschriftung';
 
@@ -143,7 +143,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
   const vollexport = useVollexport(bereich === 'vollexport');
   // Herkunft und Paketfilter (#978) in Mappentypen, Ansichten und Nummernkreisen – nur mit Recht auf die Pakete (#818),
   // sonst gilt die Kennung des Typs (`typ.paket`).
-  const pakete = usePakete(bereich === 'pakete' || (['typen', 'sichten', 'nummernkreise'].includes(bereich) && darf('pakete')));
+  const pakete = usePakete(bereich === 'pakete' || (['typen', 'sichten', 'nummernkreise', 'automatisierungen', 'ablaufvorlagen'].includes(bereich) && darf('pakete')));
   const anmeldeschutz = useAnmeldeschutz(bereich === 'anmeldeschutz');
   const region = useRegion(bereich === 'region');
   const nutzung = useNutzung(bereich === 'nutzung');
@@ -275,14 +275,14 @@ export function Werkbank({ teile }: { teile: string[] }) {
     liste = <NummernkreiseListe z={nummernkreise} offen={id} pakete={pakete.stand?.installiert ?? []} />;
     rechts = id ? <NummernkreisEditor key={`${id}-${nummernkreise.liste ? 1 : 0}`} z={nummernkreise} schluessel={id} /> : <div className="platzhalter"><p>{t('werkbank.werkbank.waehle-links-einen-nummernkreis')}</p></div>;
   } else if (bereich === 'automatisierungen') {
-    liste = <AutomatisierungenListe z={automatisierungen} offen={id} />;
+    liste = <AutomatisierungenListe z={automatisierungen} offen={id} pakete={pakete.stand?.installiert ?? []} />;
     // Ziele nach außen (#671): eigene Seite rechts, neben der Liste.
     rechts = id === 'ziele' ? <AussenZiele nachher={() => void automatisierungen.laden()} />
       : id ? <AutomatisierungEditor key={`${id}-${automatisierungen.stand ? 1 : 0}`} z={automatisierungen} id={id} /> : <div className="platzhalter"><p>{t('automatisierung.ui.waehlen')}</p></div>;
   } else if (bereich === 'ablaufvorlagen') {
     // Automatisierungsvorlagen (#1044): dreiteilig wie die Automatisierungen.
     const kennung = id ? decodeURIComponent(id) : undefined;
-    liste = <AblaufvorlagenListe z={ablaufvorlagen} offen={kennung} />;
+    liste = <AblaufvorlagenListe z={ablaufvorlagen} offen={kennung} pakete={pakete.stand?.installiert ?? []} />;
     rechts = kennung ? <AblaufvorlageEditor key={`${kennung}-${ablaufvorlagen.stand ? 1 : 0}`} z={ablaufvorlagen} kennung={kennung} /> : <div className="platzhalter"><p>{t('automatisierung.vorlage.ui.waehlen')}</p></div>;
   } else if (bereich === 'stempel') {
     // Dreiteilig seit #990: Vorlagen in der Mitte, rechts die gewählte mit Live-Vorschau (#799).
@@ -422,14 +422,13 @@ function TypenListe({ offen, pakete }: { offen?: string; pakete: InstalliertesPa
               const zz = d.zaehler.typen[mappentyp.id];
               const anzahl = zz?.anzahl ?? 0;
               const unpassend = zz?.unpassend ?? 0;
-              const p = pakete.find((x) => Object.values(x.typen).includes(mappentyp.id));
               // Teile (#1031): „Teil von Rechnung“ – sie erscheinen in der Ablage nur an der übergeordneten Mappe.
               const eltern = d.typ(uebergeordneterTyp(mappentyp));
               return (
                 <li key={mappentyp.id}>
                   <Link to={`/werkbank/typen/${mappentyp.id}`} className={`eintrag werk ${offen === mappentyp.id ? 'an' : ''}`}>
                     <span className="titel"><Hervorgehoben teile={titel} text={mappentyp.name} />{mappentyp.system && <span className="chip" title={t('werkbank.werkbank.systemmappentyp-laesst-sich')}>{t('werkbank.werkbank.system')}</span>}
-                      {p && <> <span className="chip" title={t('werkbank.werkbank.aus-dem-paket', { name: p.name, version: p.version })}>{t('werkbank.werkbank.paket', { name: p.name })}</span></>}</span>
+                      <PaketChip paket={paketHerkunft(paketVonTyp(mappentyp, pakete), pakete)} inLink /></span>
                     <span className="unter">{t('werkbank.werkbank.felder-register', { felder: mappentyp.felder.length, register: mappentyp.register.length })}{d.zahlenDa && <> · {anzahl.toLocaleString(gebietsschema())} {t('werkbank.werkbank.mappen', { anzahl })}</>}
                       {eltern && <> · {t('werkbank.listensuche.teil-von', { name: typName(eltern) })}</>}</span>
                     {unpassend > 0 && <span className="problem">{t('werkbank.werkbank.passen-nicht-zur-definition', { unpassend })}</span>}

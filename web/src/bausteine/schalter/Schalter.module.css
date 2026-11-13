@@ -1,0 +1,23 @@
+/* Schalter (#1188): Schiebeschalter für an/aus. Nur Werte aus tokens.css; an = Grün (ein Zustand, Leitsatz 2 im
+   Entwicklerhandbuch), aus = --rand-eingabe (3:1 gegen die Fläche). Zustand zusätzlich als Wort.
+   .vorschauhover und .vorschaufokus nutzt nur die Musterseite. */
+.feld { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-width: 0; }
+.schalter { display: inline-flex; align-items: center; gap: 10px; min-height: 32px; padding: 4px 0; border: 0; background: none; color: var(--tinte); font: inherit; text-align: left; cursor: pointer; }
+.schalter:disabled { opacity: .5; cursor: not-allowed; }
+.schalter[aria-busy="true"] { cursor: progress; }
+.spur { position: relative; flex: none; width: 38px; height: 22px; border-radius: 11px; background: var(--rand-eingabe); transition: background-color .15s; }
+.griff { position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: var(--flaeche); box-shadow: 0 1px 2px var(--schatten); transition: left .15s; }
+.an .spur { background: var(--gruen); }
+.an .griff { left: 19px; }
+.schalter:is(:hover, .vorschauhover):not(:disabled) .spur { box-shadow: 0 0 0 3px var(--akzent-zart); }
+.schalter:is(:focus-visible, .vorschaufokus) { outline: 2px solid var(--akzent); outline-offset: 2px; border-radius: var(--r); }
+.beschriftung { font-weight: 600; }
+.zustand { color: var(--leise); font-size: calc(12.5px * var(--skala, 1)); }
+.hinweis { padding-left: 48px; color: var(--leise); font-size: calc(12.5px * var(--skala, 1)); }
+.fehler { padding-left: 48px; color: var(--schlecht); font-size: calc(12.5px * var(--skala, 1)); }
+.sr { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+@media (pointer: coarse) { .schalter { min-height: 44px; } }
+@media (prefers-reduced-motion: reduce) { .spur, .griff { transition: none; } }
+/* Nur für die Musterseite: Hover und Fokus stehend zeigen (Klasse am Feld). */
+.vorschauhover .spur { box-shadow: 0 0 0 3px var(--akzent-zart); }
+.vorschaufokus .schalter { outline: 2px solid var(--akzent); outline-offset: 2px; border-radius: var(--r); }

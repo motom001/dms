@@ -65,7 +65,7 @@ Your confirmation only applies to **exactly the permissions you saw**. If they c
 
 **Later on:** under **Workbench → Packages → *package*** are the add-ons that exist for it in the catalogue (e.g. **Further languages** for text recognition), with **Choose …** – then the same process. The [text recognition](texterkennung.md#weitere-sprachen) page suggests languages that occur in your documents.
 
-Folder types from packages carry the notice **Package …** in **Workbench → Folder types**. You can then adjust them like any other folder type.
+Folder types from packages carry a chip with the package icon and the package's name after their name in **Workbench → Folder types**. You can then adjust them like any other folder type.
 
 ### Via the catalogue website { #uber-die-katalog-webseite }
 

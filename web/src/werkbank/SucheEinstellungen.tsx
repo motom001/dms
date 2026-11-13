@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { api, type SucheStand } from '../api';
 import { Link } from '../ort';
 import { t, tn } from '../sprache';
-import { HakenFeld, Knopf } from '../bausteine';
+import { Knopf, Schalter } from '../bausteine';
 import { EIGENE_WOERTER } from '../../../shared/src/suche';
 import { WOERTER_PFAD } from './Woerter';
 
@@ -33,9 +33,8 @@ export function SuchePanel({ abschnitt }: { abschnitt?: boolean } = {}) {
 
       <section className="blatt">
         <h2 className="h3">{t('suche.werkbank.unscharf')}</h2>
-        <HakenFeld beschriftung={t('suche.werkbank.unscharf.an')} hinweis={t('suche.werkbank.unscharf.text')}>
-          <input type="checkbox" checked={s.unscharf} disabled={laeuft} onChange={(e) => void tu(() => api.sucheSetze({ unscharf: e.target.checked }), t('suche.werkbank.gespeichert'))} />
-        </HakenFeld>
+        <Schalter an={s.unscharf} gesperrt={laeuft} beschriftung={t('suche.werkbank.unscharf.schalter')} hinweis={t('suche.werkbank.unscharf.text')}
+          setze={(an) => tu(() => api.sucheSetze({ unscharf: an }), t('suche.werkbank.gespeichert'))} />
         <p className="leise klein">{t('suche.werkbank.woerter', { anzahl: s.woerter })}{' '}
           <Knopf art="link" groesse="klein" laeuft={laeuft} onClick={() => tu(() => api.woerterNeu(), t('suche.werkbank.woerter.fertig'))}>{t('suche.werkbank.woerter.neu')}</Knopf>
         </p>

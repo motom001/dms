@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { api, type WerkbankAnsichtStand } from '../api';
 import { Link } from '../ort';
+import { Schalter } from '../bausteine';
 import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 import {
   ansichtAus, BEREICHE, expertenBereiche, fuerAlle, GRUPPEN, inVorlage, nurImExpertenmodus, OHNE_EINSTELLUNG, sichtbar, VORLAGEN, vorlageFuer, type Gruppe, type Vorlage,
@@ -102,10 +103,10 @@ export function AnsichtPanel({ z, zustand }: { z: WerkbankAnsichtZustand; zustan
         {/* Expertenmodus (#356): Bereiche, die die Vorlage nur für Fortgeschrittene vorsieht – je Administrator. */}
         <fieldset className="wahl">
           <legend className="h3">{t('werkbank.experte.titel')}</legend>
-          <label className="haken"><input type="checkbox" checked={experte} onChange={(x) => setExperte(x.target.checked)} />
-            <span><strong>{t('werkbank.experte.haken')}</strong> <span className="leise">– {expertenBereiche(vorlage).length
+          <Schalter an={experte} setze={setExperte} beschriftung={t('werkbank.experte.haken')}
+            hinweis={expertenBereiche(vorlage).length
               ? t('werkbank.experte.text', { bereiche: expertenBereiche(vorlage).map((b) => b.name).join(', ') })
-              : t('werkbank.experte.keine', { vorlage: VORLAGEN[vorlage].name })}</span></span></label>
+              : t('werkbank.experte.keine', { vorlage: VORLAGEN[vorlage].name })} />
         </fieldset>
         <h2 className="h3">{t('werkbank.ansicht.bereiche')}</h2>
         <p className="leise klein">{t('konten.verwaltende.ansicht.text')}</p>

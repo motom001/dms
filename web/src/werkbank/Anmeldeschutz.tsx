@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
-import { HakenFeld, Knopf, type KnopfErgebnis } from '../bausteine';
+import { HakenFeld, Knopf, Schalter, type KnopfErgebnis } from '../bausteine';
 import { api, type AnbieterEingabe, type AnbieterStand, type AnmeldeschutzStand, type NotfallzugangStand, type PasskeyPflicht, type SperrEinstellung, type ZweifaktorPflicht } from '../api';
 import { Hilfe } from '../Hilfe';
 import { useKonto } from '../konto';
@@ -268,13 +268,19 @@ function AnbieterBlatt() {
       <label className="haken"><input id="oidc-lokal" type="checkbox" checked={e.lokalNurAdmins} onChange={(x) => setE({ ...e, lokalNurAdmins: x.target.checked })} /><span>{t('konten.verwaltende.oidc.lokal')}
         <small className="leise">{t('werkbank.anmeldeschutz.als-notzugang-falls-der')}</small></span></label>
       <label className="haken"><input id="oidc-abmelden" type="checkbox" checked={e.abmeldenBeimAnbieter} onChange={(x) => setE({ ...e, abmeldenBeimAnbieter: x.target.checked })} /><span>{t('werkbank.anmeldeschutz.beim-abmelden-auch-beim')}</span></label>
-      <label className="haken"><input id="oidc-aktiv" type="checkbox" checked={e.aktiv} onChange={(x) => setE({ ...e, aktiv: x.target.checked })} /><span>{t('werkbank.anmeldeschutz.eingeschaltet-knopf-auf-der')}</span></label>
+      <Schalter id="oidc-aktiv" an={e.aktiv} setze={(an) => setE({ ...e, aktiv: an })} beschriftung={t('werkbank.anmeldeschutz.schalter')} hinweis={t('werkbank.anmeldeschutz.schalter.hinweis')} />
       {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
       <div className="knoepfe">
         <Knopf gesperrt={sendet || !e.aussteller} onClick={pruefen} laeuftText={t('werkbank.anmeldeschutz.prueft')}>{t('werkbank.anmeldeschutz.verbindung-pruefen')}</Knopf>
       </div>
       <Speicherleiste ent={ent} gegenstand={t('werkbank.anmeldeschutz.anbieter')} sendet={sendet}
-        links={stand.secretGesetzt && <button type="button" className="textknopf gefahr" disabled={sendet} onClick={() => void tu(async () => { uebernehmen(await api.anbieterSetzen({ clientSecretLoeschen: true })); return t('werkbank.anmeldeschutz.client-secret-geloescht'); })}>{t('werkbank.anmeldeschutz.secret-loeschen')}</button>} />
+        // Client-Secret löschen (#1210): gespeichertes Geheimnis geht verloren – Gefahr mit Rückfrage.
+        loeschen={stand.secretGesetzt ? {
+          text: t('werkbank.anmeldeschutz.secret-loeschen'),
+          rueckfrage: { titel: t('werkbank.anmeldeschutz.secret-loeschen.frage'), text: t('werkbank.anmeldeschutz.secret-loeschen.text'), ja: t('werkbank.anmeldeschutz.secret-loeschen.ja') },
+          symbol: 'schliessen',
+          onClick: () => tu(async () => { uebernehmen(await api.anbieterSetzen({ clientSecretLoeschen: true })); return t('werkbank.anmeldeschutz.client-secret-geloescht'); }),
+        } : undefined} />
     </form>
   );
 }

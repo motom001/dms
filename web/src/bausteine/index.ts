@@ -9,6 +9,8 @@ export { ProzentEingabe, ZeitraumEingabe, type ProzentEingabeProps, type Zeitrau
 export { abfangen, Ergebnis, ErgebnisBlock, Knopf, KnopfLink, fehlerText, istKnopfErgebnis, knopfAussehen, sperreAus, type GefahrRueckfrage, type KnopfArt, type KnopfErgebnis, type KnopfGesperrt, type KnopfGroesse, type KnopfLinkProps, type KnopfProps, type KnopfSperre } from './knopf/Knopf';
 export { Rueckfragen } from './rueckfrage/Rueckfrage';
 export { Speicherleiste, useEntwurf, useGespeichertNachziehen, type Entwurf, type SpeicherleisteLoeschen, type SpeicherleisteProps } from './speicherleiste/Speicherleiste';
+export { Schalter, type SchalterProps } from './schalter/Schalter';
+export { PaketChip, type PaketChipProps, type PaketHerkunft } from './paketchip/PaketChip';
 export { flaecheId, Reiter, ReiterFlaeche, reiterId, type ReiterProps, type ReiterWahl } from './reiter/Reiter';
 export { Tabelle, type TabelleProps, type TabelleSpalte, type TabelleZeile } from './tabelle/Tabelle';
 export { FilterHaken, Fundstellen, Hervorgehoben, KeineTreffer, ListenSuche, PaketFilter, Suchfeld, useListenSuche, type ListenSucheOptionen, type ListenSucheProps, type ListenSucheZustand, type PaketFilterProps, type SuchfeldProps } from './suche/Suche';
