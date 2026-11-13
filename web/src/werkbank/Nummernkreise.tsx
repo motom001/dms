@@ -10,8 +10,8 @@ import { rueckfrage } from '../rueckfrage';
 import { fortschrittText } from '../../../shared/src/auftrag';
 import { t, tn } from '../sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
-import { GeloeschteEintraege, abfangen, Bereich, Fassungen, Feld, Fundstellen, Hervorgehoben, KeineTreffer, Knopf, KnopfLink, ListenSuche, PaketFilter, useBereiche, useListenSuche, type BereicheZustand, type BereichListe } from '../bausteine';
-import { paketVonKreis, paketWahl, quellenKreis } from './listensuche';
+import { GeloeschteEintraege, abfangen, Bereich, Fassungen, Feld, Fundstellen, Hervorgehoben, KeineTreffer, Knopf, KnopfLink, ListenSuche, PaketChip, PaketFilter, useBereiche, useListenSuche, type BereicheZustand, type BereichListe } from '../bausteine';
+import { paketHerkunft, paketVonKreis, paketWahl, quellenKreis } from './listensuche';
 import type { InstalliertesPaket } from '../../../shared/src/pakete';
 
 /**
@@ -54,7 +54,7 @@ export function NummernkreiseListe({ z, offen, pakete = [] }: { z: NummernkreisZ
         <ul className="mappenliste">
           {such.treffer.map(({ eintrag: k, funde, titel }) => (
             <li key={k.schluessel}><Link to={`/werkbank/nummernkreise/${k.schluessel}`} className={`eintrag werk ${offen === k.schluessel ? 'an' : ''}`}>
-              <span className="titel"><Hervorgehoben teile={titel} text={k.name} /></span>
+              <span className="titel"><Hervorgehoben teile={titel} text={k.name} /><PaketChip paket={paketHerkunft(paketVonKreis(k, d.typen, pakete), pakete)} inLink /></span>
               <span className="unter mono">{t('werkbank.nummernkreise.naechste', { naechste: k.naechste })}</span>
               {!k.verwendet.length && <span className="leise klein">{t('werkbank.nummernkreise.unbenutzt')}</span>}
               <Fundstellen funde={funde} />
@@ -141,8 +141,16 @@ export function NummernkreisEditor({ z, schluessel }: { z: NummernkreisZustand; 
       {k && <NummernkreisStand k={k} z={z} b={b} tu={tu} />}
       {k && <Fassungen art="nummernkreis" eintrag={k.schluessel} stand={JSON.stringify(gespeichert)} nachher={() => z.laden()} klappe={b.klappe('fassungen')} />}
       <Speicherleiste ent={ent} gegenstand={t('werkbank.nummernkreise.nummernkreis-2')} sendet={sendet} ungueltig={!!musterFehler} formular="nk-formular"
-        links={!neu && <Knopf art="link" className="gefahr" gesperrt={k!.verwendet.length > 0} title={k!.verwendet.length ? t('werkbank.nummernkreise.wird-noch-verwendet') : undefined}
-          onClick={async () => { if (await rueckfrage({ titel: t('werkbank.nummernkreise.nummernkreis-loeschen', { name: k!.name }), ja: t('werkbank.nummernkreise.loeschen'), gefahr: true })) void tu(async () => { z.setListe(await api.nummernkreisLoeschen(k!.schluessel)); loeseWache(); geheZu('/werkbank/nummernkreise', true); return t('werkbank.nummernkreise.geloescht'); }); }}>{t('werkbank.nummernkreise.nummernkreis-loeschen-2')}</Knopf>} />
+        loeschen={!neu ? {
+          text: t('werkbank.nummernkreise.nummernkreis-loeschen-2'),
+          rueckfrage: { titel: t('werkbank.nummernkreise.nummernkreis-loeschen', { name: k!.name }), ja: t('werkbank.nummernkreise.loeschen') },
+          // Gesperrt aus einem Grund (#1210): welche Felder den Kreis noch verwenden – als Links in der Erklärung.
+          gesperrt: k!.verwendet.length > 0 && {
+            grund: t('werkbank.nummernkreise.loeschen-gesperrt'),
+            eintraege: k!.verwendet.map((v) => <><Link to={`/werkbank/typen/${v.typId}`} className="verweis">{v.typ}</Link> · {v.feld}</>),
+          },
+          onClick: () => tu(async () => { z.setListe(await api.nummernkreisLoeschen(k!.schluessel)); loeseWache(); geheZu('/werkbank/nummernkreise', true); return t('werkbank.nummernkreise.geloescht'); }),
+        } : undefined} />
     </div>
   );
 }

@@ -9,6 +9,13 @@ Ausführlich im Entwicklerhandbuch unter **Gestaltung und Bausteine**
   `web/src/tokens.css`) und `muster.tsx` mit jedem Zustand für die Musterseite.
 - **Benannte Varianten statt Schalter** (`Feld`, `HakenFeld`, `FeldGruppe`), keine Gottkomponente.
 - **Neues streng, Bestand beim Anfassen** – kein Großumbau.
+- **Leitsätze für Knöpfe (#1210):** Blau ist die Hauptaktion, Grün nur „+ …“, Verwerfen ist ein Knopf mit Rand, auf der
+  Seite ist nichts rot (Gefahr wie Neben mit Symbol), rot gefüllt nur in der Rückfrage, gesperrt in zwei Formen (blass ·
+  gestrichelt mit Schloss und ⓘ). Keine Farbklassen über `className` am Knopf (ESLint `ablago/knopf-farben`).
+- **Schalter oder Haken (#1188):** `Schalter` = etwas ist an oder aus (Funktion, Dienst, Automatisierung), Beschriftung
+  ohne Verb. `HakenFeld` = Auswahl oder Option. Wo ein Schalter steht, wiederholt „Stand“ den Zustand nicht.
+- **Herkunft immer per `PaketChip` (#1192):** Paket-Symbol und Name hinter dem Namen, nie „aus Paket“ ohne Namen, nie eine
+  eigene Zeile; eigene Einträge ohne Chip, Mitgeliefertes „Ablago“.
 - **Am Handy 44 × 44 px:** Jedes Bedienelement hat bei `(pointer: coarse)` eine Tippfläche von mindestens 44 × 44 px,
   ohne Überlappen; mit der Maus bleibt alles gleich (#1027). Die Rauchtests messen das auf der Musterseite.
 
@@ -23,7 +30,12 @@ Neuer Baustein: Ordner anlegen, in `index.ts` ausgeben, in `BAUSTEINE` in `muste
 | Baustein | Wofür |
 | --- | --- |
 | `Feld`, `HakenFeld`, `FeldGruppe` | Rahmen für Eingaben: Beschriftung, Eingabe, Fehler, Hinweis, Hilfesymbol, `aria` |
-| `Knopf`, `KnopfLink`, `knopfAussehen` | Knöpfe: Arten Anlegen, Haupt, Neben, Gefahr, Link; gesperrt mit Grund, „läuft“, Ergebnis am Knopf, Fehler aus asynchronen Handlern |
+| `Knopf`, `KnopfLink`, `knopfAussehen` | Knöpfe: Arten Haupt (blau), Anlegen (grün, „+ …“), Neben, Gefahr (mit Symbol und Rückfrage), Link; gesperrt in zwei Formen mit Erklärung am Knopf, „läuft“, Ergebnis am Knopf, Fehler aus asynchronen Handlern |
+| `Rueckfragen` | Das Fenster zu `rueckfrage()`/`hinweis()` (#355, #1210): „Abbrechen“ als Neben, Bestätigung blau – bei Gefahr rot gefüllt, nur hier |
+| `Speicherleiste`, `useEntwurf` | Leiste unten in Formularen (#370, #1210): „… löschen“ links (`loeschen`, Gefahr mit Rückfrage), „Verwerfen“ mit Rand, Hauptknopf blau |
+| `Schalter` | Schiebeschalter für an/aus (#1188), `role="switch"`, Zustand auch als Wort, sofort wirksam mit Promise |
+| `PaketChip` | Herkunft aus einem Paket (#1192): Symbol und Name, Tooltip mit Version, Link zur Paketseite; „Ablago“ für Mitgeliefertes |
+| `Reiter`, `ReiterFlaeche` | Register über einem Inhalt (#1210): ein aktives Aussehen, Tastatur und `aria` nach WAI-ARIA |
 | `Tabelle` | Zeilen mit Spalten, jede führt zu einer Seite (#1030): breit eine Tabelle, schmal eine Liste mit den ersten zwei Spalten; leer ein ruhiger Satz |
 | `ZeitraumEingabe`, `ProzentEingabe` | Eingaben mit Einheit (#1035): Zahl und Einheit („3 Monate“, Einzahl/Mehrzahl), Zahl mit „%“ – im Feldrahmen oder mit eigener Beschriftung |
 | `Suchfeld`, `ListenSuche`, `FilterHaken`, `PaketFilter`, `KeineTreffer`, `Fundstellen`, `useListenSuche` | Suche (#978, #994): das Suchfeld aller Listen und das Muster „Liste in der Mitte: Suchfeld oben, Filter darunter“ mit Trefferzahl, Fundstellen und Paketfilter |

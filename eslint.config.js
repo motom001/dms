@@ -69,6 +69,9 @@ export default defineConfig([
   // Bausteinregeln (#968, „Neues streng“): rohe Knöpfe und Eingaben nur in den Bausteinen selbst. Der Bestand beim
   // Einführen steht in eslint-suppressions.json (Regel ablago/bausteine).
   { files: ['web/src/**/*.tsx'], ignores: ['web/src/bausteine/**'], rules: { 'ablago/bausteine': 'error' } },
+  // Keine Farbklassen über className am Knopf (#1210): Die Farbe kommt aus der Art. Bestand beim Einführen in
+  // eslint-suppressions.json (Regel ablago/knopf-farben), abgebaut in #1211–#1215.
+  { files: ['web/src/**/*.tsx'], rules: { 'ablago/knopf-farben': 'error' } },
   // Komponenten sind länger als Funktionen im Server: 150 Zeilen je Funktion.
   { files: ['web/src/**/*.tsx'], rules: { 'max-lines-per-function': ['error', { max: 150, ...ZEILEN }] } },
   // Routendateien (#960): 60 Zeilen je Handler, die äußere Registrierfunktion ist ausgenommen.

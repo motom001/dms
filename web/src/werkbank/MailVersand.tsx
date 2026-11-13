@@ -1,4 +1,4 @@
-import { ErgebnisBlock, Knopf } from '../bausteine';
+import { ErgebnisBlock, Knopf, Schalter } from '../bausteine';
 import { useEffect, useMemo, useRef, useState, type FormEvent, type MutableRefObject } from 'react';
 import { absenderVorschlag, anbieterFuerAdresse, domainVon, MAIL_ANBIETER, OAUTH_VERSAND_SERVER, type MailAnbieter } from '../../../shared/src/mailanbieter';
 import { PLAN_VERBINDUNGEN } from '../../../shared/src/einrichtungsplan';
@@ -184,7 +184,7 @@ function MailFormular({ s, email, b, aktualisieren, sammeln }: {
 
   const inhalt = (
     <>
-      {!assistent && <label className="haken"><input type="checkbox" checked={m.aktiv} onChange={(e) => setze({ aktiv: e.target.checked })} /><span><span className="haken-titel">{t('werkbank.mail.aktiv')}</span>{vor('aktiv')}</span></label>}
+      {!assistent && <Schalter an={m.aktiv} setze={(an) => setze({ aktiv: an })} beschriftung={t('werkbank.mail.schalter')} hinweis={vor('aktiv') || undefined} />}
       <div className="raster">
         <label className="eigenschaft" htmlFor="mail-adresse"><span>{t('werkbank.mail.adresse')}</span>
           <input id="mail-adresse" type="email" value={adresse} autoComplete="off" spellCheck={false} onChange={(e) => setAdresse(e.target.value)} onBlur={() => void finden()} />

@@ -81,7 +81,10 @@ function Dialog({ dialog, absenden }: { dialog: AktionsDialog; absenden(w: Recor
     <form className="stapel" onSubmit={(e) => e.preventDefault()}>
       {dialog.felder.map((f, i) => <Eingabe key={f.schluessel ?? `text-${i}`} f={f} wert={f.schluessel ? werte[f.schluessel] : undefined} setze={(v) => f.schluessel && setze(f.schluessel, v)} fehler={f.schluessel ? feldFehler[f.schluessel] : undefined} />)}
       <div className="knoepfe">
-        <Knopf art={dialog.gefahr ? 'gefahr' : 'haupt'} type="submit" onClick={los}>{dialog.knopf || t('ablage.paketaktion.weiter')}</Knopf>
+        {/* Gefahr (#1210, Leitsatz 5): Ein Schritt, den das Paket als gefährlich meldet, fragt vorher nach. */}
+        {dialog.gefahr
+          ? <Knopf art="gefahr" symbol="warnung" onClick={los} rueckfrage={{ titel: t('ablage.paketaktion.gefahr.titel', { knopf: dialog.knopf || t('ablage.paketaktion.weiter') }), text: t('ablage.paketaktion.gefahr.text'), ja: dialog.knopf || t('ablage.paketaktion.weiter') }}>{dialog.knopf || t('ablage.paketaktion.weiter')}</Knopf>
+          : <Knopf art="haupt" type="submit" onClick={los}>{dialog.knopf || t('ablage.paketaktion.weiter')}</Knopf>}
       </div>
     </form>
   );

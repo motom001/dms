@@ -199,7 +199,7 @@ function AuskunftDetail({ e, z }: { e: AuskunftEintrag; z: DatenschutzZustand })
           <p className="knoepfe">
             <Knopf art={zustellen ? 'neben' : 'haupt'} aria-expanded={zustellen} onClick={() => setZustellen(!zustellen)}>{zustellen ? t('werkbank.auskunft.detail.zustellenZu') : t('werkbank.auskunft.detail.zustellen')}</Knopf>
             <a className="knopf" href={`/api/werkbank/auskunft/${b.id}/zip`} onClick={() => window.setTimeout(() => void z.laden(), 3000)}>{t('werkbank.auskunft.detail.herunterladen')}</a>
-            <Knopf className="gefahr-rand" onClick={async () => {
+            <Knopf onClick={async () => {
               if (!(await rueckfrage({ titel: t('werkbank.auskunft.detail.loeschenFrage'), text: t('werkbank.auskunft.detail.loeschenText', { titel: titelOder(b.titel), zeit: zeit(b.erstellt) }), ja: t('werkbank.auskunft.detail.loeschen'), gefahr: true }))) return;
               try { await api.auskunftLoeschen(b.id); await z.laden(); } catch (x) { setFehler((x as Error).message); }
             }}>{t('werkbank.auskunft.detail.loeschen')}</Knopf>

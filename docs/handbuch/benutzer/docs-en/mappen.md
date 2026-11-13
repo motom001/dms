@@ -196,14 +196,14 @@ At the bottom left of the folder is **Delete folder**. After a confirmation, the
 
 In the confirmation you choose the **reason** – *No longer needed*, *Period expired*, *At the request of the data subject* or *Other* – and can add a short remark. Both are recorded in the deletion log, with which your administrator can prove that and why something was deleted; the folder's title and contents are not in it. So don't write any names in the remark.
 
-If deleting isn't possible right now, the button is locked (dimmed, with a padlock), and the reason is given in one sentence next to it. **Why is deleting locked?** expands the detailed reason right at the button:
+If deleting isn't possible right now, the button is locked: dashed border, padlock and a small **ⓘ** next to it. A click on the button or the ⓘ opens the reason right at the button; Esc or a click elsewhere closes it again:
 
 - **Other folders still link to it.** The explanation lists them – with links there (for many, the first eight and "and … more"). Remove the link there first. That way no contract can disappear that still has invoices. Sent emails and other [post](post.md) don't prevent deleting.
 - **Archive mode:** the retention period is still running; before that, the folder can't be deleted by anyone.
 - **Permissions:** you may not delete folders of this folder type. An administrator sets this.
 - **Parts you may not delete:** if the folder has [parts](#teile), they go with it when you delete it. If you may not delete one of them, everything stays, and Ablago says how many there are.
 
-![Locked button "Delete folder" with a padlock and the expanded explanation](bilder/mappe-loeschen-warum.png)
+![Locked button "Delete folder" with a dashed border, padlock and the opened explanation](bilder/mappe-loeschen-warum.png)
 
 Users and system roles can't be deleted in the Library at all; the button is missing there.
 
@@ -242,7 +242,7 @@ This is how you notice it:
 
 - **Folders you may not read** don't appear in lists, search, counters and favourites. If a folder links to one of them, it says *Folder not visible* without a link.
 - **Without edit permission**, a folder only displays its fields and documents; "Read only" appears at the bottom. Notes and tasks still work.
-- **Without delete permission**, "Delete folder" is locked (with a padlock and "Why is deleting locked?"), **without create permission** "+ New" is missing, **without see-passwords permission** the eye on password fields is missing.
+- **Without delete permission**, "Delete folder" is locked (dashed with a padlock; the ⓘ next to it says why), **without create permission** "+ New" is missing, **without see-passwords permission** the eye on password fields is missing.
 - **Without export permission**, the export buttons are missing in a view; views you may not see are missing from the tree.
 - If your permissions depend on a field (such as "Responsible") and you would take away your own read or edit permission with a change, Ablago asks before saving.
 - When choosing users (responsible, mentions, stand-in, tasks), only those you may see appear.

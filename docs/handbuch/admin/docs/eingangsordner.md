@@ -24,7 +24,7 @@ Den Ordner `eingang` gibst du im NAS für den Scanner frei (SMB), z. B. als Unte
 
 Unter **Werkbank → Eingangsordner**:
 
-- **Eingangsordner prüfen** – ein oder aus (Standard: ein).
+- **Eingangsordner** (Schalter) – an oder aus (Standard: an).
 - **Prüfabstand** – wie oft Ablago nachsieht, 5 bis 3600 Sekunden (Standard: 30).
 - **Nach dem Übernehmen** – die Datei löschen oder nach `erledigt/` verschieben. Wer den Eingangsordner neu einrichtet, bekommt **löschen** vorgeschlagen: Die Datei steckt danach ja in der Post. Gibt es schon ein `erledigt/` und wurde nie gespeichert, bleibt es beim Verschieben wie bisher.
 - **Doppelte Dateien überspringen** – liegt genau diese Datei (gleicher Prüfwert) schon in Ablago, entsteht keine Post; die Datei wird wie eine übernommene weggeräumt und in der Liste als „doppelt – übersprungen“ geführt (Standard: aus).

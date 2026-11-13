@@ -34,6 +34,7 @@ Die Einstellungen stehen in `eslint.config.js` (flache Konfiguration, ESLint 10)
 | `@typescript-eslint/no-explicit-any` | an | – |
 | `react-hooks/rules-of-hooks`, `react-hooks/exhaustive-deps` | an (Oberfläche) | – |
 | `ablago/bausteine` | an (`web/src/**/*.tsx` außer `web/src/bausteine/`) | – |
+| `ablago/knopf-farben` | an (`web/src/**/*.tsx`) | – |
 | `@eslint-community/eslint-comments/require-description` | an | – |
 
 Längen zählen ohne Leerzeilen und Kommentare – Erklärungen im Code sollen nichts kosten.
@@ -43,6 +44,7 @@ Längen zählen ohne Leerzeilen und Kommentare – Erklärungen im Code sollen n
 - **Tests (`server/test/`):** ohne `max-lines` und `max-lines-per-function`, sonst dieselben Regeln. `test()`, `describe()` und `it()` aus `node:test` gelten nicht als „nicht abgewartet“.
 - **Werkzeug-Skripte** (`.github/werkzeuge/*.mjs`, `server/test/*.mjs`, `web/rauchtest/*.mjs`): nur die Grundregeln von ESLint, ohne Typinformation.
 - **Bausteine (`ablago/bausteine`, #968):** In der Oberfläche ist ein rohes `<button>` ein Fehler – dafür gibt es `Knopf`. `<input>`, `<select>` und `<textarea>` sind es, wenn sie nicht in `Feld`, `HakenFeld` oder `FeldGruppe` stehen. Ausgenommen sind unsichtbare Eingaben (`type="hidden"`, `type="file"`) und die Bausteine selbst unter `web/src/bausteine/`. Für Fälle, die die Bausteine bewusst nicht abdecken (Suchfeld ohne sichtbare Beschriftung, Eingabe in einer Tabellenzelle, siehe [Feld](bausteine-feld.md#wann)), gilt eine Ausnahme mit Begründung im Code. Der Bestand beim Einschalten steht in `eslint-suppressions.json`.
+- **Farbe am Knopf (`ablago/knopf-farben`, #1210):** Farbklassen über `className` an `Knopf`, `KnopfLink` und `knopfAussehen()` – `gefahr`, `gefahr-rand`, `gruen`, `primaer` – sind ein Fehler; die Farbe kommt aus der Art ([Leitsätze](bausteine.md#leitsaetze)). Geprüft werden alle festen Texte im Wert, auch in Bedingungen und Vorlagen-Texten. Der Bestand beim Einschalten (11 Stellen) steht in `eslint-suppressions.json` und wird in #1211–#1215 abgebaut. Test: `.github/werkzeuge/eslint-ablago.test.mjs`.
 - **Promises in der Oberfläche:** `onClick={async () => …}` meldet `no-misused-promises`, denn React wartet nicht auf das Promise und ein Fehler bliebe unbemerkt. Besser: `onClick={() => void speichern()}` mit eigenem `try`/`catch` in `speichern`.
 
 ### Ausnahmen im Code { #ausnahmen-im-code }

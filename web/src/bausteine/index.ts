@@ -6,7 +6,12 @@
  */
 export { Feld, FeldGruppe, HakenFeld, NurLesenFeld, type FeldEingabe, type FeldGruppeProps, type FeldProps, type FeldVerknuepfung, type NurLesenFeldProps } from './feld/Feld';
 export { ProzentEingabe, ZeitraumEingabe, type ProzentEingabeProps, type ZeitraumEingabeProps, type ZeitraumRoh } from './einheit/Einheit';
-export { abfangen, Ergebnis, ErgebnisBlock, Knopf, KnopfLink, fehlerText, istKnopfErgebnis, knopfAussehen, type KnopfArt, type KnopfErgebnis, type KnopfGroesse, type KnopfLinkProps, type KnopfProps } from './knopf/Knopf';
+export { abfangen, Ergebnis, ErgebnisBlock, Knopf, KnopfLink, fehlerText, istKnopfErgebnis, knopfAussehen, sperreAus, type GefahrRueckfrage, type KnopfArt, type KnopfErgebnis, type KnopfGesperrt, type KnopfGroesse, type KnopfLinkProps, type KnopfProps, type KnopfSperre } from './knopf/Knopf';
+export { Rueckfragen } from './rueckfrage/Rueckfrage';
+export { Speicherleiste, useEntwurf, useGespeichertNachziehen, type Entwurf, type SpeicherleisteLoeschen, type SpeicherleisteProps } from './speicherleiste/Speicherleiste';
+export { Schalter, type SchalterProps } from './schalter/Schalter';
+export { PaketChip, type PaketChipProps, type PaketHerkunft } from './paketchip/PaketChip';
+export { flaecheId, Reiter, ReiterFlaeche, reiterId, type ReiterProps, type ReiterWahl } from './reiter/Reiter';
 export { Tabelle, type TabelleProps, type TabelleSpalte, type TabelleZeile } from './tabelle/Tabelle';
 export { FilterHaken, Fundstellen, Hervorgehoben, KeineTreffer, ListenSuche, PaketFilter, Suchfeld, useListenSuche, type ListenSucheOptionen, type ListenSucheProps, type ListenSucheZustand, type PaketFilterProps, type SuchfeldProps } from './suche/Suche';
 export { Umschalter, zielDerTaste, type UmschalterProps, type UmschalterWahl } from './umschalter/Umschalter';

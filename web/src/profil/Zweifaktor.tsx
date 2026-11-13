@@ -113,7 +113,7 @@ export function ZweifaktorBlatt() {
           {modus === 'ruhe' ? (
             <div className="knoepfe">
               <button type="button" className="knopf" onClick={() => setModus('codes')}>{t('profil.zweifaktor.neue-wiederherstellungscodes')}</button>
-              {!stand.pflicht && <button type="button" className="knopf gefahr-rand" onClick={() => setModus('aus')}>{t('profil.zweifaktor.abschalten')}</button>}
+              {!stand.pflicht && <button type="button" className="knopf" onClick={() => setModus('aus')}>{t('profil.zweifaktor.abschalten')}</button>}
             </div>
           ) : (
             <form className="stapel" onSubmit={abfangen(mitPasswort, (text) => setMeldung({ art: 'schlecht', text }))}>

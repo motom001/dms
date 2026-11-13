@@ -270,7 +270,9 @@ jobs:
         run: npm run lint:abh
       # Nur Fehler; jeder erscheint als Anmerkung an der Zeile im Pull Request.
       - name: ESLint
-        run: npx eslint --pass-on-unpruned-suppressions --quiet --format ./.github/werkzeuge/eslint-github.mjs .
+        run: |
+          node --test .github/werkzeuge/eslint-ablago.test.mjs
+          npx eslint --pass-on-unpruned-suppressions --quiet --format ./.github/werkzeuge/eslint-github.mjs .
       # Warnungen (z. B. Komplexität über 15) nur für die geänderten Dateien – als Hinweis, sie brechen nichts.
       - name: Hinweise zu geänderten Dateien
         if: github.event_name == 'pull_request'

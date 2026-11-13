@@ -339,7 +339,7 @@ Ablago also pauses an automation if it runs **more than 30 times in one minute**
 
 Packages bring **ready-made automations**, for example "MOT due soon" (package Vehicles) or "Cancellation due soon" (package Household). When installing – in the setup assistant as in the workbench – Ablago lists them by name: **"Should they be switched on straight away?"** Preselected are the ones the package marks as *switched on straight away* (e.g. *Check contracts daily*, with the time behind it); if a package marks none, all are preselected as before. What stays ticked is switched on after installation, the rest off – you can untick any of them.
 
-- In the list you recognise them by the origin **from package …**. You can switch them on, adjust and copy them.
+- In the list you recognise them by the chip with the package icon and the **package's name** after the name. You can switch them on, adjust and copy them.
 - On an **update** of the package, the new version replaces the old as long as you haven't changed it; on/off always stays as you set it. A changed one stays as it is. New automations from the update are offered again when updating.
 - If you remove the package, its automations go with it if they are off and unchanged.
 - Packages do not bring [Workbench cards](#werkbank-karten), [Call from outside](#aufruf-von-aussen) or the cards [to the outside](#nach-aussen) (*Call URL*, *Send e-mail*) – they only exist in automations you create yourself. Where data goes cannot be shown by a package's permission preview; you decide that yourself.

@@ -36,7 +36,7 @@
   "werkbank.titel": "Search: typos and word index",
   "werkbank.text": "How the search handles typos, other spellings and synonyms. The search always evens out umlauts (Gebühr, Gebuhr), ß (Straße, Strasse) and hyphens (e-mail, email).",
   "werkbank.unscharf": "Typos",
-  "werkbank.unscharf.an": "If nothing is found, show similar spellings and suggest “Did you mean …?”",
+  "werkbank.unscharf.schalter": "Similar spellings (“Did you mean …?”)",
   "werkbank.unscharf.text": "If the search finds nothing, it continues with similar words from your library, e.g. “washing machine” instead of “washing machien”. Exact results always come first.",
   "werkbank.woerter_one": "The word index knows {anzahl} word.",
   "werkbank.woerter_other": "The word index knows {anzahl} words.",

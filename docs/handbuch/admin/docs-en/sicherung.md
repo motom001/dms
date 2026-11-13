@@ -69,7 +69,7 @@ Windows shows the checksum in capital letters – that makes no difference.
 
 ![Schedule and retention](bilder/werkbank-sicherung-zeitplan.png)
 
-- **Back up automatically** daily or weekly at a time (e.g. daily 02:00). If Ablago was off at that time, it backs up as soon as it runs again – but only on the same day. It doesn't catch up on a missed backup from the previous day; it only backs up again at the next scheduled date. There is never more than one automatic backup per day.
+- **Automatic backup** (switch) daily or weekly at a time (e.g. daily 02:00). If Ablago was off at that time, it backs up as soon as it runs again – but only on the same day. It doesn't catch up on a missed backup from the previous day; it only backs up again at the next scheduled date. There is never more than one automatic backup per day.
 - The schedule can only be switched on once the **emergency sheet** has been downloaded – because a backup can only be opened with the key on it. Until then, **Go to emergency sheet** leads to [Encryption](verschluesselung.md#notfallblatt).
 - **Retention** (default **7 daily / 4 weekly / 12 monthly**): of the automatic backups, the newest per day, per week and per month remains, as many as set; Ablago removes older ones after every automatic backup. Backups created by hand stay until you delete them.
 - **Keep only the newest locally** (since 0.142): instead of the retention, only the newest automatic backup stays in the folder – for tight space, when an [off-site copy](sicherung-ausser-haus.md) is made. A backup whose copy is currently running stays until it has arrived (at most 2 days). "None locally" doesn't exist.

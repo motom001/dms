@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { Schalter } from '../bausteine';
 import { fortschrittText } from '../../../shared/src/auftrag';
 import { ergebnisText, mb, STUFEN, STUFEN_LISTE, type Stufe } from '../../../shared/src/verkleinern';
 import { api, type Auftrag, type GrossePdfs, type VerkleinernEinstellung } from '../api';
@@ -130,8 +131,8 @@ export function AutomatischVerkleinern() {
   return (
     <form className="blatt" id="automatisch-verkleinern" onSubmit={(x) => { x.preventDefault(); void speichern(); }} onKeyDown={ent.tasten}>
       <h2 className="h3">{t('werkbank.verkleinern.neue-pdfs-automatisch-verkleinern-2')} <Hilfe ort="werkbank.verkleinern" /></h2>
-      <label className="haken"><input type="checkbox" checked={e.automatisch} onChange={(x) => setE({ ...e, automatisch: x.target.checked })} />
-        <span>{tn('werkbank.verkleinern.neue-pdfs-beim-ablegen', { span: <span className="leise klein">{t('werkbank.verkleinern.hochladen-eingangsordner-postfaecher')}</span> })}</span></label>
+      <Schalter an={e.automatisch} setze={(an) => setE({ ...e, automatisch: an })} beschriftung={t('werkbank.verkleinern.schalter')}
+        hinweis={t('werkbank.verkleinern.hochladen-eingangsordner-postfaecher')} />
       <div className="raster">
         <label className="eigenschaft"><span>{tn('werkbank.verkleinern.ab-groesse', { klein: <small>{t('werkbank.verkleinern.mb-2')}</small> })}</span>
           <input type="number" min={1} max={100} step={0.5} value={e.abMb} disabled={!e.automatisch} onChange={(x) => setE({ ...e, abMb: Number(x.target.value) })} /></label>

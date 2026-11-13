@@ -4,7 +4,6 @@ import { Knopf, KnopfLink, type KnopfErgebnis } from '../bausteine';
 import { eingabeFehler, KontaktFormular, leererKontakt } from './NotfallkontaktFormular';
 import { Hilfe } from '../Hilfe';
 import { useKonto } from '../konto';
-import { rueckfrage } from '../rueckfrage';
 import { t } from '../sprache';
 import { erreichbar, NOTFALLKONTAKTE_MAX, type Notfallkontakt, type NotfallkontaktEingabe, type NotfallkontakteStand } from '../../../shared/src/notfallkontakte';
 import { zeit } from './Sicherung';
@@ -58,7 +57,6 @@ export function NotfallkontakteAbschnitt({ geaendert }: { geaendert(): void }) {
   }
 
   async function loeschen(k: Notfallkontakt) {
-    if (!(await rueckfrage({ titel: t('werkbank.notfallkontakte.loeschen.titel'), text: t('werkbank.notfallkontakte.loeschen.text', { name: k.name }), ja: t('werkbank.notfallkontakte.loeschen'), gefahr: true }))) return;
     const r = await api.notfallkontaktLoeschen(k.id);
     await nachher(r, r.mail === 'verschickt' ? t('werkbank.notfallkontakte.ergebnis.geloescht-mail') : r.mail === 'grenze' ? undefined : t('werkbank.notfallkontakte.ergebnis.geloescht'));
   }
@@ -90,7 +88,8 @@ export function NotfallkontakteAbschnitt({ geaendert }: { geaendert(): void }) {
                   <Knopf groesse="klein" onClick={() => { setFehler(undefined); setForm({ id: k.id, wert: { name: k.name, email: k.email, telefon: k.telefon, notiz: k.notiz, antwortAn: k.antwortAn }, antwortSperre: k.eingetragenVon !== ich.id ? t('werkbank.notfallkontakte.antwort.hinweis') : undefined }); }}>{t('werkbank.notfallkontakte.aendern')}</Knopf>
                   {stand.versand && <Knopf groesse="klein" gesperrt={k.erneutMoeglich ? false : t('werkbank.notfallkontakte.erneut.heute')}
                     onClick={async () => { await api.notfallkontaktErneut(k.id); await laden(); return { art: 'gut', text: t('werkbank.notfallkontakte.ergebnis.erneut') }; }}>{t('werkbank.notfallkontakte.erneut')}</Knopf>}
-                  <Knopf art="gefahr" groesse="klein" onClick={() => loeschen(k)}>{t('werkbank.notfallkontakte.loeschen')}</Knopf>
+                  <Knopf art="gefahr" groesse="klein" symbol="geloescht" onClick={() => loeschen(k)}
+                    rueckfrage={{ titel: t('werkbank.notfallkontakte.loeschen.titel'), text: t('werkbank.notfallkontakte.loeschen.text', { name: k.name }), ja: t('werkbank.notfallkontakte.loeschen') }}>{t('werkbank.notfallkontakte.loeschen')}</Knopf>
                 </div>
               )}
               {form?.id === k.id && <Bearbeiten form={form} setForm={setForm} fehler={fehler} speichern={speichern} />}

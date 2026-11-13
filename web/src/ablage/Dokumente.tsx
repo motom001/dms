@@ -320,7 +320,7 @@ export function Dokumente({ register, dokumente: roh, neue, entfernt, hinzufuege
                     title={stempelPflicht ? t('ablage.dokumente.dieser-mappentyp-verlangt-beim') : undefined}>{t('ablage.dokumente.herunterladen')}</button>}
                   {bearbeitbar && pdfAuswahl.length >= 2 && <button type="button" className="knopf klein" aria-expanded={!!zusammen}
                     onClick={() => setZusammen(zusammen ? null : { name: pdfAuswahl[0].name, entfernen: false })}>{t('ablage.dokumente.zusammenfuegen')}</button>}
-                  {!nurLesen && <button type="button" className="knopf klein gefahr-rand" onClick={auswahlLoeschen}>{t('ablage.dokumente.loeschen')}</button>}
+                  {!nurLesen && <button type="button" className="knopf klein" onClick={auswahlLoeschen}>{t('ablage.dokumente.loeschen')}</button>}
                 </>}
                 {post
                   ? <span className="sortwahl klein leise">{t('ablage.dokumente.eingangsreihenfolge')}</span>
@@ -611,36 +611,14 @@ function AnsichtKopf({ x, art, umschalten }: { x: Dokument; art: Ansichtsart; um
 }
 
 /**
- * „Herunterladen“ ohne Exportrecht (#723): gesperrt erkennbar (Schloss) mit „Warum nicht?“ – wie beim Löschen (#423).
- * Die Begründung klappt direkt am Knopf auf; Bildschirmleser hören den Grund schon am Knopf.
+ * „Herunterladen“ ohne Exportrecht (#723): gesperrt aus einem Grund (#1210, Leitsatz 6) – gestrichelt mit Schloss und
+ * ⓘ, die Erklärung öffnet sich direkt am Knopf; Bildschirmleser hören den Grund schon am Knopf.
  */
 function NichtHerunterladen() {
-  const [offen, setOffen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!offen) return;
-    const zu = (e: globalThis.MouseEvent | KeyboardEvent) => {
-      if (e instanceof KeyboardEvent ? e.key === 'Escape' : !ref.current?.contains(e.target as Node)) setOffen(false);
-    };
-    document.addEventListener('mousedown', zu); document.addEventListener('keydown', zu);
-    return () => { document.removeEventListener('mousedown', zu); document.removeEventListener('keydown', zu); };
-  }, [offen]);
   return (
-    <div className="loeschwahl" ref={ref}>
-      <button type="button" className="knopf klein loeschwahl-gesperrt" aria-disabled="true" aria-describedby="mitnehmen-grund" onClick={() => setOffen(!offen)}>
-        <Symbol name="schloss" /> {t('mappen.mitnehmen.knopf')}
-      </button>
-      <span id="mitnehmen-grund" className="sr">{t('mappen.mitnehmen.grund')}</span>
-      <button type="button" className="textknopf klein loeschwahl-warum" aria-expanded={offen} aria-controls="mitnehmen-begruendung" onClick={() => setOffen(!offen)}>
-        <Symbol name="info" /> {t('mappen.mitnehmen.warum')}
-      </button>
-      {offen && (
-        <div className="loeschwahl-begruendung unten klein" id="mitnehmen-begruendung" role="region" aria-label={t('mappen.mitnehmen.warum')}>
-          <p><strong>{t('mappen.mitnehmen.titel')}</strong> {t('mappen.mitnehmen.grund')}</p>
-          <p className="leise">{t('mappen.mitnehmen.ansehen')} <Hilfe ort="dokumente.mitnehmen" /></p>
-        </div>
-      )}
-    </div>
+    <Knopf groesse="klein" gesperrt={{ grund: t('mappen.mitnehmen.grund'), titel: t('mappen.mitnehmen.titel'), stattdessen: <p className="leise">{t('mappen.mitnehmen.ansehen')} <Hilfe ort="dokumente.mitnehmen" /></p> }}>
+      {t('mappen.mitnehmen.knopf')}
+    </Knopf>
   );
 }
 

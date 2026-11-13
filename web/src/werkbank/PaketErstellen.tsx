@@ -4,6 +4,7 @@ import { BESCHREIBUNG_LAENGE, LIZENZ_SCHLUESSEL, LIZENZEN_ALPHABETISCH, lizenzPa
 import { t, tn } from '../sprache';
 import { api, ApiFehler } from '../api';
 import { geheZu } from '../ort';
+import { PaketChip } from '../bausteine';
 import { gebietsschema } from '../../../shared/src/sprache';
 import { Kopf } from './Kopf';
 
@@ -274,7 +275,7 @@ function Auswahl({ stand, e, suche, setSuche, umschalten, mitDokumenten, pruefun
         <ul className="stapel">
           {stand.typen.filter((eintrag) => passt(eintrag.name)).map((eintrag) => (
             <li key={eintrag.id}><label className="haken"><input type="checkbox" checked={e.typen.includes(eintrag.id)} onChange={(x) => umschalten('typen', eintrag.id, x.target.checked)} />
-              <span>{eintrag.name}{eintrag.paket && <> <span className="chip" title={t('werkbank.paketerstellen.kommt-beim-export-als')}>{t('werkbank.paketerstellen.aus', { name: eintrag.paket.name, version: eintrag.paket.version })}</span></>}{eintrag.geaendert && (eintrag.unterschiede
+              <span>{eintrag.name}<PaketChip paket={eintrag.paket} inLink titel={t('werkbank.paketerstellen.kommt-beim-export-als')} />{eintrag.geaendert && (eintrag.unterschiede
                 ? <details className="unterschiede"><summary><span className="chip warn">{t('werkbank.paketerstellen.geaendert', { kurz: eintrag.unterschiede.kurz })}</span></summary><ul className="klein">{eintrag.unterschiede.liste.map((x) => <li key={x}>{x}</li>)}</ul></details>
                 : <> <span className="chip warn" title={t('werkbank.paketerstellen.nach-der-installation-des')}>{t('werkbank.paketerstellen.geaendert-2')}</span></>)}
                 {eintrag.beschreibung && <small className="leise">{eintrag.beschreibung}</small>}</span></label></li>
@@ -287,7 +288,7 @@ function Auswahl({ stand, e, suche, setSuche, umschalten, mitDokumenten, pruefun
         <ul className="stapel">
           {baum.filter(({ s: x }) => passt(x.name)).map(({ s: x, tiefe }) => (
             <li key={x.id} style={{ paddingLeft: `${s ? 0 : tiefe * 1.4}em` }}><label className="haken"><input type="checkbox" checked={e.sichten.includes(x.id)} onChange={(y) => umschalten('sichten', x.id, y.target.checked)} />
-              <span>{x.name}{x.paket && <> <span className="chip">{t('werkbank.paketerstellen.aus-2', { name: x.paket.name })}</span></>}</span></label></li>
+              <span>{x.name}<PaketChip paket={x.paket} inLink /></span></label></li>
           ))}
           {!stand.sichten.length && <li className="leise">{t('werkbank.paketerstellen.keine-ansichten')}</li>}
         </ul>
@@ -298,7 +299,7 @@ function Auswahl({ stand, e, suche, setSuche, umschalten, mitDokumenten, pruefun
         <ul className="stapel">
           {(stand.wortlisten ?? []).filter((g) => passt(g.woerter.join(' '))).map((g) => (
             <li key={g.id}><label className={`haken${g.paket ? ' grau' : ''}`}><input type="checkbox" disabled={!!g.paket} checked={!g.paket && (e.wortlisten ?? []).includes(g.id)} onChange={(x) => umschalten('wortlisten', g.id, x.target.checked)} />
-              <span>{g.woerter.join(', ')}{g.paket && <> <span className="chip">{t('werkbank.paketerstellen.aus-2', { name: g.paket.name })}</span></>}</span></label></li>
+              <span>{g.woerter.join(', ')}<PaketChip paket={g.paket} inLink /></span></label></li>
           ))}
           {!(stand.wortlisten ?? []).length && <li className="leise">{t('werkbank.paketerstellen.keine-wortlisten')}</li>}
         </ul>

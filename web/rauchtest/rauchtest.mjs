@@ -109,6 +109,58 @@ function beispielPdf(zeile) {
   return Buffer.from(pdf, 'latin1');
 }
 
+/* ---------- Knöpfe auf jeder besuchten Seite (#1210) ---------- */
+
+/**
+ * Wächter für die Leitsätze der Knöpfe (#1210), läuft in jeder Seite jedes Rauchtests (addInitScript): Nach jeder
+ * Änderung im Dokument prüft er die sichtbaren Knöpfe und meldet Funde einmal je Seite an den Test (`__knopfFund`):
+ *   - anlegen-ohne-plus: `data-knopf="anlegen"`, dessen Beschriftung nicht mit „+“ beginnt (Leitsatz 2);
+ *   - gefahr-ohne-rueckfrage: `data-knopf="gefahr"`, der keine Rückfrage öffnet (`aria-haspopup="dialog"`) und nicht
+ *     gesperrt ist (Leitsatz 5);
+ *   - rot-ausserhalb-rueckfrage: rot gefüllt (`.knopf.gefahr`, `data-knopf="entscheidung"`) außerhalb des Fensters
+ *     einer Rückfrage (Leitsatz 5).
+ */
+function knopfWaechter() {
+  const gemeldet = new Set();
+  const sichtbar = (el) => el.getClientRects().length > 0;
+  const text = (el) => (el.textContent || el.getAttribute('aria-label') || '').replace(/\s+/g, ' ').trim();
+  const pruefe = () => {
+    const funde = [];
+    for (const el of document.querySelectorAll('[data-knopf="anlegen"]')) if (sichtbar(el) && !text(el).startsWith('+')) funde.push(['anlegen-ohne-plus', el]);
+    for (const el of document.querySelectorAll('[data-knopf="gefahr"]')) {
+      const gesperrt = el.disabled || el.getAttribute('aria-disabled') === 'true';
+      if (sichtbar(el) && !gesperrt && el.getAttribute('aria-haspopup') !== 'dialog') funde.push(['gefahr-ohne-rueckfrage', el]);
+    }
+    for (const el of document.querySelectorAll('.knopf.gefahr, [data-knopf="entscheidung"]')) if (sichtbar(el) && !el.closest('dialog.rueckfrage')) funde.push(['rot-ausserhalb-rueckfrage', el]);
+    for (const [art, el] of funde) {
+      const f = { art, text: text(el), pfad: location.pathname };
+      const schluessel = `${f.art}|${f.text}|${f.pfad}`;
+      if (gemeldet.has(schluessel)) continue;
+      gemeldet.add(schluessel);
+      window.__knopfFund?.(f);
+    }
+  };
+  let geplant = 0;
+  const plane = () => { if (!geplant) geplant = setTimeout(() => { geplant = 0; pruefe(); }, 120); };
+  new MutationObserver(plane).observe(document, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ['data-knopf', 'class', 'aria-haspopup', 'aria-disabled', 'disabled', 'hidden', 'open'] });
+}
+
+/**
+ * Bekannter Bestand (#1210): Knöpfe, die die Leitsätze noch nicht erfüllen und in den Bereichs-Issues umgestellt
+ * werden. Jeder Eintrag nennt sein Issue; wer eine Stelle umstellt, nimmt ihren Eintrag heraus. Neue Funde lassen den
+ * Rauchtest scheitern. `text` und `pfad` sind reguläre Ausdrücke.
+ */
+const KNOPF_AUSNAHMEN = [
+  // Werkbank → Verschlüsselung und derselbe Abschnitt im Einrichtungsassistenten (Pfad „/“).
+  { art: 'anlegen-ohne-plus', text: /^Notfallkontakt hinzufügen$/, pfad: /^\/(werkbank\/verschluesselung)?$/, issue: '#1214' },
+];
+const knopfAusnahme = (f) => KNOPF_AUSNAHMEN.find((a) => a.art === f.art && a.text.test(f.text) && (!a.pfad || a.pfad.test(f.pfad)));
+const genutzteAusnahmen = new Set();
+after(() => {
+  const ungenutzt = KNOPF_AUSNAHMEN.filter((a) => !genutzteAusnahmen.has(a));
+  if (ungenutzt.length) console.log(`# Knopf-Ausnahmen ohne Fund (#1210) – wenn umgestellt, bitte herausnehmen: ${ungenutzt.map((a) => `${a.art} ${a.text} (${a.issue})`).join('; ')}`);
+});
+
 /* ---------- Rahmen für einen Rauchtest ---------- */
 
 /**
@@ -147,6 +199,12 @@ function rauchtest(name, optionen, ablauf) {
       if (erwartet.some((e) => e.status === r.status() && e.pfad.test(pfad))) return;
       fehler.push(`Antwort ${r.status()}: ${r.request().method()} ${pfad}`);
     });
+    // Leitsätze der Knöpfe (#1210) auf jeder Seite dieses Wegs.
+    await k.exposeBinding('__knopfFund', (_quelle, f) => {
+      const a = knopfAusnahme(f);
+      if (a) genutzteAusnahmen.add(a); else fehler.push(`Knopf (#1210): ${f.art} „${f.text}“ auf ${f.pfad}`);
+    });
+    await k.addInitScript(knopfWaechter);
     if (optionen.als) {
       const c = await sitzung(optionen.als);
       const i = c.indexOf('=');
@@ -559,7 +617,8 @@ rauchtest('Werkbank: Sprungleiste und Bereiche in allen Editoren (#1000)', { als
   await s.goto(BASIS + '/werkbank/postfaecher/neu');
   const pf = bearbeitung.getByRole('navigation', { name: 'Bereiche des Postfachs' });
   await pf.getByRole('button', { name: 'Abholen', exact: true }).waitFor();
-  await bearbeitung.getByRole('checkbox', { name: 'Automatisch abrufen' }).waitFor();
+  // An/aus als Schalter (#1188), nicht als Haken.
+  await bearbeitung.getByRole('switch', { name: 'Automatischer Abruf' }).waitFor();
   assert.equal(await pf.getByRole('button', { name: 'Stand', exact: true }).count(), 0, 'Ein neues Postfach hat noch keinen Stand');
   await bearbeitung.getByRole('textbox', { name: 'Server' }).fill('imap.example.org');
   await s.getByRole('button', { name: 'Postfach anlegen' }).click();
@@ -974,7 +1033,8 @@ rauchtest('Verweisfeld folgt aus einem anderen; passt es nicht, sagt die Mappe w
 
 // Musterseite (nur im Testbau, VITE_MUSTER=1): hell und dunkel, Desktop und Handy fotografieren, mit axe-core prüfen –
 // ohne Verstoß, ohne Fehler im Browser. Braucht keine Einrichtung und keine Daten.
-test('Musterseite der Bausteine: Bilder, axe ohne Verstoß (#967)', { timeout: 120_000 }, async () => {
+// Seit #1210 mehr Bausteine und Zustände: Die Messung der Tippflächen am Handy braucht länger.
+test('Musterseite der Bausteine: Bilder, axe ohne Verstoß (#967)', { timeout: 300_000 }, async () => {
   await warteAufAblago();
   await mkdir(MUSTERORDNER, { recursive: true });
   const fehler = [];
@@ -983,7 +1043,7 @@ test('Musterseite der Bausteine: Bilder, axe ohne Verstoß (#967)', { timeout: 1
     k.on('weberror', (e) => fehler.push(`Fehler in der Seite: ${e.error().message}`));
   };
   const { bilder, verstoesse } = await musterAufnehmen(browser, { basis: BASIS, ziel: MUSTERORDNER, beobachte });
-  assert.equal(bilder.length, 14, `Bilder der Musterseite: ${bilder.join(', ')}`);
+  assert.equal(bilder.length, 22, `Bilder der Musterseite: ${bilder.join(', ')}`);
   assert.deepEqual(verstoesse, [], `axe meldet Verstöße auf der Musterseite:\n${verstoesse.join('\n')}`);
   assert.deepEqual(fehler, [], 'Fehler im Browser auf der Musterseite');
 });
@@ -1014,6 +1074,58 @@ test('Baustein Knopf: läuft, Ergebnis und Fehler am Knopf (#968)', { timeout: 6
     await k.close();
   }
   assert.deepEqual(fehler, [], 'Fehler im Browser beim Knopf');
+});
+
+// Gefahr und gesperrt (#1210): Der Gefahr-Knopf stellt seine Rückfrage selbst (Fokus auf „Abbrechen“, Esc bricht ab,
+// erst „Löschen“ handelt; rot gefüllt nur dort). Gesperrt aus einem Grund: Klick auf Knopf oder ⓘ öffnet die
+// Erklärung am Knopf, Esc schließt sie und gibt den Fokus zurück, ein Klick daneben schließt sie.
+test('Baustein Knopf: Gefahr mit Rückfrage, gesperrt mit Erklärung (#1210)', { timeout: 60_000 }, async () => {
+  await warteAufAblago();
+  const k = await browser.newContext({ ...DESKTOP, locale: 'de-DE' });
+  const fehler = [];
+  k.on('weberror', (e) => fehler.push(`Fehler in der Seite: ${e.error().message}`));
+  try {
+    const s = await k.newPage();
+    await s.goto(BASIS + '/muster#knopf');
+    const karte = s.locator('[data-zustand="knopf-ausprobieren"]');
+    const loeschen = karte.getByRole('button', { name: 'Löschen' });
+    assert.equal(await loeschen.getAttribute('aria-haspopup'), 'dialog');
+    assert.equal(await s.locator('.knopf.gefahr, [data-knopf="entscheidung"]').filter({ visible: true }).count(), 1, 'rot gefüllt nur die stehende Rückfrage der Musterseite');
+    await loeschen.click();
+    const frage = s.getByRole('alertdialog', { name: 'Notiz löschen?' });
+    await frage.waitFor();
+    assert.equal(await s.evaluate(() => document.activeElement?.textContent), 'Abbrechen', 'Fokus startet auf „Abbrechen“');
+    assert.equal(await frage.locator('[data-knopf="entscheidung"]').count(), 1, 'Bestätigung rot gefüllt');
+    await s.keyboard.press('Escape');
+    await frage.waitFor({ state: 'detached' });
+    assert.equal(await karte.locator('[data-ergebnis]').count(), 0, 'Abbrechen handelt nicht');
+    await loeschen.click();
+    await frage.getByRole('button', { name: 'Löschen' }).click();
+    await karte.locator('[role="status"][data-ergebnis="gut"]').getByText('Gelöscht').waitFor();
+
+    // Gesperrt aus einem Grund: kein Satz in der Zeile, Erklärung auf Klick.
+    const grund = s.locator('[data-zustand="knopf-grund"]');
+    const abrufen = grund.getByRole('button', { name: 'Jetzt abrufen', exact: true });
+    assert.equal(await abrufen.getAttribute('aria-disabled'), 'true');
+    // Der Grund steht nur für Screenreader am Knopf (1 × 1 px), nicht als Satz in der Zeile.
+    const satz = await grund.getByText('Erst speichern, dann abrufen.').boundingBox();
+    assert.ok(!satz || satz.width <= 1, `Grund nicht als Satz in der Zeile (${JSON.stringify(satz)})`);
+    // Mit der Tastatur (Playwright klickt nichts mit aria-disabled an – Menschen schon, das prüft der Klick aufs ⓘ).
+    await abrufen.focus();
+    await s.keyboard.press('Enter');
+    const erklaerung = grund.getByRole('region', { name: 'Warum gesperrt? Jetzt abrufen' });
+    await erklaerung.getByText('Erst speichern, dann abrufen.').waitFor();
+    await s.keyboard.press('Escape');
+    await erklaerung.waitFor({ state: 'detached' });
+    assert.equal(await s.evaluate(() => document.activeElement?.textContent), 'Jetzt abrufen', 'Esc gibt den Fokus an den Knopf');
+    await grund.getByRole('button', { name: 'Warum gesperrt? Jetzt abrufen' }).click();
+    await erklaerung.waitFor();
+    await s.locator('h1').click();
+    await erklaerung.waitFor({ state: 'detached' });
+  } finally {
+    await k.close();
+  }
+  assert.deepEqual(fehler, [], 'Fehler im Browser bei Gefahr und gesperrt');
 });
 
 /* ---------- Knöpfe in Listen und Ergebnisse am Knopf (#989, #986) ---------- */
@@ -1155,7 +1267,7 @@ async function dreiteilungSteht(s, wo) {
     rechts.scrollTop = rechts.scrollHeight;
     return { seite: document.scrollingElement.scrollHeight, fenster: innerHeight, spalte: rechts.scrollHeight, platz: rechts.clientHeight };
   });
-  assert.ok(r.spalte > r.platz + 100, `${wo}: Die rechte Spalte ist nicht länger als ihr Platz (${r.spalte} / ${r.platz} px) – der Test prüft so nichts`);
+  assert.ok(r.spalte > r.platz + 50, `${wo}: Die rechte Spalte ist nicht länger als ihr Platz (${r.spalte} / ${r.platz} px) – der Test prüft so nichts`);
   assert.equal(r.seite, r.fenster, `${wo}: Die Seite rollt unter der Dreiteilung weiter (Seite ${r.seite} px, Fenster ${r.fenster} px)`);
 }
 

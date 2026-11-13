@@ -8,7 +8,7 @@ Das ist **Stufe 1: lesen und ablegen**. Löschen, Umbenennen, Verschieben und da
 
 Unter **Werkbank → WebDAV-Laufwerk**:
 
-- **WebDAV-Laufwerk einschalten** – Standard: **aus**. Ausgeschaltet antwortet Ablago unter `/webdav/` mit „nicht gefunden“, als gäbe es das Laufwerk nicht.
+- **WebDAV-Laufwerk** (Schalter) – Standard: **aus**. Ausgeschaltet antwortet Ablago unter `/webdav/` mit „nicht gefunden“, als gäbe es das Laufwerk nicht.
 - **Stempel beim Lesen** – *Kein Stempel* oder eine [Stempel-Vorlage](stempel.md). Vorgabe: die mitgelieferte Vorlage *Aus Ablago (Laufwerk)*. Siehe [unten](#stempel-beim-lesen).
 - **Nur lesend** – für alle Benutzer: blättern und öffnen ja, ablegen, ändern und löschen nein. Siehe [unten](#nur-lesend).
 - **Stand** – die Adresse zum Einbinden (die Adresse von Ablago aus *E-Mail und Adresse* plus `/webdav/`), die Zahl der Anfragen seit dem Start und die Grenze je Benutzer.

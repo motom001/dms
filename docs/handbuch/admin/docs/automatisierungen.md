@@ -339,7 +339,7 @@ Außerdem hält Ablago eine Automatisierung an, wenn sie **mehr als 30-mal in ei
 
 Pakete bringen **vorgefertigte Automatisierungen** mit, zum Beispiel „HU wird bald fällig“ (Paket Fahrzeuge) oder „Kündigung bald fällig“ (Paket Haushalt). Beim Installieren – im Einrichtungsassistenten wie in der Werkbank – listet Ablago sie mit Namen auf: **„Sollen sie gleich eingeschaltet werden?“** Vorausgewählt sind die, die das Paket als *gleich eingeschaltet* kennzeichnet (z. B. *Verträge täglich prüfen*, mit Uhrzeit dahinter); kennzeichnet ein Paket keine, sind wie bisher alle vorausgewählt. Was angehakt bleibt, ist nach der Installation eingeschaltet, der Rest aus – du kannst jede abwählen.
 
-- In der Liste erkennst du sie an der Herkunft **aus Paket …**. Du kannst sie einschalten, anpassen und kopieren.
+- In der Liste erkennst du sie am Chip mit dem Paket-Symbol und dem **Namen des Pakets** hinter dem Namen. Du kannst sie einschalten, anpassen und kopieren.
 - Bei einem **Update** des Pakets ersetzt die neue Fassung die alte, solange du sie nicht geändert hast; an/aus bleibt immer, wie du es eingestellt hast. Eine geänderte bleibt, wie sie ist. Neue Automatisierungen aus dem Update stehen beim Aktualisieren wieder zur Wahl.
 - Entfernst du das Paket, gehen seine Automatisierungen mit, wenn sie aus und unverändert sind.
 - [Werkbank-Karten](#werkbank-karten), den [Aufruf von außen](#aufruf-von-aussen) und die Karten [nach außen](#nach-aussen) (*URL aufrufen*, *E-Mail senden*) bringen Pakete nicht mit – die gibt es nur in selbst angelegten Automatisierungen. Wohin Daten gehen, kann die Rechte-Vorschau eines Pakets nicht zeigen; das entscheidest du selbst.

@@ -15,7 +15,7 @@
     - For *Post*, the button is called **+ Post** (see [Post](post.md)).
 
 ??? question "I can't delete a folder."
-    Next to the locked **Delete folder** (with a padlock), the reason is given in one sentence; **Why is deleting locked?** explains more:
+    **Delete folder** is then locked (dashed, with a padlock). A click on it or on the **ⓘ** next to it shows the reason:
 
     - Other folders still link to it – then Ablago shows which. Remove the link there first.
     - You may not delete folders of this folder type. An administrator sets this in the permissions.

@@ -69,7 +69,7 @@ Windows zeigt die Prüfsumme in Großbuchstaben – das macht keinen Unterschied
 
 ![Zeitplan und Aufbewahrung](bilder/werkbank-sicherung-zeitplan.png)
 
-- **Automatisch sichern** täglich oder wöchentlich zu einer Uhrzeit (z. B. täglich 02:00). War Ablago zu der Zeit aus, sichert es, sobald es wieder läuft – aber nur am selben Tag. Eine verpasste Sicherung vom Vortag holt es nicht nach; es sichert erst wieder zum nächsten geplanten Termin. Mehr als eine automatische Sicherung am Tag gibt es nie.
+- **Automatische Sicherung** (Schalter) täglich oder wöchentlich zu einer Uhrzeit (z. B. täglich 02:00). War Ablago zu der Zeit aus, sichert es, sobald es wieder läuft – aber nur am selben Tag. Eine verpasste Sicherung vom Vortag holt es nicht nach; es sichert erst wieder zum nächsten geplanten Termin. Mehr als eine automatische Sicherung am Tag gibt es nie.
 - Einschalten lässt sich der Zeitplan erst, wenn das **Notfallblatt** heruntergeladen ist – denn nur mit dem Schlüssel darauf lässt sich eine Sicherung öffnen. Bis dahin führt **Zum Notfallblatt** zur [Verschlüsselung](verschluesselung.md#notfallblatt).
 - **Aufbewahrung** (Standard **7 tägliche / 4 wöchentliche / 12 monatliche**): Von den automatischen Sicherungen bleibt je Tag, je Woche und je Monat die neueste, so viele wie eingestellt; ältere entfernt Ablago nach jeder automatischen Sicherung. Von Hand angelegte Sicherungen bleiben, bis du sie löschst.
 - **Lokal nur die neueste behalten** (seit 0.142): Statt der Aufbewahrung bleibt nur die neueste automatische Sicherung im Ordner – für knappen Platz, wenn eine [Kopie außer Haus](sicherung-ausser-haus.md) entsteht. Eine Sicherung, deren Kopie gerade läuft, bleibt stehen, bis sie angekommen ist (höchstens 2 Tage). „Lokal keine“ gibt es nicht.

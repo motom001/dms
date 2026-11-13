@@ -1,8 +1,9 @@
 /**
- * Baustein Knopf (#968): Arten mit Klassen und `data-knopf`, gesperrt mit sichtbarem Grund (`aria-disabled`,
+ * Baustein Knopf (#968, #1210): Arten mit Klassen und `data-knopf` (Gefahr auf der Seite wie Neben, mit Symbol und
+ * Rückfrage), gesperrt in zwei Formen (blass · gestrichelt mit Schloss, ⓘ und Erklärung, `aria-disabled`,
  * `aria-describedby`), „läuft“ (`aria-busy`, Beschriftung bleibt der Name), Knopf nur mit Symbol (`aria-label`),
- * Ergebnisbereich mit `role="status"`; dazu `istKnopfErgebnis`, `fehlerText` und die Anlege-Knöpfe (#989).
- * Gezeichnet mit react-dom/server wie baustein-feld.test.ts.
+ * Ergebnisbereich mit `role="status"`; dazu `istKnopfErgebnis`, `fehlerText`, die Anlege-Knöpfe (#989), der rot
+ * gefüllte Bestätigungsknopf nur in der Rückfrage. Gezeichnet mit react-dom/server wie baustein-feld.test.ts.
  */
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
@@ -25,7 +26,10 @@ g.React = React;
 
 const WEB = new URL('../../web/src/', import.meta.url).href;
 const lade = (pfad: string): Promise<any> => import(WEB + pfad); // eslint-disable-line @typescript-eslint/no-explicit-any -- Module der Oberfläche, je Pfad ein anderes
-const { Knopf, KnopfLink, knopfAussehen, istKnopfErgebnis, fehlerText, ErgebnisBlock, abfangen } = await lade('bausteine/index.ts');
+const { Knopf, KnopfLink, knopfAussehen, istKnopfErgebnis, fehlerText, ErgebnisBlock, abfangen, sperreAus } = await lade('bausteine/index.ts');
+const { BestaetigenKnopf } = await lade('bausteine/knopf/Knopf.tsx');
+const { RueckfrageVorschau } = await lade('bausteine/rueckfrage/Rueckfrage.tsx');
+const FRAGE = { titel: 'Notiz löschen?', text: 'Das lässt sich nicht rückgängig machen.', ja: 'Löschen' };
 const { Kopf } = await lade('werkbank/Kopf.tsx');
 
 const zeichne = (e: ReactElement) => renderToStaticMarkup(e);
@@ -40,7 +44,7 @@ const nichts = () => {};
 
 describe('Baustein Knopf (#968)', () => {
   it('Arten: feste Klassen und data-knopf; Vorgabe ist „neben“, type="button"', () => {
-    const erwartet = { anlegen: 'knopf gruen', haupt: 'knopf primaer', neben: 'knopf', gefahr: 'knopf gefahr', link: 'textknopf' } as const;
+    const erwartet = { anlegen: 'knopf gruen', haupt: 'knopf primaer', neben: 'knopf', link: 'textknopf' } as const;
     for (const [art, klasse] of Object.entries(erwartet)) {
       const html = zeichne(h(Knopf, { art }, 'Los'));
       assert.equal(attr(html, KNOPF, 'data-knopf'), art);
@@ -52,25 +56,61 @@ describe('Baustein Knopf (#968)', () => {
     assert.match(attr(html, KNOPF, 'class') ?? '', /\bklein\b/);
   });
 
-  it('ohne Handler kein Ergebnisbereich; mit Handler ein leerer Bereich mit role="status"', () => {
-    assert.doesNotMatch(zeichne(h(Knopf, { type: 'submit' }, 'Speichern')), /role="status"/);
-    const html = zeichne(h(Knopf, { onClick: nichts }, 'Jetzt prüfen'));
-    assert.match(html, /<\/button><span id="[^"]+" role="status" aria-live="polite" class="ergebnis"><\/span>/);
-    assert.equal(attr(html, KNOPF, 'aria-describedby'), undefined, 'Leeres Ergebnis beschreibt nichts');
+  it('Gefahr (#1210, Leitsatz 4 und 5): aussehen wie Neben, mit Symbol, öffnet die Rückfrage (aria-haspopup), nie submit', () => {
+    const html = zeichne(h(Knopf, { art: 'gefahr', symbol: 'geloescht', rueckfrage: FRAGE, type: 'submit' }, 'Löschen'));
+    assert.equal(attr(html, KNOPF, 'data-knopf'), 'gefahr');
+    assert.equal(attr(html, KNOPF, 'class'), 'knopf baustein', 'auf der Seite nichts Rotes: keine Klasse gefahr');
+    assert.equal(attr(html, KNOPF, 'aria-haspopup'), 'dialog');
+    assert.equal(attr(html, KNOPF, 'type'), 'button', 'erst die Rückfrage, dann die Handlung');
+    assert.match(html, /<span class="text"><svg class="sym"[^>]*>.*<\/svg>Löschen<\/span>/, 'Symbol vor der Beschriftung');
   });
 
-  it('gesperrt ohne Grund: disabled; mit Grund: erreichbar, aria-disabled und sichtbarer Grund über aria-describedby', () => {
+  it('nichts zu tun (Leitsatz 6): gesperrt=true ist blass (disabled), ohne Erklärung, ohne ⓘ', () => {
     const ohne = zeichne(h(Knopf, { gesperrt: true }, 'Speichern'));
     assert.match(ohne, /<button[^>]*disabled=""/);
     assert.equal(attr(ohne, KNOPF, 'aria-disabled'), undefined);
-    const mit = zeichne(h(Knopf, { gesperrt: 'Erst speichern, dann abrufen.' }, 'Jetzt abrufen'));
+    assert.doesNotMatch(ohne, /class="warum"|class="sr"|schloss/);
+    // false, '' und null heißen: nicht gesperrt.
+    for (const gesperrt of [false, '', null]) assert.equal(attr(zeichne(h(Knopf, { gesperrt }, 'Los')), KNOPF, 'aria-disabled'), undefined);
+    assert.equal(sperreAus(true), null);
+    assert.deepEqual(sperreAus('Grund.'), { grund: 'Grund.' });
+  });
+
+  it('gesperrt aus einem Grund (Leitsatz 6): gestrichelt mit Schloss, erreichbar, Grund am Knopf, ⓘ daneben; kein Satz in der Zeile', () => {
+    const mit = zeichne(h(Knopf, { gesperrt: 'Erst speichern, dann abrufen.', onClick: nichts }, 'Jetzt abrufen'));
     assert.doesNotMatch(mit, /<button[^>]*disabled=""/);
     assert.equal(attr(mit, KNOPF, 'aria-disabled'), 'true');
+    assert.match(attr(mit, KNOPF, 'class') ?? '', /\bgesperrt\b/);
+    assert.equal(attr(mit, KNOPF, 'aria-expanded'), 'false');
+    const knopfId = attr(mit, KNOPF, 'id');
     const grund = attr(mit, KNOPF, 'aria-describedby');
-    assert.ok(grund);
-    assert.match(mit, new RegExp(`<span id="${grund}" class="grund">Erst speichern, dann abrufen\\.</span>`));
-    // false heißt: nicht gesperrt.
-    assert.equal(attr(zeichne(h(Knopf, { gesperrt: false }, 'Los')), KNOPF, 'aria-disabled'), undefined);
+    assert.ok(knopfId && grund);
+    // Grund für Screenreader am Knopf, sichtbar erst in der Erklärung (kein langer Satz in der Zeile).
+    assert.match(mit, new RegExp(`<span id="${grund}" class="sr">Erst speichern, dann abrufen\\.</span>`));
+    assert.match(mit, /<path d="M7 11V7a5 5 0 0 1 10 0v4"><\/path>/, 'Schloss im Knopf');
+    const info = /<button type="button" class="warum"[^>]*>/.exec(mit)?.[0] ?? '';
+    assert.match(info, new RegExp(`aria-labelledby="[^"]+ ${knopfId}"`), 'ⓘ heißt „Warum gesperrt? <Knopf>“');
+    assert.match(mit, /hidden="">Warum gesperrt\?<\/span>/);
+    assert.doesNotMatch(mit, /role="region"/, 'Erklärung erst auf Klick');
+  });
+
+  it('Erklärung am Knopf: Grund, betroffene Einträge, „und n weitere“, „Stattdessen“ mit Knöpfen; Gefahr gesperrt ohne Rückfrage', () => {
+    const sperre = { grund: 'Zwei Verträge verweisen auf diese Mappe.', titel: 'Löschen geht nicht:', eintraege: ['Stromvertrag', 'Wasser'], weitere: 3, stattdessen: h(Knopf, { groesse: 'klein' }, 'Mit verknüpften Mappen löschen …') };
+    const html = zeichne(h(Knopf, { art: 'gefahr', symbol: 'geloescht', rueckfrage: FRAGE, gesperrt: sperre, erklaerungOffen: true }, 'Mappe löschen'));
+    assert.equal(attr(html, KNOPF, 'aria-expanded'), 'true');
+    assert.equal(attr(html, KNOPF, 'aria-haspopup'), undefined, 'gesperrt öffnet keine Rückfrage');
+    const region = attr(html, KNOPF, 'aria-controls');
+    assert.match(html, new RegExp(`<div id="${region}" role="region"[^>]*><p><strong>Löschen geht nicht:</strong> Zwei Verträge verweisen auf diese Mappe\\.</p><ul><li>Stromvertrag</li><li>Wasser</li><li class="leise">und 3 weitere</li></ul>`));
+    assert.match(html, /<p class="leise">Stattdessen:<\/p><div class="wegknoepfe"><button[^>]*data-knopf="neben"[^>]*>.*Mit verknüpften Mappen löschen …/);
+    assert.doesNotMatch(html, /M3 6h18/, 'Schloss statt Papierkorb');
+  });
+
+  it('rot gefüllt nur in der Rückfrage (Leitsatz 5): Bestätigungsknopf „entscheidung“, „Abbrechen“ als Neben', () => {
+    assert.match(zeichne(h(BestaetigenKnopf, { gefahr: true }, 'Löschen')), /^<button type="submit" class="knopf gefahr baustein" data-knopf="entscheidung">/);
+    assert.match(zeichne(h(BestaetigenKnopf, {}, 'Weiter')), /^<button type="submit" class="knopf primaer baustein" data-knopf="haupt">/);
+    const vorschau = zeichne(h(RueckfrageVorschau, { r: { ...FRAGE, gefahr: true } }));
+    assert.match(vorschau, /class="rueckfrage gefahr vorschau"/);
+    assert.match(vorschau, /<button[^>]*data-knopf="neben"[^>]*>.*Abbrechen.*<button type="submit" class="knopf gefahr baustein" data-knopf="entscheidung">/);
   });
 
   it('läuft: aria-busy und aria-disabled, nicht disabled (Fokus bleibt); Beschriftung bleibt, „Läuft …“ nur zu sehen', () => {
@@ -100,6 +140,7 @@ describe('Baustein Knopf (#968)', () => {
     const html = zeichne(h(KnopfLink, { to: '/werkbank/benutzer/neu', art: 'anlegen', groesse: 'klein' }, '+ Neu'));
     assert.match(html, /^<a href="\/werkbank\/benutzer\/neu"[^>]*class="knopf gruen klein baustein"[^>]*data-knopf="anlegen"[^>]*>\+ Neu<\/a>$/);
     assert.deepEqual(knopfAussehen({ art: 'anlegen' }), { className: 'knopf gruen baustein', 'data-knopf': 'anlegen' });
+    assert.match(html, />\+ /, 'Anlegen beginnt mit „+“ (Leitsatz 2)');
   });
 
   it('istKnopfErgebnis und fehlerText', () => {

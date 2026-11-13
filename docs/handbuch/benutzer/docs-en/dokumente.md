@@ -36,7 +36,7 @@ Next to every PDF and image (JPEG, PNG) there is a **small preview of the first 
 
 ### Without the export permission { #ohne-exportrecht }
 
-In Ablago the rule is: **reading means viewing, exporting means taking along.** Downloading, sharing, copies with a stamp, sending by email, exporting and the [network drive](laufwerk.md) therefore need the permission **Export (E)**, which an administrator grants on the views. If you lack it for a folder, you can still view its documents here; instead of **Download** there is a locked button with **Why not?**, and sharing and **With stamp …** are missing. Word or Excel files that the browser can't display then can't be opened.
+In Ablago the rule is: **reading means viewing, exporting means taking along.** Downloading, sharing, copies with a stamp, sending by email, exporting and the [network drive](laufwerk.md) therefore need the permission **Export (E)**, which an administrator grants on the views. If you lack it for a folder, you can still view its documents here; instead of **Download** there is a locked button (dashed with a padlock; the **ⓘ** next to it says why), and sharing and **With stamp …** are missing. Word or Excel files that the browser can't display then can't be opened.
 
 Saving while viewing can never be prevented entirely – a browser can save a displayed page, and a screenshot always works. The permission ensures that documents can't be taken along with one click.
 

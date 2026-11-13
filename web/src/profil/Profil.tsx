@@ -325,7 +325,7 @@ function MeineGeraete() {
       )}
       {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
       {andere.length > 0 && !vertretung && (
-        <div className="knoepfe"><Knopf className="gefahr-rand" onClick={async () => {
+        <div className="knoepfe"><Knopf onClick={async () => {
           if (await rueckfrage({ titel: t('profil.profil.auf-allen-anderen-geraeten', { anzahl: andere.length }), ja: t('profil.profil.abmelden'), gefahr: true })) void tu(async () => { const r = await api.andereSitzungenBeenden(); return t('profil.profil.geraete-abgemeldet', { anzahl: r.beendet }); });
         }}>{t('profil.profil.alle-anderen-abmelden')}</Knopf></div>
       )}

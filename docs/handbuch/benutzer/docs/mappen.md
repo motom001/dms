@@ -196,14 +196,14 @@ Unten links in der Mappe steht **Mappe löschen**. Nach einer Rückfrage kommt d
 
 In der Rückfrage wählst du den **Grund** – *Nicht mehr nötig*, *Frist abgelaufen*, *Auf Verlangen der betroffenen Person* oder *Sonstiges* – und kannst eine kurze Anmerkung dazuschreiben. Beides steht im Löschprotokoll, mit dem dein Administrator nachweisen kann, dass und warum gelöscht wurde; Titel und Inhalte der Mappe stehen dort nicht. Schreib in die Anmerkung deshalb keine Namen.
 
-Geht Löschen gerade nicht, ist der Knopf gesperrt (gedämpft, mit Schloss), und der Grund steht in einem Satz daneben. **Warum ist Löschen gesperrt?** klappt die ausführliche Begründung direkt am Knopf auf:
+Geht Löschen gerade nicht, ist der Knopf gesperrt: gestrichelter Rand, Schloss, daneben ein kleines **ⓘ**. Ein Klick auf den Knopf oder das ⓘ öffnet die Begründung direkt am Knopf; Esc oder ein Klick daneben schließt sie wieder:
 
 - **Es verweisen noch andere Mappen darauf.** Die Begründung zählt sie auf – mit Links dorthin (bei vielen die ersten acht und „und … weitere“). Entferne zuerst dort den Verweis. So kann kein Vertrag verschwinden, zu dem noch Rechnungen gehören. Verschickte E-Mails und andere [Post](post.md) halten das Löschen nicht auf.
 - **Archivmodus:** Die Aufbewahrungsfrist läuft noch; vorher lässt sich die Mappe von niemandem löschen.
 - **Berechtigungen:** Du darfst Mappen dieses Mappentyps nicht löschen. Das legt ein Administrator fest.
 - **Teile, die du nicht löschen darfst:** Hat die Mappe [Teile](#teile), gehen sie beim Löschen mit. Darfst du einen davon nicht löschen, bleibt alles stehen, und Ablago sagt, wie viele es sind.
 
-![Gesperrter Knopf „Mappe löschen“ mit Schloss und aufgeklappter Begründung](bilder/mappe-loeschen-warum.png)
+![Gesperrter Knopf „Mappe löschen“ mit gestricheltem Rand, Schloss und geöffneter Begründung](bilder/mappe-loeschen-warum.png)
 
 Benutzer und Systemrollen lassen sich in der Ablage gar nicht löschen; dort fehlt der Knopf.
 
@@ -242,7 +242,7 @@ Das merkst du so:
 
 - **Mappen, die du nicht lesen darfst**, tauchen in Listen, Suche, Zählern und Favoriten nicht auf. Verweist eine Mappe auf eine solche, steht dort *nicht sichtbare Mappe* ohne Link.
 - **Ohne Bearbeiten** zeigt eine Mappe ihre Felder und Dokumente nur an; unten steht „Nur lesen“. Notizen und Aufgaben gehen trotzdem.
-- **Ohne Löschen** ist „Mappe löschen“ gesperrt (mit Schloss und „Warum ist Löschen gesperrt?“), **ohne Anlegen** fehlt „+ Neu“, **ohne Passwörter sehen** fehlt das Auge an Passwortfeldern.
+- **Ohne Löschen** ist „Mappe löschen“ gesperrt (gestrichelt mit Schloss; das ⓘ daneben sagt, warum), **ohne Anlegen** fehlt „+ Neu“, **ohne Passwörter sehen** fehlt das Auge an Passwortfeldern.
 - **Ohne Exportieren** fehlen in einer Ansicht die Knöpfe zum Exportieren; Ansichten, die du nicht sehen darfst, fehlen im Baum.
 - Hängen deine Rechte von einem Feld ab (etwa „Verantwortlich“) und würdest du dir mit einer Änderung selbst das Lesen oder Bearbeiten nehmen, fragt Ablago vor dem Speichern nach.
 - Bei der Auswahl von Benutzern (Verantwortlich, Erwähnungen, Vertretung, Aufgaben) erscheinen nur die, die du sehen darfst.

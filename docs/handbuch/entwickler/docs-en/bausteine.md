@@ -23,6 +23,21 @@ All building blocks are in `web/src/bausteine/`:
 - **Accessibility belongs in the building block.** `id`, `htmlFor`, `aria-describedby` and the like are set by the building block; whoever uses it does not have to think about them.
 - **Light and dark, desktop and phone.** Every state is readable in both appearances and at phone width; hover and keyboard focus are visible.
 
+## Principles for buttons { #leitsaetze }
+
+Buttons mean the same everywhere, and nothing startles without need (#1210). Whoever places a button checks it against these six sentences; the pattern page shows them at the top, the building blocks implement them.
+
+1. **Blue is the main action.** Save, create after filling in, next and apply are blue (`Knopf art="haupt"`), at most one per area. Blue is also the accent colour (links, focus, selection) – this looks calm and coherent.
+2. **Green means “start something new”**, and only that: “+ New”, “+ Post”, “+ Row”, “+ Emergency contact” (`art="anlegen"`). The label begins with “+”. Otherwise green is kept for states (active, done, went well).
+3. **Discard is a button with a border** (`art="neben"`) next to the blue main button – it does something, so it is a button (pattern catalogue C8). No icon, not red on hover, no confirmation on click (only Esc with changes asks); faded without changes.
+4. **Nothing on the page is red.** Dangerous buttons (delete, lock, sign out, remove a package …) look like a secondary button with an icon (`art="gefahr"`). On hover and keyboard focus text and border turn red.
+5. **Solid red only at the moment of decision:** on the confirm button of the confirmation. No danger button without a confirmation – type checking only allows `art="gefahr"` with `rueckfrage` and `symbol`. Whatever can be undone (removing a link from a field, a row from a list before saving) is a normal “Remove” or “×”, not red.
+6. **Two kinds of “not possible”.** *Nothing to do* (save or discard without changes, empty selection): `gesperrt` – faded, no explanation. *Locked for a reason* (delete with links, missing permission, archive mode): `gesperrt="<reason>"` or a `KnopfSperre` – dashed border with a padlock and a small ⓘ next to it; a click on the button or the ⓘ opens the explanation at the button (reason, affected entries, “Instead” as buttons). No long sentence in the row; for screen readers the reason is attached to the button (`aria-describedby`). Dashed means “locked for you” everywhere, like “read only” on a field (C4). No “?” – that leads to the manual (C7); ⓘ explains exactly this case.
+
+**Checked** in three places: type checking requires symbol and confirmation for `art="gefahr"` (`web/src/bausteine/knopf/typpruefung.ts`). ESLint forbids colour classes via `className` on the button (`ablago/knopf-farben`, [Style and dependencies](stil.md#regeln)). The smoke tests report, on every page they visit, create buttons without “+”, danger buttons without a confirmation and solid red outside a confirmation ([Smoke test and screenshots](#rauchtest)).
+
+![Pattern page, area “Button”: kinds, danger at rest, on hover and focus, the confirmation, disabled in two forms and the opened explanation](bilder/muster-knopf.png){ loading=lazy }
+
 ## On a phone { #handy }
 
 On a phone the finger hits, not the mouse pointer. So every control of a building block gets a **touch target of at least 44 × 44 px** with **`(pointer: coarse)`** (touch as the primary pointer) (pattern catalogue D6, #1027; WCAG 2.5.8 asks for 24 px). With a mouse (`pointer: fine`) everything stays as it is.
@@ -37,6 +52,11 @@ On a phone the finger hits, not the mouse pointer. So every control of a buildin
 | `Suchfeld`, `ListenSuche` | input like a field; “×” as a button with only a symbol; “Package” choice and `FilterHaken` at least 44 px high |
 | `Umschalter` | each choice at least 44 × 44 px |
 | `Bereich`, jump bar from `useBereiche` | jumps and the head of an area at least 44 px high; “Expand all” as a button of type link |
+| ⓘ at a locked `Knopf` | stays small to the eye; touch target 44 × 44 px |
+| `Speicherleiste` | all buttons on one line; “… delete” only shows its icon (the name stays for screen readers) |
+| `Reiter` | each tab at least 44 px high; the row scrolls sideways, the page does not |
+| `Schalter` | at least 44 px high, the label toggles too |
+| `PaketChip` as a link | stays small to the eye; invisible touch target 44 px high |
 
 **The rule:** touch targets never overlap – not in a row of buttons or a group of checkboxes either. Whoever uses a building block writes nothing for this; one-off solutions with `@media (pointer: coarse)` in `styles.css` are only left for places without a building block. New building blocks set their touch target in their own stylesheet, also only with `(pointer: coarse)`, so the desktop stays unchanged.
 
@@ -59,7 +79,9 @@ The **production build** (`npm run build` without `VITE_MUSTER`, also in the ima
 
 ## Smoke test and screenshots { #rauchtest }
 
-The smoke test “Musterseite der Bausteine” (`web/rauchtest/rauchtest.mjs`, job **pruefen**) opens `/muster` light and dark, on desktop and at phone width, checks each view with **axe-core** (WCAG 2.2 A and AA plus best practice) checks that the page does not scroll sideways on a phone, and there for touch targets of at least 44 × 44 px ([On a phone](#handy)). Any violation makes the test fail. The screenshots end up in the run's artifact **musterseite**.
+The smoke test “Musterseite der Bausteine” (`web/rauchtest/rauchtest.mjs`, job **pruefen**) opens `/muster` light and dark, on desktop and at phone width, checks each view with **axe-core** (WCAG 2.2 A and AA plus best practice, including `color-contrast`), checks that the page does not scroll sideways on a phone, and there for touch targets of at least 44 × 44 px ([On a phone](#handy)). Any violation makes the test fail. The screenshots end up in the run's artifact **musterseite**.
+
+**Buttons on every page (#1210):** every smoke test runs a guard (`knopfWaechter` in `rauchtest.mjs`) that checks the visible buttons after every change of the page: `data-knopf="anlegen"` begins with “+”, `data-knopf="gefahr"` opens a confirmation (`aria-haspopup="dialog"`), solid red only appears inside the window of a confirmation. Existing code that does not meet this yet is listed with its issue in `KNOPF_AUSNAHMEN`; whoever converts the place removes the entry.
 
 The workflow **Handbuch** takes the same screenshots in the jobs `bilder (de)` and `bilder (en)` (`docs/handbuch/screenshots/aufnehmen.mjs`, shared code in `web/rauchtest/muster.mjs`); they end up in this manual as `bilder/muster-*.png`. Locally they are missing, like all screenshots ([Getting started](loslegen.md)).
 
@@ -68,7 +90,11 @@ The workflow **Handbuch** takes the same screenshots in the jobs `bilder (de)` a
 | Building block | Purpose |
 | --- | --- |
 | [Field](bausteine-feld.md) | Frame for every input: label, input, error, hint, help icon |
-| [Button](bausteine-knopf.md) | Every button: kinds create, main, secondary, danger, link; disabled with a reason, “working”, result and error at the button |
+| [Button](bausteine-knopf.md) | Every button: kinds main (blue), create (green, “+ …”), secondary, danger (with a confirmation), link; disabled in two forms, “working”, result and error at the button; plus the confirmation |
+| [Save bar](bausteine-speicherleiste.md) | At the bottom of every form: “… delete” on the left, state, “Discard” with a border and the blue main button; draft with Esc and a warning when leaving |
+| [Tabs](bausteine-reiter.md) | Tabs above some content, one active look, keyboard and `aria` following WAI-ARIA |
+| [Switch](bausteine-schalter.md) | Something is on or off (function, service, automation) – sliding switch; choices and options stay checkboxes |
+| [Package chip](bausteine-paketchip.md) | Origin from a package: icon and name after the name, tooltip with version, link to the package page |
 | [Inputs with a unit](bausteine-einheit.md) | Period (number and unit, singular/plural) and percentage (number with “%”) for the field kinds period and percentage |
 | [Table](bausteine-tabelle.md) | Rows with columns, each leading to a page; wide a table, narrow a list with the first two columns (field kind table) |
 | [Search](bausteine-suche.md) | The search field of all lists and the pattern “list in the middle: search field on top, filters below” with number of results, places found and package filter |

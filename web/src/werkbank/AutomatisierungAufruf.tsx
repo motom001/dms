@@ -80,8 +80,9 @@ export function AufrufAdresse({ a, parameter, nachher }: { a: AutomatisierungAns
           <Knopf groesse="klein" onClick={async () => {
             if (await rueckfrage({ titel: t('automatisierung.ui.aufruf.neue-adresse.frage'), text: t('automatisierung.ui.aufruf.neue-adresse.text'), ja: t('automatisierung.ui.aufruf.neue-adresse') })) await lege('adresse')();
           }}>{t('automatisierung.ui.aufruf.neue-adresse')}</Knopf>
-          <Knopf art="gefahr" groesse="klein" onClick={async () => {
-            if (!(await rueckfrage({ titel: t('automatisierung.ui.aufruf.entfernen.frage'), text: t('automatisierung.ui.aufruf.entfernen.text'), ja: t('automatisierung.ui.aufruf.entfernen'), gefahr: true }))) return;
+          <Knopf art="gefahr" groesse="klein" symbol="geloescht"
+            rueckfrage={{ titel: t('automatisierung.ui.aufruf.entfernen.frage'), text: t('automatisierung.ui.aufruf.entfernen.text'), ja: t('automatisierung.ui.aufruf.entfernen') }}
+            onClick={async () => {
             await api.automatisierungAufrufEntfernen(a.id); setNeu(null); await nachher();
           }}>{t('automatisierung.ui.aufruf.entfernen')}</Knopf>
         </div>

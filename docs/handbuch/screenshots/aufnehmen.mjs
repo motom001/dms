@@ -969,9 +969,10 @@ async function main() {
     await tabelle.scrollIntoViewIfNeeded();
     await bild(s, 'mappe-tabelle');
   }
-  // Mappe löschen (#423): Auf die Stadtwerke verweisen Verträge – „Warum ist Löschen gesperrt?“ am gesperrten Knopf (#648).
-  await s.getByRole('button', { name: w('Warum ist Löschen gesperrt?') }).click();
-  await s.locator('.loeschwahl-begruendung').waitFor();
+  // Mappe löschen (#423): Auf die Stadtwerke verweisen Verträge – gesperrt aus einem Grund (#1210): Klick auf den
+  // gestrichelten Knopf öffnet die Erklärung am Knopf.
+  await s.locator('button[aria-disabled="true"][aria-expanded]', { hasText: w('Mappe löschen') }).click({ force: true });
+  await s.locator('[data-erklaerung]').waitFor();
   await bild(s, 'mappe-loeschen-warum');
   await s.keyboard.press('Escape');
 

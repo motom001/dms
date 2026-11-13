@@ -385,7 +385,6 @@ a.textknopf { text-decoration: none; }
 .einspaltig.schmal { max-width: 760px; margin: 0 auto; width: 100%; }
 .rahmen.profil .rumpf { padding-top: 24px; }
 .gutertext { color: var(--gruen); font-size: calc(13px * var(--skala, 1)); }
-.knopf.gefahr-rand { color: var(--schlecht); border-color: var(--schlecht); }
 .dokumentliste li.neu { background: var(--gruen-zart); }
 .dokumentliste li.weg .dateiname, .dokumentliste li.weg .dokname > :first-child { text-decoration: line-through; color: var(--leise); }
 .dateiname { overflow-wrap: anywhere; }
@@ -805,7 +804,9 @@ input.kurz { width: 7em; }
 /* Aufgaben (#54) */
 .aufgabenhinweis ul { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; width: 100%; }
 .aufgabenhinweis li { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; justify-content: space-between; }
-.aufgabenhinweis li:not(.meine) { opacity: .85; }
+/* Aufgaben anderer etwas zurückgenommen – ohne Deckkraft (#1210, Kontrast: leise Schrift auf --warn-zart sank damit unter
+   4,5:1), nur über eine Linie links. */
+.aufgabenhinweis li:not(.meine) { padding-left: 8px; border-left: 2px solid var(--linie-stark); }
 .aufgabentext { flex: 1 1 18em; min-width: 0; color: var(--tinte); }
 .aufgabenaktionen, .weitergeben { display: inline-flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .eigenschaft.breit { grid-column: 1 / -1; }
@@ -870,19 +871,7 @@ input.kurz { width: 7em; }
 .wahlliste button.an { background: var(--akzent-zart); }
 
 /* Löschen vorab prüfen (#79) */
-/* Mappe löschen mit „Warum ist Löschen gesperrt?“ (#423, #648): Begründung klappt direkt am Knopf auf (über der Speicherleiste). */
-.loeschwahl { position: relative; display: inline-flex; align-items: center; gap: 4px 10px; flex-wrap: wrap; }
-.loeschwahl-warum { display: inline-flex; align-items: center; gap: 4px; }
-/* Gesperrter Löschknopf (#648): als Knopf erkennbar, aber gedämpft – nicht klickbar wie ein echter Knopf. */
-.knopf.loeschwahl-gesperrt { color: var(--leise); border-style: dashed; background: transparent; cursor: not-allowed; display: inline-flex; align-items: center; gap: 6px; }
-.loeschwahl-grund { flex-basis: 100%; }
-.loeschwahl-begruendung { position: absolute; left: 0; bottom: calc(100% + 8px); z-index: 30; width: min(380px, calc(100vw - 48px)); padding: 10px 12px; background: var(--flaeche); border: 1px solid var(--linie-stark); border-radius: var(--r); box-shadow: 0 10px 30px var(--schatten); }
-.loeschwahl-begruendung p { margin: 0; }
-/* Unter dem Knopf aufklappen (#723: „Herunterladen“ steht oben in der Dokumentleiste). */
-.loeschwahl-begruendung.unten { bottom: auto; top: calc(100% + 8px); z-index: 30; }
-.loeschwahl-begruendung p + p { margin-top: 6px; }
-.loeschwahl-begruendung ul { margin: 6px 0 0; padding-left: 18px; }
-.loeschwahl-wege { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--linie); display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
+/* Mappe löschen gesperrt (#423, #648): seit #1210 im Baustein Knopf (gesperrt aus einem Grund, Erklärung am Knopf). */
 .textknopf.gefahr:disabled { color: var(--leise); cursor: not-allowed; text-decoration: none; }
 
 /* Benutzernamen als Link (#65) */
@@ -1454,10 +1443,12 @@ a.knopf.breit { display: flex; justify-content: center; text-decoration: none; }
   .startseite.start-breit .zuletzt .mappenliste { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 0 16px; }
 }
 /* Rückfragen (#355) */
-dialog.rueckfrage { width: min(440px, calc(100vw - 32px)); padding: 20px 22px 18px; border: 1px solid var(--linie-stark); border-radius: 10px; background: var(--flaeche); color: var(--tinte); box-shadow: 0 12px 40px var(--schatten-stark); }
+/* Fenster und Vorschau der Musterseite (#1210) sehen gleich aus; nur das Fenster hat Schleier und am Handy die Form eines
+   Blatts von unten. */
+.rueckfrage { width: min(440px, calc(100vw - 32px)); padding: 20px 22px 18px; border: 1px solid var(--linie-stark); border-radius: 10px; background: var(--flaeche); color: var(--tinte); box-shadow: 0 12px 40px var(--schatten-stark); }
 dialog.rueckfrage::backdrop { background: var(--schleier); }
-dialog.rueckfrage.gefahr { border-top: 4px solid var(--schlecht); }
-dialog.rueckfrage h2 { margin: 0 0 8px; font-size: calc(17px * var(--skala, 1)); }
+.rueckfrage.gefahr { border-top: 4px solid var(--schlecht); }
+.rueckfrage h2 { margin: 0 0 8px; font-size: calc(17px * var(--skala, 1)); }
 .rueckfrage-text p { margin: 0 0 8px; }
 dialog.rueckfrage .eigenschaft { display: flex; flex-direction: column; gap: 4px; margin: 6px 0 4px; }
 .rueckfrage-knoepfe { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
@@ -2060,15 +2051,8 @@ ul.sitzungsliste.festhoehe { border: 1px solid var(--linie); border-radius: var(
 @media (prefers-reduced-motion: reduce) { .automatisierung-schritte .laufschritt td { transition: none; } }
 @media (max-width: 600px) { .automatisierung .einzug { margin-left: 6px; } }
 
-/* Schalter an/aus (#706): role="switch", Zustand zusätzlich als Text. */
-.schalter { display: inline-flex; align-items: center; gap: 8px; background: none; border: 0; padding: 4px 0; min-height: 32px; color: var(--tinte); font: inherit; cursor: pointer; }
-.schalter-spur { position: relative; width: 36px; height: 20px; border-radius: 10px; background: var(--linie-stark); transition: background .15s; flex: none; }
-.schalter-knopf { position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: var(--flaeche); transition: left .15s; }
-.schalter.an .schalter-spur { background: var(--gruen); }
-.schalter.an .schalter-knopf { left: 18px; }
-.schalter:focus-visible { outline: 2px solid var(--akzent); outline-offset: 2px; border-radius: var(--r); }
+/* Schalter an/aus (#706): seit #1188 der Baustein Schalter (web/src/bausteine/schalter/). */
 .handlungen { align-items: center; gap: 8px 12px; }
-@media (prefers-reduced-motion: reduce) { .schalter-spur, .schalter-knopf { transition: none; } }
 /* Symbol je Ansicht (#428): Auswahl als Raster in der Werkbank. */
 .symbolwahl .knoepfe { margin-top: 4px; }
 .symbolraster-rahmen > .suche { flex: none; max-width: none; }

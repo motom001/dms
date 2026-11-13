@@ -17,7 +17,6 @@ import { Eintragsliste, type Listeneintrag } from '../ablage/Historie';
 import { useDaten } from '../daten';
 import { Listenkopf } from '../Listenkopf';
 import { geheZu, Link, loeseWache } from '../ort';
-import { rueckfrage } from '../rueckfrage';
 import { t } from '../sprache';
 import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 import { Ansage, umgestellt, useZiehen, ziehTasten } from '../ziehen';
@@ -25,7 +24,9 @@ import { FeldBedingung } from './Sichten';
 import { gebietsschema } from '../../../shared/src/sprache';
 import { AufrufAdresse, AufrufParameterZeile, AufrufWenn } from './AutomatisierungAufruf';
 import { EmailKarte, UrlKarte, Zustellungen } from './AutomatisierungAussen';
-import { GeloeschteEintraege, Bereich, Fassungen, Feld, FeldGruppe, fehlerBereiche, HakenFeld, Knopf, KnopfLink, useBereiche, type BereichListe, type Klappe } from '../bausteine';
+import { GeloeschteEintraege, Bereich, Fassungen, Feld, FeldGruppe, fehlerBereiche, HakenFeld, Knopf, KnopfLink, PaketChip, Schalter, useBereiche, type BereichListe, type Klappe } from '../bausteine';
+import type { InstalliertesPaket } from '../../../shared/src/pakete';
+import { paketHerkunft } from './listensuche';
 
 /**
  * Werkbank → Ablage aufbauen → Automatisierungen (#675): Mitte die Liste (Name, Kurzform, an/aus, letzter Lauf,
@@ -67,7 +68,7 @@ function Zustandschip({ a }: { a: AutomatisierungAnsicht }) {
 
 /* ---------- Liste ---------- */
 
-export function AutomatisierungenListe({ z, offen }: { z: AutomatisierungenZustand; offen?: string }) {
+export function AutomatisierungenListe({ z, offen, pakete = [] }: { z: AutomatisierungenZustand; offen?: string; pakete?: InstalliertesPaket[] }) {
   const [nachAusloeser, setNachAusloeser] = useState(false);
   const [suche, setSuche] = useState('');
   const [ansage, setAnsage] = useState('');
@@ -112,7 +113,7 @@ export function AutomatisierungenListe({ z, offen }: { z: AutomatisierungenZusta
           runter: i < g.length - 1 ? () => void sortiere(g, umgestellt(g, i, i + 1, 'nach')) : undefined,
         })}><span aria-hidden="true">⠿</span></button>}
         <Link to={`/werkbank/automatisierungen/${a.id}`} className={`eintrag werk ${offen === a.id ? 'an' : ''}`}>
-          <span className="titel">{a.name} <Zustandschip a={a} />{a.herkunft !== 'eigen' && <> <span className="chip">{t.frei(`automatisierung.ui.herkunft.${a.herkunft}`)}</span></>}</span>
+          <span className="titel">{a.name} <Zustandschip a={a} /><PaketChip paket={a.herkunft === 'dms' ? 'ablago' : a.herkunft === 'paket' ? paketHerkunft(a.paketId, pakete) : null} inLink /></span>
           <span className="unter">{a.kurz}</span>
           <span className="leise klein">{t('automatisierung.ui.liste.reihenfolge', { nr: a.reihenfolge })}{a.letzterLauf && <> · {t('automatisierung.ui.liste.letzter', { zeit: zeit(a.letzterLauf.gestartet), zustand: t.frei(`automatisierung.ui.zustand.${a.letzterLauf.zustand}`) })}</>}</span>
           <ListenHinweis a={a} />
@@ -294,9 +295,9 @@ export function AutomatisierungEditor({ z, id }: { z: AutomatisierungenZustand; 
             <div className="hinweis schlecht"><p>{t('automatisierung.ui.angehalten')}: {a.angehalten.text}</p></div>
             <button type="button" className="knopf klein" onClick={() => void aktion(() => api.automatisierungSchalten(a.id, true), t('automatisierung.ui.eingeschaltet'))}>{t('automatisierung.ui.wieder-einschalten')}</button>
           </> : schaltRueckmeldung ? <p className="gut" role="status">{schaltRueckmeldung}</p>
-            : <Schalter an={a ? a.aktiv : e.aktiv} beschriftung={t('automatisierung.ui.schalter')} onChange={(an) => {
+            : <Schalter an={a ? a.aktiv : e.aktiv} beschriftung={t('automatisierung.ui.schalter')} beschriftungVerbergen setze={(an) => {
               if (!a) { setE({ ...e, aktiv: an }); return; }
-              void (async () => {
+              return (async () => {
                 try { await api.automatisierungSchalten(a.id, an); await z.laden(); setSchaltRueckmeldung(an ? t('automatisierung.ui.eingeschaltet') : t('automatisierung.ui.ausgeschaltet')); setTimeout(() => setSchaltRueckmeldung(null), 2500); }
                 catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); }
               })();
@@ -360,11 +361,11 @@ export function AutomatisierungEditor({ z, id }: { z: AutomatisierungenZustand; 
       </>}
       <Speicherleiste ent={ent} gegenstand={t('automatisierung.ui.gegenstand')} sendet={sendet} ungueltig={probleme.length > 0} formular="auto-formular"
         meldung={meldung?.art === 'schlecht' ? meldung : undefined}
-        links={a && a.herkunft === 'eigen' && <Knopf art="link" className="gefahr" onClick={async () => {
-          if (await rueckfrage({ titel: t('automatisierung.ui.loeschen.frage', { name: a.name }), text: t('automatisierung.ui.loeschen.text'), ja: t('automatisierung.ui.loeschen'), gefahr: true })) {
-            void aktion(async () => { await api.automatisierungLoeschen(a.id); loeseWache(); geheZu('/werkbank/automatisierungen', true); }, t('automatisierung.ui.geloescht'));
-          }
-        }}>{t('automatisierung.ui.loeschen')}</Knopf>} />
+        loeschen={a && a.herkunft === 'eigen' ? {
+          text: t('automatisierung.ui.loeschen'),
+          rueckfrage: { titel: t('automatisierung.ui.loeschen.frage', { name: a.name }), text: t('automatisierung.ui.loeschen.text'), ja: t('automatisierung.ui.loeschen') },
+          onClick: () => { void aktion(async () => { await api.automatisierungLoeschen(a.id); loeseWache(); geheZu('/werkbank/automatisierungen', true); }, t('automatisierung.ui.geloescht')); },
+        } : undefined} />
     </div>
   );
 }
@@ -982,12 +983,3 @@ function Verlauf({ a, klappe }: { a: AutomatisierungAnsicht; k: Kontextdaten; d:
   );
 }
 
-/** Schalter an/aus (#706): echtes Schaltelement (`role="switch"`), Zustand als Text wie in der Liste. */
-function Schalter({ an, beschriftung, onChange }: { an: boolean; beschriftung: string; onChange: (an: boolean) => void }) {
-  return (
-    <button type="button" role="switch" aria-checked={an} aria-label={beschriftung} className={`schalter${an ? ' an' : ''}`} onClick={() => onChange(!an)}>
-      <span className="schalter-spur" aria-hidden="true"><span className="schalter-knopf" /></span>
-      <span>{an ? t('automatisierung.ui.an') : t('automatisierung.ui.aus')}</span>
-    </button>
-  );
-}

@@ -2,13 +2,12 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { api, type SucheStand } from '../api';
 import { geheZu, Link, loeseWache } from '../ort';
 import { Listenkopf } from '../Listenkopf';
-import { rueckfrage } from '../rueckfrage';
 import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 import { Symbol } from '../Symbol';
 import { t, tn } from '../sprache';
 import { EIGENE_WOERTER, gruppenMitWort, pruefeWortgruppe, SYNONYM_LAENGE, SYNONYM_MAX, type Wortgruppe } from '../../../shared/src/suche';
 import type { Fundquelle } from '../../../shared/src/listensuche';
-import { FeldGruppe, Fundstellen, Hervorgehoben, KeineTreffer, Knopf, KnopfLink, ListenSuche, NurLesenFeld, PaketFilter, useListenSuche } from '../bausteine';
+import { FeldGruppe, Fundstellen, Hervorgehoben, KeineTreffer, Knopf, KnopfLink, ListenSuche, NurLesenFeld, PaketChip, PaketFilter, useListenSuche } from '../bausteine';
 
 /**
  * Werkbank → Gleichbedeutende Wörter (#992, vorher unten auf „Suche und Volltext“, #356): dreiteilig wie die anderen
@@ -73,8 +72,9 @@ export function WoerterListe({ z, offen }: { z: WoerterZustand; offen?: string }
                 return (
                   <li key={g.id}><Link to={pfad(g.id)} className={`eintrag werk ${offen === g.id ? 'an' : ''}`}>
                     <span className="titel wortgruppe"><strong><Hervorgehoben teile={titel} text={g.woerter[0]} /></strong>
-                      {g.woerter.length > 1 && <span className="leise"> · <Hervorgehoben teile={rest?.teile} text={g.woerter.slice(1).join(' · ')} /></span>}</span>
-                    <span className="unter leise klein">{eigen(g) ? t('suche.gruppen.eigene') : <><Symbol name="paket" /> {herkunftText(g)}</>}</span>
+                      {g.woerter.length > 1 && <span className="leise"> · <Hervorgehoben teile={rest?.teile} text={g.woerter.slice(1).join(' · ')} /></span>}
+                      {/* Herkunft als Chip hinter dem Namen, keine eigene Zeile (#1192); eigene Gruppen ohne Chip. */}
+                      <PaketChip paket={eigen(g) ? null : { id: g.quelle, name: g.paketName }} inLink /></span>
                     <Fundstellen funde={funde.filter((f) => f !== rest && f.wo !== t('suche.gruppen.fund.paket'))} />
                   </Link></li>
                 );
@@ -189,7 +189,7 @@ function WortgruppeEditor({ z, gruppen, gruppe, kopieVon }: { z: WoerterZustand;
     } finally { setSendet(false); }
   }
   async function loeschen() {
-    if (!gruppe || !(await rueckfrage({ titel: t('suche.werkbank.entfernen.frage'), text: gruppe.woerter.join(', '), ja: t('suche.werkbank.entfernen'), gefahr: true }))) return;
+    if (!gruppe) return;
     try { z.setStand(await api.synonymLoeschen(gruppe.id)); loeseWache(); geheZu(WOERTER_PFAD, true); }
     catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); }
   }
@@ -208,7 +208,11 @@ function WortgruppeEditor({ z, gruppen, gruppe, kopieVon }: { z: WoerterZustand;
         <WortZeilen e={e} gruppen={gruppen} ausser={[gruppe?.id, kopieVon?.id]} doppelt={pruefung.doppelt} fehler={geprueft && !pruefung.doppelt.length ? pruefung.fehler : null}
           setze={setze} schiebe={schiebe} entferne={entferne} dazu={dazu} />
         <Speicherleiste ent={ent} gegenstand={t('suche.gruppen.gegenstand')} sendet={sendet} speicherbar={!!kopieVon}
-          links={!neu && <Knopf art="link" className="gefahr" onClick={loeschen}><Symbol name="geloescht" /> {t('suche.werkbank.entfernen')}</Knopf>} />
+          loeschen={!neu ? {
+            text: t('suche.werkbank.entfernen'),
+            rueckfrage: { titel: t('suche.werkbank.entfernen.frage'), text: gruppe?.woerter.join(', '), ja: t('suche.werkbank.entfernen') },
+            onClick: loeschen,
+          } : undefined} />
       </div>
     </form>
   );

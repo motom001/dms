@@ -140,7 +140,7 @@ export function TresorPanel({ t: eintrag }: { t: TresorZustand }) {
         <section className="blatt" id="wechseln">
           <h2 className="h3">{t('werkbank.verschluesselung.schluessel-wechseln-2')} <Hilfe ort="verschluesselung.wechseln" /></h2>
           <p className="leise">{t('werkbank.verschluesselung.wenn-der-schluessel-bekannt')}</p>
-          {!wechsel && <div className="knoepfe"><button type="button" className="knopf gefahr-rand" disabled={laeuft} onClick={() => void wechseln()}>{laeuft ? t('werkbank.verschluesselung.wechsle') : t('werkbank.verschluesselung.schluessel-wechseln')}</button></div>}
+          {!wechsel && <div className="knoepfe"><button type="button" className="knopf" disabled={laeuft} onClick={() => void wechseln()}>{laeuft ? t('werkbank.verschluesselung.wechsle') : t('werkbank.verschluesselung.schluessel-wechseln')}</button></div>}
           {wechsel && (
             <div className="hinweis gut stapel" role="status">
               <p>{tn('werkbank.verschluesselung.werte-wurden-neu-verschluesselt', { anzahl: wechsel.umgeschluesselt, b: <strong>{t('werkbank.verschluesselung.schluessel-gewechselt')}</strong>, span: <span className="mono">{wechsel.alt}</span>, span2: <span className="mono">{wechsel.neu}</span>, wert: wechsel.unlesbar ? t('werkbank.verschluesselung.waren-schon-vorher-nicht', { unlesbar: wechsel.unlesbar }) : '' })}</p>

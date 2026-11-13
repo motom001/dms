@@ -108,7 +108,7 @@ export function PapierkorbListe({ z, werkbank, offen }: { z: PapierkorbZustand; 
   };
   const tabelle = breite >= spalten.length * 110;
   const leerenKnopf = liste.length + z.dokumente.length > 0
-    ? <button type="button" className="knopf klein gefahr-rand" disabled={laeuft} onClick={() => void leeren()}>{laeuft ? t('ablage.papierkorb.leere') : t('ablage.papierkorb.papierkorb-leeren')}</button> : null;
+    ? <button type="button" className="knopf klein" disabled={laeuft} onClick={() => void leeren()}>{laeuft ? t('ablage.papierkorb.leere') : t('ablage.papierkorb.papierkorb-leeren')}</button> : null;
   return (
     <>
       <div ref={mess} className="breitenmesser" aria-hidden="true" />
@@ -302,7 +302,7 @@ export function PapierkorbDetail({ id, werkbank }: { id: string; werkbank: boole
         : <p className="leise klein">{t('ablage.papierkorb.beim-wiederherstellen-kommen')}</p>}
       {meldung && <div className="hinweis schlecht"><p>{meldung}</p></div>}
       <div className="knoepfe">
-        <button type="button" className="knopf gefahr-rand" disabled={!!laeuft} onClick={() => void endgueltig()}>{laeuft === 'weg' ? t('ablage.papierkorb.loesche') : t('ablage.papierkorb.endgueltig-loeschen-2')}</button>
+        <button type="button" className="knopf" disabled={!!laeuft} onClick={() => void endgueltig()}>{laeuft === 'weg' ? t('ablage.papierkorb.loesche') : t('ablage.papierkorb.endgueltig-loeschen-2')}</button>
         {!e.aufgeloestIn && <button type="button" className={`knopf ${zusammen.length > 1 ? '' : 'gruen'}`} disabled={!!laeuft} onClick={() => void wiederherstellen()}>{laeuft === 'zurueck' ? t('ablage.papierkorb.stelle-wieder-her') : zusammen.length > 1 ? t('ablage.papierkorb.nur-diese-wiederherstellen') : t('ablage.papierkorb.wiederherstellen')}</button>}
         {zusammen.length > 1 && <button type="button" className="knopf gruen" disabled={!!laeuft} onClick={() => void alleWiederherstellen()}>{laeuft === 'alle' ? t('ablage.papierkorb.stelle-wieder-her') : t('ablage.papierkorb.alle-wiederherstellen-2', { zusammen: zusammen.length })}</button>}
       </div>

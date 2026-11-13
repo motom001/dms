@@ -213,7 +213,7 @@ export function DemoPanel() {
       <div className="blatt">
         <h2 className="h3">{t('werkbank.demo.entfernen')}</h2>
         <p className="leise">{t('werkbank.demo.loescht-alle-demo-mappen', { demo: demo.toLocaleString(gebietsschema()) })}</p>
-        <div className="knoepfe"><Knopf className="gefahr-rand" gesperrt={!demo || laeuft} onClick={async () => {
+        <div className="knoepfe"><Knopf gesperrt={!demo || laeuft} onClick={async () => {
           if (await rueckfrage({ titel: t('werkbank.demo.alle-demo-mappen-loeschen', { demo: demo.toLocaleString(gebietsschema()) }), text: t('werkbank.demo.echte-mappen-bleiben-unberuehrt'), ja: t('werkbank.demo.demo-mappen-loeschen'), gefahr: true })) void starte(() => api.demoEntfernen());
         }}>{t('werkbank.demo.alle-demo-mappen-entfernen')}</Knopf></div>
         <DemoTabelle u={u} />

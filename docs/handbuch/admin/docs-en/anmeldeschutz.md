@@ -155,7 +155,7 @@ Under **Workbench → Sign-in protection → Sign-in via a provider** you enter:
 - **Client secret** – leave empty for public clients that have no secret. If one is already saved, an empty field leaves it unchanged; **Delete secret** removes it,
 - **Button label** on the sign-in page.
 
-Then click **Check connection**. Afterwards tick **Switched on – button on the sign-in page** and save. The client secret is stored in the database encrypted with [Ablago's key](verschluesselung.md).
+Then click **Check connection**. Afterwards turn on the switch **Sign-in with this provider** and save. The client secret is stored in the database encrypted with [Ablago's key](verschluesselung.md).
 
 - **Matching:** via the email address. If it doesn't exist in Ablago, Ablago refuses – unless **Create unknown addresses as new users** is on; then a user is created – with "Full administration" or without management permission, depending on **Manage new users**. With Entra ID, the sign-in name (UPN) also serves as the address.
 - **Group for "Full administration":** if it is set, "Full administration" follows the group at every sign-in: whoever is in the group gets it, whoever no longer belongs loses it. The last person with "Full administration" keeps it. A selection of individual areas stays untouched (see [Who may manage Ablago?](verwalten.md)).

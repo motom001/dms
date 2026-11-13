@@ -14,10 +14,11 @@ import { MappenWahl } from '../ablage/MappeFormular';
 import { useDaten } from '../daten';
 import { Listenkopf } from '../Listenkopf';
 import { geheZu, Link, loeseWache } from '../ort';
-import { rueckfrage } from '../rueckfrage';
 import { t } from '../sprache';
 import { Speicherleiste, useEntwurf } from '../Speicherleiste';
-import { Fassungen, Feld, FeldGruppe, GeloeschteEintraege, HakenFeld, Knopf, KnopfLink, Umschalter, ZeitraumEingabe, type Klappe, type ZeitraumRoh } from '../bausteine';
+import { Fassungen, Feld, FeldGruppe, GeloeschteEintraege, HakenFeld, Knopf, KnopfLink, PaketChip, Schalter, Umschalter, ZeitraumEingabe, type Klappe, type ZeitraumRoh } from '../bausteine';
+import type { InstalliertesPaket } from '../../../shared/src/pakete';
+import { paketHerkunft } from './listensuche';
 
 /**
  * Werkbank → Ablage aufbauen → Automatisierungsvorlagen (#1044): Mitte alle Vorlagen (an/aus, Zahl der offenen Abläufe),
@@ -42,14 +43,19 @@ const zeit = (iso: string | null | undefined) => (iso ? new Date(iso).toLocaleSt
 const FEST: Klappe = { offen: true, umschalten: () => undefined, fest: true };
 const pfad = (kennung: string) => `/werkbank/ablaufvorlagen/${encodeURIComponent(kennung)}`;
 
-function Herkunft({ v }: { v: AblaufvorlageAnsicht }) {
-  if (v.ueberlagert) return <span className="chip" title={t('automatisierung.vorlage.ui.ueberlagert', { paket: v.ueberlagert })}>{t('automatisierung.vorlage.ui.herkunft.paket')}</span>;
-  return v.herkunft === 'eigen' ? null : <span className="chip">{t.frei(`automatisierung.vorlage.ui.herkunft.${v.herkunft}`)}</span>;
+/**
+ * Herkunft einer Vorlage (#1192): Paket mit Namen, „Ablago“ für die mitgelieferten, eigene ohne Chip. Ersetzt ein Paket
+ * eine Vorlage von Ablago, steht sein Name da und der Tooltip sagt es.
+ */
+function Herkunft({ v, pakete }: { v: AblaufvorlageAnsicht; pakete: readonly InstalliertesPaket[] }) {
+  const paket = paketHerkunft(v.paketId, pakete);
+  if (v.ueberlagert) return <PaketChip paket={paket ?? { id: v.ueberlagert, name: v.ueberlagert }} inLink titel={t('automatisierung.vorlage.ui.ueberlagert', { paket: v.ueberlagert })} />;
+  return <PaketChip paket={v.herkunft === 'kern' ? 'ablago' : v.herkunft === 'paket' ? paket : null} inLink />;
 }
 
 /* ---------- Liste ---------- */
 
-export function AblaufvorlagenListe({ z, offen }: { z: AblaufvorlagenZustand; offen?: string }) {
+export function AblaufvorlagenListe({ z, offen, pakete = [] }: { z: AblaufvorlagenZustand; offen?: string; pakete?: InstalliertesPaket[] }) {
   const s = z.stand;
   return (
     <>
@@ -62,7 +68,7 @@ export function AblaufvorlagenListe({ z, offen }: { z: AblaufvorlagenZustand; of
         <ul className="mappenliste">{s.vorlagen.map((v) => (
           <li key={v.kennung}>
             <Link to={pfad(v.kennung)} className={`eintrag werk ${offen === v.kennung ? 'an' : ''}`}>
-              <span className="titel">{v.name} <span className={`chip ${v.aktiv ? 'gut' : ''}`}>{v.aktiv ? t('automatisierung.ui.an') : t('automatisierung.ui.aus')}</span> <Herkunft v={v} /></span>
+              <span className="titel">{v.name} <span className={`chip ${v.aktiv ? 'gut' : ''}`}>{v.aktiv ? t('automatisierung.ui.an') : t('automatisierung.ui.aus')}</span> <Herkunft v={v} pakete={pakete} /></span>
               <span className="unter">{v.kurz}</span>
               <span className="leise klein">{t('automatisierung.vorlage.ui.offen', { anzahl: v.offen })}{v.angehalten > 0 && <> · <span className="chip schlecht klein">{t('automatisierung.vorlage.ui.davon-angehalten', { anzahl: v.angehalten })}</span></>}</span>
               {v.probleme[0] && <span className="problem">{v.probleme[0]}</span>}
@@ -145,7 +151,9 @@ function VorlageKopf({ v, aktion }: { v?: AblaufvorlageAnsicht; aktion: (f: () =
       <div className="zeile-zwischen">
         <h2 className="h3">{v ? v.name : t('automatisierung.vorlage.ui.neu.titel')}</h2>
         {v && <div className="knoepfe">
-          <Knopf groesse="klein" onClick={() => aktion(() => api.ablaufvorlageSchalten(v.kennung, !v.aktiv), v.aktiv ? t('automatisierung.vorlage.ui.ausgeschaltet') : t('automatisierung.vorlage.ui.eingeschaltet'))}>{v.aktiv ? t('automatisierung.vorlage.ui.ausschalten') : t('automatisierung.vorlage.ui.einschalten')}</Knopf>
+          {/* An/aus als Schalter (#1188), wirkt sofort. */}
+          <Schalter an={v.aktiv} beschriftung={t('automatisierung.vorlage.ui.schalter')} beschriftungVerbergen
+            setze={(an) => aktion(() => api.ablaufvorlageSchalten(v.kennung, an), an ? t('automatisierung.vorlage.ui.eingeschaltet') : t('automatisierung.vorlage.ui.ausgeschaltet'))} />
           <Knopf groesse="klein" onClick={() => aktion(async () => { const x = await api.ablaufvorlageKopieren(v.kennung); geheZu(pfad(x.kennung)); }, t('automatisierung.ui.kopiert'))}>{t('automatisierung.ui.kopieren')}</Knopf>
           {istKernVorlage(v.kennung) && v.herkunft === 'kern' && v.version > 0 && <Knopf groesse="klein" onClick={() => aktion(() => api.ablaufvorlageZuruecksetzen(v.kennung), t('automatisierung.vorlage.ui.zurueckgesetzt'))}>{t('automatisierung.vorlage.ui.zuruecksetzen')}</Knopf>}
         </div>}
@@ -219,11 +227,11 @@ export function AblaufvorlageEditor({ z, kennung }: { z: AblaufvorlagenZustand; 
         <p className="leise klein">{t('automatisierung.vorlage.ui.kurz', { wann: wannText(e.wann) })}</p>
         {probleme.length > 0 && <ul className="fehlertext klein">{probleme.map((p) => <li key={p}>{p}</li>)}</ul>}
         <Speicherleiste ent={ent} gegenstand={t('automatisierung.vorlage.ui.gegenstand')} sendet={sendet} ungueltig={probleme.length > 0} meldung={meldung}
-          links={v && v.herkunft === 'eigen' && <Knopf art="link" className="gefahr" onClick={async () => {
-            if (await rueckfrage({ titel: t('automatisierung.vorlage.ui.loeschen.frage', { name: v.name }), text: t('automatisierung.vorlage.ui.loeschen.text'), ja: t('automatisierung.ui.loeschen'), gefahr: true })) {
-              await aktion(async () => { await api.ablaufvorlageLoeschen(v.kennung); loeseWache(); geheZu('/werkbank/ablaufvorlagen', true); }, t('automatisierung.vorlage.ui.geloescht'));
-            }
-          }}>{t('automatisierung.ui.loeschen')}</Knopf>} />
+          loeschen={v && v.herkunft === 'eigen' ? {
+            text: t('automatisierung.ui.loeschen'),
+            rueckfrage: { titel: t('automatisierung.vorlage.ui.loeschen.frage', { name: v.name }), text: t('automatisierung.vorlage.ui.loeschen.text'), ja: t('automatisierung.ui.loeschen') },
+            onClick: () => aktion(async () => { await api.ablaufvorlageLoeschen(v.kennung); loeseWache(); geheZu('/werkbank/ablaufvorlagen', true); }, t('automatisierung.vorlage.ui.geloescht')),
+          } : undefined} />
       </form>
       {v && <>
         <Ausprobieren v={v} />

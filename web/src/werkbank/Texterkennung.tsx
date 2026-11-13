@@ -342,7 +342,7 @@ function VolltextNeu({ t: eintrag, wartungAn }: { t: TexterkennungZustand; wartu
       <div className="knoepfe">
         <button type="button" className="knopf primaer" disabled={laeuft} onClick={() => void starte('ohne')}>{tx('volltext.neu.ohne')}</button>
         <button type="button" className="knopf" disabled={laeuft} onClick={() => void starte('alle')}>{tx('volltext.neu.alle')}</button>
-        {laeuft && <button type="button" className="knopf gefahr-rand" disabled={auftrag.abgebrochen} onClick={() => void abbrechen()}>{auftrag.abgebrochen ? tx('volltext.neu.laeuft') : tx('volltext.neu.abbrechen')}</button>}
+        {laeuft && <button type="button" className="knopf" disabled={auftrag.abgebrochen} onClick={() => void abbrechen()}>{auftrag.abgebrochen ? tx('volltext.neu.laeuft') : tx('volltext.neu.abbrechen')}</button>}
       </div>
     </section>
   );
@@ -409,7 +409,7 @@ function Auftraege({ t: eintrag }: { t: TexterkennungZustand }) {
           </div>
           {liste.gesamt > alle.length && <p className="leise klein">{t('werkbank.texterkennung.gezeigt-werden-die-neuesten', { zahl: zahl(alle.length), zahl2: zahl(liste.gesamt) })}</p>}
           <div className="knoepfe">
-            {abbrechbar && <button type="button" className="knopf gefahr-rand" disabled={!ids.length} onClick={() => void tu(async () => { const r = await api.ocrAbbrechen(ids); return `${zahl(r.abgebrochen)} abgebrochen.`; })}>{stand === 'laeuft' ? t('werkbank.texterkennung.abbrechen') : t('werkbank.texterkennung.aus-der-warteschlange-nehmen')}</button>}
+            {abbrechbar && <button type="button" className="knopf" disabled={!ids.length} onClick={() => void tu(async () => { const r = await api.ocrAbbrechen(ids); return `${zahl(r.abgebrochen)} abgebrochen.`; })}>{stand === 'laeuft' ? t('werkbank.texterkennung.abbrechen') : t('werkbank.texterkennung.aus-der-warteschlange-nehmen')}</button>}
             <button type="button" className="knopf primaer" disabled={!ids.length} onClick={() => void tu(async () => { const r = await api.ocrNeu(ids); return t('werkbank.texterkennung.neu-gestartet', { zahl: zahl(r.eingereiht) }); })}>{t('werkbank.texterkennung.neu-starten', { wert: ids.length ? ` (${ids.length})` : '' })}</button>
           </div>
         </>

@@ -111,8 +111,9 @@ function UrlGeheimnis({ a, karte }: { a: AutomatisierungAnsicht; karte: string }
         <Knopf groesse="klein" onClick={async () => {
           if (!stand || await rueckfrage({ titel: t('automatisierung.ui.karte.dann.url.geheimnis.neu.frage'), text: t('automatisierung.ui.karte.dann.url.geheimnis.neu.text'), ja: t('automatisierung.ui.karte.dann.url.geheimnis.neu') })) await lege();
         }}>{stand ? t('automatisierung.ui.karte.dann.url.geheimnis.neu') : t('automatisierung.ui.karte.dann.url.geheimnis.anlegen')}</Knopf>
-        {stand && <Knopf art="gefahr" groesse="klein" onClick={async () => {
-          if (!(await rueckfrage({ titel: t('automatisierung.ui.karte.dann.url.geheimnis.entfernen.frage'), text: t('automatisierung.ui.karte.dann.url.geheimnis.entfernen.text'), ja: t('automatisierung.ui.karte.dann.url.geheimnis.entfernen'), gefahr: true }))) return;
+        {stand && <Knopf art="gefahr" groesse="klein" symbol="geloescht"
+          rueckfrage={{ titel: t('automatisierung.ui.karte.dann.url.geheimnis.entfernen.frage'), text: t('automatisierung.ui.karte.dann.url.geheimnis.entfernen.text'), ja: t('automatisierung.ui.karte.dann.url.geheimnis.entfernen') }}
+          onClick={async () => {
           try { await api.automatisierungGeheimnisEntfernen(a.id, karte); setStand(null); setNeu(null); } catch (e) { setFehler((e as Error).message); }
         }}>{t('automatisierung.ui.karte.dann.url.geheimnis.entfernen')}</Knopf>}
       </div>

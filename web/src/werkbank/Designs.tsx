@@ -6,9 +6,8 @@ import { geheZu, Link, loeseWache } from '../ort';
 import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 import { logoUrl, Marke } from '../Marke';
 import { Listenkopf } from '../Listenkopf';
-import { rueckfrage } from '../rueckfrage';
 import { t, tn } from '../sprache';
-import { Knopf, KnopfLink } from '../bausteine';
+import { KnopfLink } from '../bausteine';
 
 /**
  * Designs in der Werkbank (#21): Mitte die Designs, rechts Bearbeiten mit Vorschau.
@@ -141,11 +140,11 @@ export function DesignEditor({ id }: { id: string }) {
         <details><summary className="leise klein">{t('werkbank.designs.verfuegbare-farbwerte')}</summary><pre className="protokolldaten">{designCss({ ...e, css: '' })}</pre></details>
       </div>
       <Speicherleiste ent={ent} gegenstand={t('werkbank.designs.design')} sendet={sendet}
-        links={!neu && !standard && <Knopf art="link" className="gefahr" onClick={async () => {
-          if (await rueckfrage({ titel: t('werkbank.designs.design-loeschen', { name: vorhanden!.name }), text: t('werkbank.designs.wer-es-nutzt-bekommt'), ja: t('werkbank.designs.loeschen'), gefahr: true })) {
-            void aktion(async () => { await api.designLoeschen(id); loeseWache(); await d.designsLaden(); geheZu('/werkbank/designs'); }, t('werkbank.designs.geloescht'));
-          }
-        }}>{t('werkbank.designs.design-loeschen-2')}</Knopf>}
+        loeschen={!neu && !standard ? {
+          text: t('werkbank.designs.design-loeschen-2'),
+          rueckfrage: { titel: t('werkbank.designs.design-loeschen', { name: vorhanden!.name }), text: t('werkbank.designs.wer-es-nutzt-bekommt'), ja: t('werkbank.designs.loeschen') },
+          onClick: () => { void aktion(async () => { await api.designLoeschen(id); loeseWache(); await d.designsLaden(); geheZu('/werkbank/designs'); }, t('werkbank.designs.geloescht')); },
+        } : undefined}
         weitere={!neu && !standard && <button type="button" className="knopf" disabled={geaendert} title={geaendert ? t('werkbank.designs.erst-speichern') : undefined}
           onClick={() => void aktion(async () => { await api.designStandard(id); await d.designsLaden(); }, t('werkbank.designs.als-standard-festgelegt'))}>{t('werkbank.designs.als-standard-festlegen')}</button>} />
     </form>

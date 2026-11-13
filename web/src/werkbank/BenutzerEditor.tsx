@@ -268,14 +268,12 @@ function Zugang({ b, b2, selbst, loeschbar, aktion }: { b: Benutzer; b2: Bereich
         </ul>
         {gruende.length > 0 && <div className="hinweis warn stapel"><p>{t('konten.sperren.nochnicht')}</p><ul>{gruende.map(([k, g]) => <li key={k}>{g}</li>)}</ul></div>}
         <div className="knoepfe">
-          {loeschbar && <Knopf className="gefahr-rand" onClick={async () => {
+          {loeschbar && <Knopf onClick={async () => {
             if (await rueckfrage({ titel: t('werkbank.benutzer.einladung-loeschen'), text: t('werkbank.benutzer.die-einladung-an-wird', { email: b.email }), ja: t('werkbank.benutzer.einladung-loeschen-2'), gefahr: true })) void aktion(async () => { await api.benutzerLoeschen(b.id); loeseWache(); geheZu('/werkbank/benutzer'); });
           }}>{t('werkbank.benutzer.einladung-loeschen-2')}</Knopf>}
-          <Knopf art="gefahr" gesperrt={gruende.length > 0} onClick={async () => {
-            if (await rueckfrage({ titel: t('werkbank.benutzer.deaktivieren', { name }), text: t('werkbank.benutzer.der-zugang-ist-sofort-2', { name, vertreter: String(vertreter) }), ja: t('werkbank.benutzer.deaktivieren-2'), gefahr: true })) {
-              void aktion(() => api.benutzerAendern(b.id, { aktiv: false }), t('werkbank.benutzer.deaktiviert-alle-sitzungen-beendet'));
-            }
-          }}>{t('werkbank.benutzer.benutzer-deaktivieren')}</Knopf>
+          <Knopf art="gefahr" symbol="verboten" gesperrt={gruende.length > 0}
+            rueckfrage={{ titel: t('werkbank.benutzer.deaktivieren', { name }), text: t('werkbank.benutzer.der-zugang-ist-sofort-2', { name, vertreter: String(vertreter) }), ja: t('werkbank.benutzer.deaktivieren-2') }}
+            onClick={() => { void aktion(() => api.benutzerAendern(b.id, { aktiv: false }), t('werkbank.benutzer.deaktiviert-alle-sitzungen-beendet')); }}>{t('werkbank.benutzer.benutzer-deaktivieren')}</Knopf>
         </div>
       </div>
     </Bereich>
@@ -314,7 +312,7 @@ function Sitzungen({ b, neuLaden }: { b: Benutzer; neuLaden: () => Promise<void>
         </ul>
       )}
       {liste && liste.length > 1 && (
-        <div className="knoepfe"><Knopf className="gefahr-rand" onClick={async () => {
+        <div className="knoepfe"><Knopf onClick={async () => {
           if (await rueckfrage({ titel: t('werkbank.benutzer.auf-allen-geraeten-abmelden', { wert: b.name || b.email, liste: liste.length }), ja: t('werkbank.benutzer.ueberall-abmelden'), gefahr: true })) void beende(() => api.alleSitzungenBeenden(b.id), liste.some((s) => s.aktuell));
         }}>{t('werkbank.benutzer.ueberall-abmelden')}</Knopf></div>
       )}

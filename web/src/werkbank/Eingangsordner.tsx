@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Knopf, type KnopfErgebnis } from '../bausteine';
+import { Knopf, Schalter, type KnopfErgebnis } from '../bausteine';
 import { api, type EingangEinstellung, type EingangKnoten, type EingangStand, type EingangUeberblick, type EingangWarnung } from '../api';
 import { Link } from '../ort';
 import { Hilfe } from '../Hilfe';
@@ -116,7 +116,7 @@ export function EingangsordnerPanel({ z }: { z: EingangZustand }) {
       {(s.umbenennen ?? []).map((x) => <div key={x.neu} className="hinweis warn"><p><strong>{t('werkbank.eingangsordner.umbenennen', { alt: x.alt, neu: x.neu })}</strong> {t('werkbank.eingangsordner.umbenennen.text')}</p></div>)}
       <form className="blatt" onSubmit={(x) => { x.preventDefault(); void speichern(); }} onKeyDown={ent.tasten}>
         <h2 className="h3">{t('werkbank.eingangsordner.einstellungen')}</h2>
-        <label className="haken"><input id="eingang-aktiv" type="checkbox" checked={e.aktiv} onChange={(x) => setE({ ...e, aktiv: x.target.checked })} /><span>{t('werkbank.eingangsordner.eingangsordner-pruefen')}</span></label>
+        <Schalter id="eingang-aktiv" an={e.aktiv} setze={(an) => setE({ ...e, aktiv: an })} beschriftung={t('werkbank.eingangsordner.schalter')} />
         <div className="raster">
           <label className="eigenschaft"><span>{tn('werkbank.eingangsordner.pruefabstand', { klein: <small>{t('werkbank.eingangsordner.in-sekunden-5-bis')}</small> })}</span>
             <input id="eingang-abstand" type="number" min={5} max={3600} value={e.abstand} onChange={(x) => setE({ ...e, abstand: Number(x.target.value) })} /></label>

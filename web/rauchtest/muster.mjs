@@ -9,7 +9,12 @@
  *   muster-feld-fokus, muster-feld-fokus-dunkel – Maus über einem Feld, Tastaturfokus im nächsten;
  *   muster-knopf, muster-knopf-dunkel – der Bereich „Knopf“ (#968) mit allen Arten und Zuständen, Hover und Fokus stehend;
  *   muster-bereiche, muster-bereiche-dunkel – der Bereich „Bereiche“ (#1000): Sprungleiste, zugeklappt, unter drei Bereichen;
- *   muster-fassungen, muster-fassungen-dunkel – der Bereich „Fassungen“ (#1006): Liste, leer, gelöschte Einträge.
+ *   muster-fassungen, muster-fassungen-dunkel – der Bereich „Fassungen“ (#1006): Liste, leer, gelöschte Einträge;
+ *   muster-speicherleiste, muster-speicherleiste-dunkel – der Bereich „Speicherleiste“ (#1210): „… löschen“ links,
+ *     Verwerfen mit Rand, Hauptknopf blau, gesperrt aus einem Grund;
+ *   muster-reiter, muster-reiter-dunkel – der Bereich „Reiter“ (#1210);
+ *   muster-schalter, muster-schalter-dunkel – der Bereich „Schalter“ (#1188);
+ *   muster-paketchip, muster-paketchip-dunkel – der Bereich „PaketChip“ (#1192).
  *
  * Im Handy-Kontext (390 px, Touch: `pointer: coarse`) misst `tippflaechenPruefen` jedes Bedienelement der Seite
  * (#1027, Musterkatalog D6): Jedes muss eine eigene Tippfläche von mindestens 44 × 44 px haben.
@@ -204,6 +209,10 @@ export async function musterAufnehmen(browser, { basis, ziel, gebiet = 'de-DE', 
         await foto(s.locator('#knopf'), `muster-knopf${suffix}`);
         await foto(s.locator('#bereiche'), `muster-bereiche${suffix}`);
         await foto(s.locator('#fassungen'), `muster-fassungen${suffix}`);
+        await foto(s.locator('#speicherleiste'), `muster-speicherleiste${suffix}`);
+        await foto(s.locator('#reiter'), `muster-reiter${suffix}`);
+        await foto(s.locator('#schalter'), `muster-schalter${suffix}`);
+        await foto(s.locator('#paketchip'), `muster-paketchip${suffix}`);
       }
     } finally {
       await k.close();

@@ -6,7 +6,6 @@ import { api, type WartungWerkbank } from '../api';
 import { dauerText, WARTUNG_GEAENDERT, zeitpunkt } from '../wartung';
 import { Hilfe } from '../Hilfe';
 import { istWeg } from '../erreichbar';
-import { rueckfrage } from '../rueckfrage';
 import { gebietsschema } from '../../../shared/src/sprache';
 
 /**
@@ -142,8 +141,9 @@ export function WartungsmodusPanel({ w, abschnitt }: { w: WartungsmodusZustand; 
           )}
           {s.stufe === 'aktiv' && <Knopf gesperrt={laeuft} onClick={() => tu(() => api.wartungEin({ ...eingabe, vorlauf: 0 }), t('werkbank.wartungsmodus.text-und-ende-uebernommen'))}>{t('werkbank.wartungsmodus.text-und-ende-uebernehmen')}</Knopf>}
           {s.stufe !== 'aus' && (
-            <Knopf art="gefahr" gesperrt={laeuft} onClick={async () => {
-              if (!(await rueckfrage({ titel: t('werkbank.wartungsmodus.alle-jetzt-abmelden'), text: andere ? t('werkbank.wartungsmodus.andere-sitzungen-werden-sofort', { anzahl: andere }) : t('werkbank.wartungsmodus.die-wartung-beginnt-sofort'), ja: t('werkbank.wartungsmodus.alle-abmelden'), gefahr: true }))) return;
+            <Knopf art="gefahr" symbol="abmelden" gesperrt={laeuft}
+              rueckfrage={{ titel: t('werkbank.wartungsmodus.alle-jetzt-abmelden'), text: andere ? t('werkbank.wartungsmodus.andere-sitzungen-werden-sofort', { anzahl: andere }) : t('werkbank.wartungsmodus.die-wartung-beginnt-sofort'), ja: t('werkbank.wartungsmodus.alle-abmelden') }}
+              onClick={async () => {
               await tu(() => api.wartungJetzt(), t('werkbank.wartungsmodus.alle-anderen-sind-abgemeldet'));
             }}>{t('werkbank.wartungsmodus.alle-jetzt-abmelden-2')}</Knopf>
           )}
@@ -153,8 +153,9 @@ export function WartungsmodusPanel({ w, abschnitt }: { w: WartungsmodusZustand; 
         {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
         {s.stufe === 'aus' && (
           <div className="wm-sofort" id="sofort">
-            <Knopf art="gefahr" gesperrt={laeuft} onClick={async () => {
-              if (!(await rueckfrage({ titel: t('werkbank.wartungsmodus.jetzt-sofort-sperren'), text: t('werkbank.wartungsmodus.alle-anderen-sitzungen-werden'), ja: t('werkbank.wartungsmodus.jetzt-sofort-sperren-2'), gefahr: true }))) return;
+            <Knopf art="gefahr" symbol="schloss" gesperrt={laeuft}
+              rueckfrage={{ titel: t('werkbank.wartungsmodus.jetzt-sofort-sperren'), text: t('werkbank.wartungsmodus.alle-anderen-sitzungen-werden'), ja: t('werkbank.wartungsmodus.jetzt-sofort-sperren-2') }}
+              onClick={async () => {
               await tu(() => api.wartungEin({ ...eingabe, sofort: true }), t('werkbank.wartungsmodus.sofort-gesperrt-alle-anderen'));
             }}>{t('werkbank.wartungsmodus.jetzt-sofort-sperren-2')}</Knopf>
             <p className="leise klein">{tn('werkbank.wartungsmodus.fuer-notfaelle-z-b', { hilfe: <Hilfe ort="wartungsmodus.sofort" /> })}</p>
