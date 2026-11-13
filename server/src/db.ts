@@ -137,7 +137,7 @@ export function poolbelegung(sql: postgres.Sql): Poolbelegung | null {
 /** Zwischenspeicher der Gesundheitsprüfung (#1198): so lange gilt ein Ergebnis. */
 export const DB_PRUEFUNG_GUELTIG_MS = 5000;
 /** Zeitgrenze der Prüfung: Antwortet `SELECT 1` nicht so schnell, gilt die Datenbank als nicht erreichbar. */
-export const DB_PRUEFUNG_MS = 2000;
+export const DB_PRUEFUNG_MS = 5000;
 
 /**
  * Gesundheitsprüfung mit Datenbank (#1198): `/api/gesundheit` (und der Docker-Healthcheck) meldete „gesund“, während

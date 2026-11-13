@@ -87,7 +87,7 @@ RUN printf '#!/bin/sh\nexec node --enable-source-maps /app/server/dist/pakete-pr
 ENV PORT=3000
 EXPOSE 3000
 # Port wie der Server (PORT, Standard 3000) – sonst wäre ein Container mit eigener PORT-Einstellung „unhealthy“ (#321).
-HEALTHCHECK --interval=30s --timeout=5s --start-period=20s \
+HEALTHCHECK --interval=30s --timeout=8s --start-period=20s \
   CMD wget -qO- "http://127.0.0.1:${PORT:-3000}/api/gesundheit" >/dev/null || exit 1
 CMD ["node", "--enable-source-maps", "server/dist/index.js"]
 
@@ -100,7 +100,7 @@ RUN echo "Alpine-Pakete Stand ${APK_TAG}" && apk upgrade --no-cache && apk add -
 COPY deploy/komplett/start.sh /usr/local/bin/dms-komplett
 RUN chmod 755 /usr/local/bin/dms-komplett
 ENV DMS_VARIANTE=komplett
-HEALTHCHECK --interval=30s --timeout=5s --start-period=40s \
+HEALTHCHECK --interval=30s --timeout=8s --start-period=40s \
   CMD wget -qO- "http://127.0.0.1:${PORT:-3000}/api/gesundheit" >/dev/null && pg_isready -q -h 127.0.0.1 -U dms -d dms || exit 1
 # Zusätzlich zu /data/files, /data/geheim, /data/sicherung: /data/postgres. Bewusst kein VOLUME (#943): Ein anonymes
 # Volume ginge beim Neuanlegen mit docker run bzw. in NAS-Oberflächen trotzdem verloren und verdeckte die Warnung in der
