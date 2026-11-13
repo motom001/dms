@@ -2,7 +2,9 @@
 # Zwei Ziele (#208): „dms“ (Standard, Datenbank extern) und „komplett“ (mit PostgreSQL im Container):
 #   docker build -t dms .                         docker build --target komplett -t dms-komplett .
 
-FROM node:24-alpine AS bau
+# Basis-Images mit festem Digest (Scorecard „Pinned-Dependencies“): Ein ausgetauschtes Tag bei Docker Hub käme so nicht
+# unbemerkt ins Image. Dependabot (Ökosystem docker) hebt Tag und Digest jede Woche per Pull Request.
+FROM node:24-alpine@sha256:116b800c3754b440ee0aa3ed2f20f5bf3d99a554bfd9adeea09ea8017f6e85f5 AS bau
 WORKDIR /app
 # package-lock.json (#215): genau diese Versionen, reproduzierbar mit npm ci.
 COPY package.json package-lock.json ./
@@ -17,7 +19,7 @@ RUN npm run build
 
 # Handbücher für die Offline-Hilfe (#219): alle vier und die Startseite, ohne Screenshots,
 # ausgeliefert unter /hilfe/. Nur der gebaute Ordner kommt ins Image, nicht Python.
-FROM python:3.15-alpine AS hilfe
+FROM python:3.15-alpine@sha256:0f9552bb28711333da16915ec146f5e6bb44a7fdac9ced15dc17c2e0206346dd AS hilfe
 # Feste Versionen mit Hashes (#289), dieselben wie im Handbuch-Workflow.
 COPY docs/handbuch/requirements.txt /tmp/requirements.txt
 RUN pip install --no-cache-dir --disable-pip-version-check --require-hashes -r /tmp/requirements.txt
@@ -27,7 +29,7 @@ COPY docs/releases docs/releases
 COPY docs/handbuch docs/handbuch
 RUN python3 docs/handbuch/werkzeuge/offline.py /hilfe
 
-FROM node:24-alpine AS laufzeit
+FROM node:24-alpine@sha256:116b800c3754b440ee0aa3ed2f20f5bf3d99a554bfd9adeea09ea8017f6e85f5 AS laufzeit
 # Name und Beschreibung (#687); die Image-Namen ghcr.io/motom001/dms und dms-komplett bleiben, damit Updates weiterlaufen.
 LABEL org.opencontainers.image.title="Ablago" \
       org.opencontainers.image.description="Ablago – Dokumentenablage für zu Hause und kleine Betriebe" \
