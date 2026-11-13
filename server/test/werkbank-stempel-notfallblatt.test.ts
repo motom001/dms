@@ -1,7 +1,7 @@
 /**
  * Werkbank (#990, #993), gezeichnet mit react-dom/server, ohne Browser:
  *   - Stempel: Vorlagen in der Mitte mit „+ Neu“ (grün), Klick führt auf /werkbank/stempel/:id, rechts die Vorlage
- *     mit Live-Vorschau und Speicherleiste (Gefahr-Link links).
+ *     mit Live-Vorschau und Speicherleiste („Vorlage löschen“ als Gefahr-Knopf links, #1210).
  *   - Notfallblatt nur unter Verschlüsselung: Sicherung ohne eigenen Abschnitt, nur Hinweis und Link „Zum Notfallblatt“;
  *     auch die Übersicht führt mit diesem Hinweis zur Verschlüsselung.
  */
@@ -69,8 +69,9 @@ describe('Werkbank → Stempel in der Dreiteilung (#990)', () => {
     assert.ok(html.includes('id="stempel-text"') && html.includes('id="stempel-lage"'));
     assert.ok(html.includes('stempelvorschau'), 'Live-Vorschau (#799)');
     assert.ok(html.includes('speicherleiste'));
-    assert.match(html, /data-knopf="link"[^>]*>(?:<[^>]+>)*Vorlage löschen/, 'Löschen als Gefahr-Link links');
-    assert.match(html, /class="textknopf [^"]*gefahr"/, 'in Gefahrfarbe');
+    // Seit #1210: „Vorlage löschen“ ist der Gefahr-Knopf am festen Platz der Speicherleiste (Symbol, Rückfrage).
+    assert.match(html, /data-knopf="gefahr"[^>]*aria-haspopup="dialog"[^>]*>(?:<[^>]+>)*Vorlage löschen/, 'Löschen als Gefahr-Knopf mit Rückfrage');
+    assert.doesNotMatch(html, /class="textknopf [^"]*gefahr"/, 'kein roter Link mehr');
   });
 
   it('rechts: neue Vorlage ohne Löschen; unbekannte Vorlage mit Hinweis', () => {
