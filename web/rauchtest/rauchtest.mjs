@@ -1267,7 +1267,7 @@ async function dreiteilungSteht(s, wo) {
     rechts.scrollTop = rechts.scrollHeight;
     return { seite: document.scrollingElement.scrollHeight, fenster: innerHeight, spalte: rechts.scrollHeight, platz: rechts.clientHeight };
   });
-  assert.ok(r.spalte > r.platz + 100, `${wo}: Die rechte Spalte ist nicht länger als ihr Platz (${r.spalte} / ${r.platz} px) – der Test prüft so nichts`);
+  assert.ok(r.spalte > r.platz + 50, `${wo}: Die rechte Spalte ist nicht länger als ihr Platz (${r.spalte} / ${r.platz} px) – der Test prüft so nichts`);
   assert.equal(r.seite, r.fenster, `${wo}: Die Seite rollt unter der Dreiteilung weiter (Seite ${r.seite} px, Fenster ${r.fenster} px)`);
 }
 

@@ -30,7 +30,7 @@ const { Speicherleiste } = await import(WEB + 'bausteine/index.ts');
 const alt = await import(WEB + 'Speicherleiste.tsx');
 const ent = (neu: boolean, geaendert: boolean) => ({ neu, geaendert, verwerfen: async () => {}, tasten: () => {} });
 const LOESCHEN = { text: 'Nummernkreis löschen', rueckfrage: { titel: 'Nummernkreis löschen?', ja: 'Löschen' }, onClick: () => {} };
-const knoepfe = (html: string) => [...html.matchAll(/<button([^>]*)>(.*?)<\/button>/g)].map((m) => ({ attr: m[1], text: m[2].replace(/<[^>]+>/g, '') }));
+const knoepfe = (html: string) => [...html.matchAll(/<button([^>]*)>(.*?)<\/button>/g)].map((m) => ({ attr: m[1], text: (('>' + m[2] + '<').match(/>[^<]*</g) ?? []).map((t) => t.slice(1, -1)).join('') }));
 const art = (k: { attr: string }) => /data-knopf="([^"]+)"/.exec(k.attr)?.[1];
 
 describe('Baustein Speicherleiste (#1210)', () => {
