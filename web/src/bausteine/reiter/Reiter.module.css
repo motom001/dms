@@ -1,0 +1,15 @@
+/* Reiter (#1210): ein aktives Aussehen – Fläche wie der Inhalt, Rand, oben 3 px Akzentfarbe. Nur Werte aus tokens.css.
+   .vorschauhover und .vorschaufokus nutzt nur die Musterseite. */
+.reihe { display: flex; gap: 2px; padding: 0 2px; box-shadow: inset 0 -1px 0 var(--linie); overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; }
+.reiter { position: relative; flex: none; display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px 9px; border: 1px solid transparent; border-bottom: 0; border-radius: 8px 8px 0 0; background: none; color: var(--leise); font: inherit; font-weight: 600; font-size: calc(13px * var(--skala, 1)); cursor: pointer; white-space: nowrap; }
+.reiter:is(:hover, .vorschauhover):not(.an) { color: var(--tinte); background: var(--senke); }
+.reiter:is(:focus-visible, .vorschaufokus) { outline: 2px solid var(--akzent); outline-offset: -2px; }
+.an { color: var(--tinte); background: var(--flaeche); border-color: var(--linie); box-shadow: inset 0 3px 0 var(--akzent); }
+.anzahl { min-width: 18px; padding: 0 5px; border-radius: 999px; background: var(--senke); color: var(--leise); font-size: calc(11.5px * var(--skala, 1)); text-align: center; }
+.an .anzahl { background: var(--akzent-zart); color: var(--tinte); }
+.fehler { min-width: 18px; padding: 0 5px; border-radius: 999px; background: var(--schlecht-zart); color: var(--schlecht); font-size: calc(11.5px * var(--skala, 1)); text-align: center; }
+.flaeche { padding-top: 12px; }
+.sr { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+/* Am Handy 44 px hoch (#1027). */
+@media (pointer: coarse) { .reiter { min-height: 44px; min-width: 44px; } }
+@media (prefers-reduced-motion: reduce) { .reihe { scroll-behavior: auto; } }

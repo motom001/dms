@@ -421,7 +421,7 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
     ? (d.zaehler.papierkorbTage ? t('ablage.mappeformular.aufloesen-hinweis') : t('ablage.mappeformular.aufloesen-hinweis-ohne-korb'))
     : zuordnen?.aufloesen === false ? t('ablage.mappeformular.aufloesen-gesperrt') : '';
   const loeschKnopf = loeschenZeigen ? <LoeschKnopf sperre={loeschSperre} loeschen={() => void loeschen()}
-    wege={mitVerknuepften && <button type="button" className="textknopf gefahr klein" onClick={mitVerknuepften}>{t('ablage.mappeformular.mit-verknuepften-mappen-loeschen')}</button>} /> : <span />;
+    wege={mitVerknuepften && <Knopf groesse="klein" onClick={mitVerknuepften}>{t('ablage.mappeformular.mit-verknuepften-mappen-loeschen')}</Knopf>} /> : <span />;
   // Sprung aus der Suche nach einer Archivnummer (#345): ?register=… öffnet das Register.
   // Erwähnung in einer Notiz (#427): gleich den Register „Notizen“.
   const [aktiv, setAktiv] = useState(() => startRegister(register, new URLSearchParams(location.search).get('register'), details?.aufgaben, ich.id));
@@ -1613,49 +1613,25 @@ function PasswortEingabe({ id, feld: f, roh: p, setze, mappeId, nurLesen, sehen 
 interface Loeschsperre { grund: string; rueckverweise?: Rueckverweis[] }
 
 /**
- * „Mappe löschen“ mit der Begründung auf Klick (#423): Ist Löschen gesperrt (Verweise, Archivmodus,
- * fehlendes Recht), steht neben dem grauen Knopf „Warum nicht?“ und klappt die Begründung direkt
- * am Knopf auf. Bildschirmleser hören den Grund über aria-describedby schon am Knopf.
+ * „Mappe löschen“ mit der Begründung auf Klick (#423): Ist Löschen gesperrt (Verweise, Archivmodus, fehlendes Recht),
+ * ist der Knopf gesperrt aus einem Grund (#1210, Leitsatz 6) – gestrichelt mit Schloss und ⓘ; ein Klick öffnet die
+ * Erklärung direkt am Knopf mit den verweisenden Mappen. Bildschirmleser hören den Grund schon am Knopf.
  *
- * `wege`: weitere Löschwege, die trotz Sperre gehen – sie stehen in der aufgeklappten Begründung
- * unter „Stattdessen“ (z. B. „Mit verknüpften Mappen löschen …“, #424).
+ * `wege`: weitere Löschwege, die trotz Sperre gehen – sie stehen in der Erklärung unter „Stattdessen“ als Knöpfe
+ * (z. B. „Mit verknüpften Mappen löschen …“, #424).
  */
 function LoeschKnopf({ sperre, loeschen, wege }: { sperre?: Loeschsperre; loeschen(): void; wege?: ReactNode }) {
   const d = useDaten();
-  const [offen, setOffen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!offen) return;
-    const zu = (e: MouseEvent | KeyboardEvent) => {
-      if (e instanceof KeyboardEvent ? e.key === 'Escape' : !ref.current?.contains(e.target as Node)) setOffen(false);
-    };
-    document.addEventListener('mousedown', zu); document.addEventListener('keydown', zu);
-    return () => { document.removeEventListener('mousedown', zu); document.removeEventListener('keydown', zu); };
-  }, [offen]);
-  useEffect(() => { if (!sperre) setOffen(false); }, [sperre]);
   if (!sperre) return <button type="button" className="textknopf gefahr" onClick={loeschen}>{t('ablage.mappeformular.mappe-loeschen-2')}</button>;
   const quellen = [...new Map((sperre.rueckverweise ?? []).map((r) => [r.quelleId, r])).values()];
   const zeige = quellen.slice(0, 8);
+  const eintraege = zeige.map((r) => (
+    <>{r.verborgen ? <span className="verborgen-titel">{r.titel}</span> : <Link to={`/ablage/${r.quelleTypId}/${r.quelleId}`} className="verweis"><Ehemalig id={r.quelleId}>{titelOder(r.titel)}</Ehemalig></Link>} <span className="leise">({d.typ(r.quelleTypId)?.name ?? t('ablage.mappeformular.mappe')})</span></>
+  ));
   return (
-    <div className="loeschwahl" ref={ref}>
-      {/* Gesperrt als Knopf erkennbar (#648): Rahmen, gedämpft, Schloss; der Grund steht sichtbar daneben. */}
-      <button type="button" className="knopf klein loeschwahl-gesperrt" aria-disabled="true" aria-describedby="loeschwahl-grund" onClick={() => setOffen(!offen)}>
-        <Symbol name="schloss" /> {t('mappen.loeschen.knopf')}
-      </button>
-      <span id="loeschwahl-grund" className="klein leise loeschwahl-grund">{t('mappen.loeschen.gesperrt', { grund: sperre.grund })}</span>
-      <button type="button" className="textknopf klein loeschwahl-warum" aria-expanded={offen} aria-controls="loeschwahl-begruendung" onClick={() => setOffen(!offen)}>
-        <Symbol name="info" /> {t('mappen.loeschen.warum')}
-      </button>
-      {offen && (
-        <div className="loeschwahl-begruendung klein" id="loeschwahl-begruendung" role="region" aria-label={t('ablage.mappeformular.warum-sich-die-mappe')}>
-          <p><strong>{t('ablage.mappeformular.loeschen-nicht-moeglich-2')}</strong> {sperre.grund}</p>
-          {zeige.length > 0 && <ul>{zeige.map((r) => (
-            <li key={r.quelleId}>{r.verborgen ? <span className="verborgen-titel">{r.titel}</span> : <Link to={`/ablage/${r.quelleTypId}/${r.quelleId}`} className="verweis"><Ehemalig id={r.quelleId}>{titelOder(r.titel)}</Ehemalig></Link>} <span className="leise">({d.typ(r.quelleTypId)?.name ?? t('ablage.mappeformular.mappe')})</span></li>
-          ))}{quellen.length > zeige.length && <li className="leise">{t('ablage.mappeformular.und-weitere', { wert: quellen.length - zeige.length })}</li>}</ul>}
-          {wege && <div className="loeschwahl-wege"><p className="leise">{t('ablage.mappeformular.stattdessen')}</p>{wege}</div>}
-        </div>
-      )}
-    </div>
+    <Knopf gesperrt={{ grund: sperre.grund, titel: t('ablage.mappeformular.loeschen-nicht-moeglich-2'), eintraege, weitere: quellen.length - zeige.length, stattdessen: wege }}>
+      {t('mappen.loeschen.knopf')}
+    </Knopf>
   );
 }
 

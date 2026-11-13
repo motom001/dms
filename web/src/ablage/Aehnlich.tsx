@@ -81,7 +81,7 @@ export function VektorStandBlock() {
       <label className="haken"><input type="checkbox" checked={s.suche} disabled={laeuft} onChange={(e) => void suche(e.target.checked)} /><span>{t('aehnlich.werkbank.suche')}</span></label>
       <p className="leise klein">{t('aehnlich.werkbank.suche.hilfe')}</p>
       <div className="knoepfe">
-        <button type="button" className="knopf gefahr-rand" disabled={laeuft} onClick={() => void neu()}>{t('aehnlich.werkbank.neu')}</button>
+        <button type="button" className="knopf" disabled={laeuft} onClick={() => void neu()}>{t('aehnlich.werkbank.neu')}</button>
         <button type="button" className="textknopf" onClick={laden}>{t('aehnlich.werkbank.aktualisieren')}</button>
       </div>
     </>

@@ -413,7 +413,7 @@ export function OAuthBereich({ anbieter, ziel, geaendert, setMeldung, versand = 
           <div className="knoepfe">
             <button type="button" className="knopf primaer" disabled={!gespeichert?.clientId || !stand?.rueckruf || !rueckrufOk(stand.rueckruf) || appEnt.geaendert} title={!stand?.rueckruf ? t('werkbank.postfaecher.ohne-adresse-von-ablago') : !rueckrufOk(stand.rueckruf) ? t('werkbank.postfaecher.nur-mit-https-adresse') : appEnt.geaendert ? t('werkbank.postfaecher.erst-die-app-speichern') : undefined} onClick={() => void imBrowser()}>{t('werkbank.postfaecher.im-browser-anmelden')}</button>
             {ANBIETER[anbieter].geraet && <button type="button" className="knopf" disabled={!gespeichert?.clientId || !!geraet || appEnt.geaendert} onClick={() => void mitGeraetecode()}>{t('werkbank.postfaecher.mit-geraetecode-anmelden')}</button>}
-            {o && o.zustand !== 'abgemeldet' && <button type="button" className="knopf gefahr-rand" onClick={() => void abmelden()}>{t('werkbank.postfaecher.abmelden')}</button>}
+            {o && o.zustand !== 'abgemeldet' && <button type="button" className="knopf" onClick={() => void abmelden()}>{t('werkbank.postfaecher.abmelden')}</button>}
           </div>
         </>
       )}

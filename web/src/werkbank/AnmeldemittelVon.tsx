@@ -16,7 +16,6 @@ export function PasskeysVon({ b }: { b: Benutzer }) {
   useEffect(() => { void laden(); }, [laden]);
   const name = b.name || b.email;
   const zuruecksetzen = async () => {
-    if (!(await rueckfrage({ titel: t('werkbank.benutzer.passkeys.frage', { name }), text: t('werkbank.benutzer.passkeys.frage.text', { name }), ja: t('werkbank.benutzer.zuruecksetzen'), gefahr: true }))) return;
     await api.benutzerPasskeysZuruecksetzen(b.id);
     await laden();
     return { art: 'gut' as const, text: t('werkbank.benutzer.zurueckgesetzt') };
@@ -27,7 +26,8 @@ export function PasskeysVon({ b }: { b: Benutzer }) {
       {anzahl === null ? (fehler ? <p className="fehlertext">{fehler}</p> : <p className="leise">{t('werkbank.benutzer.lade')}</p>)
         : anzahl > 0 ? <>
           <p>{t('werkbank.benutzer.passkeys.anzahl', { anzahl })}</p>
-          <div className="knoepfe"><Knopf art="gefahr" onClick={zuruecksetzen}>{t('werkbank.benutzer.zuruecksetzen')}</Knopf></div>
+          <div className="knoepfe"><Knopf art="gefahr" symbol="zuruecksetzen" onClick={zuruecksetzen}
+            rueckfrage={{ titel: t('werkbank.benutzer.passkeys.frage', { name }), text: t('werkbank.benutzer.passkeys.frage.text', { name }), ja: t('werkbank.benutzer.zuruecksetzen') }}>{t('werkbank.benutzer.zuruecksetzen')}</Knopf></div>
         </> : <p className="leise">{t('werkbank.benutzer.passkeys.keine')}</p>}
     </div>
   );
@@ -45,7 +45,7 @@ export function ZweifaktorVon({ b }: { b: Benutzer }) {
       <h3 className="h4">{t('werkbank.benutzer.zwei-faktor-anmeldung')}</h3>
       {!stand ? !meldung && <p className="leise">{t('werkbank.benutzer.lade')}</p> : stand.aktiv ? <>
         <p><span className="chip gut punkt">{t('werkbank.benutzer.eingerichtet')}</span>{stand.seit && <> {' '}{t('werkbank.benutzer.seit-2', { datum: new Date(stand.seit).toLocaleDateString(gebietsschema()) })}</>} {' '}{t('werkbank.benutzer.wiederherstellungscodes-uebrig', { codesUebrig: stand.codesUebrig })}</p>
-        <div className="knoepfe"><Knopf className="gefahr-rand" onClick={async () => {
+        <div className="knoepfe"><Knopf onClick={async () => {
           if (await rueckfrage({ titel: t('werkbank.benutzer.zwei-faktor-anmeldung-von', { name }), text: t('werkbank.benutzer.danach-reicht-das-passwort', { name }), ja: t('werkbank.benutzer.zuruecksetzen'), gefahr: true })) {
             void api.benutzerZweifaktorZuruecksetzen(b.id).then(() => { setMeldung({ art: 'gut', text: t('werkbank.benutzer.zurueckgesetzt') }); return laden(); }).catch((e) => setMeldung({ art: 'schlecht', text: (e as Error).message }));
           }

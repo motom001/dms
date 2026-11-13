@@ -23,6 +23,21 @@ Alle Bausteine stehen unter `web/src/bausteine/`:
 - **Barrierefreiheit gehört in den Baustein.** `id`, `htmlFor`, `aria-describedby` und Co. setzt der Baustein; wer ihn benutzt, muss daran nicht denken.
 - **Hell und dunkel, Desktop und Handy.** Jeder Zustand ist in beiden Darstellungen und in Handybreite lesbar; Hover und Tastaturfokus sind sichtbar.
 
+## Leitsätze für Knöpfe { #leitsaetze }
+
+Knöpfe bedeuten überall dasselbe, und nichts erschreckt unnötig (#1210). Wer einen Knopf setzt, prüft ihn gegen diese sechs Sätze; die Musterseite zeigt sie oben, die Bausteine setzen sie um.
+
+1. **Blau ist die Hauptaktion.** Speichern, Anlegen nach dem Ausfüllen, Weiter und Übernehmen sind blau (`Knopf art="haupt"`), höchstens einer je Bereich. Blau ist auch die Akzentfarbe (Links, Fokus, Auswahl) – das wirkt ruhig und zusammengehörig.
+2. **Grün heißt „etwas Neues anfangen“**, und nur das: „+ Neu“, „+ Post“, „+ Zeile“, „+ Notfallkontakt“ (`art="anlegen"`). Die Beschriftung beginnt mit „+“. Sonst ist Grün für Zustände reserviert (aktiv, erledigt, gut gegangen).
+3. **Verwerfen ist ein Knopf mit Rand** (`art="neben"`) neben dem blauen Hauptknopf – es tut etwas, also ist es ein Knopf (Musterkatalog C8). Kein Symbol, beim Darüberfahren nicht rot, beim Klick keine Rückfrage (nur Esc mit Änderungen fragt nach); ohne Änderung blass.
+4. **Auf der Seite ist nichts rot.** Gefährliche Knöpfe (Löschen, Sperren, Abmelden, Entfernen eines Pakets …) sehen aus wie ein Nebenknopf mit Symbol (`art="gefahr"`). Beim Darüberfahren und beim Tastaturfokus werden Schrift und Rand rot.
+5. **Rot gefüllt nur im Moment der Entscheidung:** am Bestätigungsknopf der Rückfrage. Ohne Rückfrage kein Gefahr-Knopf – die Typprüfung lässt `art="gefahr"` nur mit `rueckfrage` und `symbol` zu. Was sich rückgängig machen lässt (Verweis aus einem Feld entfernen, Zeile aus einer Liste vor dem Speichern), ist ein normales „Entfernen“ bzw. „×“, nicht rot.
+6. **Zwei Arten von „geht nicht“.** *Nichts zu tun* (Speichern oder Verwerfen ohne Änderung, leere Auswahl): `gesperrt` – blass, ohne Erklärung. *Gesperrt aus einem Grund* (Löschen mit Verweisen, fehlendes Recht, Archivmodus): `gesperrt="<Grund>"` oder eine `KnopfSperre` – gestrichelter Rand mit Schloss, daneben ein kleines ⓘ; ein Klick auf Knopf oder ⓘ öffnet die Erklärung am Knopf (Grund, betroffene Einträge, „Stattdessen“ als Knöpfe). Kein langer Satz in der Zeile; für Screenreader hängt der Grund am Knopf (`aria-describedby`). Gestrichelt heißt überall „für dich gesperrt“, wie „nur lesen“ am Feld (C4). Kein „?“ – das führt ins Handbuch (C7); ⓘ erklärt genau diesen Fall.
+
+**Geprüft wird das** an drei Stellen: Die Typprüfung verlangt bei `art="gefahr"` Rückfrage und Symbol (`web/src/bausteine/knopf/typpruefung.ts`). ESLint verbietet Farbklassen über `className` am Knopf (`ablago/knopf-farben`, [Stil und Abhängigkeiten](stil.md#regeln)). Die Rauchtests melden auf jeder besuchten Seite Anlege-Knöpfe ohne „+“, Gefahr-Knöpfe ohne Rückfrage und rot Gefülltes außerhalb einer Rückfrage ([Rauchtest und Bilder](#rauchtest)).
+
+![Musterseite, Bereich „Knopf“: Arten, Gefahr in Ruhe, mit Maus und Fokus, die Rückfrage, gesperrt in zwei Formen und die geöffnete Erklärung](bilder/muster-knopf.png){ loading=lazy }
+
 ## Am Handy { #handy }
 
 Am Handy trifft der Finger, nicht der Mauszeiger. Darum hat jedes Bedienelement eines Bausteins bei **`(pointer: coarse)`** (Touch als Hauptzeiger) eine **Tippfläche von mindestens 44 × 44 px** (Musterkatalog D6, #1027; WCAG 2.5.8 verlangt 24 px). Mit der Maus (`pointer: fine`) bleibt alles, wie es ist.
@@ -37,6 +52,9 @@ Am Handy trifft der Finger, nicht der Mauszeiger. Darum hat jedes Bedienelement 
 | `Suchfeld`, `ListenSuche` | Eingabe wie ein Feld; „×“ als Knopf nur mit Symbol; Auswahl „Paket“ und `FilterHaken` mindestens 44 px hoch |
 | `Umschalter` | jede Wahl mindestens 44 × 44 px |
 | `Bereich`, Sprungleiste aus `useBereiche` | Sprünge und Kopf eines Bereichs mindestens 44 px hoch; „Alle aufklappen“ als Knopf der Art Link |
+| ⓘ am gesperrten `Knopf` | bleibt optisch klein; Tippfläche 44 × 44 px |
+| `Speicherleiste` | alle Knöpfe in einer Zeile; „… löschen“ zeigt nur sein Symbol (der Name bleibt für Screenreader) |
+| `Reiter` | jeder Reiter mindestens 44 px hoch; die Reihe rollt waagerecht, die Seite nicht |
 
 **Die Regel:** Tippflächen überlappen sich nie – auch nicht in einer Knopfreihe oder einer Gruppe von Haken. Wer einen Baustein benutzt, schreibt dafür nichts selbst; Einzellösungen mit `@media (pointer: coarse)` in `styles.css` gibt es nur noch für Stellen ohne Baustein. Neue Bausteine legen ihre Tippfläche in ihrem eigenen Stylesheet fest, ebenfalls nur bei `(pointer: coarse)`, damit der Desktop unverändert bleibt.
 
@@ -59,7 +77,9 @@ Im **Produktivbau** (`npm run build` ohne `VITE_MUSTER`, auch im Image) fehlt si
 
 ## Rauchtest und Bilder { #rauchtest }
 
-Der Rauchtest „Musterseite der Bausteine“ (`web/rauchtest/rauchtest.mjs`, Job **pruefen**) öffnet `/muster` hell und dunkel, am Desktop und in Handybreite, prüft jede Ansicht mit **axe-core** (WCAG 2.2 A und AA samt bewährter Praxis) darauf, dass die Seite am Handy nicht waagerecht rollt, und dort auf Tippflächen von mindestens 44 × 44 px ([Am Handy](#handy)). Jeder Verstoß lässt den Test scheitern. Die Bilder liegen danach im Artefakt **musterseite** des Laufs.
+Der Rauchtest „Musterseite der Bausteine“ (`web/rauchtest/rauchtest.mjs`, Job **pruefen**) öffnet `/muster` hell und dunkel, am Desktop und in Handybreite, prüft jede Ansicht mit **axe-core** (WCAG 2.2 A und AA samt bewährter Praxis, darunter `color-contrast`) darauf, dass die Seite am Handy nicht waagerecht rollt, und dort auf Tippflächen von mindestens 44 × 44 px ([Am Handy](#handy)). Jeder Verstoß lässt den Test scheitern. Die Bilder liegen danach im Artefakt **musterseite** des Laufs.
+
+**Knöpfe auf jeder Seite (#1210):** In jedem Rauchtest läuft ein Wächter (`knopfWaechter` in `rauchtest.mjs`), der nach jeder Änderung der Seite die sichtbaren Knöpfe prüft: `data-knopf="anlegen"` beginnt mit „+“, `data-knopf="gefahr"` öffnet eine Rückfrage (`aria-haspopup="dialog"`), rot Gefülltes steht nur im Fenster einer Rückfrage. Bestand, der das noch nicht erfüllt, steht mit seinem Issue in `KNOPF_AUSNAHMEN`; wer die Stelle umstellt, nimmt den Eintrag heraus.
 
 Dieselben Bilder nimmt der Workflow **Handbuch** in den Jobs `bilder (de)` und `bilder (en)` auf (`docs/handbuch/screenshots/aufnehmen.mjs`, gemeinsamer Code in `web/rauchtest/muster.mjs`); sie landen in diesem Handbuch unter `bilder/muster-*.png`. Lokal fehlen sie wie alle Bildschirmfotos ([Loslegen](loslegen.md)).
 
@@ -68,7 +88,9 @@ Dieselben Bilder nimmt der Workflow **Handbuch** in den Jobs `bilder (de)` und `
 | Baustein | Wofür |
 | --- | --- |
 | [Feld](bausteine-feld.md) | Rahmen für jedes Eingabeelement: Beschriftung, Eingabe, Fehler, Hinweis, Hilfesymbol |
-| [Knopf](bausteine-knopf.md) | Jeder Knopf: Arten Anlegen, Haupt, Neben, Gefahr, Link; gesperrt mit Grund, „läuft“, Ergebnis und Fehler am Knopf |
+| [Knopf](bausteine-knopf.md) | Jeder Knopf: Arten Haupt (blau), Anlegen (grün, „+ …“), Neben, Gefahr (mit Rückfrage), Link; gesperrt in zwei Formen, „läuft“, Ergebnis und Fehler am Knopf; dazu die Rückfrage |
+| [Speicherleiste](bausteine-speicherleiste.md) | Unten in jedem Formular: „… löschen“ links, Status, „Verwerfen“ mit Rand und der blaue Hauptknopf; Entwurf mit Esc und Warnung beim Verlassen |
+| [Reiter](bausteine-reiter.md) | Register über einem Inhalt, ein aktives Aussehen, Tastatur und `aria` nach WAI-ARIA |
 | [Eingaben mit Einheit](bausteine-einheit.md) | Zeitraum (Zahl und Einheit, Einzahl/Mehrzahl) und Prozent (Zahl mit „%“) für die Feldarten Zeitraum und Prozent |
 | [Tabelle](bausteine-tabelle.md) | Zeilen mit Spalten, jede führt zu einer Seite; breit eine Tabelle, schmal eine Liste mit den ersten zwei Spalten (Feldart Tabelle) |
 | [Suche](bausteine-suche.md) | Das Suchfeld aller Listen und das Muster „Liste in der Mitte: Suchfeld oben, Filter darunter“ mit Trefferzahl, Fundstellen und Paketfilter |

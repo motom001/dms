@@ -131,7 +131,7 @@ export function FehlermeldungDetail({ id, neuLaden }: { id: string; z: Fehlermel
         <Angaben wert={m.angaben} />
       </section>
       <div className="knoepfe">
-        <button type="button" className="knopf gefahr-rand" onClick={() => void loeschen()}>{t('werkbank.fehlermeldungen.loeschen')}</button>
+        <button type="button" className="knopf" onClick={() => void loeschen()}>{t('werkbank.fehlermeldungen.loeschen')}</button>
         <button type="button" className="knopf primaer" onClick={() => void erledigt(!m.erledigt)}>{m.erledigt ? t('werkbank.fehlermeldungen.wieder-oeffnen') : t('werkbank.fehlermeldungen.als-erledigt-markieren')}</button>
       </div>
     </div>

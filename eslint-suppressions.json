@@ -112,7 +112,7 @@
       "count": 1
     },
     "max-lines-per-function": {
-      "count": 3
+      "count": 2
     }
   },
   "server/src/baum.ts": {
@@ -478,9 +478,6 @@
   "server/src/pdf/demo-dokumente.ts": {
     "max-params": {
       "count": 2
-    },
-    "no-irregular-whitespace": {
-      "count": 1
     }
   },
   "server/src/pdf/export.ts": {
@@ -513,9 +510,6 @@
     }
   },
   "server/src/pdf/schwaerzen.ts": {
-    "max-lines-per-function": {
-      "count": 1
-    },
     "max-params": {
       "count": 1
     }
@@ -1210,11 +1204,6 @@
       "count": 1
     }
   },
-  "web/src/Speicherleiste.tsx": {
-    "ablago/bausteine": {
-      "count": 2
-    }
-  },
   "web/src/UeberDms.tsx": {
     "ablago/bausteine": {
       "count": 1
@@ -1262,6 +1251,9 @@
     "ablago/bausteine": {
       "count": 12
     },
+    "ablago/knopf-farben": {
+      "count": 1
+    },
     "complexity": {
       "count": 1
     }
@@ -1273,7 +1265,10 @@
   },
   "web/src/ablage/Dokumente.tsx": {
     "ablago/bausteine": {
-      "count": 48
+      "count": 46
+    },
+    "ablago/knopf-farben": {
+      "count": 2
     },
     "complexity": {
       "count": 4
@@ -1345,7 +1340,7 @@
       "count": 3
     },
     "ablago/bausteine": {
-      "count": 45
+      "count": 42
     },
     "complexity": {
       "count": 8
@@ -1379,6 +1374,9 @@
   "web/src/ablage/Notizen.tsx": {
     "ablago/bausteine": {
       "count": 4
+    },
+    "ablago/knopf-farben": {
+      "count": 1
     }
   },
   "web/src/ablage/Papierkorb.tsx": {
@@ -1632,6 +1630,9 @@
     },
     "ablago/bausteine": {
       "count": 10
+    },
+    "ablago/knopf-farben": {
+      "count": 1
     }
   },
   "web/src/profil/DokumentPasswoerter.tsx": {
@@ -1681,11 +1682,6 @@
       "count": 13
     }
   },
-  "web/src/rueckfrage.tsx": {
-    "ablago/bausteine": {
-      "count": 3
-    }
-  },
   "web/src/seiten.ts": {
     "max-params": {
       "count": 1
@@ -1694,6 +1690,11 @@
   "web/src/verwaltungsmodus.tsx": {
     "ablago/bausteine": {
       "count": 6
+    }
+  },
+  "web/src/werkbank/Ablaufvorlagen.tsx": {
+    "ablago/knopf-farben": {
+      "count": 2
     }
   },
   "web/src/werkbank/AbsenderBereinigen.tsx": {
@@ -1740,9 +1741,17 @@
       "count": 1
     }
   },
+  "web/src/werkbank/AutomatisierungAussen.tsx": {
+    "ablago/knopf-farben": {
+      "count": 3
+    }
+  },
   "web/src/werkbank/Automatisierungen.tsx": {
     "ablago/bausteine": {
       "count": 54
+    },
+    "ablago/knopf-farben": {
+      "count": 1
     },
     "complexity": {
       "count": 2
@@ -1759,6 +1768,9 @@
   "web/src/werkbank/BenutzerEditor.tsx": {
     "ablago/bausteine": {
       "count": 5
+    },
+    "ablago/knopf-farben": {
+      "count": 1
     }
   },
   "web/src/werkbank/Berechtigungen.tsx": {
@@ -1804,6 +1816,9 @@
   "web/src/werkbank/Designs.tsx": {
     "ablago/bausteine": {
       "count": 10
+    },
+    "ablago/knopf-farben": {
+      "count": 1
     },
     "complexity": {
       "count": 1
@@ -1862,6 +1877,9 @@
     "ablago/bausteine": {
       "count": 10
     },
+    "ablago/knopf-farben": {
+      "count": 1
+    },
     "complexity": {
       "count": 2
     }
@@ -1916,6 +1934,9 @@
     "ablago/bausteine": {
       "count": 31
     },
+    "ablago/knopf-farben": {
+      "count": 1
+    },
     "complexity": {
       "count": 6
     },
@@ -1937,6 +1958,9 @@
   "web/src/werkbank/Postfaecher.tsx": {
     "ablago/bausteine": {
       "count": 28
+    },
+    "ablago/knopf-farben": {
+      "count": 1
     },
     "complexity": {
       "count": 2
@@ -1994,6 +2018,9 @@
   "web/src/werkbank/Stempel.tsx": {
     "ablago/bausteine": {
       "count": 10
+    },
+    "ablago/knopf-farben": {
+      "count": 1
     }
   },
   "web/src/werkbank/Systemkonten.tsx": {
@@ -2066,6 +2093,11 @@
       "count": 1
     },
     "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "web/src/werkbank/Woerter.tsx": {
+    "ablago/knopf-farben": {
       "count": 1
     }
   },

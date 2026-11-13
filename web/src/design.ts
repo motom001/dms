@@ -53,14 +53,18 @@ export function palette(grundlage: 'hell' | 'dunkel' | 'kontrast', primaer: stri
   const ziel = grundlage === 'kontrast' ? 7 : 4.5;
   // Ablago-Blau (#699): im Dunkeln der Markenwert von ablago.app statt der rechnerisch aufgehellten, grauen Fassung.
   const akzent = dunkel && primaer.toUpperCase() === MARKE.blau ? lesbar(MARKE.blauDunkel, n.flaeche, ziel) : lesbar(primaer, n.flaeche, ziel);
-  const gruen = lesbar(sekundaer, n.flaeche, ziel);
+  // Grün steht auch auf seiner zarten Fläche (Chip „gut“, Ergebnis am Knopf): lesbar gegen beide (#1210, dunkel 3,8:1).
+  const gruenZart = mische(n.flaeche, sekundaer, dunkel ? 0.24 : 0.12);
+  // Ablago-Grün im Dunkeln: der Wert aus tokens.css (wie beim Blau), nicht die rechnerisch aufgehellte, graue Fassung.
+  const basisGruen = dunkel && sekundaer.toUpperCase() === MARKE.gruen && n.gruen ? n.gruen : sekundaer;
+  const gruen = lesbar(lesbar(basisGruen, gruenZart, ziel), n.flaeche, ziel);
   return {
     ...n,
     akzent, 'akzent-tinte': schriftAuf(akzent),
     'akzent-zart': mische(n.flaeche, primaer, dunkel ? 0.24 : 0.12),
     'akzent-stark': dunkel ? mische(akzent, '#FFFFFF', 0.2) : mische(akzent, '#000000', 0.18),
     gruen, 'gruen-tinte': schriftAuf(gruen),
-    'gruen-zart': mische(n.flaeche, sekundaer, dunkel ? 0.24 : 0.12),
+    'gruen-zart': gruenZart,
     'marke-hell': dunkel ? 'none' : 'block', 'marke-dunkel': dunkel ? 'block' : 'none',
     'color-scheme': dunkel ? 'dark' : 'light',
   };

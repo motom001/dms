@@ -272,14 +272,14 @@ export function LasttestSeite() {
             <p>{t('lasttest.beenden.ungesichert')}</p>
             <div className="knoepfe">
               <button type="button" className="knopf primaer" onClick={() => void kopiere(block, feld.current).then((ok) => { setKopiert(ok ? 'ja' : 'nein'); if (ok) setNachfragen(false); })}>{t('lasttest.beenden.kopieren')}</button>
-              <button type="button" className="knopf gefahr-rand" onClick={() => void herunterfahren()}>{t('lasttest.beenden.trotzdem')}</button>
+              <button type="button" className="knopf" onClick={() => void herunterfahren()}>{t('lasttest.beenden.trotzdem')}</button>
               <button type="button" className="textknopf" onClick={() => setNachfragen(false)}>{t('lasttest.beenden.abbrechen')}</button>
             </div>
           </div>
         ) : (
           <div className="knoepfe lasttest-ende">
             <a className="verweis klein" href={handbuchUrl('admin', null, 'lasttest/')} target="_blank" rel="noreferrer">{t('lasttest.handbuch')} <Symbol name="extern" /></a>
-            <button type="button" className="knopf gefahr-rand" onClick={() => void beenden()}>{t('lasttest.beenden')}</button>
+            <button type="button" className="knopf" onClick={() => void beenden()}>{t('lasttest.beenden')}</button>
           </div>
         )}
       </div>

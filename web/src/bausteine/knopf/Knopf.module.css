@@ -1,22 +1,43 @@
-/* Knopf (#968): Zustände des Bausteins. Grundform und Farben je Art kommen aus styles.css (.knopf, .primaer, .gruen,
-   .gefahr, .textknopf) – so gelten Designs und Stellen wie „Knopf in einer Karte“ weiter. Hier steht, was der Baustein
-   selbst festlegt: Hover und Fokus für jede Art, gesperrt mit Grund, „läuft“ und das Ergebnis am Knopf.
+/* Knopf (#968, #1210): Zustände des Bausteins. Grundform und Farben je Art kommen aus styles.css (.knopf, .primaer,
+   .gruen, .textknopf; .gefahr nur für den Bestätigungsknopf der Rückfrage) – so gelten Designs und Stellen wie „Knopf in
+   einer Karte“ weiter. Hier steht, was der Baustein selbst festlegt: Hover und Fokus für jede Art, Gefahr (auf der Seite
+   wie Neben, Leitsatz 4), gesperrt in zwei Formen (Leitsatz 6), „läuft“ und das Ergebnis am Knopf.
    Nur Werte aus tokens.css; hell und dunkel über die Tokens (--knopf-hover ist hell dunkler, dunkel heller).
    .vorschauhover und .vorschaufokus nutzt nur die Musterseite, um Hover und Fokus stehend zu zeigen. */
 .baustein { transition: filter .12s, background-color .12s, border-color .12s; }
 
 /* Hover: sichtbar für alle Arten, hell und dunkel – nie bei gesperrt oder „läuft“. */
-.baustein[data-knopf="neben"]:is(:hover, .vorschauhover):not(:disabled, [aria-disabled="true"]) { background: var(--senke); border-color: var(--leise); }
-.baustein:is([data-knopf="haupt"], [data-knopf="anlegen"], [data-knopf="gefahr"]):is(:hover, .vorschauhover):not(:disabled, [aria-disabled="true"]) { filter: var(--knopf-hover); }
+.baustein:is([data-knopf="neben"], [data-knopf="gefahr"]):is(:hover, .vorschauhover):not(:disabled, [aria-disabled="true"]) { background: var(--senke); border-color: var(--leise); }
+.baustein:is([data-knopf="haupt"], [data-knopf="anlegen"], [data-knopf="entscheidung"]):is(:hover, .vorschauhover):not(:disabled, [aria-disabled="true"]) { filter: var(--knopf-hover); }
+/* Gefahr (Leitsatz 4): in Ruhe wie Neben mit Symbol; bei Hover und Tastaturfokus werden Schrift und Rand rot. */
+.baustein[data-knopf="gefahr"]:is(:hover, .vorschauhover, :focus-visible, .vorschaufokus):not(:disabled, [aria-disabled="true"]) { color: var(--schlecht); border-color: var(--schlecht); }
 .baustein[data-knopf="link"]:is(:hover, .vorschauhover):not(:disabled, [aria-disabled="true"]) { text-decoration: underline; }
 
-/* Tastaturfokus: Ring mit Abstand in der Akzentfarbe, bei Gefahr in der Fehlerfarbe. */
+/* Tastaturfokus: Ring mit Abstand in der Akzentfarbe, bei Gefahr und Entscheidung in der Fehlerfarbe. */
 .baustein:is(:focus-visible, .vorschaufokus) { outline: 2px solid var(--akzent); outline-offset: 2px; }
-.baustein[data-knopf="gefahr"]:is(:focus-visible, .vorschaufokus) { outline-color: var(--schlecht); }
+.baustein:is([data-knopf="gefahr"], [data-knopf="entscheidung"]):is(:focus-visible, .vorschaufokus):not([aria-disabled="true"]) { outline-color: var(--schlecht); }
 
-/* Gesperrt mit Grund (aria-disabled, bleibt erreichbar) wie gesperrt ohne Grund (disabled, styles.css). */
-.baustein[aria-disabled="true"]:not([aria-busy="true"]) { opacity: .5; cursor: not-allowed; }
+/* Gesperrt, nichts zu tun (Leitsatz 6): blass, ohne Erklärung (disabled, Grundform in styles.css). */
 .baustein:disabled { cursor: not-allowed; }
+.baustein[aria-disabled="true"]:not([aria-busy="true"]) { cursor: not-allowed; }
+/* Gesperrt aus einem Grund: gestrichelt mit Schloss wie „nur lesen“ am Feld (C4), volle Schrift in --leise (lesbar),
+   keine Fläche; bleibt erreichbar, ein Klick öffnet die Erklärung. Gilt für jede Art, auch Haupt und Anlegen. */
+.baustein.gesperrt[aria-disabled="true"]:not([aria-busy="true"]) { opacity: 1; cursor: pointer; color: var(--leise); background: transparent; border-color: var(--rand-eingabe); border-style: dashed; filter: none; }
+.baustein.gesperrt[data-knopf="link"] { border: 1px dashed var(--rand-eingabe); border-radius: 6px; padding: 3px 8px; }
+
+/* ⓘ neben dem gesperrten Knopf, Erklärung darunter (bzw. darüber, wenn unten kein Platz ist). */
+.gruppe { position: relative; display: inline-flex; align-items: center; gap: 2px; max-width: 100%; }
+.warum { display: inline-flex; align-items: center; justify-content: center; min-width: 24px; min-height: 24px; padding: 0; border: 0; border-radius: 6px; background: none; color: var(--leise); cursor: pointer; font: inherit; }
+.warum:hover, .warum[aria-expanded="true"] { color: var(--akzent); }
+.warum:focus-visible { outline: 2px solid var(--akzent); outline-offset: 2px; }
+.erklaerung { position: absolute; top: calc(100% + 6px); left: 0; z-index: 30; width: min(380px, calc(100vw - 32px)); padding: 10px 12px; background: var(--flaeche); color: var(--tinte); border: 1px solid var(--linie-stark); border-radius: var(--r); box-shadow: 0 6px 20px var(--schatten); font-size: calc(13px * var(--skala, 1)); font-weight: 400; line-height: 1.45; text-align: left; white-space: normal; overflow-wrap: anywhere; }
+.erklaerung.oben { top: auto; bottom: calc(100% + 6px); }
+.erklaerung p { margin: 0; }
+.erklaerung ul { margin: 6px 0 0; padding-left: 18px; }
+.wege { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--linie); display: flex; flex-direction: column; gap: 6px; }
+.wegknoepfe { display: flex; flex-wrap: wrap; gap: 8px; }
+/* Nur für Screenreader (der Grund am Knopf über aria-describedby). */
+.sr { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 
 /* Nur Symbol: schmaler, aber mindestens 24 px breit (WCAG 2.2, Zielgröße). */
 .symbol { padding-left: 8px; padding-right: 8px; min-width: 24px; }
@@ -33,9 +54,8 @@
 .kreisel { flex: none; width: .9em; height: .9em; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: kreisel .8s linear infinite; }
 @keyframes kreisel { to { transform: rotate(360deg); } }
 
-/* Grund und Ergebnis: in einer Knopfreihe (flex) unter allen Knöpfen der Reihe, sonst direkt unter dem Knopf. */
-.grund, .ergebnis { order: 1; flex: 1 1 100%; min-width: 0; font-weight: 400; white-space: normal; overflow-wrap: anywhere; text-align: left; }
-.grund { display: block; margin-top: 2px; font-size: calc(12.5px * var(--skala, 1)); color: var(--leise); }
+/* Ergebnis: in einer Knopfreihe (flex) unter allen Knöpfen der Reihe, sonst direkt unter dem Knopf. */
+.ergebnis { order: 1; flex: 1 1 100%; min-width: 0; font-weight: 400; white-space: normal; overflow-wrap: anywhere; text-align: left; }
 .ergebnis { display: flex; gap: 8px; align-items: baseline; margin-top: 4px; padding: 8px 12px; border-radius: var(--r); font-size: calc(13px * var(--skala, 1)); line-height: 1.45; }
 /* Ausführliches Ergebnis (ErgebnisBlock): ohne eigenes Aussehen. */
 .block { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
@@ -60,6 +80,8 @@
   .baustein:global(.klein)::before { content: ""; position: absolute; inset: -9px -1px; }
   .baustein.symbol:global(.klein) { min-width: 28px; margin-inline: 8px; }
   .baustein.symbol:global(.klein)::before { inset: -9px; }
+  /* ⓘ: optisch klein, Tippfläche 44 × 44 px (Leitsatz 6). */
+  .warum { min-width: 44px; min-height: 44px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

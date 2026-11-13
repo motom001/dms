@@ -1,0 +1,3 @@
+/* Rückfrage (#1210): Form und Farben in styles.css (.rueckfrage, für Fenster und Vorschau gleich). Die Vorschau der
+   Musterseite steht im Fluss der Seite, nie breiter als ihre Karte. */
+.vorschau { max-width: 100%; box-shadow: 0 6px 20px var(--schatten); }

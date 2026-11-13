@@ -77,6 +77,8 @@ nav:
       - Overview: bausteine.md
       - Field: bausteine-feld.md
       - Button: bausteine-knopf.md
+      - Save bar: bausteine-speicherleiste.md
+      - Tabs: bausteine-reiter.md
       - Inputs with a unit: bausteine-einheit.md
       - Table: bausteine-tabelle.md
       - Search: bausteine-suche.md

@@ -1,0 +1,12 @@
+/* Speicherleiste (#370, #1210): Grundform in styles.css (.speicherleiste – die Mappe nutzt sie bis #1211 noch roh).
+   Hier nur, was der Baustein selbst festlegt: der feste Platz für „… löschen“ links, auf einer Linie mit „Verwerfen“
+   und dem Hauptknopf. */
+.loeschen { flex: none; }
+/* Am Handy steht alles in einer Zeile: „… löschen“ zeigt nur sein Symbol, der Name bleibt für Screenreader. */
+@media (max-width: 600px) {
+  .leiste { flex-wrap: nowrap; }
+  .knoepfe { flex: 1 1 auto; flex-wrap: nowrap; min-width: 0; }
+  .knoepfe > :global(.knopf) { flex: 1 1 0; min-width: 0; padding-left: 8px; padding-right: 8px; white-space: normal; text-align: center; hyphens: auto; overflow-wrap: break-word; }
+  .loeschen { flex: none; min-width: 44px; }
+  .loeschtext { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+}

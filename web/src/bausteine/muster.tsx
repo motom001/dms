@@ -12,10 +12,14 @@ import { SucheMuster } from './suche/muster';
 import { UmschalterMuster } from './umschalter/muster';
 import { BereicheMuster } from './bereiche/muster';
 import { FassungenMuster } from './fassungen/muster';
+import { SpeicherleisteMuster } from './speicherleiste/muster';
+import { ReiterMuster } from './reiter/muster';
+import { Rueckfragen } from './rueckfrage/Rueckfrage';
 import s from './muster.module.css';
 
 /**
  * Musterseite der Bausteine (#967) unter /muster: jeder Baustein in jedem Zustand, hell und dunkel umschaltbar.
+ * Oben die Leitsätze (#1210), damit jeder sie neben den Bausteinen liest.
  * Nur im Entwicklungsmodus (`npm run dev`) und im Testbau (`VITE_MUSTER=1`); start.tsx lädt diese Datei nur dann,
  * der Produktivbau enthält sie nicht. Die Rauchtests fotografieren die Seite und prüfen sie mit axe.
  *
@@ -26,6 +30,8 @@ interface Musterbereich { id: string; titel: () => string; text: () => string; M
 const BAUSTEINE: Musterbereich[] = [
   { id: 'feld', titel: () => t('oberflaeche.muster.feld.titel'), text: () => t('oberflaeche.muster.feld.text'), Muster: FeldMuster },
   { id: 'knopf', titel: () => t('oberflaeche.muster.knopf.titel'), text: () => t('oberflaeche.muster.knopf.text'), Muster: KnopfMuster },
+  { id: 'speicherleiste', titel: () => t('oberflaeche.muster.leiste.titel'), text: () => t('oberflaeche.muster.leiste.text'), Muster: SpeicherleisteMuster },
+  { id: 'reiter', titel: () => t('oberflaeche.muster.reiter.titel'), text: () => t('oberflaeche.muster.reiter.text'), Muster: ReiterMuster },
   { id: 'einheit', titel: () => t('oberflaeche.muster.einheit.titel'), text: () => t('oberflaeche.muster.einheit.text'), Muster: EinheitMuster },
   { id: 'tabelle', titel: () => t('oberflaeche.muster.tabelle.titel'), text: () => t('oberflaeche.muster.tabelle.text'), Muster: TabelleMuster },
   { id: 'suche', titel: () => t('oberflaeche.muster.suche.titel'), text: () => t('oberflaeche.muster.suche.text'), Muster: SucheMuster },
@@ -33,6 +39,9 @@ const BAUSTEINE: Musterbereich[] = [
   { id: 'bereiche', titel: () => t('oberflaeche.muster.bereiche.titel'), text: () => t('oberflaeche.muster.bereiche.text'), Muster: BereicheMuster },
   { id: 'fassungen', titel: () => t('oberflaeche.muster.fassungen.titel'), text: () => t('oberflaeche.muster.fassungen.text'), Muster: FassungenMuster },
 ];
+
+/** Leitsätze für Knöpfe (#1210), ausführlich im Entwicklerhandbuch unter „Gestaltung und Bausteine“. */
+const LEITSAETZE = [1, 2, 3, 4, 5, 6];
 
 const DARSTELLUNGEN = Object.keys(GRUNDLAGEN) as Grundlage[];
 
@@ -74,6 +83,10 @@ export function Musterseite() {
       <nav aria-label={t('oberflaeche.muster.inhalt')} className={s.inhalt}>
         <ul>{BAUSTEINE.map((b) => <li key={b.id}><a href={`#${b.id}`}>{b.titel()}</a></li>)}</ul>
       </nav>
+      <section aria-labelledby="leitsaetze-titel" className={s.leitsaetze}>
+        <h2 id="leitsaetze-titel">{t('oberflaeche.muster.leitsaetze')}</h2>
+        <ol>{LEITSAETZE.map((n) => <li key={n}>{t.frei(`oberflaeche.muster.leitsatz.${n}`)}</li>)}</ol>
+      </section>
       <main className={s.bereiche}>
         {BAUSTEINE.map(({ id, titel, text, Muster }) => (
           <section key={id} id={id} aria-labelledby={`${id}-titel`} className={s.bereich}>
@@ -83,6 +96,8 @@ export function Musterseite() {
           </section>
         ))}
       </main>
+      {/* Die echte Rückfrage für „Ausprobieren“ und „… löschen“ (#1210). */}
+      <Rueckfragen />
     </div>
   );
 }

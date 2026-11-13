@@ -36,7 +36,7 @@ Neben jedem PDF und Bild (JPEG, PNG) steht ein **kleines Vorschaubild der ersten
 
 ### Ohne Exportrecht { #ohne-exportrecht }
 
-In Ablago gilt: **Lesen heißt ansehen, Exportieren heißt mitnehmen.** Herunterladen, Teilen, Kopien mit Stempel, Versenden per E-Mail, Exportieren und das [Laufwerk](laufwerk.md) brauchen deshalb das Recht **Exportieren (E)**, das ein Administrator an den Ansichten vergibt. Fehlt es dir für eine Mappe, siehst du ihre Dokumente hier weiterhin an; statt **Herunterladen** steht ein gesperrter Knopf mit **Warum nicht?**, und Teilen sowie **Mit Stempel …** fehlen. Word- oder Excel-Dateien, die der Browser nicht anzeigen kann, lassen sich dann nicht öffnen.
+In Ablago gilt: **Lesen heißt ansehen, Exportieren heißt mitnehmen.** Herunterladen, Teilen, Kopien mit Stempel, Versenden per E-Mail, Exportieren und das [Laufwerk](laufwerk.md) brauchen deshalb das Recht **Exportieren (E)**, das ein Administrator an den Ansichten vergibt. Fehlt es dir für eine Mappe, siehst du ihre Dokumente hier weiterhin an; statt **Herunterladen** steht ein gesperrter Knopf (gestrichelt mit Schloss; das **ⓘ** daneben sagt, warum), und Teilen sowie **Mit Stempel …** fehlen. Word- oder Excel-Dateien, die der Browser nicht anzeigen kann, lassen sich dann nicht öffnen.
 
 Ganz verhindern lässt sich das Abspeichern beim Ansehen nie – ein Browser kann eine angezeigte Seite speichern, und ein Bildschirmfoto geht immer. Das Recht sorgt dafür, dass man Dokumente nicht mit einem Klick mitnimmt.
 

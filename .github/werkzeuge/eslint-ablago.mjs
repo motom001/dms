@@ -14,6 +14,10 @@
  *   Dateiwähler öffnet sich über einen Knopf) und alles unter `web/src/bausteine/` (dort entstehen die Bausteine).
  *   Der Bestand beim Einführen steht in `eslint-suppressions.json`; begründete Ausnahmen im Code wie sonst
  *   (`// eslint-disable-next-line ablago/bausteine -- Suchfeld ohne sichtbare Beschriftung`).
+ * - `ablago/knopf-farben`: keine Farbklassen über `className` am Baustein Knopf (#1210) – `gefahr`, `gefahr-rand`,
+ *   `gruen`, `primaer` an `Knopf`, `KnopfLink` und `knopfAussehen({ className })`. Die Farbe kommt aus der Art: `haupt`
+ *   (blau), `anlegen` (grün, „+ …“), `gefahr` (mit Rückfrage). Geprüft werden alle festen Texte im Wert (auch in
+ *   Bedingungen und Vorlagen-Texten). Der Bestand beim Einführen steht in `eslint-suppressions.json`.
  */
 import { builtinRules } from 'eslint/use-at-your-own-risk';
 
@@ -81,11 +85,60 @@ const bausteine = {
   },
 };
 
+const FARBKLASSEN = new Set(['gefahr', 'gefahr-rand', 'gruen', 'primaer']);
+const KNOPF_BAUSTEINE = new Set(['Knopf', 'KnopfLink']);
+
+/** Alle festen Texte in einem Ausdruck (Literale, Teile von Vorlagen-Texten, auch in Bedingungen und Aufrufen). */
+function texteIn(knoten, aus = []) {
+  if (!knoten || typeof knoten !== 'object') return aus;
+  if (knoten.type === 'Literal' && typeof knoten.value === 'string') aus.push(knoten.value);
+  else if (knoten.type === 'TemplateElement') aus.push(knoten.value.cooked ?? '');
+  for (const [k, v] of Object.entries(knoten)) {
+    if (k === 'parent' || k === 'loc' || k === 'range') continue;
+    if (Array.isArray(v)) v.forEach((x) => texteIn(x, aus));
+    else if (v && typeof v === 'object' && typeof v.type === 'string') texteIn(v, aus);
+  }
+  return aus;
+}
+
+const farbklasseIn = (wert) => texteIn(wert).flatMap((x) => x.split(/\s+/)).find((k) => FARBKLASSEN.has(k));
+
+const knopfFarben = {
+  meta: {
+    type: 'problem',
+    docs: { description: 'Keine Farbklassen über className am Baustein Knopf – die Farbe kommt aus der Art (#1210)' },
+    schema: [],
+    messages: {
+      farbe: 'Farbklasse „{{klasse}}“ über className am Knopf: Bitte die Art nehmen – art="haupt" (blau), art="anlegen" (grün, „+ …“), art="gefahr" mit rueckfrage (Entwicklerhandbuch „Gestaltung und Bausteine → Leitsätze“).',
+    },
+  },
+  create(context) {
+    const melde = (node, wert) => {
+      const klasse = farbklasseIn(wert);
+      if (klasse) context.report({ node, messageId: 'farbe', data: { klasse } });
+    };
+    return {
+      JSXOpeningElement(knoten) {
+        if (knoten.name.type !== 'JSXIdentifier' || !KNOPF_BAUSTEINE.has(knoten.name.name)) return;
+        const a = knoten.attributes.find((x) => x.type === 'JSXAttribute' && x.name.name === 'className');
+        if (a?.value) melde(a, a.value);
+      },
+      CallExpression(knoten) {
+        if (knoten.callee.type !== 'Identifier' || knoten.callee.name !== 'knopfAussehen') return;
+        const arg = knoten.arguments[0];
+        const p = arg?.type === 'ObjectExpression' ? arg.properties.find((x) => x.type === 'Property' && x.key.type === 'Identifier' && x.key.name === 'className') : undefined;
+        if (p) melde(p, p.value);
+      },
+    };
+  },
+};
+
 export default {
   meta: { name: 'ablago' },
   rules: {
     'komplexitaet-hinweis': complexity,
     'handler-laenge': handlerLaenge,
     bausteine,
+    'knopf-farben': knopfFarben,
   },
 };

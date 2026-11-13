@@ -254,7 +254,7 @@ export function SicherungPanel({ z }: { z: SicherungZustand }) {
         {alte.length > 0 && (
           <div className="hinweis info">
             <p>{tn('werkbank.sicherung.zum-wiederherstellen-brauchst-du', { b: <strong>{t('werkbank.sicherung.sicherungen-sind-mit-einem', { anzahl: alte.length })}</strong> })}</p>
-            <div className="knoepfe"><Knopf groesse="klein" className="gefahr-rand" gesperrt={laeuft}
+            <div className="knoepfe"><Knopf groesse="klein" gesperrt={laeuft}
               onClick={async () => { if (await rueckfrage({ titel: t('werkbank.sicherung.alle-sicherungen-mit-frueherem', { anzahl: alte.length }), text: t('werkbank.sicherung.sie-sind-danach-endgueltig'), ja: t('werkbank.sicherung.endgueltig-loeschen'), gefahr: true })) void tu(async () => { for (const x of alte) await api.sicherungLoeschen(x.name); }, t('werkbank.sicherung.sicherungen-mit-frueherem-schluessel')); }}>
               {t('werkbank.sicherung.sicherungen-mit-frueherem-schluessel-2')}</Knopf></div>
           </div>

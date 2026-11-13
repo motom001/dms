@@ -4,7 +4,6 @@ import { Feld, Knopf, type KnopfErgebnis } from '../bausteine';
 import { Hilfe } from '../Hilfe';
 import { useKonto } from '../konto-kontext';
 import { geraetename, passkeyAnlegen, passkeysImBrowser } from '../passkey';
-import { rueckfrage } from '../rueckfrage';
 import { t } from '../sprache';
 import { Symbol } from '../Symbol';
 import { gebietsschema } from '../../../shared/src/sprache';
@@ -49,10 +48,7 @@ function Zeile({ p, adresse, aendern }: { p: Passkey; adresse: string | null; ae
   const [umbenennen, setUmbenennen] = useState(false);
   const [name, setName] = useState(p.name);
   const speichern = async () => { aendern(await api.passkeyBenennen(p.nr, name)); setUmbenennen(false); };
-  const entfernen = async () => {
-    if (!(await rueckfrage({ titel: t('profil.passkeys.entfernen.frage', { name: p.name }), text: t('profil.passkeys.entfernen.text'), ja: t('profil.passkeys.entfernen'), gefahr: true }))) return;
-    aendern(await api.passkeyEntfernen(p.nr));
-  };
+  const entfernen = async () => { aendern(await api.passkeyEntfernen(p.nr)); };
   return (
     <li className="passkey-zeile">
       {umbenennen ? (
@@ -77,7 +73,8 @@ function Zeile({ p, adresse, aendern }: { p: Passkey; adresse: string | null; ae
         </div>
         <div className="knoepfe">
           <Knopf groesse="klein" onClick={() => setUmbenennen(true)}>{t('profil.passkeys.umbenennen')}</Knopf>
-          <Knopf art="gefahr" groesse="klein" onClick={entfernen}>{t('profil.passkeys.entfernen')}</Knopf>
+          <Knopf art="gefahr" groesse="klein" symbol="geloescht" onClick={entfernen}
+            rueckfrage={{ titel: t('profil.passkeys.entfernen.frage', { name: p.name }), text: t('profil.passkeys.entfernen.text'), ja: t('profil.passkeys.entfernen') }}>{t('profil.passkeys.entfernen')}</Knopf>
         </div>
       </>}
     </li>

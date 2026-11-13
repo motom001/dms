@@ -575,7 +575,7 @@ function PaketDetail({ z, id, quelle }: { z: PaketeZustand; id: string; quelle?:
           {!inst && kp && <button type="button" className="knopf primaer" disabled={laeuft || ablauf || !katalog} onClick={() => setAblauf(true)}>{t('werkbank.pakete.installieren')}</button>}
           {inst && neuer && <button type="button" className="knopf primaer" disabled={laeuft} onClick={() => void zeigeVorschau(neuer)}>{t('werkbank.pakete.auf-aktualisieren', { neuer })}</button>}
           {inst && (inst.beispielMappen?.length ?? 0) > 0 && <button type="button" className="knopf" disabled={laeuft} onClick={() => void beispieleEntfernen()}>{t('werkbank.pakete.beispiele-entfernen')}</button>}
-          {inst && <Knopf className="gefahr-rand" gesperrt={laeuft} onClick={entfernen}>{t('werkbank.pakete.entfernen')}</Knopf>}
+          {inst && <Knopf gesperrt={laeuft} onClick={entfernen}>{t('werkbank.pakete.entfernen')}</Knopf>}
           {inst?.herkunft.art === 'hochgeladen' && <span className="leise klein">{t('werkbank.pakete.ein-hochgeladenes-paket')}</span>}
         </div>
         {entfernenOffen && inst && (

@@ -5,7 +5,7 @@ import { DatenProvider } from './daten';
 import { KontoProvider } from './konto';
 import { starteSammler } from './diagnose';
 import { starteErreichbarkeit } from './erreichbar';
-import { Rueckfragen } from './rueckfrage';
+import { Rueckfragen } from './bausteine';
 import { Abrufseite } from './abruf';
 import { Notfallseite } from './notfall';
 import { Fehlergrenze } from './Fehlergrenze';

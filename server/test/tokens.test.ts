@@ -53,6 +53,8 @@ test('Schrift auf Flächen: mindestens 4,5:1, hell und dunkel', () => {
     ['akzent-tinte', 'akzent'], ['schlecht', 'flaeche'], ['schlecht-tinte', 'schlecht'], ['warn', 'flaeche'],
     ['warn-tinte', 'warn'], ['warn', 'warn-tinte'], ['verwaltung-tinte', 'verwaltung'], ['verwaltung', 'verwaltung-tinte'],
     ['gruen', 'flaeche'], ['bildmarke-tinte', 'bildmarke'],
+    // Status-Flächen mit ihrer Schrift (#1210): Chip „gut“, Ergebnis am Knopf, Hinweise; leise Schrift darauf.
+    ['gruen', 'gruen-zart'], ['warn', 'warn-zart'], ['schlecht', 'schlecht-zart'], ['leise', 'warn-zart'], ['leise', 'senke'], ['schlecht', 'senke'],
     // Nummern auf den Markierungen beim Übernehmen (#1017).
     ...[1, 2, 3, 4, 5, 6].map((i): [string, string] => ['markierung-tinte', `markierung-${i}`]),
   ];
