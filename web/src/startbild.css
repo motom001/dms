@@ -1,0 +1,16 @@
+/* Startbild (#1198): steht schon in index.html (ohne Skript), bis React das erste Bild zeichnet; dazu die Meldung
+   „Ablago antwortet gerade nicht“ ohne React (startbild.ts). Gezeigt wird die Sprache aus html[data-startbild]
+   (main.tsx setzt sie sofort), ohne Angabe Deutsch. */
+.startbild { box-sizing: border-box; min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 24px 16px; text-align: center; color: var(--tinte); background: var(--grund); font: 15px/1.45 var(--schrift); }
+.startbild-logo { width: 220px; max-width: 70vw; height: auto; margin-bottom: 10px; }
+.startbild-logo.hell { display: var(--marke-hell); }
+.startbild-logo.dunkel { display: var(--marke-dunkel); }
+.startbild-text { margin: 0; max-width: 32em; }
+.startbild-titel { margin: 0; font-weight: 600; font-size: 17px; }
+.startbild-hinweis { margin: 0; max-width: 32em; color: var(--warn); }
+.startbild .knopf { margin-top: 8px; }
+/* Nach einigen Sekunden: „antwortet noch nicht“ – nur CSS, ohne Skript (STARTBILD_WARTET_S). */
+.startbild-spaeter { color: var(--leise); opacity: 0; animation: startbild-zeigen .4s ease 4s forwards; }
+@keyframes startbild-zeigen { to { opacity: 1; } }
+.startbild [data-sprache] { display: none; }
+html:not([data-startbild="en"]) .startbild [data-sprache="de"], html[data-startbild="en"] .startbild [data-sprache="en"] { display: block; }

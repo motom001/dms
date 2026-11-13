@@ -1,7 +1,10 @@
 import { readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import postgres from 'postgres';
+import { protokoll } from './protokoll';
 import { t } from './sprache';
+
+const log = () => protokoll.modul('datenbank');
 
 /**
  * Zahl der Verbindungen zur Datenbank (#544). Vorgabe bleibt 10: Im Lasttest mit 100 gleichzeitigen Anfragen
@@ -22,11 +25,28 @@ export const VERBINDUNGEN_MAX = 100;
  */
 export const VERBINDUNGEN_JE_WEITEREM = 4;
 /**
- * Der Leiter hält dauerhaft eigene Verbindungen für Sitzungssperren (Lebenszeichen, Eingangsordner, Postfächer – je
- * eine, `sql.reserve()`, dazu eine frei seit dem Ausbau der Webhooks, #991); dazu kommen Zeitpläne (`exklusiv`) und Anfragen. Ohne genug darüber hinaus
- * warten seine Abfragen endlos auf eine freie Verbindung – und mit ihnen alles, was die anderen Prozesse bei ihm aufrufen.
+ * Der Leiter bekommt vorab 4 Verbindungen mehr als die anderen Prozesse. Bis 0.266 hielt er davon 3 dauerhaft für
+ * Sitzungssperren (Lebenszeichen, Eingangsordner, Postfächer, je `sql.reserve()`), dazu jeder laufende Zeitplan eine –
+ * so konnte der Pool verklemmen (#1198). Seit #1198 laufen alle Sperren über **eine** eigene Verbindung
+ * ({@link SPERRVERBINDUNGEN}, `sperrverbindung.ts`); die übrigen 3 bleiben dem Leiter für seine Arbeit im Hintergrund
+ * (Texterkennung, Ereignisse, Automatisierungen, Zeitpläne).
  */
 export const VERBINDUNGEN_LEITER_RESERVIERT = 4;
+/**
+ * Die Sperrverbindung (#1198) zählt zum Anteil des Leiters: Sein Pool für Anfragen und Arbeit ist um sie kleiner.
+ * Weitere Prozesse öffnen sie nur, solange sie eine Sperre halten (Pakete installieren) – kurz eine über ihren Anteil.
+ */
+export const SPERRVERBINDUNGEN = 1;
+/** Größe des Pools für Anfragen und Arbeit: der eigene Anteil, im Leiter ohne die Sperrverbindung (mindestens 1). */
+export const poolGroesse = (anteil: number, leiter: boolean) => Math.max(1, anteil - (leiter ? SPERRVERBINDUNGEN : 0));
+/**
+ * Warten auf eine freie Verbindung (#1198): Nach so vielen Sekunden bricht eine Abfrage ab (QUEUE_TIMEOUT von
+ * postgres.js, Antwort 503), statt endlos zu warten. Im Lasttest mit 100 gleichzeitigen Anfragen lag die Wartezeit weit
+ * unter einer Sekunde; 30 s erreicht nur ein Pool, der festhängt – und das vor dem Reverse Proxy (oft 60–90 s).
+ */
+export const VERBINDUNG_WARTEN_S = 30;
+/** Ab so langem Warten auf eine Verbindung warnt das Protokoll – mit belegten Verbindungen und laufenden Sperren. */
+export const VERBINDUNG_WARNUNG_MS = 10_000;
 /** Mindestens so viele für den Leiter: die dauerhaft gehaltenen und 2 für Arbeit. */
 export const VERBINDUNGEN_LEITER_MIN = VERBINDUNGEN_LEITER_RESERVIERT + 2;
 
@@ -87,8 +107,69 @@ export const verbindungenFuer = (a: Verbindungsaufteilung, nr: number) => (nr <=
  * postgres.js 4 (#236): `infer: true` behält die Parametertypen von v3 (Date als timestamptz, boolean, bytea …),
  * damit Abfragen ohne ausdrücklichen Typ unverändert laufen.
  */
-export function verbinde(url: string, max = VERBINDUNGEN_VORGABE) {
-  return postgres(url, { max, onnotice: () => {}, infer: true });
+export function verbinde(url: string, max = VERBINDUNGEN_VORGABE, o: { wartenS?: number } = {}) {
+  return postgres(url, { max, onnotice: () => {}, infer: true, ...(o.wartenS ? { queue_timeout: o.wartenS } : {}) });
+}
+
+/**
+ * Höchstens `ms` warten (#1198): danach gilt `ersatz()`. Die Abfrage selbst läuft weiter (bis zu ihrem eigenen Ende oder
+ * {@link VERBINDUNG_WARTEN_S}); ihr Fehler geht dann ins Leere.
+ */
+export function hoechstens<T>(p: Promise<T>, ms: number, ersatz: () => T): Promise<T> {
+  let uhr: NodeJS.Timeout | undefined;
+  const grenze = new Promise<T>((ok) => { uhr = setTimeout(() => ok(ersatz()), ms); });
+  p.catch(() => {});
+  return Promise.race([p, grenze]).finally(() => clearTimeout(uhr));
+}
+
+/** Abbruch nach {@link VERBINDUNG_WARTEN_S}: Die Anfrage bekam keine Verbindung (postgres.js, `queue_timeout`). */
+export const istVerbindungWarten = (e: unknown) => (e as { code?: unknown } | null)?.code === 'QUEUE_TIMEOUT';
+
+/** Stand des Pools (postgres.js 4: `sql.stats`), null ohne. */
+export interface Poolbelegung { verbindungen: number; frei: number; belegt: number; reserviert: number; wartend: number }
+export function poolbelegung(sql: postgres.Sql): Poolbelegung | null {
+  try {
+    const s = (sql as unknown as { stats?: { connections: number; idle: number; leased: number; waiting: number } }).stats;
+    return s ? { verbindungen: s.connections, frei: s.idle, belegt: s.connections - s.idle, reserviert: s.leased, wartend: s.waiting } : null;
+  } catch { return null; }
+}
+
+/** Zwischenspeicher der Gesundheitsprüfung (#1198): so lange gilt ein Ergebnis. */
+export const DB_PRUEFUNG_GUELTIG_MS = 5000;
+/** Zeitgrenze der Prüfung: Antwortet `SELECT 1` nicht so schnell, gilt die Datenbank als nicht erreichbar. */
+export const DB_PRUEFUNG_MS = 2000;
+
+/**
+ * Gesundheitsprüfung mit Datenbank (#1198): `/api/gesundheit` (und der Docker-Healthcheck) meldete „gesund“, während
+ * keine Anfrage mit Datenbank mehr durchging. Jetzt läuft `SELECT 1` über den Pool der Anfragen mit kurzer Zeitgrenze:
+ * Ist keine Verbindung frei oder antwortet die Datenbank nicht, schlägt sie fehl. Keine neue Last: Das Ergebnis gilt
+ * {@link DB_PRUEFUNG_GUELTIG_MS}, gleichzeitige Prüfungen teilen sich eine Abfrage, und solange eine frühere noch
+ * wartet, kommt keine weitere dazu.
+ */
+export class Datenbankpruefung {
+  private ergebnis: { ok: boolean; t: number } | null = null;
+  private laeuft: Promise<boolean> | null = null;
+  private haengt: Promise<unknown> | null = null;
+
+  constructor(private sql: postgres.Sql, private o: { gueltigMs?: number; grenzeMs?: number; jetzt?: () => number } = {}) {}
+
+  pruefe(): Promise<boolean> {
+    const jetzt = (this.o.jetzt ?? Date.now)();
+    if (this.ergebnis && jetzt - this.ergebnis.t < (this.o.gueltigMs ?? DB_PRUEFUNG_GUELTIG_MS)) return Promise.resolve(this.ergebnis.ok);
+    this.laeuft ??= this.jetzt().then((ok) => { this.ergebnis = { ok, t: (this.o.jetzt ?? Date.now)() }; return ok; }).finally(() => { this.laeuft = null; });
+    return this.laeuft;
+  }
+
+  private async jetzt(): Promise<boolean> {
+    // Die vorige Abfrage wartet noch (Pool voll): keine zweite in die Schlange stellen.
+    if (this.haengt) return false;
+    const q = this.sql`SELECT 1`.then(() => true, () => false);
+    this.haengt = q;
+    void q.finally(() => { if (this.haengt === q) this.haengt = null; });
+    let uhr: NodeJS.Timeout | undefined;
+    const grenze = new Promise<boolean>((ok) => { uhr = setTimeout(() => ok(false), this.o.grenzeMs ?? DB_PRUEFUNG_MS); });
+    try { return await Promise.race([q, grenze]); } finally { clearTimeout(uhr); }
+  }
 }
 
 /**
@@ -102,7 +183,15 @@ export class Verbindungswarten {
   private werte: Array<{ t: number; ms: number }> = [];
   private zeitgeber?: NodeJS.Timeout;
   /** `aufteilung` (#874): mit mehreren Prozessen die Zahl zusammen und die Anteile; `max` ist der eigene Anteil. */
-  constructor(private sql: postgres.Sql, readonly max: number, readonly quelle: VerbindungsEinstellung['quelle'] = 'vorgabe', readonly aufteilung: Verbindungsaufteilung | null = null) {}
+  /** Läuft noch eine Messung? Dann keine weitere in die Schlange (sie wartet sonst mit allen anderen, #1198). */
+  private offen: Promise<number> | null = null;
+  /**
+   * `max`: Anteil dieses Prozesses. `o.sperren` (#1198): Wer Sperren hält, steht in der Warnung beim langen Warten;
+   * `o.pool`: Größe des Pools ohne die Sperrverbindung (Leiter), für die Belegung.
+   */
+  constructor(private sql: postgres.Sql, readonly max: number, readonly quelle: VerbindungsEinstellung['quelle'] = 'vorgabe', readonly aufteilung: Verbindungsaufteilung | null = null, private o: { sperren?: { namen(): string[] }; warnungMs?: number; pool?: number } = {}) {}
+
+  private get warnungMs() { return this.o.warnungMs ?? VERBINDUNG_WARNUNG_MS; }
 
   start(intervallMs = 5000) {
     if (this.zeitgeber) return;
@@ -111,11 +200,35 @@ export class Verbindungswarten {
   }
   stop() { if (this.zeitgeber) clearInterval(this.zeitgeber); this.zeitgeber = undefined; }
 
-  /** Eine Messung; gemerkt wird sie für eine Minute. */
-  async probe(): Promise<number> {
+  /** Belegung des Pools und gehaltene Sperren (#1198) – für Systemzustand und Warnung. */
+  belegung(): (Poolbelegung & { max: number; sperren: string[] }) | null {
+    const b = poolbelegung(this.sql);
+    return b ? { ...b, max: this.o.pool ?? this.max, sperren: this.o.sperren?.namen() ?? [] } : null;
+  }
+
+  /**
+   * Eine Messung; gemerkt wird sie für eine Minute. Wartet sie länger als {@link VERBINDUNG_WARNUNG_MS} (#1198), warnt
+   * das Protokoll einmal mit der Belegung des Pools und den gehaltenen Sperren – und sagt, wenn es wieder geht.
+   */
+  probe(): Promise<number> {
+    this.offen ??= this.miss().finally(() => { this.offen = null; });
+    return this.offen;
+  }
+
+  private async miss(): Promise<number> {
     const t0 = performance.now();
-    await this.sql`SELECT 1`;
+    let gewarnt = false;
+    const uhr = setTimeout(() => {
+      gewarnt = true;
+      const b = this.belegung();
+      log().warn('Anfragen warten lange auf eine freie Verbindung zur Datenbank', {
+        sekunden: Math.round(this.warnungMs / 1000), ...(b ? { pool: b.max, belegt: b.belegt, reserviert: b.reserviert, wartend: b.wartend, sperren: b.sperren.join(', ') || '–' } : {}),
+      });
+    }, this.warnungMs);
+    uhr.unref();
+    try { await this.sql`SELECT 1`; } finally { clearTimeout(uhr); }
     const ms = performance.now() - t0;
+    if (gewarnt) log().info('Verbindungen zur Datenbank wieder frei', { sekunden: Math.round(ms / 1000) });
     const jetzt = Date.now();
     this.werte.push({ t: jetzt, ms });
     this.werte = this.werte.filter((w) => w.t > jetzt - 60_000);

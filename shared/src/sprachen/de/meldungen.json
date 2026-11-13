@@ -817,6 +817,7 @@
   "http.arbeit-nach-der-antwort": "Arbeit nach der Antwort fehlgeschlagen",
   "http.interner-fehler-bei": "Interner Fehler bei {method} {split}",
   "http.interner-fehler-anfrage-details": "Interner Fehler (Anfrage {id}). Details stehen im Protokoll.",
+  "http.datenbank-beschaeftigt": "Ablago ist gerade beschäftigt – die Datenbank hat keine freie Verbindung. Bitte versuche es gleich noch einmal.",
   "http.bereich-unerfuellbar": "Dieser Bereich liegt hinter dem Ende der Datei ({groesse} Bytes).",
   "http.keine-datei-erwartet": "Diese Adresse nimmt keine Datei als Körper an.",
   "http.ohne-verwaltungsrecht": "ohne Verwaltungsrecht",

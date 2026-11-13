@@ -23,6 +23,7 @@ import { Konten } from '../src/konten';
 import { pgKontoRepo } from '../src/konto-repo';
 import { hashe, lebenszeichen, pgKurzzustand, type Kurzzustand } from '../src/kurzzustand';
 import { NotfallSperre } from '../src/notfallcode';
+import { poolSperrquelle, Sperrverbindung } from '../src/sperrverbindung';
 import { Oidc, type Abruf } from '../src/oidc';
 import { PostfachOAuth, RueckrufFehler } from '../src/postfach-oauth';
 import { pgRepo } from '../src/repo-pg';
@@ -89,11 +90,13 @@ describe('Mehrere Prozesse an einer Datenbank (#744)', { skip: !url && 'ohne TES
     assert.deepEqual(await b.exklusiv('fristen', async () => 'b'), { ok: true, wert: 'b' }, 'danach wieder frei');
     assert.equal(n, 1);
     // Lebenszeichen: Der erste Prozess ist allein, der zweite nicht; nach dem Ende des ersten ist der nächste wieder allein.
-    const p1 = await lebenszeichen(sql, H);
-    const p2 = await lebenszeichen(sql, H);
+    // Je Prozess eine eigene Sperrverbindung (#1198).
+    const eigene = () => new Sperrverbindung(poolSperrquelle(sql));
+    const p1 = await lebenszeichen(eigene(), H);
+    const p2 = await lebenszeichen(eigene(), H);
     assert.deepEqual([p1.allein, p2.allein], [true, false]);
     await p1.ende(); await p2.ende();
-    const p3 = await lebenszeichen(sql, H);
+    const p3 = await lebenszeichen(eigene(), H);
     assert.equal(p3.allein, true);
     await p3.ende();
   });

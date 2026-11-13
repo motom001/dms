@@ -6,6 +6,7 @@ import { HILFE, hilfeUrl } from '../../shared/src/hilfe';
 import { NeuereDatenbankFehler } from './db';
 import { hilfeAntwort, hilfeSenden } from './hilfe';
 import { einbettenAus, sicherheitsKoepfe, type Einbetten } from './koepfe';
+import { statischeDateien } from './oberflaeche';
 import { protokoll } from './protokoll';
 import type { ProxyVertrauen } from './proxy';
 import { t } from './sprache';
@@ -202,7 +203,7 @@ ${teile.join('\n')}
 
     // Handbücher (#219) ohne Anmeldung, wie im Einrichtungsmodus – nur Dateien unter web/dist/hilfe.
     const webDir = this.o.webDir && existsSync(this.o.webDir) ? this.o.webDir : null;
-    if (webDir) await app.register(fastifyStatic, { root: webDir, serve: false });
+    if (webDir) await app.register(fastifyStatic, { root: webDir, serve: false, ...statischeDateien(webDir) });
     const hilfe = async (req: { url: string }, reply: Parameters<typeof hilfeSenden>[0] & { sendFile(p: string): unknown }) => {
       const pfad = decodeURIComponent(req.url.split('?')[0]);
       const rel = normalize(pfad.slice(1));

@@ -1443,3 +1443,31 @@ rauchtest('Werkbank: Gleichbedeutende Wörter – Liste mit Suche, Wörter einze
   await suche.fill('');
   await elemente.getByText('1 Gruppe', { exact: true }).waitFor();
 });
+
+/* ---------- Ablago antwortet nicht (#1198) ---------- */
+
+rauchtest('Handy: Startbild, „antwortet gerade nicht“ ohne React, von selbst wieder da (#1198)', {
+  handy: true,
+  // Nachgestellt: Die Gesundheitsprüfung meldet „datenbank“ (503), solange die Datenbank hängt.
+  erwartet: [{ status: 503, pfad: /^\/api\/gesundheit$/ }],
+}, async (s, k) => {
+  // Hängende Datenbank nachstellen: /api/sprache antwortet nie, die Gesundheitsprüfung meldet „datenbank“.
+  await k.route('**/api/sprache', () => {});
+  await k.route('**/api/gesundheit', (r) => r.fulfill({ status: 503, contentType: 'application/json', body: JSON.stringify({ ok: false, zustand: 'datenbank' }) }));
+  await s.goto(BASIS + '/', { waitUntil: 'domcontentloaded' });
+  // Sofort das Startbild aus index.html (ohne Skript), in der Sprache des Browsers.
+  await s.getByText('Verbindung zu Ablago wird aufgebaut …').waitFor();
+  assert.equal(await s.getByText('Connecting to Ablago …').isVisible(), false, 'nur eine Sprache sichtbar');
+  // Nach einigen Sekunden (CSS): „antwortet noch nicht“.
+  await s.waitForFunction(() => getComputedStyle(document.querySelector('.startbild-spaeter[data-sprache="de"]')).opacity === '1');
+  // Nach der Zeitgrenze: Meldung ohne React mit „Erneut versuchen“.
+  const meldung = s.locator('#keine-antwort');
+  await meldung.getByText('Ablago antwortet gerade nicht.').waitFor();
+  assert.equal(await meldung.getByText(/Schon neu geladen/).count(), 0);
+  await meldung.getByRole('button', { name: 'Erneut versuchen' }).click();
+  // Neu geladen, Ablago antwortet weiter nicht: Hinweis, was dann hilft.
+  await s.locator('#keine-antwort').getByText(/Schon neu geladen, Ablago antwortet weiter nicht\. Wenn das anhält: Container neu starten/).waitFor();
+  // Datenbank wieder da: Die Seite merkt es von selbst und startet die Oberfläche.
+  await k.unrouteAll({ behavior: 'ignoreErrors' });
+  await s.getByRole('heading', { name: 'Anmelden' }).waitFor({ timeout: 45_000 });
+});

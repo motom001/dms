@@ -75,6 +75,12 @@ export type Einstellbar = keyof typeof VARIABLE;
 export interface Grenzwert {
   wert: number; quelle: 'vorgabe' | 'umgebung' | 'auto'; variable: (typeof VARIABLE)[Einstellbar]; min: number; max: number; prozesse?: number;
   aufteilung?: { leiter: number; andere: number; prozesse: number };
+  /**
+   * Nur bei `verbindungen` (#1198): Belegung des Pools gerade jetzt – in dem Prozess, der antwortet (mit mehreren
+   * Prozessen `prozess`). `reserviert`: für eine Transaktion bzw. fest vergeben; `sperren`: gehaltene Sitzungssperren
+   * (Zeitpläne, Dauersperren) auf der eigenen Sperrverbindung.
+   */
+  belegung?: { pool: number; belegt: number; reserviert: number; wartend: number; sperren: string[]; prozess?: number };
 }
 export type Grenzwerte = Partial<Record<Einstellbar, Grenzwert>>;
 

@@ -156,7 +156,8 @@ export function routenKontext(dienst: Dienst, konten: Konten, x: RoutenExtras = 
   const sprachen = () => { if (!x.sprachen) throw new Fachfehler(404, t('meldungen.sprachen.nicht-eingerichtet')); return x.sprachen; };
   /** Sprache für die Oberfläche (#729): die der Person, sonst die mitgeschickte, sonst die der Installation. */
   const spracheFuer = async (a: Anfrage) => {
-    const e = x.sprachen ? await x.sprachen.lies() : liesSpracheinstellung(null);
+    // #1198: höchstens kurz auf die Datenbank warten, sonst die zuletzt gelesene Einstellung.
+    const e = x.sprachen ? await x.sprachen.liesHoechstens() : liesSpracheinstellung(null);
     const kopf = spracheAusKopf(a.kopf?.('x-sprache'), e.erlaubt);
     return {
       sprache: a.benutzer ? wirksameSprache(a.benutzer.sprache ?? kopf, e) : kopf ?? e.standard,

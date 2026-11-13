@@ -1,6 +1,6 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
-import { Erreichbarkeit, istAusfall, wartezeit, ZURUECK_MS, PRUEF_ABSTAND_MS, type Gesundheit } from '../../shared/src/erreichbarkeit';
+import { Erreichbarkeit, istAusfall, istDatenbankAusfall, wartezeit, ZURUECK_MS, PRUEF_ABSTAND_MS, type Gesundheit } from '../../shared/src/erreichbarkeit';
 
 /** Uhr und Timer zum Weiterdrehen, Server zum Umschalten. */
 function aufbau() {
@@ -130,4 +130,37 @@ test('standKennung (#122): kurzer Hash, ändert sich mit dem Commit', async () =
     process.env.DMS_COMMIT = 'bbb';
     assert.notEqual(standKennung(), a);
   } finally { if (alt === undefined) delete process.env.DMS_COMMIT; else process.env.DMS_COMMIT = alt; }
+});
+
+test('Datenbank antwortet nicht (#1198): „beschäftigt“ statt „wieder erreichbar“, erst mit Datenbank zurück', async () => {
+  const { e, server, warte, wieder } = aufbau();
+  await e.pruefe();
+  // Eine Anfrage bekam 503 mit „datenbank“: Ausfall, gleich als beschäftigt markiert.
+  assert.equal(istAusfall(503, { fehler: 'beschäftigt', datenbank: true }), true);
+  assert.equal(istDatenbankAusfall(503, { fehler: 'beschäftigt', datenbank: true }), true);
+  assert.equal(istDatenbankAusfall(503, { fehler: 'Wartung' }), false);
+  server.antwort = { ok: false, zustand: 'datenbank', stand: 'a' };
+  e.ausfall(true);
+  assert.deepEqual([e.zustand.stufe, e.zustand.datenbank], ['weg', true]);
+  // Die Gesundheitsprüfung antwortet (200 vom Server, aber ohne Datenbank): nicht „wieder erreichbar“.
+  await warte(2000);
+  assert.deepEqual([e.zustand.stufe, e.zustand.datenbank], ['weg', true]);
+  assert.equal(wieder(), 0);
+  // Server ganz weg: wieder „nicht erreichbar“.
+  server.antwort = null;
+  await warte(4000);
+  assert.deepEqual([e.zustand.stufe, e.zustand.datenbank], ['weg', false]);
+  // Wieder mit Datenbank: zurück.
+  server.antwort = { ok: true, stand: 'a' };
+  await warte(8000);
+  assert.deepEqual([e.zustand.stufe, e.zustand.datenbank], ['zurueck', false]);
+  assert.equal(wieder(), 1);
+});
+
+test('Datenbank antwortet nicht, ohne vorherigen Ausfall: Prüfung beim Zurückkehren erkennt „beschäftigt“', async () => {
+  const { e, server } = aufbau();
+  await e.pruefe();
+  server.antwort = { ok: false, zustand: 'datenbank' };
+  await e.pruefe();
+  assert.deepEqual([e.zustand.stufe, e.zustand.datenbank], ['weg', true]);
 });

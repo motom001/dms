@@ -1,9 +1,12 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
-import { Erreichbarkeit } from '../../shared/src/erreichbarkeit';
+import { Erreichbarkeit, type Gesundheit } from '../../shared/src/erreichbarkeit';
 import { t, tn } from './sprache';
 import { sprache } from '../../shared/src/sprache';
 import { automatischNeuLaden } from '../../shared/src/veraltet';
 import { beiVeraltet, beobachteVeraltet, neuGeladenHinweis, neuGeladenHinweisSchliessen, selbstNeuLaden, zuletztNeuGeladen } from './veraltet';
+import { Knopf } from './bausteine/knopf/Knopf';
+import { antwortGekommen, neuLadenOhneAntwort, schonOhneAntwortNeuGeladen } from './startbild';
+import { laedtNichtUrl } from '../../shared/src/startbild';
 
 /**
  * Erreichbarkeit (#122): Leiste, wenn das DMS weg ist (Update, Neustart), wenn es wieder da ist
@@ -17,12 +20,14 @@ export const NICHT_ERREICHBAR = t('oberflaeche.erreichbar.ablago-ist-gerade-nich
 export const erreichbarkeit = new Erreichbarkeit({
   gesundheit: async () => {
     const r = await fetch('/api/gesundheit', { cache: 'no-store', credentials: 'same-origin', headers: { 'x-dms': '1', 'x-sprache': sprache() } });
-    return r.ok ? await r.json().catch(() => null) : null;
+    const g = await r.json().catch(() => null) as Gesundheit | null;
+    // 503 mit „datenbank“ (#1198): Ablago antwortet, die Datenbank nicht – die Leiste sagt „beschäftigt“.
+    return r.ok || g?.zustand === 'datenbank' ? g : null;
   },
   jetzt: () => Date.now(),
   spaeter: (f, ms) => setTimeout(f, ms),
   abbrechen: (eintrag) => clearTimeout(eintrag as ReturnType<typeof setTimeout>),
-}, () => dispatchEvent(new Event(WIEDER_ERREICHBAR)));
+}, () => { antwortGekommen(); dispatchEvent(new Event(WIEDER_ERREICHBAR)); });
 
 /** Beim Start: Stand merken, beim Zurückkehren ins Fenster nachsehen. */
 export function starteErreichbarkeit() {
@@ -91,6 +96,7 @@ export function ErreichbarkeitsBanner({ version, ansichtNeuLaden, aussen }: {
     return () => clearInterval(timer);
   }, [z.stufe]);
 
+  if (z.stufe === 'weg' && z.datenbank) return <Beschaeftigt naechsterVersuch={z.naechsterVersuch} art={art} />;
   if (z.stufe === 'weg') {
     const s = z.naechsterVersuch === null ? null : Math.max(0, Math.ceil((z.naechsterVersuch - Date.now()) / 1000));
     return (
@@ -129,4 +135,23 @@ export function ErreichbarkeitsBanner({ version, ansichtNeuLaden, aussen }: {
     );
   }
   return null;
+}
+
+/**
+ * Ablago antwortet, die Datenbank nicht (#1198): eigener Zustand statt „nicht erreichbar“ bzw. eines voreiligen „wieder
+ * erreichbar“. Führte „Seite neu laden“ schon einmal wieder hierher, sagt die Leiste, was dann hilft.
+ */
+function Beschaeftigt({ naechsterVersuch, art }: { naechsterVersuch: number | null; art: string }) {
+  const s = naechsterVersuch === null ? null : Math.max(0, Math.ceil((naechsterVersuch - Date.now()) / 1000));
+  return (
+    <div className={`vertretungsbanner erreichbarkeit weg${art}`} role="alert" id="erreichbarkeit-beschaeftigt">
+      <p>{tn('oberflaeche.erreichbar.beschaeftigt-text', { b: <strong>{t('oberflaeche.erreichbar.beschaeftigt')}</strong>, wert: s ? t('oberflaeche.erreichbar.naechster-versuch-in-s', { s }) : ' …' })}
+        {schonOhneAntwortNeuGeladen() ? <>{' '}{t('oberflaeche.erreichbar.schon-neu-geladen')}</> : null}
+        {' '}<a href={laedtNichtUrl(sprache())} target="_blank" rel="noreferrer">{t('oberflaeche.startbild.was-tun')}</a></p>
+      <span className="knoepfe">
+        <Knopf groesse="klein" onClick={() => void erreichbarkeit.pruefe()}>{t('oberflaeche.erreichbar.jetzt-pruefen')}</Knopf>
+        <Knopf groesse="klein" onClick={() => neuLadenOhneAntwort()}>{t('oberflaeche.erreichbar.seite-neu-laden')}</Knopf>
+      </span>
+    </div>
+  );
 }

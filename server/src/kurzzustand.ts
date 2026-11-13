@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import type postgres from 'postgres';
+import { poolSperrquelle, Sperrverbindung } from './sperrverbindung';
 
 /**
  * Zustand zwischen Anfragen (#744): Fehlversuche, Sperren, Einmal-Tickets, Merker „kurz hintereinander nur einmal“ und
@@ -136,8 +137,13 @@ const json = (sql: postgres.Sql, w: unknown) => (w === null || w === undefined ?
 /** LIKE-Muster für „beginnt mit“ (Sonderzeichen geschützt). */
 const anfang = (s: string) => `${s.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
 
-/** In PostgreSQL (Tabelle `kurzzustand`, Migration 078): für alle Prozesse und Server derselben Datenbank. */
-export function pgKurzzustand(sql: postgres.Sql, haushaltId: string, jetzt: () => number = Date.now): Kurzzustand {
+/**
+ * In PostgreSQL (Tabelle `kurzzustand`, Migration 078): für alle Prozesse und Server derselben Datenbank. Sperren für
+ * Zeitpläne (`exklusiv`) laufen seit #1198 über die Sperrverbindung des Prozesses (`sperren`), nie über eine Verbindung
+ * aus dem Pool, die während der Arbeit festgehalten wird. Ohne Angabe: eine eigene, aus dem Pool reserviert, solange eine
+ * Sperre gehalten wird (Tests, Bausteine).
+ */
+export function pgKurzzustand(sql: postgres.Sql, haushaltId: string, jetzt: () => number = Date.now, sperren: Sperrverbindung = new Sperrverbindung(poolSperrquelle(sql))): Kurzzustand {
   const d = (ms: number | null) => (ms === null ? null : new Date(ms));
   return {
     async zaehle(art, s, fensterMs, o = {}) {
@@ -224,31 +230,21 @@ export function pgKurzzustand(sql: postgres.Sql, haushaltId: string, jetzt: () =
       return r.count;
     },
     async exklusiv(name, f) {
-      // Eine eigene Verbindung hält die Sitzungssperre; jeder Aufruf eine neue, damit auch derselbe Prozess nicht doppelt läuft.
-      const v = await sql.reserve();
-      try {
-        const [r] = await v`SELECT pg_try_advisory_lock(${SPERRE_KLASSE}, hashtext(${`${haushaltId}:${name}`})) AS ok`;
-        if (!r.ok) return { ok: false };
-        try { return { ok: true, wert: await f() }; } finally {
-          await v`SELECT pg_advisory_unlock(${SPERRE_KLASSE}, hashtext(${`${haushaltId}:${name}`}))`.catch(() => {});
-        }
-      } finally { v.release(); }
+      // Sperrverbindung (#1198): Die Sperre hält keine Verbindung aus dem Pool fest – f() hat ihn ganz für sich.
+      const s = await sperren.versuche({ klasse: SPERRE_KLASSE, name: `${haushaltId}:${name}` }, name);
+      if (!s) return { ok: false };
+      try { return { ok: true, wert: await f() }; } finally { await s.gib().catch(() => {}); }
     },
   };
 }
 
 /**
- * Lebenszeichen (#744): Jeder Prozess hält, solange er läuft, eine geteilte Sperre auf einer eigenen Verbindung. Wer sie
- * beim Start exklusiv bekommt, ist allein an dieser Datenbank – erst dann darf er z. B. „laufende“ Aufträge als
- * unterbrochen zurückstellen (sie können keinem anderen Prozess gehören). Liefert, ob er allein war, und eine Funktion
- * zum Freigeben (beim Beenden).
+ * Lebenszeichen (#744): Jeder Prozess hält, solange er läuft, eine geteilte Sperre (seit #1198 auf seiner
+ * Sperrverbindung). Wer sie beim Start exklusiv bekommt, ist allein an dieser Datenbank – erst dann darf er z. B.
+ * „laufende“ Aufträge als unterbrochen zurückstellen (sie können keinem anderen Prozess gehören). Liefert, ob er allein
+ * war, und eine Funktion zum Freigeben (beim Beenden).
  */
-export async function lebenszeichen(sql: postgres.Sql, haushaltId: string): Promise<{ allein: boolean; ende: () => Promise<void> }> {
-  const v = await sql.reserve();
-  const k = `${haushaltId}:prozess`;
-  const [r] = await v`SELECT pg_try_advisory_lock(${SPERRE_KLASSE}, hashtext(${k})) AS ok`;
-  // Erst die geteilte nehmen, dann die exklusive lösen: Dazwischen kann kein anderer „allein“ sein.
-  await v`SELECT pg_advisory_lock_shared(${SPERRE_KLASSE}, hashtext(${k}))`;
-  if (r.ok) await v`SELECT pg_advisory_unlock(${SPERRE_KLASSE}, hashtext(${k}))`;
-  return { allein: !!r.ok, ende: async () => { await v`SELECT pg_advisory_unlock_all()`.catch(() => {}); v.release(); } };
+export async function lebenszeichen(sperren: Sperrverbindung, haushaltId: string): Promise<{ allein: boolean; ende: () => Promise<void> }> {
+  const { allein, sperre } = await sperren.lebenszeichen({ klasse: SPERRE_KLASSE, name: `${haushaltId}:prozess` }, 'lebenszeichen');
+  return { allein, ende: () => sperre.gib() };
 }

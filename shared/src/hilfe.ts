@@ -195,6 +195,8 @@ export const HILFE = {
   'verschluesselung.arten': admin('verschluesselung/', 'Was verschlüsselt ist', 'was-verschlusselt-ist'),
   // Notfallblatt (#106) steht seit #993 nur unter Verschlüsselung.
   'verschluesselung.notfallblatt': admin('verschluesselung/', 'Notfallblatt', 'notfallblatt'),
+  // Ablago lädt nicht oder bleibt schwarz (#1198): Startbild, „antwortet gerade nicht“, Leiste „beschäftigt“ – immer online.
+  'notfall.laedt-nicht': admin('was-ist-passiert/', 'Ablago lädt nicht oder bleibt schwarz', 'laedt-nicht'),
   // Notfallkontakte (#812): beim Notfallblatt, für „Wen fragen?“.
   'verschluesselung.notfallkontakte': admin('verschluesselung/', 'Notfallkontakte', 'notfallkontakte'),
   'sicherung.zeitplan': admin('sicherung/', 'Zeitplan und Aufbewahrung', 'zeitplan-und-aufbewahrung'),

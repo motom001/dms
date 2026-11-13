@@ -1,4 +1,5 @@
 import type { Readable } from 'node:stream';
+import { hoechstens } from './db';
 import type { Benutzer } from '../../shared/src/model';
 import type { Dienst } from './dienst';
 import { Fachfehler } from './fehler';
@@ -171,6 +172,16 @@ export interface Route {
    * „zuletzt aktiv“ der Sitzung nicht.
    */
   still?: boolean;
+  /**
+   * Ohne Sitzung (#1198): Die Anfrage schaut gar nicht nach der Anmeldung – nur für die Gesundheitsprüfung, die sonst
+   * mit Sitzungs-Cookie (Browser) an derselben Datenbank hinge, die sie prüfen soll.
+   */
+  ohneSitzung?: boolean;
+  /**
+   * Anmeldung höchstens so lange nachsehen (#1198, nur `offen`): Antwortet die Datenbank nicht rechtzeitig, läuft die
+   * Anfrage ohne angemeldete Person weiter – für `/api/sprache` beim Start der Oberfläche.
+   */
+  anmeldungHoechstensMs?: number;
   handler(a: Anfrage): Promise<Antwort>;
 }
 
@@ -192,6 +203,8 @@ export interface RoutenExtras {
   ueberlast?: import('./ueberlast').Ueberlastschutz;
   /** Warten auf eine freie Verbindung zur Datenbank (#544). */
   verbindungen?: import('./db').Verbindungswarten;
+  /** Gesundheitsprüfung mit Datenbank (#1198): kurze Abfrage mit Zeitgrenze, kurz zwischengespeichert. */
+  datenbank?: { pruefe(): Promise<boolean> };
   /** Wartezeit auf Verbindungen für den Lasttest (#874), in diesem Prozess. */
   poolmessung?: import('./poolmessung').Poolmessung;
   /** Sitzungen der Datenbank mit Sperren (#874). */
@@ -449,6 +462,7 @@ export async function pruefeZugang(r: Route, a: Anfrage, kopf: (n: string) => st
     return;
   }
   if (r.konsole) throw new Fachfehler(404, t('meldungen.routen.diese-schnittstelle-gibt-es'));
+  if (r.ohneSitzung && r.zugang === 'offen') return;
   // Öffentliche API: Anmeldung per API-Schlüssel statt Sitzung; kein X-DMS nötig (kein Cookie im Spiel).
   const auth = kopf('authorization');
   if (r.api && auth && schluessel) {
@@ -474,18 +488,22 @@ export async function pruefeZugang(r: Route, a: Anfrage, kopf: (n: string) => st
     const s = await schluessel.pruefe(auth).catch(() => undefined);
     if (s?.recht === NUR_ZAEHLER) throw new Fachfehler(403, t('api.schluessel.nur-zaehler'));
   }
-  const anmeldung = await konten.anmeldungZu(a.sitzung, { still: r.still });
-  a.benutzer = anmeldung?.benutzer;
-  a.sitzungsDaten = anmeldung?.sitzung;
   if (r.methode !== 'GET' && kopf('x-dms') !== '1') throw new Fachfehler(403, t('meldungen.routen.anfrage-ohne-kennung-der'));
-  // Verwaltungsmodus (#819): Zustand der Sitzung auf dem Server. Aktivität = jede ändernde Anfrage oder eine, die die
-  // Oberfläche nach einer Eingabe als „aktiv“ kennzeichnet – Abfragen im Hintergrund verlängern den Modus nicht.
-  if (a.benutzer) {
-    // Abfragen im Hintergrund (#919, `still`) nie – auch nicht kurz nach einer Eingabe.
+  type Sitzung = { benutzer?: Benutzer; sitzungsDaten?: SitzungIntern; verwaltungsmodus?: boolean };
+  const sitzung = async (): Promise<Sitzung> => {
+    const anmeldung = await konten.anmeldungZu(a.sitzung, { still: r.still });
+    if (!anmeldung?.benutzer) return {};
+    // Verwaltungsmodus (#819): Zustand der Sitzung auf dem Server. Aktivität = jede ändernde Anfrage oder eine, die die
+    // Oberfläche nach einer Eingabe als „aktiv“ kennzeichnet – Abfragen im Hintergrund (#919, `still`) nie.
     const aktiv = !r.still && ((r.methode !== 'GET' && !r.lesend && !r.pfad.startsWith('/api/konto/verwaltung')) || kopf('x-dms-aktiv') === '1');
-    a.verwaltungsmodus = await konten.modusPruefen(a.benutzer, a.sitzung, a.sitzungsDaten, aktiv);
-    a.benutzer = { ...a.benutzer, rolle: a.verwaltungsmodus ? 'admin' : 'mitglied' };
-  }
+    const verwaltungsmodus = await konten.modusPruefen(anmeldung.benutzer, a.sitzung, anmeldung.sitzung, aktiv);
+    return { benutzer: { ...anmeldung.benutzer, rolle: verwaltungsmodus ? 'admin' as const : 'mitglied' as const }, sitzungsDaten: anmeldung.sitzung, verwaltungsmodus };
+  };
+  // Datenbank antwortet nicht (#1198): offene Anfragen mit Zeitgrenze laufen dann ohne Anmeldung weiter.
+  const s = r.zugang === 'offen' && r.anmeldungHoechstensMs ? await hoechstens(sitzung(), r.anmeldungHoechstensMs, (): Sitzung => ({})) : await sitzung();
+  a.benutzer = s.benutzer;
+  a.sitzungsDaten = s.sitzungsDaten;
+  if (s.benutzer) a.verwaltungsmodus = s.verwaltungsmodus;
   if (r.zugang === 'offen') return;
   if (!a.benutzer) throw new Fachfehler(401, t('anmeldung.fehler.bitte-anmelden'));
   // Zwei-Faktor vorgeschrieben (#242), aber noch nicht eingerichtet: nur das eigene Konto.

@@ -22,7 +22,7 @@ A few seconds after the container starts, the address can be reached. As long as
 ![The page "Ablago is starting …" with the migration step, a progress bar and the note that you haven't done anything wrong](grafiken/ablago-startet.en.svg){ .grafik }
 
 - The page only shows steps and numbers, no data from the Library. Until then, sign-in, API and WebDAV answer with `503` and `Retry-After`; programs and packages simply wait.
-- `/api/gesundheit` reports `503` with `"zustand": "startet"` until the end, then `200` with `"zustand": "laeuft"`. The image's health check, a NAS or a reverse proxy thus only see the container as ready when Ablago is.
+- `/api/gesundheit` reports `503` with `"zustand": "startet"` until the end, then `200` with `"zustand": "laeuft"`. The image's health check, a NAS or a reverse proxy thus only see the container as ready when Ablago is. Since #1198 it also checks the database: if it doesn't answer or no connection is free, it reports `503` with `"zustand": "datenbank"` (see [Ablago doesn't load or stays black](was-ist-passiert.md#laedt-nicht)).
 - **If something goes wrong at start-up**, the same page says "Ablago could not start" with the reason in plain language, e.g. which migration step failed, and the pointer to the container log and [Troubleshooting](fehlersuche.md#container-logs). `/api/gesundheit` then reports `"zustand": "fehler"`. After a few minutes Ablago exits so that Docker restarts the container and tries again.
 - **If the database comes from a newer version** (lock against going back), the page says so too and stays there – a restart doesn't help. Set the image back to the newer version.
 - Ablago only does the first reconciliation of deadlines in the background after the start; the address doesn't wait for it.

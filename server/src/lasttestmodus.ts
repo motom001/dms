@@ -6,7 +6,7 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { bereinigeGeraet, EXTREM_MAPPEN, fuelleErgebnis, LASTTEST_WAHL, LIVE_VERLAUF, stufenVon, type LasttestLive, type LasttestStand, type LasttestStufe, type LasttestWahl, type LiveGruppenArt, type Speicherwahl } from '../../shared/src/lasttest';
 import { Fachfehler } from './fehler';
-import { oberflaecheSenden } from './oberflaeche';
+import { oberflaecheSenden, statischeDateien } from './oberflaeche';
 import { einbettenAus, sicherheitsKoepfe, type Einbetten } from './koepfe';
 import { protokoll } from './protokoll';
 import type { ProxyVertrauen } from './proxy';
@@ -346,7 +346,7 @@ export class Lasttestmodus {
     app.all('/api/*', async (_req, reply) => reply.code(503).send({ fehler: 'Lasttest-Modus: Diese Installation misst gerade und ist keine Ablage. Fortschritt und Ergebnis stehen auf der Startseite.' }));
 
     if (this.o.webDir && existsSync(this.o.webDir)) {
-      await app.register(fastifyStatic, { root: this.o.webDir, wildcard: false });
+      await app.register(fastifyStatic, { root: this.o.webDir, wildcard: false, ...statischeDateien(this.o.webDir) });
       app.setNotFoundHandler((req, reply) => oberflaecheSenden(req.url, reply, this.o.webDir));
     }
     await app.listen({ port: this.o.port, host: this.o.host });

@@ -4,6 +4,47 @@ You have the [emergency sheet](verschluesselung.md#notfallblatt) in front of you
 
 You can always reach this page at **https://help.ablago.app/emergency** (German: **https://help.ablago.app/notfall**). The addresses stay valid because they are on paper.
 
+## Which emergency? { #uebersicht }
+
+- [Ablago doesn't load or stays black](#laedt-nicht) – the page stays empty, "Ablago isn't responding right now" or "the database isn't responding"
+- [Ablago no longer starts](#startet-nicht) – for example after an update
+- [My device is broken](#geraet-kaputt)
+- [I can't get in any more](#kein-zugang) – forgotten password, lost two-factor phone
+- [No admin left](notfall.md) – nobody with the administration permission can get in, and there is no emergency sheet
+- [Someone else has to take over](#uebernehmen)
+
+## Ablago doesn't load or stays black { #laedt-nicht }
+
+Ablago was running, but now it isn't working – without you having changed anything.
+
+**How you can tell:**
+
+- The page stays **black or empty**, or it shows "Connecting to Ablago …" for a long time.
+- Instead of the sign-in page it says **"Ablago isn't responding right now."**
+- A red bar at the top says **"Ablago is busy – the database isn't responding."**
+
+Ablago itself is then usually still running but can't reach its database. Your documents are not affected.
+
+**What you can do – in this order:**
+
+1. **Reload the page.** Wait a minute and reload the page (on a phone: pull the page down). Ablago also keeps trying on its own and loads the page as soon as it responds again. If it then says "Already reloaded and Ablago still isn't responding", go to step 2.
+2. **Restart the container.** This ends all running requests and rebuilds the connections to the database. Nothing is lost.
+    - **Synology (Container Manager):** *Container Manager → Project →* your Ablago project *→ Action → Restart*. For a single container: *Container →* select the Ablago container *→ Action → Restart*.
+    - **UGREEN, QNAP, Unraid:** select the Ablago container in the Docker interface and choose **Restart**.
+    - **With the command line** in the folder with the Compose file: `docker compose restart` (restarts Ablago and the database). Only Ablago: `docker compose restart app`, or with [dms-komplett](https://help.ablago.app/installieren/aktuell/en/komplett/) `docker compose restart dms`.
+3. **Look at the log.** Once the container shows "running" again, reload the page. If it still doesn't work (or didn't before), look at the log of the last two hours:
+    ```
+    docker logs --since 2h <container>
+    ```
+    `<container>` is the name of the Ablago container, e.g. `dms-app-1`; `docker ps` shows them all. In the NAS interface: *Container → Details → Log*. Look out for these lines:
+    - **"Anfragen warten lange auf eine freie Verbindung zur Datenbank"** (requests are waiting a long time for a free database connection) – with the number of connections in use and reserved and the schedules running. This is the state that the restart fixes.
+    - **"Verbindung für Sperren abgebrochen"** (connection for locks lost) – the connection to the database was briefly gone; Ablago rebuilds it itself.
+    - Lines with **"Datenbank"** and **"nicht erreichbar"** or **"connection refused"** – the database container isn't running. Restart it or the whole project.
+    - **No lines at all** since a certain time: note the time of the last line.
+4. **Does it happen again?** Then please report it as a bug on [GitHub](https://github.com/motom001/dms/issues) – with the version of Ablago, the time and the log from step 3 (make names and email addresses in it unrecognisable first). That way the cause can be found.
+
+While Ablago is reachable, **Workbench → system health** (see [Many simultaneous requests](technik.md#last)) shows how many database connections are in use and which locks are running.
+
 ## Ablago no longer starts { #startet-nicht }
 
 For example after an update. Your data is still on the device – an update deletes nothing.
