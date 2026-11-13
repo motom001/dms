@@ -1163,6 +1163,7 @@ label.wahlkarte { flex-direction: row; align-items: center; gap: 10px; }
 /* Erreichbarkeit (#122): DMS weg, wieder da, neue Version. */
 .erreichbarkeit.weg { background: var(--schlecht); }
 .erreichbarkeit.weg .knopf { color: var(--schlecht); }
+.erreichbarkeit.weg a { color: inherit; } /* Was tun? (#1198) – auf der roten Leiste in Schriftfarbe */
 .erreichbarkeit.neu { background: var(--akzent); }
 .erreichbarkeit.neu .knopf { color: var(--akzent); }
 .erreichbarkeit.zurueck { background: var(--gruen); }

@@ -17,7 +17,7 @@ import type { SystemQuelle } from './system';
 import type { Designs } from './designs';
 import type { ApiSchluesselDienst } from './apischluessel';
 import { wer } from './api-v1';
-import { oberflaecheSenden } from './oberflaeche';
+import { oberflaecheSenden, statischeDateien } from './oberflaeche';
 import { einbettenAus, sicherheitsKoepfe, type Einbetten } from './koepfe';
 import { kontext, protokoll, type Kontext } from './protokoll';
 import type { Betrieb } from './betrieb';
@@ -35,6 +35,7 @@ import type { Wiederherstellung } from './wiederherstellung';
 import { MAX_DATEIGROESSE } from '../../shared/src/model';
 import { WEBDAV_METHODEN, WEBDAV_ZUSATZMETHODEN, type Webdav } from './webdav';
 import { anfrageStufe, dateiKoepfe, leseCookie, modulAus, pruefeZugang, routen, SITZUNG_COOKIE, sitzungsCookie, type Anfrage, type Route } from './routen';
+import { istVerbindungWarten } from './db';
 import { mitSprache, setzeAnfrageSprache, t, tDe } from './sprache';
 import { erlaubteSprachen } from '../../shared/src/beschriftung';
 import { spracheAusKopf } from '../../shared/src/sprachwahl';
@@ -146,6 +147,8 @@ interface Optionen {
   ueberlast?: import('./ueberlast').Ueberlastschutz;
   /** Warten auf eine freie Verbindung zur Datenbank (#544). */
   verbindungen?: import('./db').Verbindungswarten;
+  /** Gesundheitsprüfung mit Datenbank (#1198): kurze Abfrage mit Zeitgrenze, kurz zwischengespeichert. */
+  datenbank?: { pruefe(): Promise<boolean> };
   /** Wartezeit auf Verbindungen für den Lasttest (#874). */
   poolmessung?: import('./poolmessung').Poolmessung;
   /** Sitzungen der Datenbank mit Sperren (#874). */
@@ -179,6 +182,9 @@ export async function baueApp(dienst: Dienst, konten: Konten, opt: Optionen = {}
     const nochmal = fehler instanceof Fachfehler && fehler.status === 503 ? (fehler.details as { retryAfter?: unknown } | undefined)?.retryAfter : undefined;
     if (typeof nochmal === 'number') reply.header('retry-after', String(nochmal));
     if (fehler instanceof Fachfehler) return reply.code(fehler.status).send({ fehler: fehler.message, details: fehler.details });
+    // Keine freie Verbindung zur Datenbank nach VERBINDUNG_WARTEN_S (#1198): 503 statt endlos zu warten. `datenbank`
+    // sagt der Oberfläche, dass Ablago läuft, die Datenbank aber nicht antwortet (Leiste „beschäftigt“).
+    if (istVerbindungWarten(fehler)) return reply.code(503).header('retry-after', '10').send({ fehler: t('meldungen.http.datenbank-beschaeftigt'), datenbank: true });
     const err = fehler as Error & { statusCode?: number };
     if (err.statusCode && err.statusCode < 500) return reply.code(err.statusCode).send({ fehler: err.message });
     const k = (req as MitKontext).dms;
@@ -378,7 +384,7 @@ export async function baueApp(dienst: Dienst, konten: Konten, opt: Optionen = {}
   }
 
   if (opt.webDir && existsSync(opt.webDir)) {
-    await app.register(fastifyStatic, { root: opt.webDir, wildcard: false });
+    await app.register(fastifyStatic, { root: opt.webDir, wildcard: false, ...statischeDateien(opt.webDir) });
     // Alle Nicht-API-Pfade liefern die Oberfläche aus (Routing im Browser) – fehlende Dateien nicht (#932).
     app.setNotFoundHandler((req, reply) => {
       if (req.url.startsWith('/api/')) return reply.code(404).send({ fehler: t('meldungen.http.diese-schnittstelle-gibt-es') });

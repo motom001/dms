@@ -8,7 +8,7 @@ import { liesEinrichtungsdatei } from './einrichtungsdatei';
 import { Fachfehler } from './fehler';
 import { protokoll } from './protokoll';
 import { standKennung } from './system';
-import { oberflaecheSenden } from './oberflaeche';
+import { oberflaecheSenden, statischeDateien } from './oberflaeche';
 import { einbettenAus, sicherheitsKoepfe, type Einbetten } from './koepfe';
 import { t } from './sprache';
 import { EINGEBAUTE_SPRACHEN, setzeSprache } from '../../shared/src/sprache';
@@ -132,7 +132,7 @@ export async function einrichtungsmodus(o: EinrichtungsmodusOptionen): Promise<A
   app.all('/api/*', async (_req, reply) => reply.code(503).header('retry-after', '30').send({ fehler: t('meldungen.einrichtungsmodus.ablago-ist-noch-nicht') }));
 
   if (o.webDir && existsSync(o.webDir)) {
-    await app.register(fastifyStatic, { root: o.webDir, wildcard: false });
+    await app.register(fastifyStatic, { root: o.webDir, wildcard: false, ...statischeDateien(o.webDir) });
     app.setNotFoundHandler((req, reply) => oberflaecheSenden(req.url, reply, o.webDir));
   }
 

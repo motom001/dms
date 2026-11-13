@@ -16,13 +16,18 @@ export interface ErreichbarkeitsZustand {
   naechsterVersuch: number | null;
   /** Der Server läuft mit einem anderen Stand als beim Laden der Seite. */
   neueVersion: boolean;
+  /**
+   * Weg, weil die Datenbank nicht antwortet (#1198): Ablago selbst antwortet, `/api/gesundheit` meldet aber „datenbank“.
+   * Die Leiste sagt dann „beschäftigt“ statt „nicht erreichbar“; „wieder erreichbar“ erst, wenn auch die Datenbank geht.
+   */
+  datenbank: boolean;
 }
 
 /**
  * GET /api/gesundheit. `zustand` (#802): „startet“ und „fehler“ (Startseite, HTTP 503), „laeuft“, dazu
  * „einrichtung“ (Einrichtungsmodus) und „lasttest“ (Lasttest-Modus).
  */
-export interface Gesundheit { ok?: boolean; stand?: string; zustand?: 'startet' | 'fehler' | 'laeuft' | 'einrichtung' | 'lasttest' }
+export interface Gesundheit { ok?: boolean; stand?: string; zustand?: 'startet' | 'fehler' | 'laeuft' | 'einrichtung' | 'lasttest' | 'datenbank' }
 export interface Umgebung {
   /** GET /api/gesundheit; null, wenn das DMS nicht geantwortet hat. */
   gesundheit(): Promise<Gesundheit | null>;
@@ -47,11 +52,17 @@ export function istAusfall(status: number, daten: unknown): boolean {
   if (status === 0) return true;
   if (status !== 502 && status !== 503 && status !== 504) return false;
   if (daten && typeof daten === 'object' && (daten as { startet?: unknown }).startet === true) return true;
+  if (istDatenbankAusfall(status, daten)) return true;
   return !(daten && typeof daten === 'object' && 'fehler' in daten);
 }
 
+/** 503 mit `datenbank: true` (#1198): Ablago läuft, bekam aber keine Verbindung zur Datenbank. */
+export function istDatenbankAusfall(status: number, daten: unknown): boolean {
+  return status === 503 && !!daten && typeof daten === 'object' && (daten as { datenbank?: unknown }).datenbank === true;
+}
+
 export class Erreichbarkeit {
-  private z: ErreichbarkeitsZustand = { stufe: 'ok', naechsterVersuch: null, neueVersion: false };
+  private z: ErreichbarkeitsZustand = { stufe: 'ok', naechsterVersuch: null, neueVersion: false, datenbank: false };
   /** Stand beim Laden der Seite. */
   private stand: string | null = null;
   private versuch = 0;
@@ -81,11 +92,11 @@ export class Erreichbarkeit {
     this.timer = this.u.spaeter(() => { this.timer = null; void this.pruefe(); }, ms);
   }
 
-  /** Eine Anfrage hat das DMS nicht erreicht. */
-  ausfall() {
-    if (this.z.stufe === 'weg') return;
+  /** Eine Anfrage hat das DMS nicht erreicht (`datenbank`: Ablago antwortet, die Datenbank nicht, #1198). */
+  ausfall(datenbank = false) {
+    if (this.z.stufe === 'weg') { if (datenbank && !this.z.datenbank) this.setze({ datenbank }); return; }
     this.versuch = 0;
-    this.setze({ stufe: 'weg' });
+    this.setze({ stufe: 'weg', datenbank });
     this.plane();
   }
 
@@ -121,7 +132,9 @@ export class Erreichbarkeit {
     const g = await this.u.gesundheit().catch(() => null);
     this.zuletzt = this.u.jetzt();
     if (!g?.ok) {
-      if (this.z.stufe === 'weg') { this.versuch++; this.plane(); } else this.ausfall();
+      // Antwortet Ablago mit „datenbank“ (#1198), ist es beschäftigt, nicht weg – „wieder erreichbar“ erst mit Datenbank.
+      const datenbank = g?.zustand === 'datenbank';
+      if (this.z.stufe === 'weg') { this.versuch++; if (this.z.datenbank !== datenbank) this.setze({ datenbank }); this.plane(); } else this.ausfall(datenbank);
       return;
     }
     if (g.stand) {
@@ -131,7 +144,7 @@ export class Erreichbarkeit {
     if (this.z.stufe !== 'weg') return;
     this.stoppe();
     this.versuch = 0;
-    this.setze({ stufe: 'zurueck', naechsterVersuch: null });
+    this.setze({ stufe: 'zurueck', naechsterVersuch: null, datenbank: false });
     this.wiederDa();
     this.timer = this.u.spaeter(() => { this.timer = null; if (this.z.stufe === 'zurueck') this.setze({ stufe: 'ok' }); }, ZURUECK_MS);
   }

@@ -32,7 +32,7 @@ before(async () => {
 });
 after(async () => { if (wurzel) await rm(wurzel, { recursive: true, force: true }); });
 
-type Hole = (pfad: string) => Promise<{ status: number; typ: string; text: string }>;
+type Hole = (pfad: string) => Promise<{ status: number; typ: string; text: string; cache?: string }>;
 
 /** Dieselben Erwartungen für jede Betriebsart. */
 async function pruefeBetriebsart(hole: Hole) {
@@ -46,6 +46,11 @@ async function pruefeBetriebsart(hole: Hole) {
   const js = await hole('/assets/start-neu.js');
   assert.equal(js.status, 200);
   assert.match(js.text, /console\.log/);
+  // Zwischenspeichern (#1198): Dateien unter /assets/ lange, index.html nie ohne Nachfrage.
+  assert.equal(js.cache, 'public, max-age=31536000, immutable');
+  assert.equal((await hole('/')).cache, 'no-cache');
+  assert.equal((await hole('/ablage/eingang')).cache, 'no-cache');
+  assert.equal((await hole('/index.html')).cache, 'no-cache');
   // Seiten der Oberfläche (auch mit Punkt, etwa eine E-Mail-Adresse) bekommen index.html.
   for (const pfad of ['/', '/ablage/eingang', '/werkbank/pakete/ablago.steuer', '/ablage/email/lena@example.org', '/anmelden/code', '/passwort/abc']) {
     const r = await hole(pfad);
@@ -64,7 +69,7 @@ async function pruefeBetriebsart(hole: Hole) {
 
 const ueberHttp = (port: number): Hole => async (pfad) => {
   const r = await fetch(`http://127.0.0.1:${port}${pfad}`, { redirect: 'manual' });
-  return { status: r.status, typ: r.headers.get('content-type') ?? '', text: await r.text() };
+  return { status: r.status, typ: r.headers.get('content-type') ?? '', text: await r.text(), cache: r.headers.get('cache-control') ?? undefined };
 };
 
 describe('Fehlende Dateien der Oberfläche (#932)', () => {
@@ -86,7 +91,7 @@ describe('Fehlende Dateien der Oberfläche (#932)', () => {
     try {
       await pruefeBetriebsart(async (pfad) => {
         const r = await app.inject({ method: 'GET', url: pfad });
-        return { status: r.statusCode, typ: String(r.headers['content-type'] ?? ''), text: r.body };
+        return { status: r.statusCode, typ: String(r.headers['content-type'] ?? ''), text: r.body, cache: r.headers['cache-control'] };
       });
       assert.equal((await app.inject({ method: 'GET', url: '/api/gibtsnicht' })).statusCode, 404);
     } finally { await app.close(); }

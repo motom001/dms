@@ -1,6 +1,7 @@
 import { setzeErlaubteSprachen } from '../../shared/src/beschriftung';
 import { setzeSprache } from '../../shared/src/sprache';
 import { istVerfuegbar, liesSpracheinstellung, SPRACHEN_STANDARD, verfuegbareSprachen, type Spracheinstellung } from '../../shared/src/sprachwahl';
+import { hoechstens } from './db';
 import type { Einstellungen } from './einstellungen';
 import { Fachfehler } from './fehler';
 import { protokoll } from './protokoll';
@@ -14,6 +15,8 @@ import type { Sprachpakete, SprachpaketStand } from './sprachpakete';
  * Wahl und für Texte, die der Server einmal für alle bildet (z. B. Titel und Namen der Systemmappentypen).
  */
 export const SPRACHEN_NEU_LESEN_MS = 60_000;
+/** Sprache beim Start der Oberfläche (#1198): höchstens so lange auf die Datenbank warten, dann die zuletzt gelesene. */
+export const SPRACHE_HOECHSTENS_MS = 2000;
 
 export class SprachDienst {
   private uhr: ReturnType<typeof setInterval> | null = null;
@@ -21,7 +24,15 @@ export class SprachDienst {
   pakete: Sprachpakete | null = null;
   constructor(private einstellungen: Einstellungen) {}
 
-  async lies(): Promise<Spracheinstellung> { return liesSpracheinstellung(await this.einstellungen.lies('sprachen')); }
+  /** Zuletzt gelesene Einstellung (#1198): Rückfall, wenn die Datenbank gerade nicht antwortet. */
+  private zuletzt: Spracheinstellung | null = null;
+
+  async lies(): Promise<Spracheinstellung> { const e = liesSpracheinstellung(await this.einstellungen.lies('sprachen')); this.zuletzt = e; return e; }
+
+  /** Wie `lies`, aber höchstens `ms` warten – sonst die zuletzt gelesene Einstellung bzw. die Vorgabe (#1198). */
+  liesHoechstens(ms = SPRACHE_HOECHSTENS_MS): Promise<Spracheinstellung> {
+    return hoechstens(this.lies(), ms, () => this.zuletzt ?? liesSpracheinstellung(null));
+  }
 
   /** Liest die Sprachpakete und die Einstellung und setzt Sprache und erlaubte Sprachen dieses Prozesses. */
   async lade(): Promise<Spracheinstellung> {

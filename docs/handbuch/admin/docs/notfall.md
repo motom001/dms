@@ -1,5 +1,8 @@
 # Notfall: kein Admin mehr
 
+!!! abstract "Andere Notfälle"
+    Diese Seite hilft, wenn niemand mit Verwaltungsrecht mehr hineinkommt. **Lädt Ablago gar nicht oder bleibt die Seite schwarz** („Ablago antwortet gerade nicht“, „Die Datenbank antwortet nicht“), hilft [Ablago lädt nicht oder bleibt schwarz](was-ist-passiert.md#laedt-nicht). Alle Notfälle im Überblick: [Was ist dir passiert?](was-ist-passiert.md#uebersicht) – auch unter **https://help.ablago.app/notfall**.
+
 !!! tip "Erst das Notfallblatt, dann die Konsole"
     Hast du das [Notfallblatt](verschluesselung.md#notfallblatt), geht es am einfachsten mit dem **Notfallcode** darauf – ohne Dateien auf dem NAS: [Mit dem Notfallcode wieder hinein](was-ist-passiert.md#notfallcode). Gibt es noch eine Person mit „Gesamte Verwaltung“ und du kommst nur nicht hinein (Passwort vergessen, IP gesperrt, Handy für die Zwei-Faktor-Anmeldung verloren), geht es auch mit dem [Befehl `dms`](konsole.md) im Container, z. B. `dms passwort <email>`. Die RESCUE-Datei unten ist der Weg, wenn auch das Notfallblatt verloren ist.
 

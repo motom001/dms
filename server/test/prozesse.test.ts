@@ -78,7 +78,7 @@ describe('Einstellung DMS_PROZESSE (#745)', () => {
     assert.equal(prozesseAus({ DMS_PROZESSE: 'auto', DMS_DB_VERBINDUNGEN: '6' }, cg).anzahl, 1);
   });
 
-  it('Verbindungen (#874): DMS_DB_VERBINDUNGEN gilt für alle Prozesse zusammen; Leiter behält 4 für Sperren, mindestens 6, jeder weitere 2', () => {
+  it('Verbindungen (#874): DMS_DB_VERBINDUNGEN gilt für alle Prozesse zusammen; Leiter bekommt 4 vorab (Sperrverbindung und Hintergrund, #1198), mindestens 6, jeder weitere 2', () => {
     assert.deepEqual(verbindungsaufteilung(10, 1, 20), { gesamt: 10, leiter: 10, andere: 0, angehoben: false, gekuerzt: false }, 'ein Prozess: wie bisher');
     assert.deepEqual(verbindungsaufteilung(10, 1, null), { gesamt: 10, leiter: 10, andere: 0, angehoben: false, gekuerzt: false });
     assert.deepEqual(verbindungsaufteilung(14, 2, 100), { gesamt: 14, leiter: 9, andere: 5, angehoben: false, gekuerzt: false });

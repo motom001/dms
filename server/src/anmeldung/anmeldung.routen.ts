@@ -8,6 +8,7 @@ import { PASSKEYS_HOECHSTENS } from '../passkeys';
 import { t } from '../sprache';
 import { hatGesamt } from '../../../shared/src/verwaltungsrecht';
 import { eigeneVersion, standKennung } from '../system';
+import { SPRACHE_HOECHSTENS_MS } from '../sprachwahl';
 import { zeitzone } from '../../../shared/src/region';
 import { istVerfuegbar, liesSpracheinstellung, SPRACHEN_STANDARD } from '../../../shared/src/sprachwahl';
 import { L, SITZUNG_SEKUNDEN, ok, leer, b, info, ich, leseCookie, BINDUNG_COOKIE, ANBIETER_COOKIE, kurzCookie, zweifaktorStatus, passkeyStatus } from '../http/routen-hilfen';
@@ -22,12 +23,18 @@ function ohneVertretung(a: { sitzungsDaten?: { vertretungId?: string | null } })
 export function anmeldungRouten(k: RoutenKontext): Route[] {
   const { dienst, konten, x, log, pakete, einrichtungZugang, betrieb, spracheFuer, verwaltungHinweis, oidc, adresse, zf, pk, whStand, nurAdminsInWartung } = k;
   return [
-    { methode: 'GET', pfad: '/api/gesundheit', zugang: 'offen', handler: async () => ok({ ok: true, zustand: 'laeuft', stand: standKennung() }) },
+    // Mit Datenbank (#1198): Ist keine Verbindung frei oder antwortet sie nicht, 503 mit „datenbank“ – Docker, Überwachung
+    // und die Leiste der Oberfläche merken den Ausfall. Ohne Sitzung: Sie bräuchte selbst die Datenbank.
+    { methode: 'GET', pfad: '/api/gesundheit', zugang: 'offen', ohneSitzung: true, handler: async () => {
+      if (x.datenbank && !(await x.datenbank.pruefe())) return { status: 503, body: { ok: false, zustand: 'datenbank', stand: standKennung() }, koepfe: { 'retry-after': '10' } };
+      return ok({ ok: true, zustand: 'laeuft', stand: standKennung() });
+    } },
     // Wartungsmodus (#102): für Banner und Anmeldeseite, auch ohne Anmeldung.
     { methode: 'GET', pfad: '/api/wartung', zugang: 'offen', handler: async () => ok(x.wartung?.oeffentlich() ?? { stufe: 'aus', text: '', ende: null, aktivAb: null, sekunden: null }) },
 
     // Sprache vor dem ersten Bild (#729): Die Oberfläche lädt damit ihre Texte, bevor sie etwas zeigt.
-    { methode: 'GET', pfad: '/api/sprache', zugang: 'offen', handler: async (a) => ok(await spracheFuer(a)) },
+    // #1198: Antwortet die Datenbank nicht, nach kurzer Zeit ohne Anmeldung und mit der zuletzt gelesenen Einstellung.
+    { methode: 'GET', pfad: '/api/sprache', zugang: 'offen', anmeldungHoechstensMs: SPRACHE_HOECHSTENS_MS, handler: async (a) => ok(await spracheFuer(a)) },
     // Texte eines Sprachpakets (#731) für die Oberfläche – nur erlaubte Sprachen; Texte sind nichts Geheimes (auch die
     // Anmeldeseite braucht sie). Die Oberfläche setzt sie nie als HTML.
     { methode: 'GET', pfad: '/api/sprache/texte/:kennung', zugang: 'offen', handler: async (a) => {

@@ -98,7 +98,7 @@ import type { AuskunftAuswahl, AuskunftEintrag, AuskunftLink, AuskunftStand, Aus
 import type { Dokumentart } from '../../shared/src/demodaten';
 import { merkeAnfrage } from './diagnose';
 import { erreichbarkeit, NICHT_ERREICHBAR } from './erreichbar';
-import { istAusfall } from '../../shared/src/erreichbarkeit';
+import { istAusfall, istDatenbankAusfall } from '../../shared/src/erreichbarkeit';
 import { t } from './sprache';
 import { sprache } from '../../shared/src/sprache';
 import type { Abdeckung, Sprachangabe, SprachpaketInfo } from '../../shared/src/sprachpaket';
@@ -235,7 +235,7 @@ async function anfrageEinmal<T>(methode: string, url: string, body?: unknown, st
   messung.erfasse(seite, methode, url, r, start, kopf, performance.now());
   // Update, Neustart (#122): Antwort vom Proxy statt vom DMS.
   if (istAusfall(r.status, daten)) {
-    erreichbarkeit.ausfall();
+    erreichbarkeit.ausfall(istDatenbankAusfall(r.status, daten));
     merkeAnfrage(methode, url, r.status, NICHT_ERREICHBAR);
     throw new ApiFehler(r.status, NICHT_ERREICHBAR);
   }

@@ -4,6 +4,47 @@ Du hast das [Notfallblatt](verschluesselung.md#notfallblatt) vor dir und den Cod
 
 Diese Seite erreichst du immer unter **https://help.ablago.app/notfall** (Englisch: **https://help.ablago.app/emergency**). Die Adressen bleiben gültig, weil sie auf Papier stehen.
 
+## Welcher Notfall? { #uebersicht }
+
+- [Ablago lädt nicht oder bleibt schwarz](#laedt-nicht) – die Seite bleibt leer, „Ablago antwortet gerade nicht“ oder „Die Datenbank antwortet nicht“
+- [Ablago startet nicht mehr](#startet-nicht) – etwa nach einem Update
+- [Mein Gerät ist kaputt](#geraet-kaputt)
+- [Ich komme nicht mehr hinein](#kein-zugang) – Passwort vergessen, Zwei-Faktor-Handy verloren
+- [Kein Admin mehr](notfall.md) – niemand mit Verwaltungsrecht kommt hinein, auch kein Notfallblatt
+- [Jemand anderes muss übernehmen](#uebernehmen)
+
+## Ablago lädt nicht oder bleibt schwarz { #laedt-nicht }
+
+Ablago lief, aber jetzt geht es nicht mehr – ohne dass du etwas geändert hast.
+
+**Woran du es erkennst:**
+
+- Die Seite bleibt **schwarz bzw. leer**, oder sie zeigt lange „Verbindung zu Ablago wird aufgebaut …“.
+- Statt der Anmeldung steht dort **„Ablago antwortet gerade nicht.“**
+- Oben steht eine rote Leiste **„Ablago ist beschäftigt – die Datenbank antwortet nicht.“**
+
+Ablago selbst läuft dann meist noch, kommt aber nicht an seine Datenbank. Deine Dokumente sind davon nicht betroffen.
+
+**Was du tun kannst – der Reihe nach:**
+
+1. **Seite neu laden.** Warte eine Minute und lade die Seite neu (am Handy: Seite nach unten ziehen). Ablago versucht es auch von selbst weiter und lädt die Seite, sobald es wieder antwortet. Steht danach „Schon neu geladen, Ablago antwortet weiter nicht“, geh zu Schritt 2.
+2. **Container neu starten.** Das beendet alle laufenden Anfragen und baut die Verbindungen zur Datenbank neu auf. Nichts geht dabei verloren.
+    - **Synology (Container Manager):** *Container Manager → Projekt →* dein Ablago-Projekt *→ Aktion → Neu starten*. Bei einem einzelnen Container: *Container →* den Ablago-Container wählen *→ Aktion → Neu starten*.
+    - **UGREEN, QNAP, Unraid:** in der Docker-Oberfläche den Ablago-Container wählen und **Neu starten**.
+    - **Mit der Kommandozeile** im Ordner mit der Compose-Datei: `docker compose restart` (startet Ablago und die Datenbank neu). Nur Ablago: `docker compose restart app` bzw. bei [dms-komplett](https://help.ablago.app/installieren/aktuell/komplett/) `docker compose restart dms`.
+3. **Protokoll ansehen.** Steht der Container wieder auf „läuft“, lade die Seite neu. Geht es danach (oder schon vorher) nicht, sieh ins Protokoll der letzten zwei Stunden:
+    ```
+    docker logs --since 2h <container>
+    ```
+    `<container>` ist der Name des Ablago-Containers, z. B. `dms-app-1`; `docker ps` zeigt alle. In der NAS-Oberfläche: *Container → Details → Protokoll*. Achte auf diese Zeilen:
+    - **„Anfragen warten lange auf eine freie Verbindung zur Datenbank“** – mit der Zahl belegter und reservierter Verbindungen und den laufenden Zeitplänen. Das ist der Zustand, den der Neustart behebt.
+    - **„Verbindung für Sperren abgebrochen“** – die Verbindung zur Datenbank war kurz weg; Ablago baut sie selbst wieder auf.
+    - Zeilen mit **„Datenbank“** und **„nicht erreichbar“** oder **„connection refused“** – dann läuft der Datenbank-Container nicht. Starte ihn bzw. das ganze Projekt neu.
+    - **Gar keine Zeilen mehr** seit einer bestimmten Uhrzeit: Merke dir die Uhrzeit der letzten Zeile.
+4. **Kommt es wieder?** Dann melde es bitte als Fehler auf [GitHub](https://github.com/motom001/dms/issues) – mit der Version von Ablago, der Uhrzeit und dem Protokoll von Schritt 3 (vorher Namen und E-Mail-Adressen darin unkenntlich machen). So lässt sich die Ursache finden.
+
+Unter **Werkbank → Systemzustand** (siehe [Viele gleichzeitige Anfragen](technik.md#last)) siehst du, solange Ablago erreichbar ist, wie viele Verbindungen zur Datenbank gerade belegt sind und welche Sperren laufen.
+
 ## Ablago startet nicht mehr { #startet-nicht }
 
 Zum Beispiel nach einem Update. Deine Daten liegen weiter auf dem Gerät – ein Update löscht nichts.

@@ -63,6 +63,13 @@ const ich = (a: Anfrage) => {
   return a.benutzer;
 };
 
+/** Belegung des Pools (#1198) in diesem Prozess: belegt, reserviert, wartend und die gehaltenen Sperren. */
+function belegungVon(x: RoutenExtras) {
+  const b = x.verbindungen?.belegung();
+  if (!b) return {};
+  return { belegung: { pool: b.max, belegt: b.belegt, reserviert: b.reserviert, wartend: b.wartend, sperren: b.sperren, ...(x.verbund?.mehrere ? { prozess: x.verbund.nr } : {}) } };
+}
+
 /**
  * Systemzustand (#544): Arbeiter, Verbindungen zur Datenbank und Grenze des Überlastschutzes – nur zum Ansehen,
  * eingestellt per Umgebungsvariable – und die Engpässe, je mit der Variable, die man ändern müsste.
@@ -78,7 +85,7 @@ function grenzenUndEngpaesse(x: RoutenExtras) {
     ...(pe ? { prozesse: { wert: x.verbund?.anzahl ?? pe.anzahl, quelle: pe.quelle, variable: VARIABLE.prozesse, min: 1, max: PROZESSE_MAX } } : {}),
     arbeiter: { wert: a.aus ? 0 : a.groesse, quelle: a.quelle, variable: VARIABLE.arbeiter, min: 0, max: ARBEITER_MAX, ...p },
     // #874: Verbindungen gelten für alle Prozesse zusammen – Wert ist die Summe, dazu die Anteile.
-    ...(v ? { verbindungen: { wert: x.verbindungen?.aufteilung?.gesamt ?? v.max, quelle: v.quelle, variable: VARIABLE.verbindungen, min: VERBINDUNGEN_MIN, max: VERBINDUNGEN_MAX, ...(x.verbund?.mehrere && x.verbindungen?.aufteilung ? { aufteilung: { leiter: x.verbindungen.aufteilung.leiter, andere: x.verbindungen.aufteilung.andere, prozesse: x.verbund.anzahl } } : {}) } } : {}),
+    ...(v ? { verbindungen: { wert: x.verbindungen?.aufteilung?.gesamt ?? v.max, quelle: v.quelle, variable: VARIABLE.verbindungen, min: VERBINDUNGEN_MIN, max: VERBINDUNGEN_MAX, ...(x.verbund?.mehrere && x.verbindungen?.aufteilung ? { aufteilung: { leiter: x.verbindungen.aufteilung.leiter, andere: x.verbindungen.aufteilung.andere, prozesse: x.verbund.anzahl } } : {}), ...belegungVon(x) } } : {}),
     ...(u ? { anfragen: { wert: u.max, quelle: u.quelle, variable: VARIABLE.anfragen, min: MAX_ANFRAGEN_MIN, max: MAX_ANFRAGEN_MAX, ...p } } : {}),
   };
   const engpaesse = engpaesseAus({

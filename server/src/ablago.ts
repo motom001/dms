@@ -18,7 +18,7 @@ import { proxyVertrauen } from './proxy';
 import { mkdir, readdir } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { migriere, NeuereDatenbankFehler, verbinde, VERBINDUNGEN_LEITER_MIN, VERBINDUNGEN_MIN, VERBINDUNGEN_RESERVE, verbindungenAus, verbindungenFuer, verbindungsaufteilung, Verbindungswarten } from './db';
+import { Datenbankpruefung, migriere, NeuereDatenbankFehler, poolGroesse, verbinde, VERBINDUNG_WARTEN_S, VERBINDUNGEN_LEITER_MIN, VERBINDUNGEN_MIN, VERBINDUNGEN_RESERVE, verbindungenAus, verbindungenFuer, verbindungsaufteilung, Verbindungswarten } from './db';
 import { Poolmessung, sitzungsstand } from './poolmessung';
 import { abfragenZuruecksetzen, teuersteAbfragen } from './abfragestatistik';
 import { teileZwischenspeicher } from './zwischenspeicher';
@@ -37,6 +37,8 @@ import { Designs, pgDesignRepo } from './designs';
 import { ApiSchluesselDienst, pgApiSchluesselRepo } from './apischluessel';
 import { pgRepo } from './repo-pg';
 import { lebenszeichen, pgKurzzustand } from './kurzzustand';
+import { eigeneSperrquelle, Sperrverbindung } from './sperrverbindung';
+import { wiederkehrend } from './streuung';
 import { Betrieb, pgBetriebSpeicher } from './betrieb';
 import { Tresor } from './tresor';
 import { pruefeOrdner, SCHLUESSELDATEI } from './ordner';
@@ -238,15 +240,21 @@ const verbindungsteile = verbindungsaufteilung(verbindungsZahl.max, verbund.anza
 const eigeneVerbindungen = verbindungenFuer(verbindungsteile, verbund.nr);
 if (verbindungsteile.gekuerzt && leiter) log.warn(`Verbindungen zur Datenbank: ${verbindungsZahl.max} wären mehr, als die Datenbank erlaubt (max_connections ${erlaubteVerbindungen}, ${VERBINDUNGEN_RESERVE} bleiben frei) – Ablago nimmt zusammen ${verbindungsteile.gesamt}`);
 if (verbindungsteile.angehoben && leiter) log.warn(`Verbindungen zur Datenbank: ${verbindungsZahl.max} sind für ${verbund.anzahl} Prozesse zu wenig (der Leiter braucht ${VERBINDUNGEN_LEITER_MIN}, jeder weitere ${VERBINDUNGEN_MIN}) – Ablago nimmt zusammen ${verbindungsteile.gesamt}`);
-const sql = verbinde(datenbankUrl, eigeneVerbindungen);
+// Sperrverbindung (#1198): Sitzungssperren laufen über eine eigene Verbindung außerhalb des Pools. Im Leiter (er hält
+// immer das Lebenszeichen) zählt sie zu seinem Anteil; weitere Prozesse öffnen sie nur kurz (Pakete installieren).
+// Wartet eine Anfrage länger als VERBINDUNG_WARTEN_S auf eine freie Verbindung, bricht sie ab (503) statt ewig zu hängen.
+const sql = verbinde(datenbankUrl, poolGroesse(eigeneVerbindungen, leiter), { wartenS: VERBINDUNG_WARTEN_S });
+const sperren = new Sperrverbindung(eigeneSperrquelle(datenbankUrl));
 // Datenbank von einer neueren Version (#714) oder fehlgeschlagene Migration: Grund auf der Startseite (beimStartfehler).
 // Mehrere Prozesse (#745): nur der Leiter – die anderen starten erst, wenn er fertig ist.
 if (leiter) await migriere(sql, cfg.migrationen, (m) => protokoll.modul('datenbank').info(m), (nr, von, datei) => start.schritt('migration', { nr, von, datei }));
 start.schritt('schluessel');
 const [{ server_version: pgVersion }] = await sql`SHOW server_version`;
 if (leiter) protokoll.modul('datenbank').info('Datenbank verbunden', { postgres: pgVersion, host: db.host, datenbank: db.datenbank, verbindungen: `${verbindungsteile.gesamt}${verbindungsZahl.quelle === 'umgebung' ? ' (DMS_DB_VERBINDUNGEN)' : ''}${verbund.mehrere ? ` zusammen: Leiter ${verbindungsteile.leiter}, jeder weitere Prozess ${verbindungsteile.andere}` : ''}` });
-const verbindungswarten = new Verbindungswarten(sql, eigeneVerbindungen, verbindungsZahl.quelle, verbindungsteile);
+const verbindungswarten = new Verbindungswarten(sql, eigeneVerbindungen, verbindungsZahl.quelle, verbindungsteile, { sperren, pool: poolGroesse(eigeneVerbindungen, leiter) });
 verbindungswarten.start();
+// Gesundheitsprüfung mit Datenbank (#1198): kurze Abfrage mit Zeitgrenze, Ergebnis kurz zwischengespeichert.
+const datenbankpruefung = new Datenbankpruefung(sql);
 // Wo es unter Last hakt (#874): Wartezeit auf eine freie Verbindung, nur während der Lasttest fragt.
 const poolmessung = new Poolmessung(sql, eigeneVerbindungen);
 // Überlastschutz (#544): mehr als DMS_MAX_ANFRAGEN gleichzeitig (Vorgabe 250) → sofort 503 mit Retry-After.
@@ -261,12 +269,12 @@ if (leiter && istUuid(cfg.haushalt)) await protokolliereKennungsUmzug(pgEinstell
 if (mandant.hinweis) log.warn(mandant.hinweis);
 // Zustand zwischen Anfragen (#744): Fehlversuche, Sperren, Einmal-Tickets und Merker für alle Prozesse und Server
 // derselben Datenbank. Das Lebenszeichen sagt, ob dieser Prozess allein an der Datenbank ist (z. B. für die Texterkennung).
-const zustandDb = pgKurzzustand(sql, cfg.haushalt);
+const zustandDb = pgKurzzustand(sql, cfg.haushalt, Date.now, sperren);
 // Fehlversuche beim Einrichtungscode über alle Prozesse (#956).
 einrichtungscode.teileZaehler(zustandDb);
 // Mehrere Prozesse (#745): Das Lebenszeichen hält nur der Leiter – „allein“ heißt dann: kein anderer Leiter (anderer
 // Server) an dieser Datenbank. Startet der Leiter nach einem Absturz neu, sind die Aufträge der Texterkennung seine.
-const lebt = leiter ? await lebenszeichen(sql, cfg.haushalt) : { allein: false, ende: async () => {} };
+const lebt = leiter ? await lebenszeichen(sperren, cfg.haushalt) : { allein: false, ende: async () => {} };
 if (leiter && !lebt.allein) log.info('Weitere Server von Ablago an derselben Datenbank: Zeitpläne laufen je Lauf nur in einem davon');
 /** Zeitgesteuerte Arbeit nur in einem Prozess zugleich (#744, Datenbanksperre je Name). */
 const nurEiner = (name: string, f: () => Promise<unknown>) => zustandDb.exklusiv(name, f).then(() => {});
@@ -453,22 +461,17 @@ const einrichtung = new Einrichtung({
   // „Einrichtung abschließen“ erst mit Notfallblatt (#804).
   notfallblattAktuell: async () => (await sicherung.notfallblatt()).aktuell,
 });
-// Eingangsordner (#195): /eingang, wenn eingebunden; nur eine Instanz übernimmt (Sperre in PostgreSQL).
-let eingangSperre: Promise<boolean> | null = null;
+// Eingangsordner (#195): /eingang, wenn eingebunden; nur eine Instanz übernimmt (Sperre in PostgreSQL, seit #1198 auf
+// der Sperrverbindung – geht sie verloren, holt der nächste Lauf sie neu oder überlässt ihn dem anderen Server).
+const eingangSperre = sperren.dauerhaft({ klasse: 4711195 }, 'eingangsordner');
 const eingangsordner = new Eingangsordner(env.DMS_EINGANG ?? '/eingang', {
   dienst, einstellungen: pgEinstellungen(sql, cfg.haushalt),
   benutzer: () => konten.listeBenutzer(),
   pause: () => (wartung.aktiv ? 'Wartungsmodus' : wiederherstellung.laeuft() ? t('meldungen.index.wiederherstellung-laeuft') : null),
-  sperre: () => (eingangSperre ??= (async () => {
-    // Eine eigene Verbindung hält die Sperre, solange das DMS läuft.
-    const v = await sql.reserve();
-    const [r] = await v`SELECT pg_try_advisory_lock(4711195) AS ok`;
-    if (!r.ok) { v.release(); eingangSperre = null; }
-    return r.ok as boolean;
-  })()),
+  sperre: () => eingangSperre.halte(),
 });
-// Postfächer (#196): Mails per IMAP abholen; nur eine Instanz ruft ab.
-let postSperre: Promise<boolean> | null = null;
+// Postfächer (#196): Mails per IMAP abholen; nur eine Instanz ruft ab (Sperre wie beim Eingangsordner).
+const postSperre = sperren.dauerhaft({ klasse: 4711196 }, 'postfaecher');
 // Anmeldung per OAuth 2.0 (#358): Token verschlüsselt mit dem Schlüssel des DMS.
 const postfachOAuth = new PostfachOAuth({ einstellungen: pgEinstellungen(sql, cfg.haushalt), verschluessele: (k) => tresor.verschluessele(k), entschluessele: (w) => tresor.entschluessele(w), anAdmins: anVerwaltendeVon('postfaecher'), zustand: zustandDb });
 // E-Mail-Versand über OAuth (#813): dieselbe Anmeldung wie bei den Postfächern.
@@ -479,12 +482,7 @@ const postfaecher = new Postfaecher({
   pause: () => (wartung.aktiv ? 'Wartungsmodus' : wiederherstellung.laeuft() ? t('meldungen.index.wiederherstellung-laeuft') : null),
   platz: () => speicherplatz.pruefeHochladen(),
   anAdmins: anVerwaltendeVon('postfaecher'),
-  sperre: () => (postSperre ??= (async () => {
-    const v = await sql.reserve();
-    const [r] = await v`SELECT pg_try_advisory_lock(4711196) AS ok`;
-    if (!r.ok) { v.release(); postSperre = null; }
-    return r.ok as boolean;
-  })()),
+  sperre: () => postSperre.halte(),
 });
 // Hinweise zu DATABASE_URL nur, wenn sie aus der Compose-Datei kommt, nicht vom Start-Skript von dms-komplett (#805).
 const anbindungVerwaltung = new AnbindungVerwaltung(ordner.geheim, db, umgebungAusCompose(env, umgebung), () => ganzBeenden('Datenbank-Anbindung geändert'), undefined, ohneDatenbankVolume);
@@ -538,13 +536,11 @@ const pakete: Paketverwaltung = new Paketverwaltung(dienst, {
     abdeckung: (k) => sprachpakete.abdeckung(k),
   },
   // Installieren, Aktualisieren, Entfernen (#405): nacheinander über alle Instanzen – Sperre in PostgreSQL, solange es läuft.
+  // Seit #1198 auf der Sperrverbindung: Die Sperre hält keine Verbindung aus dem Pool, während installiert wird.
   sperre: async (f) => {
-    const v = await sql.reserve();
-    try {
-      const [r] = await v`SELECT pg_try_advisory_lock(4711405) AS ok`;
-      if (!r.ok) throw new Fachfehler(409, t('pakete.ablauf.fehler.belegt'));
-      try { return await f(); } finally { await v`SELECT pg_advisory_unlock(4711405)`.catch(() => {}); }
-    } finally { v.release(); }
+    const s = await sperren.versuche({ klasse: 4711405 }, 'pakete');
+    if (!s) throw new Fachfehler(409, t('pakete.ablauf.fehler.belegt'));
+    try { return await f(); } finally { await s.gib().catch(() => {}); }
   },
 });
 // Ereignis „Volltext fertig“ (#336, #458) nach dem Schritt des Kerns – auch ohne Text, damit ein Paket für die
@@ -677,6 +673,8 @@ const app = await baueApp(dienst, konten, {
   systemlast,
   ueberlast,
   verbindungen: verbindungswarten,
+  // Gesundheitsprüfung mit Datenbank (#1198).
+  datenbank: datenbankpruefung,
   poolmessung,
   sitzungen: () => sitzungsstand(sql),
   abfragen: { stand: (n: number) => teuersteAbfragen(sql, n), zuruecksetzen: () => abfragenZuruecksetzen(sql) },
@@ -737,10 +735,11 @@ if (leiter) {
 // Zeitpläne (#744): jeder Lauf unter einer Datenbanksperre – mit mehreren Prozessen arbeitet je Lauf nur einer.
 const papierkorb = async () => { if (!wartung.aktiv) await dienst.papierkorbVerwaltung.raeumePapierkorbAuf(); await raeumeExporteAuf(exporte.pfad); };
 const papierkorbLauf = () => nurEiner('papierkorb', papierkorb).catch((e) => log.error('Papierkorb aufräumen fehlgeschlagen', { fehler: (e as Error).message }));
-if (leiter) setInterval(() => void papierkorbLauf(), 60 * 60 * 1000).unref();
+// Zeitpläne gestreut (#1198): erster Lauf mit festem Versatz je Name, nicht alle zur selben Sekunde.
+if (leiter) wiederkehrend('papierkorb', 60 * 60 * 1000, () => void papierkorbLauf());
 // Abwesenheit (#78): Abgelaufenes beenden, „abwesend“ an den Benutzer-Mappen nachziehen.
 const abwesenheiten = () => nurEiner('abwesenheiten', () => konten.abwesenheitenPruefen()).catch((e) => log.error('Abwesenheiten prüfen fehlgeschlagen', { fehler: (e as Error).message }));
-if (leiter) setInterval(() => void abwesenheiten(), 60 * 60 * 1000).unref();
+if (leiter) wiederkehrend('abwesenheiten', 60 * 60 * 1000, () => void abwesenheiten());
 // Anmeldeschutz (#368) und Tägliche Zusammenfassung (#54): Wann gemeldet wird, entscheiden seit #678 die
 // Automatisierungen (Wenn-Karte „Zeitplan“, Paket „Benachrichtigungen“); die Dann-Karten rufen das hier auf.
 dienst.zusammenfassungAn = async (id, trocken) => {
@@ -766,7 +765,7 @@ const fristen = () => nurEiner('fristen', async () => {
   await zustandDb.setze('fristen-tag', 'lauf', heute, null);
   if (r.angelegt || r.erledigt || r.erinnerungen) log.info('Fristen und Erinnerungen geprüft', r);
 });
-if (leiter) setInterval(() => void fristen().catch((e) => log.error('Fristen prüfen fehlgeschlagen', { fehler: (e as Error).message })), 5 * 60 * 1000).unref();
+if (leiter) wiederkehrend('fristen', 5 * 60 * 1000, () => void fristen().catch((e) => log.error('Fristen prüfen fehlgeschlagen', { fehler: (e as Error).message })));
 if (einrichtungNoetig && leiter) log.warn(`Noch kein Benutzer vorhanden: Öffne Ablago im Browser (Port ${cfg.port}) und richte es mit dem Einrichtungscode ein.`);
 
 appFuerPakete = app;
@@ -783,20 +782,20 @@ if (leiter) {
   // RESCUE-Datei (#108): Sie liegt neben der Schlüsseldatei, also für alle Prozesse dieselbe – prüfen nur unter Sperre.
   const notfallLauf = () => void nurEiner('notfall-datei', () => notfall.pruefe()).catch((e) => log.error('Notfallzugang prüfen fehlgeschlagen', { fehler: (e as Error).message }));
   notfallLauf();
-  setInterval(notfallLauf, 30_000).unref();
+  wiederkehrend('notfall-datei', 30_000, notfallLauf);
   sicherung.start();
   speicherplatz.start();
   await eingangsordner.start();
   postfaecher.start();
   // Technische Aufgaben des Admin-Kontos (#719): alle 5 Minuten prüfen, höchstens einmal am Tag gebündelt mailen.
   // Vorher die Aufgaben bei Personen ohne Leserecht abgleichen (#798: Rechte geändert, Erwähnungen, Fristen …).
-  setInterval(() => {
+  wiederkehrend('verwaltung', 5 * 60 * 1000, () => {
     if (wartung.aktiv || wiederherstellung.laeuft()) return;
     void nurEiner('verwaltung', async () => {
       await dienst.ohneLeserecht.faelleAbgleichen().catch((e) => log.warn('Aufgaben ohne Leserecht nicht abgeglichen', { fehler: (e as Error).message }));
       await verwaltung.tick();
     }).catch((e) => log.error('Technische Aufgaben prüfen fehlgeschlagen', { fehler: (e as Error).message }));
-  }, 5 * 60 * 1000).unref();
+  });
   // Wörterverzeichnis der Suche (#575): neue Wörter aus dem Eingang übernehmen – entkoppelt von Mappen und Texterkennung.
   let woerterFehler = '';
   setInterval(() => {
@@ -807,14 +806,14 @@ if (leiter) {
       woerterFehler = (e as Error).message;
     });
   }, 5000).unref();
-  setInterval(() => void nurEiner('probe', () => wiederherstellung.tick()).catch((e) => log.error('Zeitplan der Probe gestört', { fehler: (e as Error).message })), 60_000).unref();
+  wiederkehrend('probe', 60_000, () => void nurEiner('probe', () => wiederherstellung.tick()).catch((e) => log.error('Zeitplan der Probe gestört', { fehler: (e as Error).message })));
   // Notfallkontakte (#812): Info-Mails, die auf den E-Mail-Versand gewartet haben – sobald er eingerichtet ist.
-  setInterval(() => {
+  wiederkehrend('notfallkontakte', 5 * 60_000, () => {
     if (wartung.aktiv || wiederherstellung.laeuft()) return;
     void nurEiner('notfallkontakte', () => dienst.notfallkontakte.zustellen()).catch((e) => log.warn('Info-Mails an Notfallkontakte nicht verschickt', { fehler: (e as Error).message }));
-  }, 5 * 60_000).unref();
+  });
   // Abgelaufenes aus dem Kurzzustand (#744) wegräumen – Fehlversuche, Tickets, Merker.
-  setInterval(() => void nurEiner('kurzzustand', () => zustandDb.raeumeAuf()).catch((e) => log.warn('Kurzzustand nicht aufgeräumt', { fehler: (e as Error).message })), 10 * 60_000).unref();
+  wiederkehrend('kurzzustand', 10 * 60_000, () => void nurEiner('kurzzustand', () => zustandDb.raeumeAuf()).catch((e) => log.warn('Kurzzustand nicht aufgeräumt', { fehler: (e as Error).message })));
 } else {
   await laeufer.start().catch((e: unknown) => log.warn('Stand des Paket-Läufers nicht abgefragt', { fehler: (e as Error).message }));
   await aufteilung.start();
@@ -914,6 +913,7 @@ const beenden = async () => {
   await schritt('poolmessung.aus', () => poolmessung.aus());
   await schritt('aufteilung.stop', () => aufteilung.stop());
   await schritt('lebt.ende', () => lebt.ende());
+  await schritt('sperren.ende', () => sperren.ende());
   await schritt('sql.end', () => sql.end({ timeout: 5 }));
   process.exit(gescheitert ? 1 : 0);
 };

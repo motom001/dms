@@ -1,5 +1,8 @@
 # Emergency: no admin left {#notfall-kein-admin-mehr}
 
+!!! abstract "Other emergencies"
+    This page helps if nobody with the administration permission can get in any more. **If Ablago doesn't load at all or the page stays black** ("Ablago isn't responding right now", "the database isn't responding"), see [Ablago doesn't load or stays black](was-ist-passiert.md#laedt-nicht). All emergencies at a glance: [What has happened to you?](was-ist-passiert.md#uebersicht) – also at **https://help.ablago.app/emergency**.
+
 !!! tip "First the emergency sheet, then the console"
     If you have the [emergency sheet](verschluesselung.md#notfallblatt), the easiest way is with the **emergency code** on it – without files on the NAS: [Getting back in with the emergency code](was-ist-passiert.md#notfallcode). If there is still a person with "Full administration" and you just can't get in (forgotten password, IP blocked, lost phone for two-factor sign-in), the [command `dms`](konsole.md) in the container also works, e.g. `dms passwort <email>`. The RESCUE file below is the way if the emergency sheet is lost too.
 
