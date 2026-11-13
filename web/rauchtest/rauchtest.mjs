@@ -23,7 +23,8 @@
  * (Entwicklerhandbuch, Seite „Tests“).
  */
 import assert from 'node:assert/strict';
-import { mkdir, readFile } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
+import { mkdir, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { test, after, before } from 'node:test';
 import { chromium } from 'playwright';
@@ -1442,6 +1443,67 @@ rauchtest('Werkbank: Gleichbedeutende Wörter – Liste mit Suche, Wörter einze
   await s.waitForURL(/\/werkbank\/woerter$/);
   await suche.fill('');
   await elemente.getByText('1 Gruppe', { exact: true }).waitFor();
+});
+
+/* ---------- Vorschaubild aus der Archivfassung (#1216) ---------- */
+
+/** Eine kleine E-Mail (nur Persona-Adressen), wie sie ein Postfach oder Hochladen ablegt. */
+const BEISPIEL_EML = Buffer.from([
+  'From: Lena Beispiel <lena@example.org>', 'To: Jonas Beispiel <jonas@example.org>', 'Subject: Termin Heizungswartung',
+  'Date: Mon, 15 Nov 2027 09:30:00 +0100', 'MIME-Version: 1.0', 'Content-Type: text/plain; charset=utf-8', '',
+  'Hallo Jonas, der Termin für die Heizungswartung ist am Donnerstag um 10 Uhr.', '',
+].join('\r\n'));
+
+/**
+ * Archivfassung einer Datei so ablegen, wie das Paket für PDF/A sie hinterlässt (#631) – im Rauchtest gibt es keins:
+ * erst der Stand „wartet“ (archivfassungen/<ab>/<Prüfwert>.stand), dann die Fassung (.fassung und .json, Stand weg).
+ */
+async function archivOrdner(sha) {
+  const dateien = join(process.env.DMS_DATENWURZEL ?? join(import.meta.dirname, '../../data'), 'files');
+  for (const haushalt of await readdir(dateien)) {
+    const ablage = join(dateien, haushalt);
+    if (!(await stat(join(ablage, sha.slice(0, 2), sha)).then(() => true, () => false))) continue;
+    const ordner = join(ablage, 'archivfassungen', sha.slice(0, 2));
+    await mkdir(ordner, { recursive: true });
+    return ordner;
+  }
+  throw new Error(`Datei ${sha} nicht im Ordner ${dateien} gefunden.`);
+}
+const PDFA_PAKET = { id: 'pdfa', name: 'PDF/A', version: '1.0.0' };
+async function archivfassungWartet(sha) {
+  await writeFile(join(await archivOrdner(sha), `${sha}.stand`), JSON.stringify({ stand: 'wartet', info: null, paket: PDFA_PAKET, zeit: new Date().toISOString() }));
+}
+async function archivfassungAblegen(sha, pdf) {
+  const ordner = await archivOrdner(sha);
+  await writeFile(join(ordner, `${sha}.fassung`), pdf);
+  await writeFile(join(ordner, `${sha}.json`), JSON.stringify({ mime: 'application/pdf', groesse: pdf.length, sha256: createHash('sha256').update(pdf).digest('hex'), seiten: 1,
+    pdfa: { teil: 2, stufe: 'B' }, paket: PDFA_PAKET, erstellt: new Date().toISOString() }));
+  await rm(join(ordner, `${sha}.stand`), { force: true });
+}
+
+rauchtest('Dokumentliste: E-Mail mit fertiger Archivfassung zeigt ihr Vorschaubild, ohne nur „EML“ (#1216)', {
+  als: LENA,
+  // Beim ersten Abruf gibt es das Bild noch nicht (404) – es entsteht im Hintergrund, die Liste fragt kurz darauf noch einmal.
+  erwartet: [{ status: 404, pfad: /^\/api\/dokumente\/[^/]+\/vorschau$/ }],
+}, async (s) => {
+  const cookie = await sitzung(LENA);
+  // Eine eigene Mappe im Mappentyp aus den Daten (beendet: ändert nichts an „Ist der Stichtag leer“).
+  const { typ } = daten.archiv;
+  const mappe = (await api('POST', '/api/mappen', { cookie, body: { typId: typ.id, werte: { objekt: 'Heizungsraum Hofweg', beendet: '2027-01-31' } } })).daten;
+  const mail = (await api('POST', `/api/mappen/${mappe.id}/dokumente?register=dokumente&name=${encodeURIComponent('Termin Heizungswartung.eml')}&typ=message/rfc822`, { cookie, body: BEISPIEL_EML, roh: true })).daten.dokument;
+  // Archivfassung wird noch erstellt: das Kästchen mit der Endung.
+  await archivfassungWartet(mail.sha256);
+  await s.goto(BASIS + `/ablage/${typ.id}/${mappe.id}`);
+  await s.getByRole('region', { name: 'Mappe' }).getByRole('tab', { name: 'Dokumente 1' }).click();
+  const liste = s.locator('.dokzeile').filter({ hasText: 'Termin Heizungswartung.eml' });
+  await liste.locator('.vorschaubild.ohne', { hasText: 'EML' }).waitFor();
+  // Archivfassung fertig: Ohne die Mappe neu zu laden, kommt das Bild aus ihrer ersten Seite – gekennzeichnet.
+  await archivfassungAblegen(mail.sha256, beispielPdf('Von: Lena Beispiel\nBetreff: Termin Heizungswartung'));
+  const bild = liste.locator('img.vorschaubild');
+  await bild.waitFor({ timeout: 45_000 });
+  assert.equal(await bild.getAttribute('title'), 'Vorschau aus der umgewandelten Fassung eines Pakets');
+  await s.waitForFunction((el) => el.complete && el.naturalWidth > 0, await bild.elementHandle(), { timeout: 20_000 });
+  assert.equal(await liste.locator('.vorschaubild.ohne').count(), 0);
 });
 
 /* ---------- Ablago antwortet nicht (#1198) ---------- */

@@ -74,6 +74,8 @@ export interface ArchivAblage {
   /** Archivfassung, Stand und Wortpositionen der Datei entfernen (Datei gelöscht). */
   loesche(sha: string): Promise<void>;
   belegung(): Promise<{ anzahl: number; bytes: number }>;
+  /** Prüfwerte aller Dateien mit Archivfassung (auch „Original ist schon PDF/A“) – für den Nachlauf der Vorschaubilder (#1216). */
+  alle(): Promise<string[]>;
   stand(sha: string): Promise<ArchivStandDatei | null>;
   setzeStand(sha: string, s: ArchivStandDatei | null): Promise<void>;
   /** Alle Stände (wartet, ausgelassen, Fehler) – für die Werkbank. */
@@ -115,6 +117,16 @@ export function ordnerArchiv(wurzel: string, woerterWurzel: string): ArchivAblag
       await rm(woerterPfad(sha), { force: true });
     },
     belegung: () => f.belegung(),
+    async alle() {
+      const erg: string[] = [];
+      for (const o of await readdir(wurzel).catch(() => [] as string[])) {
+        for (const n of await readdir(join(wurzel, o)).catch(() => [] as string[])) {
+          const m = /^([0-9a-f]{64})\.json$/.exec(n);
+          if (m) erg.push(m[1]);
+        }
+      }
+      return erg;
+    },
     stand,
     async setzeStand(sha, s) {
       if (s) await lege(standPfad(sha), JSON.stringify(s));
@@ -154,6 +166,7 @@ export function speicherArchiv(): ArchivAblage & { fassungen: Map<string, { info
     schreibeInfo: async (sha, info) => { fassungen.set(pruefeSha(sha), { info, inhalt: Buffer.alloc(0) }); },
     loesche: async (sha) => { fassungen.delete(sha); staende.delete(sha); woerter.delete(sha); },
     belegung: async () => ({ anzahl: fassungen.size, bytes: [...fassungen.values()].reduce((s, f) => s + f.inhalt.length, 0) }),
+    alle: async () => [...fassungen.keys()],
     stand: async (sha) => staende.get(sha) ?? null,
     setzeStand: async (sha, s) => { if (s) staende.set(pruefeSha(sha), s); else staende.delete(sha); },
     staende: async () => [...staende.entries()].map(([sha256, stand]) => ({ sha256, stand })),
@@ -260,6 +273,8 @@ export class Archivfassung {
     return this.o.ablage.lies(sha).catch(() => null);
   }
   belegung() { return this.o.ablage.belegung(); }
+  /** Prüfwerte aller Dateien mit Archivfassung (#1216). */
+  alle() { return this.o.ablage.alle().catch(() => [] as string[]); }
 
   /** Quelle der Archivfassung: PDF, JPEG, PNG und E-Mails (#946) im Original, sonst die Lesefassung (#577) – oder null. */
   private async quelle(d: Pick<Dokument, 'mime' | 'sha256' | 'name'>): Promise<Quelle | null> {

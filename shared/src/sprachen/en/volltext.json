@@ -102,6 +102,8 @@
   "werkbank.archiv.keins": "No package for the archive version installed.",
   "werkbank.archiv.paket": "Package {paket}",
   "werkbank.archiv.zaehler": "{fertig} finished · {wartet} waiting · {ausgelassen} skipped · {fehler} with errors",
+  "werkbank.archiv.vorschau": "Catching up thumbnails from the archive version: {erledigt} created, {offen} still to go. This runs in the background with low priority; Ablago stays usable.",
+  "werkbank.archiv.vorschau.fertig": "Thumbnails from the archive version caught up: {erledigt} created, {ohne} without an image.",
   "werkbank.archiv.dokument": "Document",
   "werkbank.archiv.grund": "Reason",
   "werkbank.archiv.keine": "No documents with errors or skipped.",

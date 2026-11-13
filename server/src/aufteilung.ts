@@ -151,6 +151,7 @@ export function teileArbeit(v: Verbund, o: TeilungsDeps): { start(): Promise<voi
     v.hoere('texterkennung.anstossen', () => te.anstossen());
     v.hoere('vorschau.einreihen', (d) => vs.einreihen(d as VorschauDok[]));
     v.hoere('vorschau.ausFassung', (d) => vs.ausFassung(d as VorschauDok[]));
+    v.hoere('vorschau.ausArchiv', (d) => vs.ausArchiv(d as VorschauDok[]));
     v.bediene('vorschau.nachholen', ([d]) => vs.nachholen(d as VorschauDok[]));
     v.hoere('ereignisse.wecke', () => o.dienst.ereignisse.wecke());
     v.bediene('postfach.abrufen', ([id]) => o.postfaecher.abrufen(String(id)));
@@ -180,6 +181,8 @@ export function teileArbeit(v: Verbund, o: TeilungsDeps): { start(): Promise<voi
   vs.anstossen = () => {};
   vs.einreihen = (docs) => { const d = klein(docs as VorschauDok[]); if (d.length) v.melde('vorschau.einreihen', d); return d.length; };
   vs.ausFassung = (docs) => { const d = klein(docs as VorschauDok[]); if (d.length) v.melde('vorschau.ausFassung', d); return d.length; };
+  // Archivfassung (#1216): eine neue kommt über die Schnittstelle in jedem Prozess an, das Bild entsteht im Leiter.
+  vs.ausArchiv = (docs) => { const d = klein(docs as VorschauDok[]); if (d.length) v.melde('vorschau.ausArchiv', d); return d.length; };
   vs.nachholen = (docs) => v.rufe<number>('vorschau.nachholen', [klein(docs as VorschauDok[])]);
   dienst.ereignisse.wecke = () => v.melde('ereignisse.wecke');
   dienst.ereignisse.verteile = async () => { v.melde('ereignisse.wecke'); return 0; };

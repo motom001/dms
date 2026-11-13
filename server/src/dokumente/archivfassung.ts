@@ -14,6 +14,13 @@ import type { Repo } from '../repo';
 import { t } from '../sprache';
 import type { DokumentUmwandlung } from './umwandeln';
 
+/** Vorschaubilder aus der Archivfassung (#1216) – vorschau.ts, angebunden in ablago.ts. */
+export interface VorschauAusArchiv {
+  ausArchiv(docs: Dokument[]): unknown;
+  nachlaufArchiv(shas: Iterable<string>, dokumente: (sha: string) => Promise<Dokument[]>): Promise<number>;
+  nachlaufStand(): Promise<{ offen: number; erledigt: number; ohne: number; seit: string; zeit: string } | null>;
+}
+
 /** Was die Archivfassung außer dem Kern braucht – vom Dienst hereingereicht, bis es eigene Module dafür gibt. */
 export interface ArchivfassungAnschluss {
   /** Ereignis an genau ein Paket (Ereignisse, noch im Dienst). */
@@ -41,6 +48,16 @@ export class DokumentArchivfassung {
   archiv?: Archivfassung;
   verbindeArchivfassung(a: Archivfassung) { this.archiv = a; }
   get archivfassung() { return this.archiv; }
+
+  /** Vorschaubilder aus der Archivfassung (#1216): neue Archivfassung → Bild, Nachlauf für den Bestand, Stand. */
+  private vorschau?: VorschauAusArchiv;
+  verbindeVorschau(v: VorschauAusArchiv) { this.vorschau = v; }
+
+  /** Nachlauf (Zeitplan, #1216): Dateien mit Archivfassung und ohne Vorschaubild nachholen. Liefert, wie viele offen sind. */
+  async vorschauNachlauf(): Promise<number> {
+    if (!this.archiv || !this.vorschau) return 0;
+    return this.vorschau.nachlaufArchiv(await this.archiv.alle(), (sha) => this.repo.dokumenteMitSha(sha));
+  }
 
   /** Was Archivfassung vom Dienst braucht (#631) – für index.ts und Tests. */
   archivAnbindung(ablage: ArchivAblage): ArchivAnbindung {
@@ -95,7 +112,13 @@ export class DokumentArchivfassung {
     if (!this.archiv) throw new Fachfehler(404, t('pakete.archiv.aus'));
     const d = await this.repo.holeDokument(id);
     if (!d) throw new Fachfehler(404, t('meldungen.dienst.dieses-dokument-gibt-es'));
-    return { dokument: d.id, archivfassung: await this.archiv.setze(z?.paket, d, sha, inhalt) };
+    const archivfassung = await this.archiv.setze(z?.paket, d, sha, inhalt);
+    // Vorschaubild aus der neuen Archivfassung (#1216), falls es noch keins gibt – auch nach einem früheren Fehlversuch.
+    if (this.vorschau) {
+      const alle = await this.repo.dokumenteMitSha(d.sha256).catch(() => [] as Dokument[]);
+      this.vorschau.ausArchiv(alle.length ? alle : [d]);
+    }
+    return { dokument: d.id, archivfassung };
   }
 
   /** Die Archivfassung eines Dokuments zum Ansehen (nur die aktuelle – zur Datei des Dokuments); 404 ohne. */
@@ -116,7 +139,12 @@ export class DokumentArchivfassung {
   }
 
   /** Werkbank → Texterkennung → Archivfassung (#631). */
-  async archivStand() { return this.archiv ? this.archiv.uebersicht() : null; }
+  async archivStand() {
+    if (!this.archiv) return null;
+    // Nachlauf der Vorschaubilder (#1216): Fortschritt, solange einer läuft bzw. das Ergebnis des letzten.
+    const vorschau = (await this.vorschau?.nachlaufStand().catch(() => null)) ?? null;
+    return { ...(await this.archiv.uebersicht()), vorschau };
+  }
 
   /** Stand der Archivfassung je Dokument (#631), nur wenn es eine gibt oder ein Paket dran ist. */
   async mitArchivStand(docs: Dokument[]): Promise<Dokument[]> {

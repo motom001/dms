@@ -1,0 +1,5 @@
+art: minor
+
+## Neu
+
+- **Vorschaubild auch aus der Archivfassung** (#1216): E-Mails und andere Dateien ohne eigenes Bild zeigen in der Dokumentliste die erste Seite ihrer Archivfassung (PDF/A), gekennzeichnet als „Vorschau aus der umgewandelten Fassung eines Pakets“. Reihenfolge: Datei selbst → entsperrte bzw. umgewandelte Fassung → Archivfassung → Dateiendung. Kommt die Archivfassung später, folgt das Bild – auch nach einem früheren Fehlversuch. Vorhandene Dokumente holt Ablago im Hintergrund mit Nachrang nach; den Fortschritt zeigt Werkbank → Suche und Volltext → Archivfassung.

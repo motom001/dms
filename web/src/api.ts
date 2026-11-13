@@ -338,6 +338,8 @@ export interface OcrStatus {
     pakete: Array<{ id: string; name: string; version: string; typen: string[] }>;
     zaehler: { fertig: number; bytes: number; wartet: number; ausgelassen: number; fehler: number };
     liste: Array<{ dokument: string; name: string; mappeId: string; stand: 'wartet' | 'ausgelassen' | 'fehler' | 'fertig'; info: string | null; zeit: string; paket: string | null }>;
+    /** #1216: Nachlauf der Vorschaubilder aus der Archivfassung – offen, erstellt, ohne Bild; null ohne Nachlauf. */
+    vorschau?: { offen: number; erledigt: number; ohne: number; seit: string; zeit: string } | null;
   } | null;
 }
 export interface Zaehler {
