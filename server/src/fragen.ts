@@ -8,7 +8,7 @@
  *  4. Die Antwort ist nur Text; genannte Quellen prüft das DMS (nur gegebene, lesbare Mappen).
  * Gespeichert wird nichts davon; im Protokoll steht nur, dass gefragt wurde (Anzahl, Dauer), nie der Inhalt.
  */
-import { auswahlText, type Feld, type Mappe, type Mappentyp } from '../../shared/src/model';
+import { auswahlText, type Feld, inAllgemeinerSuche, type Mappe, type Mappentyp } from '../../shared/src/model';
 import { istZeitraum, prozentText, zeitraumText } from '../../shared/src/feldarten';
 import { ausschnittUm, ausschnitteAlsText, AUSSCHNITT_MAX, FRAGE_MAX, FRAGEN_STANDARD, frageWoerter, KI_HINWEIS, liesAntwort, liesVerlauf, pruefeGrenzen, saeubere, type FrageAusschnitt, type FragenGrenzen, type FrageZeile } from '../../shared/src/fragen';
 import type { Dienst } from './dienst';
@@ -70,7 +70,8 @@ export class FragenAnDieAblage {
     const woerter = frageWoerter([frage, ...vorher].join(' '));
     const typen = new Map((await this.repo().listeTypen()).map((t) => [t.id, t]));
     // Benutzer-Mappen gehen nie an ein Paket (wie bei Paketen allgemein); an ein KI-Paket nur zugelassene Mappentypen (#796).
-    const erlaubt = (typId: string) => { const t = typen.get(typId); return !!t && t.system !== 'benutzer' && !kiGesperrt(typId); };
+    // Typen mit „In der allgemeinen Suche zeigen: nein“ (#1220, z. B. reine Auswahllisten) sind keine Quelle.
+    const erlaubt = (typId: string) => { const t = typen.get(typId); return !!t && t.system !== 'benutzer' && inAllgemeinerSuche(t) && !kiGesperrt(typId); };
     const anzahl = g.ausschnitte;
     const f = await this.repo().fragenFundstellen({ woerter, lesen: z?.lesen ?? null, dokumente: anzahl * 2, mappen: anzahl });
     const aehnlich = await this.d.suche.aehnlicheZuText(z, frage, anzahl * 2, VEKTOR_MS).catch(() => []);

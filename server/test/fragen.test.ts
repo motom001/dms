@@ -180,6 +180,15 @@ for (const pg of [false, true]) {
       assert.ok(knapp[0].text.length <= 502);
     });
 
+    it('„In der allgemeinen Suche zeigen: nein“ (#1220): Mappen des Typs sind keine Quelle', async () => {
+      const x = await aufbau();
+      const frage = () => x.d.fragen.ausschnitte(x.L, 'Was steht zum Gartenhaus und zur Versicherung?', [], FRAGEN_STANDARD);
+      assert.ok((await frage()).some((a) => a.mappe.id === x.garten.id), 'vorher Quelle');
+      await x.d.mappentypen.aendereTyp(x.garten.typId, { ...(await x.d.kern.repo.holeTyp(x.garten.typId)), inSuche: false });
+      const danach = await frage();
+      assert.ok(danach.length > 0 && !danach.some((a) => a.mappe.id === x.garten.id), JSON.stringify(danach));
+    });
+
     it('Antwort als Strom: Ausschnitte, Teile, fertig mit geprüften Quellen; Eingang mit Hinweis gegen Anweisungen', async () => {
       const x = await aufbau();
       const a = attrappe('{"text":"Am 31.12.2026 [1]. Siehe auch [99].","quellen":[1,99]}');

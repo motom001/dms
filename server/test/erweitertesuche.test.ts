@@ -117,6 +117,36 @@ function faelle(pg: boolean) {
       await assert.rejects(d.sichten.seite(ICH, { sicht: 'suche', link: 'typ=gibtsnicht' }), (e) => e instanceof Fachfehler && e.status === 422);
     });
 
+    it('„In der allgemeinen Suche zeigen: nein“ (#1220): ohne Typ nicht dabei, mit gewähltem Typ schon; Verweise und Ansicht unverändert', async () => {
+      const { d, rechnung } = await aufbau(await repo(pg));
+      const art = await d.mappentypen.legeTypAn({ name: 'Vertragsart', schluessel: 'vertragsart', titelVorlage: 'Vertragsart {name}', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }] });
+      const leasing = await d.mappen.legeMappeAn({ typId: art.id, werte: { name: 'Leasing' } });
+      const vertrag = await d.mappentypen.legeTypAn({ name: 'Vertrag', schluessel: 'vertrag', titelVorlage: '{titel}', felder: [{ key: 'titel', label: 'Titel', typ: 'text', pflicht: true }, { key: 'art', label: 'Vertragsart', typ: 'referenz', zielTyp: art.id }] });
+      assert.deepEqual(await treffer(d, 'volltext=Leasing'), ['Vertragsart Leasing'], 'Vorgabe: ja');
+      assert.equal((await d.kern.repo.holeTyp(art.id))!.inSuche, undefined, 'ohne Einstellung nichts gespeichert');
+      await d.mappentypen.aendereTyp(art.id, { ...(await d.kern.repo.holeTyp(art.id)), inSuche: false });
+      assert.equal((await d.kern.repo.holeTyp(art.id))!.inSuche, false);
+      // Suche über die Kopfzeile = erweiterte Suche ohne Typ: nicht dabei – auch nicht über „in“ oder Felder.
+      assert.deepEqual(await treffer(d, 'volltext=Leasing'), []);
+      assert.deepEqual(await treffer(d, 'volltext=Leasing&in=felder'), []);
+      assert.ok((await treffer(d, 'volltext=Backofen&in=dokumente')).length > 0, 'die übrigen Typen bleiben');
+      // Mit gewähltem Typ findet die erweiterte Suche sie.
+      assert.deepEqual(await treffer(d, 'typ=vertragsart&volltext=Leasing'), ['Vertragsart Leasing']);
+      assert.deepEqual(await treffer(d, `typ=vertragsart&typ=${rechnung.schluessel}&volltext=Leasing`), ['Vertragsart Leasing']);
+      // Ansicht des Typs, Verweisfeld und Auswahl im Feld bleiben unverändert.
+      assert.equal((await d.sichten.seite(ICH, { sicht: `typ:${art.id}` })).gesamt, 1);
+      const v = await d.mappen.legeMappeAn({ typId: vertrag.id, werte: { titel: 'Auto', art: leasing.id } });
+      assert.equal(v.werte.art, leasing.id);
+      assert.deepEqual((await d.sichten.seite(ICH, { sicht: `feld:${vertrag.id}:art`, suche: 'Leasing' })).mappen.map((m) => m.id), [leasing.id]);
+      // Speichern ohne die Angabe (älteres Programm) behält sie; ausdrücklich null setzt die Vorgabe zurück.
+      const ohne: Record<string, unknown> = { ...(await d.kern.repo.holeTyp(art.id))! };
+      delete ohne.inSuche;
+      await d.mappentypen.aendereTyp(art.id, ohne);
+      assert.equal((await d.kern.repo.holeTyp(art.id))!.inSuche, false);
+      await d.mappentypen.aendereTyp(art.id, { ...ohne, inSuche: null });
+      assert.deepEqual(await treffer(d, 'volltext=Leasing'), ['Vertragsart Leasing']);
+    });
+
     it('Datum nur von bzw. nur bis, Zahlen, Ja/Nein, Auswahl, Text, leer', async () => {
       const { d } = await aufbau(await repo(pg));
       assert.deepEqual(await treffer(d, 'typ=rechnung&rechnungsdatum.von=2025-09-01'), ['R-4', 'R-5']);

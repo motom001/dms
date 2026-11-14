@@ -52,7 +52,7 @@ export function typGegenstand(a: GegenstaendeAnschluss): Gegenstand {
       // Was in der Fassung fehlt, ist dort „nicht gesetzt“ – ausdrücklich, sonst behielte das Speichern den heutigen Wert.
       await a.aendereTyp(id, {
         ...d, beschriftungen: d.beschriftungen ?? null, berechtigungen: d.berechtigungen ?? OFFENES_REGELWERK, stempel: d.stempel ?? null, ausDokument: d.ausDokument ?? null,
-        autoZuordnen: !!d.autoZuordnen, teilVon: d.teilVon ?? null, archiv: d.archiv ?? null,
+        autoZuordnen: !!d.autoZuordnen, teilVon: d.teilVon ?? null, inSuche: d.inSuche ?? null, archiv: d.archiv ?? null,
         felder: d.felder.map((f) => ({ ...f, beschriftungen: f.beschriftungen ?? null, ausgeblendet: !!f.ausgeblendet, anzeigen: f.anzeigen ?? null })),
         register: d.register.map((r) => ({ ...r, beschriftungen: r.beschriftungen ?? null, ausgeblendet: !!r.ausgeblendet })),
         stand: jetzt?.geaendert, bestaetigt: o.bestaetigt, doppelteBestaetigt: o.doppelteBestaetigt,

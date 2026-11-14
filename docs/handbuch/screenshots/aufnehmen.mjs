@@ -1190,6 +1190,21 @@ async function main() {
   // Fristen (#129): Erinnerung am Datumsfeld
   await s.locator('.fristeditor').evaluate((e) => e.scrollIntoView({ block: 'center' }));
   await bild(s, 'werkbank-frist');
+  // In der allgemeinen Suche zeigen (#1220): eine reine Auswahlliste „Vertragsart“ mit abgewähltem Haken in den Grunddaten.
+  {
+    const art = await api('POST', '/api/typen', {
+      name: SPRACHE === 'en' ? 'Contract type' : 'Vertragsart', titelVorlage: '{name}', inSuche: false, sichtAnlegen: false,
+      felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }],
+    });
+    await geheZu(s, `/werkbank/typen/${art.id}`);
+    await s.locator('[data-sprungleiste]').getByRole('button', { name: w('Grunddaten') }).click();
+    const haken = s.getByRole('checkbox', { name: w('In der allgemeinen Suche zeigen') });
+    await haken.waitFor();
+    await haken.evaluate((e) => e.scrollIntoView({ block: 'center' }));
+    await bild(s, 'werkbank-mappentyp-in-suche');
+    // Wieder weg, damit spätere Bilder (Listen der Mappentypen) unverändert bleiben.
+    await api('DELETE', `/api/typen/${art.id}`);
+  }
   // Suche über der Liste (#978): Treffer mit Fundstellen, darunter der Filter „Paket“.
   await geheZu(s, '/werkbank/typen');
   await s.getByRole('searchbox', { name: w('Mappentypen durchsuchen') }).fill(vertrag.name.slice(0, 6));

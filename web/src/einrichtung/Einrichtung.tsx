@@ -12,7 +12,7 @@ import { Ansage, umgestellt, useZiehen, Ziehgriff } from '../ziehen';
 import {
   ABSCHNITT_TITEL_MAX, ERKENNBAR_AN_MAX, FELDTYPEN, feldtypName, freierSchluessel, INDEXPLATZHALTER, istIndexplatzhalter, REGISTERARTEN, HISTORIENGRUPPEN, historiengruppeName, historiengruppenVon, type Historiengruppe, SYSTEMSPALTEN, type Systemspalte, schluesselAus, standardRegister, titelAus, trefferlistenVon, VERWEISARTEN, vorlageFelder, wirksameVorlage, pruefeTitelFilter,
   type Abschnitt, type Feld as FeldDef, type Mappe, type Mappentyp, type Register, type Registerart, type Trefferliste, type Werte,
-  einzigesZiel, gemeinsameFelder, jedeMappe, zielErlaubt, zieleVon,
+  einzigesZiel, gemeinsameFelder, inAllgemeinerSuche, jedeMappe, zielErlaubt, zieleVon,
 } from '../../../shared/src/model';
 import { Mehrfachauswahl } from '../ablage/Mehrfachauswahl';
 import { feldVerwendung, registerAusblendbar } from '../../../shared/src/darstellung';
@@ -95,6 +95,8 @@ interface Entwurf {
   beschriftungen?: Beschriftungen<TypTeile>;
   /** Ist Teil einer anderen Mappe (#1031): `_uid` des Verweisfelds, '' = noch keins gewählt, null = aus. */
   _teilVon: string | null;
+  /** In der allgemeinen Suche zeigen (#1220); null = Vorgabe (ja). */
+  inSuche: boolean | null;
 }
 
 function neueId(): string {
@@ -126,7 +128,7 @@ function ohneAnker(x: Entwurf, uid: string): Entwurf {
 }
 
 function entwurfAus(eintrag?: Mappentyp): Entwurf {
-  if (!eintrag) return { id: neueId(), name: '', schluessel: '', beschreibung: '', titelVorlage: '', felder: [], register: standardRegister([]).map(alsEntwurfRegister), trefferlisten: [{ _uid: neueId(), key: 'standard', name: t('mappentypen.editor.standard'), spalten: [], standard: true }], berechtigungen: structuredClone(OFFENES_REGELWERK), archiv: null, stempel: null, ausDokument: null, autoZuordnen: false, ausPost: null, erkennbarAn: '', _teilVon: null };
+  if (!eintrag) return { id: neueId(), name: '', schluessel: '', beschreibung: '', titelVorlage: '', felder: [], register: standardRegister([]).map(alsEntwurfRegister), trefferlisten: [{ _uid: neueId(), key: 'standard', name: t('mappentypen.editor.standard'), spalten: [], standard: true }], berechtigungen: structuredClone(OFFENES_REGELWERK), archiv: null, stempel: null, ausDokument: null, autoZuordnen: false, ausPost: null, erkennbarAn: '', _teilVon: null, inSuche: null };
   const erstes = eintrag.register.find((r) => r.art === 'felder')?.key ?? '';
   const e: Entwurf = {
     id: eintrag.id, name: eintrag.name, schluessel: eintrag.schluessel ?? '', beschreibung: eintrag.beschreibung, titelVorlage: eintrag.titelVorlage ?? '',
@@ -136,6 +138,7 @@ function entwurfAus(eintrag?: Mappentyp): Entwurf {
     ausDokument: eintrag.ausDokument ?? null,
     autoZuordnen: !!eintrag.autoZuordnen,
     ausPost: eintrag.ausPost ?? null,
+    inSuche: eintrag.inSuche ?? null,
     erkennbarAn: eintrag.erkennbarAn ?? '',
     beschriftungen: eintrag.beschriftungen,
     register: [],
@@ -436,7 +439,7 @@ export function TypEditor({ typ, vorlage }: { typ?: Mappentyp; vorlage?: Mappent
       {gruende.length > 0 && <div className="hinweis warn"><ul>{gruende.map((g) => <li key={g}>{g}</li>)}</ul></div>}
 
       <Bereich id="grunddaten" titel={t('mappentypen.editor.grunddaten')} klappe={klappe('grunddaten')}
-        kurz={<>{tn('mappentypen.editor.kennung', { code: <code className="mono">{e.schluessel || '–'}</code> })}{e.beschreibung ? <> · {e.beschreibung}</> : null}</>}>
+        kurz={<>{tn('mappentypen.editor.kennung', { code: <code className="mono">{e.schluessel || '–'}</code> })}{e.beschreibung ? <> · {e.beschreibung}</> : null}{inAllgemeinerSuche(e) ? null : <> · {t('mappentypen.editor.in-suche-kurz')}</>}</>}>
         <div className="raster">
           <SprachText beschriftung={t('mappentypen.editor.name')} id="typ-name" wert={e.name} placeholder={t('mappentypen.editor.z-b-vertrag')} autoFocus={neu} teil="name" beschriftungen={e.beschriftungen}
               setzeWert={(name) => setE({ ...e, name, ...(neu && !e._schluesselGetippt ? { schluessel: schluesselAus(name) } : {}) })}
@@ -453,6 +456,9 @@ export function TypEditor({ typ, vorlage }: { typ?: Mappentyp; vorlage?: Mappent
             felder: x.pflicht ? y.felder.map((f) => (f._uid === x.pflicht ? { ...f, pflicht: true } : f)) : y.felder }))} />}
         {/* Dokument übernehmen (#937): nicht bei Systemtypen und Teilen – die sind nie Ziel von „Wohin gehört das?“. */}
         {!system && e._teilVon === null && <DokumentUebernehmen e={e} setE={setE} />}
+        {/* In der allgemeinen Suche zeigen (#1220): nicht bei Systemtypen und Teilen (Teile stehen ohnehin nie in der Suche). */}
+        {!system && e._teilVon === null && <HakenFeld beschriftung={t('mappentypen.editor.in-suche')} hilfe="mappentyp.in-suche" hinweis={t('mappentypen.editor.in-suche-hilfe')}>
+          <input type="checkbox" checked={inAllgemeinerSuche(e)} onChange={(ev) => setE((x) => ({ ...x, inSuche: ev.target.checked }))} /></HakenFeld>}
         {/* „12 von 14 Beschriftungen auf Englisch“ (#728): nur ein Hinweis, nie ein Fehler. */}
         <Beschriftungsstand typ={{ ...e, felder: e.felder as unknown as FeldDef[], register: e.register as unknown as Register[], trefferlisten: e.trefferlisten }} />
         {neu && e._teilVon === null && <HakenFeld beschriftung={t('mappentypen.editor.eigene-ansicht-in-der')} hinweis={t('mappentypen.editor.abwaehlen-wenn-die-mappen')}>

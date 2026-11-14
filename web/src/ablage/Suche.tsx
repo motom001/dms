@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { ausgeblendeteFelder } from '../../../shared/src/darstellung';
 import { abfrageAus, alsParameter, chipsVon, eingabeart, istGesetzt, kannLeer, liesSuche, ohneChip, suchfelder, SUCHE_PFAD, zeitraumVon, ZEITRAEUME, type Feldeingabe, type Suchformular, type Zeitraum } from '../../../shared/src/erweitertesuche';
 import { heuteIn, type Bedingungsfeld } from '../../../shared/src/sichten';
-import { zieleVon, type Mappentyp } from '../../../shared/src/model';
+import { inAllgemeinerSuche, zieleVon, type Mappentyp } from '../../../shared/src/model';
 import { api, type Bezuege } from '../api';
 import { useDaten } from '../daten';
 import { Hilfe } from '../Hilfe';
@@ -50,13 +50,27 @@ export function Suchkopf({ suche, offen, formular, setFormular }: { suche: URLSe
   const hatSuche = !!suche.toString();
   if (formular) return <Suchformular suche={suche} fokus={fokus} zeigeTreffer={() => setFormular(false)} einklappen={hatSuche ? () => setFormular(false) : undefined} />;
   return (
+    <>
     <div className="suchzusammenfassung">
       <Suchchips suche={suche} offen={offen} aendern={(k) => { setFokus(k); setFormular(true); }} />
       <Knopf groesse="klein" className="sz-aendern" onClick={() => { setFokus(undefined); setFormular(true); }}>
         <span className="nur-breit-inline">{t('suche.aendern')}</span><span className="nur-schmal">{t('suche.filter')}</span>
       </Knopf>
     </div>
+    <OhneAllgemeineSuche typen={liesSuche(suche).typen} />
+    </>
   );
+}
+
+/**
+ * „In der allgemeinen Suche zeigen: nein“ (#1220): Ohne gewählten Mappentyp fehlen diese Typen in der Suche – ein Satz
+ * sagt, welche, und wie man sie findet (den Typ wählen).
+ */
+function OhneAllgemeineSuche({ typen }: { typen: readonly string[] }) {
+  const d = useDaten();
+  const ohne = typen.length ? [] : d.typen.filter((x) => !istTeiltyp(x) && !inAllgemeinerSuche(x));
+  if (!ohne.length) return null;
+  return <p className="leise klein">{t('suche.typen.ohne-allgemeine', { namen: ohne.map((x) => typName(x)).join(', ') })}</p>;
 }
 
 export function Suchformular({ suche, fokus, zeigeTreffer, einklappen }: { suche: URLSearchParams; fokus?: string; zeigeTreffer(): void; einklappen?: () => void }) {
@@ -108,6 +122,7 @@ export function Suchformular({ suche, fokus, zeigeTreffer, einklappen }: { suche
         {!lesbar ? <p className="leise klein">{t('suche.lade')}</p>
           : <TypWahl lesbar={lesbar} gewaehlt={gewaehlt} setze={(l) => setF((x) => ({ ...x, typen: l.map(typSchluessel) }))} />}
         <p className="leise klein">{gewaehlt.length ? (gewaehlt.length > 1 ? t('suche.typen.gemeinsam') : '') : t('suche.typen.alle')}</p>
+        <OhneAllgemeineSuche typen={f.typen} />
       </fieldset>
 
       <fieldset className="suchgruppe sg-bedingungen">

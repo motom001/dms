@@ -454,6 +454,8 @@ export function baue(e: PaketErstellenEingabe, d: ErstellenDaten): Bau {
       ...ohneLeere({ erkennbarAn: mappentyp.erkennbarAn || undefined }),
       // Ist Teil einer anderen Mappe (#1031): wie im Entwurf Rechnungen die Kennung des Verweisfelds.
       ...(mappentyp.teilVon && felder.some((f) => f.key === mappentyp.teilVon) ? { gehoertZu: mappentyp.teilVon } : {}),
+      // In der allgemeinen Suche zeigen (#1220): nur „nein“ – „ja“ ist die Vorgabe.
+      ...(mappentyp.inSuche === false ? { inSuche: false } : {}),
       // Archivmodus (#1051): Schreibweise der Registry; beim Empfänger nur für den neu angelegten Typ.
       ...(archiv ? { archiv } : {}),
     };

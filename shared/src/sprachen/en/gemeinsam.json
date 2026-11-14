@@ -1210,6 +1210,8 @@
   "fassungen.titel": "Folder title: “{alt}” → “{neu}”",
   "fassungen.erkennbar-an": "“How to recognise it” changed",
   "fassungen.aus-post": "Create from post: {wert}",
+  "fassungen.in-suche-ja": "Show in the general search: yes",
+  "fassungen.in-suche-nein": "Show in the general search: no",
   "fassungen.teil-an": "Is now part of another folder (field “{feld}”)",
   "fassungen.teil-aus": "Is no longer part of another folder",
   "fassungen.archiv-an": "Archive mode switched on",

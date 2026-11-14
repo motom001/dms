@@ -329,7 +329,18 @@ export interface MappentypDaten {
    * der übergeordneten Mappe und über einen direkten Link (teile.ts). Fehlt bzw. null = eigenständig.
    */
   teilVon?: string | null;
+  /**
+   * „In der allgemeinen Suche zeigen“ (#1220): `false` = Mappen dieses Typs fehlen in der Suche über die Kopfzeile (die
+   * erweiterte Suche ohne gewählten Mappentyp) und als Quelle von „Frag deine Ablage“ – etwa reine Auswahllisten wie
+   * „Vertragsart“. Mit gewähltem Typ findet die erweiterte Suche sie; Auswahl- und Verweisfelder bleiben unberührt.
+   * Fehlt bzw. null = Vorgabe (ja); true/false = ausdrücklich eingestellt. Ein Paket-Update setzt sein „nein“ nur, solange
+   * der Administrator nichts eingestellt hat (wie `ausPost`).
+   */
+  inSuche?: boolean | null;
 }
+
+/** „In der allgemeinen Suche zeigen“ (#1220): ja, außer ausdrücklich nein. */
+export const inAllgemeinerSuche = (t: Pick<MappentypDaten, 'inSuche'> | undefined): boolean => t?.inSuche !== false;
 
 /** Höchstlänge von „Woran man ihn erkennt“ (#937). */
 export const ERKENNBAR_AN_MAX = 300;

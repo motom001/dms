@@ -262,6 +262,10 @@ See also: [Post](#post), [To (post)](#an-post).
 The searchable text in the documents – from the file's text layer or from text recognition.  
 See also: [Text recognition](#texterkennung), [Advanced search](#erweiterte-suche).
 
+<a id="allgemeine-suche"></a>**General search** (*Allgemeine Suche*) · ~ with explanation · everyone  
+The search across all folder types – the search box at the top and the advanced search without a chosen folder type – and the sources of “Ask your library”. A folder type can be left out of it (“Show in the general search” off, e.g. pure choice lists like “Contract type”); if you choose it in the advanced search, it is found.  
+See also: [Search box at the top](#suchfeld-oben), [Advanced search](#erweiterte-suche), [Folder type](#mappentyp).
+
 <a id="historie"></a>**History** (*Historie*) · ✓ everyday word · everyone  
 The story of a folder – changes before and after, documents, bin, notes, tasks. The technical operating log, on the other hand, is called "log".
 

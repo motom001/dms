@@ -1210,6 +1210,8 @@
   "fassungen.titel": "Titel einer Mappe: „{alt}“ → „{neu}“",
   "fassungen.erkennbar-an": "„Woran man ihn erkennt“ geändert",
   "fassungen.aus-post": "Aus Post anlegen: {wert}",
+  "fassungen.in-suche-ja": "In der allgemeinen Suche zeigen: ja",
+  "fassungen.in-suche-nein": "In der allgemeinen Suche zeigen: nein",
   "fassungen.teil-an": "Ist jetzt Teil einer anderen Mappe (Feld „{feld}“)",
   "fassungen.teil-aus": "Ist kein Teil einer anderen Mappe mehr",
   "fassungen.archiv-an": "Archivmodus eingeschaltet",

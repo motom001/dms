@@ -32,6 +32,7 @@ Der Editor ist in der Reihenfolge aufgebaut, in der du einen Mappentyp anlegst: 
 - **Kann aus Post angelegt werden** – dann steht der Mappentyp zur Wahl, wenn jemand ein Dokument aus der Post übernimmt und gefragt wird: *Wohin gehört das?* Mehr unter [Dokument übernehmen](#dokument-ubernehmen).
 - **Woran man ihn erkennt** – ein kurzer Satz, höchstens 300 Zeichen. Mehr unter [Dokument übernehmen](#dokument-ubernehmen).
 - **Ist Teil einer anderen Mappe** – Mappen dieses Typs gehören immer zu einer anderen Mappe, z. B. Rechnungspositionen zu ihrer Rechnung, und erscheinen nur dort. Mehr unter [Ist Teil einer anderen Mappe](#ist-teil-einer-anderen-mappe).
+- **In der allgemeinen Suche zeigen** – Vorgabe: an. Nimm den Haken weg bei Listen, die nur Werte für ein Auswahlfeld liefern. Mehr unter [In der allgemeinen Suche zeigen](#in-der-allgemeinen-suche-zeigen).
 
 Beim **Anlegen** gibt es zusätzlich **Eigene Ansicht in der Ablage anlegen** (standardmäßig an): Dann erscheint der neue Mappentyp in der Ablage als eigene Ansicht. Abwählen, wenn seine Mappen nur in einer bestehenden [Ansicht](sichten.md) erscheinen sollen.
 
@@ -47,6 +48,25 @@ Post landet zuerst unter *Post*. Von dort übernimmt man ein Dokument in eine Ma
 Die **Systemmappentypen** Benutzer, Rolle und Post sind nie wählbar; bei ihnen gibt es beide Angaben nicht. Die Pakete können beides vorgeben. Bei einem Update übernimmt Ablago die Angaben nur, wenn du sie noch nicht eingestellt hast.
 
 **Verwendet in** (bei gespeicherten Mappentypen) zeigt, wo der Mappentyp genutzt wird, jeweils mit Link: Ansichten, die ihn zeigen, Verweisfelder anderer Mappentypen, die auf ihn verweisen, und Verknüpfungsregister anderer Mappentypen, die seine Felder als Quelle nutzen. So siehst du vor einer Änderung, was davon betroffen ist. Steht dort „Nirgends verwendet“, hängt nichts an ihm.
+
+### In der allgemeinen Suche zeigen { #in-der-allgemeinen-suche-zeigen }
+
+Manche Mappentypen sind nur Listen von Werten für ein Feld anderer Mappen – etwa **Vertragsart** mit „Leasing“, „PKW-Kaufvertrag“ oder „Mietvertrag“ für das Feld *Vertragsart* der Verträge. Sucht jemand oben nach „Leasing“, soll er seinen Leasingvertrag finden, nicht den Eintrag „Vertragsart Leasing“.
+
+Dafür nimmst du in den Grunddaten des Mappentyps den Haken **In der allgemeinen Suche zeigen** weg. Dann gilt:
+
+![Grunddaten des Mappentyps Vertragsart: „In der allgemeinen Suche zeigen“ ist abgewählt](bilder/werkbank-mappentyp-in-suche.png)
+
+| Wo | Mappen dieses Typs |
+|---|---|
+| Suchfeld oben in der Kopfzeile (Enter führt in die erweiterte Suche ohne gewählten Mappentyp) | erscheinen nicht |
+| **Frag deine Ablage** | sind keine Quelle |
+| [Erweiterte Suche](https://help.ablago.app/benutzer/aktuell/ablage/#erweiterte-suche) mit diesem Mappentyp gewählt | werden gefunden |
+| Eigene Ansicht des Typs, Auswahl- und Verweisfelder, Schnittstelle, Export | wie bisher |
+
+Die erweiterte Suche nennt solche Typen unter *Mappentypen* („Nicht dabei: Vertragsart …“), damit niemand sie vermisst. Ausblenden ist kein Schutz – wer die Mappen nicht sehen soll, dem nimmst du das Leserecht ([Berechtigungen](berechtigungen.md)).
+
+Die Einstellung steht unter **Fassungen** im Änderungsprotokoll des Mappentyps („In der allgemeinen Suche zeigen: nein“). Ein [Paket](pakete.md) kann für seine reinen Auswahllisten „nein“ mitliefern; bei einem Update übernimmt Ablago das nur, solange du den Haken nicht selbst gesetzt oder weggenommen hast.
 
 ### Ist Teil einer anderen Mappe { #ist-teil-einer-anderen-mappe }
 

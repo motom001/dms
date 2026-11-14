@@ -218,6 +218,10 @@ Ein Zeitraum, in dem ein Benutzer nicht da ist – mit einem Vertreter, der sein
 <a id="aktionen"></a>**Aktionen** · ✓ Alltagswort · alle  
 Das Menü „Mappe ▾“ neben dem Titel einer Mappe – Aufgabe vergeben, Erinnern, Versenden, Exportieren und mehr. Hieß früher selbst „Aktionen“.
 
+<a id="allgemeine-suche"></a>**Allgemeine Suche** · ~ mit Erklärung · alle  
+Die Suche über alle Mappentypen – das Suchfeld oben und die erweiterte Suche ohne gewählten Mappentyp – und die Quellen von „Frag deine Ablage“. Ein Mappentyp kann darin fehlen („In der allgemeinen Suche zeigen“ aus, z. B. reine Auswahllisten wie „Vertragsart“); wählt man ihn in der erweiterten Suche, findet sie ihn.  
+Siehe auch: [Suchfeld oben](#suchfeld-oben), [Erweiterte Suche](#erweiterte-suche), [Mappentyp](#mappentyp).
+
 <a id="an-post"></a>**An (Post)** · ✓ Alltagswort · alle  
 Für wen eingehende Post im Haushalt ist – eine Person (Benutzer). Solange die Post neu ist, steht sie bei ihr unter „Zu erledigen“ mit der Aufgabe „Post für dich“; die gibt es nur, wenn „An“ ein Benutzer ist. Die Adressen einer versendeten E-Mail stehen in „An (Adresse)“. Bis 0.240 hieß das Feld „Für“.  
 Siehe auch: [Post](#post), [Von (Post)](#von-post).
@@ -692,6 +696,7 @@ Wer Oberfläche, Handbuch, Hilfetexte oder Release-Notizen schreibt, verwendet d
 | Ablago | Ablago DMS, ABLAGO, „das DMS“ für das eigene Programm | – |
 | Abwesenheit | – | `Abwesenheit` |
 | Administrator | Admin (in der Oberfläche) | – |
+| Allgemeine Suche | – | `inSuche, inAllgemeinerSuche` |
 | An (Post) | Für (als Feldname), Empfänger (als Feldname) | `an` |
 | Anlage | Anhang, Beilage, Unterdokument | `Dokument.anlageZu, Dokument.anlageNr, dms:anlagen` |
 | Anmeldung über einen Anbieter | SSO, OIDC (in der Oberfläche) | – |

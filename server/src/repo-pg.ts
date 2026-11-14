@@ -72,6 +72,8 @@ const alsTyp = (r: Zeile): Mappentyp => ({
   erkennbarAn: (r.erkennbar_an as string | null) ?? '',
   // Ist Teil einer anderen Mappe (#1031, Migration 097): nur, wenn eingestellt.
   ...(r.teil_von ? { teilVon: r.teil_von as string } : {}),
+  // In der allgemeinen Suche zeigen (#1220, Migration 116): nur, wenn eingestellt.
+  ...(typeof r.in_suche === 'boolean' ? { inSuche: r.in_suche } : {}),
   erstellt: iso(r.erstellt),
   geaendert: iso(r.geaendert),
 });
@@ -781,10 +783,10 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
     async legeTypAn(id, d: MappentypDaten, system) {
       const k = d.schluessel ? teileKennung(d.schluessel) : { paket: null, schluessel: null };
       const [r] = await sql`
-        INSERT INTO mappentypen (id, haushalt_id, name, paket, schluessel, beschreibung, titel_vorlage, felder, register, trefferliste, trefferlisten, erstellen_erlaubt, loeschen_erlaubt, system, archiv, beschriftungen, aus_post, erkennbar_an, teil_von)
+        INSERT INTO mappentypen (id, haushalt_id, name, paket, schluessel, beschreibung, titel_vorlage, felder, register, trefferliste, trefferlisten, erstellen_erlaubt, loeschen_erlaubt, system, archiv, beschriftungen, aus_post, erkennbar_an, teil_von, in_suche)
         VALUES (${id}, ${haushaltId}, ${d.name}, ${k.paket}, ${k.schluessel}, ${d.beschreibung}, ${d.titelVorlage}, ${json(sql, d.felder)}, ${json(sql, d.register)}, ${json(sql, standardliste(d).spalten)}, ${json(sql, trefferlistenVon(d))},
           ${d.erstellenErlaubt !== false}, ${d.loeschenErlaubt !== false}, ${system ?? null}, ${d.archiv ? json(sql, d.archiv) : null}, ${d.beschriftungen ? json(sql, d.beschriftungen) : null},
-          ${typeof d.ausPost === 'boolean' ? d.ausPost : null}, ${d.erkennbarAn ?? ''}, ${d.teilVon || null})
+          ${typeof d.ausPost === 'boolean' ? d.ausPost : null}, ${d.erkennbarAn ?? ''}, ${d.teilVon || null}, ${typeof d.inSuche === 'boolean' ? d.inSuche : null})
         RETURNING *`;
       return alsTyp(r);
     },
@@ -802,7 +804,7 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
             felder = ${json(sql, d.felder)}, register = ${json(sql, d.register)}, trefferliste = ${json(sql, standardliste(d).spalten)}, trefferlisten = ${json(sql, trefferlistenVon(d))},
             erstellen_erlaubt = ${d.erstellenErlaubt !== false}, loeschen_erlaubt = ${d.loeschenErlaubt !== false}, archiv = ${d.archiv ? json(sql, d.archiv) : null},
             beschriftungen = ${d.beschriftungen ? json(sql, d.beschriftungen) : null}, aus_post = ${typeof d.ausPost === 'boolean' ? d.ausPost : null}, erkennbar_an = ${d.erkennbarAn ?? ''},
-            teil_von = ${d.teilVon || null}, geaendert = ${STAND_WEITER}
+            teil_von = ${d.teilVon || null}, in_suche = ${typeof d.inSuche === 'boolean' ? d.inSuche : null}, geaendert = ${STAND_WEITER}
           WHERE haushalt_id = ${haushaltId} AND id = ${id}
           RETURNING *`;
         const refKeys = d.felder.filter((f) => f.typ === 'referenz').map((f) => f.key);

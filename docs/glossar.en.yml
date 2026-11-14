@@ -247,6 +247,9 @@ begriffe:
   Suchfeld oben:
     begriff: Search box at the top
     beschreibung: 'The one search box in the header, on every page of the Library (#1218). Enter shows all hits in the advanced search; in a view it filters the list and shows the scope as a chip “in: …”.'
+  Allgemeine Suche:
+    begriff: General search
+    beschreibung: The search across all folder types – the search box at the top and the advanced search without a chosen folder type – and the sources of “Ask your library”. A folder type can be left out of it (“Show in the general search” off, e.g. pure choice lists like “Contract type”); if you choose it in the advanced search, it is found.
   Link:
     begriff: Link (address)
     beschreibung: An address of a view or folder, e.g. via "Copy link" – also readable via folder type and field values. In the German interface, "Link" only stands for addresses; fields that point to folders are called Verweis.

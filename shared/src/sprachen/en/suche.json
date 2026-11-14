@@ -6,6 +6,7 @@
   "typen": "Folder types",
   "typen.suchen": "Find folder type …",
   "typen.alle": "Without a selection: all folder types you may read – then only with the general fields.",
+  "typen.ohne-allgemeine": "Not included: {namen} – choose the folder type to search in it.",
   "typen.gemeinsam": "Offered are the fields that all selected folder types have.",
   "typen.keine": "No other folder type matches.",
   "typen.entfernen": "Remove folder type “{name}”",

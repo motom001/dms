@@ -6,6 +6,7 @@
   "typen": "Mappentypen",
   "typen.suchen": "Mappentyp suchen …",
   "typen.alle": "Ohne Auswahl: alle Mappentypen, die du lesen darfst – dann nur mit den allgemeinen Feldern.",
+  "typen.ohne-allgemeine": "Nicht dabei: {namen} – wähle den Mappentyp, um darin zu suchen.",
   "typen.gemeinsam": "Angeboten werden die Felder, die alle gewählten Mappentypen haben.",
   "typen.keine": "Kein weiterer Mappentyp passt.",
   "typen.entfernen": "Mappentyp „{name}“ entfernen",

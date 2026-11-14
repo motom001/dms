@@ -6,7 +6,7 @@
 import { liesDirektlink } from '../../../shared/src/direktlink';
 import { abfrageAus, liesSuche } from '../../../shared/src/erweitertesuche';
 import type { TermineAntwort } from '../../../shared/src/fristen';
-import { type Aufgabe, type Mappentyp, MAX_AUSWAHL, POST_STAND, sortierbar, verweiseVon, type Werte, zieleVon } from '../../../shared/src/model';
+import { type Aufgabe, inAllgemeinerSuche, type Mappentyp, MAX_AUSWAHL, POST_STAND, sortierbar, verweiseVon, type Werte, zieleVon } from '../../../shared/src/model';
 import { auswahlKlausel, type Bedingung, filterFuer, heuteIn, klauselnFuer, setzeEigeneWerte, type Sicht, wirksameTypen } from '../../../shared/src/sichten';
 import { suchbegriffe, type Varianten, vorschlagAus } from '../../../shared/src/suche';
 import { Fachfehler } from '../fehler';
@@ -33,6 +33,14 @@ export const TEIL_TREFFER_MAX = 2000;
 type TeilFunde = Map<string, NonNullable<Ausschnitt['teil']> & { ausschnitt?: Ausschnitt }>;
 
 const text = (v: unknown) => (v == null ? '' : String(v)).trim();
+
+/**
+ * Mappentypen der erweiterten Suche (#199): die gewählten – sonst alle, außer solchen mit „In der allgemeinen Suche
+ * zeigen: nein“ (#1220, z. B. reine Auswahllisten). Teile (#1031) nie.
+ */
+export function suchTypen(gewaehlt: Mappentyp[], typen: Map<string, Mappentyp>): Mappentyp[] {
+  return (gewaehlt.length ? gewaehlt : [...typen.values()].filter(inAllgemeinerSuche)).filter((t) => !istTeiltyp(t));
+}
 
 /** Zähler-Endpunkt (#625): nur Zahlen, keine Inhalte. */
 export interface Zaehlerzahlen { neuePost: number; zuErledigen: number; ueberfaellig: number }
@@ -182,8 +190,9 @@ export class SichtenDienst {
         ? { favoriten: { benutzerId: ich.id }, suche, volltext, notizen, von, anzahl, sortierung, lesen }
       : erweitert
         ? {
-            // Teile (#1031) nie in der erweiterten Suche – nur an ihrer übergeordneten Mappe.
-            klauseln: [{ typen: (erweitert.typen.length ? erweitert.typen : [...typen.values()]).filter((t) => !istTeiltyp(t)).map((t) => t.id), filter: filterFuer(erweitert, erweitert.typen, await aufloesung()) }],
+            // Teile (#1031) nie in der erweiterten Suche – nur an ihrer übergeordneten Mappe. Ohne gewählten Typ (Suchfeld
+            // oben) auch nicht Typen mit „In der allgemeinen Suche zeigen: nein“ (#1220).
+            klauseln: [{ typen: suchTypen(erweitert.typen, typen).map((t) => t.id), filter: filterFuer(erweitert, erweitert.typen, await aufloesung()) }],
             textfilter, suche, volltext, notizen, von, anzahl, sortierung, lesen }
       : link
         ? { klauseln: [{ typen: [link.typ.id], filter: filterFuer(link, [link.typ], await aufloesung()) }], suche, volltext, notizen, von, anzahl, sortierung, lesen }
@@ -243,7 +252,7 @@ export class SichtenDienst {
     const aehnlichZu = suche && volltext ? suche : !suche && erweitert?.volltext?.dokumente ? erweitert.volltext.text : null;
     const aehnlich = erweitert && !erweitert.bedingungen.length && aehnlichZu && von === 0
       // Teile (#1031) auch hier nicht.
-      ? await this.aehnlicheZurSuche(z, aehnlichZu, { typen: new Set((erweitert.typen.length ? erweitert.typen : [...typen.values()]).filter((t) => !istTeiltyp(t)).map((t) => t.id)), ohneMappen: new Set(r.mappen.map((m) => m.id)) })
+      ? await this.aehnlicheZurSuche(z, aehnlichZu, { typen: new Set(suchTypen(erweitert.typen, typen).map((t) => t.id)), ohneMappen: new Set(r.mappen.map((m) => m.id)) })
       : [];
     return {
       gesamt: r.gesamt, von, mappen: r.mappen, bezuege: await this.maskiereBezuege(z, await this.repo.bezuege(ziele)),

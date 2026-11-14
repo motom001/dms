@@ -32,6 +32,7 @@ The editor is built in the order in which you create a folder type: **Basics →
 - **Can be created from post** – then the folder type can be chosen when someone takes over a document from the post and is asked: *Where does this belong?* More under [Taking over documents](#dokument-ubernehmen).
 - **How to recognise it** – a short sentence, at most 300 characters. More under [Taking over documents](#dokument-ubernehmen).
 - **Is part of another folder** – folders of this type always belong to another folder, e.g. invoice items to their invoice, and only appear there. More under [Is part of another folder](#ist-teil-einer-anderen-mappe).
+- **Show in the general search** – default: on. Untick it for lists that only supply values for a choice field. More under [Show in the general search](#in-der-allgemeinen-suche-zeigen).
 
 When **creating** there is additionally **Create its own view in the Library** (on by default): then the new folder type appears in the Library as a view of its own. Deselect it if its folders should only appear in an existing [view](sichten.md).
 
@@ -47,6 +48,25 @@ Post first lands under *Post*. From there, a document is taken over into a folde
 The **system folder types** User, Role and Post can never be chosen; they don't have either entry. Packages can set both. On an update, Ablago only takes over the entries if you haven't set them yet.
 
 **Used in** (for saved folder types) shows where the folder type is used, each with a link: views that show it, link fields of other folder types that link to it, and links tabs of other folder types that use its fields as a source. That way you see before a change what it affects. If it says "Not used anywhere", nothing depends on it.
+
+### Show in the general search { #in-der-allgemeinen-suche-zeigen }
+
+Some folder types are only lists of values for a field of other folders – for example **Contract type** with "Leasing", "Car purchase" or "Tenancy" for the *Contract type* field of contracts. Someone searching for "Leasing" at the top should find their leasing contract, not the entry "Contract type Leasing".
+
+To do this, untick **Show in the general search** in the basics of the folder type. Then:
+
+![Basics of the folder type Contract type: “Show in the general search” is unticked](bilder/werkbank-mappentyp-in-suche.png)
+
+| Where | Folders of this type |
+|---|---|
+| Search box at the top, in the header (Enter leads to the advanced search without a chosen folder type) | do not appear |
+| **Ask your library** | are not a source |
+| [Advanced search](https://help.ablago.app/benutzer/aktuell/en/ablage/#erweiterte-suche) with this folder type chosen | are found |
+| The type's own view, choice and link fields, API, export | as before |
+
+The advanced search names such types under *Folder types* ("Not included: Contract type …"), so nobody misses them. Hiding is no protection – if someone should not see the folders, take away their right to read ([Permissions](berechtigungen.md)).
+
+The setting is listed under **Versions** in the change log of the folder type ("Show in the general search: no"). A [package](pakete.md) can supply "no" for its pure choice lists; on an update Ablago only takes it over as long as you have not ticked or unticked it yourself.
 
 ### Is part of another folder { #ist-teil-einer-anderen-mappe }
 

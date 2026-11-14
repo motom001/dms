@@ -340,7 +340,7 @@ async function vorbereiten(cookie) {
   daten.vorbelegen = await vorbelegenDaten(cookie);
   // Archivmodus „Ist der Stichtag leer: läuft noch nicht ab“ (#1051): ein laufender und ein beendeter Mietvertrag.
   daten.archiv = await archivDaten(cookie);
-  // Datum vorschlagen (#1180): eigener Typ ohne Ansicht.
+  // Datum vorschlagen (#1180) und „In der allgemeinen Suche zeigen“ (#1220): eigene Typen ohne Ansicht.
   daten.vorschlag = await vorschlagDaten(cookie);
   // Ablage aus Bausteinen (#1211, #1212): ein Mappentyp ohne Archivmodus, damit Löschen in den Papierkorb geht.
   daten.bausteine = (await api('POST', '/api/typen', { cookie, body: { name: 'Kellerraum', schluessel: 'kellerraum', titelVorlage: '{objekt}',
@@ -392,14 +392,20 @@ async function archivDaten(cookie) {
   return { typ, laufend, beendet };
 }
 
-/** #1180: Typ „Werkzeug“ mit einer Mappe und der Vorlage „Erinnere mich in 14 Tagen“ (nur dort, Datum als Vorschlag). */
+/**
+ * #1180: Typ „Werkzeug“ mit einer Mappe und der Vorlage „Erinnere mich in 14 Tagen“ (nur dort, Datum als Vorschlag).
+ * #1220: Typ „Vertragsart“ mit „In der allgemeinen Suche zeigen: nein“ und der Mappe „Kilometerleasing“.
+ */
 async function vorschlagDaten(cookie) {
   const werkzeug = (await api('POST', '/api/typen', { cookie, body: { name: 'Werkzeug', schluessel: 'werkzeug', titelVorlage: '{name}', sichtAnlegen: false,
     felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }] } })).daten;
   const mappe = (await api('POST', '/api/mappen', { cookie, body: { typId: werkzeug.id, werte: { name: 'Bohrhammer' } } })).daten;
   const vorlage = (await api('POST', '/api/werkbank/ablaufvorlagen', { cookie, body: { name: 'Erinnere mich in 14 Tagen', typen: [werkzeug.id],
     wann: { art: 'in', anzahl: 14, einheit: 'tage' }, fragen: ['datum', 'text'], karten: [{ art: 'aufgabe', als: 'aufgabe', empfaenger: [{ art: 'selbst' }], text: '{eingabe}' }] } })).daten;
-  return { werkzeug, mappe, vorlage };
+  const vertragsart = (await api('POST', '/api/typen', { cookie, body: { name: 'Vertragsart', schluessel: 'vertragsart', titelVorlage: '{name}', sichtAnlegen: false, inSuche: false,
+    felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }] } })).daten;
+  const leasing = (await api('POST', '/api/mappen', { cookie, body: { typId: vertragsart.id, werte: { name: 'Kilometerleasing' } } })).daten;
+  return { werkzeug, mappe, vorlage, vertragsart, leasing };
 }
 
 /** Heute (Europe/Berlin, wie der Browser der Rauchtests) plus `tage` als JJJJ-MM-TT. */
@@ -2175,7 +2181,7 @@ rauchtest('Handy: „antwortet gerade nicht“ bei abgewiesener Datenbank nennt 
   await k.unrouteAll({ behavior: 'ignoreErrors' });
 });
 
-/* ---------- Datum vorschlagen (#1180) ---------- */
+/* ---------- Datum vorschlagen (#1180) und „In der allgemeinen Suche zeigen“ (#1220) ---------- */
 
 /** Den Dialog der Vorlage an der Mappe öffnen (Menü „Mappe“). */
 async function vorschlagDialog(s) {
@@ -2232,16 +2238,59 @@ rauchtest('Automatisierungsvorlage: Datum „in 14 Tagen“ vorbelegt und änder
   assert.deepEqual(funde, [], `axe meldet Verstöße:\n${funde.join('\n')}`);
 });
 
-rauchtest('Handy: Dialog „Erinnere mich in 14 Tagen“ mit 44-px-Tippflächen (#1180)', { handy: true, als: LENA }, async (s) => {
+rauchtest('Suche: Vertragsart nicht in der allgemeinen Suche, mit gewähltem Typ schon, Haken im Mappentyp (#1220)', { als: LENA }, async (s) => {
+  const { vertragsart } = daten.vorschlag;
+  const funde = [];
+  await s.goto(BASIS + '/ablage/start');
+  const feld = s.getByRole('banner').getByRole('searchbox', { name: 'In deiner Ablage suchen' });
+  await feld.fill('Kilometerleasing');
+  await feld.press('Enter');
+  await s.waitForURL(/volltext=Kilometerleasing/);
+  const liste = s.getByRole('region', { name: 'Mappen' });
+  await liste.getByText('Keine Treffer. Entferne eine Bedingung, um mehr zu finden.').waitFor();
+  await liste.getByText('Nicht dabei: Vertragsart – wähle den Mappentyp, um darin zu suchen.').waitFor();
+  for (const schema of ['light', 'dark']) {
+    await s.emulateMedia({ colorScheme: schema });
+    // Knöpfe wechseln ihre Fläche mit einem kurzen Übergang – erst danach messen (wie im Assistenten).
+    await s.waitForTimeout(400);
+    for (const v of await axePruefen(s, ABLAGE_BEREICHE)) funde.push(`Erweiterte Suche (${schema}): ${v}`);
+  }
+  await s.emulateMedia({ colorScheme: 'light' });
+  // Mit gewähltem Mappentyp: gefunden.
+  await s.goto(BASIS + '/ablage/suche?typ=vertragsart&volltext=Kilometerleasing');
+  await liste.getByRole('link', { name: /Kilometerleasing/ }).first().waitFor();
+  // Werkbank: Haken in den Grunddaten, abgewählt; Kurzinfo nennt es.
+  await verwalten(s);
+  await s.goto(BASIS + `/werkbank/typen/${vertragsart.id}`);
+  const bearbeitung = s.getByRole('region', { name: 'Bearbeitung' });
+  await bearbeitung.getByText('nicht in der allgemeinen Suche').first().waitFor();
+  await s.locator('[data-sprungleiste]').getByRole('button', { name: 'Grunddaten' }).click();
+  const haken = bearbeitung.getByRole('checkbox', { name: 'In der allgemeinen Suche zeigen' });
+  await haken.waitFor();
+  assert.equal(await haken.isChecked(), false);
+  for (const schema of ['light', 'dark']) {
+    await s.emulateMedia({ colorScheme: schema });
+    // Knöpfe wechseln ihre Fläche mit einem kurzen Übergang – erst danach messen (wie im Assistenten).
+    await s.waitForTimeout(400);
+    for (const v of await axePruefen(s, WERKBANK_BEREICHE)) funde.push(`Mappentyp (${schema}): ${v}`);
+  }
+  assert.deepEqual(funde, [], `axe meldet Verstöße:\n${funde.join('\n')}`);
+});
+
+rauchtest('Handy: Dialog „Erinnere mich in 14 Tagen“ und erweiterte Suche mit 44-px-Tippflächen (#1180, #1220)', { handy: true, als: LENA }, async (s) => {
   const funde = [];
   await vorschlagDialog(s);
   await s.waitForLoadState('networkidle');
   for (const v of await tippflaechenPruefen(s, ['.spalte.mappe'])) funde.push(`Dialog an der Mappe: ${v}`);
+  await s.goto(BASIS + '/ablage/suche?volltext=Kilometerleasing');
+  await s.getByText('Nicht dabei: Vertragsart – wähle den Mappentyp, um darin zu suchen.').waitFor();
+  await s.waitForLoadState('networkidle');
+  for (const v of await tippflaechenPruefen(s, ABLAGE_BEREICHE)) funde.push(`Erweiterte Suche: ${v}`);
   assert.deepEqual(funde, [], `Zu kleine Tippflächen am Handy:\n${funde.join('\n')}`);
 });
 
-rauchtest('Handy: Vorlage in der Werkbank mit 44-px-Tippflächen (#1180)', { handy: true, als: LENA }, async (s) => {
-  const { vorlage } = daten.vorschlag;
+rauchtest('Handy: Vorlage und Mappentyp in der Werkbank mit 44-px-Tippflächen (#1180, #1220)', { handy: true, als: LENA }, async (s) => {
+  const { vorlage, vertragsart } = daten.vorschlag;
   const funde = [];
   await s.goto(BASIS + '/ablage/start');
   await verwalten(s);
@@ -2249,5 +2298,10 @@ rauchtest('Handy: Vorlage in der Werkbank mit 44-px-Tippflächen (#1180)', { han
   await s.getByRole('group', { name: 'Fragt beim Anwenden' }).waitFor();
   await s.waitForLoadState('networkidle');
   for (const v of await tippflaechenPruefen(s, WERKBANK_BEREICHE)) funde.push(`Vorlage: ${v}`);
+  await s.goto(BASIS + `/werkbank/typen/${vertragsart.id}`);
+  await s.locator('[data-sprungleiste]').getByRole('button', { name: 'Grunddaten' }).click();
+  await s.getByRole('checkbox', { name: 'In der allgemeinen Suche zeigen' }).waitFor();
+  await s.waitForLoadState('networkidle');
+  for (const v of await tippflaechenPruefen(s, WERKBANK_BEREICHE)) funde.push(`Mappentyp: ${v}`);
   assert.deepEqual(funde, [], `Zu kleine Tippflächen am Handy:\n${funde.join('\n')}`);
 });

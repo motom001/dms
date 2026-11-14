@@ -298,6 +298,8 @@ export function bereinigeTyp(e: unknown): MappentypDaten {
     loeschenErlaubt: true,
     // Ist Teil einer anderen Mappe (#1031): Kennung des Verweisfelds oder null; geprüft in teilProbleme (teile.ts).
     teilVon: text(t.teilVon).slice(0, 60) || null,
+    // In der allgemeinen Suche zeigen (#1220): ja, nein oder null = Vorgabe (ja).
+    inSuche: typeof t.inSuche === 'boolean' ? t.inSuche : null,
   };
 }
 
@@ -305,6 +307,12 @@ export function bereinigeTyp(e: unknown): MappentypDaten {
 export function behalteTeil(roh: unknown, d: MappentypDaten, alt: Pick<MappentypDaten, 'teilVon'>): MappentypDaten {
   const r = (roh ?? {}) as Record<string, unknown>;
   return 'teilVon' in r ? d : { ...d, teilVon: alt.teilVon ?? null };
+}
+
+/** In der allgemeinen Suche zeigen (#1220): Eine Eingabe ohne `inSuche` (z. B. ein älteres Programm) behält die Einstellung. */
+export function behalteInSuche(roh: unknown, d: MappentypDaten, alt: Pick<MappentypDaten, 'inSuche'>): MappentypDaten {
+  const r = (roh ?? {}) as Record<string, unknown>;
+  return 'inSuche' in r ? d : { ...d, inSuche: alt.inSuche ?? null };
 }
 
 /** „Woran man ihn erkennt“ (#937) auch in anderen Sprachen höchstens ERKENNBAR_AN_MAX Zeichen. */

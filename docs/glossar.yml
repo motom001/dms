@@ -524,6 +524,13 @@ begriffe:
     nicht_verwenden: [Schnellsuche, Schnell finden]
     verwandt: [Erweiterte Suche, Ansicht]
     code: KopfSuche, SucheOben
+  - begriff: Allgemeine Suche
+    bereich: ablage
+    beschreibung: Die Suche über alle Mappentypen – das Suchfeld oben und die erweiterte Suche ohne gewählten Mappentyp – und die Quellen von „Frag deine Ablage“. Ein Mappentyp kann darin fehlen („In der allgemeinen Suche zeigen“ aus, z. B. reine Auswahllisten wie „Vertragsart“); wählt man ihn in der erweiterten Suche, findet sie ihn.
+    einsteiger: erklaeren
+    begegnet: alle
+    verwandt: [Suchfeld oben, Erweiterte Suche, Mappentyp]
+    code: "inSuche, inAllgemeinerSuche"
   - begriff: Link
     bereich: ablage
     beschreibung: Eine Adresse auf eine Ansicht oder Mappe, z. B. über „Link kopieren“ – auch lesbar über Mappentyp und Feldwerte. „Link“ steht nur für Adressen; Felder, die auf Mappen zeigen, heißen Verweis.

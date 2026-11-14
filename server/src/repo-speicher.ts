@@ -198,6 +198,8 @@ export function speicherRepo(): Repo {
     if (p) t.paket = p; else delete t.paket;
     // Ist Teil einer anderen Mappe (#1031): wie in PostgreSQL nur, wenn eingestellt.
     if (!t.teilVon) delete t.teilVon;
+    // In der allgemeinen Suche zeigen (#1220): ebenso nur, wenn eingestellt.
+    if (typeof t.inSuche !== 'boolean') delete t.inSuche;
     return t;
   };
   return {
