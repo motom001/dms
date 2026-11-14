@@ -57,7 +57,7 @@ describe('Baustein Schalter (#1188)', () => {
       assert.match(q, new RegExp(`<Schalter id="${id}"`), `${datei}: ${id} als Schalter`);
       assert.doesNotMatch(q, new RegExp(`<input id="${id}" type="checkbox"`), `${datei}: ${id} nicht mehr als Haken`);
     }
-    for (const datei of ['werkbank/MailVersand.tsx', 'werkbank/Sicherung.tsx', 'werkbank/Verkleinern.tsx', 'werkbank/Vollexport.tsx', 'werkbank/SucheEinstellungen.tsx', 'werkbank/Ansicht.tsx', 'werkbank/Automatisierungen.tsx', 'werkbank/Ablaufvorlagen.tsx']) {
+    for (const datei of ['werkbank/MailVersand.tsx', 'werkbank/Sicherung.tsx', 'werkbank/Verkleinern.tsx', 'werkbank/DatenEinstellungen.tsx', 'werkbank/SucheEinstellungen.tsx', 'werkbank/Ansicht.tsx', 'werkbank/Automatisierungen.tsx', 'werkbank/Ablaufvorlagen.tsx']) {
       assert.match(readFileSync(new URL(datei, WEB), 'utf8'), /<Schalter /, datei);
     }
     // Keine doppelte Zustandsanzeige beim WebDAV-Laufwerk.
