@@ -83,7 +83,7 @@ It keeps running but does not fail CI; its result (passed, failed, not found) ap
 
 ### Smoke tests of the interface { #rauchtests-der-oberflache }
 
-The smoke tests in `web/rauchtest/rauchtest.mjs` walk through the most important paths once in the browser (Chromium with Playwright): setup in the wizard, signing in and the start page, “Take over document” (opening new post, choosing a folder type, taking values from the document; at the end splitting off a following document and turning post into a new or existing folder and just marking it as done), “+ New”, changing and saving a folder, search, admin mode with Workbench → Packages, editing a folder type, the tour and “Discover Ablago” for a new account, signing out – and three paths at phone size. Each test checks the visible result and that there were no errors in the console, no failed request and no response of 400 or above (apart from expected ones). They run in the `rauchtests` job after the build and take about a minute altogether.
+The smoke tests under `web/rauchtest/` walk through the most important paths once in the browser (Chromium with Playwright): setup in the wizard, signing in and the start page, “Take over document” (opening new post, choosing a folder type, taking values from the document; at the end splitting off a following document and turning post into a new or existing folder and just marking it as done), “+ New”, changing and saving a folder, search, admin mode with Workbench → Packages, editing a folder type, the tour and “Discover Ablago” for a new account, signing out – and three paths at phone size. Each test checks the visible result and that there were no errors in the console, no failed request and no response of 400 or above (apart from expected ones). They run in the `rauchtests` job after the build and take about a minute altogether.
 
 **CI layout (#1056):** The server tests run in three parallel jobs `tests (1/3)` to `tests (3/3)` (`npm run test:teil -w server` with `TEST_TEIL=1/3` etc., `node --test --test-shard`), each with its own PostgreSQL. Alongside, `rauchtests` checks the release note, vulnerable dependencies, types, the build and the user interface. The small collecting job `pruefen` only turns green when all parts are green – it is the required check in the ruleset, and `version` and `image` wait for it. Locally `npm test` still runs all tests at once. In `image-probe` the trial installations (templates, dms-komplett, update from the previous state) run at the same time, each with its own log as a group in the run; the browsers for smoke tests and handbook screenshots come from the cache per Playwright version, system libraries only if a browser would not start otherwise (#1059).
 
@@ -98,7 +98,9 @@ DMS_URL=http://localhost:3000 DMS_DATENWURZEL=/tmp/rauchtest DB_HOST=localhost D
 
 For a second run, stop Ablago and delete the data root and the database `dms_rauchtest` (or change `DB_NAME`). If a test fails, a picture of the page is in `rauchtest-fehler/` (in CI as the artefact `rauchtest-fehler`).
 
-**When to add a smoke test:** a new flow in the interface – a new page, a new path to a result – gets its smoke test in the same PR; so does a path that easily breaks unnoticed during a rework. There is no coverage target; the server tests check the details. A test looks like this:
+**One area on its own (#1234):** `web/rauchtest/rauchtest.mjs` only starts the setup and then the areas under `web/rauchtest/bereiche/` in a fixed order. Every area includes the setup first itself and can also be started on its own against a freshly started Ablago, e.g. `node web/rauchtest/bereiche/pakete.mjs` with the same variables as above. Areas that build on data from earlier areas (such as post that has already become a folder) are only reliable in the full run. Do not use `node --test` on the folder: it starts the files in parallel against the same Ablago.
+
+**When to add a smoke test:** a new flow in the interface – a new page, a new path to a result – gets its smoke test in the same PR (in the file of its area under `web/rauchtest/bereiche/`); so does a path that easily breaks unnoticed during a rework. There is no coverage target; the server tests check the details. A test looks like this:
 
 ```js
 rauchtest('Favorit merken', { als: LENA }, async (s) => {
@@ -108,7 +110,7 @@ rauchtest('Favorit merken', { als: LENA }, async (s) => {
 });
 ```
 
-The tests search for the German texts of the interface. `{ handy: true }` opens the test at phone size, `erwartet: [{ status: 404, pfad: /…/ }]` allows responses that belong to this path. Always wait for an element or event, never a fixed time – otherwise the test becomes flaky. Data that several tests need is created by `vorbereiten()` through the API.
+The tests search for the German texts of the interface. `{ handy: true }` opens the test at phone size, `erwartet: [{ status: 404, pfad: /…/ }]` allows responses that belong to this path. Always wait for an element or event, never a fixed time – otherwise the test becomes flaky. Data that several tests need is created by `vorbereiten()` in `web/rauchtest/einrichtung.mjs` through the API.
 
 ## Manuals { #handbucher }
 

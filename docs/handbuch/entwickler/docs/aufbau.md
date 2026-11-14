@@ -343,6 +343,18 @@ Fachordner rufen nur nach unten; in derselben Schicht dürfen sie einander nutze
 
 Ohne Fachlogik und nicht in den Schichten (`TECHNIK`): `http/`, `pdf/`, `arbeit/`, `laeufer/`. Fachordner ab Schicht 1 dürfen außer Kern und Basis die Werkzeuge `messung.ts`, `vektoren.ts`, die Technik der Dateien (`hochladen.ts`, `verkleinern.ts`, `dateiumwandlung.ts`, `archivfassung.ts`, `entsperren.ts`, `paketvolltext.ts`, #1075), die Technik für Post, Ausgang und PDF bearbeiten (`pdfseiten.ts`, `graubild.ts`, `schwaerzen.ts`, `ausgabe.ts`, `export.ts`, `xlsx.ts`, `zip.ts`, `mail.ts`, #1077), die Technik für Löschen und Datenschutz (`baum.ts`, `schriftstueck.ts`, `auskunft.ts`, `vollexport.ts`, `abruf.ts`, `passwort.ts`, `tresor.ts` – nur `istVerschluesselt`, den Schlüssel reicht der Dienst herein –, #1078), `pdf/` und `arbeit/` einbinden, nie `dienst.ts`. Routen (`*.routen.ts`) gehören zur HTTP-Schicht: Sie dürfen den Dienst und ihren eigenen Fachordner einbinden; `routen.ts` holt sie direkt.
 
+## Oberfläche: Gestaltung, Web-API und Rauchtests (#1234) { #oberflaeche-dateien }
+
+Wie der Server ist auch die Oberfläche nach Bereichen in kleine Dateien geteilt – man liest und ändert nur die Stelle, um die es geht, und parallele Arbeiten stoßen seltener zusammen. Jede Datei hat höchstens 400 Zeilen (ohne Leerzeilen und Kommentare).
+
+| Was | Wo | Hinweis |
+|---|---|---|
+| Gestaltung | `web/src/stile/` | `index.css` ist der Einstieg und die einzige Stildatei, die `main.tsx` einbindet. Sie lädt `tokens.css` (Farben), `basis.css` (Elemente ohne Klasse), die Teile `01-…` bis `13-…` und zuletzt `startbild.css`. Die Reihenfolge ist fest: Bei gleicher Spezifität gewinnt die spätere Regel. Neue Regeln kommen in den Teil ihres Bereichs; wird ein Teil zu lang, an einer Abschnittsgrenze teilen und in `index.css` an derselben Stelle einreihen. `npm run lint:farben` prüft die Zeilen je CSS-Datei. |
+| Web-API | `web/src/api/` | `anfrage.ts` ist der Kern (Anfrage mit Fehlerbehandlung, `ApiFehler`, Einrichtungscode, Bestätigung im Verwaltungsmodus, Dateien laden und senden). Je Fachbereich ein Modul mit einem Objekt und seinen Typen, angelehnt an die Fachordner des Servers: `konto.ts` (`kontoApi`), `einrichtung.ts`, `betrieb.ts`, `mappen.ts`, `dokumente.ts`, `fassungen.ts`, `aufgaben.ts`, `pakete.ts`, `automatisierung.ts`, `suche.ts`, `eingaenge.ts`, `datenschutz.ts`, `werkbank.ts`. Aufrufer importieren direkt aus dem Fachmodul (`import { mappenApi, type Seite } from '../api/mappen'`); eine Sammel-Datei gibt es bewusst nicht. |
+| Rauchtests | `web/rauchtest/` | `rauchtest.mjs` startet alles in fester Reihenfolge, `einrichtung.mjs` geht zuerst den Assistenten durch und legt die Daten an, `hilfen.mjs` enthält Rahmen `rauchtest(…)`, Anmelden, Knopf-Wächter und Verwaltungsmodus, `muster.mjs` axe und Tippflächen. Die Tests stehen je Bereich unter `bereiche/` – siehe [Loslegen](loslegen.md#rauchtests-der-oberflache). |
+
+Die Rauchtests laufen in der CI nacheinander in einem Job: Alle Bereiche teilen sich ein Ablago samt Datenbank, spätere bauen auf dem Zustand der früheren auf, und einige starten Ablago neu. Parallel bräuchte jeder Teil ein eigenes Ablago mit eigener Einrichtung.
+
 ## Abhängigkeiten { #abhaengigkeiten }
 
 Ablago kommt mit **wenig fremdem Code** aus: 8 npm-Pakete im Server, 3 in der Oberfläche, dazu eine Handvoll Alpine-Pakete im Image. Das ist der beste Schutz gegen Angriffe über die Lieferkette und hält Sicherheitsupdates selten und überschaubar – und einer der Hauptgründe, warum Node.js hier gut passt. So soll es bleiben.
