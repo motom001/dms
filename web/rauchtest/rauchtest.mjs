@@ -602,6 +602,9 @@ rauchtest('Assistent: Fragen · Tipps · Handbuch, Tastatur (#1219)', { als: LEN
   await s.keyboard.press('Escape');
   await s.keyboard.press('Escape');
   await fenster.waitFor({ state: 'detached' });
+  // Der Fokus kommt nach dem Abbau des Fensters zurück – darauf warten statt sofort zu prüfen.
+  await s.waitForFunction(() => document.activeElement?.closest('[data-anker="assistent"]'), null, { timeout: 5000 })
+    .catch(() => assert.fail('der Fokus kehrt zum Knopf zurück'));
   assert.ok(await knopf.evaluate((e) => e === document.activeElement), 'der Fokus kehrt zum Knopf zurück');
   // Das Gespräch und die Wahl bleiben beim Seitenwechsel; in der Werkbank sucht das Handbuch im Admin-Handbuch.
   await s.getByRole('link', { name: /^Zu erledigen/ }).first().click();

@@ -1885,6 +1885,16 @@ ul.sitzungsliste.festhoehe { border: 1px solid var(--linie); border-radius: var(
   .spalte.sichten { padding-top: 10px; padding-bottom: 10px; }
   .spalte.liste .listenkopf p.leise { display: none; }
 }
+/* Kleine iPhones (#1218, #1219): Mit Lupe bzw. Assistent in der Kopfzeile wird es bei 375 px eng – Abstände schmaler,
+   der Name im Benutzermenü kürzer (mit „…“), damit nichts über den Rand ragt (WebKit setzt Schrift etwas breiter). */
+@media (max-width: 400px) {
+  .kopf { gap: 4px; }
+  .kopf .bereiche { gap: 2px; }
+  .kopf .bereiche a { padding: 6px; }
+  .kopf .konto { gap: 4px; flex: 0 1 auto; }
+  .benutzermenue .textknopf.wer { padding-inline: 4px; }
+  .benutzermenue .textknopf.wer .wer-name.wer-name { display: inline-block; max-width: 4.5ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: bottom; }
+}
 /* Feste Einträge links (#507): Symbol in gleicher Größe; Stern gefüllt, wenn gesetzt. */
 .sym.sym-voll { fill: currentColor; }
 .sichtliste .fest-sym { color: var(--leise); margin-right: 2px; }

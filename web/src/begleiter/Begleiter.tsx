@@ -72,7 +72,17 @@ export function Begleiter({ werkbank, imKopf = false }: { werkbank: boolean; /**
   const reiter = reiterVon(gewaehlt, fragenDa);
 
   // Am Handy ist der Knopf unter dem Blatt ausgeblendet – erst nach dem Schließen bekommt er den Fokus zurück.
-  const schliesse = () => { setOffen(false); requestAnimationFrame(() => knopf.current?.focus()); };
+  const zurueck = useRef(false);
+  const schliesse = () => { zurueck.current = true; setOffen(false); };
+  // Fokus zurück zum Knopf erst nach dem Abbau des Fensters (am Handy ist der Knopf bis dahin ausgeblendet) – und
+  // noch einmal im nächsten Bild, falls der Browser den Fokus beim Entfernen auf <body> gesetzt hat.
+  useEffect(() => {
+    if (offen || !zurueck.current) return;
+    zurueck.current = false;
+    knopf.current?.focus();
+    const bild = requestAnimationFrame(() => { if (document.activeElement !== knopf.current) knopf.current?.focus(); });
+    return () => cancelAnimationFrame(bild);
+  }, [offen]);
   // Fokus ins Fenster, sobald es offen ist.
   useEffect(() => { if (offen) fenster.current?.focus(); }, [offen]);
   useEffect(() => beiAnkerGesucht((anker) => {
