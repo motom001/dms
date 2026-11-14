@@ -125,6 +125,8 @@ rauchtest('Werkbank: Gruppe Datenschutz, Löschprotokoll eigener Bereich, Lösch
   await ohne.waitFor();
   assert.equal(await ohne.evaluate((d) => d.open), false, 'ohne Personendaten zugeklappt');
   await ohne.locator('summary').click();
+  // Das toggle-Ereignis kommt verzögert; erst neu laden, wenn der Zustand gemerkt ist.
+  await s.waitForFunction(() => Object.entries(localStorage).some(([k, v]) => k.includes('loeschkonzept') && v.includes('ohne')));
   await s.reload();
   await s.locator('#personendaten-ohne[open]').waitFor();
   await s.locator('#personendaten-ohne summary').click();
