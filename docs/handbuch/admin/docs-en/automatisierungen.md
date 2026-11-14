@@ -172,7 +172,7 @@ With the If card **Call from outside**, another system triggers an automation �
 
 1. New automation, If card **Call from outside**. Under **Parameters**, enter the names a call may send, e.g. `room, level` – only lower-case letters, digits and `_`, at most 10. They are available as placeholders in texts (`{room}`), together with `{zeitpunkt}` (when the call arrived), `{heute}` and `{automatisierung}`.
 2. Then cards as usual, for example *Task / notification* to Markus: `Water sensor in the {room} at {zeitpunkt}`. The card has **no folder**: as a condition only a characteristic of the Library is possible, recipients are people or roles (as with the [Workbench cards](#werkbank-karten)).
-3. Save. Only now does **Address and secret** appear under the card, with **Create address**. Ablago asks for your password (fresh sign-in) and shows address and secret. **Copy the secret straight away** – it is shown in full only this once. You can see the address again at any time.
+3. Save. Only now does **Address and secret** appear under the card, with **+ Address**. Ablago asks for your password (fresh sign-in) and shows address and secret. **Copy the secret straight away** – it is shown in full only this once. You can see the address again at any time.
 
 Without a created address, the automation accepts nothing; saving alone opens no door.
 
@@ -191,7 +191,7 @@ A call is a `POST` to the address with three headers and a body (JSON object wit
 This is the same method as the former webhook – just in the other direction. The signature is calculated over the **body as it is sent** (bytes); Ablago does not reformat it first. With `curl` and `openssl`:
 
 ```sh
-SECRET='whsec_…'                                     # from "Create address"
+SECRET='whsec_…'                                     # from "+ Address"
 ADDRESS='https://ablago.example.org/api/aufruf/…'    # from the card
 TIME=$(date +%s)
 BODY='{"room":"Cellar","level":"2"}'

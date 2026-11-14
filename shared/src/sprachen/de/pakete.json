@@ -435,6 +435,7 @@
   "ki.bekommt": "Bekommt Inhalte aus: {namen}",
   "ki.bekommt-nichts": "Bekommt zurzeit aus keinem Mappentyp etwas – lass unten die Mappentypen zu, die es bekommen soll.",
   "ki.zulassen": "Mappentypen für KI-Dienste ({zugelassen} von {alle} zugelassen)",
+  "ki.zugelassene-typen": "Für KI-Dienste zugelassene Mappentypen",
   "ki.zulassen.text": "Gilt für alle KI-Pakete und sofort. Sensible Mappentypen wie Gesundheit lässt du am besten gesperrt.",
   "ki.nicht-lesbar": "zugelassen, aber dieses Paket darf ihn nicht lesen",
   "ki.hinweis": "Neu: Mappentypen von KI-Diensten ausschließen.",

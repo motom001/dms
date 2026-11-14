@@ -67,7 +67,7 @@ For a link field with [several target types](mappentypen.md#mehrere-zieltypen), 
 
 ### Copying a rule into other folder types {#regel-in-andere-mappentypen-kopieren}
 
-With **Copy into other folder types …** on a saved rule you take it over into further folder types (with unsaved changes, save first); it lands at the end there. Conditions on fields that don't exist in the target type are dropped – Ablago says how many.
+With **Copy into other folder types …** on a saved rule you take it over into further folder types (with unsaved changes the button is locked – a click on it says why: save first); it lands at the end there. Conditions on fields that don't exist in the target type are dropped – Ablago says how many.
 
 ### Saving {#speichern}
 

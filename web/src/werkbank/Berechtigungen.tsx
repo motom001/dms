@@ -1,4 +1,5 @@
-import { Bereich, type Klappe } from '../bausteine';
+import { Bereich, Feld, FeldGruppe, HakenFeld, Knopf, type Klappe } from '../bausteine';
+import { Symbol } from '../Symbol';
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { Mappentyp } from '../../../shared/src/model';
 import { bedingungsfelder, beschreibeBedingung, OPERATOREN_JE_ART, type Bedingung, type Bedingungsfeld } from '../../../shared/src/sichten';
@@ -13,7 +14,7 @@ import { useDaten } from '../daten';
 import { t, tn } from '../sprache';
 import { Hilfe } from '../Hilfe';
 import { Link } from '../ort';
-import { Ansage, umgestellt, useZiehen, ziehTasten } from '../ziehen';
+import { Ansage, umgestellt, useZiehen, Ziehgriff } from '../ziehen';
 import { FeldBedingung, MappenSuche } from './Sichten';
 import { passendesErgebnis, testlaufSchluessel, type TestlaufErgebnis } from '../../../shared/src/testlauf';
 import { TestBenutzerWahl, TestMappeWahl, useTestlauf } from './TestlaufWahl';
@@ -28,7 +29,7 @@ import { gebietsschema } from '../../../shared/src/sprache';
  */
 
 const neueId = () => Math.random().toString(36).slice(2, 10);
-const WIRKUNG_TEXT: Record<'' | Wirkung, string> = { '': '–', erteilen: '✓', entziehen: '✗' };
+const WIRKUNG_TEXT: Record<'' | Wirkung, ReactNode> = { '': '–', erteilen: <Symbol name="haken" />, entziehen: <Symbol name="schliessen" /> };
 const NAECHSTE: Record<'' | Wirkung, '' | Wirkung> = { '': 'erteilen', erteilen: 'entziehen', entziehen: '' };
 
 type Art = RegelBedingung['art'];
@@ -93,11 +94,11 @@ export function RegelwerkAbschnitt({ rw, setRw, typ, gespeichert, neu, klappe }:
           const fest = (k === 'C' && sperre.C) || (k === 'D' && sperre.D);
           const an = rw.grund[k] && !fest;
           return (
-            <button key={k} type="button" className={`rechtknopf ${an ? 'erteilen' : 'entziehen'}`} disabled={fest}
-              aria-label={t('werkbank.berechtigungen.standard-2', { RECHTE: RECHTE[k], wert: an ? t('werkbank.berechtigungen.erteilt') : t('werkbank.berechtigungen.entzogen') })} title={fest ? t('werkbank.berechtigungen.geht-bei-diesem-systemtyp', { RECHTE: RECHTE[k] }) : t('werkbank.berechtigungen.klicken-zum-wechseln', { RECHTE: RECHTE[k], wert: an ? t('werkbank.berechtigungen.erteilt') : t('werkbank.berechtigungen.entzogen') })}
+            <Knopf key={k} art="link" className={`rechtknopf ${an ? 'erteilen' : 'entziehen'}`} gesperrt={fest && t('werkbank.berechtigungen.geht-bei-diesem-systemtyp', { RECHTE: RECHTE[k] })}
+              nurSymbol={t('werkbank.berechtigungen.standard-2', { RECHTE: RECHTE[k], wert: an ? t('werkbank.berechtigungen.erteilt') : t('werkbank.berechtigungen.entzogen') })} title={fest ? undefined : t('werkbank.berechtigungen.klicken-zum-wechseln', { RECHTE: RECHTE[k], wert: an ? t('werkbank.berechtigungen.erteilt') : t('werkbank.berechtigungen.entzogen') })}
               onClick={() => setRw((x) => ({ ...x, grund: { ...x.grund, [k]: !x.grund[k] } }))}>
-              <span className="buchstabe">{k}</span><span aria-hidden="true">{an ? '✓' : '✗'}</span>
-            </button>
+              <span className="buchstabe">{k}</span>{an ? WIRKUNG_TEXT.erteilen : WIRKUNG_TEXT.entziehen}
+            </Knopf>
           );
         })}
       </div>
@@ -111,7 +112,7 @@ export function RegelwerkAbschnitt({ rw, setRw, typ, gespeichert, neu, klappe }:
             <li key={r.id} {...zieh.eintrag(r.id)}>
               <RegelKarte r={r} typ={typ} problem={probleme[i]} setze={(n) => setzeRegel(i, n)} titel={titel} merke={merke}
                 offen={offen.has(r.id)} umschalten={() => umschalten(r.id)}
-                griff={<button {...zieh.griff(r.id, r.name || t('werkbank.berechtigungen.regel'))} onKeyDown={(ev) => ziehTasten(ev, { hoch: () => verschiebe(i, -1), runter: () => verschiebe(i, 1) })}><span aria-hidden="true">⠿</span></button>}
+                griff={<Ziehgriff griff={zieh.griff(r.id, r.name || t('werkbank.berechtigungen.regel'))} tasten={{ hoch: () => verschiebe(i, -1), runter: () => verschiebe(i, 1) }} />}
                 weg={() => setRw((x) => ({ ...x, regeln: x.regeln.filter((y) => y.id !== r.id) }))}
                 gespeichert={unveraendert && !neu}
                 nachKopie={() => {}} />
@@ -120,7 +121,7 @@ export function RegelwerkAbschnitt({ rw, setRw, typ, gespeichert, neu, klappe }:
         </ol>
       )}
       <Ansage text={ansage} />
-      <div className="knoepfe"><button type="button" className="knopf klein" onClick={neueRegel}>{t('werkbank.berechtigungen.regel-2')}</button></div>
+      <div className="knoepfe"><Knopf onClick={neueRegel}>{t('werkbank.berechtigungen.regel-2')}</Knopf></div>
     </Bereich>
   );
 }
@@ -158,10 +159,10 @@ export function PaketeAmTyp({ typId, klappe }: { typId: string; klappe: Klappe }
         <ul className="liste-ohne">
           {liste.map((p) => (
             <li key={p.id}>
-              <label className="haken"><input type="checkbox" checked={!p.verwehrt} disabled={sendet === p.id} onChange={(ev) => void setze(p, ev.target.checked)} />
-                <span>{t('pakete.amtyp.darf', { name: p.name })}
-                  <small className="hilfe">{[t(p.schreiben ? 'pakete.amtyp.was.schreiben' : 'pakete.amtyp.was.lesen'), ...(p.ereignisse ? [t('pakete.amtyp.was.ereignisse')] : [])].join(' · ')}</small></span>
-              </label>
+              <HakenFeld beschriftung={t('pakete.amtyp.darf', { name: p.name })}
+                hinweis={[t(p.schreiben ? 'pakete.amtyp.was.schreiben' : 'pakete.amtyp.was.lesen'), ...(p.ereignisse ? [t('pakete.amtyp.was.ereignisse')] : [])].join(' · ')}>
+                <input type="checkbox" checked={!p.verwehrt} disabled={sendet === p.id} onChange={(ev) => void setze(p, ev.target.checked)} />
+              </HakenFeld>
             </li>
           ))}
         </ul>
@@ -200,9 +201,9 @@ export function KiAmTyp({ typId, klappe }: { typId: string; klappe: Klappe }) {
       beschreibung={t('pakete.ki.typ.beschreibung')}>
       {fehler && <p className="hinweis schlecht" role="alert">{fehler}</p>}
       {!typId ? <p className="leise">{t('pakete.ki.typ.neu')}</p> : k && (
-        <label className="haken"><input type="checkbox" checked={an} disabled={sendet} onChange={(ev) => void setze(ev.target.checked)} />
-          <span>{t('pakete.ki.typ.darf')}<small className="hilfe">{an ? t('pakete.ki.typ.an.hilfe') : t('pakete.ki.typ.aus.hilfe')}</small></span>
-        </label>
+        <HakenFeld beschriftung={t('pakete.ki.typ.darf')} hinweis={an ? t('pakete.ki.typ.an.hilfe') : t('pakete.ki.typ.aus.hilfe')}>
+          <input type="checkbox" checked={an} disabled={sendet} onChange={(ev) => void setze(ev.target.checked)} />
+        </HakenFeld>
       )}
       {k && <p className="leise klein">{pakete.length ? t('pakete.ki.typ.pakete', { namen: pakete.map((p) => p.name).join(', ') }) : t('pakete.ki.typ.keine-pakete')}</p>}
       <p className="leise klein" role="status">{meldung}</p>
@@ -244,11 +245,11 @@ function RegelKarte({ r, typ, problem, setze, weg, griff, titel, merke, gespeich
     <div className={`regel zu ${problem ? 'fehlerhaft' : ''}`}>
       <div className="regelkopf">
         {griff}
-        <button type="button" className="regelsumme" aria-expanded={false} onClick={umschalten}>
+        <Knopf art="link" className="regelsumme" aria-expanded={false} onClick={umschalten}>
           <strong>{r.name || t('werkbank.berechtigungen.ohne-namen')}</strong>
           <span className="chip">{kurz(r.dann)}{r.stopp ? t('werkbank.berechtigungen.stopp') : ''}</span>
           <span className="leise klein">{t('werkbank.berechtigungen.wenn')}{' '}{r.wenn.map(bedText).join(` ${t('werkbank.berechtigungen.und')} `) || '…'}</span>
-        </button>
+        </Knopf>
       </div>
       {problem && <p className="fehlertext klein">{problem}</p>}
     </div>
@@ -258,7 +259,9 @@ function RegelKarte({ r, typ, problem, setze, weg, griff, titel, merke, gespeich
     <div className={`regel ${problem ? 'fehlerhaft' : ''}`}>
       <div className="regelkopf">
         {griff}
-        <input aria-label={t('werkbank.berechtigungen.name-der-regel')} placeholder={t('werkbank.berechtigungen.name-z-b-buchhaltung')} value={r.name} onChange={(x) => setze({ ...r, name: x.target.value })} />
+        <Feld beschriftung={t('werkbank.berechtigungen.name-der-regel')} beschriftungVerbergen className="regelname">
+          <input placeholder={t('werkbank.berechtigungen.name-z-b-buchhaltung')} value={r.name} onChange={(x) => setze({ ...r, name: x.target.value })} />
+        </Feld>
         <span className="chip" title={t('werkbank.berechtigungen.kurzform-der-wirkung')}>{kurz(r.dann)}{r.stopp ? t('werkbank.berechtigungen.stopp') : ''}</span>
       </div>
       <p className="ueber klein">{t('werkbank.berechtigungen.wenn-2')}</p>
@@ -268,45 +271,49 @@ function RegelKarte({ r, typ, problem, setze, weg, griff, titel, merke, gespeich
           return (
             <li key={i}>
               <div className="bedingungszeile">
-                <select aria-label={t('werkbank.berechtigungen.art-der-bedingung')} value={b.art} onChange={(x) => setzeB(i, neuB(x.target.value as Art, b.nicht))}>
-                  {ARTEN.filter((a) => !a.nurBenutzerTyp || typ.system === 'benutzer' || a.art === b.art).map((a) => <option key={a.art} value={a.art}>{a.name}</option>)}
-                </select>
-                <label className="haken klein" title={t('werkbank.berechtigungen.bedingung-verneinen')}><input type="checkbox" checked={!!b.nicht} onChange={(x) => setzeB(i, { ...b, nicht: x.target.checked || undefined })} /><span>{t('werkbank.berechtigungen.nicht')}</span></label>
+                <Feld beschriftung={t('werkbank.berechtigungen.art-der-bedingung')} beschriftungVerbergen>
+                  <select value={b.art} onChange={(x) => setzeB(i, neuB(x.target.value as Art, b.nicht))}>
+                    {ARTEN.filter((a) => !a.nurBenutzerTyp || typ.system === 'benutzer' || a.art === b.art).map((a) => <option key={a.art} value={a.art}>{a.name}</option>)}
+                  </select>
+                </Feld>
+                <HakenFeld beschriftung={t('werkbank.berechtigungen.nicht')} className="klein"><input type="checkbox" title={t('werkbank.berechtigungen.bedingung-verneinen')} checked={!!b.nicht} onChange={(x) => setzeB(i, { ...b, nicht: x.target.checked || undefined })} /></HakenFeld>
                 {b.art === 'rolle' && rollenTyp && <MappenSuche typId={rollenTyp} gewaehlt={b.rollen} titel={titel} merke={merke} setze={(ids) => setzeB(i, { ...b, rollen: ids })} />}
                 {b.art === 'benutzer' && benutzerTyp && <MappenSuche typId={benutzerTyp} gewaehlt={b.benutzer} titel={titel} merke={merke} setze={(ids) => setzeB(i, { ...b, benutzer: ids })} />}
                 {b.art === 'feld' && <>
-                  <select aria-label={t('werkbank.berechtigungen.feld')} value={b.bedingung.feld} onChange={(x) => { const f = felder.find((y) => y.key === x.target.value); if (f) setzeB(i, { ...b, bedingung: { art: 'feld', feld: f.key, op: OPERATOREN_JE_ART[f.art][0] } }); }}>
-                    {!feld && <option value={b.bedingung.feld}>{t('werkbank.berechtigungen.fehlt', { feld: b.bedingung.feld })}</option>}
-                    {felder.map((f) => <option key={f.key} value={f.key}>{f.label}</option>)}
-                  </select>
+                  <Feld beschriftung={t('werkbank.berechtigungen.feld')} beschriftungVerbergen>
+                    <select value={b.bedingung.feld} onChange={(x) => { const f = felder.find((y) => y.key === x.target.value); if (f) setzeB(i, { ...b, bedingung: { art: 'feld', feld: f.key, op: OPERATOREN_JE_ART[f.art][0] } }); }}>
+                      {!feld && <option value={b.bedingung.feld}>{t('werkbank.berechtigungen.fehlt', { feld: b.bedingung.feld })}</option>}
+                      {felder.map((f) => <option key={f.key} value={f.key}>{f.label}</option>)}
+                    </select>
+                  </Feld>
                   {feld && <FeldBedingung b={b.bedingung} feld={feld} setze={(n) => n.art === 'feld' && setzeB(i, { ...b, bedingung: n })} titel={titel} merke={merke} />}
                 </>}
-                <button type="button" className="textknopf gefahr klein" onClick={() => setze({ ...r, wenn: r.wenn.filter((_, j) => j !== i) })}>{t('werkbank.berechtigungen.bedingung-entfernen')}</button>
+                <Knopf art="link" groesse="klein" symbol="schliessen" onClick={() => setze({ ...r, wenn: r.wenn.filter((_, j) => j !== i) })}>{t('werkbank.berechtigungen.bedingung-entfernen')}</Knopf>
               </div>
               <p className="leise klein">{bedText(b)}</p>
             </li>
           );
         })}
       </ul>
-      <div className="knoepfe"><button type="button" className="knopf klein" onClick={() => setze({ ...r, wenn: [...r.wenn, neuB('rolle')] })}>{t('werkbank.berechtigungen.bedingung')}</button>{r.wenn.length > 1 && <span className="leise klein">{t('werkbank.berechtigungen.alle-bedingungen-muessen-zutreffen')}</span>}</div>
+      <div className="knoepfe"><Knopf onClick={() => setze({ ...r, wenn: [...r.wenn, neuB('rolle')] })}>{t('werkbank.berechtigungen.bedingung')}</Knopf>{r.wenn.length > 1 && <span className="leise klein">{t('werkbank.berechtigungen.alle-bedingungen-muessen-zutreffen')}</span>}</div>
       <p className="ueber klein">{t('werkbank.berechtigungen.dann')}</p>
       <div className="rechtewahl" role="group" aria-label={t('werkbank.berechtigungen.wirkung-je-recht')}>
         {RECHTE_LISTE.map((k) => {
           const w = r.dann[k] ?? '';
           return (
-            <button key={k} type="button" className={`rechtknopf ${w}`} aria-label={w ? t('werkbank.berechtigungen.recht-wert', { recht: RECHTE[k], wert: w }) : t('werkbank.berechtigungen.recht-unveraendert', { recht: RECHTE[k] })} title={t('werkbank.berechtigungen.klicken-zum-wechseln', { RECHTE: RECHTE[k], wert: w || t('werkbank.berechtigungen.unveraendert') })}
+            <Knopf key={k} art="link" className={`rechtknopf ${w}`} nurSymbol={w ? t('werkbank.berechtigungen.recht-wert', { recht: RECHTE[k], wert: w }) : t('werkbank.berechtigungen.recht-unveraendert', { recht: RECHTE[k] })} title={t('werkbank.berechtigungen.klicken-zum-wechseln', { RECHTE: RECHTE[k], wert: w || t('werkbank.berechtigungen.unveraendert') })}
               onClick={() => { const n = NAECHSTE[w]; const dann = { ...r.dann }; if (n) dann[k] = n; else delete dann[k]; setze({ ...r, dann }); }}>
-              <span className="buchstabe">{k}</span><span aria-hidden="true">{WIRKUNG_TEXT[w]}</span>
-            </button>
+              <span className="buchstabe">{k}</span>{WIRKUNG_TEXT[w]}
+            </Knopf>
           );
         })}
-        <label className="haken"><input type="checkbox" checked={r.stopp} onChange={(x) => setze({ ...r, stopp: x.target.checked })} /><span>{tn('werkbank.berechtigungen.stopp-2', { klein: <small className="leise">{t('werkbank.berechtigungen.trifft-die-regel-zu')}</small> })}</span></label>
+        <HakenFeld beschriftung={t('werkbank.berechtigungen.stopp-2')} hinweis={t('werkbank.berechtigungen.trifft-die-regel-zu')}><input type="checkbox" checked={r.stopp} onChange={(x) => setze({ ...r, stopp: x.target.checked })} /></HakenFeld>
       </div>
       {problem && <p className="fehlertext klein">{problem}</p>}
       <div className="knoepfe">
-        <button type="button" className="knopf klein" disabled={!gespeichert} title={gespeichert ? undefined : t('werkbank.berechtigungen.erst-speichern')} onClick={() => setKopie((x) => !x)}>{t('werkbank.berechtigungen.in-andere-mappentypen-kopieren')}</button>
-        <button type="button" className="textknopf gefahr klein" onClick={weg}>{t('werkbank.berechtigungen.regel-entfernen')}</button>
-        <button type="button" className="knopf klein" onClick={umschalten}>{t('werkbank.berechtigungen.zuklappen')}</button>
+        <Knopf gesperrt={!gespeichert && t('werkbank.berechtigungen.erst-speichern')} aria-expanded={kopie} onClick={() => setKopie((x) => !x)}>{t('werkbank.berechtigungen.in-andere-mappentypen-kopieren')}</Knopf>
+        <Knopf art="link" symbol="schliessen" onClick={weg}>{t('werkbank.berechtigungen.regel-entfernen')}</Knopf>
+        <Knopf onClick={umschalten}>{t('werkbank.berechtigungen.zuklappen')}</Knopf>
       </div>
       {kopie && <Kopieren typ={typ} regel={r} fertig={() => { setKopie(false); nachKopie(); }} />}
     </div>
@@ -329,12 +336,12 @@ function Kopieren({ typ, regel, fertig }: { typ: Mappentyp; regel: Regel; fertig
   return (
     <div className="hinweis info">
       <p>{t('werkbank.berechtigungen.die-regel-kommt-in', { name: regel.name })}</p>
-      <div className="typwahl">
+      <FeldGruppe beschriftung={t('werkbank.berechtigungen.kopieren-ziele')} beschriftungVerbergen className="typwahl">
         {d.typen.filter((mappentyp) => mappentyp.id !== typ.id).map((mappentyp) => (
           <label key={mappentyp.id} className="haken"><input type="checkbox" checked={ziele.includes(mappentyp.id)} onChange={(x) => setZiele(x.target.checked ? [...ziele, mappentyp.id] : ziele.filter((y) => y !== mappentyp.id))} /><span>{mappentyp.name}</span></label>
         ))}
-      </div>
-      <div className="knoepfe"><button type="button" className="knopf klein primaer" disabled={!ziele.length} onClick={() => void los()}>{t('werkbank.berechtigungen.kopieren')}</button></div>
+      </FeldGruppe>
+      <div className="knoepfe"><Knopf art="haupt" gesperrt={!ziele.length} onClick={() => los()}>{t('werkbank.berechtigungen.kopieren')}</Knopf></div>
       {meldung && <p role="status" className="klein">{meldung}</p>}
     </div>
   );
@@ -345,7 +352,7 @@ function Kopieren({ typ, regel, fertig }: { typ: Mappentyp; regel: Regel; fertig
 function RechteZeile({ r }: { r: Record<Recht, boolean> }) {
   return (
     <span className="rechtezeile">
-      {RECHTE_LISTE.map((k) => <span key={k} className={`recht ${r[k] ? 'ja' : 'nein'}`} title={r[k] ? t('werkbank.berechtigungen.recht-ja', { recht: RECHTE[k] }) : t('werkbank.berechtigungen.recht-nein', { recht: RECHTE[k] })}>{k}{r[k] ? '✓' : '✗'}</span>)}
+      {RECHTE_LISTE.map((k) => <span key={k} className={`recht ${r[k] ? 'ja' : 'nein'}`} title={r[k] ? t('werkbank.berechtigungen.recht-ja', { recht: RECHTE[k] }) : t('werkbank.berechtigungen.recht-nein', { recht: RECHTE[k] })}>{k}{r[k] ? WIRKUNG_TEXT.erteilen : WIRKUNG_TEXT.entziehen}</span>)}
     </span>
   );
 }
@@ -371,7 +378,7 @@ export function TestlaufBlatt({ typId, entwurf, klappe }: { typId: string; entwu
         <TestMappeWahl key={typId} id="testlauf-mappe" typId={typId} wert={mappe} setze={setMappe} />
       </div>
       {!schluessel && <p className="leise klein">{t('werkbank.berechtigungen.waehle-benutzer-und-testmappe')}</p>}
-      {schluessel && !erg && !fehler && <div className="knoepfe"><button type="button" className="knopf klein primaer" onClick={() => void los()}>{t('werkbank.berechtigungen.pruefen')}</button></div>}
+      {schluessel && !erg && !fehler && <div className="knoepfe"><Knopf art="haupt" onClick={() => los()}>{t('werkbank.berechtigungen.pruefen')}</Knopf></div>}
       {fehler && <p className="fehlertext klein">{fehler}</p>}
       {erg && (
         <div className="testlauf" role="status">
@@ -431,7 +438,7 @@ export function WasSiehtBlatt({ benutzerId, admin }: { benutzerId: string; admin
         ? <p className="leise">{t('konten.verwaltende.berechtigungen.modus')}</p>
         : <>
             <p className="leise">{t('werkbank.berechtigungen.je-mappentyp-wie-viele')}</p>
-            {!an && <div className="knoepfe"><button type="button" className="knopf klein" onClick={() => setAn(true)}>{t('werkbank.berechtigungen.anzeigen')}</button></div>}
+            {!an && <div className="knoepfe"><Knopf onClick={() => setAn(true)}>{t('werkbank.berechtigungen.anzeigen')}</Knopf></div>}
             {fehler && <p className="fehlertext klein">{fehler}</p>}
             {an && !erg && !fehler && <p className="leise">{t('werkbank.berechtigungen.lade')}</p>}
             {erg && (

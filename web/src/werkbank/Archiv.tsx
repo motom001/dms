@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
-import { ErgebnisBlock, Knopf } from '../bausteine';
+import { ErgebnisBlock, FeldGruppe, HakenFeld, Knopf } from '../bausteine';
+import type { LoeschAnlass } from '../../../shared/src/loeschprotokoll';
 import { api, type Auftrag } from '../api';
 import { useDaten } from '../daten';
 import { Link } from '../ort';
 import { Hilfe } from '../Hilfe';
 import { datumText } from '../../../shared/src/archiv';
 import { titelOder } from '../seiten';
-import { mitGrund } from '../ablage/Loeschgrund';
 import { fortschrittText } from '../../../shared/src/auftrag';
 import { t } from '../sprache';
 import { Kopf } from './Kopf';
@@ -29,19 +29,16 @@ export function DarfWegPanel({ z }: { z: DarfWegZustand }) {
   const d = useDaten();
   const [gewaehlt, setGewaehlt] = useState<Set<string>>(new Set());
   const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
-  const [laeuft, setLaeuft] = useState(false);
   const liste = z.liste ?? [];
   const alle = liste.length > 0 && gewaehlt.size === liste.length;
-  async function loeschen() {
+  // Löschprotokoll (#470): Grund „Frist abgelaufen“ vorgeschlagen – die Rückfrage samt Grund stellt der Knopf.
+  async function loeschen(anlass?: LoeschAnlass) {
     const ids = liste.filter((m) => gewaehlt.has(m.id)).map((m) => m.id);
-    if (!ids.length) return;
-    // Löschprotokoll (#470): Grund „Frist abgelaufen“ vorgeschlagen.
-    const anlass = await mitGrund({ titel: t('werkbank.archiv.diese-mappen-loeschen', { anzahl: ids.length }), text: t('werkbank.archiv.mit-eingeschaltetem-papierkorb'), ja: t('werkbank.archiv.loeschen'), gefahr: true }, 'frist');
-    if (!anlass) return;
-    setLaeuft(true); setMeldung(undefined);
+    if (!ids.length || !anlass) return;
+    setMeldung(undefined);
     const fehler: string[] = [];
     for (const id of ids) { try { await api.mappeLoeschen(id, anlass); } catch (e) { fehler.push((e as Error).message); } }
-    setLaeuft(false); setGewaehlt(new Set());
+    setGewaehlt(new Set());
     setMeldung(fehler.length ? { art: 'schlecht', text: t('werkbank.archiv.geloescht-nicht', { wert: ids.length - fehler.length, fehler: fehler.length, fehler2: fehler[0] }) } : { art: 'gut', text: t('werkbank.archiv.geloescht', { ids: ids.length }) });
     await z.laden(); await d.neuLaden();
   }
@@ -55,14 +52,22 @@ export function DarfWegPanel({ z }: { z: DarfWegZustand }) {
       {!z.liste ? <p className="leise">{t('werkbank.archiv.lade')}</p> : !liste.length && <p className="leise">{t('werkbank.archiv.nichts-keine-frist-ist')}</p>}
       {liste.length > 0 && (
         <div className="blatt">
-          <label className="haken"><input type="checkbox" checked={alle} onChange={() => setGewaehlt(alle ? new Set() : new Set(liste.map((m) => m.id)))} /><span>{gewaehlt.size ? t('werkbank.archiv.von-ausgewaehlt', { size: gewaehlt.size, liste: liste.length }) : t('werkbank.archiv.alle-auswaehlen')}</span></label>
-          <ul className="stapel">
-            {liste.map((m) => (
-              <li key={m.id}><label className="haken"><input type="checkbox" checked={gewaehlt.has(m.id)} onChange={(e) => setGewaehlt((x) => { const n = new Set(x); if (e.target.checked) n.add(m.id); else n.delete(m.id); return n; })} />
-                <span><Link to={`/ablage/${m.typId}/${m.id}`} className="verweis">{titelOder(m.titel)}</Link> <small className="leise">{t('werkbank.archiv.frist-abgelaufen-am', { typ: m.typ, datumText: datumText(m.aufbewahrenBis) })}</small></span></label></li>
-            ))}
-          </ul>
-          <div className="knoepfe"><button type="button" className="knopf gefahr" disabled={!gewaehlt.size || laeuft} onClick={() => void loeschen()}>{laeuft ? t('werkbank.archiv.loesche') : t('werkbank.archiv.ausgewaehlte-loeschen')}</button></div>
+          <HakenFeld beschriftung={gewaehlt.size ? t('werkbank.archiv.von-ausgewaehlt', { size: gewaehlt.size, liste: liste.length }) : t('werkbank.archiv.alle-auswaehlen')}>
+            <input type="checkbox" checked={alle} onChange={() => setGewaehlt(alle ? new Set() : new Set(liste.map((m) => m.id)))} />
+          </HakenFeld>
+          <FeldGruppe beschriftung={t('werkbank.archiv.aufbewahrung-abgelaufen')} beschriftungVerbergen>
+            <ul className="stapel">
+              {liste.map((m) => (
+                <li key={m.id}><label className="haken"><input type="checkbox" checked={gewaehlt.has(m.id)} onChange={(e) => setGewaehlt((x) => { const n = new Set(x); if (e.target.checked) n.add(m.id); else n.delete(m.id); return n; })} />
+                  <span><Link to={`/ablage/${m.typId}/${m.id}`} className="verweis">{titelOder(m.titel)}</Link> <small className="leise">{t('werkbank.archiv.frist-abgelaufen-am', { typ: m.typ, datumText: datumText(m.aufbewahrenBis) })}</small></span></label></li>
+              ))}
+            </ul>
+          </FeldGruppe>
+          <div className="knoepfe">
+            <Knopf art="gefahr" symbol="geloescht" gesperrt={!gewaehlt.size} laeuftText={t('werkbank.archiv.loesche')} onClick={(_e, anlass) => loeschen(anlass)}
+              rueckfrage={{ titel: t('werkbank.archiv.diese-mappen-loeschen', { anzahl: gewaehlt.size }), text: t('werkbank.archiv.mit-eingeschaltetem-papierkorb'), ja: t('werkbank.archiv.loeschen'), mitGrund: 'frist' }}>
+              {t('werkbank.archiv.ausgewaehlte-loeschen')}</Knopf>
+          </div>
         </div>
       )}
     </div>

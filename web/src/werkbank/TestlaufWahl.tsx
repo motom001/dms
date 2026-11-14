@@ -3,6 +3,8 @@ import type { Benutzer } from '../../../shared/src/model';
 import { passendesErgebnis, type TestlaufErgebnis } from '../../../shared/src/testlauf';
 import { api, type Bezuege, type Systemkonto } from '../api';
 import { t } from '../sprache';
+import { Feld, Knopf } from '../bausteine';
+import { Symbol } from '../Symbol';
 import { MappenWahl } from '../ablage/MappeFormular';
 import { useDaten } from '../daten';
 import { SystemkontenGruppe, SystemkontoKennzeichen } from './Systemkonten';
@@ -45,21 +47,21 @@ export function TestBenutzerWahl({ id, wert, setze, mitKonten }: { id: string; w
       {/* Systemkonten als eingeklappte Gruppe oben (#817), wie in Werkbank → Benutzer. */}
       {mitKonten && ohne.length > 0 && !sonder && (
         <SystemkontenGruppe liste={ohne} auf={d.einstellungen[SYSTEMKONTEN_AUF] === true} setzeAuf={(x) => d.setzeEinstellung(SYSTEMKONTEN_AUF, x || null)} id={`${id}-konten`} kinder={
-          <div className="zeile klein">
-            <label htmlFor={`${id}-konto`} className="leise">{t('werkbank.testlauf.konto.label')}</label>
+          <Feld beschriftung={t('werkbank.testlauf.konto.label')} className="klein">
             <select id={`${id}-konto`} value="" onChange={(e) => e.target.value && setze(e.target.value)}>
               <option value="">{t('werkbank.testlauf.konto.leer')}</option>
               {system.length > 0 && <optgroup label={t('werkbank.testlauf.konto.systemkonten')}>{system.map((k) => <option key={k.id} value={k.id}>{name(k)}</option>)}</optgroup>}
               {pakete.length > 0 && <optgroup label={t('werkbank.testlauf.konto.pakete')}>{pakete.map((k) => <option key={k.id} value={k.id}>{name(k)}</option>)}</optgroup>}
             </select>
-          </div>
+          </Feld>
         } />
       )}
       {sonder
         ? <div className="mehrfach-gewaehlt"><span className="chip">{name(sonder)} <span className="chip klein">{t.frei(`werkbank.testlauf.konto.kennzeichen.${sonder.rolle}`)}</span><SystemkontoKennzeichen k={sonder} />
-            <button type="button" className="textknopf klein" aria-label={t('werkbank.testlauf.konto.entfernen', { name: name(sonder) })} onClick={() => setze('')}>×</button></span></div>
+            <Knopf art="link" groesse="klein" nurSymbol={t('werkbank.testlauf.konto.entfernen', { name: name(sonder) })} onClick={() => setze('')}><Symbol name="schliessen" /></Knopf></span></div>
+        // Platzhalter ohne „Benutzer“ (#1213): die Beschriftung steht schon über dem Feld.
         : <MappenWahl id={id} ziel={ziel} mehrfach={false} wert={wert || undefined} bekannt={bekannt} merke={merke} ohneAnlegen
-            setze={(v) => setze(typeof v === 'string' ? v : '')} />}
+            platzhalter={t('werkbank.testlauf.benutzer.suchen')} setze={(v) => setze(typeof v === 'string' ? v : '')} />}
       {konto && !konto.aktiv && <span className="chip klein">{t('werkbank.testlaufwahl.deaktiviert')}</span>}
     </div>
   );

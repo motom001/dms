@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import type { SelbstErstelltDetail } from '../../../shared/src/paketerstellung';
 import { api } from '../api';
-import { geheZu, Link } from '../ort';
-import { rueckfrage } from '../rueckfrage';
+import { geheZu } from '../ort';
+import { Knopf, KnopfLink } from '../bausteine';
 import { t } from '../sprache';
 import { ERSTELLEN } from './Pakete';
 import { gebietsschema } from '../../../shared/src/sprache';
@@ -21,7 +21,6 @@ export function SelbstErstelltAnsicht({ id, konflikt, onGeaendert }: { id: strin
   const datum = (iso: string) => new Date(iso).toLocaleDateString(gebietsschema());
   async function ausListe() {
     if (!d) return;
-    if (!(await rueckfrage({ titel: t('pakete.selbst.ausListe'), text: t('pakete.selbst.ausListeFrage', { name: d.name }), ja: t('pakete.selbst.ausListe') }))) return;
     try { await api.selbstAusListe(d.id); onGeaendert(); geheZu('/werkbank/pakete', true); }
     catch (e) { setFehler((e as Error).message); }
   }
@@ -35,9 +34,10 @@ export function SelbstErstelltAnsicht({ id, konflikt, onGeaendert }: { id: strin
       </div>
       {konflikt && <div className="hinweis warn"><p>{t('pakete.selbst.konflikt', { id: d.id })}</p></div>}
       <div className="knoepfe">
-        <Link to={`/werkbank/pakete/${ERSTELLEN}?von=${encodeURIComponent(d.id)}`} className="knopf primaer">{t('pakete.selbst.neueVersion')}</Link>
+        <KnopfLink to={`/werkbank/pakete/${ERSTELLEN}?von=${encodeURIComponent(d.id)}`} art="haupt">{t('pakete.selbst.neueVersion')}</KnopfLink>
         {d.versionen[0] && <a className="knopf" href={api.selbstErstelltZip(d.id, d.versionen[0].version)}>{t('pakete.selbst.zip')}</a>}
-        <button type="button" className="knopf" onClick={() => void ausListe()}>{t('pakete.selbst.ausListe')}</button>
+        <Knopf art="gefahr" symbol="schliessen" onClick={() => ausListe()}
+          rueckfrage={{ titel: t('pakete.selbst.ausListe'), text: t('pakete.selbst.ausListeFrage', { name: d.name }), ja: t('pakete.selbst.ausListe') }}>{t('pakete.selbst.ausListe')}</Knopf>
       </div>
       <section className="blatt">
         <h2 className="h3">{t('pakete.selbst.umfang')}</h2>

@@ -62,7 +62,7 @@ Manche Mappen ergeben nur als Teil einer anderen Sinn – eine **Rechnungspositi
 
 ## Felder
 
-Jedes Feld hat eine **Bezeichnung** (änderbar), eine **Kennung** (fest, sobald gespeichert) und eine **Feldart**. Ein Klick auf ein Feld öffnet es. Die Reihenfolge änderst du mit den Pfeilen oder per **Drag & Drop** am Griff **⠿** (siehe [Ziehen statt klicken](#ziehen-statt-klicken)).
+Jedes Feld hat eine **Bezeichnung** (änderbar), eine **Kennung** (fest, sobald gespeichert – dann steht sie gestrichelt da, nur zum Lesen) und eine **Feldart**. In der Liste stehen dahinter Kennzeichen wie **Pflicht** oder **ausgeblendet**. Ein Klick auf ein Feld öffnet es. Die Reihenfolge änderst du mit den Pfeilen oder per **Drag & Drop** am Griff **⠿** (siehe [Ziehen statt klicken](#ziehen-statt-klicken)).
 
 ![Ein Feld bearbeiten](bilder/werkbank-feld.png)
 

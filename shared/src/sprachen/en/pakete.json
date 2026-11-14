@@ -435,6 +435,7 @@
   "ki.bekommt": "Receives content from: {namen}",
   "ki.bekommt-nichts": "Currently receives nothing from any folder type – allow the folder types it should receive below.",
   "ki.zulassen": "Folder types for AI services ({zugelassen} of {alle} allowed)",
+  "ki.zugelassene-typen": "Folder types allowed for AI services",
   "ki.zulassen.text": "Applies to all AI packages, immediately. Best keep sensitive folder types such as health blocked.",
   "ki.nicht-lesbar": "allowed, but this package may not read it",
   "ki.hinweis": "New: exclude folder types from AI services.",

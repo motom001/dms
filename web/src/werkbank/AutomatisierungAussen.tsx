@@ -78,7 +78,7 @@ export function UrlKarte({ karte, wenn, typ, k, a, setze }: { karte: DannUrl; we
                 <input value={p.wert} maxLength={AUSSEN_GRENZEN.wert} onFocus={() => setLetzter(i)}
                   onChange={(x) => setze({ ...karte, parameter: karte.parameter.map((y, j) => (j === i ? { ...y, wert: x.target.value } : y)) })} />
               </Feld>
-              <Knopf art="link" groesse="klein" className="gefahr" onClick={() => setze({ ...karte, parameter: karte.parameter.filter((_, j) => j !== i) })}>{t('automatisierung.ui.entfernen')}</Knopf>
+              <Knopf art="link" groesse="klein" symbol="schliessen" onClick={() => setze({ ...karte, parameter: karte.parameter.filter((_, j) => j !== i) })}>{t('automatisierung.ui.entfernen')}</Knopf>
             </li>
           ))}
         </ul>
@@ -159,7 +159,7 @@ export function EmailKarte({ karte, wenn, typ, ohneMappe, setze, wahl }: {
               {e.art === 'adresse'
                 ? <Feld beschriftung={t('automatisierung.ui.karte.dann.email.adresse.feld')}><input type="email" value={e.adresse} placeholder="lena@example.org" onChange={(x) => setzeAn(i, { art: 'adresse', adresse: x.target.value })} /></Feld>
                 : wahl(e, (n) => setzeAn(i, n), extra)}
-              <Knopf art="link" groesse="klein" className="gefahr" onClick={() => setze({ ...karte, an: karte.an.filter((_, j) => j !== i) })}>{t('automatisierung.ui.entfernen')}</Knopf>
+              <Knopf art="link" groesse="klein" symbol="schliessen" onClick={() => setze({ ...karte, an: karte.an.filter((_, j) => j !== i) })}>{t('automatisierung.ui.entfernen')}</Knopf>
             </li>
           ))}
         </ul>
@@ -254,14 +254,15 @@ export function AussenZiele({ nachher }: { nachher: () => void }) {
                 <input value={z.notiz ?? ''} maxLength={200} onChange={(x) => setzeZiel(i, { notiz: x.target.value })} />
               </Feld>
               {z.erstellt && <p className="leise klein">{t('automatisierung.ui.ziele.seit', { zeit: zeit(z.erstellt) })}</p>}
-              <div className="knoepfe"><Knopf art="link" className="gefahr" groesse="klein" onClick={() => setZiele(ziele.filter((_, j) => j !== i))}>{t('automatisierung.ui.entfernen')}</Knopf></div>
+              <div className="knoepfe"><Knopf art="link" groesse="klein" symbol="schliessen" onClick={() => setZiele(ziele.filter((_, j) => j !== i))}>{t('automatisierung.ui.entfernen')}</Knopf></div>
             </section>
           );
         })}
       </div>
+      {/* „+ Ziel“ in eigener Zeile (#1213): klein neben dem Hauptknopf wurde er auf dessen Höhe gestreckt. */}
+      {ziele.length < AUSSEN_GRENZEN.ziele && <div className="knoepfe links"><Knopf groesse="klein" onClick={() => setZiele([...ziele, { adresse: '', heimnetz: false }])}>{t('automatisierung.ui.ziele.hinzu')}</Knopf></div>}
       <div className="knoepfe">
-        {ziele.length < AUSSEN_GRENZEN.ziele && <Knopf groesse="klein" onClick={() => setZiele([...ziele, { adresse: '', heimnetz: false }])}>{t('automatisierung.ui.ziele.hinzu')}</Knopf>}
-        <Knopf art="anlegen" gesperrt={sendet || ziele.some((z) => z.adresse.trim() && zielProblem(z.adresse, z.heimnetz))} onClick={() => void speichern()}>{t('automatisierung.ui.ziele.speichern')}</Knopf>
+        <Knopf art="haupt" laeuft={sendet} gesperrt={ziele.some((z) => z.adresse.trim() && zielProblem(z.adresse, z.heimnetz))} onClick={() => speichern()}>{t('automatisierung.ui.ziele.speichern')}</Knopf>
       </div>
       <p className="leise klein">{t('automatisierung.ui.ziele.schutz', { sekunden: AUSSEN_GRENZEN.zeitlimitS })}</p>
     </div>

@@ -3,6 +3,7 @@ import { api, ApiFehler, type ErkennungStand } from '../api';
 import { Hilfe } from '../Hilfe';
 import { rueckfrage } from '../rueckfrage';
 import { t } from '../sprache';
+import { HakenFeld } from '../bausteine';
 
 /** Bestätigung des Datenabflusses (#511), wenn ein Paket mit Netzzugriff die Erkennung übernehmen soll. */
 export async function abflussBestaetigen(paket: string): Promise<boolean> {
@@ -32,8 +33,9 @@ export function ErkennungPaketBlock({ paket }: { paket: string }) {
       <h2 className="h3">{t('erkennung.werkbank.titel')} <Hilfe ort="pakete.erkennung" /></h2>
       <p className="leise klein">{t('erkennung.werkbank.text')}</p>
       {meldung && <div className={`hinweis ${meldung.art}`} role="status"><p>{meldung.text}</p></div>}
-      <label className="haken"><input type="checkbox" checked={s.standard.paket === paket} disabled={laeuft} onChange={(e) => void setze(e.target.checked)} /><span>{t('erkennung.werkbank.standard')}</span></label>
-      <p className="leise klein">{t('erkennung.werkbank.standard.hilfe')}</p>
+      <HakenFeld beschriftung={t('erkennung.werkbank.standard')} hinweis={t('erkennung.werkbank.standard.hilfe')}>
+        <input type="checkbox" checked={s.standard.paket === paket} disabled={laeuft} onChange={(e) => void setze(e.target.checked)} />
+      </HakenFeld>
       {ich && !ich.laeuft && <p className="leise klein">{t('erkennung.werkbank.laeuft-nicht')}</p>}
     </>
   );

@@ -382,11 +382,11 @@ export function Werkbank({ teile }: { teile: string[] }) {
         {/* Freiwillig, ohne Gebühren für beide Seiten (GitHub Sponsors von persönlichen Konten). */}
         <a className="unterstuetzen" href="https://github.com/sponsors/motom001" target="_blank" rel="noreferrer">
           {tn('werkbank.werkbank.projekt-unterstuetzen', { symbol: <Symbol name="herz" />, span: <span className="leise klein">{t('werkbank.werkbank.freiwillig-betrag-frei-waehlbar')}</span> })}</a>
-        <a className="unterstuetzen handbuchlink" href={handbuch('admin')} target="_blank" rel="noreferrer">{t('werkbank.handbuch.link')} ↗</a>
+        <a className="unterstuetzen handbuchlink" href={handbuch('admin')} target="_blank" rel="noreferrer">{t('werkbank.handbuch.link')} <Symbol name="extern" /></a>
       </aside>
       <section className="spalte liste" aria-label={t('werkbank.werkbank.elemente')}>{liste}</section>
       <section className="spalte mappe" aria-label={t('werkbank.werkbank.bearbeitung')}>
-        <Link to={werkbankZurueck(bereich)} className="verweis nur-schmal">{hatMitte(bereich) ? t('werkbank.werkbank.zur-liste') : t('werkbank.werkbank.bereiche-2')}</Link>
+        <Link to={werkbankZurueck(bereich)} className="verweis nur-schmal zur-liste"><Symbol name="pfeil-links" /> {hatMitte(bereich) ? t('werkbank.werkbank.zur-liste') : t('werkbank.werkbank.bereiche-2')}</Link>
         {rechts}
       </section>
     </Dreiteilung>

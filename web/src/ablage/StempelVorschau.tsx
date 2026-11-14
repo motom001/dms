@@ -194,7 +194,8 @@ export function StempelVorschau({ stempel, werte, setze, beispiele = BEISPIELE }
       <div className="stempelvorschau-raster">
         {beispiele.map((b) => (
           <figure key={b} className="stempelbeleg">
-            <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={t.frei(`werkbank.stempel.beispiel.${b}`)} onPointerMove={bewegen} onPointerUp={loslassen} onPointerCancel={loslassen}>
+            {/* Mit Stempel zum Verschieben eine Gruppe (#1213): ein Bild darf keine bedienbaren Teile enthalten (nested-interactive). */}
+            <svg viewBox={`0 0 ${W} ${H}`} role={setze ? 'group' : 'img'} aria-label={t.frei(`werkbank.stempel.beispiel.${b}`)} onPointerMove={bewegen} onPointerUp={loslassen} onPointerCancel={loslassen}>
               <Beleg art={b} />
               <g transform={t('ablage.stempelvorschau.translate-rotate', { cx: L.cx, cy: L.cy, winkel: L.winkel })}
                 className={setze ? `stempelgriff${fest ? ' fest' : ''}` : undefined}

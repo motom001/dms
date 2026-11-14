@@ -108,7 +108,7 @@ function KartenEditor({ karte, typen, gewaehlt, setze, entfernen }: { karte: Vor
     <div className="blatt karte">
       <div className="zeile-zwischen">
         <strong>{karteText(karte, typen)}</strong>
-        {entfernen && <Knopf art="link" groesse="klein" className="gefahr" onClick={entfernen}>{t('automatisierung.ui.entfernen')}</Knopf>}
+        {entfernen && <Knopf art="link" groesse="klein" symbol="schliessen" onClick={entfernen}>{t('automatisierung.ui.entfernen')}</Knopf>}
       </div>
       <Umschalter beschriftung={t('automatisierung.vorlage.ui.als')} wert={karte.als} setze={(als) => setze({ ...karte, als })}
         wahlen={[{ wert: 'aufgabe', text: t('automatisierung.karte.aufgabe.als-aufgabe') }, { wert: 'benachrichtigung', text: t('automatisierung.karte.aufgabe.als-benachrichtigung') }]} />
@@ -227,7 +227,7 @@ export function AblaufvorlageEditor({ z, kennung }: { z: AblaufvorlagenZustand; 
         {probleme.length > 0 && <ul className="fehlertext klein">{probleme.map((p) => <li key={p}>{p}</li>)}</ul>}
         <Speicherleiste ent={ent} gegenstand={t('automatisierung.vorlage.ui.gegenstand')} sendet={sendet} ungueltig={probleme.length > 0} meldung={meldung}
           loeschen={v && v.herkunft === 'eigen' ? {
-            text: t('automatisierung.ui.loeschen'),
+            text: t('automatisierung.vorlage.ui.loeschen.knopf'),
             rueckfrage: { titel: t('automatisierung.vorlage.ui.loeschen.frage', { name: v.name }), text: t('automatisierung.vorlage.ui.loeschen.text'), ja: t('automatisierung.ui.loeschen') },
             onClick: () => aktion(async () => { await api.ablaufvorlageLoeschen(v.kennung); loeseWache(); geheZu('/werkbank/ablaufvorlagen', true); }, t('automatisierung.vorlage.ui.geloescht')),
           } : undefined} />
@@ -261,7 +261,7 @@ function Ausprobieren({ v }: { v: AblaufvorlageAnsicht }) {
         {(x) => <MappenWahl id={x.id} ziel={typ} mehrfach={false} wert={mappe || undefined} bekannt={bekannt} ohneAnlegen merke={(id, y) => setBekannt((b) => ({ ...b, [id]: y }))} setze={(y) => setMappe(typeof y === 'string' ? y : '')} />}
       </Feld>}
       <div className="raster">
-        {v.fragen.includes('empfaenger') && <Feld beschriftung={t('automatisierung.vorlage.ui.frage.empfaenger')}>{(x) => <BenutzerWahl id={x.id} label={t('automatisierung.vorlage.ui.frage.empfaenger')} wert={an} setze={setAn} />}</Feld>}
+        {v.fragen.includes('empfaenger') && <BenutzerWahl label={t('automatisierung.vorlage.ui.frage.empfaenger')} sichtbar wert={an} setze={setAn} />}
         {v.fragen.includes('datum') && <Feld beschriftung={t('automatisierung.vorlage.ui.frage.datum')}><input type="date" value={datum} onChange={(x) => setDatum(x.target.value)} /></Feld>}
         {v.fragen.includes('text') && <Feld beschriftung={t('automatisierung.vorlage.ui.frage.text')}><input value={text} onChange={(x) => setText(x.target.value)} /></Feld>}
       </div>

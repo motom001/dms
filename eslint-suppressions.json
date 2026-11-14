@@ -1396,17 +1396,9 @@
       "count": 1
     }
   },
-  "web/src/einrichtung/Beschriftung.tsx": {
-    "ablago/bausteine": {
-      "count": 3
-    }
-  },
   "web/src/einrichtung/Einrichtung.tsx": {
     "@typescript-eslint/no-unused-vars": {
       "count": 13
-    },
-    "ablago/bausteine": {
-      "count": 82
     },
     "complexity": {
       "count": 3
@@ -1537,27 +1529,12 @@
       "count": 6
     }
   },
-  "web/src/werkbank/Ablaufvorlagen.tsx": {
-    "ablago/knopf-farben": {
-      "count": 1
-    }
-  },
   "web/src/werkbank/Anmeldeschutz.tsx": {
     "@typescript-eslint/no-unused-vars": {
       "count": 3
     },
     "react-hooks/exhaustive-deps": {
       "count": 1
-    }
-  },
-  "web/src/werkbank/Ansicht.tsx": {
-    "ablago/bausteine": {
-      "count": 3
-    }
-  },
-  "web/src/werkbank/Archiv.tsx": {
-    "ablago/bausteine": {
-      "count": 3
     }
   },
   "web/src/werkbank/Aufgaben.tsx": {
@@ -1570,15 +1547,7 @@
       "count": 1
     }
   },
-  "web/src/werkbank/AutomatisierungAussen.tsx": {
-    "ablago/knopf-farben": {
-      "count": 3
-    }
-  },
   "web/src/werkbank/Automatisierungen.tsx": {
-    "ablago/bausteine": {
-      "count": 53
-    },
     "complexity": {
       "count": 2
     },
@@ -1587,9 +1556,6 @@
     }
   },
   "web/src/werkbank/Berechtigungen.tsx": {
-    "ablago/bausteine": {
-      "count": 21
-    },
     "max-lines": {
       "count": 1
     }
@@ -1611,25 +1577,12 @@
     }
   },
   "web/src/werkbank/Designs.tsx": {
-    "ablago/bausteine": {
-      "count": 10
-    },
     "complexity": {
       "count": 1
     }
   },
   "web/src/werkbank/Eingangsordner.tsx": {
     "complexity": {
-      "count": 1
-    }
-  },
-  "web/src/werkbank/ErkennungPaket.tsx": {
-    "ablago/bausteine": {
-      "count": 1
-    }
-  },
-  "web/src/werkbank/KiTypen.tsx": {
-    "ablago/bausteine": {
       "count": 1
     }
   },
@@ -1642,15 +1595,7 @@
     }
   },
   "web/src/werkbank/Nummernkreise.tsx": {
-    "ablago/bausteine": {
-      "count": 10
-    },
     "complexity": {
-      "count": 2
-    }
-  },
-  "web/src/werkbank/OhneLeserecht.tsx": {
-    "ablago/bausteine": {
       "count": 1
     }
   },
@@ -1697,25 +1642,12 @@
       "count": 2
     }
   },
-  "web/src/werkbank/SelbstErstellt.tsx": {
-    "ablago/bausteine": {
-      "count": 1
-    }
-  },
   "web/src/werkbank/Sicherung.tsx": {
     "complexity": {
       "count": 2
     }
   },
-  "web/src/werkbank/SichtRechte.tsx": {
-    "ablago/bausteine": {
-      "count": 14
-    }
-  },
   "web/src/werkbank/Sichten.tsx": {
-    "ablago/bausteine": {
-      "count": 38
-    },
     "complexity": {
       "count": 1
     },
@@ -1723,20 +1655,7 @@
       "count": 1
     }
   },
-  "web/src/werkbank/Stempel.tsx": {
-    "ablago/bausteine": {
-      "count": 10
-    }
-  },
-  "web/src/werkbank/TestlaufWahl.tsx": {
-    "ablago/bausteine": {
-      "count": 2
-    }
-  },
   "web/src/werkbank/Uebersicht.tsx": {
-    "ablago/bausteine": {
-      "count": 11
-    },
     "complexity": {
       "count": 1
     }
