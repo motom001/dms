@@ -87,7 +87,17 @@ export async function tippflaechenPruefen(seite, bereich) {
     const verborgen = (el) => { const d = el.closest('details:not([open])'); return !!d && !(el.matches('summary') && el.parentElement === d); };
     // Nur in den Bereichen (#1211, #1212), wenn angegeben.
     const drin = (el) => !bereich || bereich.some((b) => el.closest(b));
-    const alle = [...document.querySelectorAll(AUSWAHL)].filter((el) => el.getClientRects().length > 0 && !verborgen(el) && drin(el) && !Object.keys(ausnahmen).some((a) => el.matches(a)));
+    const sichtbar = [...document.querySelectorAll(AUSWAHL)].filter((el) => el.getClientRects().length > 0 && !verborgen(el) && drin(el) && !Object.keys(ausnahmen).some((a) => el.matches(a)));
+    // Lange Listen (z. B. das Protokoll, das mit jedem Rauchtest wächst) bestehen aus vielen gleichen Zeilen: Von
+    // gleich gebauten und gleich großen Elementen genügen drei – sonst läuft die Prüfung in die Zeitgrenze.
+    const gesehen = new Map();
+    const alle = sichtbar.filter((el) => {
+      const r = el.getBoundingClientRect();
+      const art = `${el.tagName}|${el.getAttribute('role') ?? ''}|${el.className}|${el.parentElement?.className ?? ''}|${Math.round(r.width)}x${Math.round(r.height)}`;
+      const n = (gesehen.get(art) ?? 0) + 1;
+      gesehen.set(art, n);
+      return n <= 3;
+    });
     alle.forEach((el, i) => { el.dataset.tippnr = String(i); });
     return alle.length;
   }, [TIPP_AUSNAHMEN, bereich ?? null]);

@@ -25,8 +25,11 @@ export function anmeldungRouten(k: RoutenKontext): Route[] {
   return [
     // Mit Datenbank (#1198): Ist keine Verbindung frei oder antwortet sie nicht, 503 mit „datenbank“ – Docker, Überwachung
     // und die Leiste der Oberfläche merken den Ausfall. Ohne Sitzung: Sie bräuchte selbst die Datenbank.
+    // #1199: dazu `datenbank` (antwortet-nicht | abgewiesen) und seit wann – für „Ablago antwortet gerade nicht“. Ohne
+    // Fehlertext, Adresse oder Version: Die Antwort sieht jeder, der die Adresse kennt.
     { methode: 'GET', pfad: '/api/gesundheit', zugang: 'offen', ohneSitzung: true, handler: async () => {
-      if (x.datenbank && !(await x.datenbank.pruefe())) return { status: 503, body: { ok: false, zustand: 'datenbank', stand: standKennung() }, koepfe: { 'retry-after': '10' } };
+      const b = x.datenbank ? await x.datenbank.befund() : null;
+      if (b && b.datenbank !== 'ok') return { status: 503, body: { ok: false, zustand: 'datenbank', ...b, stand: standKennung() }, koepfe: { 'retry-after': '10' } };
       return ok({ ok: true, zustand: 'laeuft', stand: standKennung() });
     } },
     // Wartungsmodus (#102): für Banner und Anmeldeseite, auch ohne Anmeldung.

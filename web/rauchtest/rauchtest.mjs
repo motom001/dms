@@ -2016,9 +2016,12 @@ for (const teil of [0, 1, 2, 3, 4]) {
     const seiten = alle.filter((_, i) => i % 5 === teil);
     const funde = [];
     for (const seite of seiten) {
+      const beginn = Date.now();
       await seite.weg(s);
       await s.waitForLoadState('networkidle');
       for (const v of await tippflaechenPruefen(s, WERKBANK_BEREICHE)) funde.push(`${seite.name}: ${v}`);
+      // Dauer je Seite im Protokoll, damit eine langsame Seite in der CI sofort auffällt.
+      console.log(`# Werkbank Handy ${seite.name}: ${Math.round((Date.now() - beginn) / 1000)} s`);
     }
     assert.deepEqual(funde, [], `Zu kleine Tippflächen am Handy:\n${funde.join('\n')}`);
   });
@@ -2100,7 +2103,9 @@ rauchtest('Handy: Startbild, „antwortet gerade nicht“ ohne React, von selbst
 }, async (s, k) => {
   // Hängende Datenbank nachstellen: /api/sprache antwortet nie, die Gesundheitsprüfung meldet „datenbank“.
   await k.route('**/api/sprache', () => {});
-  await k.route('**/api/gesundheit', (r) => r.fulfill({ status: 503, contentType: 'application/json', body: JSON.stringify({ ok: false, zustand: 'datenbank' }) }));
+  // #1199: mit Befund – Ablago hängt seit drei Minuten (wie /api/gesundheit ihn liefert).
+  const befund = { ok: false, zustand: 'datenbank', datenbank: 'antwortet-nicht', seit: new Date(Date.now() - 180_000).toISOString(), dauerS: 180 };
+  await k.route('**/api/gesundheit', (r) => r.fulfill({ status: 503, contentType: 'application/json', body: JSON.stringify(befund) }));
   await s.goto(BASIS + '/', { waitUntil: 'domcontentloaded' });
   // Sofort das Startbild aus index.html (ohne Skript), in der Sprache des Browsers.
   await s.getByText('Verbindung zu Ablago wird aufgebaut …').waitFor();
@@ -2109,12 +2114,43 @@ rauchtest('Handy: Startbild, „antwortet gerade nicht“ ohne React, von selbst
   await s.waitForFunction(() => getComputedStyle(document.querySelector('.startbild-spaeter[data-sprache="de"]')).opacity === '1');
   // Nach der Zeitgrenze: Meldung ohne React mit „Erneut versuchen“.
   const meldung = s.locator('#keine-antwort');
-  await meldung.getByText('Ablago antwortet gerade nicht.').waitFor();
-  assert.equal(await meldung.getByText(/Schon neu geladen/).count(), 0);
+  await meldung.getByRole('heading', { name: 'Ablago antwortet gerade nicht.' }).waitFor();
+  // Hilfe zur Selbsthilfe (#1199): was los ist, was man tun kann, Handbuch, Uhrzeit – ohne Aktion und ohne Protokoll.
+  await meldung.getByText('Ablago läuft, bekommt aber seit 3 Minuten keine Antwort von seiner Datenbank.', { exact: false }).waitFor();
+  const schritte = await meldung.locator('ol.startbild-schritte li').allInnerTexts();
+  assert.equal(schritte.length, 3, schritte.join(' | '));
+  assert.match(schritte[1], /Ablago-Container neu starten/);
+  assert.match(await meldung.getByRole('link', { name: /Alle Schritte im Handbuch/ }).getAttribute('href'), /^https:\/\/help\.ablago\.app\/.+laedt-nicht$/);
+  await meldung.getByText(/^Zuletzt geprüft um \d\d:\d\d/).waitFor();
+  assert.deepEqual(await meldung.getByRole('button').allInnerTexts(), ['Erneut versuchen'], 'kein Knopf außer „Erneut versuchen“ (kein Neustart ohne Anmeldung)');
+  assert.equal(await meldung.getByText(/Schon neu geladen|allein hat nicht geholfen/).count(), 0);
+  // Barrierefrei hell und dunkel, Tippflächen am Handy.
+  const funde = [];
+  for (const schema of ['light', 'dark']) {
+    await s.emulateMedia({ colorScheme: schema });
+    for (const v of await axePruefen(s, ['#keine-antwort'])) funde.push(`${schema}: ${v}`);
+  }
+  await s.emulateMedia({ colorScheme: 'light' });
+  for (const v of await tippflaechenPruefen(s, ['#keine-antwort'])) funde.push(`Tippfläche: ${v}`);
+  assert.deepEqual(funde, [], funde.join('\n'));
   await meldung.getByRole('button', { name: 'Erneut versuchen' }).click();
   // Neu geladen, Ablago antwortet weiter nicht: Hinweis, was dann hilft.
-  await s.locator('#keine-antwort').getByText(/Schon neu geladen, Ablago antwortet weiter nicht\. Wenn das anhält: Container neu starten/).waitFor();
+  await s.locator('#keine-antwort').getByText('Neu laden allein hat nicht geholfen – dann hilft meist Schritt 2.').waitFor();
   // Datenbank wieder da: Die Seite merkt es von selbst und startet die Oberfläche.
   await k.unrouteAll({ behavior: 'ignoreErrors' });
   await s.getByRole('heading', { name: 'Anmelden' }).waitFor({ timeout: 45_000 });
+});
+
+rauchtest('Handy: „antwortet gerade nicht“ bei abgewiesener Datenbank nennt den Datenbank-Container (#1199)', {
+  handy: true,
+  erwartet: [{ status: 503, pfad: /^\/api\/gesundheit$/ }],
+}, async (s, k) => {
+  // Datenbank aus: Die Verbindung wird abgelehnt – Schritt 2 heißt dann nicht „Ablago neu starten“, sondern Datenbank prüfen.
+  await k.route('**/api/sprache', () => {});
+  await k.route('**/api/gesundheit', (r) => r.fulfill({ status: 503, contentType: 'application/json', body: JSON.stringify({ ok: false, zustand: 'datenbank', datenbank: 'abgewiesen', seit: new Date().toISOString(), dauerS: 20 }) }));
+  await s.goto(BASIS + '/', { waitUntil: 'domcontentloaded' });
+  const meldung = s.locator('#keine-antwort');
+  await meldung.getByText(/erreicht aber seit weniger als einer Minute seine Datenbank nicht – sie ist vermutlich aus\./).waitFor({ timeout: 30_000 });
+  assert.match((await meldung.locator('ol.startbild-schritte li').allInnerTexts())[1], /Container der Datenbank läuft/);
+  await k.unrouteAll({ behavior: 'ignoreErrors' });
 });

@@ -148,7 +148,7 @@ interface Optionen {
   /** Warten auf eine freie Verbindung zur Datenbank (#544). */
   verbindungen?: import('./db').Verbindungswarten;
   /** Gesundheitsprüfung mit Datenbank (#1198): kurze Abfrage mit Zeitgrenze, kurz zwischengespeichert. */
-  datenbank?: { pruefe(): Promise<boolean> };
+  datenbank?: { befund(): Promise<import('./db').DatenbankBefund> };
   /** Wartezeit auf Verbindungen für den Lasttest (#874). */
   poolmessung?: import('./poolmessung').Poolmessung;
   /** Sitzungen der Datenbank mit Sperren (#874). */

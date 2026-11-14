@@ -3,7 +3,7 @@ import './basis.css';
 import './styles.css';
 import './startbild.css';
 import { browserSprache, gemerkteSprache, ladeSprache, t } from './sprache';
-import { antwortet, antwortGekommen, holeMitGrenze, startbildSpracheSetzen, zeigeKeineAntwort } from './startbild';
+import { antwortGekommen, gesundheitBeimStart, holeMitGrenze, startbildSpracheSetzen, zeigeKeineAntwort } from './startbild';
 import { beobachteVeraltet, selbstNeuLaden } from './veraltet';
 
 // Startbild (#1198): steht schon in index.html – hier nur die Sprache, in der es spricht.
@@ -30,9 +30,11 @@ async function starte() {
   const gewaehlt = await sprachwahl();
   await ladeSprache(gewaehlt ?? gemerkteSprache() ?? 'de').catch(() => {});
   // Keine Antwort (#1198): Antwortet auch die Gesundheitsprüfung nicht, eine Meldung ohne React statt einer leeren Seite.
-  if (gewaehlt === null && !(await antwortet())) {
+  // Mit dem Befund (#1199): Ablago hängt, die Datenbank lehnt ab oder Ablago meldet sich gar nicht.
+  const g = gewaehlt === null ? await gesundheitBeimStart() : null;
+  if (g && !g.ok) {
     const wurzel = document.getElementById('root');
-    if (wurzel) zeigeKeineAntwort(wurzel);
+    if (wurzel) zeigeKeineAntwort(wurzel, g.befund);
     return;
   }
   antwortGekommen();
