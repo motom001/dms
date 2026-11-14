@@ -23,6 +23,7 @@ import { alsZeile, LOESCH_SPALTEN, type LoeschEintrag } from '../../shared/src/l
 import { t } from './sprache';
 import { EXPORT_STUECK_ZEICHEN as STUECK_ZEICHEN } from './grenzen';
 import { kennungAlsDateiname } from '../../shared/src/kennungen';
+import { heruntergeladen, PRUEFSUMMEN, pruefsummen } from './vollexport-pruefsummen';
 
 /**
  * Vollexport aller Daten in offenen Formaten (#254): ein Ordner, lesbar ohne das DMS.
@@ -594,7 +595,10 @@ async function schreibeExport(q: ExportQuelle, w: Schreiber, name: string, opt: 
   await w.schreibe('LIESMICH.md', Buffer.from(opt.liesmich ?? liesmich(q, jetzt, anzahlen, opt), 'utf8'));
   // Manifest zuletzt; es nennt alle anderen Dateien mit Größe und Prüfwert.
   const manifest = { format: 'dms-vollexport', formatversion: FORMATVERSION, erstellt: jetzt.toISOString(), dms: q.version, mandant: q.mandant, anzahlen, passwoerter: !!opt.passwoerter, protokolle: !!opt.protokolle, ...(opt.zweck ? { zweck: opt.zweck } : {}), tabellen: EXPORT_TABELLEN, dateien: w.dateien };
-  await writeFile(join(ordner, 'manifest.json'), json(manifest));
+  const manifestInhalt = json(manifest);
+  await writeFile(join(ordner, 'manifest.json'), manifestInhalt);
+  // SHA256SUMS (#1195): jede Datei samt manifest.json im Standardformat, für sha256sum -c und Co.
+  await writeFile(join(ordner, PRUEFSUMMEN), pruefsummen([...w.dateien, { pfad: 'manifest.json', sha256: createHash('sha256').update(manifestInhalt).digest('hex') }]));
   abschluss();
   return { ordner, name, dateien: w.dateien.length + 1, bytes: w.bytes, mappen: alleMappen.size, dokumente, pfade };
 }
@@ -612,6 +616,7 @@ Alles hier lässt sich ohne Ablago lesen. **Der Export ist unverschlüsselt** �
 | Ordner/Datei | Inhalt |
 | --- | --- |
 | \`manifest.json\` | Formatversion, Anzahlen, Größe und SHA-256 jeder Datei, wo jede Tabelle steht |
+| \`SHA256SUMS\` | SHA-256 jeder Datei (auch \`manifest.json\`) im Standardformat zum Prüfen, siehe unten |
 | \`struktur/\` | Mappentypen (Felder, Register, Titelvorlagen, Berechtigungen, Archiv), Ansichten, Nummernkreise, Designs, Benutzer (ohne Passwörter), Notfallkontakte (\`notfallkontakte.json\`, falls vorhanden); \`fassungen.json\` = Fassungen der Werkbank (wer wann was geändert hat, samt Löschvermerken, ohne Geheimnisse) |
 | \`daten/<typ>.csv\` | je Mappentyp eine Tabelle: eine Zeile je Mappe, eine Spalte je Feldschlüssel; Verweise als Id und \`_titel\`, bei mehreren Zieltypen dazu \`_typ\` |
 | \`daten/<typ>.jsonl\` | dasselbe verlustfrei als JSON Lines (eine Mappe je Zeile) |
@@ -635,6 +640,16 @@ Alles hier lässt sich ohne Ablago lesen. **Der Export ist unverschlüsselt** �
 
 ## Vollständig?
 
+Im Ordner des entpackten Exports (dort, wo diese Datei liegt) prüft ein Befehl jede Datei gegen \`SHA256SUMS\`:
+
+- **Linux:** \`sha256sum -c --quiet SHA256SUMS\` – ohne Ausgabe ist alles in Ordnung.
+- **macOS:** \`shasum -a 256 -c --quiet SHA256SUMS\` – ebenso.
+- **Windows (PowerShell):** \`Get-Content SHA256SUMS | ForEach-Object { $h, $p = $_ -split '  ', 2; if ((Get-FileHash -LiteralPath $p -Algorithm SHA256).Hash -ne $h) { "abweichend: $p" } }\` – ohne Ausgabe ist alles in Ordnung.
+
+Die ZIP-Datei selbst prüfst du vor dem Entpacken gegen die SHA-256, die Ablago in der Werkbank unter Vollexport anzeigt: \`sha256sum <datei>.zip\`, \`shasum -a 256 <datei>.zip\` bzw. \`Get-FileHash <datei>.zip -Algorithm SHA256\`.
+
+Dasselbe mit Python, über \`manifest.json\`:
+
 \`\`\`python
 import hashlib, json, pathlib
 basis = pathlib.Path(__file__).parent if '__file__' in dir() else pathlib.Path('.')
@@ -654,7 +669,11 @@ print('alles in Ordnung' if not fehler else f'abweichend: {fehler}')
 /* ---------- Verwaltung der Exporte ---------- */
 
 /** `bis`: danach löscht Ablago den Export (#797), ebenso nach dem Herunterladen. */
-export interface ExportStand { name: string; erstellt: string | null; bis: string; bytes: number; dateien: number; mappen: number | null; passwoerter: boolean }
+export interface ExportStand {
+  name: string; erstellt: string | null; bis: string; bytes: number; dateien: number; mappen: number | null; passwoerter: boolean;
+  /** #1195: heruntergeladen und auf dem Server gelöscht – bis `bis` bleiben SHA256SUMS und die Prüfsumme der ZIP. */
+  heruntergeladen?: { am: string; sha256: string; bytes: number };
+}
 
 const TAG_MS = 24 * 3600 * 1000;
 /** Zeitpunkt aus dem Ordnernamen (dms-export-JJJJ-MM-TT-hh-mm-ss, UTC) – auch für Exporte ohne manifest.json. */
@@ -681,7 +700,15 @@ export async function exporteIn(ziel: string, jetzt = new Date()): Promise<Expor
       m = JSON.parse(await readFile(datei, 'utf8'));
       // Beim Umzug aus dem Sicherungsordner (#797) frisch gestempelt: Die Frist beginnt dann erst dort.
       geaendert = (await stat(datei)).mtimeMs;
-    } catch { /* läuft noch oder unvollständig */ }
+    } catch { /* läuft noch, unvollständig oder schon heruntergeladen */ }
+    // Heruntergeladen (#1195): Eintrag mit Prüfsumme der ZIP bleibt EXPORT_TAGE ab dem Herunterladen.
+    const geladen = m ? null : await heruntergeladen(join(ziel, n));
+    if (geladen) {
+      const frist = new Date(Date.parse(geladen.am) + EXPORT_TAGE * TAG_MS);
+      if (frist.getTime() <= jetzt.getTime()) { await loescheExport(join(ziel, n)); continue; }
+      erg.push({ name: n, erstellt: geladen.erstellt, bis: frist.toISOString(), bytes: 0, dateien: geladen.dateien, mappen: geladen.mappen, passwoerter: false, heruntergeladen: { am: geladen.am, sha256: geladen.sha256, bytes: geladen.bytes } });
+      continue;
+    }
     const erstellt = (m?.erstellt ? new Date(m.erstellt) : null) ?? exportZeit(n);
     const ab = erstellt && geaendert > erstellt.getTime() ? new Date(geaendert) : erstellt;
     const bis = new Date((ab?.getTime() ?? jetzt.getTime()) + EXPORT_TAGE * TAG_MS);

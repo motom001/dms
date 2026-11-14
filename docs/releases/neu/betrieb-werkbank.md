@@ -4,6 +4,7 @@ art: minor
 
 - **Oberfläche lädt schneller** (#1236): Ablago liefert Skripte, Stile und Startseite fertig komprimiert aus (Brotli oder gzip). Beim ersten Aufruf über Mobilfunk sind das gut 800 KB statt knapp 4 MB. Hinter einem Reverse-Proxy ist nichts einzustellen.
 - **Mehrere Sicherungen auf einmal löschen** (#1169): In Werkbank → Sicherung wählst du Sicherungen mit Haken oder „Alle auswählen“ und löschst sie mit einer Rückfrage, die Anzahl, Zeitraum und frei werdenden Platz nennt. Die neueste geprüfte Sicherung ist geschützt. Über der Liste steht, was die Aufbewahrung von selbst wegräumt.
+- **Vollexport selbst prüfen** (#1195): Jeder Export enthält `SHA256SUMS` zum Prüfen aller Dateien (`sha256sum -c`), die LIESMICH erklärt es für Windows, macOS und Linux. In der Werkbank kommt zuerst „Prüfsummen (SHA256SUMS)“, dann „ZIP herunterladen“ mit dem Hinweis, dass der Export danach auf dem Server gelöscht wird. Nach dem Herunterladen bleibt der Eintrag mit der SHA-256 der ZIP noch 7 Tage stehen, die Liste aktualisiert sich ohne Neuladen.
 
 ## Geändert
 

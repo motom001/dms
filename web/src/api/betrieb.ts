@@ -299,6 +299,9 @@ export const betriebApi = {
   vollexport: () => anfrage<VollexportStand>('GET', '/api/werkbank/export'),
   vollexportStarten: (o: { passwoerter: boolean; passwoerterBestaetigt: boolean; protokolle: boolean; kontakte: Record<string, KontaktZuordnung> }) => anfrage<Auftrag>('POST', '/api/werkbank/export', o),
   vollexportPruefen: (name: string) => anfrage<{ ok: boolean; dateien: number; fehlend: string[]; abweichend: string[] }>('POST', `/api/werkbank/export/${encodeURIComponent(name)}/pruefen`),
+  /** SHA256SUMS eines Exports (#1195), auch nach dem Herunterladen der ZIP. */
+  vollexportPruefsummenUrl: (name: string) => `/api/werkbank/export/${encodeURIComponent(name)}/pruefsummen`,
+  vollexportZipUrl: (name: string) => `/api/werkbank/export/${encodeURIComponent(name)}/zip`,
   vollexportLoeschen: (name: string) => anfrage<null>('DELETE', `/api/werkbank/export/${encodeURIComponent(name)}`),
   vollexportUmzugGesehen: () => anfrage<null>('POST', '/api/werkbank/export/umzug-gesehen'),
   persoenlicherExport: (erlaubt: boolean) => anfrage<{ erlaubt: boolean }>('PUT', '/api/werkbank/export/persoenlich', { erlaubt }),

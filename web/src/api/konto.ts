@@ -115,7 +115,11 @@ export interface VollexportStand {
   tage: number; imSicherungsordner: boolean; volume: boolean | null; umzug: ExportUmzug | null;
   abschaetzung: { mappen: number; dokumente: number; bytes: number };
   /** `bis`: danach (und nach dem Herunterladen) gelöscht (#797). */
-  exporte: Array<{ name: string; erstellt: string | null; bis: string; bytes: number; dateien: number; mappen: number | null; passwoerter: boolean }>;
+  exporte: Array<{
+    name: string; erstellt: string | null; bis: string; bytes: number; dateien: number; mappen: number | null; passwoerter: boolean;
+    /** #1195: heruntergeladen und auf dem Server gelöscht; SHA-256 und Größe der ZIP, SHA256SUMS bleibt bis `bis`. */
+    heruntergeladen?: { am: string; sha256: string; bytes: number };
+  }>;
   kontakte: Array<{ typId: string; typ: string; zuordnung: KontaktZuordnung }>;
   /** Dürfen Benutzer ihre Daten selbst exportieren (#255)? */
   persoenlich: boolean;
