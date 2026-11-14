@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import type { AktionsDialog, AktionsErgebnis, AktionsSchritt, AngeboteneAktion, DialogFeld } from '../../../shared/src/paketaktionen';
-import { api, ApiFehler, type MappeDetails } from '../api';
+import { ApiFehler } from '../api/anfrage';
+import { mappenApi, type MappeDetails } from '../api/mappen';
+import { paketeApi } from '../api/pakete';
 import { Feld, FeldGruppe, HakenFeld, Knopf, KnopfLink, fehlerText } from '../bausteine';
 import { Link } from '../ort';
 import { Symbol } from '../Symbol';
@@ -24,8 +26,8 @@ export function PaketAktion({ aktion, details, neuLaden, kern, schliessen }: {
   const offen = useRef<string | null>(null);
   useEffect(() => {
     let aktuell = true;
-    api.paketAktionStarten(mappe.id, aktion.paket.id, aktion.schluessel).then((s) => {
-      if (!aktuell) { if (!('ergebnis' in s)) void api.paketAktionAbbrechen(s.lauf).catch(() => {}); return; }
+    mappenApi.paketAktionStarten(mappe.id, aktion.paket.id, aktion.schluessel).then((s) => {
+      if (!aktuell) { if (!('ergebnis' in s)) void paketeApi.paketAktionAbbrechen(s.lauf).catch(() => {}); return; }
       if ('kern' in s) { kern(s); return; }
       offen.current = 'dialog' in s ? s.lauf : null;
       setSchritt(s);
@@ -35,11 +37,11 @@ export function PaketAktion({ aktion, details, neuLaden, kern, schliessen }: {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- einmal je geöffneter Aktion; kern und neuLaden ändern daran nichts
   }, [mappe.id, aktion.paket.id, aktion.schluessel]);
   // Dialog geschlossen: Lauf beenden, damit die Bremse frei wird.
-  useEffect(() => () => { if (offen.current) void api.paketAktionAbbrechen(offen.current).catch(() => {}); }, []);
+  useEffect(() => () => { if (offen.current) void paketeApi.paketAktionAbbrechen(offen.current).catch(() => {}); }, []);
 
   const weiter = async (antworten: Record<string, unknown>) => {
     if (!schritt) return;
-    const s = await api.paketAktionWeiter(schritt.lauf, antworten);
+    const s = await paketeApi.paketAktionWeiter(schritt.lauf, antworten);
     offen.current = 'dialog' in s ? s.lauf : null;
     setSchritt(s);
     if ('ergebnis' in s) await neuLaden();
@@ -132,7 +134,7 @@ function Ergebnis({ ergebnis, lauf, mappe }: { ergebnis: AktionsErgebnis; lauf: 
       )}
       <div className="knoepfe">
         {ergebnis.dokument && <KnopfLink art="haupt" to={`/ablage/${mappe.typId}/${mappe.id}?dokument=${encodeURIComponent(ergebnis.dokument.id)}`}>{t('ablage.paketaktion.dokument-oeffnen')}</KnopfLink>}
-        {ergebnis.datei && <Knopf art="haupt" onClick={() => api.paketAktionDatei(lauf, ergebnis.datei!.name)}>{t('ablage.paketaktion.herunterladen', { name: ergebnis.datei.name })}</Knopf>}
+        {ergebnis.datei && <Knopf art="haupt" onClick={() => paketeApi.paketAktionDatei(lauf, ergebnis.datei!.name)}>{t('ablage.paketaktion.herunterladen', { name: ergebnis.datei.name })}</Knopf>}
       </div>
     </div>
   );

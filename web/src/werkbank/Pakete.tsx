@@ -3,7 +3,8 @@ import { Fragment, useCallback, useEffect, useMemo, useState, type ReactNode } f
 import { Symbol } from '../Symbol';
 import { ergaenzungenVon, hatNetz, hatSchnittstelle, istKiPaket, herkunftText, KATALOG_LINK_REL, katalogSeiteMitVersion, sammelSeiteMitVersion, laeuferZustandText, neueVersionen, vergleicheVersion, type AblaufErgebnis, type HerkunftPruefung, type NeueVersion, type InstalliertesPaket, type Katalog, type KatalogPaket, type KatalogVersion, rechtePunkte, rechteZeilen } from '../../../shared/src/pakete';
 import { PAKET_ID } from '../../../shared/src/kennungen';
-import { api, ApiFehler, type BeispielBehalten, type PaketlaeuferStand, type PaketQuelle, type PaketVorschau, type Sammeldatei } from '../api';
+import { ApiFehler } from '../api/anfrage';
+import { paketeApi, type BeispielBehalten, type PaketlaeuferStand, type PaketQuelle, type PaketVorschau, type Sammeldatei } from '../api/pakete';
 import { useDaten } from '../daten';
 import { Hilfe } from '../Hilfe';
 import { Listenkopf } from '../Listenkopf';
@@ -85,7 +86,7 @@ export function usePakete(offen: boolean) {
   // Selbst erstellte Pakete (#652) stehen unter „Installiert“ mit dem Zeichen „selbst erstellt“.
   const [selbst, setSelbst] = useState<SelbstErstellt[] | null>(null);
   const laden = useCallback(async () => {
-    try { const [st, se] = await Promise.all([api.pakete(), api.selbstErstellt()]); setStand(st); setSelbst(se); setFehler(undefined); }
+    try { const [st, se] = await Promise.all([paketeApi.pakete(), paketeApi.selbstErstellt()]); setStand(st); setSelbst(se); setFehler(undefined); }
     catch (e) { setFehler((e as Error).message); }
   }, []);
   useEffect(() => { if (offen) void laden(); }, [offen, laden]);
@@ -93,7 +94,7 @@ export function usePakete(offen: boolean) {
   // der Link aus der Katalog-Webseite (#191) fragt nur den offiziellen ab (alle = false).
   const abrufen = useCallback(async (alle = true) => {
     setLaedt(true); setFehler(undefined);
-    try { const k = await api.paketKatalog(alle); setKataloge({ liste: k.kataloge, abgerufen: k.abgerufen }); } catch (e) { setFehler((e as Error).message); } finally { setLaedt(false); }
+    try { const k = await paketeApi.paketKatalog(alle); setKataloge({ liste: k.kataloge, abgerufen: k.abgerufen }); } catch (e) { setFehler((e as Error).message); } finally { setLaedt(false); }
   }, []);
   // Neuere Versionen (#1167): aus den abgerufenen Katalogen und dem Stand der Installation abgeleitet, nicht gemerkt –
   // nach einem Update stimmt der Merker sofort, ohne erneut zu prüfen.
@@ -121,7 +122,7 @@ export function PaketeListe({ z, offen }: { z: PaketeZustand; offen?: string }) 
     if (!f) return;
     setHochFehler(undefined);
     try {
-      const r = await api.paketHochladen(f);
+      const r = await paketeApi.paketHochladen(f);
       // Eine Sammeldatei (#461) erkennt das DMS selbst.
       if ('sammeldatei' in r) { z.setSammel({ sammeldatei: r.sammeldatei, datei: f.name }); geheZu(`/werkbank/pakete/${SAMMEL}`); }
       else { z.setUpload({ ...r, datei: f.name }); geheZu(`/werkbank/pakete/${UPLOAD}`); }
@@ -235,7 +236,7 @@ async function entferneMitFragen(id: string, einstellungenBehalten: boolean) {
   let sprache = false;
   let vorgaben: 'entfernen' | 'behalten' | undefined;
   for (;;) {
-    try { return await api.paketEntfernen(id, einstellungenBehalten, sprache, vorgaben); } catch (e) {
+    try { return await paketeApi.paketEntfernen(id, einstellungenBehalten, sprache, vorgaben); } catch (e) {
       const d = e instanceof ApiFehler && e.status === 409 ? e.details as { sprache?: unknown; vorgaben?: VorgabeFrage[] } | undefined : undefined;
       if (d?.sprache && !sprache) {
         if (!(await rueckfrage({ titel: (e as Error).message, text: (e as ApiFehler).gruende.join(' '), ja: t('werkbank.pakete.sprache.entfernen'), gefahr: true }))) throw e;
@@ -281,26 +282,26 @@ function Quellen({ z }: { z: PaketeZustand }) {
         <ul className="stapel">
           {weitere.map((q) => (
             <li key={q.url}>
-              <Schalter an={q.aktiv} setze={(an) => tu(() => api.paketQuelleSchalten(q.url, an))} beschriftung={q.url} className="umbrechen"
+              <Schalter an={q.aktiv} setze={(an) => tu(() => paketeApi.paketQuelleSchalten(q.url, an))} beschriftung={q.url} className="umbrechen"
                 hinweis={`${q.von ? t('werkbank.pakete.von', { von: q.von }) : ''}${q.am ? t('werkbank.pakete.am', { datum: datum(q.am) }) : ''}`.trim() || undefined} />
-              <Knopf art="gefahr" groesse="klein" symbol="geloescht" onClick={() => tu(() => api.paketQuelleEntfernen(q.url))}
+              <Knopf art="gefahr" groesse="klein" symbol="geloescht" onClick={() => tu(() => paketeApi.paketQuelleEntfernen(q.url))}
                 rueckfrage={{ titel: t('werkbank.pakete.paketquelle-entfernen'), text: q.url, ja: t('werkbank.pakete.entfernen') }}>{t('werkbank.pakete.entfernen')}</Knopf>
               {q.gesperrt ? (
                 <div className="hinweis warn" role="alert">
                   <p><Symbol name="warnung" className="sym-warn" /> {tx('pakete.quelle.gesperrt', { seit: datum(q.gesperrt.seit) })} <code className="fingerabdruck">{q.gesperrt.fingerabdruck}</code></p>
-                  <Knopf groesse="klein" onClick={() => mitSchluessel(q.url, (fp) => api.paketQuelleSchluessel(q.url, fp))}>{tx('pakete.quelle.pruefen')}</Knopf>
+                  <Knopf groesse="klein" onClick={() => mitSchluessel(q.url, (fp) => paketeApi.paketQuelleSchluessel(q.url, fp))}>{tx('pakete.quelle.pruefen')}</Knopf>
                 </div>
               ) : (
                 <p className="leise">
                   {q.fingerabdruck ? <><Symbol name="schloss" /> {tx('pakete.quelle.schluessel')} <code className="fingerabdruck">{q.fingerabdruck}</code></> : tx('pakete.quelle.ohne')}
-                  {' · '}<Knopf art="link" onClick={() => mitSchluessel(q.url, (fp) => api.paketQuelleSchluessel(q.url, fp))}>{tx('pakete.quelle.pruefen')}</Knopf>
+                  {' · '}<Knopf art="link" onClick={() => mitSchluessel(q.url, (fp) => paketeApi.paketQuelleSchluessel(q.url, fp))}>{tx('pakete.quelle.pruefen')}</Knopf>
                 </p>
               )}
             </li>
           ))}
         </ul>
       )}
-      <form className="zeile" onSubmit={(e) => { e.preventDefault(); const adresse = url.trim(); void mitSchluessel(adresse, async (fp) => { const r = await api.paketQuelleHinzu(adresse, fp); setUrl(''); return r; }); }}>
+      <form className="zeile" onSubmit={(e) => { e.preventDefault(); const adresse = url.trim(); void mitSchluessel(adresse, async (fp) => { const r = await paketeApi.paketQuelleHinzu(adresse, fp); setUrl(''); return r; }); }}>
         <Feld beschriftung={t('werkbank.pakete.adresse-eines-weiteren-katalogs')} beschriftungVerbergen>
           <input type="url" placeholder="https://…/katalog.json" value={url} onChange={(e) => setUrl(e.target.value)} />
         </Feld>
@@ -348,13 +349,13 @@ export function PaketLink({ z, wert }: { z: PaketeZustand; wert: string }) {
   useEffect(() => {
     if (!gueltig) return;
     let aktuell = true;
-    api.paketVorschau({ id, version: version || undefined }).then((v) => aktuell && setVorschau(v), (e) => aktuell && setMeldung(alsMeldung(e)));
+    paketeApi.paketVorschau({ id, version: version || undefined }).then((v) => aktuell && setVorschau(v), (e) => aktuell && setMeldung(alsMeldung(e)));
     return () => { aktuell = false; };
   }, [id, version, gueltig]);
   useEffect(() => {
     if (!vorschau || vorschau.installiert) return;
     let aktuell = true;
-    api.paketKatalog(false).then((k) => { const o = k.kataloge.find((x) => x.offiziell); if (aktuell && o?.katalog) setKatalog(o.katalog); else if (aktuell) setMeldung({ art: 'schlecht', text: o?.fehler ?? t('werkbank.pakete.der-katalog-laesst-sich') }); }, (e) => aktuell && setMeldung(alsMeldung(e)));
+    paketeApi.paketKatalog(false).then((k) => { const o = k.kataloge.find((x) => x.offiziell); if (aktuell && o?.katalog) setKatalog(o.katalog); else if (aktuell) setMeldung({ art: 'schlecht', text: o?.fehler ?? t('werkbank.pakete.der-katalog-laesst-sich') }); }, (e) => aktuell && setMeldung(alsMeldung(e)));
     return () => { aktuell = false; };
   }, [vorschau]);
   if (!gueltig) return <div className="leer"><p>{tn('werkbank.pakete.dieser-link-ist-ungueltig', { code: <code>{'?installieren=paket@1.0.0'}</code> })}</p></div>;
@@ -393,7 +394,7 @@ export function PaketLink({ z, wert }: { z: PaketeZustand; wert: string }) {
         <VorschauBlock v={vorschau} warnung={null} abbrechen={() => geheZu('/werkbank/pakete')}
           los={async (x) => {
             try {
-              const r = vorschau.update ? await api.paketAktualisieren(id, vorschau.paket.version, x.bestaetigt, x.rechteBestaetigt, { automatisierungen: x.automatisierungen, herausgeberBestaetigt: x.herausgeberBestaetigt, umbauBestaetigt: x.umbauBestaetigt, umbauEntscheidungen: x.umbauEntscheidungen, sichtenErsetzen: x.sichtenErsetzen }) : await api.paketInstallieren({ id, version: vorschau.paket.version, ...x });
+              const r = vorschau.update ? await paketeApi.paketAktualisieren(id, vorschau.paket.version, x.bestaetigt, x.rechteBestaetigt, { automatisierungen: x.automatisierungen, herausgeberBestaetigt: x.herausgeberBestaetigt, umbauBestaetigt: x.umbauBestaetigt, umbauEntscheidungen: x.umbauEntscheidungen, sichtenErsetzen: x.sichtenErsetzen }) : await paketeApi.paketInstallieren({ id, version: vorschau.paket.version, ...x });
               await z.laden(); await d.neuLaden(); await z.abrufen(false);
               geheZu(`/werkbank/pakete/${r.id}`);
             } catch (e) { setMeldung(alsMeldung(e)); }
@@ -452,7 +453,7 @@ function UploadDetail({ z }: { z: PaketeZustand }) {
         abbrechen={() => { z.setUpload(null); geheZu('/werkbank/pakete'); }}
         los={async (x) => {
           try {
-            const r = await api.paketInstallieren({ upload: u.upload, bestaetigt: true, ...x });
+            const r = await paketeApi.paketInstallieren({ upload: u.upload, bestaetigt: true, ...x });
             z.setUpload(null); await z.laden(); await d.neuLaden();
             geheZu(`/werkbank/pakete/${r.id}?${NEU}`);
           } catch (e) { setMeldung(alsMeldung(e)); }
@@ -507,7 +508,7 @@ function PaketDetail({ z, id, quelle }: { z: PaketeZustand; id: string; quelle?:
 
   async function zeigeVorschau(ver?: string) {
     setMeldung(undefined); setLaeuft(true);
-    try { setVorschau(await api.paketVorschau({ id, version: ver, quelle: inst ? eigeneQuelle : quelle })); }
+    try { setVorschau(await paketeApi.paketVorschau({ id, version: ver, quelle: inst ? eigeneQuelle : quelle })); }
     catch (e) { setMeldung(alsMeldung(e)); }
     finally { setLaeuft(false); }
   }
@@ -529,7 +530,7 @@ function PaketDetail({ z, id, quelle }: { z: PaketeZustand; id: string; quelle?:
   const entfernenBestaetigt = () => void tu(async () => { const r = await entferneMitFragen(id, behalten); setEntfernenOffen(false); geheZu('/werkbank/pakete', true); return t('werkbank.pakete.ist-entfernt-2', { name: inst!.name, wert: behalten ? t('werkbank.pakete.die-einstellungen-bleiben-fuer') : '' }) + behaltenText(r.beispieleBehalten) + vorgabenText(r.vorgabenBehalten); });
   // Beispiele entfernen (#878): unveränderte Beispiel-Mappen samt Dokumenten; geänderte bleiben und werden genannt.
   const beispieleEntfernen = () => {
-    void tu(async () => { const r = await api.paketBeispieleEntfernen(id); return t('werkbank.pakete.beispiele-entfernt', { anzahl: r.entfernt }) + behaltenText(r.behalten); });
+    void tu(async () => { const r = await paketeApi.paketBeispieleEntfernen(id); return t('werkbank.pakete.beispiele-entfernt', { anzahl: r.entfernt }) + behaltenText(r.behalten); });
   };
 
   if (!inst && !kp) return (
@@ -630,12 +631,12 @@ function PaketDetail({ z, id, quelle }: { z: PaketeZustand; id: string; quelle?:
         <VorschauBlock v={vorschau} warnung={offiziell || vorschau.pruefung?.bestaetigen === false ? null : t('werkbank.pakete.aus-dem-katalog', { wert: String(inst?.herkunft.art === 'katalog' ? inst.herkunft.url : quelle) })} abbrechen={() => setVorschau(null)}
           los={(x) => tu(async () => {
             if (vorschau.update) {
-              const r = await api.paketAktualisieren(id, vorschau.paket.version, x.bestaetigt, x.rechteBestaetigt, { automatisierungen: x.automatisierungen, herausgeberBestaetigt: x.herausgeberBestaetigt, umbauBestaetigt: x.umbauBestaetigt, umbauEntscheidungen: x.umbauEntscheidungen, sichtenErsetzen: x.sichtenErsetzen });
+              const r = await paketeApi.paketAktualisieren(id, vorschau.paket.version, x.bestaetigt, x.rechteBestaetigt, { automatisierungen: x.automatisierungen, herausgeberBestaetigt: x.herausgeberBestaetigt, umbauBestaetigt: x.umbauBestaetigt, umbauEntscheidungen: x.umbauEntscheidungen, sichtenErsetzen: x.sichtenErsetzen });
               // Umzug (#1084): Das Paket heißt jetzt anders – dorthin.
               if (r.id !== id) geheZu(`/werkbank/pakete/${r.id}`);
               return t('werkbank.pakete.ist-jetzt-auf-version', { name: r.name, version: r.version });
             }
-            const r = await api.paketInstallieren({ id, version: vorschau.paket.version, quelle, ...x });
+            const r = await paketeApi.paketInstallieren({ id, version: vorschau.paket.version, quelle, ...x });
             return t('werkbank.pakete.ist-installiert', { name: r.name, version: r.version });
           })} />
       )}
@@ -733,7 +734,7 @@ export function EreignisKatalogListe() {
 /** netz: Das Paket darf ins Netz – dann seine Messwerte als externer Dienst (#565). */
 function LaeuferStand({ paket, abonniert = [], netz = false }: { paket: string; abonniert?: readonly string[]; netz?: boolean }) {
   const [s, setS] = useState<PaketlaeuferStand | null | undefined>(undefined);
-  const laden = useCallback(() => { api.paketLaeufer().then(setS, () => setS(null)); }, []);
+  const laden = useCallback(() => { paketeApi.paketLaeufer().then(setS, () => setS(null)); }, []);
   useEffect(() => { laden(); }, [laden]);
   const p = s?.pakete.find((x) => x.id === paket) ?? null;
   // Zustand passend zu dem, was der Läufer tut (#403); solange er startet, von selbst nachfragen.

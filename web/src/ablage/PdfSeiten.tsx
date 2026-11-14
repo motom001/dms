@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type DragEvent, type KeyboardEvent } from 'react';
 import type { Dokument, Mappe } from '../../../shared/src/model';
-import { api, seitenbildUrl, type PdfSeiten as Info } from '../api';
+import { dokumenteApi, seitenbildUrl, type PdfSeiten as Info } from '../api/dokumente';
 import { Hilfe } from '../Hilfe';
 import { Knopf } from '../bausteine';
 import { Symbol } from '../Symbol';
@@ -29,7 +29,7 @@ export function PdfSeiten({ d, post, versioniert, papierkorb, teilAb, schliessen
   const [fokus, setFokus] = useState<number>();
 
   useEffect(() => {
-    api.pdfSeiten(d.id).then((i) => {
+    dokumenteApi.pdfSeiten(d.id).then((i) => {
       setInfo(i);
       setSeiten(Array.from({ length: i.anzahl }, (_, k) => ({ nr: k + 1, drehung: 0, weg: false, teilAb: !!teilAb && k + 1 === teilAb && k > 0 })));
     }, (e: Error) => setFehler(e.message));
@@ -71,7 +71,7 @@ export function PdfSeiten({ d, post, versioniert, papierkorb, teilAb, schliessen
     if (postTeilen && !(await rueckfrage({ titel: t('ablage.pdfseiten.in-posts-teilen', { anzahlTeile }), text: t('ablage.pdfseiten.aus-dieser-post-entstehen', { anzahlTeile }), ja: t('ablage.pdfseiten.teilen') }))) return;
     setLaeuft(true); setFehler(undefined);
     try {
-      fertig(await api.bearbeitePdf(d.id, { seiten: bleiben.map((s) => ({ nr: s.nr, drehung: s.drehung })), teile, bestaetigt }));
+      fertig(await dokumenteApi.bearbeitePdf(d.id, { seiten: bleiben.map((s) => ({ nr: s.nr, drehung: s.drehung })), teile, bestaetigt }));
     } catch (e) { setFehler((e as Error).message); setLaeuft(false); }
   }
 

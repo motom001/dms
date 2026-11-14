@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { api, type SucheStand } from '../api';
+import { sucheApi, type SucheStand } from '../api/suche';
 import { geheZu, Link, loeseWache } from '../ort';
 import { Listenkopf } from '../Listenkopf';
 import { Speicherleiste, useEntwurf } from '../Speicherleiste';
@@ -23,7 +23,7 @@ const pfad = (id: string) => `${WOERTER_PFAD}/${encodeURIComponent(id)}`;
 export function useWoerter(offen: boolean) {
   const [stand, setStand] = useState<SucheStand | null>(null);
   const [fehler, setFehler] = useState<string>();
-  const laden = useCallback(async () => { try { setStand(await api.sucheStand()); setFehler(undefined); } catch (e) { setFehler((e as Error).message); } }, []);
+  const laden = useCallback(async () => { try { setStand(await sucheApi.sucheStand()); setFehler(undefined); } catch (e) { setFehler((e as Error).message); } }, []);
   useEffect(() => { if (offen) void laden(); }, [offen, laden]);
   return { stand, gruppen: stand?.synonyme ?? null, fehler, laden, setStand };
 }
@@ -172,11 +172,11 @@ function WortgruppeEditor({ z, gruppen, gruppe, kopieVon }: { z: WoerterZustand;
     try {
       const woerter = woerterVon(e);
       if (neu) {
-        const r = await api.synonymNeu(woerter);
+        const r = await sucheApi.synonymNeu(woerter);
         z.setStand(r); loeseWache(); geheZu(pfad(r.id), true);
         return;
       }
-      const r = await api.synonymAendern(gruppe.id, woerter, stand);
+      const r = await sucheApi.synonymAendern(gruppe.id, woerter, stand);
       z.setStand(r);
       const jetzt = r.synonyme.find((x) => x.id === gruppe.id);
       setBasis(jetzt?.woerter ?? woerter); setE(zeilen(jetzt?.woerter ?? woerter)); setStand(jetzt?.geaendert); setGeprueft(false);
@@ -190,7 +190,7 @@ function WortgruppeEditor({ z, gruppen, gruppe, kopieVon }: { z: WoerterZustand;
   }
   async function loeschen() {
     if (!gruppe) return;
-    try { z.setStand(await api.synonymLoeschen(gruppe.id)); loeseWache(); geheZu(WOERTER_PFAD, true); }
+    try { z.setStand(await sucheApi.synonymLoeschen(gruppe.id)); loeseWache(); geheZu(WOERTER_PFAD, true); }
     catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); }
   }
 

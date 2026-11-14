@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { api } from '../api';
+import { aufgabenApi } from '../api/aufgaben';
 import { useDaten } from '../daten';
 import { rueckfrage } from '../rueckfrage';
 import { BenutzerWahl } from './Aufgaben';
@@ -86,12 +86,12 @@ export function SammelLeiste({ s, titel, vorschlag, ohne, erledigen, nachher }: 
 
   const weitergeben = () => void tu(
     { titel: t('ablage.sammelweitergabe.an-weitergeben', { aufgaben: aufgaben(n), name }), text: t('ablage.sammelweitergabe.jede-weitergabe-steht-in', { name }), ja: t('ablage.sammelweitergabe.weitergeben') },
-    async (ids) => { const r = await api.aufgabenWeitergeben(ids, ziel); return { ok: r.weitergegeben, nicht: r.nicht }; },
+    async (ids) => { const r = await aufgabenApi.aufgabenWeitergeben(ids, ziel); return { ok: r.weitergegeben, nicht: r.nicht }; },
     (k) => t('ablage.sammelweitergabe.an-weitergegeben', { aufgaben: aufgaben(k), name }),
   );
   const erledigt = () => void tu(
     { titel: t('ablage.sammelweitergabe.als-erledigt-markieren', { aufgaben: aufgaben(n) }), text: t('ablage.sammelweitergabe.passt-nicht-aufgaben-erledigen'), ja: t('ablage.sammelweitergabe.erledigt') },
-    async (ids) => { const r = await api.aufgabenErledigen(ids); return { ok: r.erledigt, nicht: r.nicht }; },
+    async (ids) => { const r = await aufgabenApi.aufgabenErledigen(ids); return { ok: r.erledigt, nicht: r.nicht }; },
     (k) => `${aufgaben(k)} erledigt.`,
   );
 

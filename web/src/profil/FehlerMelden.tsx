@@ -1,6 +1,6 @@
 import { t, tn } from '../sprache';
 import { useEffect, useState, type ClipboardEvent } from 'react';
-import { api, type Diagnose } from '../api';
+import { kontoApi, type Diagnose } from '../api/konto';
 import { useDaten } from '../daten';
 import { geraeteAngaben } from '../diagnose';
 import { leseSchrift, SCHRIFTEN } from '../design';
@@ -39,7 +39,7 @@ export function FehlerMelden() {
   const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
   const [sendet, setSendet] = useState(false);
   const [gesendet, setGesendet] = useState(false);
-  useEffect(() => { api.diagnose().then(setServer, (e: Error) => setServer({ fehler: e.message })); }, []);
+  useEffect(() => { kontoApi.diagnose().then(setServer, (e: Error) => setServer({ fehler: e.message })); }, []);
 
   const design = d.designs.find((x) => x.id === (d.einstellungen.design ?? d.standardDesign))?.name ?? null;
   const angaben = { Server: server ?? t('profil.fehlermelden.wird-geladen'), Gerät: { ...geraeteAngaben(SCHRIFTEN[leseSchrift(ich.id)].name), Design: design } };
@@ -62,7 +62,7 @@ export function FehlerMelden() {
   async function senden() {
     setSendet(true); setMeldung(undefined);
     try {
-      await api.fehlerMelden({ text, angaben, bilder: bilder.map((b) => ({ name: b.name, daten: b.daten })) });
+      await kontoApi.fehlerMelden({ text, angaben, bilder: bilder.map((b) => ({ name: b.name, daten: b.daten })) });
       setGesendet(true);
     } catch (e) { setMeldung({ art: 'schlecht', text: (e as Error).message }); } finally { setSendet(false); }
   }

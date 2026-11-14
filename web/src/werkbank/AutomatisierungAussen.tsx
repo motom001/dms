@@ -5,7 +5,7 @@ import {
 } from '../../../shared/src/automatisierung';
 import type { Mappentyp } from '../../../shared/src/model';
 import { gebietsschema } from '../../../shared/src/sprache';
-import { api, type AussenZustellung } from '../api';
+import { automatisierungApi, type AussenZustellung } from '../api/automatisierung';
 import { Bereich, Feld, HakenFeld, Knopf, Platzhalter, usePlatzhalterEinsetzen, type Klappe, type PlatzhalterGruppe } from '../bausteine';
 import { Link } from '../ort';
 import { rueckfrage } from '../rueckfrage';
@@ -102,7 +102,7 @@ function UrlGeheimnis({ a, karte }: { a: AutomatisierungAnsicht; karte: string }
   const [fehler, setFehler] = useState<string>();
   const lege = async () => {
     setFehler(undefined);
-    try { const r = await api.automatisierungGeheimnis(a.id, karte); setNeu({ geheimnis: r.geheimnis, kopiert: false }); setStand({ karte, erstellt: r.erstellt }); } catch (e) { setFehler((e as Error).message); }
+    try { const r = await automatisierungApi.automatisierungGeheimnis(a.id, karte); setNeu({ geheimnis: r.geheimnis, kopiert: false }); setStand({ karte, erstellt: r.erstellt }); } catch (e) { setFehler((e as Error).message); }
   };
   return (
     <section className="automatisierung-bereich aufruf" aria-label={t('automatisierung.ui.karte.dann.url.geheimnis')}>
@@ -114,7 +114,7 @@ function UrlGeheimnis({ a, karte }: { a: AutomatisierungAnsicht; karte: string }
         {stand && <Knopf art="gefahr" groesse="klein" symbol="geloescht"
           rueckfrage={{ titel: t('automatisierung.ui.karte.dann.url.geheimnis.entfernen.frage'), text: t('automatisierung.ui.karte.dann.url.geheimnis.entfernen.text'), ja: t('automatisierung.ui.karte.dann.url.geheimnis.entfernen') }}
           onClick={async () => {
-          try { await api.automatisierungGeheimnisEntfernen(a.id, karte); setStand(null); setNeu(null); } catch (e) { setFehler((e as Error).message); }
+          try { await automatisierungApi.automatisierungGeheimnisEntfernen(a.id, karte); setStand(null); setNeu(null); } catch (e) { setFehler((e as Error).message); }
         }}>{t('automatisierung.ui.karte.dann.url.geheimnis.entfernen')}</Knopf>}
       </div>
       {fehler && <p className="fehlertext klein">{fehler}</p>}
@@ -187,7 +187,7 @@ const ZUSTAND_ART: Record<string, string> = { zugestellt: 'gut', aufgegeben: 'sc
 export function Zustellungen({ a, klappe }: { a: AutomatisierungAnsicht; klappe: Klappe }) {
   const [liste, setListe] = useState<AussenZustellung[] | null>(null);
   const [fehler, setFehler] = useState<string>();
-  const laden = useCallback(async () => { try { setListe(await api.automatisierungZustellungen(a.id)); } catch (e) { setFehler((e as Error).message); } }, [a.id]);
+  const laden = useCallback(async () => { try { setListe(await automatisierungApi.automatisierungZustellungen(a.id)); } catch (e) { setFehler((e as Error).message); } }, [a.id]);
   useEffect(() => { void laden(); const z = setInterval(() => void laden(), 10_000); return () => clearInterval(z); }, [laden]);
   return (
     <Bereich id="zustellungen" titel={t('automatisierung.ui.zustellungen')} klappe={klappe}
@@ -218,13 +218,13 @@ export function AussenZiele({ nachher }: { nachher: () => void }) {
   const [ziele, setZiele] = useState<AussenZiel[] | null>(null);
   const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
   const [sendet, setSendet] = useState(false);
-  useEffect(() => { void api.automatisierungZiele().then((r) => setZiele(r.ziele.length ? r.ziele : [{ adresse: '', heimnetz: false }]), (e: Error) => setMeldung({ art: 'schlecht', text: e.message })); }, []);
+  useEffect(() => { void automatisierungApi.automatisierungZiele().then((r) => setZiele(r.ziele.length ? r.ziele : [{ adresse: '', heimnetz: false }]), (e: Error) => setMeldung({ art: 'schlecht', text: e.message })); }, []);
   if (!ziele) return meldung ? <div className="hinweis schlecht"><p>{meldung.text}</p></div> : <p className="leise">{t('automatisierung.ui.lade')}</p>;
   const setzeZiel = (i: number, z: Partial<AussenZiel>) => setZiele(ziele.map((x, j) => (j === i ? { ...x, ...z } : x)));
   const speichern = async () => {
     setSendet(true); setMeldung(undefined);
     try {
-      const r = await api.automatisierungZieleSetzen(ziele.filter((z) => z.adresse.trim()));
+      const r = await automatisierungApi.automatisierungZieleSetzen(ziele.filter((z) => z.adresse.trim()));
       setZiele(r.ziele.length ? r.ziele : [{ adresse: '', heimnetz: false }]);
       setMeldung({ art: r.betroffen.length ? 'schlecht' : 'gut', text: r.betroffen.length ? t('automatisierung.ui.ziele.betroffen', { namen: r.betroffen.map((x) => `„${x.name}“`).join(', ') }) : t('automatisierung.ui.ziele.gespeichert') });
       nachher();

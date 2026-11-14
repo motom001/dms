@@ -25,7 +25,7 @@ export function starteSammler() {
   seite();
 }
 
-/** Aus api.ts: eine Anfrage ist fehlgeschlagen (Methode, Pfad ohne Abfrage, Status, Meldung). */
+/** Aus api/anfrage.ts: eine Anfrage ist fehlgeschlagen (Methode, Pfad ohne Abfrage, Status, Meldung). */
 export function merkeAnfrage(methode: string, url: string, status: number, meldung: string) {
   merke(anfragen, { art: 'anfrage', text: `${methode} ${url.split('?')[0]} → ${status || t('oberflaeche.diagnose.nicht-erreichbar')}: ${meldung}`.slice(0, 300) });
 }

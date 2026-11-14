@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
-import { api, type BetriebAnsicht } from '../api';
+import { betriebApi, type BetriebAnsicht } from '../api/betrieb';
+import { kontoApi } from '../api/konto';
 import { MailVersand } from './MailVersand';
 import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 import { t, tn } from '../sprache';
@@ -14,7 +15,7 @@ export function useBetrieb() {
   const [stand, setStand] = useState<BetriebAnsicht | null>(null);
   const [fehler, setFehler] = useState<string>();
   const laden = useCallback(async () => {
-    try { setStand(await api.betrieb()); setFehler(undefined); } catch (e) { setFehler((e as Error).message); }
+    try { setStand(await betriebApi.betrieb()); setFehler(undefined); } catch (e) { setFehler((e as Error).message); }
   }, []);
   return { stand, setStand, fehler, laden };
 }
@@ -49,11 +50,11 @@ function Adresse({ b }: { b: BetriebZustand }) {
   // Passkey-Pflicht an (#811)? Dann warnen, bevor die Adresse ohne https:// gespeichert wird. Ohne Recht auf den
   // Anmeldeschutz gibt es die Angabe nicht – dann ohne Warnung.
   const [pflicht, setPflicht] = useState(false);
-  useEffect(() => { api.passkeyPflicht().then((p) => setPflicht(p.admin || p.mitglied)).catch(() => setPflicht(false)); }, []);
+  useEffect(() => { kontoApi.passkeyPflicht().then((p) => setPflicht(p.admin || p.mitglied)).catch(() => setPflicht(false)); }, []);
   const ent = useEntwurf(s.adresse, adresse.trim(), { zuruecksetzen: () => { setAdresse(s.adresse); setMeldung(undefined); } });
   async function speichern(ev?: FormEvent, wert = adresse) {
     ev?.preventDefault();
-    try { const n = await api.adresseSpeichern(wert); b.setStand({ ...b.stand!, ...n }); setAdresse(n.adresse); setMeldung({ art: 'gut', text: n.adresse ? t('werkbank.betrieb.gespeichert') : t('werkbank.betrieb.keine-adresse-gepflegt-links') }); }
+    try { const n = await betriebApi.adresseSpeichern(wert); b.setStand({ ...b.stand!, ...n }); setAdresse(n.adresse); setMeldung({ art: 'gut', text: n.adresse ? t('werkbank.betrieb.gespeichert') : t('werkbank.betrieb.keine-adresse-gepflegt-links') }); }
     catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); }
   }
   return (

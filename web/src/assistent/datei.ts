@@ -1,5 +1,5 @@
 import { SAMMELSCHRITTE, type PlanPaket, type Planprobleme } from '../../../shared/src/einrichtungsplan';
-import { api } from '../api';
+import { einrichtungApi } from '../api/einrichtung';
 import { t } from '../sprache';
 import type { PaketWahl } from '../werkbank/PaketAblauf';
 import { geheim, holeStand, planAus, sammlungAus, setzeSammlung, setzeStand, type Ansicht } from './stand';
@@ -15,11 +15,11 @@ export const ersterProblemschritt = (p: Planprobleme): Ansicht | undefined => SA
 /** Pakete aus der Datei ohne Rückfrage übernehmen – nur, wenn nichts zu bestätigen ist; sonst der Grund. */
 async function paketeAusVorgabe(vorgabe: PlanPaket[]): Promise<string | null> {
   try {
-    const k = (await api.einrichtungPaketKatalog()).kataloge.find((x) => x.offiziell);
+    const k = (await einrichtungApi.einrichtungPaketKatalog()).kataloge.find((x) => x.offiziell);
     if (!k?.katalog) return t('einrichtung.pakete.katalog', { fehler: k?.fehler ?? '' });
     const fehlen = vorgabe.filter((v) => !k.katalog!.pakete.some((p) => p.id === v.id)).map((v) => v.id);
     if (fehlen.length) return t('einrichtung.pakete.unbekannt', { namen: fehlen.join(', ') });
-    const plan = await api.einrichtungPaketPlan({ pakete: vorgabe.map((v) => v.id) });
+    const plan = await einrichtungApi.einrichtungPaketPlan({ pakete: vorgabe.map((v) => v.id) });
     // Rechte, Herkunft, Namen und Pflicht-Einstellungen bestätigt immer ein Mensch – auch mit Datei.
     const fragen = plan.probleme.length > 0 || plan.herkunftBestaetigen || plan.rechte.bestaetigen || !!plan.ausgelassen?.length
       || plan.pakete.some((p) => p.einstellungen.length > 0 || p.vorschau.probleme.length > 0
@@ -45,7 +45,7 @@ async function paketeAusVorgabe(vorgabe: PlanPaket[]): Promise<string | null> {
 /** Alles prüfen, ohne etwas anzulegen; die Gründe stehen danach je Schritt in der Sammlung. */
 export async function pruefeAlles(): Promise<Planprobleme> {
   const s = holeStand().sammlung;
-  const { probleme } = await api.einrichtungPruefen(planAus(s), geheim.konto || undefined);
+  const { probleme } = await einrichtungApi.einrichtungPruefen(planAus(s), geheim.konto || undefined);
   const p: Planprobleme = { ...probleme };
   const dazu = (k: keyof Planprobleme, m: string | null) => { if (m) p[k] = [...(p[k] ?? []), m]; };
   if (s.paketeVorgabe?.length && !s.pakete) dazu('pakete', await paketeAusVorgabe(s.paketeVorgabe));
@@ -66,7 +66,7 @@ export async function nachDemLaden() {
 
 /** Datei lesen; Fehler mit Zeile und Feld stehen danach oben im Schritt. */
 export async function ladeDatei(text: string, imEinrichtungsmodus: boolean) {
-  const r = await api.einrichtungDateiLesen(text);
+  const r = await einrichtungApi.einrichtungDateiLesen(text);
   if (!r.plan || r.fehler.length) { setzeStand((x) => ({ ...x, dateiFehler: r.fehler })); return; }
   geheim.konto = ''; geheim.mail = ''; geheim.paketEinstellungen = undefined;
   setzeStand((x) => ({ ...x, neu: true, lauf: null, aendern: null, dateiFehler: [], sammlung: { ...sammlungAus(r.plan!, r.hinweise), pruefungOffen: true } }));
@@ -75,7 +75,7 @@ export async function ladeDatei(text: string, imEinrichtungsmodus: boolean) {
 
 /** „Als Datei speichern“ in der Zusammenfassung: ohne Passwörter und ohne Schlüssel. */
 export async function speichereDatei() {
-  const r = await api.einrichtungDateiSchreiben(planAus(holeStand().sammlung));
+  const r = await einrichtungApi.einrichtungDateiSchreiben(planAus(holeStand().sammlung));
   const link = Object.assign(document.createElement('a'), { href: URL.createObjectURL(new Blob([r.text], { type: 'application/yaml' })), download: r.name });
   document.body.append(link); link.click(); link.remove();
   setTimeout(() => URL.revokeObjectURL(link.href), 60_000);

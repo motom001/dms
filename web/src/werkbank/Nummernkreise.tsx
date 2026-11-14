@@ -1,5 +1,8 @@
 import { type FormEvent, useCallback, useEffect, useState } from 'react';
-import { api, speichereDatei, type Auftrag, type NummernkreisAnsicht } from '../api';
+import type { Auftrag } from '../../../shared/src/auftrag';
+import { speichereDatei } from '../api/anfrage';
+import { betriebApi } from '../api/betrieb';
+import { werkbankApi, type NummernkreisAnsicht } from '../api/werkbank';
 import { useDaten } from '../daten';
 import { geheZu, Link, loeseWache } from '../ort';
 import { Speicherleiste, useEntwurf, useGespeichertNachziehen } from '../Speicherleiste';
@@ -24,7 +27,7 @@ const zeit = (iso: string) => new Date(iso).toLocaleString(gebietsschema(), { da
 export function useNummernkreise(offen: boolean) {
   const [liste, setListe] = useState<NummernkreisAnsicht[] | null>(null);
   const [fehler, setFehler] = useState<string>();
-  const laden = useCallback(async () => { try { setListe(await api.nummernkreise()); setFehler(undefined); } catch (e) { setFehler((e as Error).message); } }, []);
+  const laden = useCallback(async () => { try { setListe(await werkbankApi.nummernkreise()); setFehler(undefined); } catch (e) { setFehler((e as Error).message); } }, []);
   useEffect(() => { if (offen) void laden(); }, [offen, laden]);
   return { liste, fehler, laden, setListe };
 }
@@ -106,7 +109,7 @@ export function NummernkreisEditor({ z, schluessel }: { z: NummernkreisZustand; 
     setSendet(true); setMeldung(undefined); setSpeicherFehler(false);
     try {
       const daten = { name: e.name, muster: e.muster, start: Number(e.start) };
-      z.setListe(neu ? await api.nummernkreisAnlegen({ ...daten, schluessel: e.schluessel }) : await api.nummernkreisAendern(k!.schluessel, daten));
+      z.setListe(neu ? await werkbankApi.nummernkreisAnlegen({ ...daten, schluessel: e.schluessel }) : await werkbankApi.nummernkreisAendern(k!.schluessel, daten));
       // Nach dem Anlegen aufgeklappt bleiben wie gerade (wie beim Mappentyp).
       if (neu) { b.merke(e.schluessel); loeseWache(); geheZu(`/werkbank/nummernkreise/${e.schluessel}`, true); }
       setMeldung({ art: 'gut', text: neu ? t('werkbank.nummernkreise.angelegt') : t('werkbank.nummernkreise.gespeichert-das-muster-gilt') });
@@ -149,7 +152,7 @@ export function NummernkreisEditor({ z, schluessel }: { z: NummernkreisZustand; 
             grund: t('werkbank.nummernkreise.loeschen-gesperrt'),
             eintraege: k!.verwendet.map((v) => <><Link to={`/werkbank/typen/${v.typId}`} className="verweis">{v.typ}</Link> · {v.feld}</>),
           },
-          onClick: () => tu(async () => { z.setListe(await api.nummernkreisLoeschen(k!.schluessel)); loeseWache(); geheZu('/werkbank/nummernkreise', true); return t('werkbank.nummernkreise.geloescht'); }),
+          onClick: () => tu(async () => { z.setListe(await werkbankApi.nummernkreisLoeschen(k!.schluessel)); loeseWache(); geheZu('/werkbank/nummernkreise', true); return t('werkbank.nummernkreise.geloescht'); }),
         } : undefined} />
     </div>
   );
@@ -166,7 +169,7 @@ function NummernkreisStand({ k, z, b, tu }: { k: NummernkreisAnsicht; z: Nummern
           <p className="leise klein">{t('werkbank.nummernkreise.zuletzt-vergeben')}</p>
           <ul className="stapel klein">{k.zuletzt.map((x) => <li key={`${x.nummer}-${x.am}`}><code className="mono">{x.nummer}</code> · {zeit(x.am)}{x.mappeId && <> · <Link to={`/ablage/mappe/${x.mappeId}`} className="verweis">{t('werkbank.nummernkreise.mappe')}</Link></>}</li>)}</ul>
         </>}
-        <form className="zeile" onSubmit={abfangen(async (x: FormEvent) => { x.preventDefault(); if (await rueckfrage({ titel: t('werkbank.nummernkreise.zaehlerstand-setzen'), text: t('werkbank.nummernkreise.die-naechste-nummer-bekommt', { zaehler }), ja: t('werkbank.nummernkreise.zaehlerstand-setzen-2') })) void tu(async () => { z.setListe(await api.nummernkreisZaehler(k.schluessel, Number(zaehler))); setZaehler(''); return t('werkbank.nummernkreise.zaehlerstand-gesetzt'); }); })}>
+        <form className="zeile" onSubmit={abfangen(async (x: FormEvent) => { x.preventDefault(); if (await rueckfrage({ titel: t('werkbank.nummernkreise.zaehlerstand-setzen'), text: t('werkbank.nummernkreise.die-naechste-nummer-bekommt', { zaehler }), ja: t('werkbank.nummernkreise.zaehlerstand-setzen-2') })) void tu(async () => { z.setListe(await werkbankApi.nummernkreisZaehler(k.schluessel, Number(zaehler))); setZaehler(''); return t('werkbank.nummernkreise.zaehlerstand-gesetzt'); }); })}>
           <Feld beschriftung={t('werkbank.nummernkreise.zaehlerstand-setzen-2')} hinweis={t('werkbank.nummernkreise.zaehler-der-naechsten-nummer')}>
             <input id="nk-zaehler" type="number" min={0} value={zaehler} onChange={(x) => setZaehler(x.target.value)} /></Feld>
           <Knopf type="submit" gesperrt={zaehler === ''}>{t('werkbank.nummernkreise.setzen')}</Knopf>
@@ -197,13 +200,13 @@ export function NummernNachtragen() {
   const [typId, feldKey] = wahl.split('|');
   useEffect(() => {
     setVorschau(null); setFehler(undefined);
-    if (wahl) api.nummernVorschau(typId, feldKey).then(setVorschau).catch((e) => setFehler((e as Error).message));
+    if (wahl) betriebApi.nummernVorschau(typId, feldKey).then(setVorschau).catch((e) => setFehler((e as Error).message));
   }, [wahl, typId, feldKey]);
   useEffect(() => {
     if (auftrag?.status !== 'laeuft') return;
-    const timer = setInterval(() => void api.auftrag().then((a) => {
+    const timer = setInterval(() => void betriebApi.auftrag().then((a) => {
       setAuftrag(a);
-      if (a?.status !== 'laeuft' && wahl) void api.nummernVorschau(typId, feldKey).then(setVorschau);
+      if (a?.status !== 'laeuft' && wahl) void betriebApi.nummernVorschau(typId, feldKey).then(setVorschau);
     }), 1000);
     return () => clearInterval(timer);
   }, [auftrag?.status, wahl, typId, feldKey]);
@@ -223,7 +226,7 @@ export function NummernNachtragen() {
         {ergebnis && <p className="gutertext" role="status">{t('werkbank.nummernkreise.nummern-vergeben', { vergeben: ergebnis.vergeben, wert: ergebnis.erste ? t('werkbank.nummernkreise.bis-2', { erste: ergebnis.erste, letzte: String(ergebnis.letzte) }) : '' })}</p>}
         {(fehler || auftrag?.status === 'fehler') && <p className="fehlertext">{fehler ?? auftrag?.fehler}</p>}
         <div className="knoepfe"><Knopf art="haupt" gesperrt={!vorschau?.anzahl} laeuft={auftrag?.status === 'laeuft'}
-          onClick={() => api.nummernNachtragen(typId, feldKey).then(setAuftrag).catch((e) => setFehler((e as Error).message))}>{t('werkbank.nummernkreise.nummern-vergeben-2')}</Knopf></div>
+          onClick={() => betriebApi.nummernNachtragen(typId, feldKey).then(setAuftrag).catch((e) => setFehler((e as Error).message))}>{t('werkbank.nummernkreise.nummern-vergeben-2')}</Knopf></div>
       </>}
     </section>
   );

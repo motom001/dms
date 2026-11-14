@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { api, type Fehlermeldung } from '../api';
+import { betriebApi, type Fehlermeldung } from '../api/betrieb';
 import { geheZu, Link } from '../ort';
 import { Person } from '../Person';
 import { Listenkopf } from '../Listenkopf';
@@ -19,7 +19,7 @@ export function useFehlermeldungen(aktiv: boolean) {
   const [fehler, setFehler] = useState<string>();
   const laden = useCallback(async () => {
     try {
-      const [offen, zu] = await Promise.all([api.fehlermeldungen(false), erledigt ? api.fehlermeldungen(true) : Promise.resolve([])]);
+      const [offen, zu] = await Promise.all([betriebApi.fehlermeldungen(false), erledigt ? betriebApi.fehlermeldungen(true) : Promise.resolve([])]);
       setListe([...offen, ...zu].sort((a, b) => b.erstellt.localeCompare(a.erstellt)));
       setFehler(undefined);
     } catch (e) { setFehler((e as Error).message); }
@@ -89,12 +89,12 @@ function Angaben({ wert }: { wert: unknown }) {
 export function FehlermeldungDetail({ id, neuLaden }: { id: string; z: FehlermeldungenZustand; neuLaden: () => Promise<void> }) {
   const [m, setM] = useState<Fehlermeldung | null>(null);
   const [fehler, setFehler] = useState<string>();
-  useEffect(() => { api.fehlermeldung(id).then(setM, (e: Error) => setFehler(e.message)); }, [id]);
+  useEffect(() => { betriebApi.fehlermeldung(id).then(setM, (e: Error) => setFehler(e.message)); }, [id]);
   async function erledigt(an: boolean) {
-    try { setM(await api.fehlermeldungErledigt(id, an)); await neuLaden(); } catch (e) { setFehler((e as Error).message); }
+    try { setM(await betriebApi.fehlermeldungErledigt(id, an)); await neuLaden(); } catch (e) { setFehler((e as Error).message); }
   }
   async function loeschen() {
-    try { await api.fehlermeldungLoeschen(id); await neuLaden(); geheZu('/werkbank/fehlermeldungen'); } catch (e) { setFehler((e as Error).message); }
+    try { await betriebApi.fehlermeldungLoeschen(id); await neuLaden(); geheZu('/werkbank/fehlermeldungen'); } catch (e) { setFehler((e as Error).message); }
   }
   if (fehler) return <div className="hinweis schlecht"><p>{fehler}</p></div>;
   if (!m) return <p className="leise">{t('werkbank.fehlermeldungen.lade')}</p>;

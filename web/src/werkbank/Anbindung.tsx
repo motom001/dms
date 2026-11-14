@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { ErgebnisBlock, Knopf } from '../bausteine';
-import { api, ApiFehler, type AnbindungEingabe, type AnbindungPruefung, type AnbindungStand } from '../api';
+import { ApiFehler } from '../api/anfrage';
+import { einrichtungApi, type AnbindungEingabe, type AnbindungPruefung, type AnbindungStand } from '../api/einrichtung';
+import { kontoApi } from '../api/konto';
 import { AnbindungFormular, PruefungAnzeige } from '../einrichtung';
 import { Link } from '../ort';
 import { t, tn } from '../sprache';
@@ -15,7 +17,7 @@ import { Kopf } from './Kopf';
 export function useAnbindung(offen: boolean) {
   const [stand, setStand] = useState<AnbindungStand | null>(null);
   const [fehler, setFehler] = useState<string>();
-  const laden = useCallback(async () => { try { setStand(await api.anbindung()); setFehler(undefined); } catch (e) { setFehler((e as Error).message); } }, []);
+  const laden = useCallback(async () => { try { setStand(await einrichtungApi.anbindung()); setFehler(undefined); } catch (e) { setFehler((e as Error).message); } }, []);
   useEffect(() => { if (offen) void laden(); }, [offen, laden]);
   return { stand, fehler, laden, setStand };
 }
@@ -46,11 +48,11 @@ export function AnbindungPanel({ z, nachAenderung, unten }: { z: AnbindungZustan
   }
   async function neuStarten() {
     setNeustart(true);
-    await api.neustart().catch(() => {});
+    await einrichtungApi.neustart().catch(() => {});
     // Im Container startet Docker das DMS wieder; dann die Seite neu laden.
     for (let i = 0; i < 120; i++) {
       await new Promise((r) => setTimeout(r, 2000));
-      try { await api.status(); location.reload(); return; } catch { /* startet noch */ }
+      try { await kontoApi.status(); location.reload(); return; } catch { /* startet noch */ }
     }
   }
 
@@ -70,7 +72,7 @@ export function AnbindungPanel({ z, nachAenderung, unten }: { z: AnbindungZustan
           <Knopf art="haupt" groesse="klein" laeuft={neustart} laeuftText={t('werkbank.anbindung.startet-neu')} onClick={() => void neuStarten()}>{t('werkbank.anbindung.jetzt-neu-starten')}</Knopf>
         </div>
       )}
-      <form id="anbindung" className="blatt" onSubmit={(ev) => { ev.preventDefault(); void tu(async () => setP(await api.anbindungPruefen(a))); }}>
+      <form id="anbindung" className="blatt" onSubmit={(ev) => { ev.preventDefault(); void tu(async () => setP(await einrichtungApi.anbindungPruefen(a))); }}>
         <h2 className="h3">{t('werkbank.anbindung.verbindung')}</h2>
         <p className="klein">{tn('werkbank.anbindung.aktuell-verbunden', { span: <span className="mono">{s.anbindung.benutzer}@{s.anbindung.host}:{s.anbindung.port}/{s.anbindung.datenbank}</span>, wert: s.neustartNoetig ? <span className="chip warn">{t('werkbank.anbindung.geaendert-gilt-nach-dem')}</span> : <span className="chip gut">{t('werkbank.anbindung.in-betrieb')}</span> })}</p>
         <AnbindungFormular wert={a} setWert={(x) => { setA(x); setP(null); setLeer(false); }} passwortGesetzt={s.anbindung.passwortGesetzt} felder={felder} />
@@ -78,7 +80,7 @@ export function AnbindungPanel({ z, nachAenderung, unten }: { z: AnbindungZustan
           <Knopf type="submit" laeuft={laeuft} laeuftText={t('werkbank.anbindung.pruefe')}>{t('werkbank.anbindung.verbindung-pruefen')}</Knopf>
           <Knopf art="haupt" gesperrt={laeuft || !p?.ok}
             onClick={() => void tu(async () => {
-              const neu = await api.anbindungSpeichern(a, leer);
+              const neu = await einrichtungApi.anbindungSpeichern(a, leer);
               z.setStand(neu); setMeldung({ art: 'gut', text: t('werkbank.anbindung.gespeichert-die-neue-anbindung') }); nachAenderung?.();
             })}>{leer ? t('werkbank.anbindung.trotzdem-uebernehmen') : t('werkbank.anbindung.uebernehmen')}</Knopf>
         </div>

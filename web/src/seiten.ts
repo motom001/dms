@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Ausschnitt, Mappe, Sortierung } from '../../shared/src/model';
-import { api, type AehnlicheMappe, type Bezuege, type Unscharf } from './api';
+import { mappenApi, type AehnlicheMappe, type Bezuege, type Unscharf } from './api/mappen';
 import { t } from './sprache';
 
 export const SEITE = 100;
@@ -41,7 +41,7 @@ export function useSeiten(sicht: string | undefined, suche: string, stand: numbe
     const nr = ++lauf.current;
     setLaedt(true);
     try {
-      const s = await api.seite(sicht, von, anzahl, suche, sortierung, volltext, notizen, link, undefined, bekannt);
+      const s = await mappenApi.seite(sicht, von, anzahl, suche, { sortierung, volltext, notizen, link, gesamt: bekannt });
       if (nr !== lauf.current) return; // überholt
       setGesamt(s.gesamt);
       if (ersetzen) { setUnscharf(s.unscharf ?? null); setAehnlich(s.aehnlich ?? []); }

@@ -1,6 +1,6 @@
 import { useRef, useSyncExternalStore } from 'react';
 import type { FrageAusschnitt, FrageGekuerzt, VerlaufEintrag } from '../../../shared/src/fragen';
-import { frageStellen } from '../api';
+import { frageStellen } from '../api/suche';
 import { Feld, Knopf } from '../bausteine';
 import { Link } from '../ort';
 import { titelOder } from '../seiten';

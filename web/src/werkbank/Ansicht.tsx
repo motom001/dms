@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { api, type WerkbankAnsichtStand } from '../api';
+import { werkbankApi, type WerkbankAnsichtStand } from '../api/werkbank';
 import { Link } from '../ort';
 import { FeldGruppe, Schalter } from '../bausteine';
 import { Speicherleiste, useEntwurf } from '../Speicherleiste';
@@ -19,7 +19,7 @@ export function useWerkbankAnsicht() {
   const [stand, setStand] = useState<WerkbankAnsichtStand | null>(null);
   const [fehler, setFehler] = useState<string>();
   const laden = useCallback(async () => {
-    try { setStand(await api.werkbankAnsicht()); setFehler(undefined); } catch (e) { setFehler((e as Error).message); }
+    try { setStand(await werkbankApi.werkbankAnsicht()); setFehler(undefined); } catch (e) { setFehler((e as Error).message); }
   }, []);
   useEffect(() => { void laden(); }, [laden]);
   /** Ohne Stand (z. B. ältere Server) bleibt alles sichtbar. */
@@ -78,7 +78,7 @@ export function AnsichtPanel({ z, zustand }: { z: WerkbankAnsichtZustand; zustan
   async function speichern() {
     setLaeuft(true); setMeldung(undefined);
     try {
-      const neu = await api.setzeWerkbankAnsicht({ installation: ansichtAus(vorlage, alle), eigene: { ein: [...ich].filter((p) => !alle.has(p)), experte } });
+      const neu = await werkbankApi.setzeWerkbankAnsicht({ installation: ansichtAus(vorlage, alle), eigene: { ein: [...ich].filter((p) => !alle.has(p)), experte } });
       z.setStand({ ...neu, benutzt: s?.benutzt });
       setMeldung({ art: 'gut', text: t('werkbank.ansicht.gespeichert-die-leiste-links') });
     } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); } finally { setLaeuft(false); }

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { t, tn } from '../sprache';
 import { AUFGABENARTEN, HISTORIENARTEN, HISTORIENGRUPPEN, historiengruppenVon, type Aufgabenart, type Feldaenderung, type Historieneintrag, type Mappentyp, type Register } from '../../../shared/src/model';
 import { feldLabel } from '../../../shared/src/beschriftung';
-import { api } from '../api';
+import { mappenApi } from '../api/mappen';
 import { useDaten } from '../daten';
 import { Link } from '../ort';
 import { Person } from '../Person';
@@ -307,7 +307,7 @@ export function Historie({ mappeId, stand, typ, register }: { mappeId: string; s
   const lade = (vor?: number) => {
     const nr = ++lauf.current;
     setLaedt(true);
-    api.historie(mappeId, { register: filter, max: HISTORIE_SEITE, vor }).then((h) => {
+    mappenApi.historie(mappeId, { register: filter, max: HISTORIE_SEITE, vor }).then((h) => {
       if (nr !== lauf.current) return;
       setListe((x) => (vor !== undefined && x ? [...x, ...h] : h)); setWeitere(h.length === HISTORIE_SEITE); setFehler(undefined); setLaedt(false);
     }, (e: Error) => { if (nr === lauf.current) { setFehler(e.message); setLaedt(false); } });

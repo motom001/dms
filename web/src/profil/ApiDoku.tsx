@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { api } from '../api';
+import { betriebApi } from '../api/betrieb';
 import { Link } from '../ort';
 import { t, tn } from '../sprache';
 
@@ -12,7 +12,7 @@ type J = Record<string, any>; // eslint-disable-line @typescript-eslint/no-expli
 export function ApiDoku() {
   const [doc, setDoc] = useState<J | null>(null);
   const [fehler, setFehler] = useState<string>();
-  useEffect(() => { api.openapi().then(setDoc).catch((e) => setFehler((e as Error).message)); }, []);
+  useEffect(() => { betriebApi.openapi().then(setDoc).catch((e) => setFehler((e as Error).message)); }, []);
   if (fehler) return <div className="hinweis schlecht"><p>{fehler}</p></div>;
   if (!doc) return <p className="leise">{t('profil.apidoku.lade')}</p>;
   const basis = `${location.origin}${doc.servers?.[0]?.url ?? '/api/v1'}`;

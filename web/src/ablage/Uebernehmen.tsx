@@ -8,7 +8,9 @@ import { istTeiltyp } from '../../../shared/src/teile';
 import { textformen, stelleVon, wertAusText } from '../../../shared/src/uebernehmen';
 import type { WortSeite } from '../../../shared/src/archivfassung';
 import { wegfallendeSeiten, type Leerseiten } from '../../../shared/src/leerseiten';
-import { api, dokumentUrl, schwaerzBildUrl, type Bezuege, type MappeDetails, type TypVorschlaege } from '../api';
+import { dokumenteApi, dokumentUrl, schwaerzBildUrl } from '../api/dokumente';
+import { mappenApi, type Bezuege, type MappeDetails } from '../api/mappen';
+import { werkbankApi, type TypVorschlaege } from '../api/werkbank';
 import { Dreiteilung } from '../bereiche';
 import { useDaten } from '../daten';
 import { Hilfe } from '../Hilfe';
@@ -57,7 +59,7 @@ export function UebernehmenSeite({ id, sicht, links, suche }: { id: string; sich
   const d = useDaten();
   const [details, setDetails] = useState<Laden<MappeDetails>>(null);
   const laden = useCallback(async () => {
-    try { setDetails(await api.mappe(id)); } catch { setDetails('fehlt'); }
+    try { setDetails(await mappenApi.mappe(id)); } catch { setDetails('fehlt'); }
   }, [id]);
   useEffect(() => { void laden(); }, [laden]);
   // Solange die Texterkennung läuft, kommt der Text nach – dann noch einmal laden (Vorschläge und Rahmen).
@@ -122,7 +124,7 @@ function Uebernehmen({ details, typ, sicht, links, neuLaden, dokumentWunsch }: {
     if (!post || gewaehlt) return;
     if (!erkennKey) { setKlass(null); return; }
     let aktuell = true;
-    api.klassifizieren({ dokumente: erkennKey.split(',') }).then((r) => {
+    mappenApi.klassifizieren({ dokumente: erkennKey.split(',') }).then((r) => {
       if (!aktuell) return;
       setKlass(r);
       if (r.vorschlag && ziele.some((x) => x.id === r.vorschlag!.typId)) setZielId(r.vorschlag.typId);
@@ -140,8 +142,8 @@ function Uebernehmen({ details, typ, sicht, links, neuLaden, dokumentWunsch }: {
     setErkannt(null);
     const ids = erkennKey.split(',');
     void Promise.allSettled([
-      api.vorschlaege(zielTyp.id, { dokumente: ids, ...(post ? {} : { mappe: m.id }) }),
-      api.abgleich({ dokumente: ids, typ: zielTyp.id }),
+      werkbankApi.vorschlaege(zielTyp.id, { dokumente: ids, ...(post ? {} : { mappe: m.id }) }),
+      mappenApi.abgleich({ dokumente: ids, typ: zielTyp.id }),
     ]).then(([v, a]) => {
       if (aktuell) setErkannt({ typId: zielTyp.id, vorschlaege: v.status === 'fulfilled' ? v.value : null, abgleich: a.status === 'fulfilled' ? a.value : null });
     });
@@ -155,7 +157,7 @@ function Uebernehmen({ details, typ, sicht, links, neuLaden, dokumentWunsch }: {
     let aktuell = true;
     for (const x of doks) {
       if (!kannSchwaerzen(x.mime)) { setWoerter((w) => ({ ...w, [x.id]: 'keine' })); continue; }
-      api.wortpositionen(x.id).then(
+      dokumenteApi.wortpositionen(x.id).then(
         (r) => aktuell && setWoerter((w) => ({ ...w, [x.id]: { seiten: alsSeiten(r.seiten), mitText: r.seiten.some((s) => s.woerter.length > 0) } })),
         () => aktuell && setWoerter((w) => ({ ...w, [x.id]: 'keine' })),
       );
@@ -274,14 +276,14 @@ function Uebernehmen({ details, typ, sicht, links, neuLaden, dokumentWunsch }: {
   async function abtrennen(ab: number) {
     const weg = doks.slice(ab).map((x) => x.id);
     try {
-      const r = await api.postAbtrennen(m.id, weg);
+      const r = await mappenApi.postAbtrennen(m.id, weg);
       setMeldung({ art: 'gut', text: t('ablage.uebernehmen.abgetrennt', { anzahl: weg.length, titel: titelOder(r.neu.titel) }) });
       await neuLaden(); await d.neuLaden();
     } catch (e) { await hinweis({ titel: t('ablage.uebernehmen.nicht-abgetrennt'), text: (e as Error).message }); }
   }
   async function hochladen(dateien: File[]) {
     const fehler: string[] = [];
-    for (const f of dateien) { try { await api.ladeHoch(m.id, postRegister, f); } catch (e) { fehler.push(`„${f.name}“: ${(e as Error).message}`); } }
+    for (const f of dateien) { try { await mappenApi.ladeHoch(m.id, postRegister, f); } catch (e) { fehler.push(`„${f.name}“: ${(e as Error).message}`); } }
     if (fehler.length) await hinweis({ titel: t('ablage.uebernehmen.nicht-hochgeladen'), text: fehler.join('\n') });
     await neuLaden(); await d.neuLaden();
   }
@@ -293,7 +295,7 @@ function Uebernehmen({ details, typ, sicht, links, neuLaden, dokumentWunsch }: {
     loeseWache();
     await d.neuLaden();
     const np = d.zaehler.neuePost;
-    const naechste = np ? (await api.seite(np, 0, 2).catch(() => null))?.mappen.find((x) => !x.verborgen && x.id !== m.id) : undefined;
+    const naechste = np ? (await mappenApi.seite(np, 0, 2).catch(() => null))?.mappen.find((x) => !x.verborgen && x.id !== m.id) : undefined;
     if (naechste && np) {
       if (nach) merkeAufloesung({ fuer: naechste.id, ...nach });
       geheZu(`/ablage/${np}/${naechste.id}/uebernehmen`);
@@ -309,13 +311,13 @@ function Uebernehmen({ details, typ, sicht, links, neuLaden, dokumentWunsch }: {
     const reg = zt?.register.find((r) => r.art === 'dokumente')?.key;
     if (details.dokumente.length && !reg) { await hinweis({ titel: t('ablage.uebernehmen.nicht-zugeordnet'), text: t('ablage.uebernehmen.ohne-dokumentenregister', { typ: zt ? typName(zt) : '' }) }); return; }
     try {
-      const r = await api.zuordnen(m.id, { ziel: ziel.id, register: reg, dokumente: mitDoks, kopieren: false, aufloesen: true, ...emlAus });
+      const r = await mappenApi.zuordnen(m.id, { ziel: ziel.id, register: reg, dokumente: mitDoks, kopieren: false, aufloesen: true, ...emlAus });
       if (r.hinweis) await hinweis({ titel: t('ablage.mappeformular.post-bleibt-zugeordnet'), text: r.hinweis });
       await weiter(r.aufgeloest ? { ...ziel, titel: r.ziel.titel ?? ziel.titel, vorhanden: true, leerseiten: r.leerseiten } : undefined);
     } catch (e) { await hinweis({ titel: t('ablage.uebernehmen.nicht-zugeordnet'), text: (e as Error).message }); }
   }
   async function ohneMappe() {
-    try { await api.mappeAendern(m.id, { werte: { stand: POST_STAND.erledigt } }); await weiter(); }
+    try { await mappenApi.mappeAendern(m.id, { werte: { stand: POST_STAND.erledigt } }); await weiter(); }
     catch (e) { await hinweis({ titel: t('ablage.uebernehmen.nicht-erledigt'), text: (e as Error).message }); }
   }
 
@@ -338,7 +340,7 @@ function Uebernehmen({ details, typ, sicht, links, neuLaden, dokumentWunsch }: {
     if (!post || doks.length < 2) { setFolge({}); return; }
     let aktuell = true;
     const mitT = nurHauptdokumente(doks).filter((x) => x.ocr?.stand === 'fertig').slice(0, DOKS_MAX);
-    void Promise.allSettled(mitT.map((x) => api.abgleich({ dokumente: [x.id] }))).then((rs) => {
+    void Promise.allSettled(mitT.map((x) => mappenApi.abgleich({ dokumente: [x.id] }))).then((rs) => {
       if (!aktuell) return;
       const je = new Map(mitT.map((x, i) => [x.id, rs[i].status === 'fulfilled' ? rs[i].value : null]));
       const erster = je.get(doks[0].id);
@@ -365,7 +367,7 @@ function Uebernehmen({ details, typ, sicht, links, neuLaden, dokumentWunsch }: {
   useEffect(() => {
     if (!post || !np) return;
     let aktuell = true;
-    api.seite(np, 0, 200).then((s) => aktuell && setReihe(s.mappen.filter((x) => !x.verborgen).map((x) => x.id)), () => {});
+    mappenApi.seite(np, 0, 200).then((s) => aktuell && setReihe(s.mappen.filter((x) => !x.verborgen).map((x) => x.id)), () => {});
     return () => { aktuell = false; };
   }, [post, np, d.stand]);
   const pos = reihe ? reihe.indexOf(m.id) : -1;
@@ -482,7 +484,7 @@ function useMappenVorschlaege(erkennKey: string, ziele: Mappentyp[], postId: str
     let aktuell = true;
     setListe(null);
     const erlaubt = new Set(zieleKey.split(','));
-    api.abgleich({ dokumente: erkennKey.split(',') }).then((r) => {
+    mappenApi.abgleich({ dokumente: erkennKey.split(',') }).then((r) => {
       if (!aktuell) return;
       const eigene = new Set(r.eigene ?? []);
       setListe(r.treffer.filter((x) => x.mappeId !== postId && erlaubt.has(x.typId) && !eigene.has(x.mappeId)).slice(0, 3)

@@ -5,7 +5,9 @@ import { PASSWORT_MINDESTLAENGE } from '../../../shared/src/model';
 import { beruflichBei, leereOrganisation, NUTZUNGEN, PAKETE_JE_NUTZUNG, type Nutzung, type Sammelschritt } from '../../../shared/src/einrichtungsplan';
 import { VORLAGEN, vorlageFuer } from '../../../shared/src/werkbankansicht';
 import { Feld, FeldGruppe, HakenFeld, Knopf } from '../bausteine';
-import { api, heikleDatei } from '../api';
+import { heikleDatei } from '../api/anfrage';
+import { betriebApi } from '../api/betrieb';
+import { einrichtungApi } from '../api/einrichtung';
 import { Marke } from '../Marke';
 import { geheZu } from '../ort';
 import { rueckfrage } from '../rueckfrage';
@@ -245,7 +247,7 @@ function useSenden() {
 
 /** Prüft einen Schritt auf dem Server (ohne etwas anzulegen): die Gründe, leer = passt. */
 async function pruefeSchritt(s: Sammelschritt, passwort?: string): Promise<string[]> {
-  const { probleme } = await api.einrichtungPruefen(planAus(holeStand().sammlung), passwort);
+  const { probleme } = await einrichtungApi.einrichtungPruefen(planAus(holeStand().sammlung), passwort);
   return probleme[s] ?? [];
 }
 
@@ -357,7 +359,7 @@ function NutzungSchritt({ s, zurWahl, leiste }: { s: Sammlung; zurWahl: () => vo
 }
 
 /** Im Assistenten wählt man Pakete über die Schnittstellen mit Einrichtungscode – installiert wird noch nichts. */
-const EINRICHTUNG_PAKETE: PaketApi = { stand: () => api.einrichtungPakete(), katalog: () => api.einrichtungPaketKatalog(), plan: (e) => api.einrichtungPaketPlan(e) };
+const EINRICHTUNG_PAKETE: PaketApi = { stand: () => einrichtungApi.einrichtungPakete(), katalog: () => einrichtungApi.einrichtungPaketKatalog(), plan: (e) => einrichtungApi.einrichtungPaketPlan(e) };
 
 function PaketeSchritt({ s, zurWahl, leiste }: { s: Sammlung; zurWahl: () => void; leiste: Leiste }) {
   // Vorbelegt beim „Ändern“ bzw. aus der Datei (#806): Auswahl, Beispiele, ausgeschaltete Automatisierungen.
@@ -687,11 +689,11 @@ function Abschluss({ abschliessen, version }: { abschliessen: () => Promise<void
   const [geladen, setGeladen] = useState(false);
   const x = useSenden();
   const blatt = useSenden();
-  useEffect(() => { void api.tresor().then((s) => { setFingerabdruck(s.fingerabdruck); if (s.notfallblatt?.aktuell) setGeladen(true); }, () => {}); }, []);
+  useEffect(() => { void betriebApi.tresor().then((s) => { setFingerabdruck(s.fingerabdruck); if (s.notfallblatt?.aktuell) setGeladen(true); }, () => {}); }, []);
   // Der Server merkt sich das Herunterladen (mit neuem Notfallcode, #815); erst dann gilt es – auch nach Neuladen.
   const herunterladen = () => void blatt.los(async () => {
     await heikleDatei('/api/werkbank/notfallblatt', 'Ablago-Notfallblatt.pdf');
-    setGeladen(!!(await api.tresor()).notfallblatt?.aktuell);
+    setGeladen(!!(await betriebApi.tresor()).notfallblatt?.aktuell);
   });
   const umgebung = t('einrichtung.abschluss.problem.umgebung', { version: version ?? t('einrichtung.abschluss.problem.unbekannt'), browser: navigator.userAgent });
   const issue = `${REPO}/issues/new?${new URLSearchParams({ title: t('einrichtung.abschluss.problem.titel'), body: `${t('einrichtung.abschluss.problem.vorlage')}\n\n---\n${umgebung}` })}`;
@@ -724,7 +726,7 @@ function Abschluss({ abschliessen, version }: { abschliessen: () => Promise<void
       </ul>
       {x.fehler && <p className="fehlertext" role="alert">{x.fehler}</p>}
       <div className="knoepfe">
-        <Knopf art="haupt" gesperrt={geladen ? false : t('einrichtung.abschluss.pflicht')} laeuft={x.sendet} onClick={() => void x.los(async () => { await api.einrichtungSchritt('fertig'); vergiss(); geheZu('/werkbank', true); await abschliessen(); })}>{t('einrichtung.abschluss.knopf')}</Knopf>
+        <Knopf art="haupt" gesperrt={geladen ? false : t('einrichtung.abschluss.pflicht')} laeuft={x.sendet} onClick={() => void x.los(async () => { await einrichtungApi.einrichtungSchritt('fertig'); vergiss(); geheZu('/werkbank', true); await abschliessen(); })}>{t('einrichtung.abschluss.knopf')}</Knopf>
       </div>
     </Rahmen>
   );

@@ -1,7 +1,8 @@
 import { Symbol } from '../Symbol';
 import { t, tn } from '../sprache';
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
-import { api, type OAuthAnbieter, type OAuthAppEingabe, type OAuthAppsStand, type OAuthStatus, type PostfachAnsicht, type PostfachEingabe } from '../api';
+import type { OAuthStatus } from '../api/betrieb';
+import { eingaengeApi, type OAuthAnbieter, type OAuthAppEingabe, type OAuthAppsStand, type PostfachAnsicht, type PostfachEingabe } from '../api/eingaenge';
 import { useDaten } from '../daten';
 import { geheZu, Link, loeseWache } from '../ort';
 import { Speicherleiste, useEntwurf, useGespeichertNachziehen } from '../Speicherleiste';
@@ -63,7 +64,7 @@ const alsEingabe = (v: PostfachAnsicht): PostfachEingabe => ({
 export function usePostfaecher(offen: boolean) {
   const [liste, setListe] = useState<PostfachAnsicht[] | null>(null);
   const [fehler, setFehler] = useState<string>();
-  const laden = useCallback(async () => { try { setListe(await api.postfaecher()); setFehler(undefined); } catch (e) { setFehler((e as Error).message); } }, []);
+  const laden = useCallback(async () => { try { setListe(await eingaengeApi.postfaecher()); setFehler(undefined); } catch (e) { setFehler((e as Error).message); } }, []);
   useEffect(() => { if (offen) void laden(); }, [offen, laden]);
   useEffect(() => {
     if (!offen) return;
@@ -135,7 +136,7 @@ export function PostfachEditor({ z, id }: { z: PostfachZustand; id: string }) {
   async function speichern() {
     setSendet(true); setFehlerOrte(new Set());
     try {
-      const l = vorhanden ? await api.postfachAendern(vorhanden.id, eingabe) : await api.postfachAnlegen(eingabe);
+      const l = vorhanden ? await eingaengeApi.postfachAendern(vorhanden.id, eingabe) : await eingaengeApi.postfachAnlegen(eingabe);
       z.setListe(l);
       setMeldung({ art: 'gut', text: t('werkbank.postfaecher.gespeichert') });
       const n = vorhanden && l.find((p) => p.id === vorhanden.id);
@@ -156,20 +157,20 @@ export function PostfachEditor({ z, id }: { z: PostfachZustand; id: string }) {
         ? t('werkbank.postfaecher.server-port-oder-verschluesselung')
         : t('werkbank.postfaecher.server-port-oder-verschluesselung-2') };
     }
-    const r = await api.postfachTesten({ ...eingabe, id: vorhanden?.id });
+    const r = await eingaengeApi.postfachTesten({ ...eingabe, id: vorhanden?.id });
     return { art: r.ok ? 'gut' : 'schlecht', text: r.text };
   }
   async function abrufen(): Promise<KnopfErgebnis | undefined> {
     if (!vorhanden) return;
     try {
-      const r = await api.postfachAbrufen(vorhanden.id);
+      const r = await eingaengeApi.postfachAbrufen(vorhanden.id);
       await d.neuLaden();
       return { art: 'gut', text: r.uebernommen ? t('werkbank.postfaecher.mails-uebernommen', { anzahl: r.uebernommen }) : t('werkbank.postfaecher.keine-neuen-mails') };
     } finally { await z.laden(); }
   }
   async function loeschen() {
     if (!vorhanden) return;
-    try { await api.postfachLoeschen(vorhanden.id); await z.laden(); loeseWache(); geheZu('/werkbank/postfaecher'); } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); }
+    try { await eingaengeApi.postfachLoeschen(vorhanden.id); await z.laden(); loeseWache(); geheZu('/werkbank/postfaecher'); } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); }
   }
 
   const absenden = (x: FormEvent) => { x.preventDefault(); void speichern(); };
@@ -313,10 +314,10 @@ export interface OAuthZiel {
 function postfachZiel(p: PostfachAnsicht, z: PostfachZustand): OAuthZiel {
   return {
     oauth: p.oauth,
-    start: () => api.postfachOAuthStart(p.id),
-    geraet: () => api.postfachOAuthGeraet(p.id),
-    geraetPruefen: () => api.postfachOAuthGeraetPruefen(p.id),
-    abmelden: async () => { z.setListe(await api.postfachOAuthAbmelden(p.id)); },
+    start: () => eingaengeApi.postfachOAuthStart(p.id),
+    geraet: () => eingaengeApi.postfachOAuthGeraet(p.id),
+    geraetPruefen: () => eingaengeApi.postfachOAuthGeraetPruefen(p.id),
+    abmelden: async () => { z.setListe(await eingaengeApi.postfachOAuthAbmelden(p.id)); },
     neuLaden: z.laden,
   };
 }
@@ -339,7 +340,7 @@ export function OAuthBereich({ anbieter, ziel, geaendert, setMeldung, versand = 
   const appEnt = useEntwurf(appGespeichert, app, { neu: !stand?.apps[anbieter], aus: !stand, zuruecksetzen: () => setApp(appGespeichert) });
   const [geraet, setGeraet] = useState<{ code: string; adresse: string; bis: string; intervall: number }>();
   useEffect(() => {
-    void api.postfachOAuthApps().then((st) => { setStand(st); setApp(appAus(st)); })
+    void eingaengeApi.postfachOAuthApps().then((st) => { setStand(st); setApp(appAus(st)); })
       .catch((x) => setMeldung({ art: 'schlecht', text: (x as Error).message }));
     // eslint-disable-next-line react-hooks/exhaustive-deps -- appAus hängt nur am Anbieter
   }, [anbieter, setMeldung]);
@@ -362,7 +363,7 @@ export function OAuthBereich({ anbieter, ziel, geaendert, setMeldung, versand = 
   const gespeichert = stand?.apps[anbieter];
   async function appSpeichern() {
     setSendet(true);
-    try { const st = await api.postfachOAuthApp(anbieter, app); setStand(st); setApp(appAus(st)); setMeldung({ art: 'gut', text: t('werkbank.postfaecher.app-gespeichert') }); } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); } finally { setSendet(false); }
+    try { const st = await eingaengeApi.postfachOAuthApp(anbieter, app); setStand(st); setApp(appAus(st)); setMeldung({ art: 'gut', text: t('werkbank.postfaecher.app-gespeichert') }); } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); } finally { setSendet(false); }
   }
   async function imBrowser() {
     if (!ziel) return;

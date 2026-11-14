@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { api } from '../api';
+import { betriebApi } from '../api/betrieb';
 import { Hilfe } from '../Hilfe';
 import { Link } from '../ort';
 import { rueckfrage } from '../rueckfrage';
@@ -8,7 +8,7 @@ import { t } from '../sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
 import { Knopf, Wahlhaken } from '../bausteine';
 
-type Posten = Awaited<ReturnType<typeof api.absenderVorschau>>['posten'];
+type Posten = Awaited<ReturnType<typeof betriebApi.absenderVorschau>>['posten'];
 const datum = (iso: string) => new Date(iso).toLocaleDateString(gebietsschema());
 
 /**
@@ -21,7 +21,7 @@ export function AbsenderBereinigen() {
   const [laeuft, setLaeuft] = useState(false);
   const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
   async function laden() {
-    try { const v = await api.absenderVorschau(); setPosten(v.posten); setWahl(new Set(v.posten.map((p) => p.id))); } catch (e) { setMeldung({ art: 'schlecht', text: (e as Error).message }); }
+    try { const v = await betriebApi.absenderVorschau(); setPosten(v.posten); setWahl(new Set(v.posten.map((p) => p.id))); } catch (e) { setMeldung({ art: 'schlecht', text: (e as Error).message }); }
   }
   useEffect(() => { void laden(); }, []);
   async function los() {
@@ -29,7 +29,7 @@ export function AbsenderBereinigen() {
     if (!ids.length || !(await rueckfrage({ titel: t('werkbank.absenderbereinigen.absender-bei-posts-leeren', { anzahl: ids.length }), text: t('werkbank.absenderbereinigen.das-feld-absender-ist'), ja: t('werkbank.absenderbereinigen.absender-leeren') }))) return;
     setLaeuft(true); setMeldung(undefined);
     try {
-      const r = await api.absenderBereinigen(ids);
+      const r = await betriebApi.absenderBereinigen(ids);
       setMeldung({ art: 'gut', text: t('werkbank.absenderbereinigen.bei-posts-ist-der', { anzahl: r.bereinigt }) });
       await laden();
     } catch (e) { setMeldung({ art: 'schlecht', text: (e as Error).message }); } finally { setLaeuft(false); }

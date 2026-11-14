@@ -3,7 +3,8 @@ import { Feld, FeldGruppe, Schalter } from '../bausteine';
 import { setzeErlaubteSprachen, sprachname } from '../../../shared/src/beschriftung';
 import { AUSGANGSSPRACHE, EINGEBAUTE_SPRACHEN, sprache } from '../../../shared/src/sprache';
 import { Link } from '../ort';
-import { api, ApiFehler, type SprachenStand, type UebersetzenStand } from '../api';
+import { ApiFehler } from '../api/anfrage';
+import { werkbankApi, type SprachenStand, type UebersetzenStand } from '../api/werkbank';
 import { rueckfrage } from '../rueckfrage';
 import { Hilfe } from '../Hilfe';
 import { Speicherleiste, useEntwurf } from '../Speicherleiste';
@@ -18,7 +19,7 @@ import { Kopf } from './Kopf';
 export function useSprachen(offen: boolean) {
   const [stand, setStand] = useState<SprachenStand | null>(null);
   const [fehler, setFehler] = useState<string>();
-  const laden = useCallback(async () => { try { setStand(await api.sprachen()); setFehler(undefined); } catch (e) { setFehler((e as Error).message); } }, []);
+  const laden = useCallback(async () => { try { setStand(await werkbankApi.sprachen()); setFehler(undefined); } catch (e) { setFehler((e as Error).message); } }, []);
   useEffect(() => { if (offen) void laden(); }, [offen, laden]);
   return { stand, fehler, laden, setStand };
 }
@@ -37,7 +38,7 @@ export function SprachenPanel({ z }: { z: SprachenZustand }) {
   async function speichern() {
     setSendet(true);
     try {
-      const n = await api.sprachenSetzen(e!);
+      const n = await werkbankApi.sprachenSetzen(e!);
       z.setStand(n); setE(n.einstellung); setzeErlaubteSprachen(n.einstellung.erlaubt);
       setMeldung({ art: 'gut', text: t('werkbank.sprachen.gespeichert') });
     } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); } finally { setSendet(false); }
@@ -110,10 +111,10 @@ function InhalteUebersetzen() {
   const [s, setS] = useState<UebersetzenStand | null>(null);
   const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
   const [sendet, setSendet] = useState(false);
-  useEffect(() => { void api.uebersetzenStand().then(setS, (e) => setMeldung({ art: 'schlecht', text: (e as Error).message })); }, []);
+  useEffect(() => { void werkbankApi.uebersetzenStand().then(setS, (e) => setMeldung({ art: 'schlecht', text: (e as Error).message })); }, []);
   async function setze(e: Partial<UebersetzenStand['einstellung']>) {
     setSendet(true); setMeldung(undefined);
-    try { setS(await api.uebersetzenSetzen(e)); setMeldung({ art: 'gut', text: t('werkbank.uebersetzen.gespeichert') }); }
+    try { setS(await werkbankApi.uebersetzenSetzen(e)); setMeldung({ art: 'gut', text: t('werkbank.uebersetzen.gespeichert') }); }
     catch (x) {
       const d = x instanceof ApiFehler && x.status === 409 ? x.details as { abfluss?: boolean; paket?: string; ziele?: string[] } | undefined : undefined;
       if (d?.abfluss && await rueckfrage({ titel: t('werkbank.uebersetzen.abfluss.titel'), text: t('werkbank.uebersetzen.abfluss.text', { paket: d.paket ?? '', ziele: (d.ziele ?? []).join(', ') }), ja: t('werkbank.uebersetzen.abfluss.ja') })) {

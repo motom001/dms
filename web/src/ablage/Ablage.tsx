@@ -7,7 +7,9 @@ import { beschreibeBedingung, kinderVon, mitNachkommen, spaltenDerSicht, wirksam
 import { liesDirektlink, type Direktlink } from '../../../shared/src/direktlink';
 import { auswahlText, darfErstellen, POST_RICHTUNG, darfPostAnlegen, formatiere, GEMISCHTE_SPALTEN, sortierbar, standardliste, TREFFER_ANFANG, TREFFER_ENDE, vorlageFelder, wirksameVorlage, type Ausschnitt, type Mappe, type Mappentyp, type Sortierung, type Wert } from '../../../shared/src/model';
 import { ausgeblendeteFelder } from '../../../shared/src/darstellung';
-import { api, verborgeneAufgaben, type Bezuege, type MappeDetails } from '../api';
+import { verborgeneAufgaben } from '../api/aufgaben';
+import { kontoApi } from '../api/konto';
+import { mappenApi, type Bezuege, type MappeDetails } from '../api/mappen';
 import type { Aufgabe } from '../../../shared/src/model';
 import { istTeiltyp, uebergeordneterTyp } from '../../../shared/src/teile';
 import { AufgabenHinweis } from './Aufgaben';
@@ -236,7 +238,7 @@ function MappeLader({ id, sicht, anhang = '', alsPost = false }: { id: string; s
   const d = useDaten();
   const [details, setDetails] = useState<MappeDetails | null | 'fehlt' | { verborgen: Aufgabe[] }>(null);
   const laden = useCallback(async () => {
-    try { setDetails(await api.mappe(id)); } catch (x) { const v = verborgeneAufgaben(x); setDetails(v ? { verborgen: v } : 'fehlt'); }
+    try { setDetails(await mappenApi.mappe(id)); } catch (x) { const v = verborgeneAufgaben(x); setDetails(v ? { verborgen: v } : 'fehlt'); }
   }, [id]);
   useEffect(() => { void laden(); }, [laden, d.stand]);
   // Neue Post aus allen Eingängen (#934) öffnet die Seite „Dokument übernehmen“ – unter „Neue Post“, damit links sie markiert ist.
@@ -402,12 +404,12 @@ function Liste(p: {
     if (!p.offen || !s.geaendert.has(p.offen)) return;
     const id = p.offen;
     s.gesehen([id]);
-    void api.gesehen([id]).then(() => d.neuLaden()).catch(() => {});
+    void kontoApi.gesehen([id]).then(() => d.neuLaden()).catch(() => {});
   }, [p.offen, s.geaendert]); // eslint-disable-line react-hooks/exhaustive-deps -- als gesehen melden nur bei anderer Mappe oder neuen Änderungen
   const geaenderteHier = s.mappen.filter((m) => s.geaendert.has(m.id)).map((m) => m.id);
   async function alleGesehen() {
     s.gesehen(geaenderteHier);
-    try { await api.gesehen(geaenderteHier); await d.neuLaden(); } catch { /* beim nächsten Laden wieder da */ }
+    try { await kontoApi.gesehen(geaenderteHier); await d.neuLaden(); } catch { /* beim nächsten Laden wieder da */ }
   }
   const w = useAuswahl(s.mappen, s.gesamt, [p.sicht, suche, volltext, inNotizen, p.link ?? '']);
   const wahl = p.auswahl ? w : undefined;
@@ -415,7 +417,7 @@ function Liste(p: {
   const [exportOffen, setExportOffen] = useState(false);
   const [emailOffen, setEmailOffen] = useState(false);
   async function alleWaehlen() {
-    try { const r = await api.auswahl(p.sicht, suche, volltext, inNotizen, p.link); w.setze(r.ids, true); }
+    try { const r = await mappenApi.auswahl(p.sicht, suche, volltext, inNotizen, p.link); w.setze(r.ids, true); }
     catch (x) { setErgebnis({ text: (x as Error).message, liste: [] }); }
   }
   // Mehrere Mappen löschen (#150): Was sich löschen ließe, zählt die Probe schon beim Auswählen – so nennt die Rückfrage
@@ -425,7 +427,7 @@ function Liste(p: {
   useEffect(() => {
     if (!p.auswahl || !gewaehltText) { setProbe(null); return; }
     let aktuell = true;
-    const z = setTimeout(() => { api.mappenLoeschen(gewaehltText.split(','), true).then((r) => aktuell && setProbe({ ids: gewaehltText, ...r }), () => aktuell && setProbe(null)); }, 250);
+    const z = setTimeout(() => { mappenApi.mappenLoeschen(gewaehltText.split(','), true).then((r) => aktuell && setProbe({ ids: gewaehltText, ...r }), () => aktuell && setProbe(null)); }, 250);
     return () => { aktuell = false; clearTimeout(z); };
   }, [gewaehltText, p.auswahl]);
   const korb = (d.zaehler.papierkorbTage ?? 0) > 0;
@@ -442,7 +444,7 @@ function Liste(p: {
     setErgebnis(undefined);
     try {
       const ids = [...w.gewaehlt];
-      const r = await api.mappenLoeschen(ids, false, anlass);
+      const r = await mappenApi.mappenLoeschen(ids, false, anlass);
       w.leeren();
       await d.neuLaden();
       setErgebnis({ text: t('ablage.ablage.mappen-4', { anzahl: r.geloescht, zahl: zahl(r.geloescht), wert: korb ? t('ablage.ablage.in-den-papierkorb-gelegt') : t('ablage.ablage.geloescht'), wert2: r.ausgelassen.length ? t('ablage.ablage.ausgelassen', { zahl: zahl(r.ausgelassen.length) }) : '' }), liste: r.ausgelassen });
@@ -532,7 +534,7 @@ function Liste(p: {
                     {/* Favorit = Abo (#422): je Favorit „bei Änderungen benachrichtigen“ – nur in der Favoritenliste; Ein/Aus als Schalter (#1188). */}
                     {(p.sicht === 'favoriten' || !!d.sicht(p.sicht)?.bedingungen.some((x) => x.art === 'favorit')) && !m.verborgen && favoritenBenachrichtigung && (
                       <Schalter className="abo-schalter" an={!s.stumm.has(m.id)} beschriftung={t('ablage.ablage.benachrichtigen')}
-                        setze={(an) => { s.setzeStumm(m.id, !an); return api.favoritBenachrichtigen(m.id, an).catch((x) => { s.setzeStumm(m.id, an); throw x; }); }} />
+                        setze={(an) => { s.setzeStumm(m.id, !an); return mappenApi.favoritBenachrichtigen(m.id, an).catch((x) => { s.setzeStumm(m.id, an); throw x; }); }} />
                     )}
                   </li>
                 );

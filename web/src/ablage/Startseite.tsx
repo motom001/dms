@@ -2,7 +2,8 @@ import { darfVerwalten } from '../../../shared/src/verwaltungsrecht';
 import { useEffect, useRef, useState } from 'react';
 import { datumDe, type Termin } from '../../../shared/src/fristen';
 import { t, tn } from '../sprache';
-import { api } from '../api';
+import { aufgabenApi } from '../api/aufgaben';
+import { mappenApi } from '../api/mappen';
 import { useDaten } from '../daten';
 import { useHandbuch } from '../Hilfe';
 import { Listenkopf } from '../Listenkopf';
@@ -81,7 +82,7 @@ export function Startseite({ offen, breit = false }: { offen?: string; breit?: b
     // Gleicher `stand`, anderes `frisch`: nachgeladen, nicht neu aufgebaut.
     const nachgeladen = startStand.current === d.stand;
     startStand.current = d.stand;
-    api.startseite().then((x) => {
+    mappenApi.startseite().then((x) => {
       if (!aktuell) return;
       if (nachgeladen && zuletzt.current?.matches(':hover, :focus-within')) zurueck.current = x;
       else { zurueck.current = null; setDaten(x); }
@@ -96,7 +97,7 @@ export function Startseite({ offen, breit = false }: { offen?: string; breit?: b
     let aktuell = true;
     const nachgeladen = terminStand.current === d.stand;
     terminStand.current = d.stand;
-    api.naechsterTermin().then((x) => { if (aktuell) setTermin(x); }, () => { if (aktuell && !nachgeladen) setTermin({ termin: null, ueberfaellig: 0 }); });
+    aufgabenApi.naechsterTermin().then((x) => { if (aktuell) setTermin(x); }, () => { if (aktuell && !nachgeladen) setTermin({ termin: null, ueberfaellig: 0 }); });
     return () => { aktuell = false; };
   }, [d.stand, d.frisch]);
 

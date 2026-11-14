@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { api, ApiFehler, type ErkennungStand } from '../api';
+import { ApiFehler } from '../api/anfrage';
+import { sucheApi, type ErkennungStand } from '../api/suche';
 import { Hilfe } from '../Hilfe';
 import { rueckfrage } from '../rueckfrage';
 import { t } from '../sprache';
@@ -18,13 +19,13 @@ export function ErkennungPaketBlock({ paket }: { paket: string }) {
   const [s, setS] = useState<ErkennungStand | null>(null);
   const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
   const [laeuft, setLaeuft] = useState(false);
-  useEffect(() => { api.erkennungStand().then(setS, (e) => setMeldung({ art: 'schlecht', text: (e as Error).message })); }, []);
+  useEffect(() => { sucheApi.erkennungStand().then(setS, (e) => setMeldung({ art: 'schlecht', text: (e as Error).message })); }, []);
   if (!s) return meldung ? <p className="fehlertext">{meldung.text}</p> : null;
   const ich = s.pakete.find((p) => p.id === paket);
   async function setze(an: boolean) {
     if (an && ich?.netz && !(await abflussBestaetigen(ich.name))) return;
     setLaeuft(true); setMeldung(undefined);
-    try { setS(await api.erkennungStandard(an ? paket : null, an && !!ich?.netz)); setMeldung({ art: 'gut', text: t('erkennung.werkbank.gespeichert') }); }
+    try { setS(await sucheApi.erkennungStandard(an ? paket : null, an && !!ich?.netz)); setMeldung({ art: 'gut', text: t('erkennung.werkbank.gespeichert') }); }
     catch (e) { setMeldung({ art: 'schlecht', text: e instanceof ApiFehler ? e.message : String(e) }); }
     finally { setLaeuft(false); }
   }

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { api, type Passkey, type PasskeyStand } from '../api';
+import { kontoApi, type Passkey, type PasskeyStand } from '../api/konto';
 import { Feld, Knopf, type KnopfErgebnis } from '../bausteine';
 import { Hilfe } from '../Hilfe';
 import { useKonto } from '../konto-kontext';
@@ -12,7 +12,7 @@ import { PASSKEY_NAME_MAX } from '../../../shared/src/passkey';
 /**
  * Passkeys (#811) in Mein Konto → Sicherheit: hinzufügen, benennen, entfernen. Mehrere je Person (Handy, Rechner,
  * Sicherheitsschlüssel). Entfernen verlangt eine frische Anmeldung – fehlt sie, fragt der Dialog des Verwaltungsmodus
- * (api.ts) und schickt die Anfrage danach noch einmal.
+ * (api/anfrage.ts) und schickt die Anfrage danach noch einmal.
  */
 
 const datum = (iso: string) => new Date(iso).toLocaleDateString(gebietsschema(), { day: '2-digit', month: '2-digit', year: 'numeric' });
@@ -26,9 +26,9 @@ export function PasskeyOhneHttps({ ort = 'profil.passkeys' }: { ort?: 'profil.pa
 export function PasskeyHinzufuegen({ fertig, abbrechen, autoFocus = false }: { fertig: (p: Passkey) => void | Promise<void>; abbrechen?: () => void; autoFocus?: boolean }) {
   const [name, setName] = useState(() => geraetename());
   const anlegen = async (): Promise<KnopfErgebnis | void> => {
-    const optionen = await api.passkeyBeginnen();
+    const optionen = await kontoApi.passkeyBeginnen();
     const antwort = await passkeyAnlegen(optionen);
-    await fertig(await api.passkeyHinzufuegen(antwort, name));
+    await fertig(await kontoApi.passkeyHinzufuegen(antwort, name));
   };
   return (
     <div className="stapel" id="passkey-hinzufuegen">
@@ -47,8 +47,8 @@ export function PasskeyHinzufuegen({ fertig, abbrechen, autoFocus = false }: { f
 function Zeile({ p, adresse, aendern }: { p: Passkey; adresse: string | null; aendern: (liste: Passkey[]) => void }) {
   const [umbenennen, setUmbenennen] = useState(false);
   const [name, setName] = useState(p.name);
-  const speichern = async () => { aendern(await api.passkeyBenennen(p.nr, name)); setUmbenennen(false); };
-  const entfernen = async () => { aendern(await api.passkeyEntfernen(p.nr)); };
+  const speichern = async () => { aendern(await kontoApi.passkeyBenennen(p.nr, name)); setUmbenennen(false); };
+  const entfernen = async () => { aendern(await kontoApi.passkeyEntfernen(p.nr)); };
   return (
     <li className="passkey-zeile">
       {umbenennen ? (
@@ -88,7 +88,7 @@ export function PasskeyBlatt() {
   const [fehler, setFehler] = useState<string>();
   const [neu, setNeu] = useState(false);
   const [meldung, setMeldung] = useState<string>();
-  const laden = useCallback(async () => { try { setStand(await api.passkeys()); } catch (e) { setFehler((e as Error).message); } }, []);
+  const laden = useCallback(async () => { try { setStand(await kontoApi.passkeys()); } catch (e) { setFehler((e as Error).message); } }, []);
   useEffect(() => { void laden(); }, [laden]);
   const geht = !!stand?.moeglich && passkeysImBrowser();
   const aendern = (liste: Passkey[]) => { setStand((s) => (s ? { ...s, liste } : s)); setMeldung(undefined); void aktualisieren(); };

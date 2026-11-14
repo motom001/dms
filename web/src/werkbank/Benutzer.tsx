@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { abwesenheitWirkt, AKTIV_MINUTEN, istGeradeAktiv, type Benutzer } from '../../../shared/src/model';
 import { darfVerwalten, hatGesamt } from '../../../shared/src/verwaltungsrecht';
 import { heuteIn } from '../../../shared/src/sichten';
-import { api, type LinkErgebnis, type Systemkonto } from '../api';
+import { kontoApi, type LinkErgebnis, type Systemkonto } from '../api/konto';
 import { t } from '../sprache';
 import { useDaten } from '../daten';
 import { useKonto } from '../konto';
@@ -22,7 +22,7 @@ export function useBenutzer() {
   const [liste, setListe] = useState<Benutzer[]>([]);
   const [geladen, setGeladen] = useState(false);
   // Geladen wird erst beim Öffnen des Bereichs; die Zahl links kommt bis dahin aus der Übersicht (#375).
-  const laden = useCallback(async () => { try { setListe(await api.benutzer()); } finally { setGeladen(true); } }, []);
+  const laden = useCallback(async () => { try { setListe(await kontoApi.benutzer()); } finally { setGeladen(true); } }, []);
   return { liste, geladen, laden };
 }
 
@@ -74,7 +74,7 @@ export function BenutzerListe({ liste: alle, offen, alltag }: { liste: Benutzer[
 export function useSystemkonten() {
   const d = useDaten();
   const [liste, setListe] = useState<Systemkonto[] | null>(null);
-  useEffect(() => { api.systemkonten().then(setListe).catch(() => setListe([])); }, [d.stand]);
+  useEffect(() => { kontoApi.systemkonten().then(setListe).catch(() => setListe([])); }, [d.stand]);
   return liste;
 }
 
@@ -139,7 +139,7 @@ export function BenutzerNeu({ neuLaden }: { neuLaden: () => Promise<void> }) {
   async function anlegen(e: FormEvent) {
     e.preventDefault();
     setSendet(true); setFehler(undefined);
-    try { setErgebnis(await api.benutzerAnlegen({ email, name, rollen })); await neuLaden(); }
+    try { setErgebnis(await kontoApi.benutzerAnlegen({ email, name, rollen })); await neuLaden(); }
     catch (err) { setFehler((err as Error).message); }
     finally { setSendet(false); }
   }

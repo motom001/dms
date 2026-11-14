@@ -1,6 +1,7 @@
 import { t, tn } from './sprache';
 import { useEffect, useState } from 'react';
-import { api, type WartungOeffentlich } from './api';
+import { betriebApi } from './api/betrieb';
+import type { WartungOeffentlich } from './api/konto';
 import { Link } from './ort';
 import { istWeg, WIEDER_ERREICHBAR } from './erreichbar';
 import { gebietsschema } from '../../shared/src/sprache';
@@ -23,7 +24,7 @@ export function useWartung(start?: WartungOeffentlich | null) {
   const [, setTick] = useState(0);
   useEffect(() => {
     let aus = false;
-    const hole = () => api.wartung().then((w) => { zuletzt = w; if (!aus) { setStand(w); setGeholt(Date.now()); } }, () => {});
+    const hole = () => betriebApi.wartung().then((w) => { zuletzt = w; if (!aus) { setStand(w); setGeholt(Date.now()); } }, () => {});
     void hole();
     // Solange das DMS nicht erreichbar ist (#122), pausiert die Abfrage.
     const timer = setInterval(() => { if (!istWeg()) void hole(); }, ABFRAGE_MS);

@@ -15,7 +15,10 @@ import type { LoeschAnlass } from '../../../shared/src/loeschprotokoll';
 import { rechtsbuendig } from '../../../shared/src/feldarten';
 import { teileVon } from '../../../shared/src/zusammengesetzt';
 import { Feld, FeldGruppe, HakenFeld, Knopf, KnopfLink, NurLesenFeld, ProzentEingabe, Reiter, ReiterFlaeche, Speicherleiste, ZeitraumEingabe, type Entwurf, type FeldProps, type KnopfSperre } from '../bausteine';
-import { api, ApiFehler, type Bezuege, type MappeDetails, type Rueckverweis } from '../api';
+import { ApiFehler } from '../api/anfrage';
+import { dokumenteApi } from '../api/dokumente';
+import { mappenApi, type Bezuege, type MappeDetails, type Rueckverweis } from '../api/mappen';
+import type { TypVorschlaege } from '../api/werkbank';
 import { useDaten } from '../daten';
 import { useKonto } from '../konto';
 import { darfBereich } from '../../../shared/src/verwaltungsrecht';
@@ -45,7 +48,6 @@ import { AehnlicheDokumente } from './Aehnlich';
 import { hinweis, rueckfrage } from '../rueckfrage';
 import { AusDokument, type AusDokumentErgebnis } from './AusDokument';
 import { ausDokumentKnopf, type Sicherheit } from '../../../shared/src/erkennung';
-import type { TypVorschlaege } from '../api';
 import { farbeVon, liesNutzlast, useBruecke, ziehtWert } from './bruecke';
 import { altesFeldAusblenden } from '../../../shared/src/umwandlung';
 import { enthaeltId, ersteId } from '../../../shared/src/folgtaus';
@@ -75,7 +77,7 @@ export interface ZuordnenNachher { post: string; register?: string; dokumente: s
 /** Die nächste Post aus „Neue Post“ (#936) – wie die Ansicht sie zuerst zeigt; ohne Ansicht oder Post keine. */
 async function naechstePost(sicht: string | null | undefined): Promise<Mappe | undefined> {
   if (!sicht) return undefined;
-  try { return (await api.seite(sicht, 0, 1)).mappen.find((m) => !m.verborgen); } catch { return undefined; }
+  try { return (await mappenApi.seite(sicht, 0, 1)).mappen.find((m) => !m.verborgen); } catch { return undefined; }
 }
 
 function useAufloesung(z: ZuordnenNachher | undefined) {
@@ -84,7 +86,7 @@ function useAufloesung(z: ZuordnenNachher | undefined) {
     // Mit „Kopie in der Post behalten“ wird nicht aufgelöst (#936) – auch wenn der Haken erst später gesetzt wird (#934).
     if (!z || z.kopieren) { setX(null); return; }
     let aktuell = true;
-    api.mappe(z.post).then((p) => {
+    mappenApi.mappe(z.post).then((p) => {
       if (!aktuell) return;
       if (istVersendet(p.mappe.werte)) { setX({ gesperrt: false, dokumente: p.dokumente.length }); return; }
       const gesperrt = p.rechte?.D === false || p.loeschbar?.ok === false;
@@ -190,7 +192,7 @@ export function MappeAnsicht({ typ, details, sicht, anhang = '', neuLaden, vorsc
   const [vorlagenAktion, setVorlagenAktion] = useState<VorlagenAktion | null>(null);
   useEffect(() => {
     let aktuell = true;
-    api.paketAktionen(mappe.id).then((a) => { if (aktuell) setPaketAktionen(a); }, () => { if (aktuell) setPaketAktionen(null); });
+    mappenApi.paketAktionen(mappe.id).then((a) => { if (aktuell) setPaketAktionen(a); }, () => { if (aktuell) setPaketAktionen(null); });
     return () => { aktuell = false; };
   }, [mappe.id, mappe.geaendert]);
   const [drucken, setDrucken] = useState(false);
@@ -562,7 +564,7 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
     const id = ersteId(ausRoh(f, v));
     vorbelegungAufheben(k, id);
     if (!id || Object.values(vorbelegtRef.current).some((e) => e.feld === k && e.mappe === id)) return;
-    const r = await api.vorbelegen(typ.id, k, id).catch(() => null);
+    const r = await mappenApi.vorbelegen(typ.id, k, id).catch(() => null);
     if (r && ersteId(ausRoh(f, rohRef.current[k])) === id) vorbelegungEintragen(f, id, r);
   }
   /** Unveränderte Vorschläge aus dem Verweisfeld `k`, die nicht von der Mappe `id` stammen, wieder leeren (#1037). */
@@ -578,7 +580,7 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
     setVorbelegt(ohne);
   }
   /** Vorschläge der Mappe `id` in leere, sichtbare, beschreibbare Felder eintragen und markieren (#1037). */
-  function vorbelegungEintragen(f: FeldDef, id: string, r: Awaited<ReturnType<typeof api.vorbelegen>>) {
+  function vorbelegungEintragen(f: FeldDef, id: string, r: Awaited<ReturnType<typeof mappenApi.vorbelegen>>) {
     for (const [b, x] of Object.entries(r.bezuege)) merke(b, x);
     const neu = leereVorschlaege(typ, r.felder, rohRef.current, (n) => geschuetzt[n] === undefined && !ausgeblendet.has(n));
     // Anzeigen, wenn … (#1033): mit den neuen Werten zusammen – „Verlängert sich um“ zeigt sich erst mit „Danach“.
@@ -620,7 +622,7 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
     const titel = (x: string) => titelOder(bekanntRef.current[x]?.titel);
     const ziele = typ.felder.filter((x) => x.typ === 'referenz' && x.folgtAus?.feld === k && geschuetzt[x.key] === undefined && !ausgeblendet.has(x.key));
     if (ziele.length) {
-      const r = await api.folgen(typ.id, { [k]: id }).catch(() => null);
+      const r = await mappenApi.folgen(typ.id, { [k]: id }).catch(() => null);
       if (!r || ersteId(ausRoh(f, rohRef.current[k])) !== id) return;
       for (const z of ziele) {
         const e = r.felder[z.key];
@@ -650,7 +652,7 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
     if (!qf || geschuetzt[qf.key] !== undefined) return;
     const qid = ersteId(ausRoh(qf, rohRef.current[qf.key]));
     if (!qid) return;
-    const r = await api.folgen(typ.id, { [qf.key]: qid }).catch(() => null);
+    const r = await mappenApi.folgen(typ.id, { [qf.key]: qid }).catch(() => null);
     const soll = r?.felder[k]?.wert;
     if (!soll || enthaeltId(ausRoh(f, rohRef.current[k]), soll) || ersteId(ausRoh(qf, rohRef.current[qf.key])) !== qid) return;
     const ok = await rueckfrage({
@@ -759,7 +761,7 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
     const liste = Object.entries(n.werte).map(([key, w]) => `${((f2) => (f2 ? feldLabel(f2) : key))(ziel.felder.find((x) => x.key === key))}: ${w}`).join(' · ');
     if (!(await rueckfrage({ titel: t('ablage.mappeformular.neue-mappe-anlegen', { name: typName(ziel) }), text: t('ablage.mappeformular.mit-diesen-angaben-du', { liste }), ja: t('ablage.mappeformular.anlegen') }))) return;
     try {
-      const m = await api.mappeAnlegen({ typId: ziel.id, werte: n.werte });
+      const m = await mappenApi.mappeAnlegen({ typId: ziel.id, werte: n.werte });
       merke(m.id, { titel: m.titel ?? '', typId: m.typId });
       const vorher = roh[k];
       setze(k, f.mehrfach ? [m.id] : m.id);
@@ -842,7 +844,7 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
     if (!istOk(p)) { zeigeFehler(p); setMeldung(t('ablage.mappeformular.bitte-die-markierten-felder')); return; }
     // Würde man sich mit diesen Werten selbst das Lesen oder Bearbeiten entziehen? Dann erst fragen (#126).
     if (mappe && werteGeaendert && ich.rolle !== 'admin') {
-      const r = await api.rechteVorschau(mappe.id, werte).catch(() => null);
+      const r = await mappenApi.rechteVorschau(mappe.id, werte).catch(() => null);
       if (r && !r.R && !(await rueckfrage({ titel: t('ablage.mappeformular.trotzdem-speichern'), text: t('ablage.mappeformular.nach-dem-speichern-kannst'), ja: t('ablage.mappeformular.trotzdem-speichern-2'), gefahr: true }))) return;
       if (r && r.R && !r.U && !(await rueckfrage({ titel: t('ablage.mappeformular.trotzdem-speichern'), text: t('ablage.mappeformular.nach-dem-speichern-kannst-2'), ja: t('ablage.mappeformular.trotzdem-speichern-2'), gefahr: true }))) return;
     }
@@ -850,8 +852,8 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
     let gespeichert: (Mappe & { hinweis?: string }) | undefined = mappe;
     try {
       // Berechnete (#1034) und zusammengesetzte Felder (#1050) schickt die Oberfläche nie – auch nicht leer oder mit einem Standardwert.
-      if (!mappe) gespeichert = await api.mappeAnlegen({ typId: typ.id, werte: Object.fromEntries(Object.entries(werte).filter(([k]) => { const f = typ.felder.find((x) => x.key === k); return !f?.berechnetVon && f?.typ !== 'zusammengesetzt'; })) });
-      else if (geaenderteFelder.length) gespeichert = await api.mappeAendern(mappe.id, { werte: zuSenden, stand: nochmal?.stand ?? stand });
+      if (!mappe) gespeichert = await mappenApi.mappeAnlegen({ typId: typ.id, werte: Object.fromEntries(Object.entries(werte).filter(([k]) => { const f = typ.felder.find((x) => x.key === k); return !f?.berechnetVon && f?.typ !== 'zusammengesetzt'; })) });
+      else if (geaenderteFelder.length) gespeichert = await mappenApi.mappeAendern(mappe.id, { werte: zuSenden, stand: nochmal?.stand ?? stand });
       setFehler(null); setBasis(JSON.stringify(rohJetzt));
       if (gespeichert) setStand(gespeichert.geaendert);
     } catch (e) {
@@ -876,7 +878,7 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
         // Gleicher Name (#194): Standard mit Versionierung „neue Version“, sonst „mit Zähler“.
         const gleich = (details?.dokumente ?? []).some((x) => x.registerKey === n.register && !entfernt.includes(x.id) && x.name.toLowerCase() === n.datei.name.toLowerCase());
         const versioniert = !!typ.register.find((r) => r.key === n.register)?.versionierung;
-        const r = await api.ladeHoch(gespeichert!.id, n.register, n.datei, gleich ? n.gleicherName ?? (versioniert ? 'version' : 'zaehler') : undefined);
+        const r = await mappenApi.ladeHoch(gespeichert!.id, n.register, n.datei, gleich ? n.gleicherName ?? (versioniert ? 'version' : 'zaehler') : undefined);
         const anderswo = r.gleicherInhalt.filter((g) => g.mappeId !== gespeichert!.id);
         if (anderswo.length) neu.push({ art: 'warn', text: <>{t('ablage.mappeformular.hat-denselben-inhalt-wie', { name: n.datei.name })}{' '}{anderswo.map((g, j) => { return <span key={j}>{tn('ablage.mappeformular.in', { wert: j > 0 && ', ', name: g.name, wert2: g.typId ? <Link to={`/ablage/${g.typId}/${g.mappeId}`} className="verweis">{titelOder(g.titel)}</Link> : t('ablage.mappeformular.einer-anderen-mappe') })}</span>; })}{t('ablage.mappeformular.gespeichert-ist-die-datei')}</> });
       } catch (e) {
@@ -888,13 +890,13 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
     if (adPositionen?.an) {
       let fehlt = 0; let letzter = '';
       for (const w of adPositionen.zeilen) {
-        try { await api.mappeAnlegen({ typId: adPositionen.typId, werte: { ...w, [adPositionen.feldKey]: gespeichert!.id } }); } catch (e) { fehlt++; letzter = (e as Error).message; }
+        try { await mappenApi.mappeAnlegen({ typId: adPositionen.typId, werte: { ...w, [adPositionen.feldKey]: gespeichert!.id } }); } catch (e) { fehlt++; letzter = (e as Error).message; }
       }
       if (fehlt) neu.push({ art: 'schlecht', text: t('ablage.mappeformular.positionen-nicht-angelegt', { anzahl: fehlt, message: letzter }) });
     }
     for (const x of adDazu.filter((y) => y.an)) {
       const zf = d.typ(x.typId)?.felder.find((f) => f.key === x.feldKey);
-      try { await api.mappeAendern(x.mappeId, { werte: { [x.feldKey]: zf?.mehrfach ? [gespeichert!.id] : gespeichert!.id } }); } catch (e) { neu.push({ art: 'schlecht', text: t('ablage.mappeformular.dazu-nicht-verknuepft', { titel: titelOder(x.titel), message: (e as Error).message }) }); }
+      try { await mappenApi.mappeAendern(x.mappeId, { werte: { [x.feldKey]: zf?.mehrfach ? [gespeichert!.id] : gespeichert!.id } }); } catch (e) { neu.push({ art: 'schlecht', text: t('ablage.mappeformular.dazu-nicht-verknuepft', { titel: titelOder(x.titel), message: (e as Error).message }) }); }
     }
     setAdPositionen(null); setAdDazu([]);
     // Zuordnen (#192): Die Post gehört jetzt zu dieser neuen Mappe – bzw. wird zu ihr (#936, aufgelöst).
@@ -902,7 +904,7 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
     let leerseiten: number | undefined;
     if (!mappe && zuordnen) {
       try {
-        const r = await api.zuordnen(zuordnen.post, { ziel: gespeichert!.id, register: zuordnen.register, dokumente: zuordnen.dokumente, kopieren: zuordnen.kopieren, aufloesen: zuordnen.aufloesen === true, ...(zuordnen.originalEmail === false ? { originalEmail: false } : {}) });
+        const r = await mappenApi.zuordnen(zuordnen.post, { ziel: gespeichert!.id, register: zuordnen.register, dokumente: zuordnen.dokumente, kopieren: zuordnen.kopieren, aufloesen: zuordnen.aufloesen === true, ...(zuordnen.originalEmail === false ? { originalEmail: false } : {}) });
         aufgeloest = r.aufgeloest;
         leerseiten = r.leerseiten;
         if (r.hinweis) await hinweis({ titel: t('ablage.mappeformular.post-bleibt-zugeordnet'), text: r.hinweis });
@@ -913,7 +915,7 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
     const mitHaupt = new Set((details?.dokumente ?? []).filter((x) => x.anlageZu && entfernt.includes(x.anlageZu)).map((x) => x.id));
     for (const id of entfernt) {
       if (mitHaupt.has(id)) continue;
-      try { await api.dokumentLoeschen(id); } catch (e) { nichtEntfernt.push(id); neu.push({ art: 'schlecht', text: (e as Error).message }); }
+      try { await dokumenteApi.dokumentLoeschen(id); } catch (e) { nichtEntfernt.push(id); neu.push({ art: 'schlecht', text: (e as Error).message }); }
     }
     setNeueDateien(offen); setEntfernt(nichtEntfernt); setHinweise(neu);
     setVorschlaege({}); setAdNeu({}); setAdMeldung(undefined); setGefolgt({}); setVorbelegt({});
@@ -962,7 +964,7 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
   })();
   async function loeschen(anlass?: LoeschAnlass) {
     if (!mappe || !anlass) return;
-    await api.mappeLoeschen(mappe.id, anlass);
+    await mappenApi.mappeLoeschen(mappe.id, anlass);
     loeseWache(); await d.neuLaden(); geheZu(`/ablage/${sicht}${anhang}`);
   }
 
@@ -1540,7 +1542,7 @@ function PasswortEingabe({ rahmen, unter, feld: f, roh: p, setze, mappeId, nurLe
     async function umschalten() {
       if (klartext !== null) { setKlartext(null); return; }
       if (!mappeId) return;
-      setKlartext((await api.passwortAnzeigen(mappeId, f.key)).wert);
+      setKlartext((await mappenApi.passwortAnzeigen(mappeId, f.key)).wert);
     }
     const hinweise = [...(Array.isArray(rahmen.hinweis) ? rahmen.hinweis : [rahmen.hinweis]),
       !sehen && p.lesbar ? t('ablage.mappeformular.passwoerter-dieser-mappe-darfst') : null,
@@ -1628,7 +1630,7 @@ function VerweisTabelle({ mappeId, typ, feldKey, spalten, anzahl }: { mappeId: s
   const d = useDaten();
   const [daten, setDaten] = useState<{ gesamt: number; mappen: Mappe[]; bezuege: Bezuege } | null>(null);
   const [fehler, setFehler] = useState<string>();
-  useEffect(() => { api.verweisende(mappeId, typ.id, feldKey).then(setDaten, (e: Error) => setFehler(e.message)); }, [mappeId, typ.id, feldKey, anzahl, d.stand]);
+  useEffect(() => { mappenApi.verweisende(mappeId, typ.id, feldKey).then(setDaten, (e: Error) => setFehler(e.message)); }, [mappeId, typ.id, feldKey, anzahl, d.stand]);
   if (fehler) return <p className="fehlertext klein">{fehler}</p>;
   if (!daten) return <p className="leise klein">{t('ablage.mappeformular.lade')}</p>;
   const rechts = (k: string) => rechtsbuendig(typ.felder.find((x) => x.key === k)?.typ);
@@ -1711,7 +1713,7 @@ export function MappenWahl({ id, ziel, ziele, gleicherTyp, mehrfach, wert, eigen
   useEffect(() => {
     if (!mehrere || !offen || zuletzt) return;
     let aktuell = true;
-    api.zuletztGeoeffnet().then((l) => aktuell && setZuletzt(new Map(l.map((x, i) => [x.id, i]))), () => aktuell && setZuletzt(new Map()));
+    mappenApi.zuletztGeoeffnet().then((l) => aktuell && setZuletzt(new Map(l.map((x, i) => [x.id, i]))), () => aktuell && setZuletzt(new Map()));
     return () => { aktuell = false; };
   }, [mehrere, offen, zuletzt]);
 
@@ -1719,7 +1721,7 @@ export function MappenWahl({ id, ziel, ziele, gleicherTyp, mehrfach, wert, eigen
   const fehlend = gewaehlt.filter((x) => !bekannt[x]).join(',');
   useEffect(() => {
     for (const x of fehlend ? fehlend.split(',') : []) {
-      api.mappe(x).then((r) => merke(x, { titel: r.mappe.titel ?? '', typId: r.mappe.typId })).catch(() => merke(x, { titel: t('ablage.mappeformular.geloeschte-mappe'), typId: '' }));
+      mappenApi.mappe(x).then((r) => merke(x, { titel: r.mappe.titel ?? '', typId: r.mappe.typId })).catch(() => merke(x, { titel: t('ablage.mappeformular.geloeschte-mappe'), typId: '' }));
     }
   }, [fehlend]); // eslint-disable-line react-hooks/exhaustive-deps -- Namen nur nachladen, wenn sich die Liste der fehlenden Mappen ändert
 
@@ -1729,9 +1731,9 @@ export function MappenWahl({ id, ziel, ziele, gleicherTyp, mehrfach, wert, eigen
     const timer = setTimeout(() => {
       const eigen = eigeneText ? JSON.parse(eigeneText) as Werte : undefined;
       // Mehrere Zieltypen ohne Feld-Auswahl (#1036, z. B. erweiterte Suche): je Typ eine Seite, zusammen.
-      const jeTyp = () => Promise.all(alleIds.split(',').map((x) => api.seite(`typ:${x}`, 0, 15, eingabe.trim(), undefined, false, false, undefined, eigen)))
+      const jeTyp = () => Promise.all(alleIds.split(',').map((x) => mappenApi.seite(`typ:${x}`, 0, 15, eingabe.trim(), { eigene: eigen })))
         .then((l) => ({ mappen: l.flatMap((x) => x.mappen), gesamt: l.reduce((n, x) => n + x.gesamt, 0) }));
-      (quelle ? quelle(eingabe.trim()) as Promise<{ mappen: Mappe[]; gesamt: number }> : !sicht && mehrere ? jeTyp() : api.seite(sicht ?? `typ:${ziel.id}`, 0, mehrere ? 30 : 20, eingabe.trim(), undefined, false, false, undefined, eigen)).then((s) => { if (aktuell) { setTreffer(s.mappen); setGesamt(s.gesamt); } }).catch(() => aktuell && setTreffer([]));
+      (quelle ? quelle(eingabe.trim()) as Promise<{ mappen: Mappe[]; gesamt: number }> : !sicht && mehrere ? jeTyp() : mappenApi.seite(sicht ?? `typ:${ziel.id}`, 0, mehrere ? 30 : 20, eingabe.trim(), { eigene: eigen })).then((s) => { if (aktuell) { setTreffer(s.mappen); setGesamt(s.gesamt); } }).catch(() => aktuell && setTreffer([]));
     }, 200);
     return () => { aktuell = false; clearTimeout(timer); };
   }, [offen, eingabe, ziel.id, sicht, eigeneText, quelle, mehrere, alleIds]);
@@ -1744,7 +1746,7 @@ export function MappenWahl({ id, ziel, ziele, gleicherTyp, mehrfach, wert, eigen
   useEffect(() => {
     if (!pruefTyp || !pruefFeld || !gewaehltText) { setLive(null); return; }
     let aktuell = true;
-    const timer = setTimeout(() => { api.auswahlPruefen(pruefTyp, pruefFeld, gewaehltText.split(','), eigeneText ? JSON.parse(eigeneText) as Werte : {}).then((r) => aktuell && setLive({ unpassend: r.unpassend, gruende: r.gruende ?? {} })).catch(() => {}); }, 300);
+    const timer = setTimeout(() => { mappenApi.auswahlPruefen(pruefTyp, pruefFeld, gewaehltText.split(','), eigeneText ? JSON.parse(eigeneText) as Werte : {}).then((r) => aktuell && setLive({ unpassend: r.unpassend, gruende: r.gruende ?? {} })).catch(() => {}); }, 300);
     return () => { aktuell = false; clearTimeout(timer); };
   }, [pruefTyp, pruefFeld, gewaehltText, eigeneText]);
   const unpassend = live?.unpassend ?? vomServer;

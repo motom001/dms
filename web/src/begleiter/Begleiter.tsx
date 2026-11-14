@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState } from 'react';
-import { api } from '../api';
+import { sucheApi } from '../api/suche';
 import { FragAblage } from '../ablage/FragAblage';
 import { Knopf, Umschalter } from '../bausteine';
 import { useDaten } from '../daten';
@@ -35,7 +35,7 @@ function useFragen() {
   const [x, setX] = useState<{ verfuegbar: boolean; paket: string | null } | null>(null);
   useEffect(() => {
     let aktuell = true;
-    fragenStand ??= api.fragenVerfuegbar().catch(() => ({ verfuegbar: false, paket: null }));
+    fragenStand ??= sucheApi.fragenVerfuegbar().catch(() => ({ verfuegbar: false, paket: null }));
     void fragenStand.then((y) => { if (aktuell) setX(y); });
     return () => { aktuell = false; };
   }, []);

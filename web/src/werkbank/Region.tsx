@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { setzeZeitzone } from '../../../shared/src/region';
-import { api, type Region, type RegionStand } from '../api';
+import { werkbankApi, type Region, type RegionStand } from '../api/werkbank';
 import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 import { t } from '../sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
@@ -14,7 +14,7 @@ import { Feld } from '../bausteine';
 export function useRegion(offen: boolean) {
   const [stand, setStand] = useState<RegionStand | null>(null);
   const [fehler, setFehler] = useState<string>();
-  const laden = useCallback(async () => { try { setStand(await api.region()); setFehler(undefined); } catch (e) { setFehler((e as Error).message); } }, []);
+  const laden = useCallback(async () => { try { setStand(await werkbankApi.region()); setFehler(undefined); } catch (e) { setFehler((e as Error).message); } }, []);
   useEffect(() => { if (offen) void laden(); }, [offen, laden]);
   return { stand, fehler, laden, setStand };
 }
@@ -33,7 +33,7 @@ export function RegionPanel({ z }: { z: RegionZustand }) {
   async function speichern() {
     setSendet(true);
     try {
-      const n = await api.regionSetzen(e!);
+      const n = await werkbankApi.regionSetzen(e!);
       z.setStand(n); setE(n.region); setzeZeitzone(n.region.zeitzone);
       setMeldung({ art: 'gut', text: t('werkbank.region.gespeichert') });
     } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); } finally { setSendet(false); }

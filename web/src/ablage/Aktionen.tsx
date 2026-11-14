@@ -5,7 +5,8 @@ import { gruppiere } from '../../../shared/src/anlagen';
 import { Feld, FeldGruppe, HakenFeld, Knopf, KnopfLink, Menue, type GefahrRueckfrage, type MenuePunkt } from '../bausteine';
 import { AnlageMarke } from './Anlagen';
 import { ausgeblendeteFelder, sichtbareRegister } from '../../../shared/src/darstellung';
-import { api, type MappeDetails } from '../api';
+import { eingaengeApi } from '../api/eingaenge';
+import { mappenApi, type MappeDetails } from '../api/mappen';
 import { useDaten } from '../daten';
 import { useKonto } from '../konto';
 import { Link } from '../ort';
@@ -77,7 +78,7 @@ export function EmailMaske({ typ, details, neuLaden, schliessen }: { typ: Mappen
   const [laeuft, setLaeuft] = useState(false);
   const [fehler, setFehler] = useState<string>();
   const [fertig, setFertig] = useState<{ id: string; typId: string }>();
-  useEffect(() => { api.emailBereit().then((r) => setBereit(r.bereit), () => setBereit(false)); }, []);
+  useEffect(() => { eingaengeApi.emailBereit().then((r) => setBereit(r.bereit), () => setBereit(false)); }, []);
   // Anlagen (#998): „mit Anlagen?“ (Vorgabe ja) – dann gehen sie mit ihrem Hauptdokument; ohne einzeln wählbar.
   const [mitAnlagen, setMitAnlagen] = useState(true);
   const liste = gruppiere(details.dokumente).flatMap((g) => [g.haupt, ...g.anlagen]);
@@ -103,7 +104,7 @@ export function EmailMaske({ typ, details, neuLaden, schliessen }: { typ: Mappen
   async function senden() {
     setFehler(undefined); setLaeuft(true);
     try {
-      setFertig(await api.emailSenden(mappe.id, { an, betreff, nachricht, dokumente: liste.filter(istGewaehlt).map((x) => x.id), mitAnlagen, originalEmail: eml, stempel: alsWunsch(stempel), verkleinern: mitPdf ? klein : null, fassung }));
+      setFertig(await mappenApi.emailSenden(mappe.id, { an, betreff, nachricht, dokumente: liste.filter(istGewaehlt).map((x) => x.id), mitAnlagen, originalEmail: eml, stempel: alsWunsch(stempel), verkleinern: mitPdf ? klein : null, fassung }));
       await neuLaden(); await d.neuLaden();
     } catch (e) { setFehler((e as Error).message); } finally { setLaeuft(false); }
   }

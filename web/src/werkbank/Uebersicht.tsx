@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { api, type WerkbankUebersicht } from '../api';
+import { betriebApi, type WerkbankUebersicht } from '../api/betrieb';
 import { Link } from '../ort';
 import { t, tn } from '../sprache';
 import { useHandbuch } from '../Hilfe';
@@ -147,7 +147,7 @@ export function useUebersicht() {
   const [fehler, setFehler] = useState<string>();
   const [akzeptiert, setAkzeptiert] = useState<Akzeptiert>({});
   const laden = useCallback(async () => {
-    try { const s = await api.uebersicht(); setStand(s); setAkzeptiert(s.akzeptiert ?? {}); setFehler(undefined); } catch (e) { setFehler((e as Error).message); }
+    try { const s = await betriebApi.uebersicht(); setStand(s); setAkzeptiert(s.akzeptiert ?? {}); setFehler(undefined); } catch (e) { setFehler((e as Error).message); }
   }, []);
   useEffect(() => { void laden(); }, [laden]);
   const mitNotfallblatt = useVerwaltetVerschluesselung();
@@ -159,13 +159,13 @@ export function useUebersicht() {
     gemeldet.current = stand;
     for (const anlass of ['erledigt', 'schwerer'] as const) {
       const liste = geordnet.aufheben.filter((x) => x.anlass === anlass).map((x) => x.schluessel);
-      if (liste.length) api.akzeptanzAufheben(liste, anlass).then(setAkzeptiert).catch(() => {});
+      if (liste.length) betriebApi.akzeptanzAufheben(liste, anlass).then(setAkzeptiert).catch(() => {});
     }
   }, [stand, geordnet]);
-  const akzeptieren = useCallback(async (h: Hinweis, grund: string) => setAkzeptiert(await api.meldungAkzeptieren(h.schluessel, h.art, grund.trim() || undefined)), []);
-  const einblenden = useCallback(async (schluessel: string) => setAkzeptiert(await api.akzeptanzAufheben([schluessel], 'eingeblendet')), []);
+  const akzeptieren = useCallback(async (h: Hinweis, grund: string) => setAkzeptiert(await betriebApi.meldungAkzeptieren(h.schluessel, h.art, grund.trim() || undefined)), []);
+  const einblenden = useCallback(async (schluessel: string) => setAkzeptiert(await betriebApi.akzeptanzAufheben([schluessel], 'eingeblendet')), []);
   // „Nein, danke“ bzw. „Gelesen“ (#821, #815): Der Hinweis kommt danach nicht wieder.
-  const erledigen = useCallback(async (schluessel: string) => { await api.meldungErledigt(schluessel); await laden(); }, [laden]);
+  const erledigen = useCallback(async (schluessel: string) => { await betriebApi.meldungErledigt(schluessel); await laden(); }, [laden]);
   // Zahl in der Leiste: offene Warnungen und rote Meldungen, ohne Hinweise und ohne bewusst akzeptierte.
   const hinweise = geordnet ? geordnet.offen.filter((h) => h.art !== 'info').length : 0;
   return { stand, fehler, laden, hinweise, geordnet, akzeptieren, einblenden, erledigen };

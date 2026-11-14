@@ -8,7 +8,8 @@ import { einzigesZiel, jedeMappe, zieleVon, type Mappentyp } from '../../../shar
 import type { Zeitraumeinheit } from '../../../shared/src/feldarten';
 import { datumDe } from '../../../shared/src/fristen';
 import { gebietsschema } from '../../../shared/src/sprache';
-import { api, type Bezuege } from '../api';
+import { automatisierungApi } from '../api/automatisierung';
+import type { Bezuege } from '../api/mappen';
 import { VorlagenDialog } from '../ablage/Aufgaben';
 import { MappenWahl } from '../ablage/MappeFormular';
 import { useDaten } from '../daten';
@@ -34,7 +35,7 @@ type Stand = { vorlagen: AblaufvorlageAnsicht[]; angehalten: Array<{ id: string;
 export function useAblaufvorlagen(offen: boolean) {
   const [stand, setStand] = useState<Stand | null>(null);
   const [fehler, setFehler] = useState<string>();
-  const laden = useCallback(async () => { try { setStand(await api.ablaufvorlagen()); setFehler(undefined); } catch (e) { setFehler((e as Error).message); } }, []);
+  const laden = useCallback(async () => { try { setStand(await automatisierungApi.ablaufvorlagen()); setFehler(undefined); } catch (e) { setFehler((e as Error).message); } }, []);
   useEffect(() => { if (offen) void laden(); }, [offen, laden]);
   return { stand, fehler, laden };
 }
@@ -229,9 +230,9 @@ function VorlageKopf({ v, aktion }: { v?: AblaufvorlageAnsicht; aktion: (f: () =
         {v && <div className="knoepfe">
           {/* An/aus als Schalter (#1188), wirkt sofort. */}
           <Schalter an={v.aktiv} beschriftung={t('automatisierung.vorlage.ui.schalter')} beschriftungVerbergen
-            setze={(an) => aktion(() => api.ablaufvorlageSchalten(v.kennung, an), an ? t('automatisierung.vorlage.ui.eingeschaltet') : t('automatisierung.vorlage.ui.ausgeschaltet'))} />
-          <Knopf groesse="klein" onClick={() => aktion(async () => { const x = await api.ablaufvorlageKopieren(v.kennung); geheZu(pfad(x.kennung)); }, t('automatisierung.ui.kopiert'))}>{t('automatisierung.ui.kopieren')}</Knopf>
-          {istKernVorlage(v.kennung) && v.herkunft === 'kern' && v.version > 0 && <Knopf groesse="klein" onClick={() => aktion(() => api.ablaufvorlageZuruecksetzen(v.kennung), t('automatisierung.vorlage.ui.zurueckgesetzt'))}>{t('automatisierung.vorlage.ui.zuruecksetzen')}</Knopf>}
+            setze={(an) => aktion(() => automatisierungApi.ablaufvorlageSchalten(v.kennung, an), an ? t('automatisierung.vorlage.ui.eingeschaltet') : t('automatisierung.vorlage.ui.ausgeschaltet'))} />
+          <Knopf groesse="klein" onClick={() => aktion(async () => { const x = await automatisierungApi.ablaufvorlageKopieren(v.kennung); geheZu(pfad(x.kennung)); }, t('automatisierung.ui.kopiert'))}>{t('automatisierung.ui.kopieren')}</Knopf>
+          {istKernVorlage(v.kennung) && v.herkunft === 'kern' && v.version > 0 && <Knopf groesse="klein" onClick={() => aktion(() => automatisierungApi.ablaufvorlageZuruecksetzen(v.kennung), t('automatisierung.vorlage.ui.zurueckgesetzt'))}>{t('automatisierung.vorlage.ui.zuruecksetzen')}</Knopf>}
         </div>}
       </div>
       {v?.ueberlagert && <p className="leise klein">{t('automatisierung.vorlage.ui.ueberlagert', { paket: v.ueberlagert })}</p>}
@@ -263,7 +264,7 @@ export function AblaufvorlageEditor({ z, kennung }: { z: AblaufvorlagenZustand; 
     setSendet(true); setMeldung(undefined);
     try {
       const daten = { ...e, fragen: fragen(e) };
-      const x = v ? await api.ablaufvorlageAendern(v.kennung, { ...daten, version: v.version }) : await api.ablaufvorlageAnlegen(daten);
+      const x = v ? await automatisierungApi.ablaufvorlageAendern(v.kennung, { ...daten, version: v.version }) : await automatisierungApi.ablaufvorlageAnlegen(daten);
       await z.laden();
       loeseWache();
       if (neu) geheZu(pfad(x.kennung), true);
@@ -302,7 +303,7 @@ export function AblaufvorlageEditor({ z, kennung }: { z: AblaufvorlagenZustand; 
           loeschen={v && v.herkunft === 'eigen' ? {
             text: t('automatisierung.vorlage.ui.loeschen.knopf'),
             rueckfrage: { titel: t('automatisierung.vorlage.ui.loeschen.frage', { name: v.name }), text: t('automatisierung.vorlage.ui.loeschen.text'), ja: t('automatisierung.ui.loeschen') },
-            onClick: () => aktion(async () => { await api.ablaufvorlageLoeschen(v.kennung); loeseWache(); geheZu('/werkbank/ablaufvorlagen', true); }, t('automatisierung.vorlage.ui.geloescht')),
+            onClick: () => aktion(async () => { await automatisierungApi.ablaufvorlageLoeschen(v.kennung); loeseWache(); geheZu('/werkbank/ablaufvorlagen', true); }, t('automatisierung.vorlage.ui.geloescht')),
           } : undefined} />
       </form>
       {v && <>
@@ -342,7 +343,7 @@ function Ausprobieren({ v }: { v: AblaufvorlageAnsicht }) {
       {schritt === 'wahl' && <div className="knoepfe"><Knopf gesperrt={!mappe} onClick={oeffnen}>{t('automatisierung.vorlage.ui.ausprobieren.los')}</Knopf></div>}
       {schritt === 'dialog' && (
         <VorlagenDialog key={runde} mappeId={mappe} vorlage={v} schliessen={() => setSchritt('wahl')}
-          probe={{ anwenden: async (x) => { setErgebnis(await api.ablaufvorlageAusprobieren(v.kennung, mappe, x)); setSchritt('ergebnis'); } }} />
+          probe={{ anwenden: async (x) => { setErgebnis(await automatisierungApi.ablaufvorlageAusprobieren(v.kennung, mappe, x)); setSchritt('ergebnis'); } }} />
       )}
       {schritt === 'ergebnis' && ergebnis && <>
         <ProbeVorschau ergebnis={ergebnis} mappe={titel} />
@@ -390,7 +391,7 @@ function GeradeBenutzt({ v, nachher }: { v: AblaufvorlageAnsicht; nachher: () =>
   const d = useDaten();
   const [liste, setListe] = useState<MappenAblauf[] | null>(null);
   const [fehler, setFehler] = useState<string>();
-  const laden = useCallback(async () => { try { setListe(await api.ablaufvorlageBenutzt(v.kennung)); } catch (x) { setFehler((x as Error).message); } }, [v.kennung]);
+  const laden = useCallback(async () => { try { setListe(await automatisierungApi.ablaufvorlageBenutzt(v.kennung)); } catch (x) { setFehler((x as Error).message); } }, [v.kennung]);
   useEffect(() => { void laden(); }, [laden, v.offen]);
   return (
     <div className="blatt">
@@ -403,7 +404,7 @@ function GeradeBenutzt({ v, nachher }: { v: AblaufvorlageAnsicht; nachher: () =>
               <span className="leise klein">{t('automatisierung.vorlage.ui.benutzt.zeile', { datum: datumDe(a.datum), person: d.person(a.erstelltVon ?? '') })}</span>
               {a.angehalten && <> <span className="chip schlecht klein">{t('ablage.aufgaben.angehalten')}</span> <span className="problem">{a.angehalten.text}</span></>}
             </span>
-            {a.angehalten && <Knopf groesse="klein" onClick={async () => { await api.ablaufFortsetzen(a.id); await laden(); nachher(); }}>{t('automatisierung.vorlage.ui.fortsetzen')}</Knopf>}
+            {a.angehalten && <Knopf groesse="klein" onClick={async () => { await automatisierungApi.ablaufFortsetzen(a.id); await laden(); nachher(); }}>{t('automatisierung.vorlage.ui.fortsetzen')}</Knopf>}
           </li>
         ))}</ul>
       )}
@@ -416,7 +417,7 @@ function Verlauf({ v }: { v: AblaufvorlageAnsicht }) {
   const d = useDaten();
   const [liste, setListe] = useState<AblaufVerlauf[] | null>(null);
   const [fehler, setFehler] = useState<string>();
-  useEffect(() => { api.ablaufvorlageVerlauf(v.kennung).then(setListe).catch((x) => setFehler((x as Error).message)); }, [v.kennung, v.offen]);
+  useEffect(() => { automatisierungApi.ablaufvorlageVerlauf(v.kennung).then(setListe).catch((x) => setFehler((x as Error).message)); }, [v.kennung, v.offen]);
   const eintraege: Listeneintrag[] = (liste ?? []).map((x) => ({
     id: x.id, wann: zeit(x.zeit), wer: x.personId ? d.person(x.personId) : '–',
     was: <>{x.text}</>, zustand: <span className={`chip ${x.art === 'angehalten' ? 'schlecht' : x.art === 'gelaufen' || x.art === 'angewendet' ? 'gut' : ''}`}>{t.frei(`automatisierung.vorlage.ui.verlauf.${x.art}`)}</span>,

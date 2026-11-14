@@ -5,7 +5,7 @@
  */
 import { useEffect, useState } from 'react';
 import type { KiUebersicht } from '../../../shared/src/pakete';
-import { api } from '../api';
+import { sucheApi } from '../api/suche';
 import { Hilfe } from '../Hilfe';
 import { Link } from '../ort';
 import { t } from '../sprache';
@@ -15,13 +15,13 @@ export function KiTypenBlock({ paket }: { paket: string }) {
   const [k, setK] = useState<KiUebersicht | null>(null);
   const [fehler, setFehler] = useState('');
   const [sendet, setSendet] = useState('');
-  useEffect(() => { api.kiTypen().then(setK, (e: Error) => setFehler(e.message)); }, []);
+  useEffect(() => { sucheApi.kiTypen().then(setK, (e: Error) => setFehler(e.message)); }, []);
   if (!k) return fehler ? <p className="fehlertext">{fehler}</p> : null;
   const p = k.pakete.find((x) => x.id === paket);
   const bekommt = new Set(p?.bekommt ?? []);
   const setze = async (typId: string, zugelassen: boolean) => {
     setSendet(typId); setFehler('');
-    try { setK(await api.setzeKiTyp(typId, zugelassen)); } catch (e) { setFehler((e as Error).message); } finally { setSendet(''); }
+    try { setK(await sucheApi.setzeKiTyp(typId, zugelassen)); } catch (e) { setFehler((e as Error).message); } finally { setSendet(''); }
   };
   const namen = k.typen.filter((x) => bekommt.has(x.id)).map((x) => x.name);
   return (

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
-import { api, type ApiSchluessel, type ApiSchluesselEingabe, type ApiSchluesselRecht } from '../api';
+import { kontoApi, type ApiSchluessel, type ApiSchluesselEingabe, type ApiSchluesselRecht } from '../api/konto';
 import { Hilfe } from '../Hilfe';
 import { Link } from '../ort';
 import { useKonto } from '../konto';
@@ -21,7 +21,7 @@ export function ApiSchluesselBlatt() {
   const [neu, setNeu] = useState<(ApiSchluessel & { schluessel: string }) | null>(null);
   const [fehler, setFehler] = useState<string>();
   const [bearbeite, setBearbeite] = useState<string | null>(null);
-  const laden = useCallback(async () => { try { setListe(await api.apiSchluessel()); } catch (e) { setFehler((e as Error).message); } }, []);
+  const laden = useCallback(async () => { try { setListe(await kontoApi.apiSchluessel()); } catch (e) { setFehler((e as Error).message); } }, []);
   useEffect(() => { void laden(); }, [laden]);
 
   async function aktion(fn: () => Promise<unknown>) {
@@ -43,7 +43,7 @@ export function ApiSchluesselBlatt() {
         <ul className="sitzungsliste">
           {liste.map((s) => bearbeite === s.id
             ? <li key={s.id}><SchluesselFormular start={s} knopf={t('profil.apischluessel.speichern')} abbrechen={() => setBearbeite(null)}
-                senden={(d) => aktion(async () => { await api.apiSchluesselAendern(s.id, d); setBearbeite(null); })} /></li>
+                senden={(d) => aktion(async () => { await kontoApi.apiSchluesselAendern(s.id, d); setBearbeite(null); })} /></li>
             : (
               <li key={s.id}>
                 <div>
@@ -54,7 +54,7 @@ export function ApiSchluesselBlatt() {
                 </div>
                 <span className="zeilenaktionen">
                   <Knopf onClick={() => setBearbeite(s.id)}>{t('profil.apischluessel.aendern')}</Knopf>
-                  <Knopf art="gefahr" symbol="geloescht" onClick={() => aktion(() => api.apiSchluesselLoeschen(s.id))}
+                  <Knopf art="gefahr" symbol="geloescht" onClick={() => aktion(() => kontoApi.apiSchluesselLoeschen(s.id))}
                     rueckfrage={{ titel: t('profil.apischluessel.schluessel-loeschen', { name: s.name }), text: t('profil.apischluessel.programme-die-ihn-nutzen'), ja: t('profil.apischluessel.loeschen') }}>{t('profil.apischluessel.loeschen')}</Knopf>
                 </span>
               </li>
@@ -65,7 +65,7 @@ export function ApiSchluesselBlatt() {
       {/* #818: Schlüssel bekommen nie Verwaltungsrechte – auch die von Personen, die verwalten. */}
       <details className="neuerschluessel">
         <summary {...knopfAussehen({ art: 'anlegen' })}>{t('profil.apischluessel.neuen-schluessel-erzeugen')}</summary>
-        <SchluesselFormular knopf={t('profil.apischluessel.erzeugen')} senden={(d) => aktion(async () => setNeu(await api.apiSchluesselAnlegen(d)))} />
+        <SchluesselFormular knopf={t('profil.apischluessel.erzeugen')} senden={(d) => aktion(async () => setNeu(await kontoApi.apiSchluesselAnlegen(d)))} />
       </details>
     </div>
   );

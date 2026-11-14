@@ -1329,14 +1329,6 @@
       "count": 1
     }
   },
-  "web/src/api.ts": {
-    "max-lines": {
-      "count": 1
-    },
-    "max-params": {
-      "count": 2
-    }
-  },
   "web/src/assistent/Schritte.tsx": {
     "complexity": {
       "count": 1

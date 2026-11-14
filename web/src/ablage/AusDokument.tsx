@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import type { Dokument, Mappentyp } from '../../../shared/src/model';
-import { api, type TypVorschlaege } from '../api';
+import { werkbankApi, type TypVorschlaege } from '../api/werkbank';
 import { Hilfe } from '../Hilfe';
 import { Feld, HakenFeld, Knopf } from '../bausteine';
 import { istTouch, verkleinere } from './PostKamera';
@@ -36,7 +36,7 @@ export function AusDokument({ typ, titel, mappeId, dokumente, fertig, schliessen
       let r: TypVorschlaege;
       if (dokId) {
         setLaeuft(t('ablage.ausdokument.lese-das-dokument'));
-        r = await api.vorschlaege(typ.id, { dokumente: [dokId], mappe: mappeId });
+        r = await werkbankApi.vorschlaege(typ.id, { dokumente: [dokId], mappe: mappeId });
       } else {
         // Fotos vorher verkleinern (wie „Post fotografieren“): schneller, und die Texterkennung braucht nicht mehr.
         const texte: string[] = [];
@@ -44,10 +44,10 @@ export function AusDokument({ typ, titel, mappeId, dokumente, fertig, schliessen
         for (const [i, f] of dateien.entries()) {
           setLaeuft(dateien.length > 1 ? t('ablage.ausdokument.lese-von', { wert: i + 1, dateien: dateien.length }) : t('ablage.ausdokument.lese-die-datei'));
           const blob = f.type.startsWith('image/') ? await verkleinere(f) : f;
-          letzte = await api.vorschlaegeDatei(typ.id, blob, f.name, mappeId);
+          letzte = await werkbankApi.vorschlaegeDatei(typ.id, blob, f.name, mappeId);
           texte.push(letzte.text);
         }
-        r = dateien.length > 1 ? await api.vorschlaege(typ.id, { text: texte.join('\n\n'), mappe: mappeId }) : letzte!;
+        r = dateien.length > 1 ? await werkbankApi.vorschlaege(typ.id, { text: texte.join('\n\n'), mappe: mappeId }) : letzte!;
       }
       if (!r.zeichen) { setFehler(t('ablage.ausdokument.auf-dem-bild-bzw')); return; }
       fertig({ r, dateien: dokId ? [] : dateien, ablegen: ablegen && !dokId && register.length ? register[0].key : null });

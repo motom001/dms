@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { api, type DebugStand, type ModusEintrag, type Protokolleintrag, type Stufe } from '../api';
+import { betriebApi, type DebugStand, type Protokolleintrag, type Stufe } from '../api/betrieb';
+import { kontoApi, type ModusEintrag } from '../api/konto';
 import { useKonto } from '../konto';
 import { Link } from '../ort';
 import { Listenkopf } from '../Listenkopf';
@@ -43,7 +44,7 @@ export function useProtokoll(sichtbar = true) {
 
   const laden = useCallback(async (nurNeue: boolean) => {
     try {
-      const r = await api.protokoll({ ...params, seit: nurNeue ? letzte.current : undefined, max: nurNeue ? 500 : ANZEIGE_MAX });
+      const r = await betriebApi.protokoll({ ...params, seit: nurNeue ? letzte.current : undefined, max: nurNeue ? 500 : ANZEIGE_MAX });
       letzte.current = r.letzte;
       setModule(r.module); setJeModul(r.jeModul ?? {}); setDebug(r.debug); setGespeichert(r.gespeichert); setFehler(undefined);
       setEintraege((alt) => (nurNeue ? [...r.eintraege, ...alt].slice(0, ANZEIGE_MAX) : r.eintraege));
@@ -137,7 +138,7 @@ function DebugPanel({ p }: { p: ProtokollZustand }) {
   const d = p.debug;
   async function schalte(an: boolean) {
     setLaeuft(true);
-    try { p.setDebug(await api.debug(an)); await p.neu(); } finally { setLaeuft(false); }
+    try { p.setDebug(await betriebApi.debug(an)); await p.neu(); } finally { setLaeuft(false); }
   }
   return (
     <div className="einspaltig">
@@ -171,7 +172,7 @@ function ImVerwaltungsmodus() {
   const [liste, setListe] = useState<ModusEintrag[] | null>(null);
   const [fehler, setFehler] = useState<string>();
   const gesamt = verwaltungsmodus.bereiche === null;
-  useEffect(() => { if (gesamt) api.imVerwaltungsmodus().then(setListe).catch((x) => setFehler((x as Error).message)); }, [gesamt]);
+  useEffect(() => { if (gesamt) kontoApi.imVerwaltungsmodus().then(setListe).catch((x) => setFehler((x as Error).message)); }, [gesamt]);
   if (!gesamt) return null;
   return (
     <div className="einspaltig" id="im-verwaltungsmodus">

@@ -1,6 +1,6 @@
 import { type FormEvent, useCallback, useEffect, useState } from 'react';
 import { AUSLOESER, LOESCHGRUENDE, LOESCHPROTOKOLL_JAHRE_MAX, LOESCHSCHRITTE, LOESCHWEGE, istSha, type LoeschEintrag } from '../../../shared/src/loeschprotokoll';
-import { api } from '../api';
+import { datenschutzApi } from '../api/datenschutz';
 import { useDaten } from '../daten';
 import { Hilfe } from '../Hilfe';
 import { pruefwert } from '../pruefwert';
@@ -31,7 +31,7 @@ export function LoeschprotokollBlatt() {
   const [jahre, setJahre] = useState('');
   const [meldung, setMeldung] = useState<string>();
   const laden = useCallback(async (x: Filter) => {
-    try { const n = await api.loeschprotokoll(ohneLeere(x)); setR(n); setJahre(String(n.jahre)); setFehler(undefined); } catch (e) { setFehler((e as Error).message); }
+    try { const n = await datenschutzApi.loeschprotokoll(ohneLeere(x)); setR(n); setJahre(String(n.jahre)); setFehler(undefined); } catch (e) { setFehler((e as Error).message); }
   }, []);
   useEffect(() => { void laden(LEER); }, [laden]);
   const setze = (k: keyof Filter, v: string) => { const n = { ...f, [k]: v }; setF(n); if (k !== 'suche') void laden(n); };
@@ -89,7 +89,7 @@ export function LoeschprotokollBlatt() {
           {r.eintraege.length > 0 && <ul className="lp-liste">{r.eintraege.map((e) => <Zeile key={e.id} e={e} vorgang={(v) => setze('vorgang', v)} />)}</ul>}
           <form className="lp-jahre" onSubmit={abfangen(async (x: FormEvent) => {
             x.preventDefault(); setMeldung(undefined);
-            await api.loeschprotokollJahre(Number(jahre)); setMeldung(t('werkbank.loeschprotokoll.gespeichert')); await laden(f);
+            await datenschutzApi.loeschprotokollJahre(Number(jahre)); setMeldung(t('werkbank.loeschprotokoll.gespeichert')); await laden(f);
           }, setMeldung)}>
             <Feld beschriftung={t('werkbank.loeschprotokoll.aufbewahrung')} hinweis={t('werkbank.loeschprotokoll.danach-fallen-alte-eintraege')}>
               {(v) => <span className="lp-jahre-feld"><input {...v} type="number" min={1} max={LOESCHPROTOKOLL_JAHRE_MAX} value={jahre} onChange={(e) => setJahre(e.target.value)} /> {' '}{t('werkbank.loeschprotokoll.jahre')}</span>}

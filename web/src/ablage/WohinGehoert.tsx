@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { feldLabel, registerName, typBeschreibung, typName } from '../../../shared/src/beschriftung';
 import type { Einschaetzung, Klassbeleg, Klassifizierung } from '../../../shared/src/klassifizierung';
 import { formatiere, istLeer, type Feld, type Mappentyp } from '../../../shared/src/model';
-import { api, type Bezuege, type MappeDetails } from '../api';
+import { mappenApi, type Bezuege, type MappeDetails } from '../api/mappen';
 import { Knopf, Mehrfachauswahl, Umschalter } from '../bausteine';
 import { useDaten } from '../daten';
 import { titelOder } from '../seiten';
@@ -127,7 +127,7 @@ export function VorhandeneMappeWahl({ ziele, vorschlaege, wahl, setze, bekannt, 
   const zieleKey = ziele.map((x) => x.id).join(',');
   // Eine Anfrage über alle Typen (erweiterte Suche ohne Bedingungen); nur Typen, in die Dokumente passen.
   const quelle = useCallback(async (suche: string) => {
-    const r = await api.seite('suche', 0, 30, suche, undefined, false, false, '');
+    const r = await mappenApi.seite('suche', 0, 30, suche, { link: '' });
     const erlaubt = new Set(zieleKey.split(','));
     return { mappen: r.mappen.filter((m) => erlaubt.has(m.typId)), gesamt: r.gesamt };
   }, [zieleKey]);
@@ -160,7 +160,7 @@ function Kurzansicht({ id }: { id: string }) {
   useEffect(() => {
     let aktuell = true;
     setX(null);
-    api.mappe(id).then((r) => aktuell && setX(r), () => aktuell && setX('fehlt'));
+    mappenApi.mappe(id).then((r) => aktuell && setX(r), () => aktuell && setX('fehlt'));
     return () => { aktuell = false; };
   }, [id]);
   const typ = x && x !== 'fehlt' ? d.typ(x.mappe.typId) : undefined;

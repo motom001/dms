@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { api } from '../api';
+import { dokumenteApi } from '../api/dokumente';
+import { werkbankApi } from '../api/werkbank';
 import { useDaten } from '../daten';
 import { geheZu, Link, loeseWache } from '../ort';
 import { Listenkopf } from '../Listenkopf';
@@ -28,7 +29,7 @@ export function useStempelVorlagenWerkbank(offen: boolean) {
   const [liste, setL] = useState<StempelVorlage[] | null>(null);
   const [fehler, setFehler] = useState<string>();
   const setListe = useCallback((l: StempelVorlage[]) => { merkeStempelVorlagen(l); setL(l); }, []);
-  const laden = useCallback(async () => { try { setListe(await api.stempelVorlagen()); setFehler(undefined); } catch (e) { setFehler((e as Error).message); } }, [setListe]);
+  const laden = useCallback(async () => { try { setListe(await dokumenteApi.stempelVorlagen()); setFehler(undefined); } catch (e) { setFehler((e as Error).message); } }, [setListe]);
   useEffect(() => { if (offen) void laden(); }, [offen, laden]);
   return { liste, fehler, laden, setListe };
 }
@@ -104,14 +105,14 @@ export function StempelEditor({ z, id }: { z: StempelZustand; id: string }) {
   async function speichern(werte = e) {
     setSendet(true); setMeldung(undefined);
     try {
-      const l = neu ? await api.stempelVorlageAnlegen(werte) : await api.stempelVorlageAendern(v!.id, werte);
+      const l = neu ? await werkbankApi.stempelVorlageAnlegen(werte) : await werkbankApi.stempelVorlageAendern(v!.id, werte);
       z.setListe(l);
       if (neu) { b.merke(l[l.length - 1].id); loeseWache(); geheZu(stempelPfad(l[l.length - 1].id), true); return; }
       setMeldung({ art: 'gut', text: t('werkbank.stempel.gespeichert') });
     } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); b.oeffne(['grunddaten']); } finally { setSendet(false); }
   }
   async function loeschen() {
-    try { z.setListe(await api.stempelVorlageLoeschen(v!.id)); loeseWache(); geheZu('/werkbank/stempel', true); } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); }
+    try { z.setListe(await werkbankApi.stempelVorlageLoeschen(v!.id)); loeseWache(); geheZu('/werkbank/stempel', true); } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); }
   }
   // Fehler stehen bei Name und Text – also in den Grunddaten; ebenso ein Fehler beim Speichern (#1000).
   const hatFehler = (x: StempelBereich) => x === 'grunddaten' && (Object.keys(fehler).length > 0 || meldung?.art === 'schlecht');

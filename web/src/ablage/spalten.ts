@@ -1,6 +1,6 @@
 import { feldLabel, typName } from '../../../shared/src/beschriftung';
 import { altesTextfeldVon, formatiere, istLeer, istSystemspalte, SYSTEMSPALTEN, type Mappe, type Mappentyp } from '../../../shared/src/model';
-import type { Bezuege } from '../api';
+import type { Bezuege } from '../api/mappen';
 import { titelOder } from '../seiten';
 import { gebietsschema } from '../../../shared/src/sprache';
 import { mitMinus, rechtsbuendig } from '../../../shared/src/feldarten';

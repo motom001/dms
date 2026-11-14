@@ -6,7 +6,8 @@ import { SammelHaken, SammelKopf, SammelLeiste, useSammelauswahl } from '../abla
 import { Link } from '../ort';
 import { titelOder } from '../seiten';
 import { heuteIn } from '../../../shared/src/sichten';
-import { api } from '../api';
+import { aufgabenApi } from '../api/aufgaben';
+import { kontoApi } from '../api/konto';
 import { useDaten } from '../daten';
 import { useKonto } from '../konto';
 import { Hilfe } from '../Hilfe';
@@ -109,7 +110,7 @@ export function MeineAbwesenheit() {
   const [stand, setStand] = useState<{ abwesenheit: Abwesenheit | null; offeneAufgaben: number } | null>(null);
   const [fehler, setFehler] = useState<string>();
   const [neu, setNeu] = useState(0);
-  const laden = async () => { try { setStand(await api.abwesenheit()); } catch (e) { setFehler((e as Error).message); } };
+  const laden = async () => { try { setStand(await kontoApi.abwesenheit()); } catch (e) { setFehler((e as Error).message); } };
   useEffect(() => { void laden(); }, []);
   return (
     <div className="einspaltig schmal">
@@ -120,7 +121,7 @@ export function MeineAbwesenheit() {
       {fehler && <div className="hinweis schlecht"><p>{fehler}</p></div>}
       {!stand ? <p className="leise">{t('profil.abwesenheit.lade')}</p> : (
         <AbwesenheitFormular benutzerId={ich.id} wer="du" wert={stand.abwesenheit ?? KEINE_ABWESENHEIT} offeneAufgaben={stand.offeneAufgaben}
-          speichern={(a) => api.abwesenheitSetzen(a)} uebergeben={() => api.aufgabenAnVertreter()}
+          speichern={(a) => kontoApi.abwesenheitSetzen(a)} uebergeben={() => kontoApi.aufgabenAnVertreter()}
           nachSpeichern={async () => { await laden(); await aktualisieren(); setNeu((n) => n + 1); }} />
       )}
       {/* #725: Die Liste der eigenen Aufgaben steht jetzt unter „Zu erledigen“. */}
@@ -133,7 +134,7 @@ export function MeineAbwesenheit() {
 export function AufgabenWeitergeben() {
   const [stand, setStand] = useState<{ abwesenheit: Abwesenheit | null; offeneAufgaben: number } | null>(null);
   const [fehler, setFehler] = useState<string>();
-  const laden = async () => { try { setStand(await api.abwesenheit()); } catch (e) { setFehler((e as Error).message); } };
+  const laden = async () => { try { setStand(await kontoApi.abwesenheit()); } catch (e) { setFehler((e as Error).message); } };
   useEffect(() => { void laden(); }, []);
   return (
     <div className="einspaltig">
@@ -156,7 +157,7 @@ function MeineOffenenAufgaben({ vertreter, geaendert }: { vertreter: string | nu
   const [fehler, setFehler] = useState<string>();
   const [f, setF] = useState<AufgabenFilter>({});
   const laden = useCallback(async () => {
-    try { setAlle((await api.meineAufgaben()).filter((a) => a.empfaengerId === ich.id)); setFehler(undefined); } catch (e) { setFehler((e as Error).message); }
+    try { setAlle((await aufgabenApi.meineAufgaben()).filter((a) => a.empfaengerId === ich.id)); setFehler(undefined); } catch (e) { setFehler((e as Error).message); }
   }, [ich.id]);
   useEffect(() => { void laden(); }, [laden]);
   const liste = filtereAufgaben(alle ?? [], f, { jetzt: new Date(), ohneVertretung: () => false });
@@ -165,7 +166,7 @@ function MeineOffenenAufgaben({ vertreter, geaendert }: { vertreter: string | nu
   const nachher = async () => { await laden(); await geaendert(); await d.neuLaden(); };
   async function einzeln(a: Aufgabe, an: string) {
     setFehler(undefined);
-    try { await api.aufgabeDelegieren(a.id, an); await nachher(); } catch (e) { setFehler((e as Error).message); }
+    try { await aufgabenApi.aufgabeDelegieren(a.id, an); await nachher(); } catch (e) { setFehler((e as Error).message); }
   }
   return (
     <section className="blatt" id="meine-aufgaben">

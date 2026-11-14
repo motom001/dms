@@ -5,7 +5,8 @@ import { ausgeblendeteFelder } from '../../../shared/src/darstellung';
 import { abfrageAus, alsParameter, chipsVon, eingabeart, istGesetzt, kannLeer, liesSuche, ohneChip, suchfelder, SUCHE_PFAD, zeitraumVon, ZEITRAEUME, type Feldeingabe, type Suchformular, type Zeitraum } from '../../../shared/src/erweitertesuche';
 import { heuteIn, type Bedingungsfeld } from '../../../shared/src/sichten';
 import { inAllgemeinerSuche, zieleVon, type Mappentyp } from '../../../shared/src/model';
-import { api, type Bezuege } from '../api';
+import { kontoApi } from '../api/konto';
+import { mappenApi, type Bezuege } from '../api/mappen';
 import { useDaten } from '../daten';
 import { Hilfe } from '../Hilfe';
 import { geheZu } from '../ort';
@@ -31,7 +32,7 @@ function useLesbareTypen(): Mappentyp[] | null {
   const [ids, setIds] = useState<Set<string> | null>(null);
   useEffect(() => {
     let aktuell = true;
-    api.meineRechte().then((r) => { if (aktuell) setIds(new Set(r.filter((x) => x.rechte.R !== 'nie').map((x) => x.typId))); }).catch(() => aktuell && setIds(new Set(d.typen.map((mappentyp) => mappentyp.id))));
+    kontoApi.meineRechte().then((r) => { if (aktuell) setIds(new Set(r.filter((x) => x.rechte.R !== 'nie').map((x) => x.typId))); }).catch(() => aktuell && setIds(new Set(d.typen.map((mappentyp) => mappentyp.id))));
     return () => { aktuell = false; };
   }, [d.typen]);
   // Teile (#1031) nicht: Sie erscheinen in der Suche über ihre übergeordnete Mappe.
@@ -291,7 +292,7 @@ export function Suchchips({ suche, offen, aendern }: { suche: URLSearchParams; o
   useEffect(() => {
     let aktuell = true;
     for (const x of fehlend ? fehlend.split(',') : []) {
-      api.mappe(x).then((r) => { titelCache[x] = { titel: r.mappe.titel ?? '', typId: r.mappe.typId }; }).catch(() => { titelCache[x] = { titel: t('ablage.suche.nicht-sichtbare-mappe'), typId: '' }; })
+      mappenApi.mappe(x).then((r) => { titelCache[x] = { titel: r.mappe.titel ?? '', typId: r.mappe.typId }; }).catch(() => { titelCache[x] = { titel: t('ablage.suche.nicht-sichtbare-mappe'), typId: '' }; })
         .finally(() => aktuell && neu((n) => n + 1));
     }
     return () => { aktuell = false; };

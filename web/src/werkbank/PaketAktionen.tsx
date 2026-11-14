@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { EINGEBAUTE_AKTIONEN, type AktionenEinstellung, type AktionRecht, type EingebauteAktion, type MappenAktion } from '../../../shared/src/paketaktionen';
 import type { InstalliertesPaket } from '../../../shared/src/pakete';
-import { api, type PaketVorschau } from '../api';
+import { paketeApi, type PaketVorschau } from '../api/pakete';
 import { HakenFeld, fehlerText } from '../bausteine';
 import { Link } from '../ort';
 import { t } from '../sprache';
@@ -18,7 +18,7 @@ export const rechteText = (r: readonly AktionRecht[]) => r.map((x) => t.frei(`we
 function useEinstellung() {
   const [e, setE] = useState<AktionenEinstellung | null>(null);
   const [fehler, setFehler] = useState<string>();
-  useEffect(() => { api.mappenaktionenEinstellung().then(setE, (x: unknown) => setFehler(fehlerText(x))); }, []);
+  useEffect(() => { paketeApi.mappenaktionenEinstellung().then(setE, (x: unknown) => setFehler(fehlerText(x))); }, []);
   return { e, setE, fehler, setFehler };
 }
 
@@ -30,7 +30,7 @@ export function PaketAktionenBlock({ paket }: { paket: Pick<InstalliertesPaket, 
   const aus = new Set(e?.paketAus[paket.id] ?? []);
   const schalte = (a: MappenAktion, an: boolean) => {
     const neu = an ? [...aus].filter((x) => x !== a.schluessel) : [...aus, a.schluessel];
-    api.paketAktionenAusSetzen(paket.id, neu).then((x) => { setE(x); setFehler(undefined); }, (x: unknown) => setFehler(fehlerText(x)));
+    paketeApi.paketAktionenAusSetzen(paket.id, neu).then((x) => { setE(x); setFehler(undefined); }, (x: unknown) => setFehler(fehlerText(x)));
   };
   return (
     <section className="stapel" aria-label={t('werkbank.paketaktionen.titel')} data-anker="paket.aktionen">
@@ -52,7 +52,7 @@ export function MappenMenueBlock({ pakete }: { pakete: InstalliertesPaket[] }) {
   const aus = new Set<EingebauteAktion>(e?.eingebautAus ?? []);
   const schalte = (k: EingebauteAktion, an: boolean) => {
     const neu = an ? [...aus].filter((x) => x !== k) : [...aus, k];
-    api.eingebauteAktionenSetzen(neu).then((x) => { setE(x); setFehler(undefined); }, (x: unknown) => setFehler(fehlerText(x)));
+    paketeApi.eingebauteAktionenSetzen(neu).then((x) => { setE(x); setFehler(undefined); }, (x: unknown) => setFehler(fehlerText(x)));
   };
   const mitAktionen = pakete.filter((p) => p.mappenaktionen?.length);
   return (

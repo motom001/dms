@@ -1,4 +1,4 @@
-import type { Unscharf } from '../api';
+import type { Unscharf } from '../api/mappen';
 import { t } from '../sprache';
 import { Knopf } from '../bausteine';
 

@@ -8,7 +8,8 @@ import {
   type SichtBedingung, type SichtRechte, type SichtRegel, type SichtRegelwerk,
 } from '../../../shared/src/sichtrechte';
 import type { Sicht, SichtDaten } from '../../../shared/src/sichten';
-import { api } from '../api';
+import { mappenApi } from '../api/mappen';
+import { werkbankApi } from '../api/werkbank';
 import { useDaten } from '../daten';
 import { Hilfe } from '../Hilfe';
 import { Link } from '../ort';
@@ -58,7 +59,7 @@ function useNamen() {
   const merke = (id: string, text2: string) => setTitel((x) => (x[id] === text2 ? x : { ...x, [id]: text2 }));
   const text = (b: SichtBedingung) => beschreibeRegelBedingung(b, { benutzer: (id) => titel[id] ?? d.person(id), rolle: (id) => titel[id] ?? '…', feld: () => '' });
   // Namen für Kurzformen nachladen.
-  const laden = (ids: string[]) => { for (const x of ids.filter((y) => !titel[y])) api.mappe(x).then((m) => merke(x, m.mappe.titel ?? '')).catch(() => merke(x, '(gelöscht)')); };
+  const laden = (ids: string[]) => { for (const x of ids.filter((y) => !titel[y])) mappenApi.mappe(x).then((m) => merke(x, m.mappe.titel ?? '')).catch(() => merke(x, '(gelöscht)')); };
   return { titel, merke, text, laden };
 }
 
@@ -248,7 +249,7 @@ export function SichtTestlauf({ id, e, klappe }: { id: string | null; e: SichtDa
   const stand = JSON.stringify([id, e.berechtigungen, e.elternId]);
   const schluessel = testlaufSchluessel({ benutzerId: b, stand }, false);
   const { erg, fehler, los } = useTestlauf(schluessel, b,
-    () => api.sichtTestlauf({ sichtId: id, benutzerId: b, elternId: e.elternId, berechtigungen: e.berechtigungen ?? null }));
+    () => werkbankApi.sichtTestlauf({ sichtId: id, benutzerId: b, elternId: e.elternId, berechtigungen: e.berechtigungen ?? null }));
   return (
     <Bereich id="testlauf" titel={t('werkbank.sichtrechte.testlauf')} hilfe={<Hilfe ort="sicht.berechtigungen" />} klappe={klappe}
       kurz={t('werkbank.sichtrechte.was-ein-benutzer-an')}

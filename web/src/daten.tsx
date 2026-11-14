@@ -2,7 +2,9 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { type Mappentyp, type Pruefergebnis, type Werte } from '../../shared/src/model';
 import { pruefeMitAnzeige } from '../../shared/src/anzeige';
 import { wirksameTypen, type Sicht } from '../../shared/src/sichten';
-import { api, type Person, type Zaehler } from './api';
+import { kontoApi, type Person } from './api/konto';
+import { mappenApi } from './api/mappen';
+import { werkbankApi, type Zaehler } from './api/werkbank';
 import { rettungsweg, wendeAn, type Design } from './design';
 import { t } from './sprache';
 import { useNachladen } from './nachladen-hook';
@@ -81,11 +83,11 @@ export function DatenProvider({ children }: { children: ReactNode }) {
   const [einstellungen, setEinstellungen] = useState<Record<string, unknown>>({});
   const setzeEinstellung = useCallback((k: string, w: unknown) => {
     setEinstellungen((e) => { const n = { ...e }; if (w === null) delete n[k]; else n[k] = w; return n; });
-    void api.einstellungSetzen(k, w).catch(() => {});
+    void kontoApi.einstellungSetzen(k, w).catch(() => {});
   }, []);
-  useEffect(() => { api.einstellungen().then(setEinstellungen).catch(() => {}); }, []);
+  useEffect(() => { kontoApi.einstellungen().then(setEinstellungen).catch(() => {}); }, []);
   const [designs, setDesigns] = useState<{ designs: Design[]; standard: string | null }>({ designs: [], standard: null });
-  const designsLaden = useCallback(async () => { try { setDesigns(await api.designs()); } catch { /* altes bleibt */ } }, []);
+  const designsLaden = useCallback(async () => { try { setDesigns(await werkbankApi.designs()); } catch { /* altes bleibt */ } }, []);
   useEffect(() => { void designsLaden(); }, [designsLaden]);
   // Eigenes Design, sonst Standard; gelöschte Designs fallen auf den Standard zurück.
   const rettung = rettungsweg();
@@ -98,10 +100,10 @@ export function DatenProvider({ children }: { children: ReactNode }) {
     vergissSichtbarkeit();
     // Zahlen der Ansichten nicht abwarten (#512): Sie kommen nach; nur die jüngste Antwort zählt.
     const nr = ++zahlenNr.current;
-    const zahlen = api.sichten().then((z) => { if (nr === zahlenNr.current) { setZaehler(z); setZahlenDa(true); } });
+    const zahlen = werkbankApi.sichten().then((z) => { if (nr === zahlenNr.current) { setZaehler(z); setZahlenDa(true); } });
     zahlen.catch(() => {});
     try {
-      const [eintrag, r, p, s] = await Promise.all([api.typen(), api.sichtenRahmen(), api.personen(), api.sichtDefinitionen()]);
+      const [eintrag, r, p, s] = await Promise.all([werkbankApi.typen(), werkbankApi.sichtenRahmen(), kontoApi.personen(), werkbankApi.sichtDefinitionen()]);
       setTypen(eintrag); setZaehler((z) => ({ ...z, ...r })); setPersonen(p); setSichten(s); setFehler(undefined);
     } catch (e) {
       setFehler((e as Error).message);
@@ -123,11 +125,11 @@ export function DatenProvider({ children }: { children: ReactNode }) {
   useEffect(() => { vergissSichtbarkeit(); }, [personen]);
   const auffrischen = useCallback(() => {
     const nr = ++zahlenNr.current;
-    api.sichten().then((z) => { if (nr === zahlenNr.current) setZaehler((alt) => ({ ...alt, ...z })); }, () => {});
+    werkbankApi.sichten().then((z) => { if (nr === zahlenNr.current) setZaehler((alt) => ({ ...alt, ...z })); }, () => {});
     // Ansichten geändert (auch von anderen, #888): Baum und Personen hängen an Rechten und Ansichten. Beides ist klein;
     // nur bei einer Änderung neu setzen, sonst baut nichts neu auf.
-    api.sichtDefinitionen().then((s) => setSichten((alt) => (gleich(alt, s) ? alt : s)), () => {});
-    api.personen().then((p) => setPersonen((alt) => (gleich(alt, p) ? alt : p)), () => {});
+    werkbankApi.sichtDefinitionen().then((s) => setSichten((alt) => (gleich(alt, s) ? alt : s)), () => {});
+    kontoApi.personen().then((p) => setPersonen((alt) => (gleich(alt, p) ? alt : p)), () => {});
     setFrisch((n) => n + 1);
   }, []);
 
@@ -168,7 +170,7 @@ export function useDaten(): Daten {
  */
 export function useAblageStand() {
   const d = useDaten();
-  useNachladen(api.ablageStand, () => d.auffrischen());
+  useNachladen(mappenApi.ablageStand, () => d.auffrischen());
 }
 
 const tag = (text: string) => { const [, m, d] = text.split('-'); return `${d}.${m}.`; };

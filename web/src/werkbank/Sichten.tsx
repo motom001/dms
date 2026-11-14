@@ -10,7 +10,8 @@ import {
 } from '../../../shared/src/sichten';
 import { ausgeblendeteFelder } from '../../../shared/src/darstellung';
 import { merkmalText } from '../../../shared/src/merkmale';
-import { api } from '../api';
+import { mappenApi } from '../api/mappen';
+import { werkbankApi } from '../api/werkbank';
 import { useDaten } from '../daten';
 import { geheZu, Link, loeseWache } from '../ort';
 import { Speicherleiste, useEntwurf } from '../Speicherleiste';
@@ -73,7 +74,7 @@ export function SichtenListe({ offen, pakete = [] }: { offen?: string; pakete?: 
     setFehler(undefined);
     try {
       const vorher = d.sicht(id)?.elternId ?? null;
-      await api.sichtVerschieben(id, elternId, stelle);
+      await werkbankApi.sichtVerschieben(id, elternId, stelle);
       await d.neuLaden();
       setAnsage(t('werkbank.sichten.liegt-jetzt-an-stelle', { name: name(id), wert: elternId ? t('werkbank.sichten.unter', { name: name(elternId) }) : t('werkbank.sichten.auf-der-obersten-ebene'), wert2: stelle + 1 }));
       // Berechtigungen (#148): Mit der neuen Elternsicht gelten sofort deren Regeln.
@@ -221,7 +222,7 @@ export function SichtEditor({ id }: { id: string }) {
   useEffect(() => {
     let aktuell = true;
     const timer = setTimeout(() => {
-      api.sichtVorschau(neu ? null : id, { ...e, name: e.name || t('werkbank.sichten.vorschau') }).then((r) => aktuell && setVorschau(r.anzahl)).catch(() => aktuell && setVorschau(null));
+      werkbankApi.sichtVorschau(neu ? null : id, { ...e, name: e.name || t('werkbank.sichten.vorschau') }).then((r) => aktuell && setVorschau(r.anzahl)).catch(() => aktuell && setVorschau(null));
     }, 350);
     return () => { aktuell = false; clearTimeout(timer); };
   }, [entwurf, d.stand]); // eslint-disable-line react-hooks/exhaustive-deps -- Vorschau hängt am Entwurf als Text (entwurf), nicht an der Objekt-Identität von e
@@ -232,7 +233,7 @@ export function SichtEditor({ id }: { id: string }) {
     setSendet(true); setMeldung(undefined);
     try {
       // Die Stelle im Baum ändern nur Ordnen und Verschieben; ohne Angabe bleibt sie (bzw. ans Ende einer neuen Ebene).
-      const s = neu ? await api.sichtAnlegen({ ...e, position: undefined }) : await api.sichtAendern(id, { ...e, position: undefined, stand });
+      const s = neu ? await werkbankApi.sichtAnlegen({ ...e, position: undefined }) : await werkbankApi.sichtAendern(id, { ...e, position: undefined, stand });
       const neuBasis = JSON.stringify(datenVon(s));
       setBasis(neuBasis); setE(JSON.parse(neuBasis)); setFehlerOrte(new Set()); setStand(s.geaendert);
       loeseWache();
@@ -250,14 +251,14 @@ export function SichtEditor({ id }: { id: string }) {
     finally { setSendet(false); }
   }
   async function loeschen() {
-    try { await api.sichtLoeschen(id); loeseWache(); await d.neuLaden(); geheZu('/werkbank/sichten'); }
+    try { await werkbankApi.sichtLoeschen(id); loeseWache(); await d.neuLaden(); geheZu('/werkbank/sichten'); }
     catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); }
   }
   async function verschiebe(r: number) {
     const ids = geschwister.map((s) => s.id);
     const [x] = ids.splice(stelle, 1);
     ids.splice(stelle + r, 0, x);
-    try { await api.sichtenOrdnen(vorhanden!.elternId, ids); await d.neuLaden(); }
+    try { await werkbankApi.sichtenOrdnen(vorhanden!.elternId, ids); await d.neuLaden(); }
     catch (z) { setMeldung({ art: 'schlecht', text: (z as Error).message }); }
   }
   const setzeTyp = (text: string, an: boolean) => setE((x) => ({ ...x, typen: an ? [...x.typen, text] : x.typen.filter((y) => y !== text) }));
@@ -687,13 +688,13 @@ export function MappenSuche({ typId, gewaehlt, titel, merke, setze }: { /** Ein 
   const [treffer, setTreffer] = useState<Mappe[]>([]);
   const fehlend = gewaehlt.filter((x) => !titel[x]).join(',');
   useEffect(() => {
-    for (const x of fehlend ? fehlend.split(',') : []) api.mappe(x).then((r) => merke(x, titelOder(r.mappe.titel))).catch(() => merke(x, '(gelöscht)'));
+    for (const x of fehlend ? fehlend.split(',') : []) mappenApi.mappe(x).then((r) => merke(x, titelOder(r.mappe.titel))).catch(() => merke(x, '(gelöscht)'));
   }, [fehlend]); // eslint-disable-line react-hooks/exhaustive-deps -- Namen nur nachladen, wenn sich die Liste der fehlenden Mappen ändert
   useEffect(() => {
     if (!eingabe.trim()) { setTreffer([]); return; }
     let aktuell = true;
     const ids = Array.isArray(typId) ? typId : [typId];
-    const timer = setTimeout(() => { void Promise.all(ids.map((x) => api.seite(`typ:${x}`, 0, 8, eingabe.trim()))).then((l) => aktuell && setTreffer(l.flatMap((x) => x.mappen))).catch(() => {}); }, 200);
+    const timer = setTimeout(() => { void Promise.all(ids.map((x) => mappenApi.seite(`typ:${x}`, 0, 8, eingabe.trim()))).then((l) => aktuell && setTreffer(l.flatMap((x) => x.mappen))).catch(() => {}); }, 200);
     return () => { aktuell = false; clearTimeout(timer); };
   }, [eingabe, Array.isArray(typId) ? typId.join(',') : typId]); // eslint-disable-line react-hooks/exhaustive-deps -- die Liste der Typen als Text
   return (
@@ -734,7 +735,7 @@ export function AuswahlFilter({ ziel, zielTypen, bedingungen, setze, eigeneFelde
   const schluessel = JSON.stringify(bedingungen);
   useEffect(() => {
     let aktuell = true;
-    const timer = setTimeout(() => { api.auswahlZaehlen(zielTypen?.length ? zielTypen : [ziel.id], bedingungen).then((z) => aktuell && setZahl(z)).catch(() => aktuell && setZahl(null)); }, 300);
+    const timer = setTimeout(() => { werkbankApi.auswahlZaehlen(zielTypen?.length ? zielTypen : [ziel.id], bedingungen).then((z) => aktuell && setZahl(z)).catch(() => aktuell && setZahl(null)); }, 300);
     return () => { aktuell = false; clearTimeout(timer); };
   }, [ziel.id, zielTypen?.join(','), schluessel]); // eslint-disable-line react-hooks/exhaustive-deps -- neu zählen nur bei anderem Ziel oder anderen Bedingungen (schluessel)
   const neu = (f: Bedingungsfeld): Feldbedingung => ({ art: 'feld', feld: f.key, op: OPERATOREN_JE_ART[f.art][0] });

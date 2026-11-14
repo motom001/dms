@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { Entscheidung, UmwandlungsFeld, Umwandlungsvorgang, UmwandlungsVorschau } from '../../../shared/src/umwandlung';
-import { api } from '../api';
+import { paketeApi } from '../api/pakete';
 import { useDaten } from '../daten';
 import { Hilfe } from '../Hilfe';
 import { Link } from '../ort';
@@ -28,13 +28,13 @@ export function PaketUmwandeln({ paket }: { paket: string }) {
   const [wahl, setWahl] = useState<Record<string, string>>({});
   const [laeuft, setLaeuft] = useState(false);
   const [meldung, setMeldung] = useState<Meldung>();
-  const laden = useCallback(() => { api.paketUmwandlungen(paket).then(setStand, () => setStand(null)); }, [paket]);
+  const laden = useCallback(() => { paketeApi.paketUmwandlungen(paket).then(setStand, () => setStand(null)); }, [paket]);
   useEffect(() => { laden(); }, [laden]);
 
   async function zeige(f: UmwandlungsFeld) {
     setMeldung(undefined); setLaeuft(true);
     try {
-      const v = await api.paketUmwandlungVorschau(paket, f.typId, f.feldKey);
+      const v = await paketeApi.paketUmwandlungVorschau(paket, f.typId, f.feldKey);
       setOffen(f); setVorschau(v); setWahl(Object.fromEntries(v.zeilen.map((z) => [z.schluessel, alsWert(z.vorschlag)])));
     } catch (e) { setMeldung(alsMeldung(e)); }
     finally { setLaeuft(false); }
@@ -43,7 +43,7 @@ export function PaketUmwandeln({ paket }: { paket: string }) {
     if (!offen || !vorschau) return;
     setLaeuft(true); setMeldung(undefined);
     try {
-      const r = await api.paketUmwandeln(paket, offen.typId, offen.feldKey, Object.fromEntries(Object.entries(wahl).map(([k, w]) => [k, ausWert(w)])));
+      const r = await paketeApi.paketUmwandeln(paket, offen.typId, offen.feldKey, Object.fromEntries(Object.entries(wahl).map(([k, w]) => [k, ausWert(w)])));
       setMeldung({ art: 'gut', text: t('pakete.umwandeln.fertig', { anzahl: r.umgewandelt, neu: r.neuePersonen, aus: r.ausgelassen.length }), gruende: r.ausgelassen.map((x) => `${x.titel || t('pakete.umwandeln.ohnetitel')}: ${x.grund}`) });
       setOffen(null); setVorschau(null); laden(); await d.neuLaden();
     } catch (e) { setMeldung(alsMeldung(e)); }
@@ -53,7 +53,7 @@ export function PaketUmwandeln({ paket }: { paket: string }) {
     if (!(await rueckfrage({ titel: t('pakete.umwandeln.zurueck.frage'), text: [t('pakete.umwandeln.zurueck.frage.text', { anzahl: v.mappen.length }), v.neuePersonen.length ? t('pakete.umwandeln.zurueck.frage.neu', { anzahl: v.neuePersonen.length }) : ''].filter(Boolean).join(' '), ja: t('pakete.umwandeln.zurueck.frage.ja') }))) return;
     setLaeuft(true); setMeldung(undefined);
     try {
-      const r = await api.paketUmwandlungZurueck(paket, v.id);
+      const r = await paketeApi.paketUmwandlungZurueck(paket, v.id);
       setMeldung({ art: 'gut', text: [t('pakete.umwandeln.zurueck.fertig', { anzahl: r.zurueck }), r.personenBehalten ? t('pakete.umwandeln.zurueck.behalten', { anzahl: r.personenBehalten }) : ''].filter(Boolean).join(' '), gruende: r.ausgelassen.map((x) => `${x.titel || t('pakete.umwandeln.ohnetitel')}: ${x.grund}`) });
       laden(); await d.neuLaden();
     } catch (e) { setMeldung(alsMeldung(e)); }

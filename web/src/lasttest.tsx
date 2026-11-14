@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { fuelleErgebnis, GERAET_MAX, PLATZHALTER, restMinuten, type LasttestLiveStand, type LasttestStand, type Speicherwahl } from '../../shared/src/lasttest';
 import type { Messpunkt } from '../../shared/src/systemlast';
 import { handbuchUrl } from '../../shared/src/hilfe';
-import { api } from './api';
+import { einrichtungApi } from './api/einrichtung';
 import { Feld, Knopf } from './bausteine';
 import { t } from './sprache';
 import { Symbol } from './Symbol';
@@ -136,7 +136,7 @@ export function LasttestSeite() {
   const geholt = useRef(0);
 
   const hole = useCallback(async () => {
-    try { const s = await api.lasttest(); geholt.current = Date.now(); setStand(s); setFehler(undefined); } catch (e) { setFehler((e as Error).message); }
+    try { const s = await einrichtungApi.lasttest(); geholt.current = Date.now(); setStand(s); setFehler(undefined); } catch (e) { setFehler((e as Error).message); }
   }, []);
   useEffect(() => { void hole(); }, [hole]);
   const laeuft = !beendet && (!stand || stand.zustand === 'laeuft');
@@ -157,7 +157,7 @@ export function LasttestSeite() {
   const angaben = { geraet: geraet ?? stand.angaben.geraet, speicher: speicher === undefined ? stand.angaben.speicher : speicher };
   const merke = (a: Partial<LasttestStand['angaben']>) => {
     clearTimeout(senden.current);
-    senden.current = setTimeout(() => { void api.lasttestAngaben(a).catch(() => {}); }, 400);
+    senden.current = setTimeout(() => { void einrichtungApi.lasttestAngaben(a).catch(() => {}); }, 400);
   };
   const block = stand.ergebnis ? fuelleErgebnis(stand.ergebnis.vorlage, angaben, stand.speicherErkannt) : '';
   const zeile = fuelleErgebnis(`${PLATZHALTER.geraet}\n${PLATZHALTER.speicher}`, angaben, stand.speicherErkannt).split('\n');
@@ -167,7 +167,7 @@ export function LasttestSeite() {
   const textDatei = stand.ergebnis ? `${stand.ergebnis.bericht}\n\n### ${t('lasttest.ergebnis')}\n\n${block}\n` : '';
 
   async function herunterfahren() {
-    try { await api.lasttestBeenden(); setBeendet(true); setFehler(undefined); } catch (e) { setFehler((e as Error).message); }
+    try { await einrichtungApi.lasttestBeenden(); setBeendet(true); setFehler(undefined); } catch (e) { setFehler((e as Error).message); }
   }
   // Herunterfahren ist Gefahr (#1215): immer mit Rückfrage. Läuft der Test noch, fällt alles weg; ist das Ergebnis
   // noch nicht kopiert oder heruntergeladen, sagt die Rückfrage das (#697).

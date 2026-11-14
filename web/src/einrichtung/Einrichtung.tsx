@@ -21,7 +21,11 @@ import { wirksameTypen } from '../../../shared/src/sichten';
 import { OFFENES_REGELWERK, regelProblem, regelwerkVon, type Regelwerk } from '../../../shared/src/rechte';
 import { KiAmTyp, PaketeAmTyp, RegelwerkAbschnitt, TestlaufBlatt } from '../werkbank/Berechtigungen';
 import { FRIST_STANDARD } from '../../../shared/src/fristen';
-import { api, ApiFehler, type Bezuege } from '../api';
+import { ApiFehler } from '../api/anfrage';
+import { dokumenteApi } from '../api/dokumente';
+import { mappenApi, type Bezuege } from '../api/mappen';
+import { sucheApi, type ErkennungStand } from '../api/suche';
+import { werkbankApi } from '../api/werkbank';
 import { useDaten } from '../daten';
 import { geheZu, Link, loeseWache } from '../ort';
 import { Speicherleiste, useEntwurf } from '../Speicherleiste';
@@ -37,7 +41,6 @@ import { FELDFORMATE, formatName, HEUTE, istFeldformat, type Feldformat } from '
 import { abflussBestaetigen } from '../werkbank/ErkennungPaket';
 import { Beschriftungsstand, OptionenBeschriftung, SprachText } from './Beschriftung';
 import { optionText, type Beschriftungen, type TypTeile } from '../../../shared/src/beschriftung';
-import type { ErkennungStand } from '../api';
 import { artenFuer, artVon, AUS_DOKUMENT_STANDARD, BESCHRIFTUNG_MAX, ENGINE_EINGEBAUT, ERKENNUNG_FELDTYPEN, ERKENNUNG_HINWEIS_MAX, ERKENNUNGSARTEN, WIEDERFINDEN_FELDTYPEN, type AusDokument, type Erkennungsart } from '../../../shared/src/erkennung';
 import { gebietsschema } from '../../../shared/src/sprache';
 import { leseZeitraum, zeitraumText } from '../../../shared/src/feldarten';
@@ -307,7 +310,7 @@ export function TypEditor({ typ, vorlage }: { typ?: Mappentyp; vorlage?: Mappent
   async function entferne(i: number) {
     const f = e.felder[i];
     // Ohne Zahlen (#512, kommen noch) lieber nachsehen.
-    const n = gespeichert && (!d.zahlenDa || d.anzahl(gespeichert.id)) ? (await api.belegung(gespeichert.id).catch(() => ({} as Record<string, number>)))[f.key] ?? 0 : 0;
+    const n = gespeichert && (!d.zahlenDa || d.anzahl(gespeichert.id)) ? (await werkbankApi.belegung(gespeichert.id).catch(() => ({} as Record<string, number>)))[f.key] ?? 0 : 0;
     const text = n
       ? t('mappentypen.editor.mappen-haben-in-einen', { anzahl: n, label: f.label, ERST_BEIM_SPEICHERN })
       : ERST_BEIM_SPEICHERN.trim();
@@ -364,7 +367,7 @@ export function TypEditor({ typ, vorlage }: { typ?: Mappentyp; vorlage?: Mappent
       })),
     };
     try {
-      const mappentyp = neu ? await api.typAnlegen({ ...daten, sichtAnlegen }) : await api.typAendern(e.id, { ...daten, bestaetigt, stand, ...(doppelteBestaetigt ? { doppelteBestaetigt } : {}) });
+      const mappentyp = neu ? await werkbankApi.typAnlegen({ ...daten, sichtAnlegen }) : await werkbankApi.typAendern(e.id, { ...daten, bestaetigt, stand, ...(doppelteBestaetigt ? { doppelteBestaetigt } : {}) });
       const sauber = entwurfAus(mappentyp);
       setE(sauber); setBasis(JSON.stringify(sauber)); setStand(mappentyp.geaendert); setFehler(null); setOffen(null); setFehlerOrte(new Set());
       // Ein neuer Typ bleibt nach dem Anlegen aufgeklappt wie gerade.
@@ -404,7 +407,7 @@ export function TypEditor({ typ, vorlage }: { typ?: Mappentyp; vorlage?: Mappent
   async function loeschen() {
     if (neu) { loeseWache(); geheZu('/werkbank/typen'); return; }
     try {
-      await api.typLoeschen(e.id);
+      await werkbankApi.typLoeschen(e.id);
       loeseWache(); await d.neuLaden(); geheZu('/werkbank/typen');
     } catch (err) {
       setMeldung((err as Error).message);
@@ -915,7 +918,7 @@ function TitelEditor({ e, setze, klappe }: { e: Entwurf; setze: (v: string) => v
   const [beispielId, setBeispielId] = useState<string>('');
   useEffect(() => {
     if (d.zahlenDa && !d.anzahl(e.id)) return;
-    api.seite(`typ:${e.id}`, 0, 50).then((s) => { setMappen(s.mappen); setBezuege(s.bezuege); setBeispielId((b) => b || s.mappen[0]?.id || ''); }).catch(() => {});
+    mappenApi.seite(`typ:${e.id}`, 0, 50).then((s) => { setMappen(s.mappen); setBezuege(s.bezuege); setBeispielId((b) => b || s.mappen[0]?.id || ''); }).catch(() => {});
   }, [e.id, d.stand]); // eslint-disable-line react-hooks/exhaustive-deps -- Beispiele nur bei anderem Typ oder neuem Stand laden
   const felder = e.felder as unknown as FeldDef[];
   const v = e.titelVorlage;
@@ -1369,7 +1372,7 @@ function ArchivEinstellung({ archiv, setze, datumsfelder, typId }: { archiv: Arc
   useEffect(() => {
     if (!archiv || !typId) { setVorschau(null); return; }
     let aktuell = true;
-    api.archivVorschau(typId, archiv).then((v) => aktuell && setVorschau(v)).catch(() => aktuell && setVorschau(null));
+    dokumenteApi.archivVorschau(typId, archiv).then((v) => aktuell && setVorschau(v)).catch(() => aktuell && setVorschau(null));
     return () => { aktuell = false; };
   }, [text, typId]); // eslint-disable-line react-hooks/exhaustive-deps -- Vorschau hängt am eingegebenen Text; archiv wird daraus abgeleitet
   const vorschlag = FRISTEN.some((f) => f.jahre === archiv?.jahre);
@@ -1407,7 +1410,7 @@ function ErkennungTyp({ ad, setze, wiederfinden, felder }: { ad: AusDokument | n
   const an = !ad?.aus;
   // Erkennung (#511): eingebaut oder ein Paket mit dms:erkennen; leer = Standard aus der Werkbank.
   const [stand, setStand] = useState<ErkennungStand | null>(null);
-  useEffect(() => { api.erkennungStand().then(setStand, () => setStand(null)); }, []);
+  useEffect(() => { sucheApi.erkennungStand().then(setStand, () => setStand(null)); }, []);
   // Ohne leere Angaben speichern: nichts gesetzt → null.
   const neu = (x: AusDokument) => { const o = Object.fromEntries(Object.entries(x).filter(([, v]) => v !== undefined && v !== '' && v !== false)) as AusDokument; return Object.keys(o).length ? o : null; };
   const engine = ad?.engine ?? '';

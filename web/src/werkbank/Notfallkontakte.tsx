@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { api, type NotfallkontaktErgebnis } from '../api';
+import { betriebApi, type NotfallkontaktErgebnis } from '../api/betrieb';
 import { Knopf, KnopfLink, type KnopfErgebnis } from '../bausteine';
 import { eingabeFehler, KontaktFormular, leererKontakt } from './NotfallkontaktFormular';
 import { Hilfe } from '../Hilfe';
@@ -36,7 +36,7 @@ export function NotfallkontakteAbschnitt({ geaendert }: { geaendert(): void }) {
   const [ergebnis, setErgebnis] = useState<KnopfErgebnis | null>(null);
 
   const laden = useCallback(async () => {
-    try { setStand(await api.notfallkontakte()); setLadefehler(undefined); } catch (e) { setLadefehler((e as Error).message); }
+    try { setStand(await betriebApi.notfallkontakte()); setLadefehler(undefined); } catch (e) { setLadefehler((e as Error).message); }
   }, []);
   useEffect(() => { void laden(); }, [laden]);
 
@@ -51,13 +51,13 @@ export function NotfallkontakteAbschnitt({ geaendert }: { geaendert(): void }) {
     const f = eingabeFehler(form.wert);
     setFehler(f);
     if (f.length) return;
-    const r = form.id ? await api.notfallkontaktAendern(form.id, form.wert) : await api.notfallkontaktAnlegen(form.wert);
+    const r = form.id ? await betriebApi.notfallkontaktAendern(form.id, form.wert) : await betriebApi.notfallkontaktAnlegen(form.wert);
     setForm(null);
     await nachher(r);
   }
 
   async function loeschen(k: Notfallkontakt) {
-    const r = await api.notfallkontaktLoeschen(k.id);
+    const r = await betriebApi.notfallkontaktLoeschen(k.id);
     await nachher(r, r.mail === 'verschickt' ? t('werkbank.notfallkontakte.ergebnis.geloescht-mail') : r.mail === 'grenze' ? undefined : t('werkbank.notfallkontakte.ergebnis.geloescht'));
   }
 
@@ -87,7 +87,7 @@ export function NotfallkontakteAbschnitt({ geaendert }: { geaendert(): void }) {
                 <div className="knoepfe">
                   <Knopf groesse="klein" onClick={() => { setFehler(undefined); setForm({ id: k.id, wert: { name: k.name, email: k.email, telefon: k.telefon, notiz: k.notiz, antwortAn: k.antwortAn }, antwortSperre: k.eingetragenVon !== ich.id ? t('werkbank.notfallkontakte.antwort.hinweis') : undefined }); }}>{t('werkbank.notfallkontakte.aendern')}</Knopf>
                   {stand.versand && <Knopf groesse="klein" gesperrt={k.erneutMoeglich ? false : t('werkbank.notfallkontakte.erneut.heute')}
-                    onClick={async () => { await api.notfallkontaktErneut(k.id); await laden(); return { art: 'gut', text: t('werkbank.notfallkontakte.ergebnis.erneut') }; }}>{t('werkbank.notfallkontakte.erneut')}</Knopf>}
+                    onClick={async () => { await betriebApi.notfallkontaktErneut(k.id); await laden(); return { art: 'gut', text: t('werkbank.notfallkontakte.ergebnis.erneut') }; }}>{t('werkbank.notfallkontakte.erneut')}</Knopf>}
                   <Knopf art="gefahr" groesse="klein" symbol="geloescht" onClick={() => loeschen(k)}
                     rueckfrage={{ titel: t('werkbank.notfallkontakte.loeschen.titel'), text: t('werkbank.notfallkontakte.loeschen.text', { name: k.name }), ja: t('werkbank.notfallkontakte.loeschen') }}>{t('werkbank.notfallkontakte.loeschen')}</Knopf>
                 </div>

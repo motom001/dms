@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Feld, HakenFeld, Knopf, Schalter, type KnopfErgebnis } from '../bausteine';
-import { api, type EingangEinstellung, type EingangKnoten, type EingangStand, type EingangUeberblick, type EingangWarnung } from '../api';
+import type { EingangWarnung } from '../api/betrieb';
+import { eingaengeApi, type EingangEinstellung, type EingangKnoten, type EingangStand, type EingangUeberblick } from '../api/eingaenge';
 import { Link } from '../ort';
 import { Hilfe } from '../Hilfe';
 import { Speicherleiste, useEntwurf } from '../Speicherleiste';
@@ -61,7 +62,7 @@ export function useEingangsordner(offen: boolean) {
   const [stand, setStand] = useState<EingangStand | null>(null);
   const [fehler, setFehler] = useState<string>();
   const laden = useCallback(async () => {
-    try { setStand(await api.eingangsordner()); setFehler(undefined); } catch (e) { setFehler((e as Error).message); }
+    try { setStand(await eingaengeApi.eingangsordner()); setFehler(undefined); } catch (e) { setFehler((e as Error).message); }
   }, []);
   useEffect(() => { void laden(); }, [laden]);
   useEffect(() => {
@@ -92,15 +93,15 @@ export function EingangsordnerPanel({ z }: { z: EingangZustand }) {
   }
   async function speichern() {
     setSendet(true);
-    try { const n = await api.eingangsordnerSetzen(e!); z.setStand(n); setE(n.einstellung ?? e); setMeldung({ art: 'gut', text: t('werkbank.eingangsordner.gespeichert') }); } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); } finally { setSendet(false); }
+    try { const n = await eingaengeApi.eingangsordnerSetzen(e!); z.setStand(n); setE(n.einstellung ?? e); setMeldung({ art: 'gut', text: t('werkbank.eingangsordner.gespeichert') }); } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); } finally { setSendet(false); }
   }
   async function personen() {
     setSendet(true);
-    try { const r = await api.eingangsordnerPersonen(); z.setStand(r.stand); setMeldung({ art: 'gut', text: t('werkbank.eingangsordner.personen.angelegt', { anzahl: r.angelegt.length }) }); } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); } finally { setSendet(false); }
+    try { const r = await eingaengeApi.eingangsordnerPersonen(); z.setStand(r.stand); setMeldung({ art: 'gut', text: t('werkbank.eingangsordner.personen.angelegt', { anzahl: r.angelegt.length }) }); } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); } finally { setSendet(false); }
   }
   // „Jetzt prüfen“ (#986): Ergebnis und Fehler stehen am Knopf, nicht oben auf der Seite.
   async function jetzt(): Promise<KnopfErgebnis> {
-    const r = await api.eingangsordnerPruefen();
+    const r = await eingaengeApi.eingangsordnerPruefen();
     z.setStand(r.stand);
     return { art: 'gut', text: r.uebernommen ? t('werkbank.eingangsordner.dateien-uebernommen', { anzahl: r.uebernommen }) : t('werkbank.eingangsordner.geprueft-nichts-fertiges-gefunden') };
   }

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { api, type SicherungSchlank, type SicherungsMeta, type WhAbgleich, type WhAbschluss, type WhLauf, type WhSchritt } from './api';
+import type { WhLauf } from './api/betrieb';
+import { einrichtungApi, type SicherungSchlank, type SicherungsMeta, type WhAbgleich, type WhAbschluss, type WhSchritt } from './api/einrichtung';
 import { t, tn } from './sprache';
 import { FeldGruppe, Feld, HakenFeld, Knopf } from './bausteine';
 import { Symbol, type SymbolName } from './Symbol';
@@ -40,7 +41,7 @@ export function Wiederherstellungsbildschirm({ fertig }: { fertig: () => void })
   useEffect(() => {
     let aus = false;
     // Fehler fängt hole selbst ab (weg); der Takt bekommt kein Promise zurück (#1011).
-    const hole = () => { void api.whStatus().then((s) => { if (aus) return; setWeg(false); setLauf(s.lauf); setAbschluss(s.abschluss); }, () => { if (!aus) setWeg(true); }); };
+    const hole = () => { void einrichtungApi.whStatus().then((s) => { if (aus) return; setWeg(false); setLauf(s.lauf); setAbschluss(s.abschluss); }, () => { if (!aus) setWeg(true); }); };
     hole();
     const timer = setInterval(hole, 1000);
     return () => { aus = true; clearInterval(timer); };
@@ -56,7 +57,7 @@ export function Wiederherstellungsbildschirm({ fertig }: { fertig: () => void })
             <p>{tn('oberflaeche.wiederherstellen.die-sicherung-ist-eingespielt', { b: <strong>{abschluss.sicherung}</strong>, zeit: zeit(abschluss.am) })}</p>
             <Schritte schritte={abschluss.schritte} />
             {abschluss.hinweise.map((h) => <div key={h} className="hinweis warn"><p>{h}</p></div>)}
-            <div className="knoepfe"><Knopf art="haupt" onClick={() => api.whAbschlussGesehen().finally(fertig)}>{t('oberflaeche.wiederherstellen.weiter-zur-anmeldung')}</Knopf></div>
+            <div className="knoepfe"><Knopf art="haupt" onClick={() => einrichtungApi.whAbschlussGesehen().finally(fertig)}>{t('oberflaeche.wiederherstellen.weiter-zur-anmeldung')}</Knopf></div>
           </>
         ) : lauf?.status === 'fehler' ? (
           <>
@@ -93,18 +94,18 @@ export function WiederherstellungsAssistent({ frisch, gestartet, abbrechen }: { 
 
   const laden = useCallback(async () => {
     setFehler(undefined);
-    try { const r = await api.whSicherungen(); setListe(r.liste); setOrdner(r.ordner); } catch (e) { setFehler((e as Error).message); }
+    try { const r = await einrichtungApi.whSicherungen(); setListe(r.liste); setOrdner(r.ordner); } catch (e) { setFehler((e as Error).message); }
   }, []);
   useEffect(() => { void laden(); }, [laden]);
 
   async function waehle(name: string, mitSchluessel?: string) {
     setGewaehlt(name); setFehler(undefined); setLaeuft(true);
-    try { setAbgleich(await api.whAbgleich(name, mitSchluessel)); } catch (e) { setFehler((e as Error).message); setAbgleich(null); } finally { setLaeuft(false); }
+    try { setAbgleich(await einrichtungApi.whAbgleich(name, mitSchluessel)); } catch (e) { setFehler((e as Error).message); setAbgleich(null); } finally { setLaeuft(false); }
   }
   async function starten() {
     if (!abgleich) return;
     setLaeuft(true); setFehler(undefined);
-    try { await api.whStart({ name: abgleich.name, ...(schluessel.trim() ? { schluessel } : {}), bestaetigt: !frisch && verstanden }); gestartet(); }
+    try { await einrichtungApi.whStart({ name: abgleich.name, ...(schluessel.trim() ? { schluessel } : {}), bestaetigt: !frisch && verstanden }); gestartet(); }
     catch (e) { setFehler((e as Error).message); setLaeuft(false); }
   }
   const brauchtSchluessel = abgleich?.schluesselNoetig ?? false;

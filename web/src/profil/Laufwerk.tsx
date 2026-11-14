@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { api, type ApiSchluessel } from '../api';
+import { kontoApi, type ApiSchluessel } from '../api/konto';
 import { Hilfe, useHandbuch } from '../Hilfe';
 import { t } from '../sprache';
 import { NeuerSchluessel } from './ApiSchluessel';
@@ -42,10 +42,10 @@ export function LaufwerkBereich() {
   const [fehler, setFehler] = useState<string>();
   const [neu, setNeu] = useState<(ApiSchluessel & { schluessel: string }) | null>(null);
   const [sendet, setSendet] = useState(false);
-  useEffect(() => { api.laufwerk().then(setS, (e) => setFehler((e as Error).message)); }, []);
+  useEffect(() => { kontoApi.laufwerk().then(setS, (e) => setFehler((e as Error).message)); }, []);
   async function schluessel() {
     setSendet(true); setFehler(undefined);
-    try { setNeu(await api.apiSchluesselAnlegen({ name: t('profil.laufwerk.schluesselname'), recht: 'schreiben', ablauf: null, passwoerter: false })); }
+    try { setNeu(await kontoApi.apiSchluesselAnlegen({ name: t('profil.laufwerk.schluesselname'), recht: 'schreiben', ablauf: null, passwoerter: false })); }
     catch (e) { setFehler((e as Error).message); } finally { setSendet(false); }
   }
   if (!s) return fehler ? <div className="hinweis schlecht"><p>{fehler}</p></div> : <p className="leise">{t('profil.laufwerk.lade')}</p>;

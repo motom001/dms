@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ZUSAMMENFASSEN_MIN, type FassungArt, type FassungEintrag, type FassungsListe, type FassungsVorschau, type GeloeschterEintrag } from '../../../../shared/src/fassungen';
 import { gebietsschema } from '../../../../shared/src/sprache';
-import { api, ApiFehler } from '../../api';
+import { ApiFehler } from '../../api/anfrage';
+import { fassungenApi } from '../../api/fassungen';
 import { rueckfrage } from '../../rueckfrage';
 import { t } from '../../sprache';
 import { Bereich, type Klappe } from '../bereiche/Bereiche';
@@ -45,8 +46,8 @@ export interface FassungenQuelle {
   geloescht(arten: FassungArt[]): Promise<GeloeschterEintrag[]>;
 }
 const API: FassungenQuelle = {
-  liste: (a, e) => api.fassungen(a, e), vergleich: (a, e, v, b) => api.fassungenVergleich(a, e, v, b), vorschau: (a, e, n) => api.fassungVorschau(a, e, n),
-  wiederherstellen: (a, e, n, x) => api.fassungWiederherstellen(a, e, n, x), geloescht: (arten) => api.fassungenGeloescht(arten),
+  liste: (a, e) => fassungenApi.fassungen(a, e), vergleich: (a, e, v, b) => fassungenApi.fassungenVergleich(a, e, v, b), vorschau: (a, e, n) => fassungenApi.fassungVorschau(a, e, n),
+  wiederherstellen: (a, e, n, x) => fassungenApi.fassungWiederherstellen(a, e, n, x), geloescht: (arten) => fassungenApi.fassungenGeloescht(arten),
 };
 
 /** Text einer Änderungsliste: kurz für die Zeile, ganz für das Aufgeklappte. */

@@ -3,7 +3,7 @@
  * Bereichsnamen kommen aus der Sprachdatei; die Fundstelle zeigt sie so, wie man sie im Editor wiederfindet
  * („Feld „Kündigen bis“ · Hilfetext“, „Register „Zahlungen““).
  */
-import type { NummernkreisAnsicht } from '../api';
+import type { NummernkreisAnsicht } from '../api/werkbank';
 import { feldHilfe, feldLabel, listenName, registerName, typBeschreibung, typName } from '../../../shared/src/beschriftung';
 import type { InstalliertesPaket } from '../../../shared/src/pakete';
 import type { Fundquelle } from '../../../shared/src/listensuche';

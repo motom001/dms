@@ -1,6 +1,6 @@
 import { useEffect, useSyncExternalStore } from 'react';
 import { SICHTBARKEIT_MAX, type Sichtbarkeit } from '../../shared/src/sichtbarkeit';
-import { api } from './api';
+import { mappenApi } from './api/mappen';
 
 /**
  * Sichtbarkeit verwiesener Mappen in der Oberfläche (#888): Fehlt ein Benutzer in den lesbaren Personen, fragt
@@ -26,7 +26,7 @@ async function frage() {
   if (!ids.length) return;
   const fuer = runde;
   try {
-    const r = await api.sichtbarkeit(ids);
+    const r = await mappenApi.sichtbarkeit(ids);
     // Inzwischen verworfen: die Antwort gilt für einen alten Stand.
     if (fuer !== runde) return;
     for (const id of ids) if (r[id]) bekannt.set(id, r[id]);

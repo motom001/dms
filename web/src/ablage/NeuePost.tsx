@@ -1,7 +1,8 @@
 import { istTeiltyp } from '../../../shared/src/teile';
 import { useEffect, useRef, useState, type DragEvent as ReactDragEvent } from 'react';
 import { darfErstellen, darfPostAnlegen, MAX_DATEIGROESSE, type Mappentyp } from '../../../shared/src/model';
-import { api, type Fundstelle } from '../api';
+import { dokumenteApi, type Fundstelle } from '../api/dokumente';
+import { mappenApi } from '../api/mappen';
 import { Fundstellen, fundstellenFuer } from './Doppelt';
 import { useDaten } from '../daten';
 import { useErreichbarkeit } from '../erreichbar';
@@ -108,10 +109,10 @@ export function PostAblage({ werkbank = false }: { werkbank?: boolean }) {
     if (!dateien.length) { setFehler(schief); return; }
     setLaeuft(t('ablage.neuepost.lege-post-an'));
     try {
-      const m = await api.postAnlegen({ betreff: ohneEndung(dateien[0].name).slice(0, 250) });
+      const m = await dokumenteApi.postAnlegen({ betreff: ohneEndung(dateien[0].name).slice(0, 250) });
       for (const [i, f] of dateien.entries()) {
         setLaeuft(t('ablage.neuepost.lade-hoch-von', { name: f.name, wert: i + 1, dateien: dateien.length }));
-        try { await api.ladeHoch(m.id, register, f); } catch (e) { schief.push(`„${f.name}“: ${(e as Error).message}`); }
+        try { await mappenApi.ladeHoch(m.id, register, f); } catch (e) { schief.push(`„${f.name}“: ${(e as Error).message}`); }
       }
       setFehler(schief);
       await d.neuLaden();

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { speichereDatei } from '../api';
+import { speichereDatei } from '../api/anfrage';
 import { useDaten } from '../daten';
 import { alsWunsch, stempelFehler, StempelFelder, stempelStart, useStempelVorlagen, type StempelWahl } from './Stempel';
 import { VerkleinertWahl } from './VerkleinertWahl';

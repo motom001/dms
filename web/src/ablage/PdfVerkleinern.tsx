@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { Dokument } from '../../../shared/src/model';
 import { ergebnisText, mb, STUFEN, STUFEN_LISTE, type Stufe } from '../../../shared/src/verkleinern';
-import { api, type VerkleinernVorschau } from '../api';
+import { dokumenteApi, type VerkleinernVorschau } from '../api/dokumente';
 import { Hilfe } from '../Hilfe';
 import { FeldGruppe, Knopf } from '../bausteine';
 import { rueckfrage } from '../rueckfrage';
@@ -22,7 +22,7 @@ export function PdfVerkleinern({ d, bearbeitbar, mitnehmen = true, schliessen, f
   const [stufe, setStufe] = useState<Stufe>('standard');
   const [fehler, setFehler] = useState<string>();
   const [laeuft, setLaeuft] = useState<'speichern' | 'laden'>();
-  useEffect(() => { api.verkleinernVorschau(d.id).then(setV, (e: Error) => setFehler(e.message)); }, [d.id, d.sha256]);
+  useEffect(() => { dokumenteApi.verkleinernVorschau(d.id).then(setV, (e: Error) => setFehler(e.message)); }, [d.id, d.sha256]);
 
   if (fehler && !v) return <div className="hinweis schlecht pdfseiten"><p>{fehler}</p><Knopf art="link" onClick={schliessen}>{t('ablage.pdfverkleinern.schliessen')}</Knopf></div>;
   if (!v) return <p className="leise pdfseiten" role="status">{t('ablage.pdfverkleinern.sehe-mir-die-bilder')}</p>;
@@ -36,14 +36,14 @@ export function PdfVerkleinern({ d, bearbeitbar, mitnehmen = true, schliessen, f
     }
     setLaeuft('speichern'); setFehler(undefined);
     try {
-      const r = await api.verkleinern(d.id, { stufe, bestaetigt });
+      const r = await dokumenteApi.verkleinern(d.id, { stufe, bestaetigt });
       fertig(r.unveraendert ? r.meldung : t('ablage.pdfverkleinern.verkleinert', { name: d.name, ergebnisText: ergebnisText(r.vorher, r.nachher), wert: v!.versioniert ? t('ablage.pdfverkleinern.version-das-original-bleibt', { wert: r.dokument.version ?? 1 }) : '' }), !r.unveraendert);
     } catch (e) { setFehler((e as Error).message); setLaeuft(undefined); }
   }
   async function herunterladen() {
     setLaeuft('laden'); setFehler(undefined);
     try {
-      const r = await api.herunterladenMitStempel(d.id, null, d.name, undefined, stufe);
+      const r = await dokumenteApi.herunterladenMitStempel(d.id, null, d.name, { verkleinern: stufe });
       fertig(r.bytes < v!.groesse * 0.9 ? t('ablage.pdfverkleinern.verkleinerte-kopie-heruntergeladen', { ergebnisText: ergebnisText(v!.groesse, r.bytes), name: d.name }) : t('ablage.pdfverkleinern.laesst-sich-kaum-verkleinern', { name: d.name }), false);
     } catch (e) { setFehler((e as Error).message); setLaeuft(undefined); }
   }

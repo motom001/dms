@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
-import { api, type OrdnerStand, type Schwelle, type SpeicherplatzEinstellung, type SpeicherplatzStand } from '../api';
+import { betriebApi, type OrdnerStand, type Schwelle, type SpeicherplatzEinstellung, type SpeicherplatzStand } from '../api/betrieb';
 import { Link } from '../ort';
 import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 import { WARTUNG_GEAENDERT } from '../wartung';
@@ -26,7 +26,7 @@ export function useSpeicherplatz(offen: boolean) {
   const [stand, setStand] = useState<SpeicherplatzStand | null>(null);
   const [fehler, setFehler] = useState<string>();
   const laden = useCallback(async () => {
-    try { setStand(await api.speicherplatz()); setFehler(undefined); } catch (e) { setFehler((e as Error).message); }
+    try { setStand(await betriebApi.speicherplatz()); setFehler(undefined); } catch (e) { setFehler((e as Error).message); }
   }, []);
   useEffect(() => {
     if (!offen) return;
@@ -90,13 +90,13 @@ export function SpeicherplatzPanel({ z, nachAenderung, auslastung, unten }: { z:
 
   async function speichern() {
     setLaeuft(true); setMeldung(undefined);
-    try { const neu = await api.speicherplatzSetzen(e!); z.setStand(neu); setE(neu.einstellung); setMeldung({ art: 'gut', text: t('werkbank.speicherplatz.gespeichert-und-neu-gemessen') }); nachAenderung?.(); }
+    try { const neu = await betriebApi.speicherplatzSetzen(e!); z.setStand(neu); setE(neu.einstellung); setMeldung({ art: 'gut', text: t('werkbank.speicherplatz.gespeichert-und-neu-gemessen') }); nachAenderung?.(); }
     catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); }
     finally { setLaeuft(false); }
   }
   async function wartungBeenden() {
     setLaeuft(true); setMeldung(undefined);
-    try { await api.wartungAus(); dispatchEvent(new Event(WARTUNG_GEAENDERT)); await z.laden(); nachAenderung?.(); setMeldung({ art: 'gut', text: t('werkbank.speicherplatz.wartungsmodus-beendet-alle-koennen') }); }
+    try { await betriebApi.wartungAus(); dispatchEvent(new Event(WARTUNG_GEAENDERT)); await z.laden(); nachAenderung?.(); setMeldung({ art: 'gut', text: t('werkbank.speicherplatz.wartungsmodus-beendet-alle-koennen') }); }
     catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); }
     finally { setLaeuft(false); }
   }

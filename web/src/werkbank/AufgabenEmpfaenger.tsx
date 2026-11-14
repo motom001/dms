@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { Benutzer } from '../../../shared/src/model';
 import { Mehrfachauswahl } from '../ablage/Mehrfachauswahl';
-import { api, type AufgabenEmpfaenger } from '../api';
+import { aufgabenApi, type AufgabenEmpfaenger } from '../api/aufgaben';
 import { useDaten } from '../daten';
 import { Hilfe } from '../Hilfe';
 import { Speicherleiste, useEntwurf } from '../Speicherleiste';
@@ -16,7 +16,7 @@ export function useAufgabenEmpfaenger(aktiv: boolean) {
   const [stand, setStand] = useState<AufgabenEmpfaenger | null>(null);
   const [fehler, setFehler] = useState<string>();
   const laden = useCallback(async () => {
-    try { setStand(await api.aufgabenEmpfaenger()); setFehler(undefined); } catch (e) { setFehler((e as Error).message); }
+    try { setStand(await aufgabenApi.aufgabenEmpfaenger()); setFehler(undefined); } catch (e) { setFehler((e as Error).message); }
   }, []);
   useEffect(() => { if (aktiv) void laden(); }, [aktiv, laden]);
   return { stand, setStand, fehler, laden };
@@ -48,7 +48,7 @@ export function AufgabenEmpfaengerBlock({ z, benutzer }: { z: AufgabenEmpfaenger
 
   async function speichern() {
     setSendet(true); setMeldung(undefined);
-    try { z.setStand(await api.aufgabenEmpfaengerSpeichern(wahl)); setMeldung({ art: 'gut', text: t('werkbank.aufgabenempfaenger.gespeichert') }); await d.neuLaden(); }
+    try { z.setStand(await aufgabenApi.aufgabenEmpfaengerSpeichern(wahl)); setMeldung({ art: 'gut', text: t('werkbank.aufgabenempfaenger.gespeichert') }); await d.neuLaden(); }
     catch (e) { setMeldung({ art: 'schlecht', text: (e as Error).message }); }
     finally { setSendet(false); }
   }

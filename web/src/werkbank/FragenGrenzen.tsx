@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { FRAGEN_BEREICH, FRAGEN_STANDARD, type FragenGrenzen } from '../../../shared/src/fragen';
-import { api, ApiFehler } from '../api';
+import { ApiFehler } from '../api/anfrage';
+import { sucheApi } from '../api/suche';
 import { Feld, Knopf } from '../bausteine';
 import { Hilfe } from '../Hilfe';
 import { t } from '../sprache';
@@ -16,11 +17,11 @@ export function FragenGrenzenBlock() {
   const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
   const [laeuft, setLaeuft] = useState(false);
   const uebernimm = (x: FragenGrenzen) => { setG(x); setEingabe({ ausschnitte: String(x.ausschnitte), zeichen: String(x.zeichen) }); };
-  useEffect(() => { api.fragenStand().then((s) => uebernimm(s.grenzen), (e) => setMeldung({ art: 'schlecht', text: (e as Error).message })); }, []);
+  useEffect(() => { sucheApi.fragenStand().then((s) => uebernimm(s.grenzen), (e) => setMeldung({ art: 'schlecht', text: (e as Error).message })); }, []);
   if (!g) return meldung ? <p className="fehlertext">{meldung.text}</p> : null;
   async function speichern() {
     setLaeuft(true); setFehler({}); setMeldung(undefined);
-    try { const s = await api.fragenGrenzen({ ausschnitte: Number(eingabe.ausschnitte), zeichen: Number(eingabe.zeichen) }); uebernimm(s.grenzen); setMeldung({ art: 'gut', text: t('fragen.werkbank.gespeichert') }); }
+    try { const s = await sucheApi.fragenGrenzen({ ausschnitte: Number(eingabe.ausschnitte), zeichen: Number(eingabe.zeichen) }); uebernimm(s.grenzen); setMeldung({ art: 'gut', text: t('fragen.werkbank.gespeichert') }); }
     catch (e) {
       const ff = e instanceof ApiFehler ? (e.details as { felderFehler?: Record<string, string> } | undefined)?.felderFehler : undefined;
       if (ff) setFehler(ff);

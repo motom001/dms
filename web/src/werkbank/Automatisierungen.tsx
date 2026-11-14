@@ -11,7 +11,8 @@ import { MODULE } from '../../../shared/src/protokollmodule';
 import { VORLAUF_EINHEITEN, WIEDERHOLUNGEN, type VorlaufEinheit } from '../../../shared/src/fristen';
 import { einzigesZiel, jedeMappe, zieleVon, type Mappentyp } from '../../../shared/src/model';
 import { bedingungsfelder, beschreibeBedingung, OPERATOREN_JE_ART, type Bedingung, type Bedingungsfeld } from '../../../shared/src/sichten';
-import { api, type Bezuege } from '../api';
+import { automatisierungApi } from '../api/automatisierung';
+import type { Bezuege } from '../api/mappen';
 import { MappenWahl } from '../ablage/MappeFormular';
 import { useDaten } from '../daten';
 import { Listenkopf } from '../Listenkopf';
@@ -45,7 +46,7 @@ type Stand = { automatisierungen: AutomatisierungAnsicht[]; fehlgeschlagen: numb
 export function useAutomatisierungen(offen: boolean) {
   const [stand, setStand] = useState<Stand | null>(null);
   const [fehler, setFehler] = useState<string>();
-  const laden = useCallback(async () => { try { setStand(await api.automatisierungen()); setFehler(undefined); } catch (e) { setFehler((e as Error).message); } }, []);
+  const laden = useCallback(async () => { try { setStand(await automatisierungApi.automatisierungen()); setFehler(undefined); } catch (e) { setFehler((e as Error).message); } }, []);
   useEffect(() => { if (offen) void laden(); }, [offen, laden]);
   // Liste aktuell halten (letzter Lauf, angehalten) – mehrere Server: einfach regelmäßig nachfragen.
   useEffect(() => { if (!offen) return; const z = setInterval(() => void laden(), 15_000); return () => clearInterval(z); }, [offen, laden]);
@@ -113,7 +114,7 @@ function ListenHinweise({ s, z, nurFehl, setNurFehl, setFehler }: { s: Stand; z:
       {s.umgezogen && (
         <div className="hinweis info">
           <p><strong>{t('automatisierung.ui.umgezogen', { anzahl: s.umgezogen.anzahl })}</strong> {t('automatisierung.ui.umgezogen.text')}</p>
-          <Knopf groesse="klein" onClick={async () => { try { await api.automatisierungUmzugGesehen(); await z.laden(); } catch (e) { setFehler((e as Error).message); } }}>{t('automatisierung.ui.umgezogen.ok')}</Knopf>
+          <Knopf groesse="klein" onClick={async () => { try { await automatisierungApi.automatisierungUmzugGesehen(); await z.laden(); } catch (e) { setFehler((e as Error).message); } }}>{t('automatisierung.ui.umgezogen.ok')}</Knopf>
         </div>
       )}
       {!!s.fehlgeschlagen && (
@@ -124,8 +125,8 @@ function ListenHinweise({ s, z, nurFehl, setNurFehl, setFehler }: { s: Stand; z:
             : t('automatisierung.ui.fehlgeschlagen', { anzahl: s.fehlgeschlagen })}</p>
           <div className="knoepfe">
             {s.fehlgeschlagen > 1 && <Knopf groesse="klein" aria-pressed={nurFehl} onClick={() => setNurFehl(!nurFehl)}>{nurFehl ? t('automatisierung.ui.fehlgeschlagen.alle') : t('automatisierung.ui.fehlgeschlagen.anzeigen')}</Knopf>}
-            <Knopf groesse="klein" onClick={async () => { try { await api.automatisierungenWiederholen(); setNurFehl(false); await z.laden(); } catch (e) { setFehler((e as Error).message); } }}>{t('automatisierung.ui.alle-wiederholen')}</Knopf>
-            <Knopf groesse="klein" onClick={async () => { try { await api.automatisierungenNichtWiederholen(); setNurFehl(false); await z.laden(); } catch (e) { setFehler((e as Error).message); } }}>{t('automatisierung.ui.nicht-wiederholen.alle')}</Knopf>
+            <Knopf groesse="klein" onClick={async () => { try { await automatisierungApi.automatisierungenWiederholen(); setNurFehl(false); await z.laden(); } catch (e) { setFehler((e as Error).message); } }}>{t('automatisierung.ui.alle-wiederholen')}</Knopf>
+            <Knopf groesse="klein" onClick={async () => { try { await automatisierungApi.automatisierungenNichtWiederholen(); setNurFehl(false); await z.laden(); } catch (e) { setFehler((e as Error).message); } }}>{t('automatisierung.ui.nicht-wiederholen.alle')}</Knopf>
           </div>
         </div>
       )}
@@ -191,7 +192,7 @@ export function AutomatisierungenListe({ z, offen, pakete = [] }: { z: Automatis
     let n = 0;
     for (const id of ids) {
       const a = s?.automatisierungen.find((x) => x.id === id);
-      try { await api.automatisierungSchalten(id, an); n++; } catch (e) { nicht.push(`${a?.name ?? id}: ${(e as Error).message}`); }
+      try { await automatisierungApi.automatisierungSchalten(id, an); n++; } catch (e) { nicht.push(`${a?.name ?? id}: ${(e as Error).message}`); }
     }
     setSchaltFehler(nicht);
     setAnsage(t(an ? 'automatisierung.ui.liste.eingeschaltet' : 'automatisierung.ui.liste.ausgeschaltet', { anzahl: n }));
@@ -213,7 +214,7 @@ export function AutomatisierungenListe({ z, offen, pakete = [] }: { z: Automatis
       const start = Math.max(REIHENFOLGE.min, Math.min(gruppe[0].reihenfolge, REIHENFOLGE.max - 10 * (neu.length - 1)));
       for (const [i, a] of neu.entries()) {
         const r = Math.min(REIHENFOLGE.max, start + i * 10);
-        if (a.reihenfolge !== r) await api.automatisierungAendern(a.id, { reihenfolge: r, version: a.version });
+        if (a.reihenfolge !== r) await automatisierungApi.automatisierungAendern(a.id, { reihenfolge: r, version: a.version });
       }
       setAnsage(t('automatisierung.ui.liste.sortiert'));
       await z.laden();
@@ -374,7 +375,7 @@ export function AutomatisierungEditor({ z, id }: { z: AutomatisierungenZustand; 
   const speichern = async () => {
     setSendet(true); setMeldung(undefined);
     try {
-      const x = neu ? await api.automatisierungAnlegen(e) : await api.automatisierungAendern(a!.id, { ...e, version: a!.version });
+      const x = neu ? await automatisierungApi.automatisierungAnlegen(e) : await automatisierungApi.automatisierungAendern(a!.id, { ...e, version: a!.version });
       await z.laden();
       loeseWache();
       if (neu) { b.merke(x.id); geheZu(`/werkbank/automatisierungen/${x.id}`, true); }
@@ -406,8 +407,8 @@ export function AutomatisierungEditor({ z, id }: { z: AutomatisierungenZustand; 
         <div className="zeile handlungen">
           <Schalter an={a ? a.aktiv && !a.angehalten : e.aktiv} beschriftung={t('automatisierung.ui.schalter')} beschriftungVerbergen
             hinweis={a?.aktiv && a.angehalten ? a.angehalten.text : neu ? t('automatisierung.ui.schalter.neu') : undefined}
-            setze={(an) => { if (!a) { setE({ ...e, aktiv: an }); return; } return api.automatisierungSchalten(a.id, an).then(() => z.laden()); }} />
-          {a && <Knopf onClick={() => aktion(async () => { const x = await api.automatisierungKopieren(a.id); geheZu(`/werkbank/automatisierungen/${x.id}`); }, t('automatisierung.ui.kopiert'))}>{t('automatisierung.ui.kopieren')}</Knopf>}
+            setze={(an) => { if (!a) { setE({ ...e, aktiv: an }); return; } return automatisierungApi.automatisierungSchalten(a.id, an).then(() => z.laden()); }} />
+          {a && <Knopf onClick={() => aktion(async () => { const x = await automatisierungApi.automatisierungKopieren(a.id); geheZu(`/werkbank/automatisierungen/${x.id}`); }, t('automatisierung.ui.kopiert'))}>{t('automatisierung.ui.kopieren')}</Knopf>}
         </div>
       </div>
       {b.leiste(hatFehler, t('automatisierung.ui.bereiche'))}
@@ -468,7 +469,7 @@ export function AutomatisierungEditor({ z, id }: { z: AutomatisierungenZustand; 
         loeschen={a ? {
           text: t('automatisierung.ui.loeschen'),
           rueckfrage: { titel: t('automatisierung.ui.loeschen.frage', { name: a.name }), text: t('automatisierung.ui.loeschen.text'), ja: t('automatisierung.ui.loeschen') },
-          onClick: () => { void aktion(async () => { await api.automatisierungLoeschen(a.id); loeseWache(); geheZu('/werkbank/automatisierungen', true); }, t('automatisierung.ui.geloescht')); },
+          onClick: () => { void aktion(async () => { await automatisierungApi.automatisierungLoeschen(a.id); loeseWache(); geheZu('/werkbank/automatisierungen', true); }, t('automatisierung.ui.geloescht')); },
           // Mitgeliefert (#1174): nicht löschbar – das Paket legte sie wieder an. Statt eines fehlenden Knopfs die Erklärung.
           gesperrt: a.herkunft === 'eigen' ? null : mitgeliefertSperre(a, k),
         } : undefined} />
@@ -1022,7 +1023,7 @@ function Wiedergeben({ a, typ, nachher, klappe }: { a: AutomatisierungAnsicht; t
   const [lauf, setLauf] = useState<Lauf | null>(null);
   const [fehler, setFehler] = useState<string>();
   // Auswahl wie ein Verweisfeld (#709); vorgeschlagen werden nur Mappen, die die Automatisierung sehen darf.
-  const quelle = useCallback((suche: string) => api.automatisierungTestmappen(a.id, suche), [a.id]);
+  const quelle = useCallback((suche: string) => automatisierungApi.automatisierungTestmappen(a.id, suche), [a.id]);
   return (
     <Bereich id="ausprobieren" titel={t('automatisierung.ui.wiedergeben')} klappe={klappe}>
       {/* Werkbank-Karten (#677): ohne Mappe, mit einer Beispielmeldung. */}
@@ -1038,7 +1039,7 @@ function Wiedergeben({ a, typ, nachher, klappe }: { a: AutomatisierungAnsicht; t
         <HakenFeld beschriftung={t('automatisierung.ui.trocken')} hinweis={t('automatisierung.ui.trocken.hilfe')} className="klein"><input type="checkbox" checked={trocken} onChange={(x) => setTrocken(x.target.checked)} /></HakenFeld>
         <Knopf groesse="klein" gesperrt={!mappe && !ohneMappeWenn(a.wenn)} onClick={async () => {
           setFehler(undefined);
-          try { setLauf(await api.automatisierungWiedergeben(a.id, mappe, trocken)); nachher(); } catch (e) { setFehler((e as Error).message); }
+          try { setLauf(await automatisierungApi.automatisierungWiedergeben(a.id, mappe, trocken)); nachher(); } catch (e) { setFehler((e as Error).message); }
         }}>{t('automatisierung.ui.wiedergeben.los')}</Knopf>
       </div>
       {fehler && <p className="fehlertext">{fehler}</p>}
@@ -1063,7 +1064,7 @@ function Verlauf({ a, klappe }: { a: AutomatisierungAnsicht; k: Kontextdaten; d:
   const d = useDaten();
   const [laeufe, setLaeufe] = useState<Lauf[] | null>(null);
   const [fehler, setFehler] = useState<string>();
-  const laden = useCallback(async () => { try { setLaeufe(await api.automatisierungLaeufe(a.id)); } catch (e) { setFehler((e as Error).message); } }, [a.id]);
+  const laden = useCallback(async () => { try { setLaeufe(await automatisierungApi.automatisierungLaeufe(a.id)); } catch (e) { setFehler((e as Error).message); } }, [a.id]);
   useEffect(() => { void laden(); const z = setInterval(() => void laden(), 2_000); return () => clearInterval(z); }, [laden]);
   const handle = async (f: () => Promise<unknown>) => { try { await f(); await laden(); } catch (e) { setFehler((e as Error).message); } };
   const laufend = laeufe?.some((l) => l.zustand === 'laeuft');
@@ -1080,8 +1081,8 @@ function Verlauf({ a, klappe }: { a: AutomatisierungAnsicht; k: Kontextdaten; d:
       inhalt: <>
         <Schritte l={l} a={a} />
         {offenFuerWiederholen && <div className="knoepfe">
-          <Knopf onClick={() => handle(() => api.automatisierungLaufWiederholen(l.id))}>{t('automatisierung.ui.wiederholen')}</Knopf>
-          <Knopf onClick={() => handle(() => api.automatisierungLaufNichtWiederholen(l.id))}>{t('automatisierung.ui.nicht-wiederholen')}</Knopf>
+          <Knopf onClick={() => handle(() => automatisierungApi.automatisierungLaufWiederholen(l.id))}>{t('automatisierung.ui.wiederholen')}</Knopf>
+          <Knopf onClick={() => handle(() => automatisierungApi.automatisierungLaufNichtWiederholen(l.id))}>{t('automatisierung.ui.nicht-wiederholen')}</Knopf>
         </div>}
       </>,
     };

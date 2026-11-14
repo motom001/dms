@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { darfPostAnlegen, fotoBetreff } from '../../../shared/src/model';
-import { api } from '../api';
+import { dokumenteApi } from '../api/dokumente';
+import { mappenApi } from '../api/mappen';
 import { useDaten } from '../daten';
 import { geheZu } from '../ort';
 import { rueckfrage } from '../rueckfrage';
@@ -83,7 +84,7 @@ export function PostKamera() {
       const schluessel = ++zaehler.current;
       const laden = (async () => {
         try {
-          const { id } = await api.fotoAblegen(await verkleinere(f));
+          const { id } = await dokumenteApi.fotoAblegen(await verkleinere(f));
           setSeiten((s) => s.map((x) => (x.schluessel === schluessel ? { ...x, id } : x)));
         } catch (e) { setSeiten((s) => s.map((x) => (x.schluessel === schluessel ? { ...x, fehler: (e as Error).message } : x))); }
       })();
@@ -100,12 +101,12 @@ export function PostKamera() {
     const stapel = alle.map((s) => s.id!);
     try {
       if (ziel) {
-        await api.fotosAnMappe(ziel.mappeId, { stapel, ...(ziel.dokumentId ? { dokument: ziel.dokumentId } : {}) });
+        await mappenApi.fotosAnMappe(ziel.mappeId, { stapel, ...(ziel.dokumentId ? { dokument: ziel.dokumentId } : {}) });
         ziel.fertig?.();
         schliessen();
         return;
       }
-      const r = await api.postAusFotos({ stapel, betreff: fotoBetreff() });
+      const r = await dokumenteApi.postAusFotos({ stapel, betreff: fotoBetreff() });
       setSeiten([]);
       setSerie((x) => [...x, { id: r.post.id, typId: r.post.typId, titel: titelOder(r.post.titel), seiten: r.seiten }]);
       setPhase('gespeichert');

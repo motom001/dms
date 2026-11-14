@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent, 
 import { datumDe, type Termin, type TermineAntwort } from '../../../shared/src/fristen';
 import { blaettere, istAnsicht, jahresZeitraum, monatsraster, monatsZeitraum, monatVon, ueberfaelligSeit, type ErledigenAnsicht } from '../../../shared/src/kalender';
 import { heuteIn } from '../../../shared/src/sichten';
-import { api } from '../api';
+import { aufgabenApi } from '../api/aufgaben';
 import { useDaten } from '../daten';
 import { Listenkopf } from '../Listenkopf';
 import { Link } from '../ort';
@@ -87,7 +87,7 @@ function useZeitraum(von: string, bis: string, favoriten: boolean) {
   const [fehler, setFehler] = useState<string>();
   useEffect(() => {
     let aktuell = true;
-    api.termine(von, bis, favoriten).then((x) => { if (aktuell) { setDaten({ ...x, favoriten }); setFehler(undefined); } }).catch((x) => aktuell && setFehler((x as Error).message));
+    aufgabenApi.termine(von, bis, favoriten).then((x) => { if (aktuell) { setDaten({ ...x, favoriten }); setFehler(undefined); } }).catch((x) => aktuell && setFehler((x as Error).message));
     return () => { aktuell = false; };
   }, [von, bis, favoriten, d.stand]);
   return { daten: daten && daten.von === von && daten.bis === bis && daten.favoriten === favoriten ? daten : undefined, alt: daten, fehler };

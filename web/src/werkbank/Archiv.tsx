@@ -1,7 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ErgebnisBlock, FeldGruppe, HakenFeld, Knopf } from '../bausteine';
 import type { LoeschAnlass } from '../../../shared/src/loeschprotokoll';
-import { api, type Auftrag } from '../api';
+import type { Auftrag } from '../../../shared/src/auftrag';
+import { betriebApi } from '../api/betrieb';
+import { datenschutzApi } from '../api/datenschutz';
+import { mappenApi } from '../api/mappen';
 import { useDaten } from '../daten';
 import { Link } from '../ort';
 import { Hilfe } from '../Hilfe';
@@ -13,12 +16,12 @@ import { Kopf } from './Kopf';
 
 /** Werkbank → Aufbewahrung abgelaufen (#212, bis #725 „Darf weg“): Mappen im Archivmodus, deren Aufbewahrungsfrist abgelaufen ist. */
 
-type Eintrag = Awaited<ReturnType<typeof api.darfWeg>>[number];
+type Eintrag = Awaited<ReturnType<typeof datenschutzApi.darfWeg>>[number];
 
 export function useDarfWeg(offen: boolean) {
   const [liste, setListe] = useState<Eintrag[] | null>(null);
   const [fehler, setFehler] = useState<string>();
-  const laden = useCallback(async () => { try { setListe(await api.darfWeg()); setFehler(undefined); } catch (e) { setFehler((e as Error).message); } }, []);
+  const laden = useCallback(async () => { try { setListe(await datenschutzApi.darfWeg()); setFehler(undefined); } catch (e) { setFehler((e as Error).message); } }, []);
   // Erst beim Öffnen laden; die Zahl links kommt bis dahin aus der Übersicht (#375).
   useEffect(() => { if (offen) void laden(); }, [laden, offen]);
   return { liste, fehler, laden };
@@ -37,7 +40,7 @@ export function DarfWegPanel({ z }: { z: DarfWegZustand }) {
     if (!ids.length || !anlass) return;
     setMeldung(undefined);
     const fehler: string[] = [];
-    for (const id of ids) { try { await api.mappeLoeschen(id, anlass); } catch (e) { fehler.push((e as Error).message); } }
+    for (const id of ids) { try { await mappenApi.mappeLoeschen(id, anlass); } catch (e) { fehler.push((e as Error).message); } }
     setGewaehlt(new Set());
     setMeldung(fehler.length ? { art: 'schlecht', text: t('werkbank.archiv.geloescht-nicht', { wert: ids.length - fehler.length, fehler: fehler.length, fehler2: fehler[0] }) } : { art: 'gut', text: t('werkbank.archiv.geloescht', { ids: ids.length }) });
     await z.laden(); await d.neuLaden();
@@ -79,7 +82,7 @@ export function DateienPruefen() {
   const [auftrag, setAuftrag] = useState<Auftrag | null>(null);
   useEffect(() => {
     if (auftrag?.status !== 'laeuft') return;
-    const timer = setInterval(() => void api.auftrag().then(setAuftrag), 1000);
+    const timer = setInterval(() => void betriebApi.auftrag().then(setAuftrag), 1000);
     return () => clearInterval(timer);
   }, [auftrag?.status]);
   const e = auftrag?.status === 'fertig' && auftrag.art === 'dateien-pruefen'
@@ -88,7 +91,7 @@ export function DateienPruefen() {
     <section className="blatt" id="dateien">
       <h2 className="h3">{t('werkbank.archiv.alle-dateien-pruefen')} <Hilfe ort="werkbank.dateienpruefen" /></h2>
       <p className="leise">{t('werkbank.archiv.liest-jede-gespeicherte-datei')}</p>
-      <div className="knoepfe"><Knopf art="haupt" laeuft={auftrag?.status === 'laeuft'} onClick={async () => setAuftrag(await api.dateienPruefen())}>{t('werkbank.archiv.jetzt-pruefen')}</Knopf></div>
+      <div className="knoepfe"><Knopf art="haupt" laeuft={auftrag?.status === 'laeuft'} onClick={async () => setAuftrag(await betriebApi.dateienPruefen())}>{t('werkbank.archiv.jetzt-pruefen')}</Knopf></div>
       {/* Fortschritt und Ergebnis unter dem Knopf (#986): darüber verschiebt sich nichts. */}
       <ErgebnisBlock anlass={auftrag?.status === 'laeuft' ? null : auftrag}>
         {auftrag?.status === 'laeuft' && <p className="leise">{fortschrittText(auftrag, t('werkbank.archiv.dateien'))}</p>}

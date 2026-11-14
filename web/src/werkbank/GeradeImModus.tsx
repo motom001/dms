@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { gebietsschema } from '../../../shared/src/sprache';
-import { api } from '../api';
+import { kontoApi } from '../api/konto';
 import { useNachladen } from '../nachladen-hook';
 import { t } from '../sprache';
 
@@ -17,7 +17,7 @@ const uhrzeit = (iso: string) => new Date(iso).toLocaleTimeString(gebietsschema(
 export function GeradeImModus() {
   const [andere, setAndere] = useState<Array<{ name: string; seit: string }>>([]);
   // Liste statt Stand: sie ist kurz und genau das, was angezeigt wird; gemeldet wird nur bei Änderung.
-  useNachladen(api.geradeImModus, setAndere, { nachlauf: false, erstesMelden: true });
+  useNachladen(kontoApi.geradeImModus, setAndere, { nachlauf: false, erstesMelden: true });
   if (!andere.length) return null;
   const namen = andere.map((x) => t('konten.verwaltung.andere.person', { name: x.name, uhrzeit: uhrzeit(x.seit) })).join(', ');
   return <p className="gerade-im-modus klein" id="gerade-im-modus">{t('konten.verwaltung.andere.text', { namen })}</p>;

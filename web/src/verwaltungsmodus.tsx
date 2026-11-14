@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react';
-import { api, ApiFehler, setzeBestaetigung } from './api';
+import { ApiFehler, setzeBestaetigung } from './api/anfrage';
+import { kontoApi } from './api/konto';
 import { t } from './sprache';
 import { Feld, Knopf } from './bausteine';
 import { passkeysImBrowser, passkeyVerwenden } from './passkey';
@@ -11,7 +12,7 @@ import type { Verwaltungsstand } from '../../shared/src/verwaltungsrecht';
  * Anmeldung vor heiklen Handlungen. Ein Dialog für alles – eingebunden einmal (`<Verwaltungsanmeldung />`).
  *
  * - Beginnen: ohne Abfrage, wenn die Anmeldung höchstens 10 Minuten zurückliegt; sonst Passwort und Code.
- * - Abgelaufen während der Arbeit: Die Anfrage wartet, der Dialog fragt; danach geht sie noch einmal hinaus (api.ts).
+ * - Abgelaufen während der Arbeit: Die Anfrage wartet, der Dialog fragt; danach geht sie noch einmal hinaus (api/anfrage.ts).
  *   Heute in diesem Browser schon bestätigt: Wiedereinstieg mit einem Klick, aktiv zu wählen.
  * - Heikle Handlung: immer Passwort (und Code), gilt dann 10 Minuten.
  * - Statt Passwort und Code geht überall ein Passkey (#811) – auch für Personen, die sich sonst über einen Anbieter anmelden.
@@ -27,7 +28,7 @@ const frage = (art: Art, heuteBestaetigt = false) => new Promise<boolean>((ferti
 
 /** „Ablago verwalten“: Modus beginnen, wenn nötig mit erneuter Anmeldung. `true` = läuft. */
 export async function verwaltungBeginnen(): Promise<boolean> {
-  try { await api.verwaltungBeginnen(); return true; } catch (e) {
+  try { await kontoApi.verwaltungBeginnen(); return true; } catch (e) {
     const d = e instanceof ApiFehler ? e.details as { bestaetigen?: boolean } | undefined : undefined;
     if (!d?.bestaetigen) throw e;
     return frage('beginnen');
@@ -87,8 +88,8 @@ function Dialog({ o, stand, schliesse }: { o: Offen; stand: Verwaltungsstand | n
     } finally { setSendet(false); }
   }
   const anmelden = () => tu(() => (o.art === 'frisch'
-    ? api.verwaltungBestaetigen({ passwort, ...(mitCode ? { code } : {}) })
-    : api.verwaltungBeginnen({ passwort, ...(mitCode ? { code } : {}) })));
+    ? kontoApi.verwaltungBestaetigen({ passwort, ...(mitCode ? { code } : {}) })
+    : kontoApi.verwaltungBeginnen({ passwort, ...(mitCode ? { code } : {}) })));
   // Nur Anbieter (#241): dort erneut anmelden; danach ist die Anmeldung frisch und es geht ohne Abfrage weiter.
   const beimAnbieter = () => {
     try { sessionStorage.setItem('dms:nach-anmeldung', '/werkbank?verwalten=1'); } catch { /* ohne */ }
@@ -98,7 +99,7 @@ function Dialog({ o, stand, schliesse }: { o: Offen; stand: Verwaltungsstand | n
   return (
     <dialog ref={ref} className="rueckfrage verwaltungsdialog" role="dialog" aria-modal="true" aria-labelledby={`${id}-t`} aria-describedby={`${id}-x`}
       onCancel={(e) => { e.preventDefault(); schliesse(false); }}>
-      <form method="dialog" onSubmit={(e) => { e.preventDefault(); if (wieder) void tu(() => api.verwaltungBeginnen()); else if (!ohnePasswort) void anmelden(); }}>
+      <form method="dialog" onSubmit={(e) => { e.preventDefault(); if (wieder) void tu(() => kontoApi.verwaltungBeginnen()); else if (!ohnePasswort) void anmelden(); }}>
         <h2 id={`${id}-t`}>{titel}</h2>
         <div id={`${id}-x`} className="rueckfrage-text"><p>{text}</p></div>
         {!wieder && passkey && <PasskeyBestaetigen frisch={o.art === 'frisch'} haupt={ohnePasswort} tu={tu} />}
@@ -114,7 +115,7 @@ function Dialog({ o, stand, schliesse }: { o: Offen; stand: Verwaltungsstand | n
         {fehler && <p className="fehlertext" role="alert">{fehler}</p>}
         <div className="rueckfrage-knoepfe">
           <Knopf onClick={() => schliesse(false)}>{t('konten.verwaltung.dialog.abbrechen')}</Knopf>
-          {wieder && <Knopf art="link" onClick={() => api.verwaltungBeenden().catch(() => undefined).finally(() => schliesse(false))}>{t('konten.verwaltung.beenden')}</Knopf>}
+          {wieder && <Knopf art="link" onClick={() => kontoApi.verwaltungBeenden().catch(() => undefined).finally(() => schliesse(false))}>{t('konten.verwaltung.beenden')}</Knopf>}
           {ohnePasswort && !wieder
             ? <Knopf art="haupt" onClick={beimAnbieter}>{t('konten.verwaltung.dialog.anbieter')}</Knopf>
             : <Knopf art="haupt" type="submit" laeuft={sendet}>{wieder ? t('konten.verwaltung.dialog.wieder.knopf') : t('konten.verwaltung.dialog.knopf')}</Knopf>}
@@ -127,10 +128,10 @@ function Dialog({ o, stand, schliesse }: { o: Offen; stand: Verwaltungsstand | n
 /** Erneute Anmeldung mit Passkey (#811): Optionen nur mit den eigenen Passkeys, dann an dieselbe Stelle wie Passwort und Code. */
 function PasskeyBestaetigen({ frisch, haupt, tu }: { frisch: boolean; haupt: boolean; tu: (f: () => Promise<unknown>) => Promise<void> }) {
   const bestaetigen = async () => {
-    const p = await api.passkeyBestaetigenOptionen();
+    const p = await kontoApi.passkeyBestaetigenOptionen();
     const antwort = await passkeyVerwenden(p.optionen);
     const passkey = { kennung: p.kennung, antwort };
-    await tu(() => (frisch ? api.verwaltungBestaetigen({ passkey }) : api.verwaltungBeginnen({ passkey })));
+    await tu(() => (frisch ? kontoApi.verwaltungBestaetigen({ passkey }) : kontoApi.verwaltungBeginnen({ passkey })));
   };
   return (
     <div className="anmelden-passkey">
@@ -157,7 +158,7 @@ export async function heikelHerunterladen(e: { preventDefault(): void }, url: st
  * Speicher der Seite zu holen. `true` = gestartet, `false` = Anmeldung abgebrochen.
  */
 export async function heikelLaden(url: string): Promise<boolean> {
-  const st = await api.status().catch(() => null);
+  const st = await kontoApi.status().catch(() => null);
   if (!st?.verwaltungsmodus?.frisch && !(await frischAngemeldet())) return false;
   const a = Object.assign(document.createElement('a'), { href: url, download: '' });
   document.body.append(a); a.click(); a.remove();
