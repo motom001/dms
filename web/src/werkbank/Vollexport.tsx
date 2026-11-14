@@ -1,4 +1,4 @@
-import { Feld, HakenFeld, Knopf, Schalter, type KnopfErgebnis } from '../bausteine';
+import { Feld, HakenFeld, Knopf, Schalter } from '../bausteine';
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import type { Auftrag } from '../../../shared/src/auftrag';
 import { betriebApi, type KontaktZuordnung } from '../api/betrieb';
@@ -10,15 +10,13 @@ import { Hilfe } from '../Hilfe';
 import { fortschrittText } from '../../../shared/src/auftrag';
 import { gebietsschema } from '../../../shared/src/sprache';
 import { Kopf } from './Kopf';
+import { mb, VollexportListe } from './VollexportListe';
 
 /**
  * Werkbank → Vollexport (#254): alle Daten in offenen Formaten, lesbar ohne das DMS.
  * Läuft im Hintergrund und schreibt in den Export-Ordner (#797) – neben files/, nicht bei den Sicherungen.
  */
 
-const mb = (b: number) => (b < 1024 ** 3 ? `${(b / 1024 ** 2).toFixed(b < 10 * 1024 ** 2 ? 1 : 0).replace('.', ',')} MB` : `${(b / 1024 ** 3).toFixed(1).replace('.', ',')} GB`);
-const zeit = (iso: string) => new Date(iso).toLocaleString(gebietsschema(), { dateStyle: 'medium', timeStyle: 'short' });
-const tag = (iso: string) => new Date(iso).toLocaleDateString(gebietsschema(), { dateStyle: 'medium' });
 
 /** Hinweise zum Export-Ordner (#797) – oben auf der Seite und in der Übersicht der Werkbank. */
 export function exportHinweise(e: { pfad: string; imSicherungsordner: boolean; umzug: ExportUmzug | null }, tage = EXPORT_TAGE): Array<{ art: 'schlecht' | 'info'; text: ReactNode; umzug?: boolean; schluessel: string }> {
@@ -129,28 +127,7 @@ export function VollexportPanel({ z }: { z: VollexportZustand }) {
         <Schalter an={s.persoenlich} beschriftung={t('werkbank.vollexport.schalter')} hinweis={t('werkbank.vollexport.mein-konto-konto-meine')}
           setze={(an) => tu(async () => { await betriebApi.persoenlicherExport(an); await z.laden(); return an ? t('werkbank.vollexport.benutzer-duerfen-ihre-daten') : t('werkbank.vollexport.meine-daten-exportieren-abgeschaltet'); })} />
       </div>
-      <div className="blatt" id="exporte">
-        <h2 className="h3">{t('werkbank.vollexport.vorhandene-exporte')}</h2>
-        {!s.exporte.length ? <p className="leise">{t('werkbank.vollexport.noch-kein-export')}</p> : <ul className="stapel">
-          {s.exporte.map((e) => (
-            <li key={e.name} className={e.passwoerter ? 'mitpasswoertern' : undefined}>
-              <strong>{e.erstellt ? zeit(e.erstellt) : e.name}</strong> <span className="leise klein">{t('werkbank.vollexport.dateien', { mb: mb(e.bytes), dateien: e.dateien, wert: e.mappen !== null ? t('werkbank.vollexport.mappen', { mappen: e.mappen }) : '', wert2: t('werkbank.export.bis', { datum: tag(e.bis) }) })}</span>
-              {/* #366: liegt unverschlüsselt im Export-Ordner – deutlich markieren. */}
-              {e.passwoerter && <span className="fehlertext klein blockzeile">{tn('werkbank.vollexport.nach-dem-import-in', { b: <strong>{t('werkbank.vollexport.enthaelt-passwoerter-im-klartext')}</strong> })}</span>}
-              <span className="knoepfe">
-                <a className="knopf klein" href={`/api/werkbank/export/${encodeURIComponent(e.name)}/zip`}>{t('werkbank.vollexport.als-zip-herunterladen')}</a>
-                {/* „Prüfen“ (#986): Ergebnis in der Zeile des Exports, nicht oben auf der Seite. */}
-                <Knopf groesse="klein" laeuftText={t('werkbank.vollexport.prueft')} onClick={async (): Promise<KnopfErgebnis> => {
-                  const r = await betriebApi.vollexportPruefen(e.name);
-                  return r.ok ? { art: 'gut', text: t('werkbank.vollexport.alle-dateien-vollstaendig-und', { dateien: r.dateien }) }
-                    : { art: 'schlecht', text: t('werkbank.vollexport.abweichungen', { wert: [...r.fehlend.map((x) => t('werkbank.vollexport.fehlt', { x })), ...r.abweichend.map((x) => t('werkbank.vollexport.veraendert', { x }))].slice(0, 5).join(', '), wert2: r.fehlend.length + r.abweichend.length > 5 ? ' …' : '' }) };
-                }}>{t('werkbank.vollexport.pruefen')}</Knopf>
-                <Knopf art="gefahr" symbol="geloescht" groesse="klein" rueckfrage={{ titel: t('werkbank.vollexport.diesen-export-loeschen'), text: e.name, ja: t('werkbank.vollexport.loeschen') }} onClick={() => { void tu(async () => { await betriebApi.vollexportLoeschen(e.name); await z.laden(); return t('werkbank.vollexport.export-geloescht'); }); }}>{t('werkbank.vollexport.loeschen')}</Knopf>
-              </span>
-            </li>
-          ))}
-        </ul>}
-      </div>
+      <VollexportListe exporte={s.exporte} laden={z.laden} melde={(text, art) => setMeldung({ art, text })} />
     </div>
   );
 }

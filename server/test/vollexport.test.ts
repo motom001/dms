@@ -1,6 +1,9 @@
 /** Vollexport (#254): Aufbau, offene Formate, Passwörter, Versionen, Prüfwerte. */
 import assert from 'node:assert/strict';
-import { mkdtemp, readFile, writeFile } from 'node:fs/promises';
+import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
+import { mkdir, mkdtemp, readdir, readFile, writeFile } from 'node:fs/promises';
+import { Readable } from 'node:stream';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, it } from 'node:test';
@@ -11,7 +14,10 @@ import { Konten } from '../src/konten';
 import { speicherKontoRepo } from '../src/konto-repo';
 import { speicherRepo } from '../src/repo-speicher';
 import { csv, exportDateien, exporteIn, pruefeExport, vollexport } from '../src/vollexport';
+import { alsHeruntergeladen, mitPruefsumme, pruefsummen, pruefsummenZeile } from '../src/vollexport-pruefsummen';
 import { kontaktVorschlaege } from '../src/routen';
+
+const sha256sumDa = (() => { try { execFileSync('sha256sum', ['--version']); return true; } catch { return false; } })();
 
 describe('Vollexport (#254)', () => {
   it('CSV nach RFC 4180 mit BOM', () => {
@@ -65,16 +71,57 @@ describe('Vollexport (#254)', () => {
     assert.ok(!pfade.includes('passwoerter.csv'));
     // Prüfen
     assert.deepEqual(await pruefeExport(r.ordner), { ok: true, dateien: m.dateien.length, fehlend: [], abweichend: [] });
+    // SHA256SUMS (#1195): jede Datei samt manifest.json, sha256sum -c meldet alle als OK.
+    const summen = (await lies('SHA256SUMS')).trim().split('\n');
+    assert.equal(summen.length, m.dateien.length + 1);
+    assert.ok(summen.some((z) => z.endsWith('  manifest.json')) && summen.some((z) => /\/mappe\.json$/.test(z)));
+    if (sha256sumDa) {
+      const aus = execFileSync('sha256sum', ['-c', 'SHA256SUMS'], { cwd: r.ordner, encoding: 'utf8' });
+      assert.equal(aus.trim().split('\n').filter((z) => z.endsWith(': OK')).length, summen.length);
+    }
+    assert.match(await lies('LIESMICH.md'), /sha256sum -c --quiet SHA256SUMS/);
     await writeFile(join(r.ordner, 'daten', 'partner.csv'), 'verändert');
     const p2 = await pruefeExport(r.ordner);
     assert.equal(p2.ok, false);
     assert.deepEqual(p2.abweichend, ['daten/partner.csv']);
     assert.equal((await exporteIn(ziel))[0].name, r.name);
     assert.ok((await exportDateien(r.ordner)).some((x) => x.name === 'manifest.json'));
+    assert.ok((await exportDateien(r.ordner)).some((x) => x.name === 'SHA256SUMS'));
 
     // Mit Passwörtern (Bitwarden-CSV)
     const r2 = await vollexport(quelle, await mkdtemp(join(tmpdir(), 'dms-export-')), { passwoerter: true, protokolle: true });
     const pw = await readFile(join(r2.ordner, 'passwoerter.csv'), 'utf8');
     assert.match(pw, /^﻿folder,favorite,type,name,notes,fields,reprompt,login_uri,login_username,login_password,login_totp\r\nZugang,,login,Portal,,,0,,anna,geheim123,\r\n$/);
+  });
+
+  it('Prüfsummen (#1195): Format wie sha256sum, ZIP-Prüfsumme beim Herunterladen, Eintrag bleibt danach', async () => {
+    assert.equal(pruefsummenZeile('ab', 'a b/c.pdf'), 'ab  a b/c.pdf');
+    assert.equal(pruefsummenZeile('ab', 'a\\b\nc'), '\\ab  a\\\\b\\nc');
+    assert.equal(pruefsummen([{ pfad: 'b', sha256: '2' }, { pfad: 'a', sha256: '1' }]).toString(), '1  a\n2  b\n');
+    // Durchreichen und mitrechnen.
+    const inhalt = Buffer.from('ZIP-INHALT'.repeat(1000));
+    let ergebnis: { sha256: string; bytes: number } | undefined;
+    const teile: Buffer[] = [];
+    for await (const t of mitPruefsumme(Readable.from([inhalt.subarray(0, 100), inhalt.subarray(100)]), (e) => { ergebnis = e; })) teile.push(t as Buffer);
+    assert.deepEqual(Buffer.concat(teile), inhalt);
+    assert.deepEqual(ergebnis, { sha256: createHash('sha256').update(inhalt).digest('hex'), bytes: inhalt.length });
+    // Nach dem Herunterladen: nur SHA256SUMS und die Angaben bleiben, der Eintrag steht mit Prüfsumme in der Liste.
+    const ziel = await mkdtemp(join(tmpdir(), 'dms-export-'));
+    const ordner = join(ziel, 'dms-export-2026-11-14-10-00-00');
+    await mkdir(join(ordner, 'daten'), { recursive: true });
+    await writeFile(join(ordner, 'daten', 'a.csv'), 'a');
+    await writeFile(join(ordner, 'manifest.json'), JSON.stringify({ erstellt: '2026-11-14T10:00:00.000Z', dateien: [{ pfad: 'daten/a.csv', bytes: 1, sha256: 'x' }], anzahlen: { mappen: 3 } }));
+    await writeFile(join(ordner, 'SHA256SUMS'), 'x  daten/a.csv\n');
+    const jetzt = new Date('2026-11-14T12:00:00Z');
+    await alsHeruntergeladen(ordner, { sha256: 'f'.repeat(64), bytes: 1234 }, jetzt);
+    assert.deepEqual((await readdir(ordner)).sort(), ['SHA256SUMS', 'heruntergeladen.json']);
+    const [e] = await exporteIn(ziel, jetzt);
+    assert.deepEqual(e.heruntergeladen, { am: jetzt.toISOString(), sha256: 'f'.repeat(64), bytes: 1234 });
+    assert.equal(e.erstellt, '2026-11-14T10:00:00.000Z');
+    assert.equal(e.mappen, 3);
+    assert.equal(e.bis, '2026-11-21T12:00:00.000Z');
+    // Nach der Frist (7 Tage ab dem Herunterladen) ist auch der Eintrag weg.
+    assert.deepEqual(await exporteIn(ziel, new Date('2026-11-21T12:00:01Z')), []);
+    assert.deepEqual(await readdir(ziel), []);
   });
 });

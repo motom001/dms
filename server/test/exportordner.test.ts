@@ -3,6 +3,7 @@
  * Löschen nach dem Herunterladen bzw. nach 7 Tagen, Warnung, wenn der Ordner doch im Sicherungsordner liegt.
  */
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { wieImModus } from './hilfen';
 import { mkdir, mkdtemp, readdir, readFile, stat, symlink, utimes, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -241,7 +242,7 @@ describe('Export-Ordner (#797): Werkbank und Herunterladen', () => {
   }
   const leer = async (inhalt: unknown) => { for await (const _ of inhalt as AsyncIterable<Buffer>) { /* lesen */ } await new Promise((r) => setTimeout(r, 20)); };
 
-  it('Vollexport: Frist, Ort, Umzug-Hinweis und Löschen nach dem Herunterladen', async () => {
+  it('Vollexport: Frist, Ort, Umzug-Hinweis und Löschen nach dem Herunterladen; Prüfsummen bleiben (#1195)', async () => {
     const { einstellungen, katrin, pfad, rufe } = await aufbau();
     const ordner = await legeExport(pfad, new Date());
     await merkeUmzug(einstellungen, { anzahl: 1, uebrig: false });
@@ -255,12 +256,23 @@ describe('Export-Ordner (#797): Werkbank und Herunterladen', () => {
     await rufe(katrin, 'POST', '/api/werkbank/export/umzug-gesehen');
     assert.equal(((await rufe(katrin, 'GET', '/api/werkbank/export')).body as { umzug: unknown }).umzug, null);
 
-    const dl = await rufe(katrin, 'GET', '/api/werkbank/export/:name/zip', { params: { name: s.exporte[0].name } });
-    assert.ok(await da(ordner), 'erst nach dem vollständigen Lesen gelöscht');
-    await leer(dl.datei!.inhalt);
+    await writeFile(join(ordner, 'SHA256SUMS'), 'x  daten/mappen.csv\n');
+    const name = s.exporte[0].name;
+    const dl = await rufe(katrin, 'GET', '/api/werkbank/export/:name/zip', { params: { name } });
+    assert.ok(await da(join(ordner, 'manifest.json')), 'erst nach dem vollständigen Lesen gelöscht');
+    const zip: Buffer[] = [];
+    for await (const t of dl.datei!.inhalt as AsyncIterable<Buffer>) zip.push(t);
     // Gelöscht wird nach dem Ende des Stroms – unter Last kann das ein paar Millisekunden dauern.
-    for (let i = 0; i < 100 && (await da(ordner)); i++) await new Promise((r) => setTimeout(r, 20));
-    assert.equal(await da(ordner), false);
+    for (let i = 0; i < 100 && (await da(join(ordner, 'manifest.json'))); i++) await new Promise((r) => setTimeout(r, 20));
+    assert.equal(await da(join(ordner, 'daten')), false);
+    // #1195: Der Eintrag bleibt mit der SHA-256 der ZIP, die Prüfsummen-Datei lässt sich weiter laden.
+    const nachher = ((await rufe(katrin, 'GET', '/api/werkbank/export')).body as { exporte: Array<{ name: string; heruntergeladen?: { sha256: string; bytes: number } }> }).exporte;
+    assert.equal(nachher[0].name, name);
+    assert.deepEqual(nachher[0].heruntergeladen && { sha256: nachher[0].heruntergeladen.sha256, bytes: nachher[0].heruntergeladen.bytes },
+      { sha256: createHash('sha256').update(Buffer.concat(zip)).digest('hex'), bytes: Buffer.concat(zip).length });
+    const summen = await rufe(katrin, 'GET', '/api/werkbank/export/:name/pruefsummen', { params: { name } });
+    assert.equal(String(summen.datei!.inhalt), 'x  daten/mappen.csv\n');
+    assert.equal(summen.datei!.name, `${name}.SHA256SUMS`);
   });
 
   it('Meine Daten exportieren: nach dem Herunterladen gelöscht, „bereit bis“ für die Anzeige', async () => {

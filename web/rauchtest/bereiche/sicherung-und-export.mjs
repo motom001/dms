@@ -55,3 +55,27 @@ rauchtest('Werkbank: Sicherungen auswählen und gemeinsam löschen (#1169)', { a
   assert.equal(await zeilen.count(), anzahl - 2);
   await zeilen.first().getByText('geschützt').waitFor();
 });
+
+// Vollexport mit Prüfsummen (#1195): erst „Prüfsummen (SHA256SUMS)“, dann „ZIP herunterladen“ mit Hinweis aufs Löschen;
+// nach dem Herunterladen bleibt der Eintrag mit der SHA-256 der ZIP stehen – ohne Neuladen der Seite.
+rauchtest('Werkbank: Vollexport mit Prüfsummen, Eintrag bleibt nach dem Herunterladen (#1195)', { als: LENA }, async (s) => {
+  await s.goto(BASIS + '/ablage/start');
+  await verwalten(s);
+  await s.goto(BASIS + '/werkbank/vollexport');
+  const bearbeitung = s.getByRole('region', { name: 'Bearbeitung' });
+  await bearbeitung.getByRole('heading', { name: 'Vollexport', level: 1 }).waitFor();
+  await bearbeitung.getByRole('button', { name: 'Export starten' }).click();
+  const eintrag = bearbeitung.locator('#exporte li').first();
+  await eintrag.getByRole('link', { name: 'ZIP herunterladen' }).waitFor({ timeout: 90_000 });
+  const knoepfe = (await eintrag.locator('.knoepfe').first().locator('a, button').allInnerTexts()).map((x) => x.trim());
+  assert.deepEqual(knoepfe.slice(0, 2), ['Prüfsummen (SHA256SUMS)', 'ZIP herunterladen'], 'Prüfsummen vor der ZIP');
+  await eintrag.getByText(/wird der Export auf dem Server gelöscht/).waitFor();
+  const summen = await Promise.all([s.waitForEvent('download'), eintrag.getByRole('link', { name: 'Prüfsummen (SHA256SUMS)' }).click()]).then(([d]) => d);
+  assert.match(summen.suggestedFilename(), /SHA256SUMS$/);
+  const zip = await Promise.all([s.waitForEvent('download'), eintrag.getByRole('link', { name: 'ZIP herunterladen' }).click()]).then(([d]) => d);
+  assert.equal(await zip.failure(), null);
+  await eintrag.getByText(/^Heruntergeladen am .* und auf dem Server gelöscht/).waitFor({ timeout: 30_000 });
+  assert.match(await eintrag.locator('dd.mono').innerText(), /^[0-9a-f]{64}$/);
+  await eintrag.getByRole('link', { name: 'Prüfsummen (SHA256SUMS)' }).waitFor();
+  await eintrag.getByRole('button', { name: 'Prüfsumme kopieren' }).waitFor();
+});
