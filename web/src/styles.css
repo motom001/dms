@@ -782,8 +782,8 @@ input.kurz { width: 7em; }
 .listenrumpf .trefferliste thead th { top: 0; }
 /* Listen der Werkbank: Kopf mit „+ Neu“ bleibt oben stehen. */
 /* Was per Tastatur oder scrollIntoView ins Bild rollt, landet unter dem haftenden Kopf, nicht dahinter (WCAG 2.4.11;
-   #1213: am Handy lag das Suchfeld der Liste sonst halb unter dem Kopf). */
-.spalte.liste { scroll-padding-top: 90px; }
+   #1213: am Handy lag das Suchfeld der Liste sonst halb unter dem Kopf; 140 px, weil der Kopf mit anderen Schriften höher wird). */
+.spalte.liste { scroll-padding-top: 140px; }
 .spalte.liste > .listenkopf { position: sticky; top: -18px; z-index: 3; background: var(--flaeche); margin: -18px -16px 0; padding: 18px 16px 8px; }
 /* Formatierter Text (#53) */
 .formatiert { line-height: 1.5; overflow-wrap: anywhere; }
