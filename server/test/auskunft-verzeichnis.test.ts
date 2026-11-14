@@ -69,11 +69,11 @@ describe('Datenschutz-Auskünfte: Verzeichnis (#668)', () => {
     assert.equal(tageBisFrist('2026-11-01', '2026-11-04'), -3);
   });
 
-  it('Werkbank: zwei Einträge, Auskünfte mit Mitte, alte Adresse leitet um', () => {
+  it('Werkbank: eigene Einträge in der Gruppe Datenschutz (#1184), Auskünfte mit Mitte, alte Adresse leitet um', () => {
     const pfade = BEREICHE.map((b) => b.pfad);
-    assert.ok(pfade.includes('auskuenfte') && pfade.includes('loeschkonzept') && !pfade.includes('datenschutz'));
-    assert.equal(BEREICHE.find((b) => b.pfad === 'auskuenfte')!.gruppe, 'benutzer');
-    assert.ok(hatMitte('auskuenfte') && !hatMitte('loeschkonzept'));
+    assert.ok(pfade.includes('auskuenfte') && pfade.includes('loeschkonzept') && pfade.includes('loeschprotokoll') && !pfade.includes('datenschutz'));
+    assert.equal(BEREICHE.find((b) => b.pfad === 'auskuenfte')!.gruppe, 'datenschutz');
+    assert.ok(hatMitte('auskuenfte') && !hatMitte('loeschkonzept') && !hatMitte('loeschprotokoll'));
     assert.equal(werkbankUmleitung('datenschutz', undefined, '?mappe=x'), '/werkbank/auskuenfte?mappe=x');
   });
 

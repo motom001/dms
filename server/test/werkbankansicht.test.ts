@@ -2,6 +2,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import {
+  abschnittUmleitung, inLeiste,
   bereichPasst, ansichtAus, BEREICHE, bereichName, expertenBereiche, fuerAlle, nurImExpertenmodus, GRUPPEN, hatMitte, inVorlage, liesAnsicht, liesEigene, OHNE_EINSTELLUNG, sichtbar, wartungsPlakette,
   werkbankEbene, werkbankUmleitung, werkbankZurueck, einDatentraeger,
 } from '../../shared/src/werkbankansicht';
@@ -177,12 +178,13 @@ describe('Werkbank: mittlere Spalte für Sammlungen zum Anlegen und Bearbeiten (
     assert.equal(werkbankUmleitung('anmeldeschutz'), null, 'Pfad bleibt, alte Links gelten weiter');
   });
 
-  it('#354, #717, #725, #1170: sechs Gruppen nach Aufgaben, je etwa 7 Bereiche', () => {
-    assert.deepEqual(Object.values(GRUPPEN), ['Ablage aufbauen', 'Benutzer und Sicherheit', 'Post und Eingänge', 'Daten sichern', 'Einstellungen', 'Wartung und Fehlersuche']);
+  it('#354, #717, #725, #1170, #1184: Gruppen nach Aufgaben, je etwa 7 Bereiche', () => {
+    assert.deepEqual(Object.values(GRUPPEN), ['Ablage aufbauen', 'Benutzer und Sicherheit', 'Datenschutz', 'Post und Eingänge', 'Daten sichern', 'Einstellungen', 'Wartung und Fehlersuche']);
     const je = (g: string) => BEREICHE.filter((x) => x.gruppe === g).map((x) => x.pfad);
     // Nutzung (#1032) steht seit #1170 auf „Eigene Organisation“ unter Einstellungen.
     assert.deepEqual(je('ablage'), ['pakete', 'typen', 'sichten', 'nummernkreise', 'automatisierungen', 'ablaufvorlagen']);
-    assert.deepEqual(je('benutzer'), ['benutzer', 'verschluesselung', 'auskuenfte', 'loeschkonzept', 'aufbewahrung', 'stempel']);
+    assert.deepEqual(je('benutzer'), ['benutzer', 'verschluesselung', 'aufbewahrung', 'stempel']);
+    assert.deepEqual(je('datenschutz'), ['auskuenfte', 'loeschkonzept', 'loeschprotokoll']);
     assert.deepEqual(je('post'), ['postfaecher', 'eingangsordner', 'webdav', 'texterkennung', 'woerter']);
     assert.deepEqual(je('sichern'), ['sicherung', 'vollexport', 'papierkorb']);
     assert.deepEqual(je('einstellungen'), ['betrieb', 'region', 'sprachen', 'organisation', 'aufgaben', 'anmeldeschutz', 'designs', 'anbindung']);
@@ -219,14 +221,22 @@ describe('Werkbank: mittlere Spalte für Sammlungen zum Anlegen und Bearbeiten (
     assert.equal(werkbankUmleitung('auskuenfte', 'neu'), null);
   });
 
-  it('#354 Nacharbeit, #668: Datenschutz-Auskünfte und Löschkonzept unter „Benutzer und Sicherheit“, alte Adresse leitet um', () => {
-    for (const pfad of ['auskuenfte', 'loeschkonzept']) {
+  it('#668, #1184: Auskünfte, Löschkonzept und Löschprotokoll in der Gruppe „Datenschutz“, alte Adressen leiten um', () => {
+    for (const pfad of ['auskuenfte', 'loeschkonzept', 'loeschprotokoll']) {
       const b = BEREICHE.find((x) => x.pfad === pfad);
-      assert.equal(b?.gruppe, 'benutzer');
-      assert.equal(GRUPPEN[b!.gruppe], 'Benutzer und Sicherheit');
+      assert.equal(b?.gruppe, 'datenschutz');
+      assert.equal(GRUPPEN[b!.gruppe], 'Datenschutz');
       assert.deepEqual(b?.in, ['organisation'], 'Vorlagen wie vorher Datenschutz');
     }
     assert.equal(werkbankUmleitung('datenschutz'), '/werkbank/auskuenfte', 'alte Links führen zu den Auskünften');
+    assert.equal(abschnittUmleitung('loeschkonzept', 'loeschprotokoll'), '/werkbank/loeschprotokoll', 'früherer Abschnitt des Löschkonzepts');
+    assert.equal(abschnittUmleitung('loeschkonzept', 'personendaten'), null);
+    // Nur bei beruflicher Nutzung in der Leiste (hilfsweise am Merkmal, bis #987).
+    assert.equal(inLeiste('datenschutz', { beruflich: false }), false);
+    assert.equal(inLeiste('datenschutz', { beruflich: true }), true);
+    assert.equal(inLeiste('datenschutz', undefined), false);
+    assert.equal(inLeiste('benutzer', { beruflich: false }), true);
+    assert.equal(inLeiste(null, { beruflich: false }), true);
     assert.deepEqual(liesAnsicht({ vorlage: 'haushalt', ein: ['datenschutz'], aus: [] }), { vorlage: 'haushalt', ein: ['auskuenfte'], aus: [] });
     // Verschlüsselung bleibt unter Benutzer und Sicherheit, WebDAV unter Post und Eingänge.
     assert.equal(BEREICHE.find((x) => x.pfad === 'verschluesselung')?.gruppe, 'benutzer');

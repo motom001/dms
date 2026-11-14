@@ -1,12 +1,13 @@
 # Workbench and overview {#werkbank-und-ubersicht}
 
-The **workbench** only exists in [Administration mode](verwalten.md#der-verwaltungsmodus): user menu → **Administer Ablago**. Afterwards you land on the **overview** – it shows the messages of your own areas. If a link leads you into the workbench (e.g. from an email "Backup failed"), you land exactly there after "Administer Ablago". You can reach the **Library** in this mode at any time via **Library** at the top, for instance to check what a folder contains. On the left are the areas you may manage, in six groups, ordered by what you want to do right now – build the Library, manage users, bring in post, back up data, change basic settings or track down an error. Which areas you see depends on the [Template](#werkbank-anpassen):
+The **workbench** only exists in [Administration mode](verwalten.md#der-verwaltungsmodus): user menu → **Administer Ablago**. Afterwards you land on the **overview** – it shows the messages of your own areas. If a link leads you into the workbench (e.g. from an email "Backup failed"), you land exactly there after "Administer Ablago". You can reach the **Library** in this mode at any time via **Library** at the top, for instance to check what a folder contains. On the left are the areas you may manage, in groups, ordered by what you want to do right now – build the Library, manage users, data protection (only when used for work), bring in post, back up data, change basic settings or track down an error. Which areas you see depends on the [Template](#werkbank-anpassen):
 
 <!-- bereiche:gruppen -->
 | Group | Areas |
 | --- | --- |
 | **Build the Library** | [Packages](pakete.md), [Folder types](mappentypen.md), [Views](sichten.md), [Number sequences](nummernkreise.md), [Automations](automatisierungen.md), [Automation templates](automatisierungsvorlagen.md) |
-| **Users and security** | [Users](benutzer.md), [Encryption](verschluesselung.md), [Data protection requests](datenschutz.md#auskunft-erteilen), [Deletion concept](loeschkonzept.md#aus-dem-dms-erzeugen), [Retention expired](archiv.md#nach-der-frist-aufbewahrung-abgelaufen) (only with archive mode), [Stamps](stempel.md) |
+| **Users and security** | [Users](benutzer.md), [Encryption](verschluesselung.md), [Retention expired](archiv.md#nach-der-frist-aufbewahrung-abgelaufen) (only with archive mode), [Stamps](stempel.md) |
+| **Data protection** | [Access requests](datenschutz.md#auskunft-erteilen) (only when used for work), [Deletion concept](loeschkonzept.md#aus-dem-dms-erzeugen) (only when used for work), [Deletion log](datenschutz.md#loschprotokoll) (only when used for work) |
 | **Post and intake** | [Mailboxes](postfaecher.md), [Intake folder](eingangsordner.md) (only if the folder is mounted), [WebDAV drive](webdav.md), [Search and full text](texterkennung.md), [Synonyms](suche.md#gleichbedeutende-worter) |
 | **Back up data** | [Backup](sicherung.md), [Full export](export.md), [Bin](papierkorb.md) |
 | **Settings** | [Email and address](installation.md#e-mail-und-adresse), [Region](region.md), [Languages](sprachen.md), [Own organisation](organisation.md), [Tasks](aufgaben.md), [Sign-in protection](anmeldeschutz.md), [Themes](designs.md), [Database connection](installation.md#datenbank-anbindung) |
@@ -157,7 +158,7 @@ Not everyone needs every area. A household may never touch number sequences, mai
 
 - **Household**: slim, only what a family needs for setting up and backing up. New installations start with it. **The self-employed and small businesses** choose **Business** right after setup.
 <!-- bereiche:organisation -->
-- **Business**: additionally Number sequences, Automations, Automation templates, Data protection requests, Deletion concept, Retention expired, Mailboxes, Intake folder, Search and full text, Synonyms, Sign-in protection, Themes, Log, Reported errors, Maintenance.
+- **Business**: additionally Number sequences, Automations, Automation templates, Retention expired, Access requests, Deletion concept, Deletion log, Mailboxes, Intake folder, Search and full text, Synonyms, Sign-in protection, Themes, Log, Reported errors, Maintenance.
 <!-- /bereiche:organisation -->
 - **Everything**: every area. It stays like this for installations set up before version 0.70 until you choose something else.
 
@@ -185,10 +186,11 @@ If a hidden area is set up, for instance a mailbox or sign-in via a provider, it
 | [Automation templates](automatisierungsvorlagen.md) | Templates for runs on a folder: “Assign task”, “Remind”, follow-up – when they run, who gets the task and what is asked when applying them | Business, Household in expert mode |
 | [Users](benutzer.md) | Create users and roles | Household, Business |
 | [Encryption](verschluesselung.md) | The key for passwords and backups | Household, Business |
-| [Data protection requests](datenschutz.md#auskunft-erteilen) | Access requests under Art. 15 GDPR for customers, tenants and contacts: request, create, deliver, evidence | Business |
-| [Deletion concept](loeschkonzept.md#aus-dem-dms-erzeugen) | Create a deletion concept, deletion log and which folder types contain personal data | Business |
 | [Retention expired](archiv.md#nach-der-frist-aufbewahrung-abgelaufen) | Check and delete folders whose retention period has expired (only with archive mode) | Business |
 | [Stamps](stempel.md) | Templates for stamps and watermarks when passing on | Household, Business |
+| [Access requests](datenschutz.md#auskunft-erteilen) | Access requests under Art. 15 GDPR for customers, tenants and contacts: request, create, deliver, evidence | Business |
+| [Deletion concept](loeschkonzept.md#aus-dem-dms-erzeugen) | Create a deletion concept: close gaps and set which folder types contain personal data | Business |
+| [Deletion log](datenschutz.md#loschprotokoll) | Evidence of what was deleted when – view, filter, export as PDF or CSV | Business |
 | [Mailboxes](postfaecher.md) | Fetch post from an email account | Business |
 | [Intake folder](eingangsordner.md) | Take over scans from a folder | Business |
 | [WebDAV drive](webdav.md) | Connect the library in Explorer, Finder or the Files app and drop files into it | Household, Business |

@@ -83,7 +83,7 @@ Ein Familienmitglied oder jemand aus dem Betrieb, der ein Konto in Ablago hat, m
 
 ### Auskunft an eine Person, die kein Benutzer ist { #auskunft-an-eine-person-die-kein-benutzer-ist }
 
-Ein Mieter, Kunde oder Kontakt fragt nach seinen Daten. Das erledigt **Werkbank → Datenschutz-Auskünfte**; die Einzelheiten stehen [weiter unten](#auskunft-nach-art-15-dsgvo).
+Ein Mieter, Kunde oder Kontakt fragt nach seinen Daten. Das erledigt **Werkbank → Datenschutz → Auskünfte**; die Einzelheiten stehen [weiter unten](#auskunft-nach-art-15-dsgvo).
 
 1. **Einmal einrichten:** Verantwortlicher (an der [eigenen Organisation](organisation.md)), Empfänger und die Mappentypen, die eine Person betreffen, jeweils mit Zweck ([Vorgaben für jede Auskunft](#einstellungen)).
 2. **Person wählen** – oder an ihrer Mappe **Mappe ▾ → Auskunft erstellen …** – und den Eingang der Anfrage eintragen. **Frist als Aufgabe anlegen** erinnert dich unter „Zu erledigen“.
@@ -96,7 +96,7 @@ Ein Mieter, Kunde oder Kontakt fragt nach seinen Daten. Das erledigt **Werkbank 
 
 Jemand verlangt, dass seine Daten gelöscht werden (Art. 17 DSGVO).
 
-1. **Finden, was zur Person gehört:** wie bei der Auskunft – die Prüfliste unter **Werkbank → Datenschutz-Auskünfte** zeigt alle Mappen, die zur Person gehören, und die, in denen sie nur genannt ist. Erzeugen musst du dafür nichts.
+1. **Finden, was zur Person gehört:** wie bei der Auskunft – die Prüfliste unter **Werkbank → Datenschutz → Auskünfte** zeigt alle Mappen, die zur Person gehören, und die, in denen sie nur genannt ist. Erzeugen musst du dafür nichts.
 2. **Prüfen, ob eine Aufbewahrungsfrist entgegensteht** (Art. 17 Abs. 3): Mappen eines Mappentyps im [Archivmodus](archiv.md) tragen **Archiv · aufbewahren bis …** und lassen sich vor Fristende ohnehin nicht löschen – auch nicht von Administratoren. Prüfe auch Mappen ohne Archivmodus: Rechnungen oder Verträge können Fristen haben, die du (noch) nicht eingetragen hast.
 3. **Frist steht entgegen → sperren statt löschen.** Die Mappe bleibt bis Fristende; benutze sie nur noch dafür, wofür du sie aufbewahren musst.
     - **Zugriff einschränken:** Gib dem Mappentyp ein Ja/Nein-Feld wie *Gesperrt* und lege in den [Berechtigungen](berechtigungen.md#bedingungen) eine Regel an: Wenn „Gesperrt ist ja“, dann Lesen und Bearbeiten nur für eine Rolle wie *Datenschutz*. Administratoren sehen weiter alles.
@@ -125,17 +125,17 @@ Für Vermieter, Selbständige und Betriebe: einmal festlegen, wie lange welche D
 5. **Wie lange Gelöschtes nachwirkt:** Aufbewahrung des [Papierkorbs](papierkorb.md#aufbewahrung) (Standard 30 Tage), Historie gelöschter Mappen (Standard 365 Tage) und Aufbewahrung der [Sicherungen](sicherung.md#zeitplan-und-aufbewahrung) passend zu deinem Konzept einstellen.
 6. **Regelmäßig prüfen:** z. B. jedes Jahr im Januar **Werkbank → Aufbewahrung abgelaufen** durchgehen und löschen, was weg darf – einen Kunden oder Vertragspartner samt allem, was dranhängt, mit [Mit verknüpften Mappen löschen](#mit-verknupften-mappen-loschen). Gelöscht wird nie automatisch.
 7. **Sperren auf Verlangen** wie unter [Löschen auf Verlangen](#loschen-auf-verlangen) beschrieben.
-8. **Dokumentieren:** Erzeuge das Löschkonzept unter **Werkbank → Löschkonzept** (PDF oder Word), ergänze die [eckigen Klammern] und lege es als Mappe in Ablago ab. Ändern sich Mappentypen oder Fristen, erzeugst du es neu.
+8. **Dokumentieren:** Erzeuge das Löschkonzept unter **Werkbank → Datenschutz → Löschkonzept** (PDF oder Word), ergänze die [eckigen Klammern] und lege es als Mappe in Ablago ab. Ändern sich Mappentypen oder Fristen, erzeugst du es neu.
 
-## Auskunft erteilen: Werkbank → Datenschutz-Auskünfte { #auskunft-erteilen }
+## Auskunft erteilen: Werkbank → Datenschutz → Auskünfte { #auskunft-erteilen }
 
-Wer Daten von Kunden, Mietern oder Kontakten verwaltet, muss auf Anfrage sagen können, was er über sie gespeichert hat – und das in einer Form, die die Person mitnehmen kann. Unter **Werkbank → Datenschutz-Auskünfte** erledigt Ablago das in wenigen Minuten.
+Wer Daten von Kunden, Mietern oder Kontakten verwaltet, muss auf Anfrage sagen können, was er über sie gespeichert hat – und das in einer Form, die die Person mitnehmen kann. Unter **Werkbank → Datenschutz → Auskünfte** erledigt Ablago das in wenigen Minuten.
 
 --8<-- "ausgeblendet-organisation.md"
 
-![Werkbank → Datenschutz-Auskünfte](bilder/werkbank-datenschutz.png)
+![Werkbank → Datenschutz → Auskünfte](bilder/werkbank-datenschutz.png)
 
-Datenschutz steht in der Werkbank unter **Benutzer und Sicherheit** in zwei Einträgen: **Datenschutz-Auskünfte** (alles zu Anfragen nach Art. 15) und **[Löschkonzept](loeschkonzept.md)** (Löschkonzept, [Personendaten in Mappentypen](#einstellungen) und [Löschprotokoll](#loschprotokoll)). Die alte Adresse `/werkbank/datenschutz` führt zu den Auskünften.
+Datenschutz ist in der Werkbank eine eigene kleine Gruppe **Datenschutz** mit drei Einträgen (#1184): **Auskünfte** (alles zu Anfragen nach Art. 15), **[Löschkonzept](loeschkonzept.md)** (Lücken schließen, Dokument erzeugen, [Personendaten in Mappentypen](#einstellungen)) und **[Löschprotokoll](#loschprotokoll)** (Nachweis ansehen und ausgeben). Die Gruppe steht nur in der Leiste, wenn die Ablage [auch beruflich genutzt](organisation.md#nutzung) wird – in einer rein privaten Ablage fehlt sie (später regelt das die Werkbank-Stufe je Person); über ihre Adressen bleiben die Seiten erreichbar. Die alte Adresse `/werkbank/datenschutz` führt zu den Auskünften, `/werkbank/loeschkonzept#loeschprotokoll` zum Löschprotokoll.
 
 ### Die Liste der Auskünfte { #liste }
 
@@ -290,7 +290,7 @@ Dabei gilt:
 
 ## Löschprotokoll { #loschprotokoll }
 
-**Werkbank → Löschkonzept → Löschprotokoll** weist nach, **dass** und **wann** du gelöscht hast (Rechenschaftspflicht, Art. 5 Abs. 2 DSGVO) – ohne dass das Protokoll selbst wieder die gelöschten Daten enthält. Die Historie einer Mappe reicht dafür nicht: Sie geht mit der Mappe, und das technische [Protokoll](fehlersuche.md#protokoll) läuft nach 24 Stunden ab.
+**Werkbank → Datenschutz → Löschprotokoll** weist nach, **dass** und **wann** du gelöscht hast (Rechenschaftspflicht, Art. 5 Abs. 2 DSGVO) – ohne dass das Protokoll selbst wieder die gelöschten Daten enthält. Die Historie einer Mappe reicht dafür nicht: Sie geht mit der Mappe, und das technische [Protokoll](fehlersuche.md#protokoll) läuft nach 24 Stunden ab.
 
 ### Was drinsteht
 
@@ -317,7 +317,7 @@ Erfasst werden alle Wege: einzeln, mehrere ausgewählt, mit verknüpften Mappen,
 
 ### Ansehen und ausgeben
 
-![Werkbank → Löschkonzept → Löschprotokoll mit Filtern, Suche per Datei und Einträgen](bilder/werkbank-loeschprotokoll.png)
+![Werkbank → Datenschutz → Löschprotokoll mit Filtern, Suche per Datei und Einträgen](bilder/werkbank-loeschprotokoll.png)
 
 - **Filter:** Zeitraum, Mappentyp, Grund, Schritt; ein Klick auf einen Vorgang zeigt alle Mappen und Dokumente dieses Vorgangs.
 - **Suche nach Nummer** (Nummernkreis oder Archivnummer) oder **Prüfsumme**.

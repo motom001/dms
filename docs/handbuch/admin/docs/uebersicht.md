@@ -1,12 +1,13 @@
 # Werkbank und Übersicht
 
-Die **Werkbank** gibt es nur im [Verwaltungsmodus](verwalten.md#der-verwaltungsmodus): Benutzermenü → **Ablago verwalten**. Danach landest du in der **Übersicht** – sie zeigt die Meldungen deiner eigenen Bereiche. Führt dich ein Link in die Werkbank (z. B. aus einer E-Mail „Sicherung fehlgeschlagen“), landest du nach „Ablago verwalten“ genau dort. Die **Ablage** erreichst du im Modus jederzeit über **Ablage** oben, etwa um nachzusehen, was eine Mappe enthält. Links stehen die Bereiche, die du verwalten darfst, in sechs Gruppen, geordnet nach dem, was du gerade tun willst – die Ablage aufbauen, Benutzer verwalten, Post hereinholen, Daten sichern, Grundeinstellungen ändern oder einem Fehler nachgehen. Welche Bereiche du siehst, hängt von der [Vorlage](#werkbank-anpassen) ab:
+Die **Werkbank** gibt es nur im [Verwaltungsmodus](verwalten.md#der-verwaltungsmodus): Benutzermenü → **Ablago verwalten**. Danach landest du in der **Übersicht** – sie zeigt die Meldungen deiner eigenen Bereiche. Führt dich ein Link in die Werkbank (z. B. aus einer E-Mail „Sicherung fehlgeschlagen“), landest du nach „Ablago verwalten“ genau dort. Die **Ablage** erreichst du im Modus jederzeit über **Ablage** oben, etwa um nachzusehen, was eine Mappe enthält. Links stehen die Bereiche, die du verwalten darfst, in Gruppen, geordnet nach dem, was du gerade tun willst – die Ablage aufbauen, Benutzer verwalten, Datenschutz (nur bei beruflicher Nutzung), Post hereinholen, Daten sichern, Grundeinstellungen ändern oder einem Fehler nachgehen. Welche Bereiche du siehst, hängt von der [Vorlage](#werkbank-anpassen) ab:
 
 <!-- bereiche:gruppen -->
 | Gruppe | Bereiche |
 | --- | --- |
 | **Ablage aufbauen** | [Pakete](pakete.md), [Mappentypen](mappentypen.md), [Ansichten](sichten.md), [Nummernkreise](nummernkreise.md), [Automatisierungen](automatisierungen.md), [Automatisierungsvorlagen](automatisierungsvorlagen.md) |
-| **Benutzer und Sicherheit** | [Benutzer](benutzer.md), [Verschlüsselung](verschluesselung.md), [Datenschutz-Auskünfte](datenschutz.md#auskunft-erteilen), [Löschkonzept](loeschkonzept.md#aus-dem-dms-erzeugen), [Aufbewahrung abgelaufen](archiv.md#nach-der-frist-aufbewahrung-abgelaufen) (nur mit Archivmodus), [Stempel](stempel.md) |
+| **Benutzer und Sicherheit** | [Benutzer](benutzer.md), [Verschlüsselung](verschluesselung.md), [Aufbewahrung abgelaufen](archiv.md#nach-der-frist-aufbewahrung-abgelaufen) (nur mit Archivmodus), [Stempel](stempel.md) |
+| **Datenschutz** | [Auskünfte](datenschutz.md#auskunft-erteilen) (nur bei beruflicher Nutzung), [Löschkonzept](loeschkonzept.md#aus-dem-dms-erzeugen) (nur bei beruflicher Nutzung), [Löschprotokoll](datenschutz.md#loschprotokoll) (nur bei beruflicher Nutzung) |
 | **Post und Eingänge** | [Postfächer](postfaecher.md), [Eingangsordner](eingangsordner.md) (nur wenn der Ordner eingebunden ist), [WebDAV-Laufwerk](webdav.md), [Suche und Volltext](texterkennung.md), [Gleichbedeutende Wörter](suche.md#gleichbedeutende-worter) |
 | **Daten sichern** | [Sicherung](sicherung.md), [Vollexport](export.md), [Papierkorb](papierkorb.md) |
 | **Einstellungen** | [E-Mail und Adresse](installation.md#e-mail-und-adresse), [Region](region.md), [Sprachen](sprachen.md), [Eigene Organisation](organisation.md), [Aufgaben](aufgaben.md), [Anmeldeschutz](anmeldeschutz.md), [Designs](designs.md), [Datenbank-Anbindung](installation.md#datenbank-anbindung) |
@@ -157,7 +158,7 @@ Nicht jeder braucht jeden Bereich. Ein Haushalt fasst Nummernkreise, Postfächer
 
 - **Haushalt**: schlank, nur was eine Familie zum Einrichten und Sichern braucht. Neue Installationen beginnen damit. **Selbständige und kleine Betriebe** wählen gleich nach der Einrichtung **Betrieb**.
 <!-- bereiche:organisation -->
-- **Betrieb**: zusätzlich Nummernkreise, Automatisierungen, Automatisierungsvorlagen, Datenschutz-Auskünfte, Löschkonzept, Aufbewahrung abgelaufen, Postfächer, Eingangsordner, Suche und Volltext, Gleichbedeutende Wörter, Anmeldeschutz, Designs, Protokoll, Gemeldete Fehler, Wartung.
+- **Betrieb**: zusätzlich Nummernkreise, Automatisierungen, Automatisierungsvorlagen, Aufbewahrung abgelaufen, Auskünfte, Löschkonzept, Löschprotokoll, Postfächer, Eingangsordner, Suche und Volltext, Gleichbedeutende Wörter, Anmeldeschutz, Designs, Protokoll, Gemeldete Fehler, Wartung.
 <!-- /bereiche:organisation -->
 - **Alles**: jeder Bereich. So bleibt es bei Installationen, die vor Version 0.70 eingerichtet wurden, bis du etwas anderes wählst.
 
@@ -185,10 +186,11 @@ Ist ein ausgeblendeter Bereich eingerichtet, etwa ein Postfach oder die Anmeldun
 | [Automatisierungsvorlagen](automatisierungsvorlagen.md) | Vorlagen für Abläufe an einer Mappe: „Aufgabe vergeben“, „Erinnern“, Wiedervorlage – wann sie laufen, wer die Aufgabe bekommt und was beim Anwenden gefragt wird | Betrieb, Haushalt im Expertenmodus |
 | [Benutzer](benutzer.md) | Benutzer und Rollen anlegen | Haushalt, Betrieb |
 | [Verschlüsselung](verschluesselung.md) | Den Schlüssel für Passwörter und Sicherungen | Haushalt, Betrieb |
-| [Datenschutz-Auskünfte](datenschutz.md#auskunft-erteilen) | Auskunft nach Art. 15 DSGVO an Kunden, Mieter und Kontakte: anfragen, erzeugen, zustellen, Nachweis | Betrieb |
-| [Löschkonzept](loeschkonzept.md#aus-dem-dms-erzeugen) | Löschkonzept erzeugen, Löschprotokoll und welche Mappentypen Personendaten enthalten | Betrieb |
 | [Aufbewahrung abgelaufen](archiv.md#nach-der-frist-aufbewahrung-abgelaufen) | Mappen, deren Aufbewahrungsfrist abgelaufen ist, prüfen und löschen (nur mit Archivmodus) | Betrieb |
 | [Stempel](stempel.md) | Vorlagen für Stempel und Wasserzeichen beim Weitergeben | Haushalt, Betrieb |
+| [Auskünfte](datenschutz.md#auskunft-erteilen) | Auskunft nach Art. 15 DSGVO an Kunden, Mieter und Kontakte: anfragen, erzeugen, zustellen, Nachweis | Betrieb |
+| [Löschkonzept](loeschkonzept.md#aus-dem-dms-erzeugen) | Löschkonzept erzeugen: Lücken schließen und festlegen, welche Mappentypen Personendaten enthalten | Betrieb |
+| [Löschprotokoll](datenschutz.md#loschprotokoll) | Nachweis, was wann gelöscht wurde – ansehen, filtern, als PDF oder CSV ausgeben | Betrieb |
 | [Postfächer](postfaecher.md) | Post aus einem E-Mail-Konto abholen | Betrieb |
 | [Eingangsordner](eingangsordner.md) | Scans aus einem Ordner übernehmen | Betrieb |
 | [WebDAV-Laufwerk](webdav.md) | Die Ablage im Explorer, Finder oder in der Dateien-App einbinden und Dateien hineinlegen | Haushalt, Betrieb |

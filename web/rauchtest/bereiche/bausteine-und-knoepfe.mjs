@@ -187,7 +187,7 @@ rauchtest('Werkbank: Hilfesymbol direkt hinter der Überschrift, nie im Text des
   await s.waitForURL(/\/werkbank/);
   const bereiche = s.getByRole('complementary', { name: 'Bereiche' });
   await bereiche.getByRole('link').first().waitFor();
-  const alle = ['pakete', 'typen', 'sichten', 'nummernkreise', 'automatisierungen', 'benutzer', 'verschluesselung', 'organisation', 'auskuenfte', 'loeschkonzept',
+  const alle = ['pakete', 'typen', 'sichten', 'nummernkreise', 'automatisierungen', 'benutzer', 'verschluesselung', 'organisation', 'auskuenfte', 'loeschkonzept', 'loeschprotokoll',
     'aufbewahrung', 'stempel', 'postfaecher', 'eingangsordner', 'webdav', 'texterkennung', 'sicherung', 'vollexport', 'papierkorb',
     'betrieb', 'region', 'sprachen', 'aufgaben', 'anmeldeschutz', 'designs', 'anbindung', 'systemzustand', 'protokoll', 'fehlermeldungen', 'wartung', 'demo']
     .map((b) => `/werkbank/${b}`);

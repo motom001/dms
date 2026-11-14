@@ -30,19 +30,21 @@ SPRACHEN = {
            'vorlagen': {'haushalt': 'Haushalt', 'organisation': 'Betrieb'}, 'alles': 'nur Alles',
            'experte': '{v} im Expertenmodus', 'zusaetzlich': '- **{o}**: zusätzlich {liste}.',
            'kopf_gruppen': '| Gruppe | Bereiche |', 'kopf_wofuer': '| Bereich | Wofür | In der Vorlage |',
-           'bedingt': {'aufbewahrung': 'nur mit Archivmodus', 'eingangsordner': 'nur wenn der Ordner eingebunden ist'}},
+           'bedingt': {'aufbewahrung': 'nur mit Archivmodus', 'eingangsordner': 'nur wenn der Ordner eingebunden ist',
+                       'auskuenfte': 'nur bei beruflicher Nutzung', 'loeschkonzept': 'nur bei beruflicher Nutzung', 'loeschprotokoll': 'nur bei beruflicher Nutzung'}},
     'en': {'texte': WURZEL / 'shared' / 'src' / 'sprachen' / 'en' / 'werkbank.json',
            'ziel': WURZEL / 'docs' / 'handbuch' / 'admin' / 'docs-en' / 'uebersicht.md',
            'vorlagen': {'haushalt': 'Household', 'organisation': 'Business'}, 'alles': 'Everything only',
            'experte': '{v} in expert mode', 'zusaetzlich': '- **{o}**: additionally {liste}.',
            'kopf_gruppen': '| Group | Areas |', 'kopf_wofuer': '| Area | What for | In the preset |',
-           'bedingt': {'aufbewahrung': 'only with archive mode', 'eingangsordner': 'only if the folder is mounted'}},
+           'bedingt': {'aufbewahrung': 'only with archive mode', 'eingangsordner': 'only if the folder is mounted',
+                       'auskuenfte': 'only when used for work', 'loeschkonzept': 'only when used for work', 'loeschprotokoll': 'only when used for work'}},
 }
 
 # Seite im Administratorhandbuch je Bereich (Pfad unter /werkbank).
 SEITE = {
     'pakete': 'pakete.md', 'typen': 'mappentypen.md', 'sichten': 'sichten.md', 'nummernkreise': 'nummernkreise.md', 'automatisierungen': 'automatisierungen.md', 'ablaufvorlagen': 'automatisierungsvorlagen.md',
-    'benutzer': 'benutzer.md', 'verschluesselung': 'verschluesselung.md', 'auskuenfte': 'datenschutz.md#auskunft-erteilen', 'loeschkonzept': 'loeschkonzept.md#aus-dem-dms-erzeugen',
+    'benutzer': 'benutzer.md', 'verschluesselung': 'verschluesselung.md', 'auskuenfte': 'datenschutz.md#auskunft-erteilen', 'loeschkonzept': 'loeschkonzept.md#aus-dem-dms-erzeugen', 'loeschprotokoll': 'datenschutz.md#loschprotokoll',
     'aufbewahrung': 'archiv.md#nach-der-frist-aufbewahrung-abgelaufen', 'stempel': 'stempel.md',
     'postfaecher': 'postfaecher.md', 'eingangsordner': 'eingangsordner.md', 'webdav': 'webdav.md',
     'texterkennung': 'texterkennung.md', 'woerter': 'suche.md#gleichbedeutende-worter', 'sicherung': 'sicherung.md', 'vollexport': 'export.md', 'papierkorb': 'papierkorb.md',

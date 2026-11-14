@@ -97,3 +97,39 @@ rauchtest('Eigene Organisation: Vorgaben der Auskünfte, Anrede zuerst, Text fol
   // Gespeichert wird mit der Speicherleiste der Seite – hier ist nichts geändert.
   assert.equal(await s.getByRole('button', { name: 'Eigene Organisation speichern' }).isDisabled(), true);
 });
+
+// #1184: Gruppe „Datenschutz“ nur bei beruflicher Nutzung; Löschprotokoll eigener Bereich; Löschkonzept aufgeräumt.
+rauchtest('Werkbank: Gruppe Datenschutz, Löschprotokoll eigener Bereich, Löschkonzept aufgeräumt (#1184)', { als: LENA }, async (s) => {
+  await s.goto(BASIS + '/ablage/start');
+  await verwalten(s);
+  const bereiche = s.getByRole('complementary', { name: 'Bereiche' });
+  const bearbeitung = s.getByRole('region', { name: 'Bearbeitung' });
+  // Privat: keine Gruppe Datenschutz in der Leiste – die Seiten bleiben über ihre Adresse erreichbar.
+  await s.goto(BASIS + '/werkbank/organisation');
+  await bereiche.getByRole('link', { name: /^Eigene Organisation/ }).waitFor();
+  for (const name of [/^Auskünfte/, /^Löschkonzept/, /^Löschprotokoll/]) assert.equal(await bereiche.getByRole('link', { name }).count(), 0, String(name));
+  // Alte Adresse des Abschnitts führt auf den eigenen Bereich.
+  await s.goto(BASIS + '/werkbank/loeschkonzept#loeschprotokoll');
+  await s.waitForURL(/\/werkbank\/loeschprotokoll$/);
+  await bearbeitung.getByRole('heading', { name: 'Löschprotokoll', level: 1 }).waitFor();
+  await s.locator('#loeschprotokoll').waitFor();
+  // Löschkonzept: Zusammenfassung oben, „ohne Personendaten“ zugeklappt; der Zustand bleibt nach dem Neuladen.
+  await s.goto(BASIS + '/werkbank/loeschkonzept');
+  await bearbeitung.getByText(/^(\d+ vollständig · \d+ mit Lücken|Noch kein Mappentyp mit Personendaten\.)$/).waitFor();
+  await bearbeitung.getByRole('link', { name: 'Als PDF erzeugen' }).waitFor();
+  const ohne = s.locator('#personendaten-ohne');
+  await ohne.waitFor();
+  assert.equal(await ohne.evaluate((d) => d.open), false, 'ohne Personendaten zugeklappt');
+  await ohne.locator('summary').click();
+  await s.reload();
+  await s.locator('#personendaten-ohne[open]').waitFor();
+  await s.locator('#personendaten-ohne summary').click();
+  assert.equal(await s.locator('#personendaten-ohne').evaluate((d) => d.open), false);
+  // Beruflich: die Gruppe mit drei Einträgen; danach wieder privat.
+  await s.goto(BASIS + '/werkbank/organisation');
+  await beruflich(s, true);
+  await bereiche.getByRole('heading', { name: 'Datenschutz' }).waitFor();
+  for (const name of [/^Auskünfte/, /^Löschkonzept/, /^Löschprotokoll/]) await bereiche.getByRole('link', { name }).waitFor();
+  await beruflich(s, false);
+  await bereiche.getByRole('link', { name: /^Löschprotokoll/ }).waitFor({ state: 'detached' });
+});

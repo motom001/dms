@@ -20,10 +20,11 @@ export const VORLAGEN: Record<Vorlage, { name: string; text: string }> = {
 };
 
 /**
- * Gruppen der Leiste (#68), nach Aufgaben statt nach Technik (#354, neu geordnet #717/#725): höchstens sechs, je etwa 7 ± 2
- * Bereiche. Die Kennung der Gruppe wird nirgends gespeichert – gespeichert sind nur Bereiche.
+ * Gruppen der Leiste (#68), nach Aufgaben statt nach Technik (#354, neu geordnet #717/#725): je etwa 7 ± 2 Bereiche.
+ * Datenschutz (#1184) ist eine kleine eigene Gruppe: Auskünfte, Löschkonzept, Löschprotokoll – nur bei beruflicher
+ * Nutzung in der Leiste (`NUR_BERUFLICH`). Die Kennung der Gruppe wird nirgends gespeichert – gespeichert sind nur Bereiche.
  */
-const GRUPPENFOLGE = ['ablage', 'benutzer', 'post', 'sichern', 'einstellungen', 'wartung'] as const;
+const GRUPPENFOLGE = ['ablage', 'benutzer', 'datenschutz', 'post', 'sichern', 'einstellungen', 'wartung'] as const;
 export type Gruppe = (typeof GRUPPENFOLGE)[number];
 export const GRUPPEN = Object.fromEntries(GRUPPENFOLGE.map((g) => [g, t.frei(`werkbank.gruppe.${g}`)])) as Record<Gruppe, string>;
 
@@ -65,12 +66,14 @@ const EINTRAEGE: Eintrag[] = [
   { pfad: 'ablaufvorlagen', gruppe: 'ablage', in: O, experte: ['haushalt'] },
   { pfad: 'benutzer', gruppe: 'benutzer', in: H },
   { pfad: 'verschluesselung', gruppe: 'benutzer', in: H },
-  // Datenschutz getrennt (#668): Auskünfte (mit Mitte, wachsende Sammlung) und Löschkonzept.
-  { pfad: 'auskuenfte', gruppe: 'benutzer', in: O },
-  { pfad: 'loeschkonzept', gruppe: 'benutzer', in: O },
   // „Aufbewahrung abgelaufen“ (#725, früher „Darf weg“) und Stempel (#717) regeln, was die Ablage verlässt.
   { pfad: 'aufbewahrung', gruppe: 'benutzer', in: O },
   { pfad: 'stempel', gruppe: 'benutzer', in: H },
+  // Datenschutz (#1184, vorher unter „Benutzer und Sicherheit“, #668): Auskünfte (mit Mitte, wachsende Sammlung),
+  // Löschkonzept und Löschprotokoll (vorher Abschnitt des Löschkonzepts) als drei klar getrennte Einträge.
+  { pfad: 'auskuenfte', gruppe: 'datenschutz', in: O },
+  { pfad: 'loeschkonzept', gruppe: 'datenschutz', in: O },
+  { pfad: 'loeschprotokoll', gruppe: 'datenschutz', in: O },
   { pfad: 'postfaecher', gruppe: 'post', in: O },
   { pfad: 'eingangsordner', gruppe: 'post', in: O },
   { pfad: 'webdav', gruppe: 'post', in: H },
@@ -147,6 +150,21 @@ export const UMGEZOGEN: Readonly<Record<string, string>> = {
 export const UMGEZOGEN_ABSCHNITT: Readonly<Record<string, string>> = {
   suche: 'suche', wiederherstellung: 'wiederherstellen', technik: 'version', wartungsmodus: 'wartungsmodus', nutzung: 'nutzung',
 };
+
+/**
+ * Gruppen, die nur bei beruflicher Nutzung in der Leiste stehen (#1184): Datenschutz gehört nicht zur rein privaten
+ * Ablage. Hilfsweise am Merkmal „beruflich genutzt“ (#1170), bis die Werkbank-Stufe je Person (#987) es übernimmt. Die
+ * Seiten bleiben über ihre Adresse erreichbar – ausgeblendet ist nicht abgeschaltet.
+ */
+export const NUR_BERUFLICH: ReadonlySet<Gruppe> = new Set<Gruppe>(['datenschutz']);
+export const inLeiste = (gruppe: Gruppe | null, m: { beruflich: boolean } | null | undefined) => !gruppe || !NUR_BERUFLICH.has(gruppe) || !!m?.beruflich;
+
+/**
+ * Umgezogene Abschnitte (#1184): alte Adresse samt Sprungmarke → neue Seite. Das Löschprotokoll war ein Abschnitt des
+ * Löschkonzepts und ist jetzt ein eigener Bereich.
+ */
+const ABSCHNITT_UMGEZOGEN: Readonly<Record<string, string>> = { 'loeschkonzept#loeschprotokoll': '/werkbank/loeschprotokoll' };
+export const abschnittUmleitung = (bereich: string, marke: string): string | null => ABSCHNITT_UMGEZOGEN[`${bereich}#${marke}`] ?? null;
 
 /** Für die ganze Installation: Vorlage plus Abweichungen. */
 export interface WerkbankAnsicht { vorlage: Vorlage; ein: string[]; aus: string[] }

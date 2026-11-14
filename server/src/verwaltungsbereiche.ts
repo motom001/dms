@@ -73,7 +73,8 @@ const REGELN: Regel[] = [
   R('GET', '/api/werkbank/datenschutz', 'auskuenfte', 'loeschkonzept'),
   R('*', '/api/werkbank/datenschutz*', 'auskuenfte', 'loeschkonzept'),
   R('*', '/api/werkbank/auskunft*', 'auskuenfte'),
-  R('*', '/api/werkbank/loeschprotokoll*', 'loeschkonzept'),
+  // Löschprotokoll (#1184): eigener Bereich; wer das Löschkonzept verwaltet, behält es.
+  R('*', '/api/werkbank/loeschprotokoll*', 'loeschkonzept', 'loeschprotokoll'),
   // Eigene Organisation (#995): Verweis auf die Mappe, Rollen für das Merkmal, Notizen.
   R('*', '/api/werkbank/organisation*', 'organisation'),
   R('*', '/api/werkbank/darf-weg', 'aufbewahrung'),
