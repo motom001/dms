@@ -316,6 +316,7 @@ fieldset.mischung legend { font-weight: 600; padding: 0 4px; }
 .aufklapper[aria-expanded="true"] .sym { transform: rotate(90deg); }
 @media (prefers-reduced-motion: reduce) { .aufklapper .sym { transition: none; } }
 @media (pointer: coarse) { .aufklapper, .aufklapper-platz { width: 44px; height: 44px; min-width: 44px; } }
+@media (pointer: coarse) { .verfuegbar-suche { margin-top: 12px; } }
 .listenkopf-knoepfe { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
 .listenzahl-geaendert { display: inline-flex; align-items: center; gap: 4px; }
 .sicht .zahl { font-size: calc(12px * var(--skala, 1)); color: var(--leise); font-variant-numeric: tabular-nums; }

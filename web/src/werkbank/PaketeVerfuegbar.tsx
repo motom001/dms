@@ -52,8 +52,9 @@ export function PaketeVerfuegbar({ z, offen }: { z: PaketeZustand; offen?: strin
   return (
     <>
       {/* Eigener Rahmen: Mitten in der Seite (unter „Installiert“) bleibt die Suchregion am Handy nicht oben stehen – sie
-          verdeckte sonst die wenigen Pakete darunter. */}
-      <div>
+          verdeckte sonst die wenigen Pakete darunter. Am Handy mit Abstand nach oben, damit das Suchfeld die
+          44-px-Tippfläche des Hilfe-Zeichens darüber nicht anschneidet. */}
+      <div className="verfuegbar-suche">
       <ListenSuche wert={such.eingabe} setze={such.setEingabe} beschriftung={t('werkbank.pakete.dazu.suche')} platzhalter={t('werkbank.pakete.dazu.suche.platzhalter')} anker="werkbank.pakete.suche"
         treffer={such.treffer.length} aktiv={such.aktiv} anzahl={t('werkbank.pakete.dazu.anzahl', { anzahl: alle.length })}
         filter={sprachen.length > 0 && !such.aktiv ? <Umschalter wert={wahl} setze={setWahl} beschriftung={t('werkbank.pakete.dazu.art')} anker="werkbank.pakete.art"
