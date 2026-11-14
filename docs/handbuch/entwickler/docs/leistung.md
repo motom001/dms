@@ -94,6 +94,18 @@ Befund: Die Rechte-Auswertung im Arbeitsspeicher kostet je Seite nur wenige Mill
 
 Zielwert: Ein Mitglied lädt Startseite und Ablage bei gleichen Daten höchstens 10 % langsamer als der Administrator – erfüllt (sogar schneller, weil für den Administrator auch Fristen ohne Empfänger anstehen). Die Verzögerung der Ereignisschleife blieb bei 99 % unter 16 ms. Größter Posten ist jetzt `/api/sichten` (Zähler je Typ und Ansicht, 150–230 ms bei 50.000 Mappen, für alle Benutzer gleich). Das behebt #512 (nächster Abschnitt).
 
+### Vorkomprimiert (#1236) { #vorkomprimiert }
+
+Das Vite-Plugin `vorkomprimieren` (`web/vite.config.ts`) legt nach dem Bau neben jede Datei in `web/dist` ab 1 KB mit Text-Endung (js, css, html, svg, json, webmanifest, wasm, txt, xml, ttf, otf) eine `.br`- (Brotli, höchste Stufe) und eine `.gz`-Fassung (gzip 9), nur mit `zlib` aus Node. `statischeDateien()` (`server/src/oberflaeche.ts`) schaltet bei `@fastify/static` `preCompressed` ein: passend zu `Accept-Encoding` die beste Fassung, sonst die Datei selbst, immer mit `Vary: Accept-Encoding`; `globIgnore` gibt den Fassungen keine eigenen Adressen. `index.html` ändert sich zur Laufzeit nicht und kommt deshalb ebenfalls vorkomprimiert. Der Test steht in `server/test/oberflaeche-dateien.test.ts`.
+
+| Datei (Stand #1236) | roh | Brotli | gzip |
+|---|---:|---:|---:|
+| `start-….js` | 2.176 KB | 434 KB | 558 KB |
+| `englisch-….js` | 903 KB | 199 KB | 258 KB |
+| `index-….css` | 156 KB | 25 KB | 30 KB |
+| `index.html` | 2,2 KB | 0,7 KB | 0,9 KB |
+| alles Komprimierbare | 3.950 KB | 821 KB | |
+
 ## Zahlen der Ansichten (#512)
 
 Die Zahlen neben den Ansichten (`GET /api/sichten` → `SichtenDienst.zaehler`) zählen mit **einer** Abfrage alle sichtbaren Ansichten per `count(*) FILTER (WHERE …)` über alle Mappen des Haushalts, dazu Typen, Eingang, Favoriten und Papierkorb – bei 50.000 Mappen 120–150 ms allein, unter Last der Seite 150–260 ms. Zwei Mittel:
