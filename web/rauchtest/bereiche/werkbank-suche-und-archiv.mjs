@@ -45,7 +45,7 @@ rauchtest('Werkbank: Mappentypen und Ansichten durchsuchen, Fundstellen, keine T
 
 // #994: Auskünfte – Haken „Nur offene zeigen“ statt „offen · alle“, die Vorgaben rechts statt „Einstellungen“ in der Liste;
 // gemeldete Fehler mit Suchfeld und „Erledigte zeigen“ darunter.
-rauchtest('Werkbank: Auskünfte und gemeldete Fehler – Suchfeld oben, Filter darunter (#994)', { als: LENA }, async (s) => {
+rauchtest('Werkbank: Auskünfte und gemeldete Fehler – Suchfeld oben, Filter darunter (#994, #1183)', { als: LENA }, async (s) => {
   await s.goto(BASIS + '/ablage/start');
   await verwalten(s);
   await s.goto(BASIS + '/werkbank/auskuenfte');
@@ -55,15 +55,16 @@ rauchtest('Werkbank: Auskünfte und gemeldete Fehler – Suchfeld oben, Filter d
   const offene = elemente.getByRole('checkbox', { name: 'Nur offene zeigen' });
   assert.equal(await offene.isChecked(), true, 'Vorgabe: nur offene');
   assert.equal(await elemente.getByRole('link', { name: 'Einstellungen' }).count(), 0, 'kein Link „Einstellungen“ mehr in der Liste');
+  // Die Vorgaben selbst stehen seit #1183 auf „Eigene Organisation“; rechts nur der Weg dorthin.
   await bearbeitung.getByRole('heading', { name: 'Vorgaben für jede Auskunft' }).waitFor();
-  await bearbeitung.getByRole('button', { name: 'Einstellungen speichern' }).waitFor();
+  await bearbeitung.getByRole('link', { name: 'Vorgaben öffnen' }).waitFor();
   await offene.uncheck();
   await elemente.getByText('Noch keine Auskunft.').waitFor();
   // Der Assistent verweist auf die Vorgaben (am Handy der Weg dorthin).
   await elemente.getByRole('link', { name: '+ Neu' }).click();
   await bearbeitung.getByRole('link', { name: 'Vorgaben für jede Auskunft' }).click();
-  await s.waitForURL(/\/werkbank\/auskuenfte\/einstellungen$/);
-  await bearbeitung.getByRole('heading', { name: 'Vorgaben für jede Auskunft', level: 1 }).waitFor();
+  await s.waitForURL(/\/werkbank\/organisation#auskunft-vorgaben$/);
+  await bearbeitung.getByRole('heading', { name: 'Datenschutz-Auskünfte', level: 2 }).waitFor();
   // Gemeldete Fehler.
   await s.goto(BASIS + '/werkbank/fehlermeldungen');
   await elemente.getByRole('searchbox', { name: 'Gemeldete Fehler durchsuchen' }).waitFor();

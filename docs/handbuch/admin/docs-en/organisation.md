@@ -7,6 +7,8 @@ You keep name, address, contact and the controllers under the GDPR **once** – 
 !!! note "No legal advice"
     Whether and whom you must name as controller or data protection officer should be checked by an expert if in doubt.
 
+![Workbench → Settings → Own organisation](bilder/werkbank-organisation.png)
+
 ## Use: private or for work { #nutzung }
 
 At the very top of the page you set once for the whole Library whether it is **also used for work** – for example by Katrin as a self-employed person, in a club or in the joinery. The default is *no*: a new Library counts as private. It is saved with the save bar at the bottom of the page.
@@ -63,6 +65,10 @@ Ablago reads the details **by the meaning of the fields**, not by fixed keys –
 
 Ablago never reads passwords, customer number, IBAN, description, documents or anything else for this. The Workbench does not show the folder’s title either (the title template could contain other fields). Changes are only possible in the Library with your normal rights; **Edit in the Library** takes you there.
 
+## Data access requests { #auskunft-vorgaben }
+
+Below the roles are the **defaults for every access request**: first the form of address (du or Sie), then the text **The person’s rights**, which follows the form of address until you change it (with **Reset to suggestion**), and the **recipients** as a suggestion for every request. So you set up the organisation and the requests in one go; the requests page points here. Details under [Defaults for every access request](datenschutz.md#einstellungen). They may be changed by whoever may manage data access requests or the deletion concept; otherwise only a sentence about it appears here.
+
 ## Where Ablago uses the details
 
 The Workbench lists this under **Where Ablago uses these details**; places with their own Workbench area (data access requests, deletion concept, folder types) are links there:
@@ -80,6 +86,6 @@ The Workbench lists this under **Where Ablago uses these details**; places with 
 
 ## Good to know
 
-- The whole page saves through **one save bar** at the bottom (use, “applies to requests and documents”, roles); it is highlighted as soon as you change something, “Discard” takes everything back.
+- The whole page saves through **one save bar** at the bottom (use, “applies to requests and documents”, roles, defaults for requests); it is highlighted as soon as you change something, “Discard changes” takes everything back.
 - The choice, the released roles and the notes are stored in the database and thus in every [backup](sicherung.md); the [full export](export.md) stores them as `struktur/organisation.json`. The details themselves are in the folder.
 - If several organisations are ticked and none is chosen, Ablago takes none of them – the previous request entry applies, otherwise the controller stays empty. The Workbench asks for a choice, the [deletion concept](loeschkonzept.md) reports the gap.
