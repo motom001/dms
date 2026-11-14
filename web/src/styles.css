@@ -1154,6 +1154,8 @@ h2 .hilfesymbol, h3 .hilfesymbol { font-size: .6em; vertical-align: .25em; }
   :is(.spalte.liste, .spalte.mappe) summary { padding-block: 8px; min-height: 44px; box-sizing: border-box; }
   /* „Gerade benutzt bei“ (#1180): Verweise untereinander – jede Zeile so hoch, dass die gewachsenen Flächen sich nicht überdecken. */
   .benutzt-liste > li { min-height: 48px; display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; }
+  /* Der Verweis nimmt seine Höhe im Fluss ein: Bricht der Text dahinter um (andere Schrift), liegt er darunter statt darüber. */
+  .spalte.mappe .benutzt-liste a.verweis { margin-block: 0; padding-block: 12px; }
 }
 .leise a.person { text-decoration: underline; text-underline-offset: 2px; }
 
