@@ -58,11 +58,42 @@ rauchtest('Eigene Organisation: Rollen als Mehrfachauswahl, eine Speicherleiste,
   const entfernen = bearbeitung.getByRole('button', { name: / entfernen$/ });
   await entfernen.first().waitFor();
   assert.equal(await speichern.isDisabled(), false);
-  await bearbeitung.getByRole('button', { name: 'Verwerfen' }).click();
+  await bearbeitung.getByRole('button', { name: 'Änderungen verwerfen' }).click();
   await speichern.and(s.locator(':disabled')).waitFor();
   assert.equal(await entfernen.count(), 0);
   // Verwendungen führen in die Bereiche.
   await bearbeitung.getByRole('link', { name: /^Datenschutz-Auskünfte:/ }).waitFor();
   await bearbeitung.getByRole('link', { name: /^Löschkonzept:/ }).click();
   await s.waitForURL(/\/werkbank\/loeschkonzept$/);
+});
+
+// #1183: Vorgaben der Auskünfte auf „Eigene Organisation“ – Anrede vor dem Text, Text folgt der Anrede, Zurücksetzen, Empfänger erklärt.
+rauchtest('Eigene Organisation: Vorgaben der Auskünfte, Anrede zuerst, Text folgt der Anrede (#1183)', { als: LENA }, async (s) => {
+  await s.goto(BASIS + '/ablage/start');
+  await verwalten(s);
+  await s.goto(BASIS + '/werkbank/auskuenfte/einstellungen');
+  await s.waitForURL(/\/werkbank\/organisation#auskunft-vorgaben$/);
+  const vorgaben = s.locator('#auskunft-vorgaben');
+  await vorgaben.getByRole('heading', { name: 'Datenschutz-Auskünfte' }).waitFor();
+  // Anrede steht vor „Rechte der Person“.
+  const reihe = await vorgaben.evaluate((v) => [...v.querySelectorAll('legend, label')].map((x) => x.textContent.trim()));
+  const anrede = reihe.findIndex((x) => x.startsWith('Anrede in Unterlagen für Dritte'));
+  const rechte = reihe.findIndex((x) => x.startsWith('Rechte der Person'));
+  assert.ok(anrede >= 0 && rechte > anrede, `Anrede vor Rechte: ${reihe.join(' | ')}`);
+  await vorgaben.getByText(/^An wen die Daten der Person weitergegeben werden/).waitFor();
+  // Der Text folgt der Anrede, solange er nicht von Hand geändert ist.
+  const text = vorgaben.getByRole('textbox', { name: 'Rechte der Person' });
+  const vorher = await text.inputValue();
+  await vorgaben.getByRole('radio', { name: /^Sie/ }).check();
+  const sie = await text.inputValue();
+  assert.notEqual(sie, vorher, 'Text folgt der Anrede');
+  // Von Hand geändert: folgt nicht mehr; „Auf Vorschlag zurücksetzen“ holt den Text zur Anrede.
+  await text.fill(`${sie} Eigener Zusatz.`);
+  await vorgaben.getByRole('radio', { name: /^du/ }).check();
+  assert.equal(await text.inputValue(), `${sie} Eigener Zusatz.`);
+  await vorgaben.getByRole('button', { name: 'Auf Vorschlag zurücksetzen' }).click();
+  assert.equal(await text.inputValue(), vorher);
+  assert.equal(await vorgaben.getByRole('button', { name: 'Auf Vorschlag zurücksetzen' }).count(), 0);
+  // Gespeichert wird mit der Speicherleiste der Seite – hier ist nichts geändert.
+  assert.equal(await s.getByRole('button', { name: 'Eigene Organisation speichern' }).isDisabled(), true);
 });

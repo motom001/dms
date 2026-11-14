@@ -270,6 +270,8 @@ export function werkbankUmleitung(bereich: string, id?: string, suche = ''): str
     const offen = new URLSearchParams(suche).get('offen');
     return offen ? `/werkbank/${bereich}/${encodeURIComponent(offen)}` : null;
   }
+  // Vorgaben für jede Auskunft (#1183): auf „Eigene Organisation“ unter Einstellungen.
+  if (bereich === 'auskuenfte' && id === 'einstellungen') return '/werkbank/organisation#auskunft-vorgaben';
   if (!id || hatMitte(bereich)) return null;
   // Lange Datenbankzugriffe stehen seit #725 im Systemzustand (Auslastung).
   if (bereich === 'anbindung') return `/werkbank/systemzustand?offen=${encodeURIComponent(id)}#datenbank`;

@@ -7,6 +7,8 @@ Name, Anschrift, Kontakt und die Verantwortlichen im Sinne der DSGVO pflegst du 
 !!! note "Keine Rechtsberatung"
     Ob und wen du als Verantwortlichen oder Datenschutzbeauftragten nennen musst, klärst du im Zweifel fachlich.
 
+![Werkbank → Einstellungen → Eigene Organisation](bilder/werkbank-organisation.png)
+
 ## Nutzung: privat oder beruflich { #nutzung }
 
 Ganz oben auf der Seite legst du einmal für die ganze Ablage fest, ob sie **auch beruflich genutzt** wird – etwa von Katrin als Selbständiger, im Verein oder in der Tischlerei. Vorgabe ist *nein*: Eine neue Ablage gilt als privat. Gespeichert wird mit der Speicherleiste unten auf der Seite.
@@ -63,6 +65,10 @@ Ablago liest die Angaben **über die Bedeutung der Felder**, nicht über feste K
 
 Passwörter, Kundennummer, IBAN, Beschreibung, Dokumente und alles Weitere liest Ablago dafür nie. Die Werkbank zeigt auch nicht den Titel der Mappe (die Titel-Vorlage könnte andere Felder enthalten). Ändern geht nur in der Ablage, mit deinen normalen Rechten; über **In der Ablage bearbeiten** kommst du hin.
 
+## Datenschutz-Auskünfte { #auskunft-vorgaben }
+
+Unter dem Abschnitt zu den Rollen stehen die **Vorgaben für jede Auskunft**: zuerst die Anrede (du oder Sie), dann der Text **Rechte der Person**, der der Anrede folgt, bis du ihn änderst (mit **Auf Vorschlag zurücksetzen**), und der **Empfänger** als Vorschlag für jede Auskunft. So richtest du Organisation und Auskünfte in einem Zug ein; die Auskünfte-Seite verweist hierher. Einzelheiten unter [Vorgaben für jede Auskunft](datenschutz.md#einstellungen). Ändern darf sie, wer die Datenschutz-Auskünfte oder das Löschkonzept verwalten darf; sonst steht hier nur ein Satz dazu.
+
 ## Wo Ablago die Angaben verwendet
 
 Die Werkbank listet das unter **Wo Ablago diese Angaben verwendet**; Stellen mit eigenem Bereich in der Werkbank (Datenschutz-Auskünfte, Löschkonzept, Mappentypen) sind Links dorthin:
@@ -80,6 +86,6 @@ Die Werkbank listet das unter **Wo Ablago diese Angaben verwendet**; Stellen mit
 
 ## Gut zu wissen
 
-- Die ganze Seite speichert über **eine Speicherleiste** unten (Nutzung, „gilt für Auskünfte und Unterlagen“, Rollen); sie erscheint hervorgehoben, sobald du etwas änderst, „Verwerfen“ nimmt alles zurück.
+- Die ganze Seite speichert über **eine Speicherleiste** unten (Nutzung, „gilt für Auskünfte und Unterlagen“, Rollen, Vorgaben der Auskünfte); sie erscheint hervorgehoben, sobald du etwas änderst, „Änderungen verwerfen“ nimmt alles zurück.
 - Die Wahl, die freigegebenen Rollen und die Notizen stehen in der Datenbank und damit in jeder [Sicherung](sicherung.md); der [Vollexport](export.md) legt sie als `struktur/organisation.json` ab. Die Angaben selbst stehen in der Mappe.
 - Ist der Haken bei mehreren Organisationen gesetzt und keine gewählt, nimmt Ablago keine davon – es gilt die bisherige Angabe der Auskunft, sonst bleibt der Verantwortliche leer. Die Werkbank bittet um eine Wahl, das [Löschkonzept](loeschkonzept.md) meldet die Lücke.

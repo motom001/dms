@@ -214,6 +214,11 @@ describe('Werkbank: mittlere Spalte für Sammlungen zum Anlegen und Bearbeiten (
     assert.deepEqual(liesAnsicht({ vorlage: 'haushalt', ein: ['nutzung'], aus: [] }), { vorlage: 'haushalt', ein: ['organisation'], aus: [] });
   });
 
+  it('#1183: Vorgaben der Auskünfte auf „Eigene Organisation“, der alte Weg leitet um', () => {
+    assert.equal(werkbankUmleitung('auskuenfte', 'einstellungen'), '/werkbank/organisation#auskunft-vorgaben');
+    assert.equal(werkbankUmleitung('auskuenfte', 'neu'), null);
+  });
+
   it('#354 Nacharbeit, #668: Datenschutz-Auskünfte und Löschkonzept unter „Benutzer und Sicherheit“, alte Adresse leitet um', () => {
     for (const pfad of ['auskuenfte', 'loeschkonzept']) {
       const b = BEREICHE.find((x) => x.pfad === pfad);

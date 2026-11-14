@@ -96,8 +96,9 @@ import { typName } from '../../../shared/src/beschriftung';
  * /werkbank/webdav                WebDAV-Laufwerk an/aus, Stand, letzte Zugriffe (#346, rechts seit #366)
  * /werkbank/automatisierungen[/:id|/neu|/ziele]  Automatisierungen Wenn – Und – Dann (#675), dreiteilig; Ziele nach außen (#671)
  * /werkbank/stempel[/:id|/neu]     Vorlagen für Stempel beim Weitergeben (#394), dreiteilig seit #990
- * /werkbank/auskuenfte[/:id|/neu|/einstellungen][?mappe=]  Datenschutz-Auskünfte (#396, #668), dreiteilig;
- *                                  früher /werkbank/datenschutz (leitet um)
+ * /werkbank/auskuenfte[/:id|/neu][?mappe=]  Datenschutz-Auskünfte (#396, #668), dreiteilig;
+ *                                  früher /werkbank/datenschutz (leitet um); /einstellungen leitet seit #1183 auf
+ *                                  /werkbank/organisation#auskunft-vorgaben
  * /werkbank/loeschkonzept          Löschkonzept, Personendaten in Mappentypen, Löschprotokoll (#469, #470, #668)
  *
  * Die Mitte bekommt jede Sammlung, in der man etwas anlegt und bearbeitet (#366, seit #990 auch kleine; `hatMitte`);
@@ -139,7 +140,9 @@ export function Werkbank({ teile }: { teile: string[] }) {
   const nummernkreise = useNummernkreise(bereich === 'nummernkreise');
   const stempel = useStempelVorlagenWerkbank(bereich === 'stempel');
   const darfWeg = useDarfWeg(bereich === 'aufbewahrung');
-  const datenschutz = useDatenschutz(bereich === 'auskuenfte' || bereich === 'loeschkonzept');
+  // Vorgaben der Auskünfte stehen seit #1183 auf „Eigene Organisation“ – dort nur mit Recht auf die Datenschutz-Bereiche.
+  const datenschutzRecht = darf('auskuenfte') || darf('loeschkonzept');
+  const datenschutz = useDatenschutz(bereich === 'auskuenfte' || bereich === 'loeschkonzept' || (bereich === 'organisation' && datenschutzRecht));
   const vollexport = useVollexport(bereich === 'vollexport');
   // Herkunft und Paketfilter (#978) in Mappentypen, Ansichten und Nummernkreisen – nur mit Recht auf die Pakete (#818),
   // sonst gilt die Kennung des Typs (`typ.paket`).
@@ -252,7 +255,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
     rechts = <RegionPanel z={region} />;
   } else if (bereich === 'organisation') {
     // Nutzung und Eigene Organisation auf einer Seite (#1170).
-    rechts = <OrganisationPanel z={organisation} nutzung={nutzung} />;
+    rechts = <OrganisationPanel z={organisation} nutzung={nutzung} datenschutz={datenschutzRecht ? datenschutz : null} />;
   } else if (bereich === 'sprachen') {
     rechts = <SprachenPanel z={sprachen} />;
   } else if (bereich === 'anmeldeschutz') {

@@ -9,6 +9,10 @@ import { useDaten } from '../daten';
 import { useKonto } from '../konto';
 import { Link } from '../ort';
 import { Speicherleiste, useEntwurf } from '../Speicherleiste';
+import type { Datenschutz } from '../../../shared/src/auskunft';
+import { datenschutzApi } from '../api/datenschutz';
+import { AuskunftVorgaben, vorgabenAus, type Vorgaben } from './AuskunftVorgaben';
+import type { DatenschutzZustand } from './Datenschutz';
 import { t } from '../sprache';
 import { Kopf } from './Kopf';
 
@@ -143,9 +147,13 @@ function Bisher({ s, uebernehmen }: { s: OrganisationStand; uebernehmen(): Promi
   );
 }
 
-/** Was diese Seite speichert (#1182: eine Speicherleiste für alles): Nutzung, „gilt für …“, freigegebene Rollen. */
-interface Entwurf { beruflich: boolean; auskunft: string; rollen: string[] }
-const entwurfAus = (s: OrganisationStand, m: Merkmale): Entwurf => ({ beruflich: m.beruflich, auskunft: s.einstellung.auskunft ?? '', rollen: [...s.einstellung.rollen].sort() });
+/**
+ * Was diese Seite speichert (#1182: eine Speicherleiste für alles): Nutzung, „gilt für …“, freigegebene Rollen und – mit
+ * Recht auf die Datenschutz-Bereiche – die Vorgaben der Auskünfte (#1183). `vorgaben: null` = nicht auf dieser Seite.
+ */
+interface Entwurf { beruflich: boolean; auskunft: string; rollen: string[]; vorgaben: Vorgaben | null }
+const entwurfAus = (s: OrganisationStand, m: Merkmale, ds: Datenschutz | null): Entwurf =>
+  ({ beruflich: m.beruflich, auskunft: s.einstellung.auskunft ?? '', rollen: [...s.einstellung.rollen].sort(), vorgaben: ds ? vorgabenAus(ds) : null });
 
 /**
  * Rollen, die das Merkmal setzen dürfen (#1182): Verweisfeld mit Mehrfachauswahl wie in den Mappen statt Haken; darunter,
@@ -182,18 +190,74 @@ function verwendungZiel(v: Verwendung): string | null {
   return null;
 }
 
-export function OrganisationPanel({ z, nutzung }: { z: OrganisationZustand; nutzung: NutzungZustand }) {
-  const d = useDaten();
+/** „Für Auskünfte und Unterlagen gilt …“ (nur bei mehreren) und die freigegebenen Rollen. */
+function WahlUndRollen({ s, e, setE }: { s: OrganisationStand; e: Entwurf; setE(x: Entwurf): void }) {
+  return (
+    <section className="blatt stapel" id="organisation-einstellungen">
+      {s.organisationen.length > 1 && (
+        <Feld beschriftung={t('werkbank.organisation.gilt-fuer')} hinweis={s.geltend ? undefined : t('werkbank.organisation.bitte-waehlen')}>
+          <select value={e.auskunft} onChange={(x) => setE({ ...e, auskunft: x.target.value })}>
+            <option value="">{t('werkbank.organisation.keine-wahl')}</option>
+            {s.organisationen.map((o) => <option key={o.mappeId} value={o.mappeId}>{anzeigename(o.angaben) || t('werkbank.organisation.ohne-name')}</option>)}
+          </select>
+        </Feld>
+      )}
+      <RollenWahl rollen={s.rollen} gewaehlt={e.rollen} setze={(rollen) => setE({ ...e, rollen })} />
+    </section>
+  );
+}
+
+function Verwendungen({ s }: { s: OrganisationStand }) {
+  return (
+    <section className="blatt">
+      <h2 className="h3">{t('werkbank.organisation.verwendung.titel')}</h2>
+      <ul>{s.verwendungen.map((v, i) => { const ziel = verwendungZiel(v); return <li key={i}>{ziel ? <Link to={ziel} className="verweis">{verwendungText(v)}</Link> : verwendungText(v)}</li>; })}</ul>
+      <p className="leise klein">{t('werkbank.organisation.nur-liste')}</p>
+    </section>
+  );
+}
+
+/** Geladene Stände der drei Teile; `gespeichert` erst, wenn alle da sind, die diese Seite zeigt. */
+function seitenStand(z: OrganisationZustand, nutzung: NutzungZustand, datenschutz: DatenschutzZustand | null) {
   const s = z.stand;
   const m = nutzung.stand;
-  const gespeichert = s && m ? entwurfAus(s, m) : null;
+  const ds = datenschutz?.stand?.einstellung ?? null;
+  const gespeichert = s && m && (!datenschutz || ds) ? entwurfAus(s, m, ds) : null;
+  return { s, m, ds, gespeichert, fehler: z.fehler ?? nutzung.fehler ?? datenschutz?.fehler };
+}
+
+/**
+ * Speichert, was sich geändert hat – je Teil über seine Schnittstelle: eigene Organisation („gilt für …“, Rollen),
+ * Merkmale (Nutzung) und die Vorgaben der Auskünfte (nur ihr Teil der Einstellung, der Rest wie Zwecke je Mappentyp bleibt).
+ * Unverändertes kommt als dasselbe Objekt zurück.
+ */
+async function speichereSeite(g: Entwurf, x: Entwurf, alt: { stand: OrganisationStand; merkmale: Merkmale; datenschutz: Datenschutz | null }) {
+  const org: Record<string, unknown> = {};
+  if (x.auskunft !== g.auskunft) org.auskunft = x.auskunft || null;
+  if (x.rollen.join(',') !== g.rollen.join(',')) org.rollen = x.rollen;
+  const stand = Object.keys(org).length ? await werkbankApi.setzeOrganisation(org) : alt.stand;
+  const merkmale = x.beruflich !== g.beruflich ? await werkbankApi.setzeMerkmale({ beruflich: x.beruflich }) : alt.merkmale;
+  let datenschutz = alt.datenschutz;
+  if (datenschutz && x.vorgaben && JSON.stringify(x.vorgaben) !== JSON.stringify(g.vorgaben)) {
+    datenschutz = { ...datenschutz, ...x.vorgaben };
+    await datenschutzApi.setzeDatenschutz(datenschutz);
+  }
+  return { stand, merkmale, datenschutz };
+}
+
+/**
+ * `datenschutz`: nur mit Recht auf Auskünfte oder Löschkonzept (#818) – sonst stehen die Vorgaben der Auskünfte nicht hier,
+ * nur ein Satz, wer sie ändert.
+ */
+export function OrganisationPanel({ z, nutzung, datenschutz }: { z: OrganisationZustand; nutzung: NutzungZustand; datenschutz: DatenschutzZustand | null }) {
+  const d = useDaten();
+  const { s, m, ds, gespeichert, fehler } = seitenStand(z, nutzung, datenschutz);
   const [e, setE] = useState<Entwurf | null>(null);
   const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
   const [sendet, setSendet] = useState(false);
   useEffect(() => { if (gespeichert && !e) setE(gespeichert); }, [gespeichert, e]);
   const ent = useEntwurf(gespeichert, e, { aus: !e, zuruecksetzen: () => { setE(gespeichert); setMeldung(undefined); } });
   if (!s || !m || !e || !gespeichert) {
-    const fehler = z.fehler ?? nutzung.fehler;
     return fehler ? <div className="hinweis schlecht"><p>{fehler}</p></div> : <p className="leise">{t('werkbank.organisation.lade')}</p>;
   }
   const mehrere = s.organisationen.length > 1;
@@ -201,18 +265,14 @@ export function OrganisationPanel({ z, nutzung }: { z: OrganisationZustand; nutz
   // Gespeichertes Merkmal, nicht der Entwurf: blass ist, was Ablago gerade nicht verwendet.
   const beruflich = m.beruflich;
   async function speichern() {
-    const g = gespeichert!; const x = e!;
     setSendet(true); setMeldung(undefined);
     try {
-      const org: Record<string, unknown> = {};
-      if (x.auskunft !== g.auskunft) org.auskunft = x.auskunft || null;
-      if (x.rollen.join(',') !== g.rollen.join(',')) org.rollen = x.rollen;
-      const stand = Object.keys(org).length ? await werkbankApi.setzeOrganisation(org) : s!;
-      const merkmale = x.beruflich !== g.beruflich ? await werkbankApi.setzeMerkmale({ beruflich: x.beruflich }) : m!;
-      z.setStand(stand); nutzung.setStand(merkmale); setE(entwurfAus(stand, merkmale));
+      const n = await speichereSeite(gespeichert!, e!, { stand: s!, merkmale: m!, datenschutz: ds });
+      z.setStand(n.stand); nutzung.setStand(n.merkmale); setE(entwurfAus(n.stand, n.merkmale, n.datenschutz));
+      if (n.datenschutz !== ds) void datenschutz?.laden();
       // Formulare der Ablage zeigen gleich, was jetzt dazugehört.
-      if (x.beruflich !== g.beruflich) await d.neuLaden();
-      setMeldung({ art: 'gut', text: x.beruflich !== g.beruflich ? t('werkbank.nutzung.gespeichert') : t('werkbank.organisation.gespeichert') });
+      if (n.merkmale !== m) await d.neuLaden();
+      setMeldung({ art: 'gut', text: n.merkmale !== m ? t('werkbank.nutzung.gespeichert') : t('werkbank.organisation.gespeichert') });
     } catch (f) { setMeldung({ art: 'schlecht', text: (f as Error).message }); } finally { setSendet(false); }
   }
   async function notizenGesehen() {
@@ -236,22 +296,10 @@ export function OrganisationPanel({ z, nutzung }: { z: OrganisationZustand; nutz
           {s.organisationen.map((o) => <Karte key={o.mappeId} o={o} mehrere={mehrere} geltend={s.geltend === o.mappeId} />)}
           {s.bisher.trim() && <Bisher s={s} uebernehmen={uebernehmen} />}
           {/* Kompakt (#1182): Wahl und Rollen als normale Felder in einem Blatt, gespeichert mit der Leiste unten. */}
-          <section className="blatt stapel" id="organisation-einstellungen">
-            {mehrere && (
-              <Feld beschriftung={t('werkbank.organisation.gilt-fuer')} hinweis={s.geltend ? undefined : t('werkbank.organisation.bitte-waehlen')}>
-                <select value={e.auskunft} onChange={(x) => setE({ ...e, auskunft: x.target.value })}>
-                  <option value="">{t('werkbank.organisation.keine-wahl')}</option>
-                  {s.organisationen.map((o) => <option key={o.mappeId} value={o.mappeId}>{anzeigename(o.angaben) || t('werkbank.organisation.ohne-name')}</option>)}
-                </select>
-              </Feld>
-            )}
-            <RollenWahl rollen={s.rollen} gewaehlt={e.rollen} setze={(rollen) => setE({ ...e, rollen })} />
-          </section>
-          <section className="blatt">
-            <h2 className="h3">{t('werkbank.organisation.verwendung.titel')}</h2>
-            <ul>{s.verwendungen.map((v, i) => { const ziel = verwendungZiel(v); return <li key={i}>{ziel ? <Link to={ziel} className="verweis">{verwendungText(v)}</Link> : verwendungText(v)}</li>; })}</ul>
-            <p className="leise klein">{t('werkbank.organisation.nur-liste')}</p>
-          </section>
+          <WahlUndRollen s={s} e={e} setE={setE} />
+          {e.vorgaben ? <AuskunftVorgaben w={e.vorgaben} setze={(vorgaben) => setE({ ...e, vorgaben })} />
+            : <p className="leise klein" id="auskunft-vorgaben">{t('werkbank.auskunft.vorgaben.ohne-recht')}</p>}
+          <Verwendungen s={s} />
           <p className="leise klein">{t('werkbank.organisation.keine-rechtsberatung')}</p>
         </div>
         <Speicherleiste ent={ent} gegenstand={t('werkbank.bereich.organisation.name')} sendet={sendet} meldung={meldung} />
