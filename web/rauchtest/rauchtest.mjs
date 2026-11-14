@@ -1880,13 +1880,13 @@ rauchtest('Werkbank aus Bausteinen: axe ohne Verstoß, hell und dunkel (#1214)',
   assert.deepEqual(funde, [], `axe meldet Verstöße:\n${funde.join('\n')}`);
 });
 
-// Am Handy in drei Teilen: Die Messung jedes Bedienelements braucht Zeit (Grenze je Rauchtest 120 s).
-for (const teil of [0, 1, 2]) {
+// Am Handy in fünf Teilen: Die Messung jedes Bedienelements braucht Zeit (Grenze je Rauchtest 120 s).
+for (const teil of [0, 1, 2, 3, 4]) {
   rauchtest(`Handy: Werkbank aus Bausteinen mit 44-px-Tippflächen, Teil ${teil + 1} (#1214)`, { handy: true, als: LENA, erwartet: WERKBANK_ERWARTET }, async (s) => {
     await s.goto(BASIS + '/ablage/start');
     await verwalten(s);
     const alle = await werkbankSeiten(s);
-    const seiten = alle.filter((_, i) => i % 3 === teil);
+    const seiten = alle.filter((_, i) => i % 5 === teil);
     const funde = [];
     for (const seite of seiten) {
       await seite.weg(s);
