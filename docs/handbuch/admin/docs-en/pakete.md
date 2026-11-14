@@ -6,7 +6,7 @@ Packages come from the **official catalogue** of the Ablago project ([dms-regist
 
 ## Fetching the catalogue { #katalog-abrufen }
 
-Ablago only queries the catalogue **at the push of a button**, never in the background: click **Fetch catalogue**. The page then shows two lists:
+Ablago only queries the catalogue **at the push of a button**, never in the background: click **Fetch catalogue**. As soon as a package is installed, the same button is called **Look for new versions** – it fetches the official catalogue and the switched-on [further sources](#expertenmodus-weitere-kataloge-und-hochladen) and checks whether there is something newer for installed packages. The button then shows when the catalogues were fetched and what came of it: “Fetched at 14:32 · 3 new versions” or “Everything up to date”. If no catalogue could be reached, it says so there; Ablago gives the reason above the list. The page then shows two lists:
 
 - **Installed** – packages in this installation, with version and origin
 - **Available** – packages from the catalogue that aren't installed yet
@@ -155,7 +155,7 @@ The deletion log records removed presets as "unused package presets removed".
 
 ## Updating { #aktualisieren }
 
-**Check for new versions** queries the catalogue (at the push of a button) and marks packages for which there is something newer. In the package, **Update to … …** shows a preview of what is added and a link to the changes.
+**Look for new versions** queries the catalogues (at the push of a button) and marks every package under **Installed** for which there is something newer, with the new version. In the package, **Update to … …** shows a preview of what is added and a link to the changes. After the update the marker disappears at once; if there is an even newer version by now, that one is shown.
 
 An update **only adds** – unless it [converts](#umbau); then the preview says so explicitly:
 
@@ -174,6 +174,18 @@ It **deletes nothing** and **overwrites nothing** you have changed yourself: if 
 
 **New ID (move, #1084):** if a package renames its ID – for instance the additional languages of text recognition from `texterkennung_fra` to `texterkennung.fra` –, this appears as an ordinary update of the installed package. The preview says "The package is now called …". Afterwards it is there under the new ID, with all folder types, folders, settings and data; no second package is created. This only works from the same source and the same publisher. By the way, an ID with a dot always means: the package **extends** the package before the dot.
 
+
+
+### Updating all packages { #alle-pakete-aktualisieren }
+
+If there is something new for several packages, the button **Update all (3)** appears above the **Installed** list. It opens **one** joint preview:
+
+- **Order** – first the packages others depend on, add-ons (e.g. additional languages of text recognition) after their main package. If a package needs a newer version of another one that is updated in the same round, that is no obstacle.
+- **Expanded** is only what you need to decide or confirm – the same confirmations as for a single update: new [permissions](#rechte-eines-pakets), a [conversion](#umbau) with its questions, a publisher set for the first time ([publisher](#herausgeber)), the origin of packages outside the official catalogue and names that already exist.
+- **No questions** – the other packages, summarised. Click a package to see what changes, as in the single preview.
+- Updates that are not possible right now (e.g. an Ablago version that is too old) are listed at the top with the reason and are not included.
+
+**Update all** stays locked until everything necessary is confirmed. Then you see the **progress per package**. If one fails, the others continue; only packages that depend on it are skipped. At the end there is a summary: how many were updated, failed or skipped, each with the reason. You can still update a single package on its own page.
 
 ## Conversion: folder types move to another package { #umbau }
 

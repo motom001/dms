@@ -1273,7 +1273,8 @@ export interface PaketVorschau {
   herausgeberBestaetigen?: string | null;
   /** Was die Signatur über die Herkunft sagt (#594). */
   pruefung?: HerkunftPruefung | null;
-  abhaengigkeiten: Array<{ id: string; bereich: string; installiert: string | null; ok: boolean; verfuegbar: string | null }>;
+  /** problem (#1168): der Eintrag aus `probleme`, wenn die installierte Version nicht passt. */
+  abhaengigkeiten: Array<{ id: string; bereich: string; installiert: string | null; ok: boolean; verfuegbar: string | null; problem?: string }>;
   typen: Array<{ schluessel: string; dmsSchluessel: string; name: string; felder: number; vorhanden: boolean; neueFelder: string[]; neueRegister: string[]; erkennung?: string[]; wiederfinden?: string[]; vorbelegen?: string[]; typAngaben?: boolean; formate?: string[]; beschriftungen?: number; abschnitte?: string[]; umwandeln?: Array<{ feld: string; aus: string; anzahl: number }>; konflikt: string | null; vorschlag: string | null; geloescht?: boolean; /** Umbau (#1041): entsteht aus diesem vorhandenen Typ (gleiche Id). */ uebernimmt?: string; /** Archivmodus des neuen Typs (#1051). */ archiv?: Archiv & { stichtagName: string | null } }>;
   sichten: Array<{ schluessel: string; name: string; eltern: string | null; vorhanden: boolean; konflikt: string | null; vorschlag: string | null; ausgelassen?: string | null; ohne?: string[]; /** Vorhandene Ansicht beim Update (#1125). */ zustand?: import('../../shared/src/pakete').SichtZustand }>;
   beispiele: number; probleme: string[]; fehlercodes?: string[];

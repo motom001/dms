@@ -3,7 +3,7 @@
  */
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { neueVersionen, type Katalog, type KatalogPaket } from '../../shared/src/pakete';
+import { aktualisierungsRunde, neueVersionen, type Katalog, type KatalogPaket, type NeueVersion, type RundenVorschau } from '../../shared/src/pakete';
 
 const OFFIZIELL = 'https://catalog.example.org/katalog.json';
 const WEITERER = 'https://pakete.example.org/katalog.json';
@@ -48,5 +48,55 @@ describe('Neuere Versionen aus den abgerufenen Katalogen (#1167)', () => {
     const hoch = { id: 'vertraege', name: 'Verträge', version: '1.0.0', herkunft: { art: 'hochgeladen' as const, von: null, am: '' } };
     assert.equal(neueVersionen([hoch, inst('eigenes', '1.0.0', 'https://anders.example.org/k.json')], kataloge).length, 0);
     assert.equal(neueVersionen([inst('vertraege', '1.0.0')], [{ url: OFFIZIELL, katalog: null }]).length, 0);
+  });
+});
+
+describe('Alle aktualisieren: Reihenfolge und Entscheidungen (#1168)', () => {
+  const u = (id: string, neu: string, quelle = OFFIZIELL): NeueVersion => ({ id, name: id, installiert: '1.0.0', neu, quelle });
+  const v = (id: string, version: string, abh: Record<string, string> = {}, mehr: Partial<RundenVorschau> = {}): RundenVorschau => ({
+    paket: { id, version, abhaengigkeiten: abh }, abhaengigkeiten: Object.entries(abh).map(([a, bereich]) => ({ id: a, bereich })), probleme: [], ...mehr,
+  });
+  const offiziell = (q: string) => q === OFFIZIELL;
+
+  it('erst das, wovon andere abhängen; Ergänzungen nach dem Hauptpaket', () => {
+    const r = aktualisierungsRunde([
+      { u: u('texterkennung.fra', '2.0.0'), v: v('texterkennung.fra', '2.0.0', { texterkennung: '>=2.0.0' }), fehler: null },
+      { u: u('vermietung', '2.0.0'), v: v('vermietung', '2.0.0', { basis: '>=1.7.0', vertraege: '>=1.1.0' }), fehler: null },
+      { u: u('texterkennung', '2.0.0'), v: v('texterkennung', '2.0.0'), fehler: null },
+      { u: u('vertraege', '1.2.0'), v: v('vertraege', '1.2.0', { basis: '>=1.7.0' }), fehler: null },
+      { u: u('basis', '1.7.0'), v: v('basis', '1.7.0'), fehler: null },
+    ], offiziell);
+    const pos = (id: string) => r.findIndex((e) => e.id === id);
+    assert.ok(pos('basis') < pos('vertraege') && pos('vertraege') < pos('vermietung'));
+    assert.ok(pos('texterkennung') < pos('texterkennung.fra'));
+  });
+
+  it('eine Abhängigkeit, die die Runde vorher passend macht, verhindert nichts – andere Probleme bleiben', () => {
+    const problem = 'basis ist in Version 1.6.0 installiert, gebraucht wird >=1.7.0.';
+    const vertraege = v('vertraege', '1.2.0', { basis: '>=1.7.0' }, { probleme: [problem, 'Das Paket braucht Ablago >=9.0.0.'] });
+    vertraege.abhaengigkeiten[0].problem = problem;
+    const [, e] = aktualisierungsRunde([{ u: u('vertraege', '1.2.0'), v: vertraege, fehler: null }, { u: u('basis', '1.7.0'), v: v('basis', '1.7.0'), fehler: null }], offiziell);
+    assert.equal(e.id, 'vertraege');
+    assert.deepEqual(e.geloest, [problem]);
+    assert.deepEqual(e.probleme, ['Das Paket braucht Ablago >=9.0.0.']);
+    // Ohne passendes Update in der Runde bleibt das Problem.
+    const [allein] = aktualisierungsRunde([{ u: u('vertraege', '1.2.0'), v: vertraege, fehler: null }], offiziell);
+    assert.equal(allein.probleme.length, 2);
+  });
+
+  it('aufgeklappt wird nur, was eine Entscheidung braucht', () => {
+    const r = aktualisierungsRunde([
+      { u: u('ruhig', '1.1.0'), v: v('ruhig', '1.1.0'), fehler: null },
+      { u: u('rechte', '1.1.0'), v: v('rechte', '1.1.0', {}, { laeufer: { bestaetigen: true } }), fehler: null },
+      { u: u('umbau', '1.1.0'), v: v('umbau', '1.1.0', {}, { umbau: [{}] }), fehler: null },
+      { u: u('herausgeber', '1.1.0'), v: v('herausgeber', '1.1.0', {}, { herausgeberBestaetigen: 'app.ablago' }), fehler: null },
+      { u: u('fremd', '1.1.0', WEITERER), v: v('fremd', '1.1.0'), fehler: null },
+      { u: u('signiert', '1.1.0', WEITERER), v: v('signiert', '1.1.0', {}, { pruefung: { bestaetigen: false } }), fehler: null },
+      { u: u('name', '1.1.0'), v: v('name', '1.1.0', {}, { probleme: ['Mappentyp „Auto“ gibt es schon.'], namenskonflikte: ['Mappentyp „Auto“ gibt es schon.'] }), fehler: null },
+      { u: u('kaputt', '1.1.0'), v: null, fehler: 'lässt sich nicht herunterladen' },
+    ], offiziell);
+    assert.deepEqual(r.filter((e) => e.entscheiden).map((e) => e.id).sort(), ['fremd', 'herausgeber', 'name', 'rechte', 'umbau']);
+    assert.deepEqual(r.find((e) => e.id === 'name')!.probleme, []);
+    assert.equal(r.find((e) => e.id === 'kaputt')!.fehler, 'lässt sich nicht herunterladen');
   });
 });

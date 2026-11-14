@@ -4,9 +4,9 @@ Ein **Paket** bringt fertige Mappentypen, Ansichten und auf Wunsch Beispiel-Mapp
 
 Pakete kommen aus dem **offiziellen Katalog** des Ablago-Projekts ([dms-registry](https://github.com/motom001/dms-registry)). Jedes Paket dort ist Open Source und wurde vom Maintainer freigegeben. Meist sind es **Konfigurationspakete** (Mappentypen, Ansichten, Beispiele). Pakete mit Code lassen sich installieren und einstellen, ihr Code läuft aber erst mit dem Paket-Läufer.
 
-## Katalog abrufen
+## Katalog abrufen { #katalog-abrufen }
 
-Ablago fragt den Katalog **nur auf Knopfdruck** ab, nie im Hintergrund: Klicke **Katalog abrufen**. Die Seite zeigt dann zwei Listen:
+Ablago fragt den Katalog **nur auf Knopfdruck** ab, nie im Hintergrund: Klicke **Katalog abrufen**. Sobald ein Paket installiert ist, heißt derselbe Knopf **Nach neuen Versionen suchen** – er holt den offiziellen Katalog und die eingeschalteten [weiteren Quellen](#expertenmodus-weitere-kataloge-und-hochladen) und schaut dabei, ob es für installierte Pakete Neueres gibt. Am Knopf steht danach, wann abgerufen wurde und was dabei herauskam: „Abgerufen um 14:32 · 3 neue Versionen“ oder „Alles aktuell“. War kein Katalog erreichbar, steht das dort; den Grund nennt Ablago über der Liste. Die Seite zeigt dann zwei Listen:
 
 - **Installiert** – Pakete in dieser Installation, mit Version und Herkunft
 - **Verfügbar** – Pakete aus dem Katalog, die noch nicht installiert sind
@@ -155,7 +155,7 @@ Das Löschprotokoll vermerkt entfernte Vorgaben als „Unbenutzte Vorgaben eines
 
 ## Aktualisieren { #aktualisieren }
 
-**Auf neue Versionen prüfen** fragt den Katalog ab (auf Knopfdruck) und markiert Pakete, für die es Neueres gibt. Im Paket zeigt **Auf … aktualisieren …** eine Vorschau mit dem, was dazukommt, und einem Link zu den Änderungen.
+**Nach neuen Versionen suchen** fragt die Kataloge ab (auf Knopfdruck) und markiert unter **Installiert** jedes Paket, für das es Neueres gibt, mit der neuen Version. Im Paket zeigt **Auf … aktualisieren …** eine Vorschau mit dem, was dazukommt, und einem Link zu den Änderungen. Nach dem Update verschwindet der Merker sofort; gibt es inzwischen eine noch neuere Version, steht diese da.
 
 Ein Update **ergänzt nur** – außer es [baut um](#umbau), dann sagt die Vorschau das ausdrücklich:
 
@@ -174,6 +174,17 @@ Es **löscht nichts** und **überschreibt nichts**, was du selbst geändert hast
 
 **Neue Id (Umzug, #1084):** Benennt ein Paket seine Id um – etwa die Zusatzsprachen der Texterkennung von `texterkennung_fra` auf `texterkennung.fra` –, erscheint das als gewöhnliches Update des installierten Pakets. Die Vorschau sagt „Das Paket heißt jetzt …“. Danach steht es unter der neuen Id da, mit allen Mappentypen, Mappen, Einstellungen und Daten; ein zweites Paket entsteht nicht. Das geht nur aus derselben Quelle und vom selben Herausgeber. Eine Id mit Punkt heißt übrigens immer: Das Paket **ergänzt** das Paket vor dem Punkt.
 
+
+### Alle Pakete aktualisieren { #alle-pakete-aktualisieren }
+
+Gibt es für mehrere Pakete Neues, steht über der Liste **Installiert** der Knopf **Alle aktualisieren (3)**. Er öffnet **eine** gemeinsame Vorschau:
+
+- **Reihenfolge** – erst die Pakete, von denen andere abhängen, Ergänzungen (z. B. Zusatzsprachen der Texterkennung) nach ihrem Hauptpaket. Braucht ein Paket eine neuere Version eines anderen, das in derselben Runde aktualisiert wird, ist das kein Hindernis.
+- **Aufgeklappt** ist nur, was du entscheiden oder bestätigen musst – dieselben Bestätigungen wie beim einzelnen Update: neue [Rechte](#rechte-eines-pakets), ein [Umbau](#umbau) mit seinen Rückfragen, ein erstmals gesetzter [Herausgeber](#herausgeber), die Herkunft bei Paketen außerhalb des offiziellen Katalogs und Namen, die es schon gibt.
+- **Ohne Rückfrage** – die übrigen Pakete, zusammengefasst. Ein Klick auf ein Paket zeigt, was sich ändert, wie in der einzelnen Vorschau.
+- Updates, die gerade nicht gehen (z. B. eine zu alte Ablago-Version), stehen mit Grund oben und laufen nicht mit.
+
+**Alle aktualisieren** bleibt gesperrt, bis alles Nötige bestätigt ist. Danach siehst du den **Fortschritt je Paket**. Scheitert eines, laufen die übrigen weiter; nur Pakete, die davon abhängen, werden ausgelassen. Am Ende steht eine Zusammenfassung: wie viele aktualisiert, gescheitert oder ausgelassen sind, jeweils mit Grund. Einzelne Pakete aktualisierst du weiterhin auf ihrer Seite.
 
 ## Umbau: Mappentypen ziehen in ein anderes Paket { #umbau }
 

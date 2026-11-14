@@ -421,7 +421,7 @@ An installable bundle of folder types, views and examples from a package catalog
 See also: [Package catalogue](#paketkatalog), [Expert mode](#expertenmodus), [Package runner](#paket-laufer), [Publisher](#herausgeber).
 
 <a id="paketkatalog"></a>**Package catalogue** (*Paketkatalog*) · ~ with explanation · administrators  
-The list of packages a DMS can install (a file katalog.json on the internet). Ablago only queries the official catalogue at the push of a button ("Fetch catalogue"). Further catalogues are entered in expert mode under "Further sources".  
+The list of packages a DMS can install (a file katalog.json on the internet). Ablago only queries the official catalogue at the push of a button ("Fetch catalogue", with installed packages "Look for new versions"). Further catalogues are entered in expert mode under "Further sources".  
 See also: [Package](#paket), [Expert mode](#expertenmodus).
 
 <a id="paket-laufer"></a>**Package runner** (*Paket-Läufer*) · ✗ technical term · advanced users  

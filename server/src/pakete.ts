@@ -1013,7 +1013,11 @@ export interface TypPlan {
 export interface SichtPlan { schluessel: string; name: string; eltern: string | null; vorhanden: boolean; konflikt: string | null; vorschlag: string | null; /** Wird nicht installiert (#656), mit Grund. */ ausgelassen?: string | null; /** Mappentypen, die hier fehlen – die Ansicht kommt ohne sie (#656). */ ohne?: string[];
   /** Vorhandene Ansicht beim Update (#1125): bleibt, wird ersetzt oder ist geändert (auf Wunsch: `sichtenErsetzen`). */
   zustand?: SichtZustand }
-export interface AbhaengigkeitPlan { id: string; bereich: string; installiert: string | null; ok: boolean; verfuegbar: string | null }
+/**
+ * Abhängigkeit in der Vorschau. problem: der Eintrag aus `probleme`, wenn die installierte Version nicht passt – „Alle
+ * aktualisieren“ (#1168) übergeht ihn, wenn dieselbe Runde die Abhängigkeit vorher auf eine passende Version bringt.
+ */
+export interface AbhaengigkeitPlan { id: string; bereich: string; installiert: string | null; ok: boolean; verfuegbar: string | null; problem?: string }
 export interface Vorschau {
   paket: { id: string; name: string; version: string; beschreibung: string; lizenz: string; autor: { name: string; github: string }; dms: string; abhaengigkeiten: Record<string, string>; readme: string | null; changelog: string | null; quelle: string | null;
     /** Herausgeber (#1084): aus dem Manifest, sonst der des Katalogs (standardHerausgeber); null = unbekannt. */
@@ -2177,7 +2181,7 @@ export class Paketverwaltung {
     }
     for (const a of abhaengigkeiten) {
       if (a.installiert && !a.ok && passt(a.installiert, a.bereich)) continue;
-      if (a.installiert && !a.ok) probleme.push(t('meldungen.pakete.ist-in-version-installiert', { id: a.id, installiert: a.installiert, bereich: a.bereich }));
+      if (a.installiert && !a.ok) { a.problem = t('meldungen.pakete.ist-in-version-installiert', { id: a.id, installiert: a.installiert, bereich: a.bereich }); probleme.push(a.problem); }
     }
     const belegt = new Set([...typen.map((t) => t.name.trim().toLowerCase()), ...(geplant?.typen ?? [])]);
     // Namenskonflikte (#1123): Typen von Abhängigkeiten, die mitinstalliert würden, zählen wie vorhandene (im Ablauf und

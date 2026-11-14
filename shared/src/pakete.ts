@@ -972,6 +972,50 @@ export { DMS_UEBERSETZEN_AB };
 export const hatSchnittstelle = (c: PaketCode | undefined, s: Schnittstelle) => !!c?.rechte.schnittstellen?.includes(s);
 
 
+/* ---------- Alle aktualisieren (#1168) ---------- */
+
+/** Was „Alle aktualisieren“ von einer Vorschau braucht (Vorschau des Servers, hier nur die genutzten Teile). */
+export interface RundenVorschau {
+  paket: { id: string; version: string; abhaengigkeiten: Record<string, string> };
+  abhaengigkeiten: Array<{ id: string; bereich: string; problem?: string }>;
+  probleme: string[]; namenskonflikte?: string[];
+  laeufer?: { bestaetigen: boolean } | null; umbau?: unknown[]; herausgeberBestaetigen?: string | null; pruefung?: { bestaetigen?: boolean } | null;
+}
+/** Ein Paket der Runde: Update, Vorschau (oder warum sie fehlt), was die Runde löst, was bleibt, ob es eine Entscheidung braucht. */
+export interface RundenEintrag<V extends RundenVorschau> {
+  u: NeueVersion; v: V | null; fehler: string | null;
+  /** Id nach dem Update (#1084: Umzug unter eine neue Id); an ihr hängen die Abhängigkeiten. */
+  id: string; abhaengigkeiten: Record<string, string>;
+  /** Probleme, die die Runde selbst löst: eine Abhängigkeit, die vorher auf eine passende Version kommt. */
+  geloest: string[];
+  /** Was das Update auch nach der Runde verhindert (Namenskonflikte zählen nicht – die löst das Umbenennen). */
+  probleme: string[];
+  /** Aus einem Katalog außer dem offiziellen: Herkunft bestätigen wie beim einzelnen Update. */
+  fremd: boolean;
+  /** Muss aufgeklappt und bestätigt werden: neue Rechte, Umbau, Herausgeber neu, Herkunft, Namenskonflikt. */
+  entscheiden: boolean;
+}
+
+/**
+ * Plan für „Alle aktualisieren“ (#1168): je Paket die Vorschau ausgewertet und in der Reihenfolge der Abhängigkeiten –
+ * erst das, wovon andere abhängen; Ergänzungen hängen von ihrem Hauptpaket ab und kommen danach. Eine Abhängigkeit, die
+ * in derselben Runde vorher auf eine passende Version kommt, verhindert nichts. offiziell: Ist das die Adresse des
+ * offiziellen Katalogs?
+ */
+export function aktualisierungsRunde<V extends RundenVorschau>(liste: ReadonlyArray<{ u: NeueVersion; v: V | null; fehler: string | null }>, offiziell: (quelle: string) => boolean): RundenEintrag<V>[] {
+  const runde = liste.flatMap((x) => (x.v ? [{ id: x.v.paket.id, version: x.v.paket.version }] : []));
+  const eintraege = liste.map(({ u, v, fehler }): RundenEintrag<V> => {
+    if (!v) return { u, v, fehler, id: u.id, abhaengigkeiten: {}, geloest: [], probleme: [], fremd: false, entscheiden: false };
+    const geloest = v.abhaengigkeiten.filter((a) => a.problem && runde.some((r) => r.id === a.id && passt(r.version, a.bereich))).map((a) => a.problem!);
+    const probleme = v.probleme.filter((p) => !geloest.includes(p) && !v.namenskonflikte?.includes(p));
+    const fremd = !offiziell(u.quelle) && v.pruefung?.bestaetigen !== false;
+    const entscheiden = !!v.laeufer?.bestaetigen || !!v.umbau?.length || !!v.herausgeberBestaetigen || !!v.pruefung?.bestaetigen || fremd || !!v.namenskonflikte?.length;
+    return { u, v, fehler, id: v.paket.id, abhaengigkeiten: v.paket.abhaengigkeiten, geloest, probleme, fremd, entscheiden };
+  });
+  // Ein Kreis darf es nicht geben – dann bleibt die Reihenfolge, wie sie kam.
+  return nachAbhaengigkeiten(eintraege) ?? eintraege;
+}
+
 /* ---------- Mehrere Pakete in einem Ablauf (#405) ---------- */
 
 /**

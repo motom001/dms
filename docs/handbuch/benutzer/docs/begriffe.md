@@ -436,7 +436,7 @@ Der Teil von Ablago, der den Code von Paketen ausführt – abgeschottet in eine
 Siehe auch: [Paket](#paket), [Dienstkonto](#dienstkonto).
 
 <a id="paketkatalog"></a>**Paketkatalog** · ~ mit Erklärung · Administratoren  
-Die Liste der Pakete, die ein DMS installieren kann (eine Datei katalog.json im Internet). Ablago fragt den offiziellen Katalog nur auf Knopfdruck ab („Katalog abrufen“). Weitere Kataloge trägt man im Expertenmodus unter „Weitere Quellen“ ein.  
+Die Liste der Pakete, die ein DMS installieren kann (eine Datei katalog.json im Internet). Ablago fragt den offiziellen Katalog nur auf Knopfdruck ab („Katalog abrufen“, mit installierten Paketen „Nach neuen Versionen suchen“). Weitere Kataloge trägt man im Expertenmodus unter „Weitere Quellen“ ein.  
 Siehe auch: [Paket](#paket), [Expertenmodus](#expertenmodus).
 
 <a id="passkey"></a>**Passkey** · ~ mit Erklärung · alle  
