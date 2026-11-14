@@ -17,6 +17,7 @@ import { dateitypName, infoFassung, infoUmwandlung, katalogUmwandlung, UMWANDELN
 import { infoVolltextPaket, katalogVolltext, VOLLTEXT_PAKET_MAX_BYTES } from '../../shared/src/paketvolltext';
 import { t } from './sprache';
 import { AUSGABE_GROSS, MB, TEXTERKENNUNG_MAX_MB as MAX_MB } from './grenzen';
+import type { Werkzeuge } from '../../shared/src/werkzeuge';
 
 /**
  * Volltext (#45, #458, #459).
@@ -97,16 +98,17 @@ function starte(cmd: string, args: string[], ms: number, signal?: AbortSignal): 
   });
 }
 
-/** Was der Kern für den Volltext braucht: poppler (pdftotext für die Textebene, pdftoppm für Seitenbilder). */
-export interface Werkzeuge {
-  pdftotext: boolean;
-  pdftoppm: boolean;
-}
+/**
+ * Was der Kern braucht (#1189: eingebaute Werkzeuge, `shared/src/werkzeuge.ts`): poppler (pdftotext für die
+ * Textebene, pdftoppm für Seitenbilder) und qpdf (geschützte PDFs, Verkleinern).
+ */
+export type { Werkzeuge };
 
-/** Was ist installiert? (Für die Werkbank.) */
+/** Was ist installiert? (Für die Werkbank: Suche und Volltext, Systemzustand.) */
 export async function pruefeWerkzeuge(): Promise<Werkzeuge> {
-  const da = (cmd: string) => starte(cmd, ['-v'], 10_000).then(() => true, (e: Error) => !/nicht installiert/.test(e.message));
-  return { pdftotext: await da('pdftotext'), pdftoppm: await da('pdftoppm') };
+  const da = (cmd: string, args = ['-v']) => starte(cmd, args, 10_000).then(() => true, (e: Error) => !/nicht installiert/.test(e.message));
+  const [pdftotext, pdftoppm, qpdf] = await Promise.all([da('pdftotext'), da('pdftoppm'), da('qpdf', ['--version'])]);
+  return { pdftotext, pdftoppm, qpdf };
 }
 
 /**

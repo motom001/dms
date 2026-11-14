@@ -81,7 +81,7 @@ If Ablago shows a count or a date that stays wrong, set the variable `DMS_ZWISCH
 
 ## Technology { #technik }
 
-**Workbench → Maintenance and troubleshooting → system health → Version and updates** shows in the section **Installed** (below *Newer versions*) what is installed: version and state of Ablago, runtime (Node.js, operating system), database, libraries and interface.
+**Workbench → Maintenance and troubleshooting → system health → Version and updates** shows in the section **Installed** (below *Newer versions*) what is installed: version and state of Ablago, runtime (Node.js, operating system), database, libraries, [built-in tools](#werkzeuge) and interface.
 
 ![Technology and versions](bilder/werkbank-technik.png)
 
@@ -89,6 +89,19 @@ If Ablago shows a count or a date that stays wrong, set the variable `DMS_ZWISCH
 - **Newer versions:** one push of a button asks whether there are newer versions – at GitHub for Ablago, at endoflife.date for Node.js, PostgreSQL and Alpine, at npm for the libraries. Without a push of the button, Ablago asks nowhere. For Ablago itself, *Current* shows the newest stable version with its date – the one `:stabil` points to (it moves once a week, see [Which image tag?](aktualisieren.md#image-tag)); it only says “newer” once there is a new stable version. If you already run a newer state (`:main` or a higher fixed number) and there are further changes on `main`, the notice names them.
 
 How the building blocks fit together is described under [Technology](technik.md).
+
+### Built-in tools { #werkzeuge }
+
+Some work Ablago does with programs that the official image includes. Here they are called **built-in tools**:
+
+| Tool | Programs | what for | if it is missing |
+| --- | --- | --- | --- |
+| Reading PDFs (Poppler) | `pdftotext`, `pdftoppm` | text from PDFs for the search (text layer), page images and thumbnails, redacting, images when [shrinking](speicherplatz.md#grosse-pdfs-verkleinern) | PDFs get no full text, page images and thumbnails are missing |
+| Editing PDFs (qpdf) | `qpdf` | recognising and [unlocking](https://help.ablago.app/benutzer/aktuell/en/dokumente/#passwortgeschuetzte-pdfs) protected PDFs, structure of PDFs when shrinking | protected PDFs can't be unlocked, shrunk PDFs get a little less small |
+
+If all are there, there is nothing to do: they only appear as a line under **Installed** ("available"). **If one is missing**, a notice at the top of **Search and full text** and in **System health** says what doesn't work because of it – e.g. "A tool for reading PDFs is missing. So Ablago can't read text from PDFs and can't show page images." – with **Check again** and **More about this** (this section). Ablago checks at start-up; **Check again** checks once more straight away, for example after you have changed the image.
+
+**Remedy:** with the official image (`ghcr.io/motom001/dms` or `dms-komplett`) nothing is missing. A tool can practically only be missing with your own, incomplete image or an installation without a container. Then the programs belong in it: on Alpine `apk add poppler-utils qpdf`, on Debian and Ubuntu `apt install poppler-utils qpdf`. Then restart Ablago or press **Check again**.
 
 ## Typical problems {#typische-probleme}
 

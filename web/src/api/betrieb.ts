@@ -7,6 +7,7 @@ import type { Notfallkontakt, NotfallkontaktEingabe, NotfallkontakteStand, Notfa
 import { anfrage } from './anfrage';
 import type { ExportUmzug, VollexportStand, WartungOeffentlich } from './konto';
 import type { EinrichtungStand, MailSuche, SicherungSchlank, SicherungsMeta, Verbindung, WhSchritt } from './einrichtung';
+import type { Werkzeuge } from '../../../shared/src/werkzeuge';
 import type { ExternUebersicht } from './pakete';
 
 /** Antwort auf eine Änderung an einem Notfallkontakt (#812). */
@@ -180,6 +181,8 @@ export interface Systemuebersicht {
   /** Feste Ordner mit belegtem und freiem Platz (#115). */
   ordner?: OrdnerStand[] | null;
   variablen?: string[];
+  /** Eingebaute Werkzeuge (#1189); null, wenn die Prüfung nicht ging. */
+  werkzeuge?: Werkzeuge | null;
 }
 export interface Vergleich { komponente: string; installiert: string | null; aktuell: string | null; status: 'aktuell' | 'neuer' | 'veraltet' | 'unbekannt'; hinweis?: string; quelle: string; /** #216 */ gruppe?: 'selbst' | 'dms'; bezeichnung?: string }
 export interface MailAnsicht {
@@ -259,7 +262,7 @@ export const betriebApi = {
   extern: (stunden: number) => anfrage<ExterneDiensteStand>('GET', `/api/werkbank/system/extern?stunden=${stunden}`),
   externKosten: (monat?: string) => anfrage<ExternKosten>('GET', `/api/werkbank/system/extern/kosten${monat ? `?monat=${encodeURIComponent(monat)}` : ''}`),
   setzeExternKosten: (e: KostenEinstellung) => anfrage<ExternKosten>('PUT', '/api/werkbank/system/extern/kosten', e),
-  system: () => anfrage<Systemuebersicht>('GET', '/api/werkbank/system'),
+  system: (werkzeugeNeu = false) => anfrage<Systemuebersicht>('GET', `/api/werkbank/system${werkzeugeNeu ? '?neu' : ''}`),
   speicherplatz: () => anfrage<SpeicherplatzStand>('GET', '/api/werkbank/speicherplatz'),
   /** Auslastung (#409): CPU, Arbeitsspeicher, Netzwerk, Wartezeit der Ereignisschleife (#477). */
   systemlast: () => anfrage<SystemlastAntwort>('GET', '/api/werkbank/systemlast'),

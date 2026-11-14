@@ -542,6 +542,10 @@ The interface through which programs work with Ablago. Access with a personal AP
 An encrypted complete backup that can be restored in Ablago. Not an export – not readable without Ablago.  
 See also: [Restore](#wiederherstellen), [Test restore](#probe-wiederherstellung), [Full export](#vollexport).
 
+<a id="eingebautes-werkzeug"></a>**Built-in tool** (*Eingebautes Werkzeug*) · ~ with explanation · administrators  
+A program that the Ablago image includes and that Ablago calls itself – for reading PDFs (Poppler) and for editing PDFs (qpdf). The workbench only mentions it if one is missing, then with what follows and what helps (Search and full text, System health).  
+See also: [System health](#systemzustand).
+
 <a id="konsole"></a>**Console** (*Konsole*) · ✗ technical term · advanced users  
 The command "dms" in the container for emergencies and operation.
 

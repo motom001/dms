@@ -547,6 +547,10 @@ Ein ausführlicheres technisches Protokoll für die Fehlersuche.
 <a id="demo-daten"></a>**Demo-Daten** · ✓ Alltagswort · Administratoren  
 Erzeugte Beispielmappen zum Ausprobieren und für Lasttests.
 
+<a id="eingebautes-werkzeug"></a>**Eingebautes Werkzeug** · ~ mit Erklärung · Administratoren  
+Ein Programm, das das Ablago-Image mitbringt und das Ablago selbst aufruft – zum Lesen von PDFs (Poppler) und zum Bearbeiten von PDFs (qpdf). Die Werkbank nennt es nur, wenn eins fehlt, dann mit Folge und Abhilfe (Suche und Volltext, Systemzustand).  
+Siehe auch: [Systemzustand](#systemzustand).
+
 <a id="einrichtungsassistent"></a>**Einrichtungsassistent** · ✓ Alltagswort · Administratoren  
 Die Schritte beim ersten Start von Ablago.  
 Siehe auch: [Einrichtungscode](#einrichtungscode).
@@ -735,6 +739,7 @@ Wer Oberfläche, Handbuch, Hilfetexte oder Release-Notizen schreibt, verwendet d
 | Dokument | – | `Dokument` |
 | E-Rechnung | – | `erechnung` |
 | Eigene Organisation | Mandant, Betrieb und Verantwortliche, Impressum | `merkmal eigeneOrganisation` |
+| Eingebautes Werkzeug | Abhängigkeit, Binary | `werkzeuge` |
 | Erinnerung | – | `MappenAblauf, Vorlage erinnern` |
 | Erweiterte Suche | – | `Suchformular` |
 | Expertenmodus | Erweiterte Ansicht | `useExperteOffen` |

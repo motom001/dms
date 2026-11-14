@@ -7,6 +7,7 @@ import type { FrageZeile, FragenGrenzen, VerlaufEintrag } from '../../../shared/
 import { erreichbarkeit, NICHT_ERREICHBAR } from '../erreichbar';
 import { t } from '../sprache';
 import { sprache } from '../../../shared/src/sprache';
+import type { Werkzeuge } from '../../../shared/src/werkzeuge';
 import { ABGEMELDET, ApiFehler, anfrage } from './anfrage';
 
 /** Erkennung per Paket (#511): Standard in der Werkbank und Pakete mit dms:erkennen. */
@@ -58,7 +59,7 @@ export interface VektorStand { paket: string | null; modell: string | null; mitV
 export interface OcrEinstellungen { aktiv: boolean; auftraege: number }
 export interface OcrStatus {
   zaehler: Record<OcrStandArt, number>; laufend: number;
-  werkzeuge: { pdftotext: boolean; pdftoppm: boolean };
+  werkzeuge: Werkzeuge;
   einstellungen: OcrEinstellungen; dateitypen: Record<string, string>;
   /** #395: erkannte Sprachen (Kennung → Anzahl Dokumente). */
   erkannteSprachen?: Record<string, number>;

@@ -1113,6 +1113,14 @@ begriffe:
     einsteiger: alltag
     begegnet: admin
     verwandt: [Systemzustand]
+  - begriff: Eingebautes Werkzeug
+    bereich: betrieb
+    beschreibung: Ein Programm, das das Ablago-Image mitbringt und das Ablago selbst aufruft – zum Lesen von PDFs (Poppler) und zum Bearbeiten von PDFs (qpdf). Die Werkbank nennt es nur, wenn eins fehlt, dann mit Folge und Abhilfe (Suche und Volltext, Systemzustand).
+    einsteiger: erklaeren
+    begegnet: admin
+    nicht_verwenden: [Abhängigkeit, Binary]
+    verwandt: [Systemzustand]
+    code: werkzeuge
   - begriff: Demo-Daten
     bereich: betrieb
     beschreibung: Erzeugte Beispielmappen zum Ausprobieren und für Lasttests.

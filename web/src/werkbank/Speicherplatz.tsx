@@ -78,7 +78,7 @@ function SchwelleFeld({ name, wert, aendern, hilfe }: { name: string; wert: Schw
   );
 }
 
-export function SpeicherplatzPanel({ z, nachAenderung, auslastung, unten }: { z: SpeicherplatzZustand; nachAenderung?: () => void; auslastung?: ReactNode; unten?: ReactNode }) {
+export function SpeicherplatzPanel({ z, nachAenderung, hinweise, auslastung, unten }: { z: SpeicherplatzZustand; nachAenderung?: () => void; hinweise?: ReactNode; auslastung?: ReactNode; unten?: ReactNode }) {
   const s = z.stand;
   const [e, setE] = useState<SpeicherplatzEinstellung | null>(null);
   const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
@@ -118,6 +118,8 @@ export function SpeicherplatzPanel({ z, nachAenderung, auslastung, unten }: { z:
         </div>
       )}
 
+      {/* Weitere Hinweise oben (#1189: fehlende eingebaute Werkzeuge). */}
+      {hinweise}
       {z.fehler && <div className="hinweis schlecht"><p>{z.fehler}</p></div>}
       <form className="blatt" id="schwellen" onSubmit={(ev) => { ev.preventDefault(); void speichern(); }} onKeyDown={ent.tasten}>
         <h2 className="h3">{t('werkbank.speicherplatz.schwellen-fuer-den-speicherplatz')}</h2>

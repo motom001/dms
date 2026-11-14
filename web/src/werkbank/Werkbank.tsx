@@ -52,6 +52,7 @@ import { WiederherstellungPanel } from './Wiederherstellung';
 import { FehlermeldungDetail, FehlermeldungenListe, useFehlermeldungen } from './Fehlermeldungen';
 import { AnbindungPanel, useAnbindung } from './Anbindung';
 import { SpeicherplatzPanel, useSpeicherplatz } from './Speicherplatz';
+import { WerkzeugeHinweis } from './Werkzeuge';
 import { AuslastungAbschnitt, ErweiterungenHinweis, useSystemlast } from './Auslastung';
 import { PapierkorbDetail, PapierkorbListe, usePapierkorb } from '../ablage/Papierkorb';
 import { filterAusAdresse } from '../../../shared/src/aufgabenfilter';
@@ -314,7 +315,8 @@ export function Werkbank({ teile }: { teile: string[] }) {
     rechts = <WebdavPanel z={webdav} />;
   } else if (bereich === 'systemzustand') {
     // Systemzustand (#725) nimmt Version und Updates (früher „Technik“) und die Auslastung der Datenbank auf.
-    rechts = <SpeicherplatzPanel z={speicherplatz} nachAenderung={() => { void uebersicht.laden(); void wartungsmodus.laden(); }} auslastung={<><ErweiterungenHinweis liste={systemlast.stand?.erweiterungen} /><AuslastungAbschnitt z={systemlast} /></>}
+    rechts = <SpeicherplatzPanel z={speicherplatz} nachAenderung={() => { void uebersicht.laden(); void wartungsmodus.laden(); }}
+      hinweise={<WerkzeugeHinweis werkzeuge={technik.u?.werkzeuge} pruefen={() => technik.laden(true)} />} auslastung={<><ErweiterungenHinweis liste={systemlast.stand?.erweiterungen} /><AuslastungAbschnitt z={systemlast} /></>}
       unten={<><div id="datenbank"><DatenbankAbschnitte z={datenbank} offen={new URLSearchParams(location.search).get('offen') ?? undefined} /></div>
         {/* Externe Dienste und KI-Kosten (#565). */}
         <ExterneDiensteAbschnitt z={externeDienste} /><KiKostenAbschnitt sichtbar nachAenderung={() => void externeDienste.laden()} /><TechnikPanel t={technik} abschnitt /></>} />;

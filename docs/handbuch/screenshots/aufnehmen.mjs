@@ -1466,7 +1466,8 @@ async function main() {
   }
   await bild(s, 'werkbank-papierkorb');
   await geheZu(s, '/werkbank/texterkennung');
-  await s.getByRole('heading', { name: w('Werkzeuge'), exact: true }).waitFor();
+  // #1189: „Werkzeuge“ nur, wenn eins fehlt – im Image sind alle da.
+  await s.getByRole('heading', { name: w('Warteschlange'), exact: true }).waitFor();
   await s.getByRole('heading', { name: w('Aufträge'), exact: true }).waitFor();
   await bild(s, 'werkbank-texterkennung');
   // Gleichbedeutende Wörter (#992): Gruppen in der Mitte mit Suche, rechts die Wörter einer Gruppe.

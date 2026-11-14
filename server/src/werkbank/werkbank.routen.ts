@@ -94,7 +94,7 @@ export function werkbankRouten(k: RoutenKontext): Route[] {
 }
 
 export function werkbankUebersichtRouten(k: RoutenKontext): Route[] {
-  const { dienst, konten, x, system, pakete, nf } = k;
+  const { dienst, konten, x, system, pakete, nf, ocr } = k;
   return [
     // Ansicht der Werkbank (#281): für alle und je Administrator.
     { methode: 'GET', pfad: '/api/werkbank/ansicht', zugang: 'admin', handler: async (a) => {
@@ -240,10 +240,12 @@ export function werkbankUebersichtRouten(k: RoutenKontext): Route[] {
       else throw new Fachfehler(400, t('werkbank.uebersicht.akzeptiert.ungueltig'));
       return leer;
     } },
-    { methode: 'GET', pfad: '/api/werkbank/system', zugang: 'admin', handler: async () => {
+    { methode: 'GET', pfad: '/api/werkbank/system', zugang: 'admin', handler: async (a) => {
       const sicher = async <T>(f: () => Promise<T>): Promise<T | null> => { try { return await f(); } catch { return null; } };
       const sp = x.speicherplatz ? await sicher(() => x.speicherplatz!.stand()) : null;
-      return ok({ ...await uebersicht(system, x.betrieb?.kurz()), ordner: sp?.ordner ?? null, variablen: x.ordner?.ueberfluessig ?? [] });
+      // Eingebaute Werkzeuge (#1189): `?neu` prüft erneut (Knopf „Erneut prüfen“ im Systemzustand).
+      const werkzeuge = await sicher(() => ocr().werkzeugeLaden(a.query.neu !== undefined));
+      return ok({ ...await uebersicht(system, x.betrieb?.kurz()), ordner: sp?.ordner ?? null, variablen: x.ordner?.ueberfluessig ?? [], werkzeuge });
     } },
   ];
 }

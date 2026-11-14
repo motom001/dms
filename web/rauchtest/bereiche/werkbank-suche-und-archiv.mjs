@@ -1,5 +1,6 @@
 /**
- * Rauchtests: Suche in Werkbank-Listen (#978, #994), gleichbedeutende Wörter (#992), Vorschaubild der Archivfassung (#1216).
+ * Rauchtests: Suche in Werkbank-Listen (#978, #994), gleichbedeutende Wörter (#992), Suche und Volltext aufgeräumt (#1189,
+ * #1190, #1191), Vorschaubild der Archivfassung (#1216).
  * Allein starten (frisch gestartetes Ablago, siehe rauchtest.mjs): node web/rauchtest/bereiche/werkbank-suche-und-archiv.mjs [fehlerordner] [musterordner]
  */
 import assert from 'node:assert/strict';
@@ -8,6 +9,7 @@ import { mkdir, readdir, rm, stat, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import '../einrichtung.mjs';
 import { api, BASIS, beispielPdf, daten, keineWaagerechteRolle, LENA, rauchtest, sitzung, verwalten } from '../hilfen.mjs';
+import { axePruefen } from '../muster.mjs';
 
 // #978: Suche über der Liste der Mappentypen wie in der Ablage – Fundstelle, Trefferzahl, Esc, keine Treffer, zurücksetzen.
 rauchtest('Werkbank: Mappentypen und Ansichten durchsuchen, Fundstellen, keine Treffer (#978)', { als: LENA }, async (s) => {
@@ -128,6 +130,64 @@ rauchtest('Werkbank: Gleichbedeutende Wörter – Liste mit Suche, Wörter einze
   await s.waitForURL(/\/werkbank\/woerter$/);
   await suche.fill('');
   await elemente.getByText('1 Gruppe', { exact: true }).waitFor();
+});
+
+/* ---------- Suche und Volltext aufgeräumt (#1189, #1190) ---------- */
+
+/** Antworten der Werkbank so umschreiben, als fehle Poppler (#1189) – im Image ist es immer da. */
+async function ohnePoppler(s) {
+  const zaehler = { neu: 0 };
+  for (const muster of [/\/api\/werkbank\/texterkennung(\?.*)?$/, /\/api\/werkbank\/system(\?.*)?$/]) {
+    await s.route(muster, async (r) => {
+      if (r.request().method() !== 'GET') return r.fallback();
+      if (new URL(r.request().url()).searchParams.has('neu')) zaehler.neu++;
+      const echt = await (await r.fetch()).json();
+      await r.fulfill({ json: { ...echt, werkzeuge: { pdftotext: false, pdftoppm: true, qpdf: true } } });
+    });
+  }
+  return zaehler;
+}
+
+// #1189: Sind alle eingebauten Werkzeuge da, steht dazu nichts auf „Suche und Volltext“ – nur eine Zeile unter
+// Installiert. Fehlt eins, steht oben ein Hinweis mit Folge, Abhilfe, „Erneut prüfen“ und „Mehr dazu“, auch im Systemzustand.
+rauchtest('Werkbank: eingebaute Werkzeuge nur, wenn eins fehlt (#1189)', { als: LENA, erwartet: [{ status: 409, pfad: /^\/api\/wiederherstellung\/sicherungen$/ }] }, async (s) => {
+  await s.goto(BASIS + '/ablage/start');
+  await verwalten(s);
+  await s.goto(BASIS + '/werkbank/texterkennung');
+  await s.getByRole('heading', { name: 'Warteschlange', exact: true }).waitFor();
+  assert.equal(await s.getByRole('heading', { name: 'Werkzeuge', exact: true }).count(), 0, 'kein Abschnitt „Werkzeuge“');
+  assert.equal(await s.locator('#werkzeuge').count(), 0, 'kein Hinweis, wenn alles da ist');
+  assert.equal(await s.getByText(/poppler/i).count(), 0, 'Poppler steht nirgends');
+  await s.goto(BASIS + '/werkbank/systemzustand#version');
+  const installiert = s.locator('#installiert');
+  await installiert.getByText('Eingebaute Werkzeuge', { exact: true }).waitFor();
+  await installiert.locator('dt', { hasText: 'PDF lesen (Poppler)' }).waitFor();
+  assert.equal(await s.locator('#werkzeuge').count(), 0);
+
+  const zaehler = await ohnePoppler(s);
+  for (const [weg, warte] of [['/werkbank/texterkennung', 'Warteschlange'], ['/werkbank/systemzustand', 'Schwellen für den Speicherplatz']]) {
+    await s.goto(BASIS + weg);
+    await s.getByRole('heading', { name: warte }).first().waitFor();
+    const hinweis = s.locator('#werkzeuge');
+    await hinweis.getByText('Ein Werkzeug zum Lesen von PDFs fehlt.').waitFor();
+    await hinweis.getByText(/keinen Text aus PDFs lesen und keine Seitenbilder zeigen/).waitFor();
+    await hinweis.getByText(/offizielle Ablago-Image bringt es mit/).waitFor();
+    await hinweis.getByText('Für Fachleute: Es fehlt pdftotext (Poppler).').waitFor();
+    const mehr = hinweis.getByRole('link', { name: 'Mehr dazu' });
+    assert.match(await mehr.getAttribute('href'), /\/hilfe\/admin\/.*fehlersuche\/#werkzeuge$/);
+    const vorher = zaehler.neu;
+    await hinweis.getByRole('button', { name: 'Erneut prüfen' }).click();
+    await hinweis.getByText('Geprüft.').waitFor();
+    assert.equal(zaehler.neu, vorher + 1, '„Erneut prüfen“ prüft auf dem Server neu');
+  }
+  await s.locator('#installiert dt', { hasText: 'PDF lesen (Poppler)' }).locator('xpath=following-sibling::dd[1]').getByText('fehlt', { exact: true }).waitFor();
+  // Der Hinweis selbst: axe hell und dunkel.
+  const funde = [];
+  for (const schema of ['light', 'dark']) {
+    await s.emulateMedia({ colorScheme: schema });
+    for (const v of await axePruefen(s, ['#werkzeuge'])) funde.push(`${schema}: ${v}`);
+  }
+  assert.deepEqual(funde, [], `axe meldet Verstöße:\n${funde.join('\n')}`);
 });
 
 /* ---------- Vorschaubild aus der Archivfassung (#1216) ---------- */

@@ -81,7 +81,7 @@ Zeigt Ablago eine Zahl oder einen Termin, die dauerhaft nicht stimmen, setze im 
 
 ## Technik
 
-**Werkbank → Wartung und Fehlersuche → Systemzustand → Version und Updates** zeigt im Abschnitt **Installiert** (unter *Neuere Versionen*), was installiert ist: Version und Stand von Ablago, Laufzeit (Node.js, Betriebssystem), Datenbank, Bibliotheken und Oberfläche.
+**Werkbank → Wartung und Fehlersuche → Systemzustand → Version und Updates** zeigt im Abschnitt **Installiert** (unter *Neuere Versionen*), was installiert ist: Version und Stand von Ablago, Laufzeit (Node.js, Betriebssystem), Datenbank, Bibliotheken, [eingebaute Werkzeuge](#werkzeuge) und Oberfläche.
 
 ![Technik und Versionen](bilder/werkbank-technik.png)
 
@@ -89,6 +89,19 @@ Zeigt Ablago eine Zahl oder einen Termin, die dauerhaft nicht stimmen, setze im 
 - **Neuere Versionen:** Ein Knopfdruck fragt nach, ob es neuere Versionen gibt – bei GitHub für Ablago, bei endoflife.date für Node.js, PostgreSQL und Alpine, bei npm für die Bibliotheken. Ohne Knopfdruck fragt Ablago nirgends nach. Bei Ablago selbst steht unter *Aktuell* die neueste stabile Version mit Datum – die, auf die `:stabil` zeigt (sie wandert einmal pro Woche, siehe [Welches Image-Tag?](aktualisieren.md#image-tag)); „neuer“ heißt es erst bei einer neuen stabilen Version. Läuft schon ein neuerer Stand (`:main` oder eine höhere feste Nummer) und liegen auf `main` weitere Änderungen, nennt sie der Hinweis.
 
 Wie die Bausteine zusammenhängen, beschreibt [Technik](technik.md).
+
+### Eingebaute Werkzeuge { #werkzeuge }
+
+Einige Arbeiten erledigt Ablago mit Programmen, die das offizielle Image mitbringt. Sie heißen hier **eingebaute Werkzeuge**:
+
+| Werkzeug | Programme | wofür | fehlt es |
+| --- | --- | --- | --- |
+| PDF lesen (Poppler) | `pdftotext`, `pdftoppm` | Text aus PDFs für die Suche (Textebene), Seiten- und Vorschaubilder, Schwärzen, Bilder beim [Verkleinern](speicherplatz.md#grosse-pdfs-verkleinern) | PDFs bekommen keinen Volltext, Seitenbilder und Vorschaubilder fehlen |
+| PDF bearbeiten (qpdf) | `qpdf` | geschützte PDFs erkennen und [entsperren](https://help.ablago.app/benutzer/aktuell/dokumente/#passwortgeschuetzte-pdfs), Aufbau der PDFs beim Verkleinern | geschützte PDFs lassen sich nicht entsperren, verkleinerte PDFs werden etwas weniger klein |
+
+Sind alle da, gibt es nichts zu tun: Sie stehen dann nur als Zeile unter **Installiert** („vorhanden“). **Fehlt eins**, steht oben auf **Suche und Volltext** und im **Systemzustand** ein Hinweis, der sagt, was deshalb nicht geht – z. B. „Ein Werkzeug zum Lesen von PDFs fehlt. Ablago kann deshalb keinen Text aus PDFs lesen und keine Seitenbilder zeigen.“ –, mit **Erneut prüfen** und **Mehr dazu** (diese Stelle). Ablago prüft beim Start; **Erneut prüfen** prüft sofort noch einmal, etwa nachdem du das Image gewechselt hast.
+
+**Abhilfe:** Mit dem offiziellen Image (`ghcr.io/motom001/dms` bzw. `dms-komplett`) fehlt nichts. Fehlen kann ein Werkzeug praktisch nur bei einem eigenen, unvollständigen Image oder einer Installation ohne Container. Dann gehören die Programme dazu: unter Alpine `apk add poppler-utils qpdf`, unter Debian und Ubuntu `apt install poppler-utils qpdf`. Danach Ablago neu starten oder **Erneut prüfen** drücken.
 
 ## Typische Probleme
 

@@ -1,5 +1,6 @@
 import { HANDBUCH_NAME, HILFE, handbuchUrl, hilfeUrl, type Handbuch, type Hilfeort } from '../../shared/src/hilfe';
 import { useKontoOptional } from './konto-kontext';
+import type { ReactNode } from 'react';
 import { t } from './sprache';
 
 /**
@@ -16,6 +17,19 @@ export function Hilfe({ ort }: { ort: Hilfeort }) {
     <a className="hilfesymbol" href={hilfeUrl(z, version)} target="_blank" rel="noreferrer" title={text} aria-label={t('oberflaeche.hilfe.oeffnet-in-neuem-tab', { text })}>
       <span aria-hidden="true">?</span>
     </a>
+  );
+}
+
+/**
+ * Dieselbe Stelle als Textlink, z. B. „Mehr dazu“ in einem Hinweis (#1189) – wo ein „?“ allein nicht sagt, dass es dort
+ * weitergeht.
+ */
+export function HilfeVerweis({ ort, children }: { ort: Hilfeort; children: ReactNode }) {
+  const version = useKontoOptional()?.version ?? null;
+  const z = HILFE[ort];
+  return (
+    <a className="verweis" href={hilfeUrl(z, version)} target="_blank" rel="noreferrer"
+      title={t('oberflaeche.hilfe.hilfe-zu-im', { titel: z.titel, HANDBUCH_NAME: HANDBUCH_NAME[z.handbuch] })}>{children}</a>
   );
 }
 
