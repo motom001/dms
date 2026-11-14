@@ -13,7 +13,7 @@ import s from './Reiter.module.css';
  * `aria-controls`, die Fläche `role="tabpanel"`). Tastatur: Tab erreicht nur den aktiven Reiter, Pfeiltasten (auch
  * Pos1/Ende) wählen den nächsten. Breiter als der Platz: Die Reihe rollt waagerecht, die Seite nicht.
  *
- * Abgrenzung: Der `Umschalter` ändert, *wie* etwas Gleiches arbeitet (z. B. „Fragen · Suchen“); Reiter zeigen
+ * Abgrenzung: Der `Umschalter` ändert, *wie* etwas Gleiches arbeitet (z. B. „Liste · Monat · Jahr“); Reiter zeigen
  * verschiedene Inhalte.
  */
 

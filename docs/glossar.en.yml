@@ -243,7 +243,10 @@ begriffe:
     beschreibung: A small image of the first page next to a PDF or image in the document list; created in the background and not backed up.
   Erweiterte Suche:
     begriff: Advanced search
-    beschreibung: A search form across the fields of several folder types and the text in documents.
+    beschreibung: A search form across the fields of several folder types and the text in documents. Enter in the search box at the top leads here with the term.
+  Suchfeld oben:
+    begriff: Search box at the top
+    beschreibung: 'The one search box in the header, on every page of the Library (#1218). Enter shows all hits in the advanced search; in a view it filters the list and shows the scope as a chip “in: …”.'
   Link:
     begriff: Link (address)
     beschreibung: An address of a view or folder, e.g. via "Copy link" – also readable via folder type and field values. In the German interface, "Link" only stands for addresses; fields that point to folders are called Verweis.
@@ -321,7 +324,10 @@ begriffe:
     beschreibung: A short guided walk on the real interface in a few steps; each step highlights one place. Ablago's own tour starts the first time a new account signs in; everyone finds it under "Discover Ablago".
   Tipp:
     begriff: Tip
-    beschreibung: One sentence showing what else you can do in Ablago – at most one a day as a quiet line on the start page; the sentence leads to the place or starts a tour. Hide it with ×, switch it off completely in My account.
+    beschreibung: One sentence showing what else you can do in Ablago – at most one new one a day as the “tip of the day” in the assistant (a dot on its button shows it); “Show me” leads to the place or starts a tour. Switch it off in My account.
+  Assistent:
+    begriff: Assistant
+    beschreibung: The round button at the bottom right of every page (a folder with a face) with the window “Ask · Tips · Manual” (#1219). It never opens by itself.
   Paket:
     begriff: Package
     beschreibung: An installable bundle of folder types, views and examples from a package catalogue, e.g. "Basis". An update only adds; it removes and changes nothing – except a conversion, which the preview shows explicitly.

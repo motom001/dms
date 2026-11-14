@@ -26,6 +26,10 @@ See also: [Design](#design), [My account](#mein-konto).
 The number on a sticker on the paper original (e.g. A-000123); the same number is on the document in Ablago. Unique per Library; comes from the number sequence "Archive number". Connects paper and document in both directions.  
 See also: [Storage location](#ablageort), [Number sequence](#nummernkreis), [Document](#dokument).
 
+<a id="assistent"></a>**Assistant** (*Assistent*) · ✓ everyday word · everyone  
+The round button at the bottom right of every page (a folder with a face) with the window “Ask · Tips · Manual” (#1219). It never opens by itself.  
+See also: [Tip](#tipp), [Discover Ablago](#ablago-entdecken).
+
 <a id="papierkorb"></a>**Bin** (*Papierkorb*) · ✓ everyday word · everyone  
 Deleted folders. They can be restored until the set number of days has passed.
 
@@ -173,8 +177,8 @@ A folder type whose folders a link may point to; a link has one or several. With
 See also: [Link (field)](#verweis), [Folder type](#mappentyp).
 
 <a id="tipp"></a>**Tip** (*Tipp*) · ✓ everyday word · everyone  
-One sentence showing what else you can do in Ablago – at most one a day as a quiet line on the start page; the sentence leads to the place or starts a tour. Hide it with ×, switch it off completely in My account.  
-See also: [Tour](#rundgang), [Discover Ablago](#ablago-entdecken).
+One sentence showing what else you can do in Ablago – at most one new one a day as the “tip of the day” in the assistant (a dot on its button shows it); “Show me” leads to the place or starts a tour. Switch it off in My account.  
+See also: [Tour](#rundgang), [Discover Ablago](#ablago-entdecken), [Assistant](#assistent).
 
 <a id="titel"></a>**Title** (*Titel*) · ✓ everyday word · everyone  
 The display name of a folder. It is formed from a template with field values.
@@ -215,7 +219,7 @@ A period in which a user is not there – with a stand-in who takes over their t
 The menu "Folder ▾" next to a folder's title – assign task, remind, send, export and more. It used to be called "Actions" itself.
 
 <a id="erweiterte-suche"></a>**Advanced search** (*Erweiterte Suche*) · ✓ everyday word · everyone  
-A search form across the fields of several folder types and the text in documents.
+A search form across the fields of several folder types and the text in documents. Enter in the search box at the top leads here with the term.
 
 <a id="archivfassung"></a>**Archive version** (*Archivfassung*) · ~ with explanation · everyone  
 A searchable PDF/A that a package such as PDF/A stores in addition to a document – a format that can still be opened in many years and without Ablago. The original stays unchanged. If there is one, Ablago shows it ("View: archive version (PDF/A)"). PDFs, scans, photos and emails (.eml, .msg) can get one; you read an email in it like a letter.  
@@ -303,6 +307,10 @@ See also: [Document](#dokument).
 <a id="erinnerung"></a>**Reminder** (*Erinnerung*) · ✓ everyday word · everyone  
 A to do set by hand for a particular day (folder ▾ → Remind). Until that day it is listed on the folder under “Planned”; since 0.256 a run of the automation template “Remind”.  
 See also: [Planned](#geplant), [Automation template](#automatisierungsvorlage).
+
+<a id="suchfeld-oben"></a>**Search box at the top** (*Suchfeld oben*) · ✓ everyday word · everyone  
+The one search box in the header, on every page of the Library (#1218). Enter shows all hits in the advanced search; in a view it filters the list and shows the scope as a chip “in: …”.  
+See also: [Advanced search](#erweiterte-suche), [View](#ansicht).
 
 <a id="vertretung"></a>**Stand-in** (*Vertretung*) · ✓ everyday word · everyone  
 A user takes over another's tasks during an absence. The stand-in gets a task of the kind "Stand-in" for this.

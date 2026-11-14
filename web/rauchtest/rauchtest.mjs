@@ -399,8 +399,9 @@ rauchtest('Anmelden und Startseite', {}, async (s) => {
   await s.getByLabel('Passwort', { exact: true }).fill(LENA.passwort);
   await s.getByRole('button', { name: 'Anmelden', exact: true }).click();
   await s.waitForURL(/\/ablage\/start$/);
-  await s.getByRole('heading', { name: /^Start/, level: 1 }).waitFor();
-  await s.getByText('Hallo Lena! Hier fängst du an.').waitFor();
+  // #1219: ruhige Startseite – Begrüßung, Kacheln, Zuletzt geöffnet; der Assistent ist zu.
+  await s.getByRole('heading', { name: 'Guten Tag, Lena', level: 1 }).waitFor();
+  assert.equal(await s.getByRole('dialog', { name: 'Assistent' }).count(), 0, 'der Assistent öffnet sich nie von selbst');
   // Kacheln der Startseite: zwei Briefe in „Neue Post“.
   await s.getByRole('link', { name: /^Neue Post 2 Noch nicht zugeordnet/ }).waitFor();
   await s.getByRole('link', { name: /^Zu erledigen/ }).first().waitFor();
@@ -487,10 +488,14 @@ rauchtest('Mappe öffnen, ändern und speichern', { als: LENA }, async (s) => {
   assert.equal(await mappe.getByRole('textbox', { name: 'Vertragsnummer' }).inputValue(), 'WV-2027-1');
 });
 
-// #940: „Zuletzt geöffnet ›“ öffnet die Liste der letzten 25; Ändern zählt wie Öffnen (der Vertrag aus dem Test davor).
+// #940: „Alle anzeigen ›“ neben „Zuletzt geöffnet“ öffnet die Liste der letzten 25 (#1219: ein Link); Ändern zählt wie
+// Öffnen (der Vertrag aus dem Test davor).
 rauchtest('Startseite: Liste „Zuletzt geöffnet“', { als: LENA }, async (s) => {
   await s.goto(BASIS + '/ablage/start');
-  await s.getByRole('link', { name: 'Zuletzt geöffnet ›' }).click();
+  const zuletzt = s.getByRole('region', { name: 'Zuletzt geöffnet' });
+  await zuletzt.getByRole('link', { name: 'Alle anzeigen ›' }).waitFor();
+  assert.equal(await zuletzt.getByRole('link', { name: /anzeigen/ }).count(), 1, 'genau ein Link „Alle anzeigen ›“');
+  await zuletzt.getByRole('link', { name: 'Alle anzeigen ›' }).click();
   await s.waitForURL(/\/ablage\/zuletzt$/);
   const liste = s.getByRole('region', { name: 'Mappen' });
   await liste.getByRole('heading', { name: /^Zuletzt geöffnet/, level: 1 }).waitFor();
@@ -500,59 +505,119 @@ rauchtest('Startseite: Liste „Zuletzt geöffnet“', { als: LENA }, async (s) 
   await s.waitForURL(/\/ablage\/start$/);
 });
 
-rauchtest('Suche auf der Startseite', { als: LENA }, async (s) => {
+// #1218: ein Suchfeld oben auf jeder Seite; Enter führt in die erweiterte Suche, die Treffer kommen sofort. Die
+// Startseite hat kein eigenes Suchfeld mehr.
+rauchtest('Suchfeld oben: Enter führt in die erweiterte Suche (#1218)', { als: LENA }, async (s) => {
   await s.goto(BASIS + '/ablage/start');
-  const schnell = s.getByRole('region', { name: 'Schnell finden' });
-  await schnell.getByRole('searchbox', { name: 'Alle Mappen durchsuchen' }).fill('Stadtwerke');
-  await schnell.getByText('Ein Treffer').waitFor();
-  await schnell.getByRole('link', { name: 'Stadtwerke Musterstadt' }).click();
+  await s.getByRole('heading', { name: 'Guten Tag, Lena', level: 1 }).waitFor();
+  const mitte = s.getByRole('region', { name: 'Mappen' });
+  await mitte.getByRole('region', { name: 'Zuletzt geöffnet' }).waitFor();
+  assert.equal(await mitte.getByRole('searchbox').count(), 0, 'kein Suchfeld auf der Startseite');
+  assert.equal(await mitte.getByRole('link', { name: 'Erweiterte Suche' }).count(), 0, 'kein Link „Erweiterte Suche“ auf der Startseite');
+  // „/“ springt hinein – nicht aus einem Eingabefeld heraus.
+  await s.keyboard.press('/');
+  const feld = s.getByRole('banner').getByRole('searchbox', { name: 'In deiner Ablage suchen' });
+  assert.ok(await feld.evaluate((e) => e === document.activeElement), '„/“ setzt den Fokus ins Suchfeld oben');
+  await s.keyboard.type('Stadtwerke');
+  await s.keyboard.press('Enter');
+  await s.waitForURL(/\/ablage\/suche\?volltext=Stadtwerke$/);
+  const liste = s.getByRole('region', { name: 'Mappen' });
+  await liste.getByRole('link', { name: /Stadtwerke Musterstadt/ }).first().click();
   await s.getByRole('region', { name: 'Mappe' }).getByRole('heading', { name: 'Stadtwerke Musterstadt', level: 1 }).waitFor();
-  // Ohne Treffer: ein Hinweis statt einer leeren Seite.
-  await s.goto(BASIS + '/ablage/start');
-  await schnell.getByRole('searchbox', { name: 'Alle Mappen durchsuchen' }).fill('Xylofonunterricht');
-  await schnell.getByText('Nichts gefunden für „Xylofonunterricht“.').waitFor();
+  // Esc leert das Feld; ohne Treffer ein ruhiger Satz statt einer leeren Seite.
+  await feld.fill('Xylofonunterricht');
+  await feld.press('Escape');
+  assert.equal(await feld.inputValue(), '');
+  await feld.fill('Xylofonunterricht');
+  await feld.press('Enter');
+  await s.waitForURL(/volltext=Xylofonunterricht/);
+  await liste.getByText('Keine Treffer. Entferne eine Bedingung, um mehr zu finden.').waitFor();
 });
 
-// #1002: Mit „Frag deine Ablage“ ein Feld statt zwei, darüber „Fragen · Suchen“. Der Text bleibt beim Umschalten, die
-// Wahl merkt Ablago je Person. Ein Antwort-Paket gibt es im Rauchtest nicht: Die Seite bekommt es nur gemeldet – eine
-// Frage stellt der Test nicht.
-const mitFragen = (s) => s.route('**/api/fragen', (r) => r.fulfill({ json: { verfuegbar: true, paket: 'KI-Assistent' } }));
-const feldArtGemerkt = (s, wert) => s.waitForResponse((r) => r.request().method() === 'PUT' && r.url().endsWith('/api/konto/einstellungen/startseite_feld')
-  && JSON.parse(r.request().postData() ?? '{}').wert === wert);
+// #1218: In einer Ansicht zeigt das Feld oben den Bereich als Chip und filtert die Liste beim Tippen; „×“ bzw. die
+// Rücktaste sucht wieder in allem. Die Ansicht hat kein eigenes Suchfeld mehr; „Suchen in ▾“ mit drei Haken.
+rauchtest('Suchfeld oben in einer Ansicht: Chip, Filtern, „Suchen in“ (#1218)', { als: LENA }, async (s) => {
+  const typen = (await api('GET', '/api/typen', { cookie: await sitzung(LENA) })).daten;
+  const vertrag = typen.find((x) => x.name === 'Vertrag');
+  await s.goto(BASIS + `/ablage/${vertrag.id}`);
+  const kopf = s.getByRole('banner');
+  const feld = kopf.getByRole('searchbox', { name: 'Vertrag durchsuchen' });
+  await kopf.getByText('in: Vertrag').waitFor();
+  assert.equal(await s.getByRole('region', { name: 'Mappen' }).getByRole('searchbox').count(), 0, 'kein zweites Suchfeld in der Ansicht');
+  const liste = s.getByRole('region', { name: 'Mappen' });
+  await feld.fill('Wartungsvertrag');
+  await liste.getByText(/^1 Treffer/).waitFor();
+  // „Suchen in ▾“: Titel und Felder (immer), Text der Dokumente, Notizen; „Mehr Filter …“ in die erweiterte Suche.
+  await kopf.getByRole('button', { name: /Suchen in/ }).click();
+  const in_ = kopf.getByRole('group', { name: 'Suchen in' });
+  assert.ok(await in_.getByRole('checkbox', { name: 'Titel und Felder' }).isDisabled());
+  await in_.getByRole('checkbox', { name: 'Text der Dokumente' }).waitFor();
+  await in_.getByRole('checkbox', { name: 'Notizen' }).waitFor();
+  assert.match(await in_.getByRole('link', { name: 'Mehr Filter …' }).getAttribute('href'), /\/ablage\/suche\?typ=.+&volltext=Wartungsvertrag$/);
+  await s.keyboard.press('Escape');
+  // Rücktaste im leeren Feld nimmt den Bereich weg: Die Liste zeigt wieder alles, Enter führt in die erweiterte Suche.
+  await feld.fill('');
+  await feld.press('Backspace');
+  const alle = kopf.getByRole('searchbox', { name: 'In deiner Ablage suchen' });
+  await alle.waitFor();
+  assert.equal(await kopf.getByText('in: Vertrag').count(), 0);
+  await liste.getByText(/^\d+ Mappen?/).waitFor();
+});
 
-rauchtest('Startseite: ein Feld, „Fragen · Suchen“ umschalten', { als: LENA }, async (s) => {
+// #1219: Assistent unten rechts – öffnet sich nie von selbst; Fragen nur mit Antwort-Paket (im Rauchtest nur gemeldet,
+// eine Frage stellt der Test nicht); Handbuch aus dem Suchverzeichnis des mitgelieferten Handbuchs (hier vorgegeben, weil
+// der Rauchtest ohne gebaute Handbücher läuft); Fokus ins Fenster und zurück zum Knopf.
+const mitFragen = (s) => s.route('**/api/fragen', (r) => r.fulfill({ json: { verfuegbar: true, paket: 'KI-Assistent' } }));
+const HANDBUCH_VERZEICHNIS = { config: { lang: ['de'] }, docs: [
+  { location: 'post/', title: 'Post', text: '<p>Neue Post kommt per Scan, Mail oder + Neu.</p>' },
+  { location: 'post/#dokument-ubernehmen', title: 'Dokument übernehmen', text: '<p>Klickst du in Neue Post eine Post an, öffnet sich die Seite Dokument übernehmen.</p>' },
+] };
+const mitHandbuch = (s) => s.route('**/hilfe/*/search/search_index.json', (r) => r.fulfill({ json: HANDBUCH_VERZEICHNIS }));
+
+rauchtest('Assistent: Fragen · Tipps · Handbuch, Tastatur (#1219)', { als: LENA }, async (s) => {
   await mitFragen(s);
+  await mitHandbuch(s);
   await s.goto(BASIS + '/ablage/start');
-  const schnell = s.getByRole('region', { name: 'Schnell finden' });
-  const art = schnell.getByRole('radiogroup', { name: 'Fragen oder suchen' });
-  // Vorgabe „Fragen“: genau ein Feld, darüber der Umschalter und „Erweiterte Suche“.
-  await art.getByRole('radio', { name: 'Fragen', checked: true }).waitFor();
-  const frage = schnell.getByRole('textbox', { name: 'Frag deine Ablage' });
-  await frage.fill('Stadtwerke');
-  assert.equal(await schnell.getByRole('searchbox').count(), 0, 'kein zweites Feld');
-  await schnell.getByRole('link', { name: 'Erweiterte Suche' }).waitFor();
-  // Klick auf „Suchen“: Text bleibt, Fokus im Feld, die Suche findet.
-  const gemerkt = feldArtGemerkt(s, 'suchen');
-  await art.getByRole('radio', { name: 'Suchen' }).click();
-  await gemerkt;
-  const feld = schnell.getByRole('searchbox', { name: 'Alle Mappen durchsuchen' });
-  assert.equal(await feld.inputValue(), 'Stadtwerke');
-  assert.ok(await feld.evaluate((e) => e === document.activeElement), 'der Fokus bleibt im Feld');
-  await schnell.getByText('Ein Treffer').waitFor();
-  await schnell.getByRole('checkbox', { name: 'auch in Dokumenten' }).waitFor();
-  assert.equal(await frage.count(), 0, 'nur ein Feld');
-  // Nach dem Neuladen weiter „Suchen“; die Pfeiltaste wechselt zurück, der Fokus bleibt im Umschalter.
-  await s.reload();
-  const an = art.getByRole('radio', { name: 'Suchen', checked: true });
-  await an.waitFor();
-  await an.focus();
-  const zurueck = feldArtGemerkt(s, null);
-  await s.keyboard.press('ArrowLeft');
-  await zurueck;
-  const fragenAn = art.getByRole('radio', { name: 'Fragen', checked: true });
-  await fragenAn.waitFor();
-  assert.ok(await fragenAn.evaluate((e) => e === document.activeElement), 'der Fokus bleibt im Umschalter');
-  await frage.waitFor();
+  const knopf = s.getByRole('button', { name: /^Assistent öffnen/ });
+  await knopf.waitFor();
+  assert.equal(await s.getByRole('dialog', { name: 'Assistent' }).count(), 0, 'öffnet sich nie von selbst');
+  await knopf.focus();
+  await s.keyboard.press('Enter');
+  const fenster = s.getByRole('dialog', { name: 'Assistent' });
+  await fenster.waitFor();
+  assert.ok(await fenster.evaluate((e) => e.contains(document.activeElement)), 'der Fokus geht ins Fenster');
+  const reiter = fenster.getByRole('radiogroup', { name: 'Assistent' });
+  assert.deepEqual((await reiter.getByRole('radio').allTextContents()).map((x) => x.replace(/\s*\(neu\)$/, '')), ['Fragen', 'Tipps', 'Handbuch']);
+  await fenster.getByRole('textbox', { name: 'Frag deine Ablage' }).waitFor();
+  await fenster.getByText(/KI-Dienst des Pakets „KI-Assistent“/).waitFor();
+  await reiter.getByRole('radio', { name: /^Tipps/ }).click();
+  await fenster.getByRole('link', { name: 'Alle Tipps ansehen ›' }).waitFor();
+  await reiter.getByRole('radio', { name: 'Handbuch' }).click();
+  await fenster.getByText('Benutzerhandbuch – weil du in der Ablage bist').waitFor();
+  await fenster.getByRole('searchbox', { name: 'Im Handbuch suchen' }).fill('übernehmen');
+  const treffer = fenster.getByRole('link', { name: /Dokument übernehmen/ });
+  assert.match(await treffer.getAttribute('href'), /^\/hilfe\/benutzer\/post\/#dokument-ubernehmen$/);
+  assert.equal(await treffer.getAttribute('target'), '_blank');
+  // Esc leert erst das Suchfeld, dann schließt es das Fenster; der Fokus kehrt zum Knopf zurück.
+  await s.keyboard.press('Escape');
+  await s.keyboard.press('Escape');
+  await fenster.waitFor({ state: 'detached' });
+  assert.ok(await knopf.evaluate((e) => e === document.activeElement), 'der Fokus kehrt zum Knopf zurück');
+  // Das Gespräch und die Wahl bleiben beim Seitenwechsel; in der Werkbank sucht das Handbuch im Admin-Handbuch.
+  await s.getByRole('link', { name: /^Zu erledigen/ }).first().click();
+  await knopf.click();
+  await fenster.getByText('Benutzerhandbuch – weil du in der Ablage bist').waitFor();
+  await fenster.getByRole('button', { name: 'Assistent schließen' }).click();
+});
+
+rauchtest('Assistent ohne Antwort-Paket: nur Tipps · Handbuch (#1219)', { als: LENA }, async (s) => {
+  await mitHandbuch(s);
+  await s.goto(BASIS + '/ablage/start');
+  await s.getByRole('button', { name: /^Assistent öffnen/ }).click();
+  const reiter = s.getByRole('dialog', { name: 'Assistent' }).getByRole('radiogroup', { name: 'Assistent' });
+  await reiter.waitFor();
+  assert.deepEqual((await reiter.getByRole('radio').allTextContents()).map((x) => x.replace(/\s*\(neu\)$/, '')), ['Tipps', 'Handbuch']);
+  assert.equal(await s.getByRole('textbox', { name: 'Frag deine Ablage' }).count(), 0);
 });
 
 /** Verwaltungsmodus über das Benutzermenü; fragt Ablago nach dem Passwort, wird es eingegeben. */
@@ -719,7 +784,7 @@ rauchtest('Rundgang beim ersten Anmelden und „Ablago entdecken“', {}, async 
   }
   await rundgang.getByRole('button', { name: 'Fertig' }).click();
   await rundgang.waitFor({ state: 'detached' });
-  await s.getByText('Hallo Jonas! Hier fängst du an.').waitFor();
+  await s.getByRole('heading', { name: 'Guten Tag, Jonas', level: 1 }).waitFor();
   // „Ablago entdecken“ im Benutzermenü: Tipps und der Rundgang zum Wiederholen.
   const menue = await benutzermenue(s, JONAS);
   await menue.getByRole('link', { name: 'Ablago entdecken' }).click();
@@ -733,7 +798,7 @@ rauchtest('Rundgang beim ersten Anmelden und „Ablago entdecken“', {}, async 
 
 rauchtest('Abmelden', { als: LENA }, async (s) => {
   await s.goto(BASIS + '/ablage/start');
-  await s.getByText('Hallo Lena! Hier fängst du an.').waitFor();
+  await s.getByRole('heading', { name: 'Guten Tag, Lena', level: 1 }).waitFor();
   const menue = await benutzermenue(s, LENA);
   await menue.getByRole('button', { name: 'Abmelden' }).click();
   await s.getByRole('heading', { name: 'Anmelden' }).waitFor();
@@ -751,7 +816,7 @@ rauchtest('Handy: Anmelden und Startseite', { handy: true }, async (s) => {
   await s.getByRole('button', { name: 'Anmelden', exact: true }).click();
   await s.waitForURL(/\/ablage\/start$/);
   // Am Handy: Ansicht oben als Auswahl, Startseite einspaltig mit „Post fotografieren“.
-  await s.getByRole('heading', { name: /^Start/, level: 1 }).waitFor();
+  await s.getByRole('heading', { name: 'Guten Tag, Lena', level: 1 }).waitFor();
   await s.getByRole('button', { name: /Post fotografieren/ }).waitFor();
   await s.getByRole('link', { name: /^Neue Post 2/ }).waitFor();
   await s.getByRole('button', { name: '+ Neu' }).waitFor();
@@ -770,27 +835,38 @@ rauchtest('Handy: Neue Post öffnen', { handy: true, als: LENA }, async (s) => {
   await keineWaagerechteRolle(s);
 });
 
-rauchtest('Handy: Suche', { handy: true, als: LENA }, async (s) => {
+// #1218: Am Handy steht oben nur die Lupe (44 px); sie öffnet das Feld über die ganze Kopfzeile.
+rauchtest('Handy: Suche über die Lupe oben', { handy: true, als: LENA }, async (s) => {
   await s.goto(BASIS + '/ablage/start');
-  await s.getByRole('searchbox', { name: 'Alle Mappen durchsuchen' }).fill('Stromvertrag');
-  await s.getByRole('link', { name: 'Stromvertrag Haus' }).click();
+  const lupe = s.getByRole('banner').getByRole('button', { name: 'Suchen', exact: true });
+  const box = await lupe.boundingBox();
+  assert.ok(box && box.width >= 44 && box.height >= 44, `Lupe mindestens 44 px (${JSON.stringify(box)})`);
+  await lupe.click();
+  const feld = s.getByRole('banner').getByRole('searchbox', { name: 'In deiner Ablage suchen' });
+  assert.ok(await feld.evaluate((e) => e === document.activeElement), 'Fokus im aufgeklappten Feld');
+  await keineWaagerechteRolle(s);
+  await feld.fill('Stromvertrag');
+  await feld.press('Enter');
+  await s.waitForURL(/\/ablage\/suche\?volltext=Stromvertrag$/);
+  await s.getByRole('link', { name: /Stromvertrag Haus/ }).first().click();
   await s.getByRole('heading', { name: 'Stromvertrag Haus', level: 1 }).waitFor();
   await keineWaagerechteRolle(s);
 });
 
-// #935: „+ … anlegen“ öffnet am Handy dasselbe Fenster – unten, so breit wie der Bildschirm; Esc schließt es.
-// #1002: Am Handy ein Feld, der Umschalter darüber.
-rauchtest('Handy: Startseite mit „Fragen · Suchen“', { handy: true, als: LENA }, async (s) => {
+// #1219: Am Handy liegt der Assistent als Blatt unten über die volle Breite.
+rauchtest('Handy: Assistent als Blatt von unten (#1219)', { handy: true, als: LENA }, async (s) => {
   await mitFragen(s);
   await s.goto(BASIS + '/ablage/start');
-  const art = s.getByRole('radiogroup', { name: 'Fragen oder suchen' });
-  await art.waitFor();
-  const frage = s.getByRole('textbox', { name: 'Frag deine Ablage' });
-  const [oben, feld] = [await art.boundingBox(), await frage.boundingBox()];
-  assert.ok(oben && feld && oben.y + oben.height <= feld.y, 'Umschalter über dem Feld');
-  assert.equal(await s.getByRole('searchbox').count(), 0, 'nur ein Feld');
+  await s.getByRole('button', { name: /^Assistent öffnen/ }).click();
+  const fenster = s.getByRole('dialog', { name: 'Assistent' });
+  await fenster.getByRole('textbox', { name: 'Frag deine Ablage' }).waitFor();
+  const box = await fenster.boundingBox();
+  const breite = await s.evaluate(() => document.documentElement.clientWidth);
+  assert.ok(box && box.x <= 1 && Math.abs(box.x + box.width - breite) <= 1, `Blatt über die volle Breite (${JSON.stringify(box)})`);
   await keineWaagerechteRolle(s);
 });
+
+// #935: „+ … anlegen“ öffnet am Handy dasselbe Fenster – unten, so breit wie der Bildschirm; Esc schließt es.
 
 rauchtest('Handy: Fenster „+ … anlegen“ passt auf den Bildschirm (#935)', { handy: true, als: LENA }, async (s) => {
   const typen = (await api('GET', '/api/typen', { cookie: await sitzung(LENA) })).daten;
@@ -838,12 +914,14 @@ rauchtest('Handy: Tabelle als Liste mit den ersten zwei Spalten (#1030)', { hand
 
 rauchtest('Teile: Suche findet den Auftrag über seine Position, „Teil von …“ am direkten Link (#1031)', { als: LENA }, async (s) => {
   const { auftrag, mappe, positionen, position } = daten.tabelle;
-  // Suche über alle Mappen: der Auftrag mit „gefunden in Auftragsposition …“, die Position selbst nicht.
+  // Suche über alle Mappen (#1218: Enter im Suchfeld oben): der Auftrag mit „gefunden in Auftragsposition …“, die Position selbst nicht.
   await s.goto(BASIS + '/ablage/start');
-  const schnell = s.locator('.ss-suche');
-  await schnell.getByRole('searchbox', { name: 'Alle Mappen durchsuchen' }).fill('Ölfilter');
-  await schnell.getByText('gefunden in Auftragsposition „1. Ölfilter“').waitFor();
-  assert.equal(await schnell.getByRole('heading', { name: /^Auftragsposition/ }).count(), 0);
+  const feld = s.getByRole('banner').getByRole('searchbox', { name: 'In deiner Ablage suchen' });
+  await feld.fill('Ölfilter');
+  await feld.press('Enter');
+  const liste = s.getByRole('region', { name: 'Mappen' });
+  await liste.getByText('gefunden in Auftragsposition „1. Ölfilter“').first().waitFor();
+  assert.equal(await liste.getByRole('link', { name: /^1\. Ölfilter/ }).count(), 0);
   // Direkter Link auf die Position: oben „Teil von Auftrag „A-1““ mit Link zurück; in der Mitte keine Liste aller Positionen.
   await s.goto(BASIS + `/ablage/${position.id}/${positionen[0].id}`);
   const zurueck = s.getByRole('link', { name: 'Auftrag „A-1“' });
@@ -1498,7 +1576,7 @@ rauchtest('Passkey: hinzufügen, damit anmelden, entfernen (#811)', { als: LENA 
   await s.goto(BASIS + '/');
   await s.getByRole('heading', { name: 'Anmelden' }).waitFor();
   await s.getByRole('button', { name: 'Mit Passkey anmelden' }).click();
-  await s.getByText('Hallo Lena! Hier fängst du an.').waitFor();
+  await s.getByRole('heading', { name: 'Guten Tag, Lena', level: 1 }).waitFor();
   await s.goto(BASIS + '/profil/sicherheit');
   await blatt.getByText(/zuletzt benutzt am/).waitFor();
   await blatt.getByRole('button', { name: 'Entfernen' }).click();
@@ -1792,6 +1870,52 @@ async function ablageSeiten(cookie) {
     } },
   ];
 }
+
+/** Kopfzeile mit dem Suchfeld oben (#1218) und der Assistent (#1219) – in den Zuständen, die es gibt. */
+const KOPF_BEREICHE = ['[data-anker="startseite.suche"]', '[data-begleiter]'];
+async function kopfUndAssistent(s, pruefe) {
+  await mitFragen(s);
+  await mitHandbuch(s);
+  const typen = (await api('GET', '/api/typen', { cookie: await sitzung(LENA) })).daten;
+  await s.goto(BASIS + '/ablage/start');
+  await s.getByRole('heading', { name: 'Guten Tag, Lena', level: 1 }).waitFor();
+  await pruefe('Startseite');
+  await s.goto(BASIS + `/ablage/${typen.find((x) => x.name === 'Vertrag').id}`);
+  const kopf = s.getByRole('banner');
+  const lupe = kopf.getByRole('button', { name: 'Suchen', exact: true });
+  const feld = kopf.getByRole('searchbox', { name: 'Vertrag durchsuchen' });
+  // Am Handy steht nur die Lupe; erst sie klappt das Feld auf.
+  await feld.or(lupe).first().waitFor();
+  if (await lupe.isVisible()) await lupe.click();
+  await feld.fill('Haus');
+  await kopf.getByRole('button', { name: /Suchen in/ }).click();
+  await kopf.getByRole('group', { name: 'Suchen in' }).waitFor();
+  await pruefe('Ansicht mit „Suchen in“');
+  await s.keyboard.press('Escape');
+  await s.getByRole('button', { name: /^Assistent öffnen/ }).click();
+  const fenster = s.getByRole('dialog', { name: 'Assistent' });
+  for (const r of ['Fragen', 'Tipps', 'Handbuch']) {
+    await fenster.getByRole('radio', { name: new RegExp(`^${r}`) }).click();
+    if (r === 'Handbuch') await fenster.getByRole('searchbox', { name: 'Im Handbuch suchen' }).fill('Post');
+    await s.waitForTimeout(300);
+    await pruefe(`Assistent ${r}`);
+  }
+}
+
+rauchtest('Kopfzeile und Assistent: axe ohne Verstoß, hell und dunkel (#1218, #1219)', { als: LENA }, async (s) => {
+  const funde = [];
+  for (const schema of ['light', 'dark']) {
+    await s.emulateMedia({ colorScheme: schema });
+    await kopfUndAssistent(s, async (name) => { for (const v of await axePruefen(s, KOPF_BEREICHE)) funde.push(`${name} (${schema}): ${v}`); });
+  }
+  assert.deepEqual(funde, [], `axe meldet Verstöße:\n${funde.join('\n')}`);
+});
+
+rauchtest('Handy: Kopfzeile und Assistent mit 44-px-Tippflächen (#1218, #1219)', { handy: true, als: LENA }, async (s) => {
+  const funde = [];
+  await kopfUndAssistent(s, async (name) => { for (const v of await tippflaechenPruefen(s, KOPF_BEREICHE)) funde.push(`${name}: ${v}`); });
+  assert.deepEqual(funde, [], `Zu kleine Tippflächen am Handy:\n${funde.join('\n')}`);
+});
 
 rauchtest('Ablage aus Bausteinen: axe ohne Verstoß, hell und dunkel (#1211, #1212)', { als: LENA }, async (s) => {
   const seiten = await ablageSeiten(await sitzung(LENA));

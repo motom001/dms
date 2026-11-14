@@ -1,0 +1,12 @@
+art: minor
+
+## Neu
+
+- **Suchfeld oben auf jeder Seite** (#1218): In der Kopfzeile steht ein Suchfeld für die ganze Ablage. Mit der Taste „/“ springst du von überall hinein, Enter zeigt alle Treffer in der erweiterten Suche – auch in Titeln und Feldern. In einer Ansicht zeigt das Feld den Bereich als Chip „in: Verträge ×“ und filtert die Liste beim Tippen; „Suchen in ▾“ legt fest, ob auch Dokumente und Notizen durchsucht werden, „Mehr Filter …“ führt in die erweiterte Suche. Am Handy öffnet eine Lupe das Feld.
+- **Assistent unten rechts** (#1219): Ein runder Knopf mit einer kleinen Mappe öffnet auf jeder Seite „Fragen · Tipps · Handbuch“ – „Frag deine Ablage“ (mit KI-Paket), den Tipp des Tages und die Suche im mitgelieferten Handbuch, ohne Internet. Er öffnet sich nie von selbst; ein Punkt zeigt einen neuen Tipp.
+
+## Geändert
+
+- **Ruhige Startseite** (#1219): nur noch Begrüßung, vier Kacheln und „Zuletzt geöffnet“ mit „Alle anzeigen ›“. Die Kacheln sehen gleich aus, nur die Zahl ist farbig. Suche, „Fragen · Suchen“ und die Tipp-Zeile sind von der Startseite verschwunden – gesucht wird oben, gefragt im Assistenten.
+- **Ansichten ohne eigenes Suchfeld** (#1218): Die Suche einer Ansicht ist das Feld oben; die Haken „Volltext durchsuchen“ und „Notizen“ stehen dort unter „Suchen in ▾“.
+- **Erweiterte Suche** (#1218): Der Volltext sucht auf Wunsch auch in Titeln und Feldern (neuer Haken, vorausgewählt); ähnliche Treffer stehen jetzt dort.

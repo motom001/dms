@@ -50,7 +50,7 @@
     Nicht, wenn das Register Versionen hat: Die alte Fassung liegt als ältere **Version** unter dem Dokument und lässt sich ansehen, herunterladen und zurückholen. Wie das geht, steht unter [Versionen verstehen](versionen.md).
 
 ??? question "Die Suche findet einen Text aus einem PDF nicht."
-    Setze neben dem Suchfeld den Haken **Volltext durchsuchen**. Ist das Dokument gerade erst hochgeladen, steht beim Ansehen unter **Über dieses Dokument** vielleicht noch *wartet* – dann einen Moment warten. Steht an der Zeile „Text nicht lesbar“, kannst du es mit **Erneut versuchen** noch einmal anstoßen; für manche Dateitypen gibt es aber keinen Volltext.
+    Setze am Suchfeld oben unter **Suchen in ▾** den Haken **Text der Dokumente** – oder drück Enter: Die erweiterte Suche sucht auch im Text der Dokumente. Ist das Dokument gerade erst hochgeladen, steht beim Ansehen unter **Über dieses Dokument** vielleicht noch *wartet* – dann einen Moment warten. Steht an der Zeile „Text nicht lesbar“, kannst du es mit **Erneut versuchen** noch einmal anstoßen; für manche Dateitypen gibt es aber keinen Volltext.
 
 ??? question "Die Spalten sind verrutscht oder eine ist verschwunden."
     Unter Mein Konto unter **Darstellung auf diesem Gerät** → **Standard-Darstellung wiederherstellen**. Oder kurz auf den Griff zwischen den Spalten klicken – das klappt eingeklappte Bereiche wieder auf.

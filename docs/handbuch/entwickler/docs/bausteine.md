@@ -49,7 +49,7 @@ Am Handy trifft der Finger, nicht der Mauszeiger. Darum hat jedes Bedienelement 
 | `Feld` | Eingaben und Auswahllisten mindestens 44 px hoch |
 | Hilfesymbol „?“ im Feld | bleibt optisch klein; unsichtbare Tippfläche 44 × 44 px, Kopfzeile 44 px hoch, Abstand zur Beschriftung |
 | `HakenFeld`, Haken in `FeldGruppe` | die ganze Zeile mit Beschriftung ist mindestens 44 px hoch; die Beschriftung schaltet den Haken mit |
-| `Suchfeld`, `ListenSuche` | Eingabe wie ein Feld; „×“ als Knopf nur mit Symbol; Auswahl „Paket“ und `FilterHaken` mindestens 44 px hoch |
+| `Suchfeld`, `ListenSuche`, `KopfSuche` | Eingabe wie ein Feld; „×“ als Knopf nur mit Symbol; Auswahl „Paket“ und `FilterHaken` mindestens 44 px hoch; `KopfSuche` am Handy als Lupe mit 44 px, aufgeklappt Chip-„×“ und „Suchen in“ 44 px |
 | `Umschalter` | jede Wahl mindestens 44 × 44 px |
 | `Bereich`, Sprungleiste aus `useBereiche` | Sprünge und Kopf eines Bereichs mindestens 44 px hoch; „Alle aufklappen“ als Knopf der Art Link |
 | ⓘ am gesperrten `Knopf` | bleibt optisch klein; Tippfläche 44 × 44 px |
@@ -97,8 +97,8 @@ Dieselben Bilder nimmt der Workflow **Handbuch** in den Jobs `bilder (de)` und `
 | [PaketChip](bausteine-paketchip.md) | Herkunft aus einem Paket: Symbol und Name hinter dem Namen, Tooltip mit Version, Link zur Paketseite |
 | [Eingaben mit Einheit](bausteine-einheit.md) | Zeitraum (Zahl und Einheit, Einzahl/Mehrzahl) und Prozent (Zahl mit „%“) für die Feldarten Zeitraum und Prozent |
 | [Tabelle](bausteine-tabelle.md) | Zeilen mit Spalten, jede führt zu einer Seite; breit eine Tabelle, schmal eine Liste mit den ersten zwei Spalten (Feldart Tabelle) |
-| [Suche](bausteine-suche.md) | Das Suchfeld aller Listen und das Muster „Liste in der Mitte: Suchfeld oben, Filter darunter“ mit Trefferzahl, Fundstellen und Paketfilter |
-| [Umschalter](bausteine-umschalter.md) | Segmentknopf: zwei bis vier gleichrangige Wahlen, genau eine an – etwa „Fragen · Suchen“ auf der Startseite |
+| [Suche](bausteine-suche.md) | Das Suchfeld aller Listen, das Muster „Liste in der Mitte: Suchfeld oben, Filter darunter“ mit Trefferzahl, Fundstellen und Paketfilter, und das Suchfeld der Kopfzeile (`KopfSuche`) |
+| [Umschalter](bausteine-umschalter.md) | Segmentknopf: zwei bis vier gleichrangige Wahlen, genau eine an – etwa „Fragen · Tipps · Handbuch“ im Assistenten |
 | [Bereiche](bausteine-bereiche.md) | Das Muster „Editor rechts: Sprungleiste + Bereiche“: Sprungleiste mit „Alle aufklappen“, Bereiche zum Auf- und Zuklappen, Gedächtnis je Gerät, Fehler öffnen ihren Bereich |
 | [Fassungen](bausteine-fassungen.md) | Wer hat wann was geändert: Liste mit lesbaren Änderungen, zwei Fassungen vergleichen, wiederherstellen mit Vorschau; gelöschte Einträge unter einer Liste |
 | [Menü](bausteine-menue.md) | Ein Knopf, der Handlungen öffnet – „Mappe ▾“, „⋯“ an Zeilen und Listen: Gruppen, Symbole, gesperrte Punkte mit Grund, Gefahr abgesetzt am Ende mit Rückfrage; am Handy als Blatt |

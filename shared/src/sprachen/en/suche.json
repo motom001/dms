@@ -19,6 +19,7 @@
   "volltext": "Full text",
   "volltext.feld": "Search term in the full text",
   "volltext.beispiel": "e.g. oven",
+  "volltext.felder": "in titles and fields",
   "volltext.dokumente": "in documents",
   "volltext.notizen": "in notes",
   "suchen": "Search",

@@ -17,6 +17,7 @@ export { Menue, type MenueProps, type MenuePunkt } from './menue/Menue';
 export { Wahlhaken, type WahlhakenProps } from './wahlhaken/Wahlhaken';
 export { Tabelle, type TabelleProps, type TabelleSpalte, type TabelleZeile } from './tabelle/Tabelle';
 export { FilterHaken, Fundstellen, Hervorgehoben, KeineTreffer, ListenSuche, PaketFilter, Suchfeld, useListenSuche, type ListenSucheOptionen, type ListenSucheProps, type ListenSucheZustand, type PaketFilterProps, type SuchfeldProps } from './suche/Suche';
+export { KopfSuche, type KopfSucheBereich, type KopfSucheProps } from './suche/KopfSuche';
 export { Umschalter, zielDerTaste, type UmschalterProps, type UmschalterWahl } from './umschalter/Umschalter';
 export { Bereich, fehlerBereiche, liesOffen, merkeOffen, SPRUNGLEISTE_AB, useBereiche, type BereicheOptionen, type BereicheZustand, type BereichListe, type Klappe } from './bereiche/Bereiche';
 export { Fassungen, GeloeschteEintraege, type FassungenProps, type FassungenQuelle } from './fassungen/Fassungen';

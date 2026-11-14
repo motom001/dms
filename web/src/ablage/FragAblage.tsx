@@ -1,4 +1,4 @@
-import { useRef, useSyncExternalStore, type RefObject } from 'react';
+import { useRef, useSyncExternalStore } from 'react';
 import type { FrageAusschnitt, FrageGekuerzt, VerlaufEintrag } from '../../../shared/src/fragen';
 import { frageStellen } from '../api';
 import { Feld, Knopf } from '../bausteine';
@@ -12,8 +12,9 @@ import { t } from '../sprache';
  * Text (kein HTML, keine Links aus der Antwort) – sie kann nichts ändern. Der Chat liegt nur hier im Speicher der Seite:
  * weg beim Neuladen.
  *
- * Seit #1002 kein eigenes zweites Feld mehr, sondern eine Art des Felds der Startseite (`StartFeld`, Umschalter
- * „Fragen · Suchen“): Die Eingabe gehört dem Feld, Antwort, Quellen und Ausschnitte stehen darunter.
+ * Seit #1219 der Reiter „Fragen“ im Assistenten unten rechts (web/src/begleiter): oben das Gespräch mit Quellen unter
+ * jeder Antwort, darunter das Feld und eine kleine Zeile mit dem KI-Hinweis. Die Eingabe gehört dem Assistenten, damit
+ * sie beim Wechsel der Reiter stehen bleibt; das Gespräch bleibt beim Seitenwechsel erhalten (bis zum Neuladen).
  */
 
 interface Runde {
@@ -38,7 +39,7 @@ const aendereLetzte = (f: (r: Runde) => Runde) => setzeChat(chat.map((r, i) => (
 /** Verlauf für die nächste Frage: nur fertige Runden, Fragen und Antworten. */
 const verlauf = (): VerlaufEintrag[] => chat.filter((r) => r.antwort).flatMap((r) => [{ rolle: 'frage' as const, text: r.frage }, { rolle: 'antwort' as const, text: r.antwort! }]);
 
-export function FragAblage({ eingabe, setEingabe, paket, feldRef }: { eingabe: string; setEingabe(wert: string): void; paket: string | null; feldRef?: RefObject<HTMLTextAreaElement | null> }) {
+export function FragAblage({ eingabe, setEingabe, paket }: { eingabe: string; setEingabe(wert: string): void; paket: string | null }) {
   const runden = useSyncExternalStore((h) => { hoerer.add(h); return () => { hoerer.delete(h); }; }, () => chat);
   const abbruch = useRef<AbortController | null>(null);
   const laeuft = runden.some((r) => r.laeuft);
@@ -65,10 +66,15 @@ export function FragAblage({ eingabe, setEingabe, paket, feldRef }: { eingabe: s
   }
 
   return (
-    <>
+    <div className="frag-fenster">
+      {runden.length > 0 ? (
+        <ol className="frag-chat" aria-live="polite">
+          {runden.map((r, i) => <RundeAnzeige key={i} r={r} />)}
+        </ol>
+      ) : <p className="leise frag-leer">{t('fragen.leer')}</p>}
       <form className="frag-form" data-kachel="fragen" data-anker="startseite.fragen" onSubmit={(e) => { e.preventDefault(); void fragen(); }}>
         <Feld beschriftung={t('fragen.titel')} beschriftungVerbergen id="frag-feld">
-          <textarea ref={feldRef} className="frag-feld" rows={2} maxLength={1000} value={eingabe} placeholder={t('fragen.platzhalter')}
+          <textarea className="frag-feld" rows={2} maxLength={1000} value={eingabe} placeholder={t('fragen.platzhalter')}
             onChange={(e) => setEingabe(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); void fragen(); } }} />
         </Feld>
@@ -78,14 +84,9 @@ export function FragAblage({ eingabe, setEingabe, paket, feldRef }: { eingabe: s
             : <Knopf art="haupt" type="submit" gesperrt={!eingabe.trim()}>{t('fragen.fragen')}</Knopf>}
           {runden.length > 0 && !laeuft && <Knopf art="link" onClick={() => setzeChat([])}>{t('fragen.neu')}</Knopf>}
         </div>
+        <p className="leise klein">{t('fragen.hinweis', { paket: paket ?? '' })} {t('fragen.verlauf')}</p>
       </form>
-      {runden.length > 0 && (
-        <ol className="frag-chat" aria-live="polite">
-          {runden.map((r, i) => <RundeAnzeige key={i} r={r} />)}
-        </ol>
-      )}
-      <p className="leise klein">{t('fragen.hinweis', { paket: paket ?? '' })} {t('fragen.verlauf')}</p>
-    </>
+    </div>
   );
 }
 

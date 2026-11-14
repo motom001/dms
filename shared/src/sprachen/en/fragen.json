@@ -1,6 +1,7 @@
 {
   "titel": "Ask your library",
   "platzhalter": "Ask your library … e.g. When does the car insurance expire?",
+  "leer": "Ask a question in full sentences. The sources from your library appear under each answer.",
   "fragen": "Ask",
   "neu": "New chat",
   "laeuft": "Writing the answer …",

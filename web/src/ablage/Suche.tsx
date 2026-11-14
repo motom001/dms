@@ -135,6 +135,8 @@ export function Suchformular({ suche, fokus, zeigeTreffer, einklappen }: { suche
           <input type="search" placeholder={t('suche.volltext.beispiel')} value={f.volltext} onChange={(e) => setF({ ...f, volltext: e.target.value })} />
         </Feld>
         <div className="zeile">
+          {/* Titel und Felder (#1218): Enter im Suchfeld oben kommt mit allen drei Orten hierher. */}
+          <HakenFeld beschriftung={t('suche.volltext.felder')}><input type="checkbox" checked={f.inFeldern} onChange={(e) => setF({ ...f, inFeldern: e.target.checked })} /></HakenFeld>
           <HakenFeld beschriftung={t('suche.volltext.dokumente')}><input type="checkbox" checked={f.inDokumenten} onChange={(e) => setF({ ...f, inDokumenten: e.target.checked })} /></HakenFeld>
           <HakenFeld beschriftung={t('suche.volltext.notizen')}><input type="checkbox" checked={f.inNotizen} onChange={(e) => setF({ ...f, inNotizen: e.target.checked })} /></HakenFeld>
         </div>

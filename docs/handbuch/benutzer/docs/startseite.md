@@ -1,56 +1,12 @@
 # Startseite
 
-Nach der Anmeldung öffnet die Ablage mit der **Startseite**. Sie zeigt auf einen Blick, wo du anfängst – wenige Kacheln, jede mit **einer** Zahl und **einem** Klick dahinter. Du erreichst sie jederzeit über **Start** ganz oben links in der Ablage oder über das Logo.
+Nach der Anmeldung öffnet die Ablage mit der **Startseite**. Sie zeigt auf einen Blick, wo du anfängst: oben die Begrüßung mit dem Datum, darunter vier Kacheln – jede mit **einer** Zahl und **einem** Klick dahinter – und die zuletzt geöffneten Mappen. Mehr steht dort nicht. Du erreichst sie jederzeit über **Start** ganz oben links in der Ablage oder über das Logo.
 
 Die Startseite nutzt die ganze Breite neben den Ansichten: Auf einem großen Bildschirm stehen die Kacheln nebeneinander, auf einem kleineren in mehreren Reihen.
 
 ![Startseite](bilder/startseite.png)
 
-## Schnell finden
-
-Ganz oben auf der Startseite steht **ein Feld**. Rechts am Feld führt **Erweiterte Suche** zur [erweiterten Suche](ablage.md#erweiterte-suche) – für Fragen wie „alle Rechnungen, die noch nicht bezahlt sind“.
-
-Ohne „Frag deine Ablage“ ist das Feld ein **Suchfeld**: „Suchen – Name, Nummer, Kennzeichen …“. Mit „Frag deine Ablage“ wechselst du darüber mit **Fragen · Suchen** zwischen beidem ([siehe unten](#fragen-oder-suchen)). Die Suche sucht sofort beim Tippen (ab zwei Zeichen) über **alle Mappen, die du lesen darfst** – du musst nicht wissen, in welcher Ansicht etwas liegt. Gesucht wird in Titeln und Feldwerten wie in der Suche der Ansichten; mit **auch in Dokumenten** zusätzlich im Volltext (dauert etwas länger).
-
-Die Treffer stehen nach Mappentyp gruppiert, Mappen mit dem Suchbegriff im Titel zuerst. Unter jedem Treffer steht, **warum er passt**, mit hervorgehobenem Begriff – zum Beispiel „Vertragsnummer: KV-123456“. Ein Tipp öffnet die Mappe. Mehr als 60 Treffer: genauer suchen oder die [Erweiterte Suche](ablage.md#erweiterte-suche) nehmen.
-
-Mit **auch in Dokumenten** und einem Paket wie **KI lokal – Ähnlichkeit** stehen unter den Treffern zusätzlich **„Ähnliche Treffer“**: Mappen, in denen dein Suchbegriff nicht vorkommt, deren Dokument aber dazu passt – „Rechnung für die Heizung“ findet so auch „Wartung Gastherme“. Sie tragen das Kennzeichen **ähnlich**; darunter steht das passende Dokument. Mehr dazu unter [Ähnliche Dokumente](dokumente.md#aehnliche-dokumente).
-
-Am Handy kannst du auch **diktieren** (Mikrofon der Tastatur). Tippst du eine **Archivnummer** und dann Enter bzw. „Suchen“, springst du direkt zum Dokument – wie in den Ansichten. Leerst du das Feld (mit **×** oder Esc), erscheinen wieder die Kacheln.
-
-## Frag deine Ablage { #frag-deine-ablage }
-
-Hat dein Administrator ein Paket wie **KI-Assistent** eingerichtet, ist das Feld oben zuerst **„Frag deine Ablage“**. Hier stellst du eine Frage in eigenen Worten – zum Beispiel „Wann läuft die Kfz-Versicherung aus?“ – und bekommst darunter eine Antwort mit Links zu den passenden Mappen. Ohne ein solches Paket gibt es nur die Suche.
-
-### Fragen oder suchen { #fragen-oder-suchen }
-
-Über dem Feld steht der Umschalter **Fragen · Suchen** – am Handy ebenso über dem Feld:
-
-- **Fragen** – das Feld ist „Frag deine Ablage“.
-- **Suchen** – das Feld ist die Suche mit **auch in Dokumenten**, wie [oben](#schnell-finden) beschrieben.
-- **Erweiterte Suche** rechts daneben gibt es in beiden Fällen.
-
-![Startseite mit „Fragen · Suchen“ über dem Feld](bilder/startseite-fragen.png)
-
-Was du eingetippt hast, bleibt beim Umschalten stehen – hast du eine Frage begonnen und willst doch lieber suchen, klick einfach auf **Suchen**. Ablago merkt sich, was du zuletzt gewählt hast, auch auf deinen anderen Geräten; beim ersten Mal ist es **Fragen**.
-
-Mit der Tastatur: Tab führt zur gewählten Seite des Umschalters, die Pfeiltasten wechseln, Tab weiter ins Feld. Ein Screenreader sagt „Fragen oder suchen“ und welche Seite gewählt ist; das Feld heißt je nachdem „Frag deine Ablage“ oder „Alle Mappen durchsuchen“. Schaltest du mit der Maus oder dem Finger um, bleibst du im Feld.
-
-### Eine Frage stellen
-
-- **Fragen:** Frage eintippen, dann **Fragen** oder Enter (neue Zeile mit Umschalt + Enter). Die Antwort entsteht beim Schreiben; mit **Abbrechen** hörst du auf.
-- **Quellen:** Unter der Antwort stehen die Mappen, aus denen sie stammt, als Links. Die Nummern in eckigen Klammern, z. B. „[2]“, zeigen auf die Stellen darunter.
-- **„An die KI geschickt: n Ausschnitte aus m Mappen“:** Aufgeklappt siehst du genau die Stellen, die an den KI-Dienst gingen – nie mehr als das, nie deine ganze Ablage. Gesucht wird nur in Mappen, die **du** lesen darfst; Passwörter sind nie dabei.
-- **„… 6 von 9 Ausschnitten (gekürzt)“:** Der KI-Dienst kann nur eine bestimmte Menge Text auf einmal lesen. War es zu viel, hat das Paket gekürzt – aufgeklappt siehst du dann nur die Stellen, die wirklich hingingen. Bei langen Chats kann es auch ältere Fragen und Antworten weglassen; das steht dann unter der Antwort. Fehlt etwas in der Antwort, hilft oft ein **Neuer Chat**.
-- **Nachfragen:** Du kannst im selben Chat weiterfragen („Und wann ist die Kündigungsfrist?“). Für jede Frage sucht Ablago neue Stellen. **Neuer Chat** fängt von vorn an.
-- **Nichts wird gespeichert.** Der Chat bleibt nur in diesem Browser-Fenster und ist beim Neuladen weg. Im Protokoll von Ablago steht nur, *dass* gefragt wurde – nicht was. Für die Übersicht der Kosten merkt sich Ablago je Frage nur, wer wann gefragt hat, wie lange es dauerte und wie viele Token der KI-Dienst meldete – ebenfalls ohne Frage und Antwort.
-- **„KI-Funktionen pausiert bis …“:** Dein Administrator hat für den KI-Dienst ein Budget je Monat festgelegt, und es ist aufgebraucht. Ab dem genannten Tag geht es wieder – oder sobald dein Administrator das Budget erhöht.
-
-Die Antwort schreibt ein KI-Dienst. Er kann sich irren oder etwas nicht finden – prüfe Wichtiges in den Quellen. Die Antwort ist nur Text: Sie ändert nichts in deiner Ablage. Die Ausschnitte gehen an den KI-Dienst, den dein Administrator eingerichtet hat – entweder ein Rechner bei dir im Heimnetz, dann bleibt alles bei dir, oder ein Anbieter. Welcher es ist, sieht dein Administrator unter Werkbank → Pakete an der Dienst-Adresse des Pakets.
-
-## Tipp des Tages
-
-Unter dem Feld steht ab und zu eine leise Zeile mit einem Tipp – höchstens einer am Tag. Der Satz ist der Link; das kleine × blendet den Tipp aus. Mehr unter [Ablago entdecken](entdecken.md#tipps).
+Gesucht wird im **Suchfeld oben in der Kopfzeile** – es steht auf jeder Seite der Ablage, Enter zeigt alle Treffer in der [erweiterten Suche](ablage.md#suchen). Fragen an deine Ablage, den Tipp des Tages und die Suche im Handbuch findest du im [Assistenten](assistent.md) unten rechts.
 
 ## Die Kacheln
 
@@ -61,7 +17,7 @@ Unter dem Feld steht ab und zu eine leise Zeile mit einem Tipp – höchstens ei
 | **Nächster Termin** | Datum und Mappe des nächsten Termins (deine Aufgaben mit Datum, Erinnerungen, Fristen an Mappen, die du lesen darfst); darunter, wie viel überfällig ist | den [Monat in Zu erledigen](eingang.md#monat-und-jahr) |
 | **Favoriten** oder eine **Ansicht deiner Wahl** | deine Favoriten bzw. die Mappen der Ansicht | die Favoriten bzw. die Ansicht |
 
-Ist eine Kachel leer, steht dort statt einer Null ein grünes Häkchen, z. B. „✓ Nichts zu erledigen“. *Zu erledigen* ist hervorgehoben, solange es etwas zu tun gibt. Alle Zahlen zählen nur, was du sehen darfst.
+Alle Kacheln sehen gleich aus; nur die **Zahl** steht in der Akzentfarbe. Ist eine Kachel leer, steht dort statt einer Null ein grünes Häkchen, z. B. „✓ Nichts zu erledigen“ – Grün heißt in Ablago immer „gut“ oder „erledigt“. Alle Zahlen zählen nur, was du sehen darfst.
 
 **Die Zahlen aktualisieren sich von selbst.** Lässt du die Startseite offen, holt sie neue Zahlen, Termine und die zuletzt geöffneten Mappen, sobald sich in der Ablage etwas geändert hat – du musst die Seite nicht neu laden. Ebenso die Zahlen bei *Neue Post* und *Zu erledigen* links. Änderungen anderer erscheinen nach einigen Sekunden (höchstens etwa einer halben Minute), deine eigenen sofort. Ablago fragt dafür nur nach, solange der Tab zu sehen ist; das zählt nicht als Aktivität. Die Werte wechseln ruhig an ihrer Stelle, ohne Ansage für Screenreader; die Liste der zuletzt geöffneten Mappen sortiert nicht um, solange der Mauszeiger oder der Fokus darauf steht.
 
@@ -71,7 +27,7 @@ Darunter stehen die **zuletzt geöffneten** Mappen – die letzten fünf, die du
 
 ## Zuletzt geöffnet { #zuletzt-geoeffnet }
 
-Ein Klick auf die Überschrift **Zuletzt geöffnet ›** oder auf **Alle zuletzt geöffneten anzeigen ›** darunter öffnet die Liste der **letzten 25** Mappen – die neueste oben, je mit Mappentyp und Zeitpunkt, z. B. „Vertrag · geöffnet heute, 10:30“. Ein Klick öffnet die Mappe rechts; **← Start** führt zurück zur Startseite.
+**Alle anzeigen ›** neben der Überschrift **Zuletzt geöffnet** öffnet die Liste der **letzten 25** Mappen – die neueste oben, je mit Mappentyp und Zeitpunkt, z. B. „Vertrag · geöffnet heute, 10:30“. Ein Klick öffnet die Mappe rechts; **← Start** führt zurück zur Startseite.
 
 - **Anlegen und Ändern zählen wie Öffnen.** Eine Mappe, die du gerade angelegt oder geändert hast – auch über „Zuordnen“ oder ein neues Dokument –, steht danach oben, auch wenn du sie nicht eigens geöffnet hast. Was andere ändern, verschiebt deine Liste nicht.
 - **Die Liste gehört dir allein.** Sie zeigt nur Mappen, die du noch lesen darfst; Mappen im Papierkorb fehlen.

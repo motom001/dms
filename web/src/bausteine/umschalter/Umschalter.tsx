@@ -3,7 +3,7 @@ import s from './Umschalter.module.css';
 
 /**
  * Baustein Umschalter (#1002): zwei bis vier gleichrangige Wahlen nebeneinander, genau eine ist an – ein Segmentknopf,
- * z. B. „Fragen · Suchen“ über dem Feld der Startseite. Anleitung im Entwicklerhandbuch, „Gestaltung und Bausteine →
+ * z. B. „Fragen · Tipps · Handbuch“ im Assistenten unten rechts (#1219). Anleitung im Entwicklerhandbuch, „Gestaltung und Bausteine →
  * Umschalter“.
  *
  * Für Screenreader eine Gruppe von Optionsfeldern (`role="radiogroup"`, je Wahl `role="radio"` mit `aria-checked`): Die

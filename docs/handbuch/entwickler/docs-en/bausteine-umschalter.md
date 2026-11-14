@@ -1,6 +1,6 @@
 # Toggle
 
-`Umschalter` (#1002) is a segmented button: two to four equal choices side by side, exactly one is on. It changes **how** something works – for example whether the box on the start page asks or searches (“Ask · Search”, `web/src/ablage/StartFeld.tsx`). For tabs with their own content below them (the tabs of a folder) there are the tab cards.
+`Umschalter` (#1002) is a segmented button: two to four equal choices side by side, exactly one is on. It changes **how** something works – for example “Ask · Tips · Manual” in the assistant at the bottom right (`web/src/begleiter/Begleiter.tsx`, #1219) or “List · Month · Year” in To do. For tabs with their own content below them (the tabs of a folder) there are the tab cards.
 
 | Property | Purpose |
 | --- | --- |

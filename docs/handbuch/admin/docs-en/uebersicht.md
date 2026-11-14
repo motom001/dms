@@ -33,6 +33,8 @@ Under every result it says **where** Ablago found the word – the area in bold,
 
 Where entries come from [packages](pakete.md), there is the filter **Package**: *All*, *Own (no package)* or one package, e.g. only *Household*. You can choose the packages that occur in the list. Search and filter work together; the number of results shows the outcome.
 
+The Library's **search box at the top, in the header** does not exist in the Workbench – here you search in the lists in the middle. The **assistant** at the bottom right is here too: under **Manual** it searches the **admin manual** in the Workbench (the user manual in the Library), without the internet, in the manual your installation brings along; plus **Tips** and, with an answering package, **Ask** ([User manual: Assistant](https://help.ablago.app/benutzer/aktuell/en/assistent/)).
+
 All other areas have **two parts**: the areas on the left, the whole page on the right. Small or read-only lists – for instance the long database accesses, the blocked addresses, the existing exports or the latest accesses to the WebDAV drive – are there as a section of their own with a fixed height that you scroll. On a smartphone, **← Areas** leads from such a page directly back to the choice of areas.
 
 Every form ends with the same bar, which stays visible at the bottom when scrolling: on the right the main button with the subject in its name – for instance **Create number sequence** or **Save mailbox** –, to its left **Discard**:

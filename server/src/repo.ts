@@ -87,8 +87,11 @@ export interface SeitenAnfrage {
   volltext?: boolean;
   /** Suche auch in Notizen (#55). */
   notizen?: boolean;
-  /** Erweiterte Suche (#199): der Begriff muss in Dokumenten und/oder Notizen stehen – UND mit allem anderen. */
-  textfilter?: { text: string; dokumente: boolean; notizen: boolean };
+  /**
+   * Erweiterte Suche (#199): der Begriff muss in Dokumenten und/oder Notizen stehen – UND mit allem anderen. Mit
+   * `felder` (#1218) zählt auch ein Treffer in Titel oder Feldern wie bei `suche`.
+   */
+  textfilter?: { text: string; dokumente: boolean; notizen: boolean; felder?: boolean };
   /**
    * Unscharfe Suche (#356): weitere Schreibweisen je Begriff (Schlüssel `falte(begriff)`) – gleichbedeutende Wörter,
    * ohne Bindestrich, bei keinem genauen Treffer ähnliche Wörter. Gilt für `suche` und `textfilter`.

@@ -49,7 +49,7 @@ On a phone the finger hits, not the mouse pointer. So every control of a buildin
 | `Feld` | inputs and selects at least 44 px high |
 | help icon “?” in a field | stays small to the eye; invisible touch target of 44 × 44 px, header row 44 px high, space to the label |
 | `HakenFeld`, checkboxes in `FeldGruppe` | the whole row with the label is at least 44 px high; the label toggles the checkbox, too |
-| `Suchfeld`, `ListenSuche` | input like a field; “×” as a button with only a symbol; “Package” choice and `FilterHaken` at least 44 px high |
+| `Suchfeld`, `ListenSuche`, `KopfSuche` | input like a field; “×” as a button with only a symbol; “Package” choice and `FilterHaken` at least 44 px high; `KopfSuche` on the phone as a 44 px magnifier, opened the chip “×” and “Search in” 44 px |
 | `Umschalter` | each choice at least 44 × 44 px |
 | `Bereich`, jump bar from `useBereiche` | jumps and the head of an area at least 44 px high; “Expand all” as a button of type link |
 | ⓘ at a locked `Knopf` | stays small to the eye; touch target 44 × 44 px |
@@ -98,7 +98,7 @@ The workflow **Handbuch** takes the same screenshots in the jobs `bilder (de)` a
 | [Inputs with a unit](bausteine-einheit.md) | Period (number and unit, singular/plural) and percentage (number with “%”) for the field kinds period and percentage |
 | [Table](bausteine-tabelle.md) | Rows with columns, each leading to a page; wide a table, narrow a list with the first two columns (field kind table) |
 | [Search](bausteine-suche.md) | The search field of all lists and the pattern “list in the middle: search field on top, filters below” with number of results, places found and package filter |
-| [Toggle](bausteine-umschalter.md) | Segmented button: two to four equal choices, exactly one on – such as “Ask · Search” on the start page |
+| [Toggle](bausteine-umschalter.md) | Segmented button: two to four equal choices, exactly one on – such as “Ask · Tips · Manual” in the assistant |
 | [Areas](bausteine-bereiche.md) | The pattern “editor on the right: jump bar + areas”: jump bar with “Expand all”, areas to expand and collapse, memory per device, errors open their area |
 | [Versions](bausteine-fassungen.md) | Who changed what and when: list with readable changes, compare two versions, restore with a preview; deleted entries below a list |
 | [Menu](bausteine-menue.md) | A button that opens actions – “Folder ▾”, “⋯” on rows and lists: groups, icons, locked items with a reason, danger set apart at the end with a confirmation; a sheet on the phone |

@@ -482,7 +482,7 @@ On the page *Take over document*, Ablago suggests a folder type under **Where do
 
 ### Ask your library { #frag-deine-ablage }
 
-If a package with the permission [Answer questions about the Library](#recht-antworten) is installed and loaded, the box at the top of the Library's start page is **"Ask your library"** at first; with **Ask · Search** above it each person switches to the search, and Ablago remembers their choice (see [User manual](https://help.ablago.app/benutzer/aktuell/en/startseite/#frag-deine-ablage)). This is how a question runs:
+If a package with the permission [Answer questions about the Library](#recht-antworten) is installed and loaded, the assistant at the bottom right has the **Ask** tab with **"Ask your library"** (see [User manual](https://help.ablago.app/benutzer/aktuell/en/assistent/#frag-deine-ablage)); without such a package the assistant only shows **Tips · Manual**. This is how a question runs:
 
 1. The browser sends the question and the chat so far to Ablago.
 2. Ablago **itself** looks for matching passages – in the documents' full text, in the folders' titles and fields and, if a package with [vectors](#recht-vektoren) is there, by similarity –, **only in folders the person asking may read**. Password fields and users are never included.
@@ -582,7 +582,7 @@ Under **"Reacts to these events:"** the preview names when the code runs by itse
 A package with the permission [Vectors for documents](#recht-vektoren) – for instance **Local AI – similarity** – computes a vector for every document with full text. With it Ablago shows:
 
 - on the folder below the documents **"Similar documents"** from other folders,
-- in the search on the [start page](https://help.ablago.app/benutzer/aktuell/en/startseite/#schnell-finden) with **"also in documents"** additionally **similar results** – folders without a matching word whose document is similar to the search term, marked **"similar"**.
+- in the [advanced search](https://help.ablago.app/benutzer/aktuell/en/ablage/#erweiterte-suche) with a full text in documents (also after Enter in the search box at the top) additionally **similar results** – folders without a matching word whose document is similar to the search term, marked **"similar"**.
 
 Everyone only sees folders they may read. The package supplies the vector of the search term; if it doesn't answer within 1.5 seconds, Ablago searches as before without similarity.
 

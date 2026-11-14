@@ -73,14 +73,17 @@ describe('Erweiterte Suche: Formular und Adresse (#199)', () => {
     assert.deepEqual(f.felder.rechnungsdatum, { von: '01.03.2025', bis: '2025-11-30' });
     assert.deepEqual(f.felder.vertragspartner.werte, ['a', 'b']);
     assert.equal(f.felder.nr.leer, 'leer');
-    assert.equal(f.inDokumenten && f.inNotizen, true, 'ohne „in“: beide');
+    assert.equal(f.inFeldern && f.inDokumenten && f.inNotizen, true, 'ohne „in“: alle drei (#1218)');
     const zurueck = liesSuche(alsParameter(f));
     assert.deepEqual(zurueck, f);
     assert.match(alsParameter({ ...leeresFormular(), felder: { typ: { werte: ['x'] } } }).toString(), /typ\.wert=x/, 'reservierte Namen mit .wert');
     assert.deepEqual(liesSuche(new URLSearchParams('volltext=x&in=notizen')).inDokumenten, false);
+    // Frühere Adressen mit „in“ behalten ihre Bedeutung: ohne „felder“ keine Titel und Felder.
+    assert.equal(liesSuche(new URLSearchParams('volltext=x&in=dokumente&in=notizen')).inFeldern, false);
+    assert.equal(alsParameter({ ...leeresFormular(), volltext: 'x' }).toString(), 'volltext=x&in=felder&in=dokumente&in=notizen');
     const typen = [{ id: 't', name: 'Rechnung', schluessel: 'rechnung', felder: [{ key: 'rechnungsdatum', label: 'Rechnungsdatum', typ: 'datum' }, { key: 'vertragspartner', label: 'Vertragspartner', typ: 'referenz', zielTyp: 'p' }] }] as never;
     const chips = chipsVon(f, typen, (id) => id.toUpperCase(), (id) => id);
-    assert.deepEqual(chips.map((c) => c.text), ['Rechnung', 'Rechnungsdatum 01.03.2025–30.11.2025', 'Vertragspartner: A, B', '„Backofen“ in Dokumenten oder Notizen']);
+    assert.deepEqual(chips.map((c) => c.text), ['Rechnung', 'Rechnungsdatum 01.03.2025–30.11.2025', 'Vertragspartner: A, B', '„Backofen“ in Titel und Feldern oder Dokumenten oder Notizen']);
     assert.equal(ohneChip(f, 'vertragspartner').felder.vertragspartner, undefined);
     assert.equal(ohneChip(f, 'volltext').volltext, '');
     assert.deepEqual(abfrageAus(f, typen).entfallen.sort(), ['leer', 'nr']);
@@ -131,6 +134,12 @@ function faelle(pg: boolean) {
       assert.deepEqual(await treffer(d, 'typ=rechnung&volltext=Backofen&in=notizen'), ['R-5']);
       assert.deepEqual(await treffer(d, 'typ=rechnung&volltext=Backofen&in=dokumente'), ['R-1', 'R-2', 'R-3']);
       assert.deepEqual(await treffer(d, 'typ=rechnung&volltext=Backofen&in=dokumente&in=notizen'), ['R-1', 'R-2', 'R-3', 'R-5']);
+      // Titel und Felder (#1218): Enter im Suchfeld oben sucht ohne „in“ – also auch dort.
+      assert.deepEqual(await treffer(d, 'volltext=R-4&in=felder'), ['R-4']);
+      assert.deepEqual(await treffer(d, 'volltext=R-4&in=dokumente'), []);
+      assert.deepEqual(await treffer(d, 'volltext=Saturn'), ['Saturn'], 'ohne Typ: alle Mappentypen, auch der Partner selbst');
+      assert.deepEqual(await treffer(d, 'typ=rechnung&volltext=Backofen'), ['R-1', 'R-2', 'R-3', 'R-5']);
+      assert.deepEqual(await treffer(d, 'volltext=Kühlschrank&in=felder'), []);
       // Mit der normalen Suche zusammen: beides muss passen.
       assert.deepEqual(await treffer(d, 'typ=rechnung&volltext=Backofen', ICH, { suche: 'R-3' }), ['R-3']);
     });

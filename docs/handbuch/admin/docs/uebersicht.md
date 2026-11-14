@@ -33,6 +33,8 @@ Unter jedem Treffer steht, **wo** Ablago das Wort gefunden hat – fett der Bere
 
 Wo Einträge aus [Paketen](pakete.md) kommen, gibt es den Filter **Paket**: *Alle*, *Eigene (ohne Paket)* oder ein Paket, z. B. nur *Haushalt*. Zur Wahl stehen die Pakete, die in der Liste vorkommen. Suche und Filter wirken zusammen; die Trefferzahl zeigt das Ergebnis.
 
+Das **Suchfeld oben in der Kopfzeile** der Ablage gibt es in der Werkbank nicht – hier suchst du in den Listen der Mitte. Der **Assistent** unten rechts ist auch hier da: Unter **Handbuch** sucht er in der Werkbank im **Admin-Handbuch** (in der Ablage im Benutzerhandbuch), ohne Internet im Handbuch, das deine Installation mitbringt; dazu **Tipps** und, mit einem Antwort-Paket, **Fragen** ([Benutzerhandbuch: Assistent](https://help.ablago.app/benutzer/aktuell/assistent/)).
+
 Alle anderen Bereiche sind **zweiteilig**: links die Bereiche, rechts die ganze Seite. Kleine oder nur lesende Listen – etwa die langen Datenbankzugriffe, die gesperrten Adressen, die vorhandenen Exporte oder die letzten Zugriffe auf das WebDAV-Laufwerk – stehen dort als eigener Abschnitt mit fester Höhe, in dem du scrollst. Am Smartphone führt **← Bereiche** von einer solchen Seite direkt zurück zur Auswahl der Bereiche.
 
 Jedes Formular endet mit derselben Leiste, die beim Scrollen unten sichtbar bleibt: rechts der Hauptknopf mit dem Gegenstand im Namen – etwa **Nummernkreis anlegen** oder **Postfach speichern** –, links daneben **Verwerfen**:

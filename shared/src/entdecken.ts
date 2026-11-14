@@ -135,9 +135,12 @@ export interface TippAnzeige {
 export interface EntdeckenStand {
   rundgaenge: Rundgang[];
   tipps: TippAnzeige[];
-  /** Tipp des Tages für die Zeile auf der Startseite (null: heute keiner oder Tipps aus). */
-  tipp: { schluessel: string; weitere: number } | null;
-  /** Tipp-Zeile auf der Startseite eingeschaltet (Mein Konto → Darstellung). */
+  /**
+   * Tipp des Tages im Assistenten (null: heute keiner oder Tipps aus). `gesehen`: schon angesehen (#1219) – dann kein
+   * Punkt mehr am Knopf des Assistenten.
+   */
+  tipp: { schluessel: string; weitere: number; gesehen: boolean } | null;
+  /** Tipp des Tages eingeschaltet (Mein Konto → Darstellung). */
   tippsAn: boolean;
   /** Rundgang, der jetzt von selbst startet (erste Anmeldung bzw. nach „Später“). */
   starten: string | null;

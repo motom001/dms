@@ -10,8 +10,6 @@ import { useKonto } from '../konto';
 import { Link } from '../ort';
 import { titelOder } from '../seiten';
 import { neuePost } from './NeuePost';
-import { StartFeld } from './StartFeld';
-import { TippZeile } from '../entdecken/TippZeile';
 import { istTouch, postFotografieren } from './PostKamera';
 import { AnsichtSymbol, Symbol } from '../Symbol';
 import { darfPostAnlegen } from '../../../shared/src/model';
@@ -19,9 +17,11 @@ import { gebietsschema } from '../../../shared/src/sprache';
 import { sichtName } from '../../../shared/src/beschriftung';
 
 /**
- * Startseite der Ablage (#334): wenige Kacheln mit je einer Zahl und einer Handlung.
+ * Startseite der Ablage (#334), ruhig seit #1219: Begrüßung, vier Kacheln mit je einer Zahl und „Zuletzt geöffnet“.
+ * Gesucht wird im Feld oben in der Kopfzeile (#1218); Fragen, Tipp des Tages und Handbuch stehen im Assistenten unten
+ * rechts (#1219). Die Kacheln sind einheitlich neutral, nur die Zahl steht in der Akzentfarbe (Grün heißt „gut“).
  * Zu erledigen, Neue Post, Nächster Termin (#725, öffnet den Monat), eine wählbare Kachel (Favoriten oder eine Ansicht) und
- * „Zuletzt geöffnet“ (Überschrift und „Alle … anzeigen“ öffnen die Liste der letzten 25, #940). In einer leeren
+ * „Zuletzt geöffnet“ (daneben „Alle anzeigen ›“ öffnet die Liste der letzten 25, #940). In einer leeren
  * Installation stattdessen drei Einstiege.
  * Abschalten und Kachel wählen: im Profil (Einstellungen „startseite“, „startseite_kachel“).
  *
@@ -32,11 +32,11 @@ import { sichtName } from '../../../shared/src/beschriftung';
 const zahl = (n: number) => n.toLocaleString(gebietsschema());
 type Startdaten = { zuletzt: Array<{ id: string; typId: string; titel: string; am: string | null }>; leer: boolean };
 
-function Kachel({ name, to, art, titel, anzahl, leer, unter, symbol, anker }: { name: string; to: string; art: 'auffaellig' | 'ruhig' | 'post'; titel: string; anzahl: number | null; leer: string; unter?: string; symbol?: string | null; anker?: string }) {
+function Kachel({ name, to, titel, anzahl, leer, unter, symbol, anker }: { name: string; to: string; titel: string; anzahl: number | null; leer: string; unter?: string; symbol?: string | null; anker?: string }) {
   const nichts = anzahl === 0;
   return (
     <div className="start-feld" data-kachel={name} data-anker={anker}>
-      <Link to={to} className={`kachel ${art} ${nichts ? 'erledigt' : ''}`}>
+      <Link to={to} className={`kachel ruhig ${nichts ? 'erledigt' : ''}`}>
         <span className="kacheltitel">{symbol && <><AnsichtSymbol name={symbol} /> </>}{titel}</span>
         {anzahl === null ? <span className="kachelzahl leise">…</span> : nichts ? <span className="kachelleer"><Symbol name="haken" /> {leer}</span> : <span className="kachelzahl">{zahl(anzahl)}</span>}
         {unter && !nichts && <span className="kachelunter leise klein">{unter}</span>}
@@ -68,6 +68,7 @@ export function Startseite({ offen, breit = false }: { offen?: string; breit?: b
   const d = useDaten();
   const { ich } = useKonto();
   const handbuch = useHandbuch();
+  const heute = new Date().toLocaleDateString(gebietsschema(), { weekday: 'long', day: 'numeric', month: 'long' });
   const [daten, setDaten] = useState<Startdaten | null>(null);
   const datei = useRef<HTMLInputElement>(null);
   // Von selbst nachgeladen (#919, `d.frisch`): ruhig wechseln. Die alten Werte bleiben stehen, bis die neuen da sind;
@@ -109,14 +110,9 @@ export function Startseite({ offen, breit = false }: { offen?: string; breit?: b
 
   return (
     <>
-      <Listenkopf titel={t('ablage.startseite.start')} hilfe="ablage.start" beschreibung={<>{t('ablage.startseite.hallo-hier-faengst-du', { wert: ich.name?.split(/\s+/)[0] || ich.email })}</>} />
+      <Listenkopf titel={t('ablage.startseite.gruss', { name: ich.name?.split(/\s+/)[0] || ich.email })} beschreibung={heute} />
       <div className={`listenrumpf startseite${breit ? ' start-breit' : ''}`}>
-        {/* Ein Feld ganz oben (#497, #1002): Suchen oder – mit einem Antwort-Paket – „Frag deine Ablage“ (#444), umschaltbar.
-            Darunter (beim Suchen ohne Suchbegriff) die Kamera, Kacheln und „zuletzt geöffnet“. */}
-        <StartFeld ohneFeld={!!daten?.leer} sonst={<>
-        {/* Tipp des Tages (#832): eine leise Zeile unter dem Feld – bleibt dort, wenn die Startseite zum Dashboard wird (#421). */}
-        {!daten?.leer && <TippZeile />}
-        {/* Handy (#490): mit einem Tipp in die Kamera – mehrseitig, ein PDF, eine Post. */}
+        {/* Handy (#490): mit einem Tipp in die Kamera – mehrseitig, ein PDF, eine Post. Nur mit Touch. */}
         {kamera && <button type="button" className="knopf gruen pk-start" onClick={() => postFotografieren()}>{tn('ablage.startseite.post-fotografieren', { symbol: <Symbol name="kamera" /> })}</button>}
         {daten?.leer ? (
           <div className="einstiege">
@@ -137,19 +133,22 @@ export function Startseite({ offen, breit = false }: { offen?: string; breit?: b
           </div>
         ) : (
           <div className="kacheln start-raster">
-            <Kachel name="eingang" anker="startseite.zu-erledigen" to="/ablage/eingang" art="auffaellig" titel={t('ablage.startseite.zu-erledigen')} anzahl={z(d.zaehler.eingang)} leer={t('ablage.startseite.nichts-zu-erledigen')} unter={t('ablage.startseite.aufgaben-und-mappen-an')} />
-            {postSicht && <Kachel name="post" anker="startseite.neue-post" to={`/ablage/${postSicht.id}`} art="post" titel={sichtName(postSicht)} anzahl={z(d.zaehler.sichten?.[postSicht.id] ?? 0)} leer={t('ablage.startseite.keine-neue-post')} unter={t('ablage.startseite.noch-nicht-zugeordnet')} />}
+            <Kachel name="eingang" anker="startseite.zu-erledigen" to="/ablage/eingang" titel={t('ablage.startseite.zu-erledigen')} anzahl={z(d.zaehler.eingang)} leer={t('ablage.startseite.nichts-zu-erledigen')} unter={t('ablage.startseite.aufgaben-und-mappen-an')} />
+            {postSicht && <Kachel name="post" anker="startseite.neue-post" to={`/ablage/${postSicht.id}`} titel={sichtName(postSicht)} anzahl={z(d.zaehler.sichten?.[postSicht.id] ?? 0)} leer={t('ablage.startseite.keine-neue-post')} unter={t('ablage.startseite.noch-nicht-zugeordnet')} />}
             <TerminKachel z={termin} />
             {lieblings
-              ? <Kachel name="wahl" to={`/ablage/${lieblings.id}`} art="ruhig" titel={lieblings.name} symbol={lieblings.symbol} anzahl={z(d.zaehler.sichten?.[lieblings.id] ?? 0)} leer={t('ablage.startseite.leer')} />
-              : <Kachel name="wahl" to="/ablage/favoriten" art="ruhig" titel={t('ablage.startseite.favoriten')} anzahl={z(d.zaehler.favoriten ?? 0)} leer={t('ablage.startseite.noch-keine-der-stern')} />}
+              ? <Kachel name="wahl" to={`/ablage/${lieblings.id}`} titel={lieblings.name} symbol={lieblings.symbol} anzahl={z(d.zaehler.sichten?.[lieblings.id] ?? 0)} leer={t('ablage.startseite.leer')} />
+              : <Kachel name="wahl" to="/ablage/favoriten" titel={t('ablage.startseite.favoriten')} anzahl={z(d.zaehler.favoriten ?? 0)} leer={t('ablage.startseite.noch-keine-der-stern')} />}
           </div>
         )}
         {daten && daten.zuletzt.length > 0 && (
-          <section className="zuletzt" data-kachel="zuletzt" ref={zuletzt} onPointerLeave={loslassen}
+          <section className="zuletzt" data-kachel="zuletzt" ref={zuletzt} aria-labelledby="zuletzt-titel" onPointerLeave={loslassen}
             onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) loslassen(); }}>
-            {/* #940: Überschrift und Zeile darunter öffnen die Liste der letzten 25 – der einzige Weg dorthin. */}
-            <h2 className="h3"><Link to="/ablage/zuletzt" className="zl-kopf" anker="startseite.zuletzt">{t('ablage.startseite.zuletzt-geoeffnet-mehr')}</Link></h2>
+            {/* #940, #1219: eine normale Überschrift, daneben ein Link zur Liste der letzten 25. */}
+            <div className="zl-kopf">
+              <h2 id="zuletzt-titel" className="h3">{t('ablage.startseite.zuletzt-geoeffnet')}</h2>
+              <Link to="/ablage/zuletzt" className="verweis klein" anker="startseite.zuletzt">{t('ablage.startseite.alle-anzeigen')}</Link>
+            </div>
             <ul className="mappenliste">
               {daten.zuletzt.map((m) => (
                 <li key={m.id}>
@@ -160,10 +159,8 @@ export function Startseite({ offen, breit = false }: { offen?: string; breit?: b
                 </li>
               ))}
             </ul>
-            <Link to="/ablage/zuletzt" className="verweis klein zl-alle">{t('ablage.startseite.zuletzt-alle')}</Link>
           </section>
         )}
-        </>} />
       </div>
     </>
   );

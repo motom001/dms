@@ -26,7 +26,7 @@ const [reiter, setReiter] = useState<'felder' | 'dokumente'>('felder');
 - **Screenreader:** `role="tablist"` mit Namen, je Reiter `role="tab"` mit `aria-selected` und `aria-controls`; die Fläche ist `role="tabpanel"` und nach dem aktiven Reiter benannt (ohne eigenes `tabindex`: Ihr Inhalt hat Bedienelemente).
 - **Breiter als der Platz:** Die Reihe rollt waagerecht, die Seite nicht. Am Handy ist jeder Reiter mindestens 44 px hoch.
 
-**Abgrenzung:** Der [Umschalter](bausteine-umschalter.md) ändert, *wie* etwas Gleiches arbeitet (z. B. „Fragen · Suchen“); Reiter zeigen verschiedene Inhalte.
+**Abgrenzung:** Der [Umschalter](bausteine-umschalter.md) ändert, *wie* etwas Gleiches arbeitet (z. B. „Liste · Monat · Jahr“); Reiter zeigen verschiedene Inhalte.
 
 **Bestand:** Die Register der Mappe (`.registertab`) und der Texterkennung ziehen in #1211 bzw. #1213 auf diesen Baustein um.
 

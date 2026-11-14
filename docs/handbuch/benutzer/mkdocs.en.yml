@@ -74,6 +74,7 @@ nav:
   - First steps: erste-schritte.md
   - Working in the Library:
       - Home page: startseite.md
+      - Assistant: assistent.md
       - Views and lists: ablage.md
       - Post: post.md
       - Folders: mappen.md

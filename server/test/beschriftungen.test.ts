@@ -113,7 +113,7 @@ describe('Beschriftungen je Sprache (#728) – Grundlagen', () => {
     const typ = { id: 't', name: 'Zähler', felder: [ART], register: [] } as unknown as Mappentyp;
     assert.equal(beschreibeBedingung({ art: 'feld', feld: 'art', op: 'einerVon', wert: { art: 'fest', wert: ['wasser'] } }, [typ]), 'Art ist einer von „Wasser“');
     // Erweiterte Suche: Beschriftung eingegeben, fester Wert in der Bedingung.
-    const r = abfrageAus({ typen: ['Zähler'], felder: { art: { werte: ['Water'] } }, volltext: '', inDokumenten: true, inNotizen: true }, [typ]);
+    const r = abfrageAus({ typen: ['Zähler'], felder: { art: { werte: ['Water'] } }, volltext: '', inFeldern: true, inDokumenten: true, inNotizen: true }, [typ]);
     assert.deepEqual(r.fehler, []);
     assert.match(JSON.stringify(r.bedingungen), /"wert":\["wasser"\]/);
     // Erkennung: die Beschriftung steht im Text, gesetzt wird der feste Wert.

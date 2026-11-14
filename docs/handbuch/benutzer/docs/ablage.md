@@ -22,7 +22,7 @@ Am Handy steht statt der Liste ein Knopf mit der aktuellen Ansicht, z. B. **Ansi
 
 **Ansichten ausblenden …** ganz unten: Nimm den Haken bei Ansichten weg, die du selten brauchst. Das gilt nur für dich und nur für diese Auswahl; die Ansicht selbst bleibt für alle, und über die Suche findest du sie weiter.
 
-Auch die Liste ist am Handy kompakter: Die Kopfzeile passt in eine Zeile, das Suchfeld bleibt beim Rollen oben, und *Volltext durchsuchen*, *Notizen* und *Erweiterte Suche* stehen hinter **Filter ▾**.
+Auch die Liste ist am Handy kompakter: Die Kopfzeile passt in eine Zeile; gesucht wird über die Lupe oben in der Kopfzeile ([Suchen](#suchen)).
 
 - **Ansichten können Unteransichten haben.** Ein Pfeil ▸ davor zeigt das; ein Klick darauf klappt sie auf oder zu. Dein Gerät merkt sich, was zugeklappt ist.
 - **Eine Ansicht mit Unteransichten zeigt alles zusammen:** *Finanzen* zeigt zum Beispiel alle offenen Rechnungen *und* die Zahlungen dieses Jahres.
@@ -60,17 +60,30 @@ Nach Verweisen und langen Texten lässt sich nicht sortieren; diese Spalten habe
 
 ## Suchen
 
-Über der Liste jeder Ansicht mit Mappen steht ein Suchfeld. Die Suche findet Mappen, deren **Titel oder Angaben** den eingegebenen Text enthalten – Groß- und Kleinschreibung spielt keine Rolle, Umlaute und Bindestriche auch nicht: „Gebuhr“ findet „Gebühr“, „Strasse“ findet „Straße“, „Kfzversicherung“ findet „Kfz-Versicherung“.
+Gesucht wird im **Suchfeld oben in der Kopfzeile**. Es steht auf jeder Seite der Ablage an derselben Stelle: „Suchen in deiner Ablage …“. Mit der Taste **/** springst du von überall hinein (nicht, während du in einem anderen Feld tippst); **Esc** leert es.
 
-![Suche in den Verträgen](bilder/suche.png)
+- **Enter** zeigt alle Treffer in der [erweiterten Suche](#erweiterte-suche): Dein Begriff steht dort im Volltext, die Treffer kommen sofort – gesucht wird in Titeln und Feldern, im Text der Dokumente und in Notizen aller Mappen, die du lesen darfst. Dort verfeinerst du weiter, etwa mit einem Mappentyp oder einem Zeitraum. Es gibt nur diese eine Trefferliste.
+- Eine **Archivnummer** und Enter öffnet direkt das Dokument.
 
-Über der Liste steht, wie viele Treffer es gibt. Ist das Suchfeld leer, siehst du wieder alle Mappen; leeren kannst du es mit dem **×** am Ende oder mit **Esc**.
+![Suchfeld oben in einer Ansicht](bilder/suche.png)
+
+### In einer Ansicht suchen { #in-einer-ansicht-suchen }
+
+Ist eine Ansicht offen, etwa *Verträge*, zeigt das Feld oben den Bereich als Chip **in: Verträge ×**, und dort steht „Verträge durchsuchen …“. Was du tippst, **filtert die Liste in der Mitte sofort**. Die Suche findet Mappen, deren **Titel oder Angaben** den eingegebenen Text enthalten – Groß- und Kleinschreibung spielt keine Rolle, Umlaute und Bindestriche auch nicht: „Gebuhr“ findet „Gebühr“, „Strasse“ findet „Straße“, „Kfzversicherung“ findet „Kfz-Versicherung“.
+
+Über der Liste steht, wie viele Treffer es gibt. Ist das Feld leer, siehst du wieder alle Mappen.
+
+- **×** am Chip oder die **Rücktaste** im leeren Feld nimmt den Bereich weg: Das Feld sucht dann wieder in allem, die Liste zeigt alles, und **Enter** führt in die erweiterte Suche.
+- **Suchen in ▾** rechts im Feld legt fest, worin gesucht wird: **Titel und Felder** (immer), **Text der Dokumente** und **Notizen**. Ablago merkt sich die beiden Haken für dich. Darunter führt **Mehr Filter …** in die erweiterte Suche, mit dem Mappentyp der Ansicht schon gewählt.
+- Wechselst du die Ansicht, beginnt das Feld leer.
+
+**Am Handy** steht oben nur eine Lupe. Ein Tipp darauf öffnet das Feld über die ganze Breite der Kopfzeile, mit Chip und **Suchen in**; **×** rechts schließt es wieder.
 
 [Teile einer Mappe](mappen.md#teile) – etwa Rechnungspositionen – stehen nicht selbst in der Liste: Steht der Begriff in einem Teil, findest du die übergeordnete Mappe mit „gefunden in …“, sofern du beide sehen darfst.
 
 ### Im Text der Dokumente suchen
 
-Setzt du neben dem Suchfeld den Haken **Volltext durchsuchen**, sucht Ablago auch im Text der hochgeladenen Dokumente – in PDFs und, dank Texterkennung, auch in Scans und Fotos. Unter jedem Treffer steht, in welchem Dokument die Stelle steht, mit dem gefundenen Wort hervorgehoben. Ablago merkt sich den Haken für dich.
+Setzt du unter **Suchen in ▾** den Haken **Text der Dokumente**, sucht Ablago auch im Text der hochgeladenen Dokumente – in PDFs und, dank Texterkennung, auch in Scans und Fotos. Unter jedem Treffer steht, in welchem Dokument die Stelle steht, mit dem gefundenen Wort hervorgehoben. Ablago merkt sich den Haken für dich.
 
 ![Volltextsuche: Treffer in einem Dokument](bilder/volltext-suche.png)
 
@@ -86,7 +99,7 @@ Hat ein Administrator **gleichbedeutende Wörter** eingerichtet (z. B. *Kfz, Aut
 
 ### In Notizen suchen
 
-Mit dem Haken **Notizen** sucht Ablago auch in den [Notizen](zusammenarbeit.md#notizen) der Mappen. Unter einem Treffer steht dann die Stelle aus der Notiz.
+Mit dem Haken **Notizen** unter **Suchen in ▾** sucht Ablago auch in den [Notizen](zusammenarbeit.md#notizen) der Mappen. Unter einem Treffer steht dann die Stelle aus der Notiz.
 
 !!! note "Was die Suche (noch) nicht kann"
     - Frisch hochgeladene Dokumente findet sie erst, wenn ihr Text erkannt ist – meist nach Sekunden, bei langen Scans nach einigen Minuten (siehe [Dokumente](dokumente.md#volltext)).
@@ -94,7 +107,7 @@ Mit dem Haken **Notizen** sucht Ablago auch in den [Notizen](zusammenarbeit.md#n
 
 ## Erweiterte Suche
 
-Wenn du eine Mappe nur ungefähr beschreiben kannst, hilft die **erweiterte Suche**. Du findest sie ganz oben bei den Ansichten, als Link **Erweiterte Suche** am Feld der [Startseite](startseite.md#schnell-finden) und neben dem Suchfeld einer Liste (dann ist der Mappentyp der Liste schon gewählt).
+Wenn du eine Mappe nur ungefähr beschreiben kannst, hilft die **erweiterte Suche**. Du findest sie ganz oben bei den Ansichten; **Enter** im [Suchfeld oben](#suchen) führt mit deinem Begriff hierher, und **Mehr Filter …** unter **Suchen in ▾** in einer Ansicht ebenso (dann ist der Mappentyp der Ansicht schon gewählt).
 
 Das Suchformular steht **oben in der Mitte**, die Treffer darunter; links bleiben die Ansichten. Solange du keine Mappe geöffnet hast, nutzt die Suche die ganze Breite bis zum rechten Rand. Öffnest du einen Treffer, erscheint er rechts und die Mitte wird schmaler.
 
@@ -125,7 +138,7 @@ So funktioniert das Formular:
 
 ### Volltext in Dokumenten und Notizen
 
-Unter **Volltext** gibst du einen Begriff ein, der in den Dokumenten oder Notizen der Mappe stehen soll. Mit den Haken **in Dokumenten** und **in Notizen** (beide vorausgewählt) legst du fest, wo: Steht der Begriff an einem der beiden Orte, zählt die Mappe als Treffer. Die Suche im Text versteht Wortformen in der Sprache des Dokuments und findet Teilwörter wie die [Volltextsuche](#im-text-der-dokumente-suchen). Unter jedem Treffer steht die Fundstelle.
+Unter **Volltext** gibst du einen Begriff ein, der in der Mappe stehen soll. Mit den Haken **in Titel und Feldern**, **in Dokumenten** und **in Notizen** (alle drei vorausgewählt) legst du fest, wo: Steht der Begriff an einem davon, zählt die Mappe als Treffer. So findet Enter im Suchfeld oben dieselben Mappen wie die Suche einer Ansicht – und mehr. Die Suche im Text versteht Wortformen in der Sprache des Dokuments und findet Teilwörter wie die [Volltextsuche](#im-text-der-dokumente-suchen). Unter jedem Treffer steht die Fundstelle.
 
 ### Das Ergebnis
 
@@ -138,6 +151,8 @@ Nach **Suchen** klappt das Formular zu. Über den Treffern steht dann die **Zusa
 Die Suche steht in der **Adresse** des Browsers: Zurück und Vor funktionieren, du kannst sie als Lesezeichen speichern oder den Link weitergeben. Wer den Link öffnet, sieht nur die Mappen, die er lesen darf.
 
 Am Handy kommt erst das Formular, nach **Suchen** die Trefferliste; mit **← Suche ändern** kommst du mit deinen Eingaben zurück zum Formular.
+
+Ist ein Paket wie **KI lokal – Ähnlichkeit** installiert und gilt der Volltext auch in Dokumenten, stehen ohne weitere Bedingungen unter den Treffern zusätzlich **„Ähnliche Treffer“**: Mappen, in denen dein Begriff nicht vorkommt, deren Dokument aber dazu passt – „Rechnung für die Heizung“ findet so auch „Wartung Gastherme“. Sie tragen das Kennzeichen **ähnlich**; darunter steht das passende Dokument. Mehr dazu unter [Ähnliche Dokumente](dokumente.md#aehnliche-dokumente).
 
 ## Mehrere Mappen auswählen
 

@@ -483,7 +483,7 @@ Auf der Seite *Dokument übernehmen* schlägt Ablago unter **Wohin gehört das?*
 
 ### Frag deine Ablage { #frag-deine-ablage }
 
-Ist ein Paket mit dem Recht [Fragen an die Ablage beantworten](#recht-antworten) installiert und geladen, ist das Feld oben auf der Startseite der Ablage zuerst **„Frag deine Ablage“**; mit **Fragen · Suchen** darüber wechselt jede Person zur Suche, und Ablago merkt sich ihre Wahl (siehe [Benutzerhandbuch](https://help.ablago.app/benutzer/aktuell/startseite/#frag-deine-ablage)). So läuft eine Frage ab:
+Ist ein Paket mit dem Recht [Fragen an die Ablage beantworten](#recht-antworten) installiert und geladen, gibt es im Assistenten unten rechts den Reiter **Fragen** mit **„Frag deine Ablage“** (siehe [Benutzerhandbuch](https://help.ablago.app/benutzer/aktuell/assistent/#frag-deine-ablage)); ohne ein solches Paket zeigt der Assistent nur **Tipps · Handbuch**. So läuft eine Frage ab:
 
 1. Der Browser schickt die Frage und den bisherigen Chat an Ablago.
 2. Ablago sucht **selbst** passende Stellen – im Volltext der Dokumente, in Titel und Feldern der Mappen und, wenn ein Paket mit [Vektoren](#recht-vektoren) da ist, nach Ähnlichkeit –, **nur in Mappen, die der Fragende lesen darf**. Passwortfelder und Benutzer sind nie dabei.
@@ -583,7 +583,7 @@ Unter **„Reagiert auf diese Ereignisse:“** nennt die Vorschau, wann der Code
 Ein Paket mit dem Recht [Vektoren zu Dokumenten](#recht-vektoren) – etwa **KI lokal – Ähnlichkeit** – rechnet zu jedem Dokument mit Volltext einen Vektor. Damit zeigt Ablago:
 
 - an der Mappe unter den Dokumenten **„Ähnliche Dokumente“** aus anderen Mappen,
-- in der Suche der [Startseite](https://help.ablago.app/benutzer/aktuell/startseite/#schnell-finden) mit **„auch in Dokumenten“** zusätzlich **ähnliche Treffer** – Mappen ohne passendes Wort, deren Dokument dem Suchbegriff ähnlich ist, gekennzeichnet mit **„ähnlich“**.
+- in der [erweiterten Suche](https://help.ablago.app/benutzer/aktuell/ablage/#erweiterte-suche) mit einem Volltext in Dokumenten (auch nach Enter im Suchfeld oben) zusätzlich **ähnliche Treffer** – Mappen ohne passendes Wort, deren Dokument dem Suchbegriff ähnlich ist, gekennzeichnet mit **„ähnlich“**.
 
 Jeder sieht dabei nur Mappen, die er lesen darf. Den Vektor des Suchbegriffs liefert das Paket; antwortet es nicht innerhalb von 1,5 Sekunden, sucht Ablago wie bisher ohne Ähnlichkeit.
 

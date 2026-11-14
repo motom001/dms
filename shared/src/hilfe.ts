@@ -227,7 +227,7 @@ export const HILFE = {
   'ablage.sicht': benutzer('ablage/', 'Ansichten und Listen', 'die-liste'),
   'ablage.erweitertesuche': benutzer('ablage/', 'Erweiterte Suche', 'erweiterte-suche'),
   'ablage.aehnlich': benutzer('dokumente/', 'ähnlichen Dokumenten', 'aehnliche-dokumente'),
-  'ablage.fragen': benutzer('startseite/', '„Frag deine Ablage“', 'frag-deine-ablage'),
+  'ablage.fragen': benutzer('assistent/', '„Frag deine Ablage“', 'frag-deine-ablage'),
   'ablage.suchvolltext': benutzer('ablage/', 'Volltext in der erweiterten Suche', 'volltext-in-dokumenten-und-notizen'),
   'ablage.post': benutzer('post/', 'Post'),
   'post.zuordnen': benutzer('post/', 'Dokument übernehmen', 'zuordnen'),
@@ -295,6 +295,14 @@ export function sprachordner(sprache?: string | null): string {
  */
 export function handbuchUrl(handbuch: Handbuch, _version: string | null | undefined, seite = '', sprache?: string | null): string {
   return `/hilfe/${handbuch}/${sprachordner(sprache)}${seite}`;
+}
+
+/**
+ * Suchverzeichnis des mitgelieferten Handbuchs (#1219): von mkdocs gebaut, liegt mit dem Handbuch unter /hilfe/. Der
+ * Assistent sucht darin, ohne Netz nach draußen; ohne gebaute Handbücher (Entwicklung) gibt es die Datei nicht.
+ */
+export function handbuchSuchverzeichnisUrl(handbuch: Handbuch, sprache?: string | null): string {
+  return `/hilfe/${handbuch}/${sprachordner(sprache)}search/search_index.json`;
 }
 
 /** Dieselbe Seite online, immer in der aktuellen Fassung (#846), in der Sprache der Person (#730). */

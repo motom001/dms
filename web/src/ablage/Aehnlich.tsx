@@ -19,6 +19,29 @@ export function AehnlichChip({ a }: { a: AehnlicheMappe }) {
   return <span className="chip aehnl-chip klein" title={t('aehnlich.chip.titel', { dokument: a.dokument.name, prozent: prozent(a.aehnlichkeit) })}>{t('aehnlich.chip')}</span>;
 }
 
+/**
+ * Ähnliche Treffer unter der Trefferliste der erweiterten Suche (#442; bis #1218 auf der Startseite): ohne Wort-Treffer,
+ * aber mit einem ähnlichen Dokument – gekennzeichnet. Nur, wenn ein Paket Ähnlichkeit kann.
+ */
+export function AehnlicheTreffer({ liste, sicht, anhang }: { liste: AehnlicheMappe[]; sicht: string; anhang: string }) {
+  if (!liste.length) return null;
+  return (
+    <section className="aehnl-treffer" aria-labelledby="aehnl-treffer-titel">
+      <h2 id="aehnl-treffer-titel" className="ueber">{t('aehnlich.gruppe')} <span className="anzahl">{liste.length}</span></h2>
+      <ul className="mappenliste">
+        {liste.map((a) => (
+          <li key={a.id}>
+            <Link to={`/ablage/${sicht}/${a.id}${anhang}`} className="eintrag">
+              <span className="titel">{titelOder(a.titel)} <AehnlichChip a={a} /></span>
+              <span className="unter leise">{t('aehnlich.eintrag', { dokument: a.dokument.name, prozent: prozent(a.aehnlichkeit) })}</span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
 /** Ähnliche Dokumente an einer Mappe – erscheint nur, wenn ein Paket mit dms:vektoren installiert ist. */
 export function AehnlicheDokumente({ mappeId }: { mappeId: string }) {
   const [stand, setStand] = useState<{ verfuegbar: boolean; berechnet: boolean; mappen: AehnlicheMappe[] } | null | 'fehler'>(null);

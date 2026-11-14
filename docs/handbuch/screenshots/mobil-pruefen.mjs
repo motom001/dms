@@ -219,20 +219,33 @@ for (const g of GROESSEN) {
         .filter((e) => { const r = e.getBoundingClientRect(); return r.height > 0 && r.height < 43.5; }).map((e) => `${(e.textContent || e.getAttribute('aria-label') || e.getAttribute('placeholder') || '').trim().slice(0, 30)} (${Math.round(e.getBoundingClientRect().height)} px)`));
       if (klein.length) fehler.push(`${ort} „Ansicht ▾“: Tippziele unter 44 px: ${klein.join(', ')}`);
       await s.keyboard.press('Escape');
-      // Schnell finden (#497): Suchfeld oben, Treffer in unter einer Sekunde, nichts zu breit.
-      // Seit #1002 der Baustein Suchfeld: die Eingabe im Rahmen `.ss-feld` (ohne Antwort-Paket immer die Suche).
-      const feld = s.locator('.ss-feld input[type="search"]');
-      if (!(await feld.count())) fehler.push(`${ort}: Suchfeld der Startseite fehlt`);
+      // Suchfeld oben (#1218): Lupe in der Kopfzeile (44 px), aufgeklappt über die ganze Breite; Enter führt in die
+      // erweiterte Suche, Treffer in unter anderthalb Sekunden, nichts zu breit.
+      const lupe = s.getByRole('banner').getByRole('button', { name: 'Suchen', exact: true });
+      if (!(await lupe.count())) fehler.push(`${ort}: Lupe des Suchfelds oben fehlt`);
       else {
+        const box = await lupe.boundingBox();
+        if (!box || box.width < 43.5 || box.height < 43.5) fehler.push(`${ort}: Lupe kleiner als 44 px (${JSON.stringify(box)})`);
+        await lupe.click();
+        const feld = s.getByRole('banner').getByRole('searchbox');
         const t0 = Date.now();
         await feld.fill('Strom');
-        await s.locator('.ss-treffer').waitFor({ timeout: 5000 }).catch(() => fehler.push(`${ort}: keine Treffer-Anzeige für „Strom“`));
+        await feld.press('Enter');
+        await s.locator('.spalte.liste .eintrag, .spalte.liste tbody tr').first().waitFor({ timeout: 5000 }).catch(() => fehler.push(`${ort}: keine Treffer für „Strom“`));
         if (Date.now() - t0 > 1500) fehler.push(`${ort}: Suche brauchte ${Date.now() - t0} ms`);
         const raus = await s.evaluate(zuBreiteElemente);
         await s.screenshot({ path: join(ordner, 'start-suche.png') });
         if (raus.length) fehler.push(`${ort} Suche:\n  ${raus.slice(0, 10).join('\n  ')}`);
-        await feld.fill('');
+        await s.goto(BASIS + seite.pfad);
       }
+      // Assistent (#1219): Blatt von unten über die volle Breite, nichts zu breit.
+      await s.locator('[data-anker="assistent"] button').first().click();
+      const blatt = s.getByRole('dialog', { name: 'Assistent' });
+      await blatt.waitFor({ timeout: 5000 }).catch(() => fehler.push(`${ort}: Assistent öffnet nicht`));
+      const rausA = await s.evaluate(zuBreiteElemente);
+      await s.screenshot({ path: join(ordner, 'assistent.png') });
+      if (rausA.length) fehler.push(`${ort} Assistent:\n  ${rausA.slice(0, 10).join('\n  ')}`);
+      await s.keyboard.press('Escape');
     }
     // Dokument vorzeigen (#505): Register mit Dokumenten – kein eingebetteter Rahmen, Tippziele mindestens 44 px.
     if (seite.name === 'post') {

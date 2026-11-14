@@ -22,7 +22,7 @@ On the phone, instead of the list there is a button with the current view, e.g. 
 
 **Hide views …** at the very bottom: remove the tick for views you rarely need. This only applies to you and only to this selection; the view itself remains for everyone, and you still find it via the search.
 
-The list is also more compact on the phone: the header fits in one line, the search field stays at the top when scrolling, and *Search full text*, *Notes* and *Advanced search* are behind **Filter ▾**.
+The list is also more compact on the phone: the header fits in one line; you search with the magnifier at the top of the header ([Search](#suchen)).
 
 - **Views can have sub-views.** An arrow ▸ in front shows this; a click on it expands or collapses them. Your device remembers what is collapsed.
 - **A view with sub-views shows everything together:** *Finances*, for example, shows all open invoices *and* this year's payments.
@@ -60,17 +60,30 @@ Links and long texts can't be sorted by; these columns have no arrow.
 
 ## Search { #suchen }
 
-Above the list of every view with folders there is a search field. The search finds folders whose **title or details** contain the text entered – upper and lower case don't matter, and neither do umlauts and hyphens: "Gebuhr" finds "Gebühr", "Strasse" finds "Straße", "Kfzversicherung" finds "Kfz-Versicherung".
+You search in the **search box at the top, in the header**. It is in the same place on every page of the Library: "Search your library …". The **/** key takes you into it from anywhere (not while you are typing in another field); **Esc** clears it.
 
-![Search in the contracts](bilder/suche.png)
+- **Enter** shows all hits in the [advanced search](#erweiterte-suche): your term is in the full text there and the hits come straight away – it searches titles and fields, the text of documents and notes of all folders you may read. There you refine further, for example with a folder type or a period. There is only this one list of hits.
+- An **archive number** and Enter opens the document directly.
 
-Above the list it says how many hits there are. If the search field is empty, you see all folders again; you clear it with the **×** at its end or with **Esc**.
+![Search box at the top in a view](bilder/suche.png)
+
+### Searching in a view {#in-einer-ansicht-suchen}
+
+When a view is open, such as *Contracts*, the box at the top shows the scope as a chip **in: Contracts ×**, and it says "Search Contracts …". What you type **filters the list in the middle straight away**. The search finds folders whose **title or details** contain the text entered – upper and lower case don't matter, and neither do umlauts and hyphens: "Gebuhr" finds "Gebühr", "Strasse" finds "Straße", "Kfzversicherung" finds "Kfz-Versicherung".
+
+Above the list it says how many hits there are. If the box is empty, you see all folders again.
+
+- **×** on the chip or **Backspace** in the empty box removes the scope: the box then searches everything again, the list shows everything, and **Enter** leads to the advanced search.
+- **Search in ▾** on the right of the box sets what is searched: **Titles and fields** (always), **Text of documents** and **Notes**. Ablago remembers the two ticks for you. Below them, **More filters …** leads to the advanced search with the view's folder type already chosen.
+- If you change the view, the box starts empty.
+
+**On the phone** there is only a magnifier at the top. Tapping it opens the box across the full width of the header, with the chip and **Search in**; **×** on the right closes it again.
 
 [Parts of a folder](mappen.md#teile) – such as invoice items – are not in the list themselves: if the term is in a part, you find the parent folder with "found in …", provided you may see both.
 
 ### Searching in the text of documents {#im-text-der-dokumente-suchen}
 
-If you tick **Search full text** next to the search field, Ablago also searches the text of uploaded documents – in PDFs and, thanks to text recognition, also in scans and photos. Below each hit it says in which document the passage is, with the word found highlighted. Ablago remembers the tick for you.
+If you tick **Text of documents** under **Search in ▾**, Ablago also searches the text of uploaded documents – in PDFs and, thanks to text recognition, also in scans and photos. Below each hit it says in which document the passage is, with the word found highlighted. Ablago remembers the tick for you.
 
 ![Full-text search: hit in a document](bilder/volltext-suche.png)
 
@@ -86,7 +99,7 @@ If an administrator has set up **synonyms** (e.g. *car, auto, vehicle* – some 
 
 ### Searching in notes {#in-notizen-suchen}
 
-With the tick **Notes**, Ablago also searches the folders' [notes](zusammenarbeit.md#notizen). Below a hit, the passage from the note is then shown.
+With the tick **Notes** under **Search in ▾**, Ablago also searches the folders' [notes](zusammenarbeit.md#notizen). Below a hit, the passage from the note is then shown.
 
 !!! note "What the search can't do (yet)"
     - It only finds freshly uploaded documents once their text has been recognised – usually after seconds, for long scans after a few minutes (see [Documents](dokumente.md#volltext)).
@@ -94,7 +107,7 @@ With the tick **Notes**, Ablago also searches the folders' [notes](zusammenarbei
 
 ## Advanced search {#erweiterte-suche}
 
-If you can only roughly describe a folder, the **advanced search** helps. You find it at the very top of the views, as the link **Advanced search** next to the box on the [home page](startseite.md#schnell-finden) and next to the search field of a list (then the list's folder type is already chosen).
+If you can only roughly describe a folder, the **advanced search** helps. You find it at the very top of the views; **Enter** in the [search box at the top](#suchen) leads here with your term, and so does **More filters …** under **Search in ▾** in a view (then the view's folder type is already chosen).
 
 The search form is **at the top in the middle**, the hits below it; the views stay on the left. As long as you haven't opened a folder, the search uses the full width up to the right edge. When you open a hit, it appears on the right and the middle becomes narrower.
 
@@ -125,7 +138,7 @@ This is how the form works:
 
 ### Full text in documents and notes { #volltext-in-dokumenten-und-notizen }
 
-Under **Full text** you enter a term that should appear in the folder's documents or notes. With the ticks **in documents** and **in notes** (both preselected) you set where: if the term appears in one of the two places, the folder counts as a hit. The search in the text understands word forms in the document's language and finds parts of words like the [full-text search](#im-text-der-dokumente-suchen). Below each hit is the passage found.
+Under **Full text** you enter a term that should appear in the folder. With the ticks **in titles and fields**, **in documents** and **in notes** (all three preselected) you set where: if the term appears in one of them, the folder counts as a hit. So Enter in the search box at the top finds the same folders as the search in a view – and more. The search in the text understands word forms in the document's language and finds parts of words like the [full-text search](#im-text-der-dokumente-suchen). Below each hit is the passage found.
 
 ### The result {#das-ergebnis}
 
@@ -138,6 +151,8 @@ After **Search**, the form collapses. Above the hits there is then the **summary
 The search is in the browser's **address**: back and forward work, you can save it as a bookmark or pass on the link. Whoever opens the link only sees the folders they may read.
 
 On the phone, the form comes first, after **Search** the list of hits; with **← Change search** you return to the form with your entries.
+
+If a package such as **AI local – similarity** is installed and the full text also applies to documents, without further conditions **"Similar results"** appear below the hits as well: folders that don't contain your term but whose document matches it – "invoice for the heating" thus also finds "gas boiler service". They carry the label **similar**; below them is the matching document. More under [Similar documents](dokumente.md#aehnliche-dokumente).
 
 ## Selecting several folders { #mehrere-mappen-auswahlen }
 
