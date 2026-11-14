@@ -1,0 +1,191 @@
+/* Löschprotokoll, Feldformate, Ähnlichkeit, „Frag deine Ablage“, „Zu erledigen“ (Liste, Monat, Jahr), Lasttest, Archivfassung.
+   Teil der Gestaltung, eingebunden in fester Reihenfolge über stile/index.css. */
+
+/* Löschprotokoll (#470) */
+.lp-grund { margin-top: 10px; }
+.lp-filter { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px 12px; align-items: end; margin: 10px 0; }
+.lp-filter .lp-suche { grid-column: span 2; }
+.lp-filter .eigenschaft { margin: 0; }
+.lp-datei { display: block; border: 1px dashed var(--linie-stark); border-radius: var(--r); padding: 10px 12px; font-size: calc(13px * var(--skala, 1)); cursor: pointer; }
+.lp-datei input { display: block; margin-bottom: 6px; max-width: 100%; }
+.lp-sha { overflow-wrap: anywhere; word-break: break-all; }
+.lp-liste { list-style: none; margin: 8px 0; padding: 0; border-top: 1px solid var(--linie); }
+.lp-eintrag { display: flex; flex-direction: column; gap: 2px; padding: 8px 0 8px 10px; border-bottom: 1px solid var(--linie); border-left: 3px solid var(--linie-stark); min-width: 0; }
+.lp-eintrag.lp-endgueltig { border-left-color: var(--schlecht); }
+.lp-eintrag.lp-wiederhergestellt { border-left-color: var(--gruen); }
+.lp-eintrag code { font-size: 0.92em; }
+.lp-jahre { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 12px; }
+.lp-jahre .eigenschaft { margin: 0; }
+.lp-jahre-feld { display: inline-flex; align-items: center; gap: 6px; }
+.lp-jahre-feld input { width: 80px; }
+@media (max-width: 600px) { .lp-filter .lp-suche { grid-column: 1 / -1; } }
+
+/* Paket-Update: Text in Verweis umwandeln (#534) */
+.umw-felder { list-style: none; margin: 0; padding: 0; }
+.umw-feld { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; justify-content: space-between; }
+.umw-feld > span { min-width: 0; overflow-wrap: anywhere; }
+.umw-vorschau { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--linie); }
+.umw-zeilen { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.umw-zeile { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; justify-content: space-between; }
+.umw-zeile > span { min-width: 0; overflow-wrap: anywhere; }
+.umw-wahl { width: 100%; max-width: 22rem; min-width: 0; }
+
+/* Feldformate (#535): Eingabe mit Link daneben, Hinweis im Editor, Liste in der Wartung */
+.ff-eingabe { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.ff-eingabe > input { flex: 1; min-width: 0; }
+.ff-link { flex: none; display: inline-grid; place-items: center; width: 40px; height: 40px; border: 1px solid var(--linie-stark); border-radius: 6px; color: var(--akzent); background: var(--flaeche); }
+.ff-link:hover, .ff-link:focus-visible { background: var(--akzent-zart); border-color: var(--akzent); outline: none; }
+.ff-link .sym { width: 18px; height: 18px; }
+.ff-hinweis { grid-column: 1 / -1; margin: 0; }
+.ff-typ { display: flex; flex-direction: column; gap: 6px; }
+.ff-feld > summary { cursor: pointer; padding: 8px 10px; font-weight: 600; }
+.ff-wert { overflow-wrap: anywhere; font-family: var(--mono, monospace); }
+
+/* Ähnlichkeit (#442): Kennzeichen „ähnlich“, ähnliche Dokumente an der Mappe, Fortschritt in der Werkbank. */
+.aehnl-chip { margin-left: 0.35rem; vertical-align: middle; font-weight: normal; }
+.aehnl-dokumente { margin-top: 1.25rem; }
+.aehnl-liste { list-style: none; margin: 0.25rem 0 0; padding: 0; display: grid; gap: 0.4rem; }
+.aehnl-liste li { min-width: 0; overflow-wrap: anywhere; }
+.aehnl-unter { display: block; }
+.aehnl-fortschritt { width: min(12rem, 100%); vertical-align: middle; }
+
+/* „Frag deine Ablage“ (#444) */
+.frag-form { display: flex; flex-direction: column; gap: 0.5rem; }
+.frag-feld { width: 100%; resize: vertical; min-height: 2.6rem; padding-left: 14px; padding-right: 14px; }
+.frag-chat { list-style: none; margin: 0; padding: 0; display: grid; gap: 1rem; }
+.frag-runde { display: grid; gap: 0.4rem; min-width: 0; }
+.frag-frage { justify-self: end; max-width: 85%; margin: 0; padding: 0.45rem 0.75rem; border-radius: var(--r); background: var(--auswahl, var(--linie)); overflow-wrap: anywhere; white-space: pre-wrap; }
+.frag-antwort { display: grid; gap: 0.35rem; min-width: 0; }
+.frag-text { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.frag-quellen { margin: 0; overflow-wrap: anywhere; }
+.frag-stellen summary { cursor: pointer; }
+.frag-ausschnitte { margin: 0.4rem 0 0; padding-left: 1.6rem; display: grid; gap: 0.6rem; }
+.frag-ausschnitte li { min-width: 0; overflow-wrap: anywhere; }
+.frag-zitat { margin: 0.25rem 0 0; padding: 0.35rem 0.6rem; border-left: 3px solid var(--linie); white-space: pre-wrap; max-height: 14rem; overflow: auto; }
+.frag-grenzen { display: grid; gap: 0.6rem; max-width: 28rem; }
+.hinweis.unscharf { margin: 4px 0; }
+
+/* „Zu erledigen“ mit Liste · Monat · Jahr (#528, #725) – Kalender nur lesen, wie am Handy. Präfix ka-. */
+.ka { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.ka-leiste { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; }
+.ka-umschalter { width: auto; }
+.ka-liste { margin: 4px 0 8px; justify-content: space-between; }
+.ka-favoriten { margin: 0; }
+.ka-kachel-datum { font-size: 1.6em; }
+.ka-blaettern { display: flex; align-items: center; gap: 6px; margin-left: auto; }
+.ka-pfeil { padding: 4px 6px; }
+.ka-pfeil .sym { width: 18px; height: 18px; }
+.ka-zeitraum { font-size: calc(17px * var(--skala, 1)); min-width: 9.5em; text-align: center; }
+.ka-sym { width: 1em; height: 1em; vertical-align: -0.12em; color: var(--leise); flex: none; }
+/* Liste: Gruppen Überfällig · Heute · Diese Woche · Später; überfällig rot und mit Text, nie nur über die Farbe. */
+.ka-gruppe { display: flex; flex-direction: column; gap: 2px; }
+.ka-gruppe > h2 { display: flex; align-items: center; gap: 6px; margin: 4px 0 2px; }
+.ka-gruppe-ueberfaellig > h2 { color: var(--schlecht); }
+.ka-anzahl { font-weight: 700; color: var(--leise); }
+.ka-eintrag.ka-ueber { box-shadow: inset 3px 0 0 var(--schlecht); }
+.ka-eintrag.ka-ueber .ka-sym { color: var(--schlecht); }
+.ka-ueberfaellig { display: inline-flex; align-items: center; gap: 4px; font-size: calc(12px * var(--skala, 1)); font-weight: 600; color: var(--schlecht); }
+.ka-ueberfaellig .sym { width: 1em; height: 1em; }
+.ka-eintrag.ka-folge { opacity: .7; }
+/* Zeile „3 überfällig“ über dem Raster. */
+.ka-ueberzeile { align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 999px; border: 1px solid var(--schlecht); background: var(--schlecht-zart); color: var(--schlecht); font-weight: 600; cursor: pointer; }
+.ka-ueberzeile[aria-pressed="true"] { background: var(--schlecht); color: var(--flaeche); }
+/* Monat: Raster Mo–So, heute hervorgehoben, Feiertage dezent beschriftet. */
+.ka-raster { width: 100%; border-collapse: collapse; table-layout: fixed; background: var(--flaeche); }
+.ka-raster th { padding: 4px; font-size: calc(11.5px * var(--skala, 1)); font-weight: 600; color: var(--leise); text-transform: uppercase; letter-spacing: .05em; text-align: left; }
+.ka-raster td { vertical-align: top; border: 1px solid var(--linie); padding: 3px 4px 4px; height: 96px; min-width: 0; overflow: hidden; }
+.ka-raster td.ka-we .ka-zahl { color: var(--leise); }
+.ka-raster td.ka-heute-tag .ka-zahl { color: var(--akzent-tinte); }
+.ka-raster td.ka-fremd { background: var(--senke); }
+.ka-raster td.ka-fremd .ka-zahl { color: var(--leise); font-weight: 400; }
+.ka-tagkopf { display: flex; align-items: baseline; gap: 6px; min-width: 0; margin-bottom: 2px; }
+.ka-zahl { border: 0; background: none; padding: 1px 6px; border-radius: 999px; font-weight: 600; color: var(--tinte); cursor: pointer; font-variant-numeric: tabular-nums; }
+.ka-zahl:hover { background: var(--akzent-zart); }
+.ka-heute-tag .ka-zahl { background: var(--akzent); color: var(--akzent-tinte); }
+.ka-gewaehlt .ka-zahl { outline: 2px solid var(--akzent); outline-offset: -1px; }
+.ka-feiertag { font-size: calc(11px * var(--skala, 1)); color: var(--leise); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.ka-zeile { display: flex; align-items: center; gap: 4px; padding: 1px 4px; margin: 1px 0; border-radius: 4px; color: var(--tinte); text-decoration: none; font-size: calc(12px * var(--skala, 1)); line-height: 1.35; white-space: nowrap; min-width: 0; border-left: 3px solid var(--akzent); background: var(--akzent-zart); }
+.ka-zeile.art-erinnerung { border-left-color: var(--gruen); background: var(--gruen-zart); }
+.ka-zeile.art-aufgabe { border-left-color: var(--warn); background: var(--warn-zart); }
+.ka-zeile.ka-folge { opacity: .55; background: transparent; border-left-style: dashed; }
+.ka-zeile.ka-ueber { border-left-color: var(--schlecht); background: var(--schlecht-zart); color: var(--schlecht); }
+.ka-zeile.ka-ueber .ka-sym { color: var(--schlecht); }
+.ka-zeile.an { outline: 2px solid var(--gruen); outline-offset: -2px; }
+.ka-zeile:hover { filter: brightness(.96); text-decoration: underline; }
+.ka-zt { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.ka-mehr { display: block; margin: 2px 4px 0; font-size: calc(12px * var(--skala, 1)); }
+.ka-tagesliste { display: flex; flex-direction: column; gap: 4px; border-top: 1px solid var(--linie); padding-top: 10px; }
+.ka-tl-kopf { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; }
+.ka-tl-kopf .textknopf { margin-left: auto; }
+/* Kompakt (Handy, schmale Spalte neben einer Mappe): Punkte je Tag, darunter die Einträge des gewählten Tags. */
+.ka-kompakt .ka-raster th { text-align: center; }
+.ka-kompakt .ka-raster td { height: auto; border: 0; padding: 0; background: none; text-align: center; }
+.ka-tagknopf { width: 100%; min-height: 44px; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 2px; padding: 4px 0; border: 0; background: none; color: var(--tinte); cursor: pointer; border-radius: 10px; font: inherit; }
+.ka-tagknopf .ka-zahl { padding: 2px 0; width: 2em; line-height: 1.5; }
+.ka-tagknopf > span, .ka-tagknopf > span > span { display: flex; flex-direction: column; align-items: center; gap: 2px; width: 100%; }
+.ka-kompakt .ka-fremd .ka-tagknopf { color: var(--leise); }
+.ka-kompakt .ka-gewaehlt .ka-tagknopf { background: var(--akzent-zart); }
+.ka-kompakt .ka-gewaehlt .ka-zahl { outline: 0; }
+.ka-punkte { display: flex; gap: 3px; height: 6px; }
+.ka-punkt { width: 6px; height: 6px; border-radius: 50%; background: var(--akzent); }
+.ka-punkt.art-erinnerung { background: var(--gruen); }
+.ka-punkt.art-aufgabe { background: var(--warn); }
+.ka-punkt.ka-folge { background: transparent; box-shadow: inset 0 0 0 1.5px var(--leise); }
+.ka-punkt.ka-ueber { background: var(--schlecht); }
+/* Jahr: zwölf kleine Monate, Tage mit Einträgen tragen einen Punkt. */
+.ka-jahr { display: grid; grid-template-columns: repeat(auto-fill, minmax(196px, 1fr)); gap: 18px 22px; }
+.ka-jm { min-width: 0; }
+.ka-jm-titel { font-size: calc(15px * var(--skala, 1)); text-transform: capitalize; padding: 2px 0; }
+.ka-mini { width: 100%; border-collapse: collapse; table-layout: fixed; font-variant-numeric: tabular-nums; font-size: calc(12px * var(--skala, 1)); }
+.ka-mini th { font-weight: 600; color: var(--leise); font-size: calc(10.5px * var(--skala, 1)); padding: 2px 0; }
+.ka-mini td { text-align: center; padding: 0; height: 26px; vertical-align: top; }
+.ka-mt { display: inline-flex; flex-direction: column; align-items: center; justify-content: flex-start; width: 24px; padding-top: 2px; line-height: 1.2; color: var(--leise); border-radius: 6px; }
+.ka-mt-knopf { border: 0; background: none; cursor: pointer; color: var(--tinte); font: inherit; font-weight: 700; }
+.ka-mt-knopf:hover { background: var(--akzent-zart); }
+.ka-mpunkt { width: 4px; height: 4px; border-radius: 50%; background: var(--akzent); margin-top: 1px; }
+.ka-mt-knopf.ka-folge { font-weight: 500; color: var(--leise); }
+.ka-mt-knopf.ka-folge .ka-mpunkt { background: transparent; box-shadow: inset 0 0 0 1px var(--leise); }
+.ka-mt-knopf.ka-ueber .ka-mpunkt { background: var(--schlecht); }
+.ka-mini .ka-heute-tag .ka-mt { background: var(--akzent); color: var(--akzent-tinte); }
+.ka-mini .ka-heute-tag .ka-mpunkt { background: var(--akzent-tinte); }
+@media (max-width: 820px) {
+  .ka-umschalter button, .ka-heute, .ka-pfeil { min-height: 44px; min-width: 44px; }
+  .ka-zeitraum { min-width: 0; font-size: 16px; }
+  .ka-blaettern { margin-left: 0; flex: 1 1 100%; justify-content: space-between; }
+  .ka-ueberzeile { min-height: 44px; }
+}
+@media (pointer: coarse) {
+  .ka-mt-knopf { width: 32px; min-height: 32px; }
+}
+
+/* Lasttest-Modus (#612): Seite mit Fortschritt und Ergebnis. */
+.karte.lasttest h2 { font-size: calc(16px * var(--skala, 1)); margin: 0 0 6px; }
+.lasttest-stand { display: flex; flex-direction: column; gap: 6px; }
+.lasttest-stand p { margin: 0; }
+.lasttest-stand progress { width: 100%; }
+.lasttest-rest { display: flex; align-items: center; gap: 6px; font-weight: 600; }
+.lasttest-durchgaenge { margin: 4px 0 0; padding-left: 18px; }
+.lasttest-ergebnis { display: flex; flex-direction: column; gap: 8px; border-top: 1px solid var(--linie); padding-top: 14px; }
+.lasttest-ergebnis p { margin: 0; }
+.lasttest-block { font-size: calc(12px * var(--skala, 1)); white-space: pre; overflow-x: auto; resize: vertical; line-height: 1.45; }
+.lasttest-bericht { font-family: var(--mono); font-size: calc(11.5px * var(--skala, 1)); white-space: pre-wrap; overflow-wrap: anywhere; max-height: 360px; overflow: auto; background: var(--senke); padding: 10px; border-radius: 6px; }
+.lasttest-ergebnis .knoepfe, .lasttest-ende { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.lasttest-ende { justify-content: space-between; border-top: 1px solid var(--linie); padding-top: 14px; }
+.lasttest .hinweis .knoepfe .knopf.primaer { width: auto; padding: 7px 12px; }
+.lasttest-auto { margin: 0; }
+/* Live während des Laufs (#895): Kacheln der Auslastung, Gruppen und neueste Meldungen. */
+.lasttest-live { display: flex; flex-direction: column; gap: 8px; border-top: 1px solid var(--linie); padding-top: 14px; }
+.lasttest-live p { margin: 0; }
+.lasttest-live .az-titel { margin-top: 4px; }
+/* #1117: Die Tabelle „Wer belegt die CPU“ scrollt am Handy in ihrem Rahmen, statt die Karte zu verbreitern. */
+.lasttest-live .tabellenrahmen { width: 0; min-width: 100%; }
+.lasttest-meldungen { margin: 0; padding-left: 18px; overflow-wrap: anywhere; }
+.lasttest-art { font-weight: 600; }
+.lasttest-art.warn { color: var(--warn); }
+.lasttest-art.fehler { color: var(--schlecht); }
+@media (max-width: 560px) {
+  .lasttest-ergebnis .knoepfe .knopf, .lasttest-ende .knopf { width: 100%; white-space: normal; }
+}
+.karte.lasttest .lasttest-ergebnis .knopf.primaer { width: auto; padding: 7px 13px; }
+/* Archivfassung (#631): über der Anzeige, was man sieht. */
+.dokansicht-kopf { margin: 0; padding: 6px 10px; border-bottom: 1px solid var(--linie); background: var(--flaeche, transparent); display: flex; gap: 4px; align-items: center; flex-wrap: wrap; }

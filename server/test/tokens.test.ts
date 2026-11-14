@@ -6,7 +6,7 @@
  * Feste Farben außerhalb von tokens.css verhindert .github/werkzeuge/farben-pruefen.mjs.
  */
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { tokenPaletten, variablen } from '../../web/src/tokens';
@@ -41,7 +41,9 @@ test('jede benutzte Farb-Variable ist ein Token, kommt aus dem Design oder ist l
   const ausDesign = new Set(['akzent-stark', 'gruen-tinte']);
   // Lokal gesetzt: Skala und Tiefe, Feldfarbe beim Übernehmen, Messpanel; Rückfall auf etwas anderes.
   const lokal = /^(skala|tiefe|ue-f|m-[\w-]+|text|auswahl)$/;
-  const css = ['basis.css', 'styles.css'].map((d) => readFileSync(join(WEB, d), 'utf8')).join('\n');
+  // Gestaltung seit #1234 in web/src/stile/ (Teile in fester Reihenfolge).
+  const stile = readdirSync(join(WEB, 'stile')).filter((d) => d.endsWith('.css')).map((d) => join('stile', d));
+  const css = ['basis.css', ...stile].map((d) => readFileSync(join(WEB, d), 'utf8')).join('\n');
   const fehlend = [...new Set([...css.matchAll(/var\(--([\w-]+)/g)].map((m) => m[1]))]
     .filter((n) => !(n in hell) && !ausDesign.has(n) && !lokal.test(n));
   assert.deepEqual(fehlend, []);

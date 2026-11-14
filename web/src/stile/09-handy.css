@@ -1,0 +1,146 @@
+/* Handy: Safari, Speicherleiste, Startseite, Post fotografieren, Ansicht wählen, kleine iPhones, Dokument vorzeigen.
+   Teil der Gestaltung, eingebunden in fester Reihenfolge über stile/index.css. */
+
+/* Handy (#489): iPhone/Safari ohne abgeschnittene Seite. Eigene Klassen mit Präfix hy-. */
+/* iOS vergrößert die Seite beim Tippen in ein Feld mit weniger als 16 px Schrift (z. B. bei der Anmeldung) und
+   bleibt vergrößert – dann wirkt alles links und rechts abgeschnitten. Auf Touch-Geräten daher mindestens 16 px. */
+@media (pointer: coarse) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]), select, textarea { font-size: max(16px, 1em); }
+}
+@supports (-webkit-touch-callout: none) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]), select, textarea { font-size: max(16px, 1em); }
+}
+/* Speicherleiste der Mappe am unteren Rand der Spalte: Die Spalte hat unten 32 px Innenabstand – ohne Ausgleich
+   schaute darunter Formularinhalt hervor („Hochgeladen …“ unter der Leiste). */
+.spalte.mappe .speicherleiste { bottom: -32px; }
+/* „+ Neu“ öffnet am rechten Rand des Knopfs, nie breiter als der Bildschirm. */
+.neuknopf .menue { left: auto; right: 0; max-width: calc(100vw - 32px); }
+.hy-schleier { display: none; }
+.hy-nur-schmal { display: none; }
+.aktionsmenue .menue .hy-nur-schmal, .aktionsmenue .menue .aktionsmenue-trenner.hy-nur-schmal { display: none; }
+@media (max-width: 600px) {
+  /* Aufklappmenüs als Blatt von unten mit großen Einträgen: + Neu, Benutzermenü, „Mappe ▾“. */
+  .hy-schleier { display: block; position: fixed; inset: 0; z-index: 40; background: var(--schleier); }
+  .neuknopf .menue, .benutzermenue .menue, .aktionsmenue .menue {
+    position: fixed; top: auto; left: 0; right: 0; bottom: 0; z-index: 41; min-width: 0; max-width: none; max-height: 80vh; overflow-y: auto;
+    border-radius: 14px 14px 0 0; padding: 10px max(12px, env(safe-area-inset-right)) max(14px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+  }
+  .neuknopf .menuepunkt, .benutzermenue .menuepunkt, .aktionsmenue .menue button { min-height: 48px; padding: 12px; font-size: 16px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .aktionsmenue .menue .hy-nur-schmal { display: flex; }
+  .aktionsmenue .menue .aktionsmenue-trenner.hy-nur-schmal { display: block; }
+  span.hy-nur-schmal { display: inline; }
+  .hy-nur-breit { display: none; }
+  /* Speicherleiste kompakt: eine Zeile, nur bei ungespeicherten Änderungen; „Mappe löschen“ steht im Menü „Mappe ▾“. */
+  .speicherleiste.hy-ruhig { display: none; }
+  .speicherleiste:has(> .knoepfe) .status:not(.schlecht) { display: none; }
+  /* Haupt-Einstieg „+ Neu“ gut erkennbar. */
+  .neuknopf > .knopf { padding: 8px 14px; font-size: 15px; box-shadow: 0 1px 3px var(--schatten-stark); }
+}
+/* Startseite unter ca. 420 px: Kacheln einspaltig als Zeile – Titel links, Zahl rechts. */
+@media (max-width: 420px) {
+  .start-raster { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .start-raster .kachel { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 12px; row-gap: 2px; align-items: center; min-height: 0; padding: 12px 14px; }
+  .start-raster .kacheltitel, .start-raster .kachelunter, .start-raster .kachelleer { grid-column: 1; }
+  .start-raster .kachelzahl { grid-column: 2; grid-row: 1 / span 2; font-size: 1.6rem; }
+}
+/* Post fotografieren (#490): Blatt von unten mit großen Knöpfen, Seiten als Vorschaubilder. Präfix pk-. */
+.pk-schleier { position: fixed; inset: 0; z-index: 70; background: var(--schleier); }
+.pk-blatt { position: fixed; left: 0; right: 0; bottom: 0; z-index: 71; margin: 0 auto; max-width: 520px; max-height: 92vh; overflow-y: auto; display: flex; flex-direction: column; gap: 10px;
+  background: var(--flaeche); border-radius: 14px 14px 0 0; box-shadow: 0 -8px 30px var(--schatten-stark);
+  padding: 18px max(16px, env(safe-area-inset-right)) max(18px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); }
+.pk-titel { font-size: calc(18px * var(--skala, 1)); font-weight: 700; display: flex; align-items: center; gap: 8px; }
+.pk-gut { color: var(--gruen); }
+.pk-knoepfe { display: flex; flex-direction: column; gap: 8px; }
+.pk-gross { width: 100%; min-height: 48px; padding: 12px; font-size: 16px; white-space: normal; }
+.pk-seiten { list-style: none; margin: 0; padding: 2px 0 4px; display: flex; gap: 8px; overflow-x: auto; }
+.pk-seiten li { position: relative; flex: none; }
+.pk-seiten img, .pk-seiten canvas { display: block; width: 66px; height: 88px; object-fit: cover; border: 1px solid var(--linie-stark); border-radius: 6px; background: var(--senke); }
+.pk-seiten .pk-fehler img { border-color: var(--schlecht); }
+.pk-nr { position: absolute; left: 4px; bottom: 4px; min-width: 20px; padding: 0 5px; border-radius: 10px; background: var(--bildmarke); color: var(--bildmarke-tinte); font-size: 12px; text-align: center; }
+.pk-weg { position: absolute; right: -6px; top: -6px; width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--linie-stark); background: var(--flaeche); color: var(--tinte); font-size: 18px; line-height: 1; cursor: pointer; }
+.pk-start { width: 100%; min-height: 52px; font-size: 17px; padding: 12px 16px; }
+.pk-postzeile { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; flex-basis: 100%; }
+.pk-postliste { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.pk-postliste .knopf { width: 100%; justify-content: space-between; white-space: normal; text-align: left; min-height: 44px; }
+.pk-postname { overflow-wrap: anywhere; }
+/* „Mehr Filter …“ unter „Suchen in ▾“ am Suchfeld oben (#1218). */
+.sucheoben-mehr { align-self: flex-start; margin-top: 2px; }
+@media (pointer: coarse) { .sucheoben-mehr { display: inline-flex; align-items: center; min-height: 44px; } }
+/* „Frag deine Ablage“ im Assistenten (#1219): große Schrift, am Handy ohne Zoomen. */
+.frag-feld { font-size: calc(16px * var(--skala, 1)); }
+/* Ansicht wählen (#498): am Handy ein Knopf mit Blatt von unten statt der Reiterleiste; am Rechner ein Filterfeld. Präfix aw-. */
+.aw { display: none; }
+.aw-filter { width: 100%; margin: 0 0 6px; }
+@media (max-width: 820px) {
+  .aw { display: block; }
+  .spalte.sichten .aw-breit, .spalte.sichten .sichtliste { display: none; }
+  .aw-knopf { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 48px; padding: 8px 14px; border: 1px solid var(--linie-stark); border-radius: 10px; background: var(--flaeche); color: var(--tinte); font: inherit; cursor: pointer; text-align: left; }
+  .aw-aktuell { flex: 1; min-width: 0; font-weight: 600; font-size: 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .aw-schleier { position: fixed; inset: 0; z-index: 40; background: var(--schleier); }
+  .aw-blatt { position: fixed; left: 0; right: 0; bottom: 0; z-index: 41; max-height: 85vh; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;
+    background: var(--flaeche); border-radius: 14px 14px 0 0; box-shadow: 0 -8px 30px var(--schatten-stark);
+    padding: 12px max(12px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left)); }
+  .aw-kopf { position: sticky; top: -12px; z-index: 1; display: flex; gap: 10px; align-items: center; padding: 4px 0 6px; background: var(--flaeche); }
+  .aw-suche { flex: 1; min-width: 0; min-height: 44px; }
+  .aw-kopf .textknopf { min-height: 44px; padding: 0 6px; }
+  .aw-liste { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+  .aw-zeile { display: flex; align-items: center; gap: 4px; min-width: 0; }
+  .aw-link { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 44px; padding: 8px 10px; border-radius: 8px; color: var(--tinte); text-decoration: none; font-size: 16px; }
+  .aw-link.an { background: var(--akzent-zart); color: var(--akzent); font-weight: 600; }
+  .aw-name { min-width: 0; overflow-wrap: anywhere; }
+  .aw-stern { flex: none; width: 44px; height: 44px; border: 0; background: none; color: var(--leise); font-size: 20px; cursor: pointer; }
+  .aw-stern.an { color: var(--warn); }
+  .aw-feste { border-bottom: 1px solid var(--linie); padding-bottom: 6px; }
+  .aw-abschnitt { margin: 8px 10px 2px; }
+  .aw-gruppenkopf .aw-pfeil { transition: transform .12s; }
+  .aw-gruppenkopf[aria-expanded="true"] .aw-pfeil { transform: rotate(90deg); }
+  .aw-knopf > span, .aw-knopf > span > span, .aw-gruppenkopf > span, .aw-gruppenkopf > span > span { width: 100%; justify-content: flex-start; }
+  .aw-gruppenkopf { display: flex; align-items: center; gap: 6px; width: 100%; min-height: 44px; padding: 8px 10px; border: 0; border-top: 1px solid var(--linie); background: none; color: var(--tinte); font: inherit; font-weight: 600; font-size: 15px; text-align: left; cursor: pointer; }
+  .aw-verwalten { align-self: flex-start; min-height: 44px; }
+  .aw-haken { min-height: 44px; align-items: center; font-size: 16px; }
+  .aw-gross { width: 100%; min-height: 48px; font-size: 16px; }
+  .aw-filter { display: none; }
+}
+@media (max-width: 600px) {
+  /* Kompakter Kopf (#498): Kopfzeile in einer Zeile, Liste mit mindestens zwei Dritteln für Treffer. */
+  .kopf { flex-wrap: nowrap; gap: 8px; }
+  .kopf .marke > span:not(.sr) { display: none; }
+  .kopf .quelle { display: none; }
+  .kopf .bereiche a { padding: 6px 8px; }
+  .kopf .konto { gap: 8px; }
+  .kopf .konto .wer { max-width: 9ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .spalte.sichten { padding-top: 10px; padding-bottom: 10px; }
+  .spalte.liste .listenkopf p.leise { display: none; }
+}
+/* Kleine iPhones (#1218, #1219): Mit Lupe bzw. Assistent in der Kopfzeile wird es bei 375 px eng – Abstände schmaler,
+   der Name im Benutzermenü kürzer (mit „…“), damit nichts über den Rand ragt (WebKit setzt Schrift etwas breiter). */
+@media (max-width: 400px) {
+  .kopf { gap: 4px; }
+  .kopf .bereiche { gap: 2px; }
+  .kopf .bereiche a { padding: 6px; }
+  .kopf .konto { gap: 4px; flex: 0 1 auto; }
+  .benutzermenue .textknopf.wer { padding-inline: 4px; }
+  .benutzermenue .textknopf.wer .wer-name.wer-name { display: inline-block; max-width: 4.5ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: bottom; }
+}
+/* Feste Einträge links (#507): Symbol in gleicher Größe; Stern gefüllt, wenn gesetzt. */
+.sym.sym-voll { fill: currentColor; }
+.sichtliste .fest-sym { color: var(--leise); margin-right: 2px; }
+.sichtliste .sicht.an .fest-sym { color: inherit; }
+/* Dokument vorzeigen am Handy (#505): großer Knopf „Öffnen“, „Teilen“, „⋯“ mit allen weiteren Aktionen als Blatt von unten. Präfix dk-. */
+.dk-gross { min-height: 44px; min-width: 44px; font-size: 16px; }
+@media (max-width: 600px) {
+  .dokansicht { display: none; }
+  .dokzeile .vorschaubild { width: 60px; height: 78px; }
+  .dokzeile > .zeilenaktionen.dk-handy { flex: 1 1 100%; display: flex; gap: 8px; flex-wrap: nowrap; white-space: normal; }
+  .dk-handy > .knopf.primaer { flex: 1; }
+  .dk-mehr { font-size: 22px; line-height: 1; padding: 0 14px; }
+  .dokzeile .dokname > .textknopf { min-height: 44px; text-align: left; font-size: 16px; }
+  .dokwahl { width: 22px; height: 22px; }
+  .dokzeile .dokname a, .dokzeile .dokname button { display: inline-flex; align-items: center; min-height: 44px; min-width: 44px; }
+  .dk-blatt { position: fixed; left: 0; right: 0; bottom: 0; z-index: 41; max-height: 80vh; overflow-y: auto; display: flex; flex-direction: column; gap: 2px;
+    background: var(--flaeche); border-radius: 14px 14px 0 0; box-shadow: 0 -8px 30px var(--schatten-stark); white-space: normal;
+    padding: 12px max(12px, env(safe-area-inset-right)) max(14px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left)); }
+  .dk-blatt > .dk-titel { font-weight: 700; padding: 4px 12px 8px; overflow-wrap: anywhere; }
+  .dk-blatt > a, .dk-blatt > button { display: flex; align-items: center; width: 100%; min-height: 48px; padding: 12px; font-size: 16px; text-align: left; text-decoration: none; border-radius: 8px; }
+  .dk-blatt > .dk-zu { justify-content: center; margin-top: 4px; }
+}

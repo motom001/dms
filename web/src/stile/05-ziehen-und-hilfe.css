@@ -1,0 +1,124 @@
+/* Ziehen und Ablegen, Dokumentzeilen, kontextbezogene Hilfe, Tippflächen am Handy, Speicherplatz und Auslastung.
+   Teil der Gestaltung, eingebunden in fester Reihenfolge über stile/index.css. */
+
+/* Drag & Drop (#73, #74): Griff ⠿, Einfügelinie, Ziel „hinein“ */
+/* Griff (#1213: Baustein Knopf mit Symbol): am Rechner mindestens 24 × 24 px, am Handy 44 px über den Knopf. */
+.ziehgriff { display: inline-flex; align-items: center; justify-content: center; min-width: 24px; min-height: 24px; background: none; border: 0; margin: 0; padding: 4px 4px; cursor: grab; color: var(--leise); font-size: calc(15px * var(--skala, 1)); line-height: 1; border-radius: 4px; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; flex: none; }
+.ziehgriff:hover { color: var(--tinte); background: var(--senke); }
+.ziehgriff:active { cursor: grabbing; }
+.ziehgriff:focus-visible { outline: 2px solid var(--akzent); outline-offset: 1px; }
+.ziehbar { display: flex; align-items: center; gap: 2px; position: relative; }
+.ziehbar > .eintrag { flex: 1; min-width: 0; }
+.gezogen { opacity: .45; }
+.zieh-vor { box-shadow: inset 0 3px 0 var(--akzent); }
+.zieh-nach { box-shadow: inset 0 -3px 0 var(--akzent); }
+.zieh-in { outline: 2px dashed var(--akzent); outline-offset: -2px; background: var(--akzent-zart); border-radius: 6px; }
+.zieh-bereit { outline: 1px dashed var(--linie-stark); outline-offset: -1px; }
+body:has(.gezogen) { cursor: grabbing; user-select: none; -webkit-user-select: none; }
+.registerchip { display: flex; align-items: center; gap: 2px; min-width: 0; }
+.registerchip .chip { min-width: 0; }
+.feldsumme > .ziehgriff { align-self: center; }
+.spaltenliste li > .ziehgriff { margin-right: -4px; }
+
+/* Abwesenheit (#78) */
+.abwesend-punkt { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--warn); margin-left: 6px; vertical-align: middle; }
+.menuekopf a.chip { text-decoration: none; align-self: flex-start; }
+.eintrag.werk.grau { opacity: .6; }
+.knopf.gefahr { background: var(--schlecht); border-color: var(--schlecht); color: var(--schlecht-tinte); }
+.knopf.gefahr:disabled { opacity: .45; }
+
+/* Dokumente (#85–#87): ganze Zeile anklickbar, Anzeige darunter, Auswahl und Sortierung */
+.dokumentliste li { flex-direction: column; align-items: stretch; gap: 8px; }
+.dokzeile { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.dokzeile > .dokname { flex: 1; }
+.dokwahl { flex: none; margin: 0; width: 16px; height: 16px; }
+/* Vorschaubild der ersten Seite (#332): klein, die Angaben der Mappe bleiben im Mittelpunkt. */
+.vorschaubild { flex: none; width: 40px; height: 52px; object-fit: cover; object-position: top; border: 1px solid var(--linie); border-radius: 4px; background: var(--papier); }
+.vorschaubild.ohne { display: inline-flex; flex-direction: column; gap: 2px; align-items: center; justify-content: center; background: var(--senke); color: var(--leise); font-size: 10px; font-weight: 600; letter-spacing: .02em; overflow: hidden; }
+.vorschaubild.ohne .sym { width: 18px; height: 18px; }
+/* Name nicht zu einem Streifen zerquetschen: Reichen die Aktionen nicht daneben, rutschen sie unter den Namen (#393). */
+.dokzeile > .dokname { min-width: min(13em, 100%); flex-basis: 13em; }
+.dokumentliste li.klickbar { cursor: pointer; }
+.dokumentliste li.klickbar:hover { background: var(--senke); }
+.dokumentliste li.klickbar.an, .dokumentliste li.an:hover { background: var(--akzent-zart); }
+.dokumentliste li.gewaehlt { box-shadow: inset 3px 0 0 var(--akzent); }
+.dokumentliste li .dokansicht { cursor: default; margin: 0 -4px; }
+.symbolverweis { text-decoration: none; color: var(--akzent); font-size: calc(15px * var(--skala, 1)); padding: 0 4px; border-radius: 4px; }
+.symbolverweis:hover { background: var(--akzent-zart); }
+.dokleiste { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.dokleiste .sortwahl { margin-left: auto; display: flex; align-items: center; gap: 6px; }
+.dokleiste .sortwahl select { width: auto; }
+
+/* Tägliche Zusammenfassung im Profil (#92, #94) */
+.zusammenfassung { display: flex; flex-direction: column; gap: 10px; margin-top: 6px; padding-left: 26px; }
+.tagewahl .tage { display: flex; flex-wrap: wrap; gap: 4px 14px; }
+.haken.aus { opacity: .6; }
+
+/* Kontextbezogene Hilfe (#110): dezentes ? am Ende eines Untertitels oder einer Überschrift */
+/* ?-Symbol der kontextbezogenen Hilfe (#110); .hilfe ist der Kleintext unter Feldern (#134) */
+.hilfesymbol { display: inline-grid; place-items: center; width: 1.25em; height: 1.25em; margin-left: .35em; border: 1px solid var(--linie-stark); border-radius: 50%; font-size: .8em; font-weight: 700; line-height: 1; color: var(--leise); text-decoration: none; vertical-align: .1em; }
+.hilfesymbol:hover, .hilfesymbol:focus-visible { color: var(--akzent); border-color: var(--akzent); }
+h2 .hilfesymbol, h3 .hilfesymbol { font-size: .6em; vertical-align: .25em; }
+/* Listenkopf (#601): das „?“ steht immer in der Überschrift, mit und ohne Beschreibung. */
+.listenkopf h1 .hilfesymbol { font-size: .65em; vertical-align: .2em; }
+/* Am Handy (#601): Tippziel 44 px, sichtbar bleibt der kleine Kreis; die negativen Ränder halten die Zeile niedrig. */
+@media (pointer: coarse) {
+  .listenkopf h1 .hilfesymbol { width: 44px; height: 44px; margin: -11px -11px -11px -5px; border: 0; font-size: 13px; vertical-align: middle; }
+  .listenkopf h1 .hilfesymbol > span { display: inline-grid; place-items: center; width: 22px; height: 22px; border: 1px solid var(--linie-stark); border-radius: 50%; }
+  .listenkopf h1 .hilfesymbol:hover > span, .listenkopf h1 .hilfesymbol:focus-visible > span { border-color: var(--akzent); }
+}
+/* Außerhalb der Bausteine am Handy etwas größer; im Feld legt der Baustein die Tippfläche fest (Feld.module.css, #1027). */
+@media (pointer: coarse) { .hilfesymbol { width: 1.6em; height: 1.6em; } }
+/* Am Handy (#1211, #1212, D6): jedes „?“ und jeder kleine Weg in der Ablage mit 44 px Tippfläche – unsichtbar um die Mitte
+   bzw. als Innenabstand, die Zeile bleibt so hoch wie vorher. */
+@media (pointer: coarse) {
+  .hilfesymbol { position: relative; }
+  .hilfesymbol::after { content: ""; position: absolute; top: 50%; left: 50%; width: 44px; height: 44px; transform: translate(-50%, -50%); }
+  .leise a.person { display: inline-block; padding-block: 14px; margin-block: -14px; }
+  .index { row-gap: 0; }
+  .index div { align-items: center; min-height: 44px; }
+  .index dd a.person { display: inline-flex; align-items: center; min-height: 44px; }
+  .mappenkopf-knoepfe { min-height: 48px; }
+  .dokleiste { column-gap: 16px; }
+  .zur-liste, .ka-weitergeben { display: inline-flex; align-items: center; gap: 4px; min-height: 44px; }
+}
+/* Am Handy (#1214, D6): in der Werkbank (Mitte und rechts) jeder Verweis, jeder Knopf-Verweis (Herunterladen), jeder
+   Haken mit Beschriftung und jede Aufklappzeile mit 44 px Tippfläche. Verweise wachsen unsichtbar nach oben und unten
+   (Innenabstand, ausgeglichen durch negativen Außenabstand), die Zeile bleibt so hoch wie vorher. */
+@media (pointer: coarse) {
+  :is(.spalte.liste, .spalte.mappe) a.verweis:not(.zur-liste, .ka-weitergeben) { display: inline-block; padding-block: 14px; margin-block: -14px; min-width: 44px; }
+  :is(.spalte.liste, .spalte.mappe) a.knopf:not([data-knopf]) { min-height: 44px; }
+  :is(.spalte.liste, .spalte.mappe) .haken-untereinander > label.haken { min-height: 44px; align-items: center; }
+  :is(.spalte.liste, .spalte.mappe) .haken-untereinander > a.verweis { margin-block: 0; padding-block: 14px; }
+  :is(.spalte.liste, .spalte.mappe) summary { padding-block: 8px; min-height: 44px; box-sizing: border-box; }
+  /* „Gerade benutzt bei“ (#1180): Verweise untereinander – jede Zeile so hoch, dass die gewachsenen Flächen sich nicht überdecken. */
+  .benutzt-liste > li { min-height: 48px; display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; }
+  /* Der Verweis nimmt seine Höhe im Fluss ein: Bricht der Text dahinter um (andere Schrift), liegt er darunter statt darüber. */
+  .spalte.mappe .benutzt-liste a.verweis { margin-block: 0; padding-block: 12px; }
+}
+.leise a.person { text-decoration: underline; text-underline-offset: 2px; }
+
+/* Speicherplatz (#116): belegt je Ordner mit Marken für Warnschwelle und Grenze */
+.ordnerzeile { padding: 10px 0; border-top: 1px solid var(--linie); }
+.ordnerzeile:first-of-type { border-top: 0; }
+/* Systemzustand → Auslastung (#409). Präfix az-. Kurve: eine Reihe, dünne Linie in der Akzentfarbe. */
+.az-raster { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px 24px; margin-top: 8px; }
+.az-wert { min-width: 0; }
+.az-wert p { margin: 4px 0 0; }
+.az-titel { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 8px; margin: 0 0 6px; font-size: calc(14px * var(--skala, 1)); }
+.az-jetzt { font-weight: 400; font-variant-numeric: tabular-nums; }
+.az-kurve { display: block; width: 100%; height: 40px; overflow: visible; color: var(--akzent); }
+.az-kurve polyline { fill: none; stroke: currentColor; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+.az-kurve .az-grund { stroke: var(--linie); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.az-kurve .az-ziel { fill: transparent; }
+.az-kurve .az-ziel:hover { fill: color-mix(in srgb, currentColor 12%, transparent); }
+.az-anteile { margin-top: 6px; }
+.platzbalken { position: relative; height: 10px; border-radius: 999px; background: var(--linie); margin: 8px 0 4px; }
+.platzbalken > span { display: block; height: 100%; border-radius: 999px; background: var(--gruen); }
+.platzbalken > span.warnung { background: var(--warn); }
+.platzbalken > span.grenze { background: var(--schlecht); }
+.platzbalken .marke { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--warn); }
+.platzbalken .marke.grenze { background: var(--schlecht); }
+.schwellenfeld { display: flex; gap: 8px; align-items: center; }
+.schwellenfeld input { max-width: 7em; }
+.schwellenfeld select { width: auto; }
