@@ -259,7 +259,10 @@ export function werkbankEinstellungenRouten(k: RoutenKontext): Route[] {
     { methode: 'GET', pfad: '/api/merkmale', zugang: 'angemeldet', handler: async () => ok(await dienst.werkbank.merkmale()) },
     // Papierkorb und Export (#1196, #1197): Aufbewahrung im Papierkorb und „Benutzer dürfen ihre eigenen Daten
     // exportieren“; gespeichert wird über die bisherigen Wege (PUT …/papierkorb/einstellungen, …/export/persoenlich).
-    { methode: 'GET', pfad: '/api/werkbank/daten', zugang: 'admin', handler: async () => ok({
+    { methode: 'GET', pfad: '/api/werkbank/daten', zugang: 'admin', handler: async (a) => ok({
+      tage: await dienst.kern.papierkorbTage(), historieTage: await dienst.mappenHistorie.historieTage(),
+      // Für die Rückfrage beim Ausschalten (0 Tage leert den Papierkorb).
+      imPapierkorb: (await dienst.papierkorbVerwaltung.papierkorb(ich(a), true)).length + (await dienst.papierkorbVerwaltung.papierkorbDokumente(ich(a), true)).length,
       persoenlich: await dienst.auskunftZustellen.persoenlicherExportErlaubt(),
     }) },
     // Sprachen (#729): Werkbank → Sprachen.

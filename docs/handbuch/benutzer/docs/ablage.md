@@ -220,6 +220,8 @@ Gelöschte Mappen und einzeln gelöschte Dokumente kommen in den **Papierkorb** 
 - **Mit verknüpften Mappen gelöscht** ([so geht's](mappen.md#mit-verknupften-mappen-loschen)): Diese Mappen tragen den Hinweis *mit … verknüpften* bzw. *verknüpft*. Öffnest du eine davon, holt **Alle wiederherstellen** den ganzen Vorgang zurück – samt der Verweise, die dabei an anderen Mappen entfernt wurden. **Nur diese wiederherstellen** holt nur die eine Mappe.
 - **Aufgelöste Post** ([so geht's](post.md#post-auflosen)): Unter einer Post, aus der eine neue Mappe wurde, steht „Aufgelöst in *Rechnung* „…““, in der Post selbst mit Link zur Mappe. Dokumente und Historie liegen dort; wiederherstellen lässt sich diese Post nicht. Wer das rückgängig machen will, löscht die neue Mappe.
 - **Endgültig löschen** entfernt sie für immer, **Papierkorb leeren** alle auf einmal – Mappen und Dokumente.
+- **Suchen und filtern:** Über der Liste suchst du nach Titel oder Dateiname und filterst nach *Art* (Mappen oder Dokumente), *Mappentyp* und wann gelöscht (*heute*, *in den letzten 7 Tagen* …).
+- **Mehrere auf einmal:** Setze die Haken vor den Einträgen oder **Alle auswählen** (wählt alle, die gerade zu sehen sind). **Wiederherstellen (n)** und **Endgültig löschen (n)** gelten dann für alle gewählten, eins nach dem anderen; was nicht ging, bleibt ausgewählt und steht mit Grund darüber.
 - Nach einer Frist, die der Administrator festlegt (meist 30 Tage), löscht Ablago gelöschte Mappen von selbst endgültig. Wie lange, steht über der Liste.
 - Unter Mein Konto kannst du einstellen, dass dein Papierkorb **beim Abmelden geleert** wird.
 

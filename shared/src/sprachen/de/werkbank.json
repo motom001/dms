@@ -176,6 +176,7 @@
   "daten.lade": "Lade …",
   "daten.ueber": "Werkbank · Daten sichern",
   "daten.einleitung": "Dauerhafte Einstellungen zu Papierkorb und Export. Sie gelten für die ganze Ablage, bis du sie wieder änderst – nicht nur für einen Export oder einen Löschvorgang.",
+  "daten.papierkorb.titel": "Papierkorb",
   "daten.benutzer.titel": "Was Benutzer selbst dürfen",
   "daten.export.schalter": "Benutzer dürfen ihre eigenen Daten exportieren",
   "daten.export.hinweis": "Unter Mein Konto → Konto → Meine Daten exportieren: Mappen, die sie lesen dürfen, ihre Aufgaben und Erinnerungen – im Format des Vollexports (Recht auf Datenübertragbarkeit, DSGVO Art. 20). Ab Werk aus.",

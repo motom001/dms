@@ -1450,8 +1450,8 @@ async function main() {
   await bild(s, 'werkbank-aufgaben-auswahl');
   await s.locator('.sammel-leiste').getByRole('button', { name: w('Auswahl aufheben') }).click();
   await geheZu(s, '/werkbank/papierkorb');
-  await s.getByRole('heading', { name: w('Aufbewahrung'), exact: true }).waitFor();
-  // #366: Aufbewahrung und Liste in der Mitte, rechts die gewählte Mappe.
+  await s.getByRole('heading', { name: w('Papierkorb') }).first().waitFor();
+  // #366: Liste in der Mitte, rechts die gewählte Mappe; die Aufbewahrung steht seit #1197 unter Daten sichern → Einstellungen.
   if (await s.locator('.spalte.liste a.eintrag, .spalte.liste tbody tr').count()) {
     await s.locator('.spalte.liste a.eintrag, .spalte.liste tbody tr').first().click();
     await s.getByRole('button', { name: w('Wiederherstellen') }).first().waitFor();
