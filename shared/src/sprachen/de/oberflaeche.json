@@ -639,5 +639,18 @@
   "muster.fassungen.feld-weg": "Feld „Kündigungsfrist“ entfernt",
   "muster.fassungen.feld-dazu": "Feld „Kündigungsfrist“ hinzugefügt",
   "muster.fassungen.pflicht": "„Betrag“ ist kein Pflichtfeld mehr",
-  "muster.fassungen.spalte": "Trefferliste „Standard“: Spalte „Ort“ entfernt"
+  "muster.fassungen.spalte": "Trefferliste „Standard“: Spalte „Ort“ entfernt",
+  "platzhalter.einsetzen": "Platzhalter einsetzen",
+  "muster.platzhalter.titel": "Platzhalter",
+  "muster.platzhalter.text": "Platzhalter zum Anklicken für Texte mit Platzhaltern: verständlicher Name, beim Überfahren der technische Platzhalter; gruppiert nach „Allgemein“ und Mappentyp; Klick setzt an der Schreibmarke ein.",
+  "muster.platzhalter.gruppen": "Gruppiert, ein Feld nur bei einem Typ",
+  "muster.platzhalter.feld": "Text",
+  "muster.platzhalter.beispiel": "Bitte {titel} prüfen",
+  "muster.platzhalter.allgemein": "Allgemein",
+  "muster.platzhalter.heute": "Heute",
+  "muster.platzhalter.vertrag": "Vertrag",
+  "muster.platzhalter.kuendigung": "Kündigung bis",
+  "muster.platzhalter.anbieter": "Anbieter",
+  "muster.platzhalter.nur-vertrag": "nur bei Vertrag",
+  "muster.platzhalter.mappentitel": "Titel der Mappe"
 }

@@ -47,11 +47,16 @@ Vorlagen ohne den Haken verhalten sich wie bisher: „In 6 Monaten“ bleibt fes
 
 Im Text einer Karte gibt es die Platzhalter wie bei den [Automatisierungen](automatisierungen.md) (`{titel}`, `{mappentyp}`, `{heute}`, `{datum}`, die Felder des Mappentyps), dazu `{eingabe}` (der Text, den man beim Anwenden schreibt), `{person}` (wer anwendet) und `{empfaenger}`. Eine Vorlage, die nach dem Text fragt, braucht `{eingabe}` in einer Karte.
 
+Unter dem Text stehen die Platzhalter **zum Anklicken** wie bei den Automatisierungen: unter **Allgemein** Eingabe beim Anwenden, Wer anwendet, Empfänger, Titel der Mappe, Mappentyp, Heute und Datum des Ablaufs, darunter je gewähltem Mappentyp seine Felder – so siehst du, woher die Platzhalter kommen. Steht ein Feld nicht in allen gewählten Mappentypen, steht „nur bei …“ daran. Ein Klick setzt den Platzhalter an der Schreibmarke ein; beim Überfahren steht der technische Name da.
+
 Der **Schalter** oben im Editor (aus) nimmt die Vorlage aus dem Menü „Mappe“ – schon geplante Abläufe laufen trotzdem. Eigene Vorlagen löschst du, sobald keine offenen Abläufe mehr an ihr hängen; Vorlagen von Ablago setzt du mit **Auf Auslieferung zurücksetzen** zurück.
 
 Darunter:
 
 - **Ausprobieren:** wähle eine Mappe und klicke auf **Ausprobieren**. Es öffnet sich **derselbe kleine Dialog wie an der Mappe** – mit genau den Fragen der Vorlage, gleicher Vorbelegung (z. B. das vorgeschlagene Datum), gleicher Beschriftung und Reihenfolge –, oben gekennzeichnet mit **„Probe – es wird nichts angelegt.“** Nach dem Bestätigen zeigt Ablago, was die Empfänger sähen: je Empfänger die Aufgabe (fällig wann) bzw. die Benachrichtigung mit Mappe und Text, und wer die Mappe nicht oder nicht ganz sehen dürfte; unter **Zusammenfassung** dieselben Zeilen kurz. Ablago probiert mit deinen Rechten als Person. Danach **Nochmal** oder **Vorlage anpassen**. Es entsteht nichts.
+
+  ![Ausprobieren: „Erinnere mich in 14 Tagen“ am Stromvertrag – die Aufgabe, wie der Empfänger sie sähe, fällig in 14 Tagen](bilder/werkbank-automatisierungsvorlage-probe.png)
+
 - **Gerade benutzt bei:** alle offenen Abläufe der Vorlage mit Link zur Mappe, Datum und Person. Titel stehen nur bei Mappen, die du lesen darfst.
 - **Verlauf:** angewendet, geplant, gelaufen, angehalten, gelöscht, fortgesetzt – mit Zeit und Person. Er bleibt 30 Tage bzw. 200 Einträge je Vorlage.
 - **Fassungen:** wer wann was geändert hat, zwei Fassungen vergleichen und eine frühere wiederherstellen – wie bei allen Einstellungen der Werkbank, siehe [Fassungen](fassungen.md). **Auf Auslieferung zurücksetzen** ist selbst eine Fassung; gelöschte eigene Vorlagen stehen mit Löschvermerk unter der Liste.

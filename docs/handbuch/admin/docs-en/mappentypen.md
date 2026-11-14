@@ -144,7 +144,7 @@ A **combined field** is made up of other fields of the same folder – following
 
 **Example: invoice number per sender.** Different companies issue the same invoice numbers, so *Invoice number* alone can't be unique. Add a field *Identifier* to the *Invoice*:
 
-1. Field kind **Combined**, template `{von} · {rechnungsnummer}` – the buttons below the template insert the placeholders of the fields.
+1. Field kind **Combined**, template `{von} · {rechnungsnummer}` – a click on a field below the template inserts its placeholder at the cursor (at the end with “ · ” in front).
 2. Tick **Unique**.
 3. Save.
 
@@ -407,7 +407,7 @@ You can change folder types at any time, even if folders already exist:
 
 ## A folder's title { #titel-einer-mappe }
 
-The **template** determines what a folder is called in lists and links, e.g. `{rechnungsnummer} of {rechnungsdatum}`. Fields in curly brackets are inserted, everything else stays. There are also `{angelegt}` and `{geaendert}` (the date in each case). The preview shows the result with sample values or with the values of a real folder.
+The **template** determines what a folder is called in lists and links, e.g. `{rechnungsnummer} of {rechnungsdatum}`. Fields in curly brackets are inserted, everything else stays. There are also `{angelegt}` and `{geaendert}` (the date in each case). Below the template the fields, and under **General** the two dates, are clickable – a click inserts the placeholder at the cursor. The preview shows the result with sample values or with the values of a real folder.
 
 If the title refers to another folder (`{vertragspartner}`), the title is updated when the contract partner changes.
 

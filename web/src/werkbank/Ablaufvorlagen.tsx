@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { feldLabel } from '../../../shared/src/beschriftung';
 import {
   empfaengerText, FRAGEN, fragtDatum, istKernVorlage, karteText, VORLAGEN_GRENZEN, VORLAGEN_PLATZHALTER, VORLAGEN_REIHENFOLGE, vorlagenProbleme, wannText,
   type AblaufProbe, type AblaufVerlauf, type AblaufvorlageAnsicht, type AblaufvorlageDaten, type AblaufWann, type Frage, type MappenAblauf, type VorlagenEmpfaenger, type VorlagenKarte,
@@ -15,7 +16,7 @@ import { Listenkopf } from '../Listenkopf';
 import { geheZu, Link, loeseWache } from '../ort';
 import { t } from '../sprache';
 import { Speicherleiste, useEntwurf } from '../Speicherleiste';
-import { Eintragsliste, Fassungen, Feld, FeldGruppe, GeloeschteEintraege, HakenFeld, Knopf, KnopfLink, Mehrfachauswahl, PaketChip, Schalter, Umschalter, ZeitraumEingabe, type Klappe, type Listeneintrag, type ZeitraumRoh } from '../bausteine';
+import { Eintragsliste, Fassungen, Feld, FeldGruppe, GeloeschteEintraege, HakenFeld, Knopf, KnopfLink, Mehrfachauswahl, PaketChip, Platzhalter, Schalter, Umschalter, usePlatzhalterEinsetzen, ZeitraumEingabe, type Klappe, type Listeneintrag, type PlatzhalterGruppe, type ZeitraumRoh } from '../bausteine';
 import type { InstalliertesPaket } from '../../../shared/src/pakete';
 import { paketHerkunft } from './listensuche';
 import { titelOder } from '../seiten';
@@ -101,11 +102,33 @@ function benutzerFelder(typen: Mappentyp[], gewaehlt: string[]): Array<{ key: st
   return felder.filter((f) => inFrage.every((ty) => ty.felder.some((g) => g.key === f.key))).map((f) => ({ key: f.key, label: f.label }));
 }
 
+/**
+ * Platzhalter einer Ablaufvorlage (#1177): „Allgemein“ (Eingabe, Person, Empfänger, Mappe, Datum) und je gewähltem
+ * Mappentyp seine Felder unter dessen Namen. Ein Feld steht einmal – beim ersten Typ, der es hat; fehlt es in einem
+ * anderen gewählten Typ, steht „nur bei …“ daran. Ohne gewählten Typ (= alle Mappentypen) gibt es nur „Allgemein“.
+ */
+function vorlagenPlatzhalter(typen: Mappentyp[], gewaehlt: string[]): PlatzhalterGruppe[] {
+  const allgemein = [...VORLAGEN_PLATZHALTER, 'titel', 'mappentyp', 'heute', 'datum'].map((key) => ({ key, text: t.frei(`automatisierung.vorlage.ui.platz.${key}`) }));
+  const inFrage = typen.filter((x) => gewaehlt.includes(x.id));
+  const schon = new Set<string>();
+  return [
+    { name: t('automatisierung.ui.platzhalter.allgemein'), eintraege: allgemein },
+    ...inFrage.map((ty) => ({
+      name: ty.name,
+      eintraege: ty.felder.filter((f) => f.typ !== 'passwort' && !schon.has(f.key)).map((f) => {
+        schon.add(f.key);
+        const bei = inFrage.filter((x) => x.felder.some((g) => g.key === f.key));
+        return { key: f.key, text: feldLabel(f), ...(bei.length < inFrage.length ? { zusatz: t('automatisierung.vorlage.ui.platz.nur-bei', { typen: bei.map((x) => x.name).join(', ') }) } : {}) };
+      }),
+    })),
+  ];
+}
+
 function KartenEditor({ karte, typen, gewaehlt, setze, entfernen }: { karte: VorlagenKarte; typen: Mappentyp[]; gewaehlt: string[]; setze: (k: VorlagenKarte) => void; entfernen?: () => void }) {
   const felder = benutzerFelder(typen, gewaehlt);
   const hat = (e: VorlagenEmpfaenger) => karte.empfaenger.some((x) => x.art === e.art && (x.art !== 'feld' || (e.art === 'feld' && x.feld === e.feld)));
   const schalte = (e: VorlagenEmpfaenger, an: boolean) => setze({ ...karte, empfaenger: an ? [...karte.empfaenger, e] : karte.empfaenger.filter((x) => !(x.art === e.art && (x.art !== 'feld' || (e.art === 'feld' && x.feld === e.feld)))) });
-  const platz = [...VORLAGEN_PLATZHALTER, 'titel', 'mappentyp', 'heute', 'datum', ...(gewaehlt.length ? typen.filter((x) => gewaehlt.includes(x.id)).flatMap((x) => x.felder.filter((f) => f.typ !== 'passwort').map((f) => f.key)) : [])];
+  const ein = usePlatzhalterEinsetzen();
   return (
     <div className="blatt karte">
       <div className="zeile-zwischen">
@@ -122,9 +145,10 @@ function KartenEditor({ karte, typen, gewaehlt, setze, entfernen }: { karte: Vor
           <HakenFeld key={f.key} beschriftung={t('automatisierung.vorlage.ui.feld', { feld: f.label })}><input type="checkbox" checked={hat({ art: 'feld', feld: f.key })} onChange={(x) => schalte({ art: 'feld', feld: f.key }, x.target.checked)} /></HakenFeld>
         ))}
       </FeldGruppe>
-      <Feld beschriftung={t('automatisierung.vorlage.ui.text')} hinweis={t('automatisierung.vorlage.ui.platzhalter', { liste: platz.map((p) => `{${p}}`).join(' ') })}>
-        <textarea rows={2} maxLength={VORLAGEN_GRENZEN.text} value={karte.text} onChange={(x) => setze({ ...karte, text: x.target.value })} />
+      <Feld beschriftung={t('automatisierung.vorlage.ui.text')} hinweis={gewaehlt.length ? undefined : t('automatisierung.vorlage.ui.platzhalter.ohne-typ')}>
+        <textarea {...ein.feld('text', karte.text, (x) => setze({ ...karte, text: x }))} rows={2} maxLength={VORLAGEN_GRENZEN.text} value={karte.text} onChange={(x) => setze({ ...karte, text: x.target.value })} />
       </Feld>
+      <Platzhalter einsetzen={ein.einsetzen} gruppen={vorlagenPlatzhalter(typen, gewaehlt)} />
     </div>
   );
 }
@@ -172,7 +196,7 @@ function WannEditor({ wann, setze }: { wann: AblaufWann; setze: (w: AblaufWann) 
   return (
     <FeldGruppe beschriftung={t('automatisierung.vorlage.ui.wann')}>
       <div className="wann-reihe">
-        <Umschalter beschriftung={t('automatisierung.vorlage.ui.wann')} wert={wann.art} setze={waehle}
+        <Umschalter beschriftung={t('automatisierung.vorlage.ui.wann')} wert={wann.art} setze={waehle} schmalUntereinander
           wahlen={[{ wert: 'sofort', text: wannText({ art: 'sofort' }) }, { wert: 'datum', text: wannText({ art: 'datum' }) }, { wert: 'in', text: t('automatisierung.vorlage.ui.wann.in') }]} />
         <span className={`wann-in${wann.art === 'in' ? '' : ' blass'}`} onFocus={() => { if (wann.art !== 'in') waehle('in'); }}>
           <ZeitraumEingabe aria-label={t('automatisierung.vorlage.ui.wann.zeitraum')} wert={roh} setze={(r) => { setLetzter(r); setze(ausRoh(r)); }} />

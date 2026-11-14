@@ -57,6 +57,7 @@ Am Handy trifft der Finger, nicht der Mauszeiger. Darum hat jedes Bedienelement 
 | `Reiter` | jeder Reiter mindestens 44 px hoch; die Reihe rollt waagerecht, die Seite nicht |
 | `Schalter` | mindestens 44 px hoch, die Beschriftung schaltet mit |
 | `PaketChip` als Link | bleibt optisch klein; unsichtbare Tippfläche 44 px hoch |
+| `Platzhalter` | kleine Knöpfe mit unsichtbarer Tippfläche 44 × 44 px |
 
 **Die Regel:** Tippflächen überlappen sich nie – auch nicht in einer Knopfreihe oder einer Gruppe von Haken. Wer einen Baustein benutzt, schreibt dafür nichts selbst; Einzellösungen mit `@media (pointer: coarse)` in `styles.css` gibt es nur noch für Stellen ohne Baustein. Neue Bausteine legen ihre Tippfläche in ihrem eigenen Stylesheet fest, ebenfalls nur bei `(pointer: coarse)`, damit der Desktop unverändert bleibt.
 
@@ -104,3 +105,4 @@ Dieselben Bilder nimmt der Workflow **Handbuch** in den Jobs `bilder (de)` und `
 | [Menü](bausteine-menue.md) | Ein Knopf, der Handlungen öffnet – „Mappe ▾“, „⋯“ an Zeilen und Listen: Gruppen, Symbole, gesperrte Punkte mit Grund, Gefahr abgesetzt am Ende mit Rückfrage; am Handy als Blatt |
 | [Wahlhaken](bausteine-wahlhaken.md) | Der Haken, mit dem man Zeilen einer Liste auswählt: ohne sichtbare Beschriftung, Umschalttaste für Bereiche, „teilweise“ im Kopf |
 | [Mehrfachauswahl](bausteine-mehrfachauswahl.md) | Mehrere Einträge wählen: Suchfeld mit Vorschlägen, Gewähltes darunter mit „Entfernen“ |
+| [Platzhalter](bausteine-platzhalter.md) | Platzhalter eines Texts zum Anklicken: verständlicher Name, gruppiert nach „Allgemein“ und Mappentyp, Einsetzen an der Schreibmarke |

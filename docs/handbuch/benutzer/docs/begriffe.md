@@ -405,7 +405,7 @@ Siehe auch: [Version](#version), [Version von Ablago](#version-von-ablago).
 Ein Administrator arbeitet vorübergehend unter dem Konto eines anderen Benutzers, um einen Fehler zu sehen. Zurück geht es mit „Zurück zum eigenen Konto“.
 
 <a id="gleich-eingeschaltet"></a>**Gleich eingeschaltet** · ~ mit Erklärung · Administratoren  
-Eine mitgelieferte Automatisierung, die das Paket beim Installieren mit gesetztem Haken anbietet. Der Administrator kann sie abwählen; ein Update ändert an oder aus danach nie.  
+Eine mitgelieferte Automatisierung, deren Schalter das Paket beim Installieren auf „an“ stellt. Angelegt werden immer alle mitgelieferten; der Administrator wählt per Schalter, welche gleich laufen. Ein Update ändert an oder aus danach nie.  
 Siehe auch: [Paket](#paket), [Paket nach Zeitplan ausführen](#paket-nach-zeitplan-ausfuhren).
 
 <a id="herausgeber"></a>**Herausgeber** · ~ mit Erklärung · Administratoren  
@@ -443,11 +443,15 @@ Siehe auch: [Paket](#paket), [Expertenmodus](#expertenmodus).
 Anmelden ohne Passwort, mit Fingerabdruck, Gesicht oder der PIN von Handy oder Rechner (#811). Gilt nur für die Adresse von Ablago, unter der er angelegt wurde, und geht nur über HTTPS. Mehrere je Person; auch als zweiter Faktor und für die erneute Anmeldung.  
 Siehe auch: [Zwei-Faktor-Anmeldung](#zwei-faktor-anmeldung).
 
+<a id="platzhalter"></a>**Platzhalter** · ~ mit Erklärung · Administratoren  
+Ein Feld oder Wert in geschweiften Klammern, den Ablago beim Anwenden einsetzt – etwa {titel} oder {kuendigung} in der Titel-Vorlage, einem zusammengesetzten Feld, einer Automatisierung oder Automatisierungsvorlage. Unter dem Text stehen sie mit verständlichem Namen zum Anklicken, gruppiert nach „Allgemein“ und Mappentyp; ein Klick setzt sie an der Schreibmarke ein.  
+Siehe auch: [Automatisierungsvorlage](#automatisierungsvorlage).
+
 <a id="postfach"></a>**Postfach** · ~ mit Erklärung · Administratoren  
 Ein angebundenes E-Mail-Konto (IMAP), aus dem Ablago Post abholt.
 
 <a id="probelauf"></a>**Probelauf** · ~ mit Erklärung · Administratoren  
-Eine Automatisierung mit einer gewählten Mappe ausprobieren, ohne dass etwas geändert oder jemand benachrichtigt wird – Ablago zeigt nur, was passieren würde.  
+Eine Automatisierung mit einer gewählten Mappe ausprobieren, ohne dass etwas geändert oder jemand benachrichtigt wird – Ablago zeigt nur, was passieren würde. Bei einer Automatisierungsvorlage öffnet „Ausprobieren“ denselben Dialog wie an der Mappe, gekennzeichnet als „Probe – es wird nichts angelegt“, und zeigt danach, was die Empfänger sähen.  
 Siehe auch: [Testlauf](#testlauf).
 
 <a id="regel"></a>**Regel** · ~ mit Erklärung · Administratoren  
@@ -762,6 +766,7 @@ Wer Oberfläche, Handbuch, Hilfetexte oder Release-Notizen schreibt, verwendet d
 | Paketkatalog | – | `Katalog, OFFIZIELLER_KATALOG` |
 | Passkey | Passschlüssel, Zugangsschlüssel, FIDO2-Schlüssel, WebAuthn (in der Oberfläche) | `Passkeys, passkeys_<Konto>` |
 | Person | Kontakt (als Mappentyp), Benutzer (für Kontakte) | `basis:person` |
+| Platzhalter | – | `Platzhalter (Baustein), platzhalterFuer, {feld}` |
 | Post | Posteingang, Inbox | – |
 | Probelauf | Trockenlauf, trocken | `trocken` |
 | Prozent | – | `prozent, shared/src/feldarten.ts` |

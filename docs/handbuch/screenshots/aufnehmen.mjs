@@ -1324,7 +1324,7 @@ async function main() {
   // Datum vorschlagen (#1180): eigene Vorlage „Erinnere mich in 14 Tagen“ – Wann „In 14 Tagen“, Haken „Datum“ frei wählbar.
   {
     const v = await api('POST', '/api/werkbank/ablaufvorlagen', {
-      name: SPRACHE === 'en' ? 'Remind me in 14 days' : 'Erinnere mich in 14 Tagen', wann: { art: 'in', anzahl: 14, einheit: 'tage' }, fragen: ['datum', 'text'],
+      name: SPRACHE === 'en' ? 'Remind me in 14 days' : 'Erinnere mich in 14 Tagen', wann: { art: 'in', anzahl: 14, einheit: 'tage' }, fragen: ['datum', 'text'], typen: [d.typ('Vertrag').id],
       karten: [{ art: 'aufgabe', als: 'aufgabe', empfaenger: [{ art: 'selbst' }], text: '{eingabe}' }],
     });
     await geheZu(s, `/werkbank/ablaufvorlagen/${encodeURIComponent(v.kennung)}`);
@@ -1332,6 +1332,18 @@ async function main() {
     await fragen.waitFor();
     await fragen.evaluate((e) => e.scrollIntoView({ block: 'center' }));
     await bild(s, 'werkbank-automatisierungsvorlage-vorschlag');
+    // Ausprobieren (#1176): derselbe Dialog wie an der Mappe als Probe, danach die Vorschau so, wie die Empfänger es sähen.
+    const bearbeitung = s.getByRole('region', { name: w('Bearbeitung') });
+    await bearbeitung.getByRole('combobox', { name: w('Mappe'), exact: true }).fill('Stromvertrag');
+    await s.getByRole('option', { name: /Stromvertrag Haus/ }).click();
+    await bearbeitung.getByRole('button', { name: w('Ausprobieren'), exact: true }).click();
+    const probe = bearbeitung.getByRole('region', { name: v.name });
+    await probe.getByLabel(w('Text')).fill(SPRACHE === 'en' ? 'Compare new tariffs' : 'Neue Tarife vergleichen');
+    await probe.getByRole('button', { name: v.name }).click();
+    const vorschau = bearbeitung.locator('.probe-vorschau');
+    await vorschau.waitFor();
+    await vorschau.evaluate((e) => e.scrollIntoView({ block: 'center' }));
+    await bild(s, 'werkbank-automatisierungsvorlage-probe');
     // Wieder weg, damit spätere Bilder (Menü „Mappe“) unverändert bleiben.
     await api('DELETE', `/api/werkbank/ablaufvorlagen/${encodeURIComponent(v.kennung)}`);
   }

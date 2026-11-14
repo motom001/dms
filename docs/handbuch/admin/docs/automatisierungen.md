@@ -29,7 +29,7 @@ Petra soll 30 Tage vor Ablauf der Kündigungsfrist eines Vertrags eine Aufgabe b
 
 ![Aufgeklappte Dann-Karte mit Empfänger und Platzhaltern](bilder/werkbank-automatisierung-karte.png)
 
-Eine Karte klappst du mit einem Klick auf ihren Namen **auf** (Einstellungen) und wieder **zu** (Kurzzeile wie „Aufgabe → Person im Feld „Verantwortlich““). Unter dem Text stehen die **Platzhalter**, die zur Wenn-Karte passen: die Felder des Mappentyps sowie `{titel}`, `{mappentyp}`, `{heute}`, `{automatisierung}` und beim Datum `{datum}` und `{tage}`. Ein Klick setzt den Platzhalter ein.
+Eine Karte klappst du mit einem Klick auf ihren Namen **auf** (Einstellungen) und wieder **zu** (Kurzzeile wie „Aufgabe → Person im Feld „Verantwortlich““). Unter dem Text stehen die **Platzhalter**, die zur Wenn-Karte passen, mit verständlichem Namen: unter **Allgemein** Titel der Mappe, Mappentyp, Heute, Name der Automatisierung und beim Datum das erreichte Datum und die Tage bis dahin, darunter unter dem Namen des Mappentyps seine Felder. Fährst du mit der Maus darüber, steht der technische Platzhalter da (`{titel}`, `{kuendigung}` …). Ein Klick setzt ihn an der **Schreibmarke** ein – im Feld, in dem du zuletzt geschrieben hast. So geht es überall, wo Platzhalter erlaubt sind: Titel-Vorlage und *Zusammengesetzt* im Mappentyp, Karten der Automatisierungen und [Automatisierungsvorlagen](automatisierungsvorlagen.md).
 
 ## Beispiel: neue Dokumente an die Verwaltung melden
 
@@ -67,7 +67,7 @@ Jede Automatisierung steht in der Liste in höchstens zwei Zeilen:
 
 **Nach einer Wiederherstellung** sind alle eingeschalteten Automatisierungen angehalten. Dann steht über der Liste **Alle angehaltenen prüfen und wieder einschalten (n)**. Eine Rückfrage nennt sie; nach **Wieder einschalten** prüft Ablago jede und schaltet sie ein. Was nicht mehr passt, bleibt angehalten.
 
-**Gruppieren:** Der Umschalter über der Liste ordnet sie nach **Auslöser** (dort sortierst du die [Reihenfolge](#reihenfolge) um), nach **Paket** (eigene, Ablago und je Paket) oder nach **Ziel** – also danach, was die Automatisierung bewirkt: *Aufgabe stellen*, *Benachrichtigen*, *Nach außen melden*, *Felder setzen*, *Paket ausführen*, *Sichern*. Das Ziel ergibt sich aus der ersten Dann-Karte.
+**Gruppieren:** Die Auswahl über der Liste ordnet sie **nach Auslöser** (dort sortierst du die [Reihenfolge](#reihenfolge) um), **nach Paket** (eigene, Ablago und je Paket) oder **nach Ziel** – also danach, was die Automatisierung bewirkt: *Aufgabe stellen*, *Benachrichtigen*, *Nach außen melden*, *Felder setzen*, *Paket ausführen*, *Sichern*. Das Ziel ergibt sich aus der ersten Dann-Karte.
 
 ## An, aus und angehalten
 
@@ -332,7 +332,7 @@ Im Bereich **Zustellungen** der Automatisierung stehen die letzten Aufrufe und M
 
 ## Reihenfolge
 
-Gibt es mehrere Automatisierungen für denselben Auslöser, laufen sie nach ihrer **Reihenfolge** (1–99, kleinere zuerst; eigene beginnen bei 50). Im Editor steht dann „läuft als 2. von 3 beim selben Auslöser“. In der Liste zeigt **Gruppieren: Auslöser** alle Automatisierungen eines Ereignisses zusammen; dort sortierst du sie per Ziehen oder mit **Alt+↑/↓** am Griff um, die Nummern passen sich an.
+Gibt es mehrere Automatisierungen für denselben Auslöser, laufen sie nach ihrer **Reihenfolge** (1–99, kleinere zuerst; eigene beginnen bei 50). Im Editor steht dann „läuft als 2. von 3 beim selben Auslöser“. In der Liste zeigt **Nach Auslöser** alle Automatisierungen eines Ereignisses zusammen; dort sortierst du sie per Ziehen oder mit **Alt+↑/↓** am Griff um, die Nummern passen sich an.
 
 ## Ausprobieren, Verlauf und Änderungsverlauf
 

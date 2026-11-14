@@ -19,6 +19,7 @@ import { PaketChipMuster } from './paketchip/muster';
 import { WahlhakenMuster } from './wahlhaken/muster';
 import { MehrfachauswahlMuster } from './mehrfachauswahl/muster';
 import { MenueMuster } from './menue/muster';
+import { PlatzhalterMuster } from './platzhalter/muster';
 import { Rueckfragen } from './rueckfrage/Rueckfrage';
 import s from './muster.module.css';
 
@@ -48,6 +49,7 @@ const BAUSTEINE: Musterbereich[] = [
   { id: 'umschalter', titel: () => t('oberflaeche.muster.umschalter.titel'), text: () => t('oberflaeche.muster.umschalter.text'), Muster: UmschalterMuster },
   { id: 'bereiche', titel: () => t('oberflaeche.muster.bereiche.titel'), text: () => t('oberflaeche.muster.bereiche.text'), Muster: BereicheMuster },
   { id: 'fassungen', titel: () => t('oberflaeche.muster.fassungen.titel'), text: () => t('oberflaeche.muster.fassungen.text'), Muster: FassungenMuster },
+  { id: 'platzhalter', titel: () => t('oberflaeche.muster.platzhalter.titel'), text: () => t('oberflaeche.muster.platzhalter.text'), Muster: PlatzhalterMuster },
 ];
 
 /** Leitsätze für Knöpfe (#1210), ausführlich im Entwicklerhandbuch unter „Gestaltung und Bausteine“. */

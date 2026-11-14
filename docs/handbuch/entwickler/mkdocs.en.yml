@@ -90,6 +90,7 @@ nav:
       - Menu: bausteine-menue.md
       - Selection checkbox: bausteine-wahlhaken.md
       - Multiple selection: bausteine-mehrfachauswahl.md
+      - Placeholders: bausteine-platzhalter.md
   - Release: release.md
   - Core:
       - Architecture: aufbau.md

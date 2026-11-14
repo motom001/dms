@@ -57,6 +57,7 @@ On a phone the finger hits, not the mouse pointer. So every control of a buildin
 | `Reiter` | each tab at least 44 px high; the row scrolls sideways, the page does not |
 | `Schalter` | at least 44 px high, the label toggles too |
 | `PaketChip` as a link | stays small to the eye; invisible touch target 44 px high |
+| `Platzhalter` | small buttons with an invisible 44 × 44 px touch target |
 
 **The rule:** touch targets never overlap – not in a row of buttons or a group of checkboxes either. Whoever uses a building block writes nothing for this; one-off solutions with `@media (pointer: coarse)` in `styles.css` are only left for places without a building block. New building blocks set their touch target in their own stylesheet, also only with `(pointer: coarse)`, so the desktop stays unchanged.
 
@@ -104,3 +105,4 @@ The workflow **Handbuch** takes the same screenshots in the jobs `bilder (de)` a
 | [Menu](bausteine-menue.md) | A button that opens actions – “Folder ▾”, “⋯” on rows and lists: groups, icons, locked items with a reason, danger set apart at the end with a confirmation; a sheet on the phone |
 | [Selection checkbox](bausteine-wahlhaken.md) | The checkbox that selects rows of a list: no visible label, Shift for ranges, “partly” in the header |
 | [Multiple selection](bausteine-mehrfachauswahl.md) | Choose several entries: search field with suggestions, chosen entries below with “Remove” |
+| [Placeholders](bausteine-platzhalter.md) | A text’s placeholders as clickable buttons: understandable name, grouped by “General” and folder type, inserted at the cursor |

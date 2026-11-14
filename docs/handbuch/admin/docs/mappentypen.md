@@ -144,7 +144,7 @@ Ein **zusammengesetztes Feld** setzt sich aus anderen Feldern derselben Mappe zu
 
 **Beispiel: Rechnungsnummer je Absender.** Verschiedene Firmen vergeben dieselben Rechnungsnummern; *Rechnungsnummer* allein kann also nicht eindeutig sein. Lege an der *Rechnung* ein Feld *Kennung* an:
 
-1. Feldart **Zusammengesetzt**, Vorlage `{von} · {rechnungsnummer}` – die Knöpfe unter der Vorlage fügen die Platzhalter der Felder ein.
+1. Feldart **Zusammengesetzt**, Vorlage `{von} · {rechnungsnummer}` – ein Klick auf ein Feld unter der Vorlage setzt seinen Platzhalter an der Schreibmarke ein (am Ende mit „ · “ davor).
 2. Haken **Eindeutig**.
 3. Speichern.
 
@@ -407,7 +407,7 @@ Du kannst Mappentypen jederzeit ändern, auch wenn es schon Mappen gibt:
 
 ## Titel einer Mappe
 
-Die **Vorlage** bestimmt, wie eine Mappe in Listen und Verweisen heißt, z. B. `{rechnungsnummer} vom {rechnungsdatum}`. Felder in geschweiften Klammern werden eingesetzt, alles andere bleibt stehen. Daneben gibt es `{angelegt}` und `{geaendert}` (jeweils das Datum). Die Vorschau zeigt das Ergebnis mit Beispielwerten oder mit den Werten einer echten Mappe.
+Die **Vorlage** bestimmt, wie eine Mappe in Listen und Verweisen heißt, z. B. `{rechnungsnummer} vom {rechnungsdatum}`. Felder in geschweiften Klammern werden eingesetzt, alles andere bleibt stehen. Daneben gibt es `{angelegt}` und `{geaendert}` (jeweils das Datum). Unter der Vorlage stehen die Felder und unter **Allgemein** die beiden Daten zum Anklicken – ein Klick setzt den Platzhalter an der Schreibmarke ein. Die Vorschau zeigt das Ergebnis mit Beispielwerten oder mit den Werten einer echten Mappe.
 
 Verweist der Titel auf eine andere Mappe (`{vertragspartner}`), wird der Titel nachgezogen, wenn sich der Vertragspartner ändert.
 

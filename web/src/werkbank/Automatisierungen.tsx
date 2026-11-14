@@ -1,7 +1,7 @@
 import { feldLabel, optionText } from '../../../shared/src/beschriftung';
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import {
-  AUTOMATISIERUNG_GRENZEN, automatisierungsProblemOrte, EREIGNIS_PERSON, PERSONEN_IM_EREIGNIS, kontextTyp, kurzform, paketKarteLeer, platzhalterFuer, REIHENFOLGE, WENN_EREIGNISSE, WOCHENTAGE, zeitplanFuerPaket, zeitplanText,
+  AUTOMATISIERUNG_GRENZEN, automatisierungsProblemOrte, EREIGNIS_PERSON, PERSONEN_IM_EREIGNIS, kontextTyp, kurzform, paketKarteLeer, REIHENFOLGE, WENN_EREIGNISSE, WOCHENTAGE, zeitplanFuerPaket, zeitplanText,
   istBetrieb, istAufruf, PROTOKOLL_FILTER_MAX, PROTOKOLL_STUFEN, type WennBetrieb, aussenKarten, zielHost, type MailEmpfaenger,
   type AutomatisierungAnsicht, type AutomatisierungDaten, type AutomatisierungOrt, type DannKarte, type Empfaenger, type Fehlschlag, type Kontextdaten,
   type Lauf, type Schritt, type UndKarte, type WennKarte,
@@ -22,8 +22,8 @@ import { Ansage, umgestellt, useZiehen, Ziehgriff } from '../ziehen';
 import { FeldBedingung } from './Sichten';
 import { gebietsschema } from '../../../shared/src/sprache';
 import { AufrufAdresse, AufrufParameterZeile, AufrufWenn } from './AutomatisierungAufruf';
-import { EmailKarte, UrlKarte, Zustellungen } from './AutomatisierungAussen';
-import { Eintragsliste, GeloeschteEintraege, Bereich, Fassungen, Feld, FeldGruppe, fehlerBereiche, HakenFeld, Knopf, KnopfLink, PaketChip, Schalter, Suchfeld, Umschalter, useBereiche, Wahlhaken, type BereichListe, type Klappe, type KnopfSperre, type Listeneintrag } from '../bausteine';
+import { EmailKarte, platzhalterGruppen, UrlKarte, Zustellungen } from './AutomatisierungAussen';
+import { Eintragsliste, GeloeschteEintraege, Bereich, Fassungen, Feld, FeldGruppe, fehlerBereiche, HakenFeld, Knopf, KnopfLink, PaketChip, Schalter, Platzhalter, Suchfeld, useBereiche, usePlatzhalterEinsetzen, Wahlhaken, type BereichListe, type Klappe, type KnopfSperre, type Listeneintrag } from '../bausteine';
 import { rueckfrage } from '../rueckfrage';
 import { Symbol } from '../Symbol';
 import type { InstalliertesPaket } from '../../../shared/src/pakete';
@@ -105,6 +105,53 @@ export function zielVon(a: Pick<AutomatisierungAnsicht, 'dann'>): string {
 }
 
 /* ---------- Liste ---------- */
+
+/** Hinweise über der Liste: umgezogene Erinnerungen (#712) und fehlgeschlagene Läufe (#707). */
+function ListenHinweise({ s, z, nurFehl, setNurFehl, setFehler }: { s: Stand; z: AutomatisierungenZustand; nurFehl: boolean; setNurFehl: (x: boolean) => void; setFehler: (x?: string) => void }) {
+  return (
+    <>
+      {s.umgezogen && (
+        <div className="hinweis info">
+          <p><strong>{t('automatisierung.ui.umgezogen', { anzahl: s.umgezogen.anzahl })}</strong> {t('automatisierung.ui.umgezogen.text')}</p>
+          <Knopf groesse="klein" onClick={async () => { try { await api.automatisierungUmzugGesehen(); await z.laden(); } catch (e) { setFehler((e as Error).message); } }}>{t('automatisierung.ui.umgezogen.ok')}</Knopf>
+        </div>
+      )}
+      {!!s.fehlgeschlagen && (
+        <div className="hinweis warn">
+          {/* Welcher Lauf und wann (#707); bei mehreren „Anzeigen“ filtert die Liste. Probeläufe zählen nicht. */}
+          <p>{s.fehlgeschlagen === 1 && s.fehlschlaege[0]
+            ? <>{t('automatisierung.ui.fehlgeschlagen.einer', { name: s.fehlschlaege[0].name, zeit: zeit(s.fehlschlaege[0].gestartet) })} <Link to={`/werkbank/automatisierungen/${s.fehlschlaege[0].automatisierungId}`} className="verweis">{t('automatisierung.ui.fehlgeschlagen.anzeigen')}</Link></>
+            : t('automatisierung.ui.fehlgeschlagen', { anzahl: s.fehlgeschlagen })}</p>
+          <div className="knoepfe">
+            {s.fehlgeschlagen > 1 && <Knopf groesse="klein" aria-pressed={nurFehl} onClick={() => setNurFehl(!nurFehl)}>{nurFehl ? t('automatisierung.ui.fehlgeschlagen.alle') : t('automatisierung.ui.fehlgeschlagen.anzeigen')}</Knopf>}
+            <Knopf groesse="klein" onClick={async () => { try { await api.automatisierungenWiederholen(); setNurFehl(false); await z.laden(); } catch (e) { setFehler((e as Error).message); } }}>{t('automatisierung.ui.alle-wiederholen')}</Knopf>
+            <Knopf groesse="klein" onClick={async () => { try { await api.automatisierungenNichtWiederholen(); setNurFehl(false); await z.laden(); } catch (e) { setFehler((e as Error).message); } }}>{t('automatisierung.ui.nicht-wiederholen.alle')}</Knopf>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+
+/** Ziele nach außen (#671): wohin „URL aufrufen“ darf – eine eigene Seite rechts. */
+function ZieleLink({ an, anzahl }: { an: boolean; anzahl: number }) {
+  return <p className="klein"><Link to="/werkbank/automatisierungen/ziele" className={`verweis tippziel${an ? ' an' : ''}`}>{t('automatisierung.ui.ziele.link', { anzahl })}</Link></p>;
+}
+
+/** Mehrfachauswahl (#1172): Leiste mit Ein- und Ausschalten für die Auswahl, sobald etwas gewählt ist. */
+function Auswahlleiste({ anzahl, schalte, aufheben }: { anzahl: number; schalte: (an: boolean) => Promise<void>; aufheben: () => void }) {
+  if (!anzahl) return null;
+  return (
+    <div className="aktionsleiste auto-auswahl" role="region" aria-label={t('automatisierung.ui.liste.auswahl')}>
+      <span>{t('automatisierung.ui.liste.gewaehlt', { anzahl })}</span>
+      <Knopf groesse="klein" onClick={() => schalte(true)}>{t('automatisierung.ui.liste.einschalten')}</Knopf>
+      <Knopf groesse="klein" onClick={() => schalte(false)}>{t('automatisierung.ui.liste.ausschalten')}</Knopf>
+      <span className="luecke" />
+      <Knopf art="link" groesse="klein" onClick={aufheben}>{t('automatisierung.ui.liste.auswahl-aufheben')}</Knopf>
+    </div>
+  );
+}
 
 export function AutomatisierungenListe({ z, offen, pakete = [] }: { z: AutomatisierungenZustand; offen?: string; pakete?: InstalliertesPaket[] }) {
   const [gruppierung, setGruppierung] = useState<Gruppierung>('ohne');
@@ -204,28 +251,10 @@ export function AutomatisierungenListe({ z, offen, pakete = [] }: { z: Automatis
         <KnopfLink to="/werkbank/automatisierungen/neu" art="anlegen" groesse="klein">{t('automatisierung.ui.neu')}</KnopfLink>
       </Listenkopf>
       {/* Ziele nach außen (#671): wohin „URL aufrufen“ darf – eine eigene Seite rechts. */}
-      <p className="klein"><Link to="/werkbank/automatisierungen/ziele" className={`verweis tippziel${offen === 'ziele' ? ' an' : ''}`}>{t('automatisierung.ui.ziele.link', { anzahl: s?.kontext.ziele?.length ?? 0 })}</Link></p>
+      <ZieleLink an={offen === 'ziele'} anzahl={s?.kontext.ziele?.length ?? 0} />
       {z.fehler && <div className="hinweis schlecht"><p>{z.fehler}</p></div>}
       {fehler && <div className="hinweis schlecht"><p>{fehler}</p></div>}
-      {s?.umgezogen && (
-        <div className="hinweis info">
-          <p><strong>{t('automatisierung.ui.umgezogen', { anzahl: s.umgezogen.anzahl })}</strong> {t('automatisierung.ui.umgezogen.text')}</p>
-          <Knopf groesse="klein" onClick={async () => { try { await api.automatisierungUmzugGesehen(); await z.laden(); } catch (e) { setFehler((e as Error).message); } }}>{t('automatisierung.ui.umgezogen.ok')}</Knopf>
-        </div>
-      )}
-      {!!s?.fehlgeschlagen && (
-        <div className="hinweis warn">
-          {/* Welcher Lauf und wann (#707); bei mehreren „Anzeigen“ filtert die Liste. Probeläufe zählen nicht. */}
-          <p>{s.fehlgeschlagen === 1 && s.fehlschlaege[0]
-            ? <>{t('automatisierung.ui.fehlgeschlagen.einer', { name: s.fehlschlaege[0].name, zeit: zeit(s.fehlschlaege[0].gestartet) })} <Link to={`/werkbank/automatisierungen/${s.fehlschlaege[0].automatisierungId}`} className="verweis">{t('automatisierung.ui.fehlgeschlagen.anzeigen')}</Link></>
-            : t('automatisierung.ui.fehlgeschlagen', { anzahl: s.fehlgeschlagen })}</p>
-          <div className="knoepfe">
-            {s.fehlgeschlagen > 1 && <Knopf groesse="klein" aria-pressed={nurFehl} onClick={() => setNurFehl(!nurFehl)}>{nurFehl ? t('automatisierung.ui.fehlgeschlagen.alle') : t('automatisierung.ui.fehlgeschlagen.anzeigen')}</Knopf>}
-            <Knopf groesse="klein" onClick={async () => { try { await api.automatisierungenWiederholen(); setNurFehl(false); await z.laden(); } catch (e) { setFehler((e as Error).message); } }}>{t('automatisierung.ui.alle-wiederholen')}</Knopf>
-            <Knopf groesse="klein" onClick={async () => { try { await api.automatisierungenNichtWiederholen(); setNurFehl(false); await z.laden(); } catch (e) { setFehler((e as Error).message); } }}>{t('automatisierung.ui.nicht-wiederholen.alle')}</Knopf>
-          </div>
-        </div>
-      )}
+      {s && <ListenHinweise s={s} z={z} nurFehl={nurFehl} setNurFehl={setNurFehl} setFehler={setFehler} />}
       {/* Nach einer Wiederherstellung (#1172): alle angehaltenen auf einmal – mit Rückfrage, die sie nennt. */}
       {angehaltene.length > 0 && <div className="knoepfe"><Knopf onClick={angehalteneEinschalten}>{t('automatisierung.ui.liste.angehaltene', { anzahl: angehaltene.length })}</Knopf></div>}
       <Ansage text={ansage} />
@@ -236,19 +265,14 @@ export function AutomatisierungenListe({ z, offen, pakete = [] }: { z: Automatis
           <HakenFeld beschriftung={t('automatisierung.ui.liste.alle-waehlen')} className="klein">
             <input type="checkbox" checked={!!sichtbar.length && gewaehlt.length === sichtbar.length} onChange={(x) => setAuswahl(x.target.checked ? new Set(sichtbar) : new Set())} />
           </HakenFeld>
-          <span className="leise klein" aria-hidden="true">{t('automatisierung.ui.liste.gruppieren')}</span>
-          <Umschalter beschriftung={t('automatisierung.ui.liste.gruppieren')} wert={gruppierung} setze={setGruppierung}
-            wahlen={GRUPPIERUNGEN.map((x) => ({ wert: x, text: t.frei(`automatisierung.ui.liste.gruppierung.${x}`) }))} />
+          {/* Eine Auswahl statt eines Umschalters: Vier Wahlen passen in die schmale Liste nicht nebeneinander. */}
+          <Feld beschriftung={t('automatisierung.ui.liste.gruppieren')} beschriftungVerbergen className="klein">
+            <select value={gruppierung} onChange={(x) => setGruppierung(x.target.value as Gruppierung)}>
+              {GRUPPIERUNGEN.map((x) => <option key={x} value={x}>{t.frei(`automatisierung.ui.liste.gruppierung.${x}`)}</option>)}
+            </select>
+          </Feld>
         </div>
-        {gewaehlt.length > 0 && (
-          <div className="aktionsleiste" role="region" aria-label={t('automatisierung.ui.liste.auswahl')}>
-            <span>{t('automatisierung.ui.liste.gewaehlt', { anzahl: gewaehlt.length })}</span>
-            <Knopf groesse="klein" onClick={() => schalte(gewaehlt, true)}>{t('automatisierung.ui.liste.einschalten')}</Knopf>
-            <Knopf groesse="klein" onClick={() => schalte(gewaehlt, false)}>{t('automatisierung.ui.liste.ausschalten')}</Knopf>
-            <span className="luecke" />
-            <Knopf art="link" groesse="klein" onClick={() => setAuswahl(new Set())}>{t('automatisierung.ui.liste.auswahl-aufheben')}</Knopf>
-          </div>
-        )}
+        <Auswahlleiste anzahl={gewaehlt.length} schalte={(an) => schalte(gewaehlt, an)} aufheben={() => setAuswahl(new Set())} />
         {gruppierung !== 'ohne'
           ? gruppen.map(([k, g]) => (
               <section key={k} className="automatisierung-gruppe" aria-label={gruppenTitel(k, g)}>
@@ -821,16 +845,46 @@ function dannKurz(k: DannKarte, typ: Mappentyp | null, kx: Kontextdaten): string
   return `${t.frei(`automatisierung.karte.aufgabe.als-${k.als}`)} → ${k.empfaenger.map((e) => empfaengerName(e, typ, kx)).join(', ') || '?'}`;
 }
 
-function Platzhalter({ wenn, typ, einfuegen }: { wenn: WennKarte; typ: Mappentyp | null; einfuegen: (x: string) => void }) {
+/** „Feld ändern“: gewählte Felder mit ihrem Wert; Platzhalter an der Schreibmarke des zuletzt benutzten Werts (#1177). */
+function FeldKarte({ karte, typ, wenn, setze }: { karte: Extract<DannKarte, { art: 'feld' }>; typ: Mappentyp | null; wenn: WennKarte; setze: (k: DannKarte) => void }) {
+  const ein = usePlatzhalterEinsetzen();
+  // Berechnete Felder (#1034) schreibt nur ihr Paket – nicht zur Wahl (bereits gewählte zeigt die Prüfung als Problem).
+  // Zusammengesetzte (#1050) setzt Ablago aus ihren Teilen – auch nicht.
+  const felder = (typ?.felder ?? []).filter((f) => f.typ !== 'passwort' && f.typ !== 'zusammengesetzt');
+  const waehlbar = felder.filter((f) => !f.berechnetVon);
+  const gewaehlt = Object.keys(karte.werte);
   return (
-    <p className="klein platzhalterleiste">
-      <span className="leise">{t('automatisierung.ui.platzhalter')} </span>
-      {platzhalterFuer(wenn, typ).map((p) => <Knopf key={p.key} groesse="klein" className="chip" title={p.label} onClick={() => einfuegen(`{${p.key}}`)}>{`{${p.key}}`}</Knopf>)}
-    </p>
+    <div className="karte offen">
+      {!typ && <p className="fehlertext klein">{t('automatisierung.ui.karte.dann.feld.ohne-typ')}</p>}
+      <ul className="stapel">
+        {gewaehlt.map((key) => {
+          const f = felder.find((x) => x.key === key);
+          const v = karte.werte[key];
+          return (
+            <li key={key} className="bedingungszeile">
+              <strong>{f ? feldLabel(f) : key}</strong>
+              <Feld beschriftung={f ? feldLabel(f) : key} beschriftungVerbergen>
+                {f?.typ === 'auswahl' ? <select value={String(v ?? '')} onChange={(x) => setze({ ...karte, werte: { ...karte.werte, [key]: x.target.value } })}><option value="">–</option>{(f.optionen ?? []).map((o) => <option key={o} value={o}>{optionText(f, o)}</option>)}</select>
+                  : f?.typ === 'janein' ? <select value={v === true ? 'ja' : v === false ? 'nein' : ''} onChange={(x) => setze({ ...karte, werte: { ...karte.werte, [key]: x.target.value === 'ja' } })}><option value="ja">{t('automatisierung.ui.ja')}</option><option value="nein">{t('automatisierung.ui.nein')}</option></select>
+                    : <input {...ein.feld(key, String(v ?? ''), (w) => setze({ ...karte, werte: { ...karte.werte, [key]: w } }))} value={String(v ?? '')} placeholder={f?.typ === 'datum' ? t('automatisierung.ui.karte.dann.feld.datum') : ''} onChange={(x) => setze({ ...karte, werte: { ...karte.werte, [key]: x.target.value } })} />}
+              </Feld>
+              <Knopf art="link" groesse="klein" symbol="schliessen" onClick={() => { const w = { ...karte.werte }; delete w[key]; setze({ ...karte, werte: w }); }}>{t('automatisierung.ui.entfernen')}</Knopf>
+            </li>
+          );
+        })}
+      </ul>
+      {typ && <Feld beschriftung={t('automatisierung.ui.karte.dann.feld.waehlen')} beschriftungVerbergen><select value="" onChange={(x) => { if (x.target.value) setze({ ...karte, werte: { ...karte.werte, [x.target.value]: '' } }); }}>
+        <option value="">{t('automatisierung.ui.karte.dann.feld.waehlen')}</option>
+        {waehlbar.filter((f) => !gewaehlt.includes(f.key)).map((f) => <option key={f.key} value={f.key}>{feldLabel(f)}</option>)}
+      </select></Feld>}
+      {gewaehlt.length > 0 && <Platzhalter einsetzen={ein.einsetzen} gruppen={platzhalterGruppen(wenn, typ)} />}
+    </div>
   );
 }
 
 function DannEditor({ karte, typ, wenn, k, a, eigenesPaket, setze }: { karte: DannKarte; typ: Mappentyp | null; wenn: WennKarte; k: Kontextdaten; a?: AutomatisierungAnsicht; eigenesPaket?: string | null; setze: (k: DannKarte) => void }) {
+  // Platzhalter zum Anklicken (#1177): an der Schreibmarke des zuletzt benutzten Felds.
+  const ein = usePlatzhalterEinsetzen();
   if (karte.art === 'paket') return <PaketKarte karte={karte} k={k} eigenesPaket={eigenesPaket} setze={setze} />;
   // Nach außen (#671).
   if (karte.art === 'url') return <UrlKarte karte={karte} wenn={wenn} typ={typ} k={k} a={a} setze={setze} />;
@@ -866,40 +920,7 @@ function DannEditor({ karte, typ, wenn, k, a, eigenesPaket, setze }: { karte: Da
       <p className="leise klein">{t.frei(`automatisierung.ui.karte.dann.anmeldeschutz.${karte.was}.text`)}</p>
     </div>
   );
-  if (karte.art === 'feld') {
-    // Berechnete Felder (#1034) schreibt nur ihr Paket – nicht zur Wahl (bereits gewählte zeigt die Prüfung als Problem).
-    // Zusammengesetzte (#1050) setzt Ablago aus ihren Teilen – auch nicht.
-    const felder = (typ?.felder ?? []).filter((f) => f.typ !== 'passwort' && f.typ !== 'zusammengesetzt');
-    const waehlbar = felder.filter((f) => !f.berechnetVon);
-    const gewaehlt = Object.keys(karte.werte);
-    return (
-      <div className="karte offen">
-        {!typ && <p className="fehlertext klein">{t('automatisierung.ui.karte.dann.feld.ohne-typ')}</p>}
-        <ul className="stapel">
-          {gewaehlt.map((key) => {
-            const f = felder.find((x) => x.key === key);
-            const v = karte.werte[key];
-            return (
-              <li key={key} className="bedingungszeile">
-                <strong>{f ? feldLabel(f) : key}</strong>
-                <Feld beschriftung={f ? feldLabel(f) : key} beschriftungVerbergen>
-                  {f?.typ === 'auswahl' ? <select value={String(v ?? '')} onChange={(x) => setze({ ...karte, werte: { ...karte.werte, [key]: x.target.value } })}><option value="">–</option>{(f.optionen ?? []).map((o) => <option key={o} value={o}>{optionText(f, o)}</option>)}</select>
-                    : f?.typ === 'janein' ? <select value={v === true ? 'ja' : v === false ? 'nein' : ''} onChange={(x) => setze({ ...karte, werte: { ...karte.werte, [key]: x.target.value === 'ja' } })}><option value="ja">{t('automatisierung.ui.ja')}</option><option value="nein">{t('automatisierung.ui.nein')}</option></select>
-                      : <input value={String(v ?? '')} placeholder={f?.typ === 'datum' ? t('automatisierung.ui.karte.dann.feld.datum') : ''} onChange={(x) => setze({ ...karte, werte: { ...karte.werte, [key]: x.target.value } })} />}
-                </Feld>
-                <Knopf art="link" groesse="klein" symbol="schliessen" onClick={() => { const w = { ...karte.werte }; delete w[key]; setze({ ...karte, werte: w }); }}>{t('automatisierung.ui.entfernen')}</Knopf>
-              </li>
-            );
-          })}
-        </ul>
-        {typ && <Feld beschriftung={t('automatisierung.ui.karte.dann.feld.waehlen')} beschriftungVerbergen><select value="" onChange={(x) => { if (x.target.value) setze({ ...karte, werte: { ...karte.werte, [x.target.value]: '' } }); }}>
-          <option value="">{t('automatisierung.ui.karte.dann.feld.waehlen')}</option>
-          {waehlbar.filter((f) => !gewaehlt.includes(f.key)).map((f) => <option key={f.key} value={f.key}>{feldLabel(f)}</option>)}
-        </select></Feld>}
-        <Platzhalter wenn={wenn} typ={typ} einfuegen={(x) => { const letzt = gewaehlt[gewaehlt.length - 1]; if (letzt) setze({ ...karte, werte: { ...karte.werte, [letzt]: `${String(karte.werte[letzt] ?? '')}${x}` } }); }} />
-      </div>
-    );
-  }
+  if (karte.art === 'feld') return <FeldKarte karte={karte} typ={typ} wenn={wenn} setze={setze} />;
   return (
     <div className="karte offen">
       <div className="raster">
@@ -923,8 +944,8 @@ function DannEditor({ karte, typ, wenn, k, a, eigenesPaket, setze }: { karte: Da
         <Knopf groesse="klein" onClick={() => setze({ ...karte, empfaenger: [...karte.empfaenger, { art: 'person', id: '' }] })}>{t('automatisierung.ui.empfaenger.hinzu')}</Knopf>
       </fieldset>
       <Feld beschriftung={t('automatisierung.ui.karte.dann.aufgabe.text')} className="breit">
-        <textarea rows={3} value={karte.text} maxLength={AUTOMATISIERUNG_GRENZEN.text} onChange={(x) => setze({ ...karte, text: x.target.value })} /></Feld>
-      <Platzhalter wenn={wenn} typ={typ} einfuegen={(x) => setze({ ...karte, text: karte.text + x })} />
+        <textarea {...ein.feld('text', karte.text, (x) => setze({ ...karte, text: x }))} rows={3} value={karte.text} maxLength={AUTOMATISIERUNG_GRENZEN.text} onChange={(x) => setze({ ...karte, text: x.target.value })} /></Feld>
+      <Platzhalter einsetzen={ein.einsetzen} gruppen={platzhalterGruppen(wenn, typ)} />
       <p className="leise klein">{ohneMappeWenn(wenn) ? t('automatisierung.ui.karte.dann.aufgabe.ohne-mappe') : t('automatisierung.ui.karte.dann.aufgabe.rechte')}</p>
     </div>
   );

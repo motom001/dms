@@ -6,7 +6,7 @@ import {
 import type { Mappentyp } from '../../../shared/src/model';
 import { gebietsschema } from '../../../shared/src/sprache';
 import { api, type AussenZustellung } from '../api';
-import { Bereich, Feld, HakenFeld, Knopf, type Klappe } from '../bausteine';
+import { Bereich, Feld, HakenFeld, Knopf, Platzhalter, usePlatzhalterEinsetzen, type Klappe, type PlatzhalterGruppe } from '../bausteine';
 import { Link } from '../ort';
 import { rueckfrage } from '../rueckfrage';
 import { t } from '../sprache';
@@ -19,21 +19,24 @@ import { t } from '../sprache';
 
 const zeit = (iso: string | null | undefined) => (iso ? new Date(iso).toLocaleString(gebietsschema(), { dateStyle: 'short', timeStyle: 'short' }) : '');
 
-/** Platzhalter zum Einfügen – bei „URL aufrufen“ nur die, die zur Inhaltsstufe passen. */
-function Platzhalterleiste({ wenn, typ, stufe, einfuegen }: { wenn: WennKarte; typ: Mappentyp | null; stufe?: Inhaltsstufe; einfuegen: (x: string) => void }) {
+/**
+ * Platzhalter einer Automatisierung gruppiert (#1177): „Allgemein“ (Mappe, Datum, Personen aus dem Ereignis …) und die
+ * Felder des Mappentyps unter seinem Namen – für den Baustein Platzhalter. Bei „URL aufrufen“ nur die, die zur
+ * Inhaltsstufe passen.
+ */
+export function platzhalterGruppen(wenn: WennKarte, typ: Mappentyp | null, stufe?: Inhaltsstufe): PlatzhalterGruppe[] {
   const liste = platzhalterFuer(wenn, typ).filter((p) => !stufe || platzhalterErlaubt(p.key, stufe, wenn));
-  return (
-    <p className="klein platzhalterleiste">
-      <span className="leise">{t('automatisierung.ui.platzhalter')} </span>
-      {liste.map((p) => <Knopf key={p.key} art="link" groesse="klein" className="chip" title={p.label} onClick={() => einfuegen(`{${p.key}}`)}>{`{${p.key}}`}</Knopf>)}
-    </p>
-  );
+  const feld = new Set((typ?.felder ?? []).map((f) => f.key));
+  return [
+    { name: t('automatisierung.ui.platzhalter.allgemein'), eintraege: liste.filter((p) => !feld.has(p.key)).map((p) => ({ key: p.key, text: p.label })) },
+    ...(typ ? [{ name: typ.name, eintraege: liste.filter((p) => feld.has(p.key)).map((p) => ({ key: p.key, text: p.label })) }] : []),
+  ];
 }
 
 /* ---------- URL aufrufen ---------- */
 
 export function UrlKarte({ karte, wenn, typ, k, a, setze }: { karte: DannUrl; wenn: WennKarte; typ: Mappentyp | null; k: Kontextdaten; a?: AutomatisierungAnsicht; setze: (k: DannUrl) => void }) {
-  const [letzter, setLetzter] = useState(0);
+  const ein = usePlatzhalterEinsetzen();
   const ziel = karte.adresse ? zielFuer(karte.adresse, k.ziele ?? []) : null;
   const stufe = async (neu: Inhaltsstufe) => {
     if (neu !== 'werte') { setze({ ...karte, inhalt: neu, bestaetigt: undefined }); return; }
@@ -75,7 +78,7 @@ export function UrlKarte({ karte, wenn, typ, k, a, setze }: { karte: DannUrl; we
                   onChange={(x) => setze({ ...karte, parameter: karte.parameter.map((y, j) => (j === i ? { ...y, name: x.target.value.toLowerCase() } : y)) })} />
               </Feld>
               <Feld beschriftung={t('automatisierung.ui.karte.dann.url.parameter.wert')}>
-                <input value={p.wert} maxLength={AUSSEN_GRENZEN.wert} onFocus={() => setLetzter(i)}
+                <input {...ein.feld(`p${i}`, p.wert, (w) => setze({ ...karte, parameter: karte.parameter.map((y, j) => (j === i ? { ...y, wert: w } : y)) }))} value={p.wert} maxLength={AUSSEN_GRENZEN.wert}
                   onChange={(x) => setze({ ...karte, parameter: karte.parameter.map((y, j) => (j === i ? { ...y, wert: x.target.value } : y)) })} />
               </Feld>
               <Knopf art="link" groesse="klein" symbol="schliessen" onClick={() => setze({ ...karte, parameter: karte.parameter.filter((_, j) => j !== i) })}>{t('automatisierung.ui.entfernen')}</Knopf>
@@ -85,10 +88,7 @@ export function UrlKarte({ karte, wenn, typ, k, a, setze }: { karte: DannUrl; we
         {karte.parameter.length < AUSSEN_GRENZEN.parameter && <Knopf groesse="klein" onClick={() => setze({ ...karte, parameter: [...karte.parameter, { name: '', wert: '' }] })}>{t('automatisierung.ui.karte.dann.url.parameter.hinzu')}</Knopf>}
         <p className="leise klein">{t('automatisierung.ui.karte.dann.url.parameter.hilfe', { anzahl: AUSSEN_GRENZEN.parameter })}</p>
       </fieldset>
-      <Platzhalterleiste wenn={wenn} typ={typ} stufe={karte.inhalt} einfuegen={(x) => {
-        const i = Math.min(letzter, karte.parameter.length - 1);
-        if (i >= 0) setze({ ...karte, parameter: karte.parameter.map((y, j) => (j === i ? { ...y, wert: `${y.wert}${x}` } : y)) });
-      }} />
+      {karte.parameter.length > 0 && <Platzhalter einsetzen={ein.einsetzen} gruppen={platzhalterGruppen(wenn, typ, karte.inhalt)} />}
       <p className="leise klein">{t('automatisierung.ui.karte.dann.url.text')}</p>
       {a && gespeichert ? <UrlGeheimnis a={a} karte={karte.id} /> : <p className="leise klein">{t('automatisierung.ui.karte.dann.url.geheimnis.erst-speichern')}</p>}
     </div>
@@ -143,7 +143,7 @@ export function EmailKarte({ karte, wenn, typ, ohneMappe, setze, wahl }: {
   /** Auswahl einer Person, Rolle, eines Felds … (wie bei Aufgaben), `extra` = zusätzliche Optionen. */
   wahl: (e: Empfaenger, setze: (e: Empfaenger | MailEmpfaenger) => void, extra: ReactNode) => ReactNode;
 }) {
-  const [feld, setFeld] = useState<'betreff' | 'text'>('text');
+  const ein = usePlatzhalterEinsetzen();
   const emailFelder = ohneMappe ? [] : (typ?.felder ?? []).filter((f) => istEmailFeld(f));
   const extra = <>
     <option value="adresse:">{t('automatisierung.ui.karte.dann.email.adresse')}</option>
@@ -168,12 +168,12 @@ export function EmailKarte({ karte, wenn, typ, ohneMappe, setze, wahl }: {
         {karte.an.some((e) => e.art === 'feld') && <p className="leise klein">{t('automatisierung.ui.karte.dann.email.an.feld')}</p>}
       </fieldset>
       <Feld beschriftung={t('automatisierung.ui.karte.dann.email.betreff')} className="breit">
-        <input value={karte.betreff} maxLength={AUSSEN_GRENZEN.betreff} onFocus={() => setFeld('betreff')} onChange={(x) => setze({ ...karte, betreff: x.target.value })} />
+        <input {...ein.feld('betreff', karte.betreff, (x) => setze({ ...karte, betreff: x }))} value={karte.betreff} maxLength={AUSSEN_GRENZEN.betreff} onChange={(x) => setze({ ...karte, betreff: x.target.value })} />
       </Feld>
       <Feld beschriftung={t('automatisierung.ui.karte.dann.email.text')} className="breit">
-        <textarea rows={4} value={karte.text} maxLength={AUSSEN_GRENZEN.text} onFocus={() => setFeld('text')} onChange={(x) => setze({ ...karte, text: x.target.value })} />
+        <textarea {...ein.feld('text', karte.text, (x) => setze({ ...karte, text: x }))} rows={4} value={karte.text} maxLength={AUSSEN_GRENZEN.text} onChange={(x) => setze({ ...karte, text: x.target.value })} />
       </Feld>
-      <Platzhalterleiste wenn={wenn} typ={typ} einfuegen={(x) => setze({ ...karte, [feld]: karte[feld] + x })} />
+      <Platzhalter einsetzen={ein.einsetzen} gruppen={platzhalterGruppen(wenn, typ)} />
       <p className="leise klein">{t('automatisierung.ui.karte.dann.email.hinweis', { anzahl: AUSSEN_GRENZEN.mailsJeAutomatisierungJeTag, alle: AUSSEN_GRENZEN.mailsJeTag })}</p>
     </div>
   );

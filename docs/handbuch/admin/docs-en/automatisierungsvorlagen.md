@@ -47,11 +47,16 @@ Templates without the tick behave as before: “In 6 months” stays fixed.
 
 A card’s text knows the placeholders of [automations](automatisierungen.md) (`{titel}`, `{mappentyp}`, `{heute}`, `{datum}`, the fields of the folder type), plus `{eingabe}` (the text typed when applying), `{person}` (who applies it) and `{empfaenger}`. A template that asks for the text needs `{eingabe}` in a card.
 
+Below the text the placeholders are **clickable** as with automations: under **General** input when applied, who applies it, recipient, folder title, folder type, today and date of the run, below them the fields of each chosen folder type – so you see where placeholders come from. If a field isn’t in all chosen folder types, “only for …” is shown with it. A click inserts the placeholder at the cursor; hovering shows the technical name.
+
 The **switch** at the top of the editor (off) takes the template out of the “Folder” menu – runs already planned still happen. You can delete your own templates once no open runs depend on them; reset Ablago’s with **Reset to delivered version**.
 
 Below:
 
 - **Try it out:** choose a folder and click **Try it out**. **The same small dialog as on the folder** opens – with exactly the template’s questions, the same pre-filled values (e.g. the suggested date), the same labels and order –, marked at the top with **“Trial – nothing is created.”** After confirming, Ablago shows what the recipients would see: per recipient the task (due when) or the notification with folder and text, and who would not be allowed to see the folder or all of it; under **Summary** the same lines in brief. Ablago tries it with your rights as the person. Then **Again** or **Adjust template**. Nothing is created.
+
+  ![Try it out: “Remind me in 14 days” on the electricity contract – the task as the recipient would see it, due in 14 days](bilder/werkbank-automatisierungsvorlage-probe.png)
+
 - **In use on:** all open runs of the template with a link to the folder, date and person. Titles appear only for folders you may read.
 - **History:** applied, planned, ran, paused, deleted, resumed – with time and person. It is kept for 30 days or 200 entries per template.
 - **Versions:** who changed what and when, compare two versions and restore an earlier one – as for all settings in the Workbench, see [Versions](fassungen.md). **Reset to delivery** is itself a version; deleted own templates are listed with a deletion note below the list.

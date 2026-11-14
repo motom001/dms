@@ -29,7 +29,7 @@ Petra is to get a task 30 days before the notice period of a contract runs out �
 
 ![Expanded Then card with recipient and placeholders](bilder/werkbank-automatisierung-karte.png)
 
-You **expand** a card with a click on its name (settings) and **collapse** it again (short line like "Task → Person in the field "Responsible""). Below the text are the **placeholders** that match the If card: the fields of the folder type as well as `{titel}`, `{mappentyp}`, `{heute}`, `{automatisierung}` and with a date `{datum}` and `{tage}`. A click inserts the placeholder.
+You **expand** a card with a click on its name (settings) and **collapse** it again (short line like "Task → Person in the field "Responsible""). Below the text are the **placeholders** that match the If card, with understandable names: under **General** folder title, folder type, today, name of the automation and with a date the date reached and the days until then, below them the fields under the folder type’s name. Hovering shows the technical placeholder (`{titel}`, `{kuendigung}` …). A click inserts it at the **cursor** – in the field you last typed in. It works the same wherever placeholders are allowed: title template and *Combined* in the folder type, cards of automations and [automation templates](automatisierungsvorlagen.md).
 
 ## Example: reporting new documents to the administration {#beispiel-neue-dokumente-an-die-verwaltung-melden}
 
@@ -67,7 +67,7 @@ Each automation takes at most two lines in the list:
 
 **After a restore** all switched-on automations are paused. Above the list it then says **Check and switch on all paused (n)**. A confirmation names them; after **Switch on again** Ablago checks each one and switches it on. Whatever no longer fits stays paused.
 
-**Group:** The toggle above the list groups them by **Trigger** (where you re-arrange the [order](#reihenfolge)), by **Package** (your own, Ablago and per package) or by **Effect** – what the automation does: *Create a task*, *Notify*, *Report outside*, *Set fields*, *Run a package*, *Back up*. The effect comes from the first Then card.
+**Group:** The choice above the list groups them **by trigger** (where you re-arrange the [order](#reihenfolge)), **by package** (your own, Ablago and per package) or **by effect** – what the automation does: *Create a task*, *Notify*, *Report outside*, *Set fields*, *Run a package*, *Back up*. The effect comes from the first Then card.
 
 ## On, off and paused {#an-aus-und-angehalten}
 
@@ -332,7 +332,7 @@ The automation's **Deliveries** area lists the latest calls and e-mails with des
 
 ## Order {#reihenfolge}
 
-If there are several automations for the same trigger, they run by their **order** (1–99, smaller first; your own start at 50). The editor then says "runs as 2nd of 3 for the same trigger". In the list, **Group: Trigger** shows all automations of an event together; there you re-order them by dragging or with **Alt+↑/↓** on the handle, and the numbers adjust.
+If there are several automations for the same trigger, they run by their **order** (1–99, smaller first; your own start at 50). The editor then says "runs as 2nd of 3 for the same trigger". In the list, **By trigger** shows all automations of an event together; there you re-order them by dragging or with **Alt+↑/↓** on the handle, and the numbers adjust.
 
 ## Trying out, run history and change history {#ausprobieren-verlauf-und-anderungsverlauf}
 
