@@ -2142,6 +2142,21 @@ ul.sitzungsliste.festhoehe { border: 1px solid var(--linie); border-radius: var(
 .historie .knoepfe { margin-top: 6px; }
 .mappenliste .eintrag .problem { display: block; color: var(--schlecht); font-size: .85em; }
 .automatisierung-gruppe .h3 { margin: 10px 0 4px; }
+/* Liste der Automatisierungen (#1172): je Eintrag höchstens zwei Zeilen – Zeichen, Name und Paket, darunter die Kurzform.
+   Wahlhaken und Ziehgriff stehen im Fluss vor dem Verweis, damit sich Tippflächen am Handy nicht überdecken. */
+.auto-liste > li { display: flex; align-items: center; gap: 2px; }
+.auto-liste > li > .eintrag { flex: 1; min-width: 0; }
+.auto-liste > li.gewaehlt > .eintrag { background: var(--akzent-zart); }
+.auto-liste .eintrag .titel { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.auto-liste .eintrag .titel .name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.auto-liste .eintrag .titel .chip, .auto-liste .eintrag .titel [data-paket] { margin-left: 0; flex: none; }
+.auto-liste .eintrag .unter { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.auto-zustand { display: inline-flex; align-items: center; justify-content: center; flex: none; width: 14px; height: 14px; }
+.auto-zustand .punkt { width: 9px; height: 9px; border-radius: 50%; border: 1.5px solid var(--rand-eingabe); box-sizing: border-box; }
+.auto-zustand.an .punkt { background: var(--gruen); border-color: var(--gruen); }
+.auto-zustand.angehalten { color: var(--warn); }
+.auto-zustand.angehalten svg { width: 14px; height: 14px; }
+.auto-werkzeuge { flex-wrap: wrap; align-items: center; gap: 4px 12px; margin: 6px 0; }
 @media (prefers-reduced-motion: reduce) { .automatisierung-schritte .laufschritt td { transition: none; } }
 @media (max-width: 600px) { .automatisierung .einzug { margin-left: 6px; } }
 

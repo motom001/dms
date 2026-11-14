@@ -4,7 +4,7 @@ With an **automation**, Ablago does something by itself: **if** something happen
 
 ![Workbench → Automations: list and editor](bilder/werkbank-automatisierungen.png)
 
-On the left are all automations with name, short form ("If Contract: Cancel by in 30 days → task to Responsible"), on/off, number in the order and the last run. On the right, an automation is organised like a [folder type](mappentypen.md#aufbau-des-editors): the **jump bar** with **Expand all / Collapse all** at the top, below it the areas **Basic details** (name, order, description) **→ When** (with the And conditions) **→ Then** (with Otherwise) **→ Try out → History → Versions**; the last three only exist after creating. Collapsed, each area shows a summary, such as the trigger or the Then and Otherwise cards; your device remembers what you expand per automation. **Save automation** at the bottom saves basic details, When, Then and Otherwise at once. Whatever does not fit is shown in the area it belongs to; for a saved automation the area is also marked red, and an error on saving expands it. **On/off**, **Copy**, **Try out** and **Restore** take effect immediately.
+On the left are all automations, each in at most two lines: at the top the state as a small sign, the name and the package it comes from, below it the short form in quiet text ("If Contract: Cancel by in 30 days → task to Responsible") – more under [The list](#liste). On the right, an automation is organised like a [folder type](mappentypen.md#aufbau-des-editors): the **jump bar** with **Expand all / Collapse all** at the top, below it the areas **Basic details** (name, order, description) **→ When** (with the And conditions) **→ Then** (with Otherwise) **→ Try out → History → Versions**; the last three only exist after creating. Collapsed, each area shows a summary, such as the trigger or the Then and Otherwise cards; your device remembers what you expand per automation. **Save automation** at the bottom saves basic details, When, Then and Otherwise at once. Whatever does not fit is shown in the area it belongs to; for a saved automation the area is also marked red, and an error on saving expands it. **On/off**, **Copy**, **Try out** and **Restore** take effect immediately.
 
 In *When* and *Then* you build the automation from cards – four boxes one below the other, connected with arrows:
 
@@ -55,9 +55,23 @@ The card **Date reached** checks once a day at the chosen time for which folders
 
 The earlier cards "Date in N days" and "Deadline reached" have merged into **Date reached**. "Date in N days" becomes the same card with advance notice in days the next time it is opened. With "Deadline reached" the date field is missing: the automation is shown in red until you choose it.
 
+## The list { #liste }
+
+Each automation takes at most two lines in the list:
+
+- **Sign before the name:** green dot = **on**, empty circle = **off**, warning symbol = **paused** (or something is missing). If you hover over the line, the tooltip gives the reason, the number in the order and the last run.
+- **After the name** the package it comes from (chip with the package icon and name), or "Ablago" for built-in ones; your own have no chip.
+- **Below** the short form in quiet text.
+
+**Several at once:** Each line has a tick box, with **Select all** above. As soon as something is selected, a bar with **Switch on** and **Switch off** for the selection appears. If an automation no longer fits, it stays as it is and Ablago names it with the reason.
+
+**After a restore** all switched-on automations are paused. Above the list it then says **Check and switch on all paused (n)**. A confirmation names them; after **Switch on again** Ablago checks each one and switches it on. Whatever no longer fits stays paused.
+
+**Group:** The toggle above the list groups them by **Trigger** (where you re-arrange the [order](#reihenfolge)), by **Package** (your own, Ablago and per package) or by **Effect** – what the automation does: *Create a task*, *Notify*, *Report outside*, *Set fields*, *Run a package*, *Back up*. The effect comes from the first Then card.
+
 ## On, off and paused {#an-aus-und-angehalten}
 
-Whether an automation works you see and change in **one** place: at the switch at the top next to the name; the list shows the same state (**on**, **off**, **paused**).
+Whether an automation works you see and change in **one** place: at the switch at the top next to the name; the list shows the same state as a sign (**on**, **off**, **paused**) and switches several at once.
 
 - For a saved automation the switch takes effect immediately; in its place it briefly says "Switched on." or "Switched off.".
 - If it is **paused** (red, see below), the reason is shown there and the button **Switch on again**.
@@ -318,7 +332,7 @@ The automation's **Deliveries** area lists the latest calls and e-mails with des
 
 ## Order {#reihenfolge}
 
-If there are several automations for the same trigger, they run by their **order** (1–99, smaller first; your own start at 50). The editor then says "runs as 2nd of 3 for the same trigger". In the list, **By trigger** shows all automations of an event together; there you re-order them by dragging or with **Alt+↑/↓** on the handle, and the numbers adjust.
+If there are several automations for the same trigger, they run by their **order** (1–99, smaller first; your own start at 50). The editor then says "runs as 2nd of 3 for the same trigger". In the list, **Group: Trigger** shows all automations of an event together; there you re-order them by dragging or with **Alt+↑/↓** on the handle, and the numbers adjust.
 
 ## Trying out, run history and change history {#ausprobieren-verlauf-und-anderungsverlauf}
 

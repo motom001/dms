@@ -4,7 +4,7 @@ Mit einer **Automatisierung** erledigt Ablago etwas von selbst: **Wenn** etwas p
 
 ![Werkbank → Automatisierungen: Liste und Editor](bilder/werkbank-automatisierungen.png)
 
-Links stehen alle Automatisierungen mit Name, Kurzform („Wenn Vertrag: Kündigung bis in 30 Tagen → Aufgabe an Verantwortlich“), an/aus, Nummer in der Reihenfolge und dem letzten Lauf. Rechts ist eine Automatisierung wie ein [Mappentyp](mappentypen.md#aufbau-des-editors) gegliedert: oben die **Sprungleiste** mit **Alle aufklappen / Alle zuklappen**, darunter die Bereiche **Grunddaten** (Name, Reihenfolge, Beschreibung) **→ Wenn** (mit den Und-Bedingungen) **→ Dann** (mit Sonst) **→ Ausprobieren → Verlauf → Fassungen**; die letzten drei gibt es erst nach dem Anlegen. Eingeklappt zeigt jeder Bereich eine Kurzinfo, etwa den Auslöser oder die Dann- und Sonst-Karten; was du aufklappst, merkt sich dein Gerät je Automatisierung. **Automatisierung speichern** unten speichert Grunddaten, Wenn, Dann und Sonst auf einmal. Was nicht passt, steht im Bereich, zu dem es gehört; bei einer gespeicherten Automatisierung ist der Bereich zusätzlich rot markiert, und ein Fehler beim Speichern klappt ihn auf. **An/aus**, **Kopieren**, **Ausprobieren** und **Wiederherstellen** wirken sofort.
+Links stehen alle Automatisierungen, je in höchstens zwei Zeilen: oben der Zustand als kleines Zeichen, der Name und das Paket, aus dem sie kommt, darunter leise die Kurzform („Wenn Vertrag: Kündigung bis in 30 Tagen → Aufgabe an Verantwortlich“) – mehr dazu unter [Die Liste](#liste). Rechts ist eine Automatisierung wie ein [Mappentyp](mappentypen.md#aufbau-des-editors) gegliedert: oben die **Sprungleiste** mit **Alle aufklappen / Alle zuklappen**, darunter die Bereiche **Grunddaten** (Name, Reihenfolge, Beschreibung) **→ Wenn** (mit den Und-Bedingungen) **→ Dann** (mit Sonst) **→ Ausprobieren → Verlauf → Fassungen**; die letzten drei gibt es erst nach dem Anlegen. Eingeklappt zeigt jeder Bereich eine Kurzinfo, etwa den Auslöser oder die Dann- und Sonst-Karten; was du aufklappst, merkt sich dein Gerät je Automatisierung. **Automatisierung speichern** unten speichert Grunddaten, Wenn, Dann und Sonst auf einmal. Was nicht passt, steht im Bereich, zu dem es gehört; bei einer gespeicherten Automatisierung ist der Bereich zusätzlich rot markiert, und ein Fehler beim Speichern klappt ihn auf. **An/aus**, **Kopieren**, **Ausprobieren** und **Wiederherstellen** wirken sofort.
 
 In *Wenn* und *Dann* baust du die Automatisierung aus Karten zusammen – vier Kästen untereinander, verbunden mit Pfeilen:
 
@@ -55,9 +55,23 @@ Die Karte **Datum erreicht** prüft einmal am Tag zur gewählten Uhrzeit, bei we
 
 Die früheren Karten „Datum in N Tagen“ und „Frist erreicht“ sind in **Datum erreicht** aufgegangen. Aus „Datum in N Tagen“ wird beim nächsten Öffnen dieselbe Karte mit Vorlauf in Tagen. Bei „Frist erreicht“ fehlt das Datumsfeld: Die Automatisierung steht rot da, bis du es wählst.
 
+## Die Liste { #liste }
+
+Jede Automatisierung steht in der Liste in höchstens zwei Zeilen:
+
+- **Zeichen vor dem Namen:** grüner Punkt = **an**, leerer Kreis = **aus**, Warnsymbol = **angehalten** (oder es fehlt ihr etwas). Fährst du mit der Maus über die Zeile, nennt der Tooltip den Grund, die Nummer in der Reihenfolge und den letzten Lauf.
+- **Hinter dem Namen** das Paket, aus dem sie kommt (Chip mit Paket-Symbol und Namen), bzw. „Ablago“ für Mitgeliefertes; eigene haben keinen Chip.
+- **Darunter** leise die Kurzform.
+
+**Mehrere auf einmal:** Vor jeder Zeile steht ein Haken, darüber **Alle auswählen**. Sobald etwas gewählt ist, erscheint eine Leiste mit **Einschalten** und **Ausschalten** für die Auswahl. Passt eine Automatisierung nicht mehr, bleibt sie, wie sie ist, und Ablago nennt sie mit Grund.
+
+**Nach einer Wiederherstellung** sind alle eingeschalteten Automatisierungen angehalten. Dann steht über der Liste **Alle angehaltenen prüfen und wieder einschalten (n)**. Eine Rückfrage nennt sie; nach **Wieder einschalten** prüft Ablago jede und schaltet sie ein. Was nicht mehr passt, bleibt angehalten.
+
+**Gruppieren:** Der Umschalter über der Liste ordnet sie nach **Auslöser** (dort sortierst du die [Reihenfolge](#reihenfolge) um), nach **Paket** (eigene, Ablago und je Paket) oder nach **Ziel** – also danach, was die Automatisierung bewirkt: *Aufgabe stellen*, *Benachrichtigen*, *Nach außen melden*, *Felder setzen*, *Paket ausführen*, *Sichern*. Das Ziel ergibt sich aus der ersten Dann-Karte.
+
 ## An, aus und angehalten
 
-Ob eine Automatisierung arbeitet, siehst und änderst du an **einer** Stelle: am Schalter oben neben dem Namen, in der Liste steht derselbe Zustand (**an**, **aus**, **angehalten**).
+Ob eine Automatisierung arbeitet, siehst und änderst du an **einer** Stelle: am Schalter oben neben dem Namen; die Liste zeigt denselben Zustand als Zeichen (**an**, **aus**, **angehalten**) und schaltet mehrere auf einmal.
 
 - Bei einer gespeicherten Automatisierung wirkt der Schalter sofort; an seiner Stelle steht kurz „Eingeschaltet.“ bzw. „Ausgeschaltet.“.
 - Ist sie **angehalten** (rot, siehe unten), steht dort der Grund und der Knopf **Wieder einschalten**.
@@ -318,7 +332,7 @@ Im Bereich **Zustellungen** der Automatisierung stehen die letzten Aufrufe und M
 
 ## Reihenfolge
 
-Gibt es mehrere Automatisierungen für denselben Auslöser, laufen sie nach ihrer **Reihenfolge** (1–99, kleinere zuerst; eigene beginnen bei 50). Im Editor steht dann „läuft als 2. von 3 beim selben Auslöser“. In der Liste zeigt **Nach Auslöser** alle Automatisierungen eines Ereignisses zusammen; dort sortierst du sie per Ziehen oder mit **Alt+↑/↓** am Griff um, die Nummern passen sich an.
+Gibt es mehrere Automatisierungen für denselben Auslöser, laufen sie nach ihrer **Reihenfolge** (1–99, kleinere zuerst; eigene beginnen bei 50). Im Editor steht dann „läuft als 2. von 3 beim selben Auslöser“. In der Liste zeigt **Gruppieren: Auslöser** alle Automatisierungen eines Ereignisses zusammen; dort sortierst du sie per Ziehen oder mit **Alt+↑/↓** am Griff um, die Nummern passen sich an.
 
 ## Ausprobieren, Verlauf und Änderungsverlauf
 
