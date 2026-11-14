@@ -33,9 +33,17 @@ Oben im Abschnitt steht der Stand in einer Zeile: letzte Sicherung, Anzahl und G
 
 **Jetzt sichern** startet eine Sicherung im Hintergrund, mit Fortschritt. Du kannst die Seite verlassen. Ist weniger Platz frei als der [Mindest-Speicherplatz](#zeitplan-und-aufbewahrung), beginnt keine Sicherung.
 
-Die Liste zeigt alle Sicherungen im Ordner mit Zeitpunkt, Art, Größe und Inhalt. Je Zeile stehen **Herunterladen · Prüfen · Löschen**. [Herunterladen](#sicherung-herunterladen) holt eine Kopie auf deinen Rechner. **Prüfen** rechnet die Prüfsumme der Datei nach und vergleicht sie mit der aus den Metadaten – „unverändert“ heißt: Die Datei ist so, wie Ablago sie geschrieben hat. **Löschen** entfernt beide Dateien.
+Die Liste zeigt alle Sicherungen im Ordner mit Zeitpunkt, Art, Größe und Inhalt. Je Zeile stehen **Herunterladen**, **Prüfen** und **Löschen**. [Herunterladen](#sicherung-herunterladen) holt eine Kopie auf deinen Rechner. **Prüfen** rechnet die Prüfsumme der Datei nach und vergleicht sie mit der aus den Metadaten – „unverändert“ heißt: Die Datei ist so, wie Ablago sie geschrieben hat. **Löschen** entfernt beide Dateien.
 
 Im Container geht das auch ohne Browser mit dem [Befehl `dms`](konsole.md#betrieb): `dms sicherung` listet die Sicherungen, `dms sicherung jetzt` startet eine, `dms sicherung pruefen <name>` prüft eine.
+
+### Mehrere Sicherungen löschen { #mehrere-loeschen }
+
+Zum Aufräumen setzt du in der Liste die Haken vor den Sicherungen, die weg sollen, oder **Alle auswählen**. **Ausgewählte löschen (n)** fragt einmal für alle nach und nennt dabei Anzahl, Zeitraum und den Platz, der frei wird. Ablago löscht dann eine nach der anderen und zeigt den Fortschritt. Was sich nicht löschen ließ, bleibt ausgewählt und steht mit dem Grund über der Liste.
+
+Die **neueste geprüfte** Sicherung (Prüfsumme „unverändert“ oder Probe in Ordnung) ist geschützt: Sie trägt „geschützt“ und lässt sich nicht zusammen mit anderen löschen, nur einzeln mit ihrem eigenen **Löschen**. Ist noch keine geprüft, gilt das für die neueste. So bleibt beim Aufräumen immer eine Sicherung stehen.
+
+Über der Liste steht, was die [Aufbewahrung](#zeitplan-und-aufbewahrung) von selbst wegräumt, mit dem Link **Aufbewahrung ändern**. Ältere automatische Sicherungen musst du also nicht von Hand löschen.
 
 ## Sicherung herunterladen { #sicherung-herunterladen }
 

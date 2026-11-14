@@ -1,17 +1,20 @@
 import { Feld, HakenFeld, Knopf, Schalter } from '../bausteine';
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { Symbol } from '../Symbol';
-import { betriebApi, type ExternStand, type ExternZustand, type Notfallblattstand, type ProbeStand, type SicherungEintrag, type SicherungsPlan, type SicherungStand, type SicherungsZustand, type WhLauf } from '../api/betrieb';
+import { betriebApi, type ExternZustand, type Notfallblattstand, type ProbeStand, type SicherungsPlan, type SicherungStand, type SicherungsZustand, type WhLauf } from '../api/betrieb';
 import { t, tn } from '../sprache';
 import { Schritte } from '../wiederherstellen';
-import { Hilfe, useHandbuch } from '../Hilfe';
+import { Hilfe } from '../Hilfe';
 import { Link } from '../ort';
 import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 import { gebietsschema } from '../../../shared/src/sprache';
 import { NOTFALLBLATT_SEITE } from '../../../shared/src/werkbankansicht';
 import { Kopf } from './Kopf';
 import { useKontoOptional } from '../konto-kontext';
-import { heikelLaden } from '../verwaltungsmodus';
+import { bytes, externText, zeit, zielName } from './sicherungFormat';
+import { SicherungListe } from './SicherungListe';
+
+export { zeit } from './sicherungFormat';
 
 /**
  * Werkbank → Sicherung (#103–#106): jetzt sichern, Liste mit Prüfsumme, Zeitplan und
@@ -23,9 +26,6 @@ export const NOTFALLBLATT_URL = '/api/werkbank/notfallblatt';
 const GEAENDERT = 'dms:sicherung';
 export const meldeSicherung = () => dispatchEvent(new Event(GEAENDERT));
 
-export const bytes = (b: number) => (b < 1024 ** 2 ? `${Math.max(1, Math.round(b / 1024))} KB` : b < 1024 ** 3 ? `${(b / 1024 ** 2).toFixed(0)} MB` : `${(b / 1024 ** 3).toFixed(1).replace('.', ',')} GB`);
-export const zeit = (iso: string) => new Date(iso).toLocaleString(gebietsschema(), { dateStyle: 'medium', timeStyle: 'short' });
-const ART = { manuell: t('werkbank.sicherung.von-hand'), automatisch: t('werkbank.sicherung.art.automatisch'), 'vor-wiederherstellung': t('werkbank.sicherung.vor-einer-wiederherstellung') } as Record<string, string>;
 const TAGE = ['', t('werkbank.sicherung.montag'), t('werkbank.sicherung.dienstag'), t('werkbank.sicherung.mittwoch'), t('werkbank.sicherung.donnerstag'), t('werkbank.sicherung.freitag'), t('werkbank.sicherung.samstag'), t('werkbank.sicherung.sonntag')];
 
 export function useSicherung(offen: boolean) {
@@ -104,42 +104,6 @@ export function sicherungsHinweise(z: SicherungsZustand, mitNotfallblatt: boolea
 
 /* ---------- Sicherung außer Haus (#585) ---------- */
 
-const zielName = (x: ExternZustand, id: string) => x.ziele.find((z) => z.id === id)?.name ?? id;
-
-/** Stand der Kopie außer Haus in Worten ohne „extern“: „geprüft“, „hochgeladen, Größe bestätigt“, „fehlgeschlagen“ … */
-function externStatus(s: ExternStand): string {
-  if (s.status === 'geprueft') return t(s.pruefung === 'stichprobe' ? 'werkbank.sicherung.extern.stichprobe' : 'werkbank.sicherung.extern.geprueft');
-  if (s.status === 'hochgeladen') return t(s.pruefung === 'groesse' ? 'werkbank.sicherung.extern.groesse' : 'werkbank.sicherung.extern.hochgeladen');
-  if (s.status === 'laeuft') return s.gesamt ? t('werkbank.sicherung.extern.laeuft.prozent', { prozent: Math.min(99, Math.floor(((s.bytes ?? 0) / s.gesamt) * 100)) }) : t('werkbank.sicherung.extern.laeuft');
-  if (s.status === 'fehlgeschlagen') return t('werkbank.sicherung.extern.fehlgeschlagen');
-  return t('werkbank.sicherung.extern.offen');
-}
-/** „extern geprüft“ usw. */
-export const externText = (s: ExternStand) => `${t('werkbank.sicherung.extern.extern')} ${externStatus(s)}`;
-
-/** Zelle „Wo“: „lokal ✓ · extern ✓ geprüft“ – je Paket ein Teil, Einzelheiten im Titel. */
-function OrtZelle({ e, extern }: { e: SicherungEintrag; extern: ExternZustand | null | undefined }) {
-  const staende = Object.entries(e.extern ?? {});
-  const mehrere = staende.length > 1;
-  return (
-    <span className="ort-zelle">
-      <span className="gutertext">{t('werkbank.sicherung.extern.lokal')} <Symbol name="haken" /></span>
-      {staende.map(([id, s]) => {
-        const ok = s.status === 'geprueft' || s.status === 'hochgeladen';
-        const name = extern ? zielName(extern, id) : id;
-        const titel = [name, s.ziel, s.grund, t('werkbank.sicherung.extern.stand', { datum: zeit(s.am) })].filter(Boolean).join(' – ');
-        return (
-          <span key={id} title={titel}>{' · '}
-            <span className={s.status === 'fehlgeschlagen' ? 'fehlertext' : s.status === 'geprueft' ? 'gutertext' : ok ? '' : 'leise'}>
-              {mehrere ? `${name}: ` : ''}{t('werkbank.sicherung.extern.extern')} {s.status === 'fehlgeschlagen' ? <Symbol name="warnung" /> : s.status === 'geprueft' ? <Symbol name="haken" /> : s.status === 'offen' || s.status === 'laeuft' ? <Symbol name="stoppuhr" /> : null} {externStatus(s)}
-            </span>
-          </span>
-        );
-      })}
-    </span>
-  );
-}
-
 /** Abschnitt „Außer Haus“: Ziele (Pakete), letzte Kopie; ohne Paket ein Hinweis auf die Möglichkeiten. Das Handbuch nur über das Hilfesymbol (#1193). */
 function AusserHaus({ x }: { x: ExternZustand | null | undefined }) {
   return (
@@ -183,9 +147,6 @@ export function useVerwaltetVerschluesselung(): boolean {
 
 export function SicherungPanel({ z }: { z: SicherungZustand }) {
   const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
-  const [prueft, setPrueft] = useState<string>();
-  // Herunterladen (#975): Name der zuletzt geladenen Sicherung – darunter Hinweis, Größe und Prüfsumme.
-  const [geladen, setGeladen] = useState<string>();
   const mitNotfallblatt = useVerwaltetVerschluesselung();
   const s = z.stand;
   if (z.fehler) return <div className="hinweis schlecht"><p>{z.fehler}</p></div>;
@@ -193,28 +154,10 @@ export function SicherungPanel({ z }: { z: SicherungZustand }) {
   const lauf = s.lauf;
   const laeuft = lauf?.status === 'laeuft';
   const hinweise = sicherungsHinweise(s.zustand, mitNotfallblatt);
-  // Sicherungen mit einem früheren Schlüssel (#47).
-  const alte = s.liste.filter((x) => x.meta && s.zustand.fingerabdruck && x.meta.verschluesselung.fingerabdruck !== s.zustand.fingerabdruck);
-  // Spalte „Wo“ (#585), sobald es ein Ziel außer Haus gibt oder eine Sicherung schon einen Stand hat.
-  const ortSpalte = !!s.zustand.extern?.ziele.length || s.liste.some((x) => x.extern);
-
   async function tu(f: () => Promise<unknown>, gut?: string) {
     setMeldung(undefined);
     try { await f(); await z.laden(); if (gut) setMeldung({ art: 'gut', text: gut }); } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); }
   }
-  // „Prüfen“ (#986): läuft und Fehler in der Zeile; das Ergebnis steht danach in der Spalte „Geprüft“.
-  const pruefKnopf = (name: string, moeglich: boolean) => (
-    <Knopf art="link" gesperrt={(laeuft && prueft !== name) || !moeglich} laeuft={laeuft && prueft === name} laeuftText={t('werkbank.sicherung.prueft')}
-      onClick={async () => { setPrueft(name); await betriebApi.sicherungPruefen(name); await z.laden(); }}>{t('werkbank.sicherung.pruefen')}</Knopf>
-  );
-
-  // „Herunterladen“ (#975): heikle Handlung (frische Anmeldung), dann lädt der Browser selbst – mit Fortschritt und Abbrechen.
-  const loeschFrage = (x: { name: string; meta?: { beginn: string } | null }) => ({ titel: t('werkbank.sicherung.sicherung-vom-loeschen', { wert: x.meta ? zeit(x.meta.beginn) : x.name }), text: t('werkbank.sicherung.sie-ist-danach-endgueltig'), ja: t('werkbank.sicherung.endgueltig-loeschen') });
-  const ladeKnopf = (name: string) => (
-    <Knopf art="link" onClick={async () => { if (await heikelLaden(betriebApi.sicherungDateiUrl(name))) setGeladen(name); }}>{t('werkbank.sicherung.herunterladen')}</Knopf>
-  );
-  const gewaehlt = geladen ? s.liste.find((x) => x.name === geladen) : undefined;
-
   return (
     <div className="einspaltig">
       <Kopf titel={t('werkbank.sicherung.sicherung')} ueber={t('werkbank.sicherung.werkbank')} hilfe="werkbank.sicherung">
@@ -245,42 +188,7 @@ export function SicherungPanel({ z }: { z: SicherungZustand }) {
         {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
       </section>
 
-      <section className="blatt" id="liste">
-        <h2 className="h3">{t('werkbank.sicherung.sicherungen-2')}</h2>
-        {alte.length > 0 && (
-          <div className="hinweis info">
-            <p>{tn('werkbank.sicherung.zum-wiederherstellen-brauchst-du', { b: <strong>{t('werkbank.sicherung.sicherungen-sind-mit-einem', { anzahl: alte.length })}</strong> })}</p>
-            <div className="knoepfe"><Knopf art="gefahr" symbol="geloescht" groesse="klein" gesperrt={laeuft}
-              rueckfrage={{ titel: t('werkbank.sicherung.alle-sicherungen-mit-frueherem', { anzahl: alte.length }), text: t('werkbank.sicherung.sie-sind-danach-endgueltig'), ja: t('werkbank.sicherung.endgueltig-loeschen') }}
-              onClick={() => { void tu(async () => { for (const x of alte) await betriebApi.sicherungLoeschen(x.name); }, t('werkbank.sicherung.sicherungen-mit-frueherem-schluessel')); }}>
-              {t('werkbank.sicherung.sicherungen-mit-frueherem-schluessel-2')}</Knopf></div>
-          </div>
-        )}
-        {!s.liste.length ? <p className="leise">{tn('werkbank.sicherung.noch-keine-sicherung-im', { span: <span className="mono">{s.zustand.ort.ordner}</span> })}</p> : (
-          <div className="trefferliste"><table>
-            <thead><tr><th>{t('werkbank.sicherung.zeitpunkt')}</th><th>{t('werkbank.sicherung.art')}</th><th className="rechts">{t('werkbank.sicherung.groesse')}</th><th>{t('werkbank.sicherung.inhalt')}</th>{ortSpalte && <th>{t('werkbank.sicherung.extern.spalte')}</th>}<th>{t('werkbank.sicherung.pruefsumme')}</th><th>{t('werkbank.sicherung.probe')}</th><th><span className="sr">{t('werkbank.sicherung.aktionen')}</span></th></tr></thead>
-            <tbody>{s.liste.map((x) => (
-              <tr key={x.name} className={geladen === x.name ? 'an' : undefined}>
-                <td className="kurz" title={x.name}>{x.meta ? zeit(x.meta.beginn) : x.schlank ? zeit(x.schlank.beginn) : x.name}</td>
-                <td>{x.meta ? ART[x.meta.art] ?? x.meta.art : x.schlank ? <span className="leise">{t('werkbank.sicherung.extern.zurueck')}</span> : <span className="fehlertext">{t('werkbank.sicherung.metadaten-fehlen')}</span>}
-                  {x.meta && s.zustand.fingerabdruck && x.meta.verschluesselung.fingerabdruck !== s.zustand.fingerabdruck && <> <span className="chip warn" title={t('werkbank.sicherung.schluessel-braucht-das-notfallblatt', { fingerabdruck: x.meta.verschluesselung.fingerabdruck })}>{t('werkbank.sicherung.frueherer-schluessel')}</span></>}</td>
-                <td className="rechts kurz">{bytes(x.bytes)}</td>
-                <td>{x.meta ? t('werkbank.sicherung.mappen-dateien', { mappen: x.meta.anzahl.mappen.toLocaleString(gebietsschema()), dateien: x.meta.anzahl.dateien.toLocaleString(gebietsschema()) }) : '–'}{x.meta && <span className="leise klein"> {' '}{t('werkbank.sicherung.ablago', { dms: x.meta.umgebung.dms })}</span>}</td>
-                {ortSpalte && <td><OrtZelle e={x} extern={s.zustand.extern} /></td>}
-                <td>{x.pruefung ? <span className={`chip ${x.pruefung.ok ? 'gut' : 'schlecht'}`} title={t('werkbank.sicherung.geprueft', { zeit: zeit(x.pruefung.am) })}>{x.pruefung.ok ? t('werkbank.sicherung.unveraendert') : t('werkbank.sicherung.weicht-ab')}</span> : <span className="leise">–</span>}</td>
-                <td>{x.probe ? <span className={`chip ${x.probe.ok ? 'gut' : 'schlecht'}`} title={`${zeit(x.probe.am)}: ${x.probe.info}`}>{x.probe.ok ? t('werkbank.sicherung.in-ordnung') : t('werkbank.sicherung.fehler')}</span> : <span className="leise">–</span>}</td>
-                <td className="kurz">
-                  {ladeKnopf(x.name)}{' · '}
-                  {pruefKnopf(x.name, !!(x.meta || x.schlank))}{' · '}
-                  <Knopf art="gefahr" symbol="geloescht" groesse="klein" gesperrt={laeuft} rueckfrage={loeschFrage(x)} onClick={() => { void tu(() => betriebApi.sicherungLoeschen(x.name), t('werkbank.sicherung.sicherung-geloescht')); }}>{t('werkbank.sicherung.loeschen')}</Knopf>
-                </td>
-              </tr>
-            ))}</tbody>
-          </table></div>
-        )}
-        {gewaehlt && <Heruntergeladen e={gewaehlt} schliessen={() => setGeladen(undefined)} />}
-        <p className="leise klein">{t('werkbank.sicherung.pruefen-rechnet-die-pruefsumme')}</p>
-      </section>
+      <SicherungListe s={s} laeuft={laeuft} laden={z.laden} />
 
       {s.zustand.probe && <Probe stand={s.zustand.probe} lauf={s.probe ?? null} sicherungen={s.liste.some((x) => x.meta)} gesperrt={laeuft} neuLaden={() => void z.laden()} />}
 
@@ -309,31 +217,6 @@ export function SicherungPanel({ z }: { z: SicherungZustand }) {
       </section>
 
       <AusserHaus x={s.zustand.extern} />
-    </div>
-  );
-}
-
-/**
- * Nach „Herunterladen“ (#975): der Hinweis auf das Notfallblatt, Größe und Prüfsumme zum späteren Prüfen der Kopie und
- * die Metadaten (.json), ohne die sich die Sicherung auf einem neuen Gerät nicht einspielen lässt.
- */
-function Heruntergeladen({ e, schliessen }: { e: SicherungEintrag; schliessen(): void }) {
-  const handbuch = useHandbuch();
-  const sha = e.meta?.sha256 ?? e.schlank?.sha256 ?? null;
-  const beginn = e.meta?.beginn ?? e.schlank?.beginn;
-  return (
-    <div className="hinweis info" role="status">
-      <p><strong>{t('werkbank.sicherung.laden.notfallblatt')}</strong> {t('werkbank.sicherung.laden.text', { zeit: beginn ? zeit(beginn) : e.name })}</p>
-      <dl className="eigenschaften">
-        <dt>{t('werkbank.sicherung.laden.datei')}</dt><dd className="mono">{`${e.name}.dms-sicherung`}</dd>
-        <dt>{t('werkbank.sicherung.groesse')}</dt><dd>{t('werkbank.sicherung.laden.bytes', { bytes: bytes(e.bytes), genau: e.bytes.toLocaleString(gebietsschema()) })}</dd>
-        <dt>{t('werkbank.sicherung.laden.sha256')}</dt><dd className="mono umbruch">{sha ?? t('werkbank.sicherung.metadaten-fehlen')}</dd>
-      </dl>
-      {(e.meta || e.schlank) && <p>{tn('werkbank.sicherung.laden.metadaten', { link: <a href={betriebApi.sicherungMetadatenUrl(e.name)} download className="verweis">{t('werkbank.sicherung.laden.metadaten-link')}</a> })}</p>}
-      <div className="knoepfe">
-        <a href={`${handbuch('admin', 'sicherung/')}#kopie-prufen`} target="_blank" rel="noreferrer" className="verweis">{t('werkbank.sicherung.laden.handbuch')}</a>
-        <Knopf groesse="klein" onClick={schliessen}>{t('werkbank.sicherung.laden.schliessen')}</Knopf>
-      </div>
     </div>
   );
 }
