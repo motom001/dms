@@ -8,6 +8,7 @@ import { nachDemLaden, nimmDatei, ladeDatei } from './assistent/datei';
 import { Rahmen, Sammelassistent, SprachSchritt, unterbrochenerLauf, VOR, zurSprache, type Leiste } from './assistent/Schritte';
 import { setzeStand, useAssistent } from './assistent/stand';
 import { useNeuLadenBeiNeuerVersion } from './erreichbar';
+import { Feld, Knopf } from './bausteine';
 
 /**
  * Einrichtungsassistent (#119). Seit #804: Code, Datenbank und „Neu oder Sicherung“ wirken sofort, weil sie technisch
@@ -92,12 +93,13 @@ export function Einrichtungsassistent({ status, fertig }: { status: KontoStatus;
   return (
     <Rahmen aktiv={VOR.wahl} titel={t('einrichtung.assistent.neu-einrichten-oder-wiederherstellen')} unter={t('einrichtung.assistent.die-datenbank-ist-verbunden-2')} leiste={VORHER} datei={{}}>
       <div className="wahlkarten">
-        <button type="button" className="wahlkarte" onClick={() => setzeStand((x) => ({ ...x, neu: true }))}>
+        {/* Zwei Wege als Karten (#1215: Baustein Knopf, Aussehen der Karte über .textknopf.wahlkarte). */}
+        <Knopf art="link" className="wahlkarte" onClick={() => setzeStand((x) => ({ ...x, neu: true }))}>
           <strong>{t('einrichtung.assistent.neu-einrichten')}</strong><span className="leise">{t('einrichtung.wahl.neu')}</span>
-        </button>
-        <button type="button" className="wahlkarte" onClick={() => setSicherung(true)}>
+        </Knopf>
+        <Knopf art="link" className="wahlkarte" onClick={() => setSicherung(true)}>
           <strong>{t('einrichtung.assistent.aus-einer-sicherung-wiederherstellen')}</strong><span className="leise">{t('einrichtung.assistent.neues-nas-alte-sicherung')}</span>
-        </button>
+        </Knopf>
       </div>
     </Rahmen>
   );
@@ -116,9 +118,8 @@ function CodeSchritt({ ok }: { ok: () => void }) {
         setzeEinrichtungscode(code.trim());
         try { await api.einrichtungCode(); ok(); } catch (x) { setzeEinrichtungscode(null); throw x; }
       }); }}>
-        <label className="eigenschaft"><span>{t('einrichtung.assistent.einrichtungscode')}</span><input className="mono" value={code} onChange={(x) => setCode(x.target.value)} placeholder="XXXX-XXXX-XXXX" autoComplete="off" autoCapitalize="characters" spellCheck={false} autoFocus required /></label>
-        {s.fehler && <p className="fehlertext">{s.fehler}</p>}
-        <button className="knopf primaer" disabled={s.sendet || !code.trim()}>{s.sendet ? t('einrichtung.assistent.pruefe') : t('einrichtung.assistent.weiter')}</button>
+        <Feld beschriftung={t('einrichtung.assistent.einrichtungscode')} fehler={s.fehler}><input className="mono" value={code} onChange={(x) => setCode(x.target.value)} placeholder="XXXX-XXXX-XXXX" autoComplete="off" autoCapitalize="characters" spellCheck={false} autoFocus required /></Feld>
+        <div className="knoepfe"><Knopf art="haupt" type="submit" laeuft={s.sendet} laeuftText={t('einrichtung.assistent.pruefe')} gesperrt={!code.trim()}>{t('einrichtung.assistent.weiter')}</Knopf></div>
       </form>
       <p className="klein">{tn('einrichtung.assistent.wo-das-bei-deinem', { link: <a className="verweis" href={installierenUrl()} target="_blank" rel="noreferrer">{t('einrichtung.assistent.wie-komme-ich-an')}</a> })}</p>
       <p className="leise klein">{t('einrichtung.assistent.nach-der-einrichtung-ist')}</p>
@@ -131,16 +132,15 @@ export const STANDARD_DB: AnbindungEingabe = { host: 'db', port: 5432, datenbank
 /** Formular der Anbindung – im Assistenten und in der Werkbank. */
 export function AnbindungFormular({ wert, setWert, passwortGesetzt, felder }: { wert: AnbindungEingabe; setWert: (a: AnbindungEingabe) => void; passwortGesetzt: boolean; felder?: Record<string, string> }) {
   const feld = (k: keyof AnbindungEingabe, name: string, hilfe: string, typ = 'text') => (
-    <label className="eigenschaft"><span>{name} <small>{hilfe}</small></span>
+    <Feld beschriftung={name} hinweis={hilfe} fehler={felder?.[k]}>
       <input type={typ} value={String(wert[k])} onChange={(x) => setWert({ ...wert, [k]: k === 'port' ? Number(x.target.value) : x.target.value })}
-        autoComplete={k === 'passwort' ? 'new-password' : 'off'} spellCheck={false} aria-invalid={!!felder?.[k]} />
-      {felder?.[k] && <small className="fehlertext">{felder[k]}</small>}
-    </label>
+        autoComplete={k === 'passwort' ? 'new-password' : 'off'} spellCheck={false} />
+    </Feld>
   );
   return (
     <div className="raster">
       {feld('host', t('einrichtung.assistent.server'), t('einrichtung.assistent.name-des-datenbank-containers'))}
-      {feld('port', t('einrichtung.assistent.port'), 'meist 5432', 'number')}
+      {feld('port', t('einrichtung.assistent.port'), t('einrichtung.assistent.meist-5432'), 'number')}
       {feld('datenbank', t('einrichtung.assistent.datenbank'), t('einrichtung.assistent.meist-dms'))}
       {feld('benutzer', t('einrichtung.assistent.benutzer'), t('einrichtung.assistent.meist-dms'))}
       {feld('passwort', t('einrichtung.assistent.passwort'), passwortGesetzt ? t('einrichtung.assistent.leer-lassen-bisheriges-behalten') : t('einrichtung.assistent.db-password-aus-der'), 'password')}
@@ -178,9 +178,9 @@ function DatenbankSchritt({ status, weiter }: { status: KontoStatus; weiter: () 
         {p && <PruefungAnzeige p={p} />}
         {s.fehler && <p className="fehlertext">{s.fehler}</p>}
         <div className="knoepfe">
-          <button className="knopf" disabled={s.sendet}>{s.sendet ? t('einrichtung.assistent.pruefe') : t('einrichtung.assistent.verbindung-pruefen')}</button>
-          {p && !p.ok && p.art === 'datenbank_fehlt' && p.anlegenMoeglich && <button type="button" className="knopf" disabled={s.sendet} onClick={() => void tu(async () => setP(await api.einrichtungDbAnlegen(a)))}>{t('einrichtung.assistent.datenbank-anlegen', { datenbank: a.datenbank })}</button>}
-          {p?.ok && <button type="button" className="knopf primaer" disabled={s.sendet} onClick={() => void tu(async () => { await api.einrichtungDbUebernehmen(a); setStartet(true); await warteBisGestartet(); await weiter(); })}>{t('einrichtung.assistent.uebernehmen-und-weiter')}</button>}
+          <Knopf art={p?.ok ? 'neben' : 'haupt'} type="submit" laeuft={s.sendet} laeuftText={t('einrichtung.assistent.pruefe')}>{t('einrichtung.assistent.verbindung-pruefen')}</Knopf>
+          {p && !p.ok && p.art === 'datenbank_fehlt' && p.anlegenMoeglich && <Knopf gesperrt={s.sendet} onClick={() => void tu(async () => setP(await api.einrichtungDbAnlegen(a)))}>{t('einrichtung.assistent.datenbank-anlegen', { datenbank: a.datenbank })}</Knopf>}
+          {p?.ok && <Knopf art="haupt" gesperrt={s.sendet} onClick={() => void tu(async () => { await api.einrichtungDbUebernehmen(a); setStartet(true); await warteBisGestartet(); await weiter(); })}>{t('einrichtung.assistent.uebernehmen-und-weiter')}</Knopf>}
         </div>
         {p && !p.ok && p.art === 'datenbank_fehlt' && !p.anlegenMoeglich && <p className="leise klein">{t('einrichtung.assistent.dieser-benutzer-darf-keine')}</p>}
       </form>

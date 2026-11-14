@@ -1187,26 +1187,8 @@
     }
   },
   "web/src/App.tsx": {
-    "ablago/bausteine": {
-      "count": 11
-    },
     "complexity": {
       "count": 2
-    }
-  },
-  "web/src/Fehlergrenze.tsx": {
-    "ablago/bausteine": {
-      "count": 2
-    }
-  },
-  "web/src/Messpanel.tsx": {
-    "ablago/bausteine": {
-      "count": 1
-    }
-  },
-  "web/src/UeberDms.tsx": {
-    "ablago/bausteine": {
-      "count": 1
     }
   },
   "web/src/ablage/Ablage.tsx": {
@@ -1350,11 +1332,6 @@
       "count": 1
     }
   },
-  "web/src/abruf.tsx": {
-    "ablago/bausteine": {
-      "count": 3
-    }
-  },
   "web/src/api.ts": {
     "max-lines": {
       "count": 1
@@ -1364,9 +1341,6 @@
     }
   },
   "web/src/assistent/Schritte.tsx": {
-    "ablago/bausteine": {
-      "count": 24
-    },
     "complexity": {
       "count": 1
     },
@@ -1375,9 +1349,6 @@
     }
   },
   "web/src/bereiche.tsx": {
-    "ablago/bausteine": {
-      "count": 2
-    },
     "complexity": {
       "count": 1
     },
@@ -1386,9 +1357,6 @@
     }
   },
   "web/src/einrichtung.tsx": {
-    "ablago/bausteine": {
-      "count": 8
-    },
     "complexity": {
       "count": 2
     },
@@ -1410,38 +1378,12 @@
       "count": 3
     }
   },
-  "web/src/entdecken/Entdecken.tsx": {
-    "ablago/bausteine": {
-      "count": 3
-    }
-  },
-  "web/src/entdecken/Rundgang.tsx": {
-    "ablago/bausteine": {
-      "count": 4
-    }
-  },
-  "web/src/entdecken/TippZeile.tsx": {
-    "ablago/bausteine": {
-      "count": 2
-    }
-  },
-  "web/src/erreichbar.tsx": {
-    "ablago/bausteine": {
-      "count": 5
-    }
-  },
   "web/src/konto.tsx": {
-    "ablago/bausteine": {
-      "count": 21
-    },
     "complexity": {
       "count": 1
     }
   },
   "web/src/lasttest.tsx": {
-    "ablago/bausteine": {
-      "count": 9
-    },
     "complexity": {
       "count": 1
     }
@@ -1451,57 +1393,12 @@
       "count": 1
     }
   },
-  "web/src/notfall.tsx": {
-    "ablago/bausteine": {
-      "count": 9
-    }
-  },
-  "web/src/profil/Abwesenheit.tsx": {
-    "ablago/bausteine": {
-      "count": 10
-    }
-  },
-  "web/src/profil/ApiSchluessel.tsx": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    },
-    "ablago/bausteine": {
-      "count": 10
-    },
-    "ablago/knopf-farben": {
-      "count": 1
-    }
-  },
   "web/src/profil/DokumentPasswoerter.tsx": {
     "@typescript-eslint/no-unused-vars": {
       "count": 1
-    },
-    "ablago/bausteine": {
-      "count": 10
-    }
-  },
-  "web/src/profil/FehlerMelden.tsx": {
-    "ablago/bausteine": {
-      "count": 5
-    }
-  },
-  "web/src/profil/Laufwerk.tsx": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    },
-    "ablago/bausteine": {
-      "count": 3
-    }
-  },
-  "web/src/profil/MeinExport.tsx": {
-    "ablago/bausteine": {
-      "count": 3
     }
   },
   "web/src/profil/Profil.tsx": {
-    "ablago/bausteine": {
-      "count": 24
-    },
     "complexity": {
       "count": 1
     },
@@ -1509,24 +1406,9 @@
       "count": 1
     }
   },
-  "web/src/profil/Zusammenfassung.tsx": {
-    "ablago/bausteine": {
-      "count": 4
-    }
-  },
-  "web/src/profil/Zweifaktor.tsx": {
-    "ablago/bausteine": {
-      "count": 13
-    }
-  },
   "web/src/seiten.ts": {
     "max-params": {
       "count": 1
-    }
-  },
-  "web/src/verwaltungsmodus.tsx": {
-    "ablago/bausteine": {
-      "count": 6
     }
   },
   "web/src/werkbank/Anmeldeschutz.tsx": {
@@ -1694,11 +1576,8 @@
     }
   },
   "web/src/wiederherstellen.tsx": {
-    "ablago/bausteine": {
-      "count": 10
-    },
     "complexity": {
-      "count": 2
+      "count": 1
     }
   }
 }

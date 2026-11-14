@@ -1,11 +1,10 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import type { GemerktesPasswort } from '../../../shared/src/entsperren';
 import { passkeysImBrowser, passkeyVerwenden } from '../passkey';
-import { Knopf } from '../bausteine';
+import { Feld, Knopf } from '../bausteine';
 import { api } from '../api';
 import { Hilfe } from '../Hilfe';
 import { useKonto } from '../konto';
-import { rueckfrage } from '../rueckfrage';
 import { t } from '../sprache';
 import { Symbol } from '../Symbol';
 import { gebietsschema } from '../../../shared/src/sprache';
@@ -74,7 +73,6 @@ export function DokumentPasswoerter() {
   }
 
   async function loesche(p: GemerktesPasswort) {
-    if (!(await rueckfrage({ titel: t('profil.dokpw.loeschen.frage', { name: p.name }), text: t('profil.dokpw.loeschen.text'), ja: t('profil.dokpw.loeschen'), gefahr: true }))) return;
     try { await api.dokumentPasswortLoeschen(p.id); setMeldung({ art: 'gut', text: t('profil.dokpw.geloescht') }); await laden(); } catch (e) { setMeldung({ art: 'schlecht', text: (e as Error).message }); }
   }
 
@@ -90,9 +88,9 @@ export function DokumentPasswoerter() {
             <li key={p.id}>
               {aendern?.id === p.id ? (
                 <form className="raster" onSubmit={(e) => void speichere(e)}>
-                  <label className="eigenschaft"><span>{t('profil.dokpw.name')}</span><input value={aendern.name} maxLength={80} onChange={(e) => setAendern({ ...aendern, name: e.target.value })} required /></label>
-                  <label className="eigenschaft"><span>{t('profil.dokpw.neu')} <small>{t('profil.dokpw.neu.hilfe')}</small></span><input type="password" autoComplete="off" value={aendern.passwort} onChange={(e) => setAendern({ ...aendern, passwort: e.target.value })} /></label>
-                  <div className="knoepfe"><button className="knopf primaer klein" disabled={!aendern.name.trim()}>{t('profil.dokpw.speichern')}</button><button type="button" className="textknopf" onClick={() => setAendern(null)}>{t('profil.dokpw.abbrechen')}</button></div>
+                  <Feld beschriftung={t('profil.dokpw.name')}><input value={aendern.name} maxLength={80} onChange={(e) => setAendern({ ...aendern, name: e.target.value })} required /></Feld>
+                  <Feld beschriftung={t('profil.dokpw.neu')} optional hinweis={t('profil.dokpw.neu.hilfe')}><input type="password" autoComplete="off" value={aendern.passwort} onChange={(e) => setAendern({ ...aendern, passwort: e.target.value })} /></Feld>
+                  <div className="knoepfe"><Knopf onClick={() => setAendern(null)}>{t('profil.dokpw.abbrechen')}</Knopf><Knopf art="haupt" type="submit" gesperrt={!aendern.name.trim()}>{t('profil.dokpw.speichern')}</Knopf></div>
                 </form>
               ) : (
                 <>
@@ -100,12 +98,13 @@ export function DokumentPasswoerter() {
                     <strong>{p.name}</strong>
                     <span className="passwort blockzeile">
                       <span className="festwert mono" aria-live="polite">{klartext[p.id] ?? '••••••••'}</span>
-                      <button type="button" className="knopf klein" onClick={() => zeige(p)} title={klartext[p.id] === undefined ? t('profil.dokpw.anzeigen') : t('profil.dokpw.verbergen')} aria-label={klartext[p.id] === undefined ? t('profil.dokpw.anzeigen') : t('profil.dokpw.verbergen')}><Symbol name={klartext[p.id] === undefined ? 'auge' : 'auge-aus'} /></button>
-                      <button type="button" className="knopf klein" onClick={() => setAendern({ id: p.id, name: p.name, passwort: '' })}>{t('profil.dokpw.aendern')}</button>
+                      <Knopf nurSymbol={klartext[p.id] === undefined ? t('profil.dokpw.anzeigen') : t('profil.dokpw.verbergen')} onClick={() => zeige(p)}><Symbol name={klartext[p.id] === undefined ? 'auge' : 'auge-aus'} /></Knopf>
+                      <Knopf onClick={() => setAendern({ id: p.id, name: p.name, passwort: '' })}>{t('profil.dokpw.aendern')}</Knopf>
                     </span>
                     <span className="leise klein blockzeile">{p.zuletzt ? t('profil.dokpw.zuletzt', { datum: datum(p.zuletzt) }) : t('profil.dokpw.nie')}</span>
                   </div>
-                  <button type="button" className="textknopf gefahr klein" onClick={() => void loesche(p)} title={t('profil.dokpw.loeschen')} aria-label={t('profil.dokpw.loeschen.von', { name: p.name })}><Symbol name="schliessen" /></button>
+                  <Knopf art="gefahr" symbol="geloescht" title={t('profil.dokpw.loeschen.von', { name: p.name })} onClick={() => loesche(p)}
+                    rueckfrage={{ titel: t('profil.dokpw.loeschen.frage', { name: p.name }), text: t('profil.dokpw.loeschen.text'), ja: t('profil.dokpw.loeschen') }}>{t('profil.dokpw.loeschen')}</Knopf>
                 </>
               )}
             </li>
@@ -115,13 +114,13 @@ export function DokumentPasswoerter() {
       {bestaetigen && (
         <form className="raster" onSubmit={(e) => void bestaetige(e)}>
           {stand?.passkey && passkeysImBrowser() && <div className="anmelden-passkey">
-            <Knopf id="dokpw-passkey" laeuftText={t('anmeldung.passkey.warte')} onClick={mitPasskey}><Symbol name="passkey" /> {t('profil.dokpw.bestaetigen.passkey')}</Knopf>
+            <Knopf id="dokpw-passkey" symbol="passkey" laeuftText={t('anmeldung.passkey.warte')} onClick={mitPasskey}>{t('profil.dokpw.bestaetigen.passkey')}</Knopf>
             <p className="trenner">{t('profil.dokpw.bestaetigen.oder')}</p>
           </div>}
           <p className="leise">{stand?.zweifaktor ? t('profil.dokpw.bestaetigen.mit-code') : t('profil.dokpw.bestaetigen.text')}</p>
-          <label className="eigenschaft"><span>{stand?.zweifaktor ? t('profil.dokpw.bestaetigen.feld-code') : t('profil.dokpw.bestaetigen.feld')}</span>
-            <input type="password" autoComplete="current-password" value={geheim} onChange={(e) => setGeheim(e.target.value)} autoFocus required /></label>
-          <div className="knoepfe"><button className="knopf primaer klein" disabled={!geheim}>{t('profil.dokpw.bestaetigen')}</button><button type="button" className="textknopf" onClick={() => setBestaetigen(null)}>{t('profil.dokpw.abbrechen')}</button></div>
+          <Feld beschriftung={stand?.zweifaktor ? t('profil.dokpw.bestaetigen.feld-code') : t('profil.dokpw.bestaetigen.feld')}>
+            <input type="password" autoComplete="current-password" value={geheim} onChange={(e) => setGeheim(e.target.value)} autoFocus required /></Feld>
+          <div className="knoepfe"><Knopf onClick={() => setBestaetigen(null)}>{t('profil.dokpw.abbrechen')}</Knopf><Knopf art="haupt" type="submit" gesperrt={!geheim}>{t('profil.dokpw.bestaetigen')}</Knopf></div>
         </form>
       )}
       {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}

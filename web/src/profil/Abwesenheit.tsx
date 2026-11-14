@@ -10,7 +10,7 @@ import { api } from '../api';
 import { useDaten } from '../daten';
 import { useKonto } from '../konto';
 import { Hilfe } from '../Hilfe';
-import { Knopf } from '../bausteine';
+import { Feld, Knopf, KnopfLink, Schalter, Suchfeld } from '../bausteine';
 import { t, tn } from '../sprache';
 import type { Hilfeort } from '../../../shared/src/hilfe';
 import { gebietsschema } from '../../../shared/src/sprache';
@@ -47,7 +47,7 @@ export function AbwesenheitFormular({ benutzerId, wer, wert, offeneAufgaben, spe
       {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
       <div className="knoepfe">
         <AufgabenUebergeben wert={wert} offeneAufgaben={offeneAufgaben} gesperrt={sendet || geaendert} uebergeben={() => tu(async () => uebergebenText(await uebergeben(), d.personen.find((p) => p.id === wert.vertreterId)?.name))} />
-        <button className="knopf primaer" disabled={sendet || !geaendert}>{sendet ? t('profil.abwesenheit.speichere') : t('profil.abwesenheit.speichern')}</button>
+        <Knopf art="haupt" type="submit" laeuft={sendet} laeuftText={t('profil.abwesenheit.speichere')} gesperrt={!geaendert}>{t('profil.abwesenheit.speichern')}</Knopf>
       </div>
     </form>
   );
@@ -83,20 +83,21 @@ export function AbwesenheitFelder({ a, setA, wert, wer, benutzerId, offeneAufgab
     <>
       <p className="leise">{t('profil.abwesenheit.solange-abwesend-gehen-neue', { wert: du ? t('profil.abwesenheit.du') : wer, wert2: du ? t('profil.abwesenheit.bist') : t('profil.abwesenheit.ist') })}</p>
       {wert.an && <div className={`hinweis ${wirkt ? 'warn' : 'info'}`}><p>{t('profil.abwesenheit.vertreten-durch', { wert: du ? t('profil.abwesenheit.du-bist') : t('profil.abwesenheit.ist-2', { wer }), wert2: wirkt ? t('profil.abwesenheit.abwesend') : t('profil.abwesenheit.demnaechst-abwesend'), zeitraumText: zeitraumText(wert), wert3: vertreter?.name ?? '–' })}</p></div>}
-      <label className="haken"><input type="checkbox" checked={a.an} onChange={(e) => setA({ ...a, an: e.target.checked })} /><span>{t('profil.abwesenheit.abwesend-2')}</span></label>
+      <Schalter an={a.an} setze={(an) => setA({ ...a, an })} beschriftung={t('profil.abwesenheit.abwesend-2')} />
       {/* #419: Die Abwesenheit leitet nur neue Aufgaben um – auf die vorhandenen hinweisen. */}
       {du && a.an && !wert.an && offeneAufgaben > 0 && (
         <div className="hinweis info hinweiszeile"><p>{t('profil.abwesenheit.du-hast-offene-aufgaben', { anzahl: offeneAufgaben })}</p>
-          <Link to="/ablage/eingang/weitergeben" className="knopf klein">{t('profil.abwesenheit.zu-meinen-aufgaben')}</Link></div>
+          <KnopfLink to="/ablage/eingang/weitergeben" groesse="klein">{t('profil.abwesenheit.zu-meinen-aufgaben')}</KnopfLink></div>
       )}
       <div className="raster">
-        <label className="eigenschaft"><span>{tn('profil.abwesenheit.von', { klein: <small>{t('profil.abwesenheit.optional')}</small> })}</span><input type="date" value={a.von ?? ''} onChange={(e) => setA({ ...a, von: e.target.value || null })} /></label>
-        <label className="eigenschaft"><span>{tn('profil.abwesenheit.bis-2', { klein: <small>{t('profil.abwesenheit.optional-einschliesslich')}</small> })}</span><input type="date" value={a.bis ?? ''} min={a.von ?? undefined} onChange={(e) => setA({ ...a, bis: e.target.value || null })} /></label>
-        <label className="eigenschaft"><span>{tn('profil.abwesenheit.vertreter', { klein: <small>{a.an ? t('profil.abwesenheit.pflicht') : t('profil.abwesenheit.bleibt-fuer-das-naechste')}</small> })}</span>
+        <Feld beschriftung={t('profil.abwesenheit.von')} optional><input type="date" value={a.von ?? ''} onChange={(e) => setA({ ...a, von: e.target.value || null })} /></Feld>
+        <Feld beschriftung={t('profil.abwesenheit.bis-2')} optional hinweis={t('profil.abwesenheit.einschliesslich')}><input type="date" value={a.bis ?? ''} min={a.von ?? undefined} onChange={(e) => setA({ ...a, bis: e.target.value || null })} /></Feld>
+        {/* Vertreter: Pflicht, sobald „Abwesend“ an ist (nicht markiert, C4); sonst freiwillig und für später hinterlegt. */}
+        <Feld beschriftung={t('profil.abwesenheit.vertreter')} optional={!a.an} hinweis={!a.an && t('profil.abwesenheit.bleibt-fuer-das-naechste')}>
           <select value={a.vertreterId ?? ''} onChange={(e) => setA({ ...a, vertreterId: e.target.value || null })}>
             <option value="">{t('profil.abwesenheit.waehlen')}</option>
             {kandidaten.map((p) => <option key={p.id} value={p.id}>{p.name}{p.abwesend ? ` (${p.abwesend.wirkt ? 'abwesend' : t('profil.abwesenheit.demnaechst-abwesend')})` : ''}</option>)}
-          </select></label>
+          </select></Feld>
       </div>
     </>
   );
@@ -172,27 +173,27 @@ function MeineOffenenAufgaben({ vertreter, geaendert }: { vertreter: string | nu
       <p className="leise">{t('termine.weitergeben.text')}</p>
       {alle === null ? <p className="leise">{t('profil.abwesenheit.lade')}</p> : !alle.length ? <p className="leise">{t('profil.abwesenheit.du-hast-keine-offenen')}</p> : <>
         <div className="aufgabenfilter stapel">
-          <input type="search" aria-label={t('profil.abwesenheit.im-titel-suchen')} placeholder={t('profil.abwesenheit.im-titel-suchen-2')} value={f.text ?? ''} onChange={(e) => setF({ ...f, text: e.target.value || undefined })} />
+          <Suchfeld wert={f.text ?? ''} setze={(text) => setF({ ...f, text: text || undefined })} beschriftung={t('profil.abwesenheit.im-titel-suchen')} platzhalter={t('profil.abwesenheit.im-titel-suchen-2')} />
           <div className="filterraster">
-            <label className="eigenschaft klein"><span>{t('profil.abwesenheit.art')}</span>
+            <Feld className="klein" beschriftung={t('profil.abwesenheit.art')}>
               <select value={f.art ?? ''} onChange={(e) => setF({ ...f, art: (e.target.value || undefined) as Aufgabenart | undefined })}>
                 <option value="">{t('profil.abwesenheit.alle')}</option>
                 {Object.entries(AUFGABENARTEN).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-              </select></label>
-            <label className="eigenschaft klein"><span>{t('profil.abwesenheit.mappentyp')}</span>
+              </select></Feld>
+            <Feld className="klein" beschriftung={t('profil.abwesenheit.mappentyp')}>
               <select value={f.typ ?? ''} onChange={(e) => setF({ ...f, typ: e.target.value || undefined })}>
                 <option value="">{t('profil.abwesenheit.alle')}</option>
                 {d.typen.filter((mappentyp) => alle.some((a) => a.typId === mappentyp.id)).map((mappentyp) => <option key={mappentyp.id} value={mappentyp.id}>{mappentyp.name}</option>)}
-              </select></label>
-            <label className="eigenschaft klein"><span>{t('profil.abwesenheit.faelligkeit')}</span>
+              </select></Feld>
+            <Feld className="klein" beschriftung={t('profil.abwesenheit.faelligkeit')}>
               <select value={f.faellig ?? ''} onChange={(e) => setF({ ...f, faellig: (e.target.value || undefined) as Faelligkeit | undefined })}>
                 <option value="">{t('profil.abwesenheit.alle')}</option>
                 {Object.entries(FAELLIGKEITEN).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-              </select></label>
+              </select></Feld>
           </div>
           <p className="listenzahl leise klein" role="status">
             {filterAktiv(f) ? t('profil.abwesenheit.von-2', { liste: liste.length, alle: alle.length }) : alle.length} {t('profil.abwesenheit.aufgaben', { anzahl: alle.length })}
-            {filterAktiv(f) && <> · <button type="button" className="verweis" onClick={() => setF({})}>{t('profil.abwesenheit.filter-zuruecksetzen')}</button></>}
+            {filterAktiv(f) && <> · <Knopf art="link" onClick={() => setF({})}>{t('profil.abwesenheit.filter-zuruecksetzen')}</Knopf></>}
           </p>
           <SammelKopf s={wahl} />
         </div>

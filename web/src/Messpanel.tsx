@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Symbol } from './Symbol';
 import { messung, type Anfragemessung } from './messung';
 import { t } from './sprache';
+import { Knopf } from './bausteine';
 
 const ms = (x: number | undefined) => (x === undefined ? '–' : `${x < 10 ? x.toFixed(1).replace('.', ',') : Math.round(x)} ms`);
 
@@ -15,10 +16,11 @@ export function Messpanel() {
   const summe = (k: keyof Anfragemessung) => s.anfragen.reduce((a, m) => a + ((m[k] as number | undefined) ?? 0), 0);
   return (
     <aside className={`messpanel ${offen ? 'offen' : ''}`} aria-label={t('oberflaeche.messpanel.zeitmessung')}>
-      <button type="button" className="messkopf" onClick={() => setOffen(!offen)} aria-expanded={offen}>
+      {/* Aufklappkopf als Baustein Knopf (#1215); Aussehen über .textknopf.messkopf. */}
+      <Knopf art="link" className="messkopf" onClick={() => setOffen(!offen)} aria-expanded={offen}>
         <span><Symbol name="stoppuhr" /> {s.bisAnzeige !== undefined ? t('oberflaeche.messpanel.bis-zur-anzeige', { ms: ms(s.bisAnzeige) }) : t('oberflaeche.messpanel.messung')}</span>
         <span className="leise">{s.anfragen.length} {t('oberflaeche.messpanel.anfragen', { anzahl: s.anfragen.length })}{s.anfragen.some((a) => a.dbAnzahl) ? t('oberflaeche.messpanel.db-zugriffe', { summe: summe('dbAnzahl') }) : ''}</span>
-      </button>
+      </Knopf>
       {offen && (
         <div className="messinhalt">
           <p className="leise klein mono">{s.pfad}</p>

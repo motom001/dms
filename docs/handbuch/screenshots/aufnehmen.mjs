@@ -380,8 +380,8 @@ async function einrichtenImBrowser(browser, bild) {
   await s.getByRole('heading', { name: w('Dein Konto') }).waitFor();
   await s.getByLabel(w('Name'), { exact: true }).fill(ADMIN.name);
   await s.getByLabel(w(/E-Mail-Adresse/)).fill(ADMIN.email);
-  // Das Feld heißt „Passwort mindestens … Zeichen“ – zwei Texte (#730), darum über den Hinweis im Feldnamen.
-  await s.locator('label').filter({ has: s.getByText(w(/^mindestens .* Zeichen$/)) }).locator('input').fill(ADMIN.passwort);
+  // Seit #1215 steht „mindestens … Zeichen“ als Hinweis unter dem Feld; das Feld heißt nur „Passwort“.
+  await s.getByLabel(w('Passwort'), { exact: true }).fill(ADMIN.passwort);
   await s.getByLabel(w('Passwort wiederholen')).fill(ADMIN.passwort);
   await bild(s, 'einrichtung-konto');
   await s.getByRole('button', { name: w('Weiter') }).click();

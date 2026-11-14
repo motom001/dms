@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { api, type SicherungSchlank, type SicherungsMeta, type WhAbgleich, type WhAbschluss, type WhLauf, type WhSchritt } from './api';
 import { t, tn } from './sprache';
-import { rueckfrage } from './rueckfrage';
+import { FeldGruppe, Feld, HakenFeld, Knopf } from './bausteine';
+import { Symbol, type SymbolName } from './Symbol';
 import { gebietsschema } from '../../shared/src/sprache';
 
 /**
@@ -14,14 +15,16 @@ import { gebietsschema } from '../../shared/src/sprache';
 const zeit = (iso: string) => new Date(iso).toLocaleString(gebietsschema(), { dateStyle: 'medium', timeStyle: 'short' });
 const groesse = (b: number) => (b < 1024 ** 3 ? `${(b / 1024 ** 2).toFixed(0)} MB` : `${(b / 1024 ** 3).toFixed(1).replace('.', ',')} GB`);
 const ART: Record<string, string> = { manuell: t('oberflaeche.wiederherstellen.von-hand'), automatisch: t('oberflaeche.wiederherstellen.art.automatisch'), 'vor-wiederherstellung': t('oberflaeche.wiederherstellen.vor-einer-wiederherstellung') };
-const ZEICHEN: Record<WhSchritt['status'], string> = { offen: '○', laeuft: '◐', ok: '✓', fehler: '✕', hinweis: '!', ausgelassen: '–' };
+// Zeichen je Stand (#1215, D5): Symbole, wo es eines gibt; „offen“ und „ausgelassen“ bleiben ruhige Zeichen.
+const ZEICHEN: Record<WhSchritt['status'], SymbolName | string> = { offen: '○', laeuft: 'stoppuhr', ok: 'haken', fehler: 'warnung', hinweis: 'info', ausgelassen: '–' };
+const SYMBOLE = new Set<string>(['stoppuhr', 'haken', 'warnung', 'info']);
 
 export function Schritte({ schritte }: { schritte: WhSchritt[] }) {
   return (
     <ol className="schrittliste">
       {schritte.map((s) => (
         <li key={s.name} className={`schritt ${s.status}`}>
-          <span className="zeichen" aria-hidden="true">{ZEICHEN[s.status]}</span>
+          <span className="zeichen" aria-hidden="true">{SYMBOLE.has(ZEICHEN[s.status]) ? <Symbol name={ZEICHEN[s.status] as SymbolName} /> : ZEICHEN[s.status]}</span>
           <span><strong>{s.name}</strong>{s.info && <span className="leise klein"> – {s.info}</span>}<span className="sr"> ({s.status})</span></span>
         </li>
       ))}
@@ -53,14 +56,14 @@ export function Wiederherstellungsbildschirm({ fertig }: { fertig: () => void })
             <p>{tn('oberflaeche.wiederherstellen.die-sicherung-ist-eingespielt', { b: <strong>{abschluss.sicherung}</strong>, zeit: zeit(abschluss.am) })}</p>
             <Schritte schritte={abschluss.schritte} />
             {abschluss.hinweise.map((h) => <div key={h} className="hinweis warn"><p>{h}</p></div>)}
-            <button className="knopf primaer" onClick={() => void api.whAbschlussGesehen().finally(fertig)}>{t('oberflaeche.wiederherstellen.weiter-zur-anmeldung')}</button>
+            <div className="knoepfe"><Knopf art="haupt" onClick={() => api.whAbschlussGesehen().finally(fertig)}>{t('oberflaeche.wiederherstellen.weiter-zur-anmeldung')}</Knopf></div>
           </>
         ) : lauf?.status === 'fehler' ? (
           <>
             <div className="hinweis schlecht"><p><strong>{lauf.fehler}</strong></p></div>
             <p>{t('oberflaeche.wiederherstellen.der-bisherige-stand-ist')}</p>
             <Schritte schritte={lauf.schritte} />
-            <button className="knopf" onClick={fertig}>{t('oberflaeche.wiederherstellen.zurueck')}</button>
+            <div className="knoepfe"><Knopf onClick={fertig}>{t('oberflaeche.wiederherstellen.zurueck')}</Knopf></div>
           </>
         ) : (
           <>
@@ -100,23 +103,22 @@ export function WiederherstellungsAssistent({ frisch, gestartet, abbrechen }: { 
   }
   async function starten() {
     if (!abgleich) return;
-    if (!frisch && !(await rueckfrage({ titel: t('oberflaeche.wiederherstellen.wirklich-wiederherstellen'), text: t('oberflaeche.wiederherstellen.der-jetzige-stand-von'), ja: t('oberflaeche.wiederherstellen.wiederherstellen'), gefahr: true, bestaetigeMit: 'wiederherstellen' }))) return;
     setLaeuft(true); setFehler(undefined);
     try { await api.whStart({ name: abgleich.name, ...(schluessel.trim() ? { schluessel } : {}), bestaetigt: !frisch && verstanden }); gestartet(); }
     catch (e) { setFehler((e as Error).message); setLaeuft(false); }
   }
   const brauchtSchluessel = abgleich?.schluesselNoetig ?? false;
-  const startbar = !!abgleich && !abgleich.probleme.length && !brauchtSchluessel && (frisch || verstanden) && !laeuft;
+  const startbar = !!abgleich && !abgleich.probleme.length && !brauchtSchluessel && (frisch || verstanden);
 
   return (
     <div className="stapel wiederherstellen">
       <div className="zeile-zwischen">
         <p className="leise klein">{tn('oberflaeche.wiederherstellen.gesucht-im-sicherungsordner-lege', { span: <span className="mono">{ordner || '…'}</span>, span2: <span className="mono">.dms-sicherung</span>, span3: <span className="mono">.json</span> })}</p>
-        <button type="button" className="knopf klein" onClick={() => { setAbgleich(null); setGewaehlt(null); void laden(); }}>{t('oberflaeche.wiederherstellen.sicherungsordner-neu-pruefen')}</button>
+        <Knopf symbol="neu-laden" onClick={() => { setAbgleich(null); setGewaehlt(null); return laden(); }}>{t('oberflaeche.wiederherstellen.sicherungsordner-neu-pruefen')}</Knopf>
       </div>
       {fehler && <p className="fehlertext" role="alert">{fehler}</p>}
       {liste === null ? <p className="leise">{t('oberflaeche.wiederherstellen.lade')}</p> : !liste.length ? <p className="leise">{t('oberflaeche.wiederherstellen.keine-sicherung-im-ordner')}</p> : (
-        <ul className="auswahlliste">
+        <FeldGruppe beschriftung={t('oberflaeche.wiederherstellen.sicherung-waehlen')} beschriftungVerbergen><ul className="auswahlliste">
           {liste.map((x) => (
             <li key={x.name}>
               <label className="haken">
@@ -125,7 +127,7 @@ export function WiederherstellungsAssistent({ frisch, gestartet, abbrechen }: { 
               </label>
             </li>
           ))}
-        </ul>
+        </ul></FeldGruppe>
       )}
 
       {abgleich && (
@@ -142,22 +144,25 @@ export function WiederherstellungsAssistent({ frisch, gestartet, abbrechen }: { 
           {abgleich.hinweise.filter((h) => !/Notfallblatt ein/.test(h) || brauchtSchluessel).map((h) => <div key={h} className="hinweis warn"><p>{h}</p></div>)}
           {(brauchtSchluessel || schluessel) && (
             <form className="stapel" onSubmit={(e) => { e.preventDefault(); void waehle(abgleich.name, schluessel); }}>
-              <label className="eigenschaft"><span>{tn('oberflaeche.wiederherstellen.schluessel-vom-notfallblatt', { klein: <small>{t('oberflaeche.wiederherstellen.fingerabdruck-leerzeichen-zaehlen', { fingerabdruck: abgleich.meta.verschluesselung.fingerabdruck })}</small> })}</span>
-                <textarea className="mono" rows={2} value={schluessel} spellCheck={false} autoComplete="off" onChange={(e) => setSchluessel(e.target.value)} /></label>
-              <div className="knoepfe"><button className="knopf" disabled={laeuft || !schluessel.trim()}>{t('oberflaeche.wiederherstellen.schluessel-pruefen')}</button></div>
+              <Feld beschriftung={t('oberflaeche.wiederherstellen.schluessel-vom-notfallblatt')} hinweis={t('oberflaeche.wiederherstellen.fingerabdruck-leerzeichen-zaehlen', { fingerabdruck: abgleich.meta.verschluesselung.fingerabdruck })}>
+                <textarea className="mono" rows={2} value={schluessel} spellCheck={false} autoComplete="off" onChange={(e) => setSchluessel(e.target.value)} /></Feld>
+              <div className="knoepfe"><Knopf type="submit" laeuft={laeuft} gesperrt={!schluessel.trim()}>{t('oberflaeche.wiederherstellen.schluessel-pruefen')}</Knopf></div>
             </form>
           )}
           {!frisch && (
-            <label className="haken"><input type="checkbox" checked={verstanden} onChange={(e) => setVerstanden(e.target.checked)} />
-              <span>{t('oberflaeche.wiederherstellen.mir-ist-klar-der')}</span></label>
+            <HakenFeld beschriftung={t('oberflaeche.wiederherstellen.mir-ist-klar-der')}><input type="checkbox" checked={verstanden} onChange={(e) => setVerstanden(e.target.checked)} /></HakenFeld>
           )}
           <div className="knoepfe">
-            <button className="knopf primaer" disabled={!startbar} onClick={() => void starten()}>{laeuft ? t('oberflaeche.wiederherstellen.starte') : t('oberflaeche.wiederherstellen.wiederherstellen')}</button>
-            {abbrechen && <button type="button" className="textknopf" onClick={abbrechen}>{t('oberflaeche.wiederherstellen.abbrechen')}</button>}
+            {/* Auf dem frischen System die Hauptaktion; in der Werkbank ersetzt sie den jetzigen Stand – Gefahr mit Rückfrage. */}
+            {frisch
+              ? <Knopf art="haupt" gesperrt={!startbar} laeuft={laeuft} laeuftText={t('oberflaeche.wiederherstellen.starte')} onClick={starten}>{t('oberflaeche.wiederherstellen.wiederherstellen')}</Knopf>
+              : <Knopf art="gefahr" symbol="zuruecksetzen" gesperrt={!startbar} laeuft={laeuft} laeuftText={t('oberflaeche.wiederherstellen.starte')} onClick={starten}
+                rueckfrage={{ titel: t('oberflaeche.wiederherstellen.wirklich-wiederherstellen'), text: t('oberflaeche.wiederherstellen.der-jetzige-stand-von'), ja: t('oberflaeche.wiederherstellen.wiederherstellen'), bestaetigeMit: 'wiederherstellen' }}>{t('oberflaeche.wiederherstellen.wiederherstellen')}</Knopf>}
+            {abbrechen && <Knopf art="link" onClick={abbrechen}>{t('oberflaeche.wiederherstellen.abbrechen')}</Knopf>}
           </div>
         </>
       )}
-      {!abgleich && abbrechen && <button type="button" className="textknopf" onClick={abbrechen}>{t('oberflaeche.wiederherstellen.zurueck-2')}</button>}
+      {!abgleich && abbrechen && <div className="knoepfe"><Knopf art="link" onClick={abbrechen}>{t('oberflaeche.wiederherstellen.zurueck-2')}</Knopf></div>}
     </div>
   );
 }

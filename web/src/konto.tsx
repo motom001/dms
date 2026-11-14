@@ -9,12 +9,10 @@ import { Wiederherstellungsbildschirm } from './wiederherstellen';
 import { AssistentAngemeldet, Einrichtungsassistent } from './einrichtung';
 import { geheZu, useOrt } from './ort';
 import { Marke } from './Marke';
-import { Symbol } from './Symbol';
 import { Hilfe } from './Hilfe';
 import { ZweifaktorEinrichten } from './profil/Zweifaktor';
 import { PasskeyHinzufuegen, PasskeyOhneHttps } from './profil/Passkeys';
 import { passkeysImBrowser, passkeyVerwenden } from './passkey';
-import { rueckfrage } from './rueckfrage';
 import { t, wechsleSprache } from './sprache';
 import { Ctx } from './konto-kontext';
 
@@ -24,7 +22,7 @@ import { setzeZeitzone } from '../../shared/src/region';
 import { zielNachAnmeldung } from '../../shared/src/startseite';
 import { darfVerwalten, type Verwaltungsstand } from '../../shared/src/verwaltungsrecht';
 import { Verwaltungsanmeldung, verwaltungBeginnen } from './verwaltungsmodus';
-import { abfangen, Knopf } from './bausteine';
+import { abfangen, Feld, Knopf } from './bausteine';
 
 const OHNE_MODUS: Verwaltungsstand = { darf: false, aktiv: false, bis: null, heuteBestaetigt: false, frisch: false, code: false, passwort: true, bereiche: [] };
 
@@ -116,7 +114,7 @@ export function KontoProvider({ children }: { children: ReactNode }) {
     return seite(<CodeSchritt kennung={kennung} wege={wege} fertig={async () => { geheZu(nachAnmeldung(false) ?? '/', true); await laden(); }} zurueck={() => geheZu('/', true)} />);
   }
   if (pfad.startsWith('/passwort/')) return seite(<PasswortSetzen schluessel={decodeURIComponent(pfad.slice('/passwort/'.length))} fertig={laden} />);
-  if (fehler) return seite(<Karte titel={t('anmeldung.verbindung.titel')}><p className="hinweis schlecht">{fehler}</p><button className="knopf" onClick={() => void laden()}>{t('anmeldung.verbindung.erneut')}</button></Karte>);
+  if (fehler) return seite(<Karte titel={t('anmeldung.verbindung.titel')}><p className="hinweis schlecht">{fehler}</p><Knopf onClick={laden}>{t('anmeldung.verbindung.erneut')}</Knopf></Karte>);
   if (!status) return seite(<p className="leise mittig">{t('anmeldung.lade')}</p>);
   // Lasttest-Modus (#612): nur die Seite mit Fortschritt und Ergebnis – keine Anmeldung, keine Ablage.
   if (status.lasttest) return seite(<LasttestSeite />);
@@ -142,7 +140,7 @@ export function KontoProvider({ children }: { children: ReactNode }) {
         <p className="trenner">{t('anmeldung.zweifaktor.oder-passkey')}</p>
         <PasskeyHinzufuegen fertig={() => laden()} />
       </>}
-      <button className="textknopf" onClick={() => void abmelden()}>{t('anmeldung.abmelden')}</button>
+      <Knopf art="link" onClick={abmelden}>{t('anmeldung.abmelden')}</Knopf>
       {darfVerwalten(status.benutzer) && <PflichtAusschalten fertig={laden} />}
       <Verwaltungsanmeldung stand={status.verwaltungsmodus ?? null} nachher={() => void laden()} />
     </Karte>
@@ -183,16 +181,15 @@ export function KontoProvider({ children }: { children: ReactNode }) {
  */
 function PflichtAusschalten({ fertig, art = 'zweifaktor' }: { fertig: () => Promise<void>; art?: 'zweifaktor' | 'passkey' }) {
   const [fehler, setFehler] = useState<string>();
+  const frage = art === 'passkey'
+    ? { titel: t('anmeldung.passkey.pflicht.frage'), text: t('anmeldung.passkey.pflicht.frage.text'), ja: t('anmeldung.zweifaktor.pflicht.frage.ja') }
+    : { titel: t('anmeldung.zweifaktor.pflicht.frage'), text: t('anmeldung.zweifaktor.pflicht.frage.text'), ja: t('anmeldung.zweifaktor.pflicht.frage.ja') };
   async function aus() {
-    const frage = art === 'passkey'
-      ? { titel: t('anmeldung.passkey.pflicht.frage'), text: t('anmeldung.passkey.pflicht.frage.text'), ja: t('anmeldung.zweifaktor.pflicht.frage.ja'), gefahr: true }
-      : { titel: t('anmeldung.zweifaktor.pflicht.frage'), text: t('anmeldung.zweifaktor.pflicht.frage.text'), ja: t('anmeldung.zweifaktor.pflicht.frage.ja'), gefahr: true };
-    if (!(await rueckfrage(frage))) return;
     try { await (art === 'passkey' ? api.passkeyPflichtSetzen({ admin: false }) : api.zweifaktorPflichtSetzen({ admin: false })); await fertig(); } catch (e) { setFehler((e as Error).message); }
   }
   return (
     <p className="leise klein">{t('anmeldung.zweifaktor.pflicht.hinweis')}{' '}
-      <button className="textknopf" onClick={() => void aus()}>{t('anmeldung.zweifaktor.pflicht.knopf')}</button>
+      <Knopf art="gefahr" symbol="verboten" rueckfrage={frage} onClick={aus}>{t('anmeldung.zweifaktor.pflicht.knopf')}</Knopf>
       {fehler && <span className="fehlertext" role="alert"> {fehler}</span>}
     </p>
   );
@@ -254,14 +251,14 @@ function CodeSchritt({ kennung, wege = { code: true, passkey: false }, fertig, z
     <Karte titel={t('anmeldung.code.verbraucht.titel')}>
       <p className="hinweis warn">{t('anmeldung.code.verbraucht.text')}</p>
       <div className="knoepfe">
-        <button className="knopf primaer" onClick={() => { geheZu('/profil/sicherheit', true); void fertig(); }}>{t('anmeldung.code.verbraucht.profil')}</button>
-        <button className="knopf" onClick={() => void fertig()}>{t('anmeldung.weiter')}</button>
+        <Knopf art="haupt" onClick={() => { geheZu('/profil/sicherheit', true); void fertig(); }}>{t('anmeldung.code.verbraucht.profil')}</Knopf>
+        <Knopf onClick={fertig}>{t('anmeldung.weiter')}</Knopf>
       </div>
     </Karte>
   );
   const mitPasskey = passkey && <div className="anmelden-passkey">
     <Knopf id="anmelden-passkey-zweiter" art={wege.code ? 'neben' : 'haupt'} className="breit" laeuftText={t('anmeldung.passkey.warte')}
-      onClick={async () => { await mitPasskeyAnmelden(kennung); await fertig(); }}><Symbol name="passkey" /> {t('anmeldung.passkey.bestaetigen')}</Knopf>
+      symbol="passkey" onClick={async () => { await mitPasskeyAnmelden(kennung); await fertig(); }}>{t('anmeldung.passkey.bestaetigen')}</Knopf>
   </div>;
   // Nur Passkey (vorgeschrieben, ohne Code-App): kein Code-Feld.
   if (!wege.code) return (
@@ -274,15 +271,14 @@ function CodeSchritt({ kennung, wege = { code: true, passkey: false }, fertig, z
     <Karte titel={t('anmeldung.code.titel')} unter={wiederherstellung ? t('anmeldung.code.text.wiederherstellung') : t('anmeldung.code.text')}>
       {mitPasskey && <>{mitPasskey}<p className="trenner">{t('anmeldung.passkey.oder-code')}</p></>}
       <form className="stapel" onSubmit={f.absenden}>
-        <label className="eigenschaft"><span>{wiederherstellung ? t('anmeldung.code.feld.wiederherstellung') : t('anmeldung.code.feld')}</span>
+        <Feld beschriftung={wiederherstellung ? t('anmeldung.code.feld.wiederherstellung') : t('anmeldung.code.feld')} fehler={f.fehler}>
           <input id="anmelden-code" key={String(wiederherstellung)} value={code} onChange={(e) => setCode(e.target.value)} autoFocus required
             {...(wiederherstellung ? { autoComplete: 'off', autoCapitalize: 'characters', spellCheck: false } : { inputMode: 'numeric' as const, autoComplete: 'one-time-code', maxLength: 7 })} />
-        </label>
-        {f.fehler && <p className="fehlertext">{f.fehler}</p>}
-        <button className="knopf primaer" disabled={f.sendet}>{f.sendet ? t('anmeldung.pruefe') : t('anmeldung.knopf')}</button>
+        </Feld>
+        <Knopf art="haupt" type="submit" laeuft={f.sendet} laeuftText={t('anmeldung.pruefe')}>{t('anmeldung.knopf')}</Knopf>
       </form>
-      <button className="textknopf" onClick={() => { setWiederherstellung(!wiederherstellung); setCode(''); }}>{wiederherstellung ? t('anmeldung.code.wechsel.app') : t('anmeldung.code.wechsel.wiederherstellung')}</button>
-      <button className="textknopf" onClick={zurueck}>{t('anmeldung.zurueck')}</button>
+      <Knopf art="link" onClick={() => { setWiederherstellung(!wiederherstellung); setCode(''); }}>{wiederherstellung ? t('anmeldung.code.wechsel.app') : t('anmeldung.code.wechsel.wiederherstellung')}</Knopf>
+      <Knopf art="link" onClick={zurueck}>{t('anmeldung.zurueck')}</Knopf>
     </Karte>
   );
 }
@@ -314,11 +310,10 @@ function Anmelden({ mail, wartung, anbieter, passkey, fertig }: { mail: boolean;
       {!mail ? <p>{t('anmeldung.vergessen.ohne-mail')}</p>
         : gesendet ? <p className="hinweis gut">{t('anmeldung.vergessen.gesendet')}</p>
         : <form className="stapel" onSubmit={f.absenden}>
-            <label className="eigenschaft"><span>{t('anmeldung.email')}</span><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" autoFocus required /></label>
-            {f.fehler && <p className="fehlertext">{f.fehler}</p>}
-            <button className="knopf primaer" disabled={f.sendet}>{t('anmeldung.vergessen.knopf')}</button>
+            <Feld beschriftung={t('anmeldung.email')} fehler={f.fehler}><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" autoFocus required /></Feld>
+            <Knopf art="haupt" type="submit" laeuft={f.sendet}>{t('anmeldung.vergessen.knopf')}</Knopf>
           </form>}
-      <button className="textknopf" onClick={() => { setVergessen(false); setGesendet(false); }}>{t('anmeldung.zurueck')}</button>
+      <Knopf art="link" onClick={() => { setVergessen(false); setGesendet(false); }}>{t('anmeldung.zurueck')}</Knopf>
     </Karte>
   );
 
@@ -329,23 +324,22 @@ function Anmelden({ mail, wartung, anbieter, passkey, fertig }: { mail: boolean;
         <a id="anmelden-anbieter" className="knopf primaer breit" href="/api/konto/anbieter/start" onClick={merkeZiel}>{anbieter.knopf}</a>
         {anbieterFehler && <p className="fehlertext" role="alert">{anbieterFehler}</p>}
         {anbieter.lokalNurAdmins && !mitPasswort
-          ? <button className="textknopf" onClick={() => setMitPasswort(true)}>{t('anmeldung.anbieter.admin')}</button>
+          ? <Knopf art="link" onClick={() => setMitPasswort(true)}>{t('anmeldung.anbieter.admin')}</Knopf>
           : <p className="trenner">{t('anmeldung.anbieter.oder')}</p>}
       </>}
       {/* Passkey (#811): eigener Weg ohne E-Mail-Adresse – nur über HTTPS; sonst ein ruhiger Hinweis mit Weg ins Handbuch. */}
       {passkey && passkeysImBrowser() ? <div className="anmelden-passkey">
-        <Knopf id="anmelden-passkey" className="breit" laeuftText={t('anmeldung.passkey.warte')} onClick={async () => { await mitPasskeyAnmelden(); await fertig(); }}>
-          <Symbol name="passkey" /> {t('anmeldung.passkey.knopf')}</Knopf>
+        <Knopf id="anmelden-passkey" className="breit" symbol="passkey" laeuftText={t('anmeldung.passkey.warte')} onClick={async () => { await mitPasskeyAnmelden(); await fertig(); }}>
+          {t('anmeldung.passkey.knopf')}</Knopf>
         <p className="trenner">{t('anmeldung.passkey.oder')}</p>
       </div> : <p className="leise klein" id="anmelden-passkey-hinweis">{t('anmeldung.passkey.fehler.https')} <Hilfe ort="profil.passkeys" /></p>}
       {(!anbieter || !anbieter.lokalNurAdmins || mitPasswort) && <>
       <form className="stapel" onSubmit={f.absenden}>
-        <label className="eigenschaft"><span>{t('anmeldung.email')}</span><input id="anmelden-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="username" autoFocus={!anbieter} required /></label>
-        <label className="eigenschaft"><span>{t('anmeldung.passwort')}</span><input id="anmelden-passwort" type="password" value={pw} onChange={(e) => setPw(e.target.value)} autoComplete="current-password" required /></label>
-        {f.fehler && <p className="fehlertext">{f.fehler}</p>}
-        <button className={`knopf ${anbieter ? '' : 'primaer'}`} disabled={f.sendet}>{f.sendet ? t('anmeldung.knopf.laeuft') : t('anmeldung.knopf')}</button>
+        <Feld beschriftung={t('anmeldung.email')}><input id="anmelden-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="username" autoFocus={!anbieter} required /></Feld>
+        <Feld beschriftung={t('anmeldung.passwort')} fehler={f.fehler}><input id="anmelden-passwort" type="password" value={pw} onChange={(e) => setPw(e.target.value)} autoComplete="current-password" required /></Feld>
+        <Knopf art={anbieter ? 'neben' : 'haupt'} type="submit" laeuft={f.sendet} laeuftText={t('anmeldung.knopf.laeuft')}>{t('anmeldung.knopf')}</Knopf>
       </form>
-      <button className="textknopf" onClick={() => setVergessen(true)}>{t('anmeldung.vergessen.link')}</button>
+      <Knopf art="link" onClick={() => setVergessen(true)}>{t('anmeldung.vergessen.link')}</Knopf>
       </>}
     </Karte>
   );
@@ -375,10 +369,9 @@ function PasswortSetzen({ schluessel, fertig }: { schluessel: string; fertig: ()
     <Karte titel={info.zweck !== 'einladung' ? t('anmeldung.passwort.neu') : info.name ? t('anmeldung.passwort.willkommen.name', { name: info.name }) : t('anmeldung.passwort.willkommen')} unter={t('anmeldung.passwort.zugang', { email: info.email })}>
       <form className="stapel" onSubmit={f.absenden}>
         <input type="email" value={info.email} autoComplete="username" readOnly hidden />
-        <label className="eigenschaft"><span>{t('anmeldung.passwort')} <small>{t('anmeldung.passwort.mindestens', { anzahl: PASSWORT_MINDESTLAENGE })}</small></span><input type="password" value={pw} onChange={(e) => setPw(e.target.value)} autoComplete="new-password" autoFocus required /></label>
-        <label className="eigenschaft"><span>{t('anmeldung.passwort.wiederholen')}</span><input type="password" value={pw2} onChange={(e) => setPw2(e.target.value)} autoComplete="new-password" required /></label>
-        {f.fehler && <p className="fehlertext">{f.fehler}</p>}
-        <button className="knopf primaer" disabled={f.sendet}>{t('anmeldung.passwort.knopf')}</button>
+        <Feld beschriftung={t('anmeldung.passwort')} hinweis={t('anmeldung.passwort.mindestens', { anzahl: PASSWORT_MINDESTLAENGE })}><input type="password" value={pw} onChange={(e) => setPw(e.target.value)} autoComplete="new-password" autoFocus required /></Feld>
+        <Feld beschriftung={t('anmeldung.passwort.wiederholen')} fehler={f.fehler}><input type="password" value={pw2} onChange={(e) => setPw2(e.target.value)} autoComplete="new-password" required /></Feld>
+        <Knopf art="haupt" type="submit" laeuft={f.sendet}>{t('anmeldung.passwort.knopf')}</Knopf>
       </form>
     </Karte>
   );

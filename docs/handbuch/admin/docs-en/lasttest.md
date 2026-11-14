@@ -61,7 +61,7 @@ You need **no console, no folders and no commands** – only a new container wit
 
     ![Load test page with the result to copy](bilder/lasttest-ergebnis.png)
 
-6. **End the test** – **End test and shut down container**. If you haven't copied or downloaded the result yet, the page asks at this point and offers **Copy result** or **Shut down anyway**. Afterwards it says "Thank you for measuring with us!": the container shuts down, you can close the page; the result stays visible and copyable on the page. Started with `--rm`, the container is gone afterwards; otherwise delete it in the Docker interface and, if needed, the image too.
+6. **End the test** – **End test and shut down container**. Before that the page asks once more (**End and shut down**); if you haven't copied or downloaded the result yet, the question says so – then better **Cancel** first and copy it. Afterwards it says "Thank you for measuring with us!": the container shuts down, you can close the page; the result stays visible and copyable on the page. Started with `--rm`, the container is gone afterwards; otherwise delete it in the Docker interface and, if needed, the image too.
 
 ??? note "This is what the page looks like in dark mode and on the phone"
     ![Load test page, dark appearance](bilder/lasttest-seite-dunkel.png)

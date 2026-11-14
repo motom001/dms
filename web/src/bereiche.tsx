@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState, type CSSProperties, type Keyb
 import { useKonto } from './konto';
 import { t } from './sprache';
 import { Symbol } from './Symbol';
+import { Knopf } from './bausteine';
 
 /**
  * Verschiebbare und einklappbare Bereiche der Dreiteilung (#23).
@@ -151,10 +152,11 @@ function Lasche({ seite, name, titel, oeffnen }: { seite: 'links' | 'rechts'; na
   const kurz = titel && titel.length > TITEL_MAX ? `${titel.slice(0, TITEL_MAX - 1).trimEnd()} …` : titel;
   const text = titel ? t('spalten.lasche.aufklappen.titel', { name, titel }) : t('spalten.lasche.aufklappen', { name });
   return (
-    <button type="button" className={`spl-lasche spl-lasche-${seite}`} onClick={oeffnen} aria-label={text} title={text}>
+    // Baustein Knopf (#1215) im Aussehen der Lasche (.textknopf.spl-lasche); Name für Screenreader der ganze Text.
+    <Knopf art="link" nurSymbol={text} className={`spl-lasche spl-lasche-${seite}`} onClick={oeffnen}>
       <Symbol name={seite === 'links' ? 'pfeil-rechts' : 'pfeil-links'} />
       <span className="spl-lasche-text">{kurz || name}</span>
-    </button>
+    </Knopf>
   );
 }
 
@@ -189,11 +191,12 @@ function Griff(p: {
   };
   // Der Pfeil zeigt, wohin die Spalte beim Einklappen verschwindet (#536): links nach links, rechts nach rechts.
   return (
-    <button type="button" className={`griff griff-${p.seite}`} style={{ left: p.x }}
-      role="separator" aria-orientation="vertical" aria-valuenow={Math.round(p.wert)} aria-label={t('spalten.griff.einklappen', { name: p.name })} title={t('spalten.griff.ziehen', { name: p.name })}
+    // Baustein Knopf (#1215) im Aussehen des Griffs (.textknopf.griff).
+    <Knopf art="link" className={`griff griff-${p.seite}`} style={{ left: p.x }}
+      role="separator" aria-orientation="vertical" aria-valuenow={Math.round(p.wert)} nurSymbol={t('spalten.griff.einklappen', { name: p.name })} title={t('spalten.griff.ziehen', { name: p.name })}
       onPointerDown={runter} onPointerMove={bewegen} onPointerUp={hoch} onPointerCancel={hoch}
       onDoubleClick={p.zuruecksetzen} onKeyDown={taste} onClick={(e) => { if (e.detail === 0) p.einklappen(); }}>
       <Symbol name={p.seite === 'links' ? 'pfeil-links' : 'pfeil-rechts'} />
-    </button>
+    </Knopf>
   );
 }

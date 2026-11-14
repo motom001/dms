@@ -221,10 +221,10 @@ function rauchtest(name, optionen, ablauf) {
   });
 }
 
-/** Das Benutzermenü oben rechts öffnen (Knopf mit dem eigenen Namen). */
+/** Das Benutzermenü oben rechts öffnen (Knopf mit dem eigenen Namen); seit #1215 ein Aufklapper ohne role="menu". */
 async function benutzermenue(s, person) {
   await s.getByRole('banner').getByRole('button', { name: person.name }).click();
-  return s.getByRole('banner').getByRole('menu');
+  return s.locator('.benutzermenue .menue');
 }
 
 /* ---------- Einrichtung und Daten ---------- */
@@ -261,8 +261,9 @@ rauchtest('Einrichtung: Assistent im Browser', {
   await s.getByRole('heading', { name: 'Dein Konto' }).waitFor();
   await s.getByLabel('Name', { exact: true }).fill(LENA.name);
   await s.getByLabel(/E-Mail-Adresse/).fill(LENA.email);
-  await s.locator('label').filter({ has: s.getByText(/^mindestens .* Zeichen$/) }).locator('input').fill(LENA.passwort);
+  await s.getByLabel('Passwort', { exact: true }).fill(LENA.passwort);
   await s.getByLabel('Passwort wiederholen').fill(LENA.passwort);
+  await assistentAxe(s, 'Dein Konto');
   await s.getByRole('button', { name: 'Weiter' }).click();
   // Wofür nutzt du Ablago? (#1045) – Lena: zu Hause.
   await s.getByRole('heading', { name: 'Wofür nutzt du Ablago?' }).waitFor();
@@ -272,8 +273,20 @@ rauchtest('Einrichtung: Assistent im Browser', {
   await s.getByRole('heading', { name: 'Pakete dazuholen' }).waitFor();
   await s.getByRole('button', { name: 'Überspringen' }).click({ timeout: 30_000 });
   await s.getByRole('heading', { name: 'Optionales' }).waitFor();
+  // Notfallkontakt (#1215): „+ Notfallkontakt“ klein, Entfernen leise mit Rückfrage – danach ist die Liste wieder leer.
+  const nk = s.locator('#notfallkontakte');
+  await nk.getByRole('button', { name: '+ Notfallkontakt' }).click();
+  await nk.getByLabel('Name', { exact: true }).fill('Markus Beispiel');
+  await nk.getByLabel('E-Mail', { exact: true }).fill('markus@example.org');
+  await nk.getByRole('button', { name: 'Übernehmen' }).click();
+  await nk.getByText('markus@example.org').waitFor();
+  await assistentAxe(s, 'Optionales');
+  await nk.getByRole('button', { name: 'Entfernen' }).click();
+  await s.getByRole('alertdialog').getByRole('button', { name: 'Entfernen' }).click();
+  await nk.getByText('markus@example.org').waitFor({ state: 'detached' });
   await s.getByRole('button', { name: 'Weiter' }).click();
   await s.getByRole('heading', { name: 'Zusammenfassung' }).waitFor();
+  await assistentAxe(s, 'Zusammenfassung');
   await s.getByRole('button', { name: 'Jetzt einrichten' }).click();
   await s.getByRole('heading', { name: /ist eingerichtet/ }).waitFor({ timeout: 60_000 });
   const download = s.waitForEvent('download');
@@ -283,13 +296,30 @@ rauchtest('Einrichtung: Assistent im Browser', {
   // Auf localhost bietet der Assistent auch den Passkey an (#811) – beides „Später“, hier die Zwei-Faktor-Anmeldung.
   await s.getByRole('region', { name: /Zwei-Faktor/ }).getByRole('button', { name: 'Später' }).click();
   await s.getByRole('region', { name: /Passkey/ }).getByRole('button', { name: 'Jetzt hinzufügen' }).waitFor();
+  await assistentAxe(s, 'Abschluss');
   await s.getByRole('button', { name: 'Einrichtung abschließen' }).click();
   await s.waitForURL(/\/werkbank/);
   const sitzungscookie = (await k.cookies()).find((c) => c.name === 'dms_sitzung');
   assert.ok(sitzungscookie, 'Nach der Einrichtung keine Sitzung im Browser');
   await vorbereiten(`${sitzungscookie.name}=${sitzungscookie.value}`);
   bereit = true;
+  assert.deepEqual(ASSISTENT_FUNDE, [], `axe meldet Verstöße im Assistenten (#1215):\n${ASSISTENT_FUNDE.join('\n')}`);
 });
+
+/**
+ * Assistent aus Bausteinen (#1215): axe auf der Karte des Assistenten, hell und dunkel. Die Funde sammelt der Test und
+ * meldet sie am Ende – so läuft die Einrichtung trotzdem durch und die übrigen Rauchtests bleiben möglich.
+ */
+const ASSISTENT_FUNDE = [];
+async function assistentAxe(s, schritt) {
+  for (const schema of ['light', 'dark']) {
+    await s.emulateMedia({ colorScheme: schema });
+    // Knöpfe wechseln ihre Fläche mit einem kurzen Übergang – erst danach messen.
+    await s.waitForTimeout(400);
+    for (const v of await axePruefen(s, ['.karte.assistent'])) ASSISTENT_FUNDE.push(`${schritt} (${schema}): ${v}`);
+  }
+  await s.emulateMedia({ colorScheme: 'light' });
+}
 
 /** Daten für die Tests über die Schnittstelle – mit der Sitzung aus dem Assistenten (im Verwaltungsmodus). */
 async function vorbereiten(cookie) {
@@ -1799,6 +1829,50 @@ rauchtest('Werkbank „Ablage aufbauen“ aus Bausteinen: axe ohne Verstoß, hel
     }
   }
   assert.deepEqual(funde, [], `axe meldet Verstöße:\n${funde.join('\n')}`);
+});
+
+/* ---------- Mein Konto, Entdecken und Systemseiten aus Bausteinen: axe und Tippflächen (#1215) ---------- */
+
+/** Inhalt der Seite und das Benutzermenü – ohne die Kopfzeile selbst (#1218, #1219 bauen sie neu). */
+const KONTO_BEREICHE = ['main.rumpf', '.benutzermenue .menue'];
+
+/** Seiten, die #1215 auf Bausteine umgestellt hat: je Name, Weg, worauf gewartet wird und welcher Bereich zählt. */
+function kontoSeiten() {
+  const seite = (name, weg, warte, bereich = KONTO_BEREICHE) => ({ name, bereich, weg: async (p) => { await p.goto(BASIS + weg); await warte(p); } });
+  return [
+    seite('Konto', '/profil/konto', (p) => p.getByRole('heading', { name: /^Meine Rechte/ }).waitFor()),
+    seite('Sicherheit', '/profil/sicherheit', (p) => p.locator('.sitzungsliste').first().waitFor()),
+    seite('Darstellung', '/profil/darstellung', (p) => p.getByRole('radiogroup', { name: 'Schriftgröße' }).waitFor()),
+    seite('Benachrichtigungen', '/profil/benachrichtigungen', (p) => p.getByRole('switch').first().waitFor()),
+    seite('Abwesenheit', '/profil/abwesenheit', (p) => p.getByRole('switch', { name: 'Abwesend' }).waitFor()),
+    seite('Fehler melden', '/profil/fehler-melden', (p) => p.getByLabel('Was ist passiert?').waitFor()),
+    seite('Ablago entdecken', '/entdecken', (p) => p.getByRole('region', { name: 'Tipps' }).getByRole('link').first().waitFor()),
+    seite('Benutzermenü', '/profil/konto', async (p) => { await p.locator('.benutzermenue .wer').click(); await p.locator('.benutzermenue .menue').waitFor(); }, ['.benutzermenue .menue']),
+    seite('Notfallzugang', '/notfall', (p) => p.getByRole('heading', { level: 1 }).waitFor(), ['main.kartenseite']),
+  ];
+}
+
+rauchtest('Mein Konto und Systemseiten aus Bausteinen: axe ohne Verstoß, hell und dunkel (#1215)', { als: LENA }, async (s) => {
+  const funde = [];
+  for (const schema of ['light', 'dark']) {
+    await s.emulateMedia({ colorScheme: schema });
+    for (const seite of kontoSeiten()) {
+      await seite.weg(s);
+      await s.waitForLoadState('networkidle');
+      for (const v of await axePruefen(s, seite.bereich)) funde.push(`${seite.name} (${schema}): ${v}`);
+    }
+  }
+  assert.deepEqual(funde, [], `axe meldet Verstöße:\n${funde.join('\n')}`);
+});
+
+rauchtest('Handy: Mein Konto und Systemseiten aus Bausteinen mit 44-px-Tippflächen (#1215)', { handy: true, als: LENA }, async (s) => {
+  const funde = [];
+  for (const seite of kontoSeiten()) {
+    await seite.weg(s);
+    await s.waitForLoadState('networkidle');
+    for (const v of await tippflaechenPruefen(s, seite.bereich)) funde.push(`${seite.name}: ${v}`);
+  }
+  assert.deepEqual(funde, [], `Zu kleine Tippflächen am Handy:\n${funde.join('\n')}`);
 });
 
 /* ---------- Ablago antwortet nicht (#1198) ---------- */

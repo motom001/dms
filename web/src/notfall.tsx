@@ -4,6 +4,7 @@ import { PASSWORT_MINDESTLAENGE } from '../../shared/src/model';
 import { Marke } from './Marke';
 import { t } from './sprache';
 import { Symbol } from './Symbol';
+import { Feld, Knopf } from './bausteine';
 import { sprache } from '../../shared/src/sprache';
 
 /**
@@ -83,18 +84,17 @@ export function Notfallseite() {
           ) : schritt.art === 'code' ? (
             <form className="notfall-form" onSubmit={(e) => void pruefen(e)}>
               <p>{t('konten.notfall.seite.einleitung')}</p>
-              <label className="eigenschaft"><span>{t('konten.notfall.seite.code')}</span>
+              <Feld beschriftung={t('konten.notfall.seite.code')} hinweis={t('konten.notfall.seite.code.hinweis', { anzahl: NOTFALLCODE_LAENGE })}>
                 <input value={code} onChange={(e) => setCode(e.target.value)} autoComplete="off" autoCapitalize="characters" autoCorrect="off" spellCheck={false}
                   required maxLength={60} placeholder={t('konten.notfall.seite.code.platzhalter')} className="mono notfall-code" autoFocus
-                  aria-invalid={!!fehler} aria-describedby="notfall-hinweis" disabled={warten > 0} /></label>
-              <p className="leise klein" id="notfall-hinweis">{t('konten.notfall.seite.code.hinweis', { anzahl: NOTFALLCODE_LAENGE })}</p>
+                  aria-invalid={!!fehler} disabled={warten > 0} /></Feld>
               {(fehler || warten > 0) && (
                 <div className="hinweis schlecht" role="alert">
                   {fehler && <p>{fehler}</p>}
                   {warten > 0 && <p className="notfall-countdown" aria-live="polite">{t('konten.notfall.seite.countdown', { sekunden: warten })}</p>}
                 </div>
               )}
-              <button className="knopf primaer" disabled={laeuft || warten > 0 || !codeOk}>{laeuft ? t('konten.notfall.seite.pruefe') : t('konten.notfall.seite.weiter')}</button>
+              <Knopf art="haupt" type="submit" laeuft={laeuft} laeuftText={t('konten.notfall.seite.pruefe')} gesperrt={warten > 0 || !codeOk}>{t('konten.notfall.seite.weiter')}</Knopf>
               <p className="leise klein">{t('konten.notfall.seite.schluessel', { sekunden: NOTFALL_SPERRE_SEKUNDEN })}</p>
             </form>
           ) : schritt.art === 'konto' ? (
@@ -116,7 +116,7 @@ function KontoWahl({ konten, weiter }: { konten: Konto[]; weiter: (k: Konto) => 
       <p>{t('konten.notfall.seite.konto')}</p>
       <ul className="notfall-konten">
         {konten.map((k) => (
-          <li key={k.id}><button type="button" className="wahlkarte" onClick={() => weiter(k)}><strong>{k.name}</strong><span className="leise">{k.email}</span></button></li>
+          <li key={k.id}><Knopf art="link" className="wahlkarte" onClick={() => weiter(k)}><strong>{k.name}</strong><span className="leise">{k.email}</span></Knopf></li>
         ))}
       </ul>
     </div>
@@ -142,14 +142,14 @@ function NeuesPasswort({ konto, code, zurueck, fertig }: { konto: Konto; code: s
     <form className="notfall-form" onSubmit={(e) => void setzen(e)}>
       <p>{t('konten.notfall.seite.passwort', { name: konto.name })}</p>
       <input type="email" value={konto.email} autoComplete="username" readOnly hidden />
-      <label className="eigenschaft"><span>{t('konten.notfall.seite.passwort.neu')} <small>{t('konten.notfall.seite.passwort.laenge', { anzahl: PASSWORT_MINDESTLAENGE })}</small></span>
-        <input type="password" value={pw} onChange={(e) => setPw(e.target.value)} autoComplete="new-password" minLength={PASSWORT_MINDESTLAENGE} required autoFocus /></label>
-      <label className="eigenschaft"><span>{t('konten.notfall.seite.passwort.wieder')}</span>
-        <input type="password" value={pw2} onChange={(e) => setPw2(e.target.value)} autoComplete="new-password" required /></label>
+      <Feld beschriftung={t('konten.notfall.seite.passwort.neu')} hinweis={t('konten.notfall.seite.passwort.laenge', { anzahl: PASSWORT_MINDESTLAENGE })}>
+        <input type="password" value={pw} onChange={(e) => setPw(e.target.value)} autoComplete="new-password" minLength={PASSWORT_MINDESTLAENGE} required autoFocus /></Feld>
+      <Feld beschriftung={t('konten.notfall.seite.passwort.wieder')}>
+        <input type="password" value={pw2} onChange={(e) => setPw2(e.target.value)} autoComplete="new-password" required /></Feld>
       <div className="hinweis warn"><p>{t('konten.notfall.seite.folgen')}</p></div>
       {fehler && <p className="hinweis schlecht" role="alert">{fehler}</p>}
-      <button className="knopf primaer" disabled={laeuft}>{laeuft ? t('konten.notfall.seite.setze') : t('konten.notfall.seite.setzen')}</button>
-      <button type="button" className="textknopf" onClick={zurueck}>{t('konten.notfall.seite.abbrechen')}</button>
+      <Knopf art="haupt" type="submit" laeuft={laeuft} laeuftText={t('konten.notfall.seite.setze')}>{t('konten.notfall.seite.setzen')}</Knopf>
+      <Knopf art="link" onClick={zurueck}>{t('konten.notfall.seite.abbrechen')}</Knopf>
     </form>
   );
 }
@@ -161,9 +161,9 @@ function NeuesBlatt({ email, blatt }: { email: string; blatt: string }) {
     <div className="stapel" role="status">
       <p className="hinweis gut"><Symbol name="haken" /> {t('konten.notfall.seite.gesetzt', { email })}</p>
       <p>{t('konten.notfall.seite.blatt')}</p>
-      <a className={`knopf${geladen ? '' : ' primaer'}`} href={`/api/notfall/blatt?schluessel=${encodeURIComponent(blatt)}`} download onClick={() => setGeladen(true)}>{t('konten.notfall.seite.blatt.knopf')}</a>
+      <a className={`knopf${geladen ? '' : ' primaer'}`} href={`/api/notfall/blatt?schluessel=${encodeURIComponent(blatt)}`} download onClick={() => setGeladen(true)}><Symbol name="herunterladen" />{t('konten.notfall.seite.blatt.knopf')}</a>
       {geladen ? <p className="gutertext klein">{t('konten.notfall.seite.blatt.geladen')}</p> : <p className="leise klein">{t('konten.notfall.seite.blatt.pflicht')}</p>}
-      <button type="button" className="knopf primaer" disabled={!geladen} onClick={() => location.assign('/')}>{t('konten.notfall.seite.anmelden')}</button>
+      <Knopf art="haupt" gesperrt={geladen ? false : t('konten.notfall.seite.blatt.pflicht')} onClick={() => location.assign('/')}>{t('konten.notfall.seite.anmelden')}</Knopf>
     </div>
   );
 }

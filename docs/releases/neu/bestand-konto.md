@@ -1,0 +1,5 @@
+art: minor
+
+## Geändert
+
+- **Mein Konto, Einrichtungsassistent und Systemseiten aus den Bausteinen** (#1215): Mein Konto, der Einrichtungsassistent, „Ablago entdecken“, die Anmeldung, der Notfallzugang, das Wiederherstellen und der Lasttest nutzen dieselben Felder, Knöpfe und Rückfragen wie Ablage und Werkbank. Einstellungen, die an oder aus sind (Startseite, Tipps, geänderte Mappen hervorheben, Papierkorb beim Abmelden leeren, Zusammenfassung, Abwesend …), sind Schalter; „Klein · Normal · Groß“ ist ein Umschalter, die Suche in „Ablago entdecken“ und in den eigenen Aufgaben ein Suchfeld mit Lupe. Abmelden einzelner Geräte, „Alle anderen abmelden“, Löschen von Schlüsseln und Passwörtern, Entfernen von Notfallkontakten und Bildern, das Abschalten der Zwei-Faktor-Anmeldung und das Herunterfahren nach dem Lasttest sind leise mit Symbol und fragen vorher nach – nichts ist mehr rot. Im Assistenten heißt es „+ Notfallkontakt“ statt eines großen grünen Knopfs; Hinweise wie „mindestens 10 Zeichen“ stehen unter dem Feld, Freiwilliges trägt „(optional)“, Pfeile und Haken sind Symbole.

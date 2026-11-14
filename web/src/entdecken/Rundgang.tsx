@@ -2,6 +2,7 @@ import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type 
 import { OEFFNE_SEITEN, type Rundgang, type RundgangSchritt } from '../../../shared/src/entdecken';
 import { geheZu } from '../ort';
 import { t } from '../sprache';
+import { Knopf } from '../bausteine';
 import { DreiteilungBild } from './Bild';
 import { beendeRundgang, findeAnker, istSchmal, useAktiverRundgang, warteAufAnker, wenigBewegung } from './stand';
 
@@ -130,12 +131,12 @@ function Fuehrung({ rundgang, vonSelbst }: { rundgang: Rundgang; vonSelbst: bool
         </div>
         <div className="rg-knoepfe">
           <div className="rg-neben">
-            {vonSelbst && <button type="button" className="textknopf" onClick={() => ende('spaeter')} title={t('entdecken.fuehrung.spaeter.titel')}>{t('entdecken.fuehrung.spaeter')}</button>}
-            {!letzter && <button type="button" className="textknopf" onClick={() => ende('gesehen')} title={t('entdecken.fuehrung.ueberspringen.titel')}>{t('entdecken.fuehrung.ueberspringen')}</button>}
+            {vonSelbst && <Knopf art="link" onClick={() => ende('spaeter')} title={t('entdecken.fuehrung.spaeter.titel')}>{t('entdecken.fuehrung.spaeter')}</Knopf>}
+            {!letzter && <Knopf art="link" onClick={() => ende('gesehen')} title={t('entdecken.fuehrung.ueberspringen.titel')}>{t('entdecken.fuehrung.ueberspringen')}</Knopf>}
           </div>
           <div className="rg-haupt">
-            {nr > 0 && <button type="button" className="knopf" onClick={zurueck}>{t('entdecken.fuehrung.zurueck')}</button>}
-            <button ref={weiterKnopf} type="button" className="knopf primaer" onClick={weiter}>{letzter ? t('entdecken.fuehrung.fertig') : t('entdecken.fuehrung.weiter')}</button>
+            {nr > 0 && <Knopf symbol="pfeil-links" onClick={zurueck}>{t('entdecken.fuehrung.zurueck')}</Knopf>}
+            <Knopf ref={weiterKnopf} art="haupt" onClick={weiter}>{letzter ? t('entdecken.fuehrung.fertig') : t('entdecken.fuehrung.weiter')}</Knopf>
           </div>
         </div>
       </div>

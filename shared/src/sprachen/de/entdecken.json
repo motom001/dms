@@ -29,7 +29,7 @@
   "zeile.neu": "Neu seit deinem letzten Besuch: {text}",
   "zeile.weitere_one": "und {anzahl} weitere",
   "zeile.weitere_other": "und {anzahl} weitere",
-  "konto.tipps": "Tipps auf der Startseite zeigen {klein}",
+  "konto.tipps": "Tipps auf der Startseite zeigen",
   "konto.tipps.hilfe": "Höchstens einer am Tag, unter „Frag deine Ablage“. Alle Tipps stehen unter „Ablago entdecken“.",
   "fuehrung.titel": "Rundgang: {titel}",
   "fuehrung.schritt": "Schritt {nr} von {anzahl}",

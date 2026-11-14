@@ -3,6 +3,7 @@ import { useDaten } from '../daten';
 import { Link } from '../ort';
 import { t } from '../sprache';
 import { Symbol } from '../Symbol';
+import { Knopf } from '../bausteine';
 import { tippHandlung, useAktiverRundgang, useEntdecken, zeigeZiel } from './stand';
 
 /**
@@ -26,7 +27,7 @@ export function TippZeile() {
     return (
       <p className="tipp-zeile" data-anker="startseite.tipp" role="status">
         <span className="leise">{t('entdecken.zeile.ausgeblendet')}</span>{' · '}
-        <button type="button" className="textknopf" onClick={() => { d.setzeEinstellung('tipps', false); setWeg('aus'); }}>{t('entdecken.zeile.keine-mehr')}</button>
+        <Knopf art="link" onClick={() => { d.setzeEinstellung('tipps', false); setWeg('aus'); }}>{t('entdecken.zeile.keine-mehr')}</Knopf>
       </p>
     );
   }
@@ -39,8 +40,8 @@ export function TippZeile() {
         {x.neu ? t('entdecken.zeile.neu', { text: x.text }) : x.text}
       </a>
       {x.neu && weitere > 0 && <>{' '}<Link to="/entdecken" className="tipp-weitere">{t('entdecken.zeile.weitere', { anzahl: weitere })}</Link></>}
-      <button type="button" className="tipp-weg" aria-label={t('entdecken.zeile.ausblenden')} title={t('entdecken.zeile.ausblenden')}
-        onClick={() => { setWeg('ausgeblendet'); void tippHandlung(x.schluessel, 'ausblenden'); }}><Symbol name="schliessen" /></button>
+      <Knopf art="link" className="tipp-weg" nurSymbol={t('entdecken.zeile.ausblenden')}
+        onClick={() => { setWeg('ausgeblendet'); void tippHandlung(x.schluessel, 'ausblenden'); }}><Symbol name="schliessen" /></Knopf>
     </p>
   );
 }

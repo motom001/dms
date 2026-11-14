@@ -11,7 +11,8 @@
  * - `ablago/bausteine`: rohe Bedienelemente in der Oberfläche (#968, „Neues streng“). `<button>` ist ein Fehler –
  *   dafür gibt es `Knopf`; `<input>`, `<select>` und `<textarea>` sind es, wenn sie nicht in einem Feldrahmen stehen
  *   (`Feld`, `HakenFeld`, `FeldGruppe`). Ausgenommen sind unsichtbare Eingaben (`type="hidden"`, `type="file"` – der
- *   Dateiwähler öffnet sich über einen Knopf) und alles unter `web/src/bausteine/` (dort entstehen die Bausteine).
+ *   Dateiwähler öffnet sich über einen Knopf –, und solche mit dem Attribut `hidden`, z. B. der Benutzername für den
+ *   Passwortmanager neben einem Passwortfeld, #1215) und alles unter `web/src/bausteine/` (dort entstehen die Bausteine).
  *   Der Bestand beim Einführen steht in `eslint-suppressions.json`; begründete Ausnahmen im Code wie sonst
  *   (`// eslint-disable-next-line ablago/bausteine -- Suchfeld ohne sichtbare Beschriftung`).
  * - `ablago/knopf-farben`: keine Farbklassen über `className` am Baustein Knopf (#1210) – `gefahr`, `gefahr-rand`,
@@ -54,6 +55,12 @@ function attributWert(oeffnend, name) {
   return a?.value?.type === 'Literal' ? a.value.value : undefined;
 }
 
+/** Trägt das Element das Attribut `hidden` (ohne Wert oder als festes `{true}`)? Dann ist es kein Bedienelement. */
+function unsichtbar(oeffnend) {
+  const a = oeffnend.attributes.find((x) => x.type === 'JSXAttribute' && x.name.name === 'hidden');
+  return !!a && (a.value === null || (a.value.type === 'JSXExpressionContainer' && a.value.expression.type === 'Literal' && a.value.expression.value === true));
+}
+
 /** Steht das Element (irgendwo) in einem Feldrahmen? Auch über eine Funktion als Kind: {(v) => <input {...v} />}. */
 function imRahmen(knoten) {
   for (let p = knoten.parent; p; p = p.parent) {
@@ -78,7 +85,7 @@ const bausteine = {
         const name = knoten.name.type === 'JSXIdentifier' ? knoten.name.name : null;
         if (!name || !ROH.has(name)) return;
         if (name === 'button') { context.report({ node: knoten, messageId: 'knopf' }); return; }
-        if (name === 'input' && UNSICHTBAR.has(attributWert(knoten, 'type'))) return;
+        if (name === 'input' && (UNSICHTBAR.has(attributWert(knoten, 'type')) || unsichtbar(knoten))) return;
         if (!imRahmen(knoten.parent)) context.report({ node: knoten, messageId: 'feld', data: { name } });
       },
     };

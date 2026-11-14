@@ -3,6 +3,7 @@ import { useHandbuch } from './Hilfe';
 import { useKonto } from './konto';
 import { Marke } from './Marke';
 import { t, tn } from './sprache';
+import { Knopf } from './bausteine';
 
 /** Offizielles Repository; mit Version zeigt der Quellcode-Link auf genau diesen Stand (Tag vX.Y.Z). */
 export const REPOSITORY = 'https://github.com/motom001/dms';
@@ -49,7 +50,7 @@ export function UeberDms({ schliessen }: { schliessen: () => void }) {
           <li>{tn('oberflaeche.ueberdms.freiwillig-ablago-selbst-meldet', { link: <a href={WER_NUTZT} {...extern}>{t('oberflaeche.ueberdms.nutzt-du-ablago-erzaehl')}</a> })}</li>
         </ul>
         <div className="ueber-dms-knoepfe">
-          <button ref={knopf} type="button" className="knopf primaer" onClick={schliessen}>{t('oberflaeche.ueberdms.schliessen')}</button>
+          <Knopf ref={knopf} art="haupt" onClick={schliessen}>{t('oberflaeche.ueberdms.schliessen')}</Knopf>
         </div>
       </div>
     </dialog>

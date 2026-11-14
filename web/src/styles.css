@@ -692,10 +692,6 @@ th[aria-sort] .spaltenknopf .pfeil { opacity: 1; }
 .menuepunkt { display: block; text-align: left; padding: 8px; border-radius: 6px; color: var(--tinte); text-decoration: none; background: none; border: 0; font: inherit; cursor: pointer; }
 .menuepunkt:hover, .menuepunkt:focus-visible { background: var(--senke); }
 .menuegruppe { display: flex; flex-direction: column; gap: 6px; padding: 8px; border-top: 1px solid var(--linie); border-bottom: 1px solid var(--linie); }
-.segmente { display: flex; border: 1px solid var(--linie-stark); border-radius: 6px; overflow: hidden; }
-.segmente button { flex: 1; background: none; border: 0; padding: 6px 4px; cursor: pointer; color: var(--tinte); }
-.segmente button + button { border-left: 1px solid var(--linie-stark); }
-.segmente button.an { background: var(--akzent); color: var(--akzent-tinte); }
 /* Beschriftungen je Sprache (#728): Eingabe mit kleinem Sprachumschalter, Beschriftung der Auswahlwerte. */
 .sprachtext { display: flex; align-items: center; gap: 6px; min-width: 0; }
 .sprachtext > input { flex: 1; min-width: 0; }
@@ -723,7 +719,7 @@ th[aria-sort] .spaltenknopf .pfeil { opacity: 1; }
 .neuerschluessel summary { display: inline-flex; list-style: none; cursor: pointer; }
 .neuerschluessel summary::-webkit-details-marker { display: none; }
 .neuerschluessel[open] summary { margin-bottom: 12px; }
-.schluesselformular { align-items: end; }
+.schluesselformular { align-items: start; }
 
 /* API-Dokumentation */
 .apidoku { max-width: 960px; }
@@ -2371,4 +2367,50 @@ main.rumpf[tabindex="-1"]:focus { outline: none; }
   .textknopf.rechtknopf[data-knopf]:not(.klein) { min-height: 48px; }
   .feldstapel > .haken, .typwahl .haken, .quellzeile > .haken, .wertgruppe .haken, .ansichtwahl .haken, .auswahlliste .haken, .liste-ohne .haken, .stapel > li > .haken { display: flex; align-items: center; min-height: 48px; }
   .stempeleditor input[type="range"], .farbwahl input[type="color"] { min-height: 48px; }
+}
+
+/* ---------- Mein Konto, Assistent und Systemseiten aus den Bausteinen (#1215) ---------- */
+/* Inhalte einer FeldGruppe über die ganze Breite (die Gruppe stellt ihre Kinder nebeneinander). */
+:is(.designwahl, .wahlkarten, .auswahlliste, .bildliste) { flex: 1 1 100%; min-width: 0; }
+/* Knopf im Aussehen einer Wahlkarte (Assistent „Neu oder Sicherung“, Notfallzugang „Konto wählen“). */
+.textknopf.wahlkarte { display: flex; padding: 16px; border: 1px solid var(--linie); border-radius: 10px; background: var(--flaeche, transparent); color: inherit; font-weight: inherit; text-align: left; white-space: normal; }
+.textknopf.wahlkarte > span, .textknopf.wahlkarte > span > span:first-child { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; min-width: 0; }
+.textknopf.wahlkarte.wahlkarte:hover { text-decoration: none; border-color: var(--akzent); }
+/* Schrittleiste des Assistenten: Nummer über dem Namen. */
+.textknopf.schrittknopf { display: flex; color: inherit; }
+.textknopf.schrittknopf > span, .textknopf.schrittknopf > span > span:first-child { display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 0; }
+.textknopf.schrittknopf.schrittknopf:hover { text-decoration: none; }
+.textknopf.schrittknopf:hover .name { text-decoration: underline; }
+/* Benutzermenü: Knopf mit dem eigenen Namen (abgeschnitten) und Menüpunkte – Aussehen wie bisher. */
+.benutzermenue .textknopf.wer { display: inline-flex; align-items: center; gap: 4px; font: inherit; color: var(--leise); }
+.benutzermenue .textknopf.wer > span, .benutzermenue .textknopf.wer > span > span:first-child { display: contents; }
+.benutzermenue .textknopf.wer.wer:hover { text-decoration: none; color: var(--tinte); }
+.benutzermenue .textknopf.wer.an { color: var(--akzent); }
+.wer-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.textknopf.menuepunkt { display: block; width: 100%; padding: 8px; color: var(--tinte); font: inherit; text-align: left; }
+.textknopf.menuepunkt > span, .textknopf.menuepunkt > span > span:first-child { display: contents; }
+.textknopf.menuepunkt.menuepunkt:hover { text-decoration: none; }
+.menuepunkt-extern { width: 14px; height: 14px; vertical-align: -2px; margin-left: 2px; color: var(--leise); }
+/* Zeitmessung (Entwicklermodus): Kopf zum Auf- und Zuklappen. */
+.textknopf.messkopf { display: flex; justify-content: space-between; color: inherit; }
+.textknopf.messkopf > span, .textknopf.messkopf > span > span:first-child { display: flex; justify-content: space-between; gap: 8px; width: 100%; }
+.textknopf.messkopf.messkopf:hover { text-decoration: none; }
+/* Griff und Lasche der Dreiteilung als Knopf: Größe und Aussehen wie bisher (#536), auch am Handy. */
+.textknopf.griff.griff.griff { display: grid; place-items: center; width: 22px; min-width: 0; height: 48px; padding: 0; border: 1px solid var(--linie-stark); color: var(--leise); position: absolute; margin: 0; }
+.textknopf.griff.griff.griff:is(:hover, :focus-visible) { color: var(--akzent); border-color: var(--akzent); text-decoration: none; }
+.textknopf.spl-lasche.spl-lasche.spl-lasche { display: flex; width: 32px; min-width: 0; padding: 10px 0; color: var(--leise); font-size: calc(12.5px * var(--skala, 1)); position: absolute; margin: 0; }
+.textknopf.spl-lasche.spl-lasche.spl-lasche:is(:hover, :focus-visible) { color: var(--akzent); text-decoration: none; }
+.textknopf.spl-lasche > span, .textknopf.spl-lasche > span > span:first-child { display: flex; flex-direction: column; align-items: center; gap: 8px; min-height: 0; max-height: 100%; overflow: hidden; }
+/* Tipp ausblenden (×): leise wie bisher. */
+.textknopf.tipp-weg { margin-left: auto; flex: none; padding: 2px 4px; color: var(--leise); }
+.textknopf.tipp-weg.tipp-weg:hover { color: var(--tinte); background: var(--senke); text-decoration: none; }
+/* Schrittleiste: offene Schritte mit lesbarer Nummer (axe color-contrast, #1215). */
+.assistent-schritte li:not(.erledigt, .aktiv) .nr { background: var(--senke); box-shadow: inset 0 0 0 1px var(--linie); }
+/* Am Handy (#1215, D6): in Mein Konto und „Ablago entdecken“ jede Tippfläche mindestens 44 px – die Bereiche links,
+   die Wochentage der Zusammenfassung, Aufklappzeilen und die Sätze der Tipps. */
+@media (pointer: coarse) {
+  .profil .typliste .typeintrag { min-height: 44px; box-sizing: border-box; }
+  .tagewahl label.haken { min-width: 44px; min-height: 44px; align-items: center; }
+  .profil summary { padding-block: 12px; min-height: 44px; box-sizing: border-box; }
+  .ent-tipps .tipp-satz { display: block; padding-block: 4px; }
 }

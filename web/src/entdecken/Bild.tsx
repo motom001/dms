@@ -1,4 +1,5 @@
 import { t } from '../sprache';
+import { Symbol } from '../Symbol';
 
 /**
  * Die Dreiteilung als Bild (#831): dieselbe vereinfachte Darstellung wie auf ablago.app („Ein Blick hinein“, Projekt
@@ -14,7 +15,7 @@ export function DreiteilungBild({ schmal }: { schmal: boolean }) {
       <div className="rg-bild-spalte rg-bild-links" aria-hidden="true">
         <span className="rg-bild-name">{t('entdecken.bild.ansichten')}</span>
         {schmal
-          ? <span className="rg-bild-eintrag an">{ansichten[3]} ▾</span>
+          ? <span className="rg-bild-eintrag an">{ansichten[3]} <Symbol name="pfeil-unten" /></span>
           : ansichten.map((a, i) => <span key={a} className={`rg-bild-eintrag${i === 3 ? ' an' : ''}`}>{a}</span>)}
       </div>
       <div className="rg-bild-spalte rg-bild-mitte" aria-hidden="true">

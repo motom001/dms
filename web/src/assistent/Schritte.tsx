@@ -4,7 +4,7 @@ import { handbuchUrl, HILFE, hilfeOnlineUrl, type Hilfeort } from '../../../shar
 import { PASSWORT_MINDESTLAENGE } from '../../../shared/src/model';
 import { beruflichBei, leereOrganisation, NUTZUNGEN, PAKETE_JE_NUTZUNG, type Nutzung, type Sammelschritt } from '../../../shared/src/einrichtungsplan';
 import { VORLAGEN, vorlageFuer } from '../../../shared/src/werkbankansicht';
-import { FeldGruppe, Knopf } from '../bausteine';
+import { Feld, FeldGruppe, HakenFeld, Knopf } from '../bausteine';
 import { api, heikleDatei } from '../api';
 import { Marke } from '../Marke';
 import { geheZu } from '../ort';
@@ -69,7 +69,7 @@ function Fortschritt({ aktiv, leiste }: { aktiv: number; leiste?: Leiste }) {
           const klick = gehe ? () => { setGrund(null); gehe(); } : sperre ? () => setGrund(sperre) : null;
           return (
             <li key={s} className={erledigt(i) ? 'erledigt' : i === aktiv ? 'aktiv' : ''} aria-current={i === aktiv ? 'step' : undefined}>
-              {klick ? <button type="button" className="textknopf" onClick={klick} title={gehe ? t('einrichtung.leiste.zu', { name: s }) : t('einrichtung.leiste.gesperrt', { name: s })}>{inhalt}</button> : inhalt}
+              {klick ? <Knopf art="link" className="schrittknopf" onClick={klick} title={gehe ? t('einrichtung.leiste.zu', { name: s }) : t('einrichtung.leiste.gesperrt', { name: s })}>{inhalt}</Knopf> : inhalt}
             </li>
           );
         })}
@@ -82,7 +82,7 @@ function Fortschritt({ aktiv, leiste }: { aktiv: number; leiste?: Leiste }) {
 function SchrittHilfe({ aktiv }: { aktiv: number }) {
   const z = HILFE[HILFE_JE_SCHRITT[aktiv]];
   return (
-    <a className="assistent-hilfe" href={hilfeOnlineUrl(z)} target="_blank" rel="noreferrer" title={t('einrichtung.hilfe.titel', { titel: z.titel })} aria-label={t('einrichtung.hilfe.label')}>
+    <a className="assistent-hilfe" href={hilfeOnlineUrl(z)} target="_blank" rel="noreferrer" title={t('einrichtung.hilfe.titel', { titel: z.titel })} aria-label={t('einrichtung.hilfe.label', { hilfe: t('einrichtung.hilfe') })}>
       <span className="hilfesymbol" aria-hidden="true">?</span> {t('einrichtung.hilfe')}
     </a>
   );
@@ -106,8 +106,8 @@ function DateiLaden({ ohneCode, imEinrichtungsmodus }: { ohneCode?: boolean; imE
     try { await ladeDatei(text, !!imEinrichtungsmodus); } catch (e) { setMeldung((e as Error).message); }
   }
   return (
-    <span className="assistent-datei">
-      <button type="button" className="textknopf klein" onClick={() => eingabe.current?.click()} title={t('einrichtung.datei.laden.titel')}>{t('einrichtung.datei.laden')}</button>
+    <span className="assistent-datei klein">
+      <Knopf art="link" onClick={() => eingabe.current?.click()} title={t('einrichtung.datei.laden.titel')}>{t('einrichtung.datei.laden')}</Knopf>
       <input ref={eingabe} type="file" accept=".yaml,.yml,.json,application/yaml,application/json,text/yaml" hidden onChange={(e) => { void gewaehlt(e.target.files?.[0]); e.target.value = ''; }} />
       {meldung && <span className="leise klein" role="status">{meldung}</span>}
     </span>
@@ -133,7 +133,7 @@ export function Rahmen({ aktiv, titel, unter, children, leiste, datei }: {
           <div className="hinweis schlecht stapel" role="alert">
             <p><strong>{t('einrichtung.datei.fehler.titel')}</strong></p>
             <ul>{st.dateiFehler.map((f, i) => <li key={i}>{f.zeile ? t('einrichtung.datei.fehler.zeile', { zeile: f.zeile, feld: f.feld }) : f.feld}: {f.text}</li>)}</ul>
-            <div className="knoepfe"><button type="button" className="knopf klein" onClick={() => setzeStand((x) => ({ ...x, dateiFehler: [] }))}>{t('einrichtung.datei.fehler.schliessen')}</button></div>
+            <div className="knoepfe"><Knopf onClick={() => setzeStand((x) => ({ ...x, dateiFehler: [] }))}>{t('einrichtung.datei.fehler.schliessen')}</Knopf></div>
           </div>
         )}
         <h1>{titel}</h1>
@@ -159,16 +159,17 @@ export function SprachSchritt({ leiste }: { leiste: Leiste }) {
   return (
     <Rahmen aktiv={VOR.sprache} titel={t('einrichtung.sprache.titel')} unter={t('einrichtung.sprache.unter')} leiste={leiste}>
       <form className="stapel" onSubmit={(e) => { e.preventDefault(); weiter(); }}>
-        <fieldset className="wahlkarten" aria-label={t('einrichtung.sprache.titel')}>
-          {EINGEBAUTE_SPRACHEN.map((s) => (
-            <label key={s} className={`wahlkarte${wahl === s ? ' gewaehlt' : ''}`} lang={s}>
-              <input type="radio" name="sprache" value={s} checked={wahl === s} onChange={() => setWahl(s)} />
-              <strong>{sprachname(s, s)}</strong>
-            </label>
-          ))}
-        </fieldset>
-        <p className="leise klein">{t('einrichtung.sprache.spaeter')}</p>
-        <div className="knoepfe"><button type="submit" className="knopf primaer">{t('einrichtung.weiter')}</button></div>
+        <FeldGruppe beschriftung={t('einrichtung.sprache.titel')} beschriftungVerbergen hinweis={t('einrichtung.sprache.spaeter')}>
+          <div className="wahlkarten">
+            {EINGEBAUTE_SPRACHEN.map((s) => (
+              <label key={s} className={`wahlkarte${wahl === s ? ' gewaehlt' : ''}`} lang={s}>
+                <input type="radio" name="sprache" value={s} checked={wahl === s} onChange={() => setWahl(s)} />
+                <strong>{sprachname(s, s)}</strong>
+              </label>
+            ))}
+          </div>
+        </FeldGruppe>
+        <div className="knoepfe"><Knopf art="haupt" type="submit">{t('einrichtung.weiter')}</Knopf></div>
       </form>
     </Rahmen>
   );
@@ -219,8 +220,8 @@ function Navigation({ zurueck, weiter, weiterText, sendet, fehler, kannWeiter = 
     <>
       {fehler && <p className="fehlertext" role="alert">{fehler}</p>}
       <div className="knoepfe">
-        {zurueck && <button type="button" className="knopf" onClick={zurueck}><Symbol name="pfeil-links" /> {aendern ? t('einrichtung.zurueck.lauf') : t('einrichtung.zurueck')}</button>}
-        <button type="submit" className="knopf primaer" disabled={sendet || !kannWeiter} onClick={(e) => { e.preventDefault(); weiter(); }}>{sendet ? t('einrichtung.pruefe') : weiterText ?? (aendern ? t('einrichtung.uebernehmen.lauf') : t('einrichtung.weiter'))}</button>
+        {zurueck && <Knopf symbol="pfeil-links" onClick={zurueck}>{aendern ? t('einrichtung.zurueck.lauf') : t('einrichtung.zurueck')}</Knopf>}
+        <Knopf art="haupt" type="submit" laeuft={sendet} laeuftText={t('einrichtung.pruefe')} gesperrt={!kannWeiter} onClick={(e) => { e.preventDefault(); weiter(); }}>{weiterText ?? (aendern ? t('einrichtung.uebernehmen.lauf') : t('einrichtung.weiter'))}</Knopf>
       </div>
     </>
   );
@@ -255,9 +256,8 @@ function AblageSchritt({ s, zurWahl, leiste, datei }: { s: Sammlung; zurWahl: ()
       <form className="stapel" onSubmit={(e) => e.preventDefault()}>
         {s.hinweise.length > 0 && <div className="hinweis info"><ul>{s.hinweise.map((h) => <li key={h}>{h}</li>)}</ul></div>}
         <Probleme liste={s.probleme.ablage} />
-        <label className="eigenschaft"><span>{t('einrichtung.ablage.name')} <small>{t('einrichtung.ablage.name.beispiel')}</small></span>
-          <input value={name} onChange={(x) => setName(x.target.value)} maxLength={30} autoFocus required /></label>
-        <p className="leise klein">{t('einrichtung.ablage.hinweis')}</p>
+        <Feld beschriftung={t('einrichtung.ablage.name')} hinweis={[t('einrichtung.ablage.name.beispiel'), t('einrichtung.ablage.hinweis')]}>
+          <input value={name} onChange={(x) => setName(x.target.value)} maxLength={30} autoFocus required /></Feld>
         <Navigation zurueck={() => { setzeSammlung((x) => ({ ...x, ablage: name })); zurueckVon('ablage', zurWahl); }} kannWeiter={!!name.trim()}
           weiter={() => { setzeSammlung((x) => ({ ...x, ablage: name.replace(/\s+/g, ' ').trim() })); weiterVon('ablage'); }} />
       </form>
@@ -283,10 +283,10 @@ function KontoSchritt({ s, zurWahl, leiste }: { s: Sammlung; zurWahl: () => void
       <form className="stapel" onSubmit={(e) => e.preventDefault()}>
         <Probleme liste={probleme} />
         {s.verweise.konto && <p className="leise klein">{t('einrichtung.konto.verweis', { verweis: s.verweise.konto })}</p>}
-        <label className="eigenschaft"><span>{t('einrichtung.konto.name')}</span><input value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" placeholder={t('einrichtung.konto.name.beispiel')} autoFocus /></label>
-        <label className="eigenschaft"><span>{t('einrichtung.konto.email')} <small>{t('einrichtung.konto.email.hilfe')}</small></span><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" required /></label>
-        <label className="eigenschaft"><span>{t('einrichtung.konto.passwort')} <small>{t('einrichtung.konto.passwort.hilfe', { anzahl: PASSWORT_MINDESTLAENGE })}</small></span><input type="password" value={pw} onChange={(e) => setPw(e.target.value)} autoComplete="new-password" required /></label>
-        <label className="eigenschaft"><span>{t('einrichtung.konto.passwort2')}</span><input type="password" value={pw2} onChange={(e) => setPw2(e.target.value)} autoComplete="new-password" required /></label>
+        <Feld beschriftung={t('einrichtung.konto.name')}><input value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" placeholder={t('einrichtung.konto.name.beispiel')} autoFocus /></Feld>
+        <Feld beschriftung={t('einrichtung.konto.email')} hinweis={t('einrichtung.konto.email.hilfe')}><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" required /></Feld>
+        <Feld beschriftung={t('einrichtung.konto.passwort')} hinweis={t('einrichtung.konto.passwort.hilfe', { anzahl: PASSWORT_MINDESTLAENGE })}><input type="password" value={pw} onChange={(e) => setPw(e.target.value)} autoComplete="new-password" required /></Feld>
+        <Feld beschriftung={t('einrichtung.konto.passwort2')}><input type="password" value={pw2} onChange={(e) => setPw2(e.target.value)} autoComplete="new-password" required /></Feld>
         <div className="hinweis info"><p>{t('einrichtung.konto.alltag')}</p></div>
         <p className="leise klein">{t('einrichtung.konto.zweifaktor')}</p>
         <p className="leise klein">{t('einrichtung.konto.erst')}</p>
@@ -402,7 +402,8 @@ function NotfallSammeln({ liste, setze }: { liste: NotfallkontaktEingabe[]; setz
           {liste.map((k, i) => (
             <li key={`${k.email}-${i}`}>
               <strong>{k.name}</strong> <span>{erreichbar(k)}</span>{k.notiz && <span className="leise"> – {k.notiz}</span>}{' '}
-              <Knopf art="link" groesse="klein" onClick={() => setze(liste.filter((_, j) => j !== i))}>{t('einrichtung.optional.notfall.entfernen')}</Knopf>
+              <Knopf art="gefahr" symbol="geloescht" onClick={() => setze(liste.filter((_, j) => j !== i))}
+                rueckfrage={{ titel: t('einrichtung.optional.notfall.entfernen.frage', { name: k.name }), ja: t('einrichtung.optional.notfall.entfernen') }}>{t('einrichtung.optional.notfall.entfernen')}</Knopf>
             </li>
           ))}
         </ul>
@@ -423,7 +424,7 @@ function NotfallSammeln({ liste, setze }: { liste: NotfallkontaktEingabe[]; setz
         </>
       ) : (
         <div className="knoepfe">
-          <Knopf art="anlegen" gesperrt={liste.length >= NOTFALLKONTAKTE_MAX ? t('werkbank.notfallkontakte.max', { max: NOTFALLKONTAKTE_MAX }) : false}
+          <Knopf art="anlegen" groesse="klein" gesperrt={liste.length >= NOTFALLKONTAKTE_MAX ? t('werkbank.notfallkontakte.max', { max: NOTFALLKONTAKTE_MAX }) : false}
             onClick={() => { setFehler(undefined); setNeu(leererKontakt()); }}>{t('werkbank.notfallkontakte.neu')}</Knopf>
         </div>
       )}
@@ -454,29 +455,29 @@ function OptionalSchritt({ s, zurWahl, leiste }: { s: Sammlung; zurWahl: () => v
         <section className="blatt">
           <h2 className="h3">{t('einrichtung.optional.adresse.titel')}</h2>
           <p className="leise klein">{t('einrichtung.optional.adresse.text')}</p>
-          <label className="eigenschaft"><span>{t('einrichtung.optional.adresse')} {o.adresse && o.adresse === vorschlag && <small className="chip">{t('einrichtung.vorgeschlagen')}</small>}</span>
-            <input value={o.adresse} onChange={(e) => setO({ ...o, adresse: e.target.value })} inputMode="url" autoComplete="off" placeholder={t('einrichtung.optional.adresse.beispiel')} /></label>
-          <p className="leise klein">{o.adresse ? t('einrichtung.optional.adresse.hinweis') : t('einrichtung.optional.adresse.leer')}</p>
+          <Feld beschriftung={t('einrichtung.optional.adresse')} kopfZusatz={o.adresse && o.adresse === vorschlag && <small className="chip">{t('einrichtung.vorgeschlagen')}</small>}
+            hinweis={o.adresse ? t('einrichtung.optional.adresse.hinweis') : t('einrichtung.optional.adresse.leer')}>
+            <input value={o.adresse} onChange={(e) => setO({ ...o, adresse: e.target.value })} inputMode="url" autoComplete="off" placeholder={t('einrichtung.optional.adresse.beispiel')} /></Feld>
         </section>
         <section className="blatt">
           <h2 className="h3">{t('einrichtung.optional.region')}</h2>
           <p className="leise klein">{t('einrichtung.optional.region.text')}</p>
-          <label className="eigenschaft"><span>{t('einrichtung.optional.bundesland')}</span>
+          <Feld beschriftung={t('einrichtung.optional.bundesland')}>
             <select value={o.bundesland} onChange={(e) => setO({ ...o, bundesland: e.target.value })}>
               <option value="">{t('einrichtung.optional.bundesland.keins')}</option>
               {Object.entries(BUNDESLAENDER).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-            </select></label>
+            </select></Feld>
         </section>
         <section className="blatt">
           <h2 className="h3">{t('einrichtung.optional.beispiele.titel')}</h2>
           <p className="leise klein">{t('einrichtung.optional.beispiele.text')}</p>
-          <label className="haken"><input type="checkbox" checked={o.beispiele && !mitTypen} disabled={mitTypen} onChange={(e) => setO({ ...o, beispiele: e.target.checked })} />
-            <span>{t('einrichtung.optional.beispiele')}{mitTypen && <small className="hilfe">{t('einrichtung.optional.beispiele.pakete')}</small>}</span></label>
+          <HakenFeld beschriftung={t('einrichtung.optional.beispiele')} hinweis={mitTypen && t('einrichtung.optional.beispiele.pakete')}>
+            <input type="checkbox" checked={o.beispiele && !mitTypen} disabled={mitTypen} onChange={(e) => setO({ ...o, beispiele: e.target.checked })} /></HakenFeld>
         </section>
         <section className="blatt" id="mail">
           <h2 className="h3">{t('einrichtung.optional.mail')}</h2>
           <p className="leise klein">{t('einrichtung.optional.mail.text')}</p>
-          <label className="haken"><input type="checkbox" checked={!!m} onChange={(e) => setO({ ...o, mail: e.target.checked ? neueMail() : null })} /><span>{t('einrichtung.optional.mail.an')}</span></label>
+          <HakenFeld beschriftung={t('einrichtung.optional.mail.an')}><input type="checkbox" checked={!!m} onChange={(e) => setO({ ...o, mail: e.target.checked ? neueMail() : null })} /></HakenFeld>
           {m && <>
             <MailSammeln wert={m} passwort={geheim.mail} email={s.konto.email.trim()} ablage={s.ablage} griff={mail} />
             <p className="leise klein">{s.verweise.mail ? t('einrichtung.optional.mail.verweis', { verweis: s.verweise.mail }) : t('einrichtung.optional.mail.passwort')}</p>
@@ -503,7 +504,7 @@ function Abschnitt({ titel, ziel, probleme, children }: { titel: string; ziel: A
     <section className={`blatt zf-abschnitt${probleme?.length ? ' mitfehler' : ''}`} aria-label={titel}>
       <div className="zf-kopf">
         <h2 className="h3">{titel}</h2>
-        <button type="button" className="textknopf" onClick={() => setzeSammlung((s) => ({ ...s, ansicht: ziel, zurZusammenfassung: true }))}>{t('einrichtung.zf.aendern')}<span className="sr"> – {titel}</span></button>
+        <Knopf art="link" onClick={() => setzeSammlung((s) => ({ ...s, ansicht: ziel, zurZusammenfassung: true }))}>{t('einrichtung.zf.aendern')}<span className="sr"> – {titel}</span></Knopf>
       </div>
       <div className="zf-inhalt">{children}</div>
       {probleme?.length ? <ul className="fehlertext klein">{probleme.map((p) => <li key={p}>{p}</li>)}</ul> : null}
@@ -556,7 +557,7 @@ function Zusammenfassung({ s, zurWahl, leiste }: { s: Sammlung; zurWahl: () => v
       <section className="blatt stapel" aria-label={t('einrichtung.zf.datei')}>
         <h2 className="h3">{t('einrichtung.zf.datei')}</h2>
         <p className="leise klein">{t('einrichtung.zf.datei.text')}</p>
-        <div><button type="button" className="knopf" onClick={() => void x.los(async () => { await speichereDatei(); setGespeichert(true); })}>{t('einrichtung.zf.datei.knopf')}</button></div>
+        <div><Knopf symbol="herunterladen" onClick={() => x.los(async () => { await speichereDatei(); setGespeichert(true); })}>{t('einrichtung.zf.datei.knopf')}</Knopf></div>
         {gespeichert && <p className="gutertext klein" role="status">{t('einrichtung.zf.datei.fertig')}</p>}
       </section>
       <Navigation sendet={x.sendet} fehler={x.fehler} zurueck={() => zurueckVon('zusammenfassung', zurWahl)} weiterText={t('einrichtung.zf.los')}
@@ -604,10 +605,10 @@ function LaufAnsicht() {
                 {x.meldung && <span className={x.zustand === 'fehler' ? 'fehlertext klein' : 'leise klein'}>{x.meldung}</span>}
                 {x.zustand === 'fehler' && (
                   <span className="knoepfe">
-                    {ziel && <button type="button" className="knopf klein" onClick={() => setzeStand((a) => (
+                    {ziel && <Knopf onClick={() => setzeStand((a) => (
                       // Vor dem Anlegen der Ablage ist noch nichts passiert: zurück zum Sammeln.
-                      ablageFertig ? { ...a, aendern: ziel, sammlung: { ...a.sammlung, ansicht: ziel } } : { ...a, lauf: null, sammlung: { ...a.sammlung, ansicht: ziel, zurZusammenfassung: true } }))}>{t('einrichtung.zf.aendern')}</button>}
-                    <button type="button" className="knopf klein primaer" disabled={l.laeuft} onClick={() => void ausfuehren()}>{t('einrichtung.lauf.nochmal')}</button>
+                      ablageFertig ? { ...a, aendern: ziel, sammlung: { ...a.sammlung, ansicht: ziel } } : { ...a, lauf: null, sammlung: { ...a.sammlung, ansicht: ziel, zurZusammenfassung: true } }))}>{t('einrichtung.zf.aendern')}</Knopf>}
+                    <Knopf art="haupt" laeuft={l.laeuft} onClick={() => void ausfuehren()}>{t('einrichtung.lauf.nochmal')}</Knopf>
                   </span>
                 )}
               </span>
@@ -640,8 +641,8 @@ function ZweifaktorAngebot({ l, aktualisieren }: { l: Lauf; aktualisieren: () =>
           <p>{t('einrichtung.abschluss.zweifaktor.text')}</p>
           {l.zweifaktor === 'spaeter' && <p className="leise klein">{t('einrichtung.abschluss.zweifaktor.spaeter.text')}</p>}
           <div className="knoepfe links">
-            <button type="button" className="knopf" onClick={() => setEinrichten(true)}>{t('einrichtung.abschluss.zweifaktor.jetzt')}</button>
-            {l.zweifaktor !== 'spaeter' && <button type="button" className="knopf" onClick={() => setze('spaeter')}>{t('einrichtung.abschluss.zweifaktor.spaeter')}</button>}
+            <Knopf onClick={() => setEinrichten(true)}>{t('einrichtung.abschluss.zweifaktor.jetzt')}</Knopf>
+            {l.zweifaktor !== 'spaeter' && <Knopf onClick={() => setze('spaeter')}>{t('einrichtung.abschluss.zweifaktor.spaeter')}</Knopf>}
           </div>
         </>}
     </section>
@@ -705,10 +706,11 @@ function Abschluss({ abschliessen, version }: { abschliessen: () => Promise<void
         <p>{t('einrichtung.abschluss.notfallblatt.text')}</p>
         {fingerabdruck && <p className="leise klein">{t('einrichtung.abschluss.fingerabdruck')} <span className="mono">{fingerabdruck}</span></p>}
         <div className="knoepfe links">
-          <button type="button" className={`knopf${geladen ? '' : ' primaer'}`} disabled={blatt.sendet} onClick={herunterladen}>{t('einrichtung.abschluss.herunterladen')}</button>
+          <Knopf art={geladen ? 'neben' : 'haupt'} symbol="herunterladen" laeuft={blatt.sendet} onClick={herunterladen}>{t('einrichtung.abschluss.herunterladen')}</Knopf>
         </div>
         {blatt.fehler && <p className="fehlertext" role="alert">{blatt.fehler}</p>}
-        {geladen ? <p className="gutertext klein" role="status"><Symbol name="haken" /> {t('einrichtung.abschluss.geladen')}</p> : <p className="leise klein">{t('einrichtung.abschluss.pflicht')}</p>}
+        {/* Ohne Notfallblatt ist „Einrichtung abschließen“ gesperrt – der Grund steht am Knopf (Leitsatz 6). */}
+        {geladen && <p className="gutertext klein" role="status"><Symbol name="haken" /> {t('einrichtung.abschluss.geladen')}</p>}
       </section>
       <ZweifaktorAngebot l={l} aktualisieren={abschliessen} />
       {/* Passkey (#811): nur über HTTPS (oder localhost) – sonst bietet der Assistent ihn gar nicht erst an. */}
@@ -722,7 +724,7 @@ function Abschluss({ abschliessen, version }: { abschliessen: () => Promise<void
       </ul>
       {x.fehler && <p className="fehlertext" role="alert">{x.fehler}</p>}
       <div className="knoepfe">
-        <button type="button" className="knopf primaer" disabled={!geladen || x.sendet} onClick={() => void x.los(async () => { await api.einrichtungSchritt('fertig'); vergiss(); geheZu('/werkbank', true); await abschliessen(); })}>{t('einrichtung.abschluss.knopf')}</button>
+        <Knopf art="haupt" gesperrt={geladen ? false : t('einrichtung.abschluss.pflicht')} laeuft={x.sendet} onClick={() => void x.los(async () => { await api.einrichtungSchritt('fertig'); vergiss(); geheZu('/werkbank', true); await abschliessen(); })}>{t('einrichtung.abschluss.knopf')}</Knopf>
       </div>
     </Rahmen>
   );

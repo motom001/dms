@@ -2,6 +2,7 @@ import { Component, useState, type ErrorInfo, type ReactNode } from 'react';
 import { jemandAngemeldet } from './konto';
 import { ErreichbarkeitsBanner, erreichbarkeit, useNeuLadenBeiNeuerVersion } from './erreichbar';
 import { t } from './sprache';
+import { Knopf } from './bausteine';
 
 /**
  * Fehlergrenze (#881): Wirft eine Komponente beim Zeichnen, zeigt React sonst eine leere weiße Seite. Stattdessen
@@ -60,8 +61,8 @@ export function FehlerAnzeige({ fehler }: { fehler: Error }) {
         {kopiert === 'ja' && <p className="gutertext klein" role="status">{t('oberflaeche.fehlergrenze.kopiert')}</p>}
         {kopiert === 'nein' && <p className="fehlertext klein" role="status">{t('oberflaeche.fehlergrenze.nicht-kopiert')}</p>}
         <div className="knoepfe links">
-          <button type="button" className="knopf primaer" onClick={() => location.reload()}>{t('oberflaeche.fehlergrenze.neu-laden')}</button>
-          <button type="button" className="knopf" onClick={() => void melden()}>{t('oberflaeche.fehlergrenze.melden')}</button>
+          <Knopf art="haupt" symbol="neu-laden" onClick={() => location.reload()}>{t('oberflaeche.fehlergrenze.neu-laden')}</Knopf>
+          <Knopf onClick={melden}>{t('oberflaeche.fehlergrenze.melden')}</Knopf>
         </div>
       </div>
     </div>
