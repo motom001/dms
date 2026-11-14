@@ -4,7 +4,7 @@
  */
 import assert from 'node:assert/strict';
 import '../einrichtung.mjs';
-import { BASIS, LENA, rauchtest, verwalten } from '../hilfen.mjs';
+import { api, BASIS, daten, LENA, rauchtest, sitzung, verwalten } from '../hilfen.mjs';
 
 // Wiederherstellen (Abschnitt der Sicherung) antwortet außerhalb des Wartungsmodus mit 409 – das ist gewollt.
 const SICHERUNG_ERWARTET = [{ status: 409, pfad: /^\/api\/wiederherstellung\/sicherungen$/ }];
@@ -101,4 +101,35 @@ rauchtest('Werkbank: eigener Export der Benutzer unter Daten sichern → Einstel
   await bearbeitung.getByText(vorher === 'true' ? 'Benutzer dürfen ihre eigenen Daten exportieren.' : 'Meine Daten exportieren ist abgeschaltet.', { exact: true }).waitFor();
   // In der Leiste unter „Daten sichern“.
   await s.getByRole('complementary', { name: 'Bereiche' }).getByRole('link', { name: /^Einstellungen/ }).waitFor();
+});
+
+// Papierkorb (#1197): Suche, Filter und Mehrfachauswahl in der Ablage; die Aufbewahrung steht unter Daten sichern →
+// Einstellungen, im Papierkorb der Werkbank nur eine Zeile mit Link dorthin.
+rauchtest('Papierkorb: suchen, mehrere wiederherstellen; Aufbewahrung unter Einstellungen (#1197)', { als: LENA }, async (s) => {
+  const cookie = await sitzung(LENA);
+  for (const objekt of ['Korbtest Eins', 'Korbtest Zwei']) {
+    const m = (await api('POST', '/api/mappen', { cookie, body: { typId: daten.bausteine.id, werte: { objekt } } })).daten;
+    await api('DELETE', `/api/mappen/${m.id}?grund=nicht_noetig`, { cookie });
+  }
+  await s.goto(BASIS + '/ablage/papierkorb');
+  const suche = s.getByRole('search', { name: 'Papierkorb durchsuchen' });
+  await suche.getByRole('searchbox').fill('Korbtest Eins');
+  await suche.getByText('1 Treffer').waitFor();
+  await suche.getByRole('searchbox').fill('Korbtest');
+  await suche.getByText('2 Treffer').waitFor();
+  await suche.getByLabel('Mappentyp').selectOption({ label: 'Kellerraum' });
+  await suche.getByText('2 Treffer').waitFor();
+  await s.getByRole('checkbox', { name: 'Alle auswählen' }).check();
+  await s.getByRole('button', { name: 'Wiederherstellen (2)' }).click();
+  await s.getByText('2 Einträge wiederhergestellt.').waitFor({ timeout: 30_000 });
+  await s.getByText(/Keine Treffer|Papierkorb ist leer/).first().waitFor();
+  // Werkbank: keine Aufbewahrung mehr im Papierkorb, nur die Zeile mit Link zu den Einstellungen.
+  await verwalten(s);
+  await s.goto(BASIS + '/werkbank/papierkorb');
+  await s.getByText(/im Papierkorb – ändern unter/).waitFor();
+  assert.equal(await s.getByLabel('Tage im Papierkorb').count(), 0, 'Aufbewahrung nicht im Papierkorb');
+  await s.getByRole('link', { name: 'Einstellungen', exact: true }).first().click();
+  await s.waitForURL(/\/werkbank\/daten/);
+  await s.getByLabel('Tage im Papierkorb').waitFor();
+  await s.getByLabel('Historie endgültig gelöschter Mappen behalten (Tage)').waitFor();
 });

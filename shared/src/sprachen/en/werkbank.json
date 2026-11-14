@@ -176,6 +176,7 @@
   "daten.lade": "Loading …",
   "daten.ueber": "Workbench · Back up data",
   "daten.einleitung": "Lasting settings for the bin and exports. They apply to the whole library until you change them again – not just to one export or one deletion.",
+  "daten.papierkorb.titel": "Bin",
   "daten.benutzer.titel": "What users may do themselves",
   "daten.export.schalter": "Users may export their own data",
   "daten.export.hinweis": "Under My account → Account → Export my data: folders they may read, their tasks and reminders – in the format of the full export (right to data portability, GDPR Art. 20). Off by default.",

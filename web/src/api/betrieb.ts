@@ -32,7 +32,7 @@ export interface ExternZustand {
   zuAlt: boolean;
 }
 /** Werkbank → Daten sichern → Einstellungen (#1196, #1197). */
-export interface DatenStand { persoenlich: boolean }
+export interface DatenStand { tage: number; historieTage: number; imPapierkorb: number; persoenlich: boolean }
 export interface SicherungEintrag { name: string; meta: SicherungsMeta | null; schlank?: SicherungSchlank; bytes: number; pruefung?: { am: string; ok: boolean }; probe?: { am: string; ok: boolean; info: string }; extern?: Record<string, ExternStand> }
 export interface SicherungsPlan { aktiv: boolean; uhrzeit: string; haeufigkeit: 'taeglich' | 'woechentlich'; wochentag: number; aufbewahrung: { taeglich: number; woechentlich: number; monatlich: number }; mindestFreiGB: number; aktivSeit: string | null; /** #585 */ nurNeueste?: boolean }
 export interface SicherungsLauf { art: string; titel: string; status: 'laeuft' | 'fertig' | 'fehler'; schritt: string; bytes: number; gesamt: number; gestartet: string; beendet?: string; fehler?: string; ergebnis?: unknown }

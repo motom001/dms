@@ -84,6 +84,13 @@
 /* Schmale Mitte (#366): erst umbrechen, dann die Knöpfe unter den Eintrag statt den Namen zu zerquetschen. */
 .korbdokument .eintrag { flex: 1 1 16em; min-width: 0; overflow-wrap: anywhere; }
 .korbdokument .knoepfe { flex: none; }
+/* Papierkorb mit Auswahl (#1197): Haken vor jedem Eintrag, Filter und Auswahlleiste über der Liste. */
+.korbzeile { display: flex; align-items: center; gap: 6px; }
+.korbzeile > a.eintrag { flex: 1 1 auto; min-width: 0; }
+.korbmappen + .korbdokumente { margin-top: 18px; }
+.papierkorb-filter { gap: 8px 12px; }
+.papierkorb-auswahl { align-items: center; gap: 8px 12px; margin: 6px 0; }
+.papierkorb-alle { display: inline-flex; align-items: center; gap: 6px; }
 
 /* Startseite (#334): wenige Kacheln, je eine Zahl und eine Handlung */
 .startseite { display: flex; flex-direction: column; gap: 16px; padding-top: 4px; }

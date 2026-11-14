@@ -97,6 +97,7 @@ const REGELN: Regel[] = [
   // von denen sie dorthin umgezogen sind.
   R('GET', '/api/werkbank/daten', 'daten'),
   R('PUT', '/api/werkbank/export/persoenlich', 'daten'),
+  R('PUT', '/api/werkbank/papierkorb/einstellungen', 'daten'),
 
   // Daten sichern
   R('*', '/api/werkbank/sicherung*', 'sicherung'),

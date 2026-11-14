@@ -3,15 +3,16 @@
 Deleted folders go into the bin – including documents and links. Individually deleted **documents** too, with all versions and the full text. After the set retention, Ablago deletes them permanently.
 
 - In the **Library**, every user sees under *Bin* only what **they themselves** deleted, and can restore it or delete it permanently. The entry is at the top among the fixed entries below *Favourites* – but only as long as the bin is switched on or something is still in it.
-- Under **Workbench → bin** you as an administrator see everything, with "deleted by": in the middle at the top the **retention** with **Empty bin**, below it the deleted folders and documents. If you choose a folder, it appears on the right – there you restore it or delete it permanently.
+- Under **Workbench → bin** you as an administrator see everything, with "deleted by": at the top **Empty bin** and a line saying how long deleted items stay, below it search, filters and the deleted folders and documents. If you choose a folder, it appears on the right – there you restore it or delete it permanently.
+- **Search, filter, several at once:** the search field finds titles and file names; you can filter by *Kind* (folders or documents), *Folder type*, *deleted by* and when deleted. With the ticks in front of the entries (or **Select all**), **Restore (n)** and **Delete for good (n)** apply to all selected ones – one after the other, folders before documents; whatever didn't work stays selected and is listed with the reason above. In the Library this works the same way, without "deleted by".
 
 ![Workbench → bin](bilder/werkbank-papierkorb.png)
 
 ## Retention { #aufbewahrung }
 
-At the top in the middle under **Retention** you set how many days deleted folders and documents stay (default: 30). Next to it, **Empty bin** empties everything at once. Only removing the [demo data](demo.md) is permanent immediately. Ablago tidies up hourly.
+Under **Workbench → Back up data → [Settings](daten-einstellungen.md#papierkorb)** you set in the **Bin** section how many days deleted folders and documents stay (default: 30). The bin itself only shows one line about it with a link there; at the top, **Empty bin** empties everything at once. Only removing the [demo data](demo.md) is permanent immediately. Ablago tidies up hourly.
 
-**0 days switches the bin off:** deleting is then permanent immediately, as before version 0.11. What is currently in the bin is deleted permanently on saving – the workbench asks first.
+**0 days switches the bin off:** deleting is then permanent immediately, as before version 0.11. What is currently in the bin is deleted permanently on saving – the workbench asks first when saving.
 
 Every user can set under My account that their bin is **emptied on sign-out**.
 
