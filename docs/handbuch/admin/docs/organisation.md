@@ -9,7 +9,7 @@ Name, Anschrift, Kontakt und die Verantwortlichen im Sinne der DSGVO pflegst du 
 
 ## Nutzung: privat oder beruflich { #nutzung }
 
-Ganz oben auf der Seite legst du einmal für die ganze Ablage fest, ob sie **auch beruflich genutzt** wird – etwa von Katrin als Selbständiger, im Verein oder in der Tischlerei. Vorgabe ist *nein*: Eine neue Ablage gilt als privat. Gespeichert wird der Haken über seine eigene Speicherleiste.
+Ganz oben auf der Seite legst du einmal für die ganze Ablage fest, ob sie **auch beruflich genutzt** wird – etwa von Katrin als Selbständiger, im Verein oder in der Tischlerei. Vorgabe ist *nein*: Eine neue Ablage gilt als privat. Gespeichert wird mit der Speicherleiste unten auf der Seite.
 
 Das ist bewusst **nur dieses eine Merkmal**. Alles Weitere ergibt sich aus Feldwerten der Mappen oder aus den installierten [Paketen](pakete.md).
 
@@ -47,7 +47,7 @@ Im **Einrichtungsassistenten** geht es noch einfacher: Wählst du bei „Wofür 
 Das Merkmal entscheidet, wer auf Auskünften und im Löschkonzept als Verantwortlicher steht. Darum ist das Feld geschützt:
 
 - Ändern darf es, wer **im Verwaltungsmodus** den Bereich *Eigene Organisation* verwalten darf (oder *Gesamte Verwaltung* hat) – siehe [Wer darf Ablago verwalten?](verwalten.md).
-- Zusätzlich jede Person mit einer Rolle, die du unter **Wer „eigene Organisation“ setzen darf** freigibst – sofern sie die Organisation ohnehin bearbeiten darf.
+- Zusätzlich jede Person mit einer Rolle, die du unter **Welche Rollen „eigene Organisation“ setzen dürfen** freigibst – sofern sie die Organisation ohnehin bearbeiten darf. Das Feld ist ein Verweisfeld mit Mehrfachauswahl wie in den Mappen: Rolle suchen, wählen, mit „Entfernen“ wieder herausnehmen. Wer Ablago verwaltet, darf das immer; neue Rollen legst du über **Rollen verwalten** an ([Benutzer und Rollen](benutzer.md)).
 - Alle anderen sehen das Feld nur lesbar. Über die [Schnittstelle](api.md), aus Paketen und Automatisierungen kommt **403** – Verwaltungsrechte gelten über einen API-Schlüssel nie.
 
 Jede Änderung am Merkmal, am Verantwortlichen oder am Datenschutzbeauftragten steht im **Systemprotokoll** (Modul Datenschutz), als **Notiz** oben auf der Seite (mit „Zur Kenntnis genommen“) und – mit eingerichtetem E-Mail-Versand – als Mail an alle, die den Bereich verwalten. Auch die Wahl „gilt für Auskünfte“ und die freigegebenen Rollen stehen im Systemprotokoll.
@@ -65,7 +65,7 @@ Passwörter, Kundennummer, IBAN, Beschreibung, Dokumente und alles Weitere liest
 
 ## Wo Ablago die Angaben verwendet
 
-Die Werkbank listet das unter **Wo Ablago diese Angaben verwendet**:
+Die Werkbank listet das unter **Wo Ablago diese Angaben verwendet**; Stellen mit eigenem Bereich in der Werkbank (Datenschutz-Auskünfte, Löschkonzept, Mappentypen) sind Links dorthin:
 
 | Stelle | Ergebnis der Bestandsaufnahme (#995) |
 | --- | --- |
@@ -80,5 +80,6 @@ Die Werkbank listet das unter **Wo Ablago diese Angaben verwendet**:
 
 ## Gut zu wissen
 
+- Die ganze Seite speichert über **eine Speicherleiste** unten (Nutzung, „gilt für Auskünfte und Unterlagen“, Rollen); sie erscheint hervorgehoben, sobald du etwas änderst, „Verwerfen“ nimmt alles zurück.
 - Die Wahl, die freigegebenen Rollen und die Notizen stehen in der Datenbank und damit in jeder [Sicherung](sicherung.md); der [Vollexport](export.md) legt sie als `struktur/organisation.json` ab. Die Angaben selbst stehen in der Mappe.
 - Ist der Haken bei mehreren Organisationen gesetzt und keine gewählt, nimmt Ablago keine davon – es gilt die bisherige Angabe der Auskunft, sonst bleibt der Verantwortliche leer. Die Werkbank bittet um eine Wahl, das [Löschkonzept](loeschkonzept.md) meldet die Lücke.
