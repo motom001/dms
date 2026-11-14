@@ -54,6 +54,8 @@ test('CSS-Dateien über der Zeilengrenze werden gemeldet (#1234)', () => {
   const dir = mkdtempSync(join(tmpdir(), 'zeilen-'));
   writeFileSync(join(dir, 'kurz.css'), '.a { color: var(--a); }\n'.repeat(3));
   writeFileSync(join(dir, 'lang.css'), '.a { color: var(--a); }\n'.repeat(6));
+  // Leerzeilen und Kommentare zählen nicht mit.
+  writeFileSync(join(dir, 'erklaert.css'), `/* Erklärung\n   über zwei Zeilen */\n\n${'.a { color: var(--a); }\n'.repeat(5)}`);
   assert.deepEqual(zuLangeCss(dir, 5).map((f) => [f.datei.split('/').pop(), f.zeilen]), [['lang.css', 6]]);
 });
 

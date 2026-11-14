@@ -11,7 +11,7 @@
  * Ausnahmen: in der Zeile ein Kommentar `farbe-erlaubt: Grund` (CSS `/* farbe-erlaubt: … *\/`, TS `// farbe-erlaubt: …`)
  * oder die ganze Datei in AUSNAHMEN unten – immer mit Grund.
  *
- * Dazu höchstens CSS_HOECHSTENS Zeilen je CSS-Datei (#1234, wie max-lines für Code): Die Gestaltung liegt in
+ * Dazu höchstens CSS_HOECHSTENS Zeilen je CSS-Datei (#1234, wie max-lines für Code ohne Leerzeilen und Kommentare): Die Gestaltung liegt in
  * web/src/stile/ in Teilen je Bereich; wird ein Teil zu lang, an einer Abschnittsgrenze teilen.
  */
 import { readdirSync, readFileSync } from 'node:fs';
@@ -92,11 +92,11 @@ export function pruefe(wurzel = 'web/src', ausnahmen = AUSNAHMEN) {
   return alle;
 }
 
-/** CSS-Dateien unter `wurzel` mit mehr als `grenze` Zeilen (#1234). */
+/** CSS-Dateien unter `wurzel` mit mehr als `grenze` Zeilen (#1234) – wie max-lines in ESLint ohne Leerzeilen und Kommentare. */
 export function zuLangeCss(wurzel = 'web/src', grenze = CSS_HOECHSTENS) {
   return dateien(wurzel)
     .filter((d) => d.endsWith('.css'))
-    .map((d) => ({ datei: relative(process.cwd(), d).split(sep).join('/'), zeilen: readFileSync(d, 'utf8').trimEnd().split('\n').length }))
+    .map((d) => ({ datei: relative(process.cwd(), d).split(sep).join('/'), zeilen: ohneKommentare(readFileSync(d, 'utf8')).split('\n').filter((z) => z.trim()).length }))
     .filter((f) => f.zeilen > grenze);
 }
 
