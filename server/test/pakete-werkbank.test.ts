@@ -2,10 +2,20 @@
  * Werkbank → Pakete (#1167, #1168, #1047, #1048): Hilfen in shared/src, die die Paketseite nutzt – ohne Server und Netz.
  */
 import assert from 'node:assert/strict';
-import { describe, it } from 'node:test';
+import { after, describe, it } from 'node:test';
+import { automatisierungKlartext, kurzanleitungIn, KURZANLEITUNG_SCHRITTE, liesKurzanleitung } from '../../shared/src/mitkommt';
+import { speicherDateien } from '../src/dateispeicher';
+import { Dienst } from '../src/dienst';
+import { speicherEinstellungen } from '../src/einstellungen';
+import { Paketverwaltung } from '../src/pakete';
+import type { Repo } from '../src/repo';
+import { speicherRepo } from '../src/repo-speicher';
+import { zipPuffer } from '../src/zip';
+import { eigeneDatenbank } from './hilfe-db';
 import { aktualisierungsRunde, neueVersionen, type Katalog, type KatalogPaket, type NeueVersion, type RundenVorschau } from '../../shared/src/pakete';
 
 const OFFIZIELL = 'https://catalog.example.org/katalog.json';
+const HAUSHALT = '00000000-0000-4000-8000-000000000001';
 const WEITERER = 'https://pakete.example.org/katalog.json';
 
 /** Katalogpaket mit den nötigen Angaben; Versionen neueste zuerst. */
@@ -100,3 +110,106 @@ describe('Alle aktualisieren: Reihenfolge und Entscheidungen (#1168)', () => {
     assert.equal(r.find((e) => e.id === 'kaputt')!.fehler, 'lässt sich nicht herunterladen');
   });
 });
+
+/* ---------- Was mitkommt und Kurzanleitung (#1047) ---------- */
+
+describe('Was mitkommt: Automatisierungen in der Fassung des Katalogs (#1047)', () => {
+  const name = (art: string) => ({ 'mappe.angelegt': 'Mappe angelegt' } as Record<string, string>)[art] ?? art;
+  const datum = (vorlauf: number, wiederholung: number | null = null) => ({ art: 'datum' as const, typ: 'Mietvertrag', feld: 'Ende', vorlauf, einheit: 'tage' as const, uhrzeit: '07:00', wiederholung });
+
+  it('Datum erreicht: vor, am Tag, nach; einmal je Termin oder wiederkehrend', () => {
+    const ersteller = [{ art: 'aufgabe' as const, benachrichtigung: false, empfaenger: [{ art: 'ersteller' as const }] }];
+    assert.deepEqual(automatisierungKlartext({ wenn: datum(60), dann: ersteller }, name), {
+      wenn: '60 Tage vor „Ende“ (Mietvertrag), geprüft um 07:00', dann: 'Aufgabe an die Person, die die Mappe angelegt hat', ablauf: 'Einmal je Termin',
+    });
+    assert.equal(automatisierungKlartext({ wenn: datum(0), dann: ersteller }, name).wenn, 'am Tag „Ende“ (Mietvertrag), geprüft um 07:00');
+    assert.equal(automatisierungKlartext({ wenn: datum(-7), dann: ersteller }, name).wenn, '7 Tage nach „Ende“ (Mietvertrag), geprüft um 07:00');
+    assert.equal(automatisierungKlartext({ wenn: datum(1), dann: ersteller }, name).wenn, '1 Tag vor „Ende“ (Mietvertrag), geprüft um 07:00');
+    assert.equal(automatisierungKlartext({ wenn: datum(60, 12), dann: ersteller }, name).ablauf, 'Wiederkehrend (jährlich): nach dem Erledigen schlägt Ablago den Folgetermin vor');
+    assert.equal(automatisierungKlartext({ wenn: datum(60, 24), dann: ersteller }, name).ablauf, 'Wiederkehrend (alle 2 Jahre): nach dem Erledigen schlägt Ablago den Folgetermin vor');
+  });
+
+  it('Empfänger aus einem Feld, sonst an die Person, die die Mappe angelegt hat; Zeitplan und Ereignis', () => {
+    const k = automatisierungKlartext({ wenn: { art: 'ereignis', ereignis: 'mappe.angelegt', typ: 'Vertrag' }, dann: [{ art: 'aufgabe', benachrichtigung: true, empfaenger: [{ art: 'feld', feld: 'Verantwortlich', sonstErsteller: true }] }] }, name);
+    assert.deepEqual(k, { wenn: 'Vertrag: Mappe angelegt', dann: 'Benachrichtigung an „Verantwortlich“ (sonst an die Person, die die Mappe angelegt hat)', ablauf: 'Bei jedem Ereignis' });
+    const z = automatisierungKlartext({ wenn: { art: 'zeitplan', tage: [1, 2, 3, 4, 5], uhrzeit: '07:00', feiertage: true, jeBenutzer: true, profilzeit: false }, dann: [{ art: 'zusammenfassung' }] }, name);
+    assert.equal(z.wenn, 'werktags um 07:00 (nicht an Feiertagen) für jeden Benutzer');
+    assert.equal(z.dann, 'Tägliche Zusammenfassung senden');
+    assert.equal(z.ablauf, 'Wiederkehrend nach Zeitplan');
+  });
+
+  it('Kurzanleitung: je Sprache eine Liste von Schritten, Ungültiges fällt still weg', () => {
+    assert.deepEqual(liesKurzanleitung({ de: ['Vertrag anlegen', '  Frist   eintragen ', 42, '<b>x</b>', ''], en: [], fr: 'Texte', '': ['x'] }), { de: ['Vertrag anlegen', 'Frist eintragen'] });
+    assert.equal(liesKurzanleitung('Schritte'), undefined);
+    assert.equal(liesKurzanleitung({ de: Array.from({ length: 20 }, (_, i) => `Schritt ${i}`) })!.de.length, KURZANLEITUNG_SCHRITTE);
+    assert.deepEqual(kurzanleitungIn({ de: ['A'], en: ['B'] }, 'en-GB'), ['B']);
+    assert.deepEqual(kurzanleitungIn({ de: ['A'] }, 'fr'), ['A']);
+  });
+});
+
+const url = process.env.TEST_DATABASE_URL;
+const ICH = { id: '00000000-0000-4000-8000-0000000000aa', email: 'markus@example.org' };
+const offen: Array<{ end(): Promise<void> }> = [];
+after(async () => { for (const s of offen) await s.end(); });
+
+/** Ein Paket mit Mietvertrag, Ansicht, Wortliste, Automatisierung und Kurzanleitung; mehr: Version 1.1.0 mit zweiter Automatisierung. */
+function mietPaket(version = '1.0.0'): Record<string, string> {
+  const zweite = version !== '1.0.0';
+  return {
+    'manifest.yaml': `schema: 1\nid: miete\nname: Miete\nversion: ${version}\nbeschreibung: Test.\nautor: { name: Test, github: test }\nlizenz: MIT\ndms: ">=0.60.0"\n`
+      + 'inhalt:\n  mappentypen: inhalt/mappentypen.yaml\n  sichten: inhalt/sichten.yaml\n  wortlisten: inhalt/wortlisten.yaml\n  automatisierungen: inhalt/automatisierungen.yaml\n'
+      + 'kurzanleitung:\n  de: [Mietvertrag anlegen, Ende eintragen, Aufgabe abwarten]\n  en: [Create a tenancy, Enter the end, Wait for the to do]\n',
+    'inhalt/mappentypen.yaml': `- schluessel: mietvertrag\n  name: Mietvertrag\n  beschreibung: Ein Mietvertrag.\n  felder: [{ key: name, label: Name, typ: text }, { key: ende, label: Ende, typ: datum }]\n  register: [{ key: daten, name: Daten, art: felder, felder: [name, ende] }]\n${zweite ? '- schluessel: nebenkosten\n  name: Nebenkosten\n  felder: [{ key: name, label: Name, typ: text }]\n  register: [{ key: daten, name: Daten, art: felder, felder: [name] }]\n' : ''}`,
+    'inhalt/sichten.yaml': '- { schluessel: miete, name: Mietverträge, typen: [mietvertrag] }\n',
+    'inhalt/wortlisten.yaml': '- woerter: [Miete, Mietvertrag]\n',
+    'inhalt/automatisierungen.yaml': `- schluessel: ende\n  name: Mietvertrag endet\n  beschreibung: Erinnert an das Ende.\n  eingeschaltet: true\n  wenn: { art: datum, typ: mietvertrag, feld: ende, vorlauf: 60, einheit: tage, uhrzeit: "07:00", wiederholung: 12 }\n  dann: [{ art: aufgabe, text: "Kündigen?", empfaenger: [{ art: ersteller }] }]\n`
+      + (zweite ? '- schluessel: neu\n  name: Neuer Mietvertrag\n  wenn: { art: mappe.angelegt, typ: mietvertrag }\n  dann: [{ art: aufgabe, text: "Prüfen", als: benachrichtigung, empfaenger: [{ art: ersteller }] }]\n' : ''),
+  };
+}
+
+for (const pg of [false, true]) {
+  describe(`Was mitkommt in Vorschau und Installation (#1047)${pg ? ' – PostgreSQL' : ''}`, { skip: pg && !url ? 'TEST_DATABASE_URL nicht gesetzt' : false }, () => {
+    async function aufbau() {
+      let r: Repo = speicherRepo();
+      if (pg) {
+        const { pgRepo } = await import('../src/repo-pg');
+        const { sql } = await eigeneDatenbank('mitkommt');
+        offen.push(sql);
+        await sql`INSERT INTO haushalte (id, name) VALUES (${HAUSHALT}, 'Test') ON CONFLICT DO NOTHING`;
+        r = pgRepo(sql, HAUSHALT) as never;
+      }
+      const d = new Dienst(r, speicherDateien(), { einstellungen: speicherEinstellungen() });
+      const p = new Paketverwaltung(d, { version: () => '0.245.0', abruf: async (u) => { throw new Error(`404 ${u}`); }, katalogUrl: OFFIZIELL });
+      const archiv = (x: Record<string, string>) => zipPuffer(Object.entries(x).map(([n, inhalt]) => ({ name: n, daten: Buffer.from(inhalt) })), new Date('2026-01-01T12:00:00Z'));
+      return { d, p, hoch: (x: Record<string, string>) => p.hochladen(archiv(x), ICH) };
+    }
+
+    it('Vorschau und Installation: alle Punkte, Kurzanleitung gespeichert', async () => {
+      const { p, hoch } = await aufbau();
+      const { upload, vorschau } = await hoch(mietPaket());
+      const m = vorschau.mitkommt!;
+      assert.deepEqual(m.mappentypen.map((x) => `${x.name} ${x.felder} ${x.beschreibung}`), ['Mietvertrag 2 Ein Mietvertrag.']);
+      assert.deepEqual(m.sichten.map((x) => x.name), ['Mietverträge']);
+      assert.deepEqual(m.wortlisten, [['Miete', 'Mietvertrag']]);
+      assert.deepEqual(m.automatisierungen.map((a) => [a.name, a.an, a.wenn]), [['Mietvertrag endet', true, { art: 'datum', typ: 'Mietvertrag', feld: 'Ende', vorlauf: 60, einheit: 'tage', uhrzeit: '07:00', wiederholung: 12 }]]);
+      assert.equal(m.code, false);
+      assert.ok(!m.mappentypen.some((x) => x.neu), 'beim Installieren ist nichts „neu in dieser Version“');
+      assert.deepEqual(vorschau.kurzanleitung, { de: ['Mietvertrag anlegen', 'Ende eintragen', 'Aufgabe abwarten'], en: ['Create a tenancy', 'Enter the end', 'Wait for the to do'] });
+      const inst = await p.installiere({ upload, bestaetigt: true }, ICH);
+      assert.deepEqual(inst.kurzanleitung?.de, ['Mietvertrag anlegen', 'Ende eintragen', 'Aufgabe abwarten']);
+      assert.deepEqual(inst.mitkommt?.automatisierungen.map((a) => a.name), ['Mietvertrag endet']);
+      const gelesen = (await p.installierte()).find((x) => x.id === 'miete')!;
+      assert.deepEqual(gelesen.mitkommt?.mappentypen.map((x) => x.name), ['Mietvertrag'], 'gespeichert an der Installation');
+    });
+
+    it('Update: was dazukommt, trägt „neu in dieser Version“', async () => {
+      const { p, hoch } = await aufbau();
+      await p.installiere({ upload: (await hoch(mietPaket())).upload, bestaetigt: true }, ICH);
+      const { vorschau } = await hoch(mietPaket('1.1.0'));
+      const m = vorschau.mitkommt!;
+      assert.deepEqual(m.mappentypen.map((x) => `${x.name}${x.neu ? ' neu' : ''}`), ['Mietvertrag', 'Nebenkosten neu']);
+      assert.deepEqual(m.automatisierungen.map((x) => `${x.name}${x.neu ? ' neu' : ''}`), ['Mietvertrag endet', 'Neuer Mietvertrag neu']);
+      assert.deepEqual(m.sichten.map((x) => `${x.name}${x.neu ? ' neu' : ''}`), ['Mietverträge']);
+    });
+  });
+}

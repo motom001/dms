@@ -2465,3 +2465,10 @@ main.rumpf[tabindex="-1"]:focus { outline: none; }
   .profil summary { padding-block: 12px; min-height: 44px; box-sizing: border-box; }
   .ent-tipps .tipp-satz { display: block; padding-block: 4px; }
 }
+
+/* Was mitkommt (#1047): je Eintrag der Name, darunter eine ruhige Zeile; Abschnitte untereinander wie im Katalog. */
+.mitkommt-zeile { display: block; }
+.mitkommt .h4 { margin: 0 0 4px; }
+.mitkommt ul, .mitkommt ol { margin: 0; padding-left: 18px; }
+.mitkommt-auf > summary { cursor: pointer; padding-block: 4px; }
+.mitkommt-auf[open] > summary { margin-bottom: 8px; }

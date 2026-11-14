@@ -11,7 +11,7 @@ Ablago only queries the catalogue **at the push of a button**, never in the back
 - **Installed** – packages in this installation, with version and origin
 - **Available** – packages from the catalogue that aren't installed yet
 
-A click on a package shows name, description, version, licence, author, the required Ablago version, dependencies, the folder types and views it contains as well as links to the README and the changes.
+A click on a package shows name, description, version, licence, author, the required Ablago version, dependencies, links to the README and the changes and below that [What comes with it](#was-mitkommt).
 
 Ablago loads the catalogue from `https://catalog.ablago.app/katalog.json` and checks its **signature** (see [Origin](#herkunft-signiert-oder-nicht)). It only follows redirects to `https://` addresses. For this, Ablago itself must be able to reach the internet. Ablago can't configure a proxy for outgoing requests. Without internet access you upload a package as a file (see [Expert mode](#expertenmodus-weitere-kataloge-und-hochladen)).
 
@@ -118,6 +118,24 @@ Next to a package's name is its **publisher** (#1084), e.g. "Contracts · app.ab
 ## Installed packages { #installierte-pakete }
 
 Per package Ablago remembers version, **origin** (the catalogue), **publisher**, when and by whom it was installed or updated and which folder types and views belong to it. These details are part of the [backup](sicherung.md) and of the [full export](export.md) (`struktur/pakete.json`). Installing, updating and removing are in the log.
+
+### What comes with it { #was-mitkommt }
+
+On a package's page, in the preview and in the [joint flow](#mehrere-pakete-in-einem-schritt-installieren) (expandable per package) there is **What comes with it** – the same points in the same order as on the package page in the [catalogue](#im-katalog-ansehen):
+
+- **Folder types** with the number of their fields and a line of description, **views**
+- **Included folders** ([defaults](#vorgaben)) per folder type and text templates to fill in
+- **Examples** and **words with the same meaning** for search
+- **Automations** in plain words: “When 60 days before “End” (Tenancy), checked at 07:00 → To do for “Responsible” (otherwise the person who created the folder)”, plus **once per date** or **recurring** and whether the package suggests switching them on right away
+- **Automation templates** with their cards and **actions in the “Folder” menu** with the permissions they need
+- **Settings** – sections and fields
+- finally **permissions and network**: no code, code without or with access to network and internet; on the page of an installed package with code, the permissions in detail
+
+On an **update**, everything that comes with the new version is marked **new in this version**. Before installation the package page only knows what the catalogue tells (folder types, views, examples); the preview shows everything else when you install. Packages installed before this Ablago version show it completely after the next update. Tours and tips from packages will follow as soon as the package format knows them.
+
+### How to use it { #so-nutzt-du-es }
+
+If a package brings a **quick guide** (three to five short steps), Ablago shows it **once right after the installation** at the top of the package page – with **Close**. After that it is under **What comes with it** at **How to use it**, to expand. Ablago shows it in your language, otherwise in German. Big topics are not explained in the guide but in a tour.
 
 ## Examples { #beispiele }
 

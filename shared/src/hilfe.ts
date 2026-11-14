@@ -71,6 +71,8 @@ export const HILFE = {
   'werkbank.pakete.sammeldatei': admin('pakete/', 'Pakete ohne Internet installieren', 'pakete-ohne-internet-installieren'),
   'werkbank.pakete.ablauf': admin('pakete/', 'Mehrere Pakete in einem Schritt installieren', 'mehrere-pakete-in-einem-schritt-installieren'),
   'werkbank.pakete.alle': admin('pakete/', 'Alle Pakete aktualisieren', 'alle-pakete-aktualisieren'),
+  'werkbank.pakete.mitkommt': admin('pakete/', 'Was mitkommt', 'was-mitkommt'),
+  'werkbank.pakete.kurzanleitung': admin('pakete/', 'So nutzt du es', 'so-nutzt-du-es'),
   'werkbank.pakete.erstellen': admin('pakete/', 'Paket aus deinem Ablago erstellen', 'paket-aus-deinem-dms-erstellen'),
   'werkbank.pakete.umwandeln': admin('pakete/', 'Text in Verweise umwandeln', 'text-in-verweise-umwandeln'),
   // Herkunft eines Pakets (#594): signierter Katalog, eigener Katalog mit Schlüssel.

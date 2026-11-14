@@ -13,6 +13,7 @@ import { t as tx, t, tn } from '../sprache';
 import { AutomatisierungenSchalter, GeaenderteAutomatisierungen } from './PaketAutomatisierungen';
 import { istKernVorlage, kernVorlage } from '../../../shared/src/ablaufvorlagen';
 import { HerkunftZeile } from './Herkunft';
+import { MitkommtAufklappen } from './PaketMitkommt';
 import { sprachname } from '../../../shared/src/beschriftung';
 import { MITMACHEN_URL } from '../../../shared/src/sprachwahl';
 import type { VorgabePlan } from '../../../shared/src/vorgaben';
@@ -116,6 +117,8 @@ export function VorschauBlock({ v, warnung, los, abbrechen, melde, ohne = [], ti
     <section className="blatt" aria-label={melde ? t('werkbank.pakete.vorschau-von', { name: v.paket.name }) : t('werkbank.pakete.vorschau')}>
       <h2 className="h3">{titel ?? (v.update ? t('werkbank.pakete.update-auf', { version: v.paket.version }) : t('werkbank.pakete.vorschau-2', { name: v.paket.name, version: v.paket.version }))}<Herausgeber wer={v.paket.herausgeber} geprueft={v.paket.herausgeberGeprueft} /></h2>
       <HerkunftZeile p={v.pruefung} />
+      {/* Was mitkommt (#1047): alles, was das Paket mitbringt; beim Update mit „neu in dieser Version“. */}
+      <MitkommtAufklappen m={v.mitkommt} />
       {bestaetigen && (
         <div className="hinweis warn" role="alert">
           <p>{tn('werkbank.pakete.installiere-nur-pakete-deren', { b: <strong>{t('werkbank.pakete.nicht-vom-ablago-projekt-2')}</strong>, wert: pruefWarnung ? `${pruefWarnung.replace(/\.$/, '')}. ` : '' })}</p>

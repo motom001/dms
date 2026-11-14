@@ -1300,6 +1300,9 @@ export interface PaketVorschau {
   sprache?: (Sprachangabe & { abdeckung: Abdeckung; uebergangen: number; pakete: string[] }) | null;
   /** Aktionen im Menü „Mappe“ (#1039) mit ihren Rechten; neu = beim Update dazu oder mit anderen Rechten. */
   aktionen?: Array<{ schluessel: string; name: string; rechte: AktionRecht[]; typen: string[]; dialog?: KernDialog; neu: boolean }>;
+  /** Was mitkommt (#1047), beim Update mit „neu in dieser Version“; Kurzanleitung je Sprache. */
+  mitkommt?: import('../../shared/src/mitkommt').Mitkommt;
+  kurzanleitung?: Record<string, string[]> | null;
 }
 /** Sammeldatei (#461): geprüft, Pakete in der Reihenfolge zum Installieren (Abhängigkeiten zuerst). */
 export interface SammelPaket {

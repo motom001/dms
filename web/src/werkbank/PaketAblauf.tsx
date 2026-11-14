@@ -11,6 +11,7 @@ import { HerkunftZeile } from './Herkunft';
 import { NamenskonfliktHinweis } from './Namenskonflikt';
 import { Eingabe } from './PaketEinstellungen';
 import { PaketSymbol } from './PaketSymbol';
+import { MitkommtAufklappen } from './PaketMitkommt';
 import { gebietsschema } from '../../../shared/src/sprache';
 
 /**
@@ -541,6 +542,8 @@ export function Fragen({ plan, eingabe, zurueck, neuerPlan, fertig, sammeln, vor
             <li key={p.schluessel}><strong>{p.name}</strong> {p.version}{p.vorschau.paket.herausgeber ? ` · ${p.vorschau.paket.herausgeber}` : ''}{p.vorschau.update ? ` (${t('pakete.ablauf.update', { version: p.vorschau.installiert ?? '' })})` : ''}
               {!p.gewaehlt && p.fuer.length > 0 && <span className="leise"> – {t('pakete.ablauf.fuer', { namen: p.fuer.map((id) => pk.find((x) => x.id === id)?.name ?? id).join(', ') })}</span>}
               {p.ergaenzt && <span className="leise"> – {t('pakete.ablauf.ergaenzt', { name: pk.find((x) => x.id === p.ergaenzt!.paket)?.name ?? p.ergaenzt.paket })}</span>}
+              {/* Was mitkommt (#1047) je Paket zum Aufklappen. */}
+              <MitkommtAufklappen m={p.vorschau.mitkommt} />
               {p.vorschau.hinweise.length > 0 && <ul className="leise">{p.vorschau.hinweise.map((h) => <li key={h}>{h}</li>)}</ul>}
             </li>
           ))}

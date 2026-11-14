@@ -11,7 +11,7 @@ Ablago fragt den Katalog **nur auf Knopfdruck** ab, nie im Hintergrund: Klicke *
 - **Installiert** – Pakete in dieser Installation, mit Version und Herkunft
 - **Verfügbar** – Pakete aus dem Katalog, die noch nicht installiert sind
 
-Ein Klick auf ein Paket zeigt Name, Beschreibung, Version, Lizenz, Autor, die nötige Ablago-Version, Abhängigkeiten, die enthaltenen Mappentypen und Ansichten sowie Links zum README und zu den Änderungen.
+Ein Klick auf ein Paket zeigt Name, Beschreibung, Version, Lizenz, Autor, die nötige Ablago-Version, Abhängigkeiten, Links zum README und zu den Änderungen und darunter [Was mitkommt](#was-mitkommt).
 
 Ablago lädt den Katalog von `https://catalog.ablago.app/katalog.json` und prüft seine **Signatur** (siehe [Herkunft](#herkunft-signiert-oder-nicht)). Weiterleitungen folgt es dabei nur auf `https://`-Adressen. Dafür muss Ablago selbst ins Internet kommen. Einen Proxy für ausgehende Abrufe kann Ablago nicht einstellen. Ohne Internetzugang lädst du ein Paket als Datei hoch (siehe [Expertenmodus](#expertenmodus-weitere-kataloge-und-hochladen)).
 
@@ -118,6 +118,24 @@ Neben dem Namen eines Pakets steht sein **Herausgeber** (#1084), z. B. „Vertr�
 ## Installierte Pakete
 
 Je Paket merkt sich Ablago Version, **Herkunft** (der Katalog), **Herausgeber**, wann und von wem es installiert bzw. aktualisiert wurde und welche Mappentypen und Ansichten dazugehören. Diese Angaben sind Teil der [Sicherung](sicherung.md) und des [Vollexports](export.md) (`struktur/pakete.json`). Installieren, Aktualisieren und Entfernen stehen im Protokoll.
+
+### Was mitkommt { #was-mitkommt }
+
+Auf der Seite eines Pakets, in der Vorschau und im [gemeinsamen Ablauf](#mehrere-pakete-in-einem-schritt-installieren) (je Paket zum Aufklappen) steht **Was mitkommt** – dieselben Punkte in derselben Reihenfolge wie auf der Paketseite im [Katalog](#im-katalog-ansehen):
+
+- **Mappentypen** mit der Zahl ihrer Felder und einer Zeile Beschreibung, **Ansichten**
+- **Mitgelieferte Mappen** ([Vorgaben](#vorgaben)) je Mappentyp und Text-Vorlagen zum Ausfüllen
+- **Beispiele** und **gleichbedeutende Wörter** für die Suche
+- **Automatisierungen** in Klartext: „Wenn 60 Tage vor „Ende“ (Mietvertrag), geprüft um 07:00 → Aufgabe an „Verantwortlich“ (sonst an die Person, die die Mappe angelegt hat)“, dazu **einmal je Termin** oder **wiederkehrend** und ob das Paket vorschlägt, sie gleich einzuschalten
+- **Automatisierungsvorlagen** mit ihren Karten und **Aktionen im Menü „Mappe“** mit den Rechten, die sie brauchen
+- **Einstellungen** – Abschnitte und Felder
+- zuletzt **Rechte und Netz**: kein Code, Code ohne oder mit Zugriff auf Netzwerk und Internet; auf der Seite eines installierten Pakets mit Code die Rechte im Einzelnen
+
+Beim **Update** trägt alles, was mit der neuen Version dazukommt, den Merker **neu in dieser Version**. Vor der Installation kennt die Paketseite nur, was der Katalog verrät (Mappentypen, Ansichten, Beispiele); alles Weitere zeigt die Vorschau beim Installieren. Pakete, die vor dieser Ablago-Version installiert wurden, zeigen es vollständig nach dem nächsten Update. Rundgänge und Tipps aus Paketen kommen dazu, sobald das Paketformat sie kennt.
+
+### So nutzt du es { #so-nutzt-du-es }
+
+Bringt ein Paket eine **Kurzanleitung** mit (drei bis fünf kurze Schritte), zeigt Ablago sie **einmal direkt nach der Installation** oben auf der Paketseite – mit **Schließen**. Danach steht sie unter **Was mitkommt** bei **So nutzt du es** zum Aufklappen. Ablago zeigt sie in deiner Sprache, sonst auf Deutsch. Große Themen erklärt kein Paket in der Anleitung, sondern ein Rundgang.
 
 ## Beispiele { #beispiele }
 

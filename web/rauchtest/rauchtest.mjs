@@ -759,6 +759,55 @@ const PAKETE_DREI = {
   katalog: [katalogPaket('basis', 'Basis', ['1.7.0', '1.6.0']), katalogPaket('vertraege', 'Verträge', ['1.2.0', '1.1.0'], {}, { abhaengigkeiten: { basis: '>=1.7.0' } }), katalogPaket('rechnungen', 'Rechnungen', ['1.0.0'])],
 };
 
+/** Was mitkommt (#1047): ein installiertes Paket mit allem, was es mitbrachte, und einer Kurzanleitung. */
+const MITKOMMT = {
+  mappentypen: [{ schluessel: 'mietvertrag', name: 'Mietvertrag', beschreibung: 'Vertrag mit Mieterin oder Mieter.', felder: 12 }],
+  sichten: [{ schluessel: 'miete', name: 'Mietverträge' }],
+  vorgaben: [{ typ: 'Vertragsart', namen: ['Miete', 'Pacht'] }], vorlagen: 1,
+  beispiele: 2, beispielDokumente: 1,
+  wortlisten: [['Miete', 'Mietvertrag']],
+  automatisierungen: [{ schluessel: 'ende', name: 'Mietvertrag endet', an: true, wenn: { art: 'datum', typ: 'Mietvertrag', feld: 'Ende', vorlauf: 60, einheit: 'tage', uhrzeit: '07:00', wiederholung: 12 },
+    dann: [{ art: 'aufgabe', benachrichtigung: false, empfaenger: [{ art: 'feld', feld: 'Verantwortlich', sonstErsteller: true }] }] }],
+  ablaufvorlagen: [{ schluessel: 'nachfassen', name: 'Nachfassen', karten: ['Aufgabe an die gewählte Person'] }],
+  aktionen: [{ schluessel: 'brief', name: 'Brief aus Vorlage', rechte: ['lesen', 'dokument_hinzufuegen'] }],
+  einstellungen: [], code: false, netz: false, sprache: false,
+};
+const KURZANLEITUNG = { de: ['Lege unter „+ Neu“ einen Mietvertrag an.', 'Trage das Ende ein.', 'Ablago erinnert dich 60 Tage vorher.'], en: ['Create a tenancy under “+ New”.', 'Enter the end.', 'Ablago reminds you 60 days before.'] };
+const PAKETE_MITKOMMT = {
+  installiert: [installiertesPaket('vermietung', 'Vermietung', '2.0.0', { mitkommt: MITKOMMT, kurzanleitung: KURZANLEITUNG })],
+  katalog: [katalogPaket('vermietung', 'Vermietung', ['2.1.0', '2.0.0'])],
+  vorschau: { vermietung: (p, v) => updateVorschau(p, v, { mitkommt: { ...MITKOMMT, automatisierungen: [...MITKOMMT.automatisierungen, { schluessel: 'neu', name: 'Neuer Mietvertrag', an: false, neu: true, wenn: { art: 'ereignis', ereignis: 'mappe.angelegt', typ: 'Mietvertrag' }, dann: [{ art: 'aufgabe', benachrichtigung: true, empfaenger: [{ art: 'ersteller' }] }] }] } }) },
+};
+
+rauchtest('Paketseite: Was mitkommt, Kurzanleitung nach der Installation, „neu in dieser Version“ (#1047)', { als: LENA }, async (s) => {
+  await paketeAttrappe(s, PAKETE_MITKOMMT);
+  await zuDenPaketen(s);
+  // Direkt nach der Installation (?neu=1): einmal die Kurzanleitung, schließbar.
+  await s.goto(BASIS + '/werkbank/pakete/vermietung?neu=1');
+  const bearbeitung = s.getByRole('region', { name: 'Bearbeitung' });
+  const anleitung = bearbeitung.getByRole('region', { name: 'So nutzt du es' });
+  await anleitung.getByText('Trage das Ende ein.').waitFor();
+  assert.equal(new URL(s.url()).search, '', 'der Merker verschwindet aus der Adresse');
+  await anleitung.getByRole('button', { name: 'Schließen' }).click();
+  await anleitung.waitFor({ state: 'detached' });
+  // Später über die Paketseite: Was mitkommt in der Reihenfolge des Katalogs, Automatisierung in Klartext.
+  const mit = bearbeitung.getByRole('region', { name: 'Was mitkommt' });
+  const titel = await mit.locator('h3').allInnerTexts();
+  assert.deepEqual(titel, ['Mappentypen', 'Ansichten', 'Mitgelieferte Mappen', 'Beispiele', 'Gleichbedeutende Wörter für die Suche', 'Automatisierungen', 'Automatisierungsvorlagen', 'Aktionen im Menü „Mappe“', 'Rechte und Netz']);
+  await mit.getByText('60 Tage vor „Ende“ (Mietvertrag), geprüft um 07:00').waitFor();
+  await mit.getByText('Aufgabe an „Verantwortlich“ (sonst an die Person, die die Mappe angelegt hat)').waitFor();
+  await mit.getByText(/^Wiederkehrend \(jährlich\): nach dem Erledigen schlägt Ablago den Folgetermin vor/).waitFor();
+  await mit.getByText('So nutzt du es').click();
+  await mit.getByText('Ablago erinnert dich 60 Tage vorher.').waitFor();
+  // Update: Was mitkommt in der Vorschau, Neues markiert.
+  await s.getByRole('region', { name: 'Elemente' }).getByRole('button', { name: 'Nach neuen Versionen suchen' }).click();
+  await bearbeitung.getByRole('button', { name: 'Auf 2.1.0 aktualisieren …' }).click();
+  const vorschau = bearbeitung.getByRole('region', { name: 'Vorschau' });
+  await vorschau.getByText('Was mitkommt').click();
+  await vorschau.getByRole('listitem').filter({ hasText: 'Neuer Mietvertrag' }).getByText('neu in dieser Version').waitFor();
+  assert.equal(await vorschau.getByRole('listitem').filter({ hasText: 'Mietvertrag endet' }).getByText('neu in dieser Version').count(), 0);
+});
+
 rauchtest('Pakete: ein Knopf, Rückmeldung mit Uhrzeit, Merker nach dem Update weg (#1167, #1168)', { als: LENA }, async (s) => {
   const z = await paketeAttrappe(s, PAKETE_DREI);
   const elemente = await zuDenPaketen(s);
@@ -833,11 +882,21 @@ async function paketSeiten(s, verwaltet = false) {
     const zu = s.locator('.spalte.mappe details:not([open]) > summary');
     while (await zu.count()) await zu.first().click();
   } });
+  // Paketseite (#1047): Kurzanleitung nach der Installation, Was mitkommt aufgeklappt.
+  seiten.push({ name: 'Paketseite', weg: async () => {
+    await s.goto(BASIS + '/werkbank/pakete/vermietung?neu=1');
+    await s.getByRole('region', { name: 'Was mitkommt' }).waitFor();
+    const zu = s.locator('.spalte.mappe details:not([open]) > summary');
+    while (await zu.count()) await zu.first().click();
+  } });
   return seiten;
 }
 
-rauchtest('Pakete: axe ohne Verstoß, hell und dunkel (#1168)', { als: LENA }, async (s) => {
-  await paketeAttrappe(s, PAKETE_RUNDE);
+/** Für axe und Tippflächen: die Runde und ein Paket mit „Was mitkommt“. */
+const PAKETE_ALLES = { ...PAKETE_RUNDE, installiert: [...PAKETE_RUNDE.installiert, ...PAKETE_MITKOMMT.installiert], katalog: [...PAKETE_RUNDE.katalog, ...PAKETE_MITKOMMT.katalog], vorschau: { ...PAKETE_RUNDE.vorschau, ...PAKETE_MITKOMMT.vorschau } };
+
+rauchtest('Pakete: axe ohne Verstoß, hell und dunkel (#1168, #1047)', { als: LENA }, async (s) => {
+  await paketeAttrappe(s, PAKETE_ALLES);
   const funde = [];
   for (const schema of ['light', 'dark']) {
     await s.emulateMedia({ colorScheme: schema });
@@ -850,8 +909,8 @@ rauchtest('Pakete: axe ohne Verstoß, hell und dunkel (#1168)', { als: LENA }, a
   assert.deepEqual(funde, [], `axe meldet Verstöße:\n${funde.join('\n')}`);
 });
 
-rauchtest('Handy: Pakete mit 44-px-Tippflächen (#1168)', { handy: true, als: LENA }, async (s) => {
-  await paketeAttrappe(s, PAKETE_RUNDE);
+rauchtest('Handy: Pakete mit 44-px-Tippflächen (#1168, #1047)', { handy: true, als: LENA }, async (s) => {
+  await paketeAttrappe(s, PAKETE_ALLES);
   const funde = [];
   for (const seite of await paketSeiten(s)) {
     await seite.weg();

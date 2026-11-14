@@ -851,11 +851,18 @@ begriffe:
     code: umbau, shared/src/umbau.ts
   - begriff: Paketkatalog
     bereich: werkbank
-    beschreibung: Die Liste der Pakete, die ein DMS installieren kann (eine Datei katalog.json im Internet). Ablago fragt den offiziellen Katalog nur auf Knopfdruck ab („Katalog abrufen“). Weitere Kataloge trägt man im Expertenmodus unter „Weitere Quellen“ ein.
+    beschreibung: Die Liste der Pakete, die ein DMS installieren kann (eine Datei katalog.json im Internet). Ablago fragt den offiziellen Katalog nur auf Knopfdruck ab („Katalog abrufen“, mit installierten Paketen „Nach neuen Versionen suchen“). Weitere Kataloge trägt man im Expertenmodus unter „Weitere Quellen“ ein.
     einsteiger: erklaeren
     begegnet: admin
-    verwandt: [Paket, Expertenmodus]
+    verwandt: [Paket, Expertenmodus, Was mitkommt]
     code: Katalog, OFFIZIELLER_KATALOG
+  - begriff: Was mitkommt
+    bereich: werkbank
+    beschreibung: Alles, was ein Paket mitbringt – Mappentypen, Ansichten, mitgelieferte Mappen, Beispiele, Wortlisten, Automatisierungen, Automatisierungsvorlagen, Aktionen im Menü „Mappe“, Einstellungen, Rechte und Netz – in derselben Reihenfolge wie im Katalog. Steht auf der Paketseite und in der Vorschau; beim Update ist Neues als „neu in dieser Version“ markiert. Dazu die Kurzanleitung „So nutzt du es“, die Ablago einmal direkt nach der Installation zeigt.
+    einsteiger: alltag
+    begegnet: admin
+    verwandt: [Paket, Paketkatalog]
+    code: Mitkommt
   - begriff: Expertenmodus
     bereich: werkbank
     beschreibung: Ein aufklappbarer Abschnitt unter Werkbank → Pakete, direkt unter den Knöpfen. Aufgeklappt zeigt er „Weitere Quellen“ und „Paket hochladen“ – für Paketentwickler und Ablago ohne Internet. Zu Beginn zugeklappt; der Browser merkt sich je Benutzer, ob er offen ist.

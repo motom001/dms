@@ -9,6 +9,7 @@ import { DMS_UEBERSETZEN_AB } from './uebersetzung';
 import type { Hilfeort } from './hilfe';
 import type { PaketKatalogArt, VERALTETE_EREIGNISSE } from './ereignisse';
 import { t } from './texte';
+import type { Mitkommt } from './mitkommt';
 import { gebietsschema } from './sprache';
 import { hauptpaket, istHerausgeber, PAKET_ID, TYPVERWEIS_ODER_ALLE } from './kennungen';
 
@@ -288,6 +289,10 @@ export interface InstalliertesPaket {
   sprache?: import('./sprachpaket').SprachpaketInfo;
   /** Aktionen im Menü „Mappe“ (#1039, `mappenaktionen`), wie im Manifest; Mappentypen als Verweise. */
   mappenaktionen?: import('./paketaktionen').MappenAktion[];
+  /** Was mitkommt (#1047), wie diese Version es mitbrachte; fehlt bei Installationen vor #1047 (bis zum nächsten Update). */
+  mitkommt?: Mitkommt;
+  /** Kurzanleitung „So nutzt du es“ (#1047) je Sprache, wenn das Paket eine mitbringt. */
+  kurzanleitung?: Record<string, string[]>;
 }
 
 /**

@@ -261,6 +261,7 @@ Das Format beschreiben die JSON-Schemas in der Registry: [`schema/manifest.schem
     ```
 
     Im Katalog steht die Angabe je Version (`versionen[].ergaenzt`, immer als `{ paket, gruppe }`). Ein Sammelpaket „alle Sprachen“ ohne eigenen Inhalt braucht es dafür nicht.
+- **Kurzanleitung** (`kurzanleitung`, dms #1047, dms-registry #164): drei bis fünf kurze Schritte „So nutzt du es“ je Sprache, z. B. `kurzanleitung: { de: [Lege unter „+ Neu“ einen Mietvertrag an., Trage das Ende ein.], en: [...] }`. Ablago zeigt sie einmal direkt nach der Installation und danach auf der Paketseite unter „Was mitkommt“ – in der Sprache der Oberfläche, sonst Deutsch. Höchstens 8 Schritte zu je 300 Zeichen, nur Text (kein `<`, `>`); Ungültiges übergeht Ablago still, ältere Versionen das ganze Feld. Kein Handbuch im Paket – große Themen erklärt ein Rundgang.
 - **Versionen:** `dms` und `abhaengigkeiten` nehmen Bereiche: `>=1.2.0`, `>1.2.0`, `1.2.0` bzw. `=1.2.0`, `^1.2.0` (gleiche Hauptversion), `~1.2.0` (gleiche Nebenversion), optional mit Obergrenze ` <2.0.0`. Bei `0.x` heißt `^` gleiche Nebenversion: `^0.63.0` passt nur zu 0.63.x. Für die Ablago-Version deshalb `>=0.63.0` (bzw. die eigene Mindestversion) schreiben.
 
 Bei einem **Update** ergänzt Ablago nur: neue Mappentypen, Felder, Register und Ansichten. Felder oder Register zu entfernen oder umzubenennen hat auf installierte Ablago keine Wirkung – plane das Format deshalb vorher. Mappentypen und Ansichten, die ein Administrator gelöscht hat, legt ein Update nicht neu an.

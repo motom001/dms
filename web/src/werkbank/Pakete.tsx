@@ -1,7 +1,7 @@
 import { Feld, HakenFeld, Knopf, KnopfLink, Reiter, ReiterFlaeche, Schalter, type KnopfErgebnis } from '../bausteine';
 import { Fragment, useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Symbol } from '../Symbol';
-import { ergaenzungenVon, hatNetz, hatSchnittstelle, istKiPaket, herkunftText, KATALOG_LINK_REL, katalogSeiteMitVersion, sammelSeiteMitVersion, laeuferZustandText, neueVersionen, vergleicheVersion, type AblaufErgebnis, type HerkunftPruefung, type NeueVersion, type InstalliertesPaket, type Katalog, type KatalogPaket } from '../../../shared/src/pakete';
+import { ergaenzungenVon, hatNetz, hatSchnittstelle, istKiPaket, herkunftText, KATALOG_LINK_REL, katalogSeiteMitVersion, sammelSeiteMitVersion, laeuferZustandText, neueVersionen, vergleicheVersion, type AblaufErgebnis, type HerkunftPruefung, type NeueVersion, type InstalliertesPaket, type Katalog, type KatalogPaket, type KatalogVersion, rechtePunkte, rechteZeilen } from '../../../shared/src/pakete';
 import { PAKET_ID } from '../../../shared/src/kennungen';
 import { api, ApiFehler, type BeispielBehalten, type PaketlaeuferStand, type PaketQuelle, type PaketVorschau, type Sammeldatei } from '../api';
 import { useDaten } from '../daten';
@@ -29,6 +29,8 @@ import { EREIGNISKATALOG, ereignisSchluessel, istKatalogArt, KATALOG_ARTEN } fro
 import { gebietsschema } from '../../../shared/src/sprache';
 import { sprachname } from '../../../shared/src/beschriftung';
 import { Kopf } from './Kopf';
+import { Kurzanleitung, MitkommtInhalt } from './PaketMitkommt';
+import { mitkommtAusKatalog } from '../../../shared/src/mitkommt';
 import { AlleAktualisieren } from './PaketeAlle';
 import { alsMeldung, Herausgeber, MeldungBox, SprachHerkunft, VorschauBlock, type Meldung } from './PaketVorschau';
 
@@ -396,7 +398,7 @@ export function PaketLink({ z, wert }: { z: PaketeZustand; wert: string }) {
         <PaketAblauf quelle={{ art: 'katalog', katalog, dms: z.stand.dms, installiert: z.stand.installiert }} start={[id]} nur={[id]} versionen={version ? { [id]: version } : {}}
           aktionen={<KnopfLink to="/werkbank/pakete">{t('werkbank.pakete.abbrechen')}</KnopfLink>}
           geaendert={() => { void z.laden(); void d.neuLaden(); }}
-          fertig={(e) => { void z.abrufen(false); geheZu(e.installiert.some((x) => x.id === id) ? `/werkbank/pakete/${id}` : '/werkbank/pakete'); }} />
+          fertig={(e) => { void z.abrufen(false); geheZu(e.installiert.some((x) => x.id === id) ? `/werkbank/pakete/${id}?${NEU}` : '/werkbank/pakete'); }} />
       )}
       {vorschau && !schon && vorschau.update && (
         <VorschauBlock v={vorschau} warnung={null} abbrechen={() => geheZu('/werkbank/pakete')}
@@ -411,6 +413,9 @@ export function PaketLink({ z, wert }: { z: PaketeZustand; wert: string }) {
     </div>
   );
 }
+
+/** Frisch installiert (#1047): Die Paketseite zeigt einmal die Kurzanleitung, bis man sie schließt. */
+const NEU = 'neu=1';
 
 /**
  * Pakete ohne Internet (#461): Sammeldatei aus der Katalog-Webseite hochladen, Inhalt ansehen und Paket für
@@ -460,7 +465,7 @@ function UploadDetail({ z }: { z: PaketeZustand }) {
           try {
             const r = await api.paketInstallieren({ upload: u.upload, bestaetigt: true, ...x });
             z.setUpload(null); await z.laden(); await d.neuLaden();
-            geheZu(`/werkbank/pakete/${r.id}`);
+            geheZu(`/werkbank/pakete/${r.id}?${NEU}`);
           } catch (e) { setMeldung(alsMeldung(e)); }
         }} />
     </div>
@@ -475,6 +480,16 @@ function PaketReiter({ reiter, setze, noetig }: { reiter: 'uebersicht' | 'einste
 /** Inhalt unter dem Register – ohne Register (Paket ohne Einstellungen) ohne Fläche. */
 function MitFlaeche({ an, wert, children }: { an: boolean; wert: string; children: ReactNode }) {
   return an ? <ReiterFlaeche id="paket" wert={wert}>{children}</ReiterFlaeche> : <>{children}</>;
+}
+
+/**
+ * Kurzanleitung (#1047) einmal direkt nach der Installation: im Ablauf der Paketseite gesetzt oder über ?neu=1 (Link,
+ * Hochladen) – der Merker verschwindet gleich aus der Adresse, damit ein Neuladen ihn nicht wieder zeigt.
+ */
+function useAnleitungNeu(): [boolean, (an: boolean) => void] {
+  const [neu, setNeu] = useState(() => new URLSearchParams(location.search).has('neu'));
+  useEffect(() => { if (new URLSearchParams(location.search).has('neu')) geheZu(location.pathname, true); }, []);
+  return [neu, setNeu];
 }
 
 function PaketDetail({ z, id, quelle }: { z: PaketeZustand; id: string; quelle?: string }) {
@@ -494,6 +509,7 @@ function PaketDetail({ z, id, quelle }: { z: PaketeZustand; id: string; quelle?:
   const [behalten, setBehalten] = useState(false);
   // Installieren im gemeinsamen Ablauf (#405): mit Abhängigkeiten (auch mit Code) und Ergänzungen in einem Schritt.
   const [ablauf, setAblauf] = useState(false);
+  const [anleitungNeu, setAnleitungNeu] = useAnleitungNeu();
   const katalog = aus ? z.kataloge?.liste.find((k) => k.url === aus.url)?.katalog ?? null : null;
   const v = kp?.versionen.find((x) => x.version === (version || kp.aktuell)) ?? kp?.versionen[0];
   const neuer = inst && inst.herkunft.art === 'katalog' && kp && vergleicheVersion(kp.aktuell, inst.version) > 0 ? kp.aktuell : null;
@@ -541,7 +557,7 @@ function PaketDetail({ z, id, quelle }: { z: PaketeZustand; id: string; quelle?:
         <h1>{inst?.name ?? kp!.name}<Herausgeber wer={inst?.herausgeber ?? kp?.herausgeber} geprueft={inst ? inst.herausgeberGeprueft : offiziell} /></h1>
         <p className="leise">{inst?.beschreibung ?? kp?.beschreibung}</p>
       </div>
-      <MeldungBox m={meldung} />
+      <MeldungBox m={meldung} />{inst && anleitungNeu && <Kurzanleitung k={inst.kurzanleitung} neu schliessen={() => setAnleitungNeu(false)} />}
       {inst?.einstellungen && (
         <PaketReiter reiter={reiter} noetig={!!inst.einstellungenNoetig} setze={(r) => { if (r === 'einstellungen') setReiter(r); else void darfVerlassen().then((ok) => { if (ok) setReiter(r); }); }} />
       )}
@@ -562,7 +578,6 @@ function PaketDetail({ z, id, quelle }: { z: PaketeZustand; id: string; quelle?:
             <SprachHerkunft maschinell={(inst?.sprache ?? v!.sprache!).maschinell} geprueftVon={(inst?.sprache ?? v!.sprache!).geprueftVon} />
           </dd></>}
           {v && <><dt>{t('werkbank.pakete.abhaengigkeiten')}</dt><dd>{Object.keys(v.abhaengigkeiten).length ? Object.entries(v.abhaengigkeiten).map(([k, b]) => `${k} ${b}`).join(', ') : t('werkbank.pakete.keine')}</dd></>}
-          {v && (v.inhalt.mappentypen.length > 0 || v.inhalt.sichten.length > 0 || v.inhalt.beispiele > 0) && <><dt>{t('werkbank.pakete.inhalt')}</dt><dd>{t('werkbank.pakete.mappentypen')}{' '}{v.inhalt.mappentypen.map((benannt) => benannt.name).join(', ') || '–'}{tn('werkbank.pakete.ansichten', { umbruch: <br /> })}{' '}{v.inhalt.sichten.map((s) => s.name).join(', ') || '–'}{v.inhalt.beispiele ? <>{tn('werkbank.pakete.beispiel-mappen-optional', { umbruch: <br />, beispiele: v.inhalt.beispiele })}</> : null}</dd></>}
           {(v?.readme || inst?.links?.readme || imKatalog) && <><dt>{t('werkbank.pakete.mehr')}</dt><dd>{(v?.readme || inst?.links?.readme) && <a className="verweis" href={v?.readme || inst!.links!.readme} target="_blank" rel="noreferrer">{t('werkbank.pakete.readme')}</a>}{(v?.changelog || inst?.links?.changelog) && <> · <a className="verweis" href={v?.changelog || inst!.links!.changelog} target="_blank" rel="noreferrer">{t('werkbank.pakete.aenderungen')}</a></>}
             {/* Paketseite im offiziellen Katalog mit der Ablago-Version nur im Fragment (#622). */}
             {imKatalog && <>{(v?.readme || inst?.links?.readme) && ' · '}<a className="verweis" href={katalogSeiteMitVersion(z.stand?.dms ?? '', id)} target="_blank" rel={KATALOG_LINK_REL} title={tx('pakete.katalog.hinweis')}>{tx('pakete.katalog.ansehen')} <Symbol name="extern" /></a></>}</dd></>}
@@ -607,6 +622,7 @@ function PaketDetail({ z, id, quelle }: { z: PaketeZustand; id: string; quelle?:
         )}
       </section>
 
+      <PaketMitkommt inst={inst} v={inst ? null : v} installiert={z.stand?.installiert ?? []} />
       {inst && <PaketUmwandeln key={`${inst.id}|${inst.version}`} paket={inst.id} />}
 
       {/* Auch nach der Installation sichtbar, bis „Weiter“ – sonst verschwände das Ergebnis mit dem Neuladen. */}
@@ -616,7 +632,7 @@ function PaketDetail({ z, id, quelle }: { z: PaketeZustand; id: string; quelle?:
           <PaketAblauf direkt quelle={{ art: 'katalog', katalog, quelle: aus?.offiziell ? undefined : aus?.url, dms: z.stand.dms, installiert: z.stand.installiert }} start={[id]} nur={[id]} versionen={version ? { [id]: version } : {}}
             aktionen={<Knopf onClick={() => setAblauf(false)}>{t('werkbank.pakete.abbrechen')}</Knopf>}
             geaendert={() => { void z.laden(); void d.neuLaden(); }}
-            fertig={(e) => { setAblauf(false); if (e.installiert.some((x) => x.id === id)) setMeldung({ art: 'gut', text: fertigText(e) }); }} />
+            fertig={(e) => { setAblauf(false); if (e.installiert.some((x) => x.id === id)) { setMeldung({ art: 'gut', text: fertigText(e) }); setAnleitungNeu(true); } }} />
         </section>
       )}
       {inst && katalog && z.stand && <ErgaenzungenBlock z={z} inst={inst} katalog={katalog} quelle={aus?.offiziell ? undefined : aus?.url} />}
@@ -638,6 +654,32 @@ function PaketDetail({ z, id, quelle }: { z: PaketeZustand; id: string; quelle?:
     </div>
   );
 }
+
+/**
+ * „Was mitkommt“ auf der Paketseite (#1047): installiert, was diese Version mitbrachte, dazu die Rechte des Codes und die
+ * Kurzanleitung; vor der Installation, was der Katalog verrät (alles Weitere zeigt die Vorschau). Installationen vor #1047
+ * kennen es erst nach dem nächsten Update.
+ */
+function PaketMitkommt({ inst, v, installiert }: { inst: InstalliertesPaket | null; v: KatalogVersion | null | undefined; installiert: InstalliertesPaket[] }) {
+  const d = useDaten();
+  const m = inst?.mitkommt ?? (v ? mitkommtAusKatalog(v) : null);
+  if (!m) return null;
+  // Mappentyp eines Verweises im Code (eigener Schlüssel oder paket:typ) – wie in der Vorschau.
+  const typName = (vw: string) => {
+    const [p, k] = vw.includes(':') ? vw.split(':') : [inst?.id ?? '', vw];
+    return d.typ((p === inst?.id ? inst.typen : installiert.find((x) => x.id === p)?.typen)?.[k] ?? '')?.name ?? k;
+  };
+  const rechte = inst?.laeufer ? rechteZeilen(rechtePunkte(inst.laeufer, typName)) : undefined;
+  return (
+    <section className="blatt stapel" aria-label={t('werkbank.pakete.mitkommt.titel')} data-anker="pakete.mitkommt">
+      <h2 className="h3">{t('werkbank.pakete.mitkommt.titel')} <Hilfe ort="werkbank.pakete.mitkommt" /></h2>
+      {!inst?.mitkommt && <p className="leise klein">{inst ? t('werkbank.pakete.mitkommt.alt') : t('werkbank.pakete.mitkommt.katalog')}</p>}
+      <MitkommtInhalt m={m} rechte={inst?.mitkommt ? rechte : undefined} />
+      {inst && !anleitungLeer(inst) && <Kurzanleitung k={inst.kurzanleitung} />}
+    </section>
+  );
+}
+const anleitungLeer = (inst: InstalliertesPaket) => !inst.kurzanleitung || !Object.keys(inst.kurzanleitung).length;
 
 /** Erfolgsmeldung oben (#659): „… ist installiert“, bei Pflicht-Einstellungen mit dem Hinweis darauf. */
 function fertigText(e: AblaufErgebnis) {

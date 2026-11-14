@@ -58,6 +58,8 @@ import {
 } from './pakete/index';
 import { fuehreUmbauAus, liesUmbau, nimmEinstellungenZurueck, planeUmbau, titelKennung, uebernahmeDaten, wendeEntscheidungenAn, type TitelSuche, type UmbauErgebnis, type UmbauLage } from './pakete/index';
 import { sichtFassung, sichtStandNach, sichtZustand } from './pakete/index';
+import { mitkommtVon, type MitkommtNamen } from './pakete/index';
+import { liesKurzanleitung, type Mitkommt } from '../../shared/src/mitkommt';
 import { abhaengigeTypen, abhaengigkeitsKonflikte, anzeigeTypIds, anzeigeWartet, eigeneKonflikte, Namensherkunft, optionaleInTyp, quelleAnlegbar, quellenNachtragen, type SollQuelle } from './pakete/index';
 import type { UmbauEntscheidungen, UmbauPlan, UmbauSchritt } from '../../shared/src/umbau';
 import { istVorgabeWert, vorgabeKennung, vorgabeVerweis, vorgabeWerte, type ErgaenzungPlan, type VorgabeFrage, type VorgabePlan } from '../../shared/src/vorgaben';
@@ -358,7 +360,9 @@ export interface Paket { manifest: Manifest; typen: PaketTyp[]; sichten: PaketSi
   /** Aktionen im Menü „Mappe“ (#1039). */
   mappenaktionen?: MappenAktion[];
   /** Automatisierungsvorlagen (#1044), roh aus inhalt/ablaufvorlagen.yaml; nur erlaubte Karten. */
-  ablaufvorlagen?: PaketAblaufvorlage[] }
+  ablaufvorlagen?: PaketAblaufvorlage[];
+  /** Kurzanleitung „So nutzt du es“ (#1047, Manifest `kurzanleitung`) je Sprache. */
+  kurzanleitung?: Record<string, string[]> }
 /** Inhalt eines Sprachpakets (#731), geprüft gegen das Deutsche dieser Version. */
 export interface PaketSprache { angabe: Sprachangabe; texte: Sprachtexte; uebergangen: string[]; beschriftungen: Record<string, SprachBeschriftung> }
 
@@ -753,6 +757,8 @@ export function liesPaket(roh: Map<string, Buffer>): Paket {
     ...(umbau.length ? { umbau } : {}),
     ...(ma.aktionen.length ? { mappenaktionen: ma.aktionen } : {}),
     ...(ablaufvorlagen.length ? { ablaufvorlagen } : {}),
+    // Kurzanleitung (#1047): Ungültiges übergeht Ablago still, wie ältere Versionen das ganze Feld.
+    ...(() => { const k = liesKurzanleitung(m.kurzanleitung); return k ? { kurzanleitung: k } : {}; })(),
   };
 }
 
@@ -1082,6 +1088,10 @@ export interface Vorschau {
    * mit diesem Update dazu oder braucht jetzt andere Rechte.
    */
   aktionen?: Array<{ schluessel: string; name: string; rechte: MappenAktion['rechte']; typen: string[]; dialog?: MappenAktion['dialog']; neu: boolean }>;
+  /** Was mitkommt (#1047): alles, was das Paket mitbringt, wie im Katalog; beim Update mit „neu in dieser Version“. */
+  mitkommt?: Mitkommt;
+  /** Kurzanleitung „So nutzt du es“ (#1047) je Sprache; null ohne. */
+  kurzanleitung?: Record<string, string[]> | null;
 }
 /** Was lege anlegt bzw. ergänzt (#1084: als ein Objekt, damit der Umzug es weiterreichen kann). */
 interface LegeAuftrag { paket: Paket; herkunft: InstalliertesPaket['herkunft']; v: KatalogVersion | undefined; plan: Vorschau; beispiele: boolean; von: Handelnder; alt: InstalliertesPaket | null; ein: string[] }
@@ -2324,6 +2334,8 @@ export class Paketverwaltung {
       sprache: sp ? { ...sp.angabe, abdeckung: abdeckung(DEUTSCH, sp.texte), uebergangen: sp.uebergangen.length, pakete: Object.keys(sp.beschriftungen) } : null,
     };
     if (umbau.schritte.length) this.umbauLagen.set(vorschau, umbau);
+    vorschau.mitkommt = mitkommtVon(paket, vorschau, this.mitkommtNamen(paket, installierte, typen), !!ich);
+    vorschau.kurzanleitung = paket.kurzanleitung ?? null;
     return vorschau;
   }
 
@@ -2425,6 +2437,24 @@ export class Paketverwaltung {
       if (plan?.zustand === 'neu' && verweise.includes(v.typ.includes(':') ? v.typ : typKennung(m.id, v.typ))) dazu(plan.name, `vorgabe:${v.schluessel}`);
     }
     return (_typen, titel) => index.get(titelKennung(titel)) ?? [];
+  }
+
+  /** Namen für „Was mitkommt“ (#1047): Mappentyp eines Verweises und Bezeichnung eines Felds darin. */
+  private mitkommtNamen(paket: Paket, installierte: InstalliertesPaket[], typen: Mappentyp[]): MitkommtNamen {
+    return {
+      // Ohne „(paket)“ dahinter wie im Katalog: „60 Tage vor „Ende“ (Mietvertrag)“.
+      typ: (vw) => {
+        const [p, s] = vw.includes(':') ? vw.split(':') : [paket.manifest.id, vw];
+        if (p === paket.manifest.id || p === 'dms') return this.typName(vw, paket, installierte, typen);
+        return typen.find((x) => x.id === installierte.find((i) => i.id === p)?.typen[s])?.name ?? s;
+      },
+      feld: (vw, key) => {
+        const [p, s] = vw.includes(':') ? vw.split(':') : [paket.manifest.id, vw];
+        if (p === paket.manifest.id) return paket.typen.find((x) => x.schluessel === s)?.felder.find((f) => f.key === key)?.label ?? key;
+        const id = installierte.find((x) => x.id === p)?.typen[s];
+        return typen.find((x) => x.id === id)?.felder.find((f) => f.key === key)?.label ?? key;
+      },
+    };
   }
 
   private typName(vw: string, paket: Paket, installierte: InstalliertesPaket[], typen: Mappentyp[]): string {
@@ -2999,6 +3029,9 @@ export class Paketverwaltung {
         ...(paket.sprache ? { sprache: { ...paket.sprache.angabe, texte: anzahlTexte(paket.sprache.texte), uebergangen: paket.sprache.uebergangen.length, beschriftungen: Object.keys(paket.sprache.beschriftungen) } } : {}),
         // Aktionen im Menü „Mappe“ (#1039): wie diese Version sie nennt; ausgeschaltete merkt sich die Werkbank getrennt.
         ...(paket.mappenaktionen?.length ? { mappenaktionen: paket.mappenaktionen } : {}),
+        // Was mitkommt und Kurzanleitung (#1047): für die Paketseite, wie diese Version sie mitbringt.
+        mitkommt: mitkommtVon(paket, plan, this.mitkommtNamen(paket, await this.d.kern.repo.listePakete(), await this.d.mappentypen.listeTypen()), false),
+        ...(paket.kurzanleitung ? { kurzanleitung: paket.kurzanleitung } : {}),
         typStand,
       };
       // Code (#338): ersetzt den bisherigen; ohne Code im neuen Paket fällt er weg.
