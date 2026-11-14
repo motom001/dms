@@ -17,6 +17,8 @@ import { Werkbank } from './werkbank/Werkbank';
 import { GeradeImModus } from './werkbank/GeradeImModus';
 import { WartungsBanner } from './wartung';
 import { NeuKnopf, PostAblage } from './ablage/NeuePost';
+import { SucheOben } from './ablage/SucheOben';
+import { Begleiter } from './begleiter/Begleiter';
 import { PostKamera } from './ablage/PostKamera';
 import { ErreichbarkeitsBanner, useBeiWiederErreichbar } from './erreichbar';
 import { useHandbuch } from './Hilfe';
@@ -28,6 +30,12 @@ import { gebietsschema } from '../../shared/src/sprache';
 import { Entdecken } from './entdecken/Entdecken';
 import { RundgangAnzeige } from './entdecken/Rundgang';
 import { starteRundgang, useEntdecken } from './entdecken/stand';
+
+/**
+ * Suchfeld oben in der Werkbank (#1218)? Vorschlag Qualität (bis Thomas entscheidet): nein – die Werkbank hat ihre
+ * eigenen Suchen in den Listen. Auf `true` gestellt steht es auch dort und sucht wie überall in der Ablage.
+ */
+export const SUCHE_OBEN_IN_DER_WERKBANK = false;
 
 export function App() {
   const { pfad, suche } = useOrt();
@@ -130,8 +138,13 @@ export function App() {
           <Link to="/ablage" className={bereich === 'ablage' ? 'an' : ''}>{t('oberflaeche.app.ablage')}</Link>
           {admin && !vertretung && <Link to="/werkbank" className={bereich === 'werkbank' ? 'an' : ''}>{t('oberflaeche.app.werkbank')}</Link>}
         </nav>
+        {/* #1218: ein Suchfeld oben auf jeder Seite; Enter führt in die erweiterte Suche. */}
+        {(bereich !== 'werkbank' || SUCHE_OBEN_IN_DER_WERKBANK) && d.geladen && <SucheOben />}
         {/* #649: „+ Neu“ nur in der Ablage – in der Werkbank wird eingerichtet, nicht abgelegt. */}
         {bereich === 'ablage' && <NeuKnopf />}
+        {/* #1219: In der Werkbank steht der Assistent in der Kopfzeile – am Handy als Knopf darin (die Listen der Werkbank
+            sind dort nur wenige Zeilen hoch, ein Knopf unten verdeckte sie), breit wie überall unten rechts. */}
+        {d.geladen && bereich === 'werkbank' && <Begleiter werkbank imKopf />}
         <div className="konto">
           {/* Quellcode, Version und Lizenz stehen unter Benutzermenü → „Über Ablago“ (#430). */}
           <Benutzermenue an={bereich === 'profil'} abmelden={abmelden} />
@@ -144,6 +157,8 @@ export function App() {
       <PostAblage werkbank={bereich === 'werkbank'} />
       <PostKamera />
       <RundgangAnzeige />
+      {/* #1219: Assistent unten rechts auf jeder Seite – Fragen, Tipps, Handbuch; öffnet sich nie von selbst. */}
+      {d.geladen && bereich !== 'werkbank' && <Begleiter werkbank={false} />}
       {ich.entwicklermodus && <Messpanel />}
     </div>
   );

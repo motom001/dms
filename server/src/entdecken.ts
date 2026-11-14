@@ -130,7 +130,7 @@ export class Entdecken {
     const heute = tippsAn ? tippDesTages(tipps, stand, this.o.heute()) : null;
     const merker = rundgangMerkerAus(e[EINSTELLUNG.rundgaenge]);
     const starten = o.vertretung ? null : rundgaenge.find((r) => startetVonSelbst(r, merker, b.letzteAnmeldung))?.schluessel ?? null;
-    return { rundgaenge, tipps, tipp: heute ? { schluessel: heute.tipp.schluessel, weitere: heute.weitere } : null, tippsAn, starten };
+    return { rundgaenge, tipps, tipp: heute ? { schluessel: heute.tipp.schluessel, weitere: heute.weitere, gesehen: (stand.gesehen ?? []).includes(heute.tipp.schluessel) } : null, tippsAn, starten };
   }
 
   /** Tipp gezeigt, angeklickt (erledigt), mit × ausgeblendet oder auf „Ablago entdecken“ wieder eingeblendet. */

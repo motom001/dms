@@ -32,13 +32,15 @@ import { EmailMehrere } from './EmailMehrere';
 import { PostKnopf } from './Post';
 import type { Hilfeort } from '../../../shared/src/hilfe';
 import { Suchkopf, suchFehler, suchTypen } from './Suche';
+import { kopfsuche, useSucheImBereich } from './kopfsuche';
+import { AehnlicheTreffer } from './Aehnlich';
 import { UnscharfHinweis } from './Unscharf';
 import { ZahlWarte } from './ZahlWarte';
 import { AufgabenWeitergeben } from '../profil/Abwesenheit';
 import { ErledigenUmschalter, MeineAufgabenWeitergeben, TermineSicht, useErledigenAnsicht } from './Termine';
 import { Ehemalig } from '../Person';
 import { gebietsschema } from '../../../shared/src/sprache';
-import { HakenFeld, Knopf, KnopfLink, Schalter, Suchfeld, Wahlhaken, type GefahrRueckfrage } from '../bausteine';
+import { Knopf, KnopfLink, Schalter, Wahlhaken, type GefahrRueckfrage } from '../bausteine';
 import type { LoeschAnlass } from '../../../shared/src/loeschprotokoll';
 
 /**
@@ -72,6 +74,9 @@ export function Ablage({ teile, suche }: { teile: string[]; suche: URLSearchPara
   const [formular, setFormular] = useState(() => !suche.toString());
   const leereSuche = istSuche && !suche.toString();
   useEffect(() => { if (leereSuche) setFormular(true); }, [leereSuche]);
+  // Enter im Suchfeld oben (#1218): Mit einem neuen Begriff kommen gleich die Treffer, nicht das Formular.
+  const volltextOben = istSuche ? suche.get('volltext') ?? '' : '';
+  useEffect(() => { if (volltextOben) setFormular(false); }, [volltextOben]);
 
   // Der eine Mappentyp der Sicht (für Trefferliste, Sortierung, „+ Neu“); bei mehreren Typen keiner.
   const verwaltet = d.sicht(sicht);
@@ -203,7 +208,7 @@ export function Ablage({ teile, suche }: { teile: string[]; suche: URLSearchPara
               beschreibung={t('ablage.ablage.mappen-die-du-mit')}
               leerText={t('ablage.ablage.noch-keine-favoriten-markiere')} />
           : !verwaltet && typ && istTeiltyp(typ) ? <TeilListe typ={typ} />
-          : verwaltet || typ ? <Liste key={sicht} sicht={sicht!} typ={typ} spaltenTyp={typ ?? sichtTypen[0]} spalten={wahl.spalten} listenSpalten={wahl.key ? wahl.spalten : []} titel={verwaltet ? sichtName(verwaltet) : typListe!} beschreibung={verwaltet ? sichtBeschreibung(verwaltet) : typ ? typBeschreibung(typ) || t('ablage.ablage.alle-mappen-dieses-mappentyps') : undefined}
+          : verwaltet || typ ? <Liste key={sicht} sicht={sicht!} typ={typ} spaltenTyp={typ ?? sichtTypen[0]} spalten={wahl.spalten} listenSpalten={wahl.key ? wahl.spalten : []} titel={verwaltet ? sichtName(verwaltet) : typListe!} bereich={verwaltet ? sichtName(verwaltet) : typ ? typName(typ) : undefined} beschreibung={verwaltet ? sichtBeschreibung(verwaltet) : typ ? typBeschreibung(typ) || t('ablage.ablage.alle-mappen-dieses-mappentyps') : undefined}
               offen={dritt} neu={!!typ && darfErstellen(typ) && verwaltet?.rechte?.C !== false} post={!!typ && darfPostAnlegen(typ) && verwaltet?.rechte?.C !== false}
               leerText={typ?.system === 'post' ? t('ablage.ablage.keine-post-mit-post') : verwaltet?.bedingungen.some((x) => x.art === 'favorit') ? t('ablage.ablage.noch-keine-favoriten-markiere') : t('ablage.ablage.noch-keine-mappen-in')} hilfe={typ?.system === 'post' ? 'ablage.post' : 'ablage.sicht'} auswahl export={verwaltet ? verwaltet.rechte?.E !== false : exportOhneSicht(ich.rolle === 'admin', d.sichten)} />
           : sicht ? <div className="leer"><p>{t('ablage.ablage.diese-ansicht-gibt-es')}</p></div> : null}
@@ -307,7 +312,7 @@ function SuchListe({ suche, offen, formular, setFormular }: { suche: URLSearchPa
   const q = suche.toString();
   return (
     <Liste key={q} sicht="suche" link={q} anhang={`?${q}`} typ={typ} spaltenTyp={typ ?? typen[0]} spalten={wahl.spalten} listenSpalten={wahl.key ? wahl.spalten : []}
-      titel={t('suche.titel')} offen={offen} hilfe="ablage.erweitertesuche" auswahl export={exportOhneSicht(ich.rolle === 'admin', d.sichten)} immerSuche
+      titel={t('suche.titel')} offen={offen} hilfe="ablage.erweitertesuche" auswahl export={exportOhneSicht(ich.rolle === 'admin', d.sichten)}
       kopf={<div className="suchkopf">{kopf}</div>}
       leerText={t('suche.keine')} />
   );
@@ -325,17 +330,19 @@ function Liste(p: {
   auswahl?: boolean;
   /** Export erlaubt (#153: Recht E an der Sicht). */
   export?: boolean;
-  /** Erweiterte Suche (#199): Chips unter dem Kopf; Suchfeld, sobald es Treffer gibt. */
-  kopf?: ReactNode; immerSuche?: boolean;
+  /** Erweiterte Suche (#199): Chips unter dem Kopf. */
+  kopf?: ReactNode;
+  /** Name im Chip des Suchfelds oben (#1218), wenn er nicht der Titel ist – z. B. „Vertrag“ statt „Alle Mappen: Vertrag“. */
+  bereich?: string;
 }) {
   const d = useDaten();
   // Favoriten benachrichtigen (#506): ohne Freigabe der Werkbank kein Schalter an den Favoriten.
   const { favoritenBenachrichtigung } = useKonto();
   const anhang = p.anhang ?? '';
-  const [eingabe, setEingabe] = useState('');
+  // Suchfeld in der Kopfzeile (#1218): Die Liste meldet sich als Bereich an („in: Verträge“) und filtert mit dem Text
+  // von dort. In der erweiterten Suche führt das Feld oben dorthin, die Liste selbst hat kein Suchfeld.
+  const eingabe = useSucheImBereich(p.sicht === 'suche' ? null : { schluessel: `${p.sicht}?${p.link ?? ''}`, name: p.bereich ?? p.titel, typ: p.typ ? p.typ.schluessel ?? p.typ.id : undefined });
   const [suche, setSuche] = useState('');
-  // Handy (#498): Haken, Erweiterte Suche und Exportieren hinter „Filter ▾“.
-  const [filter, setFilter] = useState(false);
   // Suche erst nach einer kurzen Tipppause an den Server schicken.
   useEffect(() => { const timer = setTimeout(() => setSuche(eingabe.trim()), 250); return () => clearTimeout(timer); }, [eingabe]);
 
@@ -386,10 +393,6 @@ function Liste(p: {
     return () => o.disconnect();
   }, [s.mehr, s.mappen.length, tabelle]); // eslint-disable-line react-hooks/exhaustive-deps -- Beobachter nur neu, wenn sich Liste oder Darstellung ändern
 
-  // Solange die Zahlen der Ansichten nachkommen (#512), zählt die Liste selbst.
-  const gesamtSicht = !d.zahlenDa ? s.gesamt ?? 0 : p.sicht === 'eingang' ? d.zaehler.eingang : p.sicht === 'favoriten' ? d.zaehler.favoriten ?? 0 : d.zaehler.sichten?.[p.sicht] ?? (p.typ ? d.anzahl(p.typ.id) : 0);
-  // Suche immer, sobald es Mappen gibt (#160) – der Volltext lohnt auch bei wenigen.
-  const zeigeSuche = gesamtSicht > 0 || !!eingabe || (!!p.immerSuche && !!s.gesamt);
   const anzahlText = s.gesamt === null ? '' : suche || p.sicht === 'suche'
     ? t('ablage.ablage.treffer', { zahl: zahl(s.gesamt) })
     : t('ablage.ablage.mappen-2', { anzahl: s.gesamt, zahl: zahl(s.gesamt) });
@@ -411,16 +414,6 @@ function Liste(p: {
   const [ergebnis, setErgebnis] = useState<{ text: string; liste: Array<{ id: string; titel: string; grund: string }> }>();
   const [exportOffen, setExportOffen] = useState(false);
   const [emailOffen, setEmailOffen] = useState(false);
-  // Archivnummer (#345): Enter mit einer Nummer (auch vom Handscanner, „DMS-ASN:A-000123“) springt zum Dokument.
-  async function zurArchivnummer(text: string) {
-    const nr = text.trim();
-    if (!nr || /\s/.test(nr) || !/\d/.test(nr) || nr.length > 50) return;
-    try {
-      const r = await api.archivnummer(nr);
-      setEingabe('');
-      geheZu(`/ablage/${r.typId}/${r.mappeId}?register=${encodeURIComponent(r.dokument.registerKey)}&dokument=${r.dokument.id}`);
-    } catch { /* keine Archivnummer: normale Suche */ }
-  }
   async function alleWaehlen() {
     try { const r = await api.auswahl(p.sicht, suche, volltext, inNotizen, p.link); w.setze(r.ids, true); }
     catch (x) { setErgebnis({ text: (x as Error).message, liste: [] }); }
@@ -468,23 +461,6 @@ function Liste(p: {
         </div>
       </Listenkopf>
       {p.kopf}
-      {zeigeSuche && (
-        <div className={`suchzeile${filter ? '' : ' lk-zu'}`}>
-          {/* Baustein Suchfeld (#978): dasselbe Feld wie in den Listen der Werkbank. Enter mit einer Archivnummer springt zum Dokument. */}
-          <Suchfeld wert={eingabe} setze={setEingabe} beschriftung={t('ablage.ablage.suchen')} platzhalter={volltext ? t('ablage.ablage.suchen-in-titel-werten') : t('ablage.ablage.suchen-in-titel-und')}
-            onEnter={(w) => void zurArchivnummer(w)} />
-          {/* Die Suche der Ansicht zieht mit #1218 in die Kopfzeile; bis dahin die Haken im Feldrahmen. */}
-          <HakenFeld beschriftung={t('ablage.ablage.volltext-durchsuchen')} className="klein">
-            <input type="checkbox" title={t('ablage.ablage.auch-im-text-der')} checked={volltext} onChange={(e) => d.setzeEinstellung('suche_volltext', e.target.checked || null)} />
-          </HakenFeld>
-          <HakenFeld beschriftung={t('ablage.ablage.notizen')} className="klein">
-            <input type="checkbox" title={t('ablage.ablage.auch-in-den-notizen')} checked={inNotizen} onChange={(e) => d.setzeEinstellung('suche_notizen', e.target.checked || null)} />
-          </HakenFeld>
-          {p.sicht !== 'suche' && <Link to={`/ablage/suche${p.typ ? `?typ=${encodeURIComponent(p.typ.schluessel ?? p.typ.id)}` : ''}`} className="verweis klein" title={t('ablage.ablage.mappentypen-waehlen-in-feldern')}>{t('ablage.ablage.erweiterte-suche')}</Link>}
-          {/* In der erweiterten Suche (#426) heißt „Filter“ das Suchformular; die Haken stehen dort unter „Volltext“. */}
-          {p.sicht !== 'suche' && <Knopf groesse="klein" className={`lk-filterknopf ${filter ? 'an' : ''}`} aria-expanded={filter} onClick={() => setFilter(!filter)}>{tn('ablage.ablage.filter', { span: <Symbol name="pfeil-unten" />, wert: (volltext || inNotizen) && <span className="lk-punkt" aria-label={t('ablage.ablage.aktiv')} /> })}</Knopf>}
-        </div>
-      )}
       {anzahlText && (
         <p className="listenzahl leise klein" aria-live="polite">
           {anzahlText}{s.mappen.length < (s.gesamt ?? 0) ? t('ablage.ablage.geladen', { zahl: zahl(s.mappen.length) }) : ''}
@@ -506,7 +482,7 @@ function Liste(p: {
       {s.fehler && <div className="hinweis schlecht"><p>{s.fehler}</p></div>}
       {/* Unscharfe Suche (#356): ohne genauen Treffer ähnliche Schreibweisen, „Meintest du …?“ sucht genau das Wort. */}
       {s.unscharf && <UnscharfHinweis u={s.unscharf} suchen={(x) => {
-        if (suche || !p.link) { setEingabe(x); return; }
+        if (suche || !p.link) { kopfsuche.setzeText(x); return; }
         const q = new URLSearchParams(p.link); q.set('volltext', x);
         geheZu(`/ablage/${p.sicht}${p.offen ? `/${p.offen}` : ''}?${q.toString()}`);
       }} />}
@@ -563,6 +539,7 @@ function Liste(p: {
               })}
               {nachladen && <li ref={(el) => { ende.current = el; }} className="nachladen leise klein">{nachladen}</li>}
             </ul>}
+      {p.sicht === 'suche' && <AehnlicheTreffer liste={s.aehnlich} sicht={p.sicht} anhang={anhang} />}
       </div>
     </>
   );

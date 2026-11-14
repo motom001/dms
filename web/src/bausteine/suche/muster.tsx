@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { t } from '../../sprache';
 import { FilterHaken, Fundstellen, Hervorgehoben, KeineTreffer, ListenSuche, PaketFilter, Suchfeld, useListenSuche } from './Suche';
+import { KopfSuche } from './KopfSuche';
 import s from '../muster.module.css';
 
 /**
@@ -52,6 +53,31 @@ function Liste() {
   );
 }
 
+/** Suchfeld der Kopfzeile (#1218): ohne Bereich und in einer Ansicht mit Chip und „Suchen in ▾“. */
+function KopfMuster() {
+  const [wert, setWert] = useState('');
+  const [inAnsicht, setInAnsicht] = useState('');
+  const [bereich, setBereich] = useState(true);
+  const [haken, setHaken] = useState({ text: true, notizen: false });
+  return (
+    <>
+      <Karte zustand="kopf-leer" titel={t('oberflaeche.muster.suche.kopf')}>
+        <KopfSuche wert={wert} setze={setWert} beschriftung={t('oberflaeche.muster.suche.kopf.beschriftung')} platzhalter={t('oberflaeche.muster.suche.kopf.platzhalter')} tastenkuerzel={false} />
+      </Karte>
+      <Karte zustand="kopf-bereich" titel={t('oberflaeche.muster.suche.kopf.bereich')}>
+        <KopfSuche wert={inAnsicht} setze={setInAnsicht} tastenkuerzel={false}
+          beschriftung={bereich ? t('oberflaeche.muster.suche.kopf.bereich-beschriftung') : t('oberflaeche.muster.suche.kopf.beschriftung')}
+          platzhalter={bereich ? t('oberflaeche.muster.suche.kopf.bereich-platzhalter') : t('oberflaeche.muster.suche.kopf.platzhalter')}
+          bereich={bereich ? { text: t('oberflaeche.muster.suche.kopf.chip'), weg: () => setBereich(false) } : null}
+          suchenIn={bereich ? { text: t('oberflaeche.muster.suche.kopf.suchen-in'), inhalt: <>
+            <FilterHaken an={haken.text} setze={(an) => setHaken({ ...haken, text: an })}>{t('oberflaeche.muster.suche.kopf.text')}</FilterHaken>
+            <FilterHaken an={haken.notizen} setze={(an) => setHaken({ ...haken, notizen: an })}>{t('oberflaeche.muster.suche.kopf.notizen')}</FilterHaken>
+          </> } : null} />
+      </Karte>
+    </>
+  );
+}
+
 export function SucheMuster() {
   const [leer, setLeer] = useState('');
   const [voll, setVoll] = useState(t('oberflaeche.muster.suche.wort'));
@@ -69,6 +95,7 @@ export function SucheMuster() {
       <Karte zustand="suche-keine" titel={t('oberflaeche.muster.suche.keine')}>
         <KeineTreffer zuruecksetzen={() => {}} />
       </Karte>
+      <KopfMuster />
     </div>
   );
 }

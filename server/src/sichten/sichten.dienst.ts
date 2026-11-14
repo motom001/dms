@@ -239,9 +239,11 @@ export class SichtenDienst {
     }
     // Ähnliche Treffer (#442): nur in der Suche über alle Mappen bzw. der erweiterten Suche ohne Feldbedingungen,
     // auf der ersten Seite und mit „auch in Dokumenten“ – Treffer aus Ansichten mit Bedingungen würden diese verletzen.
-    const aehnlich = erweitert && !erweitert.bedingungen.length && suche && volltext && von === 0
+    // Seit #1218 kommt man mit Enter im Suchfeld oben dorthin: dann ist der Begriff der Volltext (in Dokumenten).
+    const aehnlichZu = suche && volltext ? suche : !suche && erweitert?.volltext?.dokumente ? erweitert.volltext.text : null;
+    const aehnlich = erweitert && !erweitert.bedingungen.length && aehnlichZu && von === 0
       // Teile (#1031) auch hier nicht.
-      ? await this.aehnlicheZurSuche(z, suche, { typen: new Set((erweitert.typen.length ? erweitert.typen : [...typen.values()]).filter((t) => !istTeiltyp(t)).map((t) => t.id)), ohneMappen: new Set(r.mappen.map((m) => m.id)) })
+      ? await this.aehnlicheZurSuche(z, aehnlichZu, { typen: new Set((erweitert.typen.length ? erweitert.typen : [...typen.values()]).filter((t) => !istTeiltyp(t)).map((t) => t.id)), ohneMappen: new Set(r.mappen.map((m) => m.id)) })
       : [];
     return {
       gesamt: r.gesamt, von, mappen: r.mappen, bezuege: await this.maskiereBezuege(z, await this.repo.bezuege(ziele)),

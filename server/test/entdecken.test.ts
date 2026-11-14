@@ -198,7 +198,9 @@ describe('Server: Stand je Person und Merker (#831, #832)', () => {
     const { e, konten, jonas, morgen } = await aufbau();
     const a = await e.stand(jonas);
     assert.equal(a.tipp?.schluessel, 'suche_in_dokumenten');
+    assert.equal(a.tipp?.gesehen, false, 'neu: Punkt am Assistenten (#1219)');
     await e.tipp(jonas, 'suche_in_dokumenten', 'gezeigt');
+    assert.deepEqual((await e.stand(jonas)).tipp, { schluessel: 'suche_in_dokumenten', weitere: 0, gesehen: true }, 'angesehen: derselbe Tipp, ohne Punkt');
     await e.tipp(jonas, 'suche_in_dokumenten', 'ausblenden');
     const b = await e.stand(jonas);
     assert.equal(b.tipp, null, 'heute keiner mehr');

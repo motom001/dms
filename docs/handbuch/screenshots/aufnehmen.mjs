@@ -673,16 +673,16 @@ async function main() {
   await geheZu(s, `/ablage/${rechnung.id}/neu`);
   await bild(s, 'mappe-neu');
 
-  // Suche in einer Liste
+  // Suche in einer Liste (#1218): das Suchfeld oben mit dem Bereich als Chip „in: Vertrag“.
   await geheZu(s, `/ablage/${vertrag.id}`);
-  await s.getByPlaceholder(w('Suchen in Titel und Werten …')).fill('Haus');
+  await s.getByRole('banner').getByRole('searchbox').fill('Haus');
   await s.waitForTimeout(600);
   await bild(s, 'suche');
 
   // Volltextsuche (#45): Treffer im Text eines Dokuments
   await api('PUT', '/api/konto/einstellungen/suche_volltext', { wert: true });
   await geheZu(s, `/ablage/${vertrag.id}`);
-  await s.getByPlaceholder(w('Suchen in Titel, Werten und Dokumenten …')).fill('Preisanpassung');
+  await s.getByRole('banner').getByRole('searchbox').fill('Preisanpassung');
   await s.locator('.fundstelle').first().waitFor();
   await bild(s, 'volltext-suche');
   await api('PUT', '/api/konto/einstellungen/suche_volltext', { wert: null });
@@ -1022,12 +1022,16 @@ async function main() {
   await s.locator('.zuletzt .eintrag').first().click();
   await s.locator('.spalte.mappe .mappenkopf h1').waitFor();
   await bild(s, 'startseite-mappe');
-  // Ein Feld mit „Fragen · Suchen“ darüber (#1002). Ein Antwort-Paket gibt es bei den Aufnahmen nicht – die Seite bekommt
-  // es nur gemeldet. Gewartet wird auf den Umschalter (eindeutig, anders als eine Überschrift mit Hilfesymbol).
+  // Assistent unten rechts (#1219), Reiter „Tipps“. Ein Antwort-Paket gibt es bei den Aufnahmen nicht – die Seite bekommt
+  // es nur gemeldet, damit „Fragen · Tipps · Handbuch“ zu sehen ist.
   await s.route('**/api/fragen', (r) => r.fulfill({ json: { verfuegbar: true, paket: 'KI-Assistent' } }));
   await geheZu(s, '/ablage/start');
-  await s.getByRole('radiogroup', { name: w('Fragen oder suchen') }).getByRole('radio', { checked: true }).waitFor();
-  await bild(s, 'startseite-fragen');
+  await s.locator('[data-anker="assistent"] button').first().click();
+  const assistent = s.getByRole('dialog', { name: w('Assistent') });
+  await assistent.getByRole('radio', { name: new RegExp(`^${w('Tipps')}`) }).click();
+  await assistent.locator('[data-anker="startseite.tipp"]').or(assistent.getByRole('link', { name: w('Alle Tipps ansehen ›') })).first().waitFor();
+  await bild(s, 'assistent');
+  await assistent.getByRole('button', { name: w('Assistent schließen') }).click();
   await s.unroute('**/api/fragen');
   await api('PUT', `/api/typen/${partner.id}`, partner);
 

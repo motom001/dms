@@ -1,0 +1,57 @@
+/* Baustein Suche, Suchfeld in der Kopfzeile (#1218, Musterkatalog C16). Nur Werte aus tokens.css. */
+
+.kopfsuche { position: relative; flex: 1 1 auto; display: flex; justify-content: center; min-width: 0; }
+.rahmen { position: relative; display: flex; align-items: center; gap: 6px; width: 100%; max-width: 620px; min-height: 38px; box-sizing: border-box; padding: 0 4px 0 10px; border: 1px solid var(--rand-eingabe); border-radius: var(--r); background: var(--senke); }
+.rahmen:focus-within { outline: 2px solid var(--akzent); outline-offset: 1px; }
+.lupe { flex: none; color: var(--leise); }
+.eingabe.eingabe { flex: 1 1 auto; min-width: 6ch; width: auto; height: 34px; margin: 0; padding: 0 4px; border: 0; border-radius: 0; background: transparent; color: var(--tinte); font: inherit; box-shadow: none; outline: none; }
+.eingabe::-webkit-search-cancel-button { appearance: none; }
+.eingabe::placeholder { color: var(--leise); opacity: 1; }
+.taste { flex: none; padding: 0 6px; border: 1px solid var(--linie-stark); border-radius: 4px; color: var(--leise); font: inherit; font-size: calc(12px * var(--skala, 1)); line-height: 1.5; }
+
+/* Bereich als Chip im Feld: „in: Verträge ×“. */
+.chip { flex: none; display: inline-flex; align-items: center; gap: 2px; max-width: 45%; height: 26px; padding: 0 2px 0 10px; border-radius: 13px; background: var(--akzent-zart); color: var(--tinte); font-size: calc(13px * var(--skala, 1)); }
+.chiptext { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chip .chipweg { display: inline-flex; align-items: center; justify-content: center; min-width: 22px; min-height: 22px; padding: 0; border-radius: 11px; color: var(--tinte); text-decoration: none; }
+.chip .chipweg:hover { background: var(--senke); }
+
+.rahmen .leeren, .rahmen .zu { flex: none; display: inline-flex; align-items: center; justify-content: center; min-width: 28px; min-height: 28px; padding: 0; color: var(--leise); text-decoration: none; }
+.rahmen .leeren:hover, .rahmen .zu:hover { color: var(--tinte); }
+.rahmen .suchenIn { flex: none; display: inline-flex; align-items: center; gap: 4px; min-height: 28px; padding: 0 8px; border-radius: 6px; color: var(--leise); text-decoration: none; font-size: calc(13px * var(--skala, 1)); white-space: nowrap; }
+.rahmen .suchenIn:hover, .rahmen .suchenIn[aria-expanded="true"] { color: var(--tinte); background: var(--flaeche); }
+
+/* „Suchen in ▾“: Haken und Wege, rechts unter dem Feld (im Rahmen, damit es am Handy darin weiterläuft). */
+.panel { position: absolute; z-index: 30; top: calc(100% + 6px); right: 0; width: 280px; max-width: calc(100vw - 16px); box-sizing: border-box; padding: 8px 12px; display: flex; flex-direction: column; gap: 6px; background: var(--flaeche); border: 1px solid var(--linie-stark); border-radius: var(--r); box-shadow: 0 10px 30px var(--schatten); }
+
+/* Lupe und „Suche schließen“ gibt es nur am Handy. */
+.kopfsuche .lupenknopf, .rahmen .zu { display: none; }
+
+@media (max-width: 600px) {
+  /* Kopfzeile am Handy: nur die Lupe; aufgeklappt liegt das Feld über der ganzen Kopfzeile (die .kopf ist positioniert). */
+  .kopfsuche { position: static; flex: none; }
+  .kopfsuche .lupenknopf { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; padding: 0; color: var(--tinte); text-decoration: none; }
+  .rahmen { display: none; }
+  /* Aufgeklappt liegt das Feld über der Kopfzeile; „Suchen in ▾“ steht in einer zweiten Zeile darunter. Die Lupe
+     verschwindet so lange (sie läge unter dem Feld). */
+  .offen .lupenknopf.lupenknopf { display: none; }
+  .offen .rahmen { display: flex; flex-wrap: wrap; row-gap: 0; position: absolute; z-index: 20; inset: 6px max(8px, env(safe-area-inset-right)) auto max(8px, env(safe-area-inset-left)); width: auto; max-width: none; background: var(--flaeche); box-shadow: 0 8px 20px var(--schatten); }
+  .offen .rahmen .zu { display: inline-flex; order: 1; }
+  .rahmen .suchenIn { order: 2; flex: 1 0 100%; justify-content: flex-end; }
+  /* Am Handy nur ein „×“: „Suche schließen“ leert und klappt zu. */
+  .offen .rahmen .leeren { display: none; }
+  .eingabe.eingabe { flex: 1 1 0; font-size: 16px; min-width: 8ch; }
+  .taste { display: none; }
+  .chip { max-width: 40%; }
+  /* Am Handy steht „Suchen in“ als dritte Zeile im aufgeklappten Feld. */
+  .panel { position: static; order: 3; flex: 1 0 100%; width: auto; max-width: none; margin: 0 0 8px; box-shadow: none; }
+}
+/* Tippflächen am Handy (#1027, D6): jedes Bedienelement 44 × 44 px. */
+@media (pointer: coarse) {
+  .rahmen { min-height: 44px; }
+  .eingabe.eingabe { height: 44px; }
+  /* Runde Ecken nehmen der Tippfläche Punkte – am Handy fast eckig. */
+  .chip .chipweg { border-radius: 4px; }
+  .chip { height: auto; min-height: 36px; }
+  .chip .chipweg, .rahmen .leeren, .rahmen .zu { min-width: 44px; min-height: 44px; }
+  .rahmen .suchenIn { min-height: 44px; }
+}

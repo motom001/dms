@@ -735,8 +735,9 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
       ? vereint([inMappen(o.suche), ...(o.notizen ? [inNotizen(o.suche)] : []), ...(o.volltext ? [inDokumenten(o.suche)] : [])])
       : null;
     // Erweiterte Suche (#199): Begriff in Dokumenten oder Notizen, zusätzlich zu allen anderen Bedingungen.
-    const tf = o.textfilter?.text.trim() && (o.textfilter.dokumente || o.textfilter.notizen) ? o.textfilter : null;
-    const tfMenge = tf ? vereint([...(tf.dokumente ? [inDokumenten(tf.text)] : []), ...(tf.notizen ? [inNotizen(tf.text)] : [])]) : null;
+    // Mit `felder` (#1218) auch Titel und Felder – so findet Enter im Suchfeld oben dasselbe wie die Suche einer Liste.
+    const tf = o.textfilter?.text.trim() && (o.textfilter.dokumente || o.textfilter.notizen || o.textfilter.felder) ? o.textfilter : null;
+    const tfMenge = tf ? vereint([...(tf.felder ? [inMappen(tf.text)] : []), ...(tf.dokumente ? [inDokumenten(tf.text)] : []), ...(tf.notizen ? [inNotizen(tf.text)] : [])]) : null;
     // Ohne Suche ist der Textfilter die Treffermenge; mit Suche eine weitere Bedingung. Teile (#1031): übergeordnete
     // Mappen, in deren Teilen der Begriff steht (auchIds), zählen für beides als Treffer.
     const { treffer, textfilter } = mitTeilen(suche ?? tfMenge, suche && tfMenge, (o.auchIds ?? []).filter(istUuid));

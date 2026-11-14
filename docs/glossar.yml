@@ -512,10 +512,18 @@ begriffe:
     code: vorschau
   - begriff: Erweiterte Suche
     bereich: ablage
-    beschreibung: Ein Suchformular über die Felder mehrerer Mappentypen und den Text in Dokumenten.
+    beschreibung: Ein Suchformular über die Felder mehrerer Mappentypen und den Text in Dokumenten. Enter im Suchfeld oben führt mit dem Begriff hierher.
     einsteiger: alltag
     begegnet: alle
     code: Suchformular
+  - begriff: Suchfeld oben
+    bereich: ablage
+    beschreibung: 'Das eine Suchfeld in der Kopfzeile, auf jeder Seite der Ablage (#1218). Enter zeigt alle Treffer in der erweiterten Suche; in einer Ansicht filtert es die Liste und zeigt den Bereich als Chip „in: …“.'
+    einsteiger: alltag
+    begegnet: alle
+    nicht_verwenden: [Schnellsuche, Schnell finden]
+    verwandt: [Erweiterte Suche, Ansicht]
+    code: KopfSuche, SucheOben
   - begriff: Link
     bereich: ablage
     beschreibung: Eine Adresse auf eine Ansicht oder Mappe, z. B. über „Link kopieren“ – auch lesbar über Mappentyp und Feldwerte. „Link“ steht nur für Adressen; Felder, die auf Mappen zeigen, heißen Verweis.
@@ -758,12 +766,20 @@ begriffe:
     code: Rundgang, rundgaenge.yaml
   - begriff: Tipp
     bereich: grundbegriffe
-    beschreibung: Ein Satz, der zeigt, was man in Ablago noch tun kann – höchstens einer am Tag als leise Zeile auf der Startseite; der Satz führt an die Stelle oder startet einen Rundgang. Mit × ausblenden, in Mein Konto ganz abschalten.
+    beschreibung: Ein Satz, der zeigt, was man in Ablago noch tun kann – höchstens ein neuer am Tag als „Tipp des Tages“ im Assistenten (ein Punkt am Knopf zeigt ihn an); „Zeig es mir“ führt an die Stelle oder startet einen Rundgang. In Mein Konto abschalten.
     einsteiger: alltag
     begegnet: alle
     nicht_verwenden: [Hinweis (für Tipps), Hilfe-Tipp]
-    verwandt: [Rundgang, Ablago entdecken]
+    verwandt: [Rundgang, Ablago entdecken, Assistent]
     code: Tipp, tipps.yaml
+  - begriff: Assistent
+    bereich: grundbegriffe
+    beschreibung: Der runde Knopf unten rechts auf jeder Seite (eine Mappe mit Gesicht) mit dem Fenster „Fragen · Tipps · Handbuch“ (#1219). Öffnet sich nie von selbst.
+    einsteiger: alltag
+    begegnet: alle
+    nicht_verwenden: [Chatbot, Helferlein, Büroklammer]
+    verwandt: [Tipp, Ablago entdecken]
+    code: Begleiter
   - begriff: Paket
     bereich: werkbank
     beschreibung: Ein installierbares Bündel aus Mappentypen, Ansichten und Beispielen aus einem Paketkatalog, z. B. „Basis“. Ein Update ergänzt nur; es entfernt und ändert nichts – außer ein Umbau, den die Vorschau ausdrücklich zeigt.

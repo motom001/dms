@@ -8,7 +8,7 @@ The first time you sign in, Ablago shows you the most important places in five s
 
 1. **How Ablago is laid out:** views on the left, the list in the middle, the open folder on the right.
 2. **Filing something new:** with **+ New** you file post; it waits in *New post* until you assign it to a folder.
-3. **Finding things:** the box at the top of the start page – if set up, with [Ask your library](startseite.md#frag-deine-ablage) and the **Ask · Search** toggle.
+3. **Finding things:** the search box at the top, in the header – Enter shows all hits; if set up, you ask questions with [Ask your library](assistent.md#frag-deine-ablage) in the assistant at the bottom right.
 4. **To do and deadlines:** what is coming up – tasks, reminders and deadlines.
 5. **Your account:** the menu under your name with *My account* and *Discover Ablago*. Anyone who may administer Ablago also sees *Administer Ablago* there.
 
@@ -26,16 +26,15 @@ The tour only starts by itself the first time a **new** account signs in. Anyone
 
 The tour works with the keyboard: Tab moves between the buttons and stays inside the tour, Enter presses the button. A screen reader reads out, for each step, where the highlighted place is. If “Reduce motion” is switched on on your device, the tour jumps from step to step without a transition.
 
-## The tip on the start page { #tipps }
+## The tip of the day { #tipps }
 
-Below the box at the top of the start page there is now and then **one line with a tip**, for example: “With ‘also in documents’, the search also finds words that appear in your letters and invoices.”
+The [assistant](assistent.md#tipps) at the bottom right shows the tip of the day under **Tips** – as a card, for example: “Is there an archive number on a paper? Type it into the search box at the top and press Enter to open exactly that document.”
 
-- **At most one tip a day.** The tip stays the same until the evening.
-- **The sentence is the link.** A click takes you to the right place and highlights it briefly – or starts the tour.
-- **The small × on the right** hides this tip. Afterwards “Hidden · Don’t show tips any more” appears once: a click on *Don’t show tips any more* switches the line off completely.
+- **At most one new tip a day.** A small dot on the assistant's button shows it; as soon as you have looked at the tips, the dot is gone. The tip stays the same until the evening.
+- **Show me** takes you to the right place and highlights it briefly – or starts the tour. **Next tip** moves on.
 - **Only what you can use:** you do not get tips about things you are not allowed to do or that are not set up for you.
 
-You can switch the line on and off at any time under [My account](profil.md#startseite) → **Appearance → Start page → Show tips on the start page**.
+You can switch the dot for the tip of the day on and off at any time under [My account](profil.md#startseite) → **Appearance → Start page → Tip of the day**.
 
 ## The page “Discover Ablago” { #seite }
 
@@ -47,7 +46,7 @@ You reach it via the menu under your name → **Discover Ablago**. It begins wit
 
 ![Discover Ablago](bilder/entdecken.png)
 
-Hidden tips stay listed here, marked *hidden*; **Show again** brings them back to the start page. Even if you have switched the tip line off, you find everything here.
+Tips hidden earlier stay listed here, marked *hidden*; **Show again** brings them back into the assistant. Even if you have switched the tip of the day off, you find everything here.
 
 ## What Ablago remembers
 

@@ -50,7 +50,7 @@
     Not if the tab has versions: the old edition lies under the document as an older **version** and can be viewed, downloaded and restored. How that works is described under [Understanding versions](versionen.md).
 
 ??? question "Search doesn't find a text from a PDF."
-    Next to the search field, tick **Search full text**. If the document has only just been uploaded, **About this document** may still say *waiting* when you view it – then wait a moment. If the row says "Text not readable", you can trigger it again with **Try again**; for some file types there is no full text, though.
+    In the search box at the top, tick **Text of documents** under **Search in ▾** – or press Enter: the advanced search also searches the text of documents. If the document has only just been uploaded, **About this document** may still say *waiting* when you view it – then wait a moment. If the row says "Text not readable", you can trigger it again with **Try again**; for some file types there is no full text, though.
 
 ??? question "The columns have shifted or one has disappeared."
     Under My account, **Appearance on this device** → **Restore default appearance**. Or briefly click the handle between the columns – that expands collapsed areas again.

@@ -428,13 +428,14 @@ export function speicherRepo(): Repo {
       return r;
     },
     async seite(o) {
-      const tf = o.textfilter?.text.trim() && (o.textfilter.dokumente || o.textfilter.notizen) ? { ...o.textfilter, text: o.textfilter.text.trim().toLowerCase() } : null;
+      const tf = o.textfilter?.text.trim() && (o.textfilter.dokumente || o.textfilter.notizen || o.textfilter.felder) ? { ...o.textfilter, text: o.textfilter.text.trim().toLowerCase() } : null;
       // Fundstellen: zur Suche oder zum Volltextfilter.
       const fund = o.suche && (o.volltext || o.notizen) ? { volltext: !!o.volltext, notizen: !!o.notizen } : tf ? { volltext: tf.dokumente, notizen: tf.notizen } : null;
       const q = o.suche;
       const vv: Varianten = { ...(o.varianten ?? {}) };
       for (const [k, w] of Object.entries(o.aehnlich ?? {})) vv[k] = [...(vv[k] ?? []), ...w];
       const wertText = (v: unknown) => (typeof v === 'object' ? JSON.stringify(v) : String(v));
+      const inFeldern = (m: Mappe, text: string) => enthaelt(m.titel ?? '', text, vv) || Object.values(m.werte).some((v) => !(typeof v === 'string' && v.startsWith('dms1$')) && enthaelt(wertText(v), text, vv));
       // Teile (#1031): übergeordnete Mappen, in deren Teilen der Begriff steht, zählen als Treffer.
       const auch = new Set(o.auchIds ?? []);
       const alle = [...mappen.values()]
@@ -443,11 +444,11 @@ export function speicherRepo(): Repo {
         .filter((m) => !o.eingang || offenFuer(m, o.eingang.benutzerId, o.eingang.admin))
         .filter((m) => !o.favoriten || istFavorit(m.id, o.favoriten.benutzerId))
         .filter((m) => lesbar(o.lesen ?? null, m, zaehl))
-        .filter((m) => !q || auch.has(m.id) || enthaelt(m.titel ?? '', q, vv) || Object.values(m.werte).some((v) => !(typeof v === 'string' && v.startsWith('dms1$')) && enthaelt(wertText(v), q, vv))
+        .filter((m) => !q || auch.has(m.id) || inFeldern(m, q)
           || (!!o.volltext && [...dokumente.values()].some((d) => d.mappeId === m.id && findet(texte.get(d.id), q, vv)))
           || (!!o.notizen && [...notizen.values()].some((n) => n.mappeId === m.id && enthaelt(n.text, q, vv))))
         // Erweiterte Suche (#199): Begriff in Dokumenten oder Notizen – UND mit allem anderen.
-        .filter((m) => !tf || auch.has(m.id) || (tf.dokumente && [...dokumente.values()].some((d) => d.mappeId === m.id && findet(texte.get(d.id), tf.text, vv)))
+        .filter((m) => !tf || auch.has(m.id) || (!!tf.felder && inFeldern(m, tf.text)) || (tf.dokumente && [...dokumente.values()].some((d) => d.mappeId === m.id && findet(texte.get(d.id), tf.text, vv)))
           || (tf.notizen && [...notizen.values()].some((n) => n.mappeId === m.id && enthaelt(n.text, tf.text, vv))))
         .sort((a, b) => vergleiche(a, b, o.sortierung) || (a.titel ?? '').toLowerCase().localeCompare((b.titel ?? '').toLowerCase()) || a.id.localeCompare(b.id));
       const seite = alle.slice(o.von, o.von + o.anzahl).map(kopie);

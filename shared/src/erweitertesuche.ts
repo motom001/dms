@@ -10,7 +10,7 @@
  * - feld=wert: mehrfach bei Verweisen und Auswahllisten (= ist einer von); Ja/Nein: ja oder nein; Text: enthält
  * - feld.leer=1 bzw. feld.nichtleer=1
  * - feld.typ=<Mappentyp>: Verweis mit mehreren Zieltypen (#1036) zeigt auf eine Mappe dieses Typs, mehrfach (= einer von)
- * - volltext=…, in=dokumente / in=notizen (ohne „in“: beide)
+ * - volltext=…, in=felder / in=dokumente / in=notizen (ohne „in“: alle drei; „felder“ = Titel und Felder, #1218)
  * Zwischen den Feldern gilt UND, innerhalb eines Feldes ODER. Server und Oberfläche teilen diese Datei.
  */
 import { wertZuOption } from './beschriftung';
@@ -40,10 +40,12 @@ export interface Suchformular {
   typen: string[];
   felder: Record<string, Feldeingabe>;
   volltext: string;
+  /** Volltext auch in Titel und Feldern (#1218): Das Suchfeld oben führt mit Enter hierher – mit allen drei Orten. */
+  inFeldern: boolean;
   inDokumenten: boolean;
   inNotizen: boolean;
 }
-export const leeresFormular = (): Suchformular => ({ typen: [], felder: {}, volltext: '', inDokumenten: true, inNotizen: true });
+export const leeresFormular = (): Suchformular => ({ typen: [], felder: {}, volltext: '', inFeldern: true, inDokumenten: true, inNotizen: true });
 
 /** Welche Eingabe ein Feld bekommt – ohne dass man einen Operator wählt. */
 export type Eingabeart = 'datum' | 'zahl' | 'zeitraum' | 'verweis' | 'person' | 'auswahl' | 'janein' | 'text';
@@ -138,7 +140,7 @@ export function liesSuche(parameter: Suchparameter): Suchformular {
     if (!key || VERBOTENE_NAMEN.has(key)) continue;
     setzeZusatz(Object.hasOwn(f.felder, key) ? f.felder[key] : (f.felder[key] = {}), zusatz, w);
   }
-  if (ortGesetzt) { f.inDokumenten = orte.includes('dokumente'); f.inNotizen = orte.includes('notizen'); }
+  if (ortGesetzt) { f.inFeldern = orte.includes('felder'); f.inDokumenten = orte.includes('dokumente'); f.inNotizen = orte.includes('notizen'); }
   for (const [k, e] of Object.entries(f.felder)) if (!istGesetzt(e)) delete f.felder[k];
   return f;
 }
@@ -163,9 +165,10 @@ export function alsParameter(f: Suchformular): URLSearchParams {
   }
   if (f.volltext.trim()) {
     p.append('volltext', f.volltext.trim());
+    if (f.inFeldern) p.append('in', 'felder');
     if (f.inDokumenten) p.append('in', 'dokumente');
     if (f.inNotizen) p.append('in', 'notizen');
-    if (!f.inDokumenten && !f.inNotizen) p.append('in', '');
+    if (!f.inFeldern && !f.inDokumenten && !f.inNotizen) p.append('in', '');
   }
   return p;
 }
@@ -195,7 +198,8 @@ export function zahlAus(s: string): number | null {
 const DATUM_MIN = '0001-01-01', DATUM_MAX = '9999-12-31';
 const ZAHL_MAX = 1e15;
 
-export interface Volltextfilter { text: string; dokumente: boolean; notizen: boolean }
+/** Volltext der erweiterten Suche: der Begriff in Titel und Feldern (#1218), Dokumenten und/oder Notizen. */
+export interface Volltextfilter { text: string; dokumente: boolean; notizen: boolean; felder?: boolean }
 export interface Abfrage {
   typen: Mappentyp[];
   bedingungen: Bedingung[];
@@ -260,7 +264,7 @@ export function abfrageAus(f: Suchformular, alleTypen: Mappentyp[]): Abfrage {
     bedingungen.push(b);
   }
   const text = f.volltext.trim();
-  const volltext = text && (f.inDokumenten || f.inNotizen) ? { text, dokumente: f.inDokumenten, notizen: f.inNotizen } : null;
+  const volltext = text && (f.inFeldern || f.inDokumenten || f.inNotizen) ? { text, felder: f.inFeldern, dokumente: f.inDokumenten, notizen: f.inNotizen } : null;
   return { typen, bedingungen, volltext, entfallen, fehler };
 }
 
@@ -355,7 +359,7 @@ export function chipsVon(f: Suchformular, alleTypen: Mappentyp[], titelVon: (id:
     }
     chips.push({ key, text });
   }
-  if (a.volltext) chips.push({ key: 'volltext', text: t('gemeinsam.erweitertesuche.in', { text: a.volltext.text, filter: [a.volltext.dokumente && 'Dokumenten', a.volltext.notizen && 'Notizen'].filter(Boolean).join(' oder ') }) });
+  if (a.volltext) chips.push({ key: 'volltext', text: t('gemeinsam.erweitertesuche.in', { text: a.volltext.text, filter: [a.volltext.felder && t('gemeinsam.erweitertesuche.in.felder'), a.volltext.dokumente && t('gemeinsam.erweitertesuche.in.dokumente'), a.volltext.notizen && t('gemeinsam.erweitertesuche.in.notizen')].filter(Boolean).join(t('gemeinsam.erweitertesuche.in.oder')) }) });
   return chips;
 }
 

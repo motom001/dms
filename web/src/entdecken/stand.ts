@@ -67,7 +67,7 @@ export function findeAnker(anker: string): HTMLElement | null {
 
 /**
  * Ein Tipp oder Rundgang sucht diese Anker (#1002). Seiten, die eine Stelle erst zeigen, wenn man umschaltet, hören
- * darauf und schalten um – z. B. die Startseite mit „Fragen · Suchen“: `startseite.suche` zeigt die Suche. Nur für den
+ * darauf und schalten um – z. B. der Assistent unten rechts (#1219): `startseite.fragen` öffnet ihn bei „Fragen“. Nur für den
  * Moment; gemerkt wird nichts.
  */
 const ANKER_GESUCHT = 'ablago:anker-gesucht';

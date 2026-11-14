@@ -8,7 +8,7 @@ Meldest du dich zum ersten Mal an, zeigt dir Ablago in fünf Schritten die wicht
 
 1. **So ist Ablago aufgebaut:** links die Ansichten, in der Mitte die Liste, rechts die geöffnete Mappe.
 2. **Etwas Neues ablegen:** über **+ Neu** legst du Post ab; sie wartet unter *Neue Post*, bis du sie einer Mappe zuordnest.
-3. **Finden:** das Feld oben auf der Startseite – falls eingerichtet mit [Frag deine Ablage](startseite.md#frag-deine-ablage) und dem Umschalter **Fragen · Suchen**.
+3. **Finden:** das Suchfeld oben in der Kopfzeile – Enter zeigt alle Treffer; Fragen stellst du, falls eingerichtet, mit [Frag deine Ablage](assistent.md#frag-deine-ablage) im Assistenten unten rechts.
 4. **Zu erledigen und Fristen:** was ansteht – Aufgaben, Erinnerungen und Fristen.
 5. **Dein Konto:** das Menü unter deinem Namen mit *Mein Konto* und *Ablago entdecken*. Wer Ablago verwalten darf, sieht hier auch *Ablago verwalten*.
 
@@ -26,16 +26,15 @@ Der Rundgang kommt nur bei der ersten Anmeldung eines **neuen** Kontos von selbs
 
 Der Rundgang geht mit der Tastatur: Tab wechselt zwischen den Knöpfen und bleibt im Rundgang, Enter drückt den Knopf. Ein Screenreader liest zu jedem Schritt vor, wo die hervorgehobene Stelle steht. Hast du am Gerät „Bewegung reduzieren“ eingeschaltet, springt der Rundgang ohne Übergang von Schritt zu Schritt.
 
-## Der Tipp auf der Startseite { #tipps }
+## Der Tipp des Tages { #tipps }
 
-Unter dem Feld oben auf der Startseite steht ab und zu **eine Zeile mit einem Tipp**, zum Beispiel: „Mit ‚auch in Dokumenten‘ findet die Suche auch Wörter, die in deinen Briefen und Rechnungen stehen.“
+Den Tipp des Tages zeigt der [Assistent](assistent.md#tipps) unten rechts unter **Tipps** – als Karte, zum Beispiel: „Steht auf einem Papier eine Archivnummer? Tippe sie oben ins Suchfeld und drück Enter, dann öffnet sich genau dieses Dokument.“
 
-- **Höchstens ein Tipp am Tag.** Der Tipp bleibt bis zum Abend derselbe.
-- **Der Satz ist der Link.** Ein Klick führt an die passende Stelle und hebt sie kurz hervor – oder startet den Rundgang.
-- **Das kleine × rechts** blendet diesen Tipp aus. Danach steht einmal „Ausgeblendet · Keine Tipps mehr zeigen“: Ein Klick auf *Keine Tipps mehr zeigen* schaltet die Zeile ganz ab.
+- **Höchstens ein neuer Tipp am Tag.** Ein kleiner Punkt am Knopf des Assistenten zeigt ihn an; sobald du die Tipps angesehen hast, ist der Punkt weg. Der Tipp bleibt bis zum Abend derselbe.
+- **Zeig es mir** führt an die passende Stelle und hebt sie kurz hervor – oder startet den Rundgang. **Nächster Tipp** blättert weiter.
 - **Nur, was du nutzen kannst:** Tipps zu Dingen, die du nicht darfst oder die bei euch nicht eingerichtet sind, bekommst du nicht.
 
-Ein- und ausschalten kannst du die Zeile jederzeit unter [Mein Konto](profil.md#startseite) → **Darstellung → Startseite → Tipps auf der Startseite zeigen**.
+Den Punkt für den Tipp des Tages schaltest du jederzeit unter [Mein Konto](profil.md#startseite) → **Darstellung → Startseite → Tipp des Tages** ein und aus.
 
 ## Die Seite „Ablago entdecken“ { #seite }
 
@@ -47,7 +46,7 @@ Du erreichst sie über das Menü unter deinem Namen → **Ablago entdecken**. Si
 
 ![Ablago entdecken](bilder/entdecken.png)
 
-Ausgeblendete Tipps stehen hier weiter, mit dem Hinweis *ausgeblendet*; **Wieder zeigen** holt sie auf die Startseite zurück. Auch wenn du die Tipp-Zeile abgeschaltet hast, findest du hier alles.
+Früher ausgeblendete Tipps stehen hier weiter, mit dem Hinweis *ausgeblendet*; **Wieder zeigen** holt sie in den Assistenten zurück. Auch wenn du den Tipp des Tages abgeschaltet hast, findest du hier alles.
 
 ## Was Ablago sich merkt
 

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Ausschnitt, Mappe, Sortierung } from '../../shared/src/model';
-import { api, type Bezuege, type Unscharf } from './api';
+import { api, type AehnlicheMappe, type Bezuege, type Unscharf } from './api';
 import { t } from './sprache';
 
 export const SEITE = 100;
@@ -29,6 +29,8 @@ export function useSeiten(sicht: string | undefined, suche: string, stand: numbe
   const [gesamt, setGesamt] = useState<number | null>(null);
   /** Unscharfe Suche (#356): ohne genaue Treffer mit ähnlichen Schreibweisen gesucht. */
   const [unscharf, setUnscharf] = useState<Unscharf | null>(null);
+  /** Ähnliche Treffer (#442): in der erweiterten Suche, wenn ein Paket Ähnlichkeit kann. */
+  const [aehnlich, setAehnlich] = useState<AehnlicheMappe[]>([]);
   const [laedt, setLaedt] = useState(false);
   const [fehler, setFehler] = useState<string>();
   const lauf = useRef(0);
@@ -42,7 +44,7 @@ export function useSeiten(sicht: string | undefined, suche: string, stand: numbe
       const s = await api.seite(sicht, von, anzahl, suche, sortierung, volltext, notizen, link, undefined, bekannt);
       if (nr !== lauf.current) return; // überholt
       setGesamt(s.gesamt);
-      if (ersetzen) setUnscharf(s.unscharf ?? null);
+      if (ersetzen) { setUnscharf(s.unscharf ?? null); setAehnlich(s.aehnlich ?? []); }
       setMappen((alt) => (ersetzen ? s.mappen : [...alt, ...s.mappen]));
       setBezuege((alt) => (ersetzen ? s.bezuege : { ...alt, ...s.bezuege }));
       setAusschnitte((alt) => (ersetzen ? s.ausschnitte ?? {} : { ...alt, ...s.ausschnitte }));
@@ -76,5 +78,5 @@ export function useSeiten(sicht: string | undefined, suche: string, stand: numbe
   /** Gesehen (geöffnet oder „Alle als gesehen markieren“): Hervorhebung sofort weg. */
   const gesehen = useCallback((ids: string[]) => setGeaendert((alt) => { if (!ids.some((id) => alt.has(id))) return alt; const n = new Set(alt); for (const id of ids) n.delete(id); return n; }), []);
   const setzeStumm = useCallback((id: string, an: boolean) => setStumm((alt) => { const n = new Set(alt); if (an) n.add(id); else n.delete(id); return n; }), []);
-  return { mappen, bezuege, ausschnitte, aufgaben, favoriten, geaendert, gesehen, stumm, setzeStumm, gesamt, unscharf, laedt, fehler, mehr, alle: gesamt !== null && mappen.length >= gesamt };
+  return { mappen, bezuege, ausschnitte, aufgaben, favoriten, geaendert, gesehen, stumm, setzeStumm, gesamt, unscharf, aehnlich, laedt, fehler, mehr, alle: gesamt !== null && mappen.length >= gesamt };
 }

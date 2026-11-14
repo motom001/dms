@@ -36,3 +36,26 @@ const z = useListenSuche(liste, {
 - **Varianten** (`varianten: (wort) => string[]`) geben je Suchwort weitere Wörter dazu – vorgesehen für die gleichbedeutenden Wörter (#992); markiert wird jede gefundene Form.
 - **Am Handy** ist die Auswahl „Paket“ und jeder Haken mindestens 44 px hoch ([Am Handy](bausteine.md#handy)); das „×“ ist ein `Knopf` nur mit Symbol.
 - Die Musterseite zeigt den Baustein im Bereich **Suche**: leer, gefüllt, als Liste mit Filtern zum Ausprobieren und ohne Treffer.
+
+## Suchfeld in der Kopfzeile (`KopfSuche`) { #kopfsuche }
+
+`KopfSuche` (#1218, Musterkatalog C16) ist das Suchfeld oben in der Kopfzeile, auf jeder Seite gleich. Die Ablage setzt es in `web/src/ablage/SucheOben.tsx` ein; in der Werkbank steht es nicht (Schalter `SUCHE_OBEN_IN_DER_WERKBANK` in `web/src/App.tsx`).
+
+| Eigenschaft | Wofür |
+| --- | --- |
+| `wert`, `setze`, `beschriftung`, `platzhalter` | wie beim `Suchfeld`; die Beschriftung ist auch der Name der Suchregion (`role="search"`). |
+| `onEnter` | Enter im Feld – in der Ablage: Archivnummer, sonst erweiterte Suche mit dem Begriff im Volltext. |
+| `bereich` | Chip im Feld, z. B. „in: Verträge ×“. „×“ oder die **Rücktaste** im leeren Feld ruft `weg()`. |
+| `suchenIn` | „Suchen in ▾“ rechts im Feld: klappt darunter Haken und Links auf (Gruppe, kein ARIA-Menü); Esc oder ein Klick daneben klappt zu. |
+| `tastenkuerzel` | Taste **„/“** springt ins Feld (Vorgabe an) – nicht aus Eingabefeldern und nicht bei offenem Dialog. Im leeren Feld steht der Hinweis `/`. |
+
+- **Esc** leert das Feld; ist es leer und am Handy aufgeklappt, klappt es zu.
+- **Am Handy** (bis 600 px) steht nur die Lupe (44 px). Sie klappt das Feld über die ganze Kopfzeile auf, mit Chip und „Suchen in“; „Suche schließen“ leert und schließt. Mit Text bleibt es offen.
+- **Bereich und Liste** teilen sich in der Ablage einen Stand (`web/src/ablage/kopfsuche.ts`): Eine Liste meldet sich mit `useSucheImBereich({ schluessel, name, typ })` an und bekommt den Suchtext zurück – leer, sobald der Bereich weggenommen ist.
+- Die Musterseite zeigt das Feld ohne Bereich und in einer Ansicht mit Chip und „Suchen in ▾“.
+
+```tsx
+<KopfSuche wert={text} setze={setText} beschriftung={t('…')} platzhalter={t('…')} onEnter={zurSuche}
+  bereich={{ text: t('ablage.kopfsuche.chip', { name }), weg: bereichWeg }}
+  suchenIn={{ text: t('ablage.kopfsuche.suchen-in'), inhalt: <>{/* HakenFeld …, Link „Mehr Filter …“ */}</> }} />
+```

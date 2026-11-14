@@ -1,6 +1,6 @@
 # Umschalter
 
-`Umschalter` (#1002) ist ein Segmentknopf: zwei bis vier gleichrangige Wahlen nebeneinander, genau eine ist an. Er ändert, **wie** etwas arbeitet – etwa ob das Feld der Startseite fragt oder sucht („Fragen · Suchen“, `web/src/ablage/StartFeld.tsx`). Für Reiter mit eigenem Inhalt darunter (Register einer Mappe) gibt es die Registerkarten.
+`Umschalter` (#1002) ist ein Segmentknopf: zwei bis vier gleichrangige Wahlen nebeneinander, genau eine ist an. Er ändert, **wie** etwas arbeitet – etwa „Fragen · Tipps · Handbuch“ im Assistenten unten rechts (`web/src/begleiter/Begleiter.tsx`, #1219) oder „Liste · Monat · Jahr“ in Zu erledigen. Für Reiter mit eigenem Inhalt darunter (Register einer Mappe) gibt es die Registerkarten.
 
 | Angabe | Wofür |
 | --- | --- |

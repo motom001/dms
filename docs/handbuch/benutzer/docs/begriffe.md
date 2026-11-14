@@ -46,6 +46,10 @@ Siehe auch: [Bedingung](#bedingung), [Beruflich genutzt](#beruflich-genutzt), [M
 Nummer auf einem Aufkleber am Papieroriginal (z. B. A-000123), dieselbe steht am Dokument in Ablago. Eindeutig je Ablage; kommt aus dem Nummernkreis „Archivnummer“. Verbindet Papier und Dokument in beide Richtungen.  
 Siehe auch: [Ablageort](#ablageort), [Nummernkreis](#nummernkreis), [Dokument](#dokument).
 
+<a id="assistent"></a>**Assistent** · ✓ Alltagswort · alle  
+Der runde Knopf unten rechts auf jeder Seite (eine Mappe mit Gesicht) mit dem Fenster „Fragen · Tipps · Handbuch“ (#1219). Öffnet sich nie von selbst.  
+Siehe auch: [Tipp](#tipp), [Ablago entdecken](#ablago-entdecken).
+
 <a id="bedingung"></a>**Bedingung** · ~ mit Erklärung · Administratoren  
 Ein Filter einer Ansicht auf Feldwerte, Anzahlen, Fristen, Persönliches oder das Merkmal der Ablage, z. B. ein Feld gleich „aktueller Benutzer“, „ist mein Favorit“ oder „Ablage wird beruflich genutzt“.
 
@@ -158,8 +162,8 @@ Feldart ohne eigenen Wert – zeigt zwischen den Feldern einer Mappe die Mappen 
 Siehe auch: [Feldart](#feldart), [Register](#register), [Trefferliste](#trefferliste), [Verweis](#verweis).
 
 <a id="tipp"></a>**Tipp** · ✓ Alltagswort · alle  
-Ein Satz, der zeigt, was man in Ablago noch tun kann – höchstens einer am Tag als leise Zeile auf der Startseite; der Satz führt an die Stelle oder startet einen Rundgang. Mit × ausblenden, in Mein Konto ganz abschalten.  
-Siehe auch: [Rundgang](#rundgang), [Ablago entdecken](#ablago-entdecken).
+Ein Satz, der zeigt, was man in Ablago noch tun kann – höchstens ein neuer am Tag als „Tipp des Tages“ im Assistenten (ein Punkt am Knopf zeigt ihn an); „Zeig es mir“ führt an die Stelle oder startet einen Rundgang. In Mein Konto abschalten.  
+Siehe auch: [Rundgang](#rundgang), [Ablago entdecken](#ablago-entdecken), [Assistent](#assistent).
 
 <a id="titel"></a>**Titel** · ✓ Alltagswort · alle  
 Der Anzeigename einer Mappe. Er wird aus einer Vorlage mit Feldwerten gebildet.
@@ -239,7 +243,7 @@ Eine von Hand gesetzte Aufgabe für einen bestimmten Tag (Mappe ▾ → Erinnern
 Siehe auch: [Geplant](#geplant), [Automatisierungsvorlage](#automatisierungsvorlage).
 
 <a id="erweiterte-suche"></a>**Erweiterte Suche** · ✓ Alltagswort · alle  
-Ein Suchformular über die Felder mehrerer Mappentypen und den Text in Dokumenten.
+Ein Suchformular über die Felder mehrerer Mappentypen und den Text in Dokumenten. Enter im Suchfeld oben führt mit dem Begriff hierher.
 
 <a id="erwahnung"></a>**Erwähnung** · ✓ Alltagswort · alle  
 Die Nennung eines Benutzers mit @ in formatiertem Text. Sie erzeugt für ihn eine Aufgabe.
@@ -289,6 +293,10 @@ Siehe auch: [Post](#post).
 <a id="stand-post"></a>**Stand (Post)** · ✓ Alltagswort · alle  
 Wie weit Post bearbeitet ist – Neu (noch nicht bearbeitet), Zugeordnet (liegt bei einer passenden Mappe) oder Erledigt (nichts mehr zu tun).  
 Siehe auch: [Post](#post), [Neue Post](#neue-post).
+
+<a id="suchfeld-oben"></a>**Suchfeld oben** · ✓ Alltagswort · alle  
+Das eine Suchfeld in der Kopfzeile, auf jeder Seite der Ablage (#1218). Enter zeigt alle Treffer in der erweiterten Suche; in einer Ansicht filtert es die Liste und zeigt den Bereich als Chip „in: …“.  
+Siehe auch: [Erweiterte Suche](#erweiterte-suche), [Ansicht](#ansicht).
 
 <a id="teil"></a>**Teil** · ✓ Alltagswort · alle  
 Eine Mappe, die immer zu einer anderen gehört und nur dort erscheint – etwa eine Rechnungsposition an ihrer Rechnung (#1031). Teile stehen nicht in Ansichten, Suche und „Zuletzt geöffnet“; was in einem Teil steht, findet die übergeordnete Mappe („gefunden in …“), wenn man beide lesen darf. Öffnet man einen Teil direkt, steht oben „Teil von …“. Mit der übergeordneten Mappe gelöscht und wiederhergestellt. Kein Schutz – über Schnittstelle, Export und Links bleibt er erreichbar.  
@@ -692,6 +700,7 @@ Wer Oberfläche, Handbuch, Hilfetexte oder Release-Notizen schreibt, verwendet d
 | Archivfassung | Archivkopie, Langzeitfassung | `Archivfassung` |
 | Archivmodus | – | `Archiv` |
 | Archivnummer | – | `archivnummer` |
+| Assistent | Chatbot, Helferlein, Büroklammer | `Begleiter` |
 | Aufbewahrung abgelaufen | Darf weg | – |
 | Aufgabe | Auftrag, Task, Todo | `Aufgabe, AUFGABENARTEN` |
 | Aufruf von außen | Webhook (eingehend), Trigger-URL, Endpunkt | `WennAufruf, art: aufruf, /api/aufruf/:kennung` |
@@ -760,6 +769,7 @@ Wer Oberfläche, Handbuch, Hilfetexte oder Release-Notizen schreibt, verwendet d
 | Sonst | Else-Zweig, Andernfalls | `sonst` |
 | Standardwert | Defaultwert | – |
 | Stichtag | – | `stichtag` |
+| Suchfeld oben | Schnellsuche, Schnell finden | `KopfSuche, SucheOben` |
 | Systemmappentyp | – | `Systemtyp` |
 | Systemrolle | Rolle (für Administrator/Mitglied) | `Rolle, Benutzer.rolle` |
 | Systemzustand | Systemumgebung | – |

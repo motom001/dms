@@ -26,7 +26,7 @@ const [reiter, setReiter] = useState<'felder' | 'dokumente'>('felder');
 - **Screen readers:** `role="tablist"` with a name, per tab `role="tab"` with `aria-selected` and `aria-controls`; the panel is `role="tabpanel"` and named after the active tab (no `tabindex` of its own: its content has controls).
 - **Wider than the space:** the row scrolls sideways, the page does not. On a phone every tab is at least 44 px high.
 
-**Distinction:** the [toggle](bausteine-umschalter.md) changes *how* the same thing works (e.g. “Ask · Search”); tabs show different content.
+**Distinction:** the [toggle](bausteine-umschalter.md) changes *how* the same thing works (e.g. “List · Month · Year”); tabs show different content.
 
 **Existing code:** the tabs of a folder (`.registertab`) and of text recognition move to this building block in #1211 and #1213.
 
