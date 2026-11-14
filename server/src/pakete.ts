@@ -25,7 +25,7 @@ import { typBild, type TypBild } from '../../shared/src/typvergleich';
 import { ergaenzeBeschriftungen, type AbschnittTeile, type Beschriftungen, type NamensTeile, type TypTeile } from '../../shared/src/beschriftung';
 import type { MappenAktion } from '../../shared/src/paketaktionen';
 import { liesMappenaktionen } from './paketaktionen';
-import { ALLE_TYPEN, BEISPIEL_ENDUNGEN, BEISPIEL_ORDNER, BEREICH, CODE_MAX, PAKET_MAX, type BeispielStand, inMB, KATALOG_ALT_TAGE, type HerkunftPruefung, hatSchnittstelle, DMS_RECHTE_TYPEN, DMS_ALIAS, veralteteVerweise, WORTLISTEN_MAX, gleicheRechte, liesCode, rechtePunkte, rechteZeilen, type PaketCode, type RechtePunkt, dmsPasst, liesKatalog, nachAbhaengigkeiten, neuestePassende, OFFIZIELLER_KATALOG, PAKET_ID, passt, vergleicheVersion, VERSION, type InstalliertesPaket, type SichtZustand, type Katalog, type KatalogPaket, type KatalogVersion, auswahlMitAbhaengigkeiten, liesErgaenzt, liesErsetzt, punktIdFehler, type Ergaenzung, type AblaufPlan, type AblaufErgebnis, type AblaufAusgelassen, haengenAn, type AblaufEingabe, type AblaufInstallation } from '../../shared/src/pakete';
+import { ALLE_TYPEN, BEISPIEL_ENDUNGEN, BEISPIEL_ORDNER, BEREICH, CODE_MAX, PAKET_MAX, type BeispielStand, inMB, KATALOG_ALT_TAGE, type HerkunftPruefung, hatSchnittstelle, DMS_RECHTE_TYPEN, DMS_ALIAS, veralteteVerweise, WORTLISTEN_MAX, gleicheRechte, liesCode, rechtePunkte, rechteZeilen, type PaketCode, type RechtePunkt, dmsPasst, liesKatalog, nachAbhaengigkeiten, neuestePassende, OFFIZIELLER_KATALOG, PAKET_ID, passt, vergleicheVersion, VERSION, type InstalliertesPaket, type SichtZustand, type Katalog, type KatalogPaket, type KatalogVersion, auswahlMitAbhaengigkeiten, liesErgaenzt, liesErsetzt, punktIdFehler, katalogPaketZu, type Ergaenzung, type AblaufPlan, type AblaufErgebnis, type AblaufAusgelassen, haengenAn, type AblaufEingabe, type AblaufInstallation } from '../../shared/src/pakete';
 import { TABELLE_NEU_MAX } from '../../shared/src/tabelle';
 import { archivAusPaket, paketArchivFehler, type Archiv, type PaketArchiv } from '../../shared/src/archiv';
 import { zusammengesetztProbleme } from '../../shared/src/zusammengesetzt';
@@ -432,14 +432,8 @@ export function neueKennung(kennung: string, installierte: Array<Pick<Installier
   const treffer = installierte.flatMap((p) => Object.keys(p.typen).filter((k) => `${p.id}_${k}` === kennung).map((k) => typKennung(p.id, k)));
   return treffer.length === 1 ? treffer[0] : kennung;
 }
-/**
- * Katalogeintrag zu einer Paket-Id (#1084): die Id selbst, sonst das eine Paket, das sie unter `ersetzt` nennt – so
- * findet ein Update von texterkennung_fra das umgezogene texterkennung.fra.
- */
-export function katalogPaketZu(k: Katalog, id: string): KatalogPaket | undefined {
-  const nach = k.pakete.filter((p) => p.ersetzt?.includes(id));
-  return k.pakete.find((p) => p.id === id) ?? (nach.length === 1 ? nach[0] : undefined);
-}
+/** Katalogeintrag zu einer Paket-Id (#1084) – jetzt in shared/src/pakete.ts, hier für bestehende Aufrufer. */
+export { katalogPaketZu };
 /** Belegt die Prüfung die Herkunft vom Projekt (offizieller Katalog, Sammeldatei mit seiner Signatur, Prüfsumme dort)? */
 const offiziellBelegt = (p: HerkunftPruefung) => (p.offiziell && p.art !== 'ungueltig') || !!p.katalogversion;
 /** Vertrauen einer Herkunft (Sicherheit B): 3 offiziell belegt, 2 signierter weiterer Katalog, 1 sonst. */

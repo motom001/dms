@@ -164,6 +164,37 @@ export interface KatalogPaket {
 }
 export interface Katalog { format: number; erstellt: string; quelle: string; pakete: KatalogPaket[] }
 
+/**
+ * Katalogeintrag zu einer Paket-Id (#1084): die Id selbst, sonst das eine Paket, das sie unter `ersetzt` nennt – so
+ * findet ein Update von texterkennung_fra das umgezogene texterkennung.fra.
+ */
+export function katalogPaketZu(k: Katalog, id: string): KatalogPaket | undefined {
+  const nach = k.pakete.filter((p) => p.ersetzt?.includes(id));
+  return k.pakete.find((p) => p.id === id) ?? (nach.length === 1 ? nach[0] : undefined);
+}
+
+/** Eine neuere Version eines installierten Pakets im Katalog seiner Quelle (#1167). */
+export interface NeueVersion { id: string; name: string; installiert: string; neu: string; quelle: string }
+
+/**
+ * Neuere Versionen der installierten Pakete (#1167, #1168): je Paket aus dem Katalog, aus dem es stammt, die aktuelle
+ * Version – nur, wenn sie neuer ist. Abgeleitet aus den abgerufenen Katalogen und dem Stand der Installation, nicht
+ * gemerkt: Nach einem Update verschwindet der Merker sofort, eine noch neuere Version steht weiter da. Umgezogene
+ * Pakete (#1084) findet es unter der neuen Id. Pakete aus Quellen, die nicht abgerufen wurden, zählen nicht.
+ */
+export function neueVersionen(installiert: ReadonlyArray<Pick<InstalliertesPaket, 'id' | 'name' | 'version' | 'herkunft'>>, kataloge: ReadonlyArray<{ url: string; katalog: Katalog | null }>): NeueVersion[] {
+  const erg: NeueVersion[] = [];
+  for (const p of installiert) {
+    if (p.herkunft.art !== 'katalog') continue;
+    const url = p.herkunft.url;
+    const k = kataloge.find((x) => x.url === url)?.katalog;
+    const kp = k ? katalogPaketZu(k, p.id) : undefined;
+    const v = kp?.versionen.find((x) => x.version === kp.aktuell) ?? kp?.versionen[0];
+    if (v && vergleicheVersion(v.version, p.version) > 0) erg.push({ id: p.id, name: p.name, installiert: p.version, neu: v.version, quelle: url });
+  }
+  return erg;
+}
+
 /** Woher ein installiertes Paket stammt. */
 export type Herkunft =
   | { art: 'katalog'; url: string }

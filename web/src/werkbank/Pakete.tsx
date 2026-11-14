@@ -1,7 +1,7 @@
 import { Feld, HakenFeld, Knopf, KnopfLink, Reiter, ReiterFlaeche, Schalter } from '../bausteine';
 import { Fragment, useCallback, useEffect, useState, type ReactNode } from 'react';
 import { Symbol } from '../Symbol';
-import { ergaenzungenVon, hatNetz, hatSchnittstelle, inMB, istKiPaket, legtEtwasAn, herkunftText, KATALOG_LINK_REL, katalogSeiteMitVersion, sammelSeiteMitVersion, laeuferZustandText, vergleicheVersion, vorausgewaehlt, type AblaufErgebnis, type HerkunftPruefung, type InstalliertesPaket, type Katalog, type KatalogPaket } from '../../../shared/src/pakete';
+import { ergaenzungenVon, hatNetz, hatSchnittstelle, inMB, istKiPaket, legtEtwasAn, herkunftText, KATALOG_LINK_REL, katalogSeiteMitVersion, sammelSeiteMitVersion, laeuferZustandText, neueVersionen, vergleicheVersion, vorausgewaehlt, type AblaufErgebnis, type HerkunftPruefung, type InstalliertesPaket, type Katalog, type KatalogPaket } from '../../../shared/src/pakete';
 import { PAKET_ID } from '../../../shared/src/kennungen';
 import { api, ApiFehler, type BeispielBehalten, type PaketlaeuferStand, type PaketQuelle, type PaketVorschau, type Sammeldatei } from '../api';
 import { useDaten } from '../daten';
@@ -75,7 +75,6 @@ type Abruf = { url: string; offiziell: boolean; katalog: Katalog | null; fehler:
 export function usePakete(offen: boolean) {
   const [stand, setStand] = useState<{ installiert: InstalliertesPaket[]; katalogUrl: string; quellen: PaketQuelle[]; dms: string } | null>(null);
   const [kataloge, setKataloge] = useState<{ liste: Abruf[]; abgerufen: string } | null>(null);
-  const [updates, setUpdates] = useState<Array<{ id: string; installiert: string; neu: string; changelog: string | null; quelle: string }> | null>(null);
   const [upload, setUpload] = useState<{ upload: string; vorschau: PaketVorschau; datei: string } | null>(null);
   const [sammel, setSammel] = useState<{ sammeldatei: Sammeldatei; datei: string } | null>(null);
   const [fehler, setFehler] = useState<string>();
@@ -93,10 +92,10 @@ export function usePakete(offen: boolean) {
     setLaedt(true); setFehler(undefined);
     try { const k = await api.paketKatalog(alle); setKataloge({ liste: k.kataloge, abgerufen: k.abgerufen }); } catch (e) { setFehler((e as Error).message); } finally { setLaedt(false); }
   }, []);
-  const pruefen = useCallback(async () => {
-    setLaedt(true); setFehler(undefined);
-    try { setUpdates(await api.paketUpdates()); const k = await api.paketKatalog(true); setKataloge({ liste: k.kataloge, abgerufen: k.abgerufen }); } catch (e) { setFehler((e as Error).message); } finally { setLaedt(false); }
-  }, []);
+  // Neuere Versionen (#1167): aus den abgerufenen Katalogen und dem Stand der Installation abgeleitet, nicht gemerkt –
+  // nach einem Update stimmt der Merker sofort, ohne erneut zu prüfen.
+  const updates = neueVersionen(stand?.installiert ?? [], kataloge?.liste ?? []);
+  const pruefen = useCallback(() => abrufen(true), [abrufen]);
   /** Katalogpaket aus einer Quelle (ohne Angabe: offizieller Katalog). */
   const paketAus = (id: string, quelle?: string): { kp: KatalogPaket; url: string; offiziell: boolean } | undefined => {
     const k = kataloge?.liste.find((x) => (quelle ? x.url === quelle : x.offiziell));
@@ -116,7 +115,7 @@ export function PaketeListe({ z, offen }: { z: PaketeZustand; offen?: string }) 
   const quelleOffen = new URLSearchParams(location.search).get('quelle');
   const verfuegbar = (z.kataloge?.liste ?? [])
     .flatMap((k) => (k.katalog?.pakete ?? []).filter((p) => !installiert.some((i) => i.id === p.id || p.ersetzt?.includes(i.id))).map((p) => ({ p, url: k.url, offiziell: k.offiziell })));
-  const neuer = (id: string) => z.updates?.find((u) => u.id === id);
+  const neuer = (id: string) => z.updates.find((u) => u.id === id);
   const [hochFehler, setHochFehler] = useState<string>();
   async function hochladen(f: File | undefined) {
     if (!f) return;
