@@ -79,3 +79,26 @@ rauchtest('Werkbank: Vollexport mit Prüfsummen, Eintrag bleibt nach dem Herunte
   await eintrag.getByRole('link', { name: 'Prüfsummen (SHA256SUMS)' }).waitFor();
   await eintrag.getByRole('button', { name: 'Prüfsumme kopieren' }).waitFor();
 });
+
+// „Benutzer dürfen ihre eigenen Daten exportieren“ unter Daten sichern → Einstellungen (#1196): im Vollexport nur ein
+// leiser Satz mit Link.
+rauchtest('Werkbank: eigener Export der Benutzer unter Daten sichern → Einstellungen, nicht im Vollexport (#1196)', { als: LENA }, async (s) => {
+  await s.goto(BASIS + '/ablage/start');
+  await verwalten(s);
+  await s.goto(BASIS + '/werkbank/vollexport');
+  const bearbeitung = s.getByRole('region', { name: 'Bearbeitung' });
+  await bearbeitung.getByRole('heading', { name: 'Vollexport', level: 1 }).waitFor();
+  assert.equal(await bearbeitung.getByRole('switch').count(), 0, 'kein Schalter im Vollexport');
+  await bearbeitung.getByText('Ob Benutzer ihre eigenen Daten exportieren dürfen, stellst du unter Einstellungen ein.').waitFor();
+  await bearbeitung.getByRole('link', { name: 'Einstellungen', exact: true }).click();
+  await s.waitForURL(/\/werkbank\/daten/);
+  await bearbeitung.getByRole('heading', { name: 'Einstellungen', level: 1 }).waitFor();
+  const schalter = bearbeitung.getByRole('switch', { name: 'Benutzer dürfen ihre eigenen Daten exportieren' });
+  const vorher = await schalter.getAttribute('aria-checked');
+  await schalter.click();
+  await bearbeitung.getByText(vorher === 'true' ? 'Meine Daten exportieren ist abgeschaltet.' : 'Benutzer dürfen ihre eigenen Daten exportieren.', { exact: true }).waitFor();
+  await schalter.click();
+  await bearbeitung.getByText(vorher === 'true' ? 'Benutzer dürfen ihre eigenen Daten exportieren.' : 'Meine Daten exportieren ist abgeschaltet.', { exact: true }).waitFor();
+  // In der Leiste unter „Daten sichern“.
+  await s.getByRole('complementary', { name: 'Bereiche' }).getByRole('link', { name: /^Einstellungen/ }).waitFor();
+});

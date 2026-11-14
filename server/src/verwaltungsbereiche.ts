@@ -93,6 +93,11 @@ const REGELN: Regel[] = [
   R('*', '/api/werkbank/erkennung', 'texterkennung', 'pakete'),
   R('*', '/api/werkbank/fragen', 'texterkennung', 'pakete'),
 
+  // Papierkorb und Export (#1196, #1197): dauerhafte Einstellungen unter Einstellungen – vor den Regeln der Seiten,
+  // von denen sie dorthin umgezogen sind.
+  R('GET', '/api/werkbank/daten', 'daten'),
+  R('PUT', '/api/werkbank/export/persoenlich', 'daten'),
+
   // Daten sichern
   R('*', '/api/werkbank/sicherung*', 'sicherung'),
   R('*', '/api/werkbank/export*', 'vollexport'),

@@ -184,7 +184,7 @@ describe('Werkbank: mittlere Spalte für Sammlungen zum Anlegen und Bearbeiten (
     assert.deepEqual(je('ablage'), ['nutzung', 'pakete', 'typen', 'sichten', 'nummernkreise', 'automatisierungen', 'ablaufvorlagen']);
     assert.deepEqual(je('benutzer'), ['benutzer', 'verschluesselung', 'organisation', 'auskuenfte', 'loeschkonzept', 'aufbewahrung', 'stempel']);
     assert.deepEqual(je('post'), ['postfaecher', 'eingangsordner', 'webdav', 'texterkennung', 'woerter']);
-    assert.deepEqual(je('sichern'), ['sicherung', 'vollexport', 'papierkorb']);
+    assert.deepEqual(je('sichern'), ['sicherung', 'vollexport', 'papierkorb', 'daten']);
     assert.deepEqual(je('einstellungen'), ['betrieb', 'region', 'sprachen', 'aufgaben', 'anmeldeschutz', 'designs', 'anbindung']);
     assert.deepEqual(je('wartung'), ['systemzustand', 'protokoll', 'fehlermeldungen', 'wartung', 'demo']);
     for (const g of Object.keys(GRUPPEN)) assert.ok(je(g).length <= 7, g);
@@ -199,9 +199,10 @@ describe('Werkbank: mittlere Spalte für Sammlungen zum Anlegen und Bearbeiten (
     const alt = { vorlage: 'haushalt', ein: ['nummernkreise', 'protokoll', 'anmeldeschutz'], aus: ['aufgaben', 'papierkorb'] };
     assert.deepEqual(liesAnsicht(alt), alt);
     for (const p of ['aufgaben', 'verschluesselung', 'papierkorb', 'webdav']) assert.equal(werkbankUmleitung(p), null, p);
-    // Vorlagen: Haushalt und Betrieb enthalten dieselben Bereiche wie vor der Neugliederung (dazu Region, #726, und Sprachen, #729).
+    // Vorlagen: Haushalt und Betrieb enthalten dieselben Bereiche wie vor der Neugliederung (dazu Region, #726, Sprachen, #729,
+    // und die Einstellungen zum Sichern, #1196).
     assert.deepEqual(BEREICHE.filter((b) => inVorlage('haushalt', b.pfad)).map((b) => b.pfad).sort(),
-      ['aufgaben', 'benutzer', 'betrieb', 'nutzung', 'pakete', 'papierkorb', 'region', 'sicherung', 'sichten', 'sprachen', 'stempel', 'systemzustand', 'typen', 'verschluesselung', 'vollexport', 'webdav']);
+      ['aufgaben', 'benutzer', 'betrieb', 'daten', 'nutzung', 'pakete', 'papierkorb', 'region', 'sicherung', 'sichten', 'sprachen', 'stempel', 'systemzustand', 'typen', 'verschluesselung', 'vollexport', 'webdav']);
   });
 
   it('#354 Nacharbeit, #668: Datenschutz-Auskünfte und Löschkonzept unter „Benutzer und Sicherheit“, alte Adresse leitet um', () => {

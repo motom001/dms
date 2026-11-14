@@ -122,6 +122,7 @@ nav:
           - Wiederherstellen: wiederherstellen.md
           - Daten exportieren: export.md
           - Papierkorb: papierkorb.md
+          - Einstellungen zum Sichern: daten-einstellungen.md
       - Einstellungen:
           - Benachrichtigungen und Aufgaben: aufgaben.md
           - Region: region.md

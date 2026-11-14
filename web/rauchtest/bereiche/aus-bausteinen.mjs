@@ -161,6 +161,7 @@ async function werkbankSeiten(s) {
     seite('Vollexport', '/werkbank/vollexport'),
     seite('Betrieb', '/werkbank/betrieb'),
     seite('Region', '/werkbank/region'),
+    seite('Einstellungen zum Sichern', '/werkbank/daten'),
     seite('Sprachen', '/werkbank/sprachen'),
     seite('Aufgaben', '/werkbank/aufgaben', (s) => s.locator('[data-anker="werkbank.aufgaben.suche"]').waitFor()),
     seite('Anmeldeschutz', '/werkbank/anmeldeschutz'),

@@ -1,4 +1,5 @@
-import { Feld, HakenFeld, Knopf, Schalter } from '../bausteine';
+import { Feld, HakenFeld, Knopf } from '../bausteine';
+import { Link } from '../ort';
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import type { Auftrag } from '../../../shared/src/auftrag';
 import { betriebApi, type KontaktZuordnung } from '../api/betrieb';
@@ -122,12 +123,9 @@ export function VollexportPanel({ z }: { z: VollexportZustand }) {
             return t('werkbank.vollexport.export-laeuft-im-hintergrund');
           })}>{t('werkbank.vollexport.export-starten')}</Knopf></div>
       </div>
-      <div className="blatt">
-        <h2 className="h3">{t('werkbank.vollexport.meine-daten-exportieren')}</h2>
-        <Schalter an={s.persoenlich} beschriftung={t('werkbank.vollexport.schalter')} hinweis={t('werkbank.vollexport.mein-konto-konto-meine')}
-          setze={(an) => tu(async () => { await betriebApi.persoenlicherExport(an); await z.laden(); return an ? t('werkbank.vollexport.benutzer-duerfen-ihre-daten') : t('werkbank.vollexport.meine-daten-exportieren-abgeschaltet'); })} />
-      </div>
       <VollexportListe exporte={s.exporte} laden={z.laden} melde={(text, art) => setMeldung({ art, text })} />
+      {/* #1196: die dauerhafte Einstellung steht unter Daten sichern → Einstellungen. */}
+      <p className="leise klein">{tn('werkbank.vollexport.einstellung', { link: <Link to="/werkbank/daten#benutzer-duerfen" className="verweis">{t('werkbank.bereich.daten.name')}</Link> })}</p>
     </div>
   );
 }

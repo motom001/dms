@@ -4,6 +4,7 @@ import { useWoerter, WoerterListe, WoerterRechts } from './Woerter';
 import { Symbol } from '../Symbol';
 import { AnmeldeschutzPanel, useAnmeldeschutz } from './Anmeldeschutz';
 import { RegionPanel, useRegion } from './Region';
+import { DatenEinstellungenPanel, useDatenEinstellungen } from './DatenEinstellungen';
 import { NutzungPanel, useNutzung } from './Nutzung';
 import { OrganisationPanel, useOrganisation } from './Organisation';
 import { SprachenPanel, useSprachen } from './Sprachen';
@@ -84,6 +85,7 @@ import { typName } from '../../../shared/src/beschriftung';
  * /werkbank/texterkennung           Suche und Volltext: Texterkennung, automatisch verkleinern, Suche (#45, #356, #725)
  * /werkbank/woerter[/:id|/neu[?kopie=:id]]  Gleichbedeutende Wörter (#992), dreiteilig
  * /werkbank/aufgaben[/:id][?filter] Aufgaben aller Benutzer mit Filter (#54, #366, #354; seit #725 „Aufgaben“)
+ * /werkbank/daten                  Einstellungen zum Sichern: Aufbewahrung im Papierkorb, eigener Export der Benutzer (#1196, #1197)
  * /werkbank/wartung                 Wartung: Wartungsmodus und Wartungsoperationen, z. B. Volltext neu erzeugen (#45, #458, #725)
  * /werkbank/fehlermeldungen[/:id]  Fehlermeldungen der Benutzer (#70)
  * /werkbank/sicherung              Sicherung, Zeitplan, Probe, darunter Wiederherstellen (#103–#109, #725)
@@ -146,6 +148,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
   const pakete = usePakete(bereich === 'pakete' || (['typen', 'sichten', 'nummernkreise', 'automatisierungen', 'ablaufvorlagen'].includes(bereich) && darf('pakete')));
   const anmeldeschutz = useAnmeldeschutz(bereich === 'anmeldeschutz');
   const region = useRegion(bereich === 'region');
+  const daten = useDatenEinstellungen(bereich === 'daten');
   const nutzung = useNutzung(bereich === 'nutzung');
   const organisation = useOrganisation(bereich === 'organisation');
   const sprachen = useSprachen(bereich === 'sprachen');
@@ -162,7 +165,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
       verschluesselung: tresor.laden, papierkorb: papierkorb.laden, aufgaben: aufgaben.laden, texterkennung: ocr.laden, woerter: woerter.laden,
       wartung: async () => { await ocr.laden(); await wartungsmodus.laden(); }, fehlermeldungen: meldungen.laden, sicherung: sicherung.laden,
       systemzustand: async () => { await speicherplatz.laden(); await systemlast.laden(); await technik.laden(); await datenbank.laden(); }, anbindung: anbindung.laden, benutzer: benutzer.laden, webdav: webdav.laden, automatisierungen: automatisierungen.laden, ablaufvorlagen: ablaufvorlagen.laden,
-      auskuenfte: datenschutz.laden, loeschkonzept: datenschutz.laden,
+      auskuenfte: datenschutz.laden, loeschkonzept: datenschutz.laden, daten: daten.laden,
     };
     void offen[bereich]?.();
   });
@@ -250,6 +253,8 @@ export function Werkbank({ teile }: { teile: string[] }) {
     rechts = <AnbindungPanel z={anbindung} nachAenderung={() => void uebersicht.laden()} />;
   } else if (bereich === 'region') {
     rechts = <RegionPanel z={region} />;
+  } else if (bereich === 'daten') {
+    rechts = <DatenEinstellungenPanel z={daten} />;
   } else if (bereich === 'nutzung') {
     rechts = <NutzungPanel z={nutzung} />;
   } else if (bereich === 'organisation') {
@@ -344,6 +349,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
     { pfad: 'sicherung', name: n('sicherung'), gruppe: 'sichern', warn: uebersicht.stand?.sicherung && (uebersicht.stand.sicherung.fehler || (uebersicht.stand.sicherung.schluessel && uebersicht.stand.sicherung.zuAlt)) ? '!' : undefined, warnTitel: t('werkbank.leiste.sicherung') },
     { pfad: 'vollexport', name: n('vollexport'), gruppe: 'sichern' },
     { pfad: 'papierkorb', name: n('papierkorb'), gruppe: 'sichern', zahl: zahl(papierkorb.eintraege ? papierkorb.eintraege.length + papierkorb.dokumente.length : undefined, uebersicht.stand?.papierkorb.anzahl) },
+    { pfad: 'daten', name: n('daten'), gruppe: 'sichern' },
     // Einstellungen
     { pfad: 'betrieb', name: n('betrieb'), gruppe: 'einstellungen', warn: uebersicht.stand && !uebersicht.stand.mail ? t('werkbank.leiste.aus') : undefined, warnTitel: t('werkbank.leiste.mail') },
     { pfad: 'region', name: n('region'), gruppe: 'einstellungen' },

@@ -149,6 +149,7 @@ export const HILFE = {
   'werkbank.nummernkreise.nachtragen': admin('nummernkreise/', 'Nummern nachträglich vergeben', 'nummern-nachtraglich-vergeben'),
   'werkbank.aufkleber': admin('nummernkreise/', 'Aufkleber für Archivnummern', 'archivnummern-und-aufkleber'),
   'werkbank.region': admin('region/', 'Region'),
+  'werkbank.daten': admin('daten-einstellungen/', 'Einstellungen zum Sichern'),
   'werkbank.nutzung': admin('nutzung/', 'Nutzung'),
   // Eigene Organisation (#995).
   'werkbank.organisation': admin('organisation/', 'Eigene Organisation'),
