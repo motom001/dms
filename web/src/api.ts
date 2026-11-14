@@ -1289,7 +1289,8 @@ export interface PaketVorschau {
   ergaenzungen?: import('../../shared/src/vorgaben').ErgaenzungPlan[];
   /** Mitgelieferte Automatisierungen (#712); neu = steht beim Installieren zur Wahl. */
   /** eingeschaltet (#1082): wie im Paket angegeben; fehlt = nicht angegeben (siehe vorausgewaehlt in shared/src/pakete.ts). */
-  automatisierungen?: Array<{ schluessel: string; name: string; beschreibung: string; neu: boolean; eingeschaltet?: boolean; /** „täglich um 05:00“ bei „Paket nach Zeitplan ausführen“ (#1082). */ zeitplan?: string }>;
+  automatisierungen?: Array<{ schluessel: string; name: string; beschreibung: string; neu: boolean; eingeschaltet?: boolean; /** „täglich um 05:00“ bei „Paket nach Zeitplan ausführen“ (#1082). */ zeitplan?: string;
+    /** Update (#1174): selbst geändert – bleibt; was die neue Fassung aus dem Paket anders macht. */ geaendert?: { id: string; aenderungen: string[] } }>;
   /** Automatisierungsvorlagen (#1044) für die Rechte-Vorschau: Karten in Klartext, ersetzte Kern-Vorlage, neu bzw. mit anderen Karten. */
   ablaufvorlagen?: Array<{ schluessel: string; name: string; karten: string[]; ersetzt: string | null; neu: boolean; geaendert: boolean }>;
   /** Paket mit Code (#338): Rechte, Netzwerkzugriff und Ereignisse (#449); bestaetigen = muss ausdrücklich erlaubt werden. */

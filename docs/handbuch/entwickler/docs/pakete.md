@@ -43,7 +43,7 @@ Dann ausfüllen:
 | `inhalt/vorgaben.yaml` | optional (dms #1038): Vorgaben – Mappen zum Behalten mit fester Kennung, z. B. Vertragsarten |
 | `inhalt/vorlagen/…` | optional (dms #1038): Text-Vorlagen der Vorgaben, schlichtes Markdown (`.md`) |
 | `inhalt/wortlisten.yaml` | optional (ab Ablago 0.127.0): Gruppen gleichbedeutender Wörter für die Suche |
-| `inhalt/automatisierungen.yaml` | optional (ab Ablago 0.177.0): vorgefertigte Automatisierungen, nach der Installation aus – außer den angehakten (seit 0.233.0 mit `eingeschaltet: true` vorausgewählt) |
+| `inhalt/automatisierungen.yaml` | optional (ab Ablago 0.177.0): vorgefertigte Automatisierungen, immer mit angelegt; nach der Installation aus – außer denen, deren Schalter im Installationsdialog an steht (seit 0.233.0 mit `eingeschaltet: true` vorbelegt) |
 | `inhalt/ablaufvorlagen.yaml` | optional (ab Ablago 0.256.0, `DMS_ABLAUFVORLAGEN_AB`): [Automatisierungsvorlagen](#automatisierungsvorlagen) für das Menü „Mappe“ – nur Aufgaben und Benachrichtigungen |
 | `README.md`, `LICENSE`, `CHANGELOG.md` | Beschreibung, Lizenztext, Änderungen je Version |
 | `tests/erwartung.yaml` | was nach der Installation da sein muss |

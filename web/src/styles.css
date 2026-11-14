@@ -1473,6 +1473,10 @@ a.knopf.breit { display: flex; justify-content: center; text-decoration: none; }
 .pa-rechte h3 { margin: 8px 0 2px; }
 .pa-rechte ul { margin: 2px 0; padding-left: 18px; }
 .pa-einstellungen { border: 1px solid var(--linie); border-radius: 10px; padding: 8px 12px 12px; margin: 0; min-width: 0; }
+/* Mitgelieferte Automatisierungen beim Installieren (#1174): je eine mit Schalter untereinander; Update: selbst geänderte. */
+.paket-automatisierungen-liste { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.paket-automatisierungen-geaendert { list-style: none; margin: 0; padding: 0; }
+.paket-automatisierungen-geaendert .hinweis { margin-top: 4px; }
 .pa-einstellungen legend { padding: 0 4px; }
 .pa-reihe { margin: 0; padding-left: 20px; display: grid; gap: 2px; }
 .pa-reihe ul { margin: 2px 0; padding-left: 18px; }

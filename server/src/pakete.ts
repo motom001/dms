@@ -1066,7 +1066,8 @@ export interface Vorschau {
    * Mitgelieferte Automatisierungen (#712); neu = kommt mit dieser Installation bzw. diesem Update dazu (nur die stehen zur
    * Wahl). eingeschaltet (#1082): wie im Paket angegeben – true = mit gesetztem Haken anbieten; fehlt = nicht angegeben.
    */
-  automatisierungen: Array<{ schluessel: string; name: string; beschreibung: string; neu: boolean; eingeschaltet?: boolean; /** „täglich um 05:00“ bei „Paket nach Zeitplan ausführen“ (#1082). */ zeitplan?: string }>;
+  automatisierungen: Array<{ schluessel: string; name: string; beschreibung: string; neu: boolean; eingeschaltet?: boolean; /** „täglich um 05:00“ bei „Paket nach Zeitplan ausführen“ (#1082). */ zeitplan?: string;
+    /** Update (#1174): selbst geändert – bleibt, wie sie ist; was die neue Fassung aus dem Paket anders macht. */ geaendert?: { id: string; aenderungen: string[] } }>;
   /**
    * Automatisierungsvorlagen (#1044) für die Rechte-Vorschau: jede mit ihren Karten in Klartext („Aufgabe an die gewählte
    * Person“), ob sie eine Kern-Vorgabe ersetzt und ob sie neu oder geändert ist (bei einem Update).
@@ -2306,6 +2307,8 @@ export class Paketverwaltung {
       return { schluessel: a.schluessel, name: a.name, rechte: a.rechte, typen: a.mappentypen.map((vw) => this.typName(vw, paket, installierte, typen)), ...(a.dialog ? { dialog: a.dialog } : {}),
         neu: !alt || JSON.stringify([...alt.rechte].sort()) !== JSON.stringify([...a.rechte].sort()) || JSON.stringify(alt.anlegen ?? []) !== JSON.stringify(a.anlegen ?? []) };
     });
+    // Update (#1174): selbst geänderte mitgelieferte Automatisierungen bleiben – die Vorschau nennt sie mit der neuen Fassung.
+    const geaenderteAutos: Record<string, { id: string; aenderungen: string[] }> = ich && paket.automatisierungen.length ? await this.d.paketAutomatisierungenVergleich?.(ich, paket.automatisierungen).catch((e: Error) => { log.warn('Vergleich der Automatisierungen fehlgeschlagen', { paket: m.id, fehler: e.message }); return {}; }) ?? {} : {};
     const vorschau: Vorschau = {
       paket: { id: m.id, name: m.name, version: m.version, beschreibung: m.beschreibung, lizenz: m.lizenz, autor: m.autor, dms: m.dms, abhaengigkeiten: m.abhaengigkeiten, readme: v?.readme ?? null, changelog: v?.changelog ?? null, quelle: v?.quelle ?? null, herausgeber, herausgeberGeprueft: geprueft },
       dmsVersion, dmsOk, installiert: ich?.version ?? null, update: !!ich, umzug, herausgeberBestaetigen: herausgeberErstmals,
@@ -2314,7 +2317,7 @@ export class Paketverwaltung {
       pruefung: null,
       abhaengigkeiten, typen: typPlaene, sichten: sichtPlaene, beispiele: paket.beispiele.length, beispielDokumente: beispielDokumenteVon(paket), vorgaben: vorgabenPlan, ergaenzungen: ergaenzungenPlan, umbau: umbau.schritte.map((g) => g.plan), probleme, fehlercodes, namenskonflikte, hinweise,
       ...(paket.ablaufvorlagen?.length ? { ablaufvorlagen: await this.vorlagenPlan(paket, typen) } : {}),
-      automatisierungen: paket.automatisierungen.map((a) => ({ schluessel: a.schluessel, name: a.name, beschreibung: a.beschreibung, neu: !ich?.automatisierungen?.includes(a.schluessel), ...(a.eingeschaltet !== undefined ? { eingeschaltet: a.eingeschaltet } : {}), ...(paketZeitplan(a) ? { zeitplan: paketZeitplan(a)! } : {}) })),
+      automatisierungen: paket.automatisierungen.map((a) => ({ schluessel: a.schluessel, name: a.name, beschreibung: a.beschreibung, neu: !ich?.automatisierungen?.includes(a.schluessel), ...(a.eingeschaltet !== undefined ? { eingeschaltet: a.eingeschaltet } : {}), ...(paketZeitplan(a) ? { zeitplan: paketZeitplan(a)! } : {}), ...(geaenderteAutos[a.schluessel] ? { geaendert: geaenderteAutos[a.schluessel] } : {}) })),
       einstellungen: paket.einstellungen || ich?.einstellungen ? einstellungsAenderung(ich?.einstellungen ?? null, paket.einstellungen) : null,
       // Berechnete Felder (#1034) stehen in der Rechte-Vorschau: „berechnet Felder …“ und wer die Werte sieht.
       // Mitgelieferte Zeitpläne (#1082): „Läuft nach Zeitplan: Verträge täglich prüfen (täglich um 05:00)“.

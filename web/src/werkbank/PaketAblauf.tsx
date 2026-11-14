@@ -1,3 +1,4 @@
+import { AutomatisierungenSchalter } from './PaketAutomatisierungen';
 import { createContext, useContext, useState, type ReactNode } from 'react';
 import { Feld, FeldGruppe, HakenFeld, Knopf } from '../bausteine';
 import { auswahlMitAbhaengigkeiten, dmsPasst, inMB, passt, vergleicheVersion, vorausgewaehlt, type AblaufEingabe, type AblaufErgebnis, type AblaufInstallation, type AblaufPlan, type Ergaenzung, type InstalliertesPaket, type Katalog, type KatalogPaket, type KatalogVersion } from '../../../shared/src/pakete';
@@ -480,18 +481,15 @@ export function Fragen({ plan, eingabe, zurueck, neuerPlan, fertig, sammeln, vor
         </section>
       )}
 
+      {/* Mitgelieferte Automatisierungen (#1174): Schalter statt Haken – angelegt werden alle, gewählt wird, welche gleich laufen. */}
       {mitAutomatisierungen.length > 0 && (
         <section className="blatt stapel" aria-label={t('pakete.ablauf.automatisierungen')}>
           <h2 className="h3">{t('pakete.ablauf.automatisierungen')}</h2>
-          <p className="leise">{t('pakete.ablauf.automatisierungen.text')}</p>
-          {mitAutomatisierungen.flatMap((p) => (p.vorschau.automatisierungen ?? []).filter((a) => a.neu).map((a) => {
-            const k = `${p.id}|${a.schluessel}`;
-            return (
-              <HakenFeld key={k} beschriftung={<>{a.name} <small className="leise">{t('pakete.ablauf.automatisierungen.paket', { name: p.name })}{a.zeitplan && ` · ${t('pakete.ablauf.automatisierungen.zeitplan', { zeitplan: a.zeitplan })}`}</small></>} hinweis={a.beschreibung}>
-                <input type="checkbox" checked={!ohneAutomatisierung.includes(k)} onChange={(e) => setOhneAutomatisierung(e.target.checked ? ohneAutomatisierung.filter((x) => x !== k) : [...ohneAutomatisierung, k])} />
-              </HakenFeld>
-            );
-          }))}
+          <AutomatisierungenSchalter aus={ohneAutomatisierung} setAus={setOhneAutomatisierung}
+            liste={mitAutomatisierungen.flatMap((p) => (p.vorschau.automatisierungen ?? []).filter((a) => a.neu).map((a) => ({
+              schluessel: `${p.id}|${a.schluessel}`, name: a.name,
+              hinweis: [t('pakete.ablauf.automatisierungen.paket', { name: p.name }), a.zeitplan && t('pakete.ablauf.automatisierungen.zeitplan', { zeitplan: a.zeitplan }), a.beschreibung].filter(Boolean).join(' · '),
+            })))} />
         </section>
       )}
 

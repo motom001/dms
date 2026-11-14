@@ -23,7 +23,7 @@ import { FeldBedingung } from './Sichten';
 import { gebietsschema } from '../../../shared/src/sprache';
 import { AufrufAdresse, AufrufParameterZeile, AufrufWenn } from './AutomatisierungAufruf';
 import { EmailKarte, UrlKarte, Zustellungen } from './AutomatisierungAussen';
-import { Eintragsliste, GeloeschteEintraege, Bereich, Fassungen, Feld, FeldGruppe, fehlerBereiche, HakenFeld, Knopf, KnopfLink, PaketChip, Schalter, Suchfeld, Umschalter, useBereiche, Wahlhaken, type BereichListe, type Klappe, type Listeneintrag } from '../bausteine';
+import { Eintragsliste, GeloeschteEintraege, Bereich, Fassungen, Feld, FeldGruppe, fehlerBereiche, HakenFeld, Knopf, KnopfLink, PaketChip, Schalter, Suchfeld, Umschalter, useBereiche, Wahlhaken, type BereichListe, type Klappe, type KnopfSperre, type Listeneintrag } from '../bausteine';
 import { rueckfrage } from '../rueckfrage';
 import { Symbol } from '../Symbol';
 import type { InstalliertesPaket } from '../../../shared/src/pakete';
@@ -441,13 +441,28 @@ export function AutomatisierungEditor({ z, id }: { z: AutomatisierungenZustand; 
       </>}
       <Speicherleiste ent={ent} gegenstand={t('automatisierung.ui.gegenstand')} sendet={sendet} ungueltig={probleme.length > 0} formular="auto-formular"
         meldung={meldung?.art === 'schlecht' ? meldung : undefined}
-        loeschen={a && a.herkunft === 'eigen' ? {
+        loeschen={a ? {
           text: t('automatisierung.ui.loeschen'),
           rueckfrage: { titel: t('automatisierung.ui.loeschen.frage', { name: a.name }), text: t('automatisierung.ui.loeschen.text'), ja: t('automatisierung.ui.loeschen') },
           onClick: () => { void aktion(async () => { await api.automatisierungLoeschen(a.id); loeseWache(); geheZu('/werkbank/automatisierungen', true); }, t('automatisierung.ui.geloescht')); },
+          // Mitgeliefert (#1174): nicht löschbar – das Paket legte sie wieder an. Statt eines fehlenden Knopfs die Erklärung.
+          gesperrt: a.herkunft === 'eigen' ? null : mitgeliefertSperre(a, k),
         } : undefined} />
     </div>
   );
+}
+
+/**
+ * Warum sich eine mitgelieferte Automatisierung nicht löschen lässt (#1174): Sie kommt aus einem Paket (bzw. mit Ablago),
+ * das sie beim nächsten Update wieder anlegte. Statt zu löschen: ausschalten – aus bleibt aus, auch nach Updates.
+ */
+function mitgeliefertSperre(a: AutomatisierungAnsicht, k: Kontextdaten): KnopfSperre {
+  if (a.herkunft !== 'paket' || !a.paketId) return { titel: t('automatisierung.ui.loeschen.gesperrt'), grund: t('automatisierung.ui.loeschen.ablago') };
+  const name = k.pakete?.find((p) => p.id === a.paketId)?.name ?? a.paketId;
+  return {
+    titel: t('automatisierung.ui.loeschen.gesperrt'), grund: t('automatisierung.ui.loeschen.paket', { paket: name }),
+    stattdessen: <KnopfLink to={`/werkbank/pakete/${encodeURIComponent(a.paketId)}`} groesse="klein">{t('automatisierung.ui.loeschen.zum-paket', { paket: name })}</KnopfLink>,
+  };
 }
 
 /** Probleme eines Bereichs (#1000) stehen in ihm – nicht gesammelt am Ende des Formulars. */

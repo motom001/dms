@@ -43,7 +43,7 @@ Then fill in:
 | `inhalt/vorgaben.yaml` | optional (dms #1038): presets – folders to keep with a fixed key, e.g. contract types |
 | `inhalt/vorlagen/…` | optional (dms #1038): text templates of the presets, plain Markdown (`.md`) |
 | `inhalt/wortlisten.yaml` | optional (from Ablago 0.127.0): groups of synonyms for the search |
-| `inhalt/automatisierungen.yaml` | optional (from Ablago 0.177.0): ready-made automations, off after installation – except the ticked ones (since 0.233.0 preselected with `eingeschaltet: true`) |
+| `inhalt/automatisierungen.yaml` | optional (from Ablago 0.177.0): ready-made automations, always created; off after installation – except those whose switch is on in the installation dialog (since 0.233.0 preset with `eingeschaltet: true`) |
 | `inhalt/ablaufvorlagen.yaml` | optional (from Ablago 0.256.0, `DMS_ABLAUFVORLAGEN_AB`): [automation templates](#automatisierungsvorlagen) for the “Folder” menu – only tasks and notifications |
 | `README.md`, `LICENSE`, `CHANGELOG.md` | description, licence text, changes per version |
 | `tests/erwartung.yaml` | what must be there after installation |

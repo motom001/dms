@@ -159,6 +159,26 @@ describe('Erinnerungen am Feld als Automatisierungen (#712)', () => {
     assert.equal((await nurDatum(repo)).length, 1);
   });
 
+  it('Update-Vorschau nennt selbst geänderte mitgelieferte Automatisierungen mit der neuen Paketfassung (#1174)', async () => {
+    const { vertrag, repo, motor } = await aufbau();
+    const p = { id: 'vertraege', name: 'Verträge', typen: { vertrag: vertrag.id } } as never;
+    const def = { schluessel: 'kuendigen', name: 'Kündigung vorbereiten', beschreibung: '', wenn: { art: 'datum', typ: 'vertrag', feld: 'kuendigung', vorlauf: 3, einheit: 'monate' }, dann: [{ art: 'aufgabe', als: 'aufgabe', empfaenger: [{ art: 'ersteller' }], text: 'Kündigen?' }] };
+    await motor.ausPaket(p, [def]);
+    // Unverändert: nichts zu nennen – das Update ersetzt sie ohnehin.
+    assert.deepEqual(await motor.paketVergleich(p, [{ ...def, name: 'Neu' }]), {});
+    const [a] = await nurDatum(repo);
+    await motor.aendere(a.id, { ...a, name: 'Meine Kündigung' }, 'x');
+    // Paketfassung gleich der eigenen Änderung: auch nichts.
+    assert.deepEqual(await motor.paketVergleich(p, [{ ...def, name: 'Meine Kündigung' }]), {});
+    // Neue Fassung mit anderem Text: genannt, mit lesbaren Änderungen.
+    const v = await motor.paketVergleich(p, [{ ...def, dann: [{ ...def.dann[0], text: 'Jetzt kündigen?' }] }]);
+    assert.equal(v.kuendigen?.id, a.id);
+    assert.ok(v.kuendigen.aenderungen.length >= 2, v.kuendigen.aenderungen.join(' | '));
+    assert.ok(v.kuendigen.aenderungen.some((x) => x.includes('Kündigung vorbereiten')), 'nennt den Namen der Paketfassung');
+    // Die eigene Fassung bleibt dabei unberührt.
+    assert.equal((await nurDatum(repo))[0].name, 'Meine Kündigung');
+  });
+
   it('beim Installieren angehakte sind gleich eingeschaltet', async () => {
     const { vertrag, repo, motor } = await aufbau();
     const p = { id: 'vertraege', name: 'Verträge', typen: { vertrag: vertrag.id } } as never;

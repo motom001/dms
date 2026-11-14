@@ -382,7 +382,7 @@ An einem **Datumsfeld** wie „Kündigung bis“ oder „HU fällig“ kannst du
 - **Text** mit Platzhaltern wie dem Datum und dem Titel der Mappe.
 - **Wiederkehrend** – monatlich, vierteljährlich, halbjährlich, jährlich oder alle paar Jahre. Wer die Frist erledigt, bekommt den Vorschlag „Datum auf 30.09.2028 setzen“; das Datum ändert sich **nie von selbst**, und die Änderung steht wie jede andere in der Historie der Mappe.
 
-Pakete bringen passende Automatisierungen mit, zum Beispiel „Kündigung bald fällig“. Beim Installieren fragt Ablago, welche gleich eingeschaltet werden sollen (Vorgabe: alle). Für einen eigenen Mappentyp legst du die Automatisierung selbst an.
+Pakete bringen passende Automatisierungen mit, zum Beispiel „Kündigung bald fällig“. Sie kommen immer mit; beim Installieren wählst du per Schalter, welche gleich laufen. Für einen eigenen Mappentyp legst du die Automatisierung selbst an.
 
 **Seit Version 0.177 erinnert nur noch die Automatisierung.** Früher stellte man Vorlauf, Empfänger und Text direkt am Feld ein. Beim Update hat Ablago jede dieser Erinnerungen **einmal** als eingeschaltete Automatisierung *Erinnerung: Feld (Mappentyp)* übernommen – mit derselben Vorlaufzeit, demselben Empfänger (ist das Feld leer: der Ersteller), demselben Text und derselben Wiederholung. Es erinnert also alles wie bisher; die Werkbank-Übersicht sagt einmal, was umgezogen ist. Eine übernommene Automatisierung, die du löschst, kommt nicht wieder. Bringt ein Paket-Update später eine eigene Automatisierung für dasselbe Feld mit, ersetzt sie die übernommene, solange du diese nicht geändert hast – doppelt erinnert wird nie.
 
