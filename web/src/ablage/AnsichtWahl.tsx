@@ -116,7 +116,7 @@ export function AnsichtWahl({ aktiv, aktuell, feste, ohne = [] }: { aktiv?: stri
                 </div>
               );
             })}
-            <Knopf art="link" groesse="klein" className="aw-verwalten" onClick={() => setVerwalten(true)}>
+            <Knopf art="link" className="aw-verwalten" onClick={() => setVerwalten(true)}>
               {tn('ablage.ansichtwahl.ansichten-ausblenden', { wert: a.ausgeblendet > 0 && t('ablage.ansichtwahl.ausgeblendet', { ausgeblendet: a.ausgeblendet }) })}</Knopf>
           </>}
         </section>
