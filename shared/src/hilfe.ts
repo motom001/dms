@@ -125,6 +125,8 @@ export const HILFE = {
   'werkbank.stempel': admin('stempel/', 'Stempel-Vorlagen'),
   'werkbank.automatisierungen': admin('automatisierungen/', 'Automatisierungen'),
   'werkbank.ablaufvorlagen': admin('automatisierungsvorlagen/', 'Automatisierungsvorlagen'),
+  // #1180: Haken „Datum“ bei „In …“ – das Datum als änderbarer Vorschlag.
+  'werkbank.ablaufvorlagen.datum': admin('automatisierungsvorlagen/', 'Datum vorschlagen', 'datum-vorschlagen'),
   'werkbank.suche': admin('suche/', 'Suche: Tippfehler und Wörterverzeichnis'),
   'werkbank.woerter': admin('suche/', 'Gleichbedeutende Wörter', 'gleichbedeutende-worter'),
   'mappentyp.stempel': admin('stempel/', 'Stempel je Mappentyp', 'stempel-je-mappentyp'),
@@ -218,6 +220,8 @@ export const HILFE = {
   'mappentyp.erkennungstyp': admin('mappentypen/', 'Erkennung', 'erkennung'),
   'mappentyp.erkennung': admin('mappentypen/', 'Aus Dokument füllen', 'aus-dokument-fullen'),
   'mappentyp.wiederfinden': admin('mappentypen/', 'Zum Wiederfinden nutzen', 'zum-wiederfinden-nutzen'),
+  // #1220: Mappen dieses Typs in der Suche oben und in „Frag deine Ablage“ – z. B. nicht bei reinen Auswahllisten.
+  'mappentyp.in-suche': admin('mappentypen/', 'In der allgemeinen Suche zeigen', 'in-der-allgemeinen-suche-zeigen'),
   'mappentyp.teil': admin('mappentypen/', 'Ist Teil einer anderen Mappe', 'ist-teil-einer-anderen-mappe'),
   'mappentyp.frist': admin('mappentypen/', 'Erinnerungen an Datumsfeldern', 'fristen-erinnerungen-an-datumsfeldern'),
   'mappentyp.format': admin('mappentypen/', 'Formate und Datumsgrenzen', 'formate-und-datumsgrenzen'),

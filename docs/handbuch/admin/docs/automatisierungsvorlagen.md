@@ -25,8 +25,25 @@ In der Mitte stehen alle Vorlagen mit **an/aus**, Herkunft als Chip (**Ablago** 
 | **Name**, **Reihenfolge**, **Beschreibung** | so steht sie im Menü „Mappe“; kleinere Zahl weiter oben (1–99) |
 | **Im Menü „Mappe“ bei** | Mappentypen, an denen sie angeboten wird – keiner gewählt: bei allen |
 | **Wann** | **Sofort**, **Am gewählten Datum** oder **In …** Tagen, Wochen bzw. Monaten |
-| **Fragt beim Anwenden** | **Empfänger**, **Datum** (immer bei „am gewählten Datum“) und **Text** – genau das steht im kleinen Dialog an der Mappe |
+| **Fragt beim Anwenden** | **Empfänger**, **Datum** und **Text** – genau das steht im kleinen Dialog an der Mappe. **Datum** ist bei „Am gewählten Datum“ immer an, bei „Sofort“ aus und bei „In …“ frei wählbar (siehe [Datum vorschlagen](#datum-vorschlagen)) |
 | **Dann** | eine oder mehrere Karten **Aufgabe / Benachrichtigung**: an die gewählte Person, wer die Vorlage anwendet, wer die Mappe angelegt hat oder die Person in einem Feld der Mappe (nur mit festen Mappentypen) |
+
+### Datum vorschlagen: „Erinnere mich in 14 Tagen“ { #datum-vorschlagen }
+
+Bei **In …** entscheidest du, ob das Datum fest ist oder nur ein **Vorschlag**:
+
+| Wann | Haken „Datum“ | Was an der Mappe passiert |
+|---|---|---|
+| Sofort | – | läuft sofort |
+| In 14 Tagen | aus | läuft fest in 14 Tagen, ohne Datumsfeld |
+| In 14 Tagen | **an** | Datumsfeld, **vorbelegt mit heute + 14 Tage**, änderbar |
+| Am gewählten Datum | immer an | Datumsfeld, vorbelegt mit heute + 7 Tage |
+
+Beispiel: Lena möchte, dass sich jeder im Haushalt mit einem Klick an eine Mappe erinnern lassen kann – meistens in zwei Wochen, manchmal früher oder später. Sie legt eine Vorlage **Erinnere mich in 14 Tagen** an: Wann **In 14 Tagen**, unter „Fragt beim Anwenden“ **Datum** und **Text**, eine Karte **Aufgabe** an „wer sie anwendet“ mit dem Text `{eingabe}`. In der Liste steht sie als „In 14 Tagen (änderbar) → Aufgabe an wer sie anwendet“. Wendet Jonas sie an einer Mappe an, steht im Datumsfeld schon das Datum in 14 Tagen; er schreibt, woran er denken will, und ändert das Datum nur, wenn es nicht passt. **Ausprobieren** im Editor belegt das Datum genauso vor.
+
+![Vorlage „Erinnere mich in 14 Tagen“: Wann „In 14 Tagen“, unter „Fragt beim Anwenden“ ist „Datum“ angehakt](bilder/werkbank-automatisierungsvorlage-vorschlag.png)
+
+Vorlagen ohne den Haken verhalten sich wie bisher: „In 6 Monaten“ bleibt fest.
 
 Im Text einer Karte gibt es die Platzhalter wie bei den [Automatisierungen](automatisierungen.md) (`{titel}`, `{mappentyp}`, `{heute}`, `{datum}`, die Felder des Mappentyps), dazu `{eingabe}` (der Text, den man beim Anwenden schreibt), `{person}` (wer anwendet) und `{empfaenger}`. Eine Vorlage, die nach dem Text fragt, braucht `{eingabe}` in einer Karte.
 

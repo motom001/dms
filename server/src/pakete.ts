@@ -221,6 +221,11 @@ export interface PaketTyp {
    */
   gehoertZu?: string;
   /**
+   * „In der allgemeinen Suche zeigen“ (#1220): `false` für reine Auswahllisten (z. B. „Vertragsart“) – ihre Mappen fehlen
+   * dann in der Suche über die Kopfzeile und in „Frag deine Ablage“. Fehlt = ja. Ältere Ablago ignorieren es.
+   */
+  inSuche?: boolean;
+  /**
    * Archivmodus (#1051, Entwurf Compliance): Vorgabe für einen Typ, den das Paket neu anlegt – mit „beruflich genutzt“
    * gilt jahreBeruflich. Vorhandene Typen ändert weder Installation noch Update; ältere Ablago ignorieren es.
    */
@@ -551,6 +556,7 @@ export function liesPaket(roh: Map<string, Buffer>): Paket {
       ...(typeof t.ausPost === 'boolean' ? { ausPost: t.ausPost } : {}),
       ...(typeof t.erkennbarAn === 'string' && t.erkennbarAn.trim() ? { erkennbarAn: t.erkennbarAn.trim() } : {}),
       ...(t.gehoertZu !== undefined && t.gehoertZu !== null ? { gehoertZu: str(t.gehoertZu) } : {}),
+      ...(typeof t.inSuche === 'boolean' ? { inSuche: t.inSuche } : {}),
       ...(archiv ? { archiv } : {}) };
   });
   // Beim Auswählen übernehmen (#1037): braucht alle Typen des Pakets.
@@ -883,13 +889,14 @@ function vorbelegenNeu(t: PaketTyp, vorhanden: Pick<Mappentyp, 'felder'>): Array
   });
 }
 /**
- * Angaben am Typ (#937), die das Paket vorgibt und die der Administrator noch nicht eingestellt hat. „Ist Teil einer
- * anderen Mappe“ (#1031) genauso: Ein Update schaltet es ein, wenn das Feld da ist und der Typ eigenständig ist; aus
- * schaltet es nur der Administrator.
+ * Angaben am Typ (#937), die das Paket vorgibt und die der Administrator noch nicht eingestellt hat – ebenso „In der
+ * allgemeinen Suche zeigen“ (#1220). „Ist Teil einer anderen Mappe“ (#1031) genauso: Ein Update schaltet es ein, wenn
+ * das Feld da ist und der Typ eigenständig ist; aus schaltet es nur der Administrator.
  */
-function typAngabenNeu(t: PaketTyp, vorhanden: Pick<Mappentyp, 'ausPost' | 'erkennbarAn' | 'teilVon' | 'felder'>): { ausPost?: boolean; erkennbarAn?: string; teilVon?: string } {
+function typAngabenNeu(t: PaketTyp, vorhanden: Pick<Mappentyp, 'ausPost' | 'erkennbarAn' | 'teilVon' | 'felder' | 'inSuche'>): { ausPost?: boolean; erkennbarAn?: string; teilVon?: string; inSuche?: boolean } {
   return {
     ...(typeof t.ausPost === 'boolean' && (vorhanden.ausPost ?? null) === null ? { ausPost: t.ausPost } : {}),
+    ...(typeof t.inSuche === 'boolean' && (vorhanden.inSuche ?? null) === null ? { inSuche: t.inSuche } : {}),
     ...(t.erkennbarAn && !vorhanden.erkennbarAn ? { erkennbarAn: t.erkennbarAn } : {}),
     ...(t.gehoertZu && !vorhanden.teilVon && vorhanden.felder.some((f) => f.key === t.gehoertZu && f.typ === 'referenz') ? { teilVon: t.gehoertZu } : {}),
   };
@@ -2699,7 +2706,7 @@ export class Paketverwaltung {
       const unvollstaendig = offen.size > 0 || t.register.some((r) => (r.quellen ?? []).some((q) => quelleId(t, q, nurAngelegt, felder as Feld[]) === null))
         || t.felder.some((f) => wartet(f.anzeigen)) || t.register.some((r) => Array.isArray(r.abschnitte) && (r.abschnitte as unknown[]).some((x) => istObjekt(x) && wartet(x.anzeigen)));
       const name = plan.typen.find((x) => x.schluessel === t.schluessel)!.name;
-      return { unvollstaendig, daten: { id: ids.get(t.schluessel), name, schluessel: typKennung(m.id, t.schluessel), beschreibung: t.beschreibung, titelVorlage: t.titelVorlage ?? '', felder, register, ...(t.trefferliste ? { trefferliste: t.trefferliste.filter((k) => !offen.has(k)) } : {}), ...(t.beschriftungen ? { beschriftungen: t.beschriftungen } : {}), ...(t.ausPost !== undefined ? { ausPost: t.ausPost } : {}), ...(t.erkennbarAn ? { erkennbarAn: t.erkennbarAn } : {}),
+      return { unvollstaendig, daten: { id: ids.get(t.schluessel), name, schluessel: typKennung(m.id, t.schluessel), beschreibung: t.beschreibung, titelVorlage: t.titelVorlage ?? '', felder, register, ...(t.trefferliste ? { trefferliste: t.trefferliste.filter((k) => !offen.has(k)) } : {}), ...(t.beschriftungen ? { beschriftungen: t.beschriftungen } : {}), ...(t.ausPost !== undefined ? { ausPost: t.ausPost } : {}), ...(t.erkennbarAn ? { erkennbarAn: t.erkennbarAn } : {}), ...(t.inSuche !== undefined ? { inSuche: t.inSuche } : {}),
         // Ist Teil einer anderen Mappe (#1031): erst, wenn das Feld dabei ist (sonst im zweiten Durchgang).
         teilVon: t.gehoertZu && !offen.has(t.gehoertZu) ? t.gehoertZu : null,
         // Archivmodus (#1051) wie in der Vorschau – zählt nur beim Anlegen (und im zweiten Durchgang desselben neuen Typs);

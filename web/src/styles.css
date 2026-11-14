@@ -746,6 +746,8 @@ th[aria-sort] .spaltenknopf .pfeil { opacity: 1; }
 
 /* ---------- Sichten in der Werkbank (#38, #40, #41) ---------- */
 .typwahl { display: flex; flex-wrap: wrap; gap: 6px 18px; }
+/* Jede Wahl mindestens 24 px hoch (WCAG 2.5.8): Bei vielen Mappentypen lagen zwei Haken in der CI-Schrift zu dicht übereinander. */
+.typwahl .haken { min-height: 24px; align-items: center; }
 .bedingungen { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
 .bedingungen > li { border: 1px solid var(--linie); border-radius: var(--r); padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; background: var(--flaeche); }
 .bedingungen > li.fehlerhaft { border-color: var(--schlecht); }
@@ -1150,6 +1152,10 @@ h2 .hilfesymbol, h3 .hilfesymbol { font-size: .6em; vertical-align: .25em; }
   :is(.spalte.liste, .spalte.mappe) .haken-untereinander > label.haken { min-height: 44px; align-items: center; }
   :is(.spalte.liste, .spalte.mappe) .haken-untereinander > a.verweis { margin-block: 0; padding-block: 14px; }
   :is(.spalte.liste, .spalte.mappe) summary { padding-block: 8px; min-height: 44px; box-sizing: border-box; }
+  /* „Gerade benutzt bei“ (#1180): Verweise untereinander – jede Zeile so hoch, dass die gewachsenen Flächen sich nicht überdecken. */
+  .benutzt-liste > li { min-height: 48px; display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; }
+  /* Der Verweis nimmt seine Höhe im Fluss ein: Bricht der Text dahinter um (andere Schrift), liegt er darunter statt darüber. */
+  .spalte.mappe .benutzt-liste a.verweis { margin-block: 0; padding-block: 12px; }
 }
 .leise a.person { text-decoration: underline; text-underline-offset: 2px; }
 

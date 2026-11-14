@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
-  empfaengerText, FRAGEN, istKernVorlage, karteText, VORLAGEN_GRENZEN, VORLAGEN_PLATZHALTER, VORLAGEN_REIHENFOLGE, vorlagenProbleme, wannText,
+  empfaengerText, FRAGEN, fragtDatum, istKernVorlage, karteText, VORLAGEN_GRENZEN, VORLAGEN_PLATZHALTER, VORLAGEN_REIHENFOLGE, vorlagenProbleme, vorschlagDatum, wannText,
   type AblaufVerlauf, type AblaufvorlageAnsicht, type AblaufvorlageDaten, type AblaufWann, type Frage, type MappenAblauf, type VorlagenEmpfaenger, type VorlagenKarte,
 } from '../../../shared/src/ablaufvorlagen';
 import { einzigesZiel, jedeMappe, zieleVon, type Mappentyp } from '../../../shared/src/model';
 import type { Zeitraumeinheit } from '../../../shared/src/feldarten';
 import { datumDe } from '../../../shared/src/fristen';
+import { heuteIn } from '../../../shared/src/sichten';
 import { gebietsschema } from '../../../shared/src/sprache';
 import { api, type Bezuege } from '../api';
 import { BenutzerWahl } from '../ablage/Aufgaben';
@@ -143,6 +144,20 @@ function WannEditor({ wann, setze }: { wann: AblaufWann; setze: (w: AblaufWann) 
   );
 }
 
+/**
+ * Haken „Datum“ unter „Fragt beim Anwenden“ (#1180): bei „In …“ frei wählbar – dann ist das Datum ein Vorschlag, den man
+ * beim Anwenden ändern darf; bei „Am gewählten Datum“ immer an, bei „Sofort“ aus (beides gesperrt, mit Grund).
+ */
+function DatumFrage({ e, setze }: { e: Entwurf; setze: (an: boolean) => void }) {
+  const frei = e.wann.art === 'in';
+  const grund = frei ? 'automatisierung.vorlage.ui.frage.datum.vorschlag' : e.wann.art === 'datum' ? 'automatisierung.vorlage.ui.frage.datum.text' : 'automatisierung.vorlage.ui.frage.datum.sofort';
+  return (
+    <HakenFeld beschriftung={t('automatisierung.vorlage.ui.frage.datum')} hinweis={t(grund)} hilfe="werkbank.ablaufvorlagen.datum">
+      <input type="checkbox" checked={fragtDatum(e)} disabled={!frei} onChange={(x) => setze(x.target.checked)} />
+    </HakenFeld>
+  );
+}
+
 /** Kopf des Editors: Name, an/aus, Kopieren, Zurücksetzen – und ob ein Paket die Vorlage ersetzt. */
 function VorlageKopf({ v, aktion }: { v?: AblaufvorlageAnsicht; aktion: (f: () => Promise<unknown>, gut: string) => Promise<void> }) {
   return (
@@ -175,8 +190,8 @@ export function AblaufvorlageEditor({ z, kennung }: { z: AblaufvorlagenZustand; 
   if (!z.stand) return <p className="leise">{t('automatisierung.ui.lade')}</p>;
   if (!neu && !v) return <div className="platzhalter"><p>{t('automatisierung.vorlage.fehlt')}</p></div>;
   const typen = d.typen.filter((x) => !x.system || x.system === 'post');
-  // Fragen folgen dem Inhalt: „Datum“ genau bei „am gewählten Datum“.
-  const fragen = (x: Entwurf): Frage[] => FRAGEN.filter((f) => (f === 'datum' ? x.wann.art === 'datum' : x.fragen.includes(f)));
+  // Fragen folgen dem Inhalt: „Datum“ immer bei „am gewählten Datum“, nie bei „sofort“, bei „In …“ nach Wahl (#1180).
+  const fragen = (x: Entwurf): Frage[] => FRAGEN.filter((f) => (f === 'datum' ? fragtDatum(x) : x.fragen.includes(f)));
   const probleme = vorlagenProbleme({ ...e, fragen: fragen(e) }, d.typen);
   const aktion = async (f: () => Promise<unknown>, gut: string) => {
     setMeldung(undefined);
@@ -213,7 +228,7 @@ export function AblaufvorlageEditor({ z, kennung }: { z: AblaufvorlagenZustand; 
         <WannEditor wann={e.wann} setze={(wann) => setE({ ...e, wann })} />
         <FeldGruppe beschriftung={t('automatisierung.vorlage.ui.fragen')} hinweis={t('automatisierung.vorlage.ui.fragen.text')}>
           <HakenFeld beschriftung={t('automatisierung.vorlage.ui.frage.empfaenger')}><input type="checkbox" checked={e.fragen.includes('empfaenger')} onChange={(x) => frage('empfaenger', x.target.checked)} /></HakenFeld>
-          <HakenFeld beschriftung={t('automatisierung.vorlage.ui.frage.datum')} hinweis={t('automatisierung.vorlage.ui.frage.datum.text')}><input type="checkbox" checked={e.wann.art === 'datum'} disabled onChange={() => undefined} /></HakenFeld>
+          <DatumFrage e={e} setze={(an) => frage('datum', an)} />
           <HakenFeld beschriftung={t('automatisierung.vorlage.ui.frage.text')}><input type="checkbox" checked={e.fragen.includes('text')} onChange={(x) => frage('text', x.target.checked)} /></HakenFeld>
         </FeldGruppe>
         <h3 className="h4">{t('automatisierung.vorlage.ui.karten')}</h3>
@@ -223,7 +238,7 @@ export function AblaufvorlageEditor({ z, kennung }: { z: AblaufvorlagenZustand; 
             entfernen={e.karten.length > 1 ? () => setE({ ...e, karten: e.karten.filter((x) => x.id !== k.id) }) : undefined} />
         ))}
         {e.karten.length < VORLAGEN_GRENZEN.karten && <Knopf groesse="klein" onClick={() => setE({ ...e, karten: [...e.karten, { id: `k${Date.now().toString(36)}`, art: 'aufgabe', als: 'aufgabe', empfaenger: [{ art: 'selbst' }], text: '' }] })}>{t('automatisierung.vorlage.ui.karte-neu')}</Knopf>}
-        <p className="leise klein">{t('automatisierung.vorlage.ui.kurz', { wann: wannText(e.wann) })}</p>
+        <p className="leise klein">{t('automatisierung.vorlage.ui.kurz', { wann: wannText(e.wann, e.wann.art === 'in' && fragtDatum(e)) })}</p>
         {probleme.length > 0 && <ul className="fehlertext klein">{probleme.map((p) => <li key={p}>{p}</li>)}</ul>}
         <Speicherleiste ent={ent} gegenstand={t('automatisierung.vorlage.ui.gegenstand')} sendet={sendet} ungueltig={probleme.length > 0} meldung={meldung}
           loeschen={v && v.herkunft === 'eigen' ? {
@@ -233,7 +248,7 @@ export function AblaufvorlageEditor({ z, kennung }: { z: AblaufvorlagenZustand; 
           } : undefined} />
       </form>
       {v && <>
-        <Ausprobieren v={v} />
+        <Ausprobieren key={`${v.kennung}-${v.version}`} v={v} />
         <GeradeBenutzt v={v} nachher={() => void z.laden()} />
         <Verlauf v={v} />
         <Fassungen art="ablaufvorlage" eintrag={v.kennung} stand={v.version} nachher={() => z.laden()} klappe={FEST} />
@@ -250,7 +265,8 @@ function Ausprobieren({ v }: { v: AblaufvorlageAnsicht }) {
   const [bekannt, setBekannt] = useState<Bezuege>({});
   const [an, setAn] = useState('');
   const [text, setText] = useState('');
-  const [datum, setDatum] = useState('');
+  // Wie im Dialog an der Mappe vorbelegt (#1180): bei „In …“ mit der Frage „Datum“ der Vorschlag.
+  const [datum, setDatum] = useState(() => (fragtDatum(v) ? vorschlagDatum(v.wann, heuteIn()) : ''));
   const [zeilen, setZeilen] = useState<string[] | null>(null);
   const [fehler, setFehler] = useState<string>();
   return (
@@ -262,7 +278,9 @@ function Ausprobieren({ v }: { v: AblaufvorlageAnsicht }) {
       </Feld>}
       <div className="raster">
         {v.fragen.includes('empfaenger') && <BenutzerWahl label={t('automatisierung.vorlage.ui.frage.empfaenger')} sichtbar wert={an} setze={setAn} />}
-        {v.fragen.includes('datum') && <Feld beschriftung={t('automatisierung.vorlage.ui.frage.datum')}><input type="date" value={datum} onChange={(x) => setDatum(x.target.value)} /></Feld>}
+        {fragtDatum(v) && <Feld beschriftung={t('automatisierung.vorlage.ui.frage.datum')} hinweis={v.wann.art === 'in' ? t('automatisierung.vorlage.ui.frage.datum.vorgeschlagen', { datum: datumDe(vorschlagDatum(v.wann, heuteIn())) }) : undefined}>
+          <input type="date" value={datum} onChange={(x) => setDatum(x.target.value)} />
+        </Feld>}
         {v.fragen.includes('text') && <Feld beschriftung={t('automatisierung.vorlage.ui.frage.text')}><input value={text} onChange={(x) => setText(x.target.value)} /></Feld>}
       </div>
       <Knopf groesse="klein" gesperrt={!mappe} onClick={async () => {
@@ -287,7 +305,7 @@ function GeradeBenutzt({ v, nachher }: { v: AblaufvorlageAnsicht; nachher: () =>
       <h2 className="h3">{t('automatisierung.vorlage.ui.benutzt')}</h2>
       {fehler && <p className="fehlertext">{fehler}</p>}
       {!liste ? <p className="leise">{t('automatisierung.ui.lade')}</p> : !liste.length ? <p className="leise">{t('automatisierung.vorlage.ui.benutzt.leer')}</p> : (
-        <ul className="mappenliste">{liste.map((a) => (
+        <ul className="mappenliste benutzt-liste">{liste.map((a) => (
           <li key={a.id}>
             <span><Link to={`/ablage/${a.typId}/${a.mappeId}`} className="verweis">{a.mappeTitel || a.mappeId}</Link>{' '}
               <span className="leise klein">{t('automatisierung.vorlage.ui.benutzt.zeile', { datum: datumDe(a.datum), person: d.person(a.erstelltVon ?? '') })}</span>

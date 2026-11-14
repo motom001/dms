@@ -1190,6 +1190,21 @@ async function main() {
   // Fristen (#129): Erinnerung am Datumsfeld
   await s.locator('.fristeditor').evaluate((e) => e.scrollIntoView({ block: 'center' }));
   await bild(s, 'werkbank-frist');
+  // In der allgemeinen Suche zeigen (#1220): eine reine Auswahlliste „Vertragsart“ mit abgewähltem Haken in den Grunddaten.
+  {
+    const art = await api('POST', '/api/typen', {
+      name: SPRACHE === 'en' ? 'Contract type' : 'Vertragsart', titelVorlage: '{name}', inSuche: false, sichtAnlegen: false,
+      felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }],
+    });
+    await geheZu(s, `/werkbank/typen/${art.id}`);
+    await s.locator('[data-sprungleiste]').getByRole('button', { name: w('Grunddaten') }).click();
+    const haken = s.getByRole('checkbox', { name: w('In der allgemeinen Suche zeigen') });
+    await haken.waitFor();
+    await haken.evaluate((e) => e.scrollIntoView({ block: 'center' }));
+    await bild(s, 'werkbank-mappentyp-in-suche');
+    // Wieder weg, damit spätere Bilder (Listen der Mappentypen) unverändert bleiben.
+    await api('DELETE', `/api/typen/${art.id}`);
+  }
   // Suche über der Liste (#978): Treffer mit Fundstellen, darunter der Filter „Paket“.
   await geheZu(s, '/werkbank/typen');
   await s.getByRole('searchbox', { name: w('Mappentypen durchsuchen') }).fill(vertrag.name.slice(0, 6));
@@ -1306,6 +1321,20 @@ async function main() {
   await geheZu(s, '/werkbank/ablaufvorlagen/erinnern');
   await s.getByRole('heading', { name: w('Gerade benutzt bei'), exact: true }).waitFor();
   await bild(s, 'werkbank-automatisierungsvorlagen');
+  // Datum vorschlagen (#1180): eigene Vorlage „Erinnere mich in 14 Tagen“ – Wann „In 14 Tagen“, Haken „Datum“ frei wählbar.
+  {
+    const v = await api('POST', '/api/werkbank/ablaufvorlagen', {
+      name: SPRACHE === 'en' ? 'Remind me in 14 days' : 'Erinnere mich in 14 Tagen', wann: { art: 'in', anzahl: 14, einheit: 'tage' }, fragen: ['datum', 'text'],
+      karten: [{ art: 'aufgabe', als: 'aufgabe', empfaenger: [{ art: 'selbst' }], text: '{eingabe}' }],
+    });
+    await geheZu(s, `/werkbank/ablaufvorlagen/${encodeURIComponent(v.kennung)}`);
+    const fragen = s.getByRole('group', { name: w('Fragt beim Anwenden') });
+    await fragen.waitFor();
+    await fragen.evaluate((e) => e.scrollIntoView({ block: 'center' }));
+    await bild(s, 'werkbank-automatisierungsvorlage-vorschlag');
+    // Wieder weg, damit spätere Bilder (Menü „Mappe“) unverändert bleiben.
+    await api('DELETE', `/api/werkbank/ablaufvorlagen/${encodeURIComponent(v.kennung)}`);
+  }
   // Datenschutz (#396): Vertragspartner „betrifft eine Person“, Auskunft für die Stadtwerke gesammelt – Prüfliste.
   await api('PUT', '/api/werkbank/datenschutz', { verantwortlicher: 'Familie Beispiel\nMusterweg 1, 01234 Musterstadt', empfaenger: '', typen: { [d.typ('Vertragspartner').id]: { person: true, zweck: 'Verträge und Rechnungen des Haushalts' } } });
   await geheZu(s, `/werkbank/auskuenfte/neu?mappe=${d.stadtwerke.id}`);

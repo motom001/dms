@@ -262,6 +262,10 @@ See also: [Post](#post), [To (post)](#an-post).
 The searchable text in the documents – from the file's text layer or from text recognition.  
 See also: [Text recognition](#texterkennung), [Advanced search](#erweiterte-suche).
 
+<a id="allgemeine-suche"></a>**General search** (*Allgemeine Suche*) · ~ with explanation · everyone  
+The search across all folder types – the search box at the top and the advanced search without a chosen folder type – and the sources of “Ask your library”. A folder type can be left out of it (“Show in the general search” off, e.g. pure choice lists like “Contract type”); if you choose it in the advanced search, it is found.  
+See also: [Search box at the top](#suchfeld-oben), [Advanced search](#erweiterte-suche), [Folder type](#mappentyp).
+
 <a id="historie"></a>**History** (*Historie*) · ✓ everyday word · everyone  
 The story of a folder – changes before and after, documents, bin, notes, tasks. The technical operating log, on the other hand, is called "log".
 
@@ -340,7 +344,7 @@ A user with access to the workbench. Permissions don't restrict them.
 A setting per folder type for retention obligations – with versions and a deletion lock until the end of the period.
 
 <a id="automatisierungsvorlage"></a>**Automation template** (*Automatisierungsvorlage*) · ~ with explanation · administrators  
-An automation with gaps that you apply to one folder – “Assign task”, “Remind”, “Follow-up”. It runs straight away, on the chosen date or in a number of days, weeks or months, asks for recipient, text or date when applied and only knows the “Task / notification” card. An applied template (folder run) runs with the rights of the person who set it up – checked when it runs. Workbench → Build the library → Automation templates.  
+An automation with gaps that you apply to one folder – “Assign task”, “Remind”, “Follow-up”. It runs straight away, on the chosen date or in a number of days, weeks or months (fixed or as a suggestion that can be changed when applying), asks for recipient, text or date when applied and only knows the “Task / notification” card. An applied template (folder run) runs with the rights of the person who set it up – checked when it runs. Workbench → Build the library → Automation templates.  
 See also: [Planned](#geplant), [Reminder](#erinnerung), [Package](#paket).
 
 <a id="betrieb"></a>**Business** (*Betrieb*) · ✓ everyday word · administrators  

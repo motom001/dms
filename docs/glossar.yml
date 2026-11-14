@@ -524,6 +524,13 @@ begriffe:
     nicht_verwenden: [Schnellsuche, Schnell finden]
     verwandt: [Erweiterte Suche, Ansicht]
     code: KopfSuche, SucheOben
+  - begriff: Allgemeine Suche
+    bereich: ablage
+    beschreibung: Die Suche über alle Mappentypen – das Suchfeld oben und die erweiterte Suche ohne gewählten Mappentyp – und die Quellen von „Frag deine Ablage“. Ein Mappentyp kann darin fehlen („In der allgemeinen Suche zeigen“ aus, z. B. reine Auswahllisten wie „Vertragsart“); wählt man ihn in der erweiterten Suche, findet sie ihn.
+    einsteiger: erklaeren
+    begegnet: alle
+    verwandt: [Suchfeld oben, Erweiterte Suche, Mappentyp]
+    code: "inSuche, inAllgemeinerSuche"
   - begriff: Link
     bereich: ablage
     beschreibung: Eine Adresse auf eine Ansicht oder Mappe, z. B. über „Link kopieren“ – auch lesbar über Mappentyp und Feldwerte. „Link“ steht nur für Adressen; Felder, die auf Mappen zeigen, heißen Verweis.
@@ -717,7 +724,7 @@ begriffe:
     code: "BETRIEB_WENN, DannKarte art: sicherung, SYSTEMKONTO_WERKBANK"
   - begriff: Automatisierungsvorlage
     bereich: werkbank
-    beschreibung: Eine Automatisierung mit Lücken, die man an einer Mappe anwendet – „Aufgabe vergeben“, „Erinnern“, „Wiedervorlage“. Sie läuft sofort, am gewählten Datum oder in einigen Tagen, Wochen oder Monaten, fragt beim Anwenden nach Empfänger, Text oder Datum und kennt nur die Karte „Aufgabe / Benachrichtigung“. Eine angewendete Vorlage (Mappen-Ablauf) läuft mit den Rechten der Person, die sie angelegt hat – geprüft, wenn sie läuft. Werkbank → Ablage aufbauen → Automatisierungsvorlagen.
+    beschreibung: Eine Automatisierung mit Lücken, die man an einer Mappe anwendet – „Aufgabe vergeben“, „Erinnern“, „Wiedervorlage“. Sie läuft sofort, am gewählten Datum oder in einigen Tagen, Wochen oder Monaten (fest oder als Vorschlag, den man beim Anwenden ändern darf), fragt beim Anwenden nach Empfänger, Text oder Datum und kennt nur die Karte „Aufgabe / Benachrichtigung“. Eine angewendete Vorlage (Mappen-Ablauf) läuft mit den Rechten der Person, die sie angelegt hat – geprüft, wenn sie läuft. Werkbank → Ablage aufbauen → Automatisierungsvorlagen.
     einsteiger: erklaeren
     begegnet: admin
     nicht_verwenden: [Makro, Workflow-Vorlage, Ablaufvorlage]

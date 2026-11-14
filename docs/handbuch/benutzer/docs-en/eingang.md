@@ -47,7 +47,7 @@ Via **Folder ▾ → Remind** in a folder you have yourself – or someone else 
 
 ### Planned, follow-up and other templates { #geplant }
 
-"Assign task" and "Remind" are **automation templates**: small runs you apply to a folder. The administrators can set up more or get them from a package – the **Notifications** package, for example, brings **Follow-up**: one click, and in six months the folder is back in your "To do". Such templates appear in the **Folder ▾** menu below "Remind"; the small dialog asks exactly what the template needs.
+"Assign task" and "Remind" are **automation templates**: small runs you apply to a folder. The administrators can set up more or get them from a package – the **Notifications** package, for example, brings **Follow-up**: one click, and in six months the folder is back in your "To do". Such templates appear in the **Folder ▾** menu below "Remind"; the small dialog asks exactly what the template needs. If it suggests a date (say "in 14 days"), the date field is already filled in – you can change it.
 
 Everything still to come on a folder is listed at the top under **Planned** – with date, for whom and which template. Once something has run, it disappears there; the folder history keeps what happened. A run always uses **your** rights as they are on the day itself: if by then you are deactivated or may no longer read the folder, it is shown as **paused**, and the administrators decide how to continue.
 

@@ -10,7 +10,7 @@
 import { karteText, wannText as vorlageWannText, type AblaufvorlageDaten, type VorlagenKarte } from './ablaufvorlagen';
 import { dannText, kontextTyp, wennText, type AutomatisierungDaten, type DannKarte, type Kontextdaten } from './automatisierung';
 import type { Feld, Mappentyp, Register, Trefferliste } from './model';
-import { kannAusPost, SYSTEMSPALTEN, istSystemspalte } from './model';
+import { inAllgemeinerSuche, kannAusPost, SYSTEMSPALTEN, istSystemspalte } from './model';
 import { kurzStandard, type Regelwerk } from './rechte';
 import { kurzSicht, type SichtRegelwerk } from './sichtrechte';
 import type { SichtDaten } from './sichten';
@@ -55,7 +55,8 @@ const anAus = (v: unknown) => (v ? t('gemeinsam.fassungen.an') : t('gemeinsam.fa
 /** Gleich gemeint, verschieden gespeichert: „Aus Post anlegen“ ohne Angabe gilt wie berechnet (#937). */
 function wirksam(art: FassungArt, x: unknown): unknown {
   if (art !== 'typ' || !x || typeof x !== 'object') return x;
-  return { ...(x as TypStand), ausPost: kannAusPost(x as TypStand) };
+  // „In der allgemeinen Suche zeigen“ (#1220): ohne Angabe gilt „ja“.
+  return { ...(x as TypStand), ausPost: kannAusPost(x as TypStand), inSuche: inAllgemeinerSuche(x as TypStand) };
 }
 
 /**
@@ -202,6 +203,7 @@ function angabenSaetze(alt: TypStand, neu: TypStand): string[] {
     // Wirksam vergleichen (#937): ohne Angabe gilt „mit Dokumentenregister“; Systemtypen nie.
     () => kannAusPost(alt) !== kannAusPost(neu) && t('gemeinsam.fassungen.aus-post', { wert: anAus(kannAusPost(neu)) }),
     () => !gleich(alt.teilVon, neu.teilVon) && teil(),
+    () => inAllgemeinerSuche(alt) !== inAllgemeinerSuche(neu) && (inAllgemeinerSuche(neu) ? t('gemeinsam.fassungen.in-suche-ja') : t('gemeinsam.fassungen.in-suche-nein')),
     () => !gleich(alt.archiv, neu.archiv) && archiv(),
     () => !gleich(alt.stempel, neu.stempel) && t('gemeinsam.fassungen.stempel-am-typ'),
     () => !gleich(alt.ausDokument, neu.ausDokument) && t('gemeinsam.fassungen.aus-dokument'),

@@ -2,7 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { Symbol } from '../Symbol';
 import { AUFGABENARTEN, type Aufgabe } from '../../../shared/src/model';
 import { datumDe } from '../../../shared/src/fristen';
-import { laeuftAm, type MappenAblauf, type VorlageZumAnwenden } from '../../../shared/src/ablaufvorlagen';
+import { fragtDatum, laeuftAm, vorschlagDatum, type MappenAblauf, type VorlageZumAnwenden } from '../../../shared/src/ablaufvorlagen';
 import { Feld, Knopf } from '../bausteine';
 import { heuteIn, verschiebe } from '../../../shared/src/sichten';
 import { aufgabenBeschriftung, ausNotiz } from '../../../shared/src/mappenansicht';
@@ -198,7 +198,7 @@ export function ErinnerungFormular({ mappeId, e, vorlage, neuLaden, schliessen, 
   const fragen = vorlage?.fragen ?? ['datum', 'empfaenger', 'text'];
   const mitText = fragen.includes('text');
   const mitEmpfaenger = fragen.includes('empfaenger');
-  const [datum, setDatum] = useState(e?.datum ?? verschiebe(heuteIn(), 7));
+  const [datum, setDatum] = useState(() => startDatum(e, vorlage));
   const [text, setText] = useState(e?.text ?? '');
   const [an, setAn] = useState(e?.empfaengerId ?? ich.id);
   const [fehler, setFehler] = useState<string>();
@@ -236,6 +236,12 @@ export function ErinnerungFormular({ mappeId, e, vorlage, neuLaden, schliessen, 
       {inhalt}
     </section>
   );
+}
+
+/** Datum im Erinnern-Dialog: das des geplanten Ablaufs, sonst der Vorschlag der Vorlage (#1180), sonst in einer Woche. */
+function startDatum(e: MappenAblauf | undefined, vorlage: VorlageZumAnwenden | undefined): string {
+  if (e) return e.datum;
+  return vorlage ? vorschlagDatum(vorlage.wann, heuteIn()) : verschiebe(heuteIn(), 7);
 }
 
 /** Beschriftungen des Erinnern-Dialogs: bei „Erinnern“ wie bisher, bei einer anderen Vorlage mit ihrem Namen. */
@@ -289,18 +295,20 @@ export function AblaufFormular({ mappeId, vorlage, neuLaden, schliessen }: { map
   const d = useDaten();
   const { ich } = useKonto();
   const [an, setAn] = useState(vorlage.wann.art === 'sofort' ? '' : ich.id);
-  const [datum, setDatum] = useState(verschiebe(heuteIn(), 7));
+  // Datum: bei „In …“ mit der Frage „Datum“ der Vorschlag der Vorlage (heute + 14 Tage), änderbar (#1180).
+  const [datum, setDatum] = useState(vorschlagDatum(vorlage.wann, heuteIn()));
   const [text, setText] = useState('');
   const [fehler, setFehler] = useState<string>();
   const [hinweis, setHinweis] = useState<string>();
   const f = vorlage.fragen;
-  const am = vorlage.wann.art === 'in' ? laeuftAm(vorlage.wann, heuteIn()) : null;
-  const fehlt = (f.includes('empfaenger') && !an) || (f.includes('text') && !text.trim()) || (f.includes('datum') && !datum);
+  const mitDatum = fragtDatum(vorlage);
+  const am = vorlage.wann.art === 'in' ? laeuftAm(vorlage.wann, heuteIn(), mitDatum ? datum || null : null) : null;
+  const fehlt = (f.includes('empfaenger') && !an) || (f.includes('text') && !text.trim()) || (mitDatum && !datum);
   async function senden() {
     setFehler(undefined);
     if (f.includes('empfaenger') && an && an !== ich.id && !(await trotzdemZuweisen(mappeId, an, d.person(an)))) return;
     try {
-      const r = await api.ablaufAnwenden(mappeId, vorlage.kennung, { ...(f.includes('empfaenger') ? { empfaengerId: an } : {}), ...(f.includes('datum') ? { datum } : {}), ...(f.includes('text') ? { text } : {}) });
+      const r = await api.ablaufAnwenden(mappeId, vorlage.kennung, { ...(f.includes('empfaenger') ? { empfaengerId: an } : {}), ...(mitDatum ? { datum } : {}), ...(f.includes('text') ? { text } : {}) });
       await neuLaden(); await d.neuLaden();
       if (r.hinweis) setHinweis(r.hinweis); else schliessen();
     } catch (e) { setFehler((e as Error).message); }
@@ -310,7 +318,9 @@ export function AblaufFormular({ mappeId, vorlage, neuLaden, schliessen }: { map
       <div className="blattkopf zeile-zwischen"><h2 className="h3">{vorlage.name}</h2><Knopf art="link" onClick={schliessen}>{t('ablage.aufgaben.schliessen')}</Knopf></div>
       {vorlage.beschreibung && <p className="leise">{vorlage.beschreibung}</p>}
       <div className="raster">
-        {f.includes('datum') && <Feld beschriftung={t('ablage.aufgaben.am')}><input type="date" value={datum} onChange={(x) => setDatum(x.target.value)} /></Feld>}
+        {mitDatum && <Feld beschriftung={t('ablage.aufgaben.am')} hinweis={vorlage.wann.art === 'in' ? t('ablage.aufgaben.vorschlag', { datum: datumDe(vorschlagDatum(vorlage.wann, heuteIn())) }) : undefined}>
+          <input type="date" value={datum} onChange={(x) => setDatum(x.target.value)} />
+        </Feld>}
         {f.includes('empfaenger') && <BenutzerWahl label={t('ablage.aufgaben.fuer-2')} sichtbar wert={an} setze={setAn} />}
         {f.includes('text') && <Feld beschriftung={t('ablage.aufgaben.text')} className="breit"><input value={text} maxLength={2000} onChange={(x) => setText(x.target.value)} /></Feld>}
       </div>

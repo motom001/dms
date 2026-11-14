@@ -25,8 +25,25 @@ The middle lists all templates with **on/off**, origin as a chip (**Ablago** or 
 | **Name**, **Order**, **Description** | how it appears in the “Folder” menu; a lower number is higher up (1–99) |
 | **In the “Folder” menu for** | folder types where it is offered – none chosen: all |
 | **When** | **Straight away**, **On the chosen date** or **In …** days, weeks or months |
-| **Asks when applied** | **Recipient**, **Date** (always with “on the chosen date”) and **Text** – exactly what the small dialog on the folder shows |
+| **Asks when applied** | **Recipient**, **Date** and **Text** – exactly what the small dialog on the folder shows. **Date** is always on with “On the chosen date”, off with “Straight away” and your choice with “In …” (see [Suggest a date](#datum-vorschlagen)) |
 | **Then** | one or more **Task / notification** cards: for the chosen person, whoever applies the template, whoever created the folder or the person in a field of the folder (only with fixed folder types) |
+
+### Suggest a date: “Remind me in 14 days” { #datum-vorschlagen }
+
+With **In …** you decide whether the date is fixed or only a **suggestion**:
+
+| When | “Date” tick | What happens on the folder |
+|---|---|---|
+| Straight away | – | runs straight away |
+| In 14 days | off | runs in 14 days, fixed, without a date field |
+| In 14 days | **on** | date field, **filled in with today + 14 days**, can be changed |
+| On the chosen date | always on | date field, filled in with today + 7 days |
+
+Example: Lena wants everyone in the household to be able to set a reminder on a folder with one click – usually in two weeks, sometimes earlier or later. She creates a template **Remind me in 14 days**: When **In 14 days**, under “Asks when applied” **Date** and **Text**, one **Task** card for “whoever applies it” with the text `{eingabe}`. The list shows it as “In 14 days (can be changed) → Task for whoever applies it”. When Jonas applies it on a folder, the date field already shows the date in 14 days; he writes what he wants to remember and only changes the date if it does not suit him. **Try it out** in the editor fills in the date the same way.
+
+![Template “Remind me in 14 days”: When “In 14 days”, “Date” ticked under “Asks when applied”](bilder/werkbank-automatisierungsvorlage-vorschlag.png)
+
+Templates without the tick behave as before: “In 6 months” stays fixed.
 
 A card’s text knows the placeholders of [automations](automatisierungen.md) (`{titel}`, `{mappentyp}`, `{heute}`, `{datum}`, the fields of the folder type), plus `{eingabe}` (the text typed when applying), `{person}` (who applies it) and `{empfaenger}`. A template that asks for the text needs `{eingabe}` in a card.
 

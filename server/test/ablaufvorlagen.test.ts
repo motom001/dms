@@ -14,7 +14,8 @@ import { copyFileSync, mkdtempSync, readdirSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { after, describe, it } from 'node:test';
-import { bereinigeVorlage, kernVorlage, vorlagenEingabeFehler, vorlagenProbleme } from '../../shared/src/ablaufvorlagen';
+import { bereinigeVorlage, fragtDatum, kernVorlage, laeuftAm, vorlageKurz, vorlagenEingabeFehler, vorlagenProbleme, vorschlagDatum } from '../../shared/src/ablaufvorlagen';
+import { datumDe } from '../../shared/src/fristen';
 import { NICHTS, type Regelwerk } from '../../shared/src/rechte';
 import { heuteIn, verschiebe } from '../../shared/src/sichten';
 import { Automatisierungen, speicherAutomatisierungRepo } from '../src/automatisierung';
@@ -168,6 +169,29 @@ function verhalten(name: string, repos?: () => Promise<{ repo: Repo; konto: Kont
       assert.equal((await d.ablaeufe.anwenden(m.id, e, { text: '{titel}' }, lena.id)).aufgaben[0].text, '{titel}');
     });
 
+    it('Datum vorschlagen (#1180): „In 14 Tagen“ mit Frage „Datum“ ist änderbar, ohne bleibt es fest wie bisher', async () => {
+      const { d, lena, m, admin } = await aufbau(await repos?.());
+      const karten = [{ art: 'aufgabe', als: 'aufgabe', empfaenger: [{ art: 'selbst' }], text: '{eingabe}' }];
+      const v = await d.ablaeufe.legeVorlage({ name: 'Erinnere mich in 14 Tagen', wann: { art: 'in', anzahl: 14, einheit: 'tage' }, fragen: ['datum', 'text'], karten }, admin.id);
+      const ansicht = (await d.ablaeufe.uebersicht()).find((x) => x.kennung === v.kennung)!;
+      assert.deepEqual(ansicht.probleme, []);
+      assert.match(ansicht.kurz, /^In 14 Tagen \(änderbar\) → /, 'Kurzbeschreibung nennt den Vorschlag');
+      assert.ok((await d.ablaeufe.zumAnwenden(m.typId)).some((x) => x.kennung === v.kennung), 'im Menü „Mappe“');
+      // Ohne Datum: wie bei „Am gewählten Datum“ eine Rückfrage, kein stiller Vorschlag.
+      await assert.rejects(d.ablaeufe.anwenden(m.id, v.kennung, { text: 'Angebot prüfen' }, lena.id), status(422));
+      assert.equal((await d.ablaeufe.anwenden(m.id, v.kennung, { datum: in_(14), text: 'Angebot prüfen' }, lena.id)).ablauf!.datum, in_(14), 'Vorschlag übernommen');
+      assert.equal((await d.ablaeufe.anwenden(m.id, v.kennung, { datum: in_(20), text: 'später' }, lena.id)).ablauf!.datum, in_(20), 'geändert');
+      // Ausprobieren zeigt das gewählte Datum.
+      const zeilen = await d.ablaeufe.ausprobieren(v.kennung, m.id, { datum: in_(14), text: 'x' }, { id: lena.id, rolle: 'mitglied' }, await d.rechtepruefung.zugriff({ id: lena.id, rolle: 'mitglied' }));
+      assert.ok(zeilen[0].includes(datumDe(in_(14))), zeilen.join(' | '));
+      // Bestehende Vorlagen unverändert: „In …“ ohne Frage „Datum“ übergeht ein mitgeschicktes Datum, „Erinnern“ verlangt es.
+      const fest = await d.ablaeufe.legeVorlage({ name: 'Fest', wann: { art: 'in', anzahl: 2, einheit: 'wochen' }, fragen: [], karten: [{ ...karten[0], text: 'Ansehen: {titel}' }] }, admin.id);
+      assert.equal((await d.ablaeufe.anwenden(m.id, fest.kennung, { datum: in_(3) }, lena.id)).ablauf!.datum, verschiebe(heute, 2, 'wochen'));
+      assert.match((await d.ablaeufe.uebersicht()).find((x) => x.kennung === fest.kennung)!.kurz, /^In 2 Wochen → /);
+      await assert.rejects(d.ablaeufe.anwenden(m.id, 'erinnern', { text: 'ohne Datum' }, lena.id), status(422));
+      assert.equal((await d.ablaeufe.anwenden(m.id, 'erinnern', { datum: in_(5), text: 'mit Datum' }, lena.id)).ablauf!.datum, in_(5));
+    });
+
     it('Bremse: höchstens N offene je Person und Mappe', async () => {
       const { d, lena, m } = await aufbau(await repos?.());
       for (let i = 0; i < ABLAEUFE_JE_PERSON_UND_MAPPE; i++) await d.kern.repo.legeAblaufAn({ id: crypto.randomUUID(), vorlage: 'erinnern', mappeId: m.id, empfaengerId: lena.id, datum: in_(9), text: `x${i}`, erstellt: '', erstelltVon: lena.id, angehalten: null });
@@ -243,6 +267,22 @@ describe('Automatisierungsvorlagen: Prüfen (#1044, Sicherheit)', () => {
     assert.deepEqual(vorlagenProbleme(kernVorlage('aufgabe_vergeben'), []), []);
   });
 
+  it('Datum als Vorschlag (#1180): erlaubt bei „In …“, nicht bei „Sofort“; Vorbelegung und Lauftag', () => {
+    const karten = [{ id: 'k1', art: 'aufgabe' as const, als: 'aufgabe' as const, empfaenger: [{ art: 'selbst' as const }], text: 'x' }];
+    const in14 = { name: 'x', beschreibung: '', reihenfolge: 50, typen: [], wann: { art: 'in' as const, anzahl: 14, einheit: 'tage' as const }, fragen: ['datum' as const], karten };
+    assert.deepEqual(vorlagenProbleme(in14, []), []);
+    assert.ok(fragtDatum(in14));
+    assert.ok(!fragtDatum({ ...in14, fragen: [] }), 'ohne Frage fest');
+    assert.ok(fragtDatum(kernVorlage('erinnern')));
+    assert.deepEqual(vorlagenProbleme({ ...in14, wann: { art: 'sofort' } }, []), ['Eine Vorlage, die sofort läuft, fragt nicht nach dem Datum.']);
+    assert.equal(vorschlagDatum(in14.wann, '2026-11-14'), '2026-11-28');
+    assert.equal(vorschlagDatum({ art: 'datum' }, '2026-11-14'), '2026-11-21', '„Am gewählten Datum“ wie bisher in einer Woche');
+    assert.equal(laeuftAm(in14.wann, '2026-11-14'), '2026-11-28');
+    assert.equal(laeuftAm(in14.wann, '2026-11-14', '2026-12-01'), '2026-12-01');
+    assert.equal(vorlageKurz(in14), 'In 14 Tagen (änderbar) → Aufgabe an wer sie anwendet');
+    assert.equal(vorlageKurz({ ...in14, fragen: [] }), 'In 14 Tagen → Aufgabe an wer sie anwendet');
+  });
+
   it('Paketformat: ablaufvorlagen mit verbotener Karte macht das Paket ungültig', async () => {
     const manifest = 'schema: 1\nid: probe\nname: Probe\nversion: 1.0.0\nbeschreibung: x\nautor: { name: x, github: x }\nlizenz: Apache-2.0\ndms: ">=0.256.0"\ninhalt:\n  ablaufvorlagen: inhalt/ablaufvorlagen.yaml\n';
     const gut = '- schluessel: wiedervorlage\n  name: Wiedervorlage\n  wann: { art: in, anzahl: 6, einheit: monate }\n  fragen: []\n  karten:\n    - { art: aufgabe, als: aufgabe, empfaenger: [{ art: selbst }], text: "Wiedervorlage: {titel}" }\n';
@@ -260,10 +300,11 @@ if (url) {
       const { pgRepo } = await import('../src/repo-pg');
       const { pgKontoRepo } = await import('../src/konto-repo');
       const db = await eigeneDatenbank('ablaufvorlagen_umstellung', { migrieren: false });
-      // Stand vor 105. Die Tabelle der Fassungen (#1006) kommt dazu, weil der heutige Code beim Anlegen von Typ und Mappe Fassungen schreibt.
+      // Stand vor 105. Die Tabelle der Fassungen (#1006) und die Spalte in_suche (#1220) kommen dazu, weil der heutige Code
+      // beim Anlegen von Typ und Mappe Fassungen und in_suche schreibt.
       const vorher = mkdtempSync(join(tmpdir(), 'migrationen-'));
       try {
-        for (const f of readdirSync(MIGRATIONEN).filter((x) => x.endsWith('.sql') && (x < '105' || x.endsWith('_fassungen.sql') && !x.includes('ablaufvorlage')))) copyFileSync(join(MIGRATIONEN, f), join(vorher, f));
+        for (const f of readdirSync(MIGRATIONEN).filter((x) => x.endsWith('.sql') && (x < '105' || x.endsWith('_fassungen.sql') && !x.includes('ablaufvorlage') || x.endsWith('_typ_in_suche.sql')))) copyFileSync(join(MIGRATIONEN, f), join(vorher, f));
         await migriere(db.sql, vorher, () => {});
       } finally { rmSync(vorher, { recursive: true, force: true }); }
       const sql = db.sql;

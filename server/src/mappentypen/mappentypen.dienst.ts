@@ -20,7 +20,7 @@ import { protokoll } from '../protokoll';
 import { istUuid, KonfigurationVeraltet, type Repo } from '../repo';
 import { t } from '../sprache';
 import { doppelteNachher, neuBerechnen } from './zusammengesetzt';
-import { behalteBerechnet, behalteBeschriftungen, behalteDarstellung, behalteErkennung, behalteOrganisation, behalteTeil, bereinigeTyp, liesStand, mitSystemBeschriftung } from './eingabe';
+import { behalteBerechnet, behalteBeschriftungen, behalteDarstellung, behalteErkennung, behalteInSuche, behalteOrganisation, behalteTeil, bereinigeTyp, liesStand, mitSystemBeschriftung } from './eingabe';
 
 /** Was die Mappentypen außer dem Kern brauchen – vom Dienst hereingereicht, bis es eigene Module dafür gibt. */
 export interface MappentypenAnschluss {
@@ -232,7 +232,7 @@ export class MappentypenDienst {
     if (stand !== undefined && alt.geaendert !== stand) throw this.anschluss.konfigurationKonflikt('typ', alt.geaendert);
     // Berechnete Felder (#1034): bleiben, was sie sind; neu nur aus dem Paket des Typs, freigeben mit `berechnetVon: null`.
     // Merkmal „eigene Organisation“ und Schreibschutz (#995): nur aus dem Paket, sonst wie bisher.
-    let d = behalteOrganisation(behalteTeil(eingabe, behalteBerechnet(eingabe, behalteDarstellung(eingabe, behalteErkennung(eingabe, behalteBeschriftungen(eingabe, bereinigeTyp(eingabe), alt), alt), alt), alt, ausPaket), alt), alt, ausPaket);
+    let d = behalteInSuche(eingabe, behalteOrganisation(behalteTeil(eingabe, behalteBerechnet(eingabe, behalteDarstellung(eingabe, behalteErkennung(eingabe, behalteBeschriftungen(eingabe, bereinigeTyp(eingabe), alt), alt), alt), alt, ausPaket), alt), alt, ausPaket), alt);
     if (alt.system) d = await this.mitSystemfeldern(d, alt.system);
     // Ausblenden (#655): erst jetzt sind die Systemfelder bekannt – sie und ihre Register bleiben sichtbar.
     festigeDarstellung(d);

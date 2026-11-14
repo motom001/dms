@@ -1378,6 +1378,7 @@
   "aufgaben.laeuft-am": "Läuft am {datum} – bis dahin steht es hier unter „Geplant“.",
   "aufgaben.laeuft-sofort": "Läuft sofort.",
   "aufgaben.laeuft-am-gewaehlten": "Läuft am gewählten Tag – bis dahin steht es hier unter „Geplant“.",
+  "aufgaben.vorschlag": "Vorgeschlagen: {datum}. Du kannst ein anderes Datum wählen.",
   "anlagen.marke": "Anlage",
   "anlagen.marke-titel": "Anlage eines anderen Dokuments – sie geht mit ihm mit",
   "anlagen.seiten_one": "{anzahl} Seite",
