@@ -52,6 +52,13 @@ const SYMBOLE = {
   'extern': [['path', { d: 'M15 3h6v6' }], ['path', { d: 'M10 14 21 3' }], ['path', { d: 'M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6' }]], // external-link
   'pfeil-links': [['path', { d: 'm15 18-6-6 6-6' }]], // chevron-left
   'pfeil-rechts': [['path', { d: 'm9 18 6-6-6-6' }]], // chevron-right
+  'pfeil-unten': [['path', { d: 'm6 9 6 6 6-6' }]], // chevron-down (#1211: Menüs statt „▾“)
+  'mehr': [['circle', { cx: '12', cy: '12', r: '1' }], ['circle', { cx: '19', cy: '12', r: '1' }], ['circle', { cx: '5', cy: '12', r: '1' }]], // ellipsis (#1211: „⋯“)
+  'sortiert-auf': [['path', { d: 'm5 12 7-7 7 7' }], ['path', { d: 'M12 19V5' }]], // arrow-up (#1212: statt „↑“)
+  'sortiert-ab': [['path', { d: 'M12 5v14' }], ['path', { d: 'm19 12-7 7-7-7' }]], // arrow-down (#1212: statt „↓“)
+  'sortierbar': [['path', { d: 'm21 16-4 4-4-4' }], ['path', { d: 'M17 20V4' }], ['path', { d: 'm3 8 4-4 4 4' }], ['path', { d: 'M7 4v16' }]], // arrow-up-down (#1212: statt „↕“)
+  'griff': [['circle', { cx: '9', cy: '12', r: '1' }], ['circle', { cx: '9', cy: '5', r: '1' }], ['circle', { cx: '9', cy: '19', r: '1' }], ['circle', { cx: '15', cy: '12', r: '1' }], ['circle', { cx: '15', cy: '5', r: '1' }], ['circle', { cx: '15', cy: '19', r: '1' }]], // grip-vertical (#1211: statt „⠿“)
+  'herunterladen': [['path', { d: 'M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4' }], ['path', { d: 'm7 10 5 5 5-5' }], ['path', { d: 'M12 15V3' }]], // download (#1211)
   'stern': [['path', { d: 'M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z' }]], // star
   'schliessen': [['path', { d: 'M18 6 6 18' }], ['path', { d: 'm6 6 12 12' }]], // x
   'uebersetzen': [['path', { d: 'm5 8 6 6' }], ['path', { d: 'm4 14 6-6 2-3' }], ['path', { d: 'M2 5h12' }], ['path', { d: 'M7 2h1' }], ['path', { d: 'm22 22-5-10-5 10' }], ['path', { d: 'M14 18h6' }]], // languages

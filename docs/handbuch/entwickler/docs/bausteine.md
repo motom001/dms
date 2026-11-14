@@ -101,3 +101,6 @@ Dieselben Bilder nimmt der Workflow **Handbuch** in den Jobs `bilder (de)` und `
 | [Umschalter](bausteine-umschalter.md) | Segmentknopf: zwei bis vier gleichrangige Wahlen, genau eine an – etwa „Fragen · Suchen“ auf der Startseite |
 | [Bereiche](bausteine-bereiche.md) | Das Muster „Editor rechts: Sprungleiste + Bereiche“: Sprungleiste mit „Alle aufklappen“, Bereiche zum Auf- und Zuklappen, Gedächtnis je Gerät, Fehler öffnen ihren Bereich |
 | [Fassungen](bausteine-fassungen.md) | Wer hat wann was geändert: Liste mit lesbaren Änderungen, zwei Fassungen vergleichen, wiederherstellen mit Vorschau; gelöschte Einträge unter einer Liste |
+| [Menü](bausteine-menue.md) | Ein Knopf, der Handlungen öffnet – „Mappe ▾“, „⋯“ an Zeilen und Listen: Gruppen, Symbole, gesperrte Punkte mit Grund, Gefahr abgesetzt am Ende mit Rückfrage; am Handy als Blatt |
+| [Wahlhaken](bausteine-wahlhaken.md) | Der Haken, mit dem man Zeilen einer Liste auswählt: ohne sichtbare Beschriftung, Umschalttaste für Bereiche, „teilweise“ im Kopf |
+| [Mehrfachauswahl](bausteine-mehrfachauswahl.md) | Mehrere Einträge wählen: Suchfeld mit Vorschlägen, Gewähltes darunter mit „Entfernen“ |

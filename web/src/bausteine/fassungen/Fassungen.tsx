@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ZUSAMMENFASSEN_MIN, type FassungArt, type FassungEintrag, type FassungsListe, type FassungsVorschau, type GeloeschterEintrag } from '../../../../shared/src/fassungen';
 import { gebietsschema } from '../../../../shared/src/sprache';
-import { Eintragsliste, type Listeneintrag } from '../../ablage/Historie';
 import { api, ApiFehler } from '../../api';
 import { rueckfrage } from '../../rueckfrage';
 import { t } from '../../sprache';
 import { Bereich, type Klappe } from '../bereiche/Bereiche';
 import { Knopf } from '../knopf/Knopf';
+import { Eintragsliste, type Listeneintrag } from './Eintragsliste';
 import s from './Fassungen.module.css';
 
 /**

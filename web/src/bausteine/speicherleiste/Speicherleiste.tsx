@@ -6,6 +6,7 @@ import { t } from '../../sprache';
 import type { SymbolName } from '../../Symbol';
 import { Knopf, type GefahrRueckfrage, type KnopfSperre } from '../knopf/Knopf';
 import s from './Speicherleiste.module.css';
+import type { LoeschAnlass } from '../../../../shared/src/loeschprotokoll';
 
 /**
  * Baustein Speicherleiste (#370, aus Bausteinen seit #1210): ein Muster für alle Anlege-/Bearbeiten-Formulare.
@@ -78,8 +79,11 @@ export interface SpeicherleisteLoeschen {
   /** Beschriftung mit Gegenstand: „Nummernkreis löschen“. */
   text: string;
   rueckfrage: GefahrRueckfrage;
-  /** Erst nach „Ja“ in der Rückfrage; darf ein Promise liefern („läuft“ und Fehler am Knopf). */
-  onClick(): void | Promise<unknown>;
+  /**
+   * Erst nach „Ja“ in der Rückfrage; darf ein Promise liefern („läuft“ und Fehler am Knopf). Mit `rueckfrage.mitGrund`
+   * kommt der Anlass fürs Löschprotokoll mit (#1211).
+   */
+  onClick(anlass?: LoeschAnlass): void | Promise<unknown>;
   /** Gesperrt aus einem Grund (z. B. noch verwendet): gestrichelt mit Schloss und ⓘ, Erklärung am Knopf. */
   gesperrt?: string | KnopfSperre | false | null;
   /** Symbol; Vorgabe Papierkorb. */
@@ -106,6 +110,8 @@ export interface SpeicherleisteProps {
    * für alles, während Bereiche mit eigenen Sofortaktionen (eigene kleine Formulare) nicht im Formular liegen dürfen.
    */
   formular?: string;
+  /** Nur lesen (#1211, Mappe ohne Recht zum Bearbeiten): nur „… löschen“ und der Status, kein Verwerfen und Speichern. */
+  nurLesen?: boolean;
 }
 
 /**
@@ -113,25 +119,25 @@ export interface SpeicherleisteProps {
  * Mappentyp-Editor). Links „… löschen“, in der Mitte der Status, rechts „Verwerfen“ und der Hauptknopf mit dem
  * Gegenstand im Namen. Ohne `speichern` ist der Hauptknopf ein Submit-Knopf des umgebenden Formulars.
  */
-export function Speicherleiste({ ent, gegenstand, sendet, ungueltig, speicherbar, speichern, loeschen, weitere, meldung, haupttext, formular }: SpeicherleisteProps) {
+export function Speicherleiste({ ent, gegenstand, sendet, ungueltig, speicherbar, speichern, loeschen, weitere, meldung, haupttext, formular, nurLesen }: SpeicherleisteProps) {
   const k = leistenknoepfe({ neu: ent.neu, geaendert: ent.geaendert, sendet, ungueltig, speicherbar }, gegenstand);
   // Beschriftung ohne „Speichere …“: Während des Sendens zeigt der Knopf „läuft“ mit diesem Text darüber.
   const ruhig = leistenknoepfe({ neu: ent.neu, geaendert: ent.geaendert, ungueltig, speicherbar }, gegenstand);
   return (
     <div className={`speicherleiste ${s.leiste}`}>
       {loeschen && (
-        <Knopf art="gefahr" symbol={loeschen.symbol ?? 'geloescht'} rueckfrage={loeschen.rueckfrage} gesperrt={loeschen.gesperrt} onClick={loeschen.onClick} className={s.loeschen}>
+        <Knopf art="gefahr" symbol={loeschen.symbol ?? 'geloescht'} rueckfrage={loeschen.rueckfrage} gesperrt={loeschen.gesperrt} onClick={(_e, anlass) => loeschen.onClick(anlass)} className={s.loeschen}>
           <span className={s.loeschtext}>{loeschen.text}</span>
         </Knopf>
       )}
       <span className={`status ${meldung?.art === 'schlecht' ? 'schlecht' : ''}`} role="status">{meldung?.text ?? k.status}</span>
-      <div className={`knoepfe ${s.knoepfe}`}>
+      {!nurLesen && <div className={`knoepfe ${s.knoepfe}`}>
         {weitere}
         <Knopf gesperrt={!k.verwerfen.aktiv} title={k.verwerfen.aktiv ? k.verwerfen.titel : undefined} onClick={() => void ent.verwerfen()}>{k.verwerfen.text}</Knopf>
         <Knopf art="haupt" type={speichern ? 'button' : 'submit'} form={speichern ? undefined : formular} gesperrt={!k.haupt.aktiv && !sendet} laeuft={sendet} laeuftText={k.haupt.text} onClick={speichern}>
           {haupttext ?? ruhig.haupt.text}
         </Knopf>
-      </div>
+      </div>}
     </div>
   );
 }

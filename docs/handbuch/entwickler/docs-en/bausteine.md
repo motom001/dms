@@ -101,3 +101,6 @@ The workflow **Handbuch** takes the same screenshots in the jobs `bilder (de)` a
 | [Toggle](bausteine-umschalter.md) | Segmented button: two to four equal choices, exactly one on – such as “Ask · Search” on the start page |
 | [Areas](bausteine-bereiche.md) | The pattern “editor on the right: jump bar + areas”: jump bar with “Expand all”, areas to expand and collapse, memory per device, errors open their area |
 | [Versions](bausteine-fassungen.md) | Who changed what and when: list with readable changes, compare two versions, restore with a preview; deleted entries below a list |
+| [Menu](bausteine-menue.md) | A button that opens actions – “Folder ▾”, “⋯” on rows and lists: groups, icons, locked items with a reason, danger set apart at the end with a confirmation; a sheet on the phone |
+| [Selection checkbox](bausteine-wahlhaken.md) | The checkbox that selects rows of a list: no visible label, Shift for ranges, “partly” in the header |
+| [Multiple selection](bausteine-mehrfachauswahl.md) | Choose several entries: search field with suggestions, chosen entries below with “Remove” |

@@ -12,8 +12,12 @@ export { Speicherleiste, useEntwurf, useGespeichertNachziehen, type Entwurf, typ
 export { Schalter, type SchalterProps } from './schalter/Schalter';
 export { PaketChip, type PaketChipProps, type PaketHerkunft } from './paketchip/PaketChip';
 export { flaecheId, Reiter, ReiterFlaeche, reiterId, type ReiterProps, type ReiterWahl } from './reiter/Reiter';
+export { Mehrfachauswahl, type GewaehlterEintrag, type Vorschlag } from './mehrfachauswahl/Mehrfachauswahl';
+export { Menue, type MenueProps, type MenuePunkt } from './menue/Menue';
+export { Wahlhaken, type WahlhakenProps } from './wahlhaken/Wahlhaken';
 export { Tabelle, type TabelleProps, type TabelleSpalte, type TabelleZeile } from './tabelle/Tabelle';
 export { FilterHaken, Fundstellen, Hervorgehoben, KeineTreffer, ListenSuche, PaketFilter, Suchfeld, useListenSuche, type ListenSucheOptionen, type ListenSucheProps, type ListenSucheZustand, type PaketFilterProps, type SuchfeldProps } from './suche/Suche';
 export { Umschalter, zielDerTaste, type UmschalterProps, type UmschalterWahl } from './umschalter/Umschalter';
 export { Bereich, fehlerBereiche, liesOffen, merkeOffen, SPRUNGLEISTE_AB, useBereiche, type BereicheOptionen, type BereicheZustand, type BereichListe, type Klappe } from './bereiche/Bereiche';
 export { Fassungen, GeloeschteEintraege, type FassungenProps, type FassungenQuelle } from './fassungen/Fassungen';
+export { Eintragsliste, type Listeneintrag } from './fassungen/Eintragsliste';

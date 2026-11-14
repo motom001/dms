@@ -1,0 +1,16 @@
+/* Wahlhaken (#1211, #1212): Kästchen in einer Zeile, ohne sichtbare Beschriftung. Nur Werte aus tokens.css. */
+.flaeche { position: relative; display: inline-flex; align-items: center; justify-content: center; flex: none; min-width: 24px; min-height: 24px; }
+.haken { width: 16px; height: 16px; margin: 0; accent-color: var(--akzent); cursor: pointer; }
+.haken:hover:not(:disabled) { box-shadow: 0 0 0 3px var(--akzent-zart); }
+.haken:focus-visible { outline: 2px solid var(--akzent); outline-offset: 2px; }
+.haken:disabled { cursor: not-allowed; }
+/* Am Handy (#1027, D6): Das Kästchen wird größer, die Tippfläche ist ein unsichtbares Feld von 44 × 44 px um die
+   Mitte; Klicks darauf gehen über das label-lose Kästchen, weil das Feld zum Kästchen selbst gehört. */
+@media (pointer: coarse) {
+  .flaeche { min-width: 44px; min-height: 44px; }
+  .haken { width: 22px; height: 22px; }
+  .haken::after { content: ""; position: absolute; inset: -11px; }
+}
+
+/* Nur Musterseite: eine Zeile mit Haken und Text. */
+.musterzeile { display: flex; gap: 8px; align-items: center; }
