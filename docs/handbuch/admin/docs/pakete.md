@@ -9,7 +9,14 @@ Pakete kommen aus dem **offiziellen Katalog** des Ablago-Projekts ([dms-registry
 Ablago fragt den Katalog **nur auf Knopfdruck** ab, nie im Hintergrund: Klicke **Katalog abrufen**. Sobald ein Paket installiert ist, heißt derselbe Knopf **Nach neuen Versionen suchen** – er holt den offiziellen Katalog und die eingeschalteten [weiteren Quellen](#expertenmodus-weitere-kataloge-und-hochladen) und schaut dabei, ob es für installierte Pakete Neueres gibt. Am Knopf steht danach, wann abgerufen wurde und was dabei herauskam: „Abgerufen um 14:32 · 3 neue Versionen“ oder „Alles aktuell“. War kein Katalog erreichbar, steht das dort; den Grund nennt Ablago über der Liste. Die Seite zeigt dann zwei Listen:
 
 - **Installiert** – Pakete in dieser Installation, mit Version und Herkunft
-- **Verfügbar** – Pakete aus dem Katalog, die noch nicht installiert sind
+- **Verfügbar** – Pakete aus dem Katalog, die noch nicht installiert sind, nach denselben Regeln wie die Übersicht im Katalog:
+    - oben **Für dich empfohlen** – die Empfehlungen des Katalogs ohne schon Installiertes; nutzt du Ablago auch beruflich (Merkmal unter [Werkbank → Nutzung](nutzung.md)), kommen dazu Pakete für die Arbeit wie Compliance. Kennt ein älterer Katalog keine Empfehlungen, nimmt Ablago die Vorauswahl des Einrichtungsassistenten.
+    - darunter **Weitere Pakete**
+    - **Sprachen** (Oberflächen-Sprachen) nur über den Umschalter **Pakete · Sprachen**
+    - **Ergänzungen** wie die Zusatzsprachen der Texterkennung nicht in der Liste, sondern beim Hauptpaket unter [Dazu passend](#mehrere-pakete-in-einem-schritt-installieren)
+    - das **Suchfeld** darüber findet alles – Name, Beschreibung und Kennung, auch Sprachen und Ergänzungen
+
+![Werkbank → Pakete: „Für dich empfohlen“ und „Weitere Pakete“, darüber Suchfeld und Umschalter „Pakete · Sprachen“](bilder/werkbank-pakete-verfuegbar.png)
 
 Ein Klick auf ein Paket zeigt Name, Beschreibung, Version, Lizenz, Autor, die nötige Ablago-Version, Abhängigkeiten, Links zum README und zu den Änderungen und darunter [Was mitkommt](#was-mitkommt).
 
@@ -63,7 +70,7 @@ Ablago prüft **vor dem ersten Paket** alles: Herkunft, Rechte, Namen, Einstellu
 
 Deine Bestätigung gilt nur für **genau die Rechte, die du gesehen hast**. Ändern sie sich bis zum Klick (z. B. weil der Katalog inzwischen eine neue Version mit mehr Rechten hat), zeigt Ablago die neuen Rechte und fragt noch einmal. Während eine Installation läuft, warten andere Installationen, Updates und das Entfernen von Paketen – auch auf einem zweiten Server mit derselben Datenbank.
 
-**Nachträglich:** Unter **Werkbank → Pakete → *Paket*** stehen die Ergänzungen, die es dazu im Katalog gibt (z. B. **Weitere Sprachen** bei der Texterkennung), mit **Auswählen …** – danach derselbe Ablauf. Die Seite der [Texterkennung](texterkennung.md#weitere-sprachen) schlägt Sprachen vor, die in deinen Dokumenten vorkommen.
+**Nachträglich:** Unter **Werkbank → Pakete → *Paket*** stehen bei **Dazu passend** die Ergänzungen, die es dazu im Katalog gibt (z. B. **Weitere Sprachen** bei der Texterkennung), mit **Auswählen …** – danach derselbe Ablauf. Die Seite der [Texterkennung](texterkennung.md#weitere-sprachen) schlägt Sprachen vor, die in deinen Dokumenten vorkommen.
 
 Mappentypen aus Paketen tragen in **Werkbank → Mappentypen** hinter dem Namen einen Chip mit Paket-Symbol und dem Namen des Pakets; ein Klick in der Seite des Mappentyps führt zum Paket. Du kannst sie danach wie jeden anderen Mappentyp anpassen.
 
@@ -130,6 +137,8 @@ Auf der Seite eines Pakets, in der Vorschau und im [gemeinsamen Ablauf](#mehrere
 - **Automatisierungsvorlagen** mit ihren Karten und **Aktionen im Menü „Mappe“** mit den Rechten, die sie brauchen
 - **Einstellungen** – Abschnitte und Felder
 - zuletzt **Rechte und Netz**: kein Code, Code ohne oder mit Zugriff auf Netzwerk und Internet; auf der Seite eines installierten Pakets mit Code die Rechte im Einzelnen
+
+![Paketseite mit der Kurzanleitung nach der Installation und „Was mitkommt“](bilder/werkbank-pakete-mitkommt.png)
 
 Beim **Update** trägt alles, was mit der neuen Version dazukommt, den Merker **neu in dieser Version**. Vor der Installation kennt die Paketseite nur, was der Katalog verrät (Mappentypen, Ansichten, Beispiele); alles Weitere zeigt die Vorschau beim Installieren. Pakete, die vor dieser Ablago-Version installiert wurden, zeigen es vollständig nach dem nächsten Update. Rundgänge und Tipps aus Paketen kommen dazu, sobald das Paketformat sie kennt.
 

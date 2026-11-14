@@ -10,6 +10,7 @@ art: minor
 ## Geändert
 
 - **Ein Knopf für Katalog und neue Versionen** (#1168): Statt „Katalog abrufen“ und „Auf neue Versionen prüfen“ gibt es mit installierten Paketen nur noch „Nach neuen Versionen suchen“. Am Knopf steht danach die Uhrzeit und das Ergebnis, z. B. „3 neue Versionen“ oder „Alles aktuell“.
+- **Pakete dazuholen** (#1048): Unter „Verfügbar“ stehen oben die Pakete „Für dich empfohlen“ (aus dem Katalog, passend zu „beruflich genutzt“, ohne Installiertes), darunter „Weitere Pakete“. Sprachen gibt es über den Umschalter „Sprachen“, Ergänzungen wie die Zusatzsprachen der Texterkennung beim Hauptpaket unter „Dazu passend“; das Suchfeld findet alles. Auch im Einrichtungsassistenten stehen Sprachpakete unter dem Filter „Sprachen“.
 
 ## Behoben
 

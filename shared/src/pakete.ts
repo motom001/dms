@@ -10,6 +10,7 @@ import type { Hilfeort } from './hilfe';
 import type { PaketKatalogArt, VERALTETE_EREIGNISSE } from './ereignisse';
 import { t } from './texte';
 import type { Mitkommt } from './mitkommt';
+import { PAKETE_JE_NUTZUNG } from './einrichtungsplan';
 import { gebietsschema } from './sprache';
 import { hauptpaket, istHerausgeber, PAKET_ID, TYPVERWEIS_ODER_ALLE } from './kennungen';
 
@@ -163,7 +164,11 @@ export interface KatalogPaket {
   /** Ersetzte Ids dieses Pakets (#1084, Manifest `ersetzt`), z. B. texterkennung_fra für texterkennung.fra. */
   ersetzt?: string[];
 }
-export interface Katalog { format: number; erstellt: string; quelle: string; pakete: KatalogPaket[] }
+/**
+ * empfohlen (#1048): „Für den Anfang“ – Paket-Ids in dieser Reihenfolge (Liste im Katalog, dms-registry
+ * `werkzeuge/empfohlen.yaml`); fehlt in älteren Katalogen, dann nimmt Ablago seine eigene Liste.
+ */
+export interface Katalog { format: number; erstellt: string; quelle: string; pakete: KatalogPaket[]; empfohlen?: string[] }
 
 /**
  * Katalogeintrag zu einer Paket-Id (#1084): die Id selbst, sonst das eine Paket, das sie unter `ersetzt` nennt – so
@@ -471,7 +476,9 @@ export function liesKatalog(j: unknown): Katalog {
       ...anzeige(p as unknown as Record<string, unknown>),
     });
   }
-  return { format: 1, erstellt: text(k.erstellt), quelle: text(k.quelle), pakete: pakete.sort((a, b) => a.name.localeCompare(b.name, 'de')) };
+  // Empfehlungen (#1048): nur gültige Ids, höchstens 20; Ungültiges zählt nicht (wie bei Symbol und Kategorien).
+  const empfohlen = Array.isArray(k.empfohlen) ? [...new Set(k.empfohlen.filter((x): x is string => typeof x === 'string' && PAKET_ID.test(x)))].slice(0, 20) : [];
+  return { format: 1, erstellt: text(k.erstellt), quelle: text(k.quelle), pakete: pakete.sort((a, b) => a.name.localeCompare(b.name, 'de')), ...(empfohlen.length ? { empfohlen } : {}) };
 }
 
 /** Herkunft lesbar, z. B. „offizieller Katalog“ oder „hochgeladen von … am …“. */
@@ -976,6 +983,37 @@ export { DMS_UEBERSETZEN_AB };
 /** Darf das Paket diese Schnittstelle des Kerns nutzen (#442)? */
 export const hatSchnittstelle = (c: PaketCode | undefined, s: Schnittstelle) => !!c?.rechte.schnittstellen?.includes(s);
 
+
+/* ---------- Pakete dazuholen (#1048) ---------- */
+
+/** Art eines Pakets im Katalog (#1048, wie die Katalog-Übersicht, dms-registry #165). */
+export type PaketArt = 'paket' | 'sprache' | 'ergaenzung';
+/**
+ * Sprachpaket, Ergänzung eines anderen Pakets oder ein Paket – nach der neuesten zur Ablago-Version passenden Version.
+ * Sprachen und Ergänzungen stehen nicht in der ersten Liste, sondern beim Filter „Sprachen“, beim Hauptpaket und in der Suche.
+ */
+export function paketArt(p: KatalogPaket, dms = ''): PaketArt {
+  const v = [...p.versionen].sort((a, b) => vergleicheVersion(b.version, a.version)).find((x) => dmsPasst(dms, x.dms)) ?? p.versionen[0];
+  return v?.sprache ? 'sprache' : v?.ergaenzt ? 'ergaenzung' : 'paket';
+}
+
+/** Höchstens so viele Pakete unter „Für dich empfohlen“ (#1048; Katalog: 6–8). */
+export const EMPFOHLEN_MAX = 8;
+/** Ohne Liste im Katalog (#1048): wie der Einrichtungsassistent (#1045) – dazu Texterkennung und Benachrichtigungen (#460). */
+const EMPFOHLEN_OHNE_KATALOG = ['texterkennung', 'benachrichtigungen'];
+
+/**
+ * „Für dich empfohlen“ (#1048): die Empfehlungsliste des Katalogs (sonst die des Einrichtungsassistenten), passend zum
+ * Merkmal „beruflich genutzt“ (#1032) – ohne Pakete, die nur beruflich zählen (z. B. Compliance), solange es nicht
+ * gesetzt ist; mit ihnen, wenn es gesetzt ist. Ohne schon Installiertes, ohne Sprachen und Ergänzungen.
+ */
+export function empfehlungen(k: Katalog, o: { beruflich: boolean; dms: string; installiert: Array<{ id: string }> }): KatalogPaket[] {
+  const nurBeruflich = PAKETE_JE_NUTZUNG.beruflich.filter((id) => !PAKETE_JE_NUTZUNG.privat.includes(id));
+  const grund = k.empfohlen?.length ? k.empfohlen : [...PAKETE_JE_NUTZUNG.privat, ...EMPFOHLEN_OHNE_KATALOG];
+  const ids = o.beruflich ? [...grund, ...nurBeruflich] : grund.filter((id) => !nurBeruflich.includes(id));
+  const da = (p: KatalogPaket) => o.installiert.some((x) => x.id === p.id || p.ersetzt?.includes(x.id));
+  return [...new Set(ids)].flatMap((id) => k.pakete.filter((p) => p.id === id)).filter((p) => !da(p) && paketArt(p, o.dms) === 'paket').slice(0, EMPFOHLEN_MAX);
+}
 
 /* ---------- Alle aktualisieren (#1168) ---------- */
 

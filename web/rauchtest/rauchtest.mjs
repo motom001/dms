@@ -808,6 +808,43 @@ rauchtest('Paketseite: Was mitkommt, Kurzanleitung nach der Installation, „neu
   assert.equal(await vorschau.getByRole('listitem').filter({ hasText: 'Mietvertrag endet' }).getByText('neu in dieser Version').count(), 0);
 });
 
+/** Pakete dazuholen (#1048): Empfehlungsliste im Katalog, zwei Sprachen, Zusatzsprachen der installierten Texterkennung. */
+const PAKETE_DAZU = {
+  installiert: [installiertesPaket('basis', 'Basis', '1.7.0'), installiertesPaket('texterkennung', 'Texterkennung', '2.0.0')],
+  empfohlen: ['basis', 'haushalt', 'texterkennung', 'benachrichtigungen', 'vertraege', 'rechnungen', 'trennblatt', 'sicherung_webdav'],
+  katalog: [
+    katalogPaket('basis', 'Basis', ['1.7.0']), katalogPaket('haushalt', 'Haushalt', ['1.2.0']), katalogPaket('vertraege', 'Verträge', ['1.1.0']), katalogPaket('trennblatt', 'Trennblatt', ['1.0.0']),
+    katalogPaket('fahrzeuge', 'Fahrzeuge', ['1.1.0']), katalogPaket('texterkennung', 'Texterkennung', ['2.0.0']),
+    katalogPaket('sprache_fr', 'Französisch', ['1.0.0'], { kuerzel: 'FR' }, { sprache: { kennung: 'fr', maschinell: true } }),
+    katalogPaket('sprache_es', 'Spanisch', ['1.0.0'], { kuerzel: 'ES' }, { sprache: { kennung: 'es', maschinell: true } }),
+    katalogPaket('texterkennung.fra', 'Texterkennung – Zusatzsprache Französisch', ['1.0.0'], {}, { ergaenzt: { paket: 'texterkennung', gruppe: 'Weitere Sprachen' }, abhaengigkeiten: { texterkennung: '>=2.0.0' } }),
+  ],
+};
+
+rauchtest('Pakete dazuholen: empfohlen zuerst, Sprachen über den Filter, Ergänzungen beim Hauptpaket, Suche (#1048)', { als: LENA }, async (s) => {
+  await paketeAttrappe(s, PAKETE_DAZU);
+  const elemente = await zuDenPaketen(s);
+  await elemente.getByRole('button', { name: 'Nach neuen Versionen suchen' }).click();
+  const namen = async (region) => (await elemente.getByRole('region', { name: region }).locator('.eintrag .titel').allInnerTexts()).map((x) => x.split(' · ')[0].trim());
+  assert.deepEqual(await namen('Für dich empfohlen'), ['Haushalt', 'Verträge', 'Trennblatt']);
+  assert.deepEqual(await namen('Weitere Pakete'), ['Fahrzeuge']);
+  await elemente.getByText(/Ergänzungen wie die Zusatzsprachen/).waitFor();
+  // Sprachen nur über den Filter.
+  await elemente.getByRole('radio', { name: 'Sprachen (2)' }).click();
+  assert.deepEqual((await elemente.getByRole('list', { name: 'Sprachen' }).locator('.eintrag .titel').allInnerTexts()).map((x) => x.split(' · ')[0].trim()), ['Französisch', 'Spanisch']);
+  await elemente.getByRole('radio', { name: 'Pakete' }).click();
+  // Die Suche findet alles – auch Sprachen und Ergänzungen.
+  await elemente.getByRole('searchbox', { name: 'Verfügbare Pakete durchsuchen' }).fill('franz');
+  const treffer = elemente.getByRole('list', { name: 'Gefundene Pakete' });
+  await treffer.getByRole('link', { name: /^Texterkennung – Zusatzsprache Französisch/ }).waitFor();
+  await treffer.getByRole('link', { name: /^Französisch/ }).waitFor();
+  // Beim installierten Hauptpaket: „Dazu passend“.
+  await elemente.getByRole('link', { name: /^Texterkennung/ }).first().click();
+  const passend = s.getByRole('region', { name: 'Bearbeitung' }).getByRole('region', { name: 'Dazu passend' });
+  await passend.getByText('Weitere Sprachen').waitFor();
+  await passend.getByText(/Zusatzsprache Französisch/).waitFor();
+});
+
 rauchtest('Pakete: ein Knopf, Rückmeldung mit Uhrzeit, Merker nach dem Update weg (#1167, #1168)', { als: LENA }, async (s) => {
   const z = await paketeAttrappe(s, PAKETE_DREI);
   const elemente = await zuDenPaketen(s);
@@ -874,7 +911,10 @@ async function paketSeiten(s, verwaltet = false) {
   const elemente = verwaltet ? s.getByRole('region', { name: 'Elemente' }) : await zuDenPaketen(s);
   await elemente.getByRole('button', { name: 'Nach neuen Versionen suchen' }).click();
   await elemente.getByRole('link', { name: /^Alle aktualisieren/ }).waitFor();
-  const seiten = [{ name: 'Liste', weg: async () => {} }];
+  const seiten = [{ name: 'Liste', weg: async () => {} }, { name: 'Liste: Sprachen', weg: async () => {
+    await elemente.getByRole('radio', { name: /^Sprachen/ }).click();
+    await elemente.getByRole('list', { name: 'Sprachen' }).waitFor();
+  } }];
   seiten.push({ name: 'Alle aktualisieren', weg: async () => {
     await elemente.getByRole('link', { name: /^Alle aktualisieren/ }).click();
     await s.getByRole('region', { name: 'Reihenfolge' }).waitFor();
@@ -893,9 +933,10 @@ async function paketSeiten(s, verwaltet = false) {
 }
 
 /** Für axe und Tippflächen: die Runde und ein Paket mit „Was mitkommt“. */
-const PAKETE_ALLES = { ...PAKETE_RUNDE, installiert: [...PAKETE_RUNDE.installiert, ...PAKETE_MITKOMMT.installiert], katalog: [...PAKETE_RUNDE.katalog, ...PAKETE_MITKOMMT.katalog], vorschau: { ...PAKETE_RUNDE.vorschau, ...PAKETE_MITKOMMT.vorschau } };
+const PAKETE_ALLES = { ...PAKETE_RUNDE, empfohlen: PAKETE_DAZU.empfohlen, installiert: [...PAKETE_RUNDE.installiert, ...PAKETE_MITKOMMT.installiert, PAKETE_DAZU.installiert[1]],
+  katalog: [...PAKETE_RUNDE.katalog, ...PAKETE_MITKOMMT.katalog, ...PAKETE_DAZU.katalog.filter((p) => !['basis', 'vertraege'].includes(p.id))], vorschau: { ...PAKETE_RUNDE.vorschau, ...PAKETE_MITKOMMT.vorschau } };
 
-rauchtest('Pakete: axe ohne Verstoß, hell und dunkel (#1168, #1047)', { als: LENA }, async (s) => {
+rauchtest('Pakete: axe ohne Verstoß, hell und dunkel (#1168, #1047, #1048)', { als: LENA }, async (s) => {
   await paketeAttrappe(s, PAKETE_ALLES);
   const funde = [];
   for (const schema of ['light', 'dark']) {
@@ -909,7 +950,7 @@ rauchtest('Pakete: axe ohne Verstoß, hell und dunkel (#1168, #1047)', { als: LE
   assert.deepEqual(funde, [], `axe meldet Verstöße:\n${funde.join('\n')}`);
 });
 
-rauchtest('Handy: Pakete mit 44-px-Tippflächen (#1168, #1047)', { handy: true, als: LENA }, async (s) => {
+rauchtest('Handy: Pakete mit 44-px-Tippflächen (#1168, #1047, #1048)', { handy: true, als: LENA }, async (s) => {
   await paketeAttrappe(s, PAKETE_ALLES);
   const funde = [];
   for (const seite of await paketSeiten(s)) {

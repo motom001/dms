@@ -1400,6 +1400,7 @@ async function main() {
   await s.getByRole('heading', { name: w('Paket hochladen') }).waitFor();
   await bild(s, 'werkbank-pakete');
   await s.getByRole('button', { name: w(/Expertenmodus/) }).click();
+  await paketBilder(s, bild, geheZu);
   // Postfächer (#358): Anmeldung mit OAuth 2.0 – App eingetragen, noch nicht angemeldet (kein echter Anbieter).
   await api('PUT', '/api/werkbank/postfaecher-oauth/microsoft', { clientId: '0b5c6a1e-1234-4c8d-9e0f-5a6b7c8d9e0f', clientSecret: 'nur-fuer-bilder', tenant: 'common' });
   const pfOauth = (await api('POST', '/api/werkbank/postfaecher', { name: 'Büro', aktiv: false, server: 'outlook.office365.com', benutzer: 'buero@example.org', anmeldung: 'oauth', anbieter: 'microsoft' })).at(-1);
@@ -1633,3 +1634,54 @@ async function spricht(browser) {
 }
 
 main().catch((e) => { console.error(e); process.exit(1); });
+
+/**
+ * Pakete mit Katalog (#1047, #1048, #1168): Der Workflow hat kein Internet – Katalog und ein installiertes Paket mit
+ * „Was mitkommt“ kommen als Attrappe. Danach ist die Seite wieder echt.
+ */
+async function paketBilder(s, bild, geheZu) {
+  let katalogUrl = '';
+  const version = (version, mehr = {}) => ({ version, dms: '>=0.0.0', abhaengigkeiten: {}, inhalt: { mappentypen: [], sichten: [], beispiele: 0 }, code: false, archiv: 'a.zip', sha256: '0'.repeat(64), groesse: 4096, veroeffentlicht: '2026-11-01T00:00:00Z', quelle: '', readme: '', changelog: '', ...mehr });
+  const paket = (id, name, beschreibung, versionen) => ({ id, name, beschreibung, autor: { name: 'Ablago-Projekt', github: '' }, lizenz: 'Apache-2.0', aktuell: versionen[0].version, herausgeber: 'app.ablago', versionen });
+  const katalog = [
+    paket('haushalt', 'Haushalt', 'Anschaffungen, Garantien und Haushaltsunterlagen.', [version('1.2.0')]),
+    paket('vertraege', 'Verträge', 'Verträge mit Laufzeit, Kündigungsfrist und Erinnerung.', [version('1.1.0')]),
+    paket('rechnungen', 'Rechnungen', 'Eingangsrechnungen mit Fälligkeit und Zahlung.', [version('1.1.0')]),
+    paket('trennblatt', 'Trennblatt', 'Mehrere Dokumente in einem Scan mit Trennblatt.', [version('1.0.0')]),
+    paket('fahrzeuge', 'Fahrzeuge', 'Fahrzeuge mit Kennzeichen, Versicherung und Wartung.', [version('1.1.0')]),
+    paket('sprache_fr', 'Français', 'Ablago auf Französisch.', [version('1.0.0', { sprache: { kennung: 'fr', maschinell: true } })]),
+    paket('sprache_es', 'Español', 'Ablago auf Spanisch.', [version('1.0.0', { sprache: { kennung: 'es', maschinell: true } })]),
+    paket('vermietung', 'Vermietung', 'Mietobjekte, Wohnungen und Nebenkostenabrechnungen.', [version('2.1.0'), version('2.0.0')]),
+  ];
+  const vermietung = { id: 'vermietung', name: 'Vermietung', version: '2.0.0', beschreibung: 'Mietobjekte, Wohnungen und Nebenkostenabrechnungen.', lizenz: 'Apache-2.0', autor: { name: 'Ablago-Projekt', github: '' },
+    herausgeber: 'app.ablago', herausgeberGeprueft: true, herkunft: { art: 'katalog', url: '' }, installiert: '2026-10-01T08:00:00Z', installiertVon: null, aktualisiert: null, aktualisiertVon: null, typen: {}, sichten: {}, abhaengigkeiten: {},
+    kurzanleitung: { de: ['Lege unter „+ Neu“ ein Mietobjekt und seine Wohnungen an.', 'Ordne jedem Mietvertrag die Wohnung zu.', 'Ablago erinnert dich an Abrechnung und Kündigung.'], en: ['Create a rental property and its flats under “+ New”.', 'Link every tenancy to its flat.', 'Ablago reminds you of statements and notice.'] },
+    mitkommt: {
+      mappentypen: [{ schluessel: 'mietobjekt', name: 'Mietobjekt', felder: 9 }, { schluessel: 'wohnung', name: 'Wohnung', felder: 11 }, { schluessel: 'nebenkostenabrechnung', name: 'Nebenkostenabrechnung', felder: 8 }],
+      sichten: [{ schluessel: 'vermietung', name: 'Vermietung' }, { schluessel: 'abrechnung_offen', name: 'Abrechnung offen' }],
+      vorgaben: [], vorlagen: 0, beispiele: 11, beispielDokumente: 0, wortlisten: [['Nebenkosten', 'Betriebskosten']],
+      automatisierungen: [{ schluessel: 'kuendigung', name: 'Mietvertrag endet', an: true, wenn: { art: 'datum', typ: 'Mietvertrag', feld: 'Ende', vorlauf: 60, einheit: 'tage', uhrzeit: '07:00', wiederholung: null },
+        dann: [{ art: 'aufgabe', benachrichtigung: false, empfaenger: [{ art: 'ersteller' }] }] }],
+      ablaufvorlagen: [], aktionen: [], einstellungen: [], code: false, netz: false, sprache: false,
+    } };
+  await s.route('**/api/werkbank/pakete', async (r) => {
+    if (r.request().method() !== 'GET') return r.fallback();
+    const echt = await (await r.fetch()).json();
+    katalogUrl = echt.katalogUrl;
+    await r.fulfill({ json: { ...echt, installiert: [...echt.installiert, { ...vermietung, herkunft: { art: 'katalog', url: katalogUrl } }] } });
+  });
+  await s.route('**/api/werkbank/pakete/katalog', (r) => r.fulfill({ json: { kataloge: [{ url: katalogUrl, offiziell: true, fehler: null, pruefung: null,
+    katalog: { format: 1, erstellt: '2026-11-14T08:00:00Z', quelle: '', pakete: katalog, empfohlen: ['basis', 'haushalt', 'texterkennung', 'vertraege', 'rechnungen', 'trennblatt'] } }], abgerufen: new Date().toISOString() } }));
+  await s.route('**/api/werkbank/pakete/vermietung/umwandlungen', (r) => r.fulfill({ json: { felder: [], vorgaenge: [] } }));
+  // Verfügbar (#1048): empfohlen zuerst, Sprachen über den Umschalter; Rückmeldung am Knopf (#1168).
+  await geheZu(s, '/werkbank/pakete');
+  await s.getByRole('button', { name: w('Nach neuen Versionen suchen') }).click();
+  await s.getByRole('region', { name: w('Für dich empfohlen') }).waitFor();
+  await bild(s, 'werkbank-pakete-verfuegbar');
+  // Was mitkommt (#1047) mit der Kurzanleitung direkt nach der Installation.
+  await geheZu(s, '/werkbank/pakete/vermietung?neu=1');
+  await s.getByRole('region', { name: w('Was mitkommt') }).waitFor();
+  await bild(s, 'werkbank-pakete-mitkommt', { fullPage: true });
+  await s.unrouteAll({ behavior: 'ignoreErrors' });
+}
+

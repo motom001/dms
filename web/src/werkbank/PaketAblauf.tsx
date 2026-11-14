@@ -67,6 +67,8 @@ interface Kandidat {
   inhalt?: string;
   /** Wie im Katalog (#645): Symbol, Sprachkürzel, Kategorien, Größe des Archivs in Bytes. */
   symbol?: string; kuerzel?: string; kategorien?: string[]; groesse?: number;
+  /** Sprachpaket (#1048): nicht in der ersten Liste, sondern unter „Sprachen“. */
+  sprache?: boolean;
 }
 
 /** Was mit einem Paket der Sammeldatei passiert (#461). */
@@ -94,7 +96,7 @@ function kandidaten(q: AblaufQuelle, versionen: Record<string, string>): Kandida
       return {
         schluessel: p.id, id: p.id, name: p.name, version: z.version, beschreibung: p.beschreibung, code: z.code, ergaenzt: z.ergaenzt ?? null, abhaengigkeiten: z.abhaengigkeiten,
         ...(v ? {} : { gesperrt: t('pakete.ablauf.dms', { dms: z.dms, version: q.dms }) }), inhalt: inhaltText(z),
-        symbol: p.symbol, kuerzel: p.kuerzel, kategorien: p.kategorien, groesse: z.groesse,
+        symbol: p.symbol, kuerzel: p.kuerzel, kategorien: p.kategorien, groesse: z.groesse, ...(z.sprache ? { sprache: true } : {}),
       };
     });
   }
@@ -133,6 +135,9 @@ function aufloesen(q: AblaufQuelle, liste: Kandidat[], wahl: string[], versionen
 /** Name einer Kategorie aus dem Katalog (#645); unbekannte Kennungen zeigt Ablago, wie sie sind. */
 const kategorieName = (k: string) => { const s = `pakete.kategorie.${k}`; const x = t(s as never); return x === s ? k : x; };
 const groesseText = (b: number) => (b >= 1048576 ? `${(b / 1048576).toLocaleString(gebietsschema(), { maximumFractionDigits: 1 })} MB` : `${Math.max(1, Math.round(b / 1024))} KB`);
+
+/** Filter „Sprachen“ (#1048) neben den Kategorien des Katalogs. */
+const SPRACHEN = '~sprachen';
 
 /** Kurzer Name einer Ergänzung unter ihrem Paket: „Texterkennung – Zusatzsprache Französisch“ → „Zusatzsprache Französisch“. */
 const kurz = (name: string) => (name.includes(' – ') ? name.slice(name.lastIndexOf(' – ') + 3) : name);
@@ -189,9 +194,12 @@ export function PaketAblauf({ quelle, start, nur, empfohlen = [], versionen = {}
   // Baum: oben die Pakete, darunter ihre Ergänzungen (auch unter einem schon installierten Paket).
   const basis = (k: Kandidat) => (k.ergaenzt && (liste.some((x) => x.id === k.ergaenzt!.paket) || quelle.installiert.some((x) => x.id === k.ergaenzt!.paket)) ? k.ergaenzt.paket : null);
   const alleOben = liste.filter((k) => !basis(k) && (!nur || nur.includes(k.id)));
-  // Kategorien wie im Katalog (#645): nur die, die hier vorkommen; Gewähltes bleibt beim Filtern sichtbar.
-  const kategorien = [...new Set(alleOben.flatMap((k) => k.kategorien ?? []))];
-  const oben = kategorie ? alleOben.filter((k) => k.kategorien?.includes(kategorie) || wahl.includes(k.schluessel)) : alleOben;
+  // Kategorien wie im Katalog (#645): nur die, die hier vorkommen; Gewähltes bleibt beim Filtern sichtbar. Sprachen
+  // (#1048) stehen nicht in der ersten Liste, sondern unter „Sprachen“ – außer, man sieht nur bestimmte Pakete (nur).
+  const sprachen = !nur && alleOben.some((k) => k.sprache);
+  const kategorien = [...new Set(alleOben.filter((k) => !sprachen || !k.sprache).flatMap((k) => k.kategorien ?? []))];
+  const passt = (k: Kandidat) => (kategorie === SPRACHEN ? !!k.sprache : (!sprachen || !k.sprache) && (!kategorie || !!k.kategorien?.includes(kategorie)));
+  const oben = alleOben.filter((k) => passt(k) || wahl.includes(k.schluessel));
   const installierteBasen = [...new Set(liste.map(basis).filter((b): b is string => !!b && quelle.installiert.some((x) => x.id === b)))].filter((b) => !nur || nur.includes(b));
   const imPlan = (id: string) => aufgeloest.pakete.find((p) => p.id === id);
   const name = (id: string) => liste.find((k) => k.id === id)?.name ?? quelle.installiert.find((x) => x.id === id)?.name ?? id;
@@ -232,12 +240,13 @@ export function PaketAblauf({ quelle, start, nur, empfohlen = [], versionen = {}
 
   return (
     <div className="stapel">
-      {kategorien.length > 1 && (
+      {(kategorien.length > 1 || sprachen) && (
         <div className="pd-kategorien" role="group" aria-label={t('pakete.ablauf.kategorien')}>
           <Knopf aria-pressed={kategorie === null} onClick={() => setKategorie(null)}>{t('pakete.ablauf.kategorien.alle')}</Knopf>
           {kategorien.map((k) => (
             <Knopf key={k} aria-pressed={kategorie === k} onClick={() => setKategorie(kategorie === k ? null : k)}>{kategorieName(k)}</Knopf>
           ))}
+          {sprachen && <Knopf aria-pressed={kategorie === SPRACHEN} onClick={() => setKategorie(kategorie === SPRACHEN ? null : SPRACHEN)}>{t('pakete.ablauf.kategorien.sprachen')}</Knopf>}
         </div>
       )}
       <ul className="pd-liste" aria-label={t('pakete.ablauf.auswahl')}>

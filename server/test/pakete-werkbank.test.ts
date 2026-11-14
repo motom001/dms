@@ -12,7 +12,7 @@ import type { Repo } from '../src/repo';
 import { speicherRepo } from '../src/repo-speicher';
 import { zipPuffer } from '../src/zip';
 import { eigeneDatenbank } from './hilfe-db';
-import { aktualisierungsRunde, neueVersionen, type Katalog, type KatalogPaket, type NeueVersion, type RundenVorschau } from '../../shared/src/pakete';
+import { aktualisierungsRunde, EMPFOHLEN_MAX, empfehlungen, liesKatalog, neueVersionen, paketArt, type Katalog, type KatalogPaket, type NeueVersion, type RundenVorschau } from '../../shared/src/pakete';
 
 const OFFIZIELL = 'https://catalog.example.org/katalog.json';
 const HAUSHALT = '00000000-0000-4000-8000-000000000001';
@@ -213,3 +213,33 @@ for (const pg of [false, true]) {
     });
   });
 }
+
+/* ---------- Pakete dazuholen (#1048) ---------- */
+
+describe('Pakete dazuholen: Art, Empfehlungen, Liste aus dem Katalog (#1048)', () => {
+  const sprache = kp('sprache_fr', ['1.0.0']);
+  sprache.versionen[0].sprache = { kennung: 'fr', maschinell: true };
+  const fra = kp('texterkennung.fra', ['1.0.0']);
+  Object.assign(fra.versionen[0], { ergaenzt: { paket: 'texterkennung' }, abhaengigkeiten: { texterkennung: '>=2.0.0' } });
+  const pakete = [kp('basis', ['1.7.0']), kp('haushalt', ['1.0.0']), kp('vertraege', ['1.1.0']), kp('rechnungen', ['1.1.0']), kp('compliance', ['1.0.0']), kp('texterkennung', ['2.0.0']), kp('trennblatt', ['1.0.0']), sprache, fra];
+
+  it('Sprachpaket, Ergänzung oder Paket', () => {
+    assert.deepEqual([paketArt(sprache), paketArt(fra), paketArt(pakete[0])], ['sprache', 'ergaenzung', 'paket']);
+  });
+
+  it('ohne Liste im Katalog: die des Einrichtungsassistenten; Compliance nur, wenn beruflich genutzt', () => {
+    const k = katalog(pakete);
+    assert.deepEqual(empfehlungen(k, { beruflich: false, dms: '', installiert: [] }).map((p) => p.id), ['basis', 'haushalt', 'vertraege', 'rechnungen', 'texterkennung']);
+    assert.deepEqual(empfehlungen(k, { beruflich: true, dms: '', installiert: [{ id: 'basis' }] }).map((p) => p.id), ['haushalt', 'vertraege', 'rechnungen', 'texterkennung', 'compliance']);
+  });
+
+  it('mit Liste im Katalog: deren Reihenfolge, ohne Installiertes, Sprachen, Ergänzungen und Unbekanntes; höchstens acht', () => {
+    const k = liesKatalog({ format: 1, empfohlen: ['trennblatt', 'sprache_fr', 'texterkennung.fra', 'gibtsnicht', 'basis', 'basis', 'Ungültig!', 'compliance'], pakete });
+    assert.deepEqual(k.empfohlen, ['trennblatt', 'sprache_fr', 'texterkennung.fra', 'gibtsnicht', 'basis', 'compliance']);
+    assert.deepEqual(empfehlungen(k, { beruflich: false, dms: '', installiert: [{ id: 'basis' }] }).map((p) => p.id), ['trennblatt']);
+    assert.deepEqual(empfehlungen(k, { beruflich: true, dms: '', installiert: [] }).map((p) => p.id), ['trennblatt', 'basis', 'compliance']);
+    const viele = katalog(Array.from({ length: 12 }, (_, i) => kp(`paket_${i}`, ['1.0.0'])));
+    assert.equal(empfehlungen({ ...viele, empfohlen: viele.pakete.map((p) => p.id) }, { beruflich: false, dms: '', installiert: [] }).length, EMPFOHLEN_MAX);
+    assert.equal(liesKatalog({ format: 1, pakete: [] }).empfohlen, undefined, 'ältere Kataloge ohne Liste');
+  });
+});

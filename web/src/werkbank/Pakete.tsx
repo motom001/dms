@@ -32,6 +32,7 @@ import { Kopf } from './Kopf';
 import { Kurzanleitung, MitkommtInhalt } from './PaketMitkommt';
 import { mitkommtAusKatalog } from '../../../shared/src/mitkommt';
 import { AlleAktualisieren } from './PaketeAlle';
+import { PaketeVerfuegbar } from './PaketeVerfuegbar';
 import { alsMeldung, Herausgeber, MeldungBox, SprachHerkunft, VorschauBlock, type Meldung } from './PaketVorschau';
 
 /** Meldungen (#1168: jetzt in PaketVorschau.tsx) – hier weiter für bestehende Aufrufer. */
@@ -113,9 +114,6 @@ export type PaketeZustand = ReturnType<typeof usePakete>;
 export function PaketeListe({ z, offen }: { z: PaketeZustand; offen?: string }) {
   const [experte, setExperte] = useExperteOffen();
   const installiert = z.stand?.installiert ?? [];
-  const quelleOffen = new URLSearchParams(location.search).get('quelle');
-  const verfuegbar = (z.kataloge?.liste ?? [])
-    .flatMap((k) => (k.katalog?.pakete ?? []).filter((p) => !installiert.some((i) => i.id === p.id || p.ersetzt?.includes(i.id))).map((p) => ({ p, url: k.url, offiziell: k.offiziell })));
   const neuer = (id: string) => z.updates.find((u) => u.id === id);
   const abrufErgebnis = useMemo(() => ergebnisDesAbrufs(z.kataloge, z.updates, installiert.length > 0), [z.kataloge, z.updates, installiert.length]);
   const [hochFehler, setHochFehler] = useState<string>();
@@ -183,17 +181,8 @@ export function PaketeListe({ z, offen }: { z: PaketeZustand; offen?: string }) 
       <h2 className="ueber">{t('werkbank.pakete.verfuegbar')}</h2>
       <KatalogAnsehen z={z} />
       {z.kataloge?.liste.filter((k) => k.fehler).map((k) => <div key={k.url} className="hinweis warn klein"><p>{k.offiziell ? t('werkbank.pakete.offizieller-katalog') : host(k.url)}: {k.fehler}</p></div>)}
-      {!z.kataloge ? <p className="leise klein">{t('werkbank.pakete.klicke-katalog-abrufen-um', { knopf: installiert.length ? t('werkbank.pakete.nach-neuen-versionen-suchen') : t('werkbank.pakete.katalog-abrufen') })}</p>
-        : !verfuegbar.length ? <p className="leise leerliste">{t('werkbank.pakete.alle-pakete-des-katalogs')}</p> : (
-          <ul className="mappenliste">
-            {verfuegbar.map(({ p, url, offiziell }) => (
-              <li key={`${url}|${p.id}`}><Link to={`/werkbank/pakete/${p.id}${offiziell ? '' : `?quelle=${encodeURIComponent(url)}`}`} className={`eintrag werk ${offen === p.id && (offiziell ? !quelleOffen : quelleOffen === url) ? 'an' : ''}`}>
-                <span className="titel">{p.name}<Herausgeber wer={p.herausgeber} geprueft={offiziell} />{!offiziell && <> <span className="chip warn" title={t('werkbank.pakete.aus-nicht-vom-ablago', { url })}>{host(url)}</span></>}</span>
-                <span className="unter">{p.aktuell} · {p.beschreibung}</span>
-              </Link></li>
-            ))}
-          </ul>
-        )}
+      {/* Verfügbar (#1048): empfohlen, weitere Pakete, Sprachen über den Filter, Ergänzungen beim Hauptpaket, Suche. */}
+      <PaketeVerfuegbar z={z} offen={offen} />
       {/* Herkunft des offiziellen Katalogs (#594): signiert, nicht signiert (Stufe 1: nur Warnung) oder ungültig. */}
       <HerkunftZeile p={z.kataloge?.liste.find((k) => k.offiziell)?.pruefung} />
     </>
@@ -622,7 +611,7 @@ function PaketDetail({ z, id, quelle }: { z: PaketeZustand; id: string; quelle?:
         )}
       </section>
 
-      <PaketMitkommt inst={inst} v={inst ? null : v} installiert={z.stand?.installiert ?? []} />
+      <PaketMitkommt inst={inst} v={inst ? kp?.versionen.find((x) => x.version === inst.version) : v} installiert={z.stand?.installiert ?? []} />
       {inst && <PaketUmwandeln key={`${inst.id}|${inst.version}`} paket={inst.id} />}
 
       {/* Auch nach der Installation sichtbar, bis „Weiter“ – sonst verschwände das Ergebnis mit dem Neuladen. */}
@@ -701,8 +690,10 @@ function ErgaenzungenBlock({ z, inst, katalog, quelle }: { z: PaketeZustand; ins
   if (!erg.length && !meldung && !offen) return null;
   const gruppen = [...new Set(erg.map((x) => x.gruppe ?? tx('pakete.ablauf.ergaenzungen')))];
   return (
-    <section className="blatt stapel" aria-label={tx('pakete.ablauf.ergaenzungen')}>
-      <h2 className="h3">{gruppen.join(', ')} <Hilfe ort="werkbank.pakete.ablauf" /></h2>
+    <section className="blatt stapel" aria-label={t('werkbank.pakete.dazu.passend')}>
+      {/* „Dazu passend“ (#1048): Ergänzungen beim Hauptpaket, z. B. Zusatzsprachen der Texterkennung. */}
+      <h2 className="h3">{t('werkbank.pakete.dazu.passend')} <Hilfe ort="werkbank.pakete.ablauf" /></h2>
+      <p className="leise klein">{gruppen.join(', ')}</p>
       <MeldungBox m={meldung} />
       {!offen ? (
         <>

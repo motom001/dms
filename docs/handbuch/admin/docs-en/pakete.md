@@ -9,7 +9,14 @@ Packages come from the **official catalogue** of the Ablago project ([dms-regist
 Ablago only queries the catalogue **at the push of a button**, never in the background: click **Fetch catalogue**. As soon as a package is installed, the same button is called **Look for new versions** – it fetches the official catalogue and the switched-on [further sources](#expertenmodus-weitere-kataloge-und-hochladen) and checks whether there is something newer for installed packages. The button then shows when the catalogues were fetched and what came of it: “Fetched at 14:32 · 3 new versions” or “Everything up to date”. If no catalogue could be reached, it says so there; Ablago gives the reason above the list. The page then shows two lists:
 
 - **Installed** – packages in this installation, with version and origin
-- **Available** – packages from the catalogue that aren't installed yet
+- **Available** – packages from the catalogue that aren't installed yet, by the same rules as the overview in the catalogue:
+    - at the top **Recommended for you** – the catalogue's recommendations without what is already installed; if you also use Ablago for work (feature under [Workbench → Use](nutzung.md)), packages for work such as Compliance are added. If an older catalogue has no recommendations, Ablago takes the preselection of the setup assistant.
+    - below that **More packages**
+    - **Languages** (interface languages) only via the switch **Packages · Languages**
+    - **Add-ons** such as the additional languages of text recognition are not in the list but with their main package under [Goes with it](#mehrere-pakete-in-einem-schritt-installieren)
+    - the **search field** above finds everything – name, description and ID, including languages and add-ons
+
+![Workbench → Packages: “Recommended for you” and “More packages”, above them the search field and the switch “Packages · Languages”](bilder/werkbank-pakete-verfuegbar.png)
 
 A click on a package shows name, description, version, licence, author, the required Ablago version, dependencies, links to the README and the changes and below that [What comes with it](#was-mitkommt).
 
@@ -63,7 +70,7 @@ Ablago checks everything **before the first package**: origin, permissions, name
 
 Your confirmation only applies to **exactly the permissions you saw**. If they change before the click (e.g. because the catalogue now has a new version with more permissions), Ablago shows the new permissions and asks again. While an installation is running, other installations, updates and removing packages wait – also on a second server with the same database.
 
-**Later on:** under **Workbench → Packages → *package*** are the add-ons that exist for it in the catalogue (e.g. **Further languages** for text recognition), with **Choose …** – then the same process. The [text recognition](texterkennung.md#weitere-sprachen) page suggests languages that occur in your documents.
+**Later on:** under **Workbench → Packages → *package*** the add-ons that exist for it in the catalogue (e.g. **Further languages** for text recognition) are listed at **Goes with it**, with **Choose …** – then the same process. The [text recognition](texterkennung.md#weitere-sprachen) page suggests languages that occur in your documents.
 
 Folder types from packages carry a chip with the package icon and the package's name after their name in **Workbench → Folder types**. You can then adjust them like any other folder type.
 
@@ -130,6 +137,8 @@ On a package's page, in the preview and in the [joint flow](#mehrere-pakete-in-e
 - **Automation templates** with their cards and **actions in the “Folder” menu** with the permissions they need
 - **Settings** – sections and fields
 - finally **permissions and network**: no code, code without or with access to network and internet; on the page of an installed package with code, the permissions in detail
+
+![Package page with the quick guide after installation and “What comes with it”](bilder/werkbank-pakete-mitkommt.png)
 
 On an **update**, everything that comes with the new version is marked **new in this version**. Before installation the package page only knows what the catalogue tells (folder types, views, examples); the preview shows everything else when you install. Packages installed before this Ablago version show it completely after the next update. Tours and tips from packages will follow as soon as the package format knows them.
 
