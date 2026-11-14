@@ -31,7 +31,8 @@ describe('Baustein Umschalter (#1002)', () => {
   it('Optionsfelder: Gruppe mit Namen, je Wahl role="radio" und aria-checked; nur die gewählte mit tabindex 0', () => {
     const html = renderToStaticMarkup(h(Umschalter, { wert: 'suchen', setze: nichts, wahlen: WAHLEN, beschriftung: 'Fragen oder suchen', anker: 'startseite.feld-art' }));
     assert.match(html, /^<div role="radiogroup" aria-label="Fragen oder suchen" class="[^"]*" data-anker="startseite.feld-art">/);
-    const knoepfe = [...html.matchAll(/<button([^>]*)>([^<]*)<\/button>/g)].map((m) => ({ attr: m[1], text: m[2] }));
+    // Der Text steht in einem <span>, der Platz für die fette Schrift hält (#1175).
+    const knoepfe = [...html.matchAll(/<button([^>]*)>(?:<span[^>]*>)?([^<]*)(?:<\/span>)?<\/button>/g)].map((m) => ({ attr: m[1], text: m[2] }));
     assert.deepEqual(knoepfe.map((k) => k.text), ['Fragen', 'Suchen']);
     for (const k of knoepfe) {
       assert.match(k.attr, /type="button"/);
