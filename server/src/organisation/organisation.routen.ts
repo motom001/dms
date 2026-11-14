@@ -1,5 +1,5 @@
 /**
- * Eigene Organisation (#995): Werkbank → Benutzer und Sicherheit → Eigene Organisation. Nur im Verwaltungsmodus mit dem
+ * Eigene Organisation (#995): Werkbank → Einstellungen → Eigene Organisation (seit #1170). Nur im Verwaltungsmodus mit dem
  * Bereich „organisation“ (verwaltungsbereiche.ts). Die Angaben selbst ändert man in der Ablage.
  */
 import { L, ok, ich } from '../http/routen-hilfen';

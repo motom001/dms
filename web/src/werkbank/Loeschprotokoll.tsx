@@ -2,14 +2,15 @@ import { type FormEvent, useCallback, useEffect, useState } from 'react';
 import { AUSLOESER, LOESCHGRUENDE, LOESCHPROTOKOLL_JAHRE_MAX, LOESCHSCHRITTE, LOESCHWEGE, istSha, type LoeschEintrag } from '../../../shared/src/loeschprotokoll';
 import { datenschutzApi } from '../api/datenschutz';
 import { useDaten } from '../daten';
-import { Hilfe } from '../Hilfe';
 import { pruefwert } from '../pruefwert';
 import { t, tn } from '../sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
 import { abfangen, Feld, Knopf, Suchfeld } from '../bausteine';
+import { bereichName } from '../../../shared/src/werkbankansicht';
+import { Kopf } from './Kopf';
 
 /**
- * Werkbank → Datenschutz → Löschprotokoll (#470): Nachweis gelöschter Mappen und Dokumente – ohne Titel,
+ * Werkbank → Datenschutz → Löschprotokoll (#470, eigener Bereich seit #1184): Nachweis gelöschter Mappen und Dokumente – ohne Titel,
  * Feldwerte oder Dateinamen. Filter nach Zeitraum, Mappentyp, Grund, Schritt und Vorgang; Suche nach Nummer
  * oder Prüfsumme (auch per Datei: „Wurde dieses Dokument gelöscht?“); Ausgabe als PDF und CSV. Nicht änderbar,
  * nur die Aufbewahrung lässt sich einstellen.
@@ -22,7 +23,20 @@ const groesse = (b: number | null) => (b === null ? '' : b < 1024 * 1024 ? `${Ma
 const kurz = (id: string) => id.slice(0, 8);
 const ohneLeere = (f: Filter) => Object.fromEntries(Object.entries(f).filter(([, v]) => v)) as Record<string, string>;
 
-export function LoeschprotokollBlatt() {
+/** Werkbank → Datenschutz → Löschprotokoll (#1184): eigener Bereich, vorher ein Abschnitt des Löschkonzepts. */
+export function LoeschprotokollPanel() {
+  return (
+    <div className="einspaltig">
+      <Kopf titel={bereichName('loeschprotokoll')} ueber={t('werkbank.gruppe.datenschutz')} hilfe="werkbank.loeschprotokoll">
+        <p className="leise">{t('werkbank.loeschprotokoll.text')}</p>
+      </Kopf>
+      <LoeschprotokollBlatt />
+    </div>
+  );
+}
+
+/** Filter, Suche, Liste und Ausgabe; die Überschrift steht im Kopf der Seite. */
+function LoeschprotokollBlatt() {
   const d = useDaten();
   const [f, setF] = useState<Filter>(LEER);
   const [r, setR] = useState<{ eintraege: LoeschEintrag[]; gesamt: number; jahre: number; max: number }>();
@@ -49,7 +63,6 @@ export function LoeschprotokollBlatt() {
   const shaSuche = istSha(f.suche);
   return (
     <section className="blatt" id="loeschprotokoll">
-      <h2 className="h3">{t('werkbank.loeschprotokoll.loeschprotokoll')} <Hilfe ort="werkbank.loeschprotokoll" /></h2>
       <p className="leise klein">{t('werkbank.loeschprotokoll.jede-loeschung-steht-hier')}</p>
       <form className="lp-filter" onSubmit={(e) => { e.preventDefault(); void laden(f); }}>
         <Feld beschriftung={t('werkbank.loeschprotokoll.von')}>

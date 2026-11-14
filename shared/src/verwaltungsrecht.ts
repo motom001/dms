@@ -43,10 +43,10 @@ export const HEIKLE_BEREICHE: ReadonlySet<string> = new Set([
 export type HeikleHandlung = 'rechte' | 'schluessel' | 'vollexport' | 'wiederherstellen' | 'sicherung' | 'anbindung' | 'anbieter' | 'mailversand' | 'notfall' | 'anmeldung' | 'aufruf' | 'aussen';
 
 /**
- * Bereiche nur für „Gesamte Verwaltung“: Sie lassen sich nicht einzeln vergeben. Nutzung (#1032) ändert, was alle
- * Mappentypen zeigen und mit welcher Vorlage die Werkbank startet – das gehört zur ganzen Verwaltung.
+ * Bereiche nur für „Gesamte Verwaltung“: Sie lassen sich nicht einzeln vergeben. Derzeit keiner: Die Nutzung (#1032)
+ * steht seit #1170 auf „Eigene Organisation“; ändern darf sie weiter nur „Gesamte Verwaltung“ (PUT /api/werkbank/merkmale).
  */
-export const NUR_GESAMT_BEREICHE: ReadonlySet<string> = new Set(['nutzung']);
+export const NUR_GESAMT_BEREICHE: ReadonlySet<string> = new Set<string>();
 
 const BEKANNT = new Set(BEREICHE.map((b) => b.pfad).filter((p) => !NUR_GESAMT_BEREICHE.has(p)));
 

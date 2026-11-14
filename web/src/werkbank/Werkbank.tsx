@@ -5,14 +5,15 @@ import { Symbol } from '../Symbol';
 import { AnmeldeschutzPanel, useAnmeldeschutz } from './Anmeldeschutz';
 import { RegionPanel, useRegion } from './Region';
 import { DatenEinstellungenPanel, useDatenEinstellungen } from './DatenEinstellungen';
-import { NutzungPanel, useNutzung } from './Nutzung';
-import { OrganisationPanel, useOrganisation } from './Organisation';
+import { OrganisationPanel, useNutzung, useOrganisation } from './Organisation';
 import { SprachenPanel, useSprachen } from './Sprachen';
 import { NummernkreisEditor, NummernkreiseListe, useNummernkreise } from './Nummernkreise';
 import { StempelEditor, StempelListe, useStempelVorlagenWerkbank } from './Stempel';
 import { DarfWegPanel, useDarfWeg } from './Archiv';
 import { AutomatischVerkleinern } from './Verkleinern';
-import { AuskuenfteListe, AuskunftRechts, LoeschkonzeptPanel, useDatenschutz } from './Datenschutz';
+import { AuskuenfteListe, AuskunftRechts, useDatenschutz } from './Datenschutz';
+import { LoeschkonzeptPanel } from './Loeschkonzept';
+import { LoeschprotokollPanel } from './Loeschprotokoll';
 import { PaketeListe, PaketLink, PaketePanel, usePakete } from './Pakete';
 import { useVollexport, VollexportPanel } from './Vollexport';
 import { PostfachEditor, PostfaecherListe, usePostfaecher } from './Postfaecher';
@@ -27,7 +28,7 @@ import { Dreiteilung } from '../bereiche';
 import { useDaten } from '../daten';
 import { TypEditor } from '../einrichtung/Einrichtung';
 import { geheZu, Link } from '../ort';
-import { bereichName, hatMitte, wartungsPlakette, werkbankEbene, werkbankUmleitung, werkbankZurueck } from '../../../shared/src/werkbankansicht';
+import { abschnittUmleitung, bereichName, hatMitte, inLeiste, wartungsPlakette, werkbankEbene, werkbankUmleitung, werkbankZurueck } from '../../../shared/src/werkbankansicht';
 import { t, tn } from '../sprache';
 import { BenutzerDetail, BenutzerListe, BenutzerNeu, SystemkontoDetail, useBenutzer } from './Benutzer';
 import { BetriebPanel, useBetrieb } from './Betrieb';
@@ -88,6 +89,7 @@ import { typName } from '../../../shared/src/beschriftung';
  * /werkbank/daten                  Einstellungen zum Sichern: Aufbewahrung im Papierkorb, eigener Export der Benutzer (#1196, #1197)
  * /werkbank/wartung                 Wartung: Wartungsmodus und Wartungsoperationen, z. B. Volltext neu erzeugen (#45, #458, #725)
  * /werkbank/fehlermeldungen[/:id]  Fehlermeldungen der Benutzer (#70)
+ * /werkbank/organisation          Eigene Organisation, oben die Nutzung (#995, #1170; früher /werkbank/nutzung, leitet um)
  * /werkbank/sicherung              Sicherung, Zeitplan, Probe, darunter Wiederherstellen (#103–#109, #725)
  * /werkbank/verschluesselung#notfallblatt  Notfallblatt (#106), seit #993 nur hier
  * /werkbank/verschluesselung#notfallkontakte  Notfallkontakte (#812) für „Wen fragen?“ auf dem Notfallblatt
@@ -98,9 +100,11 @@ import { typName } from '../../../shared/src/beschriftung';
  * /werkbank/webdav                WebDAV-Laufwerk an/aus, Stand, letzte Zugriffe (#346, rechts seit #366)
  * /werkbank/automatisierungen[/:id|/neu|/ziele]  Automatisierungen Wenn – Und – Dann (#675), dreiteilig; Ziele nach außen (#671)
  * /werkbank/stempel[/:id|/neu]     Vorlagen für Stempel beim Weitergeben (#394), dreiteilig seit #990
- * /werkbank/auskuenfte[/:id|/neu|/einstellungen][?mappe=]  Datenschutz-Auskünfte (#396, #668), dreiteilig;
- *                                  früher /werkbank/datenschutz (leitet um)
- * /werkbank/loeschkonzept          Löschkonzept, Personendaten in Mappentypen, Löschprotokoll (#469, #470, #668)
+ * /werkbank/auskuenfte[/:id|/neu][?mappe=]  Datenschutz-Auskünfte (#396, #668), dreiteilig;
+ *                                  früher /werkbank/datenschutz (leitet um); /einstellungen leitet seit #1183 auf
+ *                                  /werkbank/organisation#auskunft-vorgaben
+ * /werkbank/loeschkonzept          Löschkonzept, Personendaten in Mappentypen (#469, #668), Gruppe Datenschutz (#1184)
+ * /werkbank/loeschprotokoll        Löschprotokoll (#470; seit #1184 eigener Bereich, früher …/loeschkonzept#loeschprotokoll)
  *
  * Die Mitte bekommt jede Sammlung, in der man etwas anlegt und bearbeitet (#366, seit #990 auch kleine; `hatMitte`);
  * alle anderen Bereiche sind zweiteilig: links die Bereiche, rechts die ganze Seite.
@@ -111,7 +115,9 @@ export function Werkbank({ teile }: { teile: string[] }) {
   const [, bereich = 'uebersicht', id] = teile;
   const { verwaltungsmodus } = useKonto();
   /** Verwaltungsrecht (#818): eigener Bereich? `bereiche: null` = Gesamte Verwaltung; die Übersicht hat jeder. */
-  const darf = (pfad: string) => verwaltungsmodus.bereiche === null || pfad === 'uebersicht' || pfad === 'ansicht' || verwaltungsmodus.bereiche.includes(pfad);
+  // Löschprotokoll (#1184): früher Teil des Löschkonzepts – wer das verwaltet, behält es.
+  const darf = (pfad: string) => verwaltungsmodus.bereiche === null || pfad === 'uebersicht' || pfad === 'ansicht' || verwaltungsmodus.bereiche.includes(pfad)
+    || (pfad === 'loeschprotokoll' && verwaltungsmodus.bereiche.includes('loeschkonzept'));
   const benutzer = useBenutzer();
   const protokoll = useProtokoll(bereich === 'protokoll');
   const datenbank = useDatenbank(bereich === 'systemzustand');
@@ -141,7 +147,9 @@ export function Werkbank({ teile }: { teile: string[] }) {
   const nummernkreise = useNummernkreise(bereich === 'nummernkreise');
   const stempel = useStempelVorlagenWerkbank(bereich === 'stempel');
   const darfWeg = useDarfWeg(bereich === 'aufbewahrung');
-  const datenschutz = useDatenschutz(bereich === 'auskuenfte' || bereich === 'loeschkonzept');
+  // Vorgaben der Auskünfte stehen seit #1183 auf „Eigene Organisation“ – dort nur mit Recht auf die Datenschutz-Bereiche.
+  const datenschutzRecht = darf('auskuenfte') || darf('loeschkonzept');
+  const datenschutz = useDatenschutz(bereich === 'auskuenfte' || bereich === 'loeschkonzept' || (bereich === 'organisation' && datenschutzRecht));
   const vollexport = useVollexport(bereich === 'vollexport');
   // Herkunft und Paketfilter (#978) in Mappentypen, Ansichten und Nummernkreisen – nur mit Recht auf die Pakete (#818),
   // sonst gilt die Kennung des Typs (`typ.paket`).
@@ -149,7 +157,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
   const anmeldeschutz = useAnmeldeschutz(bereich === 'anmeldeschutz');
   const region = useRegion(bereich === 'region');
   const daten = useDatenEinstellungen(bereich === 'daten');
-  const nutzung = useNutzung(bereich === 'nutzung');
+  const nutzung = useNutzung(bereich === 'organisation');
   const organisation = useOrganisation(bereich === 'organisation');
   const sprachen = useSprachen(bereich === 'sprachen');
   const anbindung = useAnbindung(bereich === 'anbindung');
@@ -175,6 +183,9 @@ export function Werkbank({ teile }: { teile: string[] }) {
   // umgezogene Bereiche (#407: /werkbank/datenbank → /werkbank/anbindung) an die neue Stelle.
   const umleitung = werkbankUmleitung(bereich, id, location.search);
   useEffect(() => { if (umleitung) geheZu(umleitung, true); }, [umleitung]);
+  // Umgezogene Abschnitte (#1184): /werkbank/loeschkonzept#loeschprotokoll → /werkbank/loeschprotokoll.
+  const abschnittNeu = abschnittUmleitung(bereich, location.hash.slice(1));
+  useEffect(() => { if (abschnittNeu) geheZu(abschnittNeu, true); }, [abschnittNeu]);
   // Sprungmarke (#725): Zusammengelegte Bereiche stehen als Abschnitt auf einer Seite (z. B. /werkbank/wartung#wartungsmodus).
   // Der Abschnitt erscheint oft erst nach dem Laden – kurz danach suchen.
   const marke = location.hash.slice(1);
@@ -255,10 +266,9 @@ export function Werkbank({ teile }: { teile: string[] }) {
     rechts = <RegionPanel z={region} />;
   } else if (bereich === 'daten') {
     rechts = <DatenEinstellungenPanel z={daten} />;
-  } else if (bereich === 'nutzung') {
-    rechts = <NutzungPanel z={nutzung} />;
   } else if (bereich === 'organisation') {
-    rechts = <OrganisationPanel z={organisation} />;
+    // Nutzung und Eigene Organisation auf einer Seite (#1170).
+    rechts = <OrganisationPanel z={organisation} nutzung={nutzung} datenschutz={datenschutzRecht ? datenschutz : null} nachNutzung={() => void ansicht.laden()} />;
   } else if (bereich === 'sprachen') {
     rechts = <SprachenPanel z={sprachen} />;
   } else if (bereich === 'anmeldeschutz') {
@@ -276,6 +286,8 @@ export function Werkbank({ teile }: { teile: string[] }) {
     rechts = <AuskunftRechts z={datenschutz} id={id} />;
   } else if (bereich === 'loeschkonzept') {
     rechts = <LoeschkonzeptPanel z={datenschutz} />;
+  } else if (bereich === 'loeschprotokoll') {
+    rechts = <LoeschprotokollPanel />;
   } else if (bereich === 'nummernkreise') {
     liste = <NummernkreiseListe z={nummernkreise} offen={id} pakete={pakete.stand?.installiert ?? []} />;
     rechts = id ? <NummernkreisEditor key={`${id}-${nummernkreise.liste ? 1 : 0}`} z={nummernkreise} schluessel={id} /> : <div className="platzhalter"><p>{t('werkbank.werkbank.waehle-links-einen-nummernkreis')}</p></div>;
@@ -321,7 +333,6 @@ export function Werkbank({ teile }: { teile: string[] }) {
   const eintraege: WerkbankEintrag[] = [
     { pfad: 'uebersicht', name: n('uebersicht'), gruppe: null, warn: uebersicht.hinweise || undefined },
     // Ablage aufbauen (#717)
-    { pfad: 'nutzung', name: n('nutzung'), gruppe: 'ablage' },
     { pfad: 'pakete', name: n('pakete'), gruppe: 'ablage', zahl: zahl(pakete.stand?.installiert.length, uz?.pakete) },
     { pfad: 'typen', name: n('typen'), gruppe: 'ablage', zahl: d.typen.length },
     { pfad: 'sichten', name: n('sichten'), gruppe: 'ablage', zahl: d.sichten.length || undefined },
@@ -333,12 +344,12 @@ export function Werkbank({ teile }: { teile: string[] }) {
     // Benutzer und Sicherheit
     { pfad: 'benutzer', name: n('benutzer'), gruppe: 'benutzer', zahl: zahl(benutzer.geladen ? benutzer.liste.filter((b) => b.aktiv).length : undefined, uz?.benutzer) },
     { pfad: 'verschluesselung', name: n('verschluesselung'), gruppe: 'benutzer', warn: tresor.stand && tresor.stand.zustand !== 'vorhanden' ? t('werkbank.leiste.fehlt') : undefined },
-    // Eigene Organisation (#995): Notizen an die Verwaltung (Merkmal oder Verantwortliche geändert).
-    { pfad: 'organisation', name: n('organisation'), gruppe: 'benutzer', warn: organisation.stand?.neu ? String(organisation.stand.neu) : undefined, warnTitel: t('werkbank.organisation.notizen.titel') },
-    { pfad: 'auskuenfte', name: n('auskuenfte'), gruppe: 'benutzer', zahl: datenschutz.stand?.verzeichnis.filter((e) => istOffen(e.zustand)).length || undefined },
-    { pfad: 'loeschkonzept', name: n('loeschkonzept'), gruppe: 'benutzer', warn: datenschutz.stand?.loeschkonzept?.luecken.length ? '!' : undefined, warnTitel: t('werkbank.loeschkonzept.personendaten') },
     ...(d.typen.some((x) => x.archiv) ? [{ pfad: 'aufbewahrung', name: n('aufbewahrung'), gruppe: 'benutzer' as const, zahl: zahl(darfWeg.liste?.length, uz?.darfWeg) }] : []),
     { pfad: 'stempel', name: n('stempel'), gruppe: 'benutzer', zahl: stempel.liste?.length || undefined },
+    // Datenschutz (#1184): drei Einträge, nur bei beruflicher Nutzung in der Leiste (`inLeiste` unten).
+    { pfad: 'auskuenfte', name: n('auskuenfte'), gruppe: 'datenschutz', zahl: datenschutz.stand?.verzeichnis.filter((e) => istOffen(e.zustand)).length || undefined },
+    { pfad: 'loeschkonzept', name: n('loeschkonzept'), gruppe: 'datenschutz', warn: datenschutz.stand?.loeschkonzept?.luecken.length ? '!' : undefined, warnTitel: t('werkbank.loeschkonzept.personendaten') },
+    { pfad: 'loeschprotokoll', name: n('loeschprotokoll'), gruppe: 'datenschutz' },
     // Post und Eingänge
     { pfad: 'postfaecher', name: n('postfaecher'), gruppe: 'post', zahl: zahl(postfaecher.liste?.length, uz?.postfaecher), warn: uebersicht.stand?.postfachAnmeldung?.length || postfaecher.liste?.some((p) => p.stand.fehlerFolge > 0 || (p.oauth && p.oauth.zustand !== 'ok')) ? '!' : undefined, warnTitel: uebersicht.stand?.postfachAnmeldung?.length ? t('werkbank.leiste.postfach.anmeldung') : t('werkbank.leiste.postfach.abruf') },
     ...(eingang.stand?.vorhanden ? [{ pfad: 'eingangsordner', name: n('eingangsordner'), gruppe: 'post' as const, warn: eingang.stand.fehler?.length ? String(eingang.stand.fehler.length) : undefined, warnTitel: t('werkbank.leiste.eingangsordner') }] : []),
@@ -354,6 +365,8 @@ export function Werkbank({ teile }: { teile: string[] }) {
     { pfad: 'betrieb', name: n('betrieb'), gruppe: 'einstellungen', warn: uebersicht.stand && !uebersicht.stand.mail ? t('werkbank.leiste.aus') : undefined, warnTitel: t('werkbank.leiste.mail') },
     { pfad: 'region', name: n('region'), gruppe: 'einstellungen' },
     { pfad: 'sprachen', name: n('sprachen'), gruppe: 'einstellungen' },
+    // Eigene Organisation (#995) mit der Nutzung (#1170): Notizen an die Verwaltung (Merkmal oder Verantwortliche geändert).
+    { pfad: 'organisation', name: n('organisation'), gruppe: 'einstellungen', warn: organisation.stand?.neu ? String(organisation.stand.neu) : undefined, warnTitel: t('werkbank.organisation.notizen.titel') },
     { pfad: 'aufgaben', name: n('aufgaben'), gruppe: 'einstellungen', zahl: zahl(aufgaben.liste?.filter((a) => !a.erledigt).length, uebersicht.stand?.aufgaben.offen),
       // #798: Aufgaben bei Personen ohne Leserecht.
       warn: uebersicht.stand?.ohneLeserecht ? '!' : undefined, warnTitel: t('werkbank.ohne-leserecht.titel') },
@@ -379,7 +392,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
     liste = null;
     rechts = <div className="leer"><p>{t('konten.verwaltung.fehler.bereich')}</p></div>;
   }
-  const eigene = eintraege.filter((e) => darf(e.pfad));
+  const eigene = eintraege.filter((e) => darf(e.pfad) && inLeiste(e.gruppe, d.zaehler.merkmale));
 
   return (
     <Dreiteilung ort="werkbank" ebene={werkbankEbene(bereich, id, !!installieren)} mitte={hatMitte(bereich)} offen={id}>

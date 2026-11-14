@@ -52,6 +52,8 @@ rauchtest('Werkbank: Sicherungen auswählen und gemeinsam löschen (#1169)', { a
   await frage.getByText(/Frei werden etwa/).waitFor();
   await frage.getByRole('button', { name: 'Endgültig löschen' }).click();
   await bearbeitung.getByText('2 Sicherungen gelöscht.').waitFor({ timeout: 30_000 });
+  // Die Liste lädt nach der Meldung neu: warten, bis die beiden Zeilen weg sind.
+  await zeilen.nth(anzahl - 2).waitFor({ state: 'detached' });
   assert.equal(await zeilen.count(), anzahl - 2);
   await zeilen.first().getByText('geschützt').waitFor();
 });

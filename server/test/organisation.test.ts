@@ -10,6 +10,7 @@ import { after, describe, it } from 'node:test';
 import { anzeigeBedingungTrifft, bereinigeAnzeige, beschreibeAnzeigeBedingung } from '../../shared/src/anzeige';
 import type { Feld, Mappentyp } from '../../shared/src/model';
 import { angabenFelder, darfGeschuetztSchreiben, geltendeOrganisation, liesAngaben, liesOrganisationEinstellung, verantwortlicherText, type EigeneOrganisation } from '../../shared/src/organisation';
+import { MERKMALE_EINSTELLUNG } from '../../shared/src/merkmale';
 import { ApiSchluesselDienst, speicherApiSchluesselRepo } from '../src/apischluessel';
 import { speicherDateien } from '../src/dateispeicher';
 import { Dienst } from '../src/dienst';
@@ -110,6 +111,8 @@ const PAKET = (typen = TYPEN()) => ({ 'manifest.yaml': manifest, 'inhalt/mappent
 async function aufbau(pg: boolean, name: string) {
   const r = pg ? await pgRepos(name) : { repo: speicherRepo(), konto: speicherKontoRepo() };
   const einstellungen = speicherEinstellungen();
+  // Eigene Organisationen wirken nur bei beruflicher Nutzung (#1170) – die Tischlerei nutzt die Ablage beruflich.
+  await einstellungen.schreibe(MERKMALE_EINSTELLUNG, { beruflich: true });
   const d = new Dienst(r.repo, speicherDateien(), { einstellungen });
   const konten = new Konten(r.konto, () => null, () => 'http://localhost', d.systemtypen.benutzerspiegel());
   d.verbindeKonten(konten.papierkorbHaken());
@@ -337,6 +340,24 @@ for (const pg of [false, true]) {
       const p = await x.d.post.legePostAn({ betreff: 'Ihre Rechnung', nachricht: 'An Tischlerei Brandt, info@tischlerei.example.org, Tel. 0123 45678. Stadtwerke Musterstadt, kunden@stadtwerke.example.org' }, { id: x.katrin.id, name: 'Katrin' }, await x.d.rechtepruefung.zugriff({ id: x.katrin.id, rolle: 'mitglied' }));
       const e = await x.d.erkennung.fuerPost(p.id);
       assert.deepEqual(e?.absender.map((a) => a.mappeId), [sw]);
+    });
+
+    it('#1170: ohne „beruflich“ bleibt die eigene Organisation gespeichert, Ablago verwendet sie aber nicht', async () => {
+      const x = await aufbau(pg, 'org_privat');
+      const wir = ((await x.verwaltend(x.katrin, 'POST', '/api/mappen', { body: { typId: x.org, werte: { name: 'Tischlerei Brandt', eigene_organisation: true, email: 'info@tischlerei.example.org' } } })).body as { id: string }).id;
+      assert.match(await x.d.organisation.verantwortlicherText() ?? '', /^Tischlerei Brandt/);
+      await x.d.werkbank.setzeMerkmale({ beruflich: false }, 'test');
+      // Auskunft, Löschkonzept und Briefkopf: keine eigene Organisation; die Werkbank zeigt sie weiter (blass), nichts ist gelöscht.
+      assert.equal(await x.d.organisation.geltende(), null);
+      assert.equal(await x.d.organisation.verantwortlicherText(), null);
+      const s = (await x.verwaltend(x.katrin, 'GET', '/api/werkbank/organisation')).body as { organisationen: EigeneOrganisation[] };
+      assert.deepEqual(s.organisationen.map((o) => o.mappeId), [wir]);
+      assert.equal((await x.d.mappen.holeMappe(wir)).mappe.werte.eigene_organisation, true);
+      // Erkennung: Sie zählt nicht mehr als eigene Mappe.
+      assert.ok(!(await x.d.erkennung.eigeneLage()).ids.has(wir));
+      await x.d.werkbank.setzeMerkmale({ beruflich: true }, 'test');
+      assert.equal((await x.d.organisation.geltende())?.mappeId, wir);
+      assert.ok((await x.d.erkennung.eigeneLage()).ids.has(wir));
     });
 
     it('Anzeige-Bedingung im Kern: Pflicht im Abschnitt „Ausgangsrechnung“ nur, wenn „Von“ eine eigene Organisation ist', async () => {

@@ -175,11 +175,11 @@ If a hidden field holds a value that no longer fits after a later change to the 
 
 ### Show if … { #anzeigen-wenn }
 
-A folder type should stay simple for Lena and still do everything in a business – without a second folder type for the same thing. For this, set on a **field** or a **section** (under the field tab, **Show if …**) when it is shown. Examples: section *Rent* only for contract type *Rent*, section *Accounting* only if the Library is [used for work](nutzung.md).
+A folder type should stay simple for Lena and still do everything in a business – without a second folder type for the same thing. For this, set on a **field** or a **section** (under the field tab, **Show if …**) when it is shown. Examples: section *Rent* only for contract type *Rent*, section *Accounting* only if the Library is [used for work](organisation.md#nutzung).
 
 Conditions come from the same toolkit as for [views](sichten.md#bedingungen):
 
-- **Library is also used for work** – the [Library attribute](nutzung.md);
+- **Library is also used for work** – the [Library attribute](organisation.md#nutzung);
 - **Field value of the folder** – equal, is one of, empty, not empty and the other comparisons of the field type, with fixed values (for dates also “today”);
 - **Reference points to a particular folder** – a reference field with “points to”, e.g. contract type *Rent*;
 - **Reference points to a folder of type …** – e.g. “*concerns* is a vehicle”; useful for references to folders of different types.

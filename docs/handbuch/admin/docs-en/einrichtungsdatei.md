@@ -75,7 +75,7 @@ optionales:
 - `konto` is the person who sets up: they get "Full administration" and also work in the Library. You invite further people after the setup under Workbench → Users.
 - Without a list `pakete` you choose the packages in the wizard; `pakete: []` means "none".
 - **Files from version 0.191 and 0.192** are still loaded: the section `administrator` counts as `konto`. Ablago skips a section `erster-benutzer` with a notice – the first user no longer exists in the wizard. When saving, only `konto` is in the file.
-- `nutzung` is the answer to "What will you use Ablago for?": `privat` (home), `beruflich` (work) or `beides` (both) ([Use](installation.md#nutzung)). `beruflich` and `beides` set the attribute [used for work](nutzung.md). Without it, the wizard asks.
+- `nutzung` is the answer to "What will you use Ablago for?": `privat` (home), `beruflich` (work) or `beides` (both) ([Use](installation.md#nutzung)). `beruflich` and `beides` set the attribute [used for work](organisation.md#nutzung). Without it, the wizard asks.
 - `organisation` only exists with `beruflich` and `beides`: `name` is required, plus optionally `strasse`, `hausnummer`, `plz`, `ort`, `email` and `telefon`. "Set up now" creates your [own organisation](organisation.md) from it; the package `basis` must then be in the list.
 - **Files up to version 0.237** don't know `nutzung` yet and set the attribute with `optionales: beruflich: true`. Ablago still reads this; the wizard then suggests "Both" in the "Use" step. If both are in the file, they must match.
 - A package's automations are keys with `true` (switched on) or `false` (off); if one is missing, it is switched on as in the wizard.

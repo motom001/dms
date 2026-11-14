@@ -20,10 +20,11 @@ export const VORLAGEN: Record<Vorlage, { name: string; text: string }> = {
 };
 
 /**
- * Gruppen der Leiste (#68), nach Aufgaben statt nach Technik (#354, neu geordnet #717/#725): höchstens sechs, je etwa 7 ± 2
- * Bereiche. Die Kennung der Gruppe wird nirgends gespeichert – gespeichert sind nur Bereiche.
+ * Gruppen der Leiste (#68), nach Aufgaben statt nach Technik (#354, neu geordnet #717/#725): je etwa 7 ± 2 Bereiche.
+ * Datenschutz (#1184) ist eine kleine eigene Gruppe: Auskünfte, Löschkonzept, Löschprotokoll – nur bei beruflicher
+ * Nutzung in der Leiste (`NUR_BERUFLICH`). Die Kennung der Gruppe wird nirgends gespeichert – gespeichert sind nur Bereiche.
  */
-const GRUPPENFOLGE = ['ablage', 'benutzer', 'post', 'sichern', 'einstellungen', 'wartung'] as const;
+const GRUPPENFOLGE = ['ablage', 'benutzer', 'datenschutz', 'post', 'sichern', 'einstellungen', 'wartung'] as const;
 export type Gruppe = (typeof GRUPPENFOLGE)[number];
 export const GRUPPEN = Object.fromEntries(GRUPPENFOLGE.map((g) => [g, t.frei(`werkbank.gruppe.${g}`)])) as Record<Gruppe, string>;
 
@@ -54,9 +55,7 @@ type Eintrag = { pfad: string; gruppe: Gruppe; in: readonly Exclude<Vorlage, 'al
  */
 const EINTRAEGE: Eintrag[] = [
   // Ablage aufbauen (#717): erst Fertiges, dann Feinarbeit, zum Schluss, was auf allem aufbaut.
-  // Nutzung (#1032): privat oder auch beruflich – bestimmt, was Mappentypen zeigen; darum vorn bei „Ablage aufbauen“
-  // (Einstellungen hat schon sieben Bereiche). Nur für „Gesamte Verwaltung“ (verwaltungsrecht.ts).
-  { pfad: 'nutzung', gruppe: 'ablage', in: H },
+  // Die Nutzung (#1032, privat oder auch beruflich) steht seit #1170 oben auf „Eigene Organisation“ unter Einstellungen.
   { pfad: 'pakete', gruppe: 'ablage', in: H },
   { pfad: 'typen', gruppe: 'ablage', in: H },
   { pfad: 'sichten', gruppe: 'ablage', in: H },
@@ -67,14 +66,14 @@ const EINTRAEGE: Eintrag[] = [
   { pfad: 'ablaufvorlagen', gruppe: 'ablage', in: O, experte: ['haushalt'] },
   { pfad: 'benutzer', gruppe: 'benutzer', in: H },
   { pfad: 'verschluesselung', gruppe: 'benutzer', in: H },
-  // Eigene Organisation (#995): Verweis auf die Organisation mit dem Merkmal – erst mit der Vorlage für Betriebe.
-  { pfad: 'organisation', gruppe: 'benutzer', in: O },
-  // Datenschutz getrennt (#668): Auskünfte (mit Mitte, wachsende Sammlung) und Löschkonzept.
-  { pfad: 'auskuenfte', gruppe: 'benutzer', in: O },
-  { pfad: 'loeschkonzept', gruppe: 'benutzer', in: O },
   // „Aufbewahrung abgelaufen“ (#725, früher „Darf weg“) und Stempel (#717) regeln, was die Ablage verlässt.
   { pfad: 'aufbewahrung', gruppe: 'benutzer', in: O },
   { pfad: 'stempel', gruppe: 'benutzer', in: H },
+  // Datenschutz (#1184, vorher unter „Benutzer und Sicherheit“, #668): Auskünfte (mit Mitte, wachsende Sammlung),
+  // Löschkonzept und Löschprotokoll (vorher Abschnitt des Löschkonzepts) als drei klar getrennte Einträge.
+  { pfad: 'auskuenfte', gruppe: 'datenschutz', in: O },
+  { pfad: 'loeschkonzept', gruppe: 'datenschutz', in: O },
+  { pfad: 'loeschprotokoll', gruppe: 'datenschutz', in: O },
   { pfad: 'postfaecher', gruppe: 'post', in: O },
   { pfad: 'eingangsordner', gruppe: 'post', in: O },
   { pfad: 'webdav', gruppe: 'post', in: H },
@@ -96,6 +95,9 @@ const EINTRAEGE: Eintrag[] = [
   { pfad: 'region', gruppe: 'einstellungen', in: H },
   // Sprachen (#729): erlaubte Sprachen und Sprache der Installation.
   { pfad: 'sprachen', gruppe: 'einstellungen', in: H },
+  // Eigene Organisation (#995) mit der Nutzung obenauf (#1170): einmal gesetzt, dann ist Ruhe – darum unter Einstellungen.
+  // In jeder Vorlage, weil der Haken „auch beruflich genutzt“ gerade für den Haushalt erreichbar sein muss.
+  { pfad: 'organisation', gruppe: 'einstellungen', in: H },
   { pfad: 'aufgaben', gruppe: 'einstellungen', in: H },
   { pfad: 'anmeldeschutz', gruppe: 'einstellungen', in: O },
   { pfad: 'designs', gruppe: 'einstellungen', in: O },
@@ -144,12 +146,29 @@ export const UMGEZOGEN: Readonly<Record<string, string>> = {
   darfweg: 'aufbewahrung', suche: 'texterkennung', wiederherstellung: 'sicherung', technik: 'systemzustand', wartungsmodus: 'wartung',
   // #668: Datenschutz in Auskünfte und Löschkonzept getrennt; die alte Adresse führt zu den Auskünften.
   datenschutz: 'auskuenfte',
+  // #1170: Nutzung und Eigene Organisation auf einer Seite unter Einstellungen.
+  nutzung: 'organisation',
 };
 
 /** Wohin ein umgezogener Bereich innerhalb seiner neuen Seite springt (Abschnitt, `#…`). */
 export const UMGEZOGEN_ABSCHNITT: Readonly<Record<string, string>> = {
-  suche: 'suche', wiederherstellung: 'wiederherstellen', technik: 'version', wartungsmodus: 'wartungsmodus',
+  suche: 'suche', wiederherstellung: 'wiederherstellen', technik: 'version', wartungsmodus: 'wartungsmodus', nutzung: 'nutzung',
 };
+
+/**
+ * Gruppen, die nur bei beruflicher Nutzung in der Leiste stehen (#1184): Datenschutz gehört nicht zur rein privaten
+ * Ablage. Hilfsweise am Merkmal „beruflich genutzt“ (#1170), bis die Werkbank-Stufe je Person (#987) es übernimmt. Die
+ * Seiten bleiben über ihre Adresse erreichbar – ausgeblendet ist nicht abgeschaltet.
+ */
+export const NUR_BERUFLICH: ReadonlySet<Gruppe> = new Set<Gruppe>(['datenschutz']);
+export const inLeiste = (gruppe: Gruppe | null, m: { beruflich: boolean } | null | undefined) => !gruppe || !NUR_BERUFLICH.has(gruppe) || !!m?.beruflich;
+
+/**
+ * Umgezogene Abschnitte (#1184): alte Adresse samt Sprungmarke → neue Seite. Das Löschprotokoll war ein Abschnitt des
+ * Löschkonzepts und ist jetzt ein eigener Bereich.
+ */
+const ABSCHNITT_UMGEZOGEN: Readonly<Record<string, string>> = { 'loeschkonzept#loeschprotokoll': '/werkbank/loeschprotokoll' };
+export const abschnittUmleitung = (bereich: string, marke: string): string | null => ABSCHNITT_UMGEZOGEN[`${bereich}#${marke}`] ?? null;
 
 /** Für die ganze Installation: Vorlage plus Abweichungen. */
 export interface WerkbankAnsicht { vorlage: Vorlage; ein: string[]; aus: string[] }
@@ -273,6 +292,8 @@ export function werkbankUmleitung(bereich: string, id?: string, suche = ''): str
     const offen = new URLSearchParams(suche).get('offen');
     return offen ? `/werkbank/${bereich}/${encodeURIComponent(offen)}` : null;
   }
+  // Vorgaben für jede Auskunft (#1183): auf „Eigene Organisation“ unter Einstellungen.
+  if (bereich === 'auskuenfte' && id === 'einstellungen') return '/werkbank/organisation#auskunft-vorgaben';
   if (!id || hatMitte(bereich)) return null;
   // Lange Datenbankzugriffe stehen seit #725 im Systemzustand (Auslastung).
   if (bereich === 'anbindung') return `/werkbank/systemzustand?offen=${encodeURIComponent(id)}#datenbank`;

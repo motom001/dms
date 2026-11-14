@@ -1347,6 +1347,8 @@ async function main() {
     // Wieder weg, damit spätere Bilder (Menü „Mappe“) unverändert bleiben.
     await api('DELETE', `/api/werkbank/ablaufvorlagen/${encodeURIComponent(v.kennung)}`);
   }
+  // Datenschutz gehört zur beruflichen Nutzung (#1170, #1184): für diese Bilder an, danach wieder privat wie vorher.
+  await api('PUT', '/api/werkbank/merkmale', { beruflich: true });
   // Datenschutz (#396): Vertragspartner „betrifft eine Person“, Auskunft für die Stadtwerke gesammelt – Prüfliste.
   await api('PUT', '/api/werkbank/datenschutz', { verantwortlicher: 'Familie Beispiel\nMusterweg 1, 01234 Musterstadt', empfaenger: '', typen: { [d.typ('Vertragspartner').id]: { person: true, zweck: 'Verträge und Rechnungen des Haushalts' } } });
   await geheZu(s, `/werkbank/auskuenfte/neu?mappe=${d.stadtwerke.id}`);
@@ -1383,17 +1385,23 @@ async function main() {
     await bild(sa, 'abrufseite');
     await ka.close();
   }
-  // Löschkonzept (#469) und Löschprotokoll (#470): einen alten Vertragspartner löschen (Grund „Nicht mehr nötig“), dann beide Abschnitte.
+  // Löschkonzept (#469) und Löschprotokoll (#470): einen alten Vertragspartner löschen (Grund „Nicht mehr nötig“), dann beide Seiten.
   {
     const alt = await api('POST', '/api/mappen', { typId: d.typ('Vertragspartner').id, werte: { name: 'Alter Stromanbieter' } });
     await api('DELETE', `/api/mappen/${alt.id}?grund=nicht_noetig`);
     await geheZu(s, '/werkbank/loeschkonzept');
     await s.locator('#loeschkonzept').evaluate((e) => e.scrollIntoView({ block: 'start' }));
     await bild(s, 'werkbank-loeschkonzept');
+    // Löschprotokoll (#1184): eigener Bereich der Gruppe Datenschutz.
+    await geheZu(s, '/werkbank/loeschprotokoll');
     await s.locator('#loeschprotokoll .lp-eintrag').first().waitFor();
-    await s.locator('#loeschprotokoll').evaluate((e) => e.scrollIntoView({ block: 'start' }));
     await bild(s, 'werkbank-loeschprotokoll');
   }
+  // Eigene Organisation (#1170, #1182, #1183): Nutzung oben, Rollen, Vorgaben der Auskünfte – die ganze Seite.
+  await geheZu(s, '/werkbank/organisation');
+  await s.locator('#auskunft-vorgaben').waitFor();
+  await bild(s, 'werkbank-organisation', { fullPage: true });
+  await api('PUT', '/api/werkbank/merkmale', { beruflich: false });
   // Pakete (#369): Abschnitt „Expertenmodus“ aufgeklappt unter den Knöpfen (ohne Katalogabruf).
   await geheZu(s, '/werkbank/pakete');
   await s.getByRole('button', { name: w(/Expertenmodus/) }).click();

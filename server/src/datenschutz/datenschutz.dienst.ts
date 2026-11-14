@@ -127,7 +127,7 @@ export class DatenschutzDienst {
 
   /**
    * Einstellungen für Unterlagen an Dritte (#995): Deckblatt und E-Mails der Auskunft, Löschkonzept. Der Verantwortliche
-   * kommt von der eigenen Organisation (Werkbank → Eigene Organisation); ohne sie gilt die bisherige Angabe.
+   * kommt von der eigenen Organisation (Werkbank → Einstellungen → Eigene Organisation); ohne sie gilt die bisherige Angabe.
    */
   async datenschutzFuerUnterlagen(): Promise<Datenschutz> {
     const d = await this.datenschutz();

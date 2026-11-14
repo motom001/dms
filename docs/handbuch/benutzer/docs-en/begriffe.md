@@ -191,7 +191,7 @@ See also: [Tip](#tipp), [Discover Ablago](#ablago-entdecken).
 A field value that may occur only once in this folder type, e.g. an invoice number.
 
 <a id="beruflich-genutzt"></a>**Used for work** (*Beruflich genutzt*) · ✓ everyday word · administrators  
-The one attribute of the Library – the Library is also used for work (self-employed, club, business). Default no. Folder types then show their work-related fields and sections; permissions, views and automations can look at it. Applies to the whole Library, not per person; set it in Workbench → Use.  
+The one attribute of the Library – the Library is also used for work (self-employed, club, business). Default no. Folder types then show their work-related fields and sections; permissions, views and automations can look at it. Applies to the whole Library, not per person; set it in Workbench → Settings → Own organisation.  
 See also: [Show if …](#anzeigen-wenn), [Condition](#bedingung).
 
 <a id="version"></a>**Version** · ✓ everyday word · everyone  

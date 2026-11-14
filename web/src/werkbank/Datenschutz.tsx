@@ -1,12 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Symbol } from '../Symbol';
 import { fortschrittText } from '../../../shared/src/auftrag';
-import { ANREDE_BEISPIEL, ANREDE_NAME, ANREDEN, textDritte, type Anrede } from '../../../shared/src/anrede';
-import { AUSKUNFT_PASSWORT_MIN, erwaehnungText, GRUND_MIN, istOffen, istRechteStandard, personenTypen, rechteStandard, tageBisFrist, type AuskunftAuswahl, type AuskunftEintrag, type AuskunftZustand, type AuskunftMappe, type AuskunftStand, type AuskunftVorschau, type Datenschutz } from '../../../shared/src/auskunft';
+import { AUSKUNFT_PASSWORT_MIN, erwaehnungText, GRUND_MIN, istOffen, personenTypen, tageBisFrist, type AuskunftAuswahl, type AuskunftEintrag, type AuskunftZustand, type AuskunftMappe, type AuskunftStand, type AuskunftVorschau, type Datenschutz } from '../../../shared/src/auskunft';
 import { LinkZeile, Zustellen } from './Zustellen';
-import { LoeschkonzeptBlatt, verweiseText } from './Loeschkonzept';
-import { personenbezug } from '../../../shared/src/loeschkonzept';
-import { LoeschprotokollBlatt } from './Loeschprotokoll';
 import { BAUM_RICHTUNGEN, kinderVon, type BaumKnoten, type BaumRichtung } from '../../../shared/src/baum';
 import { datumText } from '../../../shared/src/archiv';
 import type { Auftrag } from '../../../shared/src/auftrag';
@@ -24,7 +20,6 @@ import { titelOder } from '../seiten';
 import { Mehrfachauswahl } from '../ablage/Mehrfachauswahl';
 import { formatiere, type Mappe, type Mappentyp } from '../../../shared/src/model';
 import { falte } from '../../../shared/src/suche';
-import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 import { zeitzone } from '../../../shared/src/region';
 import { gebietsschema } from '../../../shared/src/sprache';
 import { Bereich, Feld, FeldGruppe, FilterHaken, HakenFeld, Hervorgehoben, KeineTreffer, Knopf, KnopfLink, ListenSuche, useBereiche, useListenSuche, type BereichListe } from '../bausteine';
@@ -37,7 +32,8 @@ import { Kopf } from './Kopf';
  *      Mappe, Dokument, Notiz, Historie; Bezug-Mappen nur als Erwähnung, bewusst ganz aufnehmbar (#472)
  *   3. Erzeugen als Hintergrundauftrag, optional mit Passwort (AES); Download, danach gelöscht
  *   4. Zustellen (#455): per E-Mail (nur verschlüsselt) oder als Abruf-Link mit Abrufcode
- * Unten: bereitliegende Auskünfte, Abruf-Links (Nachweis), Löschkonzept erzeugen (#469), Löschprotokoll (#470) und die Einstellungen (Absender, Rechte, Zwecke je Mappentyp).
+ * Löschkonzept (#469) und Löschprotokoll (#470) sind eigene Bereiche (Loeschkonzept.tsx, Loeschprotokoll.tsx, #1184); die
+ * Vorgaben für jede Auskunft stehen auf „Eigene Organisation“ (AuskunftVorgaben.tsx, #1183).
  */
 
 const groesse = (b: number) => (b < 1024 * 1024 ? `${Math.max(1, Math.round(b / 1024))} KB` : `${(b / 1024 / 1024).toFixed(1).replace('.', ',')} MB`);
@@ -111,7 +107,10 @@ export function AuskuenfteListe({ z, offen }: { z: DatenschutzZustand; offen?: s
   );
 }
 
-/** Rechte Spalte: „neu“ = Assistent, „einstellungen“ = Einstellungen der Auskunft, sonst eine Auskunft (auch Anfrage oder Auftrag). */
+/** Vorgaben für jede Auskunft (#1183): auf der Seite „Eigene Organisation“. */
+const VORGABEN_SEITE = '/werkbank/organisation#auskunft-vorgaben';
+
+/** Rechte Spalte: „neu“ = Assistent, ohne Auswahl der Weg zu den Vorgaben, sonst eine Auskunft (auch Anfrage oder Auftrag). */
 export function AuskunftRechts({ z, id }: { z: DatenschutzZustand; id?: string }) {
   const s = z.stand;
   // Alte Links aus der Mappe der Person (/werkbank/datenschutz?mappe=…) führen in den Assistenten.
@@ -123,27 +122,20 @@ export function AuskunftRechts({ z, id }: { z: DatenschutzZustand; id?: string }
       <Kopf titel={t('werkbank.auskunft.neu.titel')} ueber={bereichName('auskuenfte')} hilfe="werkbank.datenschutz">
         <p className="leise">{t('werkbank.datenschutz.fragt-ein-kunde-mieter')}</p>
         {/* #994: Woher Empfänger, Rechte-Text und Anrede kommen – am Handy der Weg zu den Vorgaben. */}
-        <p className="leise klein">{tn('werkbank.auskunft.neu.vorgaben', { link: <Link to="/werkbank/auskuenfte/einstellungen" className="verweis">{t('werkbank.auskunft.neu.vorgaben.link')}</Link> })}</p>
+        <p className="leise klein">{tn('werkbank.auskunft.neu.vorgaben', { link: <Link to={VORGABEN_SEITE} className="verweis">{t('werkbank.auskunft.neu.vorgaben.link')}</Link> })}</p>
       </Kopf>
       <AuskunftErteilen einstellung={s.einstellung} nachher={z.laden} zustellen={(aid) => geheZu(`/werkbank/auskuenfte/${aid}?zustellen=1`)} />
     </div>
   );
-  // Vorgaben für jede Auskunft (#994): ohne Auswahl im Kopf der rechten Spalte; über den Assistenten (und alte Links)
-  // auch als eigene Seite – am Handy steht die rechte Spalte ohne Auswahl nicht da.
-  if (id === 'einstellungen') return (
-    <div className="einspaltig">
-      <Kopf titel={t('werkbank.auskunft.einstellungen.titel')} ueber={bereichName('auskuenfte')} hilfe="werkbank.auskunft.vorgaben">
-        <p className="leise">{t('werkbank.auskunft.einstellungen.text')}</p>
-      </Kopf>
-      <AuskunftEinstellungen z={z} />
-    </div>
-  );
+  // Vorgaben für jede Auskunft (#994) stehen seit #1183 auf „Eigene Organisation“ (/werkbank/auskuenfte/einstellungen leitet um).
   if (!id) return (
     <div className="einspaltig">
       <Kopf titel={bereichName('auskuenfte')} hilfe="werkbank.auskunft"><p className="leise">{t('werkbank.auskunft.rechts.waehlen')}</p></Kopf>
-      <h2 className="h3">{t('werkbank.auskunft.einstellungen.titel')}</h2>
-      <p className="leise klein">{t('werkbank.auskunft.einstellungen.text')}</p>
-      <AuskunftEinstellungen z={z} />
+      <section className="blatt" aria-labelledby="auskunft-vorgaben-verweis">
+        <h2 className="h3" id="auskunft-vorgaben-verweis">{t('werkbank.auskunft.einstellungen.titel')}</h2>
+        <p className="leise klein">{t('werkbank.auskunft.vorgaben.verlegt')}</p>
+        <KnopfLink to={VORGABEN_SEITE}>{t('werkbank.auskunft.vorgaben.oeffnen')}</KnopfLink>
+      </section>
     </div>
   );
   const e = s.verzeichnis.find((x) => x.id === id);
@@ -234,23 +226,6 @@ function PersonVerweis({ id, titel }: { id: string; titel: string }) {
   const [typId, setTypId] = useState<string>();
   useEffect(() => { mappenApi.mappe(id).then((x) => setTypId(x.mappe.typId), () => {}); }, [id]);
   return typId ? <Link to={`/ablage/${typId}/${id}`} className="verweis">{titelOder(titel)}</Link> : <span>{titelOder(titel)}</span>;
-}
-
-/* ---------- Löschkonzept (#668): eigener Werkbank-Eintrag ---------- */
-
-export function LoeschkonzeptPanel({ z }: { z: DatenschutzZustand }) {
-  const s = z.stand;
-  if (!s) return <p className="leise">{z.fehler ?? t('werkbank.datenschutz.lade')}</p>;
-  return (
-    <div className="einspaltig">
-      <Kopf titel={t('werkbank.loeschkonzept.titel')} ueber={t('werkbank.datenschutz.werkbank')} hilfe="werkbank.loeschkonzept">
-        <p className="leise">{t('werkbank.loeschkonzept.text')}</p>
-      </Kopf>
-      <LoeschkonzeptBlatt luecken={s.loeschkonzept?.luecken ?? []} />
-      <PersonendatenTypen z={z} />
-      <LoeschprotokollBlatt />
-    </div>
-  );
 }
 
 /* ---------- Auskunft erteilen ---------- */
@@ -564,116 +539,6 @@ function MappeEintrag({ id, titel, typ, typId, inhalt, wahl, schalte, setGrund, 
           {inhalt.ohneFelder.length > 0 && <p className="leise klein">{t('werkbank.datenschutz.nie-enthalten', { ohneFelder: inhalt.ohneFelder.join(', ') })}</p>}
         </div>
       )}
-    </div>
-  );
-}
-
-/* ---------- Einstellungen ---------- */
-
-/** Gemeinsames Speichern: beide Formulare (Auskunft, Personendaten) ändern dieselbe Einstellung, je nur ihren Teil. */
-function useDatenschutzForm(z: DatenschutzZustand) {
-  const gespeichert = z.stand!.einstellung;
-  const [e, setE] = useState<Datenschutz>(gespeichert);
-  const [laeuft, setLaeuft] = useState(false);
-  const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
-  useEffect(() => { setE(gespeichert); }, [gespeichert]);
-  const ent = useEntwurf(gespeichert, e, { zuruecksetzen: () => { setE(gespeichert); setMeldung(undefined); } });
-  async function speichern(teil: (aktuell: Datenschutz) => Datenschutz) {
-    setLaeuft(true); setMeldung(undefined);
-    try { await datenschutzApi.setzeDatenschutz(teil(gespeichert)); await z.laden(); setMeldung({ art: 'gut', text: t('werkbank.datenschutz.gespeichert') }); }
-    catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); } finally { setLaeuft(false); }
-  }
-  return { e, setE, laeuft, meldung, ent, speichern };
-}
-
-/** Einstellungen der Auskunft (#668): Verantwortlicher, Empfänger, Rechte der Person, Anrede. */
-function AuskunftEinstellungen({ z }: { z: DatenschutzZustand }) {
-  const { e, setE, laeuft, meldung, ent, speichern } = useDatenschutzForm(z);
-  return (
-    <form className="blatt" id="datenschutz-einstellungen" onSubmit={(x) => { x.preventDefault(); void speichern((g) => ({ ...g, verantwortlicher: e.verantwortlicher, empfaenger: e.empfaenger, rechte: e.rechte, anrede: e.anrede })); }} onKeyDown={ent.tasten}>
-      <div className="raster">
-        {/* Eigene Organisation (#995): Name und Anschrift des Verantwortlichen pflegt man einmal an der Organisation. */}
-        <p className="eigenschaft breit leise">{tn('werkbank.datenschutz.verantwortlicher-organisation', { link: <Link to="/werkbank/organisation" className="verweis">{t('werkbank.datenschutz.zur-organisation')}</Link> })}</p>
-        <Feld beschriftung={t('werkbank.datenschutz.empfaenger')} hinweis={t('werkbank.datenschutz.vorschlag-fuer-jede-auskunft')} className="breit">
-          <textarea rows={2} value={e.empfaenger} onChange={(x) => setE({ ...e, empfaenger: x.target.value })} />
-        </Feld>
-        <Feld beschriftung={t('werkbank.datenschutz.rechte-der-person')} hinweis={t('werkbank.datenschutz.text-auf-dem-deckblatt')} className="breit">
-          <textarea rows={4} value={e.rechte} onChange={(x) => setE({ ...e, rechte: x.target.value })} />
-        </Feld>
-      </div>
-      <AnredeWahl anrede={e.anrede} setAnrede={(anrede) => setE({ ...e, anrede, rechte: istRechteStandard(e.rechte) ? rechteStandard(anrede) : e.rechte })} />
-      {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
-      <Speicherleiste ent={ent} gegenstand={t('werkbank.datenschutz.einstellungen')} sendet={laeuft} />
-    </form>
-  );
-}
-
-/**
- * Personendaten in Mappentypen (#668, beim Löschkonzept): betrifft eine Person, Zweck. Typen, die über ein
- * Verweisfeld auf einen Personen-Typ zeigen, sind als solche gekennzeichnet (#664); Typen ohne Personendaten
- * stehen eingeklappt darunter.
- */
-function PersonendatenTypen({ z }: { z: DatenschutzZustand }) {
-  const d = useDaten();
-  const { e, setE, laeuft, meldung, ent, speichern } = useDatenschutzForm(z);
-  const typen = d.typen.filter((mappentyp) => mappentyp.system !== 'benutzer' && mappentyp.system !== 'rolle');
-  const typ = (id: string) => e.typen[id] ?? { person: false, zweck: '' };
-  const bezug = useMemo(() => personenbezug(d.typen, { typen: e.typen }), [d.typen, e.typen]);
-  const zeile = (ty: Mappentyp) => {
-    const b = bezug.get(ty.id);
-    const automatisch = b?.bezug === 'verweis' && !typ(ty.id).person;
-    return (
-      <li key={ty.id}>
-        <HakenFeld beschriftung={<>{ty.name} <span className="leise klein">{automatisch ? t('werkbank.loeschkonzept.automatisch', { verweise: verweiseText(b!.verweise) }) : t('werkbank.loeschkonzept.betrifftPerson')}{ty.archiv ? ` · ${t('werkbank.loeschkonzept.aufbewahrung', { jahre: ty.archiv.jahre })}` : ''}</span></>}
-          hinweis={automatisch ? t('werkbank.loeschkonzept.automatischTitel') : undefined}>
-          <input type="checkbox" checked={typ(ty.id).person} onChange={(x) => setE({ ...e, typen: { ...e.typen, [ty.id]: { ...typ(ty.id), person: x.target.checked } } })} />
-        </HakenFeld>
-        <Feld beschriftung={t('werkbank.loeschkonzept.zweck')} className="einzug klein">
-          <input id={`zweck-${ty.id}`} value={typ(ty.id).zweck} maxLength={500} placeholder={t('werkbank.loeschkonzept.zweckBeispiel')} onChange={(x) => setE({ ...e, typen: { ...e.typen, [ty.id]: { ...typ(ty.id), zweck: x.target.value } } })} />
-        </Feld>
-      </li>
-    );
-  };
-  // Aufteilen nach dem gespeicherten Stand – sonst springt eine Zeile beim Tippen in die andere Liste.
-  const gespeichert = z.stand?.einstellung.typen;
-  const gruppe = useMemo(() => personenbezug(d.typen, { typen: gespeichert ?? {} }), [d.typen, gespeichert]);
-  const mit = typen.filter((ty) => gruppe.has(ty.id));
-  const ohne = typen.filter((ty) => !gruppe.has(ty.id));
-  return (
-    <form className="blatt" id="personendaten" onSubmit={(x) => { x.preventDefault(); void speichern((g) => ({ ...g, typen: e.typen })); }} onKeyDown={ent.tasten}>
-      <h2 className="h3">{t('werkbank.loeschkonzept.personendaten')}</h2>
-      <p className="leise klein">{t('werkbank.loeschkonzept.personendatenText')}</p>
-      {mit.length > 0 && <ul className="stapel auskunft-typen">{mit.map(zeile)}</ul>}
-      {ohne.length > 0 && (
-        <details className="weitere-typen" open={mit.length === 0}>
-          <summary>{t('werkbank.loeschkonzept.weitere')} ({ohne.length})</summary>
-          <ul className="stapel auskunft-typen">{ohne.map(zeile)}</ul>
-        </details>
-      )}
-      <p className="leise klein">{t('werkbank.loeschkonzept.verantwortlicher')} <Link to="/werkbank/organisation" className="verweis">{t('werkbank.datenschutz.zur-organisation')}</Link></p>
-      {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
-      <Speicherleiste ent={ent} gegenstand={t('werkbank.datenschutz.personendaten')} sendet={laeuft} />
-    </form>
-  );
-}
-
-/**
- * Anrede in Unterlagen für Dritte (#474): du oder Sie für alles, was an die Person geht – Deckblatt, Übersicht,
- * LIESMICH, Abrufseite, E-Mails. Die Oberfläche bleibt beim „du“. Vorschau: ein Satz in beiden Formen.
- */
-function AnredeWahl({ anrede, setAnrede }: { anrede: Anrede; setAnrede(a: Anrede): void }) {
-  return (
-    <div id="anrede">
-    <FeldGruppe beschriftung={t('werkbank.datenschutz.anrede-in-unterlagen-fuer')} hilfe="werkbank.datenschutz.anrede" hinweis={t('werkbank.datenschutz.gilt-fuer-alles-was')} className="anrede-dritte">
-      <div className="anrede-dritte-wahl">
-        {ANREDEN.map((a) => (
-          <label key={a} className={`anrede-dritte-form${a === anrede ? ' gewaehlt' : ''}`}>
-            <span className="anrede-dritte-kopf"><input type="radio" name="anrede-dritte" checked={a === anrede} onChange={() => setAnrede(a)} /><strong>{ANREDE_NAME[a]}</strong>{a === 'du' && <span className="leise klein"> {' '}{t('werkbank.datenschutz.vorgabe')}</span>}</span>
-            <q className="klein">{textDritte(a, ANREDE_BEISPIEL)}</q>
-          </label>
-        ))}
-      </div>
-    </FeldGruppe>
     </div>
   );
 }

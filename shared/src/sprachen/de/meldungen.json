@@ -1915,7 +1915,7 @@
   "organisation.notiz.verantwortlicher": "Verantwortlicher geändert",
   "organisation.notiz.datenschutzbeauftragter": "Datenschutzbeauftragter geändert",
   "organisation.mail.betreff": "Ablago: eigene Organisation geändert",
-  "organisation.mail.text": "An der eigenen Organisation „{name}“ hat sich etwas geändert: {was} (von {von}).\n\nDiese Angaben stehen auf Datenschutz-Auskünften und im Löschkonzept. Details unter Werkbank → Eigene Organisation.",
+  "organisation.mail.text": "An der eigenen Organisation „{name}“ hat sich etwas geändert: {was} (von {von}).\n\nDiese Angaben stehen auf Datenschutz-Auskünften und im Löschkonzept. Details unter Werkbank → Einstellungen → Eigene Organisation.",
   "organisation.nichts-bisher": "Es gibt keine bisherige Angabe zum Verantwortlichen, die sich übernehmen ließe.",
   "organisation.schon-da": "Es gibt schon eine eigene Organisation – die bisherige Angabe bitte dort von Hand ergänzen.",
   "organisation.ohne-basis": "Dafür braucht es einen Mappentyp mit dem Merkmal „eigene Organisation“ – das Paket Basis ab Version 1.7.0.",
