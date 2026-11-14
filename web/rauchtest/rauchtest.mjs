@@ -2016,9 +2016,12 @@ for (const teil of [0, 1, 2, 3, 4]) {
     const seiten = alle.filter((_, i) => i % 5 === teil);
     const funde = [];
     for (const seite of seiten) {
+      const beginn = Date.now();
       await seite.weg(s);
       await s.waitForLoadState('networkidle');
       for (const v of await tippflaechenPruefen(s, WERKBANK_BEREICHE)) funde.push(`${seite.name}: ${v}`);
+      // Dauer je Seite im Protokoll, damit eine langsame Seite in der CI sofort auffällt.
+      console.log(`# Werkbank Handy ${seite.name}: ${Math.round((Date.now() - beginn) / 1000)} s`);
     }
     assert.deepEqual(funde, [], `Zu kleine Tippflächen am Handy:\n${funde.join('\n')}`);
   });
