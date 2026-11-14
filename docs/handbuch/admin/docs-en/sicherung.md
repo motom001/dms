@@ -33,9 +33,17 @@ At the top of the section, the status is in one line: last backup, number and si
 
 **Back up now** starts a backup in the background, with progress. You can leave the page. If less space is free than the [minimum storage space](#zeitplan-und-aufbewahrung), no backup begins.
 
-The list shows all backups in the folder with time, kind, size and content. Each row has **Download · Check · Delete**. [Download](#sicherung-herunterladen) fetches a copy to your computer. **Check** recalculates the file's checksum and compares it with the one from the metadata – "unchanged" means: the file is as Ablago wrote it. **Delete** removes both files.
+The list shows all backups in the folder with time, kind, size and content. Each row has **Download**, **Check** and **Delete**. [Download](#sicherung-herunterladen) fetches a copy to your computer. **Check** recalculates the file's checksum and compares it with the one from the metadata – "unchanged" means: the file is as Ablago wrote it. **Delete** removes both files.
 
 In the container this also works without a browser with the [command `dms`](konsole.md#betrieb): `dms sicherung` lists the backups, `dms sicherung jetzt` starts one, `dms sicherung pruefen <name>` checks one.
+
+### Deleting several backups { #mehrere-loeschen }
+
+To tidy up, tick the backups you want to remove in the list, or **Select all**. **Delete selected (n)** asks once for all of them and states the number, the period and the space that will be freed. Ablago then deletes them one after the other and shows the progress. Anything that could not be deleted stays selected and is listed with the reason above the list.
+
+The **newest checked** backup (checksum "unchanged" or test restore fine) is protected: it is marked "protected" and can't be deleted together with others, only on its own with its own **Delete**. If none has been checked yet, this applies to the newest one. That way one backup always remains when you tidy up.
+
+Above the list it says what [retention](#zeitplan-und-aufbewahrung) clears away by itself, with the link **Change retention**. So you don't need to delete older automatic backups by hand.
 
 ## Downloading a backup { #sicherung-herunterladen }
 

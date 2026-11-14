@@ -20,6 +20,12 @@ ul.sitzungsliste.festhoehe { border: 1px solid var(--linie); border-radius: var(
 .textknopf.aufklappzeile.aufklappzeile:hover { text-decoration: none; }
 .aufklappzeile .zeichen { color: var(--leise); vertical-align: -2px; margin-right: 4px; }
 .standzeile { margin: 0; color: var(--leise); }
+/* Liste der Sicherungen (#1169): Haken je Zeile und Auswahlleiste. Die Knöpfe der Zeile stehen mit Abstand statt mit
+   „ · “ dazwischen: Am Handy wachsen ihre Tippflächen (auch „Löschen“ mit 8 px über und unter dem Knopf), und
+   umgebrochen berührten sie sich sonst bei breiteren Schriften. */
+.sicherung-auswahl { align-items: center; flex-wrap: wrap; gap: 8px 16px; }
+td.sicherung-wahl { width: 1%; }
+.sicherung-aktionen { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; }
 .mitpasswoertern { border-left: 3px solid var(--schlecht); padding-left: 10px; }
 /* Namen in der Leiste nicht abschneiden, wenn eine Plakette danebensteht (#366). */
 /* Lange Namen umbrechen mit Silbentrennung statt mitten im Wort (#1213: „Automatisierungsvorlage|n“). */

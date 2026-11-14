@@ -36,6 +36,7 @@ import './einrichtung.mjs';
 import './bereiche/start-und-suche.mjs';
 import './bereiche/pakete.mjs';
 import './bereiche/werkbank.mjs';
+import './bereiche/sicherung-und-export.mjs';
 import './bereiche/handy-und-tabellen.mjs';
 import './bereiche/dokument-uebernehmen.mjs';
 import './bereiche/bausteine-und-knoepfe.mjs';
