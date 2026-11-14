@@ -258,8 +258,9 @@ jobs:
           BASIS=$(git rev-parse HEAD^1)
           node --test .github/werkzeuge/ausnahmen-zaehlen.test.mjs
           node .github/werkzeuge/ausnahmen-zaehlen.mjs "$BASIS"
-      # Feste Farben nur in web/src/tokens.css (#966); jeder Fund erscheint als Anmerkung an der Zeile.
-      - name: Keine festen Farben
+      # Feste Farben nur in web/src/tokens.css (#966); jeder Fund erscheint als Anmerkung an der Zeile. Dazu höchstens
+      # 400 Zeilen je CSS-Datei (#1234, ohne Leerzeilen und Kommentare).
+      - name: Keine festen Farben, CSS-Dateien kurz
         run: |
           node --test .github/werkzeuge/farben-pruefen.test.mjs
           node .github/werkzeuge/farben-pruefen.mjs
