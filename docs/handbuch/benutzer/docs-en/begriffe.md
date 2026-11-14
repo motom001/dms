@@ -435,6 +435,10 @@ See also: [Two-factor sign-in](#zwei-faktor-anmeldung).
 <a id="berechtigungen"></a>**Permissions** (*Berechtigungen*) · ✓ everyday word · administrators  
 Who may do what. On the folder type – create, read, edit, delete, see passwords – with a default plus rules; on the view – see, create, export – inherited by the sub-views. They don't apply to administrators.
 
+<a id="platzhalter"></a>**Placeholder** (*Platzhalter*) · ~ with explanation · administrators  
+A field or value in curly brackets that Ablago fills in when applying – such as {titel} or {kuendigung} in the title template, a combined field, an automation or an automation template. Below the text they are listed with understandable names to click, grouped by “General” and folder type; a click inserts them at the cursor.  
+See also: [Automation template](#automatisierungsvorlage).
+
 <a id="vorgabe"></a>**Preset** (*Vorgabe*) · ~ with explanation · administrators  
 A folder a package brings to keep – such as the contract types "Electricity" or "Rent" from the Contracts package, often with templates. Always comes along, carries the marking "Preset from the package …" and is otherwise an ordinary folder. Updates only bring new versions as long as nobody has changed it; whatever was deleted stays deleted. Unlike an example (invented data to try out, on request, removable).  
 See also: [Package](#paket), [Sample folder](#beispiel-mappe), [Template](#vorlage).
@@ -486,7 +490,7 @@ Lock after failed attempts, blocked IP addresses, requirements for two-factor si
 Signing in with someone else's account, e.g. Microsoft 365 (OpenID Connect).
 
 <a id="gleich-eingeschaltet"></a>**Switched on straight away** (*Gleich eingeschaltet*) · ~ with explanation · administrators  
-An automation supplied with a package that the package offers ticked when installing. The administrator can untick it; an update never changes on or off afterwards.  
+An automation supplied with a package whose switch the package sets to “on” when installing. All supplied automations are always created; the administrator chooses with the switches which run straight away. An update never changes on or off afterwards.  
 See also: [Package](#paket), [Run package on schedule](#paket-nach-zeitplan-ausfuhren).
 
 <a id="systemrolle"></a>**System role** (*Systemrolle*) · ~ with explanation · administrators  
@@ -504,7 +508,7 @@ Checks which permissions a particular user ends up with.
 Recognises text in images and scanned PDFs so that it becomes searchable.
 
 <a id="probelauf"></a>**Trial run** (*Probelauf*) · ~ with explanation · administrators  
-Trying out an automation with a chosen folder without anything being changed or anyone being notified – Ablago only shows what would happen.  
+Trying out an automation with a chosen folder without anything being changed or anyone being notified – Ablago only shows what would happen. For an automation template, “Try it out” opens the same dialog as on the folder, marked “Trial – nothing is created”, and then shows what the recipients would see.  
 See also: [Test run](#testlauf).
 
 <a id="zwei-faktor-anmeldung"></a>**Two-factor sign-in** (*Zwei-Faktor-Anmeldung*) · ~ with explanation · everyone  

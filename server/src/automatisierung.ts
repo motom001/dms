@@ -39,6 +39,7 @@ import { datumsformat, liesRegion } from '../../shared/src/region';
 import { liesFavoritenFreigabe } from '../../shared/src/favoritenfreigabe';
 import { gebietsschema } from '../../shared/src/sprache';
 import { oeffentlichErreichbar } from '../../shared/src/auskunft';
+import { beschreibeAenderungen } from '../../shared/src/fassungsvergleich';
 
 /**
  * Motor der Automatisierungen (#674): Wenn · Und · Dann · Sonst (#677), ausgeführt unter dem Systemkonto „Automatisierung“ (#673).
@@ -479,6 +480,7 @@ export class Automatisierungen {
     // die den Ablauf angelegt hat, und denen des Empfängers (#795). {automatisierung} ist der Name der Vorlage.
     d.dienst.ablaufPlatzhalter = (text, c, empf) => this.fuelleMit(text, { a: { name: c.name }, mappe: c.mappe, typ: c.typ, z: c.z, daten: c.daten }, empf);
     d.dienst.paketAutomatisierungen = (p, liste, ein) => this.ausPaket(p, liste, ein);
+    d.dienst.paketAutomatisierungenVergleich = (p, liste) => this.paketVergleich(p, liste as PaketAutomatisierung[]);
     d.dienst.typUmgebaut = (alt, neu, felder) => this.typUmgebaut(alt, neu, felder);
     // #1001: Favoriten und Tägliche Zusammenfassung stellt man nur noch in der Automatisierung ein.
     d.dienst.favoritenRegeln = async () => (await this.d.repo.liste()).filter((a) => a.aktiv && !a.angehalten && a.wenn.art === 'favorit.geaendert')
@@ -577,7 +579,11 @@ export class Automatisierungen {
     return n;
   }
 
-  async ausPaket(p: InstalliertesPaket, liste: PaketAutomatisierung[], ein: string[] = []): Promise<number> {
+  /**
+   * Wie eine mitgelieferte Automatisierung in dieser Ablage aussieht: Typen des Pakets auf die installierten, „Paket nach
+   * Zeitplan ausführen“ auf das Paket selbst, Reihenfolge der Pakete. Für ausPaket und die Update-Vorschau (#1174).
+   */
+  private async paketUmsetzer(p: Pick<InstalliertesPaket, 'id' | 'typen'>) {
     const pakete = await this.d.dienst.kern.repo.listePakete();
     // Post von Ablago (#1001): `dms:post` – Automatisierungen auf Post brauchen keinen eigenen Mappentyp.
     const postTyp = (await this.d.dienst.kern.system()).post.id;
@@ -587,6 +593,37 @@ export class Automatisierungen {
       const [pk, sl] = vw.includes(':') ? vw.split(':') : [p.id, vw];
       return (pk === p.id ? p.typen[sl] : pakete.find((x) => x.id === pk)?.typen[sl]) ?? null;
     };
+    const daten = (x: PaketAutomatisierung) => {
+      // „Paket nach Zeitplan ausführen“ (#1082): Im Paket steht kein Ziel – es ist immer das Paket selbst.
+      const dann = x.dann.map((k) => (k && typeof k === 'object' && (k as Record<string, unknown>).art === 'paket' ? { ...k, paket: p.id } : k));
+      const d = bereinigeAutomatisierung({ name: x.name, beschreibung: x.beschreibung, wenn: { ...x.wenn, typ: typId(x.wenn.typ) }, und: x.und, dann });
+      d.reihenfolge = REIHENFOLGE.paket;
+      return d;
+    };
+    return { typId, postTyp, daten };
+  }
+
+  /**
+   * Update-Vorschau (#1174): mitgelieferte Automatisierungen, die jemand geändert hat, bleiben beim Update, wie sie sind.
+   * Je solcher Automatisierung, was die neue Fassung aus dem Paket anders macht – lesbar wie bei den Fassungen.
+   * Gleich geblieben (die eigene Änderung entspricht dem Paket) fällt weg.
+   */
+  async paketVergleich(p: InstalliertesPaket, liste: PaketAutomatisierung[]): Promise<Record<string, { id: string; aenderungen: string[] }>> {
+    const { daten } = await this.paketUmsetzer(p);
+    const vorhanden = (await this.d.repo.liste()).filter((a) => a.herkunft === 'paket' && a.paketId === p.id);
+    const kontext = { automatisierung: await this.kontext() };
+    const aus: Record<string, { id: string; aenderungen: string[] }> = {};
+    for (const x of liste.filter((y) => !mitWerkbankKarte(p.id, y))) {
+      const da = vorhanden.find((a) => a.id === paketAutomatisierungId(p, x.schluessel, vorhanden));
+      if (!da || da.geaendertVon === null) continue;
+      const aenderungen = beschreibeAenderungen('automatisierung', fassungsStand(da), fassungsStand({ ...daten(x), aktiv: da.aktiv }), kontext);
+      if (aenderungen.length) aus[x.schluessel] = { id: da.id, aenderungen };
+    }
+    return aus;
+  }
+
+  async ausPaket(p: InstalliertesPaket, liste: PaketAutomatisierung[], ein: string[] = []): Promise<number> {
+    const { typId, postTyp, daten } = await this.paketUmsetzer(p);
     const vorhanden = (await this.d.repo.liste()).filter((a) => a.herkunft === 'paket' && a.paketId === p.id);
     const ids = new Set<string>();
     let neu = 0;
@@ -595,10 +632,7 @@ export class Automatisierungen {
       // Nach einem Umzug (#1084) behält eine mitgelieferte Automatisierung ihre Id aus der früheren Paket-Id.
       const id = paketAutomatisierungId(p, x.schluessel, vorhanden);
       ids.add(id);
-      // „Paket nach Zeitplan ausführen“ (#1082): Im Paket steht kein Ziel – es ist immer das Paket selbst.
-      const dann = x.dann.map((k) => (k && typeof k === 'object' && (k as Record<string, unknown>).art === 'paket' ? { ...k, paket: p.id } : k));
-      const d = bereinigeAutomatisierung({ name: x.name, beschreibung: x.beschreibung, wenn: { ...x.wenn, typ: typId(x.wenn.typ) }, und: x.und, dann });
-      d.reihenfolge = REIHENFOLGE.paket;
+      const d = daten(x);
       // Unbekannter Mappentyp (#1084, Sicherheit A): geschlossen statt offen – ohne Typ liefe sie auf alle; sie hält an.
       const halt = this.haltOhneTyp(p.id, x, typId);
       const da = vorhanden.find((a) => a.id === id);

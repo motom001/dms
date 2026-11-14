@@ -291,7 +291,7 @@ begriffe:
     beschreibung: Checks which permissions a particular user ends up with.
   Probelauf:
     begriff: Trial run
-    beschreibung: Trying out an automation with a chosen folder without anything being changed or anyone being notified – Ablago only shows what would happen.
+    beschreibung: Trying out an automation with a chosen folder without anything being changed or anyone being notified – Ablago only shows what would happen. For an automation template, “Try it out” opens the same dialog as on the folder, marked “Trial – nothing is created”, and then shows what the recipients would see.
   Paket nach Zeitplan ausführen:
     begriff: Run package on schedule
     beschreibung: Then card of an automation with the trigger "Schedule" – it tells a package that its time has been reached (e.g. "Check contracts daily" at 5 a.m.) so that it recalculates something that depends only on the date. The package works with its own rights; an automation supplied with a package only calls its own package.
@@ -309,7 +309,10 @@ begriffe:
     beschreibung: Card of an automation that concerns the operation of Ablago instead of a folder – When "Error reported", "Log message", "New version available" and Then "Start a backup". The system account "Automation" has precisely defined Workbench permissions for them; only someone who manages the area themselves may set them up.
   Gleich eingeschaltet:
     begriff: Switched on straight away
-    beschreibung: An automation supplied with a package that the package offers ticked when installing. The administrator can untick it; an update never changes on or off afterwards.
+    beschreibung: An automation supplied with a package whose switch the package sets to “on” when installing. All supplied automations are always created; the administrator chooses with the switches which run straight away. An update never changes on or off afterwards.
+  Platzhalter:
+    begriff: Placeholder
+    beschreibung: A field or value in curly brackets that Ablago fills in when applying – such as {titel} or {kuendigung} in the title template, a combined field, an automation or an automation template. Below the text they are listed with understandable names to click, grouped by “General” and folder type; a click inserts them at the cursor.
   Nummernkreis:
     begriff: Number sequence
     beschreibung: Sequential numbers following a pattern such as {jjjj}-R{zaehler:4} (giving e.g. 2026-R0001), for instance for invoice numbers.

@@ -144,7 +144,7 @@ A **combined field** is made up of other fields of the same folder – following
 
 **Example: invoice number per sender.** Different companies issue the same invoice numbers, so *Invoice number* alone can't be unique. Add a field *Identifier* to the *Invoice*:
 
-1. Field kind **Combined**, template `{von} · {rechnungsnummer}` – the buttons below the template insert the placeholders of the fields.
+1. Field kind **Combined**, template `{von} · {rechnungsnummer}` – a click on a field below the template inserts its placeholder at the cursor (at the end with “ · ” in front).
 2. Tick **Unique**.
 3. Save.
 
@@ -382,7 +382,7 @@ On a **date field** such as "Cancel by" or "MOT due" you can switch on **Is a de
 - **Text** with placeholders such as the date and the folder's title.
 - **Recurring** – monthly, quarterly, half-yearly, yearly or every few years. Whoever completes the deadline gets the suggestion "Set date to 30/09/2028"; the date **never changes by itself**, and the change is in the folder's history like any other.
 
-Packages bring matching automations, for example "Cancellation due soon". When installing, Ablago asks which should be switched on straight away (default: all). For a folder type of your own you create the automation yourself.
+Packages bring matching automations, for example "Cancellation due soon". They always come with it; when installing you choose with a switch which run straight away. For a folder type of your own you create the automation yourself.
 
 **Since version 0.177 only the automation reminds.** Formerly, advance notice, recipient and text were set directly on the field. On the update, Ablago took over each of these reminders **once** as a switched-on automation *Reminder: field (folder type)* – with the same advance notice, the same recipient (if the field is empty: the creator), the same text and the same recurrence. So everything reminds as before; the Workbench overview says once what has moved. A taken-over automation that you delete doesn't come back. If a package update later brings its own automation for the same field, it replaces the taken-over one as long as you haven't changed it – nothing ever reminds twice.
 
@@ -407,7 +407,7 @@ You can change folder types at any time, even if folders already exist:
 
 ## A folder's title { #titel-einer-mappe }
 
-The **template** determines what a folder is called in lists and links, e.g. `{rechnungsnummer} of {rechnungsdatum}`. Fields in curly brackets are inserted, everything else stays. There are also `{angelegt}` and `{geaendert}` (the date in each case). The preview shows the result with sample values or with the values of a real folder.
+The **template** determines what a folder is called in lists and links, e.g. `{rechnungsnummer} of {rechnungsdatum}`. Fields in curly brackets are inserted, everything else stays. There are also `{angelegt}` and `{geaendert}` (the date in each case). Below the template the fields, and under **General** the two dates, are clickable – a click inserts the placeholder at the cursor. The preview shows the result with sample values or with the values of a real folder.
 
 If the title refers to another folder (`{vertragspartner}`), the title is updated when the contract partner changes.
 

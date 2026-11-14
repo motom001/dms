@@ -186,7 +186,6 @@
   "editor.so-heisst-eine-mappe": "So heißt eine Mappe in Listen und Verweisen. Felder in geschweiften Klammern werden eingesetzt, alles andere bleibt stehen.",
   "editor.vorlage": "Vorlage",
   "editor.leer-2": "leer = {automatisch}",
-  "editor.einsetzen": "Einsetzen:",
   "editor.angelegt": "angelegt",
   "editor.zuletzt-geaendert": "zuletzt geändert",
   "editor.indexwert-datum-an-dem": "Indexwert {{k}}: Datum, an dem die Mappe {wert} wurde",
@@ -429,5 +428,6 @@
   "anzeige.eigene-organisation": "Verweis zeigt auf eine eigene Organisation",
   "anzeige.eigene-organisation-feld": "„{feld}“ zeigt auf eine eigene Organisation",
   "editor.chip.eigene-organisation": "Merkmal: eigene Organisation",
-  "editor.chip.schreibschutz": "nur mit Verwaltungsrecht änderbar"
+  "editor.chip.schreibschutz": "nur mit Verwaltungsrecht änderbar",
+  "editor.platzhalter-allgemein": "Allgemein"
 }

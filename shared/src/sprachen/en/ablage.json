@@ -1379,6 +1379,7 @@
   "aufgaben.laeuft-sofort": "Runs straight away.",
   "aufgaben.laeuft-am-gewaehlten": "Runs on the chosen day – until then it is listed here under “Planned”.",
   "aufgaben.vorschlag": "Suggested: {datum}. You can choose a different date.",
+  "aufgaben.probe": "Trial – nothing is created.",
   "anlagen.marke": "Enclosure",
   "anlagen.marke-titel": "Enclosure of another document – it goes wherever that document goes",
   "anlagen.seiten_one": "{anzahl} page",

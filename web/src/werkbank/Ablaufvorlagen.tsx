@@ -1,24 +1,26 @@
 import { useCallback, useEffect, useState } from 'react';
+import { feldLabel } from '../../../shared/src/beschriftung';
 import {
-  empfaengerText, FRAGEN, fragtDatum, istKernVorlage, karteText, VORLAGEN_GRENZEN, VORLAGEN_PLATZHALTER, VORLAGEN_REIHENFOLGE, vorlagenProbleme, vorschlagDatum, wannText,
-  type AblaufVerlauf, type AblaufvorlageAnsicht, type AblaufvorlageDaten, type AblaufWann, type Frage, type MappenAblauf, type VorlagenEmpfaenger, type VorlagenKarte,
+  empfaengerText, FRAGEN, fragtDatum, istKernVorlage, karteText, VORLAGEN_GRENZEN, VORLAGEN_PLATZHALTER, VORLAGEN_REIHENFOLGE, vorlagenProbleme, wannText,
+  type AblaufProbe, type AblaufVerlauf, type AblaufvorlageAnsicht, type AblaufvorlageDaten, type AblaufWann, type Frage, type MappenAblauf, type VorlagenEmpfaenger, type VorlagenKarte,
 } from '../../../shared/src/ablaufvorlagen';
 import { einzigesZiel, jedeMappe, zieleVon, type Mappentyp } from '../../../shared/src/model';
 import type { Zeitraumeinheit } from '../../../shared/src/feldarten';
 import { datumDe } from '../../../shared/src/fristen';
-import { heuteIn } from '../../../shared/src/sichten';
 import { gebietsschema } from '../../../shared/src/sprache';
 import { api, type Bezuege } from '../api';
-import { BenutzerWahl } from '../ablage/Aufgaben';
+import { VorlagenDialog } from '../ablage/Aufgaben';
 import { MappenWahl } from '../ablage/MappeFormular';
 import { useDaten } from '../daten';
 import { Listenkopf } from '../Listenkopf';
 import { geheZu, Link, loeseWache } from '../ort';
 import { t } from '../sprache';
 import { Speicherleiste, useEntwurf } from '../Speicherleiste';
-import { Eintragsliste, Fassungen, Feld, FeldGruppe, GeloeschteEintraege, HakenFeld, Knopf, KnopfLink, PaketChip, Schalter, Umschalter, ZeitraumEingabe, type Klappe, type Listeneintrag, type ZeitraumRoh } from '../bausteine';
+import { Eintragsliste, Fassungen, Feld, FeldGruppe, GeloeschteEintraege, HakenFeld, Knopf, KnopfLink, Mehrfachauswahl, PaketChip, Platzhalter, Schalter, Umschalter, usePlatzhalterEinsetzen, ZeitraumEingabe, type Klappe, type Listeneintrag, type PlatzhalterGruppe, type ZeitraumRoh } from '../bausteine';
 import type { InstalliertesPaket } from '../../../shared/src/pakete';
 import { paketHerkunft } from './listensuche';
+import { titelOder } from '../seiten';
+import { Symbol } from '../Symbol';
 
 /**
  * Werkbank → Ablage aufbauen → Automatisierungsvorlagen (#1044): Mitte alle Vorlagen (an/aus, Zahl der offenen Abläufe),
@@ -100,11 +102,33 @@ function benutzerFelder(typen: Mappentyp[], gewaehlt: string[]): Array<{ key: st
   return felder.filter((f) => inFrage.every((ty) => ty.felder.some((g) => g.key === f.key))).map((f) => ({ key: f.key, label: f.label }));
 }
 
+/**
+ * Platzhalter einer Ablaufvorlage (#1177): „Allgemein“ (Eingabe, Person, Empfänger, Mappe, Datum) und je gewähltem
+ * Mappentyp seine Felder unter dessen Namen. Ein Feld steht einmal – beim ersten Typ, der es hat; fehlt es in einem
+ * anderen gewählten Typ, steht „nur bei …“ daran. Ohne gewählten Typ (= alle Mappentypen) gibt es nur „Allgemein“.
+ */
+function vorlagenPlatzhalter(typen: Mappentyp[], gewaehlt: string[]): PlatzhalterGruppe[] {
+  const allgemein = [...VORLAGEN_PLATZHALTER, 'titel', 'mappentyp', 'heute', 'datum'].map((key) => ({ key, text: t.frei(`automatisierung.vorlage.ui.platz.${key}`) }));
+  const inFrage = typen.filter((x) => gewaehlt.includes(x.id));
+  const schon = new Set<string>();
+  return [
+    { name: t('automatisierung.ui.platzhalter.allgemein'), eintraege: allgemein },
+    ...inFrage.map((ty) => ({
+      name: ty.name,
+      eintraege: ty.felder.filter((f) => f.typ !== 'passwort' && !schon.has(f.key)).map((f) => {
+        schon.add(f.key);
+        const bei = inFrage.filter((x) => x.felder.some((g) => g.key === f.key));
+        return { key: f.key, text: feldLabel(f), ...(bei.length < inFrage.length ? { zusatz: t('automatisierung.vorlage.ui.platz.nur-bei', { typen: bei.map((x) => x.name).join(', ') }) } : {}) };
+      }),
+    })),
+  ];
+}
+
 function KartenEditor({ karte, typen, gewaehlt, setze, entfernen }: { karte: VorlagenKarte; typen: Mappentyp[]; gewaehlt: string[]; setze: (k: VorlagenKarte) => void; entfernen?: () => void }) {
   const felder = benutzerFelder(typen, gewaehlt);
   const hat = (e: VorlagenEmpfaenger) => karte.empfaenger.some((x) => x.art === e.art && (x.art !== 'feld' || (e.art === 'feld' && x.feld === e.feld)));
   const schalte = (e: VorlagenEmpfaenger, an: boolean) => setze({ ...karte, empfaenger: an ? [...karte.empfaenger, e] : karte.empfaenger.filter((x) => !(x.art === e.art && (x.art !== 'feld' || (e.art === 'feld' && x.feld === e.feld)))) });
-  const platz = [...VORLAGEN_PLATZHALTER, 'titel', 'mappentyp', 'heute', 'datum', ...(gewaehlt.length ? typen.filter((x) => gewaehlt.includes(x.id)).flatMap((x) => x.felder.filter((f) => f.typ !== 'passwort').map((f) => f.key)) : [])];
+  const ein = usePlatzhalterEinsetzen();
   return (
     <div className="blatt karte">
       <div className="zeile-zwischen">
@@ -121,25 +145,63 @@ function KartenEditor({ karte, typen, gewaehlt, setze, entfernen }: { karte: Vor
           <HakenFeld key={f.key} beschriftung={t('automatisierung.vorlage.ui.feld', { feld: f.label })}><input type="checkbox" checked={hat({ art: 'feld', feld: f.key })} onChange={(x) => schalte({ art: 'feld', feld: f.key }, x.target.checked)} /></HakenFeld>
         ))}
       </FeldGruppe>
-      <Feld beschriftung={t('automatisierung.vorlage.ui.text')} hinweis={t('automatisierung.vorlage.ui.platzhalter', { liste: platz.map((p) => `{${p}}`).join(' ') })}>
-        <textarea rows={2} maxLength={VORLAGEN_GRENZEN.text} value={karte.text} onChange={(x) => setze({ ...karte, text: x.target.value })} />
+      <Feld beschriftung={t('automatisierung.vorlage.ui.text')} hinweis={gewaehlt.length ? undefined : t('automatisierung.vorlage.ui.platzhalter.ohne-typ')}>
+        <textarea {...ein.feld('text', karte.text, (x) => setze({ ...karte, text: x }))} rows={2} maxLength={VORLAGEN_GRENZEN.text} value={karte.text} onChange={(x) => setze({ ...karte, text: x.target.value })} />
       </Feld>
+      <Platzhalter einsetzen={ein.einsetzen} gruppen={vorlagenPlatzhalter(typen, gewaehlt)} />
     </div>
   );
 }
 
+/**
+ * Mappentypen fürs Menü „Mappe“ (#1175): dieselbe Mehrfachauswahl wie im Verweisfeld einer Mappe – Suchfeld mit
+ * Vorschlägen, Gewähltes darunter; leer heißt „bei allen Mappentypen“.
+ */
+function TypenWahl({ typen, gewaehlt, setze }: { typen: Mappentyp[]; gewaehlt: string[]; setze: (x: string[]) => void }) {
+  const [eingabe, setEingabe] = useState('');
+  const [offen, setOffen] = useState(false);
+  const q = eingabe.trim().toLowerCase();
+  const name = (id: string) => typen.find((x) => x.id === id)?.name ?? id;
+  return (
+    <Feld beschriftung={t('automatisierung.vorlage.ui.typen')} id="vorlage-typen">
+      {(v) => (
+        <Mehrfachauswahl id={v.id} name={t('automatisierung.vorlage.ui.typen')} platzhalter={t('automatisierung.vorlage.ui.typen.suchen')}
+          eingabe={eingabe} setEingabe={setEingabe} offen={offen} setOffen={setOffen}
+          vorschlaege={typen.filter((x) => !gewaehlt.includes(x.id) && (!q || x.name.toLowerCase().includes(q))).map((x) => ({ id: x.id, text: x.name }))}
+          leerText={t('automatisierung.vorlage.ui.typen.keine')}
+          waehle={(id) => { setze([...gewaehlt, id]); setEingabe(''); }}
+          gewaehlt={gewaehlt.map((id) => ({ id, inhalt: name(id), entfernenText: t('automatisierung.vorlage.ui.typen.entfernen', { name: name(id) }) }))}
+          entferne={(id) => setze(gewaehlt.filter((x) => x !== id))}
+          darunter={!gewaehlt.length && <p className="leise klein">{t('automatisierung.vorlage.ui.typen.text')}</p>} />
+      )}
+    </Feld>
+  );
+}
+
+/**
+ * Wann (#1175): „Sofort | Am gewählten Datum | In [6] [Monaten]“ – Anzahl und Einheit stehen immer direkt hinter „In“,
+ * blass (nicht gesperrt), solange „In“ nicht gewählt ist; ein Klick hinein wählt „In“. So springt nichts, und „In“
+ * erklärt sich selbst. Schmal bricht die Reihe um, die Felder stehen dann fest unter „In“ (rechts).
+ */
 function WannEditor({ wann, setze }: { wann: AblaufWann; setze: (w: AblaufWann) => void }) {
-  const roh: ZeitraumRoh = wann.art === 'in' ? { anzahl: String(wann.anzahl), einheit: wann.einheit } : { anzahl: '6', einheit: 'monate' };
+  // Zuletzt gewählter Zeitraum – bleibt stehen, wenn man kurz „Sofort“ wählt.
+  const [letzter, setLetzter] = useState<ZeitraumRoh>(() => (wann.art === 'in' ? { anzahl: String(wann.anzahl), einheit: wann.einheit } : { anzahl: '6', einheit: 'monate' }));
+  const roh: ZeitraumRoh = wann.art === 'in' ? { anzahl: String(wann.anzahl), einheit: wann.einheit } : letzter;
   const ausRoh = (r: ZeitraumRoh): AblaufWann => {
     const n = Math.max(1, Math.trunc(Number(r.anzahl)) || 1);
     const e = r.einheit as Zeitraumeinheit;
     return e === 'jahre' ? { art: 'in', anzahl: Math.min(VORLAGEN_GRENZEN.anzahl, n * 12), einheit: 'monate' } : { art: 'in', anzahl: Math.min(VORLAGEN_GRENZEN.anzahl, n), einheit: e };
   };
+  const waehle = (art: AblaufWann['art']) => { if (art === 'in') setze(ausRoh(roh)); else { setLetzter(roh); setze({ art }); } };
   return (
     <FeldGruppe beschriftung={t('automatisierung.vorlage.ui.wann')}>
-      <Umschalter beschriftung={t('automatisierung.vorlage.ui.wann')} wert={wann.art} setze={(art) => setze(art === 'in' ? ausRoh(roh) : { art })}
-        wahlen={[{ wert: 'sofort', text: wannText({ art: 'sofort' }) }, { wert: 'datum', text: wannText({ art: 'datum' }) }, { wert: 'in', text: t('automatisierung.vorlage.ui.wann.in') }]} />
-      {wann.art === 'in' && <ZeitraumEingabe aria-label={t('automatisierung.vorlage.ui.wann.in')} wert={roh} setze={(r) => setze(ausRoh(r))} />}
+      <div className="wann-reihe">
+        <Umschalter beschriftung={t('automatisierung.vorlage.ui.wann')} wert={wann.art} setze={waehle} schmalUntereinander
+          wahlen={[{ wert: 'sofort', text: wannText({ art: 'sofort' }) }, { wert: 'datum', text: wannText({ art: 'datum' }) }, { wert: 'in', text: t('automatisierung.vorlage.ui.wann.in') }]} />
+        <span className={`wann-in${wann.art === 'in' ? '' : ' blass'}`} onFocus={() => { if (wann.art !== 'in') waehle('in'); }}>
+          <ZeitraumEingabe aria-label={t('automatisierung.vorlage.ui.wann.zeitraum')} wert={roh} setze={(r) => { setLetzter(r); setze(ausRoh(r)); }} />
+        </span>
+      </div>
     </FeldGruppe>
   );
 }
@@ -149,14 +211,14 @@ function WannEditor({ wann, setze }: { wann: AblaufWann; setze: (w: AblaufWann) 
  * beim Anwenden ändern darf; bei „Am gewählten Datum“ immer an, bei „Sofort“ aus (beides gesperrt, mit Grund).
  */
 function DatumFrage({ e, setze }: { e: Entwurf; setze: (an: boolean) => void }) {
-  const frei = e.wann.art === 'in';
-  const grund = frei ? 'automatisierung.vorlage.ui.frage.datum.vorschlag' : e.wann.art === 'datum' ? 'automatisierung.vorlage.ui.frage.datum.text' : 'automatisierung.vorlage.ui.frage.datum.sofort';
   return (
-    <HakenFeld beschriftung={t('automatisierung.vorlage.ui.frage.datum')} hinweis={t(grund)} hilfe="werkbank.ablaufvorlagen.datum">
-      <input type="checkbox" checked={fragtDatum(e)} disabled={!frei} onChange={(x) => setze(x.target.checked)} />
+    <HakenFeld beschriftung={t('automatisierung.vorlage.ui.frage.datum')} hilfe="werkbank.ablaufvorlagen.datum">
+      <input type="checkbox" checked={fragtDatum(e)} disabled={e.wann.art !== 'in'} onChange={(x) => setze(x.target.checked)} />
     </HakenFeld>
   );
 }
+/** Warum „Datum“ so steht (#1175): unter den Haken statt dazwischen. */
+const datumGrund = (e: Entwurf) => t(e.wann.art === 'in' ? 'automatisierung.vorlage.ui.frage.datum.vorschlag' : e.wann.art === 'datum' ? 'automatisierung.vorlage.ui.frage.datum.text' : 'automatisierung.vorlage.ui.frage.datum.sofort');
 
 /** Kopf des Editors: Name, an/aus, Kopieren, Zurücksetzen – und ob ein Paket die Vorlage ersetzt. */
 function VorlageKopf({ v, aktion }: { v?: AblaufvorlageAnsicht; aktion: (f: () => Promise<unknown>, gut: string) => Promise<void> }) {
@@ -214,19 +276,15 @@ export function AblaufvorlageEditor({ z, kennung }: { z: AblaufvorlagenZustand; 
       <form className="blatt" onSubmit={(x) => { x.preventDefault(); void speichern(); }}>
         <VorlageKopf v={v} aktion={aktion} />
         <div className="raster">
-          <Feld beschriftung={t('automatisierung.vorlage.ui.name')}><input value={e.name} maxLength={VORLAGEN_GRENZEN.name} onChange={(x) => setE({ ...e, name: x.target.value })} /></Feld>
+          <Feld beschriftung={t('automatisierung.vorlage.ui.name')} id="vorlage-name"><input value={e.name} maxLength={VORLAGEN_GRENZEN.name} onChange={(x) => setE({ ...e, name: x.target.value })} /></Feld>
           <Feld beschriftung={t('automatisierung.vorlage.ui.reihenfolge')} hinweis={t('automatisierung.vorlage.ui.reihenfolge.text')}>
             <input type="number" min={VORLAGEN_REIHENFOLGE.min} max={VORLAGEN_REIHENFOLGE.max} value={e.reihenfolge} onChange={(x) => setE({ ...e, reihenfolge: Number(x.target.value) })} />
           </Feld>
         </div>
         <Feld beschriftung={t('automatisierung.vorlage.ui.beschreibung-feld')} optional><textarea rows={2} maxLength={VORLAGEN_GRENZEN.beschreibung} value={e.beschreibung} onChange={(x) => setE({ ...e, beschreibung: x.target.value })} /></Feld>
-        <FeldGruppe beschriftung={t('automatisierung.vorlage.ui.typen')} hinweis={t('automatisierung.vorlage.ui.typen.text')}>
-          {typen.map((ty) => (
-            <HakenFeld key={ty.id} beschriftung={ty.name}><input type="checkbox" checked={e.typen.includes(ty.id)} onChange={(x) => setE({ ...e, typen: x.target.checked ? [...e.typen, ty.id] : e.typen.filter((y) => y !== ty.id) })} /></HakenFeld>
-          ))}
-        </FeldGruppe>
+        <TypenWahl typen={typen} gewaehlt={e.typen} setze={(x) => setE({ ...e, typen: x })} />
         <WannEditor wann={e.wann} setze={(wann) => setE({ ...e, wann })} />
-        <FeldGruppe beschriftung={t('automatisierung.vorlage.ui.fragen')} hinweis={t('automatisierung.vorlage.ui.fragen.text')}>
+        <FeldGruppe beschriftung={t('automatisierung.vorlage.ui.fragen')} hinweis={<>{t('automatisierung.vorlage.ui.fragen.text')} {t('automatisierung.vorlage.ui.frage.datum.hinweis', { grund: datumGrund(e) })}</>}>
           <HakenFeld beschriftung={t('automatisierung.vorlage.ui.frage.empfaenger')}><input type="checkbox" checked={e.fragen.includes('empfaenger')} onChange={(x) => frage('empfaenger', x.target.checked)} /></HakenFeld>
           <DatumFrage e={e} setze={(an) => frage('datum', an)} />
           <HakenFeld beschriftung={t('automatisierung.vorlage.ui.frage.text')}><input type="checkbox" checked={e.fragen.includes('text')} onChange={(x) => frage('text', x.target.checked)} /></HakenFeld>
@@ -257,38 +315,72 @@ export function AblaufvorlageEditor({ z, kennung }: { z: AblaufvorlagenZustand; 
   );
 }
 
-/** Ausprobieren (trocken) an einer Mappe: zeigt, was passieren würde – mit den Rechten des Admins als Person. */
+/**
+ * Ausprobieren (#1176): Mappe wählen, dann öffnet sich derselbe kleine Dialog wie an der Mappe – mit genau den Fragen
+ * der Vorlage, gleicher Vorbelegung, Beschriftung und Reihenfolge –, gekennzeichnet als Probe. Nach dem Bestätigen die
+ * Vorschau so, wie die Empfänger es sähen, darunter die Zusammenfassung. Angelegt wird nichts (mit den Rechten des
+ * Admins als Person).
+ */
 function Ausprobieren({ v }: { v: AblaufvorlageAnsicht }) {
   const d = useDaten();
   const typ = d.typen.find((x) => (v.typen.length ? x.id === v.typen[0] : !x.system)) ?? d.typen[0];
   const [mappe, setMappe] = useState('');
   const [bekannt, setBekannt] = useState<Bezuege>({});
-  const [an, setAn] = useState('');
-  const [text, setText] = useState('');
-  // Wie im Dialog an der Mappe vorbelegt (#1180): bei „In …“ mit der Frage „Datum“ der Vorschlag.
-  const [datum, setDatum] = useState(() => (fragtDatum(v) ? vorschlagDatum(v.wann, heuteIn()) : ''));
-  const [zeilen, setZeilen] = useState<string[] | null>(null);
-  const [fehler, setFehler] = useState<string>();
+  const [schritt, setSchritt] = useState<'wahl' | 'dialog' | 'ergebnis'>('wahl');
+  const [runde, setRunde] = useState(0);
+  const [ergebnis, setErgebnis] = useState<{ zeilen: string[]; vorschau: AblaufProbe[] } | null>(null);
+  const oeffnen = () => { setErgebnis(null); setRunde((r) => r + 1); setSchritt('dialog'); };
+  const titel = mappe ? titelOder(bekannt[mappe]?.titel) : '';
   return (
     <div className="blatt">
       <h2 className="h3">{t('automatisierung.vorlage.ui.ausprobieren')}</h2>
       <p className="leise klein">{t('automatisierung.vorlage.ui.ausprobieren.text')}</p>
       {typ && <Feld beschriftung={t('automatisierung.vorlage.ui.mappe')} id="vorlage-mappe">
-        {(x) => <MappenWahl id={x.id} ziel={typ} mehrfach={false} wert={mappe || undefined} bekannt={bekannt} ohneAnlegen merke={(id, y) => setBekannt((b) => ({ ...b, [id]: y }))} setze={(y) => setMappe(typeof y === 'string' ? y : '')} />}
+        {(x) => <MappenWahl id={x.id} ziel={typ} mehrfach={false} wert={mappe || undefined} bekannt={bekannt} ohneAnlegen merke={(id, y) => setBekannt((b) => ({ ...b, [id]: y }))}
+          setze={(y) => { setMappe(typeof y === 'string' ? y : ''); setSchritt('wahl'); setErgebnis(null); }} />}
       </Feld>}
-      <div className="raster">
-        {v.fragen.includes('empfaenger') && <BenutzerWahl label={t('automatisierung.vorlage.ui.frage.empfaenger')} sichtbar wert={an} setze={setAn} />}
-        {fragtDatum(v) && <Feld beschriftung={t('automatisierung.vorlage.ui.frage.datum')} hinweis={v.wann.art === 'in' ? t('automatisierung.vorlage.ui.frage.datum.vorgeschlagen', { datum: datumDe(vorschlagDatum(v.wann, heuteIn())) }) : undefined}>
-          <input type="date" value={datum} onChange={(x) => setDatum(x.target.value)} />
-        </Feld>}
-        {v.fragen.includes('text') && <Feld beschriftung={t('automatisierung.vorlage.ui.frage.text')}><input value={text} onChange={(x) => setText(x.target.value)} /></Feld>}
-      </div>
-      <Knopf groesse="klein" gesperrt={!mappe} onClick={async () => {
-        setFehler(undefined);
-        try { setZeilen((await api.ablaufvorlageAusprobieren(v.kennung, mappe, { empfaengerId: an || undefined, datum: datum || undefined, text })).zeilen); } catch (x) { setFehler((x as Error).message); setZeilen(null); }
-      }}>{t('automatisierung.vorlage.ui.ausprobieren.los')}</Knopf>
-      {fehler && <p className="fehlertext">{fehler}</p>}
-      {zeilen && <ul className="klein">{zeilen.map((z, i) => <li key={i}>{z}</li>)}</ul>}
+      {schritt === 'wahl' && <div className="knoepfe"><Knopf gesperrt={!mappe} onClick={oeffnen}>{t('automatisierung.vorlage.ui.ausprobieren.los')}</Knopf></div>}
+      {schritt === 'dialog' && (
+        <VorlagenDialog key={runde} mappeId={mappe} vorlage={v} schliessen={() => setSchritt('wahl')}
+          probe={{ anwenden: async (x) => { setErgebnis(await api.ablaufvorlageAusprobieren(v.kennung, mappe, x)); setSchritt('ergebnis'); } }} />
+      )}
+      {schritt === 'ergebnis' && ergebnis && <>
+        <ProbeVorschau ergebnis={ergebnis} mappe={titel} />
+        <div className="knoepfe">
+          <Knopf onClick={oeffnen}>{t('automatisierung.vorlage.ui.ausprobieren.nochmal')}</Knopf>
+          <Knopf art="link" onClick={() => { const el = document.getElementById('vorlage-name'); el?.scrollIntoView({ block: 'center' }); el?.focus(); }}>{t('automatisierung.vorlage.ui.ausprobieren.anpassen')}</Knopf>
+        </div>
+      </>}
+    </div>
+  );
+}
+
+/**
+ * Vorschau nach dem Ausprobieren (#1176): je Empfänger, was er sähe – eine Aufgabe (fällig wann) oder eine
+ * Benachrichtigung, mit Mappe und Text; darunter als Zusammenfassung die Zeilen von bisher.
+ */
+function ProbeVorschau({ ergebnis, mappe }: { ergebnis: { zeilen: string[]; vorschau: AblaufProbe[] }; mappe: string }) {
+  return (
+    <div className="stapel probe-vorschau" role="status">
+      <p><strong>{t('automatisierung.vorlage.ui.ausprobieren.ergebnis')}</strong></p>
+      {!ergebnis.vorschau.length && <p className="leise">{ergebnis.zeilen[ergebnis.zeilen.length - 1]}</p>}
+      <ul className="stapel probe-karten">
+        {ergebnis.vorschau.map((x, i) => (
+          <li key={i} className="probe-karte">
+            <p className="probe-kopf"><Symbol name={x.als === 'aufgabe' ? (x.datum ? 'erinnern' : 'aufgabe') : 'info'} />{' '}
+              <strong>{t(x.als === 'aufgabe' ? 'automatisierung.vorlage.ui.vorschau.aufgabe' : 'automatisierung.vorlage.ui.vorschau.benachrichtigung', { name: x.an })}</strong>
+              {x.als === 'aufgabe' && <span className="leise"> · {x.datum ? t('automatisierung.vorlage.ui.vorschau.faellig', { datum: datumDe(x.datum) }) : t('automatisierung.vorlage.ui.vorschau.sofort')}</span>}
+            </p>
+            {mappe && <p className="leise klein">{t('automatisierung.vorlage.ui.vorschau.mappe', { titel: mappe })}</p>}
+            <p className="probe-text">{x.text || <span className="leise">{t('automatisierung.vorlage.ui.vorschau.ohne-text')}</span>}</p>
+            {x.hinweis && <p className="klein warnung">{x.hinweis}</p>}
+          </li>
+        ))}
+      </ul>
+      <details className="probe-zusammenfassung">
+        <summary className="klein tippziel">{t('automatisierung.vorlage.ui.vorschau.zusammenfassung')}</summary>
+        <ul className="klein">{ergebnis.zeilen.map((z, i) => <li key={i}>{z}</li>)}</ul>
+      </details>
     </div>
   );
 }

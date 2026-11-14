@@ -22,3 +22,4 @@ export { Umschalter, zielDerTaste, type UmschalterProps, type UmschalterWahl } f
 export { Bereich, fehlerBereiche, liesOffen, merkeOffen, SPRUNGLEISTE_AB, useBereiche, type BereicheOptionen, type BereicheZustand, type BereichListe, type Klappe } from './bereiche/Bereiche';
 export { Fassungen, GeloeschteEintraege, type FassungenProps, type FassungenQuelle } from './fassungen/Fassungen';
 export { Eintragsliste, type Listeneintrag } from './fassungen/Eintragsliste';
+export { Platzhalter, usePlatzhalterEinsetzen, type PlatzhalterEintrag, type PlatzhalterGruppe, type PlatzhalterProps } from './platzhalter/Platzhalter';

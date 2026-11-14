@@ -1,0 +1,10 @@
+/* Baustein Platzhalter (#1177): kleine Knöpfe zum Einsetzen, nach Gruppen („Allgemein“, je Mappentyp). Nur Werte aus
+   tokens.css; Tippflächen am Handy bringt der Knopf mit (klein mit unsichtbarer Fläche und Abstand). */
+.platzhalter { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.name { color: var(--leise); font-size: calc(12.5px * var(--skala, 1)); }
+.gruppe { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; min-width: 0; }
+.gruppenname { flex: 0 0 auto; min-width: 7em; color: var(--leise); font-size: calc(12.5px * var(--skala, 1)); font-weight: 600; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; min-width: 0; flex: 1 1 240px; }
+.zusatz { margin-left: 6px; color: var(--leise); font-weight: 400; }
+.zusatz::before { content: "· "; }
+@media (max-width: 600px) { .gruppenname { min-width: 0; flex-basis: 100%; } }

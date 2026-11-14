@@ -144,7 +144,7 @@ Ein **zusammengesetztes Feld** setzt sich aus anderen Feldern derselben Mappe zu
 
 **Beispiel: Rechnungsnummer je Absender.** Verschiedene Firmen vergeben dieselben Rechnungsnummern; *Rechnungsnummer* allein kann also nicht eindeutig sein. Lege an der *Rechnung* ein Feld *Kennung* an:
 
-1. Feldart **Zusammengesetzt**, Vorlage `{von} · {rechnungsnummer}` – die Knöpfe unter der Vorlage fügen die Platzhalter der Felder ein.
+1. Feldart **Zusammengesetzt**, Vorlage `{von} · {rechnungsnummer}` – ein Klick auf ein Feld unter der Vorlage setzt seinen Platzhalter an der Schreibmarke ein (am Ende mit „ · “ davor).
 2. Haken **Eindeutig**.
 3. Speichern.
 
@@ -382,7 +382,7 @@ An einem **Datumsfeld** wie „Kündigung bis“ oder „HU fällig“ kannst du
 - **Text** mit Platzhaltern wie dem Datum und dem Titel der Mappe.
 - **Wiederkehrend** – monatlich, vierteljährlich, halbjährlich, jährlich oder alle paar Jahre. Wer die Frist erledigt, bekommt den Vorschlag „Datum auf 30.09.2028 setzen“; das Datum ändert sich **nie von selbst**, und die Änderung steht wie jede andere in der Historie der Mappe.
 
-Pakete bringen passende Automatisierungen mit, zum Beispiel „Kündigung bald fällig“. Beim Installieren fragt Ablago, welche gleich eingeschaltet werden sollen (Vorgabe: alle). Für einen eigenen Mappentyp legst du die Automatisierung selbst an.
+Pakete bringen passende Automatisierungen mit, zum Beispiel „Kündigung bald fällig“. Sie kommen immer mit; beim Installieren wählst du per Schalter, welche gleich laufen. Für einen eigenen Mappentyp legst du die Automatisierung selbst an.
 
 **Seit Version 0.177 erinnert nur noch die Automatisierung.** Früher stellte man Vorlauf, Empfänger und Text direkt am Feld ein. Beim Update hat Ablago jede dieser Erinnerungen **einmal** als eingeschaltete Automatisierung *Erinnerung: Feld (Mappentyp)* übernommen – mit derselben Vorlaufzeit, demselben Empfänger (ist das Feld leer: der Ersteller), demselben Text und derselben Wiederholung. Es erinnert also alles wie bisher; die Werkbank-Übersicht sagt einmal, was umgezogen ist. Eine übernommene Automatisierung, die du löschst, kommt nicht wieder. Bringt ein Paket-Update später eine eigene Automatisierung für dasselbe Feld mit, ersetzt sie die übernommene, solange du diese nicht geändert hast – doppelt erinnert wird nie.
 
@@ -407,7 +407,7 @@ Du kannst Mappentypen jederzeit ändern, auch wenn es schon Mappen gibt:
 
 ## Titel einer Mappe
 
-Die **Vorlage** bestimmt, wie eine Mappe in Listen und Verweisen heißt, z. B. `{rechnungsnummer} vom {rechnungsdatum}`. Felder in geschweiften Klammern werden eingesetzt, alles andere bleibt stehen. Daneben gibt es `{angelegt}` und `{geaendert}` (jeweils das Datum). Die Vorschau zeigt das Ergebnis mit Beispielwerten oder mit den Werten einer echten Mappe.
+Die **Vorlage** bestimmt, wie eine Mappe in Listen und Verweisen heißt, z. B. `{rechnungsnummer} vom {rechnungsdatum}`. Felder in geschweiften Klammern werden eingesetzt, alles andere bleibt stehen. Daneben gibt es `{angelegt}` und `{geaendert}` (jeweils das Datum). Unter der Vorlage stehen die Felder und unter **Allgemein** die beiden Daten zum Anklicken – ein Klick setzt den Platzhalter an der Schreibmarke ein. Die Vorschau zeigt das Ergebnis mit Beispielwerten oder mit den Werten einer echten Mappe.
 
 Verweist der Titel auf eine andere Mappe (`{vertragspartner}`), wird der Titel nachgezogen, wenn sich der Vertragspartner ändert.
 

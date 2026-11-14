@@ -392,10 +392,6 @@ fieldset.mischung legend { font-weight: 600; padding: 0 4px; }
 a.textknopf { text-decoration: none; }
 
 /* Einrichtung: Titel und Register */
-.chipwahl { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
-.chipknopf { border: 1px solid var(--linie-stark); background: var(--flaeche); border-radius: 999px; padding: 3px 10px; font-size: calc(12.5px * var(--skala, 1)); cursor: pointer; }
-.chipknopf:hover { border-color: var(--akzent); color: var(--akzent); }
-.chipknopf.index { border-style: dashed; color: var(--leise); }
 .vorschau { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; padding: 12px 14px; border-radius: var(--r); background: var(--senke); border: 1px solid var(--linie); }
 .filterhilfe { margin: 6px 0 10px; }
 .filterhilfe summary { cursor: pointer; color: var(--leise); }
@@ -1473,6 +1469,25 @@ a.knopf.breit { display: flex; justify-content: center; text-decoration: none; }
 .pa-rechte h3 { margin: 8px 0 2px; }
 .pa-rechte ul { margin: 2px 0; padding-left: 18px; }
 .pa-einstellungen { border: 1px solid var(--linie); border-radius: 10px; padding: 8px 12px 12px; margin: 0; min-width: 0; }
+/* Mitgelieferte Automatisierungen beim Installieren (#1174): je eine mit Schalter untereinander; Update: selbst geänderte. */
+/* Ablaufvorlage, Wann (#1175): Anzahl und Einheit direkt hinter „In“, blass (nicht gesperrt), solange „In“ nicht gewählt
+   ist. Bricht die Reihe um, füllt der Umschalter die erste Zeile, und die Felder stehen rechts darunter – unter „In“. */
+.wann-reihe { display: inline-flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 6px 8px; max-width: 100%; }
+.wann-reihe > [role="radiogroup"] { flex: 1 1 auto; }
+/* Am Handy stehen die Wahlen untereinander (Umschalter `schmalUntereinander`), die Felder rechts darunter – unter „In“. */
+@media (max-width: 600px) { .wann-reihe { display: flex; flex-direction: column; align-items: flex-end; } .wann-reihe > [role="radiogroup"] { align-self: stretch; } }
+.wann-in.blass input, .wann-in.blass select { color: var(--leise); background: var(--senke); border-color: var(--linie-stark); }
+/* Ausprobieren einer Ablaufvorlage (#1176): die Vorschau je Empfänger wie eine Aufgabe an der Mappe. */
+.probe-hinweis p { display: flex; align-items: center; gap: 6px; }
+.probe-karten { list-style: none; margin: 0; padding: 0; }
+.probe-karte { border: 1px solid var(--linie); border-left: 3px solid var(--akzent); border-radius: var(--r); background: var(--flaeche); padding: 8px 12px; }
+.probe-karte p { margin: 2px 0; }
+.probe-karte .probe-kopf { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.probe-karte .probe-text { white-space: pre-wrap; overflow-wrap: anywhere; }
+.probe-karte .warnung { color: var(--warn); }
+.paket-automatisierungen-liste { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.paket-automatisierungen-geaendert { list-style: none; margin: 0; padding: 0; }
+.paket-automatisierungen-geaendert .hinweis { margin-top: 4px; }
 .pa-einstellungen legend { padding: 0 4px; }
 .pa-reihe { margin: 0; padding-left: 20px; display: grid; gap: 2px; }
 .pa-reihe ul { margin: 2px 0; padding-left: 18px; }
@@ -2132,8 +2147,6 @@ ul.sitzungsliste.festhoehe { border: 1px solid var(--linie); border-radius: var(
 .automatisierung-vorrat { border: 1px dashed var(--linie-stark); border-radius: var(--r); padding: 8px 10px; margin: 6px 0; }
 .automatisierung-vorrat .stapel { display: flex; flex-wrap: wrap; gap: 6px; list-style: none; padding: 0; margin: 4px 0 8px; }
 .automatisierung-vorrat .vorratkarte { display: flex; align-items: center; gap: 2px; background: var(--flaeche); border: 1px solid var(--linie); border-radius: 999px; padding: 2px 8px 2px 2px; }
-.platzhalterleiste { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
-.platzhalterleiste .chip { cursor: pointer; font-family: var(--mono); }
 .automatisierung-schritte { margin: 8px 0 4px; font-size: calc(13px * var(--skala, 1)); width: 100%; border-collapse: collapse; }
 .automatisierung-schritte th, .automatisierung-schritte td { padding: 4px 8px; text-align: left; vertical-align: top; overflow-wrap: break-word; hyphens: auto; }
 .automatisierung-schritte .laufschritt td { transition: background .3s; }
@@ -2142,6 +2155,25 @@ ul.sitzungsliste.festhoehe { border: 1px solid var(--linie); border-radius: var(
 .historie .knoepfe { margin-top: 6px; }
 .mappenliste .eintrag .problem { display: block; color: var(--schlecht); font-size: .85em; }
 .automatisierung-gruppe .h3 { margin: 10px 0 4px; }
+/* Liste der Automatisierungen (#1172): je Eintrag höchstens zwei Zeilen – Zeichen, Name und Paket, darunter die Kurzform.
+   Wahlhaken und Ziehgriff stehen im Fluss vor dem Verweis, damit sich Tippflächen am Handy nicht überdecken. */
+.auto-liste > li { display: flex; align-items: center; gap: 2px; }
+/* Ohne den negativen Rand links: Der Haken bliebe sonst unter dem Griff zum Einklappen der Spalte. */
+.mappenliste.auto-liste { margin-left: 0; }
+.auto-liste > li > .eintrag { flex: 1; min-width: 0; }
+.auto-liste > li.gewaehlt > .eintrag { background: var(--akzent-zart); }
+.auto-liste .eintrag .titel { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.auto-liste .eintrag .titel .name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.auto-liste .eintrag .titel .chip, .auto-liste .eintrag .titel [data-paket] { margin-left: 0; flex: none; }
+.auto-liste .eintrag .unter { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.auto-zustand { display: inline-flex; align-items: center; justify-content: center; flex: none; width: 14px; height: 14px; }
+.auto-zustand .punkt { width: 9px; height: 9px; border-radius: 50%; border: 1.5px solid var(--rand-eingabe); box-sizing: border-box; }
+.auto-zustand.an .punkt { background: var(--gruen); border-color: var(--gruen); }
+.auto-zustand.angehalten { color: var(--warn); }
+.auto-zustand.angehalten svg { width: 14px; height: 14px; }
+.auto-werkzeuge { flex-wrap: wrap; align-items: center; gap: 4px 12px; margin: 6px 0; }
+/* Die Leiste der Auswahl steht im Fluss über der Liste – klebend läge sie am Handy über den Zeilen. */
+.aktionsleiste.auto-auswahl { position: static; }
 @media (prefers-reduced-motion: reduce) { .automatisierung-schritte .laufschritt td { transition: none; } }
 @media (max-width: 600px) { .automatisierung .einzug { margin-left: 6px; } }
 

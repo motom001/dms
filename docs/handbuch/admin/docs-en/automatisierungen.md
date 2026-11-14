@@ -4,7 +4,7 @@ With an **automation**, Ablago does something by itself: **if** something happen
 
 ![Workbench → Automations: list and editor](bilder/werkbank-automatisierungen.png)
 
-On the left are all automations with name, short form ("If Contract: Cancel by in 30 days → task to Responsible"), on/off, number in the order and the last run. On the right, an automation is organised like a [folder type](mappentypen.md#aufbau-des-editors): the **jump bar** with **Expand all / Collapse all** at the top, below it the areas **Basic details** (name, order, description) **→ When** (with the And conditions) **→ Then** (with Otherwise) **→ Try out → History → Versions**; the last three only exist after creating. Collapsed, each area shows a summary, such as the trigger or the Then and Otherwise cards; your device remembers what you expand per automation. **Save automation** at the bottom saves basic details, When, Then and Otherwise at once. Whatever does not fit is shown in the area it belongs to; for a saved automation the area is also marked red, and an error on saving expands it. **On/off**, **Copy**, **Try out** and **Restore** take effect immediately.
+On the left are all automations, each in at most two lines: at the top the state as a small sign, the name and the package it comes from, below it the short form in quiet text ("If Contract: Cancel by in 30 days → task to Responsible") – more under [The list](#liste). On the right, an automation is organised like a [folder type](mappentypen.md#aufbau-des-editors): the **jump bar** with **Expand all / Collapse all** at the top, below it the areas **Basic details** (name, order, description) **→ When** (with the And conditions) **→ Then** (with Otherwise) **→ Try out → History → Versions**; the last three only exist after creating. Collapsed, each area shows a summary, such as the trigger or the Then and Otherwise cards; your device remembers what you expand per automation. **Save automation** at the bottom saves basic details, When, Then and Otherwise at once. Whatever does not fit is shown in the area it belongs to; for a saved automation the area is also marked red, and an error on saving expands it. **On/off**, **Copy**, **Try out** and **Restore** take effect immediately.
 
 In *When* and *Then* you build the automation from cards – four boxes one below the other, connected with arrows:
 
@@ -29,7 +29,7 @@ Petra is to get a task 30 days before the notice period of a contract runs out �
 
 ![Expanded Then card with recipient and placeholders](bilder/werkbank-automatisierung-karte.png)
 
-You **expand** a card with a click on its name (settings) and **collapse** it again (short line like "Task → Person in the field "Responsible""). Below the text are the **placeholders** that match the If card: the fields of the folder type as well as `{titel}`, `{mappentyp}`, `{heute}`, `{automatisierung}` and with a date `{datum}` and `{tage}`. A click inserts the placeholder.
+You **expand** a card with a click on its name (settings) and **collapse** it again (short line like "Task → Person in the field "Responsible""). Below the text are the **placeholders** that match the If card, with understandable names: under **General** folder title, folder type, today, name of the automation and with a date the date reached and the days until then, below them the fields under the folder type’s name. Hovering shows the technical placeholder (`{titel}`, `{kuendigung}` …). A click inserts it at the **cursor** – in the field you last typed in. It works the same wherever placeholders are allowed: title template and *Combined* in the folder type, cards of automations and [automation templates](automatisierungsvorlagen.md).
 
 ## Example: reporting new documents to the administration {#beispiel-neue-dokumente-an-die-verwaltung-melden}
 
@@ -55,12 +55,26 @@ The card **Date reached** checks once a day at the chosen time for which folders
 
 The earlier cards "Date in N days" and "Deadline reached" have merged into **Date reached**. "Date in N days" becomes the same card with advance notice in days the next time it is opened. With "Deadline reached" the date field is missing: the automation is shown in red until you choose it.
 
+## The list { #liste }
+
+Each automation takes at most two lines in the list:
+
+- **Sign before the name:** green dot = **on**, empty circle = **off**, warning symbol = **paused** (or something is missing). If you hover over the line, the tooltip gives the reason, the number in the order and the last run.
+- **After the name** the package it comes from (chip with the package icon and name), or "Ablago" for built-in ones; your own have no chip.
+- **Below** the short form in quiet text.
+
+**Several at once:** Each line has a tick box, with **Select all** above. As soon as something is selected, a bar with **Switch on** and **Switch off** for the selection appears. If an automation no longer fits, it stays as it is and Ablago names it with the reason.
+
+**After a restore** all switched-on automations are paused. Above the list it then says **Check and switch on all paused (n)**. A confirmation names them; after **Switch on again** Ablago checks each one and switches it on. Whatever no longer fits stays paused.
+
+**Group:** The choice above the list groups them **by trigger** (where you re-arrange the [order](#reihenfolge)), **by package** (your own, Ablago and per package) or **by effect** – what the automation does: *Create a task*, *Notify*, *Report outside*, *Set fields*, *Run a package*, *Back up*. The effect comes from the first Then card.
+
 ## On, off and paused {#an-aus-und-angehalten}
 
-Whether an automation works you see and change in **one** place: at the switch at the top next to the name; the list shows the same state (**on**, **off**, **paused**).
+Whether an automation works you see and change in **one** place: at the switch at the top next to the name; the list shows the same state as a sign (**on**, **off**, **paused**) and switches several at once.
 
-- For a saved automation the switch takes effect immediately; in its place it briefly says "Switched on." or "Switched off.".
-- If it is **paused** (red, see below), the reason is shown there and the button **Switch on again**.
+- For a saved automation the switch takes effect immediately. There is no further message – the switch shows the state itself; only if something goes wrong is the reason shown at the switch.
+- If it is **paused** (see [below](#wenn-etwas-nicht-mehr-passt)), the switch is off and the reason is shown once directly below it, e.g. "Paused after a restore – check it and switch it on again." Switching it on again means flipping the switch. It stays in its place.
 - Next to it is the button **Copy**: it creates a copy of your own and opens it.
 
 ## Schedule {#zeitplan}
@@ -337,10 +351,11 @@ Ablago also pauses an automation if it runs **more than 30 times in one minute**
 
 ## From packages {#aus-paketen}
 
-Packages bring **ready-made automations**, for example "MOT due soon" (package Vehicles) or "Cancellation due soon" (package Household). When installing – in the setup assistant as in the workbench – Ablago lists them by name: **"Should they be switched on straight away?"** Preselected are the ones the package marks as *switched on straight away* (e.g. *Check contracts daily*, with the time behind it); if a package marks none, all are preselected as before. What stays ticked is switched on after installation, the rest off – you can untick any of them.
+Packages bring **ready-made automations**, for example "MOT due soon" (package Vehicles) or "Cancellation due soon" (package Household). They **always all** come with it. When installing – in the setup assistant as in the workbench – each automation has a **switch** (on/off) under **"These automations come with it – which should run straight away?"**, plus **All on** and **All off**. Initially on are the ones the package marks as *switched on straight away* (e.g. *Check contracts daily*, with the time below); if a package marks none, all are on as before. What stays on runs after installation; the rest is created but off.
 
 - In the list you recognise them by the chip with the package icon and the **package's name** after the name. You can switch them on, adjust and copy them.
-- On an **update** of the package, the new version replaces the old as long as you haven't changed it; on/off always stays as you set it. A changed one stays as it is. New automations from the update are offered again when updating.
+- They can't be **deleted** – the package would create them again with the next update. The **Delete** button at the bottom is therefore dashed; a click explains: "Comes from the package … and can't be deleted. Switch it off – it stays off after updates too.", with the way to the package.
+- On an **update** of the package, the new version replaces the old as long as you haven't changed it; on/off always stays as you set it. A changed one stays as it is: the update preview lists it under **"You have changed these automations – they stay as they are."**, and **View the new version from the package** shows what the new version does differently – readable as with [versions](fassungen.md). If you want it, adjust your automation afterwards. New automations from the update are offered again when updating.
 - If you remove the package, its automations go with it if they are off and unchanged.
 - Packages do not bring [Workbench cards](#werkbank-karten), [Call from outside](#aufruf-von-aussen) or the cards [to the outside](#nach-aussen) (*Call URL*, *Send e-mail*) – they only exist in automations you create yourself. Where data goes cannot be shown by a package's permission preview; you decide that yourself.
 

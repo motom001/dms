@@ -23,14 +23,14 @@ In der Mitte stehen alle Vorlagen mit **an/aus**, Herkunft als Chip (**Ablago** 
 | Feld | Bedeutung |
 |---|---|
 | **Name**, **Reihenfolge**, **Beschreibung** | so steht sie im Menü „Mappe“; kleinere Zahl weiter oben (1–99) |
-| **Im Menü „Mappe“ bei** | Mappentypen, an denen sie angeboten wird – keiner gewählt: bei allen |
-| **Wann** | **Sofort**, **Am gewählten Datum** oder **In …** Tagen, Wochen bzw. Monaten |
-| **Fragt beim Anwenden** | **Empfänger**, **Datum** und **Text** – genau das steht im kleinen Dialog an der Mappe. **Datum** ist bei „Am gewählten Datum“ immer an, bei „Sofort“ aus und bei „In …“ frei wählbar (siehe [Datum vorschlagen](#datum-vorschlagen)) |
+| **Im Menü „Mappe“ bei** | Mappentypen, an denen sie angeboten wird – gewählt wie in einem Verweisfeld: tippen, Treffer anklicken, mit **Entfernen** wieder heraus. Keiner gewählt: bei allen |
+| **Wann** | **Sofort**, **Am gewählten Datum** oder **In** – Anzahl und Einheit (Tage, Wochen, Monate) stehen immer direkt dahinter. Solange „In“ nicht gewählt ist, sind sie blass; ein Klick hinein wählt „In“ |
+| **Fragt beim Anwenden** | **Empfänger**, **Datum** und **Text** – genau das steht im kleinen Dialog an der Mappe. **Datum** ist bei „Am gewählten Datum“ immer an, bei „Sofort“ aus und bei „In“ frei wählbar (siehe [Datum vorschlagen](#datum-vorschlagen)); warum, steht unter den Haken |
 | **Dann** | eine oder mehrere Karten **Aufgabe / Benachrichtigung**: an die gewählte Person, wer die Vorlage anwendet, wer die Mappe angelegt hat oder die Person in einem Feld der Mappe (nur mit festen Mappentypen) |
 
 ### Datum vorschlagen: „Erinnere mich in 14 Tagen“ { #datum-vorschlagen }
 
-Bei **In …** entscheidest du, ob das Datum fest ist oder nur ein **Vorschlag**:
+Bei **In** entscheidest du, ob das Datum fest ist oder nur ein **Vorschlag**:
 
 | Wann | Haken „Datum“ | Was an der Mappe passiert |
 |---|---|---|
@@ -39,7 +39,7 @@ Bei **In …** entscheidest du, ob das Datum fest ist oder nur ein **Vorschlag**
 | In 14 Tagen | **an** | Datumsfeld, **vorbelegt mit heute + 14 Tage**, änderbar |
 | Am gewählten Datum | immer an | Datumsfeld, vorbelegt mit heute + 7 Tage |
 
-Beispiel: Lena möchte, dass sich jeder im Haushalt mit einem Klick an eine Mappe erinnern lassen kann – meistens in zwei Wochen, manchmal früher oder später. Sie legt eine Vorlage **Erinnere mich in 14 Tagen** an: Wann **In 14 Tagen**, unter „Fragt beim Anwenden“ **Datum** und **Text**, eine Karte **Aufgabe** an „wer sie anwendet“ mit dem Text `{eingabe}`. In der Liste steht sie als „In 14 Tagen (änderbar) → Aufgabe an wer sie anwendet“. Wendet Jonas sie an einer Mappe an, steht im Datumsfeld schon das Datum in 14 Tagen; er schreibt, woran er denken will, und ändert das Datum nur, wenn es nicht passt. **Ausprobieren** im Editor belegt das Datum genauso vor.
+Beispiel: Lena möchte, dass sich jeder im Haushalt mit einem Klick an eine Mappe erinnern lassen kann – meistens in zwei Wochen, manchmal früher oder später. Sie legt eine Vorlage **Erinnere mich in 14 Tagen** an: Wann **In 14 Tagen**, unter „Fragt beim Anwenden“ **Datum** und **Text**, eine Karte **Aufgabe** an „wer sie anwendet“ mit dem Text `{eingabe}`. In der Liste steht sie als „In 14 Tagen (änderbar) → Aufgabe an wer sie anwendet“. Wendet Jonas sie an einer Mappe an, steht im Datumsfeld schon das Datum in 14 Tagen; er schreibt, woran er denken will, und ändert das Datum nur, wenn es nicht passt. **Ausprobieren** im Editor öffnet genau diesen Dialog, mit demselben Datum.
 
 ![Vorlage „Erinnere mich in 14 Tagen“: Wann „In 14 Tagen“, unter „Fragt beim Anwenden“ ist „Datum“ angehakt](bilder/werkbank-automatisierungsvorlage-vorschlag.png)
 
@@ -47,11 +47,16 @@ Vorlagen ohne den Haken verhalten sich wie bisher: „In 6 Monaten“ bleibt fes
 
 Im Text einer Karte gibt es die Platzhalter wie bei den [Automatisierungen](automatisierungen.md) (`{titel}`, `{mappentyp}`, `{heute}`, `{datum}`, die Felder des Mappentyps), dazu `{eingabe}` (der Text, den man beim Anwenden schreibt), `{person}` (wer anwendet) und `{empfaenger}`. Eine Vorlage, die nach dem Text fragt, braucht `{eingabe}` in einer Karte.
 
+Unter dem Text stehen die Platzhalter **zum Anklicken** wie bei den Automatisierungen: unter **Allgemein** Eingabe beim Anwenden, Wer anwendet, Empfänger, Titel der Mappe, Mappentyp, Heute und Datum des Ablaufs, darunter je gewähltem Mappentyp seine Felder – so siehst du, woher die Platzhalter kommen. Steht ein Feld nicht in allen gewählten Mappentypen, steht „nur bei …“ daran. Ein Klick setzt den Platzhalter an der Schreibmarke ein; beim Überfahren steht der technische Name da.
+
 Der **Schalter** oben im Editor (aus) nimmt die Vorlage aus dem Menü „Mappe“ – schon geplante Abläufe laufen trotzdem. Eigene Vorlagen löschst du, sobald keine offenen Abläufe mehr an ihr hängen; Vorlagen von Ablago setzt du mit **Auf Auslieferung zurücksetzen** zurück.
 
 Darunter:
 
-- **Ausprobieren:** wähle eine Mappe und die Antworten – Ablago zeigt, was passieren würde (mit deinen Rechten als Person), und wer etwas nicht sehen dürfte. Es entsteht nichts.
+- **Ausprobieren:** wähle eine Mappe und klicke auf **Ausprobieren**. Es öffnet sich **derselbe kleine Dialog wie an der Mappe** – mit genau den Fragen der Vorlage, gleicher Vorbelegung (z. B. das vorgeschlagene Datum), gleicher Beschriftung und Reihenfolge –, oben gekennzeichnet mit **„Probe – es wird nichts angelegt.“** Nach dem Bestätigen zeigt Ablago, was die Empfänger sähen: je Empfänger die Aufgabe (fällig wann) bzw. die Benachrichtigung mit Mappe und Text, und wer die Mappe nicht oder nicht ganz sehen dürfte; unter **Zusammenfassung** dieselben Zeilen kurz. Ablago probiert mit deinen Rechten als Person. Danach **Nochmal** oder **Vorlage anpassen**. Es entsteht nichts.
+
+  ![Ausprobieren: „Erinnere mich in 14 Tagen“ am Stromvertrag – die Aufgabe, wie der Empfänger sie sähe, fällig in 14 Tagen](bilder/werkbank-automatisierungsvorlage-probe.png)
+
 - **Gerade benutzt bei:** alle offenen Abläufe der Vorlage mit Link zur Mappe, Datum und Person. Titel stehen nur bei Mappen, die du lesen darfst.
 - **Verlauf:** angewendet, geplant, gelaufen, angehalten, gelöscht, fortgesetzt – mit Zeit und Person. Er bleibt 30 Tage bzw. 200 Einträge je Vorlage.
 - **Fassungen:** wer wann was geändert hat, zwei Fassungen vergleichen und eine frühere wiederherstellen – wie bei allen Einstellungen der Werkbank, siehe [Fassungen](fassungen.md). **Auf Auslieferung zurücksetzen** ist selbst eine Fassung; gelöschte eigene Vorlagen stehen mit Löschvermerk unter der Liste.

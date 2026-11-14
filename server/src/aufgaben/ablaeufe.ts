@@ -28,7 +28,7 @@ import { istUuid, type Repo } from '../repo';
 import { t, tAuto } from '../sprache';
 import type { ZugriffDienst } from '../zugriff';
 import {
-  type AblaufAngehalten, type AblaufAntworten, type AblaufVerlauf, type Ablaufvorlage, type AblaufvorlageAnsicht, type AblaufvorlageDaten, bereinigeVorlage,
+  type AblaufAngehalten, type AblaufAntworten, type AblaufProbe, type AblaufVerlauf, type Ablaufvorlage, type AblaufvorlageAnsicht, type AblaufvorlageDaten, bereinigeVorlage,
   fragtDatum, istKernVorlage, kernVorlage, KERN_VORLAGEN, laeuftAm, type MappenAblauf, VORLAGEN_GRENZEN, VORLAGEN_REIHENFOLGE, vorlageKurz, vorlagenEingabeFehler, vorlagenProbleme,
   type VorlageZumAnwenden, type VorlagenEmpfaenger, type VorlagenKarte,
 } from '../../../shared/src/ablaufvorlagen';
@@ -273,10 +273,11 @@ export class MappenAblaeufe {
    * Vorlage, Mappe und Empfänger. Mit `trocken` nur beschreiben, was passieren würde.
    */
   private async fuehreAus(l: Lauf): Promise<Aufgabe[]>;
-  private async fuehreAus(l: Lauf, trocken: true): Promise<string[]>;
-  private async fuehreAus(l: Lauf, trocken = false): Promise<Aufgabe[] | string[]> {
+  private async fuehreAus(l: Lauf, trocken: true): Promise<{ zeilen: string[]; vorschau: AblaufProbe[] }>;
+  private async fuehreAus(l: Lauf, trocken = false): Promise<Aufgabe[] | { zeilen: string[]; vorschau: AblaufProbe[] }> {
     const aufgaben: Aufgabe[] = [];
     const zeilen: string[] = [];
+    const vorschau: AblaufProbe[] = [];
     for (const k of l.v.karten) {
       const an = await this.empfaengerVon(k, l);
       if (!an.length) { zeilen.push(tAuto('automatisierung.vorlage.test.niemand')); continue; }
@@ -284,12 +285,7 @@ export class MappenAblaeufe {
         const ziel = (await this.teile.vertretung.empfaengerAufloesen(id)).ziel ?? id;
         const f = await this.textFuer(k, l, ziel);
         const text = f.text.slice(0, AUFGABE_MAX);
-        if (trocken) {
-          zeilen.push(tAuto(k.als === 'aufgabe' ? 'automatisierung.vorlage.test.aufgabe' : 'automatisierung.vorlage.test.benachrichtigung', { name: await this.name(ziel), text }));
-          if (!f.mappe || !(await this.rechte.kannLesen(ziel, l.mappe.id))) zeilen.push(tAuto('automatisierung.vorlage.test.ohne-leserecht', { name: await this.name(ziel) }));
-          else if (f.verborgen) zeilen.push(tAuto('automatisierung.vorlage.test.nicht-sichtbar', { name: await this.name(ziel), anzahl: f.verborgen }));
-          continue;
-        }
+        if (trocken) { const p = await this.probe(k, l, ziel, text, f); zeilen.push(...p.zeilen); vorschau.push(p.vorschau); continue; }
         if (k.als === 'benachrichtigung') {
           await this.teile.vertretung.benachrichtigeGebuendelt({ empfaengerId: ziel, mappeId: l.mappe.id, art: 'manuell', schluessel: `ablauf:${l.v.kennung}`.slice(0, 120), von: l.person, text: () => text });
           continue;
@@ -307,10 +303,19 @@ export class MappenAblaeufe {
         aufgaben.push(await this.teile.vertretung.leiteUm(a));
       }
     }
-    if (trocken) return zeilen;
+    if (trocken) return { zeilen, vorschau };
     // #798: Darf ein Empfänger die Mappe nicht lesen, entsteht ein Fall – der Admin erfährt davon.
     await this.teile.ohneLeserecht.faelleNach([l.mappe.id]);
     return aufgaben;
+  }
+
+  /** Ausprobieren: Zeilen und Vorschau (#1176) für einen Empfänger – so, wie er es sähe; eine Aufgabe trägt ihr Datum. */
+  private async probe(k: VorlagenKarte, l: Lauf, ziel: string, text: string, f: { verborgen: number; mappe: boolean }): Promise<{ zeilen: string[]; vorschau: AblaufProbe }> {
+    const name = await this.name(ziel);
+    const hinweis = !f.mappe || !(await this.rechte.kannLesen(ziel, l.mappe.id)) ? tAuto('automatisierung.vorlage.test.ohne-leserecht', { name })
+      : f.verborgen ? tAuto('automatisierung.vorlage.test.nicht-sichtbar', { name, anzahl: f.verborgen }) : null;
+    const zeile = tAuto(k.als === 'aufgabe' ? 'automatisierung.vorlage.test.aufgabe' : 'automatisierung.vorlage.test.benachrichtigung', { name, text });
+    return { zeilen: hinweis ? [zeile, hinweis] : [zeile], vorschau: { als: k.als, an: name, text, datum: k.als === 'aufgabe' && !l.sofort ? l.datum : null, ...(hinweis ? { hinweis } : {}) } };
   }
 
   /* ---------- Geplante Abläufe an der Mappe ---------- */
@@ -499,8 +504,8 @@ export class MappenAblaeufe {
     return liste.map((a) => (lesbar.has(a.mappeId) ? a : { ...a, mappeTitel: tAuto('automatisierung.platzhalter.nicht-sichtbar'), text: '' }));
   }
 
-  /** Ausprobieren (trocken) an einer Mappe – mit den Rechten des Admins als Person; nichts wird angelegt. */
-  async ausprobieren(kennung: string, mappeId: unknown, e: AblaufAntworten, ich: { id: string; rolle: string }, z: Zugriff): Promise<string[]> {
+  /** Ausprobieren (trocken) an einer Mappe mit den Rechten des Admins als Person; nichts entsteht. Dazu die Vorschau (#1176). */
+  async ausprobieren(kennung: string, mappeId: unknown, e: AblaufAntworten, ich: { id: string; rolle: string }, z: Zugriff): Promise<{ zeilen: string[]; vorschau: AblaufProbe[] }> {
     const v = await this.vorlage(kennung);
     const typen = await this.repo.listeTypen();
     const p = vorlagenProbleme(v, typen);
@@ -511,8 +516,8 @@ export class MappenAblaeufe {
     const x = await this.antworten(v, e, ich.id);
     const typ = typen.find((y) => y.id === mappe.typId) ?? null;
     const datum = v.wann.art === 'sofort' ? null : laeuftAm(v.wann, heuteIn(), x.datum);
-    const zeilen = await this.fuehreAus({ v, mappe, typ, person: ich.id, z, ...x, datum, sofort: v.wann.art === 'sofort' }, true);
-    return [datum ? tAuto('automatisierung.vorlage.test.am', { datum: datumDe(datum) }) : tAuto('automatisierung.vorlage.test.sofort'), ...zeilen];
+    const r = await this.fuehreAus({ v, mappe, typ, person: ich.id, z, ...x, datum, sofort: v.wann.art === 'sofort' }, true);
+    return { zeilen: [datum ? tAuto('automatisierung.vorlage.test.am', { datum: datumDe(datum) }) : tAuto('automatisierung.vorlage.test.sofort'), ...r.zeilen], vorschau: r.vorschau };
   }
 
   /** Für die Werkbank-Übersicht und die Mail an die Verwaltung: angehaltene Abläufe. */

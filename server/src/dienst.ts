@@ -646,6 +646,8 @@ export class Dienst {
   fristenUebernehmen?: () => Promise<number>;
   /** Mitgelieferte Automatisierungen eines Pakets anlegen bzw. aktualisieren (#712); setzt der Baustein Automatisierungen. */
   paketAutomatisierungen?: (p: InstalliertesPaket, liste: Array<{ schluessel: string; name: string; beschreibung: string; wenn: Record<string, unknown>; und?: Record<string, unknown>; dann: unknown[] }>, ein?: string[]) => Promise<number>;
+  /** Update-Vorschau (#1174): selbst geänderte mitgelieferte Automatisierungen und was die neue Paketfassung anders macht. */
+  paketAutomatisierungenVergleich?: (p: InstalliertesPaket, liste: Array<{ schluessel: string; name: string; beschreibung: string; wenn: Record<string, unknown>; und?: Record<string, unknown>; dann: unknown[] }>) => Promise<Record<string, { id: string; aenderungen: string[] }>>;
   /**
    * Umbau (#1041): Automatisierungen auf einen umgebauten Typ zeigen lassen – alter Typ → Zieltyp, Feldkennungen alt →
    * neu; setzt automatisierung.ts. Ergebnis: wie viele geändert wurden.

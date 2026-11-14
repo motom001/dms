@@ -639,5 +639,18 @@
   "muster.fassungen.feld-weg": "Field “Notice period” removed",
   "muster.fassungen.feld-dazu": "Field “Notice period” added",
   "muster.fassungen.pflicht": "“Amount” is no longer required",
-  "muster.fassungen.spalte": "Results list “Standard”: column “Place” removed"
+  "muster.fassungen.spalte": "Results list “Standard”: column “Place” removed",
+  "platzhalter.einsetzen": "Insert placeholder",
+  "muster.platzhalter.titel": "Placeholders",
+  "muster.platzhalter.text": "Clickable placeholders for texts with placeholders: an understandable name, the technical placeholder on hover; grouped by “General” and folder type; a click inserts at the cursor.",
+  "muster.platzhalter.gruppen": "Grouped, one field only for one type",
+  "muster.platzhalter.feld": "Text",
+  "muster.platzhalter.beispiel": "Please check {titel}",
+  "muster.platzhalter.allgemein": "General",
+  "muster.platzhalter.heute": "Today",
+  "muster.platzhalter.vertrag": "Contract",
+  "muster.platzhalter.kuendigung": "Cancel by",
+  "muster.platzhalter.anbieter": "Provider",
+  "muster.platzhalter.nur-vertrag": "only for Contract",
+  "muster.platzhalter.mappentitel": "Folder title"
 }

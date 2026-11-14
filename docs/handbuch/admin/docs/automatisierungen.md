@@ -4,7 +4,7 @@ Mit einer **Automatisierung** erledigt Ablago etwas von selbst: **Wenn** etwas p
 
 ![Werkbank → Automatisierungen: Liste und Editor](bilder/werkbank-automatisierungen.png)
 
-Links stehen alle Automatisierungen mit Name, Kurzform („Wenn Vertrag: Kündigung bis in 30 Tagen → Aufgabe an Verantwortlich“), an/aus, Nummer in der Reihenfolge und dem letzten Lauf. Rechts ist eine Automatisierung wie ein [Mappentyp](mappentypen.md#aufbau-des-editors) gegliedert: oben die **Sprungleiste** mit **Alle aufklappen / Alle zuklappen**, darunter die Bereiche **Grunddaten** (Name, Reihenfolge, Beschreibung) **→ Wenn** (mit den Und-Bedingungen) **→ Dann** (mit Sonst) **→ Ausprobieren → Verlauf → Fassungen**; die letzten drei gibt es erst nach dem Anlegen. Eingeklappt zeigt jeder Bereich eine Kurzinfo, etwa den Auslöser oder die Dann- und Sonst-Karten; was du aufklappst, merkt sich dein Gerät je Automatisierung. **Automatisierung speichern** unten speichert Grunddaten, Wenn, Dann und Sonst auf einmal. Was nicht passt, steht im Bereich, zu dem es gehört; bei einer gespeicherten Automatisierung ist der Bereich zusätzlich rot markiert, und ein Fehler beim Speichern klappt ihn auf. **An/aus**, **Kopieren**, **Ausprobieren** und **Wiederherstellen** wirken sofort.
+Links stehen alle Automatisierungen, je in höchstens zwei Zeilen: oben der Zustand als kleines Zeichen, der Name und das Paket, aus dem sie kommt, darunter leise die Kurzform („Wenn Vertrag: Kündigung bis in 30 Tagen → Aufgabe an Verantwortlich“) – mehr dazu unter [Die Liste](#liste). Rechts ist eine Automatisierung wie ein [Mappentyp](mappentypen.md#aufbau-des-editors) gegliedert: oben die **Sprungleiste** mit **Alle aufklappen / Alle zuklappen**, darunter die Bereiche **Grunddaten** (Name, Reihenfolge, Beschreibung) **→ Wenn** (mit den Und-Bedingungen) **→ Dann** (mit Sonst) **→ Ausprobieren → Verlauf → Fassungen**; die letzten drei gibt es erst nach dem Anlegen. Eingeklappt zeigt jeder Bereich eine Kurzinfo, etwa den Auslöser oder die Dann- und Sonst-Karten; was du aufklappst, merkt sich dein Gerät je Automatisierung. **Automatisierung speichern** unten speichert Grunddaten, Wenn, Dann und Sonst auf einmal. Was nicht passt, steht im Bereich, zu dem es gehört; bei einer gespeicherten Automatisierung ist der Bereich zusätzlich rot markiert, und ein Fehler beim Speichern klappt ihn auf. **An/aus**, **Kopieren**, **Ausprobieren** und **Wiederherstellen** wirken sofort.
 
 In *Wenn* und *Dann* baust du die Automatisierung aus Karten zusammen – vier Kästen untereinander, verbunden mit Pfeilen:
 
@@ -29,7 +29,7 @@ Petra soll 30 Tage vor Ablauf der Kündigungsfrist eines Vertrags eine Aufgabe b
 
 ![Aufgeklappte Dann-Karte mit Empfänger und Platzhaltern](bilder/werkbank-automatisierung-karte.png)
 
-Eine Karte klappst du mit einem Klick auf ihren Namen **auf** (Einstellungen) und wieder **zu** (Kurzzeile wie „Aufgabe → Person im Feld „Verantwortlich““). Unter dem Text stehen die **Platzhalter**, die zur Wenn-Karte passen: die Felder des Mappentyps sowie `{titel}`, `{mappentyp}`, `{heute}`, `{automatisierung}` und beim Datum `{datum}` und `{tage}`. Ein Klick setzt den Platzhalter ein.
+Eine Karte klappst du mit einem Klick auf ihren Namen **auf** (Einstellungen) und wieder **zu** (Kurzzeile wie „Aufgabe → Person im Feld „Verantwortlich““). Unter dem Text stehen die **Platzhalter**, die zur Wenn-Karte passen, mit verständlichem Namen: unter **Allgemein** Titel der Mappe, Mappentyp, Heute, Name der Automatisierung und beim Datum das erreichte Datum und die Tage bis dahin, darunter unter dem Namen des Mappentyps seine Felder. Fährst du mit der Maus darüber, steht der technische Platzhalter da (`{titel}`, `{kuendigung}` …). Ein Klick setzt ihn an der **Schreibmarke** ein – im Feld, in dem du zuletzt geschrieben hast. So geht es überall, wo Platzhalter erlaubt sind: Titel-Vorlage und *Zusammengesetzt* im Mappentyp, Karten der Automatisierungen und [Automatisierungsvorlagen](automatisierungsvorlagen.md).
 
 ## Beispiel: neue Dokumente an die Verwaltung melden
 
@@ -55,12 +55,26 @@ Die Karte **Datum erreicht** prüft einmal am Tag zur gewählten Uhrzeit, bei we
 
 Die früheren Karten „Datum in N Tagen“ und „Frist erreicht“ sind in **Datum erreicht** aufgegangen. Aus „Datum in N Tagen“ wird beim nächsten Öffnen dieselbe Karte mit Vorlauf in Tagen. Bei „Frist erreicht“ fehlt das Datumsfeld: Die Automatisierung steht rot da, bis du es wählst.
 
+## Die Liste { #liste }
+
+Jede Automatisierung steht in der Liste in höchstens zwei Zeilen:
+
+- **Zeichen vor dem Namen:** grüner Punkt = **an**, leerer Kreis = **aus**, Warnsymbol = **angehalten** (oder es fehlt ihr etwas). Fährst du mit der Maus über die Zeile, nennt der Tooltip den Grund, die Nummer in der Reihenfolge und den letzten Lauf.
+- **Hinter dem Namen** das Paket, aus dem sie kommt (Chip mit Paket-Symbol und Namen), bzw. „Ablago“ für Mitgeliefertes; eigene haben keinen Chip.
+- **Darunter** leise die Kurzform.
+
+**Mehrere auf einmal:** Vor jeder Zeile steht ein Haken, darüber **Alle auswählen**. Sobald etwas gewählt ist, erscheint eine Leiste mit **Einschalten** und **Ausschalten** für die Auswahl. Passt eine Automatisierung nicht mehr, bleibt sie, wie sie ist, und Ablago nennt sie mit Grund.
+
+**Nach einer Wiederherstellung** sind alle eingeschalteten Automatisierungen angehalten. Dann steht über der Liste **Alle angehaltenen prüfen und wieder einschalten (n)**. Eine Rückfrage nennt sie; nach **Wieder einschalten** prüft Ablago jede und schaltet sie ein. Was nicht mehr passt, bleibt angehalten.
+
+**Gruppieren:** Die Auswahl über der Liste ordnet sie **nach Auslöser** (dort sortierst du die [Reihenfolge](#reihenfolge) um), **nach Paket** (eigene, Ablago und je Paket) oder **nach Ziel** – also danach, was die Automatisierung bewirkt: *Aufgabe stellen*, *Benachrichtigen*, *Nach außen melden*, *Felder setzen*, *Paket ausführen*, *Sichern*. Das Ziel ergibt sich aus der ersten Dann-Karte.
+
 ## An, aus und angehalten
 
-Ob eine Automatisierung arbeitet, siehst und änderst du an **einer** Stelle: am Schalter oben neben dem Namen, in der Liste steht derselbe Zustand (**an**, **aus**, **angehalten**).
+Ob eine Automatisierung arbeitet, siehst und änderst du an **einer** Stelle: am Schalter oben neben dem Namen; die Liste zeigt denselben Zustand als Zeichen (**an**, **aus**, **angehalten**) und schaltet mehrere auf einmal.
 
-- Bei einer gespeicherten Automatisierung wirkt der Schalter sofort; an seiner Stelle steht kurz „Eingeschaltet.“ bzw. „Ausgeschaltet.“.
-- Ist sie **angehalten** (rot, siehe unten), steht dort der Grund und der Knopf **Wieder einschalten**.
+- Bei einer gespeicherten Automatisierung wirkt der Schalter sofort. Eine weitere Meldung gibt es nicht – der Schalter zeigt den Zustand selbst; nur wenn etwas schiefgeht, steht der Grund am Schalter.
+- Ist sie **angehalten** (siehe [unten](#wenn-etwas-nicht-mehr-passt)), steht der Schalter auf aus, und der Grund steht einmal direkt darunter, z. B. „Angehalten nach einer Wiederherstellung – prüfe sie und schalte sie wieder ein.“ Wieder einschalten heißt: den Schalter umlegen. Er bleibt dabei an seiner Stelle.
 - Daneben steht der Knopf **Kopieren**: Er legt eine eigene Kopie an und öffnet sie.
 
 ## Zeitplan
@@ -337,10 +351,11 @@ Außerdem hält Ablago eine Automatisierung an, wenn sie **mehr als 30-mal in ei
 
 ## Aus Paketen
 
-Pakete bringen **vorgefertigte Automatisierungen** mit, zum Beispiel „HU wird bald fällig“ (Paket Fahrzeuge) oder „Kündigung bald fällig“ (Paket Haushalt). Beim Installieren – im Einrichtungsassistenten wie in der Werkbank – listet Ablago sie mit Namen auf: **„Sollen sie gleich eingeschaltet werden?“** Vorausgewählt sind die, die das Paket als *gleich eingeschaltet* kennzeichnet (z. B. *Verträge täglich prüfen*, mit Uhrzeit dahinter); kennzeichnet ein Paket keine, sind wie bisher alle vorausgewählt. Was angehakt bleibt, ist nach der Installation eingeschaltet, der Rest aus – du kannst jede abwählen.
+Pakete bringen **vorgefertigte Automatisierungen** mit, zum Beispiel „HU wird bald fällig“ (Paket Fahrzeuge) oder „Kündigung bald fällig“ (Paket Haushalt). Sie kommen **immer alle** mit. Beim Installieren – im Einrichtungsassistenten wie in der Werkbank – steht unter **„Diese Automatisierungen kommen mit – welche sollen gleich laufen?“** je Automatisierung ein **Schalter** (an/aus), dazu **Alle an** und **Alle aus**. An sind zunächst die, die das Paket als *gleich eingeschaltet* kennzeichnet (z. B. *Verträge täglich prüfen*, mit Uhrzeit darunter); kennzeichnet ein Paket keine, sind wie bisher alle an. Was an bleibt, läuft nach der Installation, der Rest ist angelegt, aber aus.
 
 - In der Liste erkennst du sie am Chip mit dem Paket-Symbol und dem **Namen des Pakets** hinter dem Namen. Du kannst sie einschalten, anpassen und kopieren.
-- Bei einem **Update** des Pakets ersetzt die neue Fassung die alte, solange du sie nicht geändert hast; an/aus bleibt immer, wie du es eingestellt hast. Eine geänderte bleibt, wie sie ist. Neue Automatisierungen aus dem Update stehen beim Aktualisieren wieder zur Wahl.
+- **Löschen** lassen sie sich nicht – das Paket legte sie beim nächsten Update wieder an. Der Knopf **Löschen** unten ist darum gestrichelt; ein Klick erklärt: „Kommt aus dem Paket … und lässt sich nicht löschen. Schalte sie aus – sie bleibt auch nach Updates aus.“, mit dem Weg zum Paket.
+- Bei einem **Update** des Pakets ersetzt die neue Fassung die alte, solange du sie nicht geändert hast; an/aus bleibt immer, wie du es eingestellt hast. Eine geänderte bleibt, wie sie ist: Die Vorschau des Updates nennt sie unter **„Diese Automatisierungen hast du geändert – sie bleiben, wie sie sind.“**, und **Neue Fassung aus dem Paket ansehen** zeigt, was die neue Fassung anders macht – lesbar wie bei den [Fassungen](fassungen.md). Willst du sie übernehmen, passt du deine Automatisierung danach an. Neue Automatisierungen aus dem Update stehen beim Aktualisieren wieder zur Wahl.
 - Entfernst du das Paket, gehen seine Automatisierungen mit, wenn sie aus und unverändert sind.
 - [Werkbank-Karten](#werkbank-karten), den [Aufruf von außen](#aufruf-von-aussen) und die Karten [nach außen](#nach-aussen) (*URL aufrufen*, *E-Mail senden*) bringen Pakete nicht mit – die gibt es nur in selbst angelegten Automatisierungen. Wohin Daten gehen, kann die Rechte-Vorschau eines Pakets nicht zeigen; das entscheidest du selbst.
 

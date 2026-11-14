@@ -107,7 +107,7 @@ export function aufgabenRouten(k: RoutenKontext): Route[] {
     { methode: 'POST', pfad: '/api/werkbank/ablaufvorlagen/:kennung/zuruecksetzen', zugang: 'admin', handler: async (a) => ok(await dienst.ablaeufe.zuruecksetzen(a.params.kennung)) },
     { methode: 'GET', pfad: '/api/werkbank/ablaufvorlagen/:kennung/verlauf', zugang: 'admin', handler: async (a) => ok(await dienst.ablaeufe.verlauf(a.params.kennung, Number((a.query as { anzahl?: unknown }).anzahl) || 50)) },
     { methode: 'GET', pfad: '/api/werkbank/ablaufvorlagen/:kennung/benutzt', zugang: 'admin', handler: async (a) => ok(await dienst.ablaeufe.benutzt(a.params.kennung, await zg(a))) },
-    { methode: 'POST', pfad: '/api/werkbank/ablaufvorlagen/:kennung/ausprobieren', zugang: 'admin', handler: async (a) => ok({ zeilen: await dienst.ablaeufe.ausprobieren(a.params.kennung, b(a).mappeId, b(a), ich(a), await zg(a)) }) },
+    { methode: 'POST', pfad: '/api/werkbank/ablaufvorlagen/:kennung/ausprobieren', zugang: 'admin', handler: async (a) => ok(await dienst.ablaeufe.ausprobieren(a.params.kennung, b(a).mappeId, b(a), ich(a), await zg(a))) },
     // Tägliche Zusammenfassung je Benutzer: Uhrzeit, Wochentage, Feiertage (#92, #94)
     { methode: 'GET', pfad: '/api/konto/zusammenfassung', zugang: 'angemeldet', handler: async (a) => ok(await zusammenfassung(ich(a))) },
     { methode: 'PUT', pfad: '/api/konto/zusammenfassung', zugang: 'angemeldet', handler: async (a) => {

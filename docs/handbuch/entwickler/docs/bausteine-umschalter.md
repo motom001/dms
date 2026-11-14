@@ -20,7 +20,7 @@ import { Umschalter } from '../bausteine';
 
 - **Für Bildschirmleser** eine Gruppe von Optionsfeldern (`role="radiogroup"` mit der Beschriftung, je Wahl `role="radio"` mit `aria-checked`) – angesagt wird, was gerade gewählt ist.
 - **Tastatur** wie bei Optionsfeldern: Tab erreicht nur die gewählte Wahl; Pfeiltasten (links/rechts und hoch/runter, am Ende wieder vorn) sowie Pos1 und Ende wählen und bleiben in der Gruppe; Tab führt weiter.
-- **Gewählt** ist nicht nur an der Farbe zu erkennen: gefüllt, fett und mit Rahmen in der Akzentfarbe.
+- **Gewählt** ist nicht nur an der Farbe zu erkennen: gefüllt, fett und mit Rahmen in der Akzentfarbe. Die fette Schrift ändert die Breite nicht (#1175): Unsichtbar hält jede Wahl den Platz für ihren fetten Text – beim Wechsel springt nichts.
 - **Unauffällig:** kleine Schrift, leise Farbe – er steht neben einem Feld, ohne wie eine Haupthandlung zu wirken.
 - **Merken** ist Sache der Seite (z. B. als Einstellung der Person mit `d.setzeEinstellung`).
 - **Am Handy** ist jede Wahl mindestens 44 × 44 px groß ([Am Handy](bausteine.md#handy)).

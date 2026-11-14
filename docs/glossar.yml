@@ -676,7 +676,7 @@ begriffe:
     begegnet: admin
   - begriff: Probelauf
     bereich: werkbank
-    beschreibung: Eine Automatisierung mit einer gewählten Mappe ausprobieren, ohne dass etwas geändert oder jemand benachrichtigt wird – Ablago zeigt nur, was passieren würde.
+    beschreibung: Eine Automatisierung mit einer gewählten Mappe ausprobieren, ohne dass etwas geändert oder jemand benachrichtigt wird – Ablago zeigt nur, was passieren würde. Bei einer Automatisierungsvorlage öffnet „Ausprobieren“ denselben Dialog wie an der Mappe, gekennzeichnet als „Probe – es wird nichts angelegt“, und zeigt danach, was die Empfänger sähen.
     einsteiger: erklaeren
     begegnet: admin
     nicht_verwenden: [Trockenlauf, trocken]
@@ -732,11 +732,18 @@ begriffe:
     code: "Ablaufvorlage, ablaufvorlagen, inhalt.ablaufvorlagen"
   - begriff: Gleich eingeschaltet
     bereich: werkbank
-    beschreibung: Eine mitgelieferte Automatisierung, die das Paket beim Installieren mit gesetztem Haken anbietet. Der Administrator kann sie abwählen; ein Update ändert an oder aus danach nie.
+    beschreibung: Eine mitgelieferte Automatisierung, deren Schalter das Paket beim Installieren auf „an“ stellt. Angelegt werden immer alle mitgelieferten; der Administrator wählt per Schalter, welche gleich laufen. Ein Update ändert an oder aus danach nie.
     einsteiger: erklaeren
     begegnet: admin
     verwandt: [Paket, Paket nach Zeitplan ausführen]
     code: eingeschaltet (Paket)
+  - begriff: Platzhalter
+    bereich: werkbank
+    beschreibung: Ein Feld oder Wert in geschweiften Klammern, den Ablago beim Anwenden einsetzt – etwa {titel} oder {kuendigung} in der Titel-Vorlage, einem zusammengesetzten Feld, einer Automatisierung oder Automatisierungsvorlage. Unter dem Text stehen sie mit verständlichem Namen zum Anklicken, gruppiert nach „Allgemein“ und Mappentyp; ein Klick setzt sie an der Schreibmarke ein.
+    einsteiger: erklaeren
+    begegnet: admin
+    verwandt: [Automatisierungsvorlage]
+    code: "Platzhalter (Baustein), platzhalterFuer, {feld}"
   - begriff: Nummernkreis
     bereich: werkbank
     beschreibung: Fortlaufende Nummern nach einem Muster wie {jjjj}-R{zaehler:4} (ergibt z. B. 2026-R0001), etwa für Rechnungsnummern.

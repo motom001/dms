@@ -45,3 +45,4 @@ Neuer Baustein: Ordner anlegen, in `index.ts` ausgeben, in `BAUSTEINE` in `muste
 | `Menue` | Knopf, der Handlungen öffnet (#1211, #1212): „Mappe ▾“, „⋯“; Gruppen, Symbole, gesperrte Punkte mit Grund darunter, Gefahr abgesetzt am Ende mit Rückfrage (auf Wunsch `mitGrund`); am Handy als Blatt |
 | `Wahlhaken` | Haken zum Auswählen von Zeilen (#1211): ohne sichtbare Beschriftung, `setze(an, bereich)` mit Umschalttaste, `teilweise` im Kopf; 44 px am Handy |
 | `Mehrfachauswahl` | Mehrere Einträge wählen (#1211, aus `ablage/` hierher): Suchfeld mit Vorschlägen, Gewähltes darunter mit leisem „Entfernen“ |
+| `Platzhalter`, `usePlatzhalterEinsetzen` | Platzhalter zum Anklicken (#1177): verständlicher Name, technischer Platzhalter im Tooltip, gruppiert nach „Allgemein“ und Mappentyp; Einsetzen an der Schreibmarke – Titel-Vorlage, Zusammengesetzt, Automatisierungen, Ablaufvorlagen |

@@ -7,7 +7,7 @@ import { VorbelegenEditor } from './Vorbelegen';
 import { TeilEinstellung } from './Teil';
 import { kreisImStandard } from '../../../shared/src/nummernkreis';
 import { moeglicheQuellen, moeglicheZielFelder } from '../../../shared/src/folgtaus';
-import { type ChangeEvent, Fragment, useEffect, useMemo, useRef, useState } from 'react';
+import { type ChangeEvent, Fragment, useEffect, useMemo, useState } from 'react';
 import { Ansage, umgestellt, useZiehen, Ziehgriff } from '../ziehen';
 import {
   ABSCHNITT_TITEL_MAX, ERKENNBAR_AN_MAX, FELDTYPEN, feldtypName, freierSchluessel, INDEXPLATZHALTER, istIndexplatzhalter, REGISTERARTEN, HISTORIENGRUPPEN, historiengruppeName, historiengruppenVon, type Historiengruppe, SYSTEMSPALTEN, type Systemspalte, schluesselAus, standardRegister, titelAus, trefferlistenVon, VERWEISARTEN, vorlageFelder, wirksameVorlage, pruefeTitelFilter,
@@ -41,7 +41,7 @@ import type { ErkennungStand } from '../api';
 import { artenFuer, artVon, AUS_DOKUMENT_STANDARD, BESCHRIFTUNG_MAX, ENGINE_EINGEBAUT, ERKENNUNG_FELDTYPEN, ERKENNUNG_HINWEIS_MAX, ERKENNUNGSARTEN, WIEDERFINDEN_FELDTYPEN, type AusDokument, type Erkennungsart } from '../../../shared/src/erkennung';
 import { gebietsschema } from '../../../shared/src/sprache';
 import { leseZeitraum, zeitraumText } from '../../../shared/src/feldarten';
-import { abfangen, Bereich, Fassungen, Feld, FeldGruppe, HakenFeld, Knopf, KnopfLink, useBereiche, type BereichListe, type Klappe } from '../bausteine';
+import { abfangen, Bereich, Fassungen, Feld, FeldGruppe, HakenFeld, Knopf, KnopfLink, Platzhalter, useBereiche, usePlatzhalterEinsetzen, type BereichListe, type Klappe } from '../bausteine';
 import { ArchivLeer, mitStichtag } from './ArchivLeer';
 
 /** Entfernen im Editor wirkt erst beim Speichern (#136). */
@@ -908,7 +908,7 @@ function FristEditor({ f, setze }: { f: EntwurfFeld; id: (x: string) => string; 
 
 function TitelEditor({ e, setze, klappe }: { e: Entwurf; setze: (v: string) => void; klappe: Klappe }) {
   const d = useDaten();
-  const feld = useRef<HTMLInputElement>(null);
+  const ein = usePlatzhalterEinsetzen();
   // Beispiele für die Vorschau: die ersten Mappen dieses Typs.
   const [mappen, setMappen] = useState<Mappe[]>([]);
   const [bezuege, setBezuege] = useState<Bezuege>({});
@@ -928,30 +928,19 @@ function TitelEditor({ e, setze, klappe }: { e: Entwurf; setze: (v: string) => v
     beispiel ?? { erstellt: jetzt, geaendert: jetzt });
   const automatisch = wirksameVorlage({ felder, titelVorlage: '' });
 
-  function einsetzen(key: string) {
-    const el = feld.current;
-    const von = el?.selectionStart ?? v.length;
-    const bis = el?.selectionEnd ?? von;
-    const platz = `{${key}}`;
-    setze(v.slice(0, von) + platz + v.slice(bis));
-    requestAnimationFrame(() => { el?.focus(); el?.setSelectionRange(von + platz.length, von + platz.length); });
-  }
 
   return (
     <Bereich id="titel" titel={t('mappentypen.editor.titel-einer-mappe')} klappe={klappe}
       kurz={<><code className="mono">{v || automatisch || '–'}</code>{vorschau ? <> · z. B. „{vorschau}“</> : null}</>}
       beschreibung={t('mappentypen.editor.so-heisst-eine-mappe')}>
       <Feld beschriftung={t('mappentypen.editor.vorlage')}>
-        <input id="titel-vorlage" ref={feld} className="mono" value={v} onChange={(ev) => setze(ev.target.value)}
+        <input id="titel-vorlage" {...ein.feld('titel', v, setze)} className="mono" value={v} onChange={(ev) => setze(ev.target.value)}
           placeholder={automatisch ? t('mappentypen.editor.leer-2', { automatisch }) : t('mappentypen.editor.titel-beispiel')} /></Feld>
-      <div className="chipwahl">
-        <span className="leise klein">{t('mappentypen.editor.einsetzen')}</span>
-        {/* Passwörter nie im Titel (#46). */}
-        {felder.filter((f) => f.typ !== 'passwort' && f.typ !== 'tabelle').map((f) => <Knopf key={f.key} groesse="klein" className="chipknopf" onClick={() => einsetzen(f.key)}>{f.label || f.key}</Knopf>)}
-        {Object.entries(INDEXPLATZHALTER).map(([k, name]) => (
-          <Knopf key={k} groesse="klein" className="chipknopf index" title={t('mappentypen.editor.indexwert-datum-an-dem', { k, wert: k === 'angelegt' ? t('mappentypen.editor.angelegt') : t('mappentypen.editor.zuletzt-geaendert') })} onClick={() => einsetzen(k)}>{name}</Knopf>
-        ))}
-      </div>
+      {/* Platzhalter zum Anklicken (#1177): derselbe Baustein wie bei Zusammengesetzt, Automatisierungen und Ablaufvorlagen. Passwörter nie im Titel (#46). */}
+      <Platzhalter einsetzen={ein.einsetzen} gruppen={[
+        { name: e.name || t('mappentypen.editor.dieser-mappentyp-2'), eintraege: felder.filter((f) => f.typ !== 'passwort' && f.typ !== 'tabelle').map((f) => ({ key: f.key, text: f.label || f.key })) },
+        { name: t('mappentypen.editor.platzhalter-allgemein'), eintraege: Object.entries(INDEXPLATZHALTER).map(([k, name]) => ({ key: k, text: name, titel: t('mappentypen.editor.indexwert-datum-an-dem', { k, wert: k === 'angelegt' ? t('mappentypen.editor.angelegt') : t('mappentypen.editor.zuletzt-geaendert') }) })) },
+      ]} />
       {unbekannt.length > 0 && <p className="fehlertext">{t('mappentypen.editor.diese-platzhalter-passen-zu')}{' '}{unbekannt.map((k) => `{${k}}`).join(', ')}</p>}
       {filterFehler.map((x) => <p key={x} className="fehlertext">{x}</p>)}
       <details className="filterhilfe">

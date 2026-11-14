@@ -186,7 +186,6 @@
   "editor.so-heisst-eine-mappe": "This is what a folder is called in lists and links. Fields in curly brackets are filled in; everything else stays as it is.",
   "editor.vorlage": "Template",
   "editor.leer-2": "empty = {automatisch}",
-  "editor.einsetzen": "Insert:",
   "editor.angelegt": "created",
   "editor.zuletzt-geaendert": "last changed",
   "editor.indexwert-datum-an-dem": "Index value {{k}}: date on which the folder was {wert}",
@@ -429,5 +428,6 @@
   "anzeige.eigene-organisation": "Reference points to an own organisation",
   "anzeige.eigene-organisation-feld": "“{feld}” points to an own organisation",
   "editor.chip.eigene-organisation": "Attribute: own organisation",
-  "editor.chip.schreibschutz": "changeable only with administration rights"
+  "editor.chip.schreibschutz": "changeable only with administration rights",
+  "editor.platzhalter-allgemein": "General"
 }

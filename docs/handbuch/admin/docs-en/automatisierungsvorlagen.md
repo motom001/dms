@@ -23,14 +23,14 @@ The middle lists all templates with **on/off**, origin as a chip (**Ablago** or 
 | Field | Meaning |
 |---|---|
 | **Name**, **Order**, **Description** | how it appears in the “Folder” menu; a lower number is higher up (1–99) |
-| **In the “Folder” menu for** | folder types where it is offered – none chosen: all |
-| **When** | **Straight away**, **On the chosen date** or **In …** days, weeks or months |
-| **Asks when applied** | **Recipient**, **Date** and **Text** – exactly what the small dialog on the folder shows. **Date** is always on with “On the chosen date”, off with “Straight away” and your choice with “In …” (see [Suggest a date](#datum-vorschlagen)) |
+| **In the “Folder” menu for** | folder types where it is offered – chosen as in a link field: type, click a hit, take it out again with **Remove**. None chosen: all |
+| **When** | **Straight away**, **On the chosen date** or **In** – number and unit (days, weeks, months) always follow directly. While “In” isn’t chosen they are pale; clicking into them chooses “In” |
+| **Asks when applied** | **Recipient**, **Date** and **Text** – exactly what the small dialog on the folder shows. **Date** is always on with “On the chosen date”, off with “Straight away” and your choice with “In” (see [Suggest a date](#datum-vorschlagen)); the reason is shown below the ticks |
 | **Then** | one or more **Task / notification** cards: for the chosen person, whoever applies the template, whoever created the folder or the person in a field of the folder (only with fixed folder types) |
 
 ### Suggest a date: “Remind me in 14 days” { #datum-vorschlagen }
 
-With **In …** you decide whether the date is fixed or only a **suggestion**:
+With **In** you decide whether the date is fixed or only a **suggestion**:
 
 | When | “Date” tick | What happens on the folder |
 |---|---|---|
@@ -39,7 +39,7 @@ With **In …** you decide whether the date is fixed or only a **suggestion**:
 | In 14 days | **on** | date field, **filled in with today + 14 days**, can be changed |
 | On the chosen date | always on | date field, filled in with today + 7 days |
 
-Example: Lena wants everyone in the household to be able to set a reminder on a folder with one click – usually in two weeks, sometimes earlier or later. She creates a template **Remind me in 14 days**: When **In 14 days**, under “Asks when applied” **Date** and **Text**, one **Task** card for “whoever applies it” with the text `{eingabe}`. The list shows it as “In 14 days (can be changed) → Task for whoever applies it”. When Jonas applies it on a folder, the date field already shows the date in 14 days; he writes what he wants to remember and only changes the date if it does not suit him. **Try it out** in the editor fills in the date the same way.
+Example: Lena wants everyone in the household to be able to set a reminder on a folder with one click – usually in two weeks, sometimes earlier or later. She creates a template **Remind me in 14 days**: When **In 14 days**, under “Asks when applied” **Date** and **Text**, one **Task** card for “whoever applies it” with the text `{eingabe}`. The list shows it as “In 14 days (can be changed) → Task for whoever applies it”. When Jonas applies it on a folder, the date field already shows the date in 14 days; he writes what he wants to remember and only changes the date if it does not suit him. **Try it out** in the editor opens exactly this dialog, with the same date.
 
 ![Template “Remind me in 14 days”: When “In 14 days”, “Date” ticked under “Asks when applied”](bilder/werkbank-automatisierungsvorlage-vorschlag.png)
 
@@ -47,11 +47,16 @@ Templates without the tick behave as before: “In 6 months” stays fixed.
 
 A card’s text knows the placeholders of [automations](automatisierungen.md) (`{titel}`, `{mappentyp}`, `{heute}`, `{datum}`, the fields of the folder type), plus `{eingabe}` (the text typed when applying), `{person}` (who applies it) and `{empfaenger}`. A template that asks for the text needs `{eingabe}` in a card.
 
+Below the text the placeholders are **clickable** as with automations: under **General** input when applied, who applies it, recipient, folder title, folder type, today and date of the run, below them the fields of each chosen folder type – so you see where placeholders come from. If a field isn’t in all chosen folder types, “only for …” is shown with it. A click inserts the placeholder at the cursor; hovering shows the technical name.
+
 The **switch** at the top of the editor (off) takes the template out of the “Folder” menu – runs already planned still happen. You can delete your own templates once no open runs depend on them; reset Ablago’s with **Reset to delivered version**.
 
 Below:
 
-- **Try it out:** choose a folder and the answers – Ablago shows what would happen (with your rights as the person) and who would not be allowed to see something. Nothing is created.
+- **Try it out:** choose a folder and click **Try it out**. **The same small dialog as on the folder** opens – with exactly the template’s questions, the same pre-filled values (e.g. the suggested date), the same labels and order –, marked at the top with **“Trial – nothing is created.”** After confirming, Ablago shows what the recipients would see: per recipient the task (due when) or the notification with folder and text, and who would not be allowed to see the folder or all of it; under **Summary** the same lines in brief. Ablago tries it with your rights as the person. Then **Again** or **Adjust template**. Nothing is created.
+
+  ![Try it out: “Remind me in 14 days” on the electricity contract – the task as the recipient would see it, due in 14 days](bilder/werkbank-automatisierungsvorlage-probe.png)
+
 - **In use on:** all open runs of the template with a link to the folder, date and person. Titles appear only for folders you may read.
 - **History:** applied, planned, ran, paused, deleted, resumed – with time and person. It is kept for 30 days or 200 entries per template.
 - **Versions:** who changed what and when, compare two versions and restore an earlier one – as for all settings in the Workbench, see [Versions](fassungen.md). **Reset to delivery** is itself a version; deleted own templates are listed with a deletion note below the list.

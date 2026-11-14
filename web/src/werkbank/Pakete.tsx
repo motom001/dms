@@ -1,4 +1,4 @@
-import { Feld, FeldGruppe, HakenFeld, Knopf, KnopfLink, Reiter, ReiterFlaeche, Schalter } from '../bausteine';
+import { Feld, HakenFeld, Knopf, KnopfLink, Reiter, ReiterFlaeche, Schalter } from '../bausteine';
 import { Fragment, useCallback, useEffect, useState, type ReactNode } from 'react';
 import { Symbol } from '../Symbol';
 import { ergaenzungenVon, hatNetz, hatSchnittstelle, inMB, istKiPaket, legtEtwasAn, herkunftText, KATALOG_LINK_REL, katalogSeiteMitVersion, sammelSeiteMitVersion, laeuferZustandText, vergleicheVersion, vorausgewaehlt, type AblaufErgebnis, type HerkunftPruefung, type InstalliertesPaket, type Katalog, type KatalogPaket } from '../../../shared/src/pakete';
@@ -27,6 +27,7 @@ import { UmbauVorschau, umbauStart, type UmbauStand } from './PaketUmbau';
 import { hatGesamt } from '../../../shared/src/verwaltungsrecht';
 import type { UmbauEntscheidungen } from '../../../shared/src/umbau';
 import { t as tx, t, tn } from '../sprache';
+import { AutomatisierungenSchalter, GeaenderteAutomatisierungen } from './PaketAutomatisierungen';
 import { istKernVorlage, kernVorlage } from '../../../shared/src/ablaufvorlagen';
 import { KEINE_LIZENZ, lizenzArtVon, type SelbstErstellt } from '../../../shared/src/paketerstellung';
 import { HerkunftZeile } from './Herkunft';
@@ -877,16 +878,15 @@ export function VorschauBlock({ v, warnung, los, abbrechen, titel, abbrechenText
       {!v.update && v.beispiele > 0 && <HakenFeld beschriftung={<>{t('werkbank.pakete.beispiel-mappen-anlegen', { beispiele: v.beispiele })}{v.beispielDokumente?.anzahl ? ` ${t('werkbank.pakete.mit-beispiel-dokumenten', { anzahl: v.beispielDokumente.anzahl, mb: inMB(v.beispielDokumente.bytes) })}` : ''}</>}>
         <input type="checkbox" checked={beispiele} onChange={(e) => setBeispiele(e.target.checked)} />
       </HakenFeld>}
+      {/* Mitgelieferte Automatisierungen (#1174): Schalter statt Haken – angelegt werden alle, gewählt wird, welche gleich laufen. */}
       {neueAutos.length > 0 && (
-        <FeldGruppe beschriftung={tx('pakete.ablauf.automatisierungen')} hinweis={tx('pakete.ablauf.automatisierungen.text')}>
-          <div className="haken-untereinander">
-          {neueAutos.map((a) => (
-            <label key={a.schluessel} className="haken"><input type="checkbox" checked={!ohneAuto.includes(a.schluessel)} onChange={(e) => setOhneAuto(e.target.checked ? ohneAuto.filter((x) => x !== a.schluessel) : [...ohneAuto, a.schluessel])} />
-              <span>{a.name}{a.zeitplan && <> <small className="leise">{tx('pakete.ablauf.automatisierungen.zeitplan', { zeitplan: a.zeitplan })}</small></>}{a.beschreibung && <small className="hilfe">{a.beschreibung}</small>}</span></label>
-          ))}
-          </div>
-        </FeldGruppe>
+        <section className="stapel" aria-label={tx('pakete.ablauf.automatisierungen')}>
+          <h3>{tx('pakete.ablauf.automatisierungen')}</h3>
+          <AutomatisierungenSchalter aus={ohneAuto} setAus={setOhneAuto}
+            liste={neueAutos.map((a) => ({ schluessel: a.schluessel, name: a.name, hinweis: [a.zeitplan && tx('pakete.ablauf.automatisierungen.zeitplan', { zeitplan: a.zeitplan }), a.beschreibung].filter(Boolean).join(' · ') || undefined }))} />
+        </section>
       )}
+      {v.update && <GeaenderteAutomatisierungen liste={v.automatisierungen ?? []} />}
       {/* Automatisierungsvorlagen (#1044, Rechte-Vorschau): jede mit ihren Karten – nur Aufgaben und Benachrichtigungen. */}
       {!!v.ablaufvorlagen?.length && (
         <div className="stapel" data-anker="pakete.ablaufvorlagen">

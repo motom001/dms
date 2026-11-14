@@ -124,6 +124,12 @@ export interface AblaufVerlauf {
 /** Antworten beim Anwenden. */
 export interface AblaufAntworten { empfaengerId?: unknown; datum?: unknown; text?: unknown }
 
+/**
+ * Ausprobieren (#1176): was ein Empfänger sähe – Aufgabe oder Benachrichtigung, an wen, mit welchem Text und (bei einer
+ * Aufgabe, die später läuft) an welchem Tag sie fällig wird; `hinweis`, wenn er die Mappe nicht oder nicht ganz sieht.
+ */
+export interface AblaufProbe { als: 'aufgabe' | 'benachrichtigung'; an: string; text: string; datum: string | null; hinweis?: string }
+
 /* ---------- Kern-Vorgaben ---------- */
 
 /**
