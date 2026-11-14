@@ -153,6 +153,7 @@ async function werkbankSeiten(s) {
     seite('Verschlüsselung', '/werkbank/verschluesselung', (s) => s.locator('#notfallkontakte').waitFor()),
     seite('Auskünfte', '/werkbank/auskuenfte'),
     seite('Löschkonzept', '/werkbank/loeschkonzept'),
+    seite('Löschprotokoll', '/werkbank/loeschprotokoll', (s) => s.locator('#loeschprotokoll').waitFor()),
     seite('Postfach neu', '/werkbank/postfaecher/neu', (s) => s.locator('[data-sprungleiste]').waitFor()),
     seite('Eingangsordner', '/werkbank/eingangsordner'),
     seite('WebDAV', '/werkbank/webdav'),

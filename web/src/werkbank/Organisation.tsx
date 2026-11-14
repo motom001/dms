@@ -249,7 +249,7 @@ async function speichereSeite(g: Entwurf, x: Entwurf, alt: { stand: Organisation
  * `datenschutz`: nur mit Recht auf Auskünfte oder Löschkonzept (#818) – sonst stehen die Vorgaben der Auskünfte nicht hier,
  * nur ein Satz, wer sie ändert.
  */
-export function OrganisationPanel({ z, nutzung, datenschutz }: { z: OrganisationZustand; nutzung: NutzungZustand; datenschutz: DatenschutzZustand | null }) {
+export function OrganisationPanel({ z, nutzung, datenschutz, nachNutzung }: { z: OrganisationZustand; nutzung: NutzungZustand; datenschutz: DatenschutzZustand | null; nachNutzung?: () => void }) {
   const d = useDaten();
   const { s, m, ds, gespeichert, fehler } = seitenStand(z, nutzung, datenschutz);
   const [e, setE] = useState<Entwurf | null>(null);
@@ -271,7 +271,8 @@ export function OrganisationPanel({ z, nutzung, datenschutz }: { z: Organisation
       z.setStand(n.stand); nutzung.setStand(n.merkmale); setE(entwurfAus(n.stand, n.merkmale, n.datenschutz));
       if (n.datenschutz !== ds) void datenschutz?.laden();
       // Formulare der Ablage zeigen gleich, was jetzt dazugehört.
-      if (n.merkmale !== m) await d.neuLaden();
+      // Die Leiste folgt (Vorlage, Gruppe Datenschutz #1184).
+      if (n.merkmale !== m) { await d.neuLaden(); nachNutzung?.(); }
       setMeldung({ art: 'gut', text: n.merkmale !== m ? t('werkbank.nutzung.gespeichert') : t('werkbank.organisation.gespeichert') });
     } catch (f) { setMeldung({ art: 'schlecht', text: (f as Error).message }); } finally { setSendet(false); }
   }

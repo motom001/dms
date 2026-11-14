@@ -1,6 +1,5 @@
 import { ANREDE_BEISPIEL, ANREDE_NAME, ANREDEN, textDritte, type Anrede } from '../../../shared/src/anrede';
 import { istRechteStandard, rechteStandard, type Datenschutz } from '../../../shared/src/auskunft';
-import { bereichName } from '../../../shared/src/werkbankansicht';
 import { Feld, FeldGruppe, Knopf } from '../bausteine';
 import { Hilfe } from '../Hilfe';
 import { Link } from '../ort';
@@ -22,7 +21,7 @@ export function AuskunftVorgaben({ w, setze }: { w: Vorgaben; setze(x: Vorgaben)
   const eigen = !istRechteStandard(w.rechte);
   return (
     <section className="blatt stapel" id="auskunft-vorgaben" aria-labelledby="auskunft-vorgaben-titel">
-      <h2 className="h3" id="auskunft-vorgaben-titel">{bereichName('auskuenfte')} <Hilfe ort="werkbank.auskunft.vorgaben" /></h2>
+      <h2 className="h3" id="auskunft-vorgaben-titel">{t('werkbank.auskunft.vorgaben.titel')} <Hilfe ort="werkbank.auskunft.vorgaben" /></h2>
       <p className="leise klein">{t('werkbank.auskunft.einstellungen.text')} <Link to="/werkbank/auskuenfte" className="verweis">{t('werkbank.auskunft.vorgaben.zu-auskuenften')}</Link></p>
       <AnredeWahl anrede={w.anrede} setAnrede={(anrede) => setze({ ...w, anrede, rechte: eigen ? w.rechte : rechteStandard(anrede) })} />
       <Feld beschriftung={t('werkbank.datenschutz.rechte-der-person')} id="auskunft-rechte"

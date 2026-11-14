@@ -83,7 +83,7 @@ A family member or someone from the business who has an account in Ablago wants 
 
 ### Access for a person who isn't a user { #auskunft-an-eine-person-die-kein-benutzer-ist }
 
-A tenant, customer or contact asks for their data. **Workbench → Data protection requests** takes care of this; the details are [further below](#auskunft-nach-art-15-dsgvo).
+A tenant, customer or contact asks for their data. **Workbench → Data protection → Access requests** takes care of this; the details are [further below](#auskunft-nach-art-15-dsgvo).
 
 1. **Set up once:** controller (at the [own organisation](organisation.md)), recipients and the folder types that concern a person, each with a purpose ([Defaults for every access request](#einstellungen)).
 2. **Choose the person** – or on their folder **Folder ▾ → Create access copy …** – and enter when the request came in. **Create deadline as a task** reminds you under "To do".
@@ -96,7 +96,7 @@ A tenant, customer or contact asks for their data. **Workbench → Data protecti
 
 Someone demands that their data be deleted (Art. 17 GDPR).
 
-1. **Find what belongs to the person:** as with the access copy – the checklist under **Workbench → Data protection requests** shows all folders that belong to the person and those in which they are only named. You don't need to create anything for this.
+1. **Find what belongs to the person:** as with the access copy – the checklist under **Workbench → Data protection → Access requests** shows all folders that belong to the person and those in which they are only named. You don't need to create anything for this.
 2. **Check whether a retention period stands in the way** (Art. 17(3)): folders of a folder type in [archive mode](archiv.md) carry **Archive · keep until …** and can't be deleted before the end of the period anyway – not even by administrators. Also check folders without archive mode: invoices or contracts can have periods that you haven't entered (yet).
 3. **A period stands in the way → lock instead of deleting.** The folder stays until the end of the period; only use it for what you have to keep it for.
     - **Restrict access:** give the folder type a yes/no field such as *Locked* and create a rule in the [permissions](berechtigungen.md#bedingungen): if "Locked is yes", then reading and editing only for a role such as *Data protection*. Administrators still see everything.
@@ -125,17 +125,17 @@ For landlords, the self-employed and businesses: decide once how long which data
 5. **How long deleted data has an after-effect:** set the retention of the [bin](papierkorb.md#aufbewahrung) (default 30 days), the history of deleted folders (default 365 days) and the retention of [backups](sicherung.md#zeitplan-und-aufbewahrung) to fit your concept.
 6. **Check regularly:** e.g. every year in January go through **Workbench → Retention expired** and delete what may go – a customer or contract partner with everything that hangs on it with [Delete with linked folders](#mit-verknupften-mappen-loschen). Nothing is ever deleted automatically.
 7. **Lock on request** as described under [Deletion on request](#loschen-auf-verlangen).
-8. **Document it:** create the deletion concept under **Workbench → Deletion concept** (PDF or Word), complete the [square brackets] and store it as a folder in Ablago. If folder types or periods change, create it again.
+8. **Document it:** create the deletion concept under **Workbench → Data protection → Deletion concept** (PDF or Word), complete the [square brackets] and store it as a folder in Ablago. If folder types or periods change, create it again.
 
-## Giving access: Workbench → Data protection requests { #auskunft-erteilen }
+## Giving access: Workbench → Data protection → Access requests { #auskunft-erteilen }
 
-Whoever manages data of customers, tenants or contacts must be able to say on request what they have stored about them – and in a form the person can take along. Under **Workbench → Data protection requests**, Ablago does this in a few minutes.
+Whoever manages data of customers, tenants or contacts must be able to say on request what they have stored about them – and in a form the person can take along. Under **Workbench → Data protection → Access requests**, Ablago does this in a few minutes.
 
 --8<-- "ausgeblendet-organisation.md"
 
-![Workbench → Data protection requests](bilder/werkbank-datenschutz.png)
+![Workbench → Data protection → Access requests](bilder/werkbank-datenschutz.png)
 
-Data protection is in the Workbench under **Users and security** in two entries: **Data protection requests** (everything about requests under Art. 15) and **[Deletion concept](loeschkonzept.md)** (deletion concept, [personal data in folder types](#einstellungen) and [deletion log](#loschprotokoll)). The old address `/werkbank/datenschutz` leads to the requests.
+Data protection is a small group of its own in the Workbench, **Data protection**, with three entries (#1184): **Access requests** (everything about requests under Art. 15), **[Deletion concept](loeschkonzept.md)** (close gaps, create the document, [personal data in folder types](#einstellungen)) and **[Deletion log](#loschprotokoll)** (view and export the evidence). The group is only in the sidebar if the Library is [also used for work](organisation.md#nutzung) – in a purely private Library it is missing (later the Workbench level per person takes this over); the pages stay reachable through their addresses. The old address `/werkbank/datenschutz` leads to the access requests, `/werkbank/loeschkonzept#loeschprotokoll` to the deletion log.
 
 ### The list of access copies { #liste }
 
@@ -156,7 +156,7 @@ If you choose an access copy, everything is in one place on the right – organi
 
 ### Defaults for every access request { #einstellungen }
 
-Set up once – since #1183 together with your own organisation: form of address, the person’s rights and recipients are under **Workbench → Settings → [Own organisation](organisation.md) → Data access requests** and are saved with that page’s save bar. As long as no access copy is chosen, the requests page shows **Open defaults** on the right; the assistant (**+ New**) points there in its header – on a phone that is the way there. The old address `/werkbank/auskuenfte/einstellungen` leads there too. Which folder types concern a person is under **[Deletion concept](loeschkonzept.md) → Personal data in folder types**, because the deletion concept is made from it:
+Set up once – since #1183 together with your own organisation: form of address, the person’s rights and recipients are under **Workbench → Settings → [Own organisation](organisation.md) → Data protection requests** and are saved with that page’s save bar. As long as no access copy is chosen, the requests page shows **Open defaults** on the right; the assistant (**+ New**) points there in its header – on a phone that is the way there. The old address `/werkbank/auskuenfte/einstellungen` leads there too. Which folder types concern a person is under **[Deletion concept](loeschkonzept.md) → Personal data in folder types**, because the deletion concept is made from it:
 
 - **Controller:** since #995 name and address come from the [own organisation](organisation.md) (plus email, phone and – if there is one – the data protection officer) and appear as sender on the cover sheet and in the email to the person. If there is no own organisation yet (or the Library is not [used for work](organisation.md#nutzung)), the previous entry applies; the Workbench offers to take it over as own organisation.
 - **Form of address in documents for third parties** comes **first**: du or Sie, see [below](#anrede).
@@ -168,7 +168,7 @@ The **storage period** on the cover sheet comes from [archive mode](archiv.md): 
 
 ### Form of address in documents for third parties: du or Sie { #anrede }
 
-In German, Ablago addresses you with the informal "du" – and by default also the people to whom an access copy goes. If you otherwise write to your tenants or customers with the formal "Sie", switch to **Sie** under **Own organisation → Data access requests → Form of address in documents for third parties**. An example sentence shows both forms side by side; the choice takes effect with the save button of that page. It applies to the whole installation and to everything that goes to people **outside** Ablago. In English there is only "you"; the setting only makes a difference to German documents (texts for third parties are in the installation's language, see [Languages](sprachen.md)).
+In German, Ablago addresses you with the informal "du" – and by default also the people to whom an access copy goes. If you otherwise write to your tenants or customers with the formal "Sie", switch to **Sie** under **Own organisation → Data protection requests → Form of address in documents for third parties**. An example sentence shows both forms side by side; the choice takes effect with the save button of that page. It applies to the whole installation and to everything that goes to people **outside** Ablago. In English there is only "you"; the setting only makes a difference to German documents (texts for third parties are in the installation's language, see [Languages](sprachen.md)).
 
 | What | Where |
 | --- | --- |
@@ -290,7 +290,7 @@ The following applies:
 
 ## Deletion log { #loschprotokoll }
 
-**Workbench → Deletion concept → Deletion log** proves **that** and **when** you deleted (accountability, Art. 5(2) GDPR) – without the log itself containing the deleted data again. A folder's history isn't enough for this: it goes with the folder, and the technical [log](fehlersuche.md#protokoll) expires after 24 hours.
+**Workbench → Data protection → Deletion log** proves **that** and **when** you deleted (accountability, Art. 5(2) GDPR) – without the log itself containing the deleted data again. A folder's history isn't enough for this: it goes with the folder, and the technical [log](fehlersuche.md#protokoll) expires after 24 hours.
 
 ### What it contains { #was-drinsteht }
 
@@ -317,7 +317,7 @@ All ways are covered: individually, several selected, with linked folders, "Rete
 
 ### Viewing and output { #ansehen-und-ausgeben }
 
-![Workbench → Deletion concept → Deletion log with filters, search by file and entries](bilder/werkbank-loeschprotokoll.png)
+![Workbench → Data protection → Deletion log with filters, search by file and entries](bilder/werkbank-loeschprotokoll.png)
 
 - **Filters:** period, folder type, reason, step; a click on an operation shows all folders and documents of this operation.
 - **Search by number** (number sequence or archive number) or **checksum**.

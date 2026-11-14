@@ -1385,15 +1385,16 @@ async function main() {
     await bild(sa, 'abrufseite');
     await ka.close();
   }
-  // Löschkonzept (#469) und Löschprotokoll (#470): einen alten Vertragspartner löschen (Grund „Nicht mehr nötig“), dann beide Abschnitte.
+  // Löschkonzept (#469) und Löschprotokoll (#470): einen alten Vertragspartner löschen (Grund „Nicht mehr nötig“), dann beide Seiten.
   {
     const alt = await api('POST', '/api/mappen', { typId: d.typ('Vertragspartner').id, werte: { name: 'Alter Stromanbieter' } });
     await api('DELETE', `/api/mappen/${alt.id}?grund=nicht_noetig`);
     await geheZu(s, '/werkbank/loeschkonzept');
     await s.locator('#loeschkonzept').evaluate((e) => e.scrollIntoView({ block: 'start' }));
     await bild(s, 'werkbank-loeschkonzept');
+    // Löschprotokoll (#1184): eigener Bereich der Gruppe Datenschutz.
+    await geheZu(s, '/werkbank/loeschprotokoll');
     await s.locator('#loeschprotokoll .lp-eintrag').first().waitFor();
-    await s.locator('#loeschprotokoll').evaluate((e) => e.scrollIntoView({ block: 'start' }));
     await bild(s, 'werkbank-loeschprotokoll');
   }
   // Eigene Organisation (#1170, #1182, #1183): Nutzung oben, Rollen, Vorgaben der Auskünfte – die ganze Seite.

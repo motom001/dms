@@ -65,7 +65,7 @@ Ablago reads the details **by the meaning of the fields**, not by fixed keys –
 
 Ablago never reads passwords, customer number, IBAN, description, documents or anything else for this. The Workbench does not show the folder’s title either (the title template could contain other fields). Changes are only possible in the Library with your normal rights; **Edit in the Library** takes you there.
 
-## Data access requests { #auskunft-vorgaben }
+## Data protection requests { #auskunft-vorgaben }
 
 Below the roles are the **defaults for every access request**: first the form of address (du or Sie), then the text **The person’s rights**, which follows the form of address until you change it (with **Reset to suggestion**), and the **recipients** as a suggestion for every request. So you set up the organisation and the requests in one go; the requests page points here. Details under [Defaults for every access request](datenschutz.md#einstellungen). They may be changed by whoever may manage data access requests or the deletion concept; otherwise only a sentence about it appears here.
 
