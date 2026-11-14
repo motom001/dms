@@ -35,7 +35,7 @@ Which views exist is set by an administrator. If you'd like one, let them know.
 
 The list shows the view's folders, sorted by title. It first loads 100 folders and automatically the next ones when you scroll down.
 
-With **+** and the name of the folder type at the top right, e.g. **+ Invoice**, you create a new folder of this folder type (see [Folders](mappen.md)). If the button is missing, folders of this folder type may not be created in the Library – that is the case for *User*, for example. Beside it, **⋯** opens more actions for the whole view: export all folders, sort by title again and – for administrators – edit the view.
+With **+** and the name of the folder type at the top right, e.g. **+ Invoice**, you create a new folder of this folder type (see [Folders](mappen.md)). If the button is missing, folders of this folder type may not be created in the Library – that is the case for *User*, for example. Exporting and deleting work through the selection (see below); administrators edit the view itself in the Workbench under *Views*.
 
 ### Compact or as a table {#kompakt-oder-als-tabelle}
 
@@ -54,7 +54,7 @@ Which details appear as columns is set by the administrator – per folder type,
 
 In the table, a click on a column heading sorts by this column, a second click reverses the order; an arrow in the column heading shows what is sorted by and in which direction. Empty values are always at the end.
 
-Ablago remembers your sorting per view – on all devices. **⋯ → Sort by title again** restores the default – also in the narrow list, which has no column headings.
+Ablago remembers your sorting per view – on all devices. If the list is sorted differently, this is shown next to the number of folders; **Sort by title again** beside it restores the default – also in the narrow list, which has no column headings.
 
 Links and long texts can't be sorted by; these columns have no arrow.
 
@@ -159,7 +159,7 @@ In a view's list you select several folders to handle them in one step.
 
 ### Export { #exportieren }
 
-**Export …** in the action bar passes the selection out of the view, **⋯ → Export all …** at the top of the list all hits (with your search and sorting):
+**Export …** in the action bar passes the selection out of the view – with **Select all …** first, all hits (with your search and sorting):
 
 - **Excel (.xlsx)** – a table in which dates, amounts and percentages are real values: Excel can sort and calculate with them afterwards. A period is written as text ("3 months").
 - **CSV** – the same table for any spreadsheet program, in German format (semicolon, date DD.MM.YYYY, amounts with a decimal comma).

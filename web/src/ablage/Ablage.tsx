@@ -38,7 +38,7 @@ import { AufgabenWeitergeben } from '../profil/Abwesenheit';
 import { ErledigenUmschalter, MeineAufgabenWeitergeben, TermineSicht, useErledigenAnsicht } from './Termine';
 import { Ehemalig } from '../Person';
 import { gebietsschema } from '../../../shared/src/sprache';
-import { HakenFeld, Knopf, KnopfLink, Menue, Schalter, Suchfeld, Wahlhaken, type GefahrRueckfrage, type MenuePunkt } from '../bausteine';
+import { HakenFeld, Knopf, KnopfLink, Schalter, Suchfeld, Wahlhaken, type GefahrRueckfrage } from '../bausteine';
 import type { LoeschAnlass } from '../../../shared/src/loeschprotokoll';
 
 /**
@@ -330,7 +330,7 @@ function Liste(p: {
 }) {
   const d = useDaten();
   // Favoriten benachrichtigen (#506): ohne Freigabe der Werkbank kein Schalter an den Favoriten.
-  const { favoritenBenachrichtigung, ich } = useKonto();
+  const { favoritenBenachrichtigung } = useKonto();
   const anhang = p.anhang ?? '';
   const [eingabe, setEingabe] = useState('');
   const [suche, setSuche] = useState('');
@@ -457,22 +457,14 @@ function Liste(p: {
     } catch (x) { setErgebnis({ text: (x as Error).message, liste: [] }); }
   }
 
-  // „⋯“ im Kopf der Ansicht (#1212): alle exportieren, wieder nach Titel sortieren, Ansicht in der Werkbank bearbeiten.
-  const verwaltet = d.sicht(p.sicht);
-  const kopfMenue = ([
-    p.export && !!s.gesamt && { key: 'export', symbol: 'herunterladen', inhalt: t('ablage.ablage.alle-exportieren', { zahl: zahl(s.gesamt ?? 0) }), tu: () => { w.leeren(); setExportOffen(true); } },
-    sortierung && !p.sortierungFest && { key: 'titel', symbol: 'sortierbar', inhalt: t('ablage.ablage.nach-titel-sortieren'), titel: t('ablage.ablage.sortiert-nach', { spaltenName: spaltenName(sortierung.spalte, p.typ), wert: '' }), tu: () => setzeSortierung(null) },
-    ich.rolle === 'admin' && verwaltet && { key: 'bearbeiten', symbol: 'extern', inhalt: t('ablage.ablage.ansicht-bearbeiten'), tu: () => geheZu(`/werkbank/sichten/${verwaltet.id}`) },
-  ] as Array<MenuePunkt | false | null | undefined | ''>).filter((x): x is MenuePunkt => !!x);
   return (
     <>
       <div ref={mess} className="breitenmesser" aria-hidden="true" />
-      {/* Kopf der Ansicht (#1212): Titel, „+ <Typ>“ (Anlegen) und „⋯“ mit Exportieren und dem Weg in die Werkbank. */}
+      {/* Kopf der Ansicht (#1212): Titel und „+ <Typ>“ (Anlegen). Exportieren und Löschen gehen über die Auswahl, die Ansicht bearbeitet man in der Werkbank. */}
       <Listenkopf titel={p.titel} hilfe={p.hilfe} beschreibung={p.beschreibung}>
         <div className="listenkopf-knoepfe">
           {p.neu && <KnopfLink to={`/ablage/${p.sicht}/neu`} art="anlegen" groesse="klein">{p.typ ? t('ablage.ablage.neu-typ', { typ: typName(p.typ) }) : t('ablage.ablage.neu')}</KnopfLink>}
           {p.post && p.typ && <div className="postknopf"><PostKnopf /></div>}
-          {kopfMenue.length > 0 && <Menue beschriftung={t('ablage.ablage.mehr')} nurSymbol punkte={kopfMenue} anker="liste.mehr" />}
         </div>
       </Listenkopf>
       {p.kopf}
@@ -496,7 +488,9 @@ function Liste(p: {
       {anzahlText && (
         <p className="listenzahl leise klein" aria-live="polite">
           {anzahlText}{s.mappen.length < (s.gesamt ?? 0) ? t('ablage.ablage.geladen', { zahl: zahl(s.mappen.length) }) : ''}
-          {/* Sortiert wird über die Spaltenköpfe (#1212); „nach Titel“ steht im Menü „⋯“. Kein Exportieren mehr in dieser Zeile. */}
+          {/* Sortiert wird über die Spaltenköpfe (#1212). Ist anders sortiert als nach Titel, steht das hier mit dem Weg zurück. */}
+          {sortierung && !p.sortierungFest && <> {t('ablage.ablage.sortiert-nach', { spaltenName: spaltenName(sortierung.spalte, p.typ), wert: '' })}{' '}
+            <Knopf art="link" groesse="klein" onClick={() => setzeSortierung(null)}>{t('ablage.ablage.nach-titel-sortieren')}</Knopf></>}
           {geaenderteHier.length > 0 && <span className="listenzahl-geaendert"> {' '}<span className="abo-punkt" aria-hidden="true" /> {t('ablage.ablage.geaendert-zahl', { zahl: zahl(geaenderteHier.length) })}{' '}
             <Knopf groesse="klein" onClick={() => alleGesehen()}>{t('ablage.ablage.alle-gesehen')}</Knopf></span>}
         </p>

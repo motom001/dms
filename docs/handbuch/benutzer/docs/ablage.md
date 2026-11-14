@@ -35,7 +35,7 @@ Welche Ansichten es gibt, legt ein Administrator fest. Wünschst du dir eine, sa
 
 Die Liste zeigt die Mappen der Ansicht, nach Titel sortiert. Sie lädt zunächst 100 Mappen und beim Herunterscrollen automatisch die nächsten.
 
-Mit **+** und dem Namen des Mappentyps oben rechts, etwa **+ Rechnung**, legst du eine neue Mappe dieses Mappentyps an (siehe [Mappen](mappen.md)). Fehlt der Knopf zum Anlegen, dürfen von diesem Mappentyp in der Ablage keine Mappen angelegt werden – bei *Benutzer* zum Beispiel ist das so. Rechts davon öffnet **⋯** weitere Handlungen für die ganze Ansicht: alle Mappen exportieren, wieder nach Titel sortieren und – für Administratoren – die Ansicht bearbeiten.
+Mit **+** und dem Namen des Mappentyps oben rechts, etwa **+ Rechnung**, legst du eine neue Mappe dieses Mappentyps an (siehe [Mappen](mappen.md)). Fehlt der Knopf zum Anlegen, dürfen von diesem Mappentyp in der Ablage keine Mappen angelegt werden – bei *Benutzer* zum Beispiel ist das so. Exportieren und Löschen gehen über die Auswahl (siehe unten); die Ansicht selbst bearbeiten Administratoren in der Werkbank unter *Ansichten*.
 
 ### Kompakt oder als Tabelle
 
@@ -54,7 +54,7 @@ Welche Angaben als Spalten erscheinen, legt der Administrator fest – je Mappen
 
 In der Tabelle sortiert ein Klick auf eine Spaltenüberschrift nach dieser Spalte, ein zweiter Klick dreht die Reihenfolge um; ein Pfeil im Spaltenkopf zeigt, wonach und in welche Richtung sortiert ist. Leere Werte stehen immer am Ende.
 
-Ablago merkt sich deine Sortierung je Ansicht – auf allen Geräten. **⋯ → Wieder nach Titel sortieren** stellt die Grundeinstellung wieder her – auch in der schmalen Liste, die keine Spaltenköpfe hat.
+Ablago merkt sich deine Sortierung je Ansicht – auf allen Geräten. Ist anders sortiert, steht das neben der Zahl der Mappen; **Wieder nach Titel sortieren** daneben stellt die Grundeinstellung wieder her – auch in der schmalen Liste, die keine Spaltenköpfe hat.
 
 Nach Verweisen und langen Texten lässt sich nicht sortieren; diese Spalten haben keinen Pfeil.
 
@@ -159,7 +159,7 @@ In der Liste einer Ansicht wählst du mehrere Mappen aus, um sie in einem Schrit
 
 ### Exportieren
 
-**Exportieren …** in der Aktionsleiste gibt die Auswahl aus der Ansicht heraus, **⋯ → Alle … exportieren** oben an der Liste alle Treffer (mit deiner Suche und Sortierung):
+**Exportieren …** in der Aktionsleiste gibt die Auswahl aus der Ansicht heraus – mit **Alle … auswählen** vorher alle Treffer (mit deiner Suche und Sortierung):
 
 - **Excel (.xlsx)** – eine Tabelle, in der Datum, Beträge und Prozent echte Werte sind: Excel kann danach sortieren und rechnen. Ein Zeitraum steht als Text („3 Monate“).
 - **CSV** – dieselbe Tabelle für jede Tabellenkalkulation, im deutschen Format (Semikolon, Datum TT.MM.JJJJ, Beträge mit Komma).
