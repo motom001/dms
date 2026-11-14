@@ -2,7 +2,9 @@ import { useCallback, useEffect, useState } from 'react';
 import { Feld, HakenFeld, Knopf, Schalter, Wahlhaken } from '../bausteine';
 import { fortschrittText } from '../../../shared/src/auftrag';
 import { ergebnisText, mb, STUFEN, STUFEN_LISTE, type Stufe } from '../../../shared/src/verkleinern';
-import { api, type Auftrag, type GrossePdfs, type VerkleinernEinstellung } from '../api';
+import type { Auftrag } from '../../../shared/src/auftrag';
+import { betriebApi } from '../api/betrieb';
+import { dokumenteApi, type GrossePdfs, type VerkleinernEinstellung } from '../api/dokumente';
 import { useDaten } from '../daten';
 import { Hilfe } from '../Hilfe';
 import { Link } from '../ort';
@@ -32,7 +34,7 @@ export function GrossePdfsVerkleinern() {
   const laden = useCallback(async () => {
     setListe(null); setFehler(undefined);
     try {
-      const l = await api.grosseDokumente(ab, stufe);
+      const l = await dokumenteApi.grosseDokumente(ab, stufe);
       setListe(l);
       setAuswahl(new Set(l.eintraege.filter((x) => x.lohnt).map((x) => x.id)));
     } catch (e) { setFehler((e as Error).message); }
@@ -40,7 +42,7 @@ export function GrossePdfsVerkleinern() {
   useEffect(() => { void laden(); }, [laden]);
   useEffect(() => {
     if (auftrag?.status !== 'laeuft') return;
-    const timer = setInterval(() => void api.auftrag().then((a) => { setAuftrag(a); if (a?.status !== 'laeuft') void laden(); }), 1000);
+    const timer = setInterval(() => void betriebApi.auftrag().then((a) => { setAuftrag(a); if (a?.status !== 'laeuft') void laden(); }), 1000);
     return () => clearInterval(timer);
   }, [auftrag?.status, laden]);
 
@@ -56,7 +58,7 @@ export function GrossePdfsVerkleinern() {
       : t('werkbank.verkleinern.mit-versionierung-bleibt-das');
     if (!(await rueckfrage({ titel: t('werkbank.verkleinern.pdfs-verkleinern', { anzahl: gewaehlt.length }), text: t('werkbank.verkleinern.stufe-dpi', { name: STUFEN[stufe].name, dpi: STUFEN[stufe].dpi, text }), ja: t('werkbank.verkleinern.verkleinern'), gefahr: ohneOriginal }))) return;
     setFehler(undefined);
-    try { setAuftrag(await api.verkleinereViele({ ids: gewaehlt.map((x) => x.id), stufe, ohneOriginal, bestaetigt: true })); } catch (x) { setFehler((x as Error).message); }
+    try { setAuftrag(await dokumenteApi.verkleinereViele({ ids: gewaehlt.map((x) => x.id), stufe, ohneOriginal, bestaetigt: true })); } catch (x) { setFehler((x as Error).message); }
   }
 
   return (
@@ -125,12 +127,12 @@ export function AutomatischVerkleinern() {
   const [e, setE] = useState<VerkleinernEinstellung | null>(null);
   const [laeuft, setLaeuft] = useState(false);
   const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
-  useEffect(() => { api.verkleinernEinstellung().then((x) => { setGespeichert(x); setE(x); }, (x: Error) => setMeldung({ art: 'schlecht', text: x.message })); }, []);
+  useEffect(() => { dokumenteApi.verkleinernEinstellung().then((x) => { setGespeichert(x); setE(x); }, (x: Error) => setMeldung({ art: 'schlecht', text: x.message })); }, []);
   const ent = useEntwurf(gespeichert, e, { aus: !e, zuruecksetzen: () => { setE(gespeichert); setMeldung(undefined); } });
   if (!e) return <section className="blatt"><h2 className="h3">{t('werkbank.verkleinern.neue-pdfs-automatisch-verkleinern')}</h2><p className="leise">{meldung?.text ?? t('werkbank.verkleinern.lade')}</p></section>;
   async function speichern() {
     setLaeuft(true); setMeldung(undefined);
-    try { const x = await api.setzeVerkleinernEinstellung(e!); setGespeichert(x); setE(x); setMeldung({ art: 'gut', text: t('werkbank.verkleinern.gespeichert') }); }
+    try { const x = await dokumenteApi.setzeVerkleinernEinstellung(e!); setGespeichert(x); setE(x); setMeldung({ art: 'gut', text: t('werkbank.verkleinern.gespeichert') }); }
     catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); } finally { setLaeuft(false); }
   }
   return (

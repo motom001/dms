@@ -1,7 +1,7 @@
 import { useId, useRef, useState, type ReactNode } from 'react';
 import { sprachname } from '../../../shared/src/beschriftung';
 import { kennzeichnung, type Uebersetzungsquelle } from '../../../shared/src/uebersetzung';
-import { api } from '../api';
+import { mappenApi } from '../api/mappen';
 import { Hilfe } from '../Hilfe';
 import { useKonto } from '../konto';
 import { Symbol } from '../Symbol';
@@ -50,13 +50,13 @@ export function Uebersetzbar({ quelle, original, darstellen = (x) => x, ersetzen
     setFest(false); setSchwebt(false);
     setStand({ art: 'laeuft', teil: 0, teile: 1 });
     try {
-      const erst = await api.uebersetzung(quelle, 0);
+      const erst = await mappenApi.uebersetzung(quelle, 0);
       let text = erst.text + erst.trenner;
       let von = erst.von;
       for (let i = 1; i < erst.teile; i++) {
         if (lauf.current !== nr) return;
         setStand({ art: 'laeuft', teil: i, teile: erst.teile });
-        const r = await api.uebersetzung(quelle, i);
+        const r = await mappenApi.uebersetzung(quelle, i);
         // Das Original hat sich inzwischen geändert: lieber neu anfangen als zwei Fassungen mischen.
         if (r.pruefwert !== erst.pruefwert) throw new Error(t('ablage.uebersetzung.geaendert'));
         text += r.text + r.trenner;

@@ -9,7 +9,10 @@ import { personenbezug } from '../../../shared/src/loeschkonzept';
 import { LoeschprotokollBlatt } from './Loeschprotokoll';
 import { BAUM_RICHTUNGEN, kinderVon, type BaumKnoten, type BaumRichtung } from '../../../shared/src/baum';
 import { datumText } from '../../../shared/src/archiv';
-import { api, type Auftrag, type DatenschutzStand } from '../api';
+import type { Auftrag } from '../../../shared/src/auftrag';
+import { betriebApi } from '../api/betrieb';
+import { datenschutzApi, type DatenschutzStand } from '../api/datenschutz';
+import { mappenApi } from '../api/mappen';
 import { useDaten } from '../daten';
 import { Hilfe } from '../Hilfe';
 import { geheZu, Link } from '../ort';
@@ -44,7 +47,7 @@ const heute = () => new Intl.DateTimeFormat('sv-SE', { timeZone: zeitzone() }).f
 export function useDatenschutz(offen: boolean) {
   const [stand, setStand] = useState<DatenschutzStand | null>(null);
   const [fehler, setFehler] = useState<string>();
-  const laden = useCallback(async () => { try { setStand(await api.datenschutz()); setFehler(undefined); } catch (e) { setFehler((e as Error).message); } }, []);
+  const laden = useCallback(async () => { try { setStand(await datenschutzApi.datenschutz()); setFehler(undefined); } catch (e) { setFehler((e as Error).message); } }, []);
   useEffect(() => { if (offen) void laden(); }, [offen, laden]);
   return { stand, fehler, laden };
 }
@@ -200,7 +203,7 @@ function AuskunftDetail({ e, z }: { e: AuskunftEintrag; z: DatenschutzZustand })
             <Knopf art={zustellen ? 'neben' : 'haupt'} aria-expanded={zustellen} onClick={() => setZustellen(!zustellen)}>{zustellen ? t('werkbank.auskunft.detail.zustellenZu') : t('werkbank.auskunft.detail.zustellen')}</Knopf>
             <a className="knopf" href={`/api/werkbank/auskunft/${b.id}/zip`} onClick={() => window.setTimeout(() => void z.laden(), 3000)}>{t('werkbank.auskunft.detail.herunterladen')}</a>
             <Knopf art="gefahr" symbol="geloescht" rueckfrage={{ titel: t('werkbank.auskunft.detail.loeschenFrage'), text: t('werkbank.auskunft.detail.loeschenText', { titel: titelOder(b.titel), zeit: zeit(b.erstellt) }), ja: t('werkbank.auskunft.detail.loeschen') }} onClick={async () => {
-              try { await api.auskunftLoeschen(b.id); await z.laden(); } catch (x) { setFehler((x as Error).message); }
+              try { await datenschutzApi.auskunftLoeschen(b.id); await z.laden(); } catch (x) { setFehler((x as Error).message); }
             }}>{t('werkbank.auskunft.detail.loeschen')}</Knopf>
           </p>
           {zustellen && <Zustellen a={b} s={s} nachher={z.laden} />}
@@ -229,7 +232,7 @@ function AuskunftDetail({ e, z }: { e: AuskunftEintrag; z: DatenschutzZustand })
 /** Verweis auf die Mappe der Person – der Typ kommt aus den geladenen Daten, sonst nur der Titel. */
 function PersonVerweis({ id, titel }: { id: string; titel: string }) {
   const [typId, setTypId] = useState<string>();
-  useEffect(() => { api.mappe(id).then((x) => setTypId(x.mappe.typId), () => {}); }, [id]);
+  useEffect(() => { mappenApi.mappe(id).then((x) => setTypId(x.mappe.typId), () => {}); }, [id]);
   return typId ? <Link to={`/ablage/${typId}/${id}`} className="verweis">{titelOder(titel)}</Link> : <span>{titelOder(titel)}</span>;
 }
 
@@ -278,7 +281,7 @@ function PersonWahl({ typen, waehle }: { typen: Mappentyp[]; waehle(m: { id: str
     if (!offen) return;
     let aktuell = true;
     const timer = setTimeout(() => {
-      Promise.all(ids.split(',').map((id) => api.seite(`typ:${id}`, 0, 20, eingabe.trim())))
+      Promise.all(ids.split(',').map((id) => mappenApi.seite(`typ:${id}`, 0, 20, eingabe.trim())))
         .then((r) => { if (!aktuell) return; setTreffer(r.flatMap((x) => x.mappen).slice(0, 20)); setGesamt(r.reduce((n, x) => n + x.gesamt, 0)); })
         .catch(() => aktuell && setTreffer([]));
     }, 200);
@@ -335,11 +338,11 @@ function AuskunftErteilen({ einstellung, nachher, zustellen }: { einstellung: Da
   useEffect(() => {
     const id = new URLSearchParams(location.search).get('mappe');
     if (!id) return;
-    api.mappe(id).then((x) => setBetroffen({ id: x.mappe.id, typId: x.mappe.typId, titel: x.mappe.titel ?? '' }), () => {});
+    mappenApi.mappe(id).then((x) => setBetroffen({ id: x.mappe.id, typId: x.mappe.typId, titel: x.mappe.titel ?? '' }), () => {});
   }, []);
   useEffect(() => {
     if (auftrag?.status !== 'laeuft') return;
-    const timer = setInterval(() => void api.auftrag().then((a) => { setAuftrag(a); if (a?.status !== 'laeuft') void nachher(); }), 1000);
+    const timer = setInterval(() => void betriebApi.auftrag().then((a) => { setAuftrag(a); if (a?.status !== 'laeuft') void nachher(); }), 1000);
     return () => clearInterval(timer);
   }, [auftrag?.status, nachher]);
 
@@ -347,7 +350,7 @@ function AuskunftErteilen({ einstellung, nachher, zustellen }: { einstellung: Da
     if (!betroffen) return;
     setLaeuft(true); setMeldung(undefined); setVorschau(null); setGeprueft(false); setAuftrag(null);
     try {
-      const v = await api.auskunftVorschau({ mappeId: betroffen.id, tiefe, richtungen });
+      const v = await datenschutzApi.auskunftVorschau({ mappeId: betroffen.id, tiefe, richtungen });
       setVorschau(v);
       // Zugehörige Mappen ganz; Bezug-Mappen (#472) nur als Erwähnung – ganz aufnehmen nur bewusst.
       setWahl({ ...vorgabe(v.mappen, v.baum.knoten.filter((k) => !k.nurBezug).map((k) => k.id)), erwaehnungen: new Set(v.baum.knoten.filter((k) => k.nurBezug).map((k) => k.id)) });
@@ -355,7 +358,7 @@ function AuskunftErteilen({ einstellung, nachher, zustellen }: { einstellung: Da
   }
   async function frist() {
     if (!betroffen) return;
-    try { const a = await api.auskunftFrist({ mappeId: betroffen.id, eingang }); setMeldung({ art: 'gut', text: t('werkbank.datenschutz.aufgabe-angelegt', { text: a.text }) }); }
+    try { const a = await datenschutzApi.auskunftFrist({ mappeId: betroffen.id, eingang }); setMeldung({ art: 'gut', text: t('werkbank.datenschutz.aufgabe-angelegt', { text: a.text }) }); }
     catch (e) { setMeldung({ art: 'schlecht', text: (e as Error).message }); }
   }
 
@@ -384,7 +387,7 @@ function AuskunftErteilen({ einstellung, nachher, zustellen }: { einstellung: Da
     if (!betroffen || !vorschau) return;
     if (!passwort && !(await rueckfrage({ titel: t('werkbank.datenschutz.ohne-passwort-erzeugen'), text: t('werkbank.datenschutz.die-zip-datei-ist'), ja: t('werkbank.datenschutz.ohne-passwort-erzeugen-2') }))) return;
     setMeldung(undefined);
-    try { setAuftrag(await api.auskunftStarten({ mappeId: betroffen.id, tiefe, richtungen, auswahl, geprueft, passwort, empfaenger, anmerkung })); }
+    try { setAuftrag(await datenschutzApi.auskunftStarten({ mappeId: betroffen.id, tiefe, richtungen, auswahl, geprueft, passwort, empfaenger, anmerkung })); }
     catch (e) { setMeldung({ art: 'schlecht', text: (e as Error).message }); }
   }
 
@@ -577,7 +580,7 @@ function useDatenschutzForm(z: DatenschutzZustand) {
   const ent = useEntwurf(gespeichert, e, { zuruecksetzen: () => { setE(gespeichert); setMeldung(undefined); } });
   async function speichern(teil: (aktuell: Datenschutz) => Datenschutz) {
     setLaeuft(true); setMeldung(undefined);
-    try { await api.setzeDatenschutz(teil(gespeichert)); await z.laden(); setMeldung({ art: 'gut', text: t('werkbank.datenschutz.gespeichert') }); }
+    try { await datenschutzApi.setzeDatenschutz(teil(gespeichert)); await z.laden(); setMeldung({ art: 'gut', text: t('werkbank.datenschutz.gespeichert') }); }
     catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); } finally { setLaeuft(false); }
   }
   return { e, setE, laeuft, meldung, ent, speichern };

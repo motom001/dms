@@ -1,0 +1,166 @@
+/* Werkbank ohne Mitte, Leiste, Stempel, Datenschutz-Auskunft, Anrede, Notfallzugang, Löschen mit Verknüpfungen.
+   Teil der Gestaltung, eingebunden in fester Reihenfolge über stile/index.css. */
+
+/* Werkbank ohne Mitte (#366): kleine oder nur lesende Listen stehen rechts, mit fester Höhe (etwa zehn Einträge). */
+.festhoehe { max-height: 27em; overflow-y: auto; }
+.festhoehe thead th { position: sticky; top: 0; z-index: 1; }
+.festhoehe tfoot th { position: sticky; bottom: 0; background: var(--senke); }
+th.zahlzelle, td.zahlzelle { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+ul.sitzungsliste.festhoehe { border: 1px solid var(--linie); border-radius: var(--r); padding: 0 12px; }
+.aufklappliste { list-style: none; margin: 0; padding: 0; border: 1px solid var(--linie); border-radius: var(--r); }
+.aufklappliste li { border-top: 1px solid var(--linie); }
+.aufklappliste li:first-child { border-top: 0; }
+.aufklappliste li.an { background: var(--senke); }
+.aufklappliste dl { margin: 0; padding: 0 12px 10px; }
+.aufklappzeile { display: block; width: 100%; text-align: left; padding: 7px 12px; border: 0; background: none; color: inherit; font: inherit; cursor: pointer; overflow-wrap: anywhere; }
+.aufklappzeile:hover { background: var(--senke); }
+/* Als Baustein Knopf (#1214): Pfeil als Symbol statt Schriftzeichen, Zeile links bündig und umbrechend. */
+.textknopf.aufklappzeile { display: block; padding: 7px 12px; color: inherit; font-weight: inherit; }
+.textknopf.aufklappzeile > span, .textknopf.aufklappzeile > span > span:first-child { display: block; text-align: left; }
+.textknopf.aufklappzeile.aufklappzeile:hover { text-decoration: none; }
+.aufklappzeile .zeichen { color: var(--leise); vertical-align: -2px; margin-right: 4px; }
+.standzeile { margin: 0; color: var(--leise); }
+.mitpasswoertern { border-left: 3px solid var(--schlecht); padding-left: 10px; }
+/* Namen in der Leiste nicht abschneiden, wenn eine Plakette danebensteht (#366). */
+/* Lange Namen umbrechen mit Silbentrennung statt mitten im Wort (#1213: „Automatisierungsvorlage|n“). */
+@media (min-width: 821px) { .werkbankleiste .sicht .nm { white-space: normal; overflow-wrap: break-word; hyphens: auto; } }
+/* Favoriten benachrichtigen (#506): Rollen eingerückt unter „nur für bestimmte Rollen“. Präfix fz-. */
+.fz-rollen { display: flex; flex-direction: column; gap: 2px; padding-left: 24px; }
+.fz-rollen .haken { margin: 0; }
+.fz-rollen-titel { margin: 6px 0 2px; font-weight: 600; }
+/* Werkbank → Aufgaben (#366): Filter in der Mitte. */
+.aufgabenfilter { gap: 8px; }
+.aufgabenfilter > .suche { flex: none; max-width: none; }
+/* Auch unter dem Suchfeld (#1001, Filter der Werkbank → Aufgaben): eine ganze Zeile breit. */
+.filterraster { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 6px 10px; flex: 1 1 100%; }
+.filterraster select { width: 100%; }
+.zwischen .zusatz { text-transform: none; letter-spacing: 0; font-weight: normal; }
+/* Mitte mit Einstellungen oben (#366: Papierkorb, Aufgaben): die ganze Spalte scrollt, sonst bleibt der Liste nur ein Streifen. */
+.spalte.liste:has(> .blatt) { overflow-y: auto; padding-bottom: 32px; }
+.spalte.liste:has(> .blatt) > .listenrumpf { flex: none; min-height: auto; overflow: visible; padding-bottom: 0; }
+/* Stempel beim Weitergeben (#394) */
+.stempelwahl { border: 0; padding: 0; margin: 8px 0; min-width: 0; }
+.stempelfelder { margin-top: 8px; padding: 10px; border: 1px solid var(--linie); border-radius: var(--r); background: var(--senke); display: flex; flex-direction: column; gap: 10px; }
+.stempelzeile { display: flex; gap: 14px; align-items: flex-start; flex-wrap: wrap; }
+.stempelzeile > div:not(.stempelvorschau-klein) { flex: 1 1 220px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.stempeltext { color: var(--schlecht); overflow-wrap: anywhere; }
+/* Werkbank → Stempel (#990): Vorlage rechts in der Dreiteilung, Liste in der Mitte. */
+.stempeleditor { display: flex; flex-direction: column; gap: 10px; }
+.stempelvorlagen .eintrag .stempeltext { color: var(--schlecht); }
+.warntext { color: var(--warn); font-size: calc(12.5px * var(--skala, 1)); font-weight: 500; }
+.zeile-mit-zahl { display: flex; gap: 8px; align-items: center; }
+.zeile-mit-zahl input[type="range"] { flex: 1 1 auto; min-width: 0; }
+.zeile-mit-zahl input[type="number"] { width: 5.5em; flex: 0 0 auto; }
+.platzhalterknoepfe { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; margin-top: 4px; }
+/* Live-Vorschau des Stempels (#799): vier Beispielbelege nebeneinander, am Handy untereinander. */
+.stempelvorschau { display: flex; flex-direction: column; gap: 8px; }
+.stempelvorschau-raster { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 900px) { .stempelvorschau-raster { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 560px) { .stempelvorschau-raster { grid-template-columns: minmax(0, 1fr); } }
+/* Rechts neben der Mitte ist die Spalte schmaler als das Fenster (#990): nach ihrer Breite umbrechen. */
+@container mappe (max-width: 760px) { .stempelvorschau-raster { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@container mappe (max-width: 420px) { .stempelvorschau-raster { grid-template-columns: minmax(0, 1fr); } }
+.stempelvorschau-klein { flex: 0 0 150px; }
+.stempelvorschau-klein .stempelvorschau-raster { grid-template-columns: minmax(0, 1fr); }
+.stempelbeleg { margin: 0; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.stempelbeleg svg { display: block; width: 100%; height: auto; border: 1px solid var(--linie-stark); border-radius: 2px; box-shadow: 0 1px 3px var(--schatten-zart); background: var(--papier); touch-action: none; user-select: none; }
+.stempelgriff { cursor: move; outline: none; }
+.stempelgriff.fest { cursor: default; }
+.stempelgriff .stempelflaeche { fill: transparent; stroke: transparent; stroke-width: 3; stroke-dasharray: 10 6; }
+.stempelgriff:hover .stempelflaeche, .stempelgriff:focus-visible .stempelflaeche { stroke: var(--akzent); }
+.stempelgriff .drehgriff { cursor: grab; opacity: 0; }
+.stempelgriff:hover .drehgriff, .stempelgriff:focus-visible .drehgriff, .stempelgriff:active .drehgriff { opacity: 1; }
+.stempelgriff .drehgriff line { stroke: var(--akzent); stroke-width: 3; }
+.stempelgriff .drehgriff circle { fill: var(--papier); stroke: var(--akzent); stroke-width: 5; }
+@media (hover: none) { .stempelgriff .drehgriff { opacity: 1; } }
+.stempelvorschau-text { display: flex; flex-direction: column; gap: 6px; padding: 10px; border: 1px solid var(--linie); border-radius: var(--r); background: var(--senke); }
+/* Werkbank → Datenschutz: Auskunft nach Art. 15 DSGVO (#396). Eigene Klassen – nichts Globales umdefinieren. */
+.auskunft-baum { list-style: none; margin: 0; padding: 0 0 0 18px; border-left: 1px solid var(--linie); }
+.auskunft-baum.wurzel { padding-left: 0; border-left: 0; margin: 8px 0; }
+.auskunft-baum > li { margin: 4px 0; min-width: 0; }
+.auskunft-mappe { min-width: 0; overflow-wrap: anywhere; }
+.auskunft-mappe .haken > span, .auskunft-baum .haken > span { display: block; font-weight: normal; }
+.auskunft-mappe > .haken > span > .verweis { font-weight: 600; }
+.auskunft-mappe.aus > .haken > span { color: var(--leise); text-decoration: line-through; }
+.auskunft-mappe .chip { margin-left: 6px; }
+.auskunft-inhalt { margin: 2px 0 6px 26px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.auskunft-inhalt .haken { align-items: flex-start; }
+.auskunft-dritte { color: var(--warn); margin: 0; }
+.auskunft-typen .eigenschaft input { width: 100%; }
+@media (max-width: 820px) { .auskunft-baum { padding-left: 10px; } .auskunft-inhalt { margin-left: 18px; } }
+.auskunft-ganz { margin-left: 26px; }
+@media (max-width: 820px) { .auskunft-ganz { margin-left: 18px; } }
+/* Auskunft zustellen (#455): Werkbank → Datenschutz und öffentliche Abrufseite. Eigene Klassen – nichts Globales umdefinieren. */
+.auskunft-bereit { min-width: 0; overflow-wrap: anywhere; }
+.auskunft-zustellen { margin-top: 10px; padding: 12px; border: 1px solid var(--linie); border-radius: 8px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.auskunft-wege { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 8px; }
+.auskunft-weg { display: flex; gap: 8px; align-items: flex-start; padding: 10px; border: 1px solid var(--linie); border-radius: 8px; cursor: pointer; min-width: 0; }
+.auskunft-weg.gewaehlt { border-color: var(--akzent); box-shadow: inset 0 0 0 1px var(--akzent); }
+.auskunft-weg.aus { opacity: .6; cursor: not-allowed; }
+.auskunft-weg > span { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.auskunft-weg small { color: var(--leise); font-weight: normal; }
+.auskunft-weg-titel { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.auskunft-weg-inhalt { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.auskunft-codewahl { border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.auskunft-codewahl legend { font-weight: 600; padding: 0; margin-bottom: 2px; }
+.auskunft-codewahl input:not([type]) { max-width: 320px; }
+/* Anrede in Unterlagen für Dritte (#474): du oder Sie, je mit Beispielsatz */
+.anrede-dritte { border: 0; margin: 14px 0 4px; padding: 0; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.anrede-dritte legend { font-weight: 600; padding: 0; margin-bottom: 2px; }
+.anrede-dritte p { margin: 0; }
+.anrede-dritte-wahl { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 8px; }
+.anrede-dritte-form { display: flex; flex-direction: column; gap: 4px; padding: 10px; border: 1px solid var(--linie); border-radius: 8px; cursor: pointer; min-width: 0; }
+.anrede-dritte-form.gewaehlt { border-color: var(--akzent); box-shadow: inset 0 0 0 1px var(--akzent); }
+.anrede-dritte-kopf { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.anrede-dritte-form q { color: var(--leise); overflow-wrap: anywhere; }
+.auskunft-neu-inhalt { display: flex; flex-direction: column; gap: 10px; flex: 1 1 100%; min-width: 0; }
+.auskunft-neu p { margin: 0; }
+.auskunft-neu .zeile-umbruch { margin: 0; }
+.auskunft-neu .eigenschaft { color: var(--tinte); }
+.auskunft-neu .auskunft-url { flex: 1 1 260px; min-width: 0; }
+.auskunft-code-zeile { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.auskunft-code { font-size: 1.4em; letter-spacing: .08em; }
+.auskunft-links { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.auskunft-link { display: flex; gap: 8px; align-items: center; justify-content: space-between; flex-wrap: wrap; min-width: 0; overflow-wrap: anywhere; }
+.auskunft-status-aktiv { color: var(--gruen); }
+.auskunft-status-gesperrt { color: var(--schlecht); }
+.abruf-karte { max-width: 480px; }
+.abruf-form { display: flex; flex-direction: column; gap: 14px; }
+.abruf-form p { margin: 0; }
+.abruf-code { font-size: 1.3em; letter-spacing: .1em; text-transform: uppercase; }
+.abruf-fertig { display: flex; flex-direction: column; gap: 10px; }
+.abruf-fertig p { margin: 0; }
+/* Notfallzugang (#815): zuerst fürs Handy – volle Breite, große Ziele, Code gut lesbar. */
+.notfall-karte { max-width: 480px; }
+.notfall-karte .marke { align-self: flex-start; }
+.notfall-form { display: flex; flex-direction: column; gap: 14px; }
+.notfall-form p { margin: 0; }
+.notfall-code { font-size: 18px; letter-spacing: .06em; text-transform: uppercase; width: 100%; }
+.notfall-countdown { font-variant-numeric: tabular-nums; font-weight: 600; }
+.notfall-konten { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.notfall-konten .wahlkarte { width: 100%; min-height: 56px; }
+.notfall-karte .knopf { text-align: center; }
+@media (max-width: 480px) { .notfall-karte { padding: 20px 16px; } .notfall-code { letter-spacing: .02em; } }
+
+/* Mit verknüpften Mappen löschen (#424): Vorschau als Baum. Eigene Klassen mit Präfix lb-. */
+.lb-legende { list-style: none; margin: 6px 0 10px; padding: 0; display: flex; flex-wrap: wrap; gap: 4px 16px; color: var(--leise); }
+.lb-baum { list-style: none; margin: 0; padding: 0 0 0 18px; border-left: 1px solid var(--linie); }
+.lb-baum.lb-wurzel { padding-left: 0; border-left: 0; margin: 10px 0; }
+.lb-baum > li { margin: 2px 0; min-width: 0; }
+.lb-knoten { display: grid; grid-template-columns: 22px minmax(0, 1fr); column-gap: 2px; padding: 4px 6px; border-radius: var(--r); min-width: 0; }
+.lb-knoten.lb-weg { background: var(--schlecht-zart); }
+.lb-knoten .lb-haken { align-items: flex-start; min-width: 0; }
+.lb-knoten .lb-haken > span { display: block; font-weight: normal; overflow-wrap: anywhere; }
+.lb-knoten.lb-bleibt .lb-haken strong { font-weight: 600; }
+.lb-klapp { min-width: 24px; min-height: 24px; padding: 0; border: 0; background: none; color: var(--leise); cursor: pointer; }
+.lb-klapp svg { transition: transform .12s; }
+.lb-klapp[aria-expanded="true"] svg { transform: rotate(90deg); }
+@media (prefers-reduced-motion: reduce) { .lb-klapp svg { transition: none; } }
+.lb-tiefe { flex-direction: row; align-items: center; gap: 8px; }
+.lb-tiefe select { width: auto; }
+.lb-zeichen { display: inline-block; min-width: 1.4em; }
+.lb-chip { margin-left: 6px; }
+.lb-status { grid-column: 2; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; margin: 2px 0 0 26px; min-width: 0; overflow-wrap: anywhere; }
+.lb-status select { width: auto; max-width: 100%; font-size: inherit; }
+.lb-summe { margin-top: 8px; }
+@media (max-width: 820px) { .lb-baum { padding-left: 8px; } .lb-status { margin-left: 0; } }

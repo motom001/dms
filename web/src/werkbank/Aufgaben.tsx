@@ -2,7 +2,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { AUFGABENARTEN, formatiere, type Aufgabe, type Aufgabenart } from '../../../shared/src/model';
 import { FAELLIGKEITEN, filterAktiv, filterInAdresse, filtereAufgaben, type AufgabenFilter, type Faelligkeit } from '../../../shared/src/aufgabenfilter';
 import { Feld, FilterHaken, KeineTreffer, Knopf, KnopfLink, ListenSuche } from '../bausteine';
-import { api, type MappeDetails } from '../api';
+import { aufgabenApi } from '../api/aufgaben';
+import { mappenApi, type MappeDetails } from '../api/mappen';
 import { BenutzerWahl } from '../ablage/Aufgaben';
 import { useDaten } from '../daten';
 import { geheZu, Link } from '../ort';
@@ -31,7 +32,7 @@ export function useAufgaben(aktiv: boolean, erledigt = false) {
   const [unlesbar, setUnlesbar] = useState<Set<string>>(new Set());
   const [fehler, setFehler] = useState<string>();
   const laden = useCallback(async () => {
-    try { const r = await api.aufgabenWerkbank(erledigt); setListe(r.aufgaben); setUnlesbar(new Set(r.unlesbar ?? [])); setFehler(undefined); } catch (e) { setFehler((e as Error).message); }
+    try { const r = await aufgabenApi.aufgabenWerkbank(erledigt); setListe(r.aufgaben); setUnlesbar(new Set(r.unlesbar ?? [])); setFehler(undefined); } catch (e) { setFehler((e as Error).message); }
   }, [erledigt]);
   useEffect(() => { if (aktiv) void laden(); }, [aktiv, laden]);
   return { liste, erledigt, fehler, laden, unlesbar };
@@ -61,7 +62,7 @@ export function AufgabenListe({ z, filter, offen }: { z: AufgabenZustand; filter
   const titelVon = (id: string) => { const a = alle.find((x) => x.id === id); return a ? `${titelOder(a.mappeTitel)} – ${a.text}` : t('werkbank.aufgaben.aufgabe'); };
   async function weiter(a: Aufgabe, an: string) {
     setFehler(undefined);
-    try { await api.aufgabeDelegieren(a.id, an); await z.laden(); await d.neuLaden(); } catch (e) { setFehler((e as Error).message); }
+    try { await aufgabenApi.aufgabeDelegieren(a.id, an); await z.laden(); await d.neuLaden(); } catch (e) { setFehler((e as Error).message); }
   }
   // Muster „Liste in der Mitte: Suchfeld oben, Filter darunter“ (#994, Baustein Suche #1143); Suche und Filter stehen in der Adresse.
   const filterTeil = (
@@ -163,14 +164,14 @@ function AufgabeMappe({ a, z }: { a: Aufgabe; z: AufgabenZustand }) {
     const name = d.personen.find((p) => p.id === an)?.name ?? '';
     setSendet(true); setMeldung(undefined);
     try {
-      const r = await api.aufgabeDelegieren(a.id, an);
+      const r = await aufgabenApi.aufgabeDelegieren(a.id, an);
       setAn(''); setMeldung({ art: 'gut', text: [t('werkbank.aufgaben.an-weitergegeben', { name }), r.hinweis].filter(Boolean).join(' ') });
       await z.laden(); await d.neuLaden();
     } catch (e) { setMeldung({ art: 'schlecht', text: (e as Error).message }); }
     finally { setSendet(false); }
   }
   const [m, setM] = useState<MappeDetails | null | 'fehlt'>(null);
-  useEffect(() => { api.mappe(a.mappeId).then(setM, () => setM('fehlt')); }, [a.mappeId]);
+  useEffect(() => { mappenApi.mappe(a.mappeId).then(setM, () => setM('fehlt')); }, [a.mappeId]);
   const typ = d.typ(a.typId ?? '');
   const ablage = `/ablage/${a.typId}/${a.mappeId}`;
   const felder = (typ?.felder ?? []).filter((f) => f.typ !== 'passwort' && f.typ !== 'formatiert' && f.typ !== 'langtext');

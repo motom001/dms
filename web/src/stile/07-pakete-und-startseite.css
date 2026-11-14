@@ -1,0 +1,200 @@
+/* Pakete, doppelte Dateien, Papierkorb, Startseite, Rückfragen, PDF bearbeiten, Schwärzen, Archivnummer.
+   Teil der Gestaltung, eingebunden in fester Reihenfolge über stile/index.css. */
+
+/* Paketverwaltung (#188) */
+.paketname { display: grid; gap: 4px; }
+.paketname > span:first-child { font-size: calc(12.5px * var(--skala, 1)); color: var(--leise); }
+.paketname input { width: 100%; min-width: 0; }
+/* Pakete dazuholen (#460, #461): Auswahl mit Abhängigkeiten, danach Paket für Paket. */
+.pd-liste { list-style: none; padding: 0; margin: 8px 0; display: grid; gap: 8px; }
+.pd-liste > li { border: 1px solid var(--linie); border-radius: 10px; padding: 10px 12px; min-width: 0; }
+.pd-liste > li.an { border-color: var(--akzent); }
+.pd-liste .chip { white-space: normal; }
+/* Paketauswahl wie im Katalog (#645): Kacheln mit Symbol, Filter nach Kategorie. */
+.pd-kategorien { display: flex; flex-wrap: wrap; gap: 6px; }
+.pd-kategorien .knopf { min-height: 44px; }
+.pd-kategorien .knopf[aria-pressed="true"] { border-color: var(--akzent); box-shadow: inset 0 0 0 1px var(--akzent); font-weight: 600; }
+.haken.pd-kachel { display: grid; grid-template-columns: auto auto 1fr; align-items: start; gap: 10px; min-height: 44px; }
+.haken.pd-kachel > span:last-child { display: grid; gap: 2px; min-width: 0; }
+.pd-symbol { position: relative; display: inline-grid; place-items: center; width: 40px; height: 40px; border-radius: 10px; background: var(--akzent-zart); color: var(--akzent); flex: none; }
+.pd-symbol svg { width: 24px; height: 24px; }
+.pd-symbol-buchstabe { font-weight: 700; font-size: 1.1rem; }
+.pd-symbol-kuerzel { position: absolute; right: -4px; bottom: -4px; font-size: .65rem; font-weight: 700; line-height: 1; padding: 2px 3px; border-radius: 4px; background: var(--akzent); color: var(--akzent-tinte); }
+@media (min-width: 720px) { .pd-liste { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); } }
+@media (max-width: 719px) { .pd-liste .pd-darf, .pd-liste .pd-ergaenzungen { margin-left: 0; } }
+.pd-darf { margin: 4px 0 0 76px; overflow-wrap: anywhere; }
+.pd-datei { position: relative; display: inline-flex; align-self: flex-start; cursor: pointer; }
+.pd-datei input { position: absolute; inset: 0; opacity: 0; width: 100%; cursor: pointer; }
+.pd-datei:focus-within .knopf { outline: 2px solid var(--akzent); outline-offset: 2px; }
+.pd-pruefwert { overflow-wrap: anywhere; word-break: break-all; }
+/* Mehrere Pakete in einem Ablauf (#405): Ergänzungen als Häkchen unter ihrem Paket, Fragen je Abschnitt. */
+.pd-ergaenzungen { margin: 8px 0 0 76px; padding: 6px 10px 8px; border: 1px dashed var(--linie); border-radius: 8px; min-width: 0; }
+.pd-ergaenzungen legend { padding: 0 4px; }
+.haken.pd-kachel { flex: 1 1 100%; min-width: 0; }
+.pd-ergaenzungsliste { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 4px 12px; }
+.pd-ergaenzungsliste .haken > span { font-weight: normal; overflow-wrap: anywhere; }
+.pa-rechte h3 { margin: 8px 0 2px; }
+.pa-rechte ul { margin: 2px 0; padding-left: 18px; }
+.pa-einstellungen { border: 1px solid var(--linie); border-radius: 10px; padding: 8px 12px 12px; margin: 0; min-width: 0; }
+/* Mitgelieferte Automatisierungen beim Installieren (#1174): je eine mit Schalter untereinander; Update: selbst geänderte. */
+/* Ablaufvorlage, Wann (#1175): Anzahl und Einheit direkt hinter „In“, blass (nicht gesperrt), solange „In“ nicht gewählt
+   ist. Bricht die Reihe um, füllt der Umschalter die erste Zeile, und die Felder stehen rechts darunter – unter „In“. */
+.wann-reihe { display: inline-flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 6px 8px; max-width: 100%; }
+.wann-reihe > [role="radiogroup"] { flex: 1 1 auto; }
+/* Am Handy stehen die Wahlen untereinander (Umschalter `schmalUntereinander`), die Felder rechts darunter – unter „In“. */
+@media (max-width: 600px) { .wann-reihe { display: flex; flex-direction: column; align-items: flex-end; } .wann-reihe > [role="radiogroup"] { align-self: stretch; } }
+.wann-in.blass input, .wann-in.blass select { color: var(--leise); background: var(--senke); border-color: var(--linie-stark); }
+/* Ausprobieren einer Ablaufvorlage (#1176): die Vorschau je Empfänger wie eine Aufgabe an der Mappe. */
+.probe-hinweis p { display: flex; align-items: center; gap: 6px; }
+.probe-karten { list-style: none; margin: 0; padding: 0; }
+.probe-karte { border: 1px solid var(--linie); border-left: 3px solid var(--akzent); border-radius: var(--r); background: var(--flaeche); padding: 8px 12px; }
+.probe-karte p { margin: 2px 0; }
+.probe-karte .probe-kopf { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.probe-karte .probe-text { white-space: pre-wrap; overflow-wrap: anywhere; }
+.probe-karte .warnung { color: var(--warn); }
+.paket-automatisierungen-liste { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.paket-automatisierungen-geaendert { list-style: none; margin: 0; padding: 0; }
+.paket-automatisierungen-geaendert .hinweis { margin-top: 4px; }
+.pa-einstellungen legend { padding: 0 4px; }
+.pa-reihe { margin: 0; padding-left: 20px; display: grid; gap: 2px; }
+.pa-reihe ul { margin: 2px 0; padding-left: 18px; }
+.pa-je-paket { margin-left: 26px; display: grid; gap: 4px; }
+/* Herkunft eines Pakets (#594): Zeile in der Vorschau, Fingerabdrücke umbrechen statt die Seite zu verbreitern */
+.herkunft { margin: 0 0 12px; overflow-wrap: anywhere; }
+.herkunft p { margin: 2px 0; }
+.herkunft.gut .sym { color: var(--gruen); }
+.fingerabdruck { font-family: var(--mono, ui-monospace, monospace); overflow-wrap: anywhere; word-break: break-all; }
+.umbrechen { overflow-wrap: anywhere; }
+
+/* Einrichtungsassistent (#278): Hilfe je Schritt, gut sichtbar oben rechts */
+.assistent-kopf { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.assistent-hilfe { display: inline-flex; align-items: center; gap: 4px; font-weight: 600; font-size: calc(13px * var(--skala, 1)); color: var(--akzent); text-decoration: none; }
+.assistent-hilfe .hilfesymbol { margin-left: 0; color: var(--akzent); border-color: var(--akzent); }
+.assistent-hilfe:hover, .assistent-hilfe:focus-visible { text-decoration: underline; }
+
+/* Doppelte Dateien (#333) */
+.doppelthinweis { display: block; margin: 4px 0 0; padding: 6px 8px; font-size: .9em; }
+.doppeltfrage ul { margin: 6px 0; padding-left: 18px; }
+.doppeltfrage li { margin-bottom: 6px; }
+.doppeltfrage .haken { margin-top: 2px; }
+
+/* Papierkorb: einzelne Dokumente (#344) */
+.korbdokumente { margin-top: 18px; }
+.korbdokument { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+/* Schmale Mitte (#366): erst umbrechen, dann die Knöpfe unter den Eintrag statt den Namen zu zerquetschen. */
+.korbdokument .eintrag { flex: 1 1 16em; min-width: 0; overflow-wrap: anywhere; }
+.korbdokument .knoepfe { flex: none; }
+
+/* Startseite (#334): wenige Kacheln, je eine Zahl und eine Handlung */
+.startseite { display: flex; flex-direction: column; gap: 16px; padding-top: 4px; }
+.kacheln { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.kachel { display: flex; flex-direction: column; gap: 4px; padding: 14px; border: 1px solid var(--linie); border-radius: var(--r); background: var(--flaeche); color: inherit; text-decoration: none; text-align: left; font: inherit; cursor: pointer; min-height: 96px; }
+.kachel:hover { border-color: var(--akzent); }
+.kachel:focus-visible { outline: 2px solid var(--akzent); outline-offset: 2px; }
+.kacheltitel { font-weight: 600; }
+/* #1219: Kacheln einheitlich neutral (Fläche, Rand), nur die Zahl in der Akzentfarbe – Grün heißt „gut/erledigt“. */
+.kachelzahl { font-size: 2rem; font-weight: 700; line-height: 1.1; color: var(--akzent); }
+.kachelleer { color: var(--gruen); font-weight: 600; }
+.einstiege { display: flex; flex-direction: column; gap: 10px; }
+.einstiege .kachel { min-height: 0; }
+.zuletzt .mappenliste { margin-top: 6px; }
+.zl-kopf { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 16px; }
+@media (pointer: coarse) { .zl-kopf .verweis { display: inline-flex; align-items: center; min-height: 44px; } }
+.zl-zurueck { display: inline-block; margin: 0 0 4px; }
+/* Eingangsordner → Überwachung (#915): Ursache einer Warnung im Baum hervorheben. */
+.eo-baum .eo-hervor td { background: var(--warn-zart); color: var(--warn); }
+.eo-baum .eo-hervor-text { color: var(--warn); font-weight: 600; }
+/* Startseite über Mitte und rechts (#429): Raster aus Kacheln mit festem Schlüssel (data-kachel), Grundlage für #421. */
+.start-feld { display: grid; }
+@media (min-width: 821px) {
+  .startseite.start-breit { gap: 24px; }
+  .startseite.start-breit .start-raster { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+  .startseite.start-breit .kachel { min-height: 120px; padding: 18px 20px; }
+  .startseite.start-breit .zuletzt .mappenliste { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 0 16px; }
+}
+/* Rückfragen (#355) */
+/* Fenster und Vorschau der Musterseite (#1210) sehen gleich aus; nur das Fenster hat Schleier und am Handy die Form eines
+   Blatts von unten. */
+.rueckfrage { width: min(440px, calc(100vw - 32px)); padding: 20px 22px 18px; border: 1px solid var(--linie-stark); border-radius: 10px; background: var(--flaeche); color: var(--tinte); box-shadow: 0 12px 40px var(--schatten-stark); }
+dialog.rueckfrage::backdrop { background: var(--schleier); }
+.rueckfrage.gefahr { border-top: 4px solid var(--schlecht); }
+.rueckfrage h2 { margin: 0 0 8px; font-size: calc(17px * var(--skala, 1)); }
+.rueckfrage-text p { margin: 0 0 8px; }
+dialog.rueckfrage .eigenschaft { display: flex; flex-direction: column; gap: 4px; margin: 6px 0 4px; }
+.rueckfrage-knoepfe { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+@media (max-width: 600px) {
+  dialog.rueckfrage { margin: auto 0 0; width: 100vw; max-width: 100vw; border-radius: 14px 14px 0 0; padding-bottom: max(18px, env(safe-area-inset-bottom)); }
+  .rueckfrage-knoepfe { flex-direction: column-reverse; }
+  .rueckfrage-knoepfe .knopf { width: 100%; padding: 12px; font-size: 16px; }
+}
+/* PDF bearbeiten (#335) */
+.pdfseiten { margin: 8px 0 4px; padding: 10px; border: 1px solid var(--linie); border-radius: 8px; background: var(--senke); }
+.pdfseiten-kopf, .pdfseiten-fuss { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.pdfseiten-fuss { margin-top: 8px; }
+.pdfseiten-fuss > span:first-child { margin-right: auto; }
+/* Schwärzen (#392): Seiten in voller Breite, Kästen relativ zur Seite; am Handy blättert der Finger, bis „Aufziehen“ an ist. */
+.schwarz-werkzeuge { display: flex; flex-direction: column; gap: 8px; margin: 8px 0; }
+.schwarz-suche { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px; }
+.schwarz-suche .eigenschaft { display: flex; flex-direction: column; gap: 2px; flex: 1 1 220px; min-width: 0; }
+.schwarz-suche input { width: 100%; }
+.schwarz-begriffe { display: flex; flex-wrap: wrap; gap: 6px; }
+.schwarz-begriffe .chip { white-space: normal; max-width: 100%; gap: 4px; }
+.schwarz-begriffe .chip > span { overflow-wrap: anywhere; min-width: 0; }
+.schwarz-begriffe .textknopf { padding: 0 2px; }
+.schwarz-vorschlaege summary { cursor: pointer; }
+.schwarz-art { border: 0; margin: 6px 0 0; padding: 0 0 0 4px; display: flex; flex-direction: column; gap: 2px; }
+.schwarz-art .haken { display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
+.mono.umbruch, .schwarz-art .umbruch { overflow-wrap: anywhere; }
+.schwarz-schalter { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; }
+.schwarz-seiten { display: flex; flex-direction: column; align-items: center; gap: 12px; max-height: 75vh; overflow-y: auto; overflow-x: hidden; padding: 4px; }
+.schwarz-seite { margin: 0; width: 100%; max-width: 820px; }
+.schwarz-flaeche { position: relative; width: 100%; background: var(--papier); box-shadow: 0 0 0 1px var(--linie); user-select: none; -webkit-user-select: none; cursor: crosshair; overflow: hidden; }
+.schwarz-flaeche.zeichnet { touch-action: none; }
+.schwarz-flaeche img { position: absolute; inset: 0; width: 100%; height: 100%; display: block; pointer-events: none; }
+.schwarz-kasten, .schwarz-wort { position: absolute; pointer-events: none; }
+.schwarz-kasten { background: color-mix(in srgb, var(--schwaerzung) 72%, transparent); outline: 1px solid var(--schlecht); }
+.schwarz-kasten.zieht { background: color-mix(in srgb, var(--schwaerzung) 35%, transparent); outline: 1px dashed var(--schlecht); }
+.schwarz-wort { outline: 1px dotted var(--papier-wort); }
+.schwarz-seiten.vorschau .schwarz-kasten { background: var(--schwaerzung); outline: 0; }
+.schwarz-seiten.vorschau .schwarz-flaeche { cursor: default; }
+.schwarz-ziel { border: 0; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.schwarz-ziel .haken { display: flex; align-items: baseline; gap: 6px; overflow-wrap: anywhere; }
+/* PDF verkleinern (#393): Stufen als Zeilen mit geschätzter Größe rechts. */
+.stufenwahl { border: 0; margin: 8px 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.stufenwahl > div { flex-direction: column; flex-wrap: nowrap; gap: 6px; }
+.stufenwahl .stufe { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 4px 10px; padding: 8px 10px; border: 1px solid var(--linie); border-radius: 6px; background: var(--flaeche); cursor: pointer; }
+.stufenwahl .stufe.gewaehlt { border-color: var(--akzent); box-shadow: inset 0 0 0 1px var(--akzent); }
+.stufe-text { display: flex; flex-direction: column; min-width: 0; }
+.stufe-groesse { white-space: nowrap; font-variant-numeric: tabular-nums; text-align: right; }
+@media (max-width: 520px) { .stufenwahl .stufe { grid-template-columns: auto 1fr; } .stufe-groesse { grid-column: 2; text-align: left; } }
+.verkleinertwahl { display: flex; flex-direction: column; gap: 10px; margin: 6px 0; }
+.zeile-umbruch { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin: 6px 0 10px; }
+label.inline { display: inline-flex; align-items: center; gap: 6px; }
+td.umbruch { overflow-wrap: anywhere; }
+.grosse-pdfs .nur-schmal { display: none; }
+/* Am Handy (#393): Spalte „Mappe“ weg, die Mappe steht unter dem Dokument – sonst passt die Tabelle nicht. */
+@media (max-width: 600px) {
+  .grosse-pdfs th:nth-child(3), .grosse-pdfs td:nth-child(3) { display: none; }
+  .grosse-pdfs .nur-schmal { display: block; }
+}
+.seitenraster { list-style: none; margin: 10px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 10px; }
+.seitenraster .seite { position: relative; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 4px 6px; border: 1px solid var(--linie); border-radius: 6px; background: var(--flaeche); cursor: grab; }
+.seitenraster .seite:focus-visible { outline: 2px solid var(--akzent); outline-offset: 2px; }
+.seitenraster .seite.zieht { opacity: .5; }
+.seitenraster .seite.weg { opacity: .45; }
+.seitenraster .seite.weg .seitenbild { filter: grayscale(1); }
+.seitenraster .seite.teilab { box-shadow: inset 4px 0 0 var(--akzent); }
+.seitenraster .teilmarke { position: absolute; top: -9px; left: 6px; padding: 0 6px; border-radius: 8px; background: var(--akzent); color: var(--akzent-tinte); font-size: 11px; font-weight: 600; }
+.seitenbild { width: 100px; height: 130px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+.seitenbild img { max-width: 100px; max-height: 100px; border: 1px solid var(--linie); background: var(--papier); transition: transform .15s; }
+.seitenknoepfe { display: flex; flex-wrap: wrap; justify-content: center; gap: 2px 6px; }
+.symbolknopf { min-width: 26px; min-height: 26px; padding: 0 4px; border: 1px solid var(--linie); border-radius: 4px; background: var(--flaeche); color: var(--tinte); cursor: pointer; font-size: 14px; line-height: 1; }
+.symbolknopf:disabled { opacity: .4; cursor: default; }
+.zusammenfuegen { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 10px; margin: 6px 0; border: 1px solid var(--linie); border-radius: 8px; background: var(--senke); }
+.emailmappen { list-style: none; padding: 0; margin: 6px 0; display: flex; flex-direction: column; gap: 6px; max-height: 320px; overflow: auto; }
+.emailmappen ul { list-style: none; padding-left: 12px; margin: 2px 0; }
+.emailmappen li.eingerueckt { margin-left: 20px; } /* Anlagen (#998) */
+
+/* Archivnummer (#345) */
+.asnform { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 4px 0; }
+.asnform input { width: 12em; }

@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
-import { api } from '../api';
+import { betriebApi } from '../api/betrieb';
 import { Hilfe } from '../Hilfe';
 import { Link } from '../ort';
 import { titelOder } from '../seiten';
 import { t } from '../sprache';
 
-type Liste = Awaited<ReturnType<typeof api.formateUnpassend>>['typen'];
+type Liste = Awaited<ReturnType<typeof betriebApi.formateUnpassend>>['typen'];
 
 /**
  * Wartung „Angaben, die nicht zum Format passen“ (#535): Ein neues Format oder neue Datumsgrenzen machen
@@ -14,7 +14,7 @@ type Liste = Awaited<ReturnType<typeof api.formateUnpassend>>['typen'];
 export function FormateUnpassend() {
   const [liste, setListe] = useState<Liste | null>(null);
   const [fehler, setFehler] = useState<string>();
-  useEffect(() => { api.formateUnpassend().then((r) => setListe(r.typen), (e: Error) => setFehler(e.message)); }, []);
+  useEffect(() => { betriebApi.formateUnpassend().then((r) => setListe(r.typen), (e: Error) => setFehler(e.message)); }, []);
   return (
     <section className="blatt" id="formate">
       <h2 className="h3">{t('felder.wartung.titel')} <Hilfe ort="werkbank.wartung.formate" /></h2>

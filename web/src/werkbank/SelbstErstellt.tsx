@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { SelbstErstelltDetail } from '../../../shared/src/paketerstellung';
-import { api } from '../api';
+import { paketeApi } from '../api/pakete';
 import { geheZu } from '../ort';
 import { Knopf, KnopfLink } from '../bausteine';
 import { t } from '../sprache';
@@ -15,13 +15,13 @@ import { gebietsschema } from '../../../shared/src/sprache';
 export function SelbstErstelltAnsicht({ id, konflikt, onGeaendert }: { id: string; konflikt: boolean; onGeaendert(): void }) {
   const [d, setD] = useState<SelbstErstelltDetail | null>(null);
   const [fehler, setFehler] = useState<string>();
-  useEffect(() => { setD(null); api.selbstErstelltDetail(id).then(setD, (e) => setFehler((e as Error).message)); }, [id]);
+  useEffect(() => { setD(null); paketeApi.selbstErstelltDetail(id).then(setD, (e) => setFehler((e as Error).message)); }, [id]);
   if (fehler) return <div className="einspaltig"><div className="hinweis schlecht"><p>{fehler}</p></div></div>;
   if (!d) return <div className="leer"><p>{t('werkbank.selbsterstellt.lade')}</p></div>;
   const datum = (iso: string) => new Date(iso).toLocaleDateString(gebietsschema());
   async function ausListe() {
     if (!d) return;
-    try { await api.selbstAusListe(d.id); onGeaendert(); geheZu('/werkbank/pakete', true); }
+    try { await paketeApi.selbstAusListe(d.id); onGeaendert(); geheZu('/werkbank/pakete', true); }
     catch (e) { setFehler((e as Error).message); }
   }
   return (
@@ -35,7 +35,7 @@ export function SelbstErstelltAnsicht({ id, konflikt, onGeaendert }: { id: strin
       {konflikt && <div className="hinweis warn"><p>{t('pakete.selbst.konflikt', { id: d.id })}</p></div>}
       <div className="knoepfe">
         <KnopfLink to={`/werkbank/pakete/${ERSTELLEN}?von=${encodeURIComponent(d.id)}`} art="haupt">{t('pakete.selbst.neueVersion')}</KnopfLink>
-        {d.versionen[0] && <a className="knopf" href={api.selbstErstelltZip(d.id, d.versionen[0].version)}>{t('pakete.selbst.zip')}</a>}
+        {d.versionen[0] && <a className="knopf" href={paketeApi.selbstErstelltZip(d.id, d.versionen[0].version)}>{t('pakete.selbst.zip')}</a>}
         <Knopf art="gefahr" symbol="schliessen" onClick={() => ausListe()}
           rueckfrage={{ titel: t('pakete.selbst.ausListe'), text: t('pakete.selbst.ausListeFrage', { name: d.name }), ja: t('pakete.selbst.ausListe') }}>{t('pakete.selbst.ausListe')}</Knopf>
       </div>
@@ -63,7 +63,7 @@ export function SelbstErstelltAnsicht({ id, konflikt, onGeaendert }: { id: strin
         <h2 className="h3">{t('pakete.selbst.versionen')}</h2>
         <ul className="stapel">
           {d.versionen.map((v) => (
-            <li key={v.version}><a className="textknopf" href={api.selbstErstelltZip(d.id, v.version)}>{t('pakete.selbst.zipVersion', { version: v.version })}</a>
+            <li key={v.version}><a className="textknopf" href={paketeApi.selbstErstelltZip(d.id, v.version)}>{t('pakete.selbst.zipVersion', { version: v.version })}</a>
               <small className="leise"> · {datum(v.erstellt)}{v.version === d.version && d.aenderungen ? ` · ${d.aenderungen}` : d.verlauf.find((x) => x.version === v.version)?.text ? ` · ${d.verlauf.find((x) => x.version === v.version)!.text}` : ''}</small></li>
           ))}
         </ul>

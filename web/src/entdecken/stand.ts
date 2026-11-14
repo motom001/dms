@@ -1,6 +1,6 @@
 import { useEffect, useSyncExternalStore } from 'react';
 import type { EntdeckenStand, Rundgang, TippAnzeige } from '../../../shared/src/entdecken';
-import { api } from '../api';
+import { kontoApi } from '../api/konto';
 import { geheZu } from '../ort';
 
 /**
@@ -14,7 +14,7 @@ const hoerer = new Set<() => void>();
 const melde = () => { for (const h of hoerer) h(); };
 
 export function ladeEntdecken(): Promise<void> {
-  laden ??= api.entdecken().then((s) => { stand = s; fehler = false; }, () => { fehler = true; }).finally(() => { laden = null; melde(); });
+  laden ??= kontoApi.entdecken().then((s) => { stand = s; fehler = false; }, () => { fehler = true; }).finally(() => { laden = null; melde(); });
   return laden;
 }
 
@@ -30,7 +30,7 @@ export function useEntdecken(frisch = false): { stand: EntdeckenStand | null; fe
 
 /** Handlung an einem Tipp; danach den Stand neu holen. */
 export async function tippHandlung(schluessel: string, aktion: 'gezeigt' | 'erledigt' | 'ausblenden' | 'einblenden') {
-  try { await api.tippHandlung(schluessel, aktion); } catch { /* nur ein Merker – die Seite geht weiter */ }
+  try { await kontoApi.tippHandlung(schluessel, aktion); } catch { /* nur ein Merker – die Seite geht weiter */ }
   if (aktion !== 'gezeigt') await ladeEntdecken();
 }
 
@@ -50,7 +50,7 @@ export function beendeRundgang(stand2: 'gesehen' | 'spaeter' | null) {
   const a = aktiv;
   aktiv = null;
   for (const h of rundgangHoerer) h();
-  if (a && stand2) void api.rundgangMerken(a.rundgang.schluessel, stand2).catch(() => {}).then(() => ladeEntdecken());
+  if (a && stand2) void kontoApi.rundgangMerken(a.rundgang.schluessel, stand2).catch(() => {}).then(() => ladeEntdecken());
 }
 
 export const useAktiverRundgang = () => useSyncExternalStore((h) => { rundgangHoerer.add(h); return () => { rundgangHoerer.delete(h); }; }, () => aktiv);

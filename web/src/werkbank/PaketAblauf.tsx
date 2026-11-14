@@ -3,7 +3,8 @@ import { createContext, useContext, useState, type ReactNode } from 'react';
 import { Feld, FeldGruppe, HakenFeld, Knopf } from '../bausteine';
 import { auswahlMitAbhaengigkeiten, dmsPasst, inMB, passt, vergleicheVersion, vorausgewaehlt, type AblaufEingabe, type AblaufErgebnis, type AblaufInstallation, type AblaufPlan, type Ergaenzung, type InstalliertesPaket, type Katalog, type KatalogPaket, type KatalogVersion } from '../../../shared/src/pakete';
 import type { EinstellungFeld } from '../../../shared/src/paketeinstellungen';
-import { api, ApiFehler, type PaketVorschau, type Sammeldatei, type SammelPaket } from '../api';
+import { ApiFehler } from '../api/anfrage';
+import { paketeApi, type PaketVorschau, type Sammeldatei, type SammelPaket } from '../api/pakete';
 import { Hilfe } from '../Hilfe';
 import { Link } from '../ort';
 import { t } from '../sprache';
@@ -32,7 +33,7 @@ export interface PaketApi {
   katalog(): Promise<{ kataloge: Array<{ offiziell: boolean; katalog: Katalog | null; fehler: string | null }> }>;
   plan(e: AblaufEingabe): Promise<AblaufPlan<PaketVorschau>>;
 }
-export const PaketApiKontext = createContext<PaketApi>({ stand: () => api.pakete(), katalog: () => api.paketKatalog(false), plan: (e) => api.paketAblaufPlan(e) });
+export const PaketApiKontext = createContext<PaketApi>({ stand: () => paketeApi.pakete(), katalog: () => paketeApi.paketKatalog(false), plan: (e) => paketeApi.paketAblaufPlan(e) });
 
 /**
  * Gesammelte Antworten des Ablaufs (#804): Was „Jetzt einrichten“ später installiert, dazu eine Kurzfassung für die
@@ -378,7 +379,7 @@ export function Fragen({ plan, eingabe, zurueck, neuerPlan, fertig, sammeln, vor
     }
     setLaeuft(true); setMeldung(undefined); setFehler({});
     try {
-      const e = await api.paketAblaufInstallieren(antworten());
+      const e = await paketeApi.paketAblaufInstallieren(antworten());
       fertig(e);
     } catch (x) {
       const d = x instanceof ApiFehler ? x.details as { rechteStand?: string; felderFehler?: Record<string, string> } | undefined : undefined;

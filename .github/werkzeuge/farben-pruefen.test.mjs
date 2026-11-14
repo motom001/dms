@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, relative } from 'node:path';
-import { farbenInCss, farbenInTs, pruefe } from './farben-pruefen.mjs';
+import { farbenInCss, farbenInTs, pruefe, zuLangeCss } from './farben-pruefen.mjs';
 
 const werte = (funde) => funde.map((f) => f.wert);
 
@@ -48,4 +48,17 @@ test('prüft einen Ordner und lässt Ausnahmedateien aus', () => {
 
 test('der Bestand in web/src ist frei von festen Farben', () => {
   assert.deepEqual(pruefe(), []);
+});
+
+test('CSS-Dateien über der Zeilengrenze werden gemeldet (#1234)', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'zeilen-'));
+  writeFileSync(join(dir, 'kurz.css'), '.a { color: var(--a); }\n'.repeat(3));
+  writeFileSync(join(dir, 'lang.css'), '.a { color: var(--a); }\n'.repeat(6));
+  // Leerzeilen und Kommentare zählen nicht mit.
+  writeFileSync(join(dir, 'erklaert.css'), `/* Erklärung\n   über zwei Zeilen */\n\n${'.a { color: var(--a); }\n'.repeat(5)}`);
+  assert.deepEqual(zuLangeCss(dir, 5).map((f) => [f.datei.split('/').pop(), f.zeilen]), [['lang.css', 6]]);
+});
+
+test('der Bestand in web/src hält die Zeilengrenze je CSS-Datei ein', () => {
+  assert.deepEqual(zuLangeCss(), []);
 });

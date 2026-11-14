@@ -10,7 +10,7 @@ import { laedtNichtUrl } from '../../shared/src/startbild';
 
 /**
  * Erreichbarkeit (#122): Leiste, wenn das DMS weg ist (Update, Neustart), wenn es wieder da ist
- * und wenn danach eine neue Version läuft. Erkannt wird zentral in api.ts.
+ * und wenn danach eine neue Version läuft. Erkannt wird zentral in api/anfrage.ts.
  */
 
 /** Wird ausgelöst, sobald das DMS nach einem Ausfall wieder antwortet. */

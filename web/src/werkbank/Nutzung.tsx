@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { Merkmale } from '../../../shared/src/merkmale';
 import { VORLAGEN, vorlageFuer } from '../../../shared/src/werkbankansicht';
-import { api } from '../api';
+import { werkbankApi } from '../api/werkbank';
 import { HakenFeld } from '../bausteine';
 import { useDaten } from '../daten';
 import { Speicherleiste, useEntwurf } from '../Speicherleiste';
@@ -16,7 +16,7 @@ import { Kopf } from './Kopf';
 export function useNutzung(offen: boolean) {
   const [stand, setStand] = useState<Merkmale | null>(null);
   const [fehler, setFehler] = useState<string>();
-  const laden = useCallback(async () => { try { setStand(await api.merkmale()); setFehler(undefined); } catch (e) { setFehler((e as Error).message); } }, []);
+  const laden = useCallback(async () => { try { setStand(await werkbankApi.merkmale()); setFehler(undefined); } catch (e) { setFehler((e as Error).message); } }, []);
   useEffect(() => { if (offen) void laden(); }, [offen, laden]);
   return { stand, fehler, setStand };
 }
@@ -34,7 +34,7 @@ export function NutzungPanel({ z }: { z: NutzungZustand }) {
   async function speichern() {
     setSendet(true);
     try {
-      const n = await api.setzeMerkmale(e!);
+      const n = await werkbankApi.setzeMerkmale(e!);
       z.setStand(n); setE(n);
       // Formulare der Ablage zeigen gleich, was jetzt dazugehört.
       await d.neuLaden();

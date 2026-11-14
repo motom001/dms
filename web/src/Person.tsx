@@ -1,5 +1,5 @@
 import { createContext, useContext, type ReactNode } from 'react';
-import type { Person as PersonDaten } from './api';
+import type { Person as PersonDaten } from './api/konto';
 import { abwesenheitText, useDaten } from './daten';
 import { useSichtbarkeit } from './sichtbarkeit';
 import { Link } from './ort';

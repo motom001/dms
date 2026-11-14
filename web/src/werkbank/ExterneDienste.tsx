@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import { WARNUNG_AB, type KostenEinstellung, type Preis } from '../../../shared/src/extern';
 import { gebietsschema } from '../../../shared/src/sprache';
-import { api, ApiFehler, type ExternKosten, type ExterneDiensteStand, type ExternSummeZeile, type ExternUebersicht, type ExternZeile } from '../api';
+import { ApiFehler } from '../api/anfrage';
+import { betriebApi, type ExternKosten, type ExterneDiensteStand, type ExternSummeZeile, type ExternZeile } from '../api/betrieb';
+import { paketeApi, type ExternUebersicht } from '../api/pakete';
 import { Feld, HakenFeld, Knopf } from '../bausteine';
 import { Hilfe } from '../Hilfe';
 import { Speicherleiste, useEntwurf } from '../Speicherleiste';
@@ -37,7 +39,7 @@ export function useExtern(sichtbar: boolean) {
   const [stand, setStand] = useState<ExterneDiensteStand | null>(null);
   const [fehler, setFehler] = useState<string>();
   const laden = useCallback(async () => {
-    try { setStand(await api.extern(stunden)); setFehler(undefined); } catch (e) { setFehler((e as Error).message); }
+    try { setStand(await betriebApi.extern(stunden)); setFehler(undefined); } catch (e) { setFehler((e as Error).message); }
   }, [stunden]);
   useEffect(() => {
     if (!sichtbar) return;
@@ -134,7 +136,7 @@ export function PaketExternBlock({ paket }: { paket: string }) {
   const [stunden, setStunden] = useState(24);
   const [u, setU] = useState<ExternUebersicht | null>(null);
   const [fehler, setFehler] = useState<string>();
-  useEffect(() => { api.paketExtern(paket, stunden).then((x) => { setU(x); setFehler(undefined); }, (e) => setFehler((e as Error).message)); }, [paket, stunden]);
+  useEffect(() => { paketeApi.paketExtern(paket, stunden).then((x) => { setU(x); setFehler(undefined); }, (e) => setFehler((e as Error).message)); }, [paket, stunden]);
   return (
     <>
       <h2 className="h3">{t('systemzustand.extern.paket.titel')} <Hilfe ort="werkbank.extern" /></h2>
@@ -161,7 +163,7 @@ export function KiKostenAbschnitt({ sichtbar, nachAenderung }: { sichtbar: boole
   const [k, setK] = useState<ExternKosten | null>(null);
   const [fehler, setFehler] = useState<string>();
   const laden = useCallback(async () => {
-    try { setK(await api.externKosten(monat)); setFehler(undefined); } catch (e) { setFehler((e as Error).message); }
+    try { setK(await betriebApi.externKosten(monat)); setFehler(undefined); } catch (e) { setFehler((e as Error).message); }
   }, [monat]);
   useEffect(() => { if (sichtbar) void laden(); }, [sichtbar, laden]);
   if (!k) return fehler ? <div className="blatt" id="ki-kosten"><div className="hinweis schlecht"><p>{fehler}</p></div></div> : null;
@@ -265,7 +267,7 @@ function KostenEinstellungen({ k, gespeichert }: { k: ExternKosten; gespeichert:
     setSendet(true); setFelder({}); setMeldung(undefined);
     const preise: Record<string, Preis> = Object.fromEntries(Object.entries(e.preise).map(([id, p]) => [id, { ein: zahlAus(p.ein), aus: zahlAus(p.aus) }]));
     try {
-      const x = await api.setzeExternKosten({ waehrung: e.waehrung.trim().toUpperCase(), budget: e.budget.trim() === '' ? null : zahlAus(e.budget), hart: e.hart, preise });
+      const x = await betriebApi.setzeExternKosten({ waehrung: e.waehrung.trim().toUpperCase(), budget: e.budget.trim() === '' ? null : zahlAus(e.budget), hart: e.hart, preise });
       setE(alsEingabe(x.einstellung, x.kiPakete));
       gespeichert(x);
       setMeldung({ art: 'gut', text: t('systemzustand.extern.kosten.gespeichert') });

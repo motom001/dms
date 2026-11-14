@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import type { Systemkonto } from '../api';
+import type { Systemkonto } from '../api/konto';
 import { Knopf } from '../bausteine';
 import { Symbol } from '../Symbol';
 import { t } from '../sprache';

@@ -344,6 +344,18 @@ Subject folders only call downwards; within the same layer they may use each oth
 
 Without business logic and outside the layers (`TECHNIK`): `http/`, `pdf/`, `arbeit/`, `laeufer/`. Subject folders from layer 1 up may import, besides the core and the base, the tools `messung.ts`, `vektoren.ts`, the file technology (`hochladen.ts`, `verkleinern.ts`, `dateiumwandlung.ts`, `archivfassung.ts`, `entsperren.ts`, `paketvolltext.ts`, #1075), the technology for post, outgoing and editing PDFs (`pdfseiten.ts`, `graubild.ts`, `schwaerzen.ts`, `ausgabe.ts`, `export.ts`, `xlsx.ts`, `zip.ts`, `mail.ts`, #1077), the technology for deleting and data protection (`baum.ts`, `schriftstueck.ts`, `auskunft.ts`, `vollexport.ts`, `abruf.ts`, `passwort.ts`, `tresor.ts` – only `istVerschluesselt`, the service passes the key in –, #1078), `pdf/` and `arbeit/` – never `dienst.ts`. Routes (`*.routen.ts`) belong to the HTTP layer: they may import the service and their own subject folder; `routen.ts` fetches them directly.
 
+## Interface: styles, web API and smoke tests (#1234) { #oberflaeche-dateien }
+
+Like the server, the interface is split into small files by area – you read and change only the place that matters, and parallel work collides less often. Every file has at most 400 lines (without blank lines and comments).
+
+| What | Where | Note |
+|---|---|---|
+| Styles | `web/src/stile/` | `index.css` is the entry point and the only stylesheet that `main.tsx` includes. It loads `tokens.css` (colours), `basis.css` (elements without a class), the parts `01-…` to `13-…` and finally `startbild.css`. The order is fixed: with equal specificity the later rule wins. New rules go into the part of their area; if a part gets too long, split it at a section boundary and add it to `index.css` at the same position. `npm run lint:farben` checks the lines per CSS file. |
+| Web API | `web/src/api/` | `anfrage.ts` is the core (request with error handling, `ApiFehler`, setup code, confirmation in administration mode, loading and sending files). One module per subject area with one object and its types, modelled on the server's subject folders: `konto.ts` (`kontoApi`), `einrichtung.ts`, `betrieb.ts`, `mappen.ts`, `dokumente.ts`, `fassungen.ts`, `aufgaben.ts`, `pakete.ts`, `automatisierung.ts`, `suche.ts`, `eingaenge.ts`, `datenschutz.ts`, `werkbank.ts`. Callers import directly from the subject module (`import { mappenApi, type Seite } from '../api/mappen'`); there is deliberately no collecting file. |
+| Smoke tests | `web/rauchtest/` | `rauchtest.mjs` starts everything in a fixed order, `einrichtung.mjs` first walks through the wizard and creates the data, `hilfen.mjs` holds the frame `rauchtest(…)`, signing in, the button guard and administration mode, `muster.mjs` axe and touch targets. The tests live per area under `bereiche/` – see [Getting started](loslegen.md#rauchtests-der-oberflache). |
+
+In CI the smoke tests run one after another in a single job: all areas share one Ablago including its database, later ones build on the state of earlier ones, and some restart Ablago. Running in parallel would need a separate Ablago with its own setup for every part.
+
 ## Dependencies { #abhaengigkeiten }
 
 Ablago gets by with **little outside code**: 8 npm packages in the server, 3 in the interface, plus a handful of Alpine packages in the image. That is the best protection against supply-chain attacks and keeps security updates rare and manageable – and one of the main reasons why Node.js fits well here. It should stay like this.

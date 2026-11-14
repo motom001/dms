@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { abschnittsfelder, EINTRAG_ID, listen, MEHRFACH_VERWEISE, zahlFehler, type EinstellungBlock, type EinstellungFeld, type FeldVerweis, type GeheimStand } from '../../../shared/src/paketeinstellungen';
 import { Mehrfachauswahl } from '../ablage/Mehrfachauswahl';
 import { Fassungen, Feld, FeldGruppe, HakenFeld, Knopf, type FeldProps, type KnopfErgebnis } from '../bausteine';
-import { api, ApiFehler, type PaketEinstellungenStand } from '../api';
+import { ApiFehler } from '../api/anfrage';
+import { paketeApi, type PaketEinstellungenStand } from '../api/pakete';
 import { rueckfrage } from '../rueckfrage';
 import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 import { Symbol } from '../Symbol';
@@ -44,7 +45,7 @@ export function PaketEinstellungen({ id, gespeichert }: { id: string; gespeicher
   const ent = useEntwurf(gespeichertWerte, werte, { aus: !stand, zuruecksetzen: () => { if (stand) setWerte(zumFormular(stand)); setFehler({}); setMeldung(undefined); setRunde((r) => r + 1); } });
   useEffect(() => {
     let aktuell = true;
-    api.paketEinstellungen(id).then((s) => { if (aktuell) { setStand(s); setWerte(zumFormular(s)); } }, (e) => aktuell && setMeldung({ art: 'schlecht', text: (e as Error).message }));
+    paketeApi.paketEinstellungen(id).then((s) => { if (aktuell) { setStand(s); setWerte(zumFormular(s)); } }, (e) => aktuell && setMeldung({ art: 'schlecht', text: (e as Error).message }));
     return () => { aktuell = false; };
   }, [id]);
   if (!stand) return meldung ? <div className="hinweis schlecht"><p>{meldung.text}</p></div> : <p className="leise">{t('werkbank.paketeinstellungen.lade')}</p>;
@@ -52,7 +53,7 @@ export function PaketEinstellungen({ id, gespeichert }: { id: string; gespeicher
   async function speichern(adresseBestaetigt = false) {
     setLaeuft(true); setMeldung(undefined); setFehler({});
     try {
-      const s = await api.paketEinstellungenSpeichern(id, werte, adresseBestaetigt);
+      const s = await paketeApi.paketEinstellungenSpeichern(id, werte, adresseBestaetigt);
       setStand(s); setWerte(zumFormular(s));
       setMeldung({ art: 'gut', text: t('werkbank.paketeinstellungen.gespeichert') });
       gespeichert?.();
@@ -72,7 +73,7 @@ export function PaketEinstellungen({ id, gespeichert }: { id: string; gespeicher
   // Aktionen des Pakets, z. B. „Verbindung testen“ (#986): Ergebnis und Fehler stehen unter den Knöpfen, nicht oben.
   async function aktion(a: { schluessel: string; name: string; bestaetigen?: boolean }): Promise<KnopfErgebnis | undefined> {
     if (a.bestaetigen && !(await rueckfrage({ titel: t('werkbank.paketeinstellungen.jetzt-ausfuehren', { name: a.name }), ja: t('werkbank.paketeinstellungen.ausfuehren') }))) return;
-    const r = await api.paketAktion(id, a.schluessel);
+    const r = await paketeApi.paketAktion(id, a.schluessel);
     return { art: r.ok ? 'gut' : 'schlecht', text: r.text };
   }
   const b = stand.beschreibung;
@@ -99,7 +100,7 @@ export function PaketEinstellungen({ id, gespeichert }: { id: string; gespeicher
       </section>
       {/* Fassungen (#1006): wer wann welche Einstellung geändert hat; Geheimnisse nur als „geändert“. */}
       <Fassungen art="paketeinstellungen" eintrag={id} stand={JSON.stringify(stand.werte)} klappe={FEST}
-        nachher={async () => { const s = await api.paketEinstellungen(id); setStand(s); if (!ent.geaendert) setWerte(zumFormular(s)); }} />
+        nachher={async () => { const s = await paketeApi.paketEinstellungen(id); setStand(s); if (!ent.geaendert) setWerte(zumFormular(s)); }} />
     </div>
   );
 }

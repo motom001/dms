@@ -4,7 +4,7 @@ import { GESAMT, verwaltungsbaum } from '../../../shared/src/verwaltungsrecht';
 import { bereichName } from '../../../shared/src/werkbankansicht';
 import { gebietsschema } from '../../../shared/src/sprache';
 import { AbwesenheitFelder, AufgabenUebergeben, uebergebenText } from '../profil/Abwesenheit';
-import { api, type LinkErgebnis } from '../api';
+import { kontoApi, type LinkErgebnis } from '../api/konto';
 import { t, tn } from '../sprache';
 import { useDaten } from '../daten';
 import { useKonto } from '../konto';
@@ -32,7 +32,7 @@ type RolleEintrag = { id: string; name: string; system: boolean };
 function useRollen() {
   const d = useDaten();
   const [rollen, setRollen] = useState<RolleEintrag[] | null>(null);
-  useEffect(() => { api.rollen().then(setRollen).catch(() => setRollen([])); }, [d.stand]);
+  useEffect(() => { kontoApi.rollen().then(setRollen).catch(() => setRollen([])); }, [d.stand]);
   return { weitere: (rollen ?? []).filter((r) => !r.system), geladen: rollen !== null, typ: d.typen.find((mappentyp) => mappentyp.system === 'rolle') };
 }
 
@@ -84,10 +84,10 @@ const teilName = (teil: Teil) => t(`werkbank.benutzer.teil.${teil}`);
 async function speichereBenutzer(b: Benutzer, e: Entwurf, darfVerwaltung: boolean): Promise<void> {
   const alt = entwurfVon(b);
   const schritte: Array<[BenutzerBereich, Teil, boolean, () => Promise<unknown>]> = [
-    ['grunddaten', 'name', alt.name !== e.name, () => api.benutzerAendern(b.id, { name: e.name })],
-    ['rechte', 'rollen', !gleich(alt.rollen, [...e.rollen].sort()), () => api.benutzerAendern(b.id, { rollen: e.rollen })],
-    ['rechte', 'verwaltung', darfVerwaltung && !gleich(alt.verwaltung, [...e.verwaltung].sort()), () => api.verwaltungSetzen(b.id, e.verwaltung)],
-    ['vertretung', 'vertretung', !gleich(alt.abwesenheit, e.abwesenheit), () => api.benutzerAbwesenheit(b.id, e.abwesenheit)],
+    ['grunddaten', 'name', alt.name !== e.name, () => kontoApi.benutzerAendern(b.id, { name: e.name })],
+    ['rechte', 'rollen', !gleich(alt.rollen, [...e.rollen].sort()), () => kontoApi.benutzerAendern(b.id, { rollen: e.rollen })],
+    ['rechte', 'verwaltung', darfVerwaltung && !gleich(alt.verwaltung, [...e.verwaltung].sort()), () => kontoApi.verwaltungSetzen(b.id, e.verwaltung)],
+    ['vertretung', 'vertretung', !gleich(alt.abwesenheit, e.abwesenheit), () => kontoApi.benutzerAbwesenheit(b.id, e.abwesenheit)],
   ];
   const gespeichert: Teil[] = [];
   for (const [ort, teil, noetig, f] of schritte) {
@@ -189,7 +189,7 @@ export function BenutzerDetail({ b, neuLaden }: { b: Benutzer; neuLaden: () => P
           <AbwesenheitFelder a={e.abwesenheit} setA={(abwesenheit) => setE({ ...e, abwesenheit })} wert={gespeichert.abwesenheit} wer={selbst ? 'du' : b.name || b.email} benutzerId={b.id} offeneAufgaben={b.offeneAufgaben ?? 0} />
           <div className="knoepfe">
             <AufgabenUebergeben wert={gespeichert.abwesenheit} offeneAufgaben={b.offeneAufgaben ?? 0} gesperrt={ent.geaendert}
-              uebergeben={() => aktion(async () => { const r = await api.benutzerAufgabenAnVertreter(b.id); setMeldung({ art: 'gut', text: uebergebenText(r, d.person(gespeichert.abwesenheit.vertreterId)) }); await d.neuLaden(); })} />
+              uebergeben={() => aktion(async () => { const r = await kontoApi.benutzerAufgabenAnVertreter(b.id); setMeldung({ art: 'gut', text: uebergebenText(r, d.person(gespeichert.abwesenheit.vertreterId)) }); await d.neuLaden(); })} />
           </div>
         </Bereich>
       </form>
@@ -214,7 +214,7 @@ function Sicherheit({ b, b2, aktion, setErgebnis, neuLaden, loeschbar }: { b: Be
           : t('werkbank.benutzer.der-benutzer-hat-sein')}
           {' '}{loeschbar ? t('werkbank.benutzer.solange-die-einladung-nicht') : t('werkbank.benutzer.wer-schon-angemeldet-war')}</p>
         <div className="knoepfe">
-          <Knopf onClick={() => aktion(async () => setErgebnis(await api.neuerLink(b.id)))}>{b.hatPasswort ? t('werkbank.benutzer.passwort-link-erzeugen') : t('werkbank.benutzer.einladung-erneut-senden')}</Knopf>
+          <Knopf onClick={() => aktion(async () => setErgebnis(await kontoApi.neuerLink(b.id)))}>{b.hatPasswort ? t('werkbank.benutzer.passwort-link-erzeugen') : t('werkbank.benutzer.einladung-erneut-senden')}</Knopf>
         </div>
       </div>
       <ZweifaktorVon b={b} />
@@ -237,7 +237,7 @@ function Zugang({ b, b2, selbst, loeschbar, aktion }: { b: Benutzer; b2: Bereich
   if (!b.aktiv) return (
     <Bereich id="zugang" titel={t('werkbank.benutzer.zugang-wieder-freigeben')} klappe={b2.klappe('zugang')} kurz={t('werkbank.benutzer.status.deaktiviert')}>
       <p className="leise">{t('werkbank.benutzer.ist-deaktiviert-aktivieren-gibt', { name, wert: b.deaktiviert ? t('werkbank.benutzer.seit', { datumZeit: datumZeit(b.deaktiviert) }) : '', wert2: vertreter ? t('werkbank.benutzer.aufgaben-die-noch-fuer', { name, vertreter }) : '' })}</p>
-      <div className="knoepfe"><Knopf art="haupt" onClick={() => aktion(() => api.benutzerAendern(b.id, { aktiv: true }), t('werkbank.benutzer.aktiviert'))}>{t('werkbank.benutzer.benutzer-aktivieren')}</Knopf></div>
+      <div className="knoepfe"><Knopf art="haupt" onClick={() => aktion(() => kontoApi.benutzerAendern(b.id, { aktiv: true }), t('werkbank.benutzer.aktiviert'))}>{t('werkbank.benutzer.benutzer-aktivieren')}</Knopf></div>
     </Bereich>
   );
   if (selbst) return null;
@@ -255,7 +255,7 @@ function Zugang({ b, b2, selbst, loeschbar, aktion }: { b: Benutzer; b2: Bereich
         <p className="leise">{t('werkbank.benutzer.du-siehst-und-bedienst', { wert: name })}</p>
         <div className="knoepfe"><Knopf onClick={async () => {
           if (await rueckfrage({ titel: t('werkbank.benutzer.als-anmelden', { wert: name }), text: t('werkbank.benutzer.deine-eigene-sitzung-endet'), ja: t('werkbank.benutzer.anmelden') })) {
-            void aktion(async () => { await api.vertreten(b.id); geheZu('/ablage', true); await aktualisieren(); });
+            void aktion(async () => { await kontoApi.vertreten(b.id); geheZu('/ablage', true); await aktualisieren(); });
           }
         }}>{t('werkbank.benutzer.als-anmelden-2', { wert: name })}</Knopf></div>
       </div>
@@ -269,11 +269,11 @@ function Zugang({ b, b2, selbst, loeschbar, aktion }: { b: Benutzer; b2: Bereich
         </ul>
         {gruende.length > 0 && <div className="hinweis warn stapel"><p>{t('konten.sperren.nochnicht')}</p><ul>{gruende.map(([k, g]) => <li key={k}>{g}</li>)}</ul></div>}
         <div className="knoepfe">
-          {loeschbar && <Knopf art="gefahr" symbol="geloescht" onClick={() => { void aktion(async () => { await api.benutzerLoeschen(b.id); loeseWache(); geheZu('/werkbank/benutzer'); }); }}
+          {loeschbar && <Knopf art="gefahr" symbol="geloescht" onClick={() => { void aktion(async () => { await kontoApi.benutzerLoeschen(b.id); loeseWache(); geheZu('/werkbank/benutzer'); }); }}
             rueckfrage={{ titel: t('werkbank.benutzer.einladung-loeschen'), text: t('werkbank.benutzer.die-einladung-an-wird', { email: b.email }), ja: t('werkbank.benutzer.einladung-loeschen-2') }}>{t('werkbank.benutzer.einladung-loeschen-2')}</Knopf>}
           <Knopf art="gefahr" symbol="verboten" gesperrt={gruende.length > 0}
             rueckfrage={{ titel: t('werkbank.benutzer.deaktivieren', { name }), text: t('werkbank.benutzer.der-zugang-ist-sofort-2', { name, vertreter: String(vertreter) }), ja: t('werkbank.benutzer.deaktivieren-2') }}
-            onClick={() => { void aktion(() => api.benutzerAendern(b.id, { aktiv: false }), t('werkbank.benutzer.deaktiviert-alle-sitzungen-beendet')); }}>{t('werkbank.benutzer.benutzer-deaktivieren')}</Knopf>
+            onClick={() => { void aktion(() => kontoApi.benutzerAendern(b.id, { aktiv: false }), t('werkbank.benutzer.deaktiviert-alle-sitzungen-beendet')); }}>{t('werkbank.benutzer.benutzer-deaktivieren')}</Knopf>
         </div>
       </div>
     </Bereich>
@@ -284,7 +284,7 @@ function Zugang({ b, b2, selbst, loeschbar, aktion }: { b: Benutzer; b2: Bereich
 function Sitzungen({ b, neuLaden }: { b: Benutzer; neuLaden: () => Promise<void> }) {
   const [liste, setListe] = useState<Sitzung[] | null>(null);
   const [fehler, setFehler] = useState<string>();
-  const laden = useCallback(async () => { try { setListe(await api.sitzungen(b.id)); } catch (e) { setFehler((e as Error).message); } }, [b.id]);
+  const laden = useCallback(async () => { try { setListe(await kontoApi.sitzungen(b.id)); } catch (e) { setFehler((e as Error).message); } }, [b.id]);
   useEffect(() => { void laden(); }, [laden]);
   async function beende(fn: () => Promise<unknown>, eigene: boolean) {
     try { await fn(); } catch (e) { setFehler((e as Error).message); }
@@ -306,14 +306,14 @@ function Sitzungen({ b, neuLaden }: { b: Benutzer; neuLaden: () => Promise<void>
                 {istGeradeAktiv(s.zuletztAktiv) && <> <span className="chip gut punkt">{t('werkbank.benutzer.gerade-aktiv')}</span></>}
                 <span className="leise klein blockzeile">{t('werkbank.benutzer.zuletzt-aktiv-angemeldet-seit', { datumZeit: datumZeit(s.zuletztAktiv), datumZeit2: datumZeit(s.erstellt), wert: s.ip ? ` · ${s.ip}` : '' })}</span>
               </div>
-              <Knopf art="gefahr" groesse="klein" symbol="abmelden" onClick={() => beende(() => api.sitzungBeenden(b.id, s.id), !!s.aktuell)}
+              <Knopf art="gefahr" groesse="klein" symbol="abmelden" onClick={() => beende(() => kontoApi.sitzungBeenden(b.id, s.id), !!s.aktuell)}
                 rueckfrage={{ titel: t('werkbank.benutzer.abmelden.frage'), text: t('werkbank.benutzer.abmelden.frage.text', { geraet: geraetText(s.geraet) }), ja: t('werkbank.benutzer.abmelden') }}>{t('werkbank.benutzer.abmelden')}</Knopf>
             </li>
           ))}
         </ul>
       )}
       {liste && liste.length > 1 && (
-        <div className="knoepfe"><Knopf art="gefahr" symbol="abmelden" onClick={() => beende(() => api.alleSitzungenBeenden(b.id), liste.some((s) => s.aktuell))}
+        <div className="knoepfe"><Knopf art="gefahr" symbol="abmelden" onClick={() => beende(() => kontoApi.alleSitzungenBeenden(b.id), liste.some((s) => s.aktuell))}
           rueckfrage={{ titel: t('werkbank.benutzer.auf-allen-geraeten-abmelden', { wert: b.name || b.email, liste: liste.length }), ja: t('werkbank.benutzer.ueberall-abmelden') }}>{t('werkbank.benutzer.ueberall-abmelden')}</Knopf></div>
       )}
     </div>

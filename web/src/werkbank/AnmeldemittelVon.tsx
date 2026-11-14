@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { Benutzer } from '../../../shared/src/model';
-import { api } from '../api';
+import { kontoApi } from '../api/konto';
 import { Knopf } from '../bausteine';
 import { t } from '../sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
@@ -11,11 +11,11 @@ import { gebietsschema } from '../../../shared/src/sprache';
 export function PasskeysVon({ b }: { b: Benutzer }) {
   const [anzahl, setAnzahl] = useState<number | null>(null);
   const [fehler, setFehler] = useState<string>();
-  const laden = useCallback(async () => { try { setAnzahl((await api.benutzerPasskeys(b.id)).anzahl); } catch (e) { setFehler((e as Error).message); } }, [b.id]);
+  const laden = useCallback(async () => { try { setAnzahl((await kontoApi.benutzerPasskeys(b.id)).anzahl); } catch (e) { setFehler((e as Error).message); } }, [b.id]);
   useEffect(() => { void laden(); }, [laden]);
   const name = b.name || b.email;
   const zuruecksetzen = async () => {
-    await api.benutzerPasskeysZuruecksetzen(b.id);
+    await kontoApi.benutzerPasskeysZuruecksetzen(b.id);
     await laden();
     return { art: 'gut' as const, text: t('werkbank.benutzer.zurueckgesetzt') };
   };
@@ -36,7 +36,7 @@ export function PasskeysVon({ b }: { b: Benutzer }) {
 export function ZweifaktorVon({ b }: { b: Benutzer }) {
   const [stand, setStand] = useState<{ aktiv: boolean; seit: string | null; codesUebrig: number } | null>(null);
   const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
-  const laden = useCallback(async () => { try { setStand(await api.benutzerZweifaktor(b.id)); } catch (e) { setMeldung({ art: 'schlecht', text: (e as Error).message }); } }, [b.id]);
+  const laden = useCallback(async () => { try { setStand(await kontoApi.benutzerZweifaktor(b.id)); } catch (e) { setMeldung({ art: 'schlecht', text: (e as Error).message }); } }, [b.id]);
   useEffect(() => { void laden(); }, [laden]);
   const name = b.name || b.email;
   return (
@@ -45,7 +45,7 @@ export function ZweifaktorVon({ b }: { b: Benutzer }) {
       {!stand ? !meldung && <p className="leise">{t('werkbank.benutzer.lade')}</p> : stand.aktiv ? <>
         <p><span className="chip gut punkt">{t('werkbank.benutzer.eingerichtet')}</span>{stand.seit && <> {' '}{t('werkbank.benutzer.seit-2', { datum: new Date(stand.seit).toLocaleDateString(gebietsschema()) })}</>} {' '}{t('werkbank.benutzer.wiederherstellungscodes-uebrig', { codesUebrig: stand.codesUebrig })}</p>
         <div className="knoepfe"><Knopf art="gefahr" symbol="zuruecksetzen" rueckfrage={{ titel: t('werkbank.benutzer.zwei-faktor-anmeldung-von', { name }), text: t('werkbank.benutzer.danach-reicht-das-passwort', { name }), ja: t('werkbank.benutzer.zuruecksetzen') }} onClick={() => {
-          void api.benutzerZweifaktorZuruecksetzen(b.id).then(() => { setMeldung({ art: 'gut', text: t('werkbank.benutzer.zurueckgesetzt') }); return laden(); }).catch((e) => setMeldung({ art: 'schlecht', text: (e as Error).message }));
+          void kontoApi.benutzerZweifaktorZuruecksetzen(b.id).then(() => { setMeldung({ art: 'gut', text: t('werkbank.benutzer.zurueckgesetzt') }); return laden(); }).catch((e) => setMeldung({ art: 'schlecht', text: (e as Error).message }));
         }}>{t('werkbank.benutzer.zuruecksetzen')}</Knopf></div>
       </> : <p className="leise">{t('werkbank.benutzer.nicht-eingerichtet')}</p>}
       {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}

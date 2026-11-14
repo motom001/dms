@@ -1,6 +1,8 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { installierenUrl } from '../../shared/src/hilfe';
-import { api, ApiFehler, hatEinrichtungscode, setzeEinrichtungscode, type AnbindungEingabe, type AnbindungPruefung, type KontoStatus } from './api';
+import { ApiFehler, hatEinrichtungscode, setzeEinrichtungscode } from './api/anfrage';
+import { einrichtungApi, type AnbindungEingabe, type AnbindungPruefung } from './api/einrichtung';
+import { kontoApi, type KontoStatus } from './api/konto';
 import { WiederherstellungsAssistent } from './wiederherstellen';
 import { useKonto } from './konto';
 import { t, tn } from './sprache';
@@ -20,7 +22,7 @@ import { Feld, Knopf } from './bausteine';
 /** Nach dem Übernehmen der Datenbank ist der Server kurz weg; danach meldet er die nächste Phase. */
 async function warteBisGestartet(abbrechen: () => boolean = () => false) {
   for (let i = 0; i < 240 && !abbrechen(); i++) {
-    try { const st = await api.status(); if (st.einrichtung?.phase !== 'startet' && st.einrichtung?.phase !== 'datenbank') return; } catch { /* startet noch */ }
+    try { const st = await kontoApi.status(); if (st.einrichtung?.phase !== 'startet' && st.einrichtung?.phase !== 'datenbank') return; } catch { /* startet noch */ }
     await new Promise((r) => setTimeout(r, 1000));
   }
 }
@@ -57,7 +59,7 @@ export function Einrichtungsassistent({ status, fertig }: { status: KontoStatus;
   // Gespeicherten Code (sessionStorage) beim Laden prüfen.
   useEffect(() => {
     if (!e?.code || !hatEinrichtungscode() || phase === 'startet') return;
-    api.einrichtungCode().then(() => { if (!codeOk) { setCodeOk(true); void fertig(); } }, () => setzeEinrichtungscode(null));
+    einrichtungApi.einrichtungCode().then(() => { if (!codeOk) { setCodeOk(true); void fertig(); } }, () => setzeEinrichtungscode(null));
   }, [e?.code, phase]);
 
   // DMS startet nach dem Übernehmen der Datenbank im selben Prozess: Stand abfragen, bis es da ist.
@@ -116,7 +118,7 @@ function CodeSchritt({ ok }: { ok: () => void }) {
       </ol>
       <form className="stapel" onSubmit={(ev) => { ev.preventDefault(); void s.los(async () => {
         setzeEinrichtungscode(code.trim());
-        try { await api.einrichtungCode(); ok(); } catch (x) { setzeEinrichtungscode(null); throw x; }
+        try { await einrichtungApi.einrichtungCode(); ok(); } catch (x) { setzeEinrichtungscode(null); throw x; }
       }); }}>
         <Feld beschriftung={t('einrichtung.assistent.einrichtungscode')} fehler={s.fehler}><input className="mono" value={code} onChange={(x) => setCode(x.target.value)} placeholder="XXXX-XXXX-XXXX" autoComplete="off" autoCapitalize="characters" spellCheck={false} autoFocus required /></Feld>
         <div className="knoepfe"><Knopf art="haupt" type="submit" laeuft={s.sendet} laeuftText={t('einrichtung.assistent.pruefe')} gesperrt={!code.trim()}>{t('einrichtung.assistent.weiter')}</Knopf></div>
@@ -172,15 +174,15 @@ function DatenbankSchritt({ status, weiter }: { status: KontoStatus; weiter: () 
   return (
     <Rahmen aktiv={VOR.datenbank} titel={t('einrichtung.assistent.datenbank')} leiste={{ erledigt: (i) => i < VOR.datenbank, klick: (i) => (i === VOR.sprache ? zurSprache : null), gesperrt: (i) => (i === VOR.code ? t('einrichtung.gesperrt.code') : null) }} datei={{ imEinrichtungsmodus: true }} unter={t('einrichtung.assistent.ablago-speichert-alles-ausser')}>
       {e.fehler && <div className="hinweis warn"><p><strong>{t('einrichtung.assistent.klappt-es-nicht', { wert: e.quelle === 'umgebung' ? t('einrichtung.assistent.mit-database-url-aus') : e.quelle === 'datei' ? t('einrichtung.assistent.mit-der-gespeicherten-anbindung') : t('einrichtung.assistent.die-verbindung') })}</strong> {e.fehler}</p><p className="leise klein">{t('einrichtung.assistent.korrigiere-die-angaben-hier')}</p></div>}
-      <form className="stapel" onSubmit={(ev: FormEvent) => { ev.preventDefault(); void tu(async () => setP(await api.einrichtungDbPruefen(a))); }}>
+      <form className="stapel" onSubmit={(ev: FormEvent) => { ev.preventDefault(); void tu(async () => setP(await einrichtungApi.einrichtungDbPruefen(a))); }}>
         {datei && <p className="leise klein">{t('einrichtung.datenbank.datei')}</p>}
         <AnbindungFormular wert={a} setWert={(x) => { setA(x); setP(null); }} passwortGesetzt={!!v?.passwortGesetzt} felder={felder} />
         {p && <PruefungAnzeige p={p} />}
         {s.fehler && <p className="fehlertext">{s.fehler}</p>}
         <div className="knoepfe">
           <Knopf art={p?.ok ? 'neben' : 'haupt'} type="submit" laeuft={s.sendet} laeuftText={t('einrichtung.assistent.pruefe')}>{t('einrichtung.assistent.verbindung-pruefen')}</Knopf>
-          {p && !p.ok && p.art === 'datenbank_fehlt' && p.anlegenMoeglich && <Knopf gesperrt={s.sendet} onClick={() => void tu(async () => setP(await api.einrichtungDbAnlegen(a)))}>{t('einrichtung.assistent.datenbank-anlegen', { datenbank: a.datenbank })}</Knopf>}
-          {p?.ok && <Knopf art="haupt" gesperrt={s.sendet} onClick={() => void tu(async () => { await api.einrichtungDbUebernehmen(a); setStartet(true); await warteBisGestartet(); await weiter(); })}>{t('einrichtung.assistent.uebernehmen-und-weiter')}</Knopf>}
+          {p && !p.ok && p.art === 'datenbank_fehlt' && p.anlegenMoeglich && <Knopf gesperrt={s.sendet} onClick={() => void tu(async () => setP(await einrichtungApi.einrichtungDbAnlegen(a)))}>{t('einrichtung.assistent.datenbank-anlegen', { datenbank: a.datenbank })}</Knopf>}
+          {p?.ok && <Knopf art="haupt" gesperrt={s.sendet} onClick={() => void tu(async () => { await einrichtungApi.einrichtungDbUebernehmen(a); setStartet(true); await warteBisGestartet(); await weiter(); })}>{t('einrichtung.assistent.uebernehmen-und-weiter')}</Knopf>}
         </div>
         {p && !p.ok && p.art === 'datenbank_fehlt' && !p.anlegenMoeglich && <p className="leise klein">{t('einrichtung.assistent.dieser-benutzer-darf-keine')}</p>}
       </form>

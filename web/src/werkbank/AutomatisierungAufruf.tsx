@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { AUFRUF_GRENZEN, AUFRUF_RESERVIERT, PARAMETER_NAME, type AutomatisierungAnsicht, type Lauf, type WennAufruf } from '../../../shared/src/automatisierung';
 import { gebietsschema } from '../../../shared/src/sprache';
-import { api } from '../api';
+import { automatisierungApi } from '../api/automatisierung';
 import { Feld, Knopf } from '../bausteine';
 import { Link } from '../ort';
 import { rueckfrage } from '../rueckfrage';
@@ -59,7 +59,7 @@ export function AufrufAdresse({ a, parameter, nachher }: { a: AutomatisierungAns
   const [kopiert, setKopiert] = useState(false);
   const s = a.aufruf ?? null;
   const lege = (was: 'adresse' | 'geheimnis') => async () => {
-    const r = await api.automatisierungAufruf(a.id, was);
+    const r = await automatisierungApi.automatisierungAufruf(a.id, was);
     setNeu({ geheimnis: r.geheimnis, kopiert: false });
     await nachher();
   };
@@ -83,7 +83,7 @@ export function AufrufAdresse({ a, parameter, nachher }: { a: AutomatisierungAns
           <Knopf art="gefahr" groesse="klein" symbol="geloescht"
             rueckfrage={{ titel: t('automatisierung.ui.aufruf.entfernen.frage'), text: t('automatisierung.ui.aufruf.entfernen.text'), ja: t('automatisierung.ui.aufruf.entfernen') }}
             onClick={async () => {
-            await api.automatisierungAufrufEntfernen(a.id); setNeu(null); await nachher();
+            await automatisierungApi.automatisierungAufrufEntfernen(a.id); setNeu(null); await nachher();
           }}>{t('automatisierung.ui.aufruf.entfernen')}</Knopf>
         </div>
       </>}

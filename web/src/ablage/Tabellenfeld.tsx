@@ -3,7 +3,7 @@ import { feldLabel } from '../../../shared/src/beschriftung';
 import { rechtsbuendig } from '../../../shared/src/feldarten';
 import { darfErstellen, type Feld, type Mappe, type Mappentyp, type Sortierung } from '../../../shared/src/model';
 import { TABELLE_SEITE, tabelleNeuText } from '../../../shared/src/tabelle';
-import { api, type Bezuege } from '../api';
+import { mappenApi, type Bezuege } from '../api/mappen';
 import { Knopf, Tabelle } from '../bausteine';
 import { useDaten } from '../daten';
 import { gebietsschema } from '../../../shared/src/sprache';
@@ -99,12 +99,12 @@ function useZeilen(mappe: Mappe | undefined, feld: string, typId: string | undef
     if (!mappe || !typId) return;
     let aktuell = true;
     setFehler(undefined);
-    api.tabelle(mappe.id, feld, 0, sortierung).then((r) => aktuell && setDaten(r), (e: Error) => aktuell && setFehler(e.message));
+    mappenApi.tabelle(mappe.id, feld, 0, sortierung).then((r) => aktuell && setDaten(r), (e: Error) => aktuell && setFehler(e.message));
     return () => { aktuell = false; };
   }, [mappe?.id, mappe?.geaendert, feld, typId, sortText, d.stand, runde]); // eslint-disable-line react-hooks/exhaustive-deps -- neu laden, wenn Mappe, Feld, Sortierung oder der Stand der Ablage sich ändern
   async function weitere() {
     if (!mappe || !daten) return;
-    const r = await api.tabelle(mappe.id, feld, daten.mappen.length, sortierung, daten.gesamt);
+    const r = await mappenApi.tabelle(mappe.id, feld, daten.mappen.length, sortierung, daten.gesamt);
     setDaten({ ...r, mappen: [...daten.mappen, ...r.mappen.filter((m) => !daten.mappen.some((x) => x.id === m.id))], bezuege: { ...daten.bezuege, ...r.bezuege } });
   }
   return { daten, fehler, weitere, neuLaden: () => setRunde((n) => n + 1) };

@@ -1,6 +1,6 @@
 import { Fragment, useCallback, useEffect, useState, type ReactNode } from 'react';
 import { ENGPASS_MINUTEN, ENGPASS_VARIABLE, VERBINDUNG_WARTEN_MS, type Einstellbar, type Messpunkt, type ProzessZeile } from '../../../shared/src/systemlast';
-import { api, type ErweiterungStand, type Schleifenverzoegerung, type SystemlastAntwort } from '../api';
+import { betriebApi, type ErweiterungStand, type Schleifenverzoegerung, type SystemlastAntwort } from '../api/betrieb';
 import { Link } from '../ort';
 import { Hilfe } from '../Hilfe';
 import { t } from '../sprache';
@@ -17,7 +17,7 @@ export function useSystemlast(offen: boolean) {
   const [stand, setStand] = useState<SystemlastAntwort | null>(null);
   const [fehler, setFehler] = useState<string>();
   const laden = useCallback(async () => {
-    try { setStand(await api.systemlast()); setFehler(undefined); } catch (e) { setFehler((e as Error).message); }
+    try { setStand(await betriebApi.systemlast()); setFehler(undefined); } catch (e) { setFehler((e as Error).message); }
   }, []);
   useEffect(() => {
     if (!offen) return;

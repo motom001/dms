@@ -1,7 +1,7 @@
 import { Feld, HakenFeld, Knopf, Schalter } from '../bausteine';
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { Symbol } from '../Symbol';
-import { api, type ExternStand, type ExternZustand, type Notfallblattstand, type ProbeStand, type SicherungEintrag, type SicherungsPlan, type SicherungStand, type SicherungsZustand, type WhLauf } from '../api';
+import { betriebApi, type ExternStand, type ExternZustand, type Notfallblattstand, type ProbeStand, type SicherungEintrag, type SicherungsPlan, type SicherungStand, type SicherungsZustand, type WhLauf } from '../api/betrieb';
 import { t, tn } from '../sprache';
 import { Schritte } from '../wiederherstellen';
 import { Hilfe, useHandbuch } from '../Hilfe';
@@ -32,7 +32,7 @@ export function useSicherung(offen: boolean) {
   const [stand, setStand] = useState<SicherungStand | null>(null);
   const [fehler, setFehler] = useState<string>();
   const laden = useCallback(async () => {
-    try { setStand(await api.sicherung()); setFehler(undefined); } catch (e) { setFehler((e as Error).message); }
+    try { setStand(await betriebApi.sicherung()); setFehler(undefined); } catch (e) { setFehler((e as Error).message); }
   }, []);
   useEffect(() => {
     if (!offen) return;
@@ -47,7 +47,7 @@ export function useSicherung(offen: boolean) {
   useEffect(() => {
     if (!laeuft) return;
     const timer = setInterval(() => {
-      void api.sicherungLauf().then((lauf) => {
+      void betriebApi.sicherungLauf().then((lauf) => {
         setStand((s) => (s ? { ...s, lauf } : s));
         if (lauf?.status !== 'laeuft') void laden();
       }, () => {});
@@ -59,7 +59,7 @@ export function useSicherung(offen: boolean) {
   useEffect(() => {
     if (!probeLaeuft) return;
     const timer = setInterval(() => {
-      void api.probeLauf().then((probe) => {
+      void betriebApi.probeLauf().then((probe) => {
         setStand((s) => (s ? { ...s, probe } : s));
         if (probe?.status !== 'laeuft') void laden();
       }, () => {});
@@ -209,13 +209,13 @@ export function SicherungPanel({ z }: { z: SicherungZustand }) {
   // „Prüfen“ (#986): läuft und Fehler in der Zeile; das Ergebnis steht danach in der Spalte „Geprüft“.
   const pruefKnopf = (name: string, moeglich: boolean) => (
     <Knopf art="link" gesperrt={(laeuft && prueft !== name) || !moeglich} laeuft={laeuft && prueft === name} laeuftText={t('werkbank.sicherung.prueft')}
-      onClick={async () => { setPrueft(name); await api.sicherungPruefen(name); await z.laden(); }}>{t('werkbank.sicherung.pruefen')}</Knopf>
+      onClick={async () => { setPrueft(name); await betriebApi.sicherungPruefen(name); await z.laden(); }}>{t('werkbank.sicherung.pruefen')}</Knopf>
   );
 
   // „Herunterladen“ (#975): heikle Handlung (frische Anmeldung), dann lädt der Browser selbst – mit Fortschritt und Abbrechen.
   const loeschFrage = (x: { name: string; meta?: { beginn: string } | null }) => ({ titel: t('werkbank.sicherung.sicherung-vom-loeschen', { wert: x.meta ? zeit(x.meta.beginn) : x.name }), text: t('werkbank.sicherung.sie-ist-danach-endgueltig'), ja: t('werkbank.sicherung.endgueltig-loeschen') });
   const ladeKnopf = (name: string) => (
-    <Knopf art="link" onClick={async () => { if (await heikelLaden(api.sicherungDateiUrl(name))) setGeladen(name); }}>{t('werkbank.sicherung.herunterladen')}</Knopf>
+    <Knopf art="link" onClick={async () => { if (await heikelLaden(betriebApi.sicherungDateiUrl(name))) setGeladen(name); }}>{t('werkbank.sicherung.herunterladen')}</Knopf>
   );
   const gewaehlt = geladen ? s.liste.find((x) => x.name === geladen) : undefined;
 
@@ -240,7 +240,7 @@ export function SicherungPanel({ z }: { z: SicherungZustand }) {
         ) : (
           <>
             <p className="leise">{t('werkbank.sicherung.ablago-laeuft-dabei-weiter')}</p>
-            <div className="knoepfe"><Knopf art="haupt" gesperrt={!s.zustand.schluessel} onClick={() => tu(() => api.sicherungJetzt())}>{t('werkbank.sicherung.jetzt-sichern')}</Knopf></div>
+            <div className="knoepfe"><Knopf art="haupt" gesperrt={!s.zustand.schluessel} onClick={() => tu(() => betriebApi.sicherungJetzt())}>{t('werkbank.sicherung.jetzt-sichern')}</Knopf></div>
             {/* Ergebnis unter dem Knopf (#986). */}
             {lauf?.status === 'fehler' && <p className="fehlertext" role="alert">{tn('werkbank.sicherung.fehlgeschlagen-2', { titel: lauf.titel, fehler: lauf.fehler })}</p>}
             {lauf?.status === 'fertig' && lauf.art === 'sicherung' && <p className="gutertext" role="status">{t('werkbank.sicherung.fertig', { titel: lauf.titel, wert: lauf.beendet ? zeit(lauf.beendet) : '' })}</p>}
@@ -256,7 +256,7 @@ export function SicherungPanel({ z }: { z: SicherungZustand }) {
             <p>{tn('werkbank.sicherung.zum-wiederherstellen-brauchst-du', { b: <strong>{t('werkbank.sicherung.sicherungen-sind-mit-einem', { anzahl: alte.length })}</strong> })}</p>
             <div className="knoepfe"><Knopf art="gefahr" symbol="geloescht" groesse="klein" gesperrt={laeuft}
               rueckfrage={{ titel: t('werkbank.sicherung.alle-sicherungen-mit-frueherem', { anzahl: alte.length }), text: t('werkbank.sicherung.sie-sind-danach-endgueltig'), ja: t('werkbank.sicherung.endgueltig-loeschen') }}
-              onClick={() => { void tu(async () => { for (const x of alte) await api.sicherungLoeschen(x.name); }, t('werkbank.sicherung.sicherungen-mit-frueherem-schluessel')); }}>
+              onClick={() => { void tu(async () => { for (const x of alte) await betriebApi.sicherungLoeschen(x.name); }, t('werkbank.sicherung.sicherungen-mit-frueherem-schluessel')); }}>
               {t('werkbank.sicherung.sicherungen-mit-frueherem-schluessel-2')}</Knopf></div>
           </div>
         )}
@@ -276,7 +276,7 @@ export function SicherungPanel({ z }: { z: SicherungZustand }) {
                 <td className="kurz">
                   {ladeKnopf(x.name)}{' · '}
                   {pruefKnopf(x.name, !!(x.meta || x.schlank))}{' · '}
-                  <Knopf art="gefahr" symbol="geloescht" groesse="klein" gesperrt={laeuft} rueckfrage={loeschFrage(x)} onClick={() => { void tu(() => api.sicherungLoeschen(x.name), t('werkbank.sicherung.sicherung-geloescht')); }}>{t('werkbank.sicherung.loeschen')}</Knopf>
+                  <Knopf art="gefahr" symbol="geloescht" groesse="klein" gesperrt={laeuft} rueckfrage={loeschFrage(x)} onClick={() => { void tu(() => betriebApi.sicherungLoeschen(x.name), t('werkbank.sicherung.sicherung-geloescht')); }}>{t('werkbank.sicherung.loeschen')}</Knopf>
                 </td>
               </tr>
             ))}</tbody>
@@ -333,7 +333,7 @@ function Heruntergeladen({ e, schliessen }: { e: SicherungEintrag; schliessen():
         <dt>{t('werkbank.sicherung.groesse')}</dt><dd>{t('werkbank.sicherung.laden.bytes', { bytes: bytes(e.bytes), genau: e.bytes.toLocaleString(gebietsschema()) })}</dd>
         <dt>{t('werkbank.sicherung.laden.sha256')}</dt><dd className="mono umbruch">{sha ?? t('werkbank.sicherung.metadaten-fehlen')}</dd>
       </dl>
-      {(e.meta || e.schlank) && <p>{tn('werkbank.sicherung.laden.metadaten', { link: <a href={api.sicherungMetadatenUrl(e.name)} download className="verweis">{t('werkbank.sicherung.laden.metadaten-link')}</a> })}</p>}
+      {(e.meta || e.schlank) && <p>{tn('werkbank.sicherung.laden.metadaten', { link: <a href={betriebApi.sicherungMetadatenUrl(e.name)} download className="verweis">{t('werkbank.sicherung.laden.metadaten-link')}</a> })}</p>}
       <div className="knoepfe">
         <a href={`${handbuch('admin', 'sicherung/')}#kopie-prufen`} target="_blank" rel="noreferrer" className="verweis">{t('werkbank.sicherung.laden.handbuch')}</a>
         <Knopf groesse="klein" onClick={schliessen}>{t('werkbank.sicherung.laden.schliessen')}</Knopf>
@@ -351,7 +351,7 @@ function Zeitplan({ plan, notfallblatt, mitNotfallblatt, gespeichert }: { plan: 
   const setA = (k: keyof typeof a, v: string) => setP({ ...p, aufbewahrung: { ...a, [k]: Math.max(0, Math.trunc(Number(v) || 0)) } });
   async function speichern() {
     setMeldung(undefined); setSendet(true);
-    try { await api.sicherungPlan(p); setMeldung({ art: 'gut', text: t('werkbank.sicherung.gespeichert') }); gespeichert(); }
+    try { await betriebApi.sicherungPlan(p); setMeldung({ art: 'gut', text: t('werkbank.sicherung.gespeichert') }); gespeichert(); }
     catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); } finally { setSendet(false); }
   }
   return (
@@ -425,7 +425,7 @@ function Probe({ stand, lauf, sicherungen, gesperrt, neuLaden }: { stand: ProbeS
   }
   return (
     <form className="blatt" id="probe" onKeyDown={ent.tasten}
-      onSubmit={(x) => { x.preventDefault(); setSendet(true); void tu(() => api.probePlan(plan), t('werkbank.sicherung.gespeichert')).finally(() => setSendet(false)); }}>
+      onSubmit={(x) => { x.preventDefault(); setSendet(true); void tu(() => betriebApi.probePlan(plan), t('werkbank.sicherung.gespeichert')).finally(() => setSendet(false)); }}>
       <h2 className="h3">{t('werkbank.sicherung.probe-wiederherstellung')} <Hilfe ort="sicherung.probe" /></h2>
       <p>{t('werkbank.sicherung.spielt-die-neueste-sicherung')}</p>
       <dl className="eigenschaften">
@@ -443,7 +443,7 @@ function Probe({ stand, lauf, sicherungen, gesperrt, neuLaden }: { stand: ProbeS
         </Feld>
       </div>
       <div className="knoepfe">
-        <Knopf gesperrt={!sicherungen || gesperrt} laeuft={laeuft} laeuftText={t('werkbank.sicherung.probe-laeuft')} onClick={() => tu(() => api.probeStarten())}>{t('werkbank.sicherung.jetzt-probeweise-wiederherstellen')}</Knopf>
+        <Knopf gesperrt={!sicherungen || gesperrt} laeuft={laeuft} laeuftText={t('werkbank.sicherung.probe-laeuft')} onClick={() => tu(() => betriebApi.probeStarten())}>{t('werkbank.sicherung.jetzt-probeweise-wiederherstellen')}</Knopf>
       </div>
       {/* Ergebnis unter dem Knopf (#986): darüber verschiebt sich nichts. */}
       {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}

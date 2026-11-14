@@ -180,8 +180,8 @@ Hover und Fokus sind für alle Arten hell und dunkel sichtbar; die Musterseite z
 
 ## Code { #code }
 
-- Baustein: `web/src/bausteine/knopf/Knopf.tsx`, Erklärung bei gesperrt: `Erklaerung.tsx`, Aussehen: `Knopf.module.css` (Grundform und Farben je Art aus `.knopf` in `web/src/styles.css`)
+- Baustein: `web/src/bausteine/knopf/Knopf.tsx`, Erklärung bei gesperrt: `Erklaerung.tsx`, Aussehen: `Knopf.module.css` (Grundform und Farben je Art aus `.knopf` in `web/src/stile/01-kopf-und-formulare.css`)
 - Rückfrage: `web/src/bausteine/rueckfrage/Rueckfrage.tsx` (Fenster, Vorschau der Musterseite), Warteschlange `web/src/rueckfrage.tsx`
 - Musterseite: `web/src/bausteine/knopf/muster.tsx`; Typprüfung: `web/src/bausteine/knopf/typpruefung.ts`
 - Lint: `ablago/knopf-farben` in `.github/werkzeuge/eslint-ablago.mjs` (Test `eslint-ablago.test.mjs`)
-- Tests: `server/test/baustein-knopf.test.ts` (zeichnet mit react-dom/server und prüft Arten, Gefahr, gesperrt in zwei Formen, `aria-*` und `data-knopf`); Rauchtests in `web/rauchtest/rauchtest.mjs`: Knopf auf der Musterseite (läuft, Ergebnis, Fehler; Gefahr mit Rückfrage; gesperrt mit Erklärung), Wächter auf jeder Seite, „+ Neu“ in Listen (#989), Eingangsordner „Jetzt prüfen“ (#986)
+- Tests: `server/test/baustein-knopf.test.ts` (zeichnet mit react-dom/server und prüft Arten, Gefahr, gesperrt in zwei Formen, `aria-*` und `data-knopf`); Rauchtests in `web/rauchtest/bereiche/bausteine-und-knoepfe.mjs`: Knopf auf der Musterseite (läuft, Ergebnis, Fehler; Gefahr mit Rückfrage; gesperrt mit Erklärung), Wächter auf jeder Seite, „+ Neu“ in Listen (#989), Eingangsordner „Jetzt prüfen“ (#986)

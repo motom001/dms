@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Mappentyp } from '../../../shared/src/model';
 import type { PlatzhalterStand, TextGesetzt, VorlageEintrag, VorlagenListe } from '../../../shared/src/textsatz';
-import { api, type MappeDetails } from '../api';
+import { mappenApi, type MappeDetails } from '../api/mappen';
+import { paketeApi } from '../api/pakete';
 import { Feld, Knopf, KnopfLink, fehlerText } from '../bausteine';
 import { Symbol } from '../Symbol';
 import { t } from '../sprache';
@@ -23,14 +24,14 @@ export function BriefAusVorlage({ typ, details, neuLaden, zumFeld, schliessen, a
   const mappe = details.mappe;
   const offen = useRef(aktion?.lauf ?? null);
   // Geschlossen ohne Ergebnis: Lauf beenden, damit die Bremse frei wird.
-  useEffect(() => () => { if (offen.current) void api.paketAktionAbbrechen(offen.current).catch(() => {}); }, []);
+  useEffect(() => () => { if (offen.current) void paketeApi.paketAktionAbbrechen(offen.current).catch(() => {}); }, []);
   const [liste, setListe] = useState<VorlagenListe | null>(null);
   const [fehler, setFehler] = useState<string>();
   const [wahl, setWahl] = useState('');
   const [register, setRegister] = useState('');
   const [fertig, setFertig] = useState<TextGesetzt | null>(null);
   useEffect(() => {
-    api.vorlagenFuer(mappe.id).then((roh) => {
+    mappenApi.vorlagenFuer(mappe.id).then((roh) => {
       const l = aktion ? { ...roh, vorlagen: roh.vorlagen.filter((v) => v.paket?.id === aktion.paket.id), herunterladen: roh.herunterladen && aktion.herunterladen } : roh;
       setListe(l);
       setWahl(l.vorlagen[0]?.dokumentId ?? '');
@@ -40,13 +41,13 @@ export function BriefAusVorlage({ typ, details, neuLaden, zumFeld, schliessen, a
   const v = liste?.vorlagen.find((x) => x.dokumentId === wahl);
 
   async function ablegen() {
-    const r = await api.textSetzen(mappe.id, wahl, register, aktion?.lauf);
+    const r = await mappenApi.textSetzen(mappe.id, wahl, register, aktion?.lauf);
     offen.current = null;
     setFertig(r);
     await neuLaden();
   }
   async function herunterladen(name: string) {
-    await api.textHerunterladen(mappe.id, wahl, name, aktion?.lauf);
+    await mappenApi.textHerunterladen(mappe.id, wahl, name, aktion?.lauf);
     // Der Lauf einer Paket-Aktion ist damit zu Ende (Historie mit Paket); ohne Aktion bleibt der Dialog offen.
     if (aktion) { offen.current = null; schliessen(); }
   }

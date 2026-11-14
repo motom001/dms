@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { auswahlText, darfErstellen, formatiere, jedeMappe, POST_STAND, zielErlaubt, type Feld, type Mappe, type Mappentyp, type Wert, type Werte } from '../../../shared/src/model';
-import { api, type MappeDetails, type PostErkennung } from '../api';
+import { dokumenteApi } from '../api/dokumente';
+import { mappenApi, type MappeDetails, type PostErkennung } from '../api/mappen';
 import { artVon } from '../../../shared/src/erkennung';
 import { betreffFeld } from '../../../shared/src/uebernehmen';
 import { useDaten } from '../daten';
@@ -70,13 +71,13 @@ export function PostLeiste({ typ, details, neuLaden }: { typ: Mappentyp; details
   useEffect(() => {
     if (versendet) return;
     let aktuell = true;
-    api.erkennung(m.id).then((e) => { if (aktuell) setErkennung(e); }, () => {});
+    mappenApi.erkennung(m.id).then((e) => { if (aktuell) setErkennung(e); }, () => {});
     return () => { aktuell = false; };
   }, [m.id, ocrStand, versendet]);
 
   async function setzeStand(s: string) {
     setFehler(undefined);
-    try { await api.mappeAendern(m.id, { werte: { stand: s } }); await neuLaden(); await d.neuLaden(); }
+    try { await mappenApi.mappeAendern(m.id, { werte: { stand: s } }); await neuLaden(); await d.neuLaden(); }
     catch (e) { setFehler((e as Error).message); }
   }
 
@@ -104,7 +105,7 @@ export function PostLeiste({ typ, details, neuLaden }: { typ: Mappentyp; details
         </div>}
       </div>
       {fehler && <div className="hinweis schlecht" role="alert"><p>{fehler}</p></div>}
-      {erkennung && !versendet && <Erkannt post={m} e={erkennung} darf={darf} neuLaden={neuLaden} neu={async () => setErkennung(await api.erkennung(m.id, true))} />}
+      {erkennung && !versendet && <Erkannt post={m} e={erkennung} darf={darf} neuLaden={neuLaden} neu={async () => setErkennung(await mappenApi.erkennung(m.id, true))} />}
       {zusammen && <Zusammenlegen typ={typ} post={m} neuLaden={neuLaden} schliessen={() => setZusammen(false)} />}
     </>
   );
@@ -120,14 +121,14 @@ function Zusammenlegen({ typ, post, neuLaden, schliessen }: { typ: Mappentyp; po
   const [fehler, setFehler] = useState<string>();
   const [laeuft, setLaeuft] = useState(false);
   useEffect(() => {
-    api.seite(typ.id, 0, 40, '', { spalte: '_erstellt', absteigend: true })
+    mappenApi.seite(typ.id, 0, 40, '', { sortierung: { spalte: '_erstellt', absteigend: true } })
       .then((s) => setListe(s.mappen.filter((x) => x.id !== post.id && !x.verborgen && auswahlText(x.werte.stand) === POST_STAND.neu && auswahlText(x.werte.richtung) !== 'Ausgehend')))
       .catch((e) => setFehler((e as Error).message));
   }, [typ.id, post.id]);
   async function legen(q: Mappe) {
     if (!(await rueckfrage({ titel: t('ablage.post.hier-anhaengen', { titelOder: titelOder(q.titel) }), text: t('ablage.post.ihre-seiten-kommen-ans', { titelOder: titelOder(post.titel), titelOder2: titelOder(q.titel) }), ja: t('ablage.post.zusammenlegen') }))) return;
     setLaeuft(true); setFehler(undefined);
-    try { await api.postZusammenlegen(post.id, q.id); schliessen(); await neuLaden(); await d.neuLaden(); }
+    try { await dokumenteApi.postZusammenlegen(post.id, q.id); schliessen(); await neuLaden(); await d.neuLaden(); }
     catch (e) { setFehler((e as Error).message); } finally { setLaeuft(false); }
   }
   const zeit = (iso: string) => new Date(iso).toLocaleString(gebietsschema(), { dateStyle: 'short', timeStyle: 'short' });
@@ -191,7 +192,7 @@ function Erkannt({ post, e, darf, neuLaden, neu }: { post: Mappe; e: PostErkennu
   const datum = e.angaben.datum?.wert;
   const eintragen = async (werte: Werte) => {
     setFehler(undefined); setLaeuft(true);
-    try { await api.mappeAendern(post.id, { werte }); await neuLaden(); await d.neuLaden(); }
+    try { await mappenApi.mappeAendern(post.id, { werte }); await neuLaden(); await d.neuLaden(); }
     catch (x) { setFehler((x as Error).message); } finally { setLaeuft(false); }
   };
   const orgTyp = e.neuerAbsender ? d.typ(e.neuerAbsender.typId) : undefined;

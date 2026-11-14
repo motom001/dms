@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { FallOhneLeserecht } from '../../../shared/src/model';
-import { api } from '../api';
+import { aufgabenApi } from '../api/aufgaben';
 import { useDaten } from '../daten';
 import { Knopf, KnopfLink } from '../bausteine';
 import { Person } from '../Person';
@@ -21,7 +21,7 @@ export function useOhneLeserecht(aktiv: boolean) {
   const [stand, setStand] = useState<{ offen: FallOhneLeserecht[]; vergangen: FallOhneLeserecht[] } | null>(null);
   const [fehler, setFehler] = useState<string>();
   const laden = useCallback(async () => {
-    try { setStand(await api.ohneLeserecht()); setFehler(undefined); } catch (e) { setFehler((e as Error).message); }
+    try { setStand(await aufgabenApi.ohneLeserecht()); setFehler(undefined); } catch (e) { setFehler((e as Error).message); }
   }, []);
   useEffect(() => { if (aktiv) void laden(); }, [aktiv, laden]);
   return { stand, fehler, laden };
@@ -50,7 +50,7 @@ export function OhneLeserechtPanel({ nachher }: { nachher?: () => Promise<void> 
     if (!(await rueckfrage({ titel: t('werkbank.ohne-leserecht.frage.titel', { name: name(f.benutzerId) }), text: t('werkbank.ohne-leserecht.frage.text', { name: name(f.benutzerId), mappe: mappe(f) }), ja: t('werkbank.ohne-leserecht.frage.ja') }))) return;
     setSendet(f.id); setMeldung(undefined);
     try {
-      await api.leserechtAufZeit(f.id);
+      await aufgabenApi.leserechtAufZeit(f.id);
       setMeldung({ art: 'gut', text: t('werkbank.ohne-leserecht.gegeben.meldung', { name: name(f.benutzerId) }) });
       await z.laden(); await nachher?.();
     } catch (e) { setMeldung({ art: 'schlecht', text: (e as Error).message }); await z.laden(); }

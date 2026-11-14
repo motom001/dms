@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
-import { api, type DatenbankStand } from '../api';
+import { betriebApi, type DatenbankStand } from '../api/betrieb';
 import { Link } from '../ort';
 import { Hilfe } from '../Hilfe';
 import { Speicherleiste, useEntwurf } from '../Speicherleiste';
@@ -21,7 +21,7 @@ export function useDatenbank(sichtbar: boolean) {
   const [stand, setStand] = useState<DatenbankStand | null>(null);
   const [fehler, setFehler] = useState<string>();
   const laden = useCallback(async () => {
-    try { setStand(await api.datenbank()); setFehler(undefined); } catch (e) { setFehler((e as Error).message); }
+    try { setStand(await betriebApi.datenbank()); setFehler(undefined); } catch (e) { setFehler((e as Error).message); }
   }, []);
   useEffect(() => {
     if (!sichtbar) return;
@@ -106,7 +106,7 @@ function Einstellungen({ z, offen }: { z: DatenbankZustand; offen?: string }) {
   async function speichern(ev: FormEvent) {
     ev.preventDefault();
     setSendet(true);
-    try { await api.datenbankEinstellen({ schwelleMs: Number(schwelle), tage: Number(tage) }); setMeldung({ art: 'gut', text: t('werkbank.datenbank.gespeichert') }); await z.laden(); }
+    try { await betriebApi.datenbankEinstellen({ schwelleMs: Number(schwelle), tage: Number(tage) }); setMeldung({ art: 'gut', text: t('werkbank.datenbank.gespeichert') }); await z.laden(); }
     catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); } finally { setSendet(false); }
   }
   return (

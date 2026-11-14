@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import type { GemerktesPasswort } from '../../../shared/src/entsperren';
 import { passkeysImBrowser, passkeyVerwenden } from '../passkey';
 import { Feld, Knopf } from '../bausteine';
-import { api } from '../api';
+import { kontoApi } from '../api/konto';
 import { Hilfe } from '../Hilfe';
 import { useKonto } from '../konto';
 import { t } from '../sprache';
@@ -18,14 +18,14 @@ const datum = (iso: string) => new Date(iso).toLocaleDateString(gebietsschema(),
  */
 export function DokumentPasswoerter() {
   const { vertretung } = useKonto();
-  const [stand, setStand] = useState<Awaited<ReturnType<typeof api.dokumentPasswoerter>> | null>(null);
+  const [stand, setStand] = useState<Awaited<ReturnType<typeof kontoApi.dokumentPasswoerter>> | null>(null);
   const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
   const [klartext, setKlartext] = useState<Record<string, string>>({});
   const [aendern, setAendern] = useState<{ id: string; name: string; passwort: string } | null>(null);
   const [bestaetigen, setBestaetigen] = useState<null | (() => Promise<void>)>(null);
   const [geheim, setGeheim] = useState('');
   const laden = useCallback(async () => {
-    try { setStand(await api.dokumentPasswoerter()); } catch (e) { setMeldung({ art: 'schlecht', text: (e as Error).message }); }
+    try { setStand(await kontoApi.dokumentPasswoerter()); } catch (e) { setMeldung({ art: 'schlecht', text: (e as Error).message }); }
   }, []);
   useEffect(() => { if (!vertretung) void laden(); }, [laden, vertretung]);
 
@@ -34,8 +34,8 @@ export function DokumentPasswoerter() {
   const mitBestaetigung = (f: () => Promise<void>) => { setMeldung(undefined); if (bestaetigt()) void f().catch((e: Error) => setMeldung({ art: 'schlecht', text: e.message })); else { setGeheim(''); setBestaetigen(() => f); } };
 
   /** Bestätigen (Passwort, Code oder Passkey), dann die gemerkte Handlung ausführen. */
-  async function bestaetigtMit(angaben: Parameters<typeof api.dokumentPasswoerterBestaetigen>[0]) {
-    const r = await api.dokumentPasswoerterBestaetigen(angaben);
+  async function bestaetigtMit(angaben: Parameters<typeof kontoApi.dokumentPasswoerterBestaetigen>[0]) {
+    const r = await kontoApi.dokumentPasswoerterBestaetigen(angaben);
     setStand((s) => (s ? { ...s, bestaetigtBis: r.bestaetigtBis } : s));
     setGeheim('');
     const f = bestaetigen;
@@ -50,13 +50,13 @@ export function DokumentPasswoerter() {
   /** Passkey (#811): eigene Herausforderung für diesen Zweck, dann wie Passwort und Code. */
   async function mitPasskey() {
     setMeldung(undefined);
-    const o = await api.passkeyBestaetigenOptionen('dokumentpasswoerter');
+    const o = await kontoApi.passkeyBestaetigenOptionen('dokumentpasswoerter');
     await bestaetigtMit({ passkey: { kennung: o.kennung, antwort: await passkeyVerwenden(o.optionen) } });
   }
 
   const zeige = (p: GemerktesPasswort) => {
     if (klartext[p.id] !== undefined) { setKlartext(({ [p.id]: _weg, ...rest }) => rest); return; }
-    mitBestaetigung(async () => { const r = await api.dokumentPasswortZeigen(p.id); setKlartext((k) => ({ ...k, [p.id]: r.passwort })); });
+    mitBestaetigung(async () => { const r = await kontoApi.dokumentPasswortZeigen(p.id); setKlartext((k) => ({ ...k, [p.id]: r.passwort })); });
   };
 
   async function speichere(e: FormEvent) {
@@ -64,7 +64,7 @@ export function DokumentPasswoerter() {
     if (!aendern) return;
     const a = aendern;
     const tu = async () => {
-      await api.dokumentPasswortAendern(a.id, { name: a.name, ...(a.passwort ? { passwort: a.passwort } : {}) });
+      await kontoApi.dokumentPasswortAendern(a.id, { name: a.name, ...(a.passwort ? { passwort: a.passwort } : {}) });
       setAendern(null); setKlartext({});
       setMeldung({ art: 'gut', text: t('profil.dokpw.gespeichert') });
       await laden();
@@ -73,7 +73,7 @@ export function DokumentPasswoerter() {
   }
 
   async function loesche(p: GemerktesPasswort) {
-    try { await api.dokumentPasswortLoeschen(p.id); setMeldung({ art: 'gut', text: t('profil.dokpw.geloescht') }); await laden(); } catch (e) { setMeldung({ art: 'schlecht', text: (e as Error).message }); }
+    try { await kontoApi.dokumentPasswortLoeschen(p.id); setMeldung({ art: 'gut', text: t('profil.dokpw.geloescht') }); await laden(); } catch (e) { setMeldung({ art: 'schlecht', text: (e as Error).message }); }
   }
 
   return (

@@ -2,7 +2,9 @@ import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { Symbol } from '../Symbol';
 import { BESCHREIBUNG_LAENGE, LIZENZ_SCHLUESSEL, LIZENZEN_ALPHABETISCH, lizenzPasst, LIZENZNAME_LAENGE, naechsteVersionen, paketIdAus, VERSIONSARTEN, type ErstellenStand, type Lizenz, type PaketEntwurf, type PaketErstellenEingabe, type PaketPruefung, type VersionsArt } from '../../../shared/src/paketerstellung';
 import { t, tn } from '../sprache';
-import { api, ApiFehler } from '../api';
+import { ApiFehler } from '../api/anfrage';
+import { paketeApi } from '../api/pakete';
+import { werkbankApi } from '../api/werkbank';
 import { Feld, FeldGruppe, HakenFeld, Knopf, KnopfLink, PaketChip, Suchfeld } from '../bausteine';
 import { gebietsschema } from '../../../shared/src/sprache';
 import { Kopf } from './Kopf';
@@ -40,7 +42,7 @@ export function PaketErstellen({ onErstellt }: { onErstellt?: () => void } = {})
   const lauf = useRef(0);
 
   useEffect(() => {
-    api.paketErstellenStand().then((s) => {
+    paketeApi.paketErstellenStand().then((s) => {
       setStand(s);
       const von = new URLSearchParams(location.search).get('von');
       const w = von ? s.entwuerfe.find((x) => x.id === von) : undefined;
@@ -48,7 +50,7 @@ export function PaketErstellen({ onErstellt }: { onErstellt?: () => void } = {})
       else { setE(s.vorschlag); setIdAuto(!s.vorschlag.id); setFrage(s.entwuerfe.length > 0); }
     }, (x) => setFehler((x as Error).message));
     // Expertenmodus der Werkbank (#356): Version und Ablago-Version dann auch von Hand (#651).
-    api.werkbankAnsicht().then((w) => setExperte(!!w.eigene.experte), () => setExperte(false));
+    werkbankApi.werkbankAnsicht().then((w) => setExperte(!!w.eigene.experte), () => setExperte(false));
   }, []);
 
   // #651: Version und nötige Ablago-Version aus der Prüfung vorbelegen, solange nichts Passendes gewählt ist.
@@ -68,7 +70,7 @@ export function PaketErstellen({ onErstellt }: { onErstellt?: () => void } = {})
     const nr = ++lauf.current;
     setPrueft(true);
     const timer = setTimeout(() => {
-      api.paketErstellenPruefen(e).then((p) => { if (nr === lauf.current) { setPruefung(p); setFehler(undefined); } }, (x) => { if (nr === lauf.current) setFehler((x as Error).message); })
+      paketeApi.paketErstellenPruefen(e).then((p) => { if (nr === lauf.current) { setPruefung(p); setFehler(undefined); } }, (x) => { if (nr === lauf.current) setFehler((x as Error).message); })
         .finally(() => { if (nr === lauf.current) setPrueft(false); });
     }, 350);
     return () => clearTimeout(timer);
@@ -84,7 +86,7 @@ export function PaketErstellen({ onErstellt }: { onErstellt?: () => void } = {})
   async function letzteHochladen(datei: File) {
     if (!e) return;
     try {
-      const r = await api.paketLetzteVersion(datei);
+      const r = await paketeApi.paketLetzteVersion(datei);
       if (e.id && r.id !== e.id) { setFehler(t('pakete.erstellen.version.andereId', { id: r.id, eigene: e.id })); return; }
       setFehler(undefined); setHochgeladen(true);
       if (!e.id) setIdAuto(false);
@@ -102,13 +104,13 @@ export function PaketErstellen({ onErstellt }: { onErstellt?: () => void } = {})
     setSendet(true); setFehler(undefined); setFertig(undefined);
     try {
       if (mitZip) {
-        const r = await api.paketExportieren(e);
+        const r = await paketeApi.paketExportieren(e);
         setFertig(t('pakete.erstellen.fertig.zip', { datei: r.name, groesse: groesse(r.bytes) }));
       } else {
-        const r = await api.paketAnlegen(e);
+        const r = await paketeApi.paketAnlegen(e);
         setFertig(t('pakete.erstellen.fertig.angelegt', { name: r.name, version: r.version }));
       }
-      setStand(await api.paketErstellenStand());
+      setStand(await paketeApi.paketErstellenStand());
       onErstellt?.();
     } catch (x) { setFehler([(x as Error).message, ...(x instanceof ApiFehler ? x.gruende : [])].join(' ')); }
     finally { setSendet(false); }

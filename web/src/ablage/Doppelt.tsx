@@ -1,4 +1,4 @@
-import { api, type Fundstelle } from '../api';
+import { dokumenteApi, type Fundstelle } from '../api/dokumente';
 import { Link } from '../ort';
 import { pruefwert } from '../pruefwert';
 import { titelOder } from '../seiten';
@@ -20,7 +20,7 @@ export async function fundstellenFuer<T extends { datei: File }>(liste: T[], ohn
   }
   if (!mitWert.length) return erg;
   try {
-    const { fundstellen } = await api.gleicheDateien([...new Set(mitWert.map(([, w]) => w))].slice(0, 100), ohneMappe);
+    const { fundstellen } = await dokumenteApi.gleicheDateien([...new Set(mitWert.map(([, w]) => w))].slice(0, 100), ohneMappe);
     for (const [x, w] of mitWert) if (fundstellen[w]?.length) erg.set(x, fundstellen[w]);
   } catch { /* Prüfung ist eine Hilfe – ohne sie geht das Hochladen normal weiter */ }
   return erg;

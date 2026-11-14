@@ -83,7 +83,7 @@ Er läuft weiter, bricht die CI aber nicht ab; sein Ergebnis (bestanden, fehlges
 
 ### Rauchtests der Oberfläche
 
-Die Rauchtests in `web/rauchtest/rauchtest.mjs` gehen die wichtigsten Wege einmal im Browser (Chromium mit Playwright): Einrichtung im Assistenten, Anmelden und Startseite, „Dokument übernehmen“ (Neue Post öffnen, Mappentyp wählen, Werte vom Dokument übernehmen; am Ende Folgedokument abtrennen, Post in eine neue bzw. vorhandene Mappe auflösen und nur erledigen), „+ Neu“, Mappe ändern und speichern, Suche, Verwaltungsmodus mit Werkbank → Pakete, Mappentyp bearbeiten, Rundgang und „Ablago entdecken“ für ein neues Konto, Abmelden – und drei Wege in Handy-Größe. Jeder Test prüft das sichtbare Ergebnis und dass es dabei keine Fehler in der Konsole, keine fehlgeschlagene Anfrage und keine Antwort ab 400 gab (außer den erwarteten). Sie laufen im Job `rauchtests` nach dem Bauen und dauern zusammen etwa eine Minute.
+Die Rauchtests unter `web/rauchtest/` gehen die wichtigsten Wege einmal im Browser (Chromium mit Playwright): Einrichtung im Assistenten, Anmelden und Startseite, „Dokument übernehmen“ (Neue Post öffnen, Mappentyp wählen, Werte vom Dokument übernehmen; am Ende Folgedokument abtrennen, Post in eine neue bzw. vorhandene Mappe auflösen und nur erledigen), „+ Neu“, Mappe ändern und speichern, Suche, Verwaltungsmodus mit Werkbank → Pakete, Mappentyp bearbeiten, Rundgang und „Ablago entdecken“ für ein neues Konto, Abmelden – und drei Wege in Handy-Größe. Jeder Test prüft das sichtbare Ergebnis und dass es dabei keine Fehler in der Konsole, keine fehlgeschlagene Anfrage und keine Antwort ab 400 gab (außer den erwarteten). Sie laufen im Job `rauchtests` nach dem Bauen und dauern zusammen etwa eine Minute.
 
 **Aufbau der CI (#1056):** Die Server-Tests laufen in drei parallelen Jobs `tests (1/3)` bis `tests (3/3)` (`npm run test:teil -w server` mit `TEST_TEIL=1/3` usw., `node --test --test-shard`), jeder mit eigener PostgreSQL. Parallel dazu prüft `rauchtests` Release-Notiz, Sicherheitslücken der Abhängigkeiten, Typen, Bau und Oberfläche. Der kleine Sammel-Job `pruefen` wird nur grün, wenn alle Teile grün sind – er ist die Pflichtprüfung im Ruleset, auf ihn warten `version` und `image`. Lokal läuft `npm test` wie bisher alle Tests auf einmal. In `image-probe` laufen die Probe-Installationen (Vorlagen, dms-komplett, Update vom bisherigen Stand) gleichzeitig, je mit eigenem Protokoll als Gruppe im Lauf; die Browser für Rauchtests und Handbuchbilder kommen aus dem Zwischenspeicher je Playwright-Version, Systembibliotheken nur, wenn ein Browser sonst nicht startet (#1059).
 
@@ -98,7 +98,9 @@ DMS_URL=http://localhost:3000 DMS_DATENWURZEL=/tmp/rauchtest DB_HOST=localhost D
 
 Für einen zweiten Lauf Ablago beenden, die Datenwurzel und die Datenbank `dms_rauchtest` löschen (oder `DB_NAME` ändern). Bei einem Fehler liegt ein Bild der Seite in `rauchtest-fehler/` (in der CI als Artefakt `rauchtest-fehler`).
 
-**Wann ein Rauchtest dazukommt:** Ein neuer Ablauf in der Oberfläche – eine neue Seite, ein neuer Weg zu einem Ergebnis – bekommt seinen Rauchtest im selben PR; ebenso ein Weg, der bei einem Umbau leicht unbemerkt kaputtgeht. Ein Ziel für die Abdeckung gibt es nicht, Einzelheiten prüfen die Tests des Servers. So sieht ein Test aus:
+**Ein Bereich allein (#1234):** `web/rauchtest/rauchtest.mjs` startet nur die Einrichtung und danach die Bereiche unter `web/rauchtest/bereiche/` in fester Reihenfolge. Jeder Bereich bindet die Einrichtung selbst zuerst ein und lässt sich gegen ein frisch gestartetes Ablago auch allein starten, z. B. `node web/rauchtest/bereiche/pakete.mjs` mit denselben Variablen wie oben. Bereiche, die auf Daten früherer Bereiche aufbauen (etwa Post, die schon zur Mappe wurde), laufen nur im Gesamtlauf sicher. Nicht `node --test` über den Ordner: Das startet die Dateien parallel gegen dasselbe Ablago.
+
+**Wann ein Rauchtest dazukommt:** Ein neuer Ablauf in der Oberfläche – eine neue Seite, ein neuer Weg zu einem Ergebnis – bekommt seinen Rauchtest im selben PR (in der Datei seines Bereichs unter `web/rauchtest/bereiche/`); ebenso ein Weg, der bei einem Umbau leicht unbemerkt kaputtgeht. Ein Ziel für die Abdeckung gibt es nicht, Einzelheiten prüfen die Tests des Servers. So sieht ein Test aus:
 
 ```js
 rauchtest('Favorit merken', { als: LENA }, async (s) => {
@@ -108,7 +110,7 @@ rauchtest('Favorit merken', { als: LENA }, async (s) => {
 });
 ```
 
-Die Tests suchen die deutschen Texte der Oberfläche. `{ handy: true }` öffnet den Test in Handy-Größe, `erwartet: [{ status: 404, pfad: /…/ }]` erlaubt Antworten, die zu diesem Weg gehören. Gewartet wird immer auf ein Element oder Ereignis, nie eine feste Zeit – sonst wackelt der Test. Daten, die mehrere Tests brauchen, legt `vorbereiten()` über die Schnittstelle an.
+Die Tests suchen die deutschen Texte der Oberfläche. `{ handy: true }` öffnet den Test in Handy-Größe, `erwartet: [{ status: 404, pfad: /…/ }]` erlaubt Antworten, die zu diesem Weg gehören. Gewartet wird immer auf ein Element oder Ereignis, nie eine feste Zeit – sonst wackelt der Test. Daten, die mehrere Tests brauchen, legt `vorbereiten()` in `web/rauchtest/einrichtung.mjs` über die Schnittstelle an.
 
 ## Handbücher
 

@@ -2,7 +2,7 @@ import { useEffect, useId, useRef, useState } from 'react';
 import { abwesenheitWirkt } from '../../shared/src/model';
 import { heuteIn } from '../../shared/src/sichten';
 import { leseSchrift, setzeSchrift } from './design';
-import { api } from './api';
+import { kontoApi } from './api/konto';
 import { Knopf, KnopfLink } from './bausteine';
 import { Symbol } from './Symbol';
 import { Ablage } from './ablage/Ablage';
@@ -92,7 +92,7 @@ export function App() {
       {vertretung && (
         <div className="vertretungsbanner" role="alert">
           <p>{tn('oberflaeche.app.seit-alles-was-du', { b: <strong>{t('oberflaeche.app.du-agierst-als', { adminName: vertretung.adminName, wert: ich.name || ich.email })}</strong>, email: ich.email, uhrzeit: uhrzeit(vertretung.beginn) })}</p>
-          <Knopf groesse="klein" onClick={() => api.vertretungBeenden().then(() => { geheZu('/werkbank/benutzer', true); return aktualisieren(); })}>{t('oberflaeche.app.zurueck-zum-eigenen-konto')}</Knopf>
+          <Knopf groesse="klein" onClick={() => kontoApi.vertretungBeenden().then(() => { geheZu('/werkbank/benutzer', true); return aktualisieren(); })}>{t('oberflaeche.app.zurueck-zum-eigenen-konto')}</Knopf>
         </div>
       )}
       {!vertretung && hinweise.length > 0 && <Hinweise />}
@@ -199,7 +199,7 @@ function Hinweise() {
         <p>{tn('oberflaeche.app.um-einen-fehler-nachzustellen', { b: <strong>{t('konten.verwaltende.vertretung', { anzahl: hinweise.length })}</strong> })}</p>
         <ul>{hinweise.map((h) => <li key={h.id}>{t('oberflaeche.app.bis', { adminName: h.adminName, uhrzeit: uhrzeit(h.beginn), wert: h.ende ? uhrzeit(h.ende) : t('oberflaeche.app.jetzt-noch-nicht-beendet') })}</li>)}</ul>
       </div>
-      <Knopf groesse="klein" onClick={() => { setWeg(true); void api.hinweiseGesehen().then(aktualisieren); }}>{t('oberflaeche.app.verstanden')}</Knopf>
+      <Knopf groesse="klein" onClick={() => { setWeg(true); void kontoApi.hinweiseGesehen().then(aktualisieren); }}>{t('oberflaeche.app.verstanden')}</Knopf>
     </div>
   );
 }

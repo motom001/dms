@@ -1,6 +1,8 @@
 import { Feld, HakenFeld, Knopf, Schalter, type KnopfErgebnis } from '../bausteine';
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
-import { api, type Auftrag, type ExportUmzug, type KontaktZuordnung, type VollexportStand } from '../api';
+import type { Auftrag } from '../../../shared/src/auftrag';
+import { betriebApi, type KontaktZuordnung } from '../api/betrieb';
+import type { ExportUmzug, VollexportStand } from '../api/konto';
 import { t, tn } from '../sprache';
 import { EXPORT_TAGE } from '../../../shared/src/auskunft';
 import { useDaten } from '../daten';
@@ -34,7 +36,7 @@ const ANGABEN: Array<[keyof KontaktZuordnung, string]> = [['name', t('werkbank.v
 export function useVollexport(offen: boolean) {
   const [stand, setStand] = useState<VollexportStand | null>(null);
   const [fehler, setFehler] = useState<string>();
-  const laden = useCallback(async () => { try { setStand(await api.vollexport()); setFehler(undefined); } catch (e) { setFehler((e as Error).message); } }, []);
+  const laden = useCallback(async () => { try { setStand(await betriebApi.vollexport()); setFehler(undefined); } catch (e) { setFehler((e as Error).message); } }, []);
   useEffect(() => { if (offen) void laden(); }, [offen, laden]);
   return { stand, fehler, laden };
 }
@@ -52,7 +54,7 @@ export function VollexportPanel({ z }: { z: VollexportZustand }) {
   useEffect(() => { if (s && !Object.keys(kontakte).length) setKontakte(Object.fromEntries(s.kontakte.map((k) => [k.typId, k.zuordnung]))); }, [s]); // eslint-disable-line react-hooks/exhaustive-deps -- Vorbelegung nur einmal, sobald der Stand da ist – Eingaben nicht überschreiben
   useEffect(() => {
     if (auftrag?.status !== 'laeuft') return;
-    const timer = setInterval(() => void api.auftrag().then((a) => { setAuftrag(a); if (a?.status !== 'laeuft') void z.laden(); }), 1500);
+    const timer = setInterval(() => void betriebApi.auftrag().then((a) => { setAuftrag(a); if (a?.status !== 'laeuft') void z.laden(); }), 1500);
     return () => clearInterval(timer);
   }, [auftrag?.status]); // eslint-disable-line react-hooks/exhaustive-deps -- Abfrage nur beim Wechsel des Status starten oder stoppen
   async function tu(f: () => Promise<string>) {
@@ -70,7 +72,7 @@ export function VollexportPanel({ z }: { z: VollexportZustand }) {
       {meldung && <div className={`hinweis ${meldung.art}`}><p>{meldung.text}</p></div>}
       {exportHinweise({ pfad: s.ordner, imSicherungsordner: s.imSicherungsordner, umzug: s.umzug }, s.tage).map((x, i) => (
         <div key={i} className={`hinweis ${x.art}`}><p>{x.text}</p>
-          {x.umzug && <Knopf groesse="klein" onClick={() => api.vollexportUmzugGesehen().then(z.laden, (e: Error) => setMeldung({ art: 'schlecht', text: e.message }))}>{t('werkbank.export.umzug.ok')}</Knopf>}
+          {x.umzug && <Knopf groesse="klein" onClick={() => betriebApi.vollexportUmzugGesehen().then(z.laden, (e: Error) => setMeldung({ art: 'schlecht', text: e.message }))}>{t('werkbank.export.umzug.ok')}</Knopf>}
         </div>
       ))}
       <div className="blatt">
@@ -118,14 +120,14 @@ export function VollexportPanel({ z }: { z: VollexportZustand }) {
         {auftrag?.status === 'fehler' && <p className="fehlertext">{auftrag.fehler}</p>}
         <div className="knoepfe"><Knopf art="haupt" gesperrt={auftrag?.status === 'laeuft' || (pw && !pwOk)}
           onClick={() => void tu(async () => {
-            setAuftrag(await api.vollexportStarten({ passwoerter: pw, passwoerterBestaetigt: pwOk, protokolle, kontakte: Object.fromEntries(Object.entries(kontakte).filter((e): e is [string, KontaktZuordnung] => !!e[1])) }));
+            setAuftrag(await betriebApi.vollexportStarten({ passwoerter: pw, passwoerterBestaetigt: pwOk, protokolle, kontakte: Object.fromEntries(Object.entries(kontakte).filter((e): e is [string, KontaktZuordnung] => !!e[1])) }));
             return t('werkbank.vollexport.export-laeuft-im-hintergrund');
           })}>{t('werkbank.vollexport.export-starten')}</Knopf></div>
       </div>
       <div className="blatt">
         <h2 className="h3">{t('werkbank.vollexport.meine-daten-exportieren')}</h2>
         <Schalter an={s.persoenlich} beschriftung={t('werkbank.vollexport.schalter')} hinweis={t('werkbank.vollexport.mein-konto-konto-meine')}
-          setze={(an) => tu(async () => { await api.persoenlicherExport(an); await z.laden(); return an ? t('werkbank.vollexport.benutzer-duerfen-ihre-daten') : t('werkbank.vollexport.meine-daten-exportieren-abgeschaltet'); })} />
+          setze={(an) => tu(async () => { await betriebApi.persoenlicherExport(an); await z.laden(); return an ? t('werkbank.vollexport.benutzer-duerfen-ihre-daten') : t('werkbank.vollexport.meine-daten-exportieren-abgeschaltet'); })} />
       </div>
       <div className="blatt" id="exporte">
         <h2 className="h3">{t('werkbank.vollexport.vorhandene-exporte')}</h2>
@@ -139,11 +141,11 @@ export function VollexportPanel({ z }: { z: VollexportZustand }) {
                 <a className="knopf klein" href={`/api/werkbank/export/${encodeURIComponent(e.name)}/zip`}>{t('werkbank.vollexport.als-zip-herunterladen')}</a>
                 {/* „Prüfen“ (#986): Ergebnis in der Zeile des Exports, nicht oben auf der Seite. */}
                 <Knopf groesse="klein" laeuftText={t('werkbank.vollexport.prueft')} onClick={async (): Promise<KnopfErgebnis> => {
-                  const r = await api.vollexportPruefen(e.name);
+                  const r = await betriebApi.vollexportPruefen(e.name);
                   return r.ok ? { art: 'gut', text: t('werkbank.vollexport.alle-dateien-vollstaendig-und', { dateien: r.dateien }) }
                     : { art: 'schlecht', text: t('werkbank.vollexport.abweichungen', { wert: [...r.fehlend.map((x) => t('werkbank.vollexport.fehlt', { x })), ...r.abweichend.map((x) => t('werkbank.vollexport.veraendert', { x }))].slice(0, 5).join(', '), wert2: r.fehlend.length + r.abweichend.length > 5 ? ' …' : '' }) };
                 }}>{t('werkbank.vollexport.pruefen')}</Knopf>
-                <Knopf art="gefahr" symbol="geloescht" groesse="klein" rueckfrage={{ titel: t('werkbank.vollexport.diesen-export-loeschen'), text: e.name, ja: t('werkbank.vollexport.loeschen') }} onClick={() => { void tu(async () => { await api.vollexportLoeschen(e.name); await z.laden(); return t('werkbank.vollexport.export-geloescht'); }); }}>{t('werkbank.vollexport.loeschen')}</Knopf>
+                <Knopf art="gefahr" symbol="geloescht" groesse="klein" rueckfrage={{ titel: t('werkbank.vollexport.diesen-export-loeschen'), text: e.name, ja: t('werkbank.vollexport.loeschen') }} onClick={() => { void tu(async () => { await betriebApi.vollexportLoeschen(e.name); await z.laden(); return t('werkbank.vollexport.export-geloescht'); }); }}>{t('werkbank.vollexport.loeschen')}</Knopf>
               </span>
             </li>
           ))}

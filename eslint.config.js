@@ -15,7 +15,7 @@ import { defineConfig } from 'eslint/config';
 import ablago from './.github/werkzeuge/eslint-ablago.mjs';
 
 const CODE = ['server/src/**/*.ts', 'server/test/**/*.ts', 'web/src/**/*.{ts,tsx}', 'shared/src/**/*.ts'];
-const WERKZEUGE = ['.github/werkzeuge/*.mjs', 'server/test/*.mjs', 'web/rauchtest/*.mjs', 'eslint.config.js', '.dependency-cruiser.cjs'];
+const WERKZEUGE = ['.github/werkzeuge/*.mjs', 'server/test/*.mjs', 'web/rauchtest/**/*.mjs', 'eslint.config.js', '.dependency-cruiser.cjs'];
 // Leerzeilen und Kommentare zählen bei den Längen nicht mit: Erklärungen im Code sollen nichts kosten.
 const ZEILEN = { skipBlankLines: true, skipComments: true };
 
@@ -30,7 +30,9 @@ export default defineConfig([
     languageOptions: { globals: { ...globals.node } },
   },
   { files: ['**/*.cjs'], languageOptions: { sourceType: 'commonjs' } },
-  { files: ['web/rauchtest/*.mjs'], languageOptions: { globals: { ...globals.node, ...globals.browser } } },
+  { files: ['web/rauchtest/**/*.mjs'], languageOptions: { globals: { ...globals.node, ...globals.browser } } },
+  // Rauchtests (#1234): je Bereich eine Datei unter web/rauchtest/bereiche/ – höchstens 400 Zeilen wie Code.
+  { files: ['web/rauchtest/**/*.mjs'], rules: { 'max-lines': ['error', { max: 400, ...ZEILEN }] } },
 
   // Server, Oberfläche, gemeinsamer Code: mit Typinformation (je Datei das passende tsconfig.json).
   {

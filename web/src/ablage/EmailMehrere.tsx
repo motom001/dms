@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { Dokument } from '../../../shared/src/model';
-import { api } from '../api';
+import { eingaengeApi } from '../api/eingaenge';
+import { mappenApi } from '../api/mappen';
 import { useDaten } from '../daten';
 import { Hilfe } from '../Hilfe';
 import { useKonto } from '../konto';
@@ -42,14 +43,14 @@ export function EmailMehrere({ ids, fertig }: { ids: string[]; fertig(meldung?: 
   const [ergebnis, setErgebnis] = useState<{ id: string; typId: string }>();
   const zuViele = ids.length > EMAIL_MAPPEN_HOECHSTENS;
 
-  useEffect(() => { api.emailBereit().then((r) => setBereit(r.bereit), () => setBereit(false)); }, []);
+  useEffect(() => { eingaengeApi.emailBereit().then((r) => setBereit(r.bereit), () => setBereit(false)); }, []);
   useEffect(() => {
     if (zuViele) return;
     let ab = false;
     void (async () => {
       const x: MappeMitDokumenten[] = [];
       for (const id of ids) {
-        try { const m = await api.mappe(id); x.push({ id, titel: titelOder(m.mappe.titel), typId: m.mappe.typId, dokumente: m.dokumente }); } catch { /* nicht lesbar: der Server lehnt ab */ }
+        try { const m = await mappenApi.mappe(id); x.push({ id, titel: titelOder(m.mappe.titel), typId: m.mappe.typId, dokumente: m.dokumente }); } catch { /* nicht lesbar: der Server lehnt ab */ }
       }
       if (ab) return;
       setListe(x);
@@ -84,7 +85,7 @@ export function EmailMehrere({ ids, fertig }: { ids: string[]; fertig(meldung?: 
   async function senden() {
     setFehler(undefined); setLaeuft(true);
     try {
-      const r = await api.emailMehrere({ ids, an, betreff, nachricht, angaben, dokumente: umfang === 'alle' ? 'alle' : umfang === 'keine' ? [] : [...gewaehlt], mitAnlagen: umfang !== 'auswahl', ...(umfang === 'alle' && !eml ? { originalEmail: false } : {}), stempel: alsWunsch(stempel), verkleinern: kleinAn ? klein : null, fassung });
+      const r = await mappenApi.emailMehrere({ ids, an, betreff, nachricht, angaben, dokumente: umfang === 'alle' ? 'alle' : umfang === 'keine' ? [] : [...gewaehlt], mitAnlagen: umfang !== 'auswahl', ...(umfang === 'alle' && !eml ? { originalEmail: false } : {}), stempel: alsWunsch(stempel), verkleinern: kleinAn ? klein : null, fassung });
       setErgebnis(r); await d.neuLaden();
     } catch (e) { setFehler((e as Error).message); } finally { setLaeuft(false); }
   }

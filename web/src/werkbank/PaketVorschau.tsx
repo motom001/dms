@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Feld, HakenFeld, Knopf } from '../bausteine';
 import { inMB, legtEtwasAn, vorausgewaehlt } from '../../../shared/src/pakete';
-import { api, ApiFehler, type PaketVorschau } from '../api';
+import { ApiFehler } from '../api/anfrage';
+import { betriebApi } from '../api/betrieb';
+import type { PaketVorschau } from '../api/pakete';
 import { Hilfe } from '../Hilfe';
 import { useKonto } from '../konto';
 import { AktionenVorschau } from './PaketAktionen';
@@ -41,8 +43,8 @@ export interface VorschauAntwort {
 /** „Vorher sichern“ (#702): eine Sicherung starten und abwarten. Liefert den Fehler oder null; scheitert sie, kein Umbau. */
 export async function sicherungVorher(): Promise<string | null> {
   try {
-    let lauf: Awaited<ReturnType<typeof api.sicherungLauf>> = await api.sicherungJetzt();
-    while (lauf?.status === 'laeuft') { await new Promise((r) => setTimeout(r, 1500)); lauf = await api.sicherungLauf(); }
+    let lauf: Awaited<ReturnType<typeof betriebApi.sicherungLauf>> = await betriebApi.sicherungJetzt();
+    while (lauf?.status === 'laeuft') { await new Promise((r) => setTimeout(r, 1500)); lauf = await betriebApi.sicherungLauf(); }
     return lauf?.status === 'fehler' ? t('pakete.umbau.vorschau.sicherung-fehler', { fehler: lauf.fehler ?? '' }) : null;
   } catch (e) { return t('pakete.umbau.vorschau.sicherung-fehler', { fehler: (e as Error).message }); }
 }

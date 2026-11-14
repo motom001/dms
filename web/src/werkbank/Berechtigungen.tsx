@@ -8,7 +8,9 @@ import {
   beschreibeRegelBedingung, kurz, kurzStandard, RECHTE, RECHTE_LISTE, regelProblem, systemSperre,
   type Recht, type Regel, type RegelBedingung, type Regelwerk, type Wirkung,
 } from '../../../shared/src/rechte';
-import { api, type PaketAmTyp, type Testlauf } from '../api';
+import { mappenApi } from '../api/mappen';
+import { sucheApi } from '../api/suche';
+import { werkbankApi, type PaketAmTyp, type Testlauf } from '../api/werkbank';
 import type { KiUebersicht } from '../../../shared/src/pakete';
 import { useDaten } from '../daten';
 import { t, tn } from '../sprache';
@@ -138,14 +140,14 @@ export function PaketeAmTyp({ typId, klappe }: { typId: string; klappe: Klappe }
   useEffect(() => {
     if (!typId) return;
     let weg = false;
-    api.paketeAmTyp(typId).then((x) => { if (!weg) setListe(x); }, (e: Error) => { if (!weg) setFehler(e.message); });
+    werkbankApi.paketeAmTyp(typId).then((x) => { if (!weg) setListe(x); }, (e: Error) => { if (!weg) setFehler(e.message); });
     return () => { weg = true; };
   }, [typId]);
   if (typId && liste && !liste.length) return null;
   const verwehrt = liste?.filter((p) => p.verwehrt).length ?? 0;
   const setze = async (p: PaketAmTyp, darf: boolean) => {
     setSendet(p.id); setFehler(''); setMeldung('');
-    try { setListe(await api.paketVerwehren(typId, p.id, !darf)); setMeldung(t(darf ? 'pakete.amtyp.gespeichert.an' : 'pakete.amtyp.gespeichert.aus', { name: p.name })); }
+    try { setListe(await werkbankApi.paketVerwehren(typId, p.id, !darf)); setMeldung(t(darf ? 'pakete.amtyp.gespeichert.an' : 'pakete.amtyp.gespeichert.aus', { name: p.name })); }
     catch (e) { setFehler((e as Error).message); }
     finally { setSendet(''); }
   };
@@ -183,14 +185,14 @@ export function KiAmTyp({ typId, klappe }: { typId: string; klappe: Klappe }) {
   const [sendet, setSendet] = useState(false);
   useEffect(() => {
     let weg = false;
-    api.kiTypen().then((x) => { if (!weg) setK(x); }, (e: Error) => { if (!weg) setFehler(e.message); });
+    sucheApi.kiTypen().then((x) => { if (!weg) setK(x); }, (e: Error) => { if (!weg) setFehler(e.message); });
     return () => { weg = true; };
   }, [typId]);
   const eintrag = k?.typen.find((x) => x.id === typId);
   const an = !!eintrag?.zugelassen;
   const setze = async (zugelassen: boolean) => {
     setSendet(true); setFehler(''); setMeldung('');
-    try { setK(await api.setzeKiTyp(typId, zugelassen)); setMeldung(t(zugelassen ? 'pakete.ki.typ.gespeichert.an' : 'pakete.ki.typ.gespeichert.aus')); }
+    try { setK(await sucheApi.setzeKiTyp(typId, zugelassen)); setMeldung(t(zugelassen ? 'pakete.ki.typ.gespeichert.an' : 'pakete.ki.typ.gespeichert.aus')); }
     catch (e) { setFehler((e as Error).message); }
     finally { setSendet(false); }
   };
@@ -238,7 +240,7 @@ function RegelKarte({ r, typ, problem, setze, weg, griff, titel, merke, gespeich
   const fehlend = r.wenn.flatMap((b) => (b.art === 'rolle' ? b.rollen : b.art === 'benutzer' ? b.benutzer : [])).filter((x) => !titel[x]).join(',');
   useEffect(() => {
     if (offen) return;
-    for (const x of fehlend ? fehlend.split(',') : []) api.mappe(x).then((m) => merke(x, m.mappe.titel ?? '')).catch(() => merke(x, '(gelöscht)'));
+    for (const x of fehlend ? fehlend.split(',') : []) mappenApi.mappe(x).then((m) => merke(x, m.mappe.titel ?? '')).catch(() => merke(x, '(gelöscht)'));
   }, [fehlend, offen]); // eslint-disable-line react-hooks/exhaustive-deps -- Namen nur nachladen, wenn sich die Liste der fehlenden Mappen ändert
 
   if (!offen) return (
@@ -326,7 +328,7 @@ function Kopieren({ typ, regel, fertig }: { typ: Mappentyp; regel: Regel; fertig
   const [meldung, setMeldung] = useState<string>();
   async function los() {
     try {
-      const r = await api.regelKopieren(typ.id, regel.id, ziele);
+      const r = await werkbankApi.regelKopieren(typ.id, regel.id, ziele);
       setMeldung(t('werkbank.berechtigungen.in-mappentypen-ans-ende', { anzahl: r.kopiert, wert: r.ausgelassen ? t('werkbank.berechtigungen.bedingungen-passten-dort-nicht', { anzahl: r.ausgelassen }) : '' }));
       setZiele([]);
       void d.neuLaden();
@@ -367,7 +369,7 @@ export function TestlaufBlatt({ typId, entwurf, klappe }: { typId: string; entwu
   const stand = JSON.stringify(entwurf);
   const schluessel = testlaufSchluessel({ benutzerId: b, mappeId: mappe, stand });
   const { erg, fehler, los } = useTestlauf<Testlauf>(schluessel, `${b}|${mappe}`,
-    () => api.testlauf({ mappeId: mappe, benutzerId: b, berechtigungen: entwurf }));
+    () => werkbankApi.testlauf({ mappeId: mappe, benutzerId: b, berechtigungen: entwurf }));
   return (
     <Bereich id="testlauf" titel={t('werkbank.berechtigungen.testlauf')} hilfe={<Hilfe ort="berechtigungen.testlauf" />} klappe={klappe}
       kurz={typId ? t('werkbank.berechtigungen.rechte-eines-benutzers-an') : t('werkbank.berechtigungen.gibt-es-sobald-der')}
@@ -420,7 +422,7 @@ export function TestlaufBlatt({ typId, entwurf, klappe }: { typId: string; entwu
 
 export function WasSiehtBlatt({ benutzerId, admin }: { benutzerId: string; admin: boolean }) {
   // Ergebnis an den Benutzer gebunden (#371): nie die Liste eines anderen Benutzers zeigen.
-  const [gespeichert, setErg] = useState<TestlaufErgebnis<Awaited<ReturnType<typeof api.wasSieht>>>>();
+  const [gespeichert, setErg] = useState<TestlaufErgebnis<Awaited<ReturnType<typeof werkbankApi.wasSieht>>>>();
   const [fehlerZu, setFehler] = useState<TestlaufErgebnis<string>>();
   const erg = passendesErgebnis(gespeichert, benutzerId);
   const fehler = passendesErgebnis(fehlerZu, benutzerId);
@@ -428,7 +430,7 @@ export function WasSiehtBlatt({ benutzerId, admin }: { benutzerId: string; admin
   useEffect(() => {
     if (!an || admin) return;
     let aktuell = true;
-    api.wasSieht(benutzerId).then((x) => aktuell && setErg({ schluessel: benutzerId, wert: x })).catch((x) => aktuell && setFehler({ schluessel: benutzerId, wert: (x as Error).message }));
+    werkbankApi.wasSieht(benutzerId).then((x) => aktuell && setErg({ schluessel: benutzerId, wert: x })).catch((x) => aktuell && setFehler({ schluessel: benutzerId, wert: (x as Error).message }));
     return () => { aktuell = false; };
   }, [an, benutzerId, admin]);
   return (

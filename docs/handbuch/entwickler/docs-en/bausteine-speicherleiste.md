@@ -54,6 +54,6 @@ The folder still has its own bar in `MappeFormular.tsx` (green “Save”, “De
 
 ## Code { #code }
 
-- Building block: `web/src/bausteine/speicherleiste/Speicherleiste.tsx`, look: `Speicherleiste.module.css` (basic shape `.speicherleiste` in `web/src/styles.css`), logic of the buttons: `shared/src/entwurf.ts`
+- Building block: `web/src/bausteine/speicherleiste/Speicherleiste.tsx`, look: `Speicherleiste.module.css` (basic shape `.speicherleiste` in `web/src/stile/01-kopf-und-formulare.css`), logic of the buttons: `shared/src/entwurf.ts`
 - Pattern page: `web/src/bausteine/speicherleiste/muster.tsx`
 - Tests: `server/test/baustein-speicherleiste.test.ts`, `server/test/entwurf.test.ts`

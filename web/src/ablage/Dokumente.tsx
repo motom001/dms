@@ -12,7 +12,8 @@ import { Uebersetzbar } from './Uebersetzung';
 import { volltextHerkunft } from '../../../shared/src/volltext';
 import { fassungAusInfo } from '../../../shared/src/dateiumwandlung';
 import { t, tn } from '../sprache';
-import { api, archivfassungUrl, dokumentUrl, fassungUrl, versionUrl, type Fundstelle } from '../api';
+import { dokumenteApi, archivfassungUrl, dokumentUrl, fassungUrl, versionUrl, type Fundstelle } from '../api/dokumente';
+import { mappenApi } from '../api/mappen';
 import { pdfaName, type ArchivStand } from '../../../shared/src/archivfassung';
 import { namensvorschlag } from '../../../shared/src/entsperren';
 import { useDaten } from '../daten';
@@ -109,7 +110,7 @@ export function Dokumente({ register, dokumente: roh, neue, entfernt, hinzufuege
   const [asn, setAsn] = useState<{ id: string; wert: string; fehler?: string } | null>(null);
   async function speichereAsn() {
     if (!asn) return;
-    try { await api.setzeArchivnummer(asn.id, asn.wert); setAsn(null); await neuLaden?.(); }
+    try { await dokumenteApi.setzeArchivnummer(asn.id, asn.wert); setAsn(null); await neuLaden?.(); }
     catch (e) { setAsn({ ...asn, fehler: (e as Error).message }); }
   }
   const [ersetzeId, setErsetzeId] = useState<string>();
@@ -120,7 +121,7 @@ export function Dokumente({ register, dokumente: roh, neue, entfernt, hinzufuege
     if (!id) return;
     setVersionFehler(undefined);
     if (datei.size > MAX_DATEIGROESSE) { setVersionFehler(t('ablage.dokumente.ist-zu-gross-ueber', { name: datei.name })); return; }
-    try { await api.ersetzen(id, datei); await neuLaden?.(); } catch (e) { setVersionFehler((e as Error).message); }
+    try { await dokumenteApi.ersetzen(id, datei); await neuLaden?.(); } catch (e) { setVersionFehler((e as Error).message); }
   }
   const d = useDaten();
   // PDF bearbeiten (#335): Seitenansicht je Dokument, Zusammenfügen der Auswahl.
@@ -156,7 +157,7 @@ export function Dokumente({ register, dokumente: roh, neue, entfernt, hinzufuege
     if (!(await rueckfrage({ titel: t('ablage.dokumente.post-teilen-ab-frage', { name: x.name }), text: t('ablage.dokumente.post-teilen-ab-text', { anzahl: weg.length }), ja: t('ablage.dokumente.post-teilen-ab') }))) return;
     setPdfMeldung(undefined); setVersionFehler(undefined);
     try {
-      const r = await api.postAbtrennen(x.mappeId, weg.map((y) => y.id));
+      const r = await mappenApi.postAbtrennen(x.mappeId, weg.map((y) => y.id));
       setPdfMeldung(<>{t('ablage.dokumente.post-geteilt', { anzahl: weg.length })}{' '}<Link to={`/ablage/${r.neu.typId}/${r.neu.id}`} className="verweis">{String(r.neu.werte.betreff ?? t('ablage.dokumente.post'))}</Link></>);
       await neuLaden?.();
     } catch (e) { setVersionFehler((e as Error).message); }
@@ -185,7 +186,7 @@ export function Dokumente({ register, dokumente: roh, neue, entfernt, hinzufuege
     if (zusammen.entfernen && ohneKorb && !(await rueckfrage({ titel: t('ablage.dokumente.ausgangsdokumente-endgueltig'), text: t('ablage.dokumente.der-papierkorb-ist-ausgeschaltet', { pdfAuswahl: pdfAuswahl.length }), ja: t('ablage.dokumente.zusammenfuegen-und-loeschen'), gefahr: true }))) return;
     setZusammen({ ...zusammen, laeuft: true, fehler: undefined });
     try {
-      const r = await api.fuegePdfZusammen({ dokumente: pdfAuswahl.map((x) => x.id), name: zusammen.name.trim() || undefined, register: register.key, originaleEntfernen: zusammen.entfernen, bestaetigt: zusammen.entfernen && ohneKorb });
+      const r = await dokumenteApi.fuegePdfZusammen({ dokumente: pdfAuswahl.map((x) => x.id), name: zusammen.name.trim() || undefined, register: register.key, originaleEntfernen: zusammen.entfernen, bestaetigt: zusammen.entfernen && ohneKorb });
       setZusammen(null); setGewaehlt(new Set());
       setPdfMeldung(t('ablage.dokumente.pdfs-zu-zusammengefuegt', { pdfAuswahl: pdfAuswahl.length, name: r.dokument.name }));
       await neuLaden?.();
@@ -201,7 +202,7 @@ export function Dokumente({ register, dokumente: roh, neue, entfernt, hinzufuege
   const mitFrisch = (x: Dokument): Dokument => (frisch[x.id] ? { ...x, ...frisch[x.id] } : x);
   async function teilenAusblenden(id: string) {
     setTeilenWeg((w) => new Set(w).add(id));
-    try { await api.teilenHinweisAus(id); } catch { /* bleibt ausgeblendet bis zum Neuladen */ }
+    try { await dokumenteApi.teilenHinweisAus(id); } catch { /* bleibt ausgeblendet bis zum Neuladen */ }
   }
   const [text, setText] = useState<{ id: string; text: string | null } | null>(null);
   const standVon = (x: Dokument) => ocr[x.id] ?? x.ocr;
@@ -210,7 +211,7 @@ export function Dokumente({ register, dokumente: roh, neue, entfernt, hinzufuege
   useEffect(() => {
     if (!offen || !dokumente.length) return;
     const timer = setTimeout(() => {
-      void api.mappe(dokumente[0].mappeId).then((m) => {
+      void mappenApi.mappe(dokumente[0].mappeId).then((m) => {
         setOcr(Object.fromEntries(m.dokumente.map((x) => [x.id, x.ocr])));
         setFrisch(Object.fromEntries(m.dokumente.map((x) => [x.id, { sprache: x.sprache, weitereSprachen: x.weitereSprachen, teilenAb: x.teilenAb }])));
       }, () => {});
@@ -218,11 +219,11 @@ export function Dokumente({ register, dokumente: roh, neue, entfernt, hinzufuege
     return () => clearTimeout(timer);
   }, [offen, ocr, dokumente.length]); // eslint-disable-line react-hooks/exhaustive-deps -- Nachfrage nur neu planen, wenn sich Texterkennung oder Dokumentzahl ändern
   async function erneut(id: string) {
-    try { const x = await api.texterkennungErneut(id); setOcr((o) => ({ ...o, [id]: x.ocr })); } catch { /* bleibt */ }
+    try { const x = await dokumenteApi.texterkennungErneut(id); setOcr((o) => ({ ...o, [id]: x.ocr })); } catch { /* bleibt */ }
   }
   async function zeigeText(id: string) {
     if (text?.id === id) { setText(null); return; }
-    try { setText({ id, text: (await api.volltext(id)).text }); } catch { setText({ id, text: null }); }
+    try { setText({ id, text: (await dokumenteApi.volltext(id)).text }); } catch { setText({ id, text: null }); }
   }
 
   /** Anlage (#998): eingeklappte Zeile unter ihrem Hauptdokument; geht mit ihm, wenn es entfernt wird. */
@@ -324,7 +325,7 @@ export function Dokumente({ register, dokumente: roh, neue, entfernt, hinzufuege
             { key: 'original', gruppe: g.laden, symbol: 'herunterladen' as const, inhalt: t('ablage.dokumente.laden.original'), titel: t('volltext.archiv.laden.original.titel'), tu: laden(dokumentUrl(x.id, true)) }]
           : [{ key: 'original', gruppe: g.laden, symbol: 'herunterladen' as const, inhalt: t('ablage.dokumente.herunterladen'), tu: laden(dokumentUrl(x.id, true)) }]),
       mitnehmen && !stempelPflicht && z.anlagen.length > 0 && { key: 'anlagen', gruppe: g.laden, symbol: 'bezug', inhalt: t('ablage.dokumente.laden.mit-anlagen'), titel: t('ablage.anlagen.mit-anlagen', { anzahl: z.anlagen.length }),
-        tu: () => api.herunterladenMitAnlagen(x.id, t('ablage.anlagen.zip-name', { name: x.name.replace(/\.[^.]{1,5}$/, '') }), archiv ? 'archiv' : undefined) },
+        tu: () => dokumenteApi.herunterladenMitAnlagen(x.id, t('ablage.anlagen.zip-name', { name: x.name.replace(/\.[^.]{1,5}$/, '') }), archiv ? 'archiv' : undefined) },
       mitnehmen && kannStempeln(x.mime) && typ && { key: 'stempel', gruppe: g.laden, symbol: 'pdf', inhalt: stempelPflicht ? t('ablage.dokumente.herunterladen-mit-stempel') : t('ablage.dokumente.laden.mit-stempel'), titel: t('ablage.dokumente.eine-kopie-mit-stempel'),
         tu: () => setStempelOffen(stempelOffen?.id === x.id && !stempelOffen.version ? undefined : { id: x.id }) },
       bearbeitbar && pdf && { key: 'seiten', gruppe: g.bearbeiten, symbol: 'dokument', inhalt: t('ablage.dokumente.menue.seiten'), titel: t('ablage.dokumente.seiten-drehen-loeschen-umsortieren'), tu: () => nurEins(setSeitenOffen, x.id, seitenOffen) },
@@ -742,7 +743,7 @@ function PdfSchutzAnzeige({ x, betreff, fertig }: { x: Dokument; betreff: string
     e.preventDefault();
     setSendet(true); setMeldung(undefined);
     try {
-      const r = await api.dokumentEntsperren(x.id, passwort, merken ? { name } : undefined);
+      const r = await dokumenteApi.dokumentEntsperren(x.id, passwort, merken ? { name } : undefined);
       setPasswort('');
       setMeldung({ art: 'gut', text: r.hinweis ? t('mappen.entsperren.fertig-ohne-merken', { grund: r.hinweis }) : r.gemerkt ? t('mappen.entsperren.fertig-gemerkt') : t('mappen.entsperren.fertig') });
       fertig();
@@ -791,10 +792,10 @@ function mitZaehler(name: string) {
 function Versionen({ d, zurueck, neuLaden, mitStempel, mitnehmen = true }: { d: Dokument; zurueck: boolean; neuLaden?: () => Promise<void>; /** Pflicht-Stempel (#394): Herunterladen nur über den Dialog. */ mitStempel?: (nummer: number) => void; /** Exportrecht (#723): ohne E nur ansehen. */ mitnehmen?: boolean }) {
   const [liste, setListe] = useState<DokumentVersion[] | null>(null);
   const [fehler, setFehler] = useState<string>();
-  useEffect(() => { api.versionen(d.id).then((r) => setListe(r.aeltere)).catch((e) => setFehler((e as Error).message)); }, [d.id, d.version]);
+  useEffect(() => { dokumenteApi.versionen(d.id).then((r) => setListe(r.aeltere)).catch((e) => setFehler((e as Error).message)); }, [d.id, d.version]);
   async function hole(n: number) {
     setFehler(undefined);
-    try { await api.zurueckholen(d.id, n); await neuLaden?.(); } catch (e) { setFehler((e as Error).message); }
+    try { await dokumenteApi.zurueckholen(d.id, n); await neuLaden?.(); } catch (e) { setFehler((e as Error).message); }
   }
   const herkunft = (h: Herkunft | null | undefined) => (h ? HERKUNFT[h] ?? h : 'hochgeladen');
   return (

@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Benutzer } from '../../../shared/src/model';
 import { passendesErgebnis, type TestlaufErgebnis } from '../../../shared/src/testlauf';
-import { api, type Bezuege, type Systemkonto } from '../api';
+import { kontoApi, type Systemkonto } from '../api/konto';
+import type { Bezuege } from '../api/mappen';
 import { t } from '../sprache';
 import { Feld, Knopf } from '../bausteine';
 import { Symbol } from '../Symbol';
@@ -33,8 +34,8 @@ export function TestBenutzerWahl({ id, wert, setze, mitKonten }: { id: string; w
   const { bekannt, merke } = useBekannt();
   const [konten, setKonten] = useState<Benutzer[]>([]);
   const [ohne, setOhne] = useState<Systemkonto[]>([]);
-  useEffect(() => { api.benutzer().then(setKonten).catch(() => {}); }, []);
-  useEffect(() => { if (mitKonten) api.systemkonten().then(setOhne).catch(() => {}); }, [mitKonten]);
+  useEffect(() => { kontoApi.benutzer().then(setKonten).catch(() => {}); }, []);
+  useEffect(() => { if (mitKonten) kontoApi.systemkonten().then(setOhne).catch(() => {}); }, [mitKonten]);
   if (!ziel) return <p className="leise klein">{t('werkbank.testlaufwahl.der-mappentyp-benutzer-fehlt')}</p>;
   const konto = konten.find((k) => k.id === wert);
   const sonder = ohne.find((k) => k.id === wert);

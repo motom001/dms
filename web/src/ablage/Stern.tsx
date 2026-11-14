@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { api } from '../api';
+import { mappenApi } from '../api/mappen';
 import { useDaten } from '../daten';
 import { Symbol } from '../Symbol';
 import { t } from '../sprache';
@@ -19,7 +19,7 @@ export function Stern({ mappeId, an, titel, anker }: { mappeId: string; an: bool
     if (laeuft) return;
     const neu = !jetzt;
     setJetzt(neu); setLaeuft(true);
-    try { await api.favorit(mappeId, neu); await d.neuLaden(); } catch { setJetzt(!neu); } finally { setLaeuft(false); }
+    try { await mappenApi.favorit(mappeId, neu); await d.neuLaden(); } catch { setJetzt(!neu); } finally { setLaeuft(false); }
   }
   const text = jetzt ? t('ablage.stern.aus-den-favoriten-entfernen') : t('ablage.stern.zu-den-favoriten');
   return (

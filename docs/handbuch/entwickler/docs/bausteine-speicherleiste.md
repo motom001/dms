@@ -54,6 +54,6 @@ Die Mappe hat noch eine eigene Leiste in `MappeFormular.tsx` (grünes „Speiche
 
 ## Code { #code }
 
-- Baustein: `web/src/bausteine/speicherleiste/Speicherleiste.tsx`, Aussehen: `Speicherleiste.module.css` (Grundform `.speicherleiste` in `web/src/styles.css`), Logik der Knöpfe: `shared/src/entwurf.ts`
+- Baustein: `web/src/bausteine/speicherleiste/Speicherleiste.tsx`, Aussehen: `Speicherleiste.module.css` (Grundform `.speicherleiste` in `web/src/stile/01-kopf-und-formulare.css`), Logik der Knöpfe: `shared/src/entwurf.ts`
 - Musterseite: `web/src/bausteine/speicherleiste/muster.tsx`
 - Tests: `server/test/baustein-speicherleiste.test.ts`, `server/test/entwurf.test.ts`

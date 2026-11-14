@@ -1,6 +1,7 @@
 import { useContext, useEffect, useState } from 'react';
 import { KATALOG_LINK_REL, sammelSeiteMitVersion, type AblaufErgebnis, type InstalliertesPaket, type Katalog } from '../../../shared/src/pakete';
-import { api, ApiFehler, type PaketVorschau, type Sammeldatei } from '../api';
+import { ApiFehler } from '../api/anfrage';
+import { paketeApi, type PaketVorschau, type Sammeldatei } from '../api/pakete';
 import { Hilfe } from '../Hilfe';
 import { Symbol } from '../Symbol';
 import { HerkunftZeile } from './Herkunft';
@@ -113,7 +114,7 @@ export function SammeldateiWahl({ geladen, einzeln }: { geladen(s: Sammeldatei, 
     if (!f) return;
     setFehler(undefined); setLaedt(true);
     try {
-      const r = await api.paketHochladen(f);
+      const r = await paketeApi.paketHochladen(f);
       if ('sammeldatei' in r) geladen(r.sammeldatei, f.name);
       else if (einzeln) einzeln(r, f.name);
       else setFehler(t('werkbank.paketedazuholen.das-ist-ein-einzelnes'));

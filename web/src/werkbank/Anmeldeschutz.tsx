@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { Feld, HakenFeld, Knopf, KnopfLink, Schalter, type KnopfErgebnis } from '../bausteine';
-import { api, type AnbieterEingabe, type AnbieterStand, type AnmeldeschutzStand, type NotfallzugangStand, type PasskeyPflicht, type SperrEinstellung, type ZweifaktorPflicht } from '../api';
+import { kontoApi, type AnbieterEingabe, type AnbieterStand, type AnmeldeschutzStand, type NotfallzugangStand, type PasskeyPflicht, type SperrEinstellung, type ZweifaktorPflicht } from '../api/konto';
 import { Hilfe } from '../Hilfe';
 import { useKonto } from '../konto';
 import { geheZu, Link } from '../ort';
@@ -21,7 +21,7 @@ const zeit = (iso: string) => new Date(iso).toLocaleString(gebietsschema(), { da
 export function useAnmeldeschutz(offen: boolean) {
   const [stand, setStand] = useState<AnmeldeschutzStand | null>(null);
   const [fehler, setFehler] = useState<string>();
-  const laden = useCallback(async () => { try { setStand(await api.anmeldeschutz()); setFehler(undefined); } catch (e) { setFehler((e as Error).message); } }, []);
+  const laden = useCallback(async () => { try { setStand(await kontoApi.anmeldeschutz()); setFehler(undefined); } catch (e) { setFehler((e as Error).message); } }, []);
   useEffect(() => { void laden(); }, [laden]);
   useEffect(() => { if (!offen) return; const timer = setInterval(() => void laden(), 30_000); return () => clearInterval(timer); }, [offen, laden]);
   return { stand, fehler, laden, setStand };
@@ -39,10 +39,10 @@ export function AnmeldeschutzPanel({ z }: { z: AnmeldeschutzZustand }) {
   if (!s || !e) return <p className="leise">{z.fehler ?? t('werkbank.anmeldeschutz.lade')}</p>;
   async function speichern() {
     setSendet(true);
-    try { const n = await api.anmeldeschutzSetzen({ ...e!, ausnahmen: e!.ausnahmen.split(/[\s,;]+/).filter(Boolean) }); z.setStand(n); setE(sperrFormular(n.einstellung)); setMeldung({ art: 'gut', text: t('werkbank.anmeldeschutz.gespeichert') }); } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); } finally { setSendet(false); }
+    try { const n = await kontoApi.anmeldeschutzSetzen({ ...e!, ausnahmen: e!.ausnahmen.split(/[\s,;]+/).filter(Boolean) }); z.setStand(n); setE(sperrFormular(n.einstellung)); setMeldung({ art: 'gut', text: t('werkbank.anmeldeschutz.gespeichert') }); } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); } finally { setSendet(false); }
   }
   async function entsperren(ip: string) {
-    try { z.setStand(await api.entsperren(ip)); setMeldung({ art: 'gut', text: t('werkbank.anmeldeschutz.freigegeben', { ip }) }); } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); }
+    try { z.setStand(await kontoApi.entsperren(ip)); setMeldung({ art: 'gut', text: t('werkbank.anmeldeschutz.freigegeben', { ip }) }); } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); }
   }
   const zahl = ([beschriftung, hinweis]: [string, string?], wert: number, f: (n: number) => void, min: number, id: string) => (
     <Feld beschriftung={beschriftung} hinweis={hinweis}><input id={id} type="number" min={min} value={wert} onChange={(x) => f(Number(x.target.value))} /></Feld>
@@ -103,11 +103,11 @@ function NotfallzugangBlatt({ deineIp }: { deineIp: string }) {
   const [n, setN] = useState<NotfallzugangStand | null>(null);
   const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
   const [sendet, setSendet] = useState(false);
-  useEffect(() => { api.notfallzugang().then(setN).catch((x) => setMeldung({ art: 'schlecht', text: (x as Error).message })); }, []);
+  useEffect(() => { kontoApi.notfallzugang().then(setN).catch((x) => setMeldung({ art: 'schlecht', text: (x as Error).message })); }, []);
   async function setze(internet: boolean) {
     if (internet && !(await rueckfrage({ titel: t('werkbank.notfallzugang.frage'), text: t('werkbank.notfallzugang.frage.text'), ja: t('werkbank.notfallzugang.frage.ja'), gefahr: true }))) return;
     setSendet(true); setMeldung(undefined);
-    try { setN(await api.notfallzugangSetzen(internet)); setMeldung({ art: 'gut', text: t('werkbank.notfallzugang.gespeichert') }); }
+    try { setN(await kontoApi.notfallzugangSetzen(internet)); setMeldung({ art: 'gut', text: t('werkbank.notfallzugang.gespeichert') }); }
     catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); } finally { setSendet(false); }
   }
   return (
@@ -142,7 +142,7 @@ function ZweifaktorPflichtBlatt() {
   const [p, setP] = useState<ZweifaktorPflicht | null>(null);
   const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
   const [sendet, setSendet] = useState(false);
-  useEffect(() => { api.zweifaktorPflicht().then(setP).catch((x) => setMeldung({ art: 'schlecht', text: (x as Error).message })); }, []);
+  useEffect(() => { kontoApi.zweifaktorPflicht().then(setP).catch((x) => setMeldung({ art: 'schlecht', text: (x as Error).message })); }, []);
   async function setze(neu: Partial<ZweifaktorPflicht>) {
     if (!p) return;
     // #416: Pflicht für die eigene Rolle ohne eigenes Zwei-Faktor – vorher fragen, mit Weg zur Einrichtung.
@@ -157,7 +157,7 @@ function ZweifaktorPflichtBlatt() {
     // Sofort sichtbar; bei einem Fehler zurück auf den gespeicherten Stand.
     const alt = p;
     setP({ ...p, ...neu }); setSendet(true); setMeldung(undefined);
-    try { setP(await api.zweifaktorPflichtSetzen(neu)); setMeldung({ art: 'gut', text: t('werkbank.anmeldeschutz.gespeichert') }); void aktualisieren(); }
+    try { setP(await kontoApi.zweifaktorPflichtSetzen(neu)); setMeldung({ art: 'gut', text: t('werkbank.anmeldeschutz.gespeichert') }); void aktualisieren(); }
     catch (x) { setP(alt); setMeldung({ art: 'schlecht', text: (x as Error).message }); }
     finally { setSendet(false); }
   }
@@ -188,7 +188,7 @@ function PasskeyPflichtBlatt() {
   const [p, setP] = useState<PasskeyPflicht | null>(null);
   const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
   const [sendet, setSendet] = useState(false);
-  useEffect(() => { api.passkeyPflicht().then(setP).catch((x) => setMeldung({ art: 'schlecht', text: (x as Error).message })); }, []);
+  useEffect(() => { kontoApi.passkeyPflicht().then(setP).catch((x) => setMeldung({ art: 'schlecht', text: (x as Error).message })); }, []);
   async function setze(neu: Partial<ZweifaktorPflicht>) {
     if (!p) return;
     // Für die eigene Rolle ohne eigenen Passkey: vorher fragen, mit Weg zum Hinzufügen (wie #416).
@@ -201,7 +201,7 @@ function PasskeyPflichtBlatt() {
     }
     const alt = p;
     setP({ ...p, ...neu }); setSendet(true); setMeldung(undefined);
-    try { setP(await api.passkeyPflichtSetzen(neu)); setMeldung({ art: 'gut', text: t('werkbank.anmeldeschutz.gespeichert') }); void aktualisieren(); }
+    try { setP(await kontoApi.passkeyPflichtSetzen(neu)); setMeldung({ art: 'gut', text: t('werkbank.anmeldeschutz.gespeichert') }); void aktualisieren(); }
     catch (x) { setP(alt); setMeldung({ art: 'schlecht', text: (x as Error).message }); }
     finally { setSendet(false); }
   }
@@ -237,17 +237,17 @@ function AnbieterBlatt() {
   const uebernehmen = (s: AnbieterStand) => { setStand(s); setE(alsFormular(s)); };
   const gespeichert = stand ? alsFormular(stand) : null;
   const ent = useEntwurf(gespeichert, e, { aus: !e, zuruecksetzen: () => { setE(gespeichert); setMeldung(undefined); } });
-  useEffect(() => { api.anbieter().then(uebernehmen).catch((x) => setMeldung({ art: 'schlecht', text: (x as Error).message })); }, []);
+  useEffect(() => { kontoApi.anbieter().then(uebernehmen).catch((x) => setMeldung({ art: 'schlecht', text: (x as Error).message })); }, []);
   async function tu(f: () => Promise<string>) {
     setSendet(true); setMeldung(undefined);
     try { setMeldung({ art: 'gut', text: await f() }); } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); } finally { setSendet(false); }
   }
-  const speichern = () => tu(async () => { uebernehmen(await api.anbieterSetzen({ ...e!, clientSecret: e!.clientSecret || undefined })); return t('werkbank.anmeldeschutz.gespeichert'); });
+  const speichern = () => tu(async () => { uebernehmen(await kontoApi.anbieterSetzen({ ...e!, clientSecret: e!.clientSecret || undefined })); return t('werkbank.anmeldeschutz.gespeichert'); });
   // „Verbindung prüfen“ (#986): Ergebnis und Fehler stehen am Knopf.
   const pruefen = async (): Promise<KnopfErgebnis> => {
     setMeldung(undefined);
-    uebernehmen(await api.anbieterSetzen({ ...e!, aktiv: stand!.aktiv, clientSecret: e!.clientSecret || undefined }));
-    const r = await api.anbieterPruefen();
+    uebernehmen(await kontoApi.anbieterSetzen({ ...e!, aktiv: stand!.aktiv, clientSecret: e!.clientSecret || undefined }));
+    const r = await kontoApi.anbieterPruefen();
     return { art: 'gut', text: t('werkbank.anmeldeschutz.verbindung-klappt-schluessel', { anzahl: r.schluessel, aussteller: r.aussteller, wert: r.abmelden ? t('werkbank.anmeldeschutz.abmelden-beim-anbieter-moeglich') : t('werkbank.anmeldeschutz.ohne-abmelden-beim-anbieter') }) };
   };
   if (!stand || !e) return <div className="blatt"><h2 className="h3">{t('werkbank.anmeldeschutz.anmeldung-ueber-einen-anbieter')}</h2>{meldung ? <p className="fehlertext">{meldung.text}</p> : <p className="leise">{t('werkbank.anmeldeschutz.lade')}</p>}</div>;
@@ -296,7 +296,7 @@ function AnbieterBlatt() {
           text: t('werkbank.anmeldeschutz.secret-loeschen'),
           rueckfrage: { titel: t('werkbank.anmeldeschutz.secret-loeschen.frage'), text: t('werkbank.anmeldeschutz.secret-loeschen.text'), ja: t('werkbank.anmeldeschutz.secret-loeschen.ja') },
           symbol: 'schliessen',
-          onClick: () => tu(async () => { uebernehmen(await api.anbieterSetzen({ clientSecretLoeschen: true })); return t('werkbank.anmeldeschutz.client-secret-geloescht'); }),
+          onClick: () => tu(async () => { uebernehmen(await kontoApi.anbieterSetzen({ clientSecretLoeschen: true })); return t('werkbank.anmeldeschutz.client-secret-geloescht'); }),
         } : undefined} />
     </form>
   );

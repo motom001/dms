@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { api, type Notfallblattstand, type TresorStatus } from '../api';
+import { betriebApi, type Notfallblattstand, type TresorStatus } from '../api/betrieb';
 import { useKonto } from '../konto';
 import { Link } from '../ort';
 import { Erledigt, NotfallblattGrund, NOTFALLBLATT_URL, meldeSicherung, zeit } from './Sicherung';
@@ -26,7 +26,7 @@ export function useTresor(aktiv = true) {
   const [stand, setStand] = useState<TresorStatus | null>(null);
   const [fehler, setFehler] = useState<string>();
   const laden = useCallback(async () => {
-    try { setStand(await api.tresor()); setFehler(undefined); } catch (e) { setFehler((e as Error).message); }
+    try { setStand(await betriebApi.tresor()); setFehler(undefined); } catch (e) { setFehler((e as Error).message); }
   }, []);
   useEffect(() => {
     if (!aktiv) return;
@@ -78,7 +78,7 @@ export function TresorPanel({ t: eintrag }: { t: TresorZustand }) {
 
   async function erzeugen() {
     setLaeuft(true); setMeldung(undefined);
-    try { eintrag.setStand(await api.tresorErzeugen()); melde(); await aktualisieren(); setMeldung({ art: 'gut', text: t('werkbank.verschluesselung.schluessel-erzeugt-passwoerter') }); }
+    try { eintrag.setStand(await betriebApi.tresorErzeugen()); melde(); await aktualisieren(); setMeldung({ art: 'gut', text: t('werkbank.verschluesselung.schluessel-erzeugt-passwoerter') }); }
     catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); }
     finally { setLaeuft(false); }
   }
@@ -86,7 +86,7 @@ export function TresorPanel({ t: eintrag }: { t: TresorZustand }) {
 
   async function wechseln() {
     setLaeuft(true); setMeldung(undefined); setWechsel(undefined);
-    try { const r = await api.tresorWechseln(); eintrag.setStand(r); setWechsel(r); melde(); await aktualisieren(); }
+    try { const r = await betriebApi.tresorWechseln(); eintrag.setStand(r); setWechsel(r); melde(); await aktualisieren(); }
     catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); }
     finally { setLaeuft(false); }
   }
@@ -149,7 +149,7 @@ export function TresorPanel({ t: eintrag }: { t: TresorZustand }) {
                 <li className={blattGeladen ? 'erledigt' : ''}>
                   {blattGeladen && <Erledigt />}{tn('werkbank.verschluesselung.das-neue-notfallblatt-herunterladen', { link: <a className="knopf klein" href={NOTFALLBLATT_URL} download onClick={(e) => void heikelHerunterladen(e, NOTFALLBLATT_URL, () => { setBlattGeladen(true); setTimeout(() => void eintrag.laden(), 1500); setTimeout(meldeSicherung, 1500); })}>{t('werkbank.verschluesselung.notfallblatt-herunterladen')}</a> })}</li>
                 <li className={gesichert?.ok ? 'erledigt' : ''}>
-                  {gesichert?.ok && <Erledigt />}{t('werkbank.verschluesselung.eine-neue-sicherung-anlegen')}{' '}<Knopf groesse="klein" gesperrt={gesichert?.ok} onClick={() => api.sicherungJetzt().then(() => setGesichert({ ok: true, text: t('werkbank.verschluesselung.sicherung-laeuft-den-stand') })).catch((x) => setGesichert({ ok: false, text: (x as Error).message }))}>{t('werkbank.verschluesselung.jetzt-sichern')}</Knopf>
+                  {gesichert?.ok && <Erledigt />}{t('werkbank.verschluesselung.eine-neue-sicherung-anlegen')}{' '}<Knopf groesse="klein" gesperrt={gesichert?.ok} onClick={() => betriebApi.sicherungJetzt().then(() => setGesichert({ ok: true, text: t('werkbank.verschluesselung.sicherung-laeuft-den-stand') })).catch((x) => setGesichert({ ok: false, text: (x as Error).message }))}>{t('werkbank.verschluesselung.jetzt-sichern')}</Knopf>
                   {gesichert && <span className={gesichert.ok ? 'leise klein' : 'fehlertext klein'}> {gesichert.text} <Link to="/werkbank/sicherung" className="verweis">{t('werkbank.verschluesselung.zur-sicherung')}</Link></span>}
                 </li>
               </ol>

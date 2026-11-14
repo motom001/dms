@@ -4,7 +4,7 @@ import { version as reactVersion } from 'react';
 import { useCallback, useEffect, useState } from 'react';
 import { geraetText } from '../../../shared/src/model';
 import { markdownZelle } from '../../../shared/src/maskieren';
-import { api, type Systemuebersicht, type Vergleich } from '../api';
+import { betriebApi, type Systemuebersicht, type Vergleich } from '../api/betrieb';
 import { useHandbuch } from '../Hilfe';
 import { useKonto } from '../konto';
 import { t, tn } from '../sprache';
@@ -87,7 +87,7 @@ export function useTechnik(sichtbar: boolean) {
   const [u, setU] = useState<Systemuebersicht | null>(null);
   const [fehler, setFehler] = useState<string>();
   const [abgleich, setAbgleich] = useState<Vergleich[] | null>(null);
-  const laden = useCallback(async () => { try { setU(await api.system()); setFehler(undefined); } catch (e) { setFehler((e as Error).message); } }, []);
+  const laden = useCallback(async () => { try { setU(await betriebApi.system()); setFehler(undefined); } catch (e) { setFehler((e as Error).message); } }, []);
   useEffect(() => { if (sichtbar) void laden(); }, [sichtbar, laden]);
   return { u, fehler, abgleich, setAbgleich, laden };
 }
@@ -118,7 +118,7 @@ export function TechnikPanel({ t: eintrag, abschnitt }: { t: TechnikZustand; abs
   const [kopiert, setKopiert] = useState(false);
   async function pruefen() {
     setLaeuft(true); setFehler(undefined);
-    try { eintrag.setAbgleich(await api.versionsabgleich({ react: reactVersion })); } catch (e) { setFehler((e as Error).message); } finally { setLaeuft(false); }
+    try { eintrag.setAbgleich(await betriebApi.versionsabgleich({ react: reactVersion })); } catch (e) { setFehler((e as Error).message); } finally { setLaeuft(false); }
   }
   async function kopieren() {
     if (!eintrag.u) return;

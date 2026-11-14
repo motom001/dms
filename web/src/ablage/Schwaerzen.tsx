@@ -3,7 +3,7 @@ import type { Dokument } from '../../../shared/src/model';
 import {
   bereicheVon, findeBegriff, findeMuster, mitRand, MUSTER, stellenText, BEGRIFF_MAX_LAENGE, BEGRIFFE_MAX, type Bereich, type Fund, type Musterart,
 } from '../../../shared/src/schwaerzen';
-import { api, schwaerzBildUrl, type SchwaerzenVorschau } from '../api';
+import { dokumenteApi, schwaerzBildUrl, type SchwaerzenVorschau } from '../api/dokumente';
 import { Hilfe } from '../Hilfe';
 import { Feld, FeldGruppe, HakenFeld, Knopf } from '../bausteine';
 import { Symbol } from '../Symbol';
@@ -54,7 +54,7 @@ export function Schwaerzen({ d, schliessen, fertig }: { d: Dokument; schliessen(
   const [zeichnen, setZeichnen] = useState(() => !window.matchMedia?.('(pointer: coarse)').matches);
   const [ziehen, setZiehen] = useState<Ziehen | null>(null);
   const [laeuft, setLaeuft] = useState(false);
-  useEffect(() => { api.schwaerzenVorschau(d.id).then(setV, (e: Error) => setFehler(e.message)); }, [d.id, d.sha256]);
+  useEffect(() => { dokumenteApi.schwaerzenVorschau(d.id).then(setV, (e: Error) => setFehler(e.message)); }, [d.id, d.sha256]);
 
   const vorschlaege = useMemo(() => (v ? findeMuster(v.seiten) : []), [v]);
   const begriffFunde = useMemo(() => (v ? begriffe.map((b) => findeBegriff(v.seiten, b)) : []), [v, begriffe]);
@@ -122,7 +122,7 @@ export function Schwaerzen({ d, schliessen, fertig }: { d: Dokument; schliessen(
     if (!alle.length) return;
     setLaeuft(true); setFehler(undefined);
     try {
-      const r = await api.schwaerzen(d.id, { bereiche: [...eigene, ...vorschlagBereiche], begriffe, ziel });
+      const r = await dokumenteApi.schwaerzen(d.id, { bereiche: [...eigene, ...vorschlagBereiche], begriffe, ziel });
       fertig(r.meldung);
     } catch (e) { setFehler((e as Error).message); setLaeuft(false); }
   }

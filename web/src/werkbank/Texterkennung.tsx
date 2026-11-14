@@ -6,7 +6,9 @@ import { FormateUnpassend } from './FormateUnpassend';
 import { AbsenderBereinigen } from './AbsenderBereinigen';
 import { useCallback, useEffect, useState } from 'react';
 import { OCR_STAENDE, type OcrStandArt } from '../../../shared/src/model';
-import { api, type OcrStatus } from '../api';
+import type { Auftrag as HintergrundAuftrag } from '../../../shared/src/auftrag';
+import { betriebApi } from '../api/betrieb';
+import { sucheApi, type OcrStatus } from '../api/suche';
 import { Link } from '../ort';
 import { Hilfe } from '../Hilfe';
 import { rueckfrage } from '../rueckfrage';
@@ -14,7 +16,6 @@ import { WARTUNG_GEAENDERT } from '../wartung';
 import { sprachname, sprachvorschlaege } from '../../../shared/src/textsprache';
 import { TEXTERKENNUNG_PAKET } from '../../../shared/src/volltext';
 import { fortschrittText } from '../../../shared/src/auftrag';
-import type { Auftrag as HintergrundAuftrag } from '../api';
 import { t as tx, t, tn } from '../sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
 import { AnlageMarke } from '../ablage/Anlagen';
@@ -31,7 +32,7 @@ export function useTexterkennung(aktiv: boolean) {
   const [fehler, setFehler] = useState<string>();
   /** Lädt den Stand; Rückgabe: der Fehler, falls es nicht geklappt hat (für „Erneut prüfen“ am Knopf, #986). */
   const laden = useCallback(async (werkzeugeNeu = false): Promise<string | undefined> => {
-    try { setStand(await api.texterkennung(werkzeugeNeu)); setFehler(undefined); return undefined; } catch (e) { setFehler((e as Error).message); return (e as Error).message; }
+    try { setStand(await sucheApi.texterkennung(werkzeugeNeu)); setFehler(undefined); return undefined; } catch (e) { setFehler((e as Error).message); return (e as Error).message; }
   }, []);
   // Solange etwas wartet oder läuft, alle paar Sekunden auffrischen.
   const offen = !!stand && (stand.zaehler.wartet > 0 || stand.zaehler.laeuft > 0 || (stand.zaehler.paket ?? 0) > 0);
@@ -69,11 +70,11 @@ function PauseHinweis({ t: eintrag, wartungAn }: { t: TexterkennungZustand; wart
   const offen = s.zaehler.wartet + s.zaehler.laeuft;
   const warten = offen ? t('werkbank.texterkennung.dokumente-warten', { anzahl: offen, zahl: zahl(offen) }) : '';
   async function einschalten() {
-    try { eintrag.setStand(await api.texterkennungSpeichern({ ...s.einstellungen, aktiv: true })); } catch (e) { setMeldung((e as Error).message); }
+    try { eintrag.setStand(await sucheApi.texterkennungSpeichern({ ...s.einstellungen, aktiv: true })); } catch (e) { setMeldung((e as Error).message); }
   }
   async function wartungBeenden() {
     if (!(await rueckfrage({ titel: t('werkbank.texterkennung.wartungsmodus-beenden'), text: t('werkbank.texterkennung.alle-koennen-sich-wieder'), ja: t('werkbank.texterkennung.wartung-beenden') }))) return;
-    try { await api.wartungAus(); dispatchEvent(new Event(WARTUNG_GEAENDERT)); await eintrag.laden(); } catch (e) { setMeldung((e as Error).message); }
+    try { await betriebApi.wartungAus(); dispatchEvent(new Event(WARTUNG_GEAENDERT)); await eintrag.laden(); } catch (e) { setMeldung((e as Error).message); }
   }
   if (!s.einstellungen.aktiv) return (
     <div className="hinweis warn hinweiszeile" role="status">
@@ -302,24 +303,24 @@ function VolltextNeu({ t: eintrag, wartungAn }: { t: TexterkennungZustand; wartu
   const [auftrag, setAuftrag] = useState<HintergrundAuftrag | null>(null);
   const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
   // Läuft schon einer (z. B. nach dem Neuladen der Seite)? Dann seinen Stand zeigen.
-  useEffect(() => { void api.auftrag().then((a) => { if (a?.art === 'volltext-neu') setAuftrag(a); }, () => {}); }, []);
+  useEffect(() => { void betriebApi.auftrag().then((a) => { if (a?.art === 'volltext-neu') setAuftrag(a); }, () => {}); }, []);
   useEffect(() => {
     if (auftrag?.status !== 'laeuft') return;
-    const x = setInterval(() => void api.auftrag().then((a) => { setAuftrag(a); if (a?.status !== 'laeuft') void laden(); }), 1000);
+    const x = setInterval(() => void betriebApi.auftrag().then((a) => { setAuftrag(a); if (a?.status !== 'laeuft') void laden(); }), 1000);
     return () => clearInterval(x);
   }, [auftrag?.status, laden]);
   async function starte(umfang: 'ohne' | 'alle') {
     setMeldung(undefined);
     try {
-      const { anzahl } = await api.volltextNeuAnzahl(umfang);
+      const { anzahl } = await betriebApi.volltextNeuAnzahl(umfang);
       if (!anzahl) { setMeldung({ art: 'gut', text: tx('volltext.neu.nichts') }); return; }
       if (umfang === 'alle' && !(await rueckfrage({ titel: tx('volltext.neu.rueckfrage.titel'), text: tx('volltext.neu.rueckfrage.text', { anzahl }), ja: tx('volltext.neu.rueckfrage.ja') }))) return;
-      setAuftrag(await api.volltextNeu(umfang));
+      setAuftrag(await betriebApi.volltextNeu(umfang));
     } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); }
   }
   async function abbrechen() {
     if (!auftrag) return;
-    try { setAuftrag(await api.auftragAbbrechen(auftrag.id)); } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); }
+    try { setAuftrag(await betriebApi.auftragAbbrechen(auftrag.id)); } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); }
   }
   const e = auftrag?.status === 'fertig' ? auftrag.ergebnis as { dokumente: number; erledigt: number; abgebrochen: boolean } : null;
   const laeuft = auftrag?.status === 'laeuft';
@@ -351,7 +352,7 @@ function VolltextNeu({ t: eintrag, wartungAn }: { t: TexterkennungZustand; wartu
 
 /** Aufträge der Texterkennung (#61): je Stand die Dokumente mit Mappe, neu starten, abbrechen. */
 const STAENDE_LISTE: OcrStandArt[] = ['fehler', 'wartet', 'laeuft', 'paket', 'ausgelassen', 'fertig'];
-type Auftrag = Awaited<ReturnType<typeof api.ocrAuftraege>>['eintraege'][number];
+type Auftrag = Awaited<ReturnType<typeof sucheApi.ocrAuftraege>>['eintraege'][number];
 
 function Auftraege({ t: eintrag }: { t: TexterkennungZustand }) {
   const s = eintrag.stand!;
@@ -361,7 +362,7 @@ function Auftraege({ t: eintrag }: { t: TexterkennungZustand }) {
   const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
   const zaehlerText = JSON.stringify(s.zaehler);
   const laden = useCallback(async () => {
-    try { setListe(await api.ocrAuftraege(stand)); } catch (e) { setMeldung({ art: 'schlecht', text: (e as Error).message }); }
+    try { setListe(await sucheApi.ocrAuftraege(stand)); } catch (e) { setMeldung({ art: 'schlecht', text: (e as Error).message }); }
   }, [stand]);
   useEffect(() => { void laden(); setAuswahl(new Set()); }, [laden, zaehlerText]);
   const ids = [...auswahl];
@@ -375,7 +376,7 @@ function Auftraege({ t: eintrag }: { t: TexterkennungZustand }) {
   return (
     <section className="blatt" id="auftraege">
       <div className="blattkopf zeile-zwischen"><h2 className="h3">{t('werkbank.texterkennung.auftraege')}</h2>
-        {s.zaehler.fehler > 0 && <Knopf groesse="klein" onClick={() => tu(async () => { const r = await api.ocrFehlerNeu(); return t('werkbank.texterkennung.dokumente-stehen-wieder-in', { anzahl: r.eingereiht, zahl: zahl(r.eingereiht) }); })}>{t('werkbank.texterkennung.alle-fehler-neu-starten')}</Knopf>}
+        {s.zaehler.fehler > 0 && <Knopf groesse="klein" onClick={() => tu(async () => { const r = await sucheApi.ocrFehlerNeu(); return t('werkbank.texterkennung.dokumente-stehen-wieder-in', { anzahl: r.eingereiht, zahl: zahl(r.eingereiht) }); })}>{t('werkbank.texterkennung.alle-fehler-neu-starten')}</Knopf>}
       </div>
       <Reiter id="ocr-stand" wert={stand} setze={setStand} beschriftung={t('werkbank.texterkennung.reiter')}
         wahlen={STAENDE_LISTE.map((k) => ({ wert: k, text: OCR_STAENDE[k], anzahl: s.zaehler[k] }))} />
@@ -406,9 +407,9 @@ function Auftraege({ t: eintrag }: { t: TexterkennungZustand }) {
           </div>
           {liste.gesamt > alle.length && <p className="leise klein">{t('werkbank.texterkennung.gezeigt-werden-die-neuesten', { zahl: zahl(alle.length), zahl2: zahl(liste.gesamt) })}</p>}
           <div className="knoepfe">
-            {abbrechbar && <Knopf art="gefahr" symbol="verboten" gesperrt={!ids.length} onClick={() => tu(async () => { const r = await api.ocrAbbrechen(ids); return `${zahl(r.abgebrochen)} abgebrochen.`; })}
+            {abbrechbar && <Knopf art="gefahr" symbol="verboten" gesperrt={!ids.length} onClick={() => tu(async () => { const r = await sucheApi.ocrAbbrechen(ids); return `${zahl(r.abgebrochen)} abgebrochen.`; })}
               rueckfrage={{ titel: t('werkbank.texterkennung.abbrechen.frage', { anzahl: ids.length }), text: t('werkbank.texterkennung.abbrechen.text'), ja: stand === 'laeuft' ? t('werkbank.texterkennung.abbrechen') : t('werkbank.texterkennung.aus-der-warteschlange-nehmen') }}>{stand === 'laeuft' ? t('werkbank.texterkennung.abbrechen') : t('werkbank.texterkennung.aus-der-warteschlange-nehmen')}</Knopf>}
-            <Knopf art="haupt" gesperrt={!ids.length} onClick={() => tu(async () => { const r = await api.ocrNeu(ids); return t('werkbank.texterkennung.neu-gestartet', { zahl: zahl(r.eingereiht) }); })}>{t('werkbank.texterkennung.neu-starten', { wert: ids.length ? ` (${ids.length})` : '' })}</Knopf>
+            <Knopf art="haupt" gesperrt={!ids.length} onClick={() => tu(async () => { const r = await sucheApi.ocrNeu(ids); return t('werkbank.texterkennung.neu-gestartet', { zahl: zahl(r.eingereiht) }); })}>{t('werkbank.texterkennung.neu-starten', { wert: ids.length ? ` (${ids.length})` : '' })}</Knopf>
           </div>
         </>
       )}
@@ -425,7 +426,7 @@ function VorschauNachholen() {
   async function nachholen() {
     setLaeuft(true); setMeldung(undefined);
     try {
-      const r = await api.vorschauNachholen();
+      const r = await betriebApi.vorschauNachholen();
       setMeldung({ art: 'gut', text: r.eingereiht ? t('werkbank.texterkennung.fuer-dateien-entstehen-jetzt', { anzahl: r.eingereiht, zahl: zahl(r.eingereiht) }) : t('werkbank.texterkennung.nichts-nachzuholen-alle-pdfs') });
     } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); }
     finally { setLaeuft(false); }

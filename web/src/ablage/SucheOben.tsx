@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { SUCHE_PFAD } from '../../../shared/src/erweitertesuche';
-import { api } from '../api';
+import { mappenApi } from '../api/mappen';
 import { HakenFeld, KopfSuche } from '../bausteine';
 import { useDaten } from '../daten';
 import { geheZu, Link, useOrt } from '../ort';
@@ -33,7 +33,7 @@ export function SucheOben() {
     if (!text) return;
     if (istArchivnummer(text)) {
       try {
-        const r = await api.archivnummer(text);
+        const r = await mappenApi.archivnummer(text);
         kopfsuche.setzeText('');
         geheZu(`/ablage/${r.typId}/${r.mappeId}?register=${encodeURIComponent(r.dokument.registerKey)}&dokument=${r.dokument.id}`);
         return;

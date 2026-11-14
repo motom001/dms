@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { kernTyp } from '../../../shared/src/dateiumwandlung';
-import { vorschauUrl } from '../api';
+import { vorschauUrl } from '../api/dokumente';
 import { t } from '../sprache';
 import { Symbol } from '../Symbol';
 

@@ -27,4 +27,4 @@ import { Umschalter } from '../bausteine';
 - **Long choices** don’t fit side by side on a phone; with `schmalUntereinander` they are stacked there, as wide as the column (example: “Where does this belong?” on *Take over document*, `web/src/ablage/WohinGehoert.tsx`).
 - The pattern page shows the building block in the section **Toggle**: two and three choices, plus long choices that are stacked on a phone.
 
-Older places with the class `segmente` in `styles.css` (List · Month · Year in *To do*, text size in My account) are converted by whoever changes them anyway.
+Older places with the class `segmente` in `web/src/stile/` (List · Month · Year in *To do*, text size in My account) are converted by whoever changes them anyway.

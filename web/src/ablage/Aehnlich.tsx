@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { api, type AehnlicheMappe, type VektorStand } from '../api';
+import { mappenApi, type AehnlicheMappe } from '../api/mappen';
+import { sucheApi, type VektorStand } from '../api/suche';
 import { Hilfe } from '../Hilfe';
 import { Knopf, Schalter } from '../bausteine';
 import { Link } from '../ort';
@@ -48,7 +49,7 @@ export function AehnlicheDokumente({ mappeId }: { mappeId: string }) {
   useEffect(() => {
     let aktuell = true;
     setStand(null);
-    api.aehnlicheZurMappe(mappeId).then((s) => { if (aktuell) setStand(s); }, () => { if (aktuell) setStand('fehler'); });
+    mappenApi.aehnlicheZurMappe(mappeId).then((s) => { if (aktuell) setStand(s); }, () => { if (aktuell) setStand('fehler'); });
     return () => { aktuell = false; };
   }, [mappeId]);
   if (stand === null) return null;
@@ -78,16 +79,16 @@ export function VektorStandBlock() {
   const [s, setS] = useState<VektorStand | null>(null);
   const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
   const [laeuft, setLaeuft] = useState(false);
-  const laden = useCallback(() => { api.vektorStand().then(setS, (e) => setMeldung({ art: 'schlecht', text: (e as Error).message })); }, []);
+  const laden = useCallback(() => { sucheApi.vektorStand().then(setS, (e) => setMeldung({ art: 'schlecht', text: (e as Error).message })); }, []);
   useEffect(() => { laden(); }, [laden]);
   if (!s) return meldung ? <p className="fehlertext">{meldung.text}</p> : null;
   async function suche(an: boolean) {
     setLaeuft(true);
-    try { setS(await api.vektorSuche(an)); setMeldung(undefined); } catch (e) { setMeldung({ art: 'schlecht', text: (e as Error).message }); } finally { setLaeuft(false); }
+    try { setS(await sucheApi.vektorSuche(an)); setMeldung(undefined); } catch (e) { setMeldung({ art: 'schlecht', text: (e as Error).message }); } finally { setLaeuft(false); }
   }
   async function neu() {
     setLaeuft(true);
-    try { const r = await api.vektorenNeu(); setMeldung({ art: 'gut', text: t('aehnlich.werkbank.neu.fertig', { anzahl: r.entfernt }) }); laden(); }
+    try { const r = await sucheApi.vektorenNeu(); setMeldung({ art: 'gut', text: t('aehnlich.werkbank.neu.fertig', { anzahl: r.entfernt }) }); laden(); }
     catch (e) { setMeldung({ art: 'schlecht', text: (e as Error).message }); } finally { setLaeuft(false); }
   }
   return (

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Knopf, KnopfLink } from '../bausteine';
 import { aktualisierungsRunde, haengenAn, type RundenEintrag } from '../../../shared/src/pakete';
-import { api, type PaketVorschau } from '../api';
+import { paketeApi, type PaketVorschau } from '../api/pakete';
 import { useDaten } from '../daten';
 import { Hilfe } from '../Hilfe';
 import { geheZu, Link } from '../ort';
@@ -38,7 +38,7 @@ export function AlleAktualisieren({ z }: { z: PaketeZustand }) {
   useEffect(() => {
     if (!z.stand) return;
     let aktuell = true;
-    void Promise.all(updates.map((u) => api.paketVorschau({ id: u.id, version: u.neu, quelle: u.quelle === katalogUrl ? undefined : u.quelle })
+    void Promise.all(updates.map((u) => paketeApi.paketVorschau({ id: u.id, version: u.neu, quelle: u.quelle === katalogUrl ? undefined : u.quelle })
       .then((v) => ({ u, v, fehler: null }), (e: unknown) => ({ u, v: null, fehler: (e as Error).message }))))
       .then((l) => { if (aktuell) setGeladen(aktualisierungsRunde(l, (q) => q === katalogUrl)); });
     return () => { aktuell = false; };
@@ -68,7 +68,7 @@ export function AlleAktualisieren({ z }: { z: PaketeZustand }) {
       stand[e.u.id] = { zustand: 'laeuft' }; zeige();
       const x = antworten[e.u.id];
       try {
-        const r = await api.paketAktualisieren(e.u.id, e.u.neu, x?.bestaetigt, x?.rechteBestaetigt, { automatisierungen: x?.automatisierungen, herausgeberBestaetigt: x?.herausgeberBestaetigt, umbauBestaetigt: x?.umbauBestaetigt, umbauEntscheidungen: x?.umbauEntscheidungen, sichtenErsetzen: x?.sichtenErsetzen });
+        const r = await paketeApi.paketAktualisieren(e.u.id, e.u.neu, x?.bestaetigt, x?.rechteBestaetigt, { automatisierungen: x?.automatisierungen, herausgeberBestaetigt: x?.herausgeberBestaetigt, umbauBestaetigt: x?.umbauBestaetigt, umbauEntscheidungen: x?.umbauEntscheidungen, sichtenErsetzen: x?.sichtenErsetzen });
         stand[e.u.id] = { zustand: 'fertig', text: t('werkbank.pakete.alle.fertig', { version: r.version }) };
       } catch (f) {
         const m = alsMeldung(f);

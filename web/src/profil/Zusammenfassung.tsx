@@ -1,7 +1,7 @@
 import { t } from '../sprache';
 import { useEffect, useState } from 'react';
 import { BUNDESLAENDER, type Bundesland } from '../../../shared/src/feiertage';
-import { api, type Zusammenfassung } from '../api';
+import { kontoApi, type Zusammenfassung } from '../api/konto';
 import { Feld, FeldGruppe, HakenFeld, Schalter } from '../bausteine';
 
 /** Profil: tägliche Zusammenfassung der Aufgaben – an/aus, Uhrzeit, Wochentage, Feiertage (#54, #92, #94). */
@@ -12,12 +12,12 @@ export function ZusammenfassungEinstellen() {
   const [z, setZ] = useState<Zusammenfassung | null>(null);
   const [fehler, setFehler] = useState<string>();
   const [gespeichert, setGespeichert] = useState(false);
-  useEffect(() => { api.zusammenfassung().then(setZ, (e: Error) => setFehler(e.message)); }, []);
+  useEffect(() => { kontoApi.zusammenfassung().then(setZ, (e: Error) => setFehler(e.message)); }, []);
   async function setze(n: Partial<Zusammenfassung>) {
     if (!z) return;
     const neu = { ...z, ...n };
     setZ(neu); setFehler(undefined); setGespeichert(false);
-    try { setZ(await api.zusammenfassungSetzen({ aktiv: neu.aktiv, uhrzeit: neu.uhrzeit, tage: neu.tage, feiertage: neu.feiertage })); setGespeichert(true); }
+    try { setZ(await kontoApi.zusammenfassungSetzen({ aktiv: neu.aktiv, uhrzeit: neu.uhrzeit, tage: neu.tage, feiertage: neu.feiertage })); setGespeichert(true); }
     catch (e) { setFehler((e as Error).message); setZ(z); }
   }
   if (!z) return fehler ? <p className="fehlertext">{fehler}</p> : <p className="leise">{t('profil.zusammenfassung.lade')}</p>;

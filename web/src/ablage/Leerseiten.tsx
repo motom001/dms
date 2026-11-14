@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { faelltWeg, istErkannt, leerseitenGelten, wegfallendeSeiten, wirdGekuerzt, type Leerseiten } from '../../../shared/src/leerseiten';
 import type { Dokument } from '../../../shared/src/model';
-import { api, seitenbildUrl } from '../api';
+import { dokumenteApi, seitenbildUrl } from '../api/dokumente';
 import { Knopf } from '../bausteine';
 import { Hilfe } from '../Hilfe';
 import { t } from '../sprache';
@@ -57,7 +57,7 @@ export function LeerseitenLeiste({ x, l, darf, geaendert, senkrecht = false }: {
 }) {
   const nummern = Array.from({ length: l.seiten }, (_, i) => i + 1);
   async function waehle(nr: number, weglassen: boolean) {
-    const r = await api.leerseiteWaehlen(x.id, nr, weglassen);
+    const r = await dokumenteApi.leerseiteWaehlen(x.id, nr, weglassen);
     geaendert(r.leerseiten);
   }
   return (

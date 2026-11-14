@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Feld, HakenFeld, Schalter } from '../bausteine';
-import { api, type WebdavEinstellung, type WebdavStand } from '../api';
+import { eingaengeApi, type WebdavEinstellung, type WebdavStand } from '../api/eingaenge';
 import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 import { t, tn } from '../sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
@@ -18,7 +18,7 @@ export function useWebdav(offen: boolean) {
   const [stand, setStand] = useState<WebdavStand | null>(null);
   const [fehler, setFehler] = useState<string>();
   const laden = useCallback(async () => {
-    try { setStand(await api.webdav()); setFehler(undefined); } catch (e) { setFehler((e as Error).message); }
+    try { setStand(await eingaengeApi.webdav()); setFehler(undefined); } catch (e) { setFehler((e as Error).message); }
   }, []);
   useEffect(() => { if (offen) void laden(); }, [offen, laden]);
   useEffect(() => {
@@ -40,7 +40,7 @@ export function WebdavPanel({ z }: { z: WebdavZustand }) {
   if (!s || !e) return z.fehler ? <div className="hinweis schlecht"><p>{z.fehler}</p></div> : <p className="leise">{t('werkbank.webdav.lade')}</p>;
   async function speichern() {
     setSendet(true);
-    try { const n = await api.webdavSetzen(e!); z.setStand(n); setE(n.einstellung); setMeldung({ art: 'gut', text: t('werkbank.webdav.gespeichert') }); } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); } finally { setSendet(false); }
+    try { const n = await eingaengeApi.webdavSetzen(e!); z.setStand(n); setE(n.einstellung); setMeldung({ art: 'gut', text: t('werkbank.webdav.gespeichert') }); } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); } finally { setSendet(false); }
   }
   return (
     <div className="einspaltig">

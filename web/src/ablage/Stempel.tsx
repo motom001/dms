@@ -6,7 +6,7 @@ import {
 } from '../../../shared/src/stempel';
 import { t, tn } from '../sprache';
 import { beispielWerte, PlatzhalterKnoepfe, StempelVorschau } from './StempelVorschau';
-import { api } from '../api';
+import { dokumenteApi } from '../api/dokumente';
 import { Feld, HakenFeld, Knopf } from '../bausteine';
 import { Hilfe } from '../Hilfe';
 import { VerkleinertWahl } from './VerkleinertWahl';
@@ -24,7 +24,7 @@ let zwischenspeicher: StempelVorlage[] | null = null;
 /** Vorlagen (einmal je Sitzung geladen; die Werkbank setzt sie nach dem Speichern neu). */
 export function useStempelVorlagen(): StempelVorlage[] | null {
   const [v, setV] = useState(zwischenspeicher);
-  useEffect(() => { if (!zwischenspeicher) void api.stempelVorlagen().then((x) => { zwischenspeicher = x; setV(x); }, () => setV([])); }, []);
+  useEffect(() => { if (!zwischenspeicher) void dokumenteApi.stempelVorlagen().then((x) => { zwischenspeicher = x; setV(x); }, () => setV([])); }, []);
   return v;
 }
 export const merkeStempelVorlagen = (v: StempelVorlage[]) => { zwischenspeicher = v; };
@@ -156,7 +156,9 @@ export function StempelDialog({ d, typ, mappe, version, anlagen = [], schliessen
     if (!wahl) return;
     setLaeuft(true); setMeldung(undefined);
     try {
-      const r = await api.herunterladenMitStempel(d.id, alsWunsch({ ...wahl, an: true }), dateiname, version, d.mime === 'application/pdf' || (mitArchiv && fassung === 'archiv') ? klein : null, mitArchiv ? fassung : undefined, zusammen, eml);
+      const r = await dokumenteApi.herunterladenMitStempel(d.id, alsWunsch({ ...wahl, an: true }), dateiname, {
+        version, verkleinern: d.mime === 'application/pdf' || (mitArchiv && fassung === 'archiv') ? klein : null, fassung: mitArchiv ? fassung : undefined, mitAnlagen: zusammen, originalEmail: eml,
+      });
       setMeldung({ art: 'gut', text: t('ablage.stempel.gespeichert-die-historie-der', { name: r.name }) });
     } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); } finally { setLaeuft(false); }
   }

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { anschriftZeilen, anzeigename, neueNotizen, type Angaben, type EigeneOrganisation, type OrganisationStand, type Stelle, type Verwendung } from '../../../shared/src/organisation';
 import { zeitText } from '../../../shared/src/region';
-import { api } from '../api';
+import { werkbankApi } from '../api/werkbank';
 import { Feld, HakenFeld, Knopf, KnopfLink } from '../bausteine';
 import { useDaten } from '../daten';
 import { Link } from '../ort';
@@ -17,7 +17,7 @@ import { Kopf } from './Kopf';
 export function useOrganisation(offen: boolean) {
   const [stand, setStand] = useState<OrganisationStand | null>(null);
   const [fehler, setFehler] = useState<string>();
-  const laden = useCallback(async () => { try { setStand(await api.organisation()); setFehler(undefined); } catch (e) { setFehler((e as Error).message); } }, []);
+  const laden = useCallback(async () => { try { setStand(await werkbankApi.organisation()); setFehler(undefined); } catch (e) { setFehler((e as Error).message); } }, []);
   useEffect(() => { if (offen) void laden(); }, [offen, laden]);
   return { stand, fehler, setStand, laden };
 }
@@ -89,10 +89,10 @@ export function OrganisationPanel({ z }: { z: OrganisationZustand }) {
   const mehrere = s.organisationen.length > 1;
   const neu = neueNotizen(s.einstellung);
   async function setze(e: Record<string, unknown>, text: string) {
-    try { z.setStand(await api.setzeOrganisation(e)); setMeldung({ art: 'gut', text }); } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); }
+    try { z.setStand(await werkbankApi.setzeOrganisation(e)); setMeldung({ art: 'gut', text }); } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); }
   }
   async function uebernehmen() {
-    try { z.setStand(await api.organisationUebernehmen()); await d.neuLaden(); setMeldung({ art: 'gut', text: t('werkbank.organisation.uebernommen') }); } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); }
+    try { z.setStand(await werkbankApi.organisationUebernehmen()); await d.neuLaden(); setMeldung({ art: 'gut', text: t('werkbank.organisation.uebernommen') }); } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); }
   }
   return (
     <div className="einspaltig">

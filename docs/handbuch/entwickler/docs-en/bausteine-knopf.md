@@ -175,8 +175,8 @@ Hover and focus are visible for all kinds in light and dark mode; the pattern pa
 
 ## Code { #code }
 
-- Building block: `web/src/bausteine/knopf/Knopf.tsx`, explanation when locked: `Erklaerung.tsx`, look: `Knopf.module.css` (basic shape and colours per kind from `.knopf` in `web/src/styles.css`)
+- Building block: `web/src/bausteine/knopf/Knopf.tsx`, explanation when locked: `Erklaerung.tsx`, look: `Knopf.module.css` (basic shape and colours per kind from `.knopf` in `web/src/stile/01-kopf-und-formulare.css`)
 - Confirmation: `web/src/bausteine/rueckfrage/Rueckfrage.tsx` (window, preview for the pattern page), queue `web/src/rueckfrage.tsx`
 - Pattern page: `web/src/bausteine/knopf/muster.tsx`; type check: `web/src/bausteine/knopf/typpruefung.ts`
 - Lint: `ablago/knopf-farben` in `.github/werkzeuge/eslint-ablago.mjs` (test `eslint-ablago.test.mjs`)
-- Tests: `server/test/baustein-knopf.test.ts` (renders with react-dom/server and checks kinds, danger, disabled in two forms, `aria-*` and `data-knopf`); smoke tests in `web/rauchtest/rauchtest.mjs`: button on the pattern page (working, result, error; danger with a confirmation; locked with an explanation), the guard on every page, “+ New” in lists (#989), inbox folder “Check now” (#986)
+- Tests: `server/test/baustein-knopf.test.ts` (renders with react-dom/server and checks kinds, danger, disabled in two forms, `aria-*` and `data-knopf`); smoke tests in `web/rauchtest/bereiche/bausteine-und-knoepfe.mjs`: button on the pattern page (working, result, error; danger with a confirmation; locked with an explanation), the guard on every page, “+ New” in lists (#989), inbox folder “Check now” (#986)

@@ -59,7 +59,7 @@ Am Handy trifft der Finger, nicht der Mauszeiger. Darum hat jedes Bedienelement 
 | `PaketChip` als Link | bleibt optisch klein; unsichtbare Tippfläche 44 px hoch |
 | `Platzhalter` | kleine Knöpfe mit unsichtbarer Tippfläche 44 × 44 px |
 
-**Die Regel:** Tippflächen überlappen sich nie – auch nicht in einer Knopfreihe oder einer Gruppe von Haken. Wer einen Baustein benutzt, schreibt dafür nichts selbst; Einzellösungen mit `@media (pointer: coarse)` in `styles.css` gibt es nur noch für Stellen ohne Baustein. Neue Bausteine legen ihre Tippfläche in ihrem eigenen Stylesheet fest, ebenfalls nur bei `(pointer: coarse)`, damit der Desktop unverändert bleibt.
+**Die Regel:** Tippflächen überlappen sich nie – auch nicht in einer Knopfreihe oder einer Gruppe von Haken. Wer einen Baustein benutzt, schreibt dafür nichts selbst; Einzellösungen mit `@media (pointer: coarse)` in `web/src/stile/` gibt es nur noch für Stellen ohne Baustein. Neue Bausteine legen ihre Tippfläche in ihrem eigenen Stylesheet fest, ebenfalls nur bei `(pointer: coarse)`, damit der Desktop unverändert bleibt.
 
 **Geprüft** wird das im Rauchtest der Musterseite: In der Handyansicht (390 px, Touch) misst `tippflaechenPruefen` in `web/rauchtest/muster.mjs` jedes Bedienelement der Seite so, wie der Browser einen Fingertipp zuordnet (`elementFromPoint` – unsichtbare Tippflächen und Beschriftungen zählen mit). Jedes braucht ein eigenes Quadrat von 44 × 44 px; sonst scheitert der Test. Ausnahmen stehen mit Grund in `TIPP_AUSNAHMEN` (heute keine).
 
@@ -80,9 +80,9 @@ Im **Produktivbau** (`npm run build` ohne `VITE_MUSTER`, auch im Image) fehlt si
 
 ## Rauchtest und Bilder { #rauchtest }
 
-Der Rauchtest „Musterseite der Bausteine“ (`web/rauchtest/rauchtest.mjs`, Job **pruefen**) öffnet `/muster` hell und dunkel, am Desktop und in Handybreite, prüft jede Ansicht mit **axe-core** (WCAG 2.2 A und AA samt bewährter Praxis, darunter `color-contrast`) darauf, dass die Seite am Handy nicht waagerecht rollt, und dort auf Tippflächen von mindestens 44 × 44 px ([Am Handy](#handy)). Jeder Verstoß lässt den Test scheitern. Die Bilder liegen danach im Artefakt **musterseite** des Laufs.
+Der Rauchtest „Musterseite der Bausteine“ (`web/rauchtest/bereiche/bausteine-und-knoepfe.mjs`, Job **pruefen**) öffnet `/muster` hell und dunkel, am Desktop und in Handybreite, prüft jede Ansicht mit **axe-core** (WCAG 2.2 A und AA samt bewährter Praxis, darunter `color-contrast`) darauf, dass die Seite am Handy nicht waagerecht rollt, und dort auf Tippflächen von mindestens 44 × 44 px ([Am Handy](#handy)). Jeder Verstoß lässt den Test scheitern. Die Bilder liegen danach im Artefakt **musterseite** des Laufs.
 
-**Knöpfe auf jeder Seite (#1210):** In jedem Rauchtest läuft ein Wächter (`knopfWaechter` in `rauchtest.mjs`), der nach jeder Änderung der Seite die sichtbaren Knöpfe prüft: `data-knopf="anlegen"` beginnt mit „+“, `data-knopf="gefahr"` öffnet eine Rückfrage (`aria-haspopup="dialog"`), rot Gefülltes steht nur im Fenster einer Rückfrage. Bestand, der das noch nicht erfüllt, steht mit seinem Issue in `KNOPF_AUSNAHMEN`; wer die Stelle umstellt, nimmt den Eintrag heraus.
+**Knöpfe auf jeder Seite (#1210):** In jedem Rauchtest läuft ein Wächter (`knopfWaechter` in `web/rauchtest/hilfen.mjs`), der nach jeder Änderung der Seite die sichtbaren Knöpfe prüft: `data-knopf="anlegen"` beginnt mit „+“, `data-knopf="gefahr"` öffnet eine Rückfrage (`aria-haspopup="dialog"`), rot Gefülltes steht nur im Fenster einer Rückfrage. Bestand, der das noch nicht erfüllt, steht mit seinem Issue in `KNOPF_AUSNAHMEN`; wer die Stelle umstellt, nimmt den Eintrag heraus.
 
 Dieselben Bilder nimmt der Workflow **Handbuch** in den Jobs `bilder (de)` und `bilder (en)` auf (`docs/handbuch/screenshots/aufnehmen.mjs`, gemeinsamer Code in `web/rauchtest/muster.mjs`); sie landen in diesem Handbuch unter `bilder/muster-*.png`. Lokal fehlen sie wie alle Bildschirmfotos ([Loslegen](loslegen.md)).
 

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { PASSWORT_MINDESTLAENGE } from '../../shared/src/model';
-import { ABGEMELDET, api, type KontoStatus, type WartungOeffentlich, type ZweiteWege } from './api';
+import { ABGEMELDET } from './api/anfrage';
+import { kontoApi, type KontoStatus, type WartungOeffentlich, type ZweiteWege } from './api/konto';
 import { erlaubteSprachen, setzeErlaubteSprachen } from '../../shared/src/beschriftung';
 import { sprache } from '../../shared/src/sprache';
 import { WartungsHinweis } from './wartung';
@@ -50,7 +51,7 @@ export function KontoProvider({ children }: { children: ReactNode }) {
 
   const laden = useCallback(async () => {
     try {
-      const st = await api.status();
+      const st = await kontoApi.status();
       // Region (#726): „heute“, Uhrzeiten und Kalendertage wie auf dem Server.
       setzeZeitzone(st.zeitzone);
       // Sprachen (#729): Beschriftungen nur in erlaubten Sprachen; gilt nach der Anmeldung eine andere Sprache, neu laden.
@@ -97,7 +98,7 @@ export function KontoProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const abmelden = useCallback(async () => {
-    const r = await api.abmelden().catch(() => null);
+    const r = await kontoApi.abmelden().catch(() => null);
     // Über einen Anbieter angemeldet (#241): auch dort abmelden.
     if (r?.abmelden) { location.href = r.abmelden; return; }
     setStatus((s) => (s ? { ...s, benutzer: null } : s));
@@ -163,7 +164,7 @@ export function KontoProvider({ children }: { children: ReactNode }) {
     if (await verwaltungBeginnen()) { if (!location.pathname.startsWith('/werkbank')) geheZu('/werkbank', true); await laden(); }
   };
   const verwaltungBeenden = async () => {
-    await api.verwaltungBeenden().catch(() => undefined);
+    await kontoApi.verwaltungBeenden().catch(() => undefined);
     if (location.pathname.startsWith('/werkbank')) geheZu('/ablage', true);
     await laden();
   };
@@ -188,7 +189,7 @@ function PflichtAusschalten({ fertig, art = 'zweifaktor' }: { fertig: () => Prom
     ? { titel: t('anmeldung.passkey.pflicht.frage'), text: t('anmeldung.passkey.pflicht.frage.text'), ja: t('anmeldung.zweifaktor.pflicht.frage.ja') }
     : { titel: t('anmeldung.zweifaktor.pflicht.frage'), text: t('anmeldung.zweifaktor.pflicht.frage.text'), ja: t('anmeldung.zweifaktor.pflicht.frage.ja') };
   async function aus() {
-    try { await (art === 'passkey' ? api.passkeyPflichtSetzen({ admin: false }) : api.zweifaktorPflichtSetzen({ admin: false })); await fertig(); } catch (e) { setFehler((e as Error).message); }
+    try { await (art === 'passkey' ? kontoApi.passkeyPflichtSetzen({ admin: false }) : kontoApi.zweifaktorPflichtSetzen({ admin: false })); await fertig(); } catch (e) { setFehler((e as Error).message); }
   }
   return (
     <p className="leise klein">{t('anmeldung.zweifaktor.pflicht.hinweis')}{' '}
@@ -234,9 +235,9 @@ function useAbsenden(fn: () => Promise<void>) {
 
 /** Mit Passkey anmelden (#811): ohne E-Mail-Adresse oder – mit `zweiterSchritt` – als zweiter Faktor. */
 async function mitPasskeyAnmelden(zweiterSchritt?: string) {
-  const o = await api.passkeyOptionen(zweiterSchritt);
+  const o = await kontoApi.passkeyOptionen(zweiterSchritt);
   const antwort = await passkeyVerwenden(o.optionen);
-  await api.passkeyAnmelden({ kennung: o.kennung, antwort, ...(zweiterSchritt ? { zweiterSchritt } : {}) });
+  await kontoApi.passkeyAnmelden({ kennung: o.kennung, antwort, ...(zweiterSchritt ? { zweiterSchritt } : {}) });
 }
 
 /** Zweiter Schritt der Anmeldung (#242): Code aus der App, ein Wiederherstellungscode oder ein Passkey (#811). */
@@ -246,7 +247,7 @@ function CodeSchritt({ kennung, wege = { code: true, passkey: false }, fertig, z
   const [wiederherstellung, setWiederherstellung] = useState(false);
   const [genutzt, setGenutzt] = useState(false);
   const f = useAbsenden(async () => {
-    const r = await api.anmeldenCode(kennung, code);
+    const r = await kontoApi.anmeldenCode(kennung, code);
     if (r.wiederherstellung) { setGenutzt(true); return; }
     await fertig();
   });
@@ -300,8 +301,8 @@ function Anmelden({ mail, wartung, anbieter, passkey, fertig }: { mail: boolean;
   const [gesendet, setGesendet] = useState(false);
   const [kennung, setKennung] = useState<{ kennung: string; wege?: ZweiteWege } | null>(null);
   const f = useAbsenden(async () => {
-    if (vergessen) { await api.passwortVergessen(email); setGesendet(true); return; }
-    const r = await api.anmelden({ email, passwort: pw });
+    if (vergessen) { await kontoApi.passwortVergessen(email); setGesendet(true); return; }
+    const r = await kontoApi.anmelden({ email, passwort: pw });
     if (r.zweiterSchritt) { setKennung({ kennung: r.zweiterSchritt, wege: r.wege }); setPw(''); return; }
     await fertig();
   });
@@ -354,10 +355,10 @@ function PasswortSetzen({ schluessel, fertig }: { schluessel: string; fertig: ()
   const [pw, setPw] = useState('');
   const [pw2, setPw2] = useState('');
   const [kennung, setKennung] = useState<{ kennung: string; wege?: ZweiteWege } | null>(null);
-  useEffect(() => { api.linkPruefen(schluessel).then(setInfo).catch((e) => setUngueltig((e as Error).message)); }, [schluessel]);
+  useEffect(() => { kontoApi.linkPruefen(schluessel).then(setInfo).catch((e) => setUngueltig((e as Error).message)); }, [schluessel]);
   const f = useAbsenden(async () => {
     if (pw !== pw2) throw new Error(t('anmeldung.passwort.ungleich'));
-    const r = await api.passwortSetzen(schluessel, pw);
+    const r = await kontoApi.passwortSetzen(schluessel, pw);
     // Zwei-Faktor (#242): Der Link ersetzt das Passwort, nicht den Code.
     if (r.zweiterSchritt) { setKennung({ kennung: r.zweiterSchritt, wege: r.wege }); return; }
     geheZu('/ablage', true);

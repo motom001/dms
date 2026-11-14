@@ -2,7 +2,7 @@ import { createContext, useContext } from 'react';
 import type { Benutzer } from '../../shared/src/model';
 import type { UebersetzenAngebot } from '../../shared/src/uebersetzung';
 import type { Verwaltungsstand } from '../../shared/src/verwaltungsrecht';
-import type { KontoStatus, SprachStatus } from './api';
+import type { KontoStatus, SprachStatus } from './api/konto';
 import { t } from './sprache';
 
 /**

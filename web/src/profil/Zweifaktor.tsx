@@ -1,7 +1,7 @@
 import { t, tn } from '../sprache';
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import QRCode from 'qrcode';
-import { api, type ZweifaktorStand } from '../api';
+import { kontoApi, type ZweifaktorStand } from '../api/konto';
 import { Hilfe } from '../Hilfe';
 import { useKonto } from '../konto-kontext';
 import { gebietsschema } from '../../../shared/src/sprache';
@@ -45,7 +45,7 @@ export function ZweifaktorEinrichten({ fertig, abbrechen }: { fertig: () => void
   const beginnen = useCallback(async () => {
     setFehler(undefined);
     try {
-      const e = await api.zweifaktorBeginnen();
+      const e = await kontoApi.zweifaktorBeginnen();
       setEntwurf({ ...e, bild: await QRCode.toDataURL(e.uri, { margin: 1, width: 200, errorCorrectionLevel: 'M' }) });
     } catch (e) { setFehler((e as Error).message); }
   }, []);
@@ -53,7 +53,7 @@ export function ZweifaktorEinrichten({ fertig, abbrechen }: { fertig: () => void
   async function bestaetigen(e: FormEvent) {
     e.preventDefault();
     setSendet(true); setFehler(undefined);
-    try { setCodes((await api.zweifaktorBestaetigen(code)).codes); } catch (x) { setFehler((x as Error).message); } finally { setSendet(false); }
+    try { setCodes((await kontoApi.zweifaktorBestaetigen(code)).codes); } catch (x) { setFehler((x as Error).message); } finally { setSendet(false); }
   }
   if (codes) return <Wiederherstellungscodes codes={codes} weiter={fertig} />;
   return (
@@ -87,7 +87,7 @@ export function ZweifaktorBlatt() {
   const [pw, setPw] = useState('');
   const [neueCodes, setNeueCodes] = useState<string[] | null>(null);
   const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
-  const laden = useCallback(async () => { try { setStand(await api.zweifaktor()); } catch (e) { setMeldung({ art: 'schlecht', text: (e as Error).message }); } }, []);
+  const laden = useCallback(async () => { try { setStand(await kontoApi.zweifaktor()); } catch (e) { setMeldung({ art: 'schlecht', text: (e as Error).message }); } }, []);
   useEffect(() => { void laden(); }, [laden]);
 
   async function mitPasswort(e?: FormEvent) {
@@ -95,8 +95,8 @@ export function ZweifaktorBlatt() {
     // Enter im Passwortfeld beim Abschalten: erst die Rückfrage wie am Knopf (#1215).
     if (e && modus === 'aus' && !(await rueckfrage({ titel: t('profil.zweifaktor.abschalten.frage'), text: t('profil.zweifaktor.danach-reicht-wieder-das'), ja: t('profil.zweifaktor.abschalten'), gefahr: true }))) return;
     try {
-      if (modus === 'codes') { setNeueCodes((await api.zweifaktorCodes(pw)).codes); }
-      else { await api.zweifaktorEntfernen(pw); setModus('ruhe'); setMeldung({ art: 'gut', text: t('profil.zweifaktor.zwei-faktor-anmeldung-abgeschaltet') }); await laden(); }
+      if (modus === 'codes') { setNeueCodes((await kontoApi.zweifaktorCodes(pw)).codes); }
+      else { await kontoApi.zweifaktorEntfernen(pw); setModus('ruhe'); setMeldung({ art: 'gut', text: t('profil.zweifaktor.zwei-faktor-anmeldung-abgeschaltet') }); await laden(); }
       setPw('');
     } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); }
   }

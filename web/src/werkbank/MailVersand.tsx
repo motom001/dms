@@ -2,7 +2,8 @@ import { ErgebnisBlock, Feld, HakenFeld, Knopf, Schalter } from '../bausteine';
 import { useEffect, useMemo, useRef, useState, type FormEvent, type MutableRefObject } from 'react';
 import { absenderVorschlag, anbieterFuerAdresse, domainVon, MAIL_ANBIETER, OAUTH_VERSAND_SERVER, type MailAnbieter } from '../../../shared/src/mailanbieter';
 import { PLAN_VERBINDUNGEN } from '../../../shared/src/einrichtungsplan';
-import { api, type BetriebAnsicht, type MailEingabe, type MailSuche, type Probe, type Verbindung } from '../api';
+import { betriebApi, type BetriebAnsicht, type MailEingabe, type Probe } from '../api/betrieb';
+import { einrichtungApi, type MailSuche, type Verbindung } from '../api/einrichtung';
 import { useKonto } from '../konto';
 import { Link } from '../ort';
 import { Speicherleiste, useEntwurf } from '../Speicherleiste';
@@ -137,7 +138,7 @@ function MailFormular({ s, email, b, aktualisieren, sammeln }: {
     setSucht(true);
     try {
       // Vor der Einrichtung mit Einrichtungscode statt Anmeldung (#804).
-      const r = await (assistent ? api.einrichtungMailFinden : api.mailFinden)(adr, thunderbird);
+      const r = await (assistent ? einrichtungApi.einrichtungMailFinden : betriebApi.mailFinden)(adr, thunderbird);
       setSuche(r);
       schlageVor(adr, r.fund, r.fund?.benutzer === 'lokalteil');
       if (!r.fund && !thunderbird) setErweitert(true);
@@ -159,7 +160,7 @@ function MailFormular({ s, email, b, aktualisieren, sammeln }: {
     ev?.preventDefault();
     setLaeuft('speichern');
     try {
-      b!.setStand({ ...b!.stand!, ...await api.mailSpeichern(eingabe()) });
+      b!.setStand({ ...b!.stand!, ...await betriebApi.mailSpeichern(eingabe()) });
       setM((x) => ({ ...x, passwort: '' })); setLoeschen(false); setVorgeschlagen(new Set()); await aktualisieren?.();
       setMeldung({ art: 'gut', text: t('werkbank.mail.gespeichert') });
     } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); } finally { setLaeuft(null); }
@@ -171,7 +172,7 @@ function MailFormular({ s, email, b, aktualisieren, sammeln }: {
 
   async function teste(was: 'pruefen' | 'testmail') {
     setLaeuft(was); setProbe(undefined);
-    try { setProbe({ ...(was === 'pruefen' ? await api.mailPruefen(eingabe()) : await api.testmail(eingabe(), an)), was }); }
+    try { setProbe({ ...(was === 'pruefen' ? await betriebApi.mailPruefen(eingabe()) : await betriebApi.testmail(eingabe(), an)), was }); }
     catch (x) { setProbe({ ok: false, meldung: (x as Error).message, was }); }
     finally { setLaeuft(null); }
   }
@@ -288,8 +289,8 @@ function MailFormular({ s, email, b, aktualisieren, sammeln }: {
       {oauth && m.anbieter && (
         <OAuthBereich anbieter={m.anbieter} versand geaendert={ent.geaendert || s.mail.anmeldung !== 'oauth'} setMeldung={setMeldung}
           ziel={s.mail.anmeldung === 'oauth' ? {
-            oauth: s.oauth, start: api.mailOAuthStart, geraet: api.mailOAuthGeraet, geraetPruefen: api.mailOAuthGeraetPruefen,
-            abmelden: async () => { b.setStand({ ...b.stand!, ...await api.mailOAuthAbmelden() }); }, neuLaden: b.laden,
+            oauth: s.oauth, start: betriebApi.mailOAuthStart, geraet: betriebApi.mailOAuthGeraet, geraetPruefen: betriebApi.mailOAuthGeraetPruefen,
+            abmelden: async () => { b.setStand({ ...b.stand!, ...await betriebApi.mailOAuthAbmelden() }); }, neuLaden: b.laden,
           } : undefined} />
       )}
     </>

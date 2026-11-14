@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { api } from '../api';
+import { werkbankApi } from '../api/werkbank';
 import { useDaten } from '../daten';
 import { designCss, GRUNDLAGEN, MARKE, palette, rettungsweg, wendeAn, type Design, type Grundlage } from '../design';
 import { geheZu, Link, loeseWache } from '../ort';
@@ -79,7 +79,7 @@ export function DesignEditor({ id }: { id: string }) {
       ev.preventDefault();
       setSendet(true);
       void aktion(async () => {
-        const r = neu ? await api.designAnlegen(e) : await api.designAendern(id, e);
+        const r = neu ? await werkbankApi.designAnlegen(e) : await werkbankApi.designAendern(id, e);
         loeseWache(); await d.designsLaden();
         if (neu) geheZu(`/werkbank/designs/${r.id}`);
       }, t('werkbank.designs.design-gespeichert')).finally(() => setSendet(false));
@@ -116,9 +116,9 @@ export function DesignEditor({ id }: { id: string }) {
             <label className="knopf klein">{vorhanden?.logo ? t('werkbank.designs.anderes-logo-waehlen') : t('werkbank.designs.logo-hochladen')}
               <input type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" hidden onChange={(x) => {
                 const f = x.target.files?.[0]; x.target.value = '';
-                if (f) void aktion(async () => { await api.designLogo(id, f); await d.designsLaden(); }, t('werkbank.designs.logo-gespeichert'));
+                if (f) void aktion(async () => { await werkbankApi.designLogo(id, f); await d.designsLaden(); }, t('werkbank.designs.logo-gespeichert'));
               }} /></label>
-            {vorhanden?.logo && <Knopf groesse="klein" symbol="zuruecksetzen" onClick={() => aktion(async () => { await api.designLogoEntfernen(id); await d.designsLaden(); }, t('werkbank.designs.standard-logo-wiederhergestellt'))}>{t('werkbank.designs.standard-wiederherstellen')}</Knopf>}
+            {vorhanden?.logo && <Knopf groesse="klein" symbol="zuruecksetzen" onClick={() => aktion(async () => { await werkbankApi.designLogoEntfernen(id); await d.designsLaden(); }, t('werkbank.designs.standard-logo-wiederhergestellt'))}>{t('werkbank.designs.standard-wiederherstellen')}</Knopf>}
             <span className="leise klein">{t('werkbank.designs.png-jpeg-webp-oder')}</span>
           </div>
         )}
@@ -145,10 +145,10 @@ export function DesignEditor({ id }: { id: string }) {
         loeschen={!neu && !standard ? {
           text: t('werkbank.designs.design-loeschen-2'),
           rueckfrage: { titel: t('werkbank.designs.design-loeschen', { name: vorhanden!.name }), text: t('werkbank.designs.wer-es-nutzt-bekommt'), ja: t('werkbank.designs.loeschen') },
-          onClick: () => { void aktion(async () => { await api.designLoeschen(id); loeseWache(); await d.designsLaden(); geheZu('/werkbank/designs'); }, t('werkbank.designs.geloescht')); },
+          onClick: () => { void aktion(async () => { await werkbankApi.designLoeschen(id); loeseWache(); await d.designsLaden(); geheZu('/werkbank/designs'); }, t('werkbank.designs.geloescht')); },
         } : undefined}
         weitere={!neu && !standard && <Knopf gesperrt={geaendert && t('werkbank.designs.erst-speichern')}
-          onClick={() => aktion(async () => { await api.designStandard(id); await d.designsLaden(); }, t('werkbank.designs.als-standard-festgelegt'))}>{t('werkbank.designs.als-standard-festlegen')}</Knopf>} />
+          onClick={() => aktion(async () => { await werkbankApi.designStandard(id); await d.designsLaden(); }, t('werkbank.designs.als-standard-festgelegt'))}>{t('werkbank.designs.als-standard-festlegen')}</Knopf>} />
     </form>
   );
 }

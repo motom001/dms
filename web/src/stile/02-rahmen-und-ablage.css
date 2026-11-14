@@ -1,0 +1,200 @@
+/* Rahmen und Konto, Anmeldeseiten, Ablage in drei Spalten, Register an der Mappe, Dokumente, Editor der Einrichtung.
+   Teil der Gestaltung, eingebunden in fester Reihenfolge über stile/index.css. */
+
+/* ---------- Rahmen und Konto ---------- */
+.konto { margin-left: auto; display: flex; align-items: center; gap: 14px; font-size: calc(13px * var(--skala, 1)); }
+.wer { color: var(--leise); max-width: 22ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-decoration: none; padding: 4px 8px; border-radius: 6px; }
+.wer:hover { color: var(--tinte); background: var(--senke); }
+.wer.an { background: var(--akzent-zart); color: var(--akzent); }
+.klein { font-size: calc(12.5px * var(--skala, 1)); }
+.mittig { text-align: center; padding: 48px 16px; }
+.stapel { display: flex; flex-direction: column; gap: 12px; }
+.einspaltig { display: flex; flex-direction: column; gap: 14px; }
+.zeilenaktionen { display: flex; gap: 12px; flex-wrap: wrap; white-space: nowrap; }
+.linkzeile { display: flex; gap: 8px; }
+.linkzeile input { flex: 1; }
+.linkzeile > :first-child { flex: 1; min-width: 0; }
+
+/* Anmeldeseiten */
+.kartenseite { min-height: 100vh; display: grid; place-items: center; padding: 24px max(16px, env(safe-area-inset-right)) 24px max(16px, env(safe-area-inset-left)); }
+.karte { width: 100%; max-width: 420px; background: var(--flaeche); border: 1px solid var(--linie); border-radius: 12px; padding: 28px; display: flex; flex-direction: column; gap: 16px; }
+.karte h1 { font-size: calc(22px * var(--skala, 1)); }
+/* Fehlergrenze (#881): Meldung statt leerer Seite. */
+.karte.fehlergrenze { max-width: 520px; }
+.karte.fehlergrenze .knopf.primaer { width: auto; padding: 7px 13px; }
+.fehlergrenze-angaben { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 12em; overflow: auto; margin: 6px 0 0; padding: 8px; background: var(--senke); border: 1px solid var(--linie); border-radius: 6px; font-size: calc(12px * var(--skala, 1)); }
+/* Wiederherstellen (#107) */
+.karte.breit { max-width: 760px; }
+.karte .wiederherstellen .knopf.primaer { width: auto; }
+.schrittliste { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.schritt { display: flex; gap: 10px; align-items: baseline; }
+.schritt .zeichen { width: 1.2em; text-align: center; font-weight: 700; color: var(--leise); }
+.schritt.ok .zeichen { color: var(--gruen); }
+.schritt.fehler .zeichen, .schritt.fehler strong { color: var(--schlecht); }
+.schritt.hinweis .zeichen { color: var(--warn); }
+.schritt.laeuft .zeichen { color: var(--akzent); }
+.schritt.offen, .schritt.ausgelassen { color: var(--leise); }
+.auswahlliste { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.marke.gross { font-size: calc(18px * var(--skala, 1)); }
+.karte .knopf.primaer { width: 100%; padding: 10px; }
+.karte .textknopf { align-self: flex-start; font-size: calc(13px * var(--skala, 1)); }
+
+/* ---------- Ablage: drei Spalten ---------- */
+.rahmen.ablage, .rahmen.werkbank { height: 100vh; height: 100dvh; display: flex; flex-direction: column; }
+.rahmen.ablage .rumpf, .rahmen.werkbank .rumpf { flex: 1; min-height: 0; max-width: none; width: 100%; padding-top: 0; padding-bottom: 0; }
+.drei { flex: 1; min-height: 0; min-width: 0; display: grid; grid-template-columns: 220px minmax(260px, 360px) minmax(0, 1fr); gap: 0; margin: 0 calc(-1 * max(16px, env(safe-area-inset-right))) 0 calc(-1 * max(16px, env(safe-area-inset-left))); }
+/* Bezugsrahmen (#1063): Absolut Positioniertes bleibt in seiner Spalte und verlängert nie die Seite. Menüs und
+   Wahllisten haben ihren eigenen Rahmen in der Spalte (.wahl, .aktionsmenue, .neuknopf) – für sie ändert sich nichts. */
+.spalte { position: relative; min-width: 0; min-height: 0; overflow-y: auto; padding: 18px 16px 32px; display: flex; flex-direction: column; gap: 12px; }
+.spalte.sichten { border-right: 1px solid var(--linie); padding-left: max(16px, env(safe-area-inset-left)); }
+.spalte.liste { border-right: 1px solid var(--linie); background: var(--flaeche); }
+/* Platz für den Assistenten unten rechts (#1219), damit der runde Knopf nichts verdeckt: Schmal (Handy, Tablet) und
+   überall, wo eine Speicherleiste steht, hat er unten einen eigenen Streifen – die Leiste endet darüber. Sonst lässt sich
+   in den Spalten über ihn hinaus rollen. In der Werkbank steht er schmal in der Kopfzeile (Begleiter.module.css). */
+@media (min-width: 821px) {
+  .spalte:not(.sichten):not(:has(.speicherleiste)) { padding-bottom: 96px; }
+  .rahmen:has(.speicherleiste) .rumpf.rumpf { padding-bottom: 76px; }
+}
+@media (max-width: 820px) {
+  .rahmen:not(.werkbank) .rumpf.rumpf { padding-bottom: 76px; }
+}
+.spalte.mappe { padding-right: max(20px, env(safe-area-inset-right)); padding-left: 24px; }
+.sichtliste { display: flex; flex-direction: column; gap: 2px; }
+.sichtliste hr { border: 0; border-top: 1px solid var(--linie); margin: 8px 4px; width: auto; }
+.unterstuetzen { display: flex; flex-wrap: wrap; gap: 2px 6px; align-items: baseline; margin-top: auto; padding: 8px 10px; border-top: 1px solid var(--linie); color: var(--leise); text-decoration: none; font-size: calc(13px * var(--skala, 1)); }
+.unterstuetzen > span:first-child { color: var(--schlecht); }
+.unterstuetzen .klein { flex-basis: 100%; }
+.unterstuetzen:hover { color: var(--akzent); }
+.sicht { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 7px 10px; border-radius: 6px; color: inherit; text-decoration: none; }
+.sicht:hover { background: var(--flaeche); }
+.sicht.an { background: var(--akzent-zart); color: var(--akzent); font-weight: 600; }
+.sicht .nm { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Sichten als Baum (#38): Einrückung je Ebene, Pfeil zum Auf- und Zuklappen. */
+.sichtzeile { position: relative; display: flex; align-items: center; gap: 2px; padding-left: calc(var(--tiefe, 0) * 20px); }
+/* Ablage-Baum (#1212): je Ebene eine dünne senkrechte Linie, Einzug 20 px; oberste Ebene leicht fett. */
+.sichtzeile::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: calc(var(--tiefe, 0) * 20px); pointer-events: none;
+  background-image: repeating-linear-gradient(to right, transparent 0 13px, var(--linie-stark) 13px 14px, transparent 14px 20px); }
+.sichtzeile .sicht.oben .nm { font-weight: 600; }
+.sicht .zahl, .sicht .zaehler { margin-left: auto; text-align: right; }
+.sichtzeile .sicht { flex: 1; min-width: 0; }
+/* Der Pfeil hängt links vor dem Namen (auf der ersten Ebene im Rand), damit die Namen bündig mit „Eingang“ stehen. */
+.aufklapper, .aufklapper-platz { flex: none; width: 28px; height: 28px; min-width: 28px; }
+.textknopf.aufklapper { display: inline-flex; align-items: center; justify-content: center; padding: 0; border: 0; background: none; color: var(--leise); cursor: pointer; border-radius: 6px; text-decoration: none; }
+.textknopf.aufklapper:hover { background: var(--flaeche); color: var(--tinte); text-decoration: none; }
+.aufklapper .sym { transition: transform .12s; }
+.aufklapper[aria-expanded="true"] .sym { transform: rotate(90deg); }
+@media (prefers-reduced-motion: reduce) { .aufklapper .sym { transition: none; } }
+@media (pointer: coarse) { .aufklapper, .aufklapper-platz { width: 44px; height: 44px; min-width: 44px; } }
+@media (pointer: coarse) { .verfuegbar-suche { margin-top: 12px; } }
+.listenkopf-knoepfe { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+.listenzahl-geaendert { display: inline-flex; align-items: center; gap: 4px; }
+.sicht .zahl { font-size: calc(12px * var(--skala, 1)); color: var(--leise); font-variant-numeric: tabular-nums; }
+/* Zahl einer Ansicht kommt noch (#512): gleicher Platz, blass. */
+.sz-warte { opacity: .45; min-width: 2ch; text-align: right; }
+.zaehler { font-size: calc(11.5px * var(--skala, 1)); font-weight: 700; min-width: 20px; text-align: center; padding: 1px 7px; border-radius: 999px; background: var(--warn); color: var(--flaeche); }
+.listenkopf { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+.listenkopf h1 { font-size: calc(19px * var(--skala, 1)); }
+.listenkopf > div { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.listenkopf > .listenkopf-knoepfe { flex-direction: row; flex: none; }
+.mappenliste { list-style: none; margin: 0 -8px; padding: 0; display: flex; flex-direction: column; }
+.eintrag { display: flex; flex-direction: column; gap: 2px; padding: 9px 10px; border-radius: 6px; color: inherit; text-decoration: none; border-left: 3px solid transparent; }
+.eintrag:hover { background: var(--senke); }
+.eintrag.an { background: var(--gruen-zart); border-left-color: var(--gruen); }
+.eintrag .titel { font-weight: 600; overflow-wrap: anywhere; }
+.eintrag .unter { font-size: calc(12.5px * var(--skala, 1)); color: var(--leise); overflow-wrap: anywhere; }
+.eintrag .problem { font-size: calc(12px * var(--skala, 1)); color: var(--warn); }
+.leerliste { padding: 12px 2px; }
+.platzhalter { flex: 1; display: grid; place-items: center; color: var(--leise); text-align: center; border: 1px dashed var(--linie-stark); border-radius: var(--r); min-height: 200px; }
+.mappenkopf { display: flex; flex-direction: column; gap: 4px; }
+.mappenkopf h1 { font-size: calc(22px * var(--skala, 1)); }
+.index { display: flex; flex-wrap: wrap; gap: 4px 20px; margin: 4px 0 0; font-size: calc(12.5px * var(--skala, 1)); color: var(--leise); }
+.index div { display: flex; gap: 6px; }
+.index dt { font-weight: 600; }
+.index dd { margin: 0; }
+/* Im Kopf der Mappe steht die Person mitten in leiser Schrift: unterstrichen, damit der Verweis nicht nur an der Farbe
+   hängt (axe link-in-text-block, #1211). */
+.index dd a.person { text-decoration: underline; text-underline-offset: 2px; }
+.nur-schmal { display: none; }
+
+
+/* ---------- Register an der Mappe (Trennblätter) ---------- */
+.blatt.mitregistern { padding-top: 0; gap: 14px; }
+.registertaben { display: flex; gap: 2px; margin: 0 -20px; padding: 10px 14px 0; box-shadow: inset 0 -1px 0 var(--linie); overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; background: var(--senke); border-radius: var(--r) var(--r) 0 0; }
+.registertab { position: relative; display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px 9px; border: 1px solid transparent; border-bottom: 0; border-radius: 8px 8px 0 0; background: none; cursor: pointer; font-weight: 600; font-size: calc(13px * var(--skala, 1)); color: var(--leise); white-space: nowrap; border-top: 3px solid transparent; }
+.registertab:hover:not(:disabled) { color: var(--tinte); }
+.registertab.an { background: var(--flaeche); border-color: var(--linie); color: var(--tinte); }
+.registertab.an.art-felder { border-top-color: var(--gruen); }
+.registertab.an.art-dokumente { border-top-color: var(--akzent); }
+.registertab.an.art-verknuepfungen { border-top-color: var(--warn); }
+.registertab:disabled { opacity: 0.45; cursor: default; }
+.fehlerpunkt { font-size: calc(11px * var(--skala, 1)); font-weight: 700; min-width: 18px; padding: 0 5px; border-radius: 999px; background: var(--schlecht); color: var(--flaeche); text-align: center; }
+.anzahl { font-size: calc(11px * var(--skala, 1)); font-weight: 600; padding: 0 6px; border-radius: 999px; background: var(--senke); color: var(--leise); }
+.registerinhalt { min-height: 120px; }
+
+/* Dokumente */
+.dokumente { display: flex; flex-direction: column; gap: 12px; }
+.ablagezone { border: 2px dashed var(--linie-stark); border-radius: var(--r); padding: 18px; text-align: center; display: flex; flex-direction: column; gap: 4px; }
+.ablagezone.zieht { border-color: var(--akzent); background: var(--akzent-zart); }
+.dokumentliste { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; border: 1px solid var(--linie); border-radius: var(--r); }
+.dokumentliste li { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 12px; border-bottom: 1px solid var(--linie); flex-wrap: wrap; }
+.dokumentliste li:last-child { border-bottom: 0; }
+.dokumentliste li.an { background: var(--akzent-zart); }
+.dokname { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.dokname .textknopf, .dokname .verweis { text-align: left; overflow-wrap: anywhere; }
+.dokansicht { border: 1px solid var(--linie); border-radius: var(--r); overflow: hidden; background: var(--senke); }
+.dokansicht iframe { display: block; width: 100%; height: min(72vh, 760px); border: 0; background: var(--papier); }
+/* Dokumentliste (#1211): Kopf der Anzeige mit „PDF/A · Original“ und „In neuem Tab“, Satz statt Vorschau, „Über dieses
+   Dokument“ darunter; Infozeile und Zustand in der Zeile. */
+.dokansicht img { max-height: min(72vh, 760px); object-fit: contain; }
+.dokansicht-tab { margin-left: auto; display: inline-flex; align-items: center; gap: 4px; }
+.dokansicht-leer { padding: 18px 14px; display: flex; flex-direction: column; gap: 10px; align-items: flex-start; background: var(--flaeche); }
+.dokansicht-leer p { margin: 0; }
+.dok-ueber { margin: 0; padding: 10px 12px; display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 6px 14px; background: var(--flaeche); border-top: 1px solid var(--linie); }
+.dok-ueber > div { display: contents; }
+.dok-ueber dt { color: var(--leise); }
+.dok-ueber dd { margin: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; overflow-wrap: anywhere; }
+.dokzustand { display: flex; flex-direction: column; gap: 2px; color: var(--warn); }
+.dokzustand > span { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; }
+.dokleiste-alle { display: inline-flex; align-items: center; gap: 6px; }
+.dokzeile > .zeilenaktionen { align-items: center; }
+.dokname-knopf { text-align: left; overflow-wrap: anywhere; white-space: normal; }
+.dokansicht img { display: block; max-width: 100%; margin: 0 auto; }
+a.textknopf { text-decoration: none; }
+
+/* Einrichtung: Titel und Register */
+.vorschau { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; padding: 12px 14px; border-radius: var(--r); background: var(--senke); border: 1px solid var(--linie); }
+.filterhilfe { margin: 6px 0 10px; }
+.filterhilfe summary { cursor: pointer; color: var(--leise); }
+.filtertabelle { border-collapse: collapse; margin-top: 6px; }
+.filtertabelle td { padding: 3px 12px 3px 0; vertical-align: top; }
+.vorschautitel { font-size: calc(16px * var(--skala, 1)); }
+.vorschau select { width: auto; max-width: 260px; padding: 3px 6px; }
+.registerliste { display: flex; flex-direction: column; gap: 8px; }
+.registerzeile { border: 1px solid var(--linie); border-left: 4px solid var(--linie-stark); border-radius: var(--r); padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
+.registerzeile.art-felder { border-left-color: var(--gruen); }
+.registerzeile.art-dokumente { border-left-color: var(--akzent); }
+.registerzeile.art-verknuepfungen { border-left-color: var(--warn); }
+.registerkopf { display: grid; grid-template-columns: 150px minmax(0, 1fr) auto auto; gap: 10px; align-items: center; }
+.registerkopf .chip { justify-content: center; }
+.registerkopf > .registername { min-width: 0; }
+.registerchip { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+/* Ausgeblendet (#655): im Editor leiser, aber lesbar. */
+.feldzeile.ausgeblendet .flabel, .registerzeile.ausgeblendet .registerkopf input { color: var(--leise); }
+.feldzeile.ausgeblendet { border-style: dashed; }
+/* Abschnitte im Feldregister (#890) */
+.feldaufteilung { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+.feldaufteilung > p { margin: 0; }
+.aufteilung { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; width: 100%; }
+.aufteilungsfeld { padding: 3px 8px; border-left: 2px solid var(--linie-stark); font-size: calc(13px * var(--skala, 1)); display: flex; align-items: center; gap: 6px; }
+.aufteilungsfeld.ausgeblendet { color: var(--leise); }
+.abschnittzeile { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin: 6px 0 2px; padding: 4px 6px; border: 1px dashed var(--linie-stark); border-radius: var(--r); background: var(--senke); }
+.abschnittzeile.mit-titel { border-style: solid; }
+.abschnittzeile .sprachtext { flex: 1 1 220px; }
+.abschnittzeile .haken { margin: 0; }
+.abschnittzeile .feldaktionen { margin-left: auto; padding-right: 0; }
+/* Anzeigen, wenn … (#1033): Bedingung am Abschnitt im Editor, Symbol und Satz „nur bei …“ als Chip. */
+.abschnittanzeige { list-style: none; margin: 2px 0 8px; padding: 8px 10px; border: 1px solid var(--linie); border-radius: var(--r); background: var(--flaeche); }
+.anzeigechip { gap: 4px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.anzeigechip svg { width: 12px; height: 12px; flex: none; }
+.anzeigeeditor .bedingungen { margin: 4px 0; }
+.anzeigeeditor .anzeigemodus { display: flex; align-items: center; gap: 8px; }

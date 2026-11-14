@@ -3,7 +3,7 @@ import {
   auskunftMail, CODE_EIGEN_MIN, EMAIL_WARNUNG_BYTES, LINK_ABRUFE_MAX, LINK_ABRUFE_STANDARD, LINK_FEHLVERSUCHE_MAX, LINK_STATUS, LINK_TAGE_MAX, LINK_TAGE_STANDARD,
   linkStatus, normiereCode, zeigeCode, type AuskunftLink, type AuskunftStand,
 } from '../../../shared/src/auskunft';
-import { api, type DatenschutzStand } from '../api';
+import { datenschutzApi, type DatenschutzStand } from '../api/datenschutz';
 import { Link } from '../ort';
 import { rueckfrage } from '../rueckfrage';
 import { titelOder } from '../seiten';
@@ -72,7 +72,7 @@ function LinkErstellen({ a, s, nachher }: { a: AuskunftStand; s: DatenschutzStan
     if (aktiv && !(await rueckfrage({ titel: t('werkbank.zustellen.neuen-abruf-link-erstellen'), text: t('werkbank.zustellen.der-bisherige-link-dieser'), ja: t('werkbank.zustellen.neuen-link-erstellen') }))) return;
     setLaeuft(true); setFehler(undefined); setNeu(null);
     try {
-      const r = await api.auskunftLink(a.id, { tage, abrufe, senden: senden && s.mail, ...(an.trim() ? { an: an.trim() } : {}), ...(eigen ? { code } : {}) });
+      const r = await datenschutzApi.auskunftLink(a.id, { tage, abrufe, senden: senden && s.mail, ...(an.trim() ? { an: an.trim() } : {}), ...(eigen ? { code } : {}) });
       setNeu({ url: r.url, code: r.code, eigen, gesendet: r.gesendet, an: an.trim() });
       await nachher();
     } catch (e) { setFehler((e as Error).message); } finally { setLaeuft(false); }
@@ -141,7 +141,7 @@ function PerEmail({ a, s, nachher }: { a: AuskunftStand; s: DatenschutzStand; na
   const zuGross = a.bytes > MAIL_MAX;
   async function senden() {
     setLaeuft(true); setMeldung(undefined);
-    try { const r = await api.auskunftEmail(a.id, { an, betreff, nachricht }); setMeldung({ art: 'gut', text: t('werkbank.zustellen.gesendet-an-teile-jetzt', { an: r.an.join(', ') }) }); await nachher(); }
+    try { const r = await datenschutzApi.auskunftEmail(a.id, { an, betreff, nachricht }); setMeldung({ art: 'gut', text: t('werkbank.zustellen.gesendet-an-teile-jetzt', { an: r.an.join(', ') }) }); await nachher(); }
     catch (e) { setMeldung({ art: 'schlecht', text: (e as Error).message }); } finally { setLaeuft(false); }
   }
   return (
@@ -175,7 +175,7 @@ export function LinkZeile({ l, nachher, mitTitel }: { l: AuskunftLink; nachher()
       <span>{mitTitel && <><strong>{titelOder(l.titel)}</strong> · </>}<span className={`chip auskunft-status-${st}`}>{LINK_STATUS[st]}</span>{' '}
         <span className="leise klein">{t('werkbank.zustellen.erstellt-gueltig-bis-von', { zeit: zeit(l.erstellt), wert: l.empfaenger ? t('werkbank.zustellen.fuer', { empfaenger: l.empfaenger }) : '', tag: tag(l.ablauf), abrufe: l.abrufe, maxAbrufe: l.maxAbrufe, wert2: l.abgerufen ? t('werkbank.zustellen.zuletzt-abgerufen-am', { zeit: zeit(l.abgerufen) }) : '', wert3: l.fehlversuche ? t('werkbank.zustellen.falsche-codes', { anzahl: l.fehlversuche }) : '', wert4: l.codeArt === 'eigen' ? t('werkbank.zustellen.eigener-code') : '' })}</span></span>
       {st === 'aktiv' && <Knopf art="gefahr" symbol="verboten" groesse="klein" onClick={async () => {
-        try { await api.auskunftLinkWiderrufen(l.id); await nachher(); } catch (e) { setFehler((e as Error).message); }
+        try { await datenschutzApi.auskunftLinkWiderrufen(l.id); await nachher(); } catch (e) { setFehler((e as Error).message); }
       }} rueckfrage={{ titel: t('werkbank.zustellen.abruf-link-zurueckziehen'), text: t('werkbank.zustellen.der-link-gilt-sofort'), ja: t('werkbank.zustellen.zurueckziehen') }}>{t('werkbank.zustellen.zurueckziehen')}</Knopf>}
       {fehler && <span className="fehlertext klein">{fehler}</span>}
     </li>

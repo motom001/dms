@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { BAUM_TIEFE_MAX, kinderVon, type BaumKnoten } from '../../../shared/src/baum';
 import { datumText } from '../../../shared/src/archiv';
 import { kennzeichen, KENNZEICHEN, LOESCH_TIEFE, loeschErinnerung, loeschZusammenfassung, planeLoeschung, type LoeschAktion, type LoeschKennzeichen, type LoeschVorschau } from '../../../shared/src/loeschbaum';
-import { api } from '../api';
+import { mappenApi } from '../api/mappen';
 import { Symbol } from '../Symbol';
 import { useDaten } from '../daten';
 import { Hilfe } from '../Hilfe';
@@ -31,7 +31,7 @@ export function LoeschBaum({ mappeId, titel, sicht, schliessen, neuLaden }: { ma
   useEffect(() => {
     let aktiv = true;
     setV(null); setFehler(undefined);
-    api.loeschVorschau(mappeId, tiefe).then((x) => {
+    mappenApi.loeschVorschau(mappeId, tiefe).then((x) => {
       if (!aktiv) return;
       setV(x); setAuswahl(x.vorschlag);
       // Große Bäume: ab der zweiten Ebene zugeklappt, wenn es viele sind.
@@ -57,7 +57,7 @@ export function LoeschBaum({ mappeId, titel, sicht, schliessen, neuLaden }: { ma
     if (!v || !plan?.loeschen.length || !anlass) return;
     setLaeuft(true); setFehler(undefined);
     try {
-      const r = await api.mitVerknuepftenLoeschen(mappeId, { tiefe, auswahl, grund: anlass.grund ?? undefined, grundText: anlass.text });
+      const r = await mappenApi.mitVerknuepftenLoeschen(mappeId, { tiefe, auswahl, grund: anlass.grund ?? undefined, grundText: anlass.text });
       const start = r.loeschen.includes(mappeId);
       // Ist die Mappe selbst weg, erst zur Liste – sonst lädt die Ansicht sie noch einmal (404).
       if (start) geheZu(`/ablage/${sicht}`);

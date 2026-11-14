@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { api, type ZuletztGeoeffnet } from '../api';
+import { mappenApi, type ZuletztGeoeffnet } from '../api/mappen';
 import { useDaten } from '../daten';
 import { Listenkopf } from '../Listenkopf';
 import { Link } from '../ort';
@@ -30,7 +30,7 @@ export function ZuletztListe({ offen }: { offen?: string }) {
   const [fehler, setFehler] = useState<string>();
   useEffect(() => {
     let aktuell = true;
-    api.zuletztGeoeffnet().then((x) => { if (aktuell) { setListe(x); setFehler(undefined); } }, (e) => { if (aktuell) setFehler((e as Error).message); });
+    mappenApi.zuletztGeoeffnet().then((x) => { if (aktuell) { setListe(x); setFehler(undefined); } }, (e) => { if (aktuell) setFehler((e as Error).message); });
     return () => { aktuell = false; };
     // Nach dem Öffnen einer Mappe nicht umsortieren (sonst springt der Eintrag unter dem Mauszeiger): nur bei neuem Stand.
   }, [d.stand]);

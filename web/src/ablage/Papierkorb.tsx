@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { formatiere, SYSTEMSPALTEN } from '../../../shared/src/model';
-import { api, type DokumentImKorb, type PapierkorbEintrag } from '../api';
+import { mappenApi, type DokumentImKorb, type PapierkorbEintrag } from '../api/mappen';
 import { useDaten } from '../daten';
 import { geheZu, Link } from '../ort';
 import { titelOder } from '../seiten';
@@ -32,8 +32,8 @@ export function usePapierkorb(werkbank: boolean, aktiv = true) {
   const [fehler, setFehler] = useState<string>();
   const laden = useCallback(async () => {
     try {
-      if (werkbank) { const r = await api.papierkorbWerkbank(); setEintraege(r.eintraege); setDokumente(r.dokumente ?? []); setTage(r.tage); setHistorieTage(r.historieTage); }
-      else { const [m, dok] = await Promise.all([api.papierkorb(), api.papierkorbDokumente()]); setEintraege(m); setDokumente(dok); }
+      if (werkbank) { const r = await mappenApi.papierkorbWerkbank(); setEintraege(r.eintraege); setDokumente(r.dokumente ?? []); setTage(r.tage); setHistorieTage(r.historieTage); }
+      else { const [m, dok] = await Promise.all([mappenApi.papierkorb(), mappenApi.papierkorbDokumente()]); setEintraege(m); setDokumente(dok); }
       setFehler(undefined);
     } catch (e) { setFehler((e as Error).message); }
   }, [werkbank]);
@@ -77,7 +77,7 @@ export function PapierkorbListe({ z, werkbank, offen }: { z: PapierkorbZustand; 
   const leerenFrage = { titel: t('ablage.papierkorb.leeren', { wert: werkbank ? t('ablage.papierkorb.den-ganzen-papierkorb-alle') : t('ablage.papierkorb.deinen-papierkorb') }), text: t('ablage.papierkorb.werden-endgueltig-geloescht', { anzahl: liste.length + z.dokumente.length, charAt: was.charAt(0).toUpperCase(), was: was.slice(1) }), ja: t('ablage.papierkorb.papierkorb-leeren') };
   async function leeren() {
     setLaeuft(true); setMeldung(undefined);
-    try { await api.papierkorbLeeren(werkbank); melde(); await d.neuLaden(); geheZu(basis(werkbank)); }
+    try { await mappenApi.papierkorbLeeren(werkbank); melde(); await d.neuLaden(); geheZu(basis(werkbank)); }
     catch (e) { setMeldung((e as Error).message); }
     finally { setLaeuft(false); }
   }
@@ -177,7 +177,7 @@ function DokumenteImKorb({ z, werkbank }: { z: PapierkorbZustand; werkbank: bool
   async function zurueck(x: DokumentImKorb) {
     setLaeuft(x.id); setMeldung(undefined);
     try {
-      const r = await api.dokumentWiederherstellen(x.id, werkbank);
+      const r = await mappenApi.dokumentWiederherstellen(x.id, werkbank);
       melde(); await d.neuLaden();
       setMeldung({ art: 'gut', text: <>{tn('ablage.papierkorb.liegt-wieder-in-register', { name: x.name, link: <Link to={`/ablage/${r.typId}/${x.mappeId}`} className="verweis">{titelOder(x.mappeTitel)}</Link>, register: x.register })}</> });
     } catch (e) { setMeldung({ art: 'schlecht', text: (e as Error).message }); }
@@ -185,7 +185,7 @@ function DokumenteImKorb({ z, werkbank }: { z: PapierkorbZustand; werkbank: bool
   }
   async function weg(x: DokumentImKorb) {
     setLaeuft(x.id); setMeldung(undefined);
-    try { await api.dokumentEndgueltig(x.id, werkbank); melde(); await d.neuLaden(); }
+    try { await mappenApi.dokumentEndgueltig(x.id, werkbank); melde(); await d.neuLaden(); }
     catch (e) { setMeldung({ art: 'schlecht', text: (e as Error).message }); }
     finally { setLaeuft(undefined); }
   }
@@ -227,10 +227,10 @@ export function PapierkorbDetail({ id, werkbank }: { id: string; werkbank: boole
   const [gruppe, setGruppe] = useState<PapierkorbEintrag[] | null>(null);
   useEffect(() => {
     setE(null);
-    api.papierkorbEintrag(id, werkbank).then((x) => {
+    mappenApi.papierkorbEintrag(id, werkbank).then((x) => {
       setE(x);
       // Vorgang (#424): die anderen Mappen, die zusammen gelöscht wurden.
-      if (x.vorgang) (werkbank ? api.papierkorbWerkbank().then((r) => r.eintraege) : api.papierkorb()).then(setGruppe, () => setGruppe([]));
+      if (x.vorgang) (werkbank ? mappenApi.papierkorbWerkbank().then((r) => r.eintraege) : mappenApi.papierkorb()).then(setGruppe, () => setGruppe([]));
     }, () => setE('fehlt'));
   }, [id, werkbank]);
 
@@ -243,7 +243,7 @@ export function PapierkorbDetail({ id, werkbank }: { id: string; werkbank: boole
     if (!e || e === 'fehlt' || !e.vorgang) return;
     setLaeuft('alle'); setMeldung(undefined);
     try {
-      const r = await api.vorgangWiederherstellen(e.vorgang, werkbank);
+      const r = await mappenApi.vorgangWiederherstellen(e.vorgang, werkbank);
       melde(); await d.neuLaden();
       await hinweis({ titel: t('ablage.papierkorb.wiederhergestellt'), text: t('ablage.papierkorb.mappen-samt-dokumenten-2', { anzahl: r.mappen, wert: r.verweiseWieder ? t('ablage.papierkorb.entfernte-verweise-sind-wieder', { anzahl: r.verweiseWieder }) : '', wert2: r.verweiseEntfallen ? t('ablage.papierkorb.verweise-auf-mappen-die', { anzahl: r.verweiseEntfallen }) : '' }) });
       const start = r.startId ? zusammen.find((x) => x.id === r.startId) : undefined;
@@ -254,7 +254,7 @@ export function PapierkorbDetail({ id, werkbank }: { id: string; werkbank: boole
   async function wiederherstellen() {
     setLaeuft('zurueck'); setMeldung(undefined);
     try {
-      const r = await api.wiederherstellen(id, werkbank);
+      const r = await mappenApi.wiederherstellen(id, werkbank);
       melde(); await d.neuLaden();
       // Nach den Berechtigungen nicht mehr sichtbar (#126): Bescheid sagen und in den Papierkorb zurück.
       if (r.hinweis) { await hinweis({ titel: t('ablage.papierkorb.wiederhergestellt'), text: r.hinweis }); geheZu(basis(werkbank)); return; }
@@ -264,7 +264,7 @@ export function PapierkorbDetail({ id, werkbank }: { id: string; werkbank: boole
   }
   async function endgueltig() {
     setLaeuft('weg'); setMeldung(undefined);
-    try { await api.endgueltigLoeschen(id, werkbank); melde(); await d.neuLaden(); geheZu(basis(werkbank)); }
+    try { await mappenApi.endgueltigLoeschen(id, werkbank); melde(); await d.neuLaden(); geheZu(basis(werkbank)); }
     catch (x) { setMeldung((x as Error).message); setLaeuft(null); }
   }
 
@@ -331,7 +331,7 @@ function PapierkorbEinstellungen({ z, leeren }: { z: PapierkorbZustand; leeren?:
     const anzahl = (z.eintraege?.length ?? 0) + z.dokumente.length;
     if (n === 0 && anzahl && !(await rueckfrage({ titel: t('ablage.papierkorb.papierkorb-ausschalten'), text: t('ablage.papierkorb.alle-eintraege-darin-werden', { anzahl }), ja: t('ablage.papierkorb.ausschalten-und-leeren'), gefahr: true }))) return;
     try {
-      const r = await api.papierkorbTage({ tage: n, historieTage: h });
+      const r = await mappenApi.papierkorbTage({ tage: n, historieTage: h });
       z.setTage(r.tage); z.setHistorieTage(r.historieTage); melde(); await d.neuLaden();
       setMeldung({ art: 'gut', text: t('ablage.papierkorb.gespeichert', { wert: r.geleert ? t('ablage.papierkorb.mappen-endgueltig-geloescht', { anzahl: r.geleert }) : '' }) });
     } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); }

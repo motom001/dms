@@ -4,7 +4,7 @@ import { ZusammenfassungEinstellen } from './Zusammenfassung';
 import { geraetText, istGeradeAktiv, PASSWORT_MINDESTLAENGE, type Sitzung } from '../../../shared/src/model';
 import { darfVerwalten, hatGesamt } from '../../../shared/src/verwaltungsrecht';
 import { bereichName } from '../../../shared/src/werkbankansicht';
-import { api } from '../api';
+import { kontoApi } from '../api/konto';
 import { bereicheZuruecksetzen } from '../bereiche';
 import { ApiSchluesselBlatt } from './ApiSchluessel';
 import { useDaten } from '../daten';
@@ -30,8 +30,8 @@ const STUFE = { immer: t('profil.profil.stufe.immer'), nie: t('profil.profil.stu
 
 /** Was darf ich? (#126) Je Mappentyp und Recht: ja, nein oder je nach Mappe – ohne die Regeln selbst. */
 function MeineRechte({ admin }: { admin: boolean }) {
-  const [liste, setListe] = useState<Awaited<ReturnType<typeof api.meineRechte>>>();
-  useEffect(() => { api.meineRechte().then(setListe).catch(() => setListe([])); }, []);
+  const [liste, setListe] = useState<Awaited<ReturnType<typeof kontoApi.meineRechte>>>();
+  useEffect(() => { kontoApi.meineRechte().then(setListe).catch(() => setListe([])); }, []);
   return (
     <section className="blatt">
       <h2 className="h3">{tn('profil.profil.meine-rechte', { hilfe: <Hilfe ort="profil.rechte" /> })}</h2>
@@ -101,14 +101,14 @@ function ProfilBereich({ bereich }: { bereich: keyof typeof BEREICHE }) {
   const [entwickler, setEntwickler] = useState(!!ich.entwicklermodus);
   const [ansicht, setAnsicht] = useState(false);
 
-  const fName = useFormular(async () => { await api.profil(name); await aktualisieren(); return t('profil.profil.name-gespeichert'); });
+  const fName = useFormular(async () => { await kontoApi.profil(name); await aktualisieren(); return t('profil.profil.name-gespeichert'); });
   const fEmail = useFormular(async () => {
-    await api.emailAendern(email, pwEmail); setPwEmail(''); await aktualisieren();
+    await kontoApi.emailAendern(email, pwEmail); setPwEmail(''); await aktualisieren();
     return mail ? t('profil.profil.e-mail-adresse-geaendert') : t('profil.profil.e-mail-adresse-geaendert-2');
   });
   const fPw = useFormular(async () => {
     if (neu !== neu2) throw new Error(t('profil.profil.die-beiden-neuen-passwoerter'));
-    await api.passwortAendern(alt, neu); setAlt(''); setNeu(''); setNeu2('');
+    await kontoApi.passwortAendern(alt, neu); setAlt(''); setNeu(''); setNeu2('');
     return t('profil.profil.passwort-geaendert-alle-anderen');
   });
 
@@ -239,7 +239,7 @@ function ProfilBereich({ bereich }: { bereich: keyof typeof BEREICHE }) {
         <h2 className="h3">{t('profil.profil.entwicklermodus')}</h2>
         <p className="leise">{t('profil.profil.zeigt-unten-rechts-bei')}</p>
         <Schalter an={entwickler} beschriftung={t('profil.profil.zeitmessung-anzeigen')}
-          setze={(an) => { setEntwickler(an); void api.entwicklermodus(an).then(aktualisieren).catch(() => setEntwickler(!an)); }} />
+          setze={(an) => { setEntwickler(an); void kontoApi.entwicklermodus(an).then(aktualisieren).catch(() => setEntwickler(!an)); }} />
       </div>
       </>}
 
@@ -287,7 +287,7 @@ function MeineGeraete() {
   const { vertretung } = useKonto();
   const [liste, setListe] = useState<Sitzung[] | null>(null);
   const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
-  const laden = useCallback(async () => { try { setListe(await api.meineSitzungen()); } catch (e) { setMeldung({ art: 'schlecht', text: (e as Error).message }); } }, []);
+  const laden = useCallback(async () => { try { setListe(await kontoApi.meineSitzungen()); } catch (e) { setMeldung({ art: 'schlecht', text: (e as Error).message }); } }, []);
   useEffect(() => { void laden(); }, [laden]);
   async function tu(f: () => Promise<string>) {
     setMeldung(undefined);
@@ -310,7 +310,7 @@ function MeineGeraete() {
                 <span className="leise klein blockzeile">{t('profil.profil.zuletzt-aktiv-angemeldet-seit', { datumZeit: datumZeit(s.zuletztAktiv), datumZeit2: datumZeit(s.erstellt), wert: s.ip ? ` · ${s.ip}` : '' })}</span>
               </div>
               {!s.aktuell && !vertretung && <Knopf art="gefahr" symbol="abmelden" rueckfrage={{ titel: t('profil.profil.geraet-abmelden.frage', { geraet: geraetText(s.geraet) }), text: t('profil.profil.geraet-abmelden.text'), ja: t('profil.profil.abmelden') }}
-                onClick={() => tu(async () => { await api.meineSitzungBeenden(s.id); return t('profil.profil.geraet-abgemeldet'); })}>{t('profil.profil.abmelden')}</Knopf>}
+                onClick={() => tu(async () => { await kontoApi.meineSitzungBeenden(s.id); return t('profil.profil.geraet-abgemeldet'); })}>{t('profil.profil.abmelden')}</Knopf>}
             </li>
           ))}
         </ul>
@@ -318,7 +318,7 @@ function MeineGeraete() {
       {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
       {andere.length > 0 && !vertretung && (
         <div className="knoepfe"><Knopf art="gefahr" symbol="abmelden" rueckfrage={{ titel: t('profil.profil.auf-allen-anderen-geraeten', { anzahl: andere.length }), ja: t('profil.profil.abmelden') }}
-          onClick={() => tu(async () => { const r = await api.andereSitzungenBeenden(); return t('profil.profil.geraete-abgemeldet', { anzahl: r.beendet }); })}>{t('profil.profil.alle-anderen-abmelden')}</Knopf></div>
+          onClick={() => tu(async () => { const r = await kontoApi.andereSitzungenBeenden(); return t('profil.profil.geraete-abgemeldet', { anzahl: r.beendet }); })}>{t('profil.profil.alle-anderen-abmelden')}</Knopf></div>
       )}
     </div>
   );
@@ -337,7 +337,7 @@ function SpracheWaehlen() {
   const name = (s: string) => sprachname(s, s);
   async function speichern(neu: string) {
     setWahl(neu); setSendet(true); setFehler(undefined);
-    try { await api.eigeneSprache(neu || null); wechsleSprache(neu || sprachen.standard); }
+    try { await kontoApi.eigeneSprache(neu || null); wechsleSprache(neu || sprachen.standard); }
     catch (e) { setFehler((e as Error).message); setWahl(ich.sprache ?? ''); }
     finally { setSendet(false); }
   }
@@ -373,7 +373,7 @@ function UebersetzenWahl() {
   if (!uebersetzen) return null;
   async function schalte(an: boolean) {
     setSendet(true); setFehler(undefined);
-    try { await api.eigenesUebersetzen(an); await aktualisieren(); } catch (e) { setFehler((e as Error).message); } finally { setSendet(false); }
+    try { await kontoApi.eigenesUebersetzen(an); await aktualisieren(); } catch (e) { setFehler((e as Error).message); } finally { setSendet(false); }
   }
   return (
     <>

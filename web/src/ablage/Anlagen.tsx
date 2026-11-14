@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { anlageText } from '../../../shared/src/anlagen';
 import type { Dokument } from '../../../shared/src/model';
-import { api } from '../api';
+import { dokumenteApi } from '../api/dokumente';
 import { Feld, HakenFeld, Knopf } from '../bausteine';
 import { Hilfe } from '../Hilfe';
 import { t } from '../sprache';
@@ -46,7 +46,7 @@ export function AnlageZeile({ a, haupt, auf, umschalten, vorschau, herunterladen
   async function benenne() {
     if (name === null) return;
     setFehler(undefined);
-    try { await api.anlageUmbenennen(haupt.id, a.id, name); setName(null); await fertig(); } catch (x) { setFehler((x as Error).message); }
+    try { await dokumenteApi.anlageUmbenennen(haupt.id, a.id, name); setName(null); await fertig(); } catch (x) { setFehler((x as Error).message); }
   }
   return (
     <li className={`${s.zeile} ${auf ? 'an' : ''} ${weg ? 'weg' : ''}`} data-anlage={a.anlageNr ?? undefined}>
@@ -59,9 +59,9 @@ export function AnlageZeile({ a, haupt, auf, umschalten, vorschau, herunterladen
         {!weg && (
           <span className={`${s.aktionen} klein`}>
             {herunterladen}
-            {bearbeitbar && !erste && <Knopf art="link" groesse="klein" title={t('ablage.anlagen.nach-oben-titel')} onClick={async () => { await api.anlagenSortieren(haupt.id, nachOben(await api.anlagen(haupt.id), a.id)); await fertig(); }}>{t('ablage.anlagen.nach-oben')}</Knopf>}
+            {bearbeitbar && !erste && <Knopf art="link" groesse="klein" title={t('ablage.anlagen.nach-oben-titel')} onClick={async () => { await dokumenteApi.anlagenSortieren(haupt.id, nachOben(await dokumenteApi.anlagen(haupt.id), a.id)); await fertig(); }}>{t('ablage.anlagen.nach-oben')}</Knopf>}
             {bearbeitbar && name === null && <Knopf art="link" groesse="klein" onClick={() => setName(a.name)}>{t('ablage.anlagen.umbenennen')}</Knopf>}
-            {bearbeitbar && <Knopf art="link" groesse="klein" title={t('ablage.anlagen.loesen-titel')} onClick={async () => { await api.anlageLoesen(haupt.id, a.id); await fertig(t('ablage.anlagen.geloest', { name: a.name })); }}>{t('ablage.anlagen.loesen')}</Knopf>}
+            {bearbeitbar && <Knopf art="link" groesse="klein" title={t('ablage.anlagen.loesen-titel')} onClick={async () => { await dokumenteApi.anlageLoesen(haupt.id, a.id); await fertig(t('ablage.anlagen.geloest', { name: a.name })); }}>{t('ablage.anlagen.loesen')}</Knopf>}
           </span>
         )}
       </div>
@@ -98,7 +98,7 @@ export function AlsAnlage({ d, ziele, schliessen, fertig }: { d: Dokument; ziele
           {ziele.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
         </select>
       </Feld>
-      <Knopf art="haupt" groesse="klein" gesperrt={!z} onClick={async () => { await api.anlageAnhaengen(ziel, d.id); await fertig(t('ablage.anlagen.angehaengt', { name: d.name, haupt: z?.name ?? '' })); }}>{t('ablage.anlagen.anhaengen')}</Knopf>
+      <Knopf art="haupt" groesse="klein" gesperrt={!z} onClick={async () => { await dokumenteApi.anlageAnhaengen(ziel, d.id); await fertig(t('ablage.anlagen.angehaengt', { name: d.name, haupt: z?.name ?? '' })); }}>{t('ablage.anlagen.anhaengen')}</Knopf>
       <Knopf art="link" groesse="klein" onClick={schliessen}>{t('ablage.anlagen.abbrechen')}</Knopf>
     </div>
   );
@@ -137,7 +137,7 @@ export function HerunterladenMitAnlagen({ d, anlagen, archiv, ohne }: { d: Dokum
   return (
     <span className={s.mitAnlagen}>
       {zip
-        ? <Knopf art="link" onClick={() => api.herunterladenMitAnlagen(d.id, t('ablage.anlagen.zip-name', { name: d.name.replace(/\.[^.]{1,5}$/, '') }), archiv ? 'archiv' : undefined, eml)}>{t('ablage.anlagen.herunterladen')}</Knopf>
+        ? <Knopf art="link" onClick={() => dokumenteApi.herunterladenMitAnlagen(d.id, t('ablage.anlagen.zip-name', { name: d.name.replace(/\.[^.]{1,5}$/, '') }), archiv ? 'archiv' : undefined, eml)}>{t('ablage.anlagen.herunterladen')}</Knopf>
         : ohne}
       <HakenFeld beschriftung={t('ablage.anlagen.mit-anlagen', { anzahl: anlagen.length })}>
         <input type="checkbox" checked={mit} onChange={(e) => setMit(e.target.checked)} />

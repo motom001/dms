@@ -6,7 +6,9 @@ import { fragtDatum, laeuftAm, vorschlagDatum, type MappenAblauf, type VorlageZu
 import { Feld, Knopf } from '../bausteine';
 import { heuteIn, verschiebe } from '../../../shared/src/sichten';
 import { aufgabenBeschriftung, ausNotiz } from '../../../shared/src/mappenansicht';
-import { api } from '../api';
+import { aufgabenApi } from '../api/aufgaben';
+import { automatisierungApi } from '../api/automatisierung';
+import { mappenApi } from '../api/mappen';
 import { nameMitAbwesenheit, useDaten } from '../daten';
 import { useKonto } from '../konto';
 import { Person } from '../Person';
@@ -64,7 +66,7 @@ export function VorlagenDialog({ mappeId, vorlage, schliessen, probe }: { mappeI
  * weiter wie bisher (der Server antwortet dann mit einem Hinweis).
  */
 export async function trotzdemZuweisen(mappeId: string, an: string, name: string): Promise<boolean> {
-  try { if ((await api.darfLesen(mappeId, an)).lesen) return true; } catch { return true; }
+  try { if ((await mappenApi.darfLesen(mappeId, an)).lesen) return true; } catch { return true; }
   return rueckfrage({ titel: t('mappen.aufgabe.zuweisen.titel', { name }), text: t('mappen.aufgabe.zuweisen.text', { name }), ja: t('mappen.aufgabe.zuweisen.trotzdem'), nein: t('mappen.aufgabe.zuweisen.abbrechen') });
 }
 
@@ -103,15 +105,15 @@ function Zeile({ a, neuLaden, setBestaetigt, setFolge, zuNotizen }: { a: Aufgabe
           {/* Automatisch zugeordnet (#337): „Passt“ bestätigt, „Rückgängig“ nimmt die Zuordnung zurück. */}
           {a.art === 'zugeordnet' && <Knopf groesse="klein" onClick={async () => {
             if (await rueckfrage({ titel: t('ablage.aufgaben.zuordnung-rueckgaengig-machen'), text: t('ablage.aufgaben.die-dokumente-kommen-zurueck'), ja: t('ablage.aufgaben.rueckgaengig-machen') })) {
-              await tu(() => api.zuordnungRueckgaengig(a.id), t('ablage.aufgaben.zuordnung-rueckgaengig-gemacht-die'));
+              await tu(() => aufgabenApi.zuordnungRueckgaengig(a.id), t('ablage.aufgaben.zuordnung-rueckgaengig-gemacht-die'));
             }
           }}>{t('ablage.aufgaben.rueckgaengig')}</Knopf>}
-          {a.art !== 'passung' && <Knopf groesse="klein" art={a.art === 'zugeordnet' ? 'haupt' : 'neben'} symbol="haken" onClick={() => tu(() => api.aufgabeErledigt(a.id))}>{a.art === 'zugeordnet' ? t('ablage.aufgaben.passt') : t('ablage.aufgaben.erledigt')}</Knopf>}
+          {a.art !== 'passung' && <Knopf groesse="klein" art={a.art === 'zugeordnet' ? 'haupt' : 'neben'} symbol="haken" onClick={() => tu(() => aufgabenApi.aufgabeErledigt(a.id))}>{a.art === 'zugeordnet' ? t('ablage.aufgaben.passt') : t('ablage.aufgaben.erledigt')}</Knopf>}
           <Knopf groesse="klein" onClick={() => setWeiter(true)}>{t('ablage.aufgaben.weitergeben')}</Knopf>
         </div>
       )}
       {darf && weiter && (
-        <form className="weitergeben" onSubmit={(e) => { e.preventDefault(); if (an) void (async () => { if (await trotzdemZuweisen(a.mappeId, an, d.person(an))) await tu(() => api.aufgabeDelegieren(a.id, an), t('ablage.aufgaben.an-weitergegeben', { person: d.person(an) })); })(); }}
+        <form className="weitergeben" onSubmit={(e) => { e.preventDefault(); if (an) void (async () => { if (await trotzdemZuweisen(a.mappeId, an, d.person(an))) await tu(() => aufgabenApi.aufgabeDelegieren(a.id, an), t('ablage.aufgaben.an-weitergegeben', { person: d.person(an) })); })(); }}
           onKeyDown={(e) => { if (e.key === 'Escape') { setWeiter(false); setAn(''); } }}>
           <span className="leise klein">{t('ablage.aufgaben.weitergeben-an')}</span>
           <BenutzerWahl label={t('ablage.aufgaben.weitergeben-an')} wert={an} setze={setAn} ohne={a.empfaengerId} fokus />
@@ -154,7 +156,7 @@ function Folgetermin({ f, neuLaden, fertig }: { f: Folge; neuLaden: () => Promis
   const d = useDaten();
   const [fehler, setFehler] = useState<string>();
   async function setzen() {
-    try { const r = await api.folgetermin(f.aufgabe.id); await neuLaden(); await d.neuLaden(); fertig(r.hinweis ?? t('ablage.aufgaben.naechster-termin-eingetragen', { datumDe: datumDe(f.datum) })); }
+    try { const r = await aufgabenApi.folgetermin(f.aufgabe.id); await neuLaden(); await d.neuLaden(); fertig(r.hinweis ?? t('ablage.aufgaben.naechster-termin-eingetragen', { datumDe: datumDe(f.datum) })); }
     catch (e) { setFehler((e as Error).message); }
   }
   return (
@@ -180,7 +182,7 @@ export function Geplant({ liste, vorlagen = [], neuLaden }: { liste: MappenAblau
   const [fehler, setFehler] = useState<string>();
   if (!liste.length) return null;
   async function loeschen(e: MappenAblauf) {
-    try { await api.ablaufLoeschen(e.id); await neuLaden(); } catch (x) { setFehler((x as Error).message); }
+    try { await automatisierungApi.ablaufLoeschen(e.id); await neuLaden(); } catch (x) { setFehler((x as Error).message); }
   }
   return (
     <div className="hinweis info stapel erinnerungen" role="status" data-anker="mappe.geplant">
@@ -230,7 +232,7 @@ export function ErinnerungFormular({ mappeId, e, vorlage, neuLaden, schliessen, 
     try {
       const x = { datum, ...(mitText ? { text } : {}), ...(mitEmpfaenger ? { empfaengerId: an || undefined } : {}) };
       if (probe) { await probe.anwenden(x); return; }
-      const r = e ? await api.ablaufAendern(e.id, x) : await api.ablaufAnwenden(mappeId, vorlage?.kennung ?? 'erinnern', x);
+      const r = e ? await automatisierungApi.ablaufAendern(e.id, x) : await mappenApi.ablaufAnwenden(mappeId, vorlage?.kennung ?? 'erinnern', x);
       await neuLaden(); await d.neuLaden();
       if (r.hinweis) setHinweis(r.hinweis); else schliessen();
     } catch (x) { setFehler((x as Error).message); }
@@ -291,7 +293,7 @@ export function NeueAufgabe({ mappeId, vorlage, neuLaden, schliessen, probe }: {
     try {
       const x = { ...(fragen.includes('empfaenger') ? { empfaengerId: an } : {}), ...(fragen.includes('text') ? { text } : {}) };
       if (probe) { await probe.anwenden(x); return; }
-      const r = await api.ablaufAnwenden(mappeId, vorlage?.kennung ?? 'aufgabe_vergeben', x);
+      const r = await mappenApi.ablaufAnwenden(mappeId, vorlage?.kennung ?? 'aufgabe_vergeben', x);
       await neuLaden(); await d.neuLaden();
       // Empfänger darf die Mappe nicht lesen (#127): Maske offen lassen, Hinweis zeigen.
       if (r.hinweis) { setHinweis(r.hinweis); setText(''); setAn(''); } else schliessen();
@@ -337,7 +339,7 @@ export function AblaufFormular({ mappeId, vorlage, neuLaden, schliessen, probe }
     try {
       const x = { ...(f.includes('empfaenger') ? { empfaengerId: an } : {}), ...(mitDatum ? { datum } : {}), ...(f.includes('text') ? { text } : {}) };
       if (probe) { await probe.anwenden(x); return; }
-      const r = await api.ablaufAnwenden(mappeId, vorlage.kennung, x);
+      const r = await mappenApi.ablaufAnwenden(mappeId, vorlage.kennung, x);
       await neuLaden(); await d.neuLaden();
       if (r.hinweis) setHinweis(r.hinweis); else schliessen();
     } catch (e) { setFehler((e as Error).message); }

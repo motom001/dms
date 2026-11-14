@@ -1,6 +1,6 @@
 import { Kopf } from './Kopf';
 import { useEffect, useState } from 'react';
-import { api, type SucheStand } from '../api';
+import { sucheApi, type SucheStand } from '../api/suche';
 import { Link } from '../ort';
 import { t, tn } from '../sprache';
 import { Knopf, Schalter } from '../bausteine';
@@ -15,7 +15,7 @@ export function SuchePanel({ abschnitt }: { abschnitt?: boolean } = {}) {
   const [s, setS] = useState<SucheStand | null>(null);
   const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
   const [laeuft, setLaeuft] = useState(false);
-  useEffect(() => { api.sucheStand().then(setS, (e) => setMeldung({ art: 'schlecht', text: (e as Error).message })); }, []);
+  useEffect(() => { sucheApi.sucheStand().then(setS, (e) => setMeldung({ art: 'schlecht', text: (e as Error).message })); }, []);
   async function tu(f: () => Promise<SucheStand>, gut?: string) {
     setLaeuft(true); setMeldung(undefined);
     try { setS(await f()); if (gut) setMeldung({ art: 'gut', text: gut }); }
@@ -34,9 +34,9 @@ export function SuchePanel({ abschnitt }: { abschnitt?: boolean } = {}) {
       <section className="blatt">
         <h2 className="h3">{t('suche.werkbank.unscharf')}</h2>
         <Schalter an={s.unscharf} gesperrt={laeuft} beschriftung={t('suche.werkbank.unscharf.schalter')} hinweis={t('suche.werkbank.unscharf.text')}
-          setze={(an) => tu(() => api.sucheSetze({ unscharf: an }), t('suche.werkbank.gespeichert'))} />
+          setze={(an) => tu(() => sucheApi.sucheSetze({ unscharf: an }), t('suche.werkbank.gespeichert'))} />
         <p className="leise klein">{t('suche.werkbank.woerter', { anzahl: s.woerter })}{' '}
-          <Knopf art="link" groesse="klein" laeuft={laeuft} onClick={() => tu(() => api.woerterNeu(), t('suche.werkbank.woerter.fertig'))}>{t('suche.werkbank.woerter.neu')}</Knopf>
+          <Knopf art="link" groesse="klein" laeuft={laeuft} onClick={() => tu(() => sucheApi.woerterNeu(), t('suche.werkbank.woerter.fertig'))}>{t('suche.werkbank.woerter.neu')}</Knopf>
         </p>
       </section>
 

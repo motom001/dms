@@ -59,7 +59,7 @@ On a phone the finger hits, not the mouse pointer. So every control of a buildin
 | `PaketChip` as a link | stays small to the eye; invisible touch target 44 px high |
 | `Platzhalter` | small buttons with an invisible 44 × 44 px touch target |
 
-**The rule:** touch targets never overlap – not in a row of buttons or a group of checkboxes either. Whoever uses a building block writes nothing for this; one-off solutions with `@media (pointer: coarse)` in `styles.css` are only left for places without a building block. New building blocks set their touch target in their own stylesheet, also only with `(pointer: coarse)`, so the desktop stays unchanged.
+**The rule:** touch targets never overlap – not in a row of buttons or a group of checkboxes either. Whoever uses a building block writes nothing for this; one-off solutions with `@media (pointer: coarse)` in `web/src/stile/` are only left for places without a building block. New building blocks set their touch target in their own stylesheet, also only with `(pointer: coarse)`, so the desktop stays unchanged.
 
 **Checked** in the smoke test of the pattern page: in the phone view (390 px, touch) `tippflaechenPruefen` in `web/rauchtest/muster.mjs` measures every control on the page the way the browser assigns a tap (`elementFromPoint` – invisible touch targets and labels count). Each needs a square of 44 × 44 px of its own; otherwise the test fails. Exceptions are listed with a reason in `TIPP_AUSNAHMEN` (none today).
 
@@ -80,9 +80,9 @@ The **production build** (`npm run build` without `VITE_MUSTER`, also in the ima
 
 ## Smoke test and screenshots { #rauchtest }
 
-The smoke test “Musterseite der Bausteine” (`web/rauchtest/rauchtest.mjs`, job **pruefen**) opens `/muster` light and dark, on desktop and at phone width, checks each view with **axe-core** (WCAG 2.2 A and AA plus best practice, including `color-contrast`), checks that the page does not scroll sideways on a phone, and there for touch targets of at least 44 × 44 px ([On a phone](#handy)). Any violation makes the test fail. The screenshots end up in the run's artifact **musterseite**.
+The smoke test “Musterseite der Bausteine” (`web/rauchtest/bereiche/bausteine-und-knoepfe.mjs`, job **pruefen**) opens `/muster` light and dark, on desktop and at phone width, checks each view with **axe-core** (WCAG 2.2 A and AA plus best practice, including `color-contrast`), checks that the page does not scroll sideways on a phone, and there for touch targets of at least 44 × 44 px ([On a phone](#handy)). Any violation makes the test fail. The screenshots end up in the run's artifact **musterseite**.
 
-**Buttons on every page (#1210):** every smoke test runs a guard (`knopfWaechter` in `rauchtest.mjs`) that checks the visible buttons after every change of the page: `data-knopf="anlegen"` begins with “+”, `data-knopf="gefahr"` opens a confirmation (`aria-haspopup="dialog"`), solid red only appears inside the window of a confirmation. Existing code that does not meet this yet is listed with its issue in `KNOPF_AUSNAHMEN`; whoever converts the place removes the entry.
+**Buttons on every page (#1210):** every smoke test runs a guard (`knopfWaechter` in `web/rauchtest/hilfen.mjs`) that checks the visible buttons after every change of the page: `data-knopf="anlegen"` begins with “+”, `data-knopf="gefahr"` opens a confirmation (`aria-haspopup="dialog"`), solid red only appears inside the window of a confirmation. Existing code that does not meet this yet is listed with its issue in `KNOPF_AUSNAHMEN`; whoever converts the place removes the entry.
 
 The workflow **Handbuch** takes the same screenshots in the jobs `bilder (de)` and `bilder (en)` (`docs/handbuch/screenshots/aufnehmen.mjs`, shared code in `web/rauchtest/muster.mjs`); they end up in this manual as `bilder/muster-*.png`. Locally they are missing, like all screenshots ([Getting started](loslegen.md)).
 

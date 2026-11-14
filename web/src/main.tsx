@@ -1,7 +1,5 @@
-import './tokens.css';
-import './basis.css';
-import './styles.css';
-import './startbild.css';
+// Gestaltung: eine Einstiegsdatei bindet alle Teile in fester Reihenfolge ein (#1234).
+import './stile/index.css';
 import { browserSprache, gemerkteSprache, ladeSprache, t } from './sprache';
 import { antwortGekommen, gesundheitBeimStart, holeMitGrenze, startbildSpracheSetzen, zeigeKeineAntwort } from './startbild';
 import { beobachteVeraltet, selbstNeuLaden } from './veraltet';

@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { api, DOKUMENTARTEN, type Auftrag, type DemoAbschaetzung, type DemoErgebnis, type DemoOptionen, type DemoStufe, type Dokumentart } from '../api';
+import type { Auftrag } from '../../../shared/src/auftrag';
+import { DOKUMENTARTEN, type Dokumentart } from '../../../shared/src/demodaten';
+import { betriebApi } from '../api/betrieb';
+import { einrichtungApi, type DemoAbschaetzung, type DemoErgebnis, type DemoOptionen, type DemoStufe } from '../api/einrichtung';
 import { useDaten } from '../daten';
 import { fortschrittText } from '../../../shared/src/auftrag';
 import { t, tn } from '../sprache';
@@ -13,7 +16,7 @@ type Uebersicht = Array<{ typId: string; name: string; demo: number; gesamt: num
 function useUebersicht() {
   const d = useDaten();
   const [u, setU] = useState<Uebersicht>([]);
-  const laden = useCallback(async () => { try { setU(await api.demoUebersicht()); } catch { /* Anzeige bleibt leer */ } }, []);
+  const laden = useCallback(async () => { try { setU(await einrichtungApi.demoUebersicht()); } catch { /* Anzeige bleibt leer */ } }, []);
   useEffect(() => { void laden(); }, [laden, d.stand]);
   return u;
 }
@@ -68,7 +71,7 @@ function useAuftrag(fertig: (a: Auftrag) => void) {
   fertigRef.current = fertig;
   const abfragen = useCallback(async () => {
     try {
-      const neu = await api.auftrag();
+      const neu = await betriebApi.auftrag();
       setA(neu);
       // Nur melden, wenn wir den Auftrag laufen gesehen haben (nicht bei alten Aufträgen nach dem Öffnen).
       if (neu && neu.status !== 'laeuft' && zuletzt.current === neu.id) { zuletzt.current = undefined; fertigRef.current(neu); }
@@ -107,7 +110,7 @@ export function DemoPanel() {
   // … den freien Platz (und ob pdftoppm da ist) liefert der Server kurz nach der letzten Änderung.
   useEffect(() => {
     if (!anzahlOk || zuViele) return;
-    const timer = setTimeout(() => { api.demoAbschaetzung(JSON.parse(schluessel) as DemoOptionen).then(setSchaetzung, () => setSchaetzung(null)); }, 400);
+    const timer = setTimeout(() => { einrichtungApi.demoAbschaetzung(JSON.parse(schluessel) as DemoOptionen).then(setSchaetzung, () => setSchaetzung(null)); }, 400);
     return () => clearTimeout(timer);
   }, [schluessel, anzahlOk, zuViele]);
   const bytes = menge?.dokumente?.bytes ?? 0;
@@ -154,12 +157,12 @@ export function DemoPanel() {
           <p className="leise">{t('werkbank.demo.vertragspartner-vertrag-rechnung-und')}</p>
           <div className="knoepfe"><Knopf art="haupt" gesperrt={laeuft} onClick={async () => {
             setMeldung(undefined);
-            try { await api.beispiele(); setMeldung({ art: 'gut', text: t('werkbank.demo.beispiele-geladen') }); } catch (e) { setMeldung({ art: 'schlecht', text: (e as Error).message }); }
+            try { await einrichtungApi.beispiele(); setMeldung({ art: 'gut', text: t('werkbank.demo.beispiele-geladen') }); } catch (e) { setMeldung({ art: 'schlecht', text: (e as Error).message }); }
             await d.neuLaden();
           }}>{t('werkbank.demo.beispiele-laden')}</Knopf></div>
         </div>
       ) : (
-        <form className="blatt" onSubmit={(e) => { e.preventDefault(); void starte(() => api.demoErzeugen(optionen)); }}>
+        <form className="blatt" onSubmit={(e) => { e.preventDefault(); void starte(() => einrichtungApi.demoErzeugen(optionen)); }}>
           <h2 className="h3">{t('werkbank.demo.erzeugen')}</h2>
           <div className="raster">
             <Feld beschriftung={t('werkbank.demo.anzahl')} hinweis={t('werkbank.demo.bis-50-000-je')}>
@@ -216,7 +219,7 @@ export function DemoPanel() {
       <div className="blatt">
         <h2 className="h3">{t('werkbank.demo.entfernen')}</h2>
         <p className="leise">{t('werkbank.demo.loescht-alle-demo-mappen', { demo: demo.toLocaleString(gebietsschema()) })}</p>
-        <div className="knoepfe"><Knopf art="gefahr" symbol="geloescht" gesperrt={!demo || laeuft} onClick={() => { void starte(() => api.demoEntfernen()); }}
+        <div className="knoepfe"><Knopf art="gefahr" symbol="geloescht" gesperrt={!demo || laeuft} onClick={() => { void starte(() => einrichtungApi.demoEntfernen()); }}
           rueckfrage={{ titel: t('werkbank.demo.alle-demo-mappen-loeschen', { demo: demo.toLocaleString(gebietsschema()) }), text: t('werkbank.demo.echte-mappen-bleiben-unberuehrt'), ja: t('werkbank.demo.demo-mappen-loeschen') }}>{t('werkbank.demo.alle-demo-mappen-entfernen')}</Knopf></div>
         <DemoTabelle u={u} />
       </div>

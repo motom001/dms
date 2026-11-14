@@ -1,0 +1,232 @@
+/* Kopf, Knöpfe, Listen, Formular einer Mappe, Feldraster und Einrichtungsfelder.
+   Teil der Gestaltung, eingebunden in fester Reihenfolge über stile/index.css. */
+
+/* Nur für Screenreader (#1063: eine Klasse statt zweier). top/left 0, damit das Element nicht an seiner Stelle
+   im Inhalt stehen bleibt und eine Spalte oder die Seite verlängert. */
+.sr { position: absolute; top: 0; left: 0; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+.leise { color: var(--leise); }
+.ueber { font-size: calc(11.5px * var(--skala, 1)); text-transform: uppercase; letter-spacing: 0.08em; color: var(--leise); font-weight: 600; }
+
+/* Kopf */
+.kopf { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: 24px; padding: 10px max(16px, env(safe-area-inset-right)) 10px max(16px, env(safe-area-inset-left)); background: var(--flaeche); border-bottom: 1px solid var(--linie); }
+.marke { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: calc(16px * var(--skala, 1)); }
+a.marke { color: inherit; text-decoration: none; border-radius: 6px; }
+a.marke:focus-visible { outline: 2px solid var(--akzent); outline-offset: 3px; }
+.marke .m1 { fill: var(--akzent); } .marke .m2 { fill: var(--gruen); }
+.bereiche { display: flex; gap: 4px; }
+.bereiche a { padding: 6px 12px; border-radius: 6px; color: var(--leise); text-decoration: none; font-weight: 600; }
+.bereiche a:hover { background: var(--senke); color: var(--tinte); }
+.bereiche a.an { background: var(--akzent-zart); color: var(--akzent); }
+
+.rumpf { max-width: 1240px; margin: 0 auto; padding: 20px max(16px, env(safe-area-inset-right)) 48px max(16px, env(safe-area-inset-left)); display: flex; flex-direction: column; gap: 14px; }
+.zweispaltig { display: grid; grid-template-columns: 232px minmax(0, 1fr); gap: 20px; align-items: start; }
+.leiste { position: sticky; top: 72px; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+.leistenkopf { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.typliste { display: flex; flex-direction: column; gap: 4px; }
+.typeintrag { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 8px 10px; border-radius: var(--r); border: 1px solid transparent; color: inherit; text-decoration: none; }
+.typeintrag:hover { background: var(--flaeche); }
+.typeintrag.an { background: var(--flaeche); border-color: var(--linie); box-shadow: inset 3px 0 0 var(--akzent); }
+.typeintrag .nm { font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.typeintrag .zahl { font-size: calc(12px * var(--skala, 1)); color: var(--leise); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.inhalt { min-width: 0; display: flex; flex-direction: column; gap: 14px; }
+.inhalt > form:not(.blatt) { display: flex; flex-direction: column; gap: 14px; }
+
+.seitenkopf { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex-wrap: wrap; }
+.seitenkopf > div { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.blatt { background: var(--flaeche); border: 1px solid var(--linie); border-radius: var(--r); padding: 18px 20px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.blattkopf { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.blattkopf .leise { font-size: calc(12.5px * var(--skala, 1)); max-width: 60ch; }
+
+.regler { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.regler > span { display: flex; justify-content: space-between; gap: 8px; font-size: calc(12.5px * var(--skala, 1)); font-weight: 600; }
+.regler > span output { font-variant-numeric: tabular-nums; font-weight: 600; color: var(--akzent); white-space: nowrap; }
+.regler small { font-weight: 400; color: var(--leise); }
+.regler output { font-variant-numeric: tabular-nums; font-weight: 600; color: var(--akzent); white-space: nowrap; }
+fieldset.mischung { border: 1px solid var(--linie); border-radius: 8px; padding: 10px 12px 12px; margin: 0; min-width: 0; }
+fieldset.mischung legend { font-weight: 600; padding: 0 4px; }
+.knopf { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 7px 13px; border-radius: 6px; border: 1px solid var(--linie-stark); background: var(--flaeche); font-weight: 600; font-size: calc(13px * var(--skala, 1)); cursor: pointer; white-space: nowrap; text-decoration: none; color: var(--tinte); }
+/* Hover und Fokus der Knöpfe aus dem Baustein (data-knopf, #968) legt Knopf.module.css fest. */
+.knopf:not(.primaer):not(.gruen):not(.gefahr):not([data-knopf]):hover:not(:disabled) { background: var(--senke); }
+.knopf.primaer { background: var(--akzent); border-color: var(--akzent); color: var(--akzent-tinte); }
+.knopf.gruen { background: var(--gruen); border-color: var(--gruen); color: var(--gruen-tinte, var(--akzent-tinte)); }
+.knopf:is(.primaer, .gruen, .gefahr):not([data-knopf]):hover:not(:disabled) { filter: brightness(1.08); }
+.knopf.klein { padding: 4px 10px; font-size: calc(12.5px * var(--skala, 1)); }
+.knopf:disabled { opacity: 0.5; cursor: default; }
+.knoepfe { display: flex; gap: 8px; flex-wrap: wrap; }
+/* Knopfzeile mit beschriftetem Feld (z. B. „Version“ + Auswahl, #448): Knöpfe unten bündig mit dem Feld, nicht gestreckt. */
+.knoepfe.feld-buendig { align-items: flex-end; }
+/* Aufklappbarer Abschnitt, z. B. Expertenmodus der Pakete (#369): Kopf als Knopf mit aria-expanded. */
+.aufklappbereich { border: 1px solid var(--linie); border-radius: 6px; margin: 4px 0; }
+.aufklappkopf { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; width: 100%; padding: 6px 10px; border: 0; border-radius: 6px; background: none; font: inherit; font-weight: 600; color: var(--tinte); text-align: left; cursor: pointer; }
+.aufklappkopf:hover { background: var(--senke); }
+.aufklappkopf:focus-visible { outline: 2px solid var(--akzent); outline-offset: 2px; }
+.aufklappkopf .zeichen { flex: none; width: 1em; color: var(--akzent); font-size: calc(11px * var(--skala, 1)); }
+.aufklappkopf .leise { font-weight: 400; }
+/* Als Baustein Knopf (#1214): Kopf über die ganze Breite, links bündig, umbrechend; Schrift wie bisher, kein Unterstreichen. */
+.textknopf.aufklappkopf { display: flex; justify-content: flex-start; padding: 6px 10px; color: var(--tinte); }
+.textknopf.aufklappkopf > span, .textknopf.aufklappkopf > span > span:first-child { flex: 1 1 auto; flex-wrap: wrap; justify-content: flex-start; align-items: baseline; gap: 2px 8px; }
+.textknopf.aufklappkopf.aufklappkopf:hover { text-decoration: none; }
+.aufklappinhalt { display: flex; flex-direction: column; gap: 8px; padding: 4px 10px 10px; min-width: 0; }
+.textknopf { background: none; border: 0; padding: 0; cursor: pointer; font-weight: 600; color: var(--akzent); }
+.textknopf.gefahr { color: var(--schlecht); }
+.verweis { color: var(--akzent); font-weight: 600; text-decoration: none; }
+.verweis:hover { text-decoration: underline; text-underline-offset: 3px; }
+.verweis.klein { font-size: calc(12.5px * var(--skala, 1)); }
+.chip { display: inline-flex; align-items: center; font-size: calc(11.5px * var(--skala, 1)); font-weight: 600; border-radius: 999px; padding: 2px 8px; background: var(--senke); color: var(--leise); border: 1px solid var(--linie); white-space: nowrap; }
+.chip.warn { background: var(--warn-zart); color: var(--warn); border-color: transparent; }
+.chip.gut { background: var(--gruen-zart); color: var(--gruen); border-color: transparent; }
+.chip.schlecht { background: var(--schlecht-zart); color: var(--schlecht); border-color: transparent; }
+
+.hinweis { border-radius: var(--r); padding: 10px 12px; display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap; font-size: calc(13px * var(--skala, 1)); }
+.hinweis ul { margin: 0; padding-left: 18px; }
+.hinweis.warn { background: var(--warn-zart); color: var(--warn); }
+.hinweis.schlecht { background: var(--schlecht-zart); color: var(--schlecht); }
+.hinweis.gut { background: var(--gruen-zart); color: var(--gruen); }
+.hinweis.info { background: var(--akzent-zart); color: var(--tinte); }
+.hinweis.stapel { flex-direction: column; align-items: stretch; }
+/* Satz mit Liste oder mehrere Absätze stehen immer untereinander (#662) – auch wo „stapel“ fehlt. */
+.hinweis:has(> ul, > ol, > p + p) { flex-direction: column; align-items: stretch; }
+/* „Link kopieren“ (#98) */
+.linkkopiert { margin-top: 8px; }
+.linkkopiert input { flex: 1 1 260px; min-width: 0; font: inherit; }
+.leer { border: 1px dashed var(--linie-stark); border-radius: var(--r); padding: 24px; text-align: center; color: var(--leise); display: flex; flex-direction: column; gap: 12px; align-items: center; }
+.leer h2 { color: var(--tinte); font-size: calc(17px * var(--skala, 1)); }
+.leer p { max-width: 56ch; }
+
+/* Liste */
+.werkzeug { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.suche { position: relative; flex: 1; max-width: 360px; }
+/* In einer Spalte (Flex-Spalte) nicht in die Höhe wachsen – sonst stehen wenige Treffer weit unten (#33). */
+.spalte > .suche { flex: none; }
+.tabellenrahmen { overflow-x: auto; border: 1px solid var(--linie); border-radius: var(--r); }
+.ziffern { font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+/* Formular einer Mappe */
+.formular { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px 18px; }
+.feld { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.feld.breit { grid-column: 1 / -1; }
+.feldkopf { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.feldkopf label, .feldkopf .label { font-size: calc(12.5px * var(--skala, 1)); font-weight: 600; }
+.pflicht { color: var(--schlecht); margin-left: 3px; }
+/* Abschnitte im Feldregister (#890): je Gruppe ein Raster, Abstand wie zwischen zwei Zeilen – so wirkt ein Umbruch
+   ohne Überschrift in schmaler Ansicht (ein Feld je Zeile) gar nicht. Mit Überschrift: dünne Linie und Titel. */
+.feldgruppen { display: grid; gap: 16px; }
+.feldabschnitt { border-top: 1px solid var(--linie); padding-top: 6px; }
+.abschnittkopf { margin: 0; font-size: calc(13px * var(--skala, 1)); font-weight: 600; }
+.feldabschnitt.offen .abschnittkopf { margin-bottom: 10px; }
+.abschnittkopf button { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; border: 0; background: none; padding: 4px 2px; font: inherit; color: var(--tinte); cursor: pointer; text-align: left; border-radius: 4px; }
+.abschnittkopf button:hover .abschnitttitel { color: var(--akzent); }
+.abschnittkopf button:focus-visible { outline: 2px solid var(--akzent); outline-offset: 1px; }
+.abschnittkopf svg { flex: none; transition: transform .15s; }
+.feldabschnitt.offen .abschnittkopf svg { transform: rotate(90deg); }
+.abschnittkopf .leise { font-weight: 400; }
+.feldabschnitt > .formular[hidden] { display: none; }
+/* Ruhige Zeile (#1033): ausgeblendet, aber mit Werten – an der Stelle des Felds bzw. Abschnitts, über die ganze Breite. */
+.ausgeblendetzeile { grid-column: 1 / -1; margin: 0; padding: 6px 0; border-top: 1px dashed var(--linie); }
+.ausgeblendetzeile > svg { vertical-align: -2px; margin-right: 6px; }
+.ausgeblendetzeile > span[aria-hidden] { margin: 0 6px; }
+.ausgeblendetzeile svg, .anzeigehinweis svg { width: 14px; height: 14px; flex: none; }
+.anzeigehinweis { grid-column: 1 / -1; display: flex; align-items: center; gap: 6px; margin: 0; }
+@media (max-width: 560px) { .feldabschnitt { border-top: 0; padding-top: 0; } }
+@media (prefers-reduced-motion: reduce) { .abschnittkopf svg { transition: none; } }
+.hilfe { font-size: calc(12px * var(--skala, 1)); color: var(--leise); font-weight: 400; }
+.fehlertext { color: var(--schlecht); font-size: calc(12.5px * var(--skala, 1)); }
+.fehlertext.eingerueckt { padding: 0 12px 10px; }
+.feld.fehlerhaft input, .feld.fehlerhaft select, .feld.fehlerhaft textarea { border-color: var(--schlecht); }
+.betrag { display: grid; grid-template-columns: minmax(0, 1fr) 72px; gap: 6px; }
+.haken { display: flex; gap: 8px; align-items: flex-start; cursor: pointer; }
+.haken > span { display: flex; flex-direction: column; gap: 1px; font-weight: 500; }
+/* Beschriftung samt Hilfesymbol in einer Zeile (#801); die Beschreibung (small) steht darunter. */
+.haken-titel { display: flex; align-items: baseline; }
+/* Haken einer FeldGruppe untereinander statt nebeneinander (#1214). */
+.haken-untereinander { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.haken-titel > .hilfesymbol { flex: none; }
+.trenner { display: flex; align-items: center; gap: 10px; color: var(--leise); font-size: calc(12px * var(--skala, 1)); }
+.trenner::before, .trenner::after { content: ''; flex: 1; border-top: 1px solid var(--linie); }
+.auswahlliste { display: flex; flex-direction: column; gap: 6px; max-height: 190px; overflow: auto; border: 1px solid var(--linie); border-radius: 6px; padding: 8px; }
+.refbox { display: flex; flex-direction: column; gap: 6px; }
+.zeile { display: flex; gap: 14px; flex-wrap: wrap; }
+.verwaist { margin: 0; padding-left: 18px; font-size: calc(12.5px * var(--skala, 1)); color: var(--leise); }
+
+.speicherleiste { position: sticky; bottom: 0; z-index: 3; display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; padding: 12px 20px calc(12px + env(safe-area-inset-bottom)); background: var(--flaeche); border: 1px solid var(--linie); border-radius: var(--r); }
+/* Knopfgruppe steht rechts; in einer schmalen Mappen-Spalte füllt sie eine eigene Zeile (#32). */
+.speicherleiste .knoepfe { margin-left: auto; }
+.spalte.mappe { container: mappe / inline-size; }
+@container mappe (max-width: 460px) {
+  .speicherleiste { padding: 10px 12px calc(10px + env(safe-area-inset-bottom)); gap: 8px; }
+  .speicherleiste .knoepfe { flex: 1 1 100%; flex-wrap: nowrap; margin-left: 0; }
+  .speicherleiste .knoepfe > * { flex: 1 1 0; min-width: 0; padding-left: 8px; padding-right: 8px; white-space: normal; text-align: center; }
+}
+.speicherleiste .status:empty { display: none; }
+.speicherleiste .status { font-size: calc(12.5px * var(--skala, 1)); color: var(--leise); }
+.speicherleiste .status.schlecht { color: var(--schlecht); font-weight: 600; }
+/* Werkbank-Formulare (#370): Leiste als unterer Rand des Blatts statt Kasten im Kasten. */
+.blatt > .speicherleiste { margin: 4px -20px -18px; border-width: 1px 0 0; border-radius: 0 0 var(--r) var(--r); }
+.speicherleiste .knoepfe { align-items: center; }
+.textknopf:disabled { color: var(--leise); cursor: not-allowed; }
+
+/* Rückverweise */
+.gruppen { display: flex; flex-direction: column; gap: 12px; }
+.gruppe { border: 1px solid var(--linie); border-radius: var(--r); overflow: hidden; }
+.gruppe header { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; padding: 8px 12px; background: var(--senke); border-bottom: 1px solid var(--linie); font-size: calc(13px * var(--skala, 1)); }
+.gruppe ul { list-style: none; margin: 0; padding: 8px 12px; display: flex; flex-direction: column; gap: 4px; }
+.gruppe > p { padding: 8px 12px; }
+
+/* Einrichtung */
+.raster { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+.eigenschaft { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.eigenschaft > span { font-size: calc(12.5px * var(--skala, 1)); font-weight: 600; }
+.eigenschaft small { font-weight: 400; color: var(--leise); }
+/* Im Raster stehen die Felder einer Zeile unten bündig, auch wenn eine Beschriftung umbricht (#245). */
+/*
+ * Formularzeilen (#245, #650): Jedes Feld im Raster belegt drei Teilzeilen – Beschriftung, Eingabe, Hinweis – und
+ * teilt sie mit seinen Nachbarn (subgrid). So stehen die Eingabefelder einer Zeile auf einer Linie, auch wenn eine
+ * Beschriftung umbricht, und Hinweise stehen darunter, ohne die Nachbarn nach unten zu schieben.
+ */
+.raster { row-gap: 5px; }
+.raster > * { grid-row: span 3; align-self: start; margin-bottom: 7px; }
+.raster > .eigenschaft:not(:has(> :nth-child(4))) { display: grid; grid-template-rows: subgrid; align-self: stretch; gap: 5px; }
+.raster > .eigenschaft:not(:has(> :nth-child(4))) > span:first-child { align-self: end; }
+.eigenschaft.unten { justify-content: flex-end; }
+/* Feldrahmen (Baustein Feld) über die ganze Breite des Rasters (#1214). */
+.raster > .breit { grid-column: 1 / -1; }
+/*
+ * Haken im Raster (#801): Haken und Beschriftung stehen in der Teilzeile der Eingabefelder, auf Höhe ihres Textes;
+ * die Beschreibung steht darunter in der Teilzeile der Hinweise – wie ein Hinweis unter einem Feld. So schiebt sie
+ * die Nachbarn nicht nach unten. Das Hilfesymbol bleibt in .haken-titel direkt hinter der Beschriftung.
+ */
+.raster > .eigenschaft.unten:has(> .haken:only-child) { justify-content: normal; }
+.raster > .eigenschaft.unten > .haken:only-child { grid-row: 2 / span 2; display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-rows: subgrid; column-gap: 8px; row-gap: 5px; align-items: start; }
+.raster > .eigenschaft.unten > .haken:only-child > input { grid-row: 1; grid-column: 1; margin-top: 10px; }
+.raster > .eigenschaft.unten > .haken:only-child > span { grid-row: 1 / span 2; grid-column: 2; display: grid; grid-template-rows: subgrid; row-gap: 5px; }
+.raster > .eigenschaft.unten > .haken:only-child > span > .haken-titel { grid-row: 1; padding-top: 8px; }
+.raster > .eigenschaft.unten > .haken:only-child > span > small { grid-row: 2; }
+/* Knöpfe neben Feldern stehen auf der Linie der Eingabefelder (#801). */
+.raster > .eigenschaft.unten > .knoepfe:only-child { grid-row: 2; align-self: start; }
+.wahl { border: 0; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.wahl legend { font-size: calc(12.5px * var(--skala, 1)); font-weight: 600; padding: 0; margin-bottom: 6px; }
+/* Optionsknöpfe untereinander in einer FeldGruppe (#1213): die Gruppe reiht sonst nebeneinander. */
+.feldstapel { flex: 1 1 100%; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.feldliste { display: flex; flex-direction: column; gap: 8px; }
+.feldzeile { border: 1px solid var(--linie); border-radius: var(--r); background: var(--flaeche); }
+.feldzeile.offen { border-color: var(--akzent); box-shadow: 0 0 0 1px var(--akzent); }
+.feldzeile.fehlerhaft { border-color: var(--schlecht); }
+.feldsumme { display: flex; align-items: stretch; min-width: 0; }
+.feldkopfknopf { flex: 1; min-width: 0; display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) 110px; gap: 4px 14px; align-items: center; text-align: left; background: none; border: 0; padding: 10px 12px; cursor: pointer; border-radius: var(--r); }
+.flabel { font-weight: 600; overflow-wrap: anywhere; }
+.fkey { color: var(--leise); overflow-wrap: anywhere; }
+.ftyp { font-size: calc(12.5px * var(--skala, 1)); color: var(--leise); }
+.chips { grid-column: 1 / -1; display: flex; gap: 6px; flex-wrap: wrap; }
+.feldaktionen { display: flex; align-items: center; gap: 2px; padding-right: 6px; }
+.symbol { width: 30px; height: 30px; border: 0; background: none; border-radius: 6px; color: var(--leise); cursor: pointer; }
+.symbol:hover:not(:disabled) { background: var(--senke); color: var(--tinte); }
+.symbol:disabled { opacity: 0.3; cursor: default; }
+.feldeditor { border-top: 1px dashed var(--linie); padding: 16px 12px 14px; display: flex; flex-direction: column; gap: 16px; }
+/* Gruppe ohne eigenen Rahmen, z. B. um die festen Eigenschaften eines Systemfelds gemeinsam zu sperren. */
+.ohnerahmen { border: 0; padding: 0; margin: 0; min-width: 0; display: flex; flex-direction: column; gap: 16px; }
+.ohnerahmen:disabled { opacity: .65; }
+/* Wert, der hier nur angezeigt wird (z. B. Systemfelder einer Benutzer-Mappe). */
+.festwert { padding: 7px 10px; border: 1px dashed var(--linie-stark); border-radius: 6px; background: var(--senke); min-height: 2.2em; overflow-wrap: break-word; }
+.festwert ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 4px 12px; }
+.zwischen { font-size: calc(11.5px * var(--skala, 1)); text-transform: uppercase; letter-spacing: 0.07em; color: var(--leise); }
+.feldfuss { display: flex; justify-content: space-between; align-items: center; gap: 10px; }

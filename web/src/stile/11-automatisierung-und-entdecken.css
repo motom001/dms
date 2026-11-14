@@ -1,0 +1,142 @@
+/* Automatisierungen, Symbole je Ansicht, Datenschutz-Auskünfte, E-Mail-Versand, „Ablago entdecken“.
+   Teil der Gestaltung, eingebunden in fester Reihenfolge über stile/index.css. */
+
+/* Automatisierungen (#675): Wenn · Und · Dann untereinander, Karten auf- und zuklappbar, Schritte leuchten im Lauf auf. */
+/* Ablagestelle in „Wenn“, „Und“ und „Dann“: ohne eigenen Kasten, der Bereich ist das Blatt (#1000). */
+.automatisierung-bereich { border-radius: var(--r); margin: 4px 0; }
+.automatisierung-bereich > .zeile { justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+.automatisierung-bereich .h3 { margin: 0; }
+/* Aufruf von außen (#679): Beispiel mit curl umbrechen statt die Seite zu verbreitern (Handy). */
+.automatisierung-bereich.aufruf pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: calc(12px * var(--skala, 1)); background: var(--senke); padding: 8px 10px; border-radius: 6px; margin: 6px 0 0; }
+.automatisierung-pfeil { text-align: center; color: var(--leise); font-size: 1.2rem; line-height: 1; }
+.automatisierung-karten { list-style: none; margin: 6px 0; padding: 0; display: grid; gap: 6px; }
+.automatisierung-karten > li, .automatisierung .karte { background: var(--flaeche); border: 1px solid var(--linie); border-radius: 6px; padding: 6px 8px; }
+.automatisierung .karte.offen { border-color: var(--linie-stark); }
+.automatisierung .karte-kopf { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.automatisierung .karte-kopf > .textknopf:not(.gefahr) { flex: 1; min-width: 0; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.automatisierung .bedingungen { list-style: none; padding: 0; margin: 6px 0; display: grid; gap: 6px; }
+.automatisierung .bedingungszeile { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.automatisierung .einzug { margin-left: 18px; padding-left: 8px; border-left: 2px solid var(--linie); }
+.automatisierung-vorrat { border: 1px dashed var(--linie-stark); border-radius: var(--r); padding: 8px 10px; margin: 6px 0; }
+.automatisierung-vorrat .stapel { display: flex; flex-wrap: wrap; gap: 6px; list-style: none; padding: 0; margin: 4px 0 8px; }
+.automatisierung-vorrat .vorratkarte { display: flex; align-items: center; gap: 2px; background: var(--flaeche); border: 1px solid var(--linie); border-radius: 999px; padding: 2px 8px 2px 2px; }
+.automatisierung-schritte { margin: 8px 0 4px; font-size: calc(13px * var(--skala, 1)); width: 100%; border-collapse: collapse; }
+.automatisierung-schritte th, .automatisierung-schritte td { padding: 4px 8px; text-align: left; vertical-align: top; overflow-wrap: break-word; hyphens: auto; }
+.automatisierung-schritte .laufschritt td { transition: background .3s; }
+.automatisierung-schritte .laufschritt.fehler td { background: var(--schlecht-zart); }
+.automatisierung-schritte .laufschritt.laeuft td { background: var(--akzent-zart); }
+.historie .knoepfe { margin-top: 6px; }
+.mappenliste .eintrag .problem { display: block; color: var(--schlecht); font-size: .85em; }
+.automatisierung-gruppe .h3 { margin: 10px 0 4px; }
+/* Liste der Automatisierungen (#1172): je Eintrag höchstens zwei Zeilen – Zeichen, Name und Paket, darunter die Kurzform.
+   Wahlhaken und Ziehgriff stehen im Fluss vor dem Verweis, damit sich Tippflächen am Handy nicht überdecken. */
+.auto-liste > li { display: flex; align-items: center; gap: 2px; }
+/* Ohne den negativen Rand links: Der Haken bliebe sonst unter dem Griff zum Einklappen der Spalte. */
+.mappenliste.auto-liste { margin-left: 0; }
+.auto-liste > li > .eintrag { flex: 1; min-width: 0; }
+.auto-liste > li.gewaehlt > .eintrag { background: var(--akzent-zart); }
+.auto-liste .eintrag .titel { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.auto-liste .eintrag .titel .name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.auto-liste .eintrag .titel .chip, .auto-liste .eintrag .titel [data-paket] { margin-left: 0; flex: none; }
+.auto-liste .eintrag .unter { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.auto-zustand { display: inline-flex; align-items: center; justify-content: center; flex: none; width: 14px; height: 14px; }
+.auto-zustand .punkt { width: 9px; height: 9px; border-radius: 50%; border: 1.5px solid var(--rand-eingabe); box-sizing: border-box; }
+.auto-zustand.an .punkt { background: var(--gruen); border-color: var(--gruen); }
+.auto-zustand.angehalten { color: var(--warn); }
+.auto-zustand.angehalten svg { width: 14px; height: 14px; }
+.auto-werkzeuge { flex-wrap: wrap; align-items: center; gap: 4px 12px; margin: 6px 0; }
+/* Die Leiste der Auswahl steht im Fluss über der Liste – klebend läge sie am Handy über den Zeilen. */
+.aktionsleiste.auto-auswahl { position: static; }
+@media (prefers-reduced-motion: reduce) { .automatisierung-schritte .laufschritt td { transition: none; } }
+@media (max-width: 600px) { .automatisierung .einzug { margin-left: 6px; } }
+
+/* Schalter an/aus (#706): seit #1188 der Baustein Schalter (web/src/bausteine/schalter/). */
+.handlungen { align-items: center; gap: 8px 12px; }
+/* Symbol je Ansicht (#428): Auswahl als Raster in der Werkbank. */
+.symbolwahl .knoepfe { margin-top: 4px; }
+.symbolraster-rahmen > .suche { flex: none; max-width: none; }
+.symbolraster-rahmen { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; max-height: 360px; overflow: auto; padding: 8px; border: 1px solid var(--linie); border-radius: 8px; }
+.symbolgruppe { border: 0; margin: 0; padding: 0; min-width: 0; }
+.symbolraster { display: flex; flex-wrap: wrap; gap: 4px; }
+.symbolknopf { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border: 1px solid var(--linie); border-radius: 6px; background: var(--flaeche, transparent); color: inherit; cursor: pointer; }
+.symbolknopf .sym { width: 20px; height: 20px; }
+.symbolknopf.an { border-color: var(--akzent); box-shadow: 0 0 0 2px var(--akzent) inset; }
+@media (max-width: 820px) { .symbolknopf { width: 44px; height: 44px; } }
+
+/* Datenschutz-Auskünfte (#668): Frist, Verlauf. Suche und Filter über der Liste: Baustein Suche (#994). */
+.frist-ueber { color: var(--schlecht); font-weight: 600; }
+.frist-bald { color: var(--warn); }
+.chip.aus { opacity: .7; }
+.auskunft-verlauf, .auskunft-typen { list-style: none; padding-left: 0; }
+.loeschkonzept-luecken { list-style: none; padding-left: 0; }
+.loeschkonzept-luecken > li { display: flex; flex-wrap: wrap; gap: .4rem 1rem; align-items: baseline; justify-content: space-between; }
+.loeschkonzept-luecken .knoepfe { margin: 0; }
+.weitere-typen > summary { cursor: pointer; margin: .5rem 0; }
+.auskunft-verlauf li { padding: 4px 0; border-bottom: 1px solid var(--linie); }
+
+/* E-Mail-Versand einrichten (#813): Vorschläge des Assistenten sichtbar gekennzeichnet, „Erweitert“ eingeklappt. */
+.hinweis.mail-vorschlag { flex-direction: column; align-items: flex-start; gap: 4px; }
+.hinweis.mail-vorschlag p { margin: 0; }
+.vorschlag { margin-left: .45em; font-size: calc(11.5px * var(--skala, 1)); font-weight: 500; color: var(--akzent); }
+details.erweitert { margin: 12px 0; }
+details.erweitert > summary { cursor: pointer; font-weight: 600; padding: 4px 0; }
+details.erweitert[open] > summary { margin-bottom: 10px; }
+.hinweis > details { flex-basis: 100%; }
+.hinweis > details .mono { overflow-wrap: anywhere; margin: 4px 0 0; }
+
+/* ---------- Ablago entdecken (#831, #832): Rundgang, Tipp-Zeile, Seite ---------- */
+/* Tipp des Tages: leise Zeile in normaler Textfarbe, ohne Symbol, ohne Rahmen, ohne Bewegung; der Satz ist der Link. */
+.tipp-satz { color: inherit; text-decoration: underline; text-decoration-color: var(--linie-stark); text-underline-offset: 3px; }
+.tipp-satz:hover { text-decoration-color: currentColor; }
+/* Ziel eines Tipps: kurz ein Rahmen, keine Bewegung. */
+.anker-hervor { outline: 3px solid var(--akzent); outline-offset: 3px; border-radius: 6px; }
+
+/* Rundgang: modaler Dialog über die ganze Seite; das Ziel bekommt ein Licht, der Rest wird abgedunkelt. */
+dialog.rundgang { position: fixed; inset: 0; width: 100%; height: 100%; max-width: none; max-height: none; margin: 0; padding: 16px; border: 0; background: transparent; color: var(--tinte); overflow: auto; }
+dialog.rundgang[open] { display: flex; align-items: center; justify-content: center; }
+dialog.rundgang::backdrop { background: var(--schleier-stark); }
+dialog.rundgang.mit-ziel::backdrop { background: transparent; }
+.rg-licht { position: fixed; border-radius: 10px; pointer-events: none; box-shadow: 0 0 0 3px var(--akzent), 0 0 0 9999px var(--schleier-stark); }
+.rg-karte { position: relative; width: min(440px, calc(100vw - 32px)); background: var(--flaeche); color: var(--tinte); border: 1px solid var(--linie-stark); border-radius: 10px; box-shadow: 0 12px 40px var(--schatten-stark); padding: 16px 20px 14px; display: flex; flex-direction: column; gap: 6px; }
+dialog.rundgang.mit-ziel .rg-karte { position: fixed; }
+dialog.rundgang.schmal.mit-ziel .rg-karte { left: 16px; right: 16px; width: auto; }
+.rg-kopf { margin: 0; display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.rg-inhalt h2 { margin: 2px 0 6px; }
+.rg-inhalt p { margin: 0 0 8px; }
+.rg-ende { border-top: 1px solid var(--linie); padding-top: 10px; }
+.rg-knoepfe { display: flex; justify-content: space-between; align-items: center; gap: 8px 12px; flex-wrap: wrap; margin-top: 4px; }
+.rg-neben, .rg-haupt { display: flex; gap: 8px; align-items: center; }
+.rg-haupt { margin-left: auto; }
+@media (prefers-reduced-motion: no-preference) {
+  .rg-licht { transition: left .2s ease, top .2s ease, width .2s ease, height .2s ease; }
+  .anker-hervor { transition: outline-color .2s ease; }
+}
+
+/* Die Dreiteilung als Bild (wie auf ablago.app): links Ansichten, Mitte Liste, rechts Mappe; am Handy untereinander. */
+.rg-bild { display: grid; grid-template-columns: 0.9fr 1fr 1.1fr; border: 1px solid var(--linie); border-radius: 8px; overflow: hidden; font-size: calc(12px * var(--skala, 1)); margin: 2px 0 12px; background: var(--grund); }
+.rg-bild-spalte { padding: 8px; display: flex; flex-direction: column; gap: 4px; min-width: 0; background: var(--flaeche); }
+.rg-bild-links { background: var(--senke); border-right: 1px solid var(--linie); }
+.rg-bild-mitte { border-right: 1px solid var(--linie); }
+.rg-bild-name { font-size: calc(10.5px * var(--skala, 1)); text-transform: uppercase; letter-spacing: .06em; font-weight: 700; color: var(--akzent); margin-bottom: 2px; }
+.rg-bild-eintrag { padding: 3px 6px; border-radius: 5px; color: var(--leise); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rg-bild-eintrag.an { background: var(--akzent-zart); color: var(--tinte); font-weight: 600; }
+.rg-bild-zeile { padding: 4px 6px; border: 1px solid var(--linie); border-radius: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rg-bild-zeile.an { border-color: var(--akzent); }
+.rg-bild-feld { display: flex; justify-content: space-between; align-items: center; gap: 6px; border-bottom: 1px dashed var(--linie); padding-bottom: 3px; color: var(--leise); }
+.rg-bild-strich { display: inline-block; width: 40%; height: 6px; border-radius: 3px; background: var(--linie); }
+.rg-bild-schmal { grid-template-columns: 1fr; max-width: 260px; }
+.rg-bild-schmal .rg-bild-links, .rg-bild-schmal .rg-bild-mitte { border-right: 0; }
+.rg-bild-schmal .rg-bild-links { border-bottom: 1px solid var(--linie); }
+
+/* Seite „Ablago entdecken“ */
+.entdecken .mappenkopf p { margin: 4px 0 0; }
+.ent-rundgaenge, .ent-tipps { list-style: none; margin: 0; padding: 0; }
+.ent-rundgaenge li { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.ent-tipps li { padding: 7px 0; border-bottom: 1px solid var(--linie); }
+.ent-tipps li:last-child { border-bottom: 0; }
+.ent-aus .tipp-satz { color: var(--leise); }
+.ent-gruppe h3 { margin: 6px 0 2px; }
+.ent-suche input { width: 100%; }
+main.rumpf[tabindex="-1"]:focus { outline: none; }
+/* Außerhalb der angemeldeten Ablage (#933): Anmelden, Einrichtung – die Leiste bleibt beim Blättern oben. */
+.erreichbarkeit.aussen { position: sticky; top: 0; z-index: 20; }
