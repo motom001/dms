@@ -150,10 +150,7 @@ function knopfWaechter() {
  * werden. Jeder Eintrag nennt sein Issue; wer eine Stelle umstellt, nimmt ihren Eintrag heraus. Neue Funde lassen den
  * Rauchtest scheitern. `text` und `pfad` sind reguläre Ausdrücke.
  */
-const KNOPF_AUSNAHMEN = [
-  // Werkbank → Verschlüsselung und derselbe Abschnitt im Einrichtungsassistenten (Pfad „/“).
-  { art: 'anlegen-ohne-plus', text: /^Notfallkontakt hinzufügen$/, pfad: /^\/(werkbank\/verschluesselung)?$/, issue: '#1214' },
-];
+const KNOPF_AUSNAHMEN = [];
 const knopfAusnahme = (f) => KNOPF_AUSNAHMEN.find((a) => a.art === f.art && a.text.test(f.text) && (!a.pfad || a.pfad.test(f.pfad)));
 const genutzteAusnahmen = new Set();
 after(() => {
@@ -1701,6 +1698,85 @@ rauchtest('Handy: Ablage aus Bausteinen mit 44-px-Tippflächen (#1211, #1212)', 
   }
   assert.deepEqual(funde, [], `Zu kleine Tippflächen am Handy:\n${funde.join('\n')}`);
 });
+
+/* ---------- Werkbank aus Bausteinen: axe und Tippflächen (#1214) ---------- */
+
+/** Mitte und rechte Spalte der Werkbank – ohne Kopfzeile und Bereichsliste (andere Issues). */
+const WERKBANK_BEREICHE = ['.spalte.liste', '.spalte.mappe'];
+
+/**
+ * Seiten der Werkbank, die #1214 auf Bausteine umgestellt hat: Pakete, Benutzer und Sicherheit, Post und Eingänge,
+ * Daten sichern, Betrieb. Je Seite ein Name, der Weg und worauf gewartet wird.
+ */
+async function werkbankSeiten(s) {
+  // Im Verwaltungsmodus über die Seite selbst (die Sitzung des Browsers darf die Werkbank lesen).
+  const lena = (await s.evaluate(async () => (await fetch('/api/benutzer', { headers: { 'x-dms': '1' } })).json())).find((b) => b.email === 'lena@example.org');
+  const seite = (name, weg, warte) => ({ name, weg: async (p) => {
+    await p.goto(BASIS + weg);
+    await (warte ? warte(p) : p.locator('.spalte.liste:visible, .spalte.mappe:visible').first().waitFor());
+  } });
+  return [
+    seite('Pakete', '/werkbank/pakete'),
+    seite('Paket erstellen', '/werkbank/pakete/erstellen'),
+    seite('Benutzer', `/werkbank/benutzer/${lena.id}`, (s) => s.locator('[data-sprungleiste]').waitFor()),
+    seite('Neuer Benutzer', '/werkbank/benutzer/neu'),
+    seite('Verschlüsselung', '/werkbank/verschluesselung', (s) => s.locator('#notfallkontakte').waitFor()),
+    seite('Auskünfte', '/werkbank/auskuenfte'),
+    seite('Löschkonzept', '/werkbank/loeschkonzept'),
+    seite('Postfach neu', '/werkbank/postfaecher/neu', (s) => s.locator('[data-sprungleiste]').waitFor()),
+    seite('Eingangsordner', '/werkbank/eingangsordner'),
+    seite('WebDAV', '/werkbank/webdav'),
+    seite('Texterkennung', '/werkbank/texterkennung', (s) => s.getByRole('tablist').first().waitFor()),
+    seite('Sicherung', '/werkbank/sicherung'),
+    seite('Vollexport', '/werkbank/vollexport'),
+    seite('Betrieb', '/werkbank/betrieb'),
+    seite('Region', '/werkbank/region'),
+    seite('Sprachen', '/werkbank/sprachen'),
+    seite('Aufgaben', '/werkbank/aufgaben', (s) => s.locator('[data-anker="werkbank.aufgaben.suche"]').waitFor()),
+    seite('Anmeldeschutz', '/werkbank/anmeldeschutz'),
+    seite('Systemzustand', '/werkbank/systemzustand'),
+    seite('Protokoll', '/werkbank/protokoll'),
+    seite('Fehlermeldungen', '/werkbank/fehlermeldungen', (s) => s.getByRole('searchbox').first().waitFor()),
+    seite('Wartung', '/werkbank/wartung'),
+    seite('Demo-Daten', '/werkbank/demo'),
+  ];
+}
+
+// Wiederherstellen (Abschnitt der Sicherung) antwortet außerhalb des Wartungsmodus mit 409 – das ist gewollt.
+const WERKBANK_ERWARTET = [{ status: 409, pfad: /^\/api\/wiederherstellung\/sicherungen$/ }];
+
+rauchtest('Werkbank aus Bausteinen: axe ohne Verstoß, hell und dunkel (#1214)', { als: LENA, erwartet: WERKBANK_ERWARTET }, async (s) => {
+  await s.goto(BASIS + '/ablage/start');
+  await verwalten(s);
+  const seiten = await werkbankSeiten(s);
+  const funde = [];
+  for (const schema of ['light', 'dark']) {
+    await s.emulateMedia({ colorScheme: schema });
+    for (const seite of seiten) {
+      await seite.weg(s);
+      await s.waitForLoadState('networkidle');
+      for (const v of await axePruefen(s, WERKBANK_BEREICHE)) funde.push(`${seite.name} (${schema}): ${v}`);
+    }
+  }
+  assert.deepEqual(funde, [], `axe meldet Verstöße:\n${funde.join('\n')}`);
+});
+
+// Am Handy in drei Teilen: Die Messung jedes Bedienelements braucht Zeit (Grenze je Rauchtest 120 s).
+for (const teil of [0, 1, 2]) {
+  rauchtest(`Handy: Werkbank aus Bausteinen mit 44-px-Tippflächen, Teil ${teil + 1} (#1214)`, { handy: true, als: LENA, erwartet: WERKBANK_ERWARTET }, async (s) => {
+    await s.goto(BASIS + '/ablage/start');
+    await verwalten(s);
+    const alle = await werkbankSeiten(s);
+    const seiten = alle.filter((_, i) => i % 3 === teil);
+    const funde = [];
+    for (const seite of seiten) {
+      await seite.weg(s);
+      await s.waitForLoadState('networkidle');
+      for (const v of await tippflaechenPruefen(s, WERKBANK_BEREICHE)) funde.push(`${seite.name}: ${v}`);
+    }
+    assert.deepEqual(funde, [], `Zu kleine Tippflächen am Handy:\n${funde.join('\n')}`);
+  });
+}
 
 /* ---------- Ablago antwortet nicht (#1198) ---------- */
 

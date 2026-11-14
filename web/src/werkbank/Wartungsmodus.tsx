@@ -1,6 +1,6 @@
 import { t, tn } from '../sprache';
 import { Kopf } from './Kopf';
-import { Knopf } from '../bausteine';
+import { Feld, Knopf } from '../bausteine';
 import { useCallback, useEffect, useState } from 'react';
 import { api, type WartungWerkbank } from '../api';
 import { dauerText, WARTUNG_GEAENDERT, zeitpunkt } from '../wartung';
@@ -115,19 +115,22 @@ export function WartungsmodusPanel({ w, abschnitt }: { w: WartungsmodusZustand; 
         </dl>
 
         <div className="raster">
-          <label className="eigenschaft breit"><span>{tn('werkbank.wartungsmodus.text-fuer-alle', { klein: <small>{t('werkbank.wartungsmodus.z-b-wiederherstellung-ca')}</small> })}</span>
-            <input value={text} maxLength={200} onChange={(e) => setText(e.target.value)} /></label>
+          <Feld beschriftung={t('werkbank.wartungsmodus.text-fuer-alle')} hinweis={t('werkbank.wartungsmodus.z-b-wiederherstellung-ca')} className="breit">
+            <input value={text} maxLength={200} onChange={(e) => setText(e.target.value)} />
+          </Feld>
           {s.stufe === 'aus' && (
-            <div className="eigenschaft wm-oben">
-              <span><label htmlFor="wartung-beginn">{t('werkbank.wartungsmodus.beginn')}</label> <small>{t('werkbank.wartungsmodus.alle-anderen-werden-abgemeldet')}</small></span>
-              <input id="wartung-beginn" type="datetime-local" value={beginn} onChange={(e) => setBeginn(e.target.value)} />
-              <div className="wm-schnell" role="group" aria-label={t('werkbank.wartungsmodus.beginn-schnell-waehlen')}>
-                {SCHNELL.map(([min, name]) => <button key={min} type="button" className="knopf klein" onClick={() => setBeginn(inMinuten(min))}>{name}</button>)}
-              </div>
-            </div>
+            <Feld beschriftung={t('werkbank.wartungsmodus.beginn')} hinweis={t('werkbank.wartungsmodus.alle-anderen-werden-abgemeldet')} className="wm-oben" id="wartung-beginn">
+              {(v) => <>
+                <input {...v} type="datetime-local" value={beginn} onChange={(e) => setBeginn(e.target.value)} />
+                <div className="wm-schnell" role="group" aria-label={t('werkbank.wartungsmodus.beginn-schnell-waehlen')}>
+                  {SCHNELL.map(([min, name]) => <Knopf key={min} groesse="klein" onClick={() => setBeginn(inMinuten(min))}>{name}</Knopf>)}
+                </div>
+              </>}
+            </Feld>
           )}
-          <label className={`eigenschaft${s.stufe === 'aus' ? ' wm-oben' : ''}`}><span>{tn('werkbank.wartungsmodus.erwartetes-ende', { klein: <small>{t('werkbank.wartungsmodus.optional')}</small> })}</span>
-            <input type="datetime-local" value={ende} onChange={(e) => setEnde(e.target.value)} /></label>
+          <Feld beschriftung={t('werkbank.wartungsmodus.erwartetes-ende')} optional className={s.stufe === 'aus' ? 'wm-oben' : undefined}>
+            <input type="datetime-local" value={ende} onChange={(e) => setEnde(e.target.value)} />
+          </Feld>
         </div>
         {s.stufe === 'aus' && (schiene.fehler
           ? <p className="fehlertext" role="status">{schiene.fehler}</p>

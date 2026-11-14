@@ -617,7 +617,7 @@ For package developers and for Ablago without internet access, under **Workbench
 
 In expert mode you can:
 
-- **Further sources** – add, switch off and remove catalogue addresses, at most 20. Only HTTPS is allowed; the format is the same as for the official catalogue (the registry's `katalog.json`). How a catalogue with **its own key** is treated is described [below](#katalog-mit-eigenem-schlussel). **Fetch catalogue** queries all **switched-on** further catalogues besides the official one – no matter whether the section is currently expanded or collapsed; their packages carry the address as a mark. If you no longer want to use a source, switch it off or remove it. Without further sources there is only the official catalogue.
+- **Further sources** – add, switch off and remove catalogue addresses, at most 20. Only HTTPS is allowed; the format is the same as for the official catalogue (the registry's `katalog.json`). How a catalogue with **its own key** is treated is described [below](#katalog-mit-eigenem-schlussel). **Fetch catalogue** queries all **switched-on** further catalogues besides the official one – no matter whether the section is currently expanded or collapsed; their packages carry the address as a mark. If you no longer want to use a source, switch it off with its switch or remove it (Ablago asks first). Without further sources there is only the official catalogue.
 - **Upload a package as a file** (`.zip` in the registry's format, e.g. the package folder zipped, at most 128 MB). Ablago checks it just like a catalogue package, only without a checksum from the catalogue, and shows the preview. It recognises a [bundle file](#pakete-ohne-internet-installieren) by itself.
 
 !!! warning "Not checked by the Ablago project"

@@ -85,7 +85,6 @@ export function TresorPanel({ t: eintrag }: { t: TresorZustand }) {
   const erzeugbar = s.zustand === 'fehlt' || s.zustand === 'verloren';
 
   async function wechseln() {
-    if (!(await rueckfrage({ titel: t('werkbank.verschluesselung.schluessel-jetzt-wechseln'), text: t('werkbank.verschluesselung.alle-gespeicherten-passwoerter-und'), ja: t('werkbank.verschluesselung.schluessel-wechseln'), gefahr: true, bestaetigeMit: 'wechseln' }))) return;
     setLaeuft(true); setMeldung(undefined); setWechsel(undefined);
     try { const r = await api.tresorWechseln(); eintrag.setStand(r); setWechsel(r); melde(); await aktualisieren(); }
     catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); }
@@ -140,7 +139,8 @@ export function TresorPanel({ t: eintrag }: { t: TresorZustand }) {
         <section className="blatt" id="wechseln">
           <h2 className="h3">{t('werkbank.verschluesselung.schluessel-wechseln-2')} <Hilfe ort="verschluesselung.wechseln" /></h2>
           <p className="leise">{t('werkbank.verschluesselung.wenn-der-schluessel-bekannt')}</p>
-          {!wechsel && <div className="knoepfe"><button type="button" className="knopf" disabled={laeuft} onClick={() => void wechseln()}>{laeuft ? t('werkbank.verschluesselung.wechsle') : t('werkbank.verschluesselung.schluessel-wechseln')}</button></div>}
+          {!wechsel && <div className="knoepfe"><Knopf art="gefahr" symbol="neu-laden" laeuft={laeuft} laeuftText={t('werkbank.verschluesselung.wechsle')} onClick={wechseln}
+            rueckfrage={{ titel: t('werkbank.verschluesselung.schluessel-jetzt-wechseln'), text: t('werkbank.verschluesselung.alle-gespeicherten-passwoerter-und'), ja: t('werkbank.verschluesselung.schluessel-wechseln'), bestaetigeMit: 'wechseln' }}>{t('werkbank.verschluesselung.schluessel-wechseln')}</Knopf></div>}
           {wechsel && (
             <div className="hinweis gut stapel" role="status">
               <p>{tn('werkbank.verschluesselung.werte-wurden-neu-verschluesselt', { anzahl: wechsel.umgeschluesselt, b: <strong>{t('werkbank.verschluesselung.schluessel-gewechselt')}</strong>, span: <span className="mono">{wechsel.alt}</span>, span2: <span className="mono">{wechsel.neu}</span>, wert: wechsel.unlesbar ? t('werkbank.verschluesselung.waren-schon-vorher-nicht', { unlesbar: wechsel.unlesbar }) : '' })}</p>
@@ -149,7 +149,7 @@ export function TresorPanel({ t: eintrag }: { t: TresorZustand }) {
                 <li className={blattGeladen ? 'erledigt' : ''}>
                   {blattGeladen && <Erledigt />}{tn('werkbank.verschluesselung.das-neue-notfallblatt-herunterladen', { link: <a className="knopf klein" href={NOTFALLBLATT_URL} download onClick={(e) => void heikelHerunterladen(e, NOTFALLBLATT_URL, () => { setBlattGeladen(true); setTimeout(() => void eintrag.laden(), 1500); setTimeout(meldeSicherung, 1500); })}>{t('werkbank.verschluesselung.notfallblatt-herunterladen')}</a> })}</li>
                 <li className={gesichert?.ok ? 'erledigt' : ''}>
-                  {gesichert?.ok && <Erledigt />}{t('werkbank.verschluesselung.eine-neue-sicherung-anlegen')}{' '}<button type="button" className="knopf klein" disabled={gesichert?.ok} onClick={() => void api.sicherungJetzt().then(() => setGesichert({ ok: true, text: t('werkbank.verschluesselung.sicherung-laeuft-den-stand') })).catch((x) => setGesichert({ ok: false, text: (x as Error).message }))}>{t('werkbank.verschluesselung.jetzt-sichern')}</button>
+                  {gesichert?.ok && <Erledigt />}{t('werkbank.verschluesselung.eine-neue-sicherung-anlegen')}{' '}<Knopf groesse="klein" gesperrt={gesichert?.ok} onClick={() => api.sicherungJetzt().then(() => setGesichert({ ok: true, text: t('werkbank.verschluesselung.sicherung-laeuft-den-stand') })).catch((x) => setGesichert({ ok: false, text: (x as Error).message }))}>{t('werkbank.verschluesselung.jetzt-sichern')}</Knopf>
                   {gesichert && <span className={gesichert.ok ? 'leise klein' : 'fehlertext klein'}> {gesichert.text} <Link to="/werkbank/sicherung" className="verweis">{t('werkbank.verschluesselung.zur-sicherung')}</Link></span>}
                 </li>
               </ol>

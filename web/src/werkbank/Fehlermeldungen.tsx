@@ -3,11 +3,10 @@ import { api, type Fehlermeldung } from '../api';
 import { geheZu, Link } from '../ort';
 import { Person } from '../Person';
 import { Listenkopf } from '../Listenkopf';
-import { rueckfrage } from '../rueckfrage';
 import { t } from '../sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
 import { useDaten } from '../daten';
-import { FilterHaken, Fundstellen, Hervorgehoben, KeineTreffer, ListenSuche, useListenSuche } from '../bausteine';
+import { FilterHaken, Fundstellen, Knopf, Hervorgehoben, KeineTreffer, ListenSuche, useListenSuche } from '../bausteine';
 
 /** Werkbank → Wartung und Fehlersuche → Fehlermeldungen (#70). */
 const zeit = (iso: string) => new Date(iso).toLocaleString(gebietsschema(), { dateStyle: 'medium', timeStyle: 'short' });
@@ -95,7 +94,6 @@ export function FehlermeldungDetail({ id, neuLaden }: { id: string; z: Fehlermel
     try { setM(await api.fehlermeldungErledigt(id, an)); await neuLaden(); } catch (e) { setFehler((e as Error).message); }
   }
   async function loeschen() {
-    if (!(await rueckfrage({ titel: t('werkbank.fehlermeldungen.fehlermeldung-loeschen'), text: t('werkbank.fehlermeldungen.die-meldung-wird-samt'), ja: t('werkbank.fehlermeldungen.endgueltig-loeschen'), gefahr: true }))) return;
     try { await api.fehlermeldungLoeschen(id); await neuLaden(); geheZu('/werkbank/fehlermeldungen'); } catch (e) { setFehler((e as Error).message); }
   }
   if (fehler) return <div className="hinweis schlecht"><p>{fehler}</p></div>;
@@ -131,8 +129,9 @@ export function FehlermeldungDetail({ id, neuLaden }: { id: string; z: Fehlermel
         <Angaben wert={m.angaben} />
       </section>
       <div className="knoepfe">
-        <button type="button" className="knopf" onClick={() => void loeschen()}>{t('werkbank.fehlermeldungen.loeschen')}</button>
-        <button type="button" className="knopf primaer" onClick={() => void erledigt(!m.erledigt)}>{m.erledigt ? t('werkbank.fehlermeldungen.wieder-oeffnen') : t('werkbank.fehlermeldungen.als-erledigt-markieren')}</button>
+        <Knopf art="gefahr" symbol="geloescht" onClick={loeschen}
+          rueckfrage={{ titel: t('werkbank.fehlermeldungen.fehlermeldung-loeschen'), text: t('werkbank.fehlermeldungen.die-meldung-wird-samt'), ja: t('werkbank.fehlermeldungen.endgueltig-loeschen') }}>{t('werkbank.fehlermeldungen.loeschen')}</Knopf>
+        <Knopf art="haupt" onClick={() => erledigt(!m.erledigt)}>{m.erledigt ? t('werkbank.fehlermeldungen.wieder-oeffnen') : t('werkbank.fehlermeldungen.als-erledigt-markieren')}</Knopf>
       </div>
     </div>
   );

@@ -403,7 +403,7 @@ async function einrichtenImBrowser(browser, bild) {
   // Notfallkontakte (#812): Markus als Vertrauensperson – angelegt mit „Jetzt einrichten“, auf dem Notfallblatt unter
   // „Wen fragen?“ und unter Werkbank → Verschlüsselung (ohne E-Mail-Versand: „wird verschickt, sobald …“).
   const nk = s.locator('#notfallkontakte');
-  await nk.getByRole('button', { name: w('Notfallkontakt hinzufügen') }).click();
+  await nk.getByRole('button', { name: w('+ Notfallkontakt') }).click();
   await nk.getByLabel(w('Name'), { exact: true }).fill('Markus Beispiel');
   await nk.getByLabel(w('E-Mail'), { exact: true }).fill('markus@example.org');
   await nk.getByLabel(w('Telefon')).fill('0151 0000000');

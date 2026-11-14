@@ -13,7 +13,7 @@ import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 import { Hilfe } from '../Hilfe';
 import { Symbol } from '../Symbol';
 import { rueckfrage } from '../rueckfrage';
-import { Bereich, Feld, Knopf, useBereiche, type BereicheZustand, type BereichListe } from '../bausteine';
+import { Bereich, Feld, FeldGruppe, HakenFeld, Knopf, useBereiche, type BereicheZustand, type BereichListe } from '../bausteine';
 import { WasSiehtBlatt } from './Berechtigungen';
 import { PasskeysVon, ZweifaktorVon } from './AnmeldemittelVon';
 
@@ -40,15 +40,16 @@ function useRollen() {
 export function WeitereRollen({ gewaehlt, setze, sperre }: { gewaehlt: string[]; setze: (ids: string[]) => void; sperre?: boolean }) {
   const r = useRollen();
   return (
-    <fieldset className="wahl rollenwahl">
-      <legend>{tn('werkbank.benutzer.rollen', { klein: <small className="leise">{t('werkbank.benutzer.z-b-als-verantwortliche')}</small> })}</legend>
-      {r.geladen && !r.weitere.length && <p className="leise klein">{t('werkbank.benutzer.noch-keine-rollen-angelegt')}</p>}
-      {r.weitere.map((x) => (
-        <label key={x.id} className="haken"><input type="checkbox" disabled={sperre} checked={gewaehlt.includes(x.id)}
-          onChange={(e) => setze(e.target.checked ? [...gewaehlt, x.id] : gewaehlt.filter((y) => y !== x.id))} /><span>{x.name}</span></label>
-      ))}
-      {r.typ && <Link to={`/ablage/${r.typ.id}`} className="verweis klein">{t('werkbank.benutzer.rollen-in-der-ablage')}</Link>}
-    </fieldset>
+    <FeldGruppe beschriftung={t('werkbank.benutzer.rollen')} hinweis={t('werkbank.benutzer.z-b-als-verantwortliche')} className="rollenwahl">
+      <div className="haken-untereinander">
+        {r.geladen && !r.weitere.length && <p className="leise klein">{t('werkbank.benutzer.noch-keine-rollen-angelegt')}</p>}
+        {r.weitere.map((x) => (
+          <label key={x.id} className="haken"><input type="checkbox" disabled={sperre} checked={gewaehlt.includes(x.id)}
+            onChange={(e) => setze(e.target.checked ? [...gewaehlt, x.id] : gewaehlt.filter((y) => y !== x.id))} /><span>{x.name}</span></label>
+        ))}
+        {r.typ && <Link to={`/ablage/${r.typ.id}`} className="verweis klein">{t('werkbank.benutzer.rollen-in-der-ablage')}</Link>}
+      </div>
+    </FeldGruppe>
   );
 }
 
@@ -268,9 +269,8 @@ function Zugang({ b, b2, selbst, loeschbar, aktion }: { b: Benutzer; b2: Bereich
         </ul>
         {gruende.length > 0 && <div className="hinweis warn stapel"><p>{t('konten.sperren.nochnicht')}</p><ul>{gruende.map(([k, g]) => <li key={k}>{g}</li>)}</ul></div>}
         <div className="knoepfe">
-          {loeschbar && <Knopf onClick={async () => {
-            if (await rueckfrage({ titel: t('werkbank.benutzer.einladung-loeschen'), text: t('werkbank.benutzer.die-einladung-an-wird', { email: b.email }), ja: t('werkbank.benutzer.einladung-loeschen-2'), gefahr: true })) void aktion(async () => { await api.benutzerLoeschen(b.id); loeseWache(); geheZu('/werkbank/benutzer'); });
-          }}>{t('werkbank.benutzer.einladung-loeschen-2')}</Knopf>}
+          {loeschbar && <Knopf art="gefahr" symbol="geloescht" onClick={() => { void aktion(async () => { await api.benutzerLoeschen(b.id); loeseWache(); geheZu('/werkbank/benutzer'); }); }}
+            rueckfrage={{ titel: t('werkbank.benutzer.einladung-loeschen'), text: t('werkbank.benutzer.die-einladung-an-wird', { email: b.email }), ja: t('werkbank.benutzer.einladung-loeschen-2') }}>{t('werkbank.benutzer.einladung-loeschen-2')}</Knopf>}
           <Knopf art="gefahr" symbol="verboten" gesperrt={gruende.length > 0}
             rueckfrage={{ titel: t('werkbank.benutzer.deaktivieren', { name }), text: t('werkbank.benutzer.der-zugang-ist-sofort-2', { name, vertreter: String(vertreter) }), ja: t('werkbank.benutzer.deaktivieren-2') }}
             onClick={() => { void aktion(() => api.benutzerAendern(b.id, { aktiv: false }), t('werkbank.benutzer.deaktiviert-alle-sitzungen-beendet')); }}>{t('werkbank.benutzer.benutzer-deaktivieren')}</Knopf>
@@ -306,15 +306,15 @@ function Sitzungen({ b, neuLaden }: { b: Benutzer; neuLaden: () => Promise<void>
                 {istGeradeAktiv(s.zuletztAktiv) && <> <span className="chip gut punkt">{t('werkbank.benutzer.gerade-aktiv')}</span></>}
                 <span className="leise klein blockzeile">{t('werkbank.benutzer.zuletzt-aktiv-angemeldet-seit', { datumZeit: datumZeit(s.zuletztAktiv), datumZeit2: datumZeit(s.erstellt), wert: s.ip ? ` · ${s.ip}` : '' })}</span>
               </div>
-              <Knopf art="link" className="gefahr" onClick={() => beende(() => api.sitzungBeenden(b.id, s.id), !!s.aktuell)}>{t('werkbank.benutzer.abmelden')}</Knopf>
+              <Knopf art="gefahr" groesse="klein" symbol="abmelden" onClick={() => beende(() => api.sitzungBeenden(b.id, s.id), !!s.aktuell)}
+                rueckfrage={{ titel: t('werkbank.benutzer.abmelden.frage'), text: t('werkbank.benutzer.abmelden.frage.text', { geraet: geraetText(s.geraet) }), ja: t('werkbank.benutzer.abmelden') }}>{t('werkbank.benutzer.abmelden')}</Knopf>
             </li>
           ))}
         </ul>
       )}
       {liste && liste.length > 1 && (
-        <div className="knoepfe"><Knopf onClick={async () => {
-          if (await rueckfrage({ titel: t('werkbank.benutzer.auf-allen-geraeten-abmelden', { wert: b.name || b.email, liste: liste.length }), ja: t('werkbank.benutzer.ueberall-abmelden'), gefahr: true })) void beende(() => api.alleSitzungenBeenden(b.id), liste.some((s) => s.aktuell));
-        }}>{t('werkbank.benutzer.ueberall-abmelden')}</Knopf></div>
+        <div className="knoepfe"><Knopf art="gefahr" symbol="abmelden" onClick={() => beende(() => api.alleSitzungenBeenden(b.id), liste.some((s) => s.aktuell))}
+          rueckfrage={{ titel: t('werkbank.benutzer.auf-allen-geraeten-abmelden', { wert: b.name || b.email, liste: liste.length }), ja: t('werkbank.benutzer.ueberall-abmelden') }}>{t('werkbank.benutzer.ueberall-abmelden')}</Knopf></div>
       )}
     </div>
   );
@@ -338,18 +338,22 @@ function Verwaltungsrecht({ wahl, setWahl, darfAendern, sperre }: { wahl: string
       {!darfAendern && <p className="hinweis info"><span>{t('werkbank.verwaltungsrecht.nurGesamt')}</span></p>}
       <fieldset disabled={!darfAendern || sperre} className="wahl">
         <legend className="sr">{t('werkbank.verwaltungsrecht.titel')}</legend>
-        <label className="haken"><input id="darf-verwalten" type="checkbox" checked={an} onChange={(e) => setWahl(e.target.checked ? [GESAMT] : [])} /><span><strong>{t('werkbank.verwaltungsrecht.darf')}</strong></span></label>
+        <HakenFeld beschriftung={t('werkbank.verwaltungsrecht.darf')}>
+          <input id="darf-verwalten" type="checkbox" checked={an} onChange={(e) => setWahl(e.target.checked ? [GESAMT] : [])} />
+        </HakenFeld>
         {an && <div className="verwaltungsbaum">
-          <label className="haken"><input id="gesamte-verwaltung" type="checkbox" checked={gesamt} onChange={(e) => setWahl(e.target.checked ? [GESAMT] : baum.flatMap((a) => a.bereiche.map((x) => x.pfad)))} />
-            <span><strong>{t('werkbank.verwaltungsrecht.gesamt')}</strong> <small className="leise">{t('werkbank.verwaltungsrecht.gesamt.text')}</small></span></label>
+          <HakenFeld beschriftung={t('werkbank.verwaltungsrecht.gesamt')} hinweis={t('werkbank.verwaltungsrecht.gesamt.text')}>
+            <input id="gesamte-verwaltung" type="checkbox" checked={gesamt} onChange={(e) => setWahl(e.target.checked ? [GESAMT] : baum.flatMap((a) => a.bereiche.map((x) => x.pfad)))} />
+          </HakenFeld>
           {baum.map((a) => (
-            <fieldset key={a.gruppe} className="verwaltungsast">
-              <legend>{a.name}</legend>
-              {a.bereiche.map((x) => (
-                <label key={x.pfad} className="haken"><input type="checkbox" checked={gesamt || wahl.includes(x.pfad)} disabled={gesamt} onChange={(e) => umschalten(x.pfad, e.target.checked)} />
-                  <span>{bereichName(x.pfad)}{x.heikel && <> <span className="chip warn klein" title={t('werkbank.verwaltungsrecht.heikel.titel')}><Symbol name="warnung" /> {t('werkbank.verwaltungsrecht.heikel')}</span></>}</span></label>
-              ))}
-            </fieldset>
+            <FeldGruppe key={a.gruppe} beschriftung={a.name} className="verwaltungsgruppe">
+              <div className="verwaltungsast">
+                {a.bereiche.map((x) => (
+                  <label key={x.pfad} className="haken"><input type="checkbox" checked={gesamt || wahl.includes(x.pfad)} disabled={gesamt} onChange={(e) => umschalten(x.pfad, e.target.checked)} />
+                    <span>{bereichName(x.pfad)}{x.heikel && <> <span className="chip warn klein" title={t('werkbank.verwaltungsrecht.heikel.titel')}><Symbol name="warnung" /> {t('werkbank.verwaltungsrecht.heikel')}</span></>}</span></label>
+                ))}
+              </div>
+            </FeldGruppe>
           ))}
         </div>}
       </fieldset>
@@ -365,7 +369,9 @@ export function LinkAnzeige({ e, schliessen }: { e: LinkErgebnis; schliessen?: (
     <div className="hinweis info stapel">
       <p>{t('werkbank.benutzer.er-funktioniert-nur-einmal', { wert: e.mailFehler ? t('werkbank.benutzer.die-e-mail-an', { email: e.benutzer.email, mailFehler: e.mailFehler }) : t('werkbank.benutzer.schicke-diesen-link-an', { email: e.benutzer.email }) })}</p>
       <div className="linkzeile">
-        <input readOnly value={e.link} onFocus={(ev) => ev.target.select()} aria-label={t('werkbank.benutzer.link-zum-passwort-setzen')} className="mono" />
+        <Feld beschriftung={t('werkbank.benutzer.link-zum-passwort-setzen')} beschriftungVerbergen>
+          <input readOnly value={e.link} onFocus={(ev) => ev.target.select()} className="mono" />
+        </Feld>
         <Knopf groesse="klein" onClick={async () => { try { await navigator.clipboard.writeText(e.link!); setKopiert(true); } catch { /* Feld ist markierbar */ } }}>{kopiert ? t('werkbank.benutzer.kopiert') : t('werkbank.benutzer.kopieren')}</Knopf>
       </div>
       {schliessen && <Knopf art="link" onClick={schliessen}>{t('werkbank.benutzer.schliessen')}</Knopf>}

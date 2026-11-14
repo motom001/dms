@@ -24,7 +24,7 @@ import { falte } from '../../../shared/src/suche';
 import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 import { zeitzone } from '../../../shared/src/region';
 import { gebietsschema } from '../../../shared/src/sprache';
-import { Bereich, FilterHaken, Hervorgehoben, KeineTreffer, Knopf, KnopfLink, ListenSuche, useBereiche, useListenSuche, type BereichListe } from '../bausteine';
+import { Bereich, Feld, FeldGruppe, FilterHaken, HakenFeld, Hervorgehoben, KeineTreffer, Knopf, KnopfLink, ListenSuche, useBereiche, useListenSuche, type BereichListe } from '../bausteine';
 import { Kopf } from './Kopf';
 
 /**
@@ -199,8 +199,7 @@ function AuskunftDetail({ e, z }: { e: AuskunftEintrag; z: DatenschutzZustand })
           <p className="knoepfe">
             <Knopf art={zustellen ? 'neben' : 'haupt'} aria-expanded={zustellen} onClick={() => setZustellen(!zustellen)}>{zustellen ? t('werkbank.auskunft.detail.zustellenZu') : t('werkbank.auskunft.detail.zustellen')}</Knopf>
             <a className="knopf" href={`/api/werkbank/auskunft/${b.id}/zip`} onClick={() => window.setTimeout(() => void z.laden(), 3000)}>{t('werkbank.auskunft.detail.herunterladen')}</a>
-            <Knopf onClick={async () => {
-              if (!(await rueckfrage({ titel: t('werkbank.auskunft.detail.loeschenFrage'), text: t('werkbank.auskunft.detail.loeschenText', { titel: titelOder(b.titel), zeit: zeit(b.erstellt) }), ja: t('werkbank.auskunft.detail.loeschen'), gefahr: true }))) return;
+            <Knopf art="gefahr" symbol="geloescht" rueckfrage={{ titel: t('werkbank.auskunft.detail.loeschenFrage'), text: t('werkbank.auskunft.detail.loeschenText', { titel: titelOder(b.titel), zeit: zeit(b.erstellt) }), ja: t('werkbank.auskunft.detail.loeschen') }} onClick={async () => {
               try { await api.auskunftLoeschen(b.id); await z.laden(); } catch (x) { setFehler((x as Error).message); }
             }}>{t('werkbank.auskunft.detail.loeschen')}</Knopf>
           </p>
@@ -394,12 +393,14 @@ function AuskunftErteilen({ einstellung, nachher, zustellen }: { einstellung: Da
   const zeigeKnoten = (k: BaumKnoten): ReactNode => (k.nurBezug && k.ueber ? (
     <li key={k.id}>
       <div className={`auskunft-mappe ${wahl.erwaehnungen.has(k.id) || wahl.mappen.has(k.id) ? '' : 'aus'}`}>
-        <label className="haken"><input type="checkbox" checked={wahl.erwaehnungen.has(k.id) || wahl.mappen.has(k.id)} disabled={wahl.mappen.has(k.id)} onChange={(e) => schalte('erwaehnungen', k.id, e.target.checked)} />
-          <span>{erwaehnungText({ typ: k.typ, titel: titelOder(k.titel), feld: k.ueber.feld, richtung: k.ueber.richtung })}{' '}
-            <span className="chip" title={t('werkbank.datenschutz.nur-ueber-einen-verweis')}>{t('werkbank.datenschutz.bezug')}</span>{' '}
-            <a href={`/ablage/${k.typId}/${k.id}`} className="verweis klein" target="_blank" rel="noreferrer">{t('werkbank.datenschutz.oeffnen')}</a></span></label>
-        <label className="haken klein auskunft-ganz"><input type="checkbox" checked={wahl.mappen.has(k.id)} onChange={(e) => ganz(k.id, e.target.checked)} />
-          <span>{tn('werkbank.datenschutz.ganz-aufnehmen', { span: <span className="leise">{t('werkbank.datenschutz.mit-dokumenten-notizen-und')}</span> })}</span></label>
+        <HakenFeld beschriftung={<>{erwaehnungText({ typ: k.typ, titel: titelOder(k.titel), feld: k.ueber.feld, richtung: k.ueber.richtung })}{' '}
+          <span className="chip" title={t('werkbank.datenschutz.nur-ueber-einen-verweis')}>{t('werkbank.datenschutz.bezug')}</span></>}
+          hinweis={<a href={`/ablage/${k.typId}/${k.id}`} className="verweis klein" target="_blank" rel="noreferrer">{t('werkbank.datenschutz.oeffnen')}</a>}>
+          <input type="checkbox" checked={wahl.erwaehnungen.has(k.id) || wahl.mappen.has(k.id)} disabled={wahl.mappen.has(k.id)} onChange={(e) => schalte('erwaehnungen', k.id, e.target.checked)} />
+        </HakenFeld>
+        <HakenFeld beschriftung={t('werkbank.datenschutz.ganz-aufnehmen')} hinweis={t('werkbank.datenschutz.mit-dokumenten-notizen-und')} className="klein auskunft-ganz">
+          <input type="checkbox" checked={wahl.mappen.has(k.id)} onChange={(e) => ganz(k.id, e.target.checked)} />
+        </HakenFeld>
         {wahl.mappen.has(k.id) && <MappeEintrag id={k.id} titel={k.titel} typ={k.typ} typId={k.typId} inhalt={inhalte[k.id]} wahl={wahl} schalte={schalte} nurInhalt
           setGrund={(id, g) => setWahl((w) => ({ ...w, gruende: { ...w.gruende, [id]: g } }))} />}
       </div>
@@ -436,16 +437,22 @@ function AuskunftErteilen({ einstellung, nachher, zustellen }: { einstellung: Da
             gewaehlt={[{ id: betroffen.id, inhalt: <><Link to={`/ablage/${betroffen.typId}/${betroffen.id}`} className="verweis">{titelOder(betroffen.titel)}</Link> <span className="leise klein">{d.typ(betroffen.typId)?.name}</span></>, entfernenText: t('werkbank.datenschutz.entfernen-andere-person-waehlen', { titelOder: titelOder(betroffen.titel) }) }]}
             entferne={() => { setBetroffen(null); setVorschau(null); setAuftrag(null); }} />
           <div className="zeile-umbruch">
-            <label className="inline">{t('werkbank.datenschutz.anfrage-eingegangen-am')}{' '}<input type="date" value={eingang} max={heute()} onChange={(e) => setEingang(e.target.value)} /></label>
-            <button type="button" className="knopf klein" onClick={() => void frist()} title={t('werkbank.datenschutz.aufgabe-fuer-dich-faellig')}>{t('werkbank.datenschutz.frist-als-aufgabe-anlegen')}</button>
+            <Feld beschriftung={t('werkbank.datenschutz.anfrage-eingegangen-am')}>
+              <input type="date" value={eingang} max={heute()} onChange={(e) => setEingang(e.target.value)} />
+            </Feld>
+            <Knopf onClick={() => frist()} title={t('werkbank.datenschutz.aufgabe-fuer-dich-faellig')}>{t('werkbank.datenschutz.frist-als-aufgabe-anlegen')}</Knopf>
           </div>
           <p className="leise klein">{t('werkbank.datenschutz.2-sammeln-alle-mappen')}</p>
           <div className="zeile-umbruch">
-            <label className="inline">{t('werkbank.datenschutz.tiefe')}{' '}<select value={tiefe} onChange={(e) => setTiefe(Number(e.target.value))}>{[1, 2, 3, 4, 5].map((n) => <option key={n} value={n}>{n} {t('werkbank.datenschutz.ebenen', { anzahl: n })}</option>)}</select></label>
-            {(Object.keys(BAUM_RICHTUNGEN) as BaumRichtung[]).map((r) => (
-              <label key={r} className="haken inline"><input type="checkbox" checked={richtungen.includes(r)} onChange={(e) => setRichtungen(e.target.checked ? [...richtungen, r] : richtungen.filter((x) => x !== r))} /><span>{BAUM_RICHTUNGEN[r]}</span></label>
-            ))}
-            <button type="button" className="knopf klein primaer" disabled={laeuft || !richtungen.length} onClick={() => void sammeln()}>{laeuft ? t('werkbank.datenschutz.sammle') : vorschau ? t('werkbank.datenschutz.neu-sammeln') : t('werkbank.datenschutz.sammeln')}</button>
+            <Feld beschriftung={t('werkbank.datenschutz.tiefe')}>
+              <select value={tiefe} onChange={(e) => setTiefe(Number(e.target.value))}>{[1, 2, 3, 4, 5].map((n) => <option key={n} value={n}>{n} {t('werkbank.datenschutz.ebenen', { anzahl: n })}</option>)}</select>
+            </Feld>
+            <FeldGruppe beschriftung={t('werkbank.datenschutz.richtungen')}>
+              {(Object.keys(BAUM_RICHTUNGEN) as BaumRichtung[]).map((r) => (
+                <label key={r} className="haken"><input type="checkbox" checked={richtungen.includes(r)} onChange={(e) => setRichtungen(e.target.checked ? [...richtungen, r] : richtungen.filter((x) => x !== r))} /><span>{BAUM_RICHTUNGEN[r]}</span></label>
+              ))}
+            </FeldGruppe>
+            <Knopf art="haupt" gesperrt={!richtungen.length} laeuft={laeuft} laeuftText={t('werkbank.datenschutz.sammle')} onClick={() => void sammeln()}>{vorschau ? t('werkbank.datenschutz.neu-sammeln') : t('werkbank.datenschutz.sammeln')}</Knopf>
           </div>
         </>
       )}
@@ -460,22 +467,29 @@ function AuskunftErteilen({ einstellung, nachher, zustellen }: { einstellung: Da
           <h3 className="h4">{t('werkbank.datenschutz.4-erzeugen')}</h3>
           <p>{auswahl.mappen.length} {t('werkbank.datenschutz.mappen', { anzahl: auswahl.mappen.length })}{auswahl.erwaehnungen.length ? t('werkbank.datenschutz.und-erwaehnungen', { anzahl: auswahl.erwaehnungen.length }) : ''}, {auswahl.dokumente.length} {t('werkbank.datenschutz.dokumente', { anzahl: auswahl.dokumente.length })} ({groesse(bytes)}), {auswahl.notizen.length} {t('werkbank.datenschutz.notizen', { anzahl: auswahl.notizen.length })}{auswahl.ohneNotizen.length ? t('werkbank.datenschutz.zurueckgehalten', { ohneNotizen: auswahl.ohneNotizen.length }) : ''}.</p>
           <div className="raster">
-            <label className="eigenschaft breit"><span>{tn('werkbank.datenschutz.empfaenger-der-daten', { klein: <small>{t('werkbank.datenschutz.steht-auf-dem-deckblatt')}</small> })}</span><textarea rows={2} value={empfaenger} onChange={(e) => setEmpfaenger(e.target.value)} /></label>
-            <label className="eigenschaft breit"><span>{tn('werkbank.datenschutz.anmerkung', { klein: <small>{t('werkbank.datenschutz.optional-steht-auf-dem')}</small> })}</span><textarea rows={2} value={anmerkung} onChange={(e) => setAnmerkung(e.target.value)} /></label>
-            <label className="eigenschaft"><span>{tn('werkbank.datenschutz.passwort-fuer-die-zip', { klein: <small>{t('werkbank.datenschutz.optional-aes-256-mindestens', { AUSKUNFT_PASSWORT_MIN })}</small> })}</span>
-              <span className="zeile-umbruch"><input type="text" autoComplete="off" spellCheck={false} value={passwort} onChange={(e) => setPasswort(e.target.value)} className="mono" />
-                <button type="button" className="knopf klein" onClick={() => setPasswort(zufallsPasswort())}>{t('werkbank.datenschutz.vorschlagen')}</button></span></label>
+            <Feld beschriftung={t('werkbank.datenschutz.empfaenger-der-daten')} hinweis={t('werkbank.datenschutz.steht-auf-dem-deckblatt')} className="breit">
+              <textarea rows={2} value={empfaenger} onChange={(e) => setEmpfaenger(e.target.value)} />
+            </Feld>
+            <Feld beschriftung={t('werkbank.datenschutz.anmerkung')} optional hinweis={t('werkbank.datenschutz.optional-steht-auf-dem')} className="breit">
+              <textarea rows={2} value={anmerkung} onChange={(e) => setAnmerkung(e.target.value)} />
+            </Feld>
+            <Feld beschriftung={t('werkbank.datenschutz.passwort-fuer-die-zip')} optional hinweis={t('werkbank.datenschutz.optional-aes-256-mindestens', { AUSKUNFT_PASSWORT_MIN })}>
+              {(v) => <span className="zeile-umbruch"><input {...v} type="text" autoComplete="off" spellCheck={false} value={passwort} onChange={(e) => setPasswort(e.target.value)} className="mono" />
+                <Knopf groesse="klein" onClick={() => setPasswort(zufallsPasswort())}>{t('werkbank.datenschutz.vorschlagen')}</Knopf></span>}
+            </Feld>
           </div>
           {pwFehler && <p className="fehlertext klein">{t('werkbank.datenschutz.mindestens-zeichen', { AUSKUNFT_PASSWORT_MIN })}</p>}
           {passwort && !pwFehler && <p className="leise klein">{t('werkbank.datenschutz.teile-das-passwort-getrennt')}</p>}
-          <label className="haken"><input type="checkbox" checked={geprueft} onChange={(e) => setGeprueft(e.target.checked)} /><span>{t('werkbank.datenschutz.ich-habe-die-auswahl')}</span></label>
+          <HakenFeld beschriftung={t('werkbank.datenschutz.ich-habe-die-auswahl')}>
+            <input type="checkbox" checked={geprueft} onChange={(e) => setGeprueft(e.target.checked)} />
+          </HakenFeld>
           {ohneGrund > 0 && <p className="fehlertext klein">{t('werkbank.datenschutz.abgewaehlte-notizen-brauchen-eine', { anzahl: ohneGrund })}</p>}
           {auftrag?.status === 'laeuft' && <p className="leise" role="status">{fortschrittText(auftrag)}</p>}
           {auftrag?.status === 'fehler' && <p className="fehlertext" role="alert">{auftrag.fehler}</p>}
           {/* #665: Das Ergebnis steht an der Stelle des Knopfs – darüber verschiebt sich nichts; ein zweites Erzeugen nur über „Neue Auskunft erstellen“. */}
           {fertig ? <AuskunftFertig f={fertig} zustellen={zustellen} nachher={nachher} neu={() => { setAuftrag(null); setGeprueft(false); }} />
-            : <div className="knoepfe"><button type="button" className="knopf primaer" disabled={!geprueft || !auswahl.mappen.length || ohneGrund > 0 || !!pwFehler || auftrag?.status === 'laeuft'} onClick={() => void erzeugen()}>
-            {auftrag?.status === 'laeuft' ? t('werkbank.datenschutz.wird-erzeugt') : t('werkbank.datenschutz.auskunft-erzeugen')}</button></div>}
+            : <div className="knoepfe"><Knopf art="haupt" gesperrt={!geprueft || !auswahl.mappen.length || ohneGrund > 0 || !!pwFehler} laeuft={auftrag?.status === 'laeuft'} laeuftText={t('werkbank.datenschutz.wird-erzeugt')} onClick={() => void erzeugen()}>
+            {t('werkbank.datenschutz.auskunft-erzeugen')}</Knopf></div>}
         </>
       )}
     </section>
@@ -493,11 +507,11 @@ function AuskunftFertig({ f, zustellen, nachher, neu }: { f: AuskunftStand; zust
       <div ref={ref} tabIndex={-1} className="hinweis gut stapel" role="status">
         <p><strong>{t('werkbank.datenschutz.auskunft-ist-fertig')}</strong> – {anzahl(f.mappen, t('werkbank.datenschutz.mappe'), t('werkbank.datenschutz.mappen-2'))}, {anzahl(f.dokumente, t('werkbank.datenschutz.dokument'), t('werkbank.datenschutz.dokumente-2'))} ({groesse(f.bytes)}){f.verschluesselt ? t('werkbank.datenschutz.mit-passwort') : ''}.</p>
         <p>{t('werkbank.datenschutz.wie-soll-sie-zur')}</p>
-        <p className="knoepfe"><button type="button" className="knopf primaer" onClick={() => zustellen(f.id)}>{t('werkbank.datenschutz.zustellen')}</button>
+        <p className="knoepfe"><Knopf art="haupt" onClick={() => zustellen(f.id)}>{t('werkbank.datenschutz.zustellen')}</Knopf>
           <a className="knopf" href={`/api/werkbank/auskunft/${f.id}/zip`} onClick={() => window.setTimeout(() => void nachher(), 3000)}>{t('werkbank.datenschutz.herunterladen')}</a></p>
         <p className="leise klein">{t('werkbank.datenschutz.ohne-abruf-link-wird', { zeit: zeit(f.bis) })}</p>
       </div>
-      <p><button type="button" className="textknopf klein" onClick={neu}>{t('werkbank.datenschutz.neue-auskunft-erstellen')}</button></p>
+      <p><Knopf art="link" groesse="klein" onClick={neu}>{t('werkbank.datenschutz.neue-auskunft-erstellen')}</Knopf></p>
     </div>
   );
 }
@@ -516,27 +530,34 @@ function MappeEintrag({ id, titel, typ, typId, inhalt, wahl, schalte, setGrund, 
   const an = wahl.mappen.has(id);
   return (
     <div className={`auskunft-mappe ${an ? '' : 'aus'}`}>
-      {!nurInhalt && <label className="haken"><input type="checkbox" checked={an} onChange={(e) => schalte('mappen', id, e.target.checked)} />
-        <span><a href={`/ablage/${typId}/${id}`} className="verweis" target="_blank" rel="noreferrer">{titelOder(titel)}</a> <span className="leise klein">{typ}</span>{info}</span></label>}
+      {!nurInhalt && <HakenFeld beschriftung={<>{titelOder(titel)} <span className="leise klein">{typ}</span>{info}</>}
+        hinweis={<a href={`/ablage/${typId}/${id}`} className="verweis klein" target="_blank" rel="noreferrer">{t('werkbank.datenschutz.oeffnen')}</a>}>
+        <input type="checkbox" checked={an} onChange={(e) => schalte('mappen', id, e.target.checked)} />
+      </HakenFeld>}
       {an && inhalt && (
         <div className="auskunft-inhalt">
           {inhalt.dritte.length > 0 && <p className="klein auskunft-dritte">{t('werkbank.datenschutz.daten-dritter-haengt-auch', { dritte: inhalt.dritte.slice(0, 4).join(', '), wert: inhalt.dritte.length > 4 ? ' …' : '' })}</p>}
           {inhalt.dokumente.map((x) => (
-            <label key={x.id} className="haken klein"><input type="checkbox" checked={wahl.dokumente.has(x.id)} onChange={(e) => schalte('dokumente', x.id, e.target.checked)} />
-              <span><Symbol name="dokument" /> {x.name} <span className="leise">{x.register} · {groesse(x.groesse)}</span>
-                {x.geschwaerzt && <span className="chip">{t('werkbank.datenschutz.geschwaerzt')}</span>}
-                {x.geschwaerzteFassung && <span className="leise"> {' '}{t('werkbank.datenschutz.geschwaerzte-fassung-vorhanden')}</span>}
-                {!x.geschwaerzt && x.schwaerzbar && <> · <a href={`/ablage/${typId}/${id}`} className="verweis" target="_blank" rel="noreferrer" title={t('werkbank.datenschutz.mappe-in-einem-neuen')}>{t('werkbank.datenschutz.schwaerzen')}</a></>}</span></label>
+            <HakenFeld key={x.id} className="klein" beschriftung={<><Symbol name="dokument" /> {x.name} <span className="leise">{x.register} · {groesse(x.groesse)}</span>
+              {x.geschwaerzt && <span className="chip">{t('werkbank.datenschutz.geschwaerzt')}</span>}
+              {x.geschwaerzteFassung && <span className="leise"> {' '}{t('werkbank.datenschutz.geschwaerzte-fassung-vorhanden')}</span>}</>}
+              hinweis={!x.geschwaerzt && x.schwaerzbar && <a href={`/ablage/${typId}/${id}`} className="verweis" target="_blank" rel="noreferrer" title={t('werkbank.datenschutz.mappe-in-einem-neuen')}>{t('werkbank.datenschutz.schwaerzen')}</a>}>
+              <input type="checkbox" checked={wahl.dokumente.has(x.id)} onChange={(e) => schalte('dokumente', x.id, e.target.checked)} />
+            </HakenFeld>
           ))}
           {inhalt.notizen.map((n) => (
             <div key={n.id}>
-              <label className="haken klein"><input type="checkbox" checked={wahl.notizen.has(n.id)} onChange={(e) => schalte('notizen', n.id, e.target.checked)} />
-                <span><Symbol name="notiz" /> {n.text.length > 120 ? `${n.text.slice(0, 120)} …` : n.text} <span className="leise">{zeit(n.erstellt)}</span></span></label>
-              {!wahl.notizen.has(n.id) && <label className="eigenschaft einzug klein"><span>{tn('werkbank.datenschutz.warum-zurueckhalten', { klein: <small>{t('werkbank.datenschutz.pflicht-z-b-interne')}</small> })}</span>
-                <input value={wahl.gruende[n.id] ?? ''} maxLength={500} onChange={(e) => setGrund(n.id, e.target.value)} /></label>}
+              <HakenFeld className="klein" beschriftung={<><Symbol name="notiz" /> {n.text.length > 120 ? `${n.text.slice(0, 120)} …` : n.text} <span className="leise">{zeit(n.erstellt)}</span></>}>
+                <input type="checkbox" checked={wahl.notizen.has(n.id)} onChange={(e) => schalte('notizen', n.id, e.target.checked)} />
+              </HakenFeld>
+              {!wahl.notizen.has(n.id) && <Feld beschriftung={t('werkbank.datenschutz.warum-zurueckhalten')} hinweis={t('werkbank.datenschutz.pflicht-z-b-interne')} className="einzug klein">
+                <input value={wahl.gruende[n.id] ?? ''} maxLength={500} onChange={(e) => setGrund(n.id, e.target.value)} />
+              </Feld>}
             </div>
           ))}
-          {inhalt.historie > 0 && <label className="haken klein"><input type="checkbox" checked={wahl.historie.has(id)} onChange={(e) => schalte('historie', id, e.target.checked)} /><span>{tn('werkbank.datenschutz.historie-eintraege', { anzahl: inhalt.historie, symbol: <Symbol name="historie" /> })}</span></label>}
+          {inhalt.historie > 0 && <HakenFeld className="klein" beschriftung={tn('werkbank.datenschutz.historie-eintraege', { anzahl: inhalt.historie, symbol: <Symbol name="historie" /> })}>
+            <input type="checkbox" checked={wahl.historie.has(id)} onChange={(e) => schalte('historie', id, e.target.checked)} />
+          </HakenFeld>}
           {inhalt.ohneFelder.length > 0 && <p className="leise klein">{t('werkbank.datenschutz.nie-enthalten', { ohneFelder: inhalt.ohneFelder.join(', ') })}</p>}
         </div>
       )}
@@ -570,8 +591,12 @@ function AuskunftEinstellungen({ z }: { z: DatenschutzZustand }) {
       <div className="raster">
         {/* Eigene Organisation (#995): Name und Anschrift des Verantwortlichen pflegt man einmal an der Organisation. */}
         <p className="eigenschaft breit leise">{tn('werkbank.datenschutz.verantwortlicher-organisation', { link: <Link to="/werkbank/organisation" className="verweis">{t('werkbank.datenschutz.zur-organisation')}</Link> })}</p>
-        <label className="eigenschaft breit"><span>{tn('werkbank.datenschutz.empfaenger', { klein: <small>{t('werkbank.datenschutz.vorschlag-fuer-jede-auskunft')}</small> })}</span><textarea rows={2} value={e.empfaenger} onChange={(x) => setE({ ...e, empfaenger: x.target.value })} /></label>
-        <label className="eigenschaft breit"><span>{tn('werkbank.datenschutz.rechte-der-person', { klein: <small>{t('werkbank.datenschutz.text-auf-dem-deckblatt')}</small> })}</span><textarea rows={4} value={e.rechte} onChange={(x) => setE({ ...e, rechte: x.target.value })} /></label>
+        <Feld beschriftung={t('werkbank.datenschutz.empfaenger')} hinweis={t('werkbank.datenschutz.vorschlag-fuer-jede-auskunft')} className="breit">
+          <textarea rows={2} value={e.empfaenger} onChange={(x) => setE({ ...e, empfaenger: x.target.value })} />
+        </Feld>
+        <Feld beschriftung={t('werkbank.datenschutz.rechte-der-person')} hinweis={t('werkbank.datenschutz.text-auf-dem-deckblatt')} className="breit">
+          <textarea rows={4} value={e.rechte} onChange={(x) => setE({ ...e, rechte: x.target.value })} />
+        </Feld>
       </div>
       <AnredeWahl anrede={e.anrede} setAnrede={(anrede) => setE({ ...e, anrede, rechte: istRechteStandard(e.rechte) ? rechteStandard(anrede) : e.rechte })} />
       {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
@@ -596,10 +621,13 @@ function PersonendatenTypen({ z }: { z: DatenschutzZustand }) {
     const automatisch = b?.bezug === 'verweis' && !typ(ty.id).person;
     return (
       <li key={ty.id}>
-        <label className="haken" title={automatisch ? t('werkbank.loeschkonzept.automatischTitel') : undefined}>
+        <HakenFeld beschriftung={<>{ty.name} <span className="leise klein">{automatisch ? t('werkbank.loeschkonzept.automatisch', { verweise: verweiseText(b!.verweise) }) : t('werkbank.loeschkonzept.betrifftPerson')}{ty.archiv ? ` · ${t('werkbank.loeschkonzept.aufbewahrung', { jahre: ty.archiv.jahre })}` : ''}</span></>}
+          hinweis={automatisch ? t('werkbank.loeschkonzept.automatischTitel') : undefined}>
           <input type="checkbox" checked={typ(ty.id).person} onChange={(x) => setE({ ...e, typen: { ...e.typen, [ty.id]: { ...typ(ty.id), person: x.target.checked } } })} />
-          <span>{ty.name} <span className="leise klein">{automatisch ? t('werkbank.loeschkonzept.automatisch', { verweise: verweiseText(b!.verweise) }) : t('werkbank.loeschkonzept.betrifftPerson')}{ty.archiv ? ` · ${t('werkbank.loeschkonzept.aufbewahrung', { jahre: ty.archiv.jahre })}` : ''}</span></span></label>
-        <label className="eigenschaft einzug klein"><span>{t('werkbank.loeschkonzept.zweck')}</span><input id={`zweck-${ty.id}`} value={typ(ty.id).zweck} maxLength={500} placeholder={t('werkbank.loeschkonzept.zweckBeispiel')} onChange={(x) => setE({ ...e, typen: { ...e.typen, [ty.id]: { ...typ(ty.id), zweck: x.target.value } } })} /></label>
+        </HakenFeld>
+        <Feld beschriftung={t('werkbank.loeschkonzept.zweck')} className="einzug klein">
+          <input id={`zweck-${ty.id}`} value={typ(ty.id).zweck} maxLength={500} placeholder={t('werkbank.loeschkonzept.zweckBeispiel')} onChange={(x) => setE({ ...e, typen: { ...e.typen, [ty.id]: { ...typ(ty.id), zweck: x.target.value } } })} />
+        </Feld>
       </li>
     );
   };
@@ -632,10 +660,9 @@ function PersonendatenTypen({ z }: { z: DatenschutzZustand }) {
  */
 function AnredeWahl({ anrede, setAnrede }: { anrede: Anrede; setAnrede(a: Anrede): void }) {
   return (
-    <fieldset className="anrede-dritte" id="anrede">
-      <legend>{tn('werkbank.datenschutz.anrede-in-unterlagen-fuer', { hilfe: <Hilfe ort="werkbank.datenschutz.anrede" /> })}</legend>
-      <p className="leise klein">{t('werkbank.datenschutz.gilt-fuer-alles-was')}</p>
-      <div className="anrede-dritte-wahl" role="radiogroup" aria-label={t('werkbank.datenschutz.anrede')}>
+    <div id="anrede">
+    <FeldGruppe beschriftung={t('werkbank.datenschutz.anrede-in-unterlagen-fuer')} hilfe="werkbank.datenschutz.anrede" hinweis={t('werkbank.datenschutz.gilt-fuer-alles-was')} className="anrede-dritte">
+      <div className="anrede-dritte-wahl">
         {ANREDEN.map((a) => (
           <label key={a} className={`anrede-dritte-form${a === anrede ? ' gewaehlt' : ''}`}>
             <span className="anrede-dritte-kopf"><input type="radio" name="anrede-dritte" checked={a === anrede} onChange={() => setAnrede(a)} /><strong>{ANREDE_NAME[a]}</strong>{a === 'du' && <span className="leise klein"> {' '}{t('werkbank.datenschutz.vorgabe')}</span>}</span>
@@ -643,6 +670,7 @@ function AnredeWahl({ anrede, setAnrede }: { anrede: Anrede; setAnrede(a: Anrede
           </label>
         ))}
       </div>
-    </fieldset>
+    </FeldGruppe>
+    </div>
   );
 }

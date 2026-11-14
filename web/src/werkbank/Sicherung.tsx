@@ -1,4 +1,4 @@
-import { Knopf, Schalter } from '../bausteine';
+import { Feld, HakenFeld, Knopf, Schalter } from '../bausteine';
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { Symbol } from '../Symbol';
 import { api, type ExternStand, type ExternZustand, type Notfallblattstand, type ProbeStand, type SicherungEintrag, type SicherungsPlan, type SicherungStand, type SicherungsZustand, type WhLauf } from '../api';
@@ -6,7 +6,6 @@ import { t, tn } from '../sprache';
 import { Schritte } from '../wiederherstellen';
 import { Hilfe, useHandbuch } from '../Hilfe';
 import { Link } from '../ort';
-import { rueckfrage } from '../rueckfrage';
 import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 import { gebietsschema } from '../../../shared/src/sprache';
 import { NOTFALLBLATT_SEITE } from '../../../shared/src/werkbankansicht';
@@ -214,6 +213,7 @@ export function SicherungPanel({ z }: { z: SicherungZustand }) {
   );
 
   // „Herunterladen“ (#975): heikle Handlung (frische Anmeldung), dann lädt der Browser selbst – mit Fortschritt und Abbrechen.
+  const loeschFrage = (x: { name: string; meta?: { beginn: string } | null }) => ({ titel: t('werkbank.sicherung.sicherung-vom-loeschen', { wert: x.meta ? zeit(x.meta.beginn) : x.name }), text: t('werkbank.sicherung.sie-ist-danach-endgueltig'), ja: t('werkbank.sicherung.endgueltig-loeschen') });
   const ladeKnopf = (name: string) => (
     <Knopf art="link" onClick={async () => { if (await heikelLaden(api.sicherungDateiUrl(name))) setGeladen(name); }}>{t('werkbank.sicherung.herunterladen')}</Knopf>
   );
@@ -254,8 +254,9 @@ export function SicherungPanel({ z }: { z: SicherungZustand }) {
         {alte.length > 0 && (
           <div className="hinweis info">
             <p>{tn('werkbank.sicherung.zum-wiederherstellen-brauchst-du', { b: <strong>{t('werkbank.sicherung.sicherungen-sind-mit-einem', { anzahl: alte.length })}</strong> })}</p>
-            <div className="knoepfe"><Knopf groesse="klein" gesperrt={laeuft}
-              onClick={async () => { if (await rueckfrage({ titel: t('werkbank.sicherung.alle-sicherungen-mit-frueherem', { anzahl: alte.length }), text: t('werkbank.sicherung.sie-sind-danach-endgueltig'), ja: t('werkbank.sicherung.endgueltig-loeschen'), gefahr: true })) void tu(async () => { for (const x of alte) await api.sicherungLoeschen(x.name); }, t('werkbank.sicherung.sicherungen-mit-frueherem-schluessel')); }}>
+            <div className="knoepfe"><Knopf art="gefahr" symbol="geloescht" groesse="klein" gesperrt={laeuft}
+              rueckfrage={{ titel: t('werkbank.sicherung.alle-sicherungen-mit-frueherem', { anzahl: alte.length }), text: t('werkbank.sicherung.sie-sind-danach-endgueltig'), ja: t('werkbank.sicherung.endgueltig-loeschen') }}
+              onClick={() => { void tu(async () => { for (const x of alte) await api.sicherungLoeschen(x.name); }, t('werkbank.sicherung.sicherungen-mit-frueherem-schluessel')); }}>
               {t('werkbank.sicherung.sicherungen-mit-frueherem-schluessel-2')}</Knopf></div>
           </div>
         )}
@@ -275,7 +276,7 @@ export function SicherungPanel({ z }: { z: SicherungZustand }) {
                 <td className="kurz">
                   {ladeKnopf(x.name)}{' · '}
                   {pruefKnopf(x.name, !!(x.meta || x.schlank))}{' · '}
-                  <Knopf art="link" gesperrt={laeuft} onClick={async () => { if (await rueckfrage({ titel: t('werkbank.sicherung.sicherung-vom-loeschen', { wert: x.meta ? zeit(x.meta.beginn) : x.name }), text: t('werkbank.sicherung.sie-ist-danach-endgueltig'), ja: t('werkbank.sicherung.endgueltig-loeschen'), gefahr: true })) void tu(() => api.sicherungLoeschen(x.name), t('werkbank.sicherung.sicherung-geloescht')); }}>{t('werkbank.sicherung.loeschen')}</Knopf>
+                  <Knopf art="gefahr" symbol="geloescht" groesse="klein" gesperrt={laeuft} rueckfrage={loeschFrage(x)} onClick={() => { void tu(() => api.sicherungLoeschen(x.name), t('werkbank.sicherung.sicherung-geloescht')); }}>{t('werkbank.sicherung.loeschen')}</Knopf>
                 </td>
               </tr>
             ))}</tbody>
@@ -361,21 +362,35 @@ function Zeitplan({ plan, notfallblatt, mitNotfallblatt, gespeichert }: { plan: 
       {!notfallblatt && !p.aktiv && <p className="leise klein">{t('werkbank.sicherung.erst-wenn-verschluesselung-fertig')}{' '}
         {mitNotfallblatt ? <Link to={NOTFALLBLATT_SEITE} className="knopf klein">{t('werkbank.sicherung.zur-verschluesselung')}</Link> : t('werkbank.sicherung.keine-berechtigung-verschluesselung')}</p>}
       <div className="raster">
-        <label className="eigenschaft"><span>{t('werkbank.sicherung.haeufigkeit')}</span>
-          <select value={p.haeufigkeit} onChange={(e) => setP({ ...p, haeufigkeit: e.target.value as SicherungsPlan['haeufigkeit'] })}><option value="taeglich">{t('werkbank.sicherung.taeglich')}</option><option value="woechentlich">{t('werkbank.sicherung.woechentlich')}</option></select></label>
+        <Feld beschriftung={t('werkbank.sicherung.haeufigkeit')}>
+          <select value={p.haeufigkeit} onChange={(e) => setP({ ...p, haeufigkeit: e.target.value as SicherungsPlan['haeufigkeit'] })}><option value="taeglich">{t('werkbank.sicherung.taeglich')}</option><option value="woechentlich">{t('werkbank.sicherung.woechentlich')}</option></select>
+        </Feld>
         {p.haeufigkeit === 'woechentlich' && (
-          <label className="eigenschaft"><span>{t('werkbank.sicherung.wochentag')}</span>
-            <select value={p.wochentag} onChange={(e) => setP({ ...p, wochentag: Number(e.target.value) })}>{TAGE.slice(1).map((text, i) => <option key={text} value={i + 1}>{text}</option>)}</select></label>
+          <Feld beschriftung={t('werkbank.sicherung.wochentag')}>
+            <select value={p.wochentag} onChange={(e) => setP({ ...p, wochentag: Number(e.target.value) })}>{TAGE.slice(1).map((text, i) => <option key={text} value={i + 1}>{text}</option>)}</select>
+          </Feld>
         )}
-        <label className="eigenschaft"><span>{t('werkbank.sicherung.uhrzeit')}</span><input type="time" value={p.uhrzeit} onChange={(e) => setP({ ...p, uhrzeit: e.target.value })} /></label>
+        <Feld beschriftung={t('werkbank.sicherung.uhrzeit')}>
+          <input type="time" value={p.uhrzeit} onChange={(e) => setP({ ...p, uhrzeit: e.target.value })} />
+        </Feld>
       </div>
       <p className="leise klein">{t('werkbank.sicherung.aufbewahrt-werden-die-neuesten')}</p>
-      <label className="haken"><input type="checkbox" checked={!!p.nurNeueste} onChange={(e) => setP({ ...p, nurNeueste: e.target.checked })} /><span>{t('werkbank.sicherung.extern.nurneueste')} <small className="leise">{t('werkbank.sicherung.extern.nurneueste.hilfe')}</small></span></label>
+      <HakenFeld beschriftung={t('werkbank.sicherung.extern.nurneueste')} hinweis={t('werkbank.sicherung.extern.nurneueste.hilfe')}>
+        <input type="checkbox" checked={!!p.nurNeueste} onChange={(e) => setP({ ...p, nurNeueste: e.target.checked })} />
+      </HakenFeld>
       <div className="raster">
-        {p.haeufigkeit === 'taeglich' && <label className="eigenschaft"><span>{t('werkbank.sicherung.taegliche')}</span><input type="number" min={0} max={366} value={a.taeglich} disabled={!!p.nurNeueste} onChange={(e) => setA('taeglich', e.target.value)} /></label>}
-        <label className="eigenschaft"><span>{t('werkbank.sicherung.woechentliche')}</span><input type="number" min={0} max={260} value={a.woechentlich} disabled={!!p.nurNeueste} onChange={(e) => setA('woechentlich', e.target.value)} /></label>
-        <label className="eigenschaft"><span>{t('werkbank.sicherung.monatliche')}</span><input type="number" min={0} max={240} value={a.monatlich} disabled={!!p.nurNeueste} onChange={(e) => setA('monatlich', e.target.value)} /></label>
-        <label className="eigenschaft"><span>{tn('werkbank.sicherung.mindest-speicherplatz-in-gb', { klein: <small>{t('werkbank.sicherung.darunter-beginnt-keine-sicherung')}</small> })}</span><input type="number" min={0} value={p.mindestFreiGB} onChange={(e) => setP({ ...p, mindestFreiGB: Math.max(0, Math.trunc(Number(e.target.value) || 0)) })} /></label>
+        {p.haeufigkeit === 'taeglich' && <Feld beschriftung={t('werkbank.sicherung.taegliche')}>
+          <input type="number" min={0} max={366} value={a.taeglich} disabled={!!p.nurNeueste} onChange={(e) => setA('taeglich', e.target.value)} />
+        </Feld>}
+        <Feld beschriftung={t('werkbank.sicherung.woechentliche')}>
+          <input type="number" min={0} max={260} value={a.woechentlich} disabled={!!p.nurNeueste} onChange={(e) => setA('woechentlich', e.target.value)} />
+        </Feld>
+        <Feld beschriftung={t('werkbank.sicherung.monatliche')}>
+          <input type="number" min={0} max={240} value={a.monatlich} disabled={!!p.nurNeueste} onChange={(e) => setA('monatlich', e.target.value)} />
+        </Feld>
+        <Feld beschriftung={t('werkbank.sicherung.mindest-speicherplatz-in-gb')} hinweis={t('werkbank.sicherung.darunter-beginnt-keine-sicherung')}>
+          <input type="number" min={0} value={p.mindestFreiGB} onChange={(e) => setP({ ...p, mindestFreiGB: Math.max(0, Math.trunc(Number(e.target.value) || 0)) })} />
+        </Feld>
       </div>
       {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
       <Speicherleiste ent={ent} gegenstand={t('werkbank.sicherung.zeitplan')} sendet={sendet} />
@@ -420,9 +435,12 @@ function Probe({ stand, lauf, sicherungen, gesperrt, neuLaden }: { stand: ProbeS
       {lauf?.art === 'probe' && (laeuft || lauf.status === 'fehler') && <Schritte schritte={lauf.schritte} />}
       <div className="raster">
         <Schalter an={plan.aktiv} setze={(an) => setPlan({ ...plan, aktiv: an })} beschriftung={t('werkbank.sicherung.woechentlich-automatisch')} />
-        <label className="eigenschaft"><span>{t('werkbank.sicherung.wochentag')}</span>
-          <select value={plan.wochentag} onChange={(e) => setPlan({ ...plan, wochentag: Number(e.target.value) })}>{TAGE.slice(1).map((text, i) => <option key={text} value={i + 1}>{text}</option>)}</select></label>
-        <label className="eigenschaft"><span>{t('werkbank.sicherung.uhrzeit')}</span><input type="time" value={plan.uhrzeit} onChange={(e) => setPlan({ ...plan, uhrzeit: e.target.value })} /></label>
+        <Feld beschriftung={t('werkbank.sicherung.wochentag')}>
+          <select value={plan.wochentag} onChange={(e) => setPlan({ ...plan, wochentag: Number(e.target.value) })}>{TAGE.slice(1).map((text, i) => <option key={text} value={i + 1}>{text}</option>)}</select>
+        </Feld>
+        <Feld beschriftung={t('werkbank.sicherung.uhrzeit')}>
+          <input type="time" value={plan.uhrzeit} onChange={(e) => setPlan({ ...plan, uhrzeit: e.target.value })} />
+        </Feld>
       </div>
       <div className="knoepfe">
         <Knopf gesperrt={!sicherungen || gesperrt} laeuft={laeuft} laeuftText={t('werkbank.sicherung.probe-laeuft')} onClick={() => tu(() => api.probeStarten())}>{t('werkbank.sicherung.jetzt-probeweise-wiederherstellen')}</Knopf>

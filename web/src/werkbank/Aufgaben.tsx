@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { AUFGABENARTEN, formatiere, type Aufgabe, type Aufgabenart } from '../../../shared/src/model';
 import { FAELLIGKEITEN, filterAktiv, filterInAdresse, filtereAufgaben, type AufgabenFilter, type Faelligkeit } from '../../../shared/src/aufgabenfilter';
-import { FilterHaken, KeineTreffer, ListenSuche } from '../bausteine';
+import { Feld, FilterHaken, KeineTreffer, Knopf, KnopfLink, ListenSuche } from '../bausteine';
 import { api, type MappeDetails } from '../api';
 import { BenutzerWahl } from '../ablage/Aufgaben';
 import { useDaten } from '../daten';
@@ -67,28 +67,32 @@ export function AufgabenListe({ z, filter, offen }: { z: AufgabenZustand; filter
   const filterTeil = (
     <>
       <div className="filterraster">
-        <label className="eigenschaft klein"><span>{t('werkbank.aufgaben.empfaenger')}</span>
+        <Feld beschriftung={t('werkbank.aufgaben.empfaenger')} className="klein">
           <select value={filter.empfaenger ?? ''} onChange={(e) => setze({ empfaenger: e.target.value || undefined })}>
             <option value="">{t('werkbank.aufgaben.alle')}</option>
             <option value="admins">{t('konten.verwaltende.ohneEmpfaenger')}</option>
             <option value="ohne-vertretung">{t('werkbank.aufgaben.abwesend-ohne-vertretung')}</option>
             {d.personen.map((p) => <option key={p.id} value={p.id}>{p.name}{p.aktiv === false ? t('werkbank.aufgaben.deaktiviert') : ''}</option>)}
-          </select></label>
-        <label className="eigenschaft klein"><span>{t('werkbank.aufgaben.art')}</span>
+          </select>
+        </Feld>
+        <Feld beschriftung={t('werkbank.aufgaben.art')} className="klein">
           <select value={filter.art ?? ''} onChange={(e) => setze({ art: (e.target.value || undefined) as Aufgabenart | undefined })}>
             <option value="">{t('werkbank.aufgaben.alle')}</option>
             {Object.entries(AUFGABENARTEN).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-          </select></label>
-        <label className="eigenschaft klein"><span>{t('werkbank.aufgaben.mappentyp')}</span>
+          </select>
+        </Feld>
+        <Feld beschriftung={t('werkbank.aufgaben.mappentyp')} className="klein">
           <select value={filter.typ ?? ''} onChange={(e) => setze({ typ: e.target.value || undefined })}>
             <option value="">{t('werkbank.aufgaben.alle')}</option>
             {d.typen.map((mappentyp) => <option key={mappentyp.id} value={mappentyp.id}>{mappentyp.name}</option>)}
-          </select></label>
-        <label className="eigenschaft klein"><span>{t('werkbank.aufgaben.faelligkeit')}</span>
+          </select>
+        </Feld>
+        <Feld beschriftung={t('werkbank.aufgaben.faelligkeit')} className="klein">
           <select value={filter.faellig ?? ''} onChange={(e) => setze({ faellig: (e.target.value || undefined) as Faelligkeit | undefined })}>
             <option value="">{t('werkbank.aufgaben.alle')}</option>
             {Object.entries(FAELLIGKEITEN).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-          </select></label>
+          </select>
+        </Feld>
       </div>
       <FilterHaken an={!!filter.erledigt} setze={(an) => geheZu(`/werkbank/aufgaben${filterInAdresse({ ...filter, erledigt: an })}`, true)} anker="werkbank.aufgaben.erledigte">{t('werkbank.aufgaben.erledigte-zeigen')}</FilterHaken>
     </>
@@ -106,7 +110,7 @@ export function AufgabenListe({ z, filter, offen }: { z: AufgabenZustand; filter
       {(z.fehler || fehler) && <div className="hinweis schlecht"><p>{z.fehler ?? fehler}</p></div>}
       {/* #798: Aufgaben bei Personen ohne Leserecht – offen als Warnung, sonst ein leiser Link (auch zu den vergangenen). */}
       {!z.erledigt && z.unlesbar.size > 0
-        ? <div className="hinweis warn hinweiszeile"><p><strong>{t('werkbank.ohne-leserecht.offen', { anzahl: z.unlesbar.size })}.</strong> {t('werkbank.ohne-leserecht.hinweis')}</p><Link to={`/werkbank/aufgaben/${OHNE_LESERECHT}${suche}`} className="knopf klein">{t('werkbank.ohne-leserecht.knopf')}</Link></div>
+        ? <div className="hinweis warn hinweiszeile"><p><strong>{t('werkbank.ohne-leserecht.offen', { anzahl: z.unlesbar.size })}.</strong> {t('werkbank.ohne-leserecht.hinweis')}</p><KnopfLink to={`/werkbank/aufgaben/${OHNE_LESERECHT}${suche}`} groesse="klein">{t('werkbank.ohne-leserecht.knopf')}</KnopfLink></div>
         : <p className="leise klein"><Link to={`/werkbank/aufgaben/${OHNE_LESERECHT}${suche}`} className={`verweis${offen === OHNE_LESERECHT ? ' an' : ''}`}>{t('werkbank.ohne-leserecht.titel')}</Link></p>}
       {/* Kästchen auch am Handy sichtbar (#415) – deshalb immer „mit-auswahl“. */}
       <div className={`listenrumpf${z.erledigt ? '' : ' mit-auswahl'}`}>
@@ -200,12 +204,12 @@ function AufgabeMappe({ a, z }: { a: Aufgabe; z: AufgabenZustand }) {
           </section>
         )}
       <div className="knoepfe sammel-rechts">
-        <Link to={ablage} className="knopf primaer">{t('werkbank.aufgaben.in-der-ablage-oeffnen')}</Link>
+        <KnopfLink to={ablage} art="haupt">{t('werkbank.aufgaben.in-der-ablage-oeffnen')}</KnopfLink>
         {!a.erledigt && (
           <span className="sammel-ziel">
             <span className="klein">{t('werkbank.aufgaben.weitergeben-an-2')}</span>
             <BenutzerWahl label={t('werkbank.aufgaben.aufgabe-weitergeben-an', { text: a.text })} wert={an} setze={setAn} ohne={a.empfaengerId} />
-            <button type="button" className="knopf" disabled={!an || sendet} onClick={() => void weitergeben()}>{t('werkbank.aufgaben.weitergeben')}</button>
+            <Knopf gesperrt={!an} laeuft={sendet} onClick={() => void weitergeben()}>{t('werkbank.aufgaben.weitergeben')}</Knopf>
           </span>
         )}
       </div>

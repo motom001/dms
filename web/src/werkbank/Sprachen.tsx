@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Schalter } from '../bausteine';
+import { Feld, FeldGruppe, Schalter } from '../bausteine';
 import { setzeErlaubteSprachen, sprachname } from '../../../shared/src/beschriftung';
 import { AUSGANGSSPRACHE, EINGEBAUTE_SPRACHEN, sprache } from '../../../shared/src/sprache';
 import { Link } from '../ort';
@@ -50,8 +50,8 @@ export function SprachenPanel({ z }: { z: SprachenZustand }) {
       </Kopf>
       {meldung && <div className={`hinweis ${meldung.art}`} role="status"><p>{meldung.text}</p></div>}
       <form className="blatt" onSubmit={(x) => { x.preventDefault(); void speichern(); }} onKeyDown={ent.tasten}>
-        <fieldset className="eigenschaft">
-          <legend>{t('werkbank.sprachen.erlaubt')}</legend>
+        <FeldGruppe beschriftung={t('werkbank.sprachen.erlaubt')}>
+          <div className="haken-untereinander">
           {s.verfuegbar.map((spr) => {
             const fest = spr === AUSGANGSSPRACHE || spr === e.standard;
             return (
@@ -63,11 +63,13 @@ export function SprachenPanel({ z }: { z: SprachenZustand }) {
               </label>
             );
           })}
-        </fieldset>
-        <label className="eigenschaft"><span>{t('werkbank.sprachen.standard')} <small>{t('werkbank.sprachen.standard.hinweis')}</small></span>
+          </div>
+        </FeldGruppe>
+        <Feld beschriftung={t('werkbank.sprachen.standard')} hinweis={t('werkbank.sprachen.standard.hinweis')}>
           <select id="sprachen-standard" value={e.standard} onChange={(x) => setE({ ...e, standard: x.target.value, erlaubt: e.erlaubt.includes(x.target.value) ? e.erlaubt : [...e.erlaubt, x.target.value] })}>
             {e.erlaubt.map((spr) => <option key={spr} value={spr}>{sprachname(spr)}</option>)}
-          </select></label>
+          </select>
+        </Feld>
         <Speicherleiste ent={ent} gegenstand={t('werkbank.bereich.sprachen.name')} sendet={sendet} />
       </form>
       <InhalteUebersetzen />
@@ -129,11 +131,12 @@ function InhalteUebersetzen() {
       {s && !s.pakete.length && <p className="leise">{t('werkbank.uebersetzen.kein-paket')}</p>}
       {s && s.pakete.length > 0 && <>
         <Schalter id="uebersetzen-an" an={s.einstellung.an} gesperrt={sendet} setze={(an) => setze({ an })} beschriftung={t('werkbank.uebersetzen.an')} />
-        <label className="eigenschaft"><span>{t('werkbank.uebersetzen.paket')}</span>
+        <Feld beschriftung={t('werkbank.uebersetzen.paket')}>
           <select id="uebersetzen-paket" value={s.einstellung.paket ?? ''} disabled={sendet || !s.einstellung.an} onChange={(x) => void setze({ paket: x.target.value || null, abfluss: false })}>
             <option value="">{t('werkbank.uebersetzen.automatisch')}</option>
             {s.pakete.map((p) => <option key={p.id} value={p.id}>{p.netz ? t('werkbank.uebersetzen.mit-netz', { name: p.name, ziele: p.netz.join(', ') }) : p.name}</option>)}
-          </select></label>
+          </select>
+        </Feld>
         <p className="leise klein">{s.wirksam
           ? t('werkbank.uebersetzen.wirksam', { name: s.wirksam.name })
           : s.einstellung.an ? t('werkbank.uebersetzen.keins-wirksam') : t('werkbank.uebersetzen.aus')}</p>

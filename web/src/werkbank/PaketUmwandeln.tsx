@@ -8,6 +8,7 @@ import { rueckfrage } from '../rueckfrage';
 import { t } from '../sprache';
 import { alsMeldung, MeldungBox, type Meldung } from './Pakete';
 import { gebietsschema } from '../../../shared/src/sprache';
+import { Feld, Knopf } from '../bausteine';
 
 /**
  * Werkbank → Pakete → Paket (#534): Nach einem Update, das ein Textfeld durch einen Verweis ersetzt (`aus_text`),
@@ -72,7 +73,7 @@ export function PaketUmwandeln({ paket }: { paket: string }) {
           {offeneFelder.map((f) => (
             <li key={f.typId + f.feldKey} className="umw-feld">
               <span><strong>{f.typName} – {f.feldLabel}</strong><br /><span className="leise klein">{t('pakete.umwandeln.anzahl', { anzahl: f.anzahl, aus: f.ausLabel, ziel: f.zielTypName })}</span></span>
-              <button type="button" className={`knopf klein ${offen?.typId === f.typId && offen.feldKey === f.feldKey ? 'an' : ''}`} disabled={laeuft} onClick={() => void zeige(f)}>{t('pakete.umwandeln.vorschau')}</button>
+              <Knopf groesse="klein" aria-pressed={offen?.typId === f.typId && offen.feldKey === f.feldKey} gesperrt={laeuft} onClick={() => void zeige(f)}>{t('pakete.umwandeln.vorschau')}</Knopf>
             </li>
           ))}
         </ul>
@@ -92,9 +93,8 @@ export function PaketUmwandeln({ paket }: { paket: string }) {
             <ul className="umw-zeilen">
               {vorschau.zeilen.map((z) => (
                 <li key={z.schluessel}>
-                  <label className="umw-zeile">
-                    <span><strong>„{z.name}“</strong> <span className="leise klein">{t('pakete.umwandeln.vorschau.mappen', { anzahl: z.mappen })}</span>
-                      {z.passend.length > 1 && <> <span className="chip warn">{t('pakete.umwandeln.vorschau.mehrere', { anzahl: z.passend.length })}</span></>}</span>
+                  <Feld beschriftung={<><strong>„{z.name}“</strong> <span className="leise klein">{t('pakete.umwandeln.vorschau.mappen', { anzahl: z.mappen })}</span>
+                    {z.passend.length > 1 && <> <span className="chip warn">{t('pakete.umwandeln.vorschau.mehrere', { anzahl: z.passend.length })}</span></>}</>}>
                     <select className="umw-wahl" value={wahl[z.schluessel] ?? 'weg'} onChange={(e) => setWahl({ ...wahl, [z.schluessel]: e.target.value })}>
                       <optgroup label={t('pakete.umwandeln.vorschau.vorhanden', { ziel: offen.zielTypName })}>
                         {vorschau.kandidaten.map((k) => <option key={k.id} value={`p:${k.id}`}>{k.titel}</option>)}
@@ -102,7 +102,7 @@ export function PaketUmwandeln({ paket }: { paket: string }) {
                       <option value="neu">{t('pakete.umwandeln.vorschau.neu', { ziel: offen.zielTypName, name: z.name })}</option>
                       <option value="weg">{t('pakete.umwandeln.vorschau.weg')}</option>
                     </select>
-                  </label>
+                  </Feld>
                 </li>
               ))}
             </ul>
@@ -114,8 +114,8 @@ export function PaketUmwandeln({ paket }: { paket: string }) {
             </details>
           )}
           <div className="knoepfe">
-            <button type="button" className="knopf primaer" disabled={laeuft || !vorschau.zeilen.length || nichts} onClick={() => void umwandeln()}>{laeuft ? t('pakete.umwandeln.laeuft') : t('pakete.umwandeln.los')}</button>
-            <button type="button" className="textknopf" onClick={() => { setOffen(null); setVorschau(null); }}>{t('pakete.umwandeln.abbrechen')}</button>
+            <Knopf art="haupt" gesperrt={!vorschau.zeilen.length || nichts} laeuft={laeuft} laeuftText={t('pakete.umwandeln.laeuft')} onClick={() => void umwandeln()}>{t('pakete.umwandeln.los')}</Knopf>
+            <Knopf onClick={() => { setOffen(null); setVorschau(null); }}>{t('pakete.umwandeln.abbrechen')}</Knopf>
           </div>
         </div>
       )}
@@ -128,7 +128,7 @@ export function PaketUmwandeln({ paket }: { paket: string }) {
                 {datum(v.zeit)} · {v.typName} – {v.feldLabel}: {t('pakete.umwandeln.bisher.zeile', { anzahl: v.mappen.length, neu: v.neuePersonen.length })}
                 {v.rueckgaengig
                   ? <span className="leise"> · {t('pakete.umwandeln.bisher.zurueck', { zeit: datum(v.rueckgaengig.zeit) })}</span>
-                  : <> · <button type="button" className="textknopf" disabled={laeuft} onClick={() => void zurueck(v)}>{t('pakete.umwandeln.bisher.knopf')}</button></>}
+                  : <> · <Knopf art="link" groesse="klein" gesperrt={laeuft} onClick={() => void zurueck(v)}>{t('pakete.umwandeln.bisher.knopf')}</Knopf></>}
               </li>
             ))}
           </ul>

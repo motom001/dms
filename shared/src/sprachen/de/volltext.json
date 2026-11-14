@@ -111,5 +111,8 @@
   "archiv.wahl.alle": "Alle Dokumente haben eine Archivfassung.",
   "archiv.wahl.unbekannt": "Dokumente ohne Archivfassung (und E-Rechnungen) gehen als Original.",
   "archiv.wahl.keine": "Keines dieser Dokumente hat eine Archivfassung – es geht das Original hinaus.",
-  "archiv.ansicht.entsperrt": "Ansicht: entsperrte Fassung"
+  "archiv.ansicht.entsperrt": "Ansicht: entsperrte Fassung",
+  "neu.abbrechen.frage": "Lauf abbrechen?",
+  "neu.abbrechen.text": "Dokumente, die schon fertig sind, behalten ihren neuen Text; die übrigen bleiben, wie sie sind.",
+  "neu.abbrechen.ja": "Lauf abbrechen"
 }

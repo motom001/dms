@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Schalter } from '../bausteine';
+import { Feld, HakenFeld, Knopf, Schalter, Wahlhaken } from '../bausteine';
 import { fortschrittText } from '../../../shared/src/auftrag';
 import { ergebnisText, mb, STUFEN, STUFEN_LISTE, type Stufe } from '../../../shared/src/verkleinern';
 import { api, type Auftrag, type GrossePdfs, type VerkleinernEinstellung } from '../api';
@@ -8,7 +8,7 @@ import { Hilfe } from '../Hilfe';
 import { Link } from '../ort';
 import { rueckfrage } from '../rueckfrage';
 import { Speicherleiste, useEntwurf } from '../Speicherleiste';
-import { t, tn } from '../sprache';
+import { t } from '../sprache';
 
 /**
  * Werkbank → Systemzustand (#393, #408): große PDFs verkleinern (Liste nach Größe mit geschätzter Ersparnis,
@@ -64,10 +64,14 @@ export function GrossePdfsVerkleinern() {
       <h2 className="h3">{t('werkbank.verkleinern.grosse-pdfs-verkleinern')} <Hilfe ort="werkbank.verkleinern" /></h2>
       <p className="leise klein">{t('werkbank.verkleinern.gescannte-und-fotografierte-pdfs')}</p>
       <div className="zeile-umbruch">
-        <label className="inline">{t('werkbank.verkleinern.ab')}{' '}<select value={ab} onChange={(x) => setAb(Number(x.target.value))}>{ABS.map((a) => <option key={a} value={a}>{t('werkbank.verkleinern.mb', { a })}</option>)}</select></label>
-        <label className="inline">{t('werkbank.verkleinern.stufe')}{' '}<select value={stufe} onChange={(x) => setStufe(x.target.value as Stufe)}>
-          {STUFEN_LISTE.map((s) => <option key={s} value={s}>{t('werkbank.verkleinern.dpi', { name: STUFEN[s].name, dpi: STUFEN[s].dpi })}</option>)}
-        </select></label>
+        <Feld beschriftung={t('werkbank.verkleinern.ab')}>
+          <select value={ab} onChange={(x) => setAb(Number(x.target.value))}>{ABS.map((a) => <option key={a} value={a}>{t('werkbank.verkleinern.mb', { a })}</option>)}</select>
+        </Feld>
+        <Feld beschriftung={t('werkbank.verkleinern.stufe')}>
+          <select value={stufe} onChange={(x) => setStufe(x.target.value as Stufe)}>
+            {STUFEN_LISTE.map((s) => <option key={s} value={s}>{t('werkbank.verkleinern.dpi', { name: STUFEN[s].name, dpi: STUFEN[s].dpi })}</option>)}
+          </select>
+        </Feld>
       </div>
       {fehler && <p className="fehlertext" role="alert">{fehler}</p>}
       {liste === null ? <p className="leise" role="status">{t('werkbank.verkleinern.suche-grosse-pdfs-und')}</p> : !alle.length ? <p className="leise">{t('werkbank.verkleinern.keine-pdfs-ab-mb', { ab })}</p> : (
@@ -75,12 +79,12 @@ export function GrossePdfsVerkleinern() {
           <div className="tabellenrahmen festhoehe">
             <table className="auftraege grosse-pdfs">
               <thead><tr>
-                <th><input type="checkbox" aria-label={t('werkbank.verkleinern.alle-waehlen')} checked={auswahl.size === alle.length} onChange={(x) => setAuswahl(x.target.checked ? new Set(alle.map((a) => a.id)) : new Set())} /></th>
+                <th><Wahlhaken beschriftung={t('werkbank.verkleinern.alle-waehlen')} an={auswahl.size === alle.length} teilweise={auswahl.size > 0 && auswahl.size < alle.length} setze={(an) => setAuswahl(an ? new Set(alle.map((a) => a.id)) : new Set())} /></th>
                 <th>{t('werkbank.verkleinern.dokument')}</th><th>{t('werkbank.verkleinern.mappe')}</th><th className="zahlzelle">{t('werkbank.verkleinern.groesse')}</th><th className="zahlzelle">{t('werkbank.verkleinern.danach')}</th>
               </tr></thead>
               <tbody>{alle.map((x) => (
                 <tr key={x.id} className={auswahl.has(x.id) ? 'an' : ''}>
-                  <td><input type="checkbox" aria-label={t('werkbank.verkleinern.waehlen', { name: x.name })} checked={auswahl.has(x.id)} onChange={() => umschalten(x.id)} /></td>
+                  <td><Wahlhaken beschriftung={t('werkbank.verkleinern.waehlen', { name: x.name })} an={auswahl.has(x.id)} setze={() => umschalten(x.id)} /></td>
                   <td className="umbruch">{x.name}{x.version > 1 ? <span className="leise klein"> {' '}{t('werkbank.verkleinern.version', { version: x.version })}</span> : null}
                     <span className="nur-schmal leise klein">{x.mappeTitel || t('werkbank.verkleinern.ohne-titel')}</span></td>
                   <td className="umbruch">{x.typId ? <Link to={`/ablage/${x.typId}/${x.mappeId}`} className="verweis">{x.mappeTitel || t('werkbank.verkleinern.ohne-titel')}</Link> : x.mappeTitel}{x.typId && d.typ(x.typId) ? <span className="leise klein"> · {d.typ(x.typId)!.name}</span> : null}</td>
@@ -92,8 +96,9 @@ export function GrossePdfsVerkleinern() {
             </table>
           </div>
           {liste.mehr && <p className="leise klein">{t('werkbank.verkleinern.gezeigt-werden-die-groessten', { alle: alle.length })}</p>}
-          <label className="haken"><input type="checkbox" checked={ohneOriginal} onChange={(x) => setOhneOriginal(x.target.checked)} />
-            <span>{tn('werkbank.verkleinern.originale-nicht-als-aeltere', { span: <span className="leise klein">{t('werkbank.verkleinern.gibt-den-platz-sofort')}</span> })}</span></label>
+          <HakenFeld beschriftung={t('werkbank.verkleinern.originale-nicht-als-aeltere')} hinweis={t('werkbank.verkleinern.gibt-den-platz-sofort')}>
+            <input type="checkbox" checked={ohneOriginal} onChange={(x) => setOhneOriginal(x.target.checked)} />
+          </HakenFeld>
         </>
       )}
       {auftrag?.status === 'laeuft' && <p className="leise" role="status">{fortschrittText(auftrag, t('werkbank.verkleinern.dokumente'))}</p>}
@@ -106,9 +111,9 @@ export function GrossePdfsVerkleinern() {
       {auftrag?.status === 'fehler' && <p className="fehlertext">{auftrag.fehler}</p>}
       <div className="knoepfe">
         <span className="leise klein">{gewaehlt.length ? t('werkbank.verkleinern.geschaetzt-frei', { mb: mb(ersparnis) }) : ''}</span>
-        <button type="button" className="knopf primaer" disabled={!gewaehlt.length || auftrag?.status === 'laeuft'} onClick={() => void los()}>
-          {auftrag?.status === 'laeuft' ? t('werkbank.verkleinern.wird-verkleinert') : t('werkbank.verkleinern.pdfs-verkleinern-2', { anzahl: gewaehlt.length, wert: gewaehlt.length || '' }).trim()}
-        </button>
+        <Knopf art="haupt" gesperrt={!gewaehlt.length} laeuft={auftrag?.status === 'laeuft'} laeuftText={t('werkbank.verkleinern.wird-verkleinert')} onClick={() => void los()}>
+          {t('werkbank.verkleinern.pdfs-verkleinern-2', { anzahl: gewaehlt.length, wert: gewaehlt.length || '' }).trim()}
+        </Knopf>
       </div>
     </section>
   );
@@ -134,12 +139,14 @@ export function AutomatischVerkleinern() {
       <Schalter an={e.automatisch} setze={(an) => setE({ ...e, automatisch: an })} beschriftung={t('werkbank.verkleinern.schalter')}
         hinweis={t('werkbank.verkleinern.hochladen-eingangsordner-postfaecher')} />
       <div className="raster">
-        <label className="eigenschaft"><span>{tn('werkbank.verkleinern.ab-groesse', { klein: <small>{t('werkbank.verkleinern.mb-2')}</small> })}</span>
-          <input type="number" min={1} max={100} step={0.5} value={e.abMb} disabled={!e.automatisch} onChange={(x) => setE({ ...e, abMb: Number(x.target.value) })} /></label>
-        <label className="eigenschaft"><span>{t('werkbank.verkleinern.stufe')}</span>
+        <Feld beschriftung={t('werkbank.verkleinern.ab-groesse')} hinweis={t('werkbank.verkleinern.mb-2')}>
+          <input type="number" min={1} max={100} step={0.5} value={e.abMb} disabled={!e.automatisch} onChange={(x) => setE({ ...e, abMb: Number(x.target.value) })} />
+        </Feld>
+        <Feld beschriftung={t('werkbank.verkleinern.stufe')}>
           <select value={e.stufe} disabled={!e.automatisch} onChange={(x) => setE({ ...e, stufe: x.target.value as Stufe })}>
             {STUFEN_LISTE.map((s) => <option key={s} value={s}>{t('werkbank.verkleinern.dpi', { name: STUFEN[s].name, dpi: STUFEN[s].dpi })}</option>)}
-          </select></label>
+          </select>
+        </Feld>
       </div>
       <p className="leise klein">{t('werkbank.verkleinern.standard-aus-eingeschaltet-wird')}</p>
       {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}

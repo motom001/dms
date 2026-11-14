@@ -8,6 +8,7 @@ import { GrossePdfsVerkleinern } from './Verkleinern';
 import { t, tn } from '../sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
 import { Kopf } from './Kopf';
+import { Feld, Knopf } from '../bausteine';
 
 /**
  * Werkbank → Wartung und Fehlersuche → Systemzustand (#408, früher Einstellungen → Speicherplatz, #116):
@@ -62,15 +63,17 @@ function Balken({ o }: { o: OrdnerStand }) {
 
 function SchwelleFeld({ name, wert, aendern, hilfe }: { name: string; wert: Schwelle; aendern: (s: Schwelle) => void; hilfe: string }) {
   return (
-    <label className="eigenschaft"><span>{name} <small>{hilfe}</small></span>
-      <span className="schwellenfeld">
-        <input type="number" min={0} step={0.5} max={wert.einheit === 'prozent' ? 90 : 100000} value={wert.wert} onChange={(e) => aendern({ ...wert, wert: Number(e.target.value) })} />
-        <select value={wert.einheit} onChange={(e) => aendern({ ...wert, einheit: e.target.value as Schwelle['einheit'] })} aria-label={t('werkbank.speicherplatz.einheit', { name })}>
-          <option value="prozent">{t('werkbank.speicherplatz.frei-2')}</option>
-          <option value="gb">{t('werkbank.speicherplatz.gb-frei')}</option>
-        </select>
-      </span>
-    </label>
+    <Feld beschriftung={name} hinweis={hilfe}>
+      {(v) => (
+        <span className="schwellenfeld">
+          <input {...v} type="number" min={0} step={0.5} max={wert.einheit === 'prozent' ? 90 : 100000} value={wert.wert} onChange={(e) => aendern({ ...wert, wert: Number(e.target.value) })} />
+          <select value={wert.einheit} onChange={(e) => aendern({ ...wert, einheit: e.target.value as Schwelle['einheit'] })} aria-label={t('werkbank.speicherplatz.einheit', { name })}>
+            <option value="prozent">{t('werkbank.speicherplatz.frei-2')}</option>
+            <option value="gb">{t('werkbank.speicherplatz.gb-frei')}</option>
+          </select>
+        </span>
+      )}
+    </Feld>
   );
 }
 
@@ -110,7 +113,7 @@ export function SpeicherplatzPanel({ z, nachAenderung, auslastung, unten }: { z:
       {s.wartungBeenden && (
         <div className="hinweis gut hinweiszeile">
           <p>{tn('werkbank.speicherplatz.der-wartungsmodus-wegen-des', { b: <strong>{t('werkbank.speicherplatz.wieder-frei', { wert: Number.isFinite(minFrei) ? platz(minFrei) : t('werkbank.speicherplatz.genug-platz') })}</strong> })}</p>
-          <button type="button" className="knopf primaer klein" disabled={laeuft} onClick={() => void wartungBeenden()}>{t('werkbank.speicherplatz.wartung-beenden')}</button>
+          <Knopf art="haupt" groesse="klein" gesperrt={laeuft} onClick={wartungBeenden}>{t('werkbank.speicherplatz.wartung-beenden')}</Knopf>
         </div>
       )}
 
@@ -162,7 +165,7 @@ export function SpeicherplatzPanel({ z, nachAenderung, auslastung, unten }: { z:
         {s.vorschau && s.vorschau.anzahl > 0 && <p className="leise klein">{t('werkbank.speicherplatz.davon-vorschaubilder-mit-sie', { zahl: s.vorschau.anzahl.toLocaleString(gebietsschema()), platz: platz(s.vorschau.bytes) })}</p>}
         <div className="zeile-zwischen">
           <p className="leise klein">{t('werkbank.speicherplatz.gemessen-uhr', { uhrzeit: new Date(s.gemessen).toLocaleTimeString(gebietsschema(), { timeStyle: 'short' }) })}</p>
-          <button type="button" className="knopf klein" onClick={() => void z.laden()}>{t('werkbank.speicherplatz.neu-messen')}</button>
+          <Knopf groesse="klein" onClick={() => z.laden()}>{t('werkbank.speicherplatz.neu-messen')}</Knopf>
         </div>
       </section>
 

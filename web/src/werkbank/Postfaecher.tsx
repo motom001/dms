@@ -1,3 +1,4 @@
+import { Symbol } from '../Symbol';
 import { t, tn } from '../sprache';
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { api, type OAuthAnbieter, type OAuthAppEingabe, type OAuthAppsStand, type OAuthStatus, type PostfachAnsicht, type PostfachEingabe } from '../api';
@@ -6,9 +7,8 @@ import { geheZu, Link, loeseWache } from '../ort';
 import { Speicherleiste, useEntwurf, useGespeichertNachziehen } from '../Speicherleiste';
 import { Hilfe } from '../Hilfe';
 import { Listenkopf } from '../Listenkopf';
-import { rueckfrage } from '../rueckfrage';
 import { gebietsschema } from '../../../shared/src/sprache';
-import { GeloeschteEintraege, Bereich, Fassungen, fehlerBereiche, Knopf, KnopfLink, Schalter, useBereiche, type BereichListe, type Klappe, type KnopfErgebnis } from '../bausteine';
+import { Bereich, Fassungen, fehlerBereiche, Feld, GeloeschteEintraege, HakenFeld, Knopf, KnopfLink, Schalter, useBereiche, type BereichListe, type Klappe, type KnopfErgebnis } from '../bausteine';
 
 /**
  * Werkbank → Postfächer (#196): Mails per IMAP abholen, jede Mail wird neue Post.
@@ -189,12 +189,12 @@ export function PostfachEditor({ z, id }: { z: PostfachZustand; id: string }) {
           kurz={[e.name, e.aktiv ? t('werkbank.postfaecher.bereich.an') : t('werkbank.postfaecher.aus')].filter(Boolean).join(' · ')}>
           <Schalter id="pf-aktiv" an={e.aktiv} setze={(an) => setze({ aktiv: an })} beschriftung={t('werkbank.postfaecher.schalter')} />
           <div className="raster">
-            <label className="eigenschaft"><span>{t('werkbank.postfaecher.name')}</span><input id="pf-name" value={e.name} maxLength={80} placeholder={t('werkbank.postfaecher.z-b-rechnungen')} onChange={(x) => setze({ name: x.target.value })} /></label>
-            <label className="eigenschaft"><span>{tn('werkbank.postfaecher.fuer', { klein: <small>{t('werkbank.postfaecher.optional-steht-an-jeder')}</small> })}</span>
+            <Feld beschriftung={t('werkbank.postfaecher.name')}><input id="pf-name" value={e.name} maxLength={80} placeholder={t('werkbank.postfaecher.z-b-rechnungen')} onChange={(x) => setze({ name: x.target.value })} /></Feld>
+            <Feld beschriftung={t('werkbank.postfaecher.fuer')} optional hinweis={t('werkbank.postfaecher.optional-steht-an-jeder')}>
               <select id="pf-fuer" value={e.fuer ?? ''} onChange={(x) => setze({ fuer: x.target.value || null })}>
                 <option value="">{t('werkbank.postfaecher.niemand')}</option>
                 {d.personen.filter((p) => p.aktiv !== false).map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-              </select></label>
+              </select></Feld>
           </div>
         </Bereich>
         <Verbindung e={e} vorhanden={vorhanden} setze={setze} bestaetigt={bestaetigt} setBestaetigt={setBestaetigt} klappe={klappe('verbindung')} testen={testen} />
@@ -212,18 +212,17 @@ export function PostfachEditor({ z, id }: { z: PostfachZustand; id: string }) {
         <Bereich id="abholen" titel={t('werkbank.postfaecher.bereich.abholen')} klappe={klappe('abholen')}
           kurz={t('werkbank.postfaecher.bereich.abholen.kurz', { ordner: e.ordner, anzahl: e.abstand })}>
           <div className="raster">
-            <label className="eigenschaft"><span>{t('werkbank.postfaecher.ordner')}</span><input id="pf-ordner" value={e.ordner} onChange={(x) => setze({ ordner: x.target.value })} /></label>
-            <label className="eigenschaft"><span>{tn('werkbank.postfaecher.abrufabstand', { klein: <small>{t('werkbank.postfaecher.in-minuten')}</small> })}</span><input id="pf-abstand" type="number" min={1} max={1440} value={e.abstand} onChange={(x) => setze({ abstand: Number(x.target.value) })} /></label>
-            <label className="eigenschaft"><span>{tn('werkbank.postfaecher.nur-von-diesen-absendern', { klein: <small>{t('werkbank.postfaecher.adressen-oder-domains-durch')}</small> })}</span>
-              <input id="pf-absender" value={Array.isArray(e.absender) ? e.absender.join(', ') : e.absender} placeholder={t('werkbank.postfaecher.rechnung-stadtwerke-example-bank')} onChange={(x) => setze({ absender: x.target.value })} /></label>
-            <label className="eigenschaft"><span>{t('werkbank.postfaecher.nach-dem-uebernehmen')}</span>
+            <Feld beschriftung={t('werkbank.postfaecher.ordner')}><input id="pf-ordner" value={e.ordner} onChange={(x) => setze({ ordner: x.target.value })} /></Feld>
+            <Feld beschriftung={t('werkbank.postfaecher.abrufabstand')} hinweis={t('werkbank.postfaecher.in-minuten')}><input id="pf-abstand" type="number" min={1} max={1440} value={e.abstand} onChange={(x) => setze({ abstand: Number(x.target.value) })} /></Feld>
+            <Feld beschriftung={t('werkbank.postfaecher.nur-von-diesen-absendern')} hinweis={t('werkbank.postfaecher.adressen-oder-domains-durch')}><input id="pf-absender" value={Array.isArray(e.absender) ? e.absender.join(', ') : e.absender} placeholder={t('werkbank.postfaecher.rechnung-stadtwerke-example-bank')} onChange={(x) => setze({ absender: x.target.value })} /></Feld>
+            <Feld beschriftung={t('werkbank.postfaecher.nach-dem-uebernehmen')}>
               <select id="pf-nachher" value={e.nachher} onChange={(x) => setze({ nachher: x.target.value as PostfachEingabe['nachher'] })}>
                 <option value="verschieben">{t('werkbank.postfaecher.in-einen-ordner-verschieben')}</option><option value="gelesen">{t('werkbank.postfaecher.nur-als-gelesen-markieren')}</option><option value="loeschen">{t('werkbank.postfaecher.loeschen')}</option>
-              </select></label>
-            {e.nachher === 'verschieben' && <label className="eigenschaft"><span>{tn('werkbank.postfaecher.ordner-fuer-uebernommenes', { klein: <small>{t('werkbank.postfaecher.wird-bei-bedarf-angelegt')}</small> })}</span><input id="pf-zielordner" value={e.zielordner} onChange={(x) => setze({ zielordner: x.target.value })} /></label>}
+              </select></Feld>
+            {e.nachher === 'verschieben' && <Feld beschriftung={t('werkbank.postfaecher.ordner-fuer-uebernommenes')} hinweis={t('werkbank.postfaecher.wird-bei-bedarf-angelegt')}><input id="pf-zielordner" value={e.zielordner} onChange={(x) => setze({ zielordner: x.target.value })} /></Feld>}
           </div>
-          <label className="haken"><input id="pf-anhang" type="checkbox" checked={e.nurMitAnhang} onChange={(x) => setze({ nurMitAnhang: x.target.checked })} /><span>{tn('werkbank.postfaecher.nur-mails-mit-anhang', { klein: <small className="leise">{t('werkbank.postfaecher.andere-bleiben-unveraendert-im')}</small> })}</span></label>
-          <label className="haken"><input id="pf-original" type="checkbox" checked={e.original} onChange={(x) => setze({ original: x.target.checked })} /><span>{t('werkbank.postfaecher.original-mail-als-eml')}</span></label>
+          <HakenFeld beschriftung={t('werkbank.postfaecher.nur-mails-mit-anhang')} hinweis={t('werkbank.postfaecher.andere-bleiben-unveraendert-im')}><input id="pf-anhang" type="checkbox" checked={e.nurMitAnhang} onChange={(x) => setze({ nurMitAnhang: x.target.checked })} /></HakenFeld>
+          <HakenFeld beschriftung={t('werkbank.postfaecher.original-mail-als-eml')}><input id="pf-original" type="checkbox" checked={e.original} onChange={(x) => setze({ original: x.target.checked })} /></HakenFeld>
         </Bereich>
       </form>
       {vorhanden && <PostfachStand p={vorhanden} klappe={klappe('stand')} geaendert={ent.geaendert} abrufen={abrufen} />}
@@ -246,21 +245,21 @@ function Verbindung({ e, vorhanden, setze, bestaetigt, setBestaetigt, klappe, te
     <Bereich id="verbindung" titel={t('werkbank.postfaecher.bereich.verbindung')} klappe={klappe}
       kurz={[e.benutzer, e.server, e.anmeldung === 'oauth' ? t('werkbank.postfaecher.oauth-2-0') : ''].filter(Boolean).join(' · ')}>
       <div className="raster">
-        <label className="eigenschaft"><span>{t('werkbank.postfaecher.server')}</span><input id="pf-server" value={e.server} placeholder="imap.example.org" onChange={(x) => setze({ server: x.target.value.trim() })} /></label>
-        <label className="eigenschaft"><span>{t('werkbank.postfaecher.verschluesselung')}</span>
+        <Feld beschriftung={t('werkbank.postfaecher.server')}><input id="pf-server" value={e.server} placeholder="imap.example.org" onChange={(x) => setze({ server: x.target.value.trim() })} /></Feld>
+        <Feld beschriftung={t('werkbank.postfaecher.verschluesselung')}>
           <select id="pf-verschluesselung" value={e.verschluesselung} onChange={(x) => { const v = x.target.value as PostfachEingabe['verschluesselung']; setze({ verschluesselung: v, port: PORT[v] }); }}>
             <option value="ssl">{t('werkbank.postfaecher.ssl-tls-meist-port')}</option><option value="starttls">{t('werkbank.postfaecher.starttls-meist-port-143')}</option><option value="keine" disabled={e.anmeldung === 'oauth'}>{t('werkbank.postfaecher.keine-unsicher')}</option>
-          </select></label>
-        <label className="eigenschaft"><span>{t('werkbank.postfaecher.port')}</span><input id="pf-port" type="number" min={1} max={65535} value={e.port} onChange={(x) => setze({ port: Number(x.target.value) })} /></label>
-        <label className="eigenschaft"><span>{tn('werkbank.postfaecher.anmeldung', { hilfe: <Hilfe ort="werkbank.postfaecher.oauth" /> })}</span>
+          </select></Feld>
+        <Feld beschriftung={t('werkbank.postfaecher.port')}><input id="pf-port" type="number" min={1} max={65535} value={e.port} onChange={(x) => setze({ port: Number(x.target.value) })} /></Feld>
+        <Feld beschriftung={t('werkbank.postfaecher.anmeldung')} hilfe="werkbank.postfaecher.oauth">
           <select id="pf-anmeldung" value={e.anmeldung ?? 'passwort'} onChange={(x) => {
             const anmeldung = x.target.value as 'passwort' | 'oauth';
             const vor = ANBIETER[e.anbieter ?? 'microsoft'].server;
             setze({ anmeldung, ...(anmeldung === 'oauth' && vor && !e.server ? { server: vor, port: 993, verschluesselung: 'ssl' } : anmeldung === 'oauth' && e.verschluesselung === 'keine' ? { verschluesselung: 'ssl', port: 993 } : {}) });
           }}>
             <option value="passwort">{t('werkbank.postfaecher.passwort-oder-app-passwort')}</option><option value="oauth">{t('werkbank.postfaecher.oauth-2-0-microsoft')}</option>
-          </select></label>
-        {e.anmeldung === 'oauth' && <label className="eigenschaft"><span>{t('werkbank.postfaecher.anbieter')}</span>
+          </select></Feld>
+        {e.anmeldung === 'oauth' && <Feld beschriftung={t('werkbank.postfaecher.anbieter')}>
           <select id="pf-anbieter" value={e.anbieter ?? 'microsoft'} onChange={(x) => {
             const anbieter = x.target.value as OAuthAnbieter;
             const vor = ANBIETER[anbieter].server;
@@ -269,14 +268,14 @@ function Verbindung({ e, vorhanden, setze, bestaetigt, setBestaetigt, klappe, te
             setze({ anbieter, ...(ersetzen ? { server: vor, port: 993, verschluesselung: 'ssl' } : {}) });
           }}>
             {(Object.keys(ANBIETER) as OAuthAnbieter[]).map((a) => <option key={a} value={a}>{ANBIETER[a].name}</option>)}
-          </select></label>}
-        <label className="eigenschaft"><span>{tn('werkbank.postfaecher.benutzername', { wert: e.anmeldung === 'oauth' && <small>{t('werkbank.postfaecher.die-mail-adresse-des')}</small> })}</span><input id="pf-benutzer" value={e.benutzer} autoComplete="off" onChange={(x) => setze({ benutzer: x.target.value })} /></label>
-        {e.anmeldung !== 'oauth' && <label className="eigenschaft"><span>{tn('werkbank.postfaecher.passwort', { klein: <small>{vorhanden?.passwortGesetzt ? (gleicherServer(e, vorhanden) ? t('werkbank.postfaecher.gespeichert-leer-lassen-um') : t('werkbank.postfaecher.server-geaendert-bitte-neu')) : t('werkbank.postfaecher.wird-verschluesselt-gespeichert')}</small> })}</span>
-          <input id="pf-passwort" type="password" autoComplete="new-password" value={e.passwort ?? ''} onChange={(x) => setze({ passwort: x.target.value })} /></label>}
+          </select></Feld>}
+        <Feld beschriftung={t('werkbank.postfaecher.benutzername')} hinweis={e.anmeldung === 'oauth' && t('werkbank.postfaecher.die-mail-adresse-des')}><input id="pf-benutzer" value={e.benutzer} autoComplete="off" onChange={(x) => setze({ benutzer: x.target.value })} /></Feld>
+        {e.anmeldung !== 'oauth' && <Feld beschriftung={t('werkbank.postfaecher.passwort')} hinweis={vorhanden?.passwortGesetzt ? (gleicherServer(e, vorhanden) ? t('werkbank.postfaecher.gespeichert-leer-lassen-um') : t('werkbank.postfaecher.server-geaendert-bitte-neu')) : t('werkbank.postfaecher.wird-verschluesselt-gespeichert')}>
+          <input id="pf-passwort" type="password" autoComplete="new-password" value={e.passwort ?? ''} onChange={(x) => setze({ passwort: x.target.value })} /></Feld>}
       </div>
       {e.verschluesselung === 'keine' && vorhanden?.verschluesselung !== 'keine' && (
         <div className="hinweis schlecht"><p>{t('werkbank.postfaecher.ohne-verschluesselung-gehen-passwort')}</p>
-          <label className="haken"><input id="pf-unsicher" type="checkbox" checked={bestaetigt} onChange={(x) => setBestaetigt(x.target.checked)} /><span>{t('werkbank.postfaecher.trotzdem-ohne-verschluesselung')}</span></label></div>
+          <HakenFeld beschriftung={t('werkbank.postfaecher.trotzdem-ohne-verschluesselung')}><input id="pf-unsicher" type="checkbox" checked={bestaetigt} onChange={(x) => setBestaetigt(x.target.checked)} /></HakenFeld></div>
       )}
       <div className="knoepfe"><Knopf onClick={testen} laeuftText={t('werkbank.postfaecher.verbinde')}>{t('werkbank.postfaecher.verbindung-testen')}</Knopf></div>
     </Bereich>
@@ -378,7 +377,7 @@ export function OAuthBereich({ anbieter, ziel, geaendert, setMeldung, versand = 
     try { setGeraet(await ziel.geraet()); setMeldung(undefined); } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); }
   }
   async function abmelden() {
-    if (!ziel || !(await rueckfrage({ titel: t('werkbank.postfaecher.anmeldung-entfernen'), text: versand ? t('werkbank.mail.oauth.abmelden.text') : t('werkbank.postfaecher.ablago-loescht-die-gespeicherten'), ja: t('werkbank.postfaecher.abmelden'), gefahr: true }))) return;
+    if (!ziel) return;
     try { await ziel.abmelden(); setMeldung({ art: 'gut', text: t('werkbank.postfaecher.abgemeldet') }); } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); }
   }
 
@@ -391,15 +390,15 @@ export function OAuthBereich({ anbieter, ziel, geaendert, setMeldung, versand = 
       <form onSubmit={(x) => { x.preventDefault(); void appSpeichern(); }} onKeyDown={appEnt.tasten}>
       <h3 className="h4">{tn('werkbank.postfaecher.app-beim-anbieter', { klein: <small className="leise">{versand ? t('werkbank.mail.oauth.app.gilt') : t('werkbank.postfaecher.gilt-fuer-alle-postfaecher')}</small> })}</h3>
       <div className="raster">
-        <label className="eigenschaft"><span>{tn('werkbank.postfaecher.client-id', { klein: <small>{t('werkbank.postfaecher.anwendungs-id')}</small> })}</span><input id="pf-oauth-client" value={app.clientId} autoComplete="off" onChange={(x) => setApp({ ...app, clientId: x.target.value })} /></label>
-        <label className="eigenschaft"><span>{tn('werkbank.postfaecher.client-geheimnis', { klein: <small>{gespeichert?.secretGesetzt ? t('werkbank.postfaecher.gespeichert-leer-lassen-um') : t('werkbank.postfaecher.wird-verschluesselt-gespeichert-leer')}</small> })}</span>
-          <input id="pf-oauth-geheimnis" type="password" autoComplete="new-password" value={app.clientSecret ?? ''} onChange={(x) => setApp({ ...app, clientSecret: x.target.value })} /></label>
-        {anbieter === 'microsoft' && <label className="eigenschaft"><span>{tn('werkbank.postfaecher.mandant-tenant', { klein: <small>{t('werkbank.postfaecher.common-consumers-nur-outlook')}</small> })}</span><input id="pf-oauth-tenant" value={app.tenant ?? ''} onChange={(x) => setApp({ ...app, tenant: x.target.value.trim() })} /></label>}
+        <Feld beschriftung={t('werkbank.postfaecher.client-id')} hinweis={t('werkbank.postfaecher.anwendungs-id')}><input id="pf-oauth-client" value={app.clientId} autoComplete="off" onChange={(x) => setApp({ ...app, clientId: x.target.value })} /></Feld>
+        <Feld beschriftung={t('werkbank.postfaecher.client-geheimnis')} hinweis={gespeichert?.secretGesetzt ? t('werkbank.postfaecher.gespeichert-leer-lassen-um') : t('werkbank.postfaecher.wird-verschluesselt-gespeichert-leer')}>
+          <input id="pf-oauth-geheimnis" type="password" autoComplete="new-password" value={app.clientSecret ?? ''} onChange={(x) => setApp({ ...app, clientSecret: x.target.value })} /></Feld>
+        {anbieter === 'microsoft' && <Feld beschriftung={t('werkbank.postfaecher.mandant-tenant')} hinweis={t('werkbank.postfaecher.common-consumers-nur-outlook')}><input id="pf-oauth-tenant" value={app.tenant ?? ''} onChange={(x) => setApp({ ...app, tenant: x.target.value.trim() })} /></Feld>}
         {anbieter === 'andere' && <>
-          <label className="eigenschaft"><span>{t('werkbank.postfaecher.autorisierungs-endpunkt')}</span><input id="pf-oauth-autorisierung" value={app.autorisierung ?? ''} placeholder="https://…/authorize" onChange={(x) => setApp({ ...app, autorisierung: x.target.value.trim() })} /></label>
-          <label className="eigenschaft"><span>{t('werkbank.postfaecher.token-endpunkt')}</span><input id="pf-oauth-token" value={app.token ?? ''} placeholder="https://…/token" onChange={(x) => setApp({ ...app, token: x.target.value.trim() })} /></label>
-          <label className="eigenschaft"><span>{tn('werkbank.postfaecher.geraetecode-endpunkt', { klein: <small>{t('werkbank.postfaecher.optional')}</small> })}</span><input id="pf-oauth-geraet" value={app.geraet ?? ''} onChange={(x) => setApp({ ...app, geraet: x.target.value.trim() })} /></label>
-          <label className="eigenschaft"><span>{tn('werkbank.postfaecher.bereich-scope', { klein: <small>{t('werkbank.postfaecher.mit-leerzeichen-getrennt-meist')}</small> })}</span><input id="pf-oauth-bereich" value={app.bereich ?? ''} onChange={(x) => setApp({ ...app, bereich: x.target.value })} /></label>
+          <Feld beschriftung={t('werkbank.postfaecher.autorisierungs-endpunkt')}><input id="pf-oauth-autorisierung" value={app.autorisierung ?? ''} placeholder="https://…/authorize" onChange={(x) => setApp({ ...app, autorisierung: x.target.value.trim() })} /></Feld>
+          <Feld beschriftung={t('werkbank.postfaecher.token-endpunkt')}><input id="pf-oauth-token" value={app.token ?? ''} placeholder="https://…/token" onChange={(x) => setApp({ ...app, token: x.target.value.trim() })} /></Feld>
+          <Feld beschriftung={t('werkbank.postfaecher.geraetecode-endpunkt')} optional><input id="pf-oauth-geraet" value={app.geraet ?? ''} onChange={(x) => setApp({ ...app, geraet: x.target.value.trim() })} /></Feld>
+          <Feld beschriftung={t('werkbank.postfaecher.bereich-scope')} hinweis={t('werkbank.postfaecher.mit-leerzeichen-getrennt-meist')}><input id="pf-oauth-bereich" value={app.bereich ?? ''} onChange={(x) => setApp({ ...app, bereich: x.target.value })} /></Feld>
         </>}
       </div>
       <p className="leise klein">{t('werkbank.postfaecher.umleitungs-uri-fuer-die')}{' '}{stand?.rueckruf ? <><code>{stand.rueckruf}</code>{!rueckrufOk(stand.rueckruf) && t('werkbank.postfaecher.ohne-https-geht-die')}</> : <>{tn('werkbank.postfaecher.erst-nach-eintrag-der', { link: <Link to="/werkbank/betrieb" className="verweis">{t('werkbank.postfaecher.e-mail-und-adresse')}</Link>, wert: ANBIETER[anbieter].geraet ? t('werkbank.postfaecher.oder-mit-geraetecode-anmelden') : '' })}</>}</p>
@@ -413,11 +412,11 @@ export function OAuthBereich({ anbieter, ziel, geaendert, setMeldung, versand = 
             <dt>{t('werkbank.postfaecher.zustand')}</dt><dd>{o?.zustand === 'ok' ? t('werkbank.postfaecher.angemeldet-am', { zeitpunkt: zeitpunkt(o.angemeldetAm), wert: o.von ? t('werkbank.postfaecher.von', { von: o.von }) : '' }) : o?.zustand === 'abgelaufen' ? <strong>{t('werkbank.postfaecher.abgelaufen-oder-entzogen-bitte')}</strong> : t('werkbank.postfaecher.nicht-angemeldet')}</dd>
             {o?.fehler && <><dt>{t('werkbank.postfaecher.grund')}</dt><dd>{o.fehler}</dd></>}
           </dl>
-          {geraet && <div className="hinweis info" role="status"><p>{tn('werkbank.postfaecher.oeffne-auf-einem-beliebigen', { link: <a href={geraet.adresse} target="_blank" rel="noreferrer noopener" className="verweis">{geraet.adresse} ↗</a>, b: <strong className="mono">{geraet.code}</strong>, zeit: zeit(geraet.bis) })}</p></div>}
+          {geraet && <div className="hinweis info" role="status"><p>{tn('werkbank.postfaecher.oeffne-auf-einem-beliebigen', { link: <a href={geraet.adresse} target="_blank" rel="noreferrer noopener" className="verweis">{geraet.adresse} <Symbol name="extern" /></a>, b: <strong className="mono">{geraet.code}</strong>, zeit: zeit(geraet.bis) })}</p></div>}
           <div className="knoepfe">
-            <button type="button" className="knopf primaer" disabled={!gespeichert?.clientId || !stand?.rueckruf || !rueckrufOk(stand.rueckruf) || appEnt.geaendert} title={!stand?.rueckruf ? t('werkbank.postfaecher.ohne-adresse-von-ablago') : !rueckrufOk(stand.rueckruf) ? t('werkbank.postfaecher.nur-mit-https-adresse') : appEnt.geaendert ? t('werkbank.postfaecher.erst-die-app-speichern') : undefined} onClick={() => void imBrowser()}>{t('werkbank.postfaecher.im-browser-anmelden')}</button>
-            {ANBIETER[anbieter].geraet && <button type="button" className="knopf" disabled={!gespeichert?.clientId || !!geraet || appEnt.geaendert} onClick={() => void mitGeraetecode()}>{t('werkbank.postfaecher.mit-geraetecode-anmelden')}</button>}
-            {o && o.zustand !== 'abgemeldet' && <button type="button" className="knopf" onClick={() => void abmelden()}>{t('werkbank.postfaecher.abmelden')}</button>}
+            <Knopf art="haupt" gesperrt={!gespeichert?.clientId || (!stand?.rueckruf ? t('werkbank.postfaecher.ohne-adresse-von-ablago') : !rueckrufOk(stand.rueckruf) ? t('werkbank.postfaecher.nur-mit-https-adresse') : appEnt.geaendert ? t('werkbank.postfaecher.erst-die-app-speichern') : false)} onClick={() => void imBrowser()}>{t('werkbank.postfaecher.im-browser-anmelden')}</Knopf>
+            {ANBIETER[anbieter].geraet && <Knopf gesperrt={!gespeichert?.clientId || !!geraet || appEnt.geaendert} onClick={() => void mitGeraetecode()}>{t('werkbank.postfaecher.mit-geraetecode-anmelden')}</Knopf>}
+            {o && o.zustand !== 'abgemeldet' && <Knopf art="gefahr" symbol="abmelden" onClick={() => void abmelden()} rueckfrage={{ titel: t('werkbank.postfaecher.anmeldung-entfernen'), text: versand ? t('werkbank.mail.oauth.abmelden.text') : t('werkbank.postfaecher.ablago-loescht-die-gespeicherten'), ja: t('werkbank.postfaecher.abmelden') }}>{t('werkbank.postfaecher.abmelden')}</Knopf>}
           </div>
         </>
       )}

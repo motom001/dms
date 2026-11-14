@@ -3,8 +3,7 @@ import { Symbol } from '../Symbol';
 import { BESCHREIBUNG_LAENGE, LIZENZ_SCHLUESSEL, LIZENZEN_ALPHABETISCH, lizenzPasst, LIZENZNAME_LAENGE, naechsteVersionen, paketIdAus, VERSIONSARTEN, type ErstellenStand, type Lizenz, type PaketEntwurf, type PaketErstellenEingabe, type PaketPruefung, type VersionsArt } from '../../../shared/src/paketerstellung';
 import { t, tn } from '../sprache';
 import { api, ApiFehler } from '../api';
-import { geheZu } from '../ort';
-import { PaketChip } from '../bausteine';
+import { Feld, FeldGruppe, HakenFeld, Knopf, KnopfLink, PaketChip, Suchfeld } from '../bausteine';
 import { gebietsschema } from '../../../shared/src/sprache';
 import { Kopf } from './Kopf';
 
@@ -123,7 +122,7 @@ export function PaketErstellen({ onErstellt }: { onErstellt?: () => void } = {})
       <ol className="assistent-schritte" aria-label={t('werkbank.paketerstellen.schritt-von', { wert: schritt + 1, SCHRITTE: SCHRITTE.length, SCHRITTE2: SCHRITTE[schritt] })}>
         {SCHRITTE.map((s, i) => (
           <li key={s} className={i < schritt ? 'erledigt' : i === schritt ? 'aktiv' : ''} aria-current={i === schritt ? 'step' : undefined}>
-            <button type="button" className="textknopf" onClick={() => setSchritt(i)}><span className="nr" aria-hidden="true">{i < schritt ? <Symbol name="haken" /> : i + 1}</span><span className="name">{s}</span></button>
+            <Knopf art="link" onClick={() => setSchritt(i)}><span className="nr" aria-hidden="true">{i < schritt ? <Symbol name="haken" /> : i + 1}</span><span className="name">{s}</span></Knopf>
           </li>
         ))}
       </ol>
@@ -141,7 +140,7 @@ export function PaketErstellen({ onErstellt }: { onErstellt?: () => void } = {})
               <div className="hinweis warn">
                 <p>{t('werkbank.paketerstellen.nicht-gewaehlt-aber-gebraucht')}</p>
                 <ul>{p.fehlend.map((f) => (
-                  <li key={f.id}>{f.art === 'typ' ? t('werkbank.paketerstellen.mappentyp') : t('werkbank.paketerstellen.ansicht')} „{f.name}“ <span className="leise">({f.grund})</span> <button type="button" className="textknopf" onClick={() => umschalten(f.art === 'typ' ? 'typen' : 'sichten', f.id, true)}>{t('werkbank.paketerstellen.mit-aufnehmen')}</button></li>
+                  <li key={f.id}>{f.art === 'typ' ? t('werkbank.paketerstellen.mappentyp') : t('werkbank.paketerstellen.ansicht')} „{f.name}“ <span className="leise">({f.grund})</span> <Knopf art="link" onClick={() => umschalten(f.art === 'typ' ? 'typen' : 'sichten', f.id, true)}>{t('werkbank.paketerstellen.mit-aufnehmen')}</Knopf></li>
                 ))}</ul>
               </div>
             )}
@@ -156,15 +155,24 @@ export function PaketErstellen({ onErstellt }: { onErstellt?: () => void } = {})
         <section className="blatt" aria-label={t('werkbank.paketerstellen.angaben')}>
           <h2 className="h3">{t('werkbank.paketerstellen.angaben')}</h2>
           <div className="raster">
-          <label className="eigenschaft"><span>{t('werkbank.paketerstellen.name')}</span><input value={e.name} maxLength={60} onChange={(x) => setze({ name: x.target.value, ...(idAuto ? { id: paketIdAus(x.target.value) } : {}) })} /></label>
-          <label className="eigenschaft"><span>{t('werkbank.paketerstellen.id')}</span><input value={e.id} maxLength={20} onChange={(x) => { setIdAuto(false); setze({ id: x.target.value }); }} />
-            <small className="leise">{tn('werkbank.paketerstellen.kleinbuchstaben-ziffern-und-z', { code: <code>{t('werkbank.paketerstellen.vertraege-familie')}</code> })}</small></label>
-          <label className="eigenschaft breit"><span>{t('werkbank.paketerstellen.beschreibung')}</span><textarea rows={3} value={e.beschreibung} maxLength={BESCHREIBUNG_LAENGE.max} onChange={(x) => setze({ beschreibung: x.target.value })} />
-            <small className="leise">{t('werkbank.paketerstellen.ein-zwei-saetze-was', { min: BESCHREIBUNG_LAENGE.min, max: BESCHREIBUNG_LAENGE.max })}</small></label>
-          <label className="eigenschaft"><span>{t('werkbank.paketerstellen.autor')}</span><input value={e.autor.name} onChange={(x) => setze({ autor: { ...e.autor, name: x.target.value } })} /></label>
-          <label className="eigenschaft"><span>{t('werkbank.paketerstellen.github-name-optional')}</span><input value={e.autor.github} onChange={(x) => setze({ autor: { ...e.autor, github: x.target.value } })} /></label>
-          <label className="eigenschaft breit"><span>{t('werkbank.paketerstellen.was-ist-neu-in')}</span><textarea rows={2} value={e.aenderungen} onChange={(x) => setze({ aenderungen: x.target.value })} placeholder={t('werkbank.paketerstellen.z-b-feld-kundennummer')} />
-            <small className="leise">{t('werkbank.paketerstellen.steht-im-changelog-leer')}</small></label>
+          <Feld beschriftung={t('werkbank.paketerstellen.name')}>
+            <input value={e.name} maxLength={60} onChange={(x) => setze({ name: x.target.value, ...(idAuto ? { id: paketIdAus(x.target.value) } : {}) })} />
+          </Feld>
+          <Feld beschriftung={t('werkbank.paketerstellen.id')} hinweis={tn('werkbank.paketerstellen.kleinbuchstaben-ziffern-und-z', { code: <code>{t('werkbank.paketerstellen.vertraege-familie')}</code> })}>
+            <input value={e.id} maxLength={20} onChange={(x) => { setIdAuto(false); setze({ id: x.target.value }); }} />
+          </Feld>
+          <Feld beschriftung={t('werkbank.paketerstellen.beschreibung')} hinweis={t('werkbank.paketerstellen.ein-zwei-saetze-was', { min: BESCHREIBUNG_LAENGE.min, max: BESCHREIBUNG_LAENGE.max })} className="breit">
+            <textarea rows={3} value={e.beschreibung} maxLength={BESCHREIBUNG_LAENGE.max} onChange={(x) => setze({ beschreibung: x.target.value })} />
+          </Feld>
+          <Feld beschriftung={t('werkbank.paketerstellen.autor')}>
+            <input value={e.autor.name} onChange={(x) => setze({ autor: { ...e.autor, name: x.target.value } })} />
+          </Feld>
+          <Feld beschriftung={t('werkbank.paketerstellen.github-name-optional')} optional>
+            <input value={e.autor.github} onChange={(x) => setze({ autor: { ...e.autor, github: x.target.value } })} />
+          </Feld>
+          <Feld beschriftung={t('werkbank.paketerstellen.was-ist-neu-in')} hinweis={t('werkbank.paketerstellen.steht-im-changelog-leer')} className="breit">
+            <textarea rows={2} value={e.aenderungen} onChange={(x) => setze({ aenderungen: x.target.value })} placeholder={t('werkbank.paketerstellen.z-b-feld-kundennummer')} />
+          </Feld>
           </div>
           <VersionWahl e={e} setze={setze} lage={lage ?? null} experte={experte} hochgeladen={hochgeladen} hochladen={(d) => void letzteHochladen(d)} />
           <LizenzWahl e={e} setze={setze} />
@@ -184,22 +192,22 @@ export function PaketErstellen({ onErstellt }: { onErstellt?: () => void } = {})
             <Inhalt p={p} />
             {e.lizenzArt && e.lizenzArt !== 'frei' && <div className="hinweis warn"><p>{t('pakete.erstellen.lizenz.nichtKatalog')}</p></div>}
           </> : <div className="hinweis schlecht stapel"><p>{t('pakete.erstellen.nochnicht')}</p><ul>{p.probleme.map((x) => <li key={x}>{x}</li>)}</ul></div>}
-          {fertig && <div className="hinweis gut" role="status"><p>{fertig} <button type="button" className="textknopf" onClick={() => e && geheZu(`/werkbank/pakete/${SELBST}${e.id}`)}>{t('pakete.erstellen.fertig.ansehen')}</button></p></div>}
+          {fertig && <div className="hinweis gut" role="status"><p>{fertig} <KnopfLink to={`/werkbank/pakete/${SELBST}${e.id}`} groesse="klein">{t('pakete.erstellen.fertig.ansehen')}</KnopfLink></p></div>}
         </section>
       )}
 
       {fehler && <div className="hinweis schlecht" role="alert"><p>{fehler}</p></div>}
 
       <div className="speicherleiste">
-        <button type="button" className="textknopf" onClick={() => geheZu('/werkbank/pakete')}>{t('werkbank.paketerstellen.abbrechen')}</button>
+        <KnopfLink to="/werkbank/pakete">{t('werkbank.paketerstellen.abbrechen')}</KnopfLink>
         <span className="status" role="status">{prueft ? t('werkbank.paketerstellen.pruefe') : p ? (p.einspielbar ? t('werkbank.paketerstellen.bereit-zum-erstellen') : t('werkbank.paketerstellen.punkte-offen', { anzahl: p.probleme.length })) : ''}</span>
         <div className="knoepfe">
-          {schritt > 0 && <button type="button" className="knopf" onClick={() => setSchritt(schritt - 1)}>{t('werkbank.paketerstellen.zurueck')}</button>}
+          {schritt > 0 && <Knopf onClick={() => setSchritt(schritt - 1)}>{t('werkbank.paketerstellen.zurueck')}</Knopf>}
           {schritt < SCHRITTE.length - 1
-            ? <button type="button" className="knopf primaer" disabled={schritt === 0 && frage} onClick={() => setSchritt(schritt + 1)}>{t('werkbank.paketerstellen.weiter')}</button>
+            ? <Knopf art="haupt" gesperrt={schritt === 0 && frage} onClick={() => setSchritt(schritt + 1)}>{t('werkbank.paketerstellen.weiter')}</Knopf>
             : <>
-              <button type="button" className="knopf" disabled={sendet || prueft || !p?.einspielbar} onClick={() => void erstellen(true)}>{t('pakete.erstellen.mitZip')}</button>
-              <button type="button" className="knopf primaer" disabled={sendet || prueft || !p?.einspielbar} onClick={() => void erstellen(false)}>{sendet ? t('werkbank.paketerstellen.erstelle') : t('pakete.erstellen.knopf')}</button>
+              <Knopf gesperrt={sendet || prueft || !p?.einspielbar} onClick={() => void erstellen(true)}>{t('pakete.erstellen.mitZip')}</Knopf>
+              <Knopf art="haupt" gesperrt={prueft || !p?.einspielbar} laeuft={sendet} laeuftText={t('werkbank.paketerstellen.erstelle')} onClick={() => void erstellen(false)}>{t('pakete.erstellen.knopf')}</Knopf>
             </>}
         </div>
       </div>
@@ -232,12 +240,12 @@ function NeuOderVersion({ stand, neu, version }: { stand: ErstellenStand; neu():
   return (
     <section className="blatt" aria-label={t('pakete.erstellen.frage.titel')}>
       <h2 className="h3">{t('pakete.erstellen.frage.titel')}</h2>
-      <div className="knoepfe"><button type="button" className="knopf primaer" onClick={neu}>{t('pakete.erstellen.frage.neu')}</button></div>
+      <div className="knoepfe"><Knopf art="haupt" onClick={neu}>{t('pakete.erstellen.frage.neu')}</Knopf></div>
       <p className="leise klein">{t('pakete.erstellen.frage.neuText')}</p>
       <h3 className="h4">{t('pakete.erstellen.frage.version')}</h3>
       <ul className="stapel">
         {liste.map((w) => (
-          <li key={w.id}><button type="button" className="textknopf" onClick={() => version(w)}>{t('pakete.erstellen.frage.versionVon', { name: w.name })}</button>
+          <li key={w.id}><Knopf art="link" onClick={() => version(w)}>{t('pakete.erstellen.frage.versionVon', { name: w.name })}</Knopf>
             <small className="leise"> {w.id} · {t('pakete.erstellen.frage.zuletzt', { version: w.version, datum: new Date(w.exportiert).toLocaleDateString(gebietsschema()) })}</small></li>
         ))}
       </ul>
@@ -269,9 +277,10 @@ function Auswahl({ stand, e, suche, setSuche, umschalten, mitDokumenten, pruefun
   }, [stand.sichten]);
   return (
     <>
-      <div className="zeile"><input type="search" placeholder={t('werkbank.paketerstellen.suchen')} aria-label={t('werkbank.paketerstellen.mappentypen-ansichten-und-wortlisten')} value={suche} onChange={(x) => setSuche(x.target.value)} /></div>
+      <Suchfeld wert={suche} setze={setSuche} beschriftung={t('werkbank.paketerstellen.mappentypen-ansichten-und-wortlisten')} platzhalter={t('werkbank.paketerstellen.suchen')} />
       <section className="blatt" aria-label={t('werkbank.paketerstellen.mappentypen')}>
         <h2 className="h3">{t('werkbank.paketerstellen.mappentypen')}</h2>
+        <FeldGruppe beschriftung={t('werkbank.paketerstellen.mappentypen')} beschriftungVerbergen>
         <ul className="stapel">
           {stand.typen.filter((eintrag) => passt(eintrag.name)).map((eintrag) => (
             <li key={eintrag.id}><label className="haken"><input type="checkbox" checked={e.typen.includes(eintrag.id)} onChange={(x) => umschalten('typen', eintrag.id, x.target.checked)} />
@@ -282,9 +291,11 @@ function Auswahl({ stand, e, suche, setSuche, umschalten, mitDokumenten, pruefun
           ))}
           {!stand.typen.length && <li className="leise">{t('werkbank.paketerstellen.keine-mappentypen')}</li>}
         </ul>
+        </FeldGruppe>
       </section>
       <section className="blatt" aria-label={t('werkbank.paketerstellen.ansichten')}>
         <h2 className="h3">{t('werkbank.paketerstellen.ansichten')}</h2>
+        <FeldGruppe beschriftung={t('werkbank.paketerstellen.ansichten')} beschriftungVerbergen>
         <ul className="stapel">
           {baum.filter(({ s: x }) => passt(x.name)).map(({ s: x, tiefe }) => (
             <li key={x.id} style={{ paddingLeft: `${s ? 0 : tiefe * 1.4}em` }}><label className="haken"><input type="checkbox" checked={e.sichten.includes(x.id)} onChange={(y) => umschalten('sichten', x.id, y.target.checked)} />
@@ -292,10 +303,12 @@ function Auswahl({ stand, e, suche, setSuche, umschalten, mitDokumenten, pruefun
           ))}
           {!stand.sichten.length && <li className="leise">{t('werkbank.paketerstellen.keine-ansichten')}</li>}
         </ul>
+        </FeldGruppe>
       </section>
       <section className="blatt" aria-label={t('werkbank.paketerstellen.wortlisten')}>
         <h2 className="h3">{t('werkbank.paketerstellen.wortlisten')}</h2>
         <p className="leise klein">{t('werkbank.paketerstellen.gleichbedeutende-woerter-fuer-die')}</p>
+        <FeldGruppe beschriftung={t('werkbank.paketerstellen.wortlisten')} beschriftungVerbergen>
         <ul className="stapel">
           {(stand.wortlisten ?? []).filter((g) => passt(g.woerter.join(' '))).map((g) => (
             <li key={g.id}><label className={`haken${g.paket ? ' grau' : ''}`}><input type="checkbox" disabled={!!g.paket} checked={!g.paket && (e.wortlisten ?? []).includes(g.id)} onChange={(x) => umschalten('wortlisten', g.id, x.target.checked)} />
@@ -303,6 +316,7 @@ function Auswahl({ stand, e, suche, setSuche, umschalten, mitDokumenten, pruefun
           ))}
           {!(stand.wortlisten ?? []).length && <li className="leise">{t('werkbank.paketerstellen.keine-wortlisten')}</li>}
         </ul>
+        </FeldGruppe>
       </section>
       <section className="blatt" aria-label={t('werkbank.paketerstellen.beispiel-mappen')}>
         <h2 className="h3">{t('werkbank.paketerstellen.beispiel-mappen-optional')}</h2>
@@ -310,16 +324,20 @@ function Auswahl({ stand, e, suche, setSuche, umschalten, mitDokumenten, pruefun
         {!pruefung ? <p className="leise klein">{t('werkbank.paketerstellen.lade')}</p> : !pruefung.beispielMappen.length ? <p className="leise klein">{t('werkbank.paketerstellen.waehle-zuerst-eigene-mappentypen')}</p> : pruefung.beispielMappen.map((b) => (
           <details key={b.typId} open={b.mappen.some((m) => e.beispiele.includes(m.id))}>
             <summary>{b.typ} <span className="leise klein">({b.mappen.filter((m) => e.beispiele.includes(m.id)).length} {' '}{t('werkbank.paketerstellen.von-gewaehlt', { mappen: b.mappen.length, wert: b.mehr ? '+' : '' })}</span></summary>
+            <FeldGruppe beschriftung={b.typ} beschriftungVerbergen>
             <ul className="stapel">
               {b.mappen.filter((m) => passt(m.titel)).map((m) => (
                 <li key={m.id}><label className="haken"><input type="checkbox" checked={e.beispiele.includes(m.id)} onChange={(x) => umschalten('beispiele', m.id, x.target.checked)} /><span>{m.titel}{m.demo && <> <span className="chip gut">{t('werkbank.paketerstellen.demo')}</span></>}</span></label></li>
               ))}
               {!b.mappen.length && <li className="leise klein">{t('werkbank.paketerstellen.keine-mappen')}</li>}
             </ul>
+            </FeldGruppe>
           </details>
         ))}
         {/* Beispiel-Dokumente (#878): nur auf ausdrücklichen Wunsch – Dokumente sind oft echt. */}
-        {e.beispiele.length > 0 && <label className="haken"><input type="checkbox" checked={!!e.beispielDokumente} onChange={(x) => mitDokumenten(x.target.checked)} /><span>{t('werkbank.paketerstellen.mit-dokumenten')}</span></label>}
+        {e.beispiele.length > 0 && <HakenFeld beschriftung={t('werkbank.paketerstellen.mit-dokumenten')}>
+          <input type="checkbox" checked={!!e.beispielDokumente} onChange={(x) => mitDokumenten(x.target.checked)} />
+        </HakenFeld>}
       </section>
     </>
   );
@@ -353,10 +371,12 @@ function VersionWahl({ e, setze, lage, experte, hochgeladen, hochladen }: {
   const opt = lage.dmsOptionen;
   return (
     <>
-      <fieldset className="eigenschaft breit">
-        <legend>{t('pakete.erstellen.version.titel')}</legend>
+      <FeldGruppe beschriftung={t('pakete.erstellen.version.titel')} className="breit">
+        <div className="haken-untereinander">
         {e.vonHand ? (
-          <label className="eigenschaft"><span>{t('pakete.erstellen.version.titel')}</span><input value={e.version} onChange={(x) => setze({ version: x.target.value })} /></label>
+          <Feld beschriftung={t('pakete.erstellen.version.titel')} beschriftungVerbergen>
+            <input value={e.version} onChange={(x) => setze({ version: x.target.value })} />
+          </Feld>
         ) : n ? <>
           <p className="leise klein">{t(hochgeladen ? 'pakete.erstellen.version.bekanntHochgeladen' : 'pakete.erstellen.version.bekannt', { version: lage.bekannt! })}</p>
           {VERSIONSARTEN.map((a) => (
@@ -371,17 +391,19 @@ function VersionWahl({ e, setze, lage, experte, hochgeladen, hochladen }: {
           </> : <p><strong>{t('pakete.erstellen.version.erstes')}</strong><br /><small className="leise">{t('pakete.erstellen.version.erstesErklaerung')}</small></p>}
         </>}
         {!e.vonHand && <p className="leise klein">{t('pakete.erstellen.version.unbekannt')}{' '}
-          <button type="button" className="textknopf" onClick={() => datei.current?.click()}>{t('pakete.erstellen.version.hochladen')}</button>
+          <Knopf art="link" onClick={() => datei.current?.click()}>{t('pakete.erstellen.version.hochladen')}</Knopf>
           <input ref={datei} type="file" accept=".zip,application/zip" hidden onChange={(x) => { const f = x.target.files?.[0]; if (f) hochladen(f); x.target.value = ''; }} /></p>}
-        {experte && <label className="haken"><input type="checkbox" checked={!!e.vonHand} onChange={(x) => setze({ vonHand: x.target.checked || undefined })} />
-          <span>{t('pakete.erstellen.version.vonHand')}<small className="leise">{t('pakete.erstellen.version.vonHandHinweis')}</small></span></label>}
-      </fieldset>
-      <label className="eigenschaft"><span>{t('pakete.erstellen.dms.titel')}</span>
+        {experte && <HakenFeld beschriftung={t('pakete.erstellen.version.vonHand')} hinweis={t('pakete.erstellen.version.vonHandHinweis')}>
+          <input type="checkbox" checked={!!e.vonHand} onChange={(x) => setze({ vonHand: x.target.checked || undefined })} />
+        </HakenFeld>}
+        </div>
+      </FeldGruppe>
+      <Feld beschriftung={t('pakete.erstellen.dms.titel')} hinweis={lage.gruende.length ? t('pakete.erstellen.dms.gruende', { gruende: lage.gruende.join(', ') }) : t('pakete.erstellen.dms.grundlage')}>
         {e.vonHand ? <input value={e.dms} onChange={(x) => setze({ dms: x.target.value })} />
           : <select value={opt.includes(e.dms) ? e.dms : ''} onChange={(x) => setze({ dms: x.target.value })}>
             {[...opt].reverse().map((o, i, alle) => <option key={o} value={o}>{o === opt[0] ? t('pakete.erstellen.dms.mindest', { angabe: o }) : i === 0 && alle.length > 1 ? t('pakete.erstellen.dms.eigene', { angabe: o }) : o}</option>)}
           </select>}
-        <small className="leise">{lage.gruende.length ? t('pakete.erstellen.dms.gruende', { gruende: lage.gruende.join(', ') }) : t('pakete.erstellen.dms.grundlage')}</small></label>
+      </Feld>
     </>
   );
 }
@@ -391,23 +413,27 @@ function LizenzWahl({ e, setze }: { e: PaketErstellenEingabe; setze(x: Partial<P
   const art = e.lizenzArt ?? 'frei';
   const name = useId();
   return (
-    <fieldset className="eigenschaft breit">
-      <legend>{t('pakete.erstellen.lizenz.titel')}</legend>
+    <FeldGruppe beschriftung={t('pakete.erstellen.lizenz.titel')} className="breit">
+      <div className="haken-untereinander">
       {(['frei', 'eigen', 'keine'] as const).map((a) => (
         <label key={a} className="haken"><input type="radio" name={name} checked={art === a} onChange={() => setze({ lizenzArt: a })} /><span>{t(`pakete.erstellen.lizenz.${a}`)}</span></label>
       ))}
       {art === 'frei' && <LizenzSuche wert={e.lizenz} waehle={(l) => setze({ lizenz: l })} />}
       {art === 'eigen' && <>
-        <label className="eigenschaft"><span>{t('pakete.erstellen.lizenz.name')}</span>
-          <input value={e.lizenzName ?? ''} maxLength={LIZENZNAME_LAENGE.max} placeholder={t('pakete.erstellen.lizenz.namePlatzhalter')} onChange={(x) => setze({ lizenzName: x.target.value })} /></label>
-        <label className="eigenschaft breit"><span>{t('pakete.erstellen.lizenz.text')}</span>
-          <textarea rows={6} value={e.lizenzText ?? ''} onChange={(x) => setze({ lizenzText: x.target.value })} /></label>
-        <label className="eigenschaft"><span>{t('pakete.erstellen.lizenz.datei')}</span>
-          <input type="file" accept=".txt,.md,text/plain,text/markdown" onChange={(x) => { const f = x.target.files?.[0]; if (f) void f.text().then((text) => setze({ lizenzText: text })); }} /></label>
+        <Feld beschriftung={t('pakete.erstellen.lizenz.name')}>
+          <input value={e.lizenzName ?? ''} maxLength={LIZENZNAME_LAENGE.max} placeholder={t('pakete.erstellen.lizenz.namePlatzhalter')} onChange={(x) => setze({ lizenzName: x.target.value })} />
+        </Feld>
+        <Feld beschriftung={t('pakete.erstellen.lizenz.text')} className="breit">
+          <textarea rows={6} value={e.lizenzText ?? ''} onChange={(x) => setze({ lizenzText: x.target.value })} />
+        </Feld>
+        <Feld beschriftung={t('pakete.erstellen.lizenz.datei')}>
+          <input type="file" accept=".txt,.md,text/plain,text/markdown" onChange={(x) => { const f = x.target.files?.[0]; if (f) void f.text().then((text) => setze({ lizenzText: text })); }} />
+        </Feld>
       </>}
       {art === 'keine' && <p className="leise klein">{t('pakete.erstellen.lizenz.keineHinweis')}</p>}
       {art !== 'frei' && <div className="hinweis info"><p>{t('pakete.erstellen.lizenz.nichtKatalog')}</p></div>}
-    </fieldset>
+      </div>
+    </FeldGruppe>
   );
 }
 
@@ -426,7 +452,8 @@ function LizenzSuche({ wert, waehle }: { wert: string; waehle(l: Lizenz): void }
   return (
     <div className="refbox" onBlur={(x) => { if (!x.currentTarget.contains(x.relatedTarget as Node)) { setOffen(false); setEingabe(wert); } }}>
       <div className="wahl">
-        <input type="search" role="combobox" aria-label={t('pakete.erstellen.lizenz.suchen')} placeholder={t('pakete.erstellen.lizenz.suchen')} autoComplete="off"
+        <Feld beschriftung={t('pakete.erstellen.lizenz.suchen')} beschriftungVerbergen>
+        <input type="search" role="combobox" placeholder={t('pakete.erstellen.lizenz.suchen')} autoComplete="off"
           aria-expanded={offen} aria-controls={offen ? `${id}-l` : undefined} aria-autocomplete="list" aria-activedescendant={offen && liste[aktiv] ? `${id}-${aktiv}` : undefined}
           value={eingabe} onFocus={() => setOffen(true)} onClick={() => setOffen(true)}
           onChange={(x) => { setEingabe(x.target.value); setOffen(true); setAktiv(0); }}
@@ -436,13 +463,14 @@ function LizenzSuche({ wert, waehle }: { wert: string; waehle(l: Lizenz): void }
             else if (x.key === 'ArrowUp') { x.preventDefault(); setAktiv((a) => Math.max(a - 1, 0)); }
             else if (x.key === 'Enter') { x.preventDefault(); if (offen && liste[aktiv]) nimm(liste[aktiv]); }
           }} />
+        </Feld>
         {offen && (
           <div id={`${id}-l`} className="wahlliste" role="listbox" aria-label={t('pakete.erstellen.lizenz.frei')}>
             {!liste.length ? <p className="leise klein">{t('pakete.erstellen.lizenz.keinTreffer')}</p> : liste.map((l, i) => (
-              <button key={l} id={`${id}-${i}`} type="button" role="option" aria-selected={l === wert} className={i === aktiv ? 'an' : undefined}
+              <div key={l} id={`${id}-${i}`} role="option" aria-selected={l === wert} className={`wahloption${i === aktiv ? ' an' : ''}`}
                 onMouseDown={(x) => x.preventDefault()} onClick={() => nimm(l)}>
                 <strong>{l}</strong> – {lizenzName(l)}<br /><small className="leise">{lizenzSatz(l)}</small>
-              </button>
+              </div>
             ))}
           </div>
         )}

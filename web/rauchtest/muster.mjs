@@ -61,10 +61,13 @@ export async function axePruefen(seite, bereich) {
 /** Mindestmaß einer Tippfläche am Handy (#1027, Musterkatalog D6 „Tippziele ≥ 44 pt“). */
 export const TIPPFLAECHE = 44;
 /**
- * Ausnahmen von der Messung – nur mit Grund. Schlüssel: CSS-Selektor, Wert: Grund. Heute keine.
- * (Beispiel: Verweise mitten im Fließtext sind nach WCAG 2.5.8 ausgenommen.)
+ * Ausnahmen von der Messung – nur mit Grund. Schlüssel: CSS-Selektor, Wert: Grund.
  */
-export const TIPP_AUSNAHMEN = {};
+export const TIPP_AUSNAHMEN = {
+  // #1214: Verweise mitten im Fließtext eines Absatzes nimmt WCAG 2.5.8 aus („Inline“); am Handy wachsen sie in der
+  // Werkbank trotzdem unsichtbar auf 44 px, stoßen dabei aber an die Zeilen darüber und darunter.
+  'p > a.verweis': 'Verweis im Fließtext (WCAG 2.5.8, Ausnahme „Inline“)',
+};
 
 /**
  * Tippflächen aller Bedienelemente messen (#1027): Für jedes sichtbare Element (Knopf, Verweis, Eingabe, Auswahl, Haken,

@@ -100,7 +100,7 @@ export function NotfallkontakteAbschnitt({ geaendert }: { geaendert(): void }) {
       {form && form.id === null && <Bearbeiten form={form} setForm={setForm} fehler={fehler} speichern={speichern} />}
       {!form && stand && (
         <div className="knoepfe">
-          <Knopf art="anlegen" gesperrt={voll ? t('werkbank.notfallkontakte.max', { max: NOTFALLKONTAKTE_MAX }) : false} ergebnis={ergebnis}
+          <Knopf art="anlegen" groesse="klein" gesperrt={voll ? t('werkbank.notfallkontakte.max', { max: NOTFALLKONTAKTE_MAX }) : false} ergebnis={ergebnis}
             onClick={() => { setErgebnis(null); setFehler(undefined); setForm({ id: null, wert: leererKontakt() }); }}>{t('werkbank.notfallkontakte.neu')}</Knopf>
         </div>
       )}

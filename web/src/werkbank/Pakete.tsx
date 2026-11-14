@@ -1,5 +1,5 @@
-import { HakenFeld, Knopf } from '../bausteine';
-import { Fragment, useCallback, useEffect, useState } from 'react';
+import { Feld, FeldGruppe, HakenFeld, Knopf, KnopfLink, Reiter, ReiterFlaeche, Schalter } from '../bausteine';
+import { Fragment, useCallback, useEffect, useState, type ReactNode } from 'react';
 import { Symbol } from '../Symbol';
 import { ergaenzungenVon, hatNetz, hatSchnittstelle, inMB, istKiPaket, legtEtwasAn, herkunftText, KATALOG_LINK_REL, katalogSeiteMitVersion, sammelSeiteMitVersion, laeuferZustandText, vergleicheVersion, vorausgewaehlt, type AblaufErgebnis, type HerkunftPruefung, type InstalliertesPaket, type Katalog, type KatalogPaket } from '../../../shared/src/pakete';
 import { PAKET_ID } from '../../../shared/src/kennungen';
@@ -135,15 +135,15 @@ export function PaketeListe({ z, offen }: { z: PaketeZustand; offen?: string }) 
         {/* „läuft“ am jeweiligen Knopf (#986); das Ergebnis ist die Liste darunter, ein Fehler steht über der Liste. */}
         <Knopf groesse="klein" laeuftText={t('werkbank.pakete.frage-ab')} onClick={() => z.abrufen()}>{t('werkbank.pakete.katalog-abrufen')}</Knopf>
         {installiert.length > 0 && <Knopf groesse="klein" laeuftText={t('werkbank.pakete.frage-ab')} onClick={z.pruefen}>{t('werkbank.pakete.auf-neue-versionen-pruefen')}</Knopf>}
-        <Link to={`/werkbank/pakete/${ERSTELLEN}`} className={`knopf klein ${offen === ERSTELLEN ? 'an' : ''}`}>{t('werkbank.pakete.paket-erstellen')}</Link>
-        <Link to={`/werkbank/pakete/${SAMMEL}`} className={`knopf klein ${offen === SAMMEL ? 'an' : ''}`}>{t('werkbank.pakete.ohne-internet')}</Link>
+        <KnopfLink to={`/werkbank/pakete/${ERSTELLEN}`} groesse="klein" className={offen === ERSTELLEN ? 'an' : undefined}>{t('werkbank.pakete.paket-erstellen')}</KnopfLink>
+        <KnopfLink to={`/werkbank/pakete/${SAMMEL}`} groesse="klein" className={offen === SAMMEL ? 'an' : undefined}>{t('werkbank.pakete.ohne-internet')}</KnopfLink>
       </div>
       <section className="aufklappbereich">
-        <button type="button" className="aufklappkopf" aria-expanded={experte} aria-controls="pakete-experte" onClick={() => setExperte(!experte)}>
-          <span className="zeichen" aria-hidden="true">{experte ? '▾' : '▸'}</span>
+        <Knopf art="link" className="aufklappkopf" aria-expanded={experte} aria-controls="pakete-experte" onClick={() => setExperte(!experte)}>
+          <Symbol name={experte ? 'pfeil-unten' : 'pfeil-rechts'} className="zeichen" />
           <span>{t('werkbank.pakete.expertenmodus')}</span>
           <span className="leise klein">{t('werkbank.pakete.weitere-quellen-paket-oder')}</span>
-        </button>
+        </Knopf>
         {experte && (
           <div id="pakete-experte" className="aufklappinhalt">
             <div className="hinweis warn klein"><p>{t('werkbank.pakete.pakete-ausserhalb-des-offiziellen')}</p></div>
@@ -275,18 +275,19 @@ function Quellen({ z }: { z: PaketeZustand }) {
         <ul className="stapel">
           {weitere.map((q) => (
             <li key={q.url}>
-              <label className="haken"><input type="checkbox" checked={q.aktiv} onChange={(e) => void tu(() => api.paketQuelleSchalten(q.url, e.target.checked))} /><span className="umbrechen">{q.url}</span></label>
-              <span className="leise"> {q.von ? t('werkbank.pakete.von', { von: q.von }) : ''}{q.am ? t('werkbank.pakete.am', { datum: datum(q.am) }) : ''} · </span>
-              <Knopf art="link" className="gefahr" onClick={async () => { if (await rueckfrage({ titel: t('werkbank.pakete.paketquelle-entfernen'), text: q.url, ja: t('werkbank.pakete.entfernen'), gefahr: true })) void tu(() => api.paketQuelleEntfernen(q.url)); }}>{t('werkbank.pakete.entfernen')}</Knopf>
+              <Schalter an={q.aktiv} setze={(an) => tu(() => api.paketQuelleSchalten(q.url, an))} beschriftung={q.url} className="umbrechen"
+                hinweis={`${q.von ? t('werkbank.pakete.von', { von: q.von }) : ''}${q.am ? t('werkbank.pakete.am', { datum: datum(q.am) }) : ''}`.trim() || undefined} />
+              <Knopf art="gefahr" groesse="klein" symbol="geloescht" onClick={() => tu(() => api.paketQuelleEntfernen(q.url))}
+                rueckfrage={{ titel: t('werkbank.pakete.paketquelle-entfernen'), text: q.url, ja: t('werkbank.pakete.entfernen') }}>{t('werkbank.pakete.entfernen')}</Knopf>
               {q.gesperrt ? (
                 <div className="hinweis warn" role="alert">
                   <p><Symbol name="warnung" className="sym-warn" /> {tx('pakete.quelle.gesperrt', { seit: datum(q.gesperrt.seit) })} <code className="fingerabdruck">{q.gesperrt.fingerabdruck}</code></p>
-                  <button type="button" className="knopf klein" onClick={() => void mitSchluessel(q.url, (fp) => api.paketQuelleSchluessel(q.url, fp))}>{tx('pakete.quelle.pruefen')}</button>
+                  <Knopf groesse="klein" onClick={() => mitSchluessel(q.url, (fp) => api.paketQuelleSchluessel(q.url, fp))}>{tx('pakete.quelle.pruefen')}</Knopf>
                 </div>
               ) : (
                 <p className="leise">
                   {q.fingerabdruck ? <><Symbol name="schloss" /> {tx('pakete.quelle.schluessel')} <code className="fingerabdruck">{q.fingerabdruck}</code></> : tx('pakete.quelle.ohne')}
-                  {' · '}<button type="button" className="textknopf" onClick={() => void mitSchluessel(q.url, (fp) => api.paketQuelleSchluessel(q.url, fp))}>{tx('pakete.quelle.pruefen')}</button>
+                  {' · '}<Knopf art="link" onClick={() => mitSchluessel(q.url, (fp) => api.paketQuelleSchluessel(q.url, fp))}>{tx('pakete.quelle.pruefen')}</Knopf>
                 </p>
               )}
             </li>
@@ -294,8 +295,10 @@ function Quellen({ z }: { z: PaketeZustand }) {
         </ul>
       )}
       <form className="zeile" onSubmit={(e) => { e.preventDefault(); const adresse = url.trim(); void mitSchluessel(adresse, async (fp) => { const r = await api.paketQuelleHinzu(adresse, fp); setUrl(''); return r; }); }}>
-        <input type="url" placeholder="https://…/katalog.json" aria-label={t('werkbank.pakete.adresse-eines-weiteren-katalogs')} value={url} onChange={(e) => setUrl(e.target.value)} />
-        <button type="submit" className="knopf klein" disabled={!url.trim()}>{t('werkbank.pakete.hinzufuegen')}</button>
+        <Feld beschriftung={t('werkbank.pakete.adresse-eines-weiteren-katalogs')} beschriftungVerbergen>
+          <input type="url" placeholder="https://…/katalog.json" value={url} onChange={(e) => setUrl(e.target.value)} />
+        </Feld>
+        <Knopf art="haupt" type="submit" gesperrt={!url.trim()}>{t('werkbank.pakete.hinzufuegen')}</Knopf>
       </form>
       {fehler && <p className="fehlertext">{fehler}</p>}
     </div>
@@ -371,11 +374,11 @@ export function PaketLink({ z, wert }: { z: PaketeZustand; wert: string }) {
         </section>
       )}
       {schon && (
-        <div className="hinweis info"><p>{tn('werkbank.pakete.ist-schon-installiert-version', { name: vorschau!.paket.name, installiert: vorschau!.installiert })}{' '}<button type="button" className="textknopf" onClick={() => { void z.abrufen(false); geheZu(`/werkbank/pakete/${id}`); }}>{t('werkbank.pakete.zum-paket')}</button> {' '}{t('werkbank.pakete.dort-gibt-es-ggf')}</p></div>
+        <div className="hinweis info"><p>{tn('werkbank.pakete.ist-schon-installiert-version', { name: vorschau!.paket.name, installiert: vorschau!.installiert })}{' '}<Knopf art="link" onClick={() => { void z.abrufen(false); geheZu(`/werkbank/pakete/${id}`); }}>{t('werkbank.pakete.zum-paket')}</Knopf> {' '}{t('werkbank.pakete.dort-gibt-es-ggf')}</p></div>
       )}
       {vorschau && !schon && !vorschau.update && katalog && z.stand && (
         <PaketAblauf quelle={{ art: 'katalog', katalog, dms: z.stand.dms, installiert: z.stand.installiert }} start={[id]} nur={[id]} versionen={version ? { [id]: version } : {}}
-          aktionen={<button type="button" className="textknopf" onClick={() => geheZu('/werkbank/pakete')}>{t('werkbank.pakete.abbrechen')}</button>}
+          aktionen={<KnopfLink to="/werkbank/pakete">{t('werkbank.pakete.abbrechen')}</KnopfLink>}
           geaendert={() => { void z.laden(); void d.neuLaden(); }}
           fertig={(e) => { void z.abrufen(false); geheZu(e.installiert.some((x) => x.id === id) ? `/werkbank/pakete/${id}` : '/werkbank/pakete'); }} />
       )}
@@ -456,6 +459,16 @@ function UploadDetail({ z }: { z: PaketeZustand }) {
   );
 }
 
+/** Register des Pakets (#1214, Baustein Reiter): Übersicht und Einstellungen; ein Warnsymbol, wenn Einstellungen fehlen. */
+function PaketReiter({ reiter, setze, noetig }: { reiter: 'uebersicht' | 'einstellungen'; setze(r: 'uebersicht' | 'einstellungen'): void; noetig: boolean }) {
+  return <Reiter id="paket" wert={reiter} setze={setze} beschriftung={t('werkbank.pakete.paket')} wahlen={[{ wert: 'uebersicht', text: t('werkbank.pakete.uebersicht') },
+    { wert: 'einstellungen', text: <>{t('werkbank.pakete.einstellungen')}{noetig && <> <Symbol name="warnung" className="sym-warn" /><span className="sr">{t('werkbank.pakete.einstellungen-noetig-2')}</span></>}</> }]} />;
+}
+/** Inhalt unter dem Register – ohne Register (Paket ohne Einstellungen) ohne Fläche. */
+function MitFlaeche({ an, wert, children }: { an: boolean; wert: string; children: ReactNode }) {
+  return an ? <ReiterFlaeche id="paket" wert={wert}>{children}</ReiterFlaeche> : <>{children}</>;
+}
+
 function PaketDetail({ z, id, quelle }: { z: PaketeZustand; id: string; quelle?: string }) {
   const d = useDaten();
   const inst = z.stand?.installiert.find((p) => p.id === id) ?? null;
@@ -491,11 +504,10 @@ function PaketDetail({ z, id, quelle }: { z: PaketeZustand; id: string; quelle?:
     catch (e) { setMeldung(alsMeldung(e)); }
     finally { setLaeuft(false); }
   }
-  const entfernen = async () => {
+  const entfernen = () => {
     if (!inst) return;
     // Mit Einstellungen (#197): fragen, ob sie für eine spätere Neuinstallation bleiben sollen (Standard: nein).
     if (inst.einstellungen) { setEntfernenOffen(true); return; }
-    if (!(await rueckfrage({ titel: t('werkbank.pakete.entfernen-2', { name: inst.name }), text: t('werkbank.pakete.seine-mappentypen-und-ansichten'), ja: t('werkbank.pakete.entfernen'), gefahr: true }))) return;
     void tu(async () => {
       const r = await entferneMitFragen(id, false);
       geheZu('/werkbank/pakete', true); return t('werkbank.pakete.ist-entfernt', { name: inst.name }) + behaltenText(r.beispieleBehalten) + vorgabenText(r.vorgabenBehalten);
@@ -503,15 +515,14 @@ function PaketDetail({ z, id, quelle }: { z: PaketeZustand; id: string; quelle?:
   };
   const entfernenBestaetigt = () => void tu(async () => { const r = await entferneMitFragen(id, behalten); setEntfernenOffen(false); geheZu('/werkbank/pakete', true); return t('werkbank.pakete.ist-entfernt-2', { name: inst!.name, wert: behalten ? t('werkbank.pakete.die-einstellungen-bleiben-fuer') : '' }) + behaltenText(r.beispieleBehalten) + vorgabenText(r.vorgabenBehalten); });
   // Beispiele entfernen (#878): unveränderte Beispiel-Mappen samt Dokumenten; geänderte bleiben und werden genannt.
-  const beispieleEntfernen = async () => {
-    if (!inst || !(await rueckfrage({ titel: t('werkbank.pakete.beispiele-entfernen.frage', { name: inst.name }), text: t('werkbank.pakete.beispiele-entfernen.text'), ja: t('werkbank.pakete.beispiele-entfernen'), gefahr: true }))) return;
+  const beispieleEntfernen = () => {
     void tu(async () => { const r = await api.paketBeispieleEntfernen(id); return t('werkbank.pakete.beispiele-entfernt', { anzahl: r.entfernt }) + behaltenText(r.behalten); });
   };
 
   if (!inst && !kp) return (
     <div className="leer">
       <p>{z.kataloge ? t('werkbank.pakete.dieses-paket-gibt-es') : t('werkbank.pakete.lade')}</p>
-      {!z.kataloge && <button type="button" className="knopf" onClick={() => void z.abrufen()}>{t('werkbank.pakete.katalog-abrufen')}</button>}
+      {!z.kataloge && <Knopf onClick={() => z.abrufen()}>{t('werkbank.pakete.katalog-abrufen')}</Knopf>}
     </div>
   );
   const autor = inst?.autor ?? kp?.autor;
@@ -524,12 +535,9 @@ function PaketDetail({ z, id, quelle }: { z: PaketeZustand; id: string; quelle?:
       </div>
       <MeldungBox m={meldung} />
       {inst?.einstellungen && (
-        <div className="registertaben" role="tablist" aria-label={t('werkbank.pakete.paket')}>
-          <button type="button" role="tab" aria-selected={reiter === 'uebersicht'} className={`registertab ${reiter === 'uebersicht' ? 'an' : ''}`} onClick={() => void darfVerlassen().then((ok) => { if (ok) setReiter('uebersicht'); })}>{t('werkbank.pakete.uebersicht')}</button>
-          <button type="button" role="tab" aria-selected={reiter === 'einstellungen'} className={`registertab ${reiter === 'einstellungen' ? 'an' : ''}`} onClick={() => setReiter('einstellungen')}>{t('werkbank.pakete.einstellungen')}{inst.einstellungenNoetig && <> <Symbol name="warnung" className="sym-warn" /><span className="sr">{t('werkbank.pakete.einstellungen-noetig-2')}</span></>}</button>
-        </div>
+        <PaketReiter reiter={reiter} noetig={!!inst.einstellungenNoetig} setze={(r) => { if (r === 'einstellungen') setReiter(r); else void darfVerlassen().then((ok) => { if (ok) setReiter(r); }); }} />
       )}
-      {inst?.einstellungen && reiter === 'einstellungen' ? <PaketEinstellungen id={id} gespeichert={() => void z.laden()} /> : <>
+      {inst?.einstellungen && reiter === 'einstellungen' ? <ReiterFlaeche id="paket" wert={reiter}><PaketEinstellungen id={id} gespeichert={() => void z.laden()} /></ReiterFlaeche> : <MitFlaeche an={!!inst?.einstellungen} wert={reiter}>
 
       <section className="blatt">
         <dl className="eigenschaften">
@@ -570,19 +578,23 @@ function PaketDetail({ z, id, quelle }: { z: PaketeZustand; id: string; quelle?:
         {/* Mit Versionsauswahl: Knöpfe bündig mit dem Auswahlfeld statt auf Beschriftung + Feld gestreckt (#448). */}
         <div className={`knoepfe${kp && kp.versionen.length > 1 && !inst ? ' feld-buendig' : ''}`}>
           {kp && kp.versionen.length > 1 && !inst && (
-            <label className="klein">{t('werkbank.pakete.version-6')}{' '}<select value={version || kp.aktuell} onChange={(e) => { setVersion(e.target.value); setVorschau(null); }}>{kp.versionen.map((x) => <option key={x.version} value={x.version}>{x.version}</option>)}</select></label>
+            <Feld beschriftung={t('werkbank.pakete.version-6')}><select value={version || kp.aktuell} onChange={(e) => { setVersion(e.target.value); setVorschau(null); }}>{kp.versionen.map((x) => <option key={x.version} value={x.version}>{x.version}</option>)}</select></Feld>
           )}
-          {!inst && kp && <button type="button" className="knopf primaer" disabled={laeuft || ablauf || !katalog} onClick={() => setAblauf(true)}>{t('werkbank.pakete.installieren')}</button>}
-          {inst && neuer && <button type="button" className="knopf primaer" disabled={laeuft} onClick={() => void zeigeVorschau(neuer)}>{t('werkbank.pakete.auf-aktualisieren', { neuer })}</button>}
-          {inst && (inst.beispielMappen?.length ?? 0) > 0 && <button type="button" className="knopf" disabled={laeuft} onClick={() => void beispieleEntfernen()}>{t('werkbank.pakete.beispiele-entfernen')}</button>}
-          {inst && <Knopf gesperrt={laeuft} onClick={entfernen}>{t('werkbank.pakete.entfernen')}</Knopf>}
+          {!inst && kp && <Knopf art="haupt" gesperrt={laeuft || ablauf || !katalog} onClick={() => setAblauf(true)}>{t('werkbank.pakete.installieren')}</Knopf>}
+          {inst && neuer && <Knopf art="haupt" gesperrt={laeuft} onClick={() => void zeigeVorschau(neuer)}>{t('werkbank.pakete.auf-aktualisieren', { neuer })}</Knopf>}
+          {inst && (inst.beispielMappen?.length ?? 0) > 0 && <Knopf art="gefahr" symbol="geloescht" gesperrt={laeuft} onClick={beispieleEntfernen} rueckfrage={{ titel: t('werkbank.pakete.beispiele-entfernen.frage', { name: inst.name }), text: t('werkbank.pakete.beispiele-entfernen.text'), ja: t('werkbank.pakete.beispiele-entfernen') }}>{t('werkbank.pakete.beispiele-entfernen')}</Knopf>}
+          {/* Mit Einstellungen öffnet „Entfernen“ erst die Wahl „Einstellungen behalten“ (#197); entfernt wird dort nach Rückfrage. */}
+          {inst && (inst.einstellungen ? <Knopf symbol="geloescht" gesperrt={laeuft} aria-expanded={entfernenOffen} onClick={entfernen}>{t('werkbank.pakete.entfernen')}</Knopf>
+            : <Knopf art="gefahr" symbol="geloescht" gesperrt={laeuft} onClick={entfernen} rueckfrage={{ titel: t('werkbank.pakete.entfernen-2', { name: inst.name }), text: t('werkbank.pakete.seine-mappentypen-und-ansichten'), ja: t('werkbank.pakete.entfernen') }}>{t('werkbank.pakete.entfernen')}</Knopf>)}
           {inst?.herkunft.art === 'hochgeladen' && <span className="leise klein">{t('werkbank.pakete.ein-hochgeladenes-paket')}</span>}
         </div>
         {entfernenOffen && inst && (
           <div className="hinweis warn" role="dialog" aria-label={t('werkbank.pakete.paket-entfernen')}>
             <p>{t('werkbank.pakete.entfernen-seine-mappentypen-und', { name: inst.name })}</p>
-            <label className="haken"><input type="checkbox" checked={behalten} onChange={(e) => setBehalten(e.target.checked)} /><span>{t('werkbank.pakete.einstellungen-behalten-fuer-eine')}</span></label>
-            <div className="knoepfe"><button type="button" className="knopf gefahr" disabled={laeuft} onClick={entfernenBestaetigt}>{t('werkbank.pakete.entfernen')}</button><button type="button" className="textknopf" onClick={() => setEntfernenOffen(false)}>{t('werkbank.pakete.abbrechen')}</button></div>
+            <HakenFeld beschriftung={t('werkbank.pakete.einstellungen-behalten-fuer-eine')}>
+              <input type="checkbox" checked={behalten} onChange={(e) => setBehalten(e.target.checked)} />
+            </HakenFeld>
+            <div className="knoepfe"><Knopf art="gefahr" symbol="geloescht" gesperrt={laeuft} onClick={entfernenBestaetigt} rueckfrage={{ titel: t('werkbank.pakete.entfernen-2', { name: inst.name }), text: t('werkbank.pakete.seine-mappentypen-und-ansichten'), ja: t('werkbank.pakete.entfernen') }}>{t('werkbank.pakete.entfernen')}</Knopf><Knopf onClick={() => setEntfernenOffen(false)}>{t('werkbank.pakete.abbrechen')}</Knopf></div>
           </div>
         )}
       </section>
@@ -594,7 +606,7 @@ function PaketDetail({ z, id, quelle }: { z: PaketeZustand; id: string; quelle?:
         <section className="blatt stapel" aria-label={tx('pakete.ablauf.zusammenfassung')}>
           <h2 className="h3">{tx('pakete.ablauf.titel', { name: kp.name })} <Hilfe ort="werkbank.pakete.ablauf" /></h2>
           <PaketAblauf direkt quelle={{ art: 'katalog', katalog, quelle: aus?.offiziell ? undefined : aus?.url, dms: z.stand.dms, installiert: z.stand.installiert }} start={[id]} nur={[id]} versionen={version ? { [id]: version } : {}}
-            aktionen={<button type="button" className="textknopf" onClick={() => setAblauf(false)}>{t('werkbank.pakete.abbrechen')}</button>}
+            aktionen={<Knopf onClick={() => setAblauf(false)}>{t('werkbank.pakete.abbrechen')}</Knopf>}
             geaendert={() => { void z.laden(); void d.neuLaden(); }}
             fertig={(e) => { setAblauf(false); if (e.installiert.some((x) => x.id === id)) setMeldung({ art: 'gut', text: fertigText(e) }); }} />
         </section>
@@ -614,7 +626,7 @@ function PaketDetail({ z, id, quelle }: { z: PaketeZustand; id: string; quelle?:
             return t('werkbank.pakete.ist-installiert', { name: r.name, version: r.version });
           })} />
       )}
-      </>}
+      </MitFlaeche>}
     </div>
   );
 }
@@ -645,11 +657,11 @@ function ErgaenzungenBlock({ z, inst, katalog, quelle }: { z: PaketeZustand; ins
       {!offen ? (
         <>
           {erg.length > 0 && <p className="leise">{tx('pakete.ablauf.nachtraeglich', { anzahl: erg.length, namen: erg.slice(0, 4).map((x) => x.name.includes(' – ') ? x.name.slice(x.name.lastIndexOf(' – ') + 3) : x.name).join(', ') })}</p>}
-          {erg.length > 0 && <div className="knoepfe"><button type="button" className="knopf" onClick={() => { setMeldung(undefined); setOffen(true); }}>{tx('pakete.ablauf.nachtraeglich.knopf')}</button></div>}
+          {erg.length > 0 && <div className="knoepfe"><Knopf onClick={() => { setMeldung(undefined); setOffen(true); }}>{tx('pakete.ablauf.nachtraeglich.knopf')}</Knopf></div>}
         </>
       ) : (
         <PaketAblauf quelle={{ art: 'katalog', katalog, quelle, dms: stand.dms, installiert: stand.installiert }} start={[]} nur={[inst.id]}
-          aktionen={<button type="button" className="textknopf" onClick={() => setOffen(false)}>{t('werkbank.pakete.abbrechen')}</button>}
+          aktionen={<Knopf onClick={() => setOffen(false)}>{t('werkbank.pakete.abbrechen')}</Knopf>}
           geaendert={() => { void z.laden(); void d.neuLaden(); }}
           fertig={(e) => { setOffen(false); if (e.installiert.length) setMeldung({ art: 'gut', text: fertigText(e) }); }} />
       )}
@@ -694,7 +706,7 @@ function LaeuferStand({ paket, abonniert = [], netz = false }: { paket: string; 
   return (
     <>
       {/* „Aktualisieren“ heißt in der Paketverwaltung nur das Update (#659); hier lädt der Knopf den Stand neu. */}
-      <div className="zeile-zwischen"><h2 className="h3">{t('werkbank.pakete.paket-laeufer')}</h2>{s && stand && p && <button type="button" className="textknopf" onClick={laden}>{tn('werkbank.pakete.stand-neu-laden', { symbol: <Symbol name="neu-laden" /> })}</button>}</div>
+      <div className="zeile-zwischen"><h2 className="h3">{t('werkbank.pakete.paket-laeufer')}</h2>{s && stand && p && <Knopf art="link" onClick={laden}>{tn('werkbank.pakete.stand-neu-laden', { symbol: <Symbol name="neu-laden" /> })}</Knopf>}</div>
       {!s || !stand ? <p className="leise">{t('werkbank.pakete.der-paket-laeufer-laeuft')}</p> : !p ? <p className="leise">{stand.text}</p> : (
         <>
           <dl className="eigenschaften">
@@ -776,7 +788,9 @@ export function VorschauBlock({ v, warnung, los, abbrechen, titel, abbrechenText
       {bestaetigen && (
         <div className="hinweis warn" role="alert">
           <p>{tn('werkbank.pakete.installiere-nur-pakete-deren', { b: <strong>{t('werkbank.pakete.nicht-vom-ablago-projekt-2')}</strong>, wert: pruefWarnung ? `${pruefWarnung.replace(/\.$/, '')}. ` : '' })}</p>
-          <label className="haken"><input type="checkbox" checked={ok} onChange={(e) => setOk(e.target.checked)} /><span>{t('werkbank.pakete.ich-weiss-woher-das')}</span></label>
+          <HakenFeld beschriftung={t('werkbank.pakete.ich-weiss-woher-das')}>
+            <input type="checkbox" checked={ok} onChange={(e) => setOk(e.target.checked)} />
+          </HakenFeld>
         </div>
       )}
       {v.laeufer && (
@@ -792,7 +806,9 @@ export function VorschauBlock({ v, warnung, los, abbrechen, titel, abbrechenText
             ))}
           </ul>
           {v.laeufer.bestaetigen
-            ? <label className="haken"><input type="checkbox" checked={rechteOk} onChange={(e) => setRechteOk(e.target.checked)} /><span>{v.update ? t('werkbank.pakete.die-rechte-haben-sich') : t('werkbank.pakete.ich-erlaube-dem-paket')}</span></label>
+            ? <HakenFeld beschriftung={v.update ? t('werkbank.pakete.die-rechte-haben-sich') : t('werkbank.pakete.ich-erlaube-dem-paket')}>
+              <input type="checkbox" checked={rechteOk} onChange={(e) => setRechteOk(e.target.checked)} />
+            </HakenFeld>
             : <p className="leise">{t('werkbank.pakete.die-rechte-sind-dieselben')}</p>}
           {/* Dienst-Adresse (#444): Hinweis auf die Vertrauensbeziehung schon bei der Installation. */}
           {v.laeufer.rechte.some((r) => r.hilfe === 'pakete.recht.adresse') && <p>{tx('fragen.adresse.installation')}</p>}
@@ -818,10 +834,10 @@ export function VorschauBlock({ v, warnung, los, abbrechen, titel, abbrechenText
             {eintrag.vorhanden
               ? <span><strong>{eintrag.name}</strong> – {eintrag.neueFelder.length || eintrag.neueRegister.length || eintrag.erkennung?.length || eintrag.wiederfinden?.length || eintrag.vorbelegen?.length || eintrag.typAngaben || eintrag.formate?.length || eintrag.beschriftungen || eintrag.abschnitte?.length ? [eintrag.neueFelder.length || eintrag.neueRegister.length ? t('werkbank.pakete.neu', { wert: [...eintrag.neueFelder.map((f) => t('werkbank.pakete.feld', { f })), ...eintrag.neueRegister.map((r) => t('werkbank.pakete.register', { r }))].join(', ') }) : '', eintrag.erkennung?.length ? t('werkbank.pakete.aus-dokument-fuellen', { map: eintrag.erkennung.map((f) => `„${f}“`).join(', ') }) : '', eintrag.wiederfinden?.length ? t('werkbank.pakete.zum-wiederfinden', { map: eintrag.wiederfinden.map((f) => `„${f}“`).join(', ') }) : '', eintrag.vorbelegen?.length ? t('werkbank.pakete.vorbelegen', { map: eintrag.vorbelegen.map((f) => `„${f}“`).join(', ') }) : '', eintrag.typAngaben ? t('werkbank.pakete.dokument-uebernehmen') : '', eintrag.formate?.length ? tx('felder.paket.formate', { felder: eintrag.formate.map((f) => `„${f}“`).join(', ') }) : '', eintrag.beschriftungen ? t('werkbank.pakete.beschriftungen', { anzahl: eintrag.beschriftungen }) : '', eintrag.abschnitte?.length ? t('werkbank.pakete.abschnitte', { map: eintrag.abschnitte.map((r) => `„${r}“`).join(', ') }) : ''].filter(Boolean).join('; ') : t('werkbank.pakete.keine-aenderung')}</span>
               : eintrag.geloescht ? <span className="leise">{t('werkbank.pakete.hast-du-geloescht-bleibt', { name: eintrag.name })}</span>
-              : <label className="paketname"><span>{tn('werkbank.pakete.felder-kennung', { felder: eintrag.felder, code: <code>{eintrag.dmsSchluessel}</code> })}</span>
-                  <input value={namen[eintrag.schluessel] ?? eintrag.name} aria-label={t('werkbank.pakete.name-fuer', { name: eintrag.name })} onChange={(e) => setNamen({ ...namen, [eintrag.schluessel]: e.target.value })} />
-                  {eintrag.konflikt && (namen[eintrag.schluessel] ?? '').trim().toLowerCase() === eintrag.name.toLowerCase() && <span className="fehlertext klein">{eintrag.konflikt}</span>}
-                </label>}
+              : <Feld beschriftung={t('werkbank.pakete.name-fuer', { name: eintrag.name })} hinweis={tn('werkbank.pakete.felder-kennung', { felder: eintrag.felder, code: <code>{eintrag.dmsSchluessel}</code> })}
+                  fehler={eintrag.konflikt && (namen[eintrag.schluessel] ?? '').trim().toLowerCase() === eintrag.name.toLowerCase() ? eintrag.konflikt : undefined}>
+                  <input value={namen[eintrag.schluessel] ?? eintrag.name} onChange={(e) => setNamen({ ...namen, [eintrag.schluessel]: e.target.value })} />
+                </Feld>}
             {/* Umbau (#1041): Der Typ entsteht aus einem vorhandenen – gleiche Mappen, Rechte und Ansichten. */}
             {eintrag.uebernimmt && <p className="leise klein">{t('pakete.umbau.vorschau.typ-aus', { name: eintrag.uebernimmt })}</p>}
             {/* Archivmodus aus dem Paket (#1051): nur für neue Typen, danach am Mappentyp änderbar. */}
@@ -839,10 +855,10 @@ export function VorschauBlock({ v, warnung, los, abbrechen, titel, abbrechenText
           <li key={s.schluessel}>
             {s.vorhanden ? <SichtZustandZeile s={s} ersetzen={ersetzen.includes(s.schluessel)} setze={(an) => setErsetzen(an ? [...ersetzen, s.schluessel] : ersetzen.filter((k) => k !== s.schluessel))} />
               : s.ausgelassen ? <span className="leise">{s.ausgelassen}</span>
-              : <label className="paketname"><span>{s.eltern ? t('werkbank.pakete.unter', { wert: v.sichten.find((x) => x.schluessel === s.eltern)?.name ?? s.eltern }) : t('werkbank.pakete.oberste-ebene')}</span>
-                  <input value={sichtNamen[s.schluessel] ?? s.name} aria-label={t('werkbank.pakete.name-fuer-ansicht', { name: s.name })} onChange={(e) => setSichtNamen({ ...sichtNamen, [s.schluessel]: e.target.value })} />
-                  {s.konflikt && (sichtNamen[s.schluessel] ?? '').trim().toLowerCase() === s.name.toLowerCase() && <span className="fehlertext klein">{s.konflikt}</span>}
-                </label>}
+              : <Feld beschriftung={t('werkbank.pakete.name-fuer-ansicht', { name: s.name })} hinweis={s.eltern ? t('werkbank.pakete.unter', { wert: v.sichten.find((x) => x.schluessel === s.eltern)?.name ?? s.eltern }) : t('werkbank.pakete.oberste-ebene')}
+                  fehler={s.konflikt && (sichtNamen[s.schluessel] ?? '').trim().toLowerCase() === s.name.toLowerCase() ? s.konflikt : undefined}>
+                  <input value={sichtNamen[s.schluessel] ?? s.name} onChange={(e) => setSichtNamen({ ...sichtNamen, [s.schluessel]: e.target.value })} />
+                </Feld>}
           </li>
         ))}
       </ul>
@@ -853,19 +869,23 @@ export function VorschauBlock({ v, warnung, los, abbrechen, titel, abbrechenText
         <>
           <h3>{t('werkbank.pakete.abhaengigkeiten')}</h3>
           <ul className="klein">{v.abhaengigkeiten.map((a) => <li key={a.id}>{a.id} {a.bereich}: {a.installiert ? t('werkbank.pakete.installiert-2', { installiert: a.installiert, wert: a.ok ? '' : t('werkbank.pakete.passt-nicht') }) : a.verfuegbar ? t('werkbank.pakete.fehlt-im-katalog-gibt', { verfuegbar: a.verfuegbar }) : t('werkbank.pakete.fehlt-und-ist-nicht')}</li>)}</ul>
-          {!v.update && fehlend.length > 0 && <label className="haken"><input type="checkbox" checked={mit} onChange={(e) => setMit(e.target.checked)} /><span>{t('werkbank.pakete.fehlende-pakete-mitinstallieren')}</span></label>}
+          {!v.update && fehlend.length > 0 && <HakenFeld beschriftung={t('werkbank.pakete.fehlende-pakete-mitinstallieren')}>
+            <input type="checkbox" checked={mit} onChange={(e) => setMit(e.target.checked)} />
+          </HakenFeld>}
         </>
       )}
-      {!v.update && v.beispiele > 0 && <label className="haken"><input type="checkbox" checked={beispiele} onChange={(e) => setBeispiele(e.target.checked)} /><span>{t('werkbank.pakete.beispiel-mappen-anlegen', { beispiele: v.beispiele })}{v.beispielDokumente?.anzahl ? ` ${t('werkbank.pakete.mit-beispiel-dokumenten', { anzahl: v.beispielDokumente.anzahl, mb: inMB(v.beispielDokumente.bytes) })}` : ''}</span></label>}
+      {!v.update && v.beispiele > 0 && <HakenFeld beschriftung={<>{t('werkbank.pakete.beispiel-mappen-anlegen', { beispiele: v.beispiele })}{v.beispielDokumente?.anzahl ? ` ${t('werkbank.pakete.mit-beispiel-dokumenten', { anzahl: v.beispielDokumente.anzahl, mb: inMB(v.beispielDokumente.bytes) })}` : ''}</>}>
+        <input type="checkbox" checked={beispiele} onChange={(e) => setBeispiele(e.target.checked)} />
+      </HakenFeld>}
       {neueAutos.length > 0 && (
-        <fieldset className="stapel">
-          <legend><strong>{tx('pakete.ablauf.automatisierungen')}</strong></legend>
-          <p className="leise klein">{tx('pakete.ablauf.automatisierungen.text')}</p>
+        <FeldGruppe beschriftung={tx('pakete.ablauf.automatisierungen')} hinweis={tx('pakete.ablauf.automatisierungen.text')}>
+          <div className="haken-untereinander">
           {neueAutos.map((a) => (
             <label key={a.schluessel} className="haken"><input type="checkbox" checked={!ohneAuto.includes(a.schluessel)} onChange={(e) => setOhneAuto(e.target.checked ? ohneAuto.filter((x) => x !== a.schluessel) : [...ohneAuto, a.schluessel])} />
               <span>{a.name}{a.zeitplan && <> <small className="leise">{tx('pakete.ablauf.automatisierungen.zeitplan', { zeitplan: a.zeitplan })}</small></>}{a.beschreibung && <small className="hilfe">{a.beschreibung}</small>}</span></label>
           ))}
-        </fieldset>
+          </div>
+        </FeldGruppe>
       )}
       {/* Automatisierungsvorlagen (#1044, Rechte-Vorschau): jede mit ihren Karten – nur Aufgaben und Benachrichtigungen. */}
       {!!v.ablaufvorlagen?.length && (
@@ -887,8 +907,8 @@ export function VorschauBlock({ v, warnung, los, abbrechen, titel, abbrechenText
       )}
       {konflikt && !!v.namenskonflikte?.length && <NamenskonfliktHinweis liste={v.namenskonflikte} />}
       <div className="knoepfe">
-        <button type="button" className="knopf primaer" disabled={laeuft || probleme.length > 0 || konflikt || leer || (bestaetigen && !ok) || rechteFehlen || herausgeberFehlt || umbauFehlt}
-          onClick={() => {
+        <Knopf art="haupt" gesperrt={probleme.length > 0 || konflikt || leer || (bestaetigen && !ok) || rechteFehlen || herausgeberFehlt || umbauFehlt}
+          laeuft={laeuft} laeuftText={v.update ? t('werkbank.pakete.aktualisiere') : t('werkbank.pakete.installiere')} onClick={() => {
             setLaeuft(true);
             void (async () => {
               if (umbau.length && umbauStand.sichern && !(await sichereVorher())) return;
@@ -896,9 +916,9 @@ export function VorschauBlock({ v, warnung, los, abbrechen, titel, abbrechenText
                 ...(umbau.length ? { umbauBestaetigt: true, umbauEntscheidungen: umbauStand.entscheidungen } : {}), ...(ersetzen.length ? { sichtenErsetzen: ersetzen } : {}) });
             })().finally(() => setLaeuft(false));
           }}>
-          {laeuft ? (v.update ? t('werkbank.pakete.aktualisiere') : t('werkbank.pakete.installiere')) : v.update ? t('werkbank.pakete.aktualisieren') : t('werkbank.pakete.installieren-2')}
-        </button>
-        <button type="button" className="textknopf" onClick={abbrechen}>{abbrechenText}</button>
+          {v.update ? t('werkbank.pakete.aktualisieren') : t('werkbank.pakete.installieren-2')}
+        </Knopf>
+        <Knopf onClick={abbrechen}>{abbrechenText}</Knopf>
       </div>
     </section>
   );

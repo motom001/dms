@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { FRAGEN_BEREICH, FRAGEN_STANDARD, type FragenGrenzen } from '../../../shared/src/fragen';
 import { api, ApiFehler } from '../api';
+import { Feld, Knopf } from '../bausteine';
 import { Hilfe } from '../Hilfe';
 import { t } from '../sprache';
 
@@ -27,12 +28,9 @@ export function FragenGrenzenBlock() {
     } finally { setLaeuft(false); }
   }
   const feld = (k: keyof FragenGrenzen, name: string) => (
-    <div className={`eigenschaft${fehler[k] ? ' fehlerhaft' : ''}`}>
-      <label htmlFor={`fg-${k}`}>{name}</label>
-      <input id={`fg-${k}`} type="number" inputMode="numeric" min={FRAGEN_BEREICH[k].min} max={FRAGEN_BEREICH[k].max} value={eingabe[k]} onChange={(e) => setEingabe({ ...eingabe, [k]: e.target.value })} />
-      <small className="leise">{t('fragen.werkbank.bereich', { min: FRAGEN_BEREICH[k].min, max: FRAGEN_BEREICH[k].max, standard: FRAGEN_STANDARD[k] })}</small>
-      {fehler[k] && <small className="fehlertext">{fehler[k]}</small>}
-    </div>
+    <Feld beschriftung={name} id={`fg-${k}`} fehler={fehler[k]} hinweis={t('fragen.werkbank.bereich', { min: FRAGEN_BEREICH[k].min, max: FRAGEN_BEREICH[k].max, standard: FRAGEN_STANDARD[k] })}>
+      <input type="number" inputMode="numeric" min={FRAGEN_BEREICH[k].min} max={FRAGEN_BEREICH[k].max} value={eingabe[k]} onChange={(e) => setEingabe({ ...eingabe, [k]: e.target.value })} />
+    </Feld>
   );
   return (
     <>
@@ -43,7 +41,7 @@ export function FragenGrenzenBlock() {
         {feld('ausschnitte', t('fragen.werkbank.ausschnitte'))}
         {feld('zeichen', t('fragen.werkbank.zeichen'))}
       </div>
-      <div className="knoepfe"><button type="button" className="knopf" disabled={laeuft || (eingabe.ausschnitte === String(g.ausschnitte) && eingabe.zeichen === String(g.zeichen))} onClick={() => void speichern()}>{t('fragen.werkbank.speichern')}</button></div>
+      <div className="knoepfe"><Knopf art="haupt" gesperrt={eingabe.ausschnitte === String(g.ausschnitte) && eingabe.zeichen === String(g.zeichen)} laeuft={laeuft} onClick={() => void speichern()}>{t('fragen.werkbank.speichern')}</Knopf></div>
     </>
   );
 }

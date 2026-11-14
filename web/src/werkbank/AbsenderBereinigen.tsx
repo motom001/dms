@@ -6,6 +6,7 @@ import { rueckfrage } from '../rueckfrage';
 import { titelOder } from '../seiten';
 import { t } from '../sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
+import { Knopf, Wahlhaken } from '../bausteine';
 
 type Posten = Awaited<ReturnType<typeof api.absenderVorschau>>['posten'];
 const datum = (iso: string) => new Date(iso).toLocaleDateString(gebietsschema());
@@ -44,19 +45,19 @@ export function AbsenderBereinigen() {
         <div className="tabellenrahmen festhoehe">
           <table className="absb-tabelle">
             <thead><tr>
-              <th><input type="checkbox" aria-label={t('werkbank.absenderbereinigen.alle-waehlen')} checked={wahl.size === posten.length} onChange={(e) => setWahl(e.target.checked ? new Set(posten.map((p) => p.id)) : new Set())} /></th>
+              <th><Wahlhaken beschriftung={t('werkbank.absenderbereinigen.alle-waehlen')} an={wahl.size === posten.length} teilweise={wahl.size > 0 && wahl.size < posten.length} setze={(an) => setWahl(an ? new Set(posten.map((p) => p.id)) : new Set())} /></th>
               <th>{t('werkbank.absenderbereinigen.post')}</th><th>{t('werkbank.absenderbereinigen.absender')}</th><th>{t('werkbank.absenderbereinigen.kanal')}</th><th>{t('werkbank.absenderbereinigen.angelegt')}</th>
             </tr></thead>
             <tbody>{posten.map((p) => (
               <tr key={p.id}>
-                <td><input type="checkbox" aria-label={t('werkbank.absenderbereinigen.bereinigen', { titelOder: titelOder(p.titel) })} checked={wahl.has(p.id)} onChange={() => umschalten(p.id)} /></td>
+                <td><Wahlhaken beschriftung={t('werkbank.absenderbereinigen.bereinigen', { titelOder: titelOder(p.titel) })} an={wahl.has(p.id)} setze={() => umschalten(p.id)} /></td>
                 <td><Link to={`/ablage/eingang/${p.id}`} className="verweis">{titelOder(p.titel)}</Link></td>
                 <td>{p.absender}</td><td>{p.kanal}</td><td>{datum(p.erstellt)}</td>
               </tr>
             ))}</tbody>
           </table>
         </div>
-        <div className="knoepfe"><button type="button" className="knopf primaer" disabled={laeuft || !wahl.size} onClick={() => void los()}>{laeuft ? t('werkbank.absenderbereinigen.leere') : t('werkbank.absenderbereinigen.absender-leeren-2', { size: wahl.size })}</button></div>
+        <div className="knoepfe"><Knopf art="haupt" gesperrt={!wahl.size} laeuft={laeuft} laeuftText={t('werkbank.absenderbereinigen.leere')} onClick={() => void los()}>{t('werkbank.absenderbereinigen.absender-leeren-2', { size: wahl.size })}</Knopf></div>
       </>}
     </section>
   );

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
-import { HakenFeld, Knopf, Schalter, type KnopfErgebnis } from '../bausteine';
+import { Feld, HakenFeld, Knopf, KnopfLink, Schalter, type KnopfErgebnis } from '../bausteine';
 import { api, type AnbieterEingabe, type AnbieterStand, type AnmeldeschutzStand, type NotfallzugangStand, type PasskeyPflicht, type SperrEinstellung, type ZweifaktorPflicht } from '../api';
 import { Hilfe } from '../Hilfe';
 import { useKonto } from '../konto';
@@ -44,7 +44,9 @@ export function AnmeldeschutzPanel({ z }: { z: AnmeldeschutzZustand }) {
   async function entsperren(ip: string) {
     try { z.setStand(await api.entsperren(ip)); setMeldung({ art: 'gut', text: t('werkbank.anmeldeschutz.freigegeben', { ip }) }); } catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); }
   }
-  const zahl = (wert: number, f: (n: number) => void, min: number, id: string) => <input id={id} type="number" min={min} value={wert} onChange={(x) => f(Number(x.target.value))} />;
+  const zahl = ([beschriftung, hinweis]: [string, string?], wert: number, f: (n: number) => void, min: number, id: string) => (
+    <Feld beschriftung={beschriftung} hinweis={hinweis}><input id={id} type="number" min={min} value={wert} onChange={(x) => f(Number(x.target.value))} /></Feld>
+  );
   return (
     <div className="einspaltig">
       <Kopf titel={t('werkbank.anmeldeschutz.anmeldeschutz')} ueber={t('werkbank.anmeldeschutz.werkbank')} hilfe="werkbank.anmeldeschutz">
@@ -54,20 +56,21 @@ export function AnmeldeschutzPanel({ z }: { z: AnmeldeschutzZustand }) {
       <form className="blatt" onSubmit={(x) => { x.preventDefault(); void speichern(); }} onKeyDown={ent.tasten}>
         <h2 className="h3">{t('werkbank.anmeldeschutz.je-e-mail-adresse')}</h2>
         <div className="raster">
-          <label className="eigenschaft"><span>{t('werkbank.anmeldeschutz.fehlversuche')}</span>{zahl(e.konto.versuche, (n) => setE({ ...e, konto: { ...e.konto, versuche: n } }), 1, 'as-konto-versuche')}</label>
-          <label className="eigenschaft"><span>{tn('werkbank.anmeldeschutz.sperre', { klein: <small>{t('werkbank.anmeldeschutz.in-minuten')}</small> })}</span>{zahl(e.konto.minuten, (n) => setE({ ...e, konto: { ...e.konto, minuten: n } }), 1, 'as-konto-minuten')}</label>
+          {zahl([t('werkbank.anmeldeschutz.fehlversuche')], e.konto.versuche, (n) => setE({ ...e, konto: { ...e.konto, versuche: n } }), 1, 'as-konto-versuche')}
+          {zahl([t('werkbank.anmeldeschutz.sperre'), t('werkbank.anmeldeschutz.in-minuten')], e.konto.minuten, (n) => setE({ ...e, konto: { ...e.konto, minuten: n } }), 1, 'as-konto-minuten')}
         </div>
         <h2 className="h3">{t('werkbank.anmeldeschutz.je-ip-adresse-ueber')}</h2>
         <div className="raster">
-          <label className="eigenschaft"><span>{t('werkbank.anmeldeschutz.fehlversuche')}</span>{zahl(e.ip.versuche, (n) => setE({ ...e, ip: { ...e.ip, versuche: n } }), 1, 'as-ip-versuche')}</label>
-          <label className="eigenschaft"><span>{tn('werkbank.anmeldeschutz.sperre', { klein: <small>{t('werkbank.anmeldeschutz.in-minuten-0-dauerhaft')}</small> })}</span>{zahl(e.ip.minuten, (n) => setE({ ...e, ip: { ...e.ip, minuten: n } }), 0, 'as-ip-minuten')}</label>
+          {zahl([t('werkbank.anmeldeschutz.fehlversuche')], e.ip.versuche, (n) => setE({ ...e, ip: { ...e.ip, versuche: n } }), 1, 'as-ip-versuche')}
+          {zahl([t('werkbank.anmeldeschutz.sperre'), t('werkbank.anmeldeschutz.in-minuten-0-dauerhaft')], e.ip.minuten, (n) => setE({ ...e, ip: { ...e.ip, minuten: n } }), 0, 'as-ip-minuten')}
         </div>
-        <label className="eigenschaft"><span>{tn('werkbank.anmeldeschutz.nie-sperren', { klein: <small>{t('werkbank.anmeldeschutz.adressen-oder-netze-z')}</small> })}</span>
-          <input id="as-ausnahmen" value={e.ausnahmen} placeholder="192.168.0.0/16, 10.0.0.0/8" onChange={(x) => setE({ ...e, ausnahmen: x.target.value })} /></label>
+        <Feld beschriftung={t('werkbank.anmeldeschutz.nie-sperren')} hinweis={t('werkbank.anmeldeschutz.adressen-oder-netze-z')}>
+          <input id="as-ausnahmen" value={e.ausnahmen} placeholder="192.168.0.0/16, 10.0.0.0/8" onChange={(x) => setE({ ...e, ausnahmen: x.target.value })} />
+        </Feld>
         <h2 className="h3">{t('konten.verwaltende.anmeldeschutz.mail')}</h2>
         <p className="leise klein">{t('werkbank.anmeldeschutz.angriffsversuche-aus-dem-internet')}</p>
         {/* #678: Sammelmeldung und Sofortmeldung sind jetzt Automatisierungen (Paket „Benachrichtigungen“). */}
-        <div className="hinweis info hinweiszeile"><p>{t('werkbank.anmeldeschutz.automatisierung')}</p><Link to="/werkbank/automatisierungen" className="knopf klein">{t('werkbank.zusammenfassung.automatisierung.knopf')}</Link></div>
+        <div className="hinweis info hinweiszeile"><p>{t('werkbank.anmeldeschutz.automatisierung')}</p><KnopfLink to="/werkbank/automatisierungen" groesse="klein">{t('werkbank.zusammenfassung.automatisierung.knopf')}</KnopfLink></div>
         <Speicherleiste ent={ent} gegenstand={t('werkbank.anmeldeschutz.anmeldeschutz')} sendet={sendet} />
       </form>
       <ZweifaktorPflichtBlatt />
@@ -82,7 +85,7 @@ export function AnmeldeschutzPanel({ z }: { z: AnmeldeschutzZustand }) {
             {s.gesperrt.map((g) => (
               <li key={g.ip}>
                 <span><strong className="mono">{g.ip}</strong> <span className="leise klein">{t('werkbank.anmeldeschutz.seit', { grund: g.grund, zeit: zeit(g.seit), wert: g.bis ? t('werkbank.anmeldeschutz.bis', { zeit: zeit(g.bis) }) : t('werkbank.anmeldeschutz.bis-entsperrt') })}</span></span>
-                <button type="button" className="knopf klein" onClick={() => void entsperren(g.ip)}>{t('werkbank.anmeldeschutz.freigeben')}</button>
+                <Knopf groesse="klein" onClick={() => entsperren(g.ip)}>{t('werkbank.anmeldeschutz.freigeben')}</Knopf>
               </li>
             ))}
           </ul>
@@ -115,8 +118,9 @@ function NotfallzugangBlatt({ deineIp }: { deineIp: string }) {
       {n && <p className="klein">{n.code.vorhanden && n.code.erstellt ? t('werkbank.notfallzugang.code', { datum: zeit(n.code.erstellt) }) : t('werkbank.notfallzugang.code.keiner')}{' '}
         <Link to={NOTFALLBLATT_SEITE} className="verweis">{t('werkbank.sicherung.zum-notfallblatt')}</Link></p>}
       {n && <>
-        <label className="haken"><input id="notfall-internet" type="checkbox" checked={n.internet} disabled={sendet} onChange={(x) => void setze(x.target.checked)} />
-          <span>{t('werkbank.notfallzugang.internet')}<small className="hilfe">{t('werkbank.notfallzugang.internet.hilfe')}</small></span></label>
+        <HakenFeld beschriftung={t('werkbank.notfallzugang.internet')} hinweis={t('werkbank.notfallzugang.internet.hilfe')}>
+          <input id="notfall-internet" type="checkbox" checked={n.internet} disabled={sendet} onChange={(x) => void setze(x.target.checked)} />
+        </HakenFeld>
         {n.internet && <div className="hinweis warn"><p>{t('werkbank.notfallzugang.internet.warnung')}</p></div>}
         {n.internet && n.von && n.am && <p className="leise klein">{t('werkbank.notfallzugang.internet.von', { von: n.von, am: zeit(n.am) })}</p>}
         {!n.heimnetz && !n.internet && <>
@@ -162,8 +166,12 @@ function ZweifaktorPflichtBlatt() {
       <h2 className="h3">{t('werkbank.anmeldeschutz.zwei-faktor-anmeldung')} <Hilfe ort="werkbank.zweifaktor" /></h2>
       <p className="leise">{t('werkbank.anmeldeschutz.jeder-kann-sie-unter')}</p>
       {!p ? !meldung && <p className="leise">{t('werkbank.anmeldeschutz.lade')}</p> : <>
-        <label className="haken"><input id="zf-admin" type="checkbox" checked={p.admin} disabled={sendet} onChange={(x) => void setze({ admin: x.target.checked })} /><span>{t('konten.verwaltende.zweifaktor.pflicht')}</span></label>
-        <label className="haken"><input id="zf-mitglied" type="checkbox" checked={p.mitglied} disabled={sendet} onChange={(x) => void setze({ mitglied: x.target.checked })} /><span>{t('werkbank.anmeldeschutz.fuer-mitglieder-vorschreiben')}</span></label>
+        <HakenFeld beschriftung={t('konten.verwaltende.zweifaktor.pflicht')}>
+          <input id="zf-admin" type="checkbox" checked={p.admin} disabled={sendet} onChange={(x) => void setze({ admin: x.target.checked })} />
+        </HakenFeld>
+        <HakenFeld beschriftung={t('werkbank.anmeldeschutz.fuer-mitglieder-vorschreiben')}>
+          <input id="zf-mitglied" type="checkbox" checked={p.mitglied} disabled={sendet} onChange={(x) => void setze({ mitglied: x.target.checked })} />
+        </HakenFeld>
       </>}
       {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
     </div>
@@ -244,7 +252,9 @@ function AnbieterBlatt() {
   };
   if (!stand || !e) return <div className="blatt"><h2 className="h3">{t('werkbank.anmeldeschutz.anmeldung-ueber-einen-anbieter')}</h2>{meldung ? <p className="fehlertext">{meldung.text}</p> : <p className="leise">{t('werkbank.anmeldeschutz.lade')}</p>}</div>;
   const feld = (k: 'aussteller' | 'clientId' | 'knopf' | 'adminGruppe' | 'gruppenClaim', titel: ReactNode, platzhalter = '') => (
-    <label className="eigenschaft"><span>{titel}</span><input id={`oidc-${k}`} value={e[k]} placeholder={platzhalter} onChange={(x) => setE({ ...e, [k]: x.target.value })} /></label>
+    <Feld beschriftung={titel}>
+      <input id={`oidc-${k}`} value={e[k]} placeholder={platzhalter} onChange={(x) => setE({ ...e, [k]: x.target.value })} />
+    </Feld>
   );
   return (
     <form className="blatt" onSubmit={(x) => { x.preventDefault(); void speichern(); }} onKeyDown={ent.tasten}>
@@ -252,22 +262,29 @@ function AnbieterBlatt() {
       <p className="leise">{t('werkbank.anmeldeschutz.anmelden-mit-dem-konto')}</p>
       <p className="klein">{tn('werkbank.anmeldeschutz.beim-anbieter-als-weiterleitungs', { code: <code className="mono">{stand.rueckkehr}</code>, umbruch: <br />, code2: <code className="mono">{stand.abmeldenZurueck}</code> })}</p>
       <div className="raster">
-        {feld('aussteller', <>{tn('werkbank.anmeldeschutz.adresse-des-anbieters', { klein: <small>{t('werkbank.anmeldeschutz.issuer-z-b-https')}</small> })}</>, 'https://…')}
+        {feld('aussteller', <>{t('werkbank.anmeldeschutz.adresse-des-anbieters')} <small>{t('werkbank.anmeldeschutz.issuer-z-b-https')}</small></>, 'https://…')}
         {feld('clientId', t('werkbank.anmeldeschutz.client-id'))}
-        <label className="eigenschaft"><span>{tn('werkbank.anmeldeschutz.client-secret', { klein: <small>{stand.secretGesetzt ? t('werkbank.anmeldeschutz.gespeichert-leer-lassen-um') : t('werkbank.anmeldeschutz.leer-fuer-oeffentliche-clients')}</small> })}</span>
-          <input id="oidc-secret" type="password" autoComplete="new-password" value={e.clientSecret} onChange={(x) => setE({ ...e, clientSecret: x.target.value })} /></label>
+        <Feld beschriftung={t('werkbank.anmeldeschutz.client-secret')} hinweis={stand.secretGesetzt ? t('werkbank.anmeldeschutz.gespeichert-leer-lassen-um') : t('werkbank.anmeldeschutz.leer-fuer-oeffentliche-clients')}>
+          <input id="oidc-secret" type="password" autoComplete="new-password" value={e.clientSecret} onChange={(x) => setE({ ...e, clientSecret: x.target.value })} />
+        </Feld>
         {feld('knopf', t('werkbank.anmeldeschutz.beschriftung-des-knopfes'))}
       </div>
-      <label className="haken"><input id="oidc-anlegen" type="checkbox" checked={e.anlegen} onChange={(x) => setE({ ...e, anlegen: x.target.checked })} /><span>{tn('werkbank.anmeldeschutz.unbekannte-adressen-als-neue', { klein: <small className="leise">{t('werkbank.anmeldeschutz.sonst-nur-benutzer-die')}</small> })}</span></label>
-      {e.anlegen && <label className="eigenschaft"><span>{t('konten.verwaltende.oidc.neu')}</span>
-        <select id="oidc-rolle" value={e.standardrolle} onChange={(x) => setE({ ...e, standardrolle: x.target.value === 'admin' ? 'admin' : 'mitglied' })}><option value="mitglied">{t('konten.verwaltende.oidc.neu.ohne')}</option><option value="admin">{t('konten.verwaltende.oidc.neu.gesamt')}</option></select></label>}
+      <HakenFeld beschriftung={t('werkbank.anmeldeschutz.unbekannte-adressen-als-neue')} hinweis={t('werkbank.anmeldeschutz.sonst-nur-benutzer-die')}>
+        <input id="oidc-anlegen" type="checkbox" checked={e.anlegen} onChange={(x) => setE({ ...e, anlegen: x.target.checked })} />
+      </HakenFeld>
+      {e.anlegen && <Feld beschriftung={t('konten.verwaltende.oidc.neu')}>
+        <select id="oidc-rolle" value={e.standardrolle} onChange={(x) => setE({ ...e, standardrolle: x.target.value === 'admin' ? 'admin' : 'mitglied' })}><option value="mitglied">{t('konten.verwaltende.oidc.neu.ohne')}</option><option value="admin">{t('konten.verwaltende.oidc.neu.gesamt')}</option></select>
+      </Feld>}
       <div className="raster">
         {feld('adminGruppe', <>{t('konten.verwaltende.oidc.gruppe')} <small>{t('konten.verwaltende.oidc.gruppe.leer')}</small></>, t('werkbank.anmeldeschutz.z-b-dms-admins'))}
-        {feld('gruppenClaim', <>{tn('werkbank.anmeldeschutz.claim-mit-den-gruppen', { klein: <small>{t('werkbank.anmeldeschutz.meist-groups')}</small> })}</>, 'groups')}
+        {feld('gruppenClaim', <>{t('werkbank.anmeldeschutz.claim-mit-den-gruppen')} <small>{t('werkbank.anmeldeschutz.meist-groups')}</small></>, 'groups')}
       </div>
-      <label className="haken"><input id="oidc-lokal" type="checkbox" checked={e.lokalNurAdmins} onChange={(x) => setE({ ...e, lokalNurAdmins: x.target.checked })} /><span>{t('konten.verwaltende.oidc.lokal')}
-        <small className="leise">{t('werkbank.anmeldeschutz.als-notzugang-falls-der')}</small></span></label>
-      <label className="haken"><input id="oidc-abmelden" type="checkbox" checked={e.abmeldenBeimAnbieter} onChange={(x) => setE({ ...e, abmeldenBeimAnbieter: x.target.checked })} /><span>{t('werkbank.anmeldeschutz.beim-abmelden-auch-beim')}</span></label>
+      <HakenFeld beschriftung={t('konten.verwaltende.oidc.lokal')} hinweis={t('werkbank.anmeldeschutz.als-notzugang-falls-der')}>
+        <input id="oidc-lokal" type="checkbox" checked={e.lokalNurAdmins} onChange={(x) => setE({ ...e, lokalNurAdmins: x.target.checked })} />
+      </HakenFeld>
+      <HakenFeld beschriftung={t('werkbank.anmeldeschutz.beim-abmelden-auch-beim')}>
+        <input id="oidc-abmelden" type="checkbox" checked={e.abmeldenBeimAnbieter} onChange={(x) => setE({ ...e, abmeldenBeimAnbieter: x.target.checked })} />
+      </HakenFeld>
       <Schalter id="oidc-aktiv" an={e.aktiv} setze={(an) => setE({ ...e, aktiv: an })} beschriftung={t('werkbank.anmeldeschutz.schalter')} hinweis={t('werkbank.anmeldeschutz.schalter.hinweis')} />
       {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
       <div className="knoepfe">

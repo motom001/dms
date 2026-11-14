@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, type ReactNode } from 'react';
-import { HakenFeld } from '../bausteine';
+import { Feld, FeldGruppe, HakenFeld, Knopf } from '../bausteine';
 import { auswahlMitAbhaengigkeiten, dmsPasst, inMB, passt, vergleicheVersion, vorausgewaehlt, type AblaufEingabe, type AblaufErgebnis, type AblaufInstallation, type AblaufPlan, type Ergaenzung, type InstalliertesPaket, type Katalog, type KatalogPaket, type KatalogVersion } from '../../../shared/src/pakete';
 import type { EinstellungFeld } from '../../../shared/src/paketeinstellungen';
 import { api, ApiFehler, type PaketVorschau, type Sammeldatei, type SammelPaket } from '../api';
@@ -203,6 +203,8 @@ export function PaketAblauf({ quelle, start, nur, empfohlen = [], versionen = {}
     const erg = ergaenzungen(k.id);
     return (
       <li key={k.schluessel} className={an ? 'an' : undefined}>
+        {/* Kachel als Gruppe mit dem Paketnamen (#1214): Haken, Symbol und Beschreibung bleiben eine Fläche zum Antippen. */}
+        <FeldGruppe beschriftung={k.name} beschriftungVerbergen>
         <label className="haken pd-kachel">
           <input type="checkbox" checked={an} disabled={!!k.gesperrt || mit} onChange={(e) => schalten(k.schluessel, e.target.checked)} aria-describedby={`pa-${k.id}`} />
           <PaketSymbol symbol={k.symbol} kuerzel={k.kuerzel} name={k.name} />
@@ -216,6 +218,7 @@ export function PaketAblauf({ quelle, start, nur, empfohlen = [], versionen = {}
             {k.groesse !== undefined && k.groesse > 0 && <span className="klein leise">{t('pakete.ablauf.groesse', { groesse: groesseText(k.groesse) })}</span>}
           </span>
         </label>
+        </FeldGruppe>
         <div className="pd-darf klein leise" id={`pa-${k.id}`}>
           {k.gesperrt ? <span className="fehlertext">{k.gesperrt}</span> : k.inhalt ? k.inhalt : null}
           {!k.gesperrt && Object.keys(k.abhaengigkeiten).length > 0 && <>{k.inhalt ? ' · ' : ''}{t('pakete.ablauf.braucht', { namen: Object.keys(k.abhaengigkeiten).map((a) => (quelle.installiert.some((x) => x.id === a) ? t('pakete.ablauf.braucht.da', { name: name(a) }) : name(a))).join(', ') })}</>}
@@ -229,9 +232,9 @@ export function PaketAblauf({ quelle, start, nur, empfohlen = [], versionen = {}
     <div className="stapel">
       {kategorien.length > 1 && (
         <div className="pd-kategorien" role="group" aria-label={t('pakete.ablauf.kategorien')}>
-          <button type="button" className="knopf klein" aria-pressed={kategorie === null} onClick={() => setKategorie(null)}>{t('pakete.ablauf.kategorien.alle')}</button>
+          <Knopf aria-pressed={kategorie === null} onClick={() => setKategorie(null)}>{t('pakete.ablauf.kategorien.alle')}</Knopf>
           {kategorien.map((k) => (
-            <button key={k} type="button" className="knopf klein" aria-pressed={kategorie === k} onClick={() => setKategorie(kategorie === k ? null : k)}>{kategorieName(k)}</button>
+            <Knopf key={k} aria-pressed={kategorie === k} onClick={() => setKategorie(kategorie === k ? null : k)}>{kategorieName(k)}</Knopf>
           ))}
         </div>
       )}
@@ -249,9 +252,9 @@ export function PaketAblauf({ quelle, start, nur, empfohlen = [], versionen = {}
       {meldung && <div className="hinweis schlecht" role="status"><p>{meldung.text}</p>{!!meldung.gruende?.length && <ul>{meldung.gruende.map((g) => <li key={g}>{g}</li>)}</ul>}</div>}
       <p className="leise klein">{t('pakete.ablauf.auswahl.hinweis')}</p>
       <div className="knoepfe">
-        <button type="button" className="knopf primaer" disabled={laeuft || !aufgeloest.pakete.length || aufgeloest.probleme.length > 0} onClick={() => void pruefen()}>
-          {laeuft ? t('pakete.ablauf.pruefe') : weiterText ?? t('pakete.ablauf.weiter', { anzahl: aufgeloest.pakete.length })}
-        </button>
+        <Knopf art="haupt" gesperrt={!aufgeloest.pakete.length || aufgeloest.probleme.length > 0} laeuft={laeuft} laeuftText={t('pakete.ablauf.pruefe')} onClick={() => void pruefen()}>
+          {weiterText ?? t('pakete.ablauf.weiter', { anzahl: aufgeloest.pakete.length })}
+        </Knopf>
         {aktionen}
       </div>
     </div>
@@ -265,8 +268,7 @@ function ErgaenzungenWahl({ erg, offen, wahl, imPlan, schalten }: { erg: Kandida
   return (
     <>
       {gruppen.map((g) => (
-        <fieldset key={g} className="pd-ergaenzungen">
-          <legend className="klein"><strong>{g ? `${g}?` : t('pakete.ablauf.ergaenzungen')}</strong></legend>
+        <FeldGruppe key={g} beschriftung={g ? `${g}?` : t('pakete.ablauf.ergaenzungen')} className="pd-ergaenzungen">
           <div className="pd-ergaenzungsliste">
             {erg.filter((k) => (k.ergaenzt?.gruppe ?? '') === g).map((k) => {
               const p = imPlan(k.id);
@@ -279,7 +281,7 @@ function ErgaenzungenWahl({ erg, offen, wahl, imPlan, schalten }: { erg: Kandida
               );
             })}
           </div>
-        </fieldset>
+        </FeldGruppe>
       ))}
     </>
   );
@@ -391,7 +393,7 @@ export function Fragen({ plan, eingabe, zurueck, neuerPlan, fertig, sammeln, vor
         <div className="hinweis warn stapel" role="status">
           <p>{t('pakete.ablauf.ausgelassen')}</p>
           <ul>{plan.ausgelassen.map((a) => <li key={a.id}><strong>{a.name}</strong> {a.version}: {a.grund}</li>)}</ul>
-          <div className="knoepfe"><button type="button" className="knopf" disabled={laeuft} onClick={() => void nochmal()}>{t('pakete.ablauf.ausgelassen.nochmal')}</button></div>
+          <div className="knoepfe"><Knopf gesperrt={laeuft} onClick={() => void nochmal()}>{t('pakete.ablauf.ausgelassen.nochmal')}</Knopf></div>
         </div>
       )}
 
@@ -401,7 +403,9 @@ export function Fragen({ plan, eingabe, zurueck, neuerPlan, fertig, sammeln, vor
           <HerkunftZeile p={plan.herkunft} />
           <div className="hinweis warn" role="alert">
             <p>{t('pakete.ablauf.herkunft.text')}</p>
-            <label className="haken"><input type="checkbox" checked={herkunftOk} onChange={(e) => setHerkunftOk(e.target.checked)} /><span>{t('pakete.ablauf.herkunft.ja')}</span></label>
+            <HakenFeld beschriftung={t('pakete.ablauf.herkunft.ja')}>
+              <input type="checkbox" checked={herkunftOk} onChange={(e) => setHerkunftOk(e.target.checked)} />
+            </HakenFeld>
           </div>
         </section>
       )}
@@ -426,7 +430,9 @@ export function Fragen({ plan, eingabe, zurueck, neuerPlan, fertig, sammeln, vor
             <div className="hinweis warn"><HakenFeld beschriftung={t('pakete.ablauf.herausgeber.ja', { liste: erstmals.map((p) => `${p.name}: ${p.vorschau.herausgeberBestaetigen}`).join(', ') })}><input type="checkbox" checked={herausgeberOk} onChange={(e) => setHerausgeberOk(e.target.checked)} /></HakenFeld></div>
           )}
           {plan.rechte.bestaetigen && (
-            <div className="hinweis warn"><label className="haken"><input type="checkbox" checked={rechteOk} onChange={(e) => setRechteOk(e.target.checked)} /><span>{t('pakete.ablauf.rechte.ja')}</span></label></div>
+            <div className="hinweis warn"><HakenFeld beschriftung={t('pakete.ablauf.rechte.ja')}>
+              <input type="checkbox" checked={rechteOk} onChange={(e) => setRechteOk(e.target.checked)} />
+            </HakenFeld></div>
           )}
         </section>
       )}
@@ -439,16 +445,14 @@ export function Fragen({ plan, eingabe, zurueck, neuerPlan, fertig, sammeln, vor
             <div key={p.schluessel} className="stapel">
               <h3 className="klein">{p.name}</h3>
               {konfliktTypen(p).map((x) => (
-                <label key={x.schluessel} className="paketname"><span>{t('pakete.ablauf.namen.typ', { name: x.name })}</span>
+                <Feld key={x.schluessel} beschriftung={t('pakete.ablauf.namen.typ', { name: x.name })} fehler={(namen[p.id]?.[x.schluessel] ?? '').trim().toLowerCase() === x.name.toLowerCase() ? x.konflikt : undefined}>
                   <input value={namen[p.id]?.[x.schluessel] ?? ''} onChange={(e) => setNamen({ ...namen, [p.id]: { ...namen[p.id], [x.schluessel]: e.target.value } })} />
-                  {(namen[p.id]?.[x.schluessel] ?? '').trim().toLowerCase() === x.name.toLowerCase() && <span className="fehlertext klein">{x.konflikt}</span>}
-                </label>
+                </Feld>
               ))}
               {konfliktSichten(p).map((x) => (
-                <label key={x.schluessel} className="paketname"><span>{t('pakete.ablauf.namen.sicht', { name: x.name })}</span>
+                <Feld key={x.schluessel} beschriftung={t('pakete.ablauf.namen.sicht', { name: x.name })} fehler={(sichtNamen[p.id]?.[x.schluessel] ?? '').trim().toLowerCase() === x.name.toLowerCase() ? x.konflikt : undefined}>
                   <input value={sichtNamen[p.id]?.[x.schluessel] ?? ''} onChange={(e) => setSichtNamen({ ...sichtNamen, [p.id]: { ...sichtNamen[p.id], [x.schluessel]: e.target.value } })} />
-                  {(sichtNamen[p.id]?.[x.schluessel] ?? '').trim().toLowerCase() === x.name.toLowerCase() && <span className="fehlertext klein">{x.konflikt}</span>}
-                </label>
+                </Feld>
               ))}
             </div>
           ))}
@@ -458,16 +462,18 @@ export function Fragen({ plan, eingabe, zurueck, neuerPlan, fertig, sammeln, vor
       {mitBeispielen.length > 0 && (
         <section className="blatt stapel" aria-label={t('pakete.ablauf.beispiele')}>
           <h2 className="h3">{t('pakete.ablauf.beispiele')}</h2>
-          <label className="haken"><input type="checkbox" checked={beispiele} onChange={(e) => setBeispiele(e.target.checked)} />
-            <span>{mitBeispielen.length === 1 ? t('pakete.ablauf.beispiele.eins', { anzahl: mitBeispielen[0].vorschau.beispiele, name: mitBeispielen[0].name }) : t('pakete.ablauf.beispiele.alle', { anzahl: mitBeispielen.length })}</span></label>
+          <HakenFeld beschriftung={mitBeispielen.length === 1 ? t('pakete.ablauf.beispiele.eins', { anzahl: mitBeispielen[0].vorschau.beispiele, name: mitBeispielen[0].name }) : t('pakete.ablauf.beispiele.alle', { anzahl: mitBeispielen.length })}>
+            <input type="checkbox" checked={beispiele} onChange={(e) => setBeispiele(e.target.checked)} />
+          </HakenFeld>
           {/* Beispiel-Dokumente (#878): wie viele und wie groß, damit niemand von 100 MB überrascht wird. */}
           {mitBeispielen.some((p) => p.vorschau.beispielDokumente?.anzahl) && <p className="leise klein">{t('pakete.ablauf.beispiele.dokumente', { anzahl: mitBeispielen.reduce((n, p) => n + (p.vorschau.beispielDokumente?.anzahl ?? 0), 0), mb: inMB(mitBeispielen.reduce((n, p) => n + (p.vorschau.beispielDokumente?.bytes ?? 0), 0)) })}</p>}
           {beispiele && mitBeispielen.length > 1 && (
             <details className="pa-je-paket">
               <summary className="klein">{t('pakete.ablauf.beispiele.je')}</summary>
               {mitBeispielen.map((p) => (
-                <label key={p.schluessel} className="haken klein"><input type="checkbox" checked={!ohneBeispiele.includes(p.id)} onChange={(e) => setOhneBeispiele(e.target.checked ? ohneBeispiele.filter((x) => x !== p.id) : [...ohneBeispiele, p.id])} />
-                  <span>{t('pakete.ablauf.beispiele.paket', { name: p.name, anzahl: p.vorschau.beispiele })}</span></label>
+                <HakenFeld key={p.schluessel} className="klein" beschriftung={t('pakete.ablauf.beispiele.paket', { name: p.name, anzahl: p.vorschau.beispiele })}>
+                  <input type="checkbox" checked={!ohneBeispiele.includes(p.id)} onChange={(e) => setOhneBeispiele(e.target.checked ? ohneBeispiele.filter((x) => x !== p.id) : [...ohneBeispiele, p.id])} />
+                </HakenFeld>
               ))}
             </details>
           )}
@@ -481,8 +487,9 @@ export function Fragen({ plan, eingabe, zurueck, neuerPlan, fertig, sammeln, vor
           {mitAutomatisierungen.flatMap((p) => (p.vorschau.automatisierungen ?? []).filter((a) => a.neu).map((a) => {
             const k = `${p.id}|${a.schluessel}`;
             return (
-              <label key={k} className="haken"><input type="checkbox" checked={!ohneAutomatisierung.includes(k)} onChange={(e) => setOhneAutomatisierung(e.target.checked ? ohneAutomatisierung.filter((x) => x !== k) : [...ohneAutomatisierung, k])} />
-                <span>{a.name} <small className="leise">{t('pakete.ablauf.automatisierungen.paket', { name: p.name })}{a.zeitplan && ` · ${t('pakete.ablauf.automatisierungen.zeitplan', { zeitplan: a.zeitplan })}`}</small>{a.beschreibung && <small className="hilfe">{a.beschreibung}</small>}</span></label>
+              <HakenFeld key={k} beschriftung={<>{a.name} <small className="leise">{t('pakete.ablauf.automatisierungen.paket', { name: p.name })}{a.zeitplan && ` · ${t('pakete.ablauf.automatisierungen.zeitplan', { zeitplan: a.zeitplan })}`}</small></>} hinweis={a.beschreibung}>
+                <input type="checkbox" checked={!ohneAutomatisierung.includes(k)} onChange={(e) => setOhneAutomatisierung(e.target.checked ? ohneAutomatisierung.filter((x) => x !== k) : [...ohneAutomatisierung, k])} />
+              </HakenFeld>
             );
           }))}
         </section>
@@ -495,13 +502,15 @@ export function Fragen({ plan, eingabe, zurueck, neuerPlan, fertig, sammeln, vor
           {mitEinstellungen.map((p) => (
             <fieldset key={p.schluessel} className="pa-einstellungen stapel">
               <legend><strong>{p.name}</strong></legend>
-              <label className="haken klein"><input type="checkbox" checked={spaeter.includes(p.id)} onChange={(e) => setSpaeter(e.target.checked ? [...spaeter, p.id] : spaeter.filter((x) => x !== p.id))} /><span>{t('pakete.ablauf.einstellungen.spaeter')}</span></label>
+              <HakenFeld beschriftung={t('pakete.ablauf.einstellungen.spaeter')} className="klein">
+                <input type="checkbox" checked={spaeter.includes(p.id)} onChange={(e) => setSpaeter(e.target.checked ? [...spaeter, p.id] : spaeter.filter((x) => x !== p.id))} />
+              </HakenFeld>
               {!spaeter.includes(p.id) && p.einstellungen.map((f: EinstellungFeld) => (
                 <div key={f.schluessel}>
                   <Eingabe f={f} wert={werte[p.id]?.[f.schluessel]} fehler={fehler[`${p.id}.${f.schluessel}`]?.replace(`${p.name}: `, '')} auswahl={plan.auswahl} id={`pa-${p.id}-${f.schluessel}`}
                     setze={(v) => setWerte((w) => ({ ...w, [p.id]: { ...w[p.id], [f.schluessel]: v } }))} />
                   {f.typ === 'adresse' && f.beispiel && leer(werte[p.id]?.[f.schluessel]) && (
-                    <button type="button" className="textknopf klein" onClick={() => setWerte((w) => ({ ...w, [p.id]: { ...w[p.id], [f.schluessel]: f.beispiel } }))}>{t('pakete.ablauf.einstellungen.beispiel', { beispiel: f.beispiel })}</button>
+                    <Knopf art="link" groesse="klein" onClick={() => setWerte((w) => ({ ...w, [p.id]: { ...w[p.id], [f.schluessel]: f.beispiel } }))}>{t('pakete.ablauf.einstellungen.beispiel', { beispiel: f.beispiel })}</Knopf>
                   )}
                 </div>
               ))}
@@ -509,8 +518,9 @@ export function Fragen({ plan, eingabe, zurueck, neuerPlan, fertig, sammeln, vor
             </fieldset>
           ))}
           {adressen.length > 0 && (
-            <div className="hinweis warn"><label className="haken"><input type="checkbox" checked={adresseOk} onChange={(e) => setAdresseOk(e.target.checked)} />
-              <span>{t('pakete.ablauf.adresse.ja', { adressen: adressen.map((a) => `${a.paket} → ${a.wert}`).join(', ') })}</span></label></div>
+            <div className="hinweis warn"><HakenFeld beschriftung={t('pakete.ablauf.adresse.ja', { adressen: adressen.map((a) => `${a.paket} → ${a.wert}`).join(', ') })}>
+              <input type="checkbox" checked={adresseOk} onChange={(e) => setAdresseOk(e.target.checked)} />
+            </HakenFeld></div>
           )}
         </section>
       )}
@@ -541,10 +551,10 @@ export function Fragen({ plan, eingabe, zurueck, neuerPlan, fertig, sammeln, vor
         {nochKonflikt && namenskonflikte.length > 0 && <NamenskonfliktHinweis liste={namenskonflikte} />}
         {fehlt.length > 0 && !probleme.length && <ul className="leise klein">{fehlt.map((f) => <li key={f}>{f}</li>)}</ul>}
         <div className="knoepfe">
-          <button type="button" className="knopf primaer" disabled={laeuft || probleme.length > 0 || fehlt.length > 0} onClick={() => void installieren()}>
-            {sammeln ? t('einrichtung.pakete.uebernehmen', { anzahl: pk.length }) : laeuft ? t('pakete.ablauf.installiere') : t('pakete.ablauf.installieren', { anzahl: pk.length })}
-          </button>
-          <button type="button" className="textknopf" disabled={laeuft} onClick={zurueck}>{t('pakete.ablauf.zurueck')}</button>
+          <Knopf art="haupt" gesperrt={probleme.length > 0 || fehlt.length > 0} laeuft={laeuft} laeuftText={t('pakete.ablauf.installiere')} onClick={() => void installieren()}>
+            {sammeln ? t('einrichtung.pakete.uebernehmen', { anzahl: pk.length }) : t('pakete.ablauf.installieren', { anzahl: pk.length })}
+          </Knopf>
+          <Knopf gesperrt={laeuft} onClick={zurueck}>{t('pakete.ablauf.zurueck')}</Knopf>
         </div>
       </section>
     </div>
@@ -578,7 +588,7 @@ export function AblaufErgebnisAnsicht({ e, weiter }: { e: AblaufErgebnis; weiter
       )}
       {(e.nichtInstalliert.length > 0 || !!e.fehler) && <p className="leise">{t('pakete.ablauf.ergebnis.nachholen')} <Link to="/werkbank/pakete" className="verweis">{t('werkbank.paketablauf.werkbank-pakete')}</Link></p>}
       {!e.installiert.length && !e.fehler && !e.nichtInstalliert.length && <p className="leise">{t('pakete.ablauf.ergebnis.nichts')}</p>}
-      <div className="knoepfe"><button type="button" className="knopf primaer" onClick={weiter}>{t('pakete.ablauf.ergebnis.weiter')}</button></div>
+      <div className="knoepfe"><Knopf art="haupt" onClick={weiter}>{t('pakete.ablauf.ergebnis.weiter')}</Knopf></div>
     </div>
   );
 }

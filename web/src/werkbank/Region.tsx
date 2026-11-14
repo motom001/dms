@@ -5,6 +5,7 @@ import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 import { t } from '../sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
 import { Kopf } from './Kopf';
+import { Feld } from '../bausteine';
 
 /**
  * Werkbank → Einstellungen → Region (#726): Land, Bundesland und Zeitzone an einer Stelle,
@@ -47,19 +48,22 @@ export function RegionPanel({ z }: { z: RegionZustand }) {
       </Kopf>
       {meldung && <div className={`hinweis ${meldung.art}`} role="status"><p>{meldung.text}</p></div>}
       <form className="blatt" onSubmit={(x) => { x.preventDefault(); void speichern(); }} onKeyDown={ent.tasten}>
-        <label className="eigenschaft"><span>{t('werkbank.region.land')}</span>
+        <Feld beschriftung={t('werkbank.region.land')}>
           <select id="region-land" value={e.land} onChange={(x) => setE({ ...e, land: x.target.value })}>
             {Object.entries(s.laender).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-          </select></label>
-        <label className="eigenschaft"><span>{t('werkbank.region.bundesland')} <small>{t('werkbank.region.bundesland.hinweis')}</small></span>
+          </select>
+        </Feld>
+        <Feld beschriftung={t('werkbank.region.bundesland')} optional hinweis={t('werkbank.region.bundesland.hinweis')}>
           <select id="region-bundesland" value={e.bundesland ?? ''} onChange={(x) => setE({ ...e, bundesland: x.target.value || null })}>
             <option value="">{t('werkbank.region.bundesland.keins')}</option>
             {Object.entries(s.bundeslaender).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-          </select></label>
-        <label className="eigenschaft"><span>{t('werkbank.region.zeitzone')} <small>{t('werkbank.region.zeitzone.hinweis')}</small></span>
+          </select>
+        </Feld>
+        <Feld beschriftung={t('werkbank.region.zeitzone')} hinweis={t('werkbank.region.zeitzone.hinweis')}>
           <select id="region-zeitzone" value={e.zeitzone} onChange={(x) => setE({ ...e, zeitzone: x.target.value })}>
             {zonen.map((zz) => <option key={zz} value={zz}>{zz.replace(/_/g, ' ')}</option>)}
-          </select></label>
+          </select>
+        </Feld>
         <Speicherleiste ent={ent} gegenstand={t('werkbank.bereich.region.name')} sendet={sendet} />
       </form>
       <section className="blatt" aria-labelledby="region-feiertage">

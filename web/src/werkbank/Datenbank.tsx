@@ -3,10 +3,11 @@ import { api, type DatenbankStand } from '../api';
 import { Link } from '../ort';
 import { Hilfe } from '../Hilfe';
 import { Speicherleiste, useEntwurf } from '../Speicherleiste';
+import { Symbol } from '../Symbol';
 import { t, tn } from '../sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
 import { ProzessTabelle } from './Auslastung';
-import { abfangen } from '../bausteine';
+import { abfangen, Feld, Knopf } from '../bausteine';
 
 /**
  * Lange Datenbankzugriffe (#12) und was gerade in der Datenbank läuft – seit #407 unter
@@ -70,10 +71,10 @@ function Langlaeufer({ z, offen }: { z: DatenbankZustand; offen?: string }) {
               const offenHier = auf.has(id);
               return (
                 <li key={id} data-id={id} className={offenHier ? 'an' : undefined}>
-                  <button type="button" className="aufklappzeile" aria-expanded={offenHier} onClick={() => umschalten(id)}>
-                    <span className="mono klein">{zeit(l.zeit)}</span> <span className={`chip ${l.dauerMs >= 5000 ? 'stufe-error' : 'stufe-warn'}`}>{dauer(l.dauerMs)}</span>{' '}
+                  <Knopf art="link" className="aufklappzeile" aria-expanded={offenHier} onClick={() => umschalten(id)}>
+                    <Symbol name={offenHier ? 'pfeil-unten' : 'pfeil-rechts'} className="zeichen" /><span className="mono klein">{zeit(l.zeit)}</span> <span className={`chip ${l.dauerMs >= 5000 ? 'stufe-error' : 'stufe-warn'}`}>{dauer(l.dauerMs)}</span>{' '}
                     <span className="mono">{l.zugriff}</span>
-                  </button>
+                  </Knopf>
                   {offenHier && (
                     <dl className="eigenschaften klein">
                       {l.zugriff.startsWith('Anfrage: ')
@@ -113,8 +114,12 @@ function Einstellungen({ z, offen }: { z: DatenbankZustand; offen?: string }) {
       <h2 className="h3">{t('werkbank.datenbank.lange-datenbankzugriffe')} <Hilfe ort="werkbank.datenbank" /></h2>
       <p className="leise">{t('werkbank.datenbank.jeder-datenbankzugriff-wird-gestoppt')}</p>
       <div className="raster">
-        <label className="eigenschaft"><span>{tn('werkbank.datenbank.lang-ab', { klein: <small>{t('werkbank.datenbank.millisekunden-standard-500')}</small> })}</span><input type="number" min={1} max={600000} value={schwelle} onChange={(x) => setSchwelle(x.target.value)} /></label>
-        <label className="eigenschaft"><span>{tn('werkbank.datenbank.aufbewahren', { klein: <small>{t('werkbank.datenbank.tage-standard-30')}</small> })}</span><input type="number" min={1} max={3650} value={tage} onChange={(x) => setTage(x.target.value)} /></label>
+        <Feld beschriftung={t('werkbank.datenbank.lang-ab')} hinweis={t('werkbank.datenbank.millisekunden-standard-500')}>
+          <input type="number" min={1} max={600000} value={schwelle} onChange={(x) => setSchwelle(x.target.value)} />
+        </Feld>
+        <Feld beschriftung={t('werkbank.datenbank.aufbewahren')} hinweis={t('werkbank.datenbank.tage-standard-30')}>
+          <input type="number" min={1} max={3650} value={tage} onChange={(x) => setTage(x.target.value)} />
+        </Feld>
       </div>
       <Langlaeufer z={z} offen={offen} />
       {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'}>{meldung.text}</p>}

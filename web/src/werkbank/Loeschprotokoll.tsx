@@ -6,7 +6,7 @@ import { Hilfe } from '../Hilfe';
 import { pruefwert } from '../pruefwert';
 import { t, tn } from '../sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
-import { abfangen } from '../bausteine';
+import { abfangen, Feld, Knopf, Suchfeld } from '../bausteine';
 
 /**
  * Werkbank → Datenschutz → Löschprotokoll (#470): Nachweis gelöschter Mappen und Dokumente – ohne Titel,
@@ -52,20 +52,30 @@ export function LoeschprotokollBlatt() {
       <h2 className="h3">{t('werkbank.loeschprotokoll.loeschprotokoll')} <Hilfe ort="werkbank.loeschprotokoll" /></h2>
       <p className="leise klein">{t('werkbank.loeschprotokoll.jede-loeschung-steht-hier')}</p>
       <form className="lp-filter" onSubmit={(e) => { e.preventDefault(); void laden(f); }}>
-        <label className="eigenschaft"><span>{t('werkbank.loeschprotokoll.von')}</span><input type="date" value={f.von} onChange={(e) => setze('von', e.target.value)} /></label>
-        <label className="eigenschaft"><span>{t('werkbank.loeschprotokoll.bis')}</span><input type="date" value={f.bis} onChange={(e) => setze('bis', e.target.value)} /></label>
-        <label className="eigenschaft"><span>{t('werkbank.loeschprotokoll.mappentyp')}</span><select value={f.typId} onChange={(e) => setze('typId', e.target.value)}><option value="">{t('werkbank.loeschprotokoll.alle')}</option>{typen.map((mappentyp) => <option key={mappentyp.id} value={mappentyp.id}>{mappentyp.name}</option>)}</select></label>
-        <label className="eigenschaft"><span>{t('werkbank.loeschprotokoll.grund')}</span><select value={f.grund} onChange={(e) => setze('grund', e.target.value)}><option value="">{t('werkbank.loeschprotokoll.alle')}</option>{Object.entries(LOESCHGRUENDE).map(([k, n]) => <option key={k} value={k}>{n}</option>)}<option value="ohne">{t('werkbank.loeschprotokoll.ohne-grund')}</option></select></label>
-        <label className="eigenschaft"><span>{t('werkbank.loeschprotokoll.schritt')}</span><select value={f.schritt} onChange={(e) => setze('schritt', e.target.value)}><option value="">{t('werkbank.loeschprotokoll.alle')}</option>{Object.entries(LOESCHSCHRITTE).map(([k, n]) => <option key={k} value={k}>{n}</option>)}</select></label>
-        <label className="eigenschaft lp-suche"><span>{t('werkbank.loeschprotokoll.nummer-oder-pruefsumme')}</span><input type="search" value={f.suche} placeholder={t('werkbank.loeschprotokoll.z-b-r-2026')} onChange={(e) => setF({ ...f, suche: e.target.value })} /></label>
-        <button type="submit" className="knopf">{t('werkbank.loeschprotokoll.suchen')}</button>
+        <Feld beschriftung={t('werkbank.loeschprotokoll.von')}>
+          <input type="date" value={f.von} onChange={(e) => setze('von', e.target.value)} />
+        </Feld>
+        <Feld beschriftung={t('werkbank.loeschprotokoll.bis')}>
+          <input type="date" value={f.bis} onChange={(e) => setze('bis', e.target.value)} />
+        </Feld>
+        <Feld beschriftung={t('werkbank.loeschprotokoll.mappentyp')}>
+          <select value={f.typId} onChange={(e) => setze('typId', e.target.value)}><option value="">{t('werkbank.loeschprotokoll.alle')}</option>{typen.map((mappentyp) => <option key={mappentyp.id} value={mappentyp.id}>{mappentyp.name}</option>)}</select>
+        </Feld>
+        <Feld beschriftung={t('werkbank.loeschprotokoll.grund')}>
+          <select value={f.grund} onChange={(e) => setze('grund', e.target.value)}><option value="">{t('werkbank.loeschprotokoll.alle')}</option>{Object.entries(LOESCHGRUENDE).map(([k, n]) => <option key={k} value={k}>{n}</option>)}<option value="ohne">{t('werkbank.loeschprotokoll.ohne-grund')}</option></select>
+        </Feld>
+        <Feld beschriftung={t('werkbank.loeschprotokoll.schritt')}>
+          <select value={f.schritt} onChange={(e) => setze('schritt', e.target.value)}><option value="">{t('werkbank.loeschprotokoll.alle')}</option>{Object.entries(LOESCHSCHRITTE).map(([k, n]) => <option key={k} value={k}>{n}</option>)}</select>
+        </Feld>
+        <Suchfeld className="lp-suche" wert={f.suche} setze={(suche) => setF({ ...f, suche })} beschriftung={t('werkbank.loeschprotokoll.nummer-oder-pruefsumme')} platzhalter={t('werkbank.loeschprotokoll.z-b-r-2026')} />
+        <Knopf art="haupt" type="submit">{t('werkbank.loeschprotokoll.suchen')}</Knopf>
       </form>
       <label className="lp-datei" onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); void pruefe(e.dataTransfer.files[0]); }}>
         <input type="file" onChange={(e) => { void pruefe(e.target.files?.[0]); e.target.value = ''; }} />
         <span>{tn('werkbank.loeschprotokoll.datei-hierher-ziehen-oder', { b: <strong>{t('werkbank.loeschprotokoll.wurde-dieses-dokument-geloescht')}</strong> })}</span>
       </label>
       {datei && <p className="leise klein lp-sha">{datei}</p>}
-      {f.vorgang && <p className="klein">{t('werkbank.loeschprotokoll.nur-vorgang', { kurz: kurz(f.vorgang) })}{' '}<button type="button" className="textknopf klein" onClick={() => setze('vorgang', '')}>{t('werkbank.loeschprotokoll.alle-vorgaenge')}</button></p>}
+      {f.vorgang && <p className="klein">{t('werkbank.loeschprotokoll.nur-vorgang', { kurz: kurz(f.vorgang) })}{' '}<Knopf art="link" groesse="klein" onClick={() => setze('vorgang', '')}>{t('werkbank.loeschprotokoll.alle-vorgaenge')}</Knopf></p>}
       {fehler && <p className="fehlertext">{fehler}</p>}
       {r && (
         <>
@@ -81,9 +91,10 @@ export function LoeschprotokollBlatt() {
             x.preventDefault(); setMeldung(undefined);
             await api.loeschprotokollJahre(Number(jahre)); setMeldung(t('werkbank.loeschprotokoll.gespeichert')); await laden(f);
           }, setMeldung)}>
-            <label className="eigenschaft"><span>{tn('werkbank.loeschprotokoll.aufbewahrung', { klein: <small>{t('werkbank.loeschprotokoll.danach-fallen-alte-eintraege')}</small> })}</span>
-              <span className="lp-jahre-feld"><input type="number" min={1} max={LOESCHPROTOKOLL_JAHRE_MAX} value={jahre} onChange={(e) => setJahre(e.target.value)} /> {' '}{t('werkbank.loeschprotokoll.jahre')}</span></label>
-            <button type="submit" className="knopf klein" disabled={jahre === String(r.jahre)}>{t('werkbank.loeschprotokoll.speichern')}</button>
+            <Feld beschriftung={t('werkbank.loeschprotokoll.aufbewahrung')} hinweis={t('werkbank.loeschprotokoll.danach-fallen-alte-eintraege')}>
+              {(v) => <span className="lp-jahre-feld"><input {...v} type="number" min={1} max={LOESCHPROTOKOLL_JAHRE_MAX} value={jahre} onChange={(e) => setJahre(e.target.value)} /> {' '}{t('werkbank.loeschprotokoll.jahre')}</span>}
+            </Feld>
+            <Knopf art="haupt" type="submit" gesperrt={jahre === String(r.jahre)}>{t('werkbank.loeschprotokoll.speichern')}</Knopf>
             {meldung && <span className="leise klein" role="status">{meldung}</span>}
           </form>
         </>
@@ -101,7 +112,7 @@ function Zeile({ e, vorgang }: { e: LoeschEintrag; vorgang(v: string): void }) {
       <span className="lp-kopf"><strong>{LOESCHSCHRITTE[e.schritt]}</strong> · {zeit(e.zeit)} · {e.typ || t('werkbank.loeschprotokoll.mappentyp-unbekannt')}{e.nummer ? ` · ${e.nummer}` : ''}</span>
       <span className="klein">{was}</span>
       <span className="leise klein">{LOESCHWEGE[e.weg] ?? e.weg} · {e.von}{e.ausloeser !== 'benutzer' ? ` (${AUSLOESER[e.ausloeser]})` : ''}{e.grund ? ` · ${LOESCHGRUENDE[e.grund]}` : ''}{e.grundText ? `: ${e.grundText}` : ''}
-        {e.vorgang && <> · <button type="button" className="textknopf klein" onClick={() => vorgang(e.vorgang!)}>{t('werkbank.loeschprotokoll.vorgang', { kurz: kurz(e.vorgang) })}</button></>}</span>
+        {e.vorgang && <> · <Knopf art="link" groesse="klein" onClick={() => vorgang(e.vorgang!)}>{t('werkbank.loeschprotokoll.vorgang', { kurz: kurz(e.vorgang) })}</Knopf></>}</span>
     </li>
   );
 }

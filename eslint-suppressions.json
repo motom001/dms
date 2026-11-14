@@ -1542,22 +1542,9 @@
       "count": 1
     }
   },
-  "web/src/werkbank/AbsenderBereinigen.tsx": {
-    "ablago/bausteine": {
-      "count": 3
-    }
-  },
-  "web/src/werkbank/Anbindung.tsx": {
-    "ablago/bausteine": {
-      "count": 2
-    }
-  },
   "web/src/werkbank/Anmeldeschutz.tsx": {
     "@typescript-eslint/no-unused-vars": {
       "count": 3
-    },
-    "ablago/bausteine": {
-      "count": 12
     },
     "react-hooks/exhaustive-deps": {
       "count": 1
@@ -1574,9 +1561,6 @@
     }
   },
   "web/src/werkbank/Aufgaben.tsx": {
-    "ablago/bausteine": {
-      "count": 5
-    },
     "complexity": {
       "count": 1
     }
@@ -1602,19 +1586,6 @@
       "count": 1
     }
   },
-  "web/src/werkbank/Benutzer.tsx": {
-    "ablago/bausteine": {
-      "count": 3
-    }
-  },
-  "web/src/werkbank/BenutzerEditor.tsx": {
-    "ablago/bausteine": {
-      "count": 5
-    },
-    "ablago/knopf-farben": {
-      "count": 1
-    }
-  },
   "web/src/werkbank/Berechtigungen.tsx": {
     "ablago/bausteine": {
       "count": 21
@@ -1623,20 +1594,7 @@
       "count": 1
     }
   },
-  "web/src/werkbank/Betrieb.tsx": {
-    "ablago/bausteine": {
-      "count": 2
-    }
-  },
-  "web/src/werkbank/Datenbank.tsx": {
-    "ablago/bausteine": {
-      "count": 3
-    }
-  },
   "web/src/werkbank/Datenschutz.tsx": {
-    "ablago/bausteine": {
-      "count": 25
-    },
     "complexity": {
       "count": 2
     },
@@ -1648,9 +1606,6 @@
     }
   },
   "web/src/werkbank/Demo.tsx": {
-    "ablago/bausteine": {
-      "count": 7
-    },
     "complexity": {
       "count": 1
     }
@@ -1664,9 +1619,6 @@
     }
   },
   "web/src/werkbank/Eingangsordner.tsx": {
-    "ablago/bausteine": {
-      "count": 8
-    },
     "complexity": {
       "count": 1
     }
@@ -1676,35 +1628,12 @@
       "count": 1
     }
   },
-  "web/src/werkbank/Fehlermeldungen.tsx": {
-    "ablago/bausteine": {
-      "count": 2
-    }
-  },
-  "web/src/werkbank/FragenGrenzen.tsx": {
-    "ablago/bausteine": {
-      "count": 2
-    }
-  },
   "web/src/werkbank/KiTypen.tsx": {
     "ablago/bausteine": {
       "count": 1
     }
   },
-  "web/src/werkbank/Loeschkonzept.tsx": {
-    "ablago/bausteine": {
-      "count": 1
-    }
-  },
-  "web/src/werkbank/Loeschprotokoll.tsx": {
-    "ablago/bausteine": {
-      "count": 11
-    }
-  },
   "web/src/werkbank/MailVersand.tsx": {
-    "ablago/bausteine": {
-      "count": 12
-    },
     "complexity": {
       "count": 1
     },
@@ -1726,9 +1655,6 @@
     }
   },
   "web/src/werkbank/PaketAblauf.tsx": {
-    "ablago/bausteine": {
-      "count": 19
-    },
     "complexity": {
       "count": 1
     },
@@ -1736,21 +1662,10 @@
       "count": 1
     },
     "max-lines-per-function": {
-      "count": 1
-    }
-  },
-  "web/src/werkbank/PaketEinstellungen.tsx": {
-    "ablago/bausteine": {
-      "count": 15
-    },
-    "complexity": {
       "count": 1
     }
   },
   "web/src/werkbank/PaketErstellen.tsx": {
-    "ablago/bausteine": {
-      "count": 35
-    },
     "complexity": {
       "count": 1
     },
@@ -1761,18 +1676,7 @@
       "count": 1
     }
   },
-  "web/src/werkbank/PaketUmwandeln.tsx": {
-    "ablago/bausteine": {
-      "count": 5
-    }
-  },
   "web/src/werkbank/Pakete.tsx": {
-    "ablago/bausteine": {
-      "count": 31
-    },
-    "ablago/knopf-farben": {
-      "count": 1
-    },
     "complexity": {
       "count": 6
     },
@@ -1784,29 +1688,13 @@
     }
   },
   "web/src/werkbank/PaketeDazuholen.tsx": {
-    "ablago/bausteine": {
-      "count": 5
-    },
     "react-hooks/exhaustive-deps": {
       "count": 1
     }
   },
   "web/src/werkbank/Postfaecher.tsx": {
-    "ablago/bausteine": {
-      "count": 27
-    },
     "complexity": {
       "count": 2
-    }
-  },
-  "web/src/werkbank/Protokoll.tsx": {
-    "ablago/bausteine": {
-      "count": 10
-    }
-  },
-  "web/src/werkbank/Region.tsx": {
-    "ablago/bausteine": {
-      "count": 3
     }
   },
   "web/src/werkbank/SelbstErstellt.tsx": {
@@ -1815,9 +1703,6 @@
     }
   },
   "web/src/werkbank/Sicherung.tsx": {
-    "ablago/bausteine": {
-      "count": 10
-    },
     "complexity": {
       "count": 2
     }
@@ -1838,39 +1723,14 @@
       "count": 1
     }
   },
-  "web/src/werkbank/Speicherplatz.tsx": {
-    "ablago/bausteine": {
-      "count": 4
-    }
-  },
-  "web/src/werkbank/Sprachen.tsx": {
-    "ablago/bausteine": {
-      "count": 3
-    }
-  },
   "web/src/werkbank/Stempel.tsx": {
     "ablago/bausteine": {
       "count": 10
     }
   },
-  "web/src/werkbank/Systemkonten.tsx": {
-    "ablago/bausteine": {
-      "count": 1
-    }
-  },
-  "web/src/werkbank/Technik.tsx": {
-    "ablago/bausteine": {
-      "count": 2
-    }
-  },
   "web/src/werkbank/TestlaufWahl.tsx": {
     "ablago/bausteine": {
       "count": 2
-    }
-  },
-  "web/src/werkbank/Texterkennung.tsx": {
-    "ablago/bausteine": {
-      "count": 12
     }
   },
   "web/src/werkbank/Uebersicht.tsx": {
@@ -1882,40 +1742,23 @@
     }
   },
   "web/src/werkbank/Verkleinern.tsx": {
-    "ablago/bausteine": {
-      "count": 8
-    },
     "complexity": {
       "count": 1
     }
   },
   "web/src/werkbank/Verschluesselung.tsx": {
-    "ablago/bausteine": {
-      "count": 2
-    },
     "complexity": {
       "count": 1
     }
   },
   "web/src/werkbank/Vollexport.tsx": {
-    "ablago/bausteine": {
-      "count": 7
-    },
     "complexity": {
       "count": 1
     }
   },
   "web/src/werkbank/Wartungsmodus.tsx": {
-    "ablago/bausteine": {
-      "count": 4
-    },
     "complexity": {
       "count": 1
-    }
-  },
-  "web/src/werkbank/Webdav.tsx": {
-    "ablago/bausteine": {
-      "count": 2
     }
   },
   "web/src/werkbank/Werkbank.tsx": {
@@ -1923,14 +1766,6 @@
       "count": 1
     },
     "max-lines-per-function": {
-      "count": 1
-    }
-  },
-  "web/src/werkbank/Zustellen.tsx": {
-    "ablago/bausteine": {
-      "count": 17
-    },
-    "complexity": {
       "count": 1
     }
   },

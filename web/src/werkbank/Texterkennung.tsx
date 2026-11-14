@@ -1,4 +1,4 @@
-import { Knopf, type KnopfErgebnis } from '../bausteine';
+import { Knopf, KnopfLink, Reiter, ReiterFlaeche, Wahlhaken, type KnopfErgebnis } from '../bausteine';
 import { Kopf } from './Kopf';
 import { DateienPruefen } from './Archiv';
 import { NummernNachtragen } from './Nummernkreise';
@@ -78,13 +78,13 @@ function PauseHinweis({ t: eintrag, wartungAn }: { t: TexterkennungZustand; wart
   if (!s.einstellungen.aktiv) return (
     <div className="hinweis warn hinweiszeile" role="status">
       <p>{tn('werkbank.texterkennung.neue-dokumente-bleiben-in', { b: <strong>{t('werkbank.texterkennung.die-texterkennung-ist-ausgeschaltet')}</strong>, warten, wert: meldung && <span className="fehlertext blockzeile">{meldung}</span> })}</p>
-      <button type="button" className="knopf primaer klein" onClick={() => void einschalten()}>{t('werkbank.texterkennung.einschalten')}</button>
+      <Knopf art="haupt" groesse="klein" onClick={einschalten}>{t('werkbank.texterkennung.einschalten')}</Knopf>
     </div>
   );
   if (wartungAn) return (
     <div className="hinweis warn hinweiszeile" role="status">
       <p><strong>{t('werkbank.texterkennung.pausiert-solange-der-wartungsmodus')}</strong>{warten}{meldung && <span className="fehlertext blockzeile">{meldung}</span>}</p>
-      <button type="button" className="knopf klein" onClick={() => void wartungBeenden()}>{t('werkbank.texterkennung.wartungsmodus-beenden-2')}</button>
+      <Knopf groesse="klein" onClick={wartungBeenden}>{t('werkbank.texterkennung.wartungsmodus-beenden-2')}</Knopf>
     </div>
   );
   return null;
@@ -330,7 +330,7 @@ function VolltextNeu({ t: eintrag, wartungAn }: { t: TexterkennungZustand; wartu
       {s?.paket ? <p className="leise klein">{tx('volltext.neu.dauer')}</p> : s && (
         <div className="hinweis warn hinweiszeile" role="status">
           <p>{tx('volltext.werkbank.paket.fehlt')}</p>
-          <Link to={`/werkbank/pakete/${TEXTERKENNUNG_PAKET}`} className="knopf klein">{tx('volltext.werkbank.paket.installieren')}</Link>
+          <KnopfLink to={`/werkbank/pakete/${TEXTERKENNUNG_PAKET}`}>{tx('volltext.werkbank.paket.installieren')}</KnopfLink>
         </div>
       )}
       {s && <PauseHinweis t={eintrag} wartungAn={wartungAn} />}
@@ -340,9 +340,10 @@ function VolltextNeu({ t: eintrag, wartungAn }: { t: TexterkennungZustand; wartu
       {auftrag?.status === 'fehler' && <p className="fehlertext">{auftrag.fehler}</p>}
       {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
       <div className="knoepfe">
-        <button type="button" className="knopf primaer" disabled={laeuft} onClick={() => void starte('ohne')}>{tx('volltext.neu.ohne')}</button>
-        <button type="button" className="knopf" disabled={laeuft} onClick={() => void starte('alle')}>{tx('volltext.neu.alle')}</button>
-        {laeuft && <button type="button" className="knopf" disabled={auftrag.abgebrochen} onClick={() => void abbrechen()}>{auftrag.abgebrochen ? tx('volltext.neu.laeuft') : tx('volltext.neu.abbrechen')}</button>}
+        <Knopf art="haupt" gesperrt={laeuft} onClick={() => starte('ohne')}>{tx('volltext.neu.ohne')}</Knopf>
+        <Knopf gesperrt={laeuft} onClick={() => starte('alle')}>{tx('volltext.neu.alle')}</Knopf>
+        {laeuft && <Knopf art="gefahr" symbol="verboten" laeuft={auftrag.abgebrochen} laeuftText={tx('volltext.neu.laeuft')} onClick={abbrechen}
+          rueckfrage={{ titel: tx('volltext.neu.abbrechen.frage'), text: tx('volltext.neu.abbrechen.text'), ja: tx('volltext.neu.abbrechen.ja') }}>{tx('volltext.neu.abbrechen')}</Knopf>}
       </div>
     </section>
   );
@@ -374,29 +375,25 @@ function Auftraege({ t: eintrag }: { t: TexterkennungZustand }) {
   return (
     <section className="blatt" id="auftraege">
       <div className="blattkopf zeile-zwischen"><h2 className="h3">{t('werkbank.texterkennung.auftraege')}</h2>
-        {s.zaehler.fehler > 0 && <button type="button" className="knopf klein" onClick={() => void tu(async () => { const r = await api.ocrFehlerNeu(); return t('werkbank.texterkennung.dokumente-stehen-wieder-in', { anzahl: r.eingereiht, zahl: zahl(r.eingereiht) }); })}>{t('werkbank.texterkennung.alle-fehler-neu-starten')}</button>}
+        {s.zaehler.fehler > 0 && <Knopf groesse="klein" onClick={() => tu(async () => { const r = await api.ocrFehlerNeu(); return t('werkbank.texterkennung.dokumente-stehen-wieder-in', { anzahl: r.eingereiht, zahl: zahl(r.eingereiht) }); })}>{t('werkbank.texterkennung.alle-fehler-neu-starten')}</Knopf>}
       </div>
-      <div className="registertaben klein" role="tablist" aria-label={t('werkbank.texterkennung.stand')}>
-        {STAENDE_LISTE.map((k) => (
-          <button key={k} type="button" role="tab" aria-selected={stand === k} className={`registertab ${stand === k ? 'an' : ''}`} onClick={() => setStand(k)}>
-            {OCR_STAENDE[k]} <span className="anzahl">{zahl(s.zaehler[k])}</span>
-          </button>
-        ))}
-      </div>
+      <Reiter id="ocr-stand" wert={stand} setze={setStand} beschriftung={t('werkbank.texterkennung.reiter')}
+        wahlen={STAENDE_LISTE.map((k) => ({ wert: k, text: OCR_STAENDE[k], anzahl: s.zaehler[k] }))} />
+      <ReiterFlaeche id="ocr-stand" wert={stand}>
       {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
       {liste === null ? <p className="leise">{t('werkbank.texterkennung.lade')}</p> : !alle.length ? <p className="leise">{t('werkbank.texterkennung.keine-dokumente-in-diesem')}</p> : (
         <>
           <div className="tabellenrahmen festhoehe">
             <table className="auftraege">
               <thead><tr>
-                <th><input type="checkbox" aria-label={t('werkbank.texterkennung.alle-waehlen')} checked={auswahl.size === alle.length} onChange={(e) => setAuswahl(e.target.checked ? new Set(alle.map((a) => a.dokument.id)) : new Set())} /></th>
+                <th><Wahlhaken beschriftung={t('werkbank.texterkennung.alle-waehlen')} an={auswahl.size === alle.length} teilweise={auswahl.size > 0 && auswahl.size < alle.length} setze={(an) => setAuswahl(an ? new Set(alle.map((a) => a.dokument.id)) : new Set())} /></th>
                 <th>{t('werkbank.texterkennung.dokument')}</th><th>{t('werkbank.texterkennung.mappe')}</th><th>{t('werkbank.texterkennung.groesse')}</th><th>{stand === 'fertig' ? t('werkbank.texterkennung.seiten') : t('werkbank.texterkennung.grund-stand')}</th><th>{t('werkbank.texterkennung.seit')}</th>
               </tr></thead>
               <tbody>{alle.map((a) => {
                 const o = a.dokument.ocr;
                 return (
                   <tr key={a.dokument.id} className={auswahl.has(a.dokument.id) ? 'an' : ''}>
-                    <td><input type="checkbox" aria-label={t('werkbank.texterkennung.waehlen', { name: a.dokument.name })} checked={auswahl.has(a.dokument.id)} onChange={() => umschalten(a.dokument.id)} /></td>
+                    <td><Wahlhaken beschriftung={t('werkbank.texterkennung.waehlen', { name: a.dokument.name })} an={auswahl.has(a.dokument.id)} setze={() => umschalten(a.dokument.id)} /></td>
                     <td>{a.dokument.name} <AnlageMarke d={a.dokument} /></td>
                     <td><Link to={`/ablage/${a.typId}/${a.dokument.mappeId}`} className="verweis">{a.mappeTitel || t('werkbank.texterkennung.ohne-titel')}</Link></td>
                     <td className="zahlzelle">{groesse(a.dokument.groesse)}</td>
@@ -409,11 +406,13 @@ function Auftraege({ t: eintrag }: { t: TexterkennungZustand }) {
           </div>
           {liste.gesamt > alle.length && <p className="leise klein">{t('werkbank.texterkennung.gezeigt-werden-die-neuesten', { zahl: zahl(alle.length), zahl2: zahl(liste.gesamt) })}</p>}
           <div className="knoepfe">
-            {abbrechbar && <button type="button" className="knopf" disabled={!ids.length} onClick={() => void tu(async () => { const r = await api.ocrAbbrechen(ids); return `${zahl(r.abgebrochen)} abgebrochen.`; })}>{stand === 'laeuft' ? t('werkbank.texterkennung.abbrechen') : t('werkbank.texterkennung.aus-der-warteschlange-nehmen')}</button>}
-            <button type="button" className="knopf primaer" disabled={!ids.length} onClick={() => void tu(async () => { const r = await api.ocrNeu(ids); return t('werkbank.texterkennung.neu-gestartet', { zahl: zahl(r.eingereiht) }); })}>{t('werkbank.texterkennung.neu-starten', { wert: ids.length ? ` (${ids.length})` : '' })}</button>
+            {abbrechbar && <Knopf art="gefahr" symbol="verboten" gesperrt={!ids.length} onClick={() => tu(async () => { const r = await api.ocrAbbrechen(ids); return `${zahl(r.abgebrochen)} abgebrochen.`; })}
+              rueckfrage={{ titel: t('werkbank.texterkennung.abbrechen.frage', { anzahl: ids.length }), text: t('werkbank.texterkennung.abbrechen.text'), ja: stand === 'laeuft' ? t('werkbank.texterkennung.abbrechen') : t('werkbank.texterkennung.aus-der-warteschlange-nehmen') }}>{stand === 'laeuft' ? t('werkbank.texterkennung.abbrechen') : t('werkbank.texterkennung.aus-der-warteschlange-nehmen')}</Knopf>}
+            <Knopf art="haupt" gesperrt={!ids.length} onClick={() => tu(async () => { const r = await api.ocrNeu(ids); return t('werkbank.texterkennung.neu-gestartet', { zahl: zahl(r.eingereiht) }); })}>{t('werkbank.texterkennung.neu-starten', { wert: ids.length ? ` (${ids.length})` : '' })}</Knopf>
           </div>
         </>
       )}
+      </ReiterFlaeche>
     </section>
   );
 }
@@ -436,7 +435,7 @@ function VorschauNachholen() {
       <h2 className="h3">{t('werkbank.texterkennung.vorschaubilder-nachholen')}</h2>
       <p className="leise">{t('werkbank.texterkennung.neben-jedem-pdf-und')}</p>
       {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
-      <div className="knoepfe"><button type="button" className="knopf" disabled={laeuft} onClick={() => void nachholen()}>{laeuft ? t('werkbank.texterkennung.stelle-ein') : t('werkbank.texterkennung.vorschaubilder-nachholen')}</button></div>
+      <div className="knoepfe"><Knopf laeuft={laeuft} laeuftText={t('werkbank.texterkennung.stelle-ein')} onClick={() => void nachholen()}>{t('werkbank.texterkennung.vorschaubilder-nachholen')}</Knopf></div>
     </section>
   );
 }

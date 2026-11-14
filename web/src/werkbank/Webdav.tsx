@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Schalter } from '../bausteine';
+import { Feld, HakenFeld, Schalter } from '../bausteine';
 import { api, type WebdavEinstellung, type WebdavStand } from '../api';
-import { Hilfe } from '../Hilfe';
 import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 import { t, tn } from '../sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
@@ -56,14 +55,15 @@ export function WebdavPanel({ z }: { z: WebdavZustand }) {
         <Schalter id="webdav-aktiv" an={e.aktiv} setze={(an) => setE({ ...e, aktiv: an })} beschriftung={t('werkbank.webdav.schalter')}
           hinweis={tn('werkbank.webdav.ausgeschaltet-antwortet-mit-nicht', { code: <code>{'/webdav/'}</code> })} />
         {/* Stempel beim Lesen (#722): Vorgabe ist die mitgelieferte Vorlage; Pflicht-Stempel der Mappentypen gelten immer. */}
-        <label className="eigenschaft"><span>{t('werkbank.webdav.stempel')} <Hilfe ort="webdav.stempel" /></span>
+        <Feld beschriftung={t('werkbank.webdav.stempel')} hilfe="webdav.stempel" hinweis={t('werkbank.webdav.stempel.hinweis')}>
           <select id="webdav-stempel" value={e.stempel ?? ''} onChange={(x) => setE({ ...e, stempel: x.target.value || null })}>
             <option value="">{t('werkbank.webdav.stempel.aus')}</option>
             {s.vorlagen.map((v) => <option key={v.id} value={v.id}>{v.name} – {v.text.split('\n').join(' / ')}</option>)}
           </select>
-          <small className="leise">{t('werkbank.webdav.stempel.hinweis')}</small></label>
-        <label className="haken"><input id="webdav-nur-lesend" type="checkbox" checked={e.nurLesend} onChange={(x) => setE({ ...e, nurLesend: x.target.checked })} />
-          <span><span className="haken-titel">{t('werkbank.webdav.nur-lesend')}&nbsp;<Hilfe ort="webdav.nurLesend" /></span><small className="leise">{t('werkbank.webdav.nur-lesend.hinweis')}</small></span></label>
+        </Feld>
+        <HakenFeld beschriftung={t('werkbank.webdav.nur-lesend')} hilfe="webdav.nurLesend" hinweis={t('werkbank.webdav.nur-lesend.hinweis')}>
+          <input id="webdav-nur-lesend" type="checkbox" checked={e.nurLesend} onChange={(x) => setE({ ...e, nurLesend: x.target.checked })} />
+        </HakenFeld>
         <Speicherleiste ent={ent} gegenstand={t('werkbank.webdav.einstellungen')} sendet={sendet} />
       </form>
       <div className="blatt">
