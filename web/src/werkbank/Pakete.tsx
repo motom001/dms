@@ -1,7 +1,7 @@
-import { Feld, HakenFeld, Knopf, KnopfLink, Reiter, ReiterFlaeche, Schalter } from '../bausteine';
-import { Fragment, useCallback, useEffect, useState, type ReactNode } from 'react';
+import { Feld, HakenFeld, Knopf, KnopfLink, Reiter, ReiterFlaeche, Schalter, type KnopfErgebnis } from '../bausteine';
+import { Fragment, useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Symbol } from '../Symbol';
-import { ergaenzungenVon, hatNetz, hatSchnittstelle, inMB, istKiPaket, legtEtwasAn, herkunftText, KATALOG_LINK_REL, katalogSeiteMitVersion, sammelSeiteMitVersion, laeuferZustandText, vergleicheVersion, vorausgewaehlt, type AblaufErgebnis, type HerkunftPruefung, type InstalliertesPaket, type Katalog, type KatalogPaket } from '../../../shared/src/pakete';
+import { ergaenzungenVon, hatNetz, hatSchnittstelle, istKiPaket, herkunftText, KATALOG_LINK_REL, katalogSeiteMitVersion, sammelSeiteMitVersion, laeuferZustandText, neueVersionen, vergleicheVersion, type AblaufErgebnis, type HerkunftPruefung, type NeueVersion, type InstalliertesPaket, type Katalog, type KatalogPaket, type KatalogVersion, rechtePunkte, rechteZeilen } from '../../../shared/src/pakete';
 import { PAKET_ID } from '../../../shared/src/kennungen';
 import { api, ApiFehler, type BeispielBehalten, type PaketlaeuferStand, type PaketQuelle, type PaketVorschau, type Sammeldatei } from '../api';
 import { useDaten } from '../daten';
@@ -14,29 +14,30 @@ import { FragenGrenzenBlock } from './FragenGrenzen';
 import { PaketExternBlock } from './ExterneDienste';
 import { ErkennungPaketBlock, KlassifizierenBlock } from './ErkennungPaket';
 import { KiTypenBlock } from './KiTypen';
-import { AktionenVorschau, MappenMenueBlock, PaketAktionenBlock } from './PaketAktionen';
+import { MappenMenueBlock, PaketAktionenBlock } from './PaketAktionen';
 import { PaketErstellen, SELBST } from './PaketErstellen';
 import { SelbstErstelltAnsicht } from './SelbstErstellt';
 import { rueckfrage } from '../rueckfrage';
 import { useKonto } from '../konto';
 import { SammeldateiAnsicht, SammeldateiWahl } from './PaketeDazuholen';
 import { PaketAblauf } from './PaketAblauf';
-import { NamenskonfliktHinweis } from './Namenskonflikt';
 import { PaketUmwandeln } from './PaketUmwandeln';
-import { UmbauVorschau, umbauStart, type UmbauStand } from './PaketUmbau';
-import { hatGesamt } from '../../../shared/src/verwaltungsrecht';
-import type { UmbauEntscheidungen } from '../../../shared/src/umbau';
 import { t as tx, t, tn } from '../sprache';
-import { AutomatisierungenSchalter, GeaenderteAutomatisierungen } from './PaketAutomatisierungen';
-import { istKernVorlage, kernVorlage } from '../../../shared/src/ablaufvorlagen';
 import { KEINE_LIZENZ, lizenzArtVon, type SelbstErstellt } from '../../../shared/src/paketerstellung';
 import { HerkunftZeile } from './Herkunft';
 import { EREIGNISKATALOG, ereignisSchluessel, istKatalogArt, KATALOG_ARTEN } from '../../../shared/src/ereignisse';
 import { gebietsschema } from '../../../shared/src/sprache';
 import { sprachname } from '../../../shared/src/beschriftung';
-import { MITMACHEN_URL } from '../../../shared/src/sprachwahl';
 import { Kopf } from './Kopf';
-import type { VorgabeFrage, VorgabePlan } from '../../../shared/src/vorgaben';
+import { Kurzanleitung, MitkommtInhalt } from './PaketMitkommt';
+import { mitkommtAusKatalog } from '../../../shared/src/mitkommt';
+import { AlleAktualisieren } from './PaketeAlle';
+import { PaketeVerfuegbar } from './PaketeVerfuegbar';
+import { alsMeldung, Herausgeber, MeldungBox, SprachHerkunft, VorschauBlock, type Meldung } from './PaketVorschau';
+
+/** Meldungen (#1168: jetzt in PaketVorschau.tsx) – hier weiter für bestehende Aufrufer. */
+export { alsMeldung, MeldungBox, type Meldung };
+import type { VorgabeFrage } from '../../../shared/src/vorgaben';
 
 /**
  * Werkbank → Pakete (#188): Konfigurationspakete aus dem offiziellen Katalog.
@@ -53,6 +54,8 @@ export const UPLOAD = t('werkbank.pakete.hochgeladen');
 export const ERSTELLEN = t('werkbank.pakete.erstellen');
 /** Hochgeladene Sammeldatei mit mehreren Paketen (#461). */
 export const SAMMEL = t('werkbank.pakete.sammeldatei');
+/** Alle aktualisieren (#1168). */
+export const ALLE = t('werkbank.pakete.alle-pfad');
 
 /**
  * Abschnitt „Expertenmodus“ auf- oder zugeklappt (#369): reiner Komfort, kein Recht – gemerkt im
@@ -75,7 +78,6 @@ type Abruf = { url: string; offiziell: boolean; katalog: Katalog | null; fehler:
 export function usePakete(offen: boolean) {
   const [stand, setStand] = useState<{ installiert: InstalliertesPaket[]; katalogUrl: string; quellen: PaketQuelle[]; dms: string } | null>(null);
   const [kataloge, setKataloge] = useState<{ liste: Abruf[]; abgerufen: string } | null>(null);
-  const [updates, setUpdates] = useState<Array<{ id: string; installiert: string; neu: string; changelog: string | null; quelle: string }> | null>(null);
   const [upload, setUpload] = useState<{ upload: string; vorschau: PaketVorschau; datei: string } | null>(null);
   const [sammel, setSammel] = useState<{ sammeldatei: Sammeldatei; datei: string } | null>(null);
   const [fehler, setFehler] = useState<string>();
@@ -93,10 +95,9 @@ export function usePakete(offen: boolean) {
     setLaedt(true); setFehler(undefined);
     try { const k = await api.paketKatalog(alle); setKataloge({ liste: k.kataloge, abgerufen: k.abgerufen }); } catch (e) { setFehler((e as Error).message); } finally { setLaedt(false); }
   }, []);
-  const pruefen = useCallback(async () => {
-    setLaedt(true); setFehler(undefined);
-    try { setUpdates(await api.paketUpdates()); const k = await api.paketKatalog(true); setKataloge({ liste: k.kataloge, abgerufen: k.abgerufen }); } catch (e) { setFehler((e as Error).message); } finally { setLaedt(false); }
-  }, []);
+  // Neuere Versionen (#1167): aus den abgerufenen Katalogen und dem Stand der Installation abgeleitet, nicht gemerkt –
+  // nach einem Update stimmt der Merker sofort, ohne erneut zu prüfen.
+  const updates = neueVersionen(stand?.installiert ?? [], kataloge?.liste ?? []);
   /** Katalogpaket aus einer Quelle (ohne Angabe: offizieller Katalog). */
   const paketAus = (id: string, quelle?: string): { kp: KatalogPaket; url: string; offiziell: boolean } | undefined => {
     const k = kataloge?.liste.find((x) => (quelle ? x.url === quelle : x.offiziell));
@@ -106,17 +107,15 @@ export function usePakete(offen: boolean) {
   };
   /** Hat ein Katalog ein Paket mit derselben Id wie ein selbst erstelltes (#652)? */
   const konflikt = (id: string) => !!kataloge?.liste.some((k) => k.katalog?.pakete.some((p) => p.id === id));
-  return { stand, selbst, kataloge, updates, upload, setUpload, sammel, setSammel, fehler, laedt, laden, abrufen, pruefen, paketAus, setStand, konflikt };
+  return { stand, selbst, kataloge, updates, upload, setUpload, sammel, setSammel, fehler, laedt, laden, abrufen, paketAus, setStand, konflikt };
 }
 export type PaketeZustand = ReturnType<typeof usePakete>;
 
 export function PaketeListe({ z, offen }: { z: PaketeZustand; offen?: string }) {
   const [experte, setExperte] = useExperteOffen();
   const installiert = z.stand?.installiert ?? [];
-  const quelleOffen = new URLSearchParams(location.search).get('quelle');
-  const verfuegbar = (z.kataloge?.liste ?? [])
-    .flatMap((k) => (k.katalog?.pakete ?? []).filter((p) => !installiert.some((i) => i.id === p.id || p.ersetzt?.includes(i.id))).map((p) => ({ p, url: k.url, offiziell: k.offiziell })));
-  const neuer = (id: string) => z.updates?.find((u) => u.id === id);
+  const neuer = (id: string) => z.updates.find((u) => u.id === id);
+  const abrufErgebnis = useMemo(() => ergebnisDesAbrufs(z.kataloge, z.updates, installiert.length > 0), [z.kataloge, z.updates, installiert.length]);
   const [hochFehler, setHochFehler] = useState<string>();
   async function hochladen(f: File | undefined) {
     if (!f) return;
@@ -133,9 +132,10 @@ export function PaketeListe({ z, offen }: { z: PaketeZustand; offen?: string }) 
     <>
       <Listenkopf titel={t('werkbank.pakete.pakete')} hilfe="werkbank.pakete" beschreibung={t('werkbank.pakete.fertige-mappentypen-und-ansichten')} />
       <div className="knoepfe">
-        {/* „läuft“ am jeweiligen Knopf (#986); das Ergebnis ist die Liste darunter, ein Fehler steht über der Liste. */}
-        <Knopf groesse="klein" laeuftText={t('werkbank.pakete.frage-ab')} onClick={() => z.abrufen()}>{t('werkbank.pakete.katalog-abrufen')}</Knopf>
-        {installiert.length > 0 && <Knopf groesse="klein" laeuftText={t('werkbank.pakete.frage-ab')} onClick={z.pruefen}>{t('werkbank.pakete.auf-neue-versionen-pruefen')}</Knopf>}
+        {/* Ein Knopf für Katalog und neue Versionen (#1168): holt alle Kataloge; „läuft“ und das Ergebnis mit Uhrzeit am Knopf (#986). */}
+        <Knopf groesse="klein" laeuftText={t('werkbank.pakete.frage-ab')} onClick={() => z.abrufen()} ergebnis={abrufErgebnis} data-anker="werkbank.pakete.suchen">
+          {installiert.length ? t('werkbank.pakete.nach-neuen-versionen-suchen') : t('werkbank.pakete.katalog-abrufen')}
+        </Knopf>
         <KnopfLink to={`/werkbank/pakete/${ERSTELLEN}`} groesse="klein" className={offen === ERSTELLEN ? 'an' : undefined}>{t('werkbank.pakete.paket-erstellen')}</KnopfLink>
         <KnopfLink to={`/werkbank/pakete/${SAMMEL}`} groesse="klein" className={offen === SAMMEL ? 'an' : undefined}>{t('werkbank.pakete.ohne-internet')}</KnopfLink>
       </div>
@@ -158,7 +158,10 @@ export function PaketeListe({ z, offen }: { z: PaketeZustand; offen?: string }) 
         )}
       </section>
       {z.fehler && <div className="hinweis schlecht"><p>{z.fehler}</p></div>}
-      <h2 className="ueber">{t('werkbank.pakete.installiert')}</h2>
+      <div className="zeile-zwischen">
+        <h2 className="ueber">{t('werkbank.pakete.installiert')}</h2>
+        {z.updates.length > 0 && <KnopfLink to={`/werkbank/pakete/${ALLE}`} art="haupt" className={offen === ALLE ? 'an' : undefined} anker="werkbank.pakete.alle">{t('werkbank.pakete.alle-aktualisieren', { anzahl: z.updates.length })}</KnopfLink>}
+      </div>
       {!z.stand ? <p className="leise">{t('werkbank.pakete.lade')}</p> : !installiert.length && !z.selbst?.length ? <p className="leise leerliste">{t('werkbank.pakete.noch-keine-pakete-installiert')}</p> : (
         <ul className="mappenliste">
           {(z.selbst ?? []).map((p) => (
@@ -178,22 +181,24 @@ export function PaketeListe({ z, offen }: { z: PaketeZustand; offen?: string }) 
       <h2 className="ueber">{t('werkbank.pakete.verfuegbar')}</h2>
       <KatalogAnsehen z={z} />
       {z.kataloge?.liste.filter((k) => k.fehler).map((k) => <div key={k.url} className="hinweis warn klein"><p>{k.offiziell ? t('werkbank.pakete.offizieller-katalog') : host(k.url)}: {k.fehler}</p></div>)}
-      {!z.kataloge ? <p className="leise klein">{t('werkbank.pakete.klicke-katalog-abrufen-um')}</p>
-        : !verfuegbar.length ? <p className="leise leerliste">{t('werkbank.pakete.alle-pakete-des-katalogs')}</p> : (
-          <ul className="mappenliste">
-            {verfuegbar.map(({ p, url, offiziell }) => (
-              <li key={`${url}|${p.id}`}><Link to={`/werkbank/pakete/${p.id}${offiziell ? '' : `?quelle=${encodeURIComponent(url)}`}`} className={`eintrag werk ${offen === p.id && (offiziell ? !quelleOffen : quelleOffen === url) ? 'an' : ''}`}>
-                <span className="titel">{p.name}<Herausgeber wer={p.herausgeber} geprueft={offiziell} />{!offiziell && <> <span className="chip warn" title={t('werkbank.pakete.aus-nicht-vom-ablago', { url })}>{host(url)}</span></>}</span>
-                <span className="unter">{p.aktuell} · {p.beschreibung}</span>
-              </Link></li>
-            ))}
-          </ul>
-        )}
-      {z.kataloge && <p className="leise klein">{t('werkbank.pakete.abgerufen', { datum: datum(z.kataloge.abgerufen) })}</p>}
+      {/* Verfügbar (#1048): empfohlen, weitere Pakete, Sprachen über den Filter, Ergänzungen beim Hauptpaket, Suche. */}
+      <PaketeVerfuegbar z={z} offen={offen} />
       {/* Herkunft des offiziellen Katalogs (#594): signiert, nicht signiert (Stufe 1: nur Warnung) oder ungültig. */}
       <HerkunftZeile p={z.kataloge?.liste.find((k) => k.offiziell)?.pruefung} />
     </>
   );
+}
+
+/**
+ * Rückmeldung nach dem Abruf (#1168), am Knopf: Uhrzeit und Ergebnis – „3 neue Versionen“, „Alles aktuell“ oder ohne
+ * installierte Pakete nur „Katalog abgerufen“. Ist kein Katalog erreichbar, steht das dort; die Gründe stehen über der Liste.
+ */
+function ergebnisDesAbrufs(k: PaketeZustand['kataloge'], updates: NeueVersion[], mitInstalliert: boolean): KnopfErgebnis | null {
+  if (!k) return null;
+  const zeit = new Date(k.abgerufen).toLocaleTimeString(gebietsschema(), { timeStyle: 'short' });
+  if (!k.liste.some((x) => x.katalog)) return { art: 'warn', text: t('werkbank.pakete.abruf.fehler', { zeit }) };
+  if (!mitInstalliert) return { art: 'gut', text: t('werkbank.pakete.abruf.katalog', { zeit }) };
+  return updates.length ? { art: 'info', text: t('werkbank.pakete.abruf.neu', { zeit, anzahl: updates.length }) } : { art: 'gut', text: t('werkbank.pakete.abruf.aktuell', { zeit }) };
 }
 
 /**
@@ -320,6 +325,7 @@ export function PaketePanel({ z, id }: { z: PaketeZustand; id?: string }) {
   );
   if (id === UPLOAD) return <UploadDetail z={z} />;
   if (id === SAMMEL) return <SammelDetail z={z} />;
+  if (id === ALLE) return <AlleAktualisieren z={z} />;
   if (id === ERSTELLEN) return <PaketErstellen key={location.search} onErstellt={() => void z.laden()} />;
   if (id.startsWith(SELBST)) return <SelbstErstelltAnsicht id={id.slice(SELBST.length)} konflikt={z.konflikt(id.slice(SELBST.length))} onGeaendert={() => void z.laden()} />;
   const quelle = new URLSearchParams(location.search).get('quelle') ?? undefined;
@@ -381,7 +387,7 @@ export function PaketLink({ z, wert }: { z: PaketeZustand; wert: string }) {
         <PaketAblauf quelle={{ art: 'katalog', katalog, dms: z.stand.dms, installiert: z.stand.installiert }} start={[id]} nur={[id]} versionen={version ? { [id]: version } : {}}
           aktionen={<KnopfLink to="/werkbank/pakete">{t('werkbank.pakete.abbrechen')}</KnopfLink>}
           geaendert={() => { void z.laden(); void d.neuLaden(); }}
-          fertig={(e) => { void z.abrufen(false); geheZu(e.installiert.some((x) => x.id === id) ? `/werkbank/pakete/${id}` : '/werkbank/pakete'); }} />
+          fertig={(e) => { void z.abrufen(false); geheZu(e.installiert.some((x) => x.id === id) ? `/werkbank/pakete/${id}?${NEU}` : '/werkbank/pakete'); }} />
       )}
       {vorschau && !schon && vorschau.update && (
         <VorschauBlock v={vorschau} warnung={null} abbrechen={() => geheZu('/werkbank/pakete')}
@@ -397,13 +403,8 @@ export function PaketLink({ z, wert }: { z: PaketeZustand; wert: string }) {
   );
 }
 
-/** Ergebnis einer Aktion mit ggf. Gründen. */
-export type Meldung = { art: 'gut' | 'schlecht'; text: string; gruende?: string[] };
-export const alsMeldung = (e: unknown): Meldung => ({ art: 'schlecht', text: (e as Error).message, gruende: e instanceof ApiFehler ? e.gruende : [] });
-
-export function MeldungBox({ m }: { m?: Meldung }) {
-  return m ? <div className={`hinweis ${m.art}`} role="status"><p>{m.text}</p>{!!m.gruende?.length && <ul>{m.gruende.map((g) => <li key={g}>{g}</li>)}</ul>}</div> : null;
-}
+/** Frisch installiert (#1047): Die Paketseite zeigt einmal die Kurzanleitung, bis man sie schließt. */
+const NEU = 'neu=1';
 
 /**
  * Pakete ohne Internet (#461): Sammeldatei aus der Katalog-Webseite hochladen, Inhalt ansehen und Paket für
@@ -453,7 +454,7 @@ function UploadDetail({ z }: { z: PaketeZustand }) {
           try {
             const r = await api.paketInstallieren({ upload: u.upload, bestaetigt: true, ...x });
             z.setUpload(null); await z.laden(); await d.neuLaden();
-            geheZu(`/werkbank/pakete/${r.id}`);
+            geheZu(`/werkbank/pakete/${r.id}?${NEU}`);
           } catch (e) { setMeldung(alsMeldung(e)); }
         }} />
     </div>
@@ -468,6 +469,16 @@ function PaketReiter({ reiter, setze, noetig }: { reiter: 'uebersicht' | 'einste
 /** Inhalt unter dem Register – ohne Register (Paket ohne Einstellungen) ohne Fläche. */
 function MitFlaeche({ an, wert, children }: { an: boolean; wert: string; children: ReactNode }) {
   return an ? <ReiterFlaeche id="paket" wert={wert}>{children}</ReiterFlaeche> : <>{children}</>;
+}
+
+/**
+ * Kurzanleitung (#1047) einmal direkt nach der Installation: im Ablauf der Paketseite gesetzt oder über ?neu=1 (Link,
+ * Hochladen) – der Merker verschwindet gleich aus der Adresse, damit ein Neuladen ihn nicht wieder zeigt.
+ */
+function useAnleitungNeu(): [boolean, (an: boolean) => void] {
+  const [neu, setNeu] = useState(() => new URLSearchParams(location.search).has('neu'));
+  useEffect(() => { if (new URLSearchParams(location.search).has('neu')) geheZu(location.pathname, true); }, []);
+  return [neu, setNeu];
 }
 
 function PaketDetail({ z, id, quelle }: { z: PaketeZustand; id: string; quelle?: string }) {
@@ -487,6 +498,7 @@ function PaketDetail({ z, id, quelle }: { z: PaketeZustand; id: string; quelle?:
   const [behalten, setBehalten] = useState(false);
   // Installieren im gemeinsamen Ablauf (#405): mit Abhängigkeiten (auch mit Code) und Ergänzungen in einem Schritt.
   const [ablauf, setAblauf] = useState(false);
+  const [anleitungNeu, setAnleitungNeu] = useAnleitungNeu();
   const katalog = aus ? z.kataloge?.liste.find((k) => k.url === aus.url)?.katalog ?? null : null;
   const v = kp?.versionen.find((x) => x.version === (version || kp.aktuell)) ?? kp?.versionen[0];
   const neuer = inst && inst.herkunft.art === 'katalog' && kp && vergleicheVersion(kp.aktuell, inst.version) > 0 ? kp.aktuell : null;
@@ -534,7 +546,7 @@ function PaketDetail({ z, id, quelle }: { z: PaketeZustand; id: string; quelle?:
         <h1>{inst?.name ?? kp!.name}<Herausgeber wer={inst?.herausgeber ?? kp?.herausgeber} geprueft={inst ? inst.herausgeberGeprueft : offiziell} /></h1>
         <p className="leise">{inst?.beschreibung ?? kp?.beschreibung}</p>
       </div>
-      <MeldungBox m={meldung} />
+      <MeldungBox m={meldung} />{inst && anleitungNeu && <Kurzanleitung k={inst.kurzanleitung} neu schliessen={() => setAnleitungNeu(false)} />}
       {inst?.einstellungen && (
         <PaketReiter reiter={reiter} noetig={!!inst.einstellungenNoetig} setze={(r) => { if (r === 'einstellungen') setReiter(r); else void darfVerlassen().then((ok) => { if (ok) setReiter(r); }); }} />
       )}
@@ -555,7 +567,6 @@ function PaketDetail({ z, id, quelle }: { z: PaketeZustand; id: string; quelle?:
             <SprachHerkunft maschinell={(inst?.sprache ?? v!.sprache!).maschinell} geprueftVon={(inst?.sprache ?? v!.sprache!).geprueftVon} />
           </dd></>}
           {v && <><dt>{t('werkbank.pakete.abhaengigkeiten')}</dt><dd>{Object.keys(v.abhaengigkeiten).length ? Object.entries(v.abhaengigkeiten).map(([k, b]) => `${k} ${b}`).join(', ') : t('werkbank.pakete.keine')}</dd></>}
-          {v && (v.inhalt.mappentypen.length > 0 || v.inhalt.sichten.length > 0 || v.inhalt.beispiele > 0) && <><dt>{t('werkbank.pakete.inhalt')}</dt><dd>{t('werkbank.pakete.mappentypen')}{' '}{v.inhalt.mappentypen.map((benannt) => benannt.name).join(', ') || '–'}{tn('werkbank.pakete.ansichten', { umbruch: <br /> })}{' '}{v.inhalt.sichten.map((s) => s.name).join(', ') || '–'}{v.inhalt.beispiele ? <>{tn('werkbank.pakete.beispiel-mappen-optional', { umbruch: <br />, beispiele: v.inhalt.beispiele })}</> : null}</dd></>}
           {(v?.readme || inst?.links?.readme || imKatalog) && <><dt>{t('werkbank.pakete.mehr')}</dt><dd>{(v?.readme || inst?.links?.readme) && <a className="verweis" href={v?.readme || inst!.links!.readme} target="_blank" rel="noreferrer">{t('werkbank.pakete.readme')}</a>}{(v?.changelog || inst?.links?.changelog) && <> · <a className="verweis" href={v?.changelog || inst!.links!.changelog} target="_blank" rel="noreferrer">{t('werkbank.pakete.aenderungen')}</a></>}
             {/* Paketseite im offiziellen Katalog mit der Ablago-Version nur im Fragment (#622). */}
             {imKatalog && <>{(v?.readme || inst?.links?.readme) && ' · '}<a className="verweis" href={katalogSeiteMitVersion(z.stand?.dms ?? '', id)} target="_blank" rel={KATALOG_LINK_REL} title={tx('pakete.katalog.hinweis')}>{tx('pakete.katalog.ansehen')} <Symbol name="extern" /></a></>}</dd></>}
@@ -600,6 +611,7 @@ function PaketDetail({ z, id, quelle }: { z: PaketeZustand; id: string; quelle?:
         )}
       </section>
 
+      <PaketMitkommt inst={inst} v={inst ? kp?.versionen.find((x) => x.version === inst.version) : v} installiert={z.stand?.installiert ?? []} />
       {inst && <PaketUmwandeln key={`${inst.id}|${inst.version}`} paket={inst.id} />}
 
       {/* Auch nach der Installation sichtbar, bis „Weiter“ – sonst verschwände das Ergebnis mit dem Neuladen. */}
@@ -609,7 +621,7 @@ function PaketDetail({ z, id, quelle }: { z: PaketeZustand; id: string; quelle?:
           <PaketAblauf direkt quelle={{ art: 'katalog', katalog, quelle: aus?.offiziell ? undefined : aus?.url, dms: z.stand.dms, installiert: z.stand.installiert }} start={[id]} nur={[id]} versionen={version ? { [id]: version } : {}}
             aktionen={<Knopf onClick={() => setAblauf(false)}>{t('werkbank.pakete.abbrechen')}</Knopf>}
             geaendert={() => { void z.laden(); void d.neuLaden(); }}
-            fertig={(e) => { setAblauf(false); if (e.installiert.some((x) => x.id === id)) setMeldung({ art: 'gut', text: fertigText(e) }); }} />
+            fertig={(e) => { setAblauf(false); if (e.installiert.some((x) => x.id === id)) { setMeldung({ art: 'gut', text: fertigText(e) }); setAnleitungNeu(true); } }} />
         </section>
       )}
       {inst && katalog && z.stand && <ErgaenzungenBlock z={z} inst={inst} katalog={katalog} quelle={aus?.offiziell ? undefined : aus?.url} />}
@@ -632,6 +644,32 @@ function PaketDetail({ z, id, quelle }: { z: PaketeZustand; id: string; quelle?:
   );
 }
 
+/**
+ * „Was mitkommt“ auf der Paketseite (#1047): installiert, was diese Version mitbrachte, dazu die Rechte des Codes und die
+ * Kurzanleitung; vor der Installation, was der Katalog verrät (alles Weitere zeigt die Vorschau). Installationen vor #1047
+ * kennen es erst nach dem nächsten Update.
+ */
+function PaketMitkommt({ inst, v, installiert }: { inst: InstalliertesPaket | null; v: KatalogVersion | null | undefined; installiert: InstalliertesPaket[] }) {
+  const d = useDaten();
+  const m = inst?.mitkommt ?? (v ? mitkommtAusKatalog(v) : null);
+  if (!m) return null;
+  // Mappentyp eines Verweises im Code (eigener Schlüssel oder paket:typ) – wie in der Vorschau.
+  const typName = (vw: string) => {
+    const [p, k] = vw.includes(':') ? vw.split(':') : [inst?.id ?? '', vw];
+    return d.typ((p === inst?.id ? inst.typen : installiert.find((x) => x.id === p)?.typen)?.[k] ?? '')?.name ?? k;
+  };
+  const rechte = inst?.laeufer ? rechteZeilen(rechtePunkte(inst.laeufer, typName)) : undefined;
+  return (
+    <section className="blatt stapel" aria-label={t('werkbank.pakete.mitkommt.titel')} data-anker="pakete.mitkommt">
+      <h2 className="h3">{t('werkbank.pakete.mitkommt.titel')} <Hilfe ort="werkbank.pakete.mitkommt" /></h2>
+      {!inst?.mitkommt && <p className="leise klein">{inst ? t('werkbank.pakete.mitkommt.alt') : t('werkbank.pakete.mitkommt.katalog')}</p>}
+      <MitkommtInhalt m={m} rechte={inst?.mitkommt ? rechte : undefined} />
+      {inst && !anleitungLeer(inst) && <Kurzanleitung k={inst.kurzanleitung} />}
+    </section>
+  );
+}
+const anleitungLeer = (inst: InstalliertesPaket) => !inst.kurzanleitung || !Object.keys(inst.kurzanleitung).length;
+
 /** Erfolgsmeldung oben (#659): „… ist installiert“, bei Pflicht-Einstellungen mit dem Hinweis darauf. */
 function fertigText(e: AblaufErgebnis) {
   const namen = e.installiert.map((x) => `${x.name} ${x.version}`).join(', ');
@@ -652,8 +690,10 @@ function ErgaenzungenBlock({ z, inst, katalog, quelle }: { z: PaketeZustand; ins
   if (!erg.length && !meldung && !offen) return null;
   const gruppen = [...new Set(erg.map((x) => x.gruppe ?? tx('pakete.ablauf.ergaenzungen')))];
   return (
-    <section className="blatt stapel" aria-label={tx('pakete.ablauf.ergaenzungen')}>
-      <h2 className="h3">{gruppen.join(', ')} <Hilfe ort="werkbank.pakete.ablauf" /></h2>
+    <section className="blatt stapel" aria-label={t('werkbank.pakete.dazu.passend')}>
+      {/* „Dazu passend“ (#1048): Ergänzungen beim Hauptpaket, z. B. Zusatzsprachen der Texterkennung. */}
+      <h2 className="h3">{t('werkbank.pakete.dazu.passend')} <Hilfe ort="werkbank.pakete.ablauf" /></h2>
+      <p className="leise klein">{gruppen.join(', ')}</p>
       <MeldungBox m={meldung} />
       {!offen ? (
         <>
@@ -728,308 +768,10 @@ function LaeuferStand({ paket, abonniert = [], netz = false }: { paket: string; 
   );
 }
 
-/**
- * Vorschau mit Namen, Abhängigkeiten und Beispielen. Bei Paketen außerhalb des offiziellen
- * Katalogs (#189) eine deutliche Warnung, die man ausdrücklich bestätigen muss.
- * Auch im Einrichtungsassistenten und für Sammeldateien (#460, #461): je Paket ein Block, eigene Überschrift
- * und „Auslassen“ statt „Abbrechen“.
- */
-export function VorschauBlock({ v, warnung, los, abbrechen, titel, abbrechenText = t('werkbank.pakete.abbrechen'), herkunftBestaetigt = false }: {
-  v: PaketVorschau; warnung: string | null; abbrechen(): void; titel?: string; abbrechenText?: string;
-  /** Herkunft schon vorher bestätigt (Sammeldatei): kein zweiter Haken. */
-  herkunftBestaetigt?: boolean;
-  los(x: { namen: Record<string, string>; sichtNamen: Record<string, string>; beispiele: boolean; mitAbhaengigkeiten: boolean; rechteBestaetigt?: boolean; bestaetigt?: boolean; herausgeberBestaetigt?: boolean; automatisierungen: string[]; umbauBestaetigt?: boolean; umbauEntscheidungen?: UmbauEntscheidungen; sichtenErsetzen?: string[] }): Promise<void>;
-}) {
-  // Mitgelieferte Automatisierungen (#712): abgewählte bleiben aus. Vorausgewählt (#1082): die mit eingeschaltet: true –
-  // nennt das Paket das nirgends, wie bisher alle.
-  const neueAutos = (v.automatisierungen ?? []).filter((a) => a.neu);
-  const [ohneAuto, setOhneAuto] = useState<string[]>(() => { const an = vorausgewaehlt(v.automatisierungen ?? []); return neueAutos.filter((a) => !an.includes(a.schluessel)).map((a) => a.schluessel); });
-  const [namen, setNamen] = useState<Record<string, string>>(() => Object.fromEntries(v.typen.filter((eintrag) => !eintrag.vorhanden).map((eintrag) => [eintrag.schluessel, eintrag.vorschlag ?? eintrag.name])));
-  const [sichtNamen, setSichtNamen] = useState<Record<string, string>>(() => Object.fromEntries(v.sichten.filter((s) => !s.vorhanden && !s.ausgelassen).map((s) => [s.schluessel, s.vorschlag ?? s.name])));
-  // Ansichten (#1125): geänderte bzw. vor #1125 installierte bleiben – außer, sie sind hier angehakt.
-  const [ersetzen, setErsetzen] = useState<string[]>([]);
-  const [beispiele, setBeispiele] = useState(false);
-  const [mit, setMit] = useState(true);
-  const [ok, setOk] = useState(false);
-  const [rechteOk, setRechteOk] = useState(false);
-  const [laeuft, setLaeuft] = useState(false);
-  const rechteFehlen = !!v.laeufer?.bestaetigen && !rechteOk;
-  // Erstmals ein Herausgeber an einem Bestandspaket (#1084): eigener Haken, sonst kein Update.
-  const [herausgeberOk, setHerausgeberOk] = useState(false);
-  const herausgeberFehlt = !!v.herausgeberBestaetigen && !herausgeberOk;
-  // Umbau (#1041): Rückfragen, „Vorher sichern“ und Bestätigung – nur „Gesamte Verwaltung“.
-  const { ich } = useKonto();
-  const umbau = v.umbau ?? [];
-  const [umbauStand, setUmbauStand] = useState<UmbauStand>(() => umbauStart(umbau));
-  const [sicherungFehler, setSicherungFehler] = useState<string | null>(null);
-  const umbauFehlt = umbau.length > 0 && (!umbauStand.bestaetigt || !hatGesamt(ich));
-  /** „Vorher sichern“ (#702): eine Sicherung starten und abwarten; scheitert sie, kein Umbau. */
-  const sichereVorher = async (): Promise<boolean> => {
-    setSicherungFehler(null);
-    try {
-      let lauf: Awaited<ReturnType<typeof api.sicherungLauf>> = await api.sicherungJetzt();
-      while (lauf?.status === 'laeuft') { await new Promise((r) => setTimeout(r, 1500)); lauf = await api.sicherungLauf(); }
-      if (lauf?.status === 'fehler') { setSicherungFehler(t('pakete.umbau.vorschau.sicherung-fehler', { fehler: lauf.fehler ?? '' })); return false; }
-      return true;
-    } catch (e) { setSicherungFehler(t('pakete.umbau.vorschau.sicherung-fehler', { fehler: (e as Error).message })); return false; }
-  };
-  const fehlend = v.abhaengigkeiten.filter((a) => !a.installiert);
-  const konflikt = v.typen.some((eintrag) => !eintrag.vorhanden && eintrag.konflikt && (namen[eintrag.schluessel] ?? '').trim().toLowerCase() === eintrag.name.toLowerCase())
-    || v.sichten.some((s) => !s.vorhanden && !s.ausgelassen && s.konflikt && (sichtNamen[s.schluessel] ?? '').trim().toLowerCase() === s.name.toLowerCase());
-  const leer = Object.values(namen).some((n) => !n.trim()) || Object.values(sichtNamen).some((n) => !n.trim());
-  // Namenskonflikte (#1123) stehen auch in den Problemen; sie verhindern nichts, wenn oben umbenannt ist.
-  const probleme = v.probleme.filter((p) => !v.namenskonflikte?.includes(p));
-  // Herkunft bestätigen (#189, #594): außerhalb des offiziellen Katalogs bzw. ohne gültige Signatur.
-  const pruefWarnung = warnung ?? (v.pruefung?.bestaetigen ? (v.pruefung.art === 'ungueltig' ? tx('pakete.herkunft.warnung.ungueltig') : '') : null);
-  const bestaetigen = pruefWarnung !== null && !herkunftBestaetigt;
-  return (
-    <section className="blatt" aria-label={t('werkbank.pakete.vorschau')}>
-      <h2 className="h3">{titel ?? (v.update ? t('werkbank.pakete.update-auf', { version: v.paket.version }) : t('werkbank.pakete.vorschau-2', { name: v.paket.name, version: v.paket.version }))}<Herausgeber wer={v.paket.herausgeber} geprueft={v.paket.herausgeberGeprueft} /></h2>
-      <HerkunftZeile p={v.pruefung} />
-      {bestaetigen && (
-        <div className="hinweis warn" role="alert">
-          <p>{tn('werkbank.pakete.installiere-nur-pakete-deren', { b: <strong>{t('werkbank.pakete.nicht-vom-ablago-projekt-2')}</strong>, wert: pruefWarnung ? `${pruefWarnung.replace(/\.$/, '')}. ` : '' })}</p>
-          <HakenFeld beschriftung={t('werkbank.pakete.ich-weiss-woher-das')}>
-            <input type="checkbox" checked={ok} onChange={(e) => setOk(e.target.checked)} />
-          </HakenFeld>
-        </div>
-      )}
-      {v.laeufer && (
-        // Erst lesen, dann bestätigen (#449): Liste, darunter links der Haken – untereinander, auch am Handy.
-        <div className={`hinweis stapel ${v.laeufer.bestaetigen ? 'warn' : 'info'}`} role={v.laeufer.bestaetigen ? 'alert' : undefined}>
-          <p>{tn('werkbank.pakete.er-laeuft-im-paket', { b: <strong>{t('werkbank.pakete.das-paket-enthaelt-code')}</strong> })}</p>
-          <ul>
-            {v.laeufer.rechte.map((r) => (
-              <li key={r.text}>
-                {r.text} <Hilfe ort={r.hilfe} />
-                {r.unter && <ul>{r.unter.map((u) => <li key={u.text}>{u.text} <Hilfe ort={u.hilfe} /></li>)}</ul>}
-              </li>
-            ))}
-          </ul>
-          {v.laeufer.bestaetigen
-            ? <HakenFeld beschriftung={v.update ? t('werkbank.pakete.die-rechte-haben-sich') : t('werkbank.pakete.ich-erlaube-dem-paket')}>
-              <input type="checkbox" checked={rechteOk} onChange={(e) => setRechteOk(e.target.checked)} />
-            </HakenFeld>
-            : <p className="leise">{t('werkbank.pakete.die-rechte-sind-dieselben')}</p>}
-          {/* Dienst-Adresse (#444): Hinweis auf die Vertrauensbeziehung schon bei der Installation. */}
-          {v.laeufer.rechte.some((r) => r.hilfe === 'pakete.recht.adresse') && <p>{tx('fragen.adresse.installation')}</p>}
-        </div>
-      )}
-      <FremdeMappenVorschau v={v} />
-      <AktionenVorschau aktionen={v.aktionen} update={v.update} />
-      {probleme.length > 0 && <div className="hinweis schlecht"><ul>{probleme.map((p) => <li key={p}>{p}</li>)}</ul></div>}
-      {v.hinweise?.length > 0 && <div className="hinweis info"><ul>{v.hinweise.map((p) => <li key={p}>{p}</li>)}</ul></div>}
-      {v.sprache && <SprachVorschau s={v.sprache} />}
-      {v.einstellungen && (v.einstellungen.neu.length > 0 || v.einstellungen.weg.length > 0) && (
-        <div className="hinweis info"><p>{t('werkbank.pakete.einstellungen-2')}{v.update && v.einstellungen.neu.length > 0 && <> {' '}{t('werkbank.pakete.neu-mit-vorgabe', { neu: v.einstellungen.neu.join(', ') })}</>}{!v.update && <> {' '}{t('werkbank.pakete.das-paket-hat-einstellungen')}</>}{v.einstellungen.weg.length > 0 && <> {' '}{tn('werkbank.pakete.ihre-werte-werden-entfernt', { b: <strong>{t('werkbank.pakete.fallen-weg')}</strong>, weg: v.einstellungen.weg.join(', ') })}</>}</p></div>
-      )}
-      {/* Nur, wenn wirklich etwas angelegt wird (#643); Namenskonflikte stehen direkt am betroffenen Namen. */}
-      {v.update
-        ? <p className="leise">{umbau.length ? tx('pakete.umbau.vorschau.update') : tx('pakete.vorschau.update')}</p>
-        : legtEtwasAn(v) ? <p className="leise">{tx('pakete.vorschau.anlegen')}</p>
-        : v.paket.beschreibung ? <p>{v.paket.beschreibung}</p> : null}
-      {v.typen.length > 0 && <h3>{t('werkbank.pakete.mappentypen-2')}</h3>}
-      <ul className="stapel">
-        {v.typen.map((eintrag) => (
-          <li key={eintrag.schluessel}>
-            {eintrag.vorhanden
-              ? <span><strong>{eintrag.name}</strong> – {eintrag.neueFelder.length || eintrag.neueRegister.length || eintrag.erkennung?.length || eintrag.wiederfinden?.length || eintrag.vorbelegen?.length || eintrag.typAngaben || eintrag.formate?.length || eintrag.beschriftungen || eintrag.abschnitte?.length ? [eintrag.neueFelder.length || eintrag.neueRegister.length ? t('werkbank.pakete.neu', { wert: [...eintrag.neueFelder.map((f) => t('werkbank.pakete.feld', { f })), ...eintrag.neueRegister.map((r) => t('werkbank.pakete.register', { r }))].join(', ') }) : '', eintrag.erkennung?.length ? t('werkbank.pakete.aus-dokument-fuellen', { map: eintrag.erkennung.map((f) => `„${f}“`).join(', ') }) : '', eintrag.wiederfinden?.length ? t('werkbank.pakete.zum-wiederfinden', { map: eintrag.wiederfinden.map((f) => `„${f}“`).join(', ') }) : '', eintrag.vorbelegen?.length ? t('werkbank.pakete.vorbelegen', { map: eintrag.vorbelegen.map((f) => `„${f}“`).join(', ') }) : '', eintrag.typAngaben ? t('werkbank.pakete.dokument-uebernehmen') : '', eintrag.formate?.length ? tx('felder.paket.formate', { felder: eintrag.formate.map((f) => `„${f}“`).join(', ') }) : '', eintrag.beschriftungen ? t('werkbank.pakete.beschriftungen', { anzahl: eintrag.beschriftungen }) : '', eintrag.abschnitte?.length ? t('werkbank.pakete.abschnitte', { map: eintrag.abschnitte.map((r) => `„${r}“`).join(', ') }) : ''].filter(Boolean).join('; ') : t('werkbank.pakete.keine-aenderung')}</span>
-              : eintrag.geloescht ? <span className="leise">{t('werkbank.pakete.hast-du-geloescht-bleibt', { name: eintrag.name })}</span>
-              : <Feld beschriftung={t('werkbank.pakete.name-fuer', { name: eintrag.name })} hinweis={tn('werkbank.pakete.felder-kennung', { felder: eintrag.felder, code: <code>{eintrag.dmsSchluessel}</code> })}
-                  fehler={eintrag.konflikt && (namen[eintrag.schluessel] ?? '').trim().toLowerCase() === eintrag.name.toLowerCase() ? eintrag.konflikt : undefined}>
-                  <input value={namen[eintrag.schluessel] ?? eintrag.name} onChange={(e) => setNamen({ ...namen, [eintrag.schluessel]: e.target.value })} />
-                </Feld>}
-            {/* Umbau (#1041): Der Typ entsteht aus einem vorhandenen – gleiche Mappen, Rechte und Ansichten. */}
-            {eintrag.uebernimmt && <p className="leise klein">{t('pakete.umbau.vorschau.typ-aus', { name: eintrag.uebernimmt })}</p>}
-            {/* Archivmodus aus dem Paket (#1051): nur für neue Typen, danach am Mappentyp änderbar. */}
-            {!eintrag.vorhanden && !eintrag.geloescht && !eintrag.uebernimmt && eintrag.archiv && <p className="leise klein">{eintrag.archiv.stichtag && eintrag.archiv.leererStichtag === 'laeuftNicht'
-              ? t('werkbank.pakete.archiv-laeuft-nicht', { anzahl: eintrag.archiv.jahre, ab: eintrag.archiv.stichtagName ?? '' })
-              : t('werkbank.pakete.archiv', { anzahl: eintrag.archiv.jahre, ab: eintrag.archiv.stichtagName ? `„${eintrag.archiv.stichtagName}“` : t('werkbank.pakete.archiv-anlagedatum') })}</p>}
-            {/* Text → Verweis (#534): Das Update ändert vorhandene Angaben nicht; umgewandelt wird danach mit Vorschau. */}
-            {eintrag.vorhanden && eintrag.umwandeln?.filter((u) => u.anzahl > 0).map((u) => <p key={u.feld} className="leise klein">{tx('pakete.update.umwandeln', { feld: u.feld, aus: u.aus, anzahl: u.anzahl })}</p>)}
-          </li>
-        ))}
-      </ul>
-      {v.sichten.length > 0 && <h3>{t('werkbank.pakete.ansichten-2')}</h3>}
-      <ul className="stapel">
-        {v.sichten.map((s) => (
-          <li key={s.schluessel}>
-            {s.vorhanden ? <SichtZustandZeile s={s} ersetzen={ersetzen.includes(s.schluessel)} setze={(an) => setErsetzen(an ? [...ersetzen, s.schluessel] : ersetzen.filter((k) => k !== s.schluessel))} />
-              : s.ausgelassen ? <span className="leise">{s.ausgelassen}</span>
-              : <Feld beschriftung={t('werkbank.pakete.name-fuer-ansicht', { name: s.name })} hinweis={s.eltern ? t('werkbank.pakete.unter', { wert: v.sichten.find((x) => x.schluessel === s.eltern)?.name ?? s.eltern }) : t('werkbank.pakete.oberste-ebene')}
-                  fehler={s.konflikt && (sichtNamen[s.schluessel] ?? '').trim().toLowerCase() === s.name.toLowerCase() ? s.konflikt : undefined}>
-                  <input value={sichtNamen[s.schluessel] ?? s.name} onChange={(e) => setSichtNamen({ ...sichtNamen, [s.schluessel]: e.target.value })} />
-                </Feld>}
-          </li>
-        ))}
-      </ul>
-      <VorgabenVorschau v={v} />
-      <UmbauVorschau plaene={umbau} stand={umbauStand} setze={setUmbauStand} gesamt={hatGesamt(ich)} />
-      {sicherungFehler && <div className="hinweis schlecht" role="alert"><p>{sicherungFehler}</p></div>}
-      {v.abhaengigkeiten.length > 0 && (
-        <>
-          <h3>{t('werkbank.pakete.abhaengigkeiten')}</h3>
-          <ul className="klein">{v.abhaengigkeiten.map((a) => <li key={a.id}>{a.id} {a.bereich}: {a.installiert ? t('werkbank.pakete.installiert-2', { installiert: a.installiert, wert: a.ok ? '' : t('werkbank.pakete.passt-nicht') }) : a.verfuegbar ? t('werkbank.pakete.fehlt-im-katalog-gibt', { verfuegbar: a.verfuegbar }) : t('werkbank.pakete.fehlt-und-ist-nicht')}</li>)}</ul>
-          {!v.update && fehlend.length > 0 && <HakenFeld beschriftung={t('werkbank.pakete.fehlende-pakete-mitinstallieren')}>
-            <input type="checkbox" checked={mit} onChange={(e) => setMit(e.target.checked)} />
-          </HakenFeld>}
-        </>
-      )}
-      {!v.update && v.beispiele > 0 && <HakenFeld beschriftung={<>{t('werkbank.pakete.beispiel-mappen-anlegen', { beispiele: v.beispiele })}{v.beispielDokumente?.anzahl ? ` ${t('werkbank.pakete.mit-beispiel-dokumenten', { anzahl: v.beispielDokumente.anzahl, mb: inMB(v.beispielDokumente.bytes) })}` : ''}</>}>
-        <input type="checkbox" checked={beispiele} onChange={(e) => setBeispiele(e.target.checked)} />
-      </HakenFeld>}
-      {/* Mitgelieferte Automatisierungen (#1174): Schalter statt Haken – angelegt werden alle, gewählt wird, welche gleich laufen. */}
-      {neueAutos.length > 0 && (
-        <section className="stapel" aria-label={tx('pakete.ablauf.automatisierungen')}>
-          <h3>{tx('pakete.ablauf.automatisierungen')}</h3>
-          <AutomatisierungenSchalter aus={ohneAuto} setAus={setOhneAuto}
-            liste={neueAutos.map((a) => ({ schluessel: a.schluessel, name: a.name, hinweis: [a.zeitplan && tx('pakete.ablauf.automatisierungen.zeitplan', { zeitplan: a.zeitplan }), a.beschreibung].filter(Boolean).join(' · ') || undefined }))} />
-        </section>
-      )}
-      {v.update && <GeaenderteAutomatisierungen liste={v.automatisierungen ?? []} />}
-      {/* Automatisierungsvorlagen (#1044, Rechte-Vorschau): jede mit ihren Karten – nur Aufgaben und Benachrichtigungen. */}
-      {!!v.ablaufvorlagen?.length && (
-        <div className="stapel" data-anker="pakete.ablaufvorlagen">
-          <p><strong>{tx('pakete.ablauf.vorlagen')}</strong></p>
-          <p className="leise klein">{tx('pakete.ablauf.vorlagen.text')}</p>
-          <ul>{v.ablaufvorlagen.map((a) => (
-            <li key={a.schluessel}>{a.name}: {a.karten.join(', ')}
-              {istKernVorlage(a.ersetzt) && <> <small className="leise">{tx('pakete.ablauf.vorlagen.ersetzt', { name: kernVorlage(a.ersetzt).name })}</small></>}
-              {v.update && (a.neu || a.geaendert) && <> <span className="chip warn klein">{a.neu ? tx('pakete.ablauf.vorlagen.neu') : tx('pakete.ablauf.vorlagen.geaendert')}</span></>}
-            </li>
-          ))}</ul>
-        </div>
-      )}
-      {v.herausgeberBestaetigen && (
-        <div className="hinweis warn">
-          <HakenFeld beschriftung={t('werkbank.pakete.herausgeber-bestaetigen', { herausgeber: v.herausgeberBestaetigen })}><input type="checkbox" checked={herausgeberOk} onChange={(e) => setHerausgeberOk(e.target.checked)} /></HakenFeld>
-        </div>
-      )}
-      {konflikt && !!v.namenskonflikte?.length && <NamenskonfliktHinweis liste={v.namenskonflikte} />}
-      <div className="knoepfe">
-        <Knopf art="haupt" gesperrt={probleme.length > 0 || konflikt || leer || (bestaetigen && !ok) || rechteFehlen || herausgeberFehlt || umbauFehlt}
-          laeuft={laeuft} laeuftText={v.update ? t('werkbank.pakete.aktualisiere') : t('werkbank.pakete.installiere')} onClick={() => {
-            setLaeuft(true);
-            void (async () => {
-              if (umbau.length && umbauStand.sichern && !(await sichereVorher())) return;
-              await los({ namen, sichtNamen, beispiele, mitAbhaengigkeiten: mit, automatisierungen: neueAutos.map((a) => a.schluessel).filter((k) => !ohneAuto.includes(k)), ...(rechteOk ? { rechteBestaetigt: true } : {}), ...(herausgeberOk ? { herausgeberBestaetigt: true } : {}), ...(bestaetigen && ok ? { bestaetigt: true } : {}),
-                ...(umbau.length ? { umbauBestaetigt: true, umbauEntscheidungen: umbauStand.entscheidungen } : {}), ...(ersetzen.length ? { sichtenErsetzen: ersetzen } : {}) });
-            })().finally(() => setLaeuft(false));
-          }}>
-          {v.update ? t('werkbank.pakete.aktualisieren') : t('werkbank.pakete.installieren-2')}
-        </Knopf>
-        <Knopf onClick={abbrechen}>{abbrechenText}</Knopf>
-      </div>
-    </section>
-  );
-}
-
-/**
- * Eine vorhandene Ansicht des Pakets in der Vorschau (#1125): vorhanden, wird ersetzt, oder bleibt (geändert bzw. ohne
- * Prüfwert) – dann mit Haken „trotzdem ersetzen“.
- */
-function SichtZustandZeile({ s, ersetzen, setze }: { s: PaketVorschau['sichten'][number]; ersetzen: boolean; setze(an: boolean): void }) {
-  if (s.zustand === 'aktualisiert') return <span>{t('werkbank.pakete.ansicht.aktualisiert', { name: s.name })}</span>;
-  if (s.zustand !== 'geaendert' && s.zustand !== 'unbekannt') return <span className="leise">{t('werkbank.pakete.vorhanden', { name: s.name })}</span>;
-  return (
-    <div className="stapel">
-      <span>{t(s.zustand === 'geaendert' ? 'werkbank.pakete.ansicht.geaendert' : 'werkbank.pakete.ansicht.unbekannt', { name: s.name })}</span>
-      <HakenFeld beschriftung={t('werkbank.pakete.ansicht.ersetzen')}><input type="checkbox" checked={ersetzen} onChange={(e) => setze(e.target.checked)} /></HakenFeld>
-    </div>
-  );
-}
-
-/** Was mit einer Vorgabe geschieht (#1038), als kurzer Zusatz hinter ihrem Namen. */
-function vorgabeZustand(x: VorgabePlan, update: boolean): string {
-  const teile = [
-    x.zustand === 'neu' ? (update ? t('werkbank.pakete.vorgaben.neu') : '')
-      : x.zustand === 'aktualisiert' ? t('werkbank.pakete.vorgaben.aktualisiert')
-      : x.zustand === 'geaendert' ? (x.neueFassung ? t('werkbank.pakete.vorgaben.geaendert-neue-fassung') : t('werkbank.pakete.vorgaben.geaendert'))
-      : x.zustand === 'geloescht' ? t('werkbank.pakete.vorgaben.geloescht')
-      : x.zustand === 'uebernommen' ? t('werkbank.pakete.vorgaben.uebernommen') : '',
-    x.vorlagen ? t('werkbank.pakete.vorgaben.vorlagen', { anzahl: x.vorlagen }) : '',
-  ].filter(Boolean);
-  return teile.join(', ');
-}
-
-/**
- * Vorgaben in der Vorschau (#1038): Mappen, die das Paket zum Behalten mitbringt – je Mappentyp. Beim Update nur, was
- * sich tut; was unverändert bleibt, steht als Zahl darunter.
- */
-function VorgabenVorschau({ v }: { v: PaketVorschau }) {
-  const alle = (v.vorgaben ?? []).filter((x) => !x.fremd);
-  if (!alle.length) return null;
-  const zeigen = v.update ? alle.filter((x) => x.zustand !== 'gleich' || x.vorlagen > 0) : alle;
-  const typen = [...new Set(zeigen.map((x) => x.typ))];
-  const gleich = alle.length - zeigen.length;
-  return (
-    <section className="stapel" aria-label={t('werkbank.pakete.vorgaben.titel')} data-anker="pakete.vorgaben">
-      <h3>{t('werkbank.pakete.vorgaben.titel')} <Hilfe ort="pakete.vorgaben" /></h3>
-      <p className="leise klein">{v.update ? t('werkbank.pakete.vorgaben.text-update') : t('werkbank.pakete.vorgaben.text')}</p>
-      {typen.map((typ) => (
-        <div key={typ}>
-          <p className="klein"><strong>{typ}</strong></p>
-          <ul className="klein">
-            {zeigen.filter((x) => x.typ === typ).map((x) => { const z = vorgabeZustand(x, v.update); return <li key={x.schluessel}>{x.name}{z && <span className="leise"> · {z}</span>}</li>; })}
-          </ul>
-        </div>
-      ))}
-      {gleich > 0 && <p className="leise klein">{t('werkbank.pakete.vorgaben.unveraendert', { anzahl: gleich })}</p>}
-    </section>
-  );
-}
-
-/**
- * Mappen anderer Pakete (#1038) – Teil der Rechte-Vorschau: Vorgaben in deren Mappentypen und Vorlagen, die das Paket an
- * ihre Vorgaben hängt. Mehr darf es dort nicht (keine Felder, keine Rechte, nichts löschen).
- */
-function FremdeMappenVorschau({ v }: { v: PaketVorschau }) {
-  const fremd = (v.vorgaben ?? []).filter((x) => x.fremd && (x.zustand === 'neu' || x.vorlagen > 0));
-  const erg = (v.ergaenzungen ?? []).filter((e) => !e.fehlt && e.vorlagen > 0);
-  if (!fremd.length && !erg.length) return null;
-  return (
-    <div className="hinweis info stapel" data-anker="pakete.fremde-mappen">
-      <p><strong>{t('werkbank.pakete.fremde-mappen.titel')}</strong></p>
-      <ul>
-        {fremd.map((x) => <li key={x.schluessel}>{t('werkbank.pakete.fremde-mappen.vorgabe', { name: x.name, typ: x.typ, paket: x.fremd ?? '' })}</li>)}
-        {erg.map((e) => <li key={e.ziel}>{t('werkbank.pakete.fremde-mappen.vorlagen', { anzahl: e.vorlagen, name: e.name, paket: e.paket })}</li>)}
-      </ul>
-      <p className="leise klein">{t('werkbank.pakete.fremde-mappen.grenze')}</p>
-    </div>
-  );
-}
-
-/** Sprachpaket in der Vorschau (#731): Sprache, Abdeckung, maschinell/geprüft, Beschriftungen für andere Pakete. */
-function SprachVorschau({ s }: { s: NonNullable<PaketVorschau['sprache']> }) {
-  return (
-    <div className="hinweis info stapel">
-      <p>{t('werkbank.pakete.sprache.vorschau', { sprache: sprachname(s.kennung), prozent: s.abdeckung.prozent, vorhanden: s.abdeckung.vorhanden, gesamt: s.abdeckung.gesamt, ablago: s.ablago })}</p>
-      <SprachHerkunft maschinell={s.maschinell} geprueftVon={s.geprueftVon} />
-      {s.pakete.length > 0 && <p>{t('werkbank.pakete.sprache.beschriftungen', { pakete: s.pakete.join(', ') })}</p>}
-      <p className="leise klein">{t('werkbank.pakete.sprache.erlauben')}</p>
-    </div>
-  );
-}
-/** „Maschinell übersetzt – Verbesserungen willkommen“ bzw. „Geprüft von …“ (#731) – wie in Mein Konto. */
-function SprachHerkunft({ maschinell, geprueftVon }: { maschinell: boolean; geprueftVon?: string }) {
-  if (geprueftVon) return <p className="leise klein">{t('werkbank.pakete.sprache.geprueft', { wer: geprueftVon })}</p>;
-  if (!maschinell) return null;
-  return <p className="leise klein">{tn('werkbank.pakete.sprache.maschinell', { link: <a href={MITMACHEN_URL} target="_blank" rel="noreferrer">{t('werkbank.pakete.sprache.mitmachen')}</a> })}</p>;
-}
-
 /** Lizenz eines Pakets (#651): bei eigener oder fehlender Lizenz mit sachlichem Hinweis. */
 function LizenzAngabe({ lizenz }: { lizenz: string }) {
   const art = lizenzArtVon(lizenz);
   if (art === 'frei') return <>{lizenz}</>;
   return <>{art === 'keine' || lizenz === KEINE_LIZENZ ? tx('pakete.erstellen.lizenz.keine') : lizenz.replace(/^LicenseRef-/, '').replace(/-/g, ' ')}
     <small className="leise" style={{ display: 'block' }}>{tx(art === 'keine' ? 'pakete.vorschau.lizenz.keine' : 'pakete.vorschau.lizenz.eigen')}</small></>;
-}
-
-/**
- * Herausgeber neben dem Namen (#1084): „Verträge · app.ablago“, immer vollständig (nie gekürzt – sonst sähe
- * app.ablago-community wie app.ablago aus). Nicht belegte als „Herausgeber laut Paket: … – nicht geprüft“.
- */
-function Herausgeber({ wer, geprueft }: { wer?: string | null; geprueft?: boolean }) {
-  if (!wer) return null;
-  return <span className="leise" title={t('werkbank.pakete.herausgeber')}> · {geprueft ? wer : t('werkbank.pakete.herausgeber-ungeprueft', { wer })}</span>;
 }

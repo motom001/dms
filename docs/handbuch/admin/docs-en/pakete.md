@@ -6,12 +6,19 @@ Packages come from the **official catalogue** of the Ablago project ([dms-regist
 
 ## Fetching the catalogue { #katalog-abrufen }
 
-Ablago only queries the catalogue **at the push of a button**, never in the background: click **Fetch catalogue**. The page then shows two lists:
+Ablago only queries the catalogue **at the push of a button**, never in the background: click **Fetch catalogue**. As soon as a package is installed, the same button is called **Look for new versions** – it fetches the official catalogue and the switched-on [further sources](#expertenmodus-weitere-kataloge-und-hochladen) and checks whether there is something newer for installed packages. The button then shows when the catalogues were fetched and what came of it: “Fetched at 14:32 · 3 new versions” or “Everything up to date”. If no catalogue could be reached, it says so there; Ablago gives the reason above the list. The page then shows two lists:
 
 - **Installed** – packages in this installation, with version and origin
-- **Available** – packages from the catalogue that aren't installed yet
+- **Available** – packages from the catalogue that aren't installed yet, by the same rules as the overview in the catalogue:
+    - at the top **Recommended for you** – the catalogue's recommendations without what is already installed; if you also use Ablago for work (feature under [Workbench → Use](nutzung.md)), packages for work such as Compliance are added. If an older catalogue has no recommendations, Ablago takes the preselection of the setup assistant.
+    - below that **More packages**
+    - **Languages** (interface languages) only via the switch **Packages · Languages**
+    - **Add-ons** such as the additional languages of text recognition are not in the list but with their main package under [Goes with it](#mehrere-pakete-in-einem-schritt-installieren)
+    - the **search field** above finds everything – name, description and ID, including languages and add-ons
 
-A click on a package shows name, description, version, licence, author, the required Ablago version, dependencies, the folder types and views it contains as well as links to the README and the changes.
+![Workbench → Packages: “Recommended for you” and “More packages”, above them the search field and the switch “Packages · Languages”](bilder/werkbank-pakete-verfuegbar.png)
+
+A click on a package shows name, description, version, licence, author, the required Ablago version, dependencies, links to the README and the changes and below that [What comes with it](#was-mitkommt).
 
 Ablago loads the catalogue from `https://catalog.ablago.app/katalog.json` and checks its **signature** (see [Origin](#herkunft-signiert-oder-nicht)). It only follows redirects to `https://` addresses. For this, Ablago itself must be able to reach the internet. Ablago can't configure a proxy for outgoing requests. Without internet access you upload a package as a file (see [Expert mode](#expertenmodus-weitere-kataloge-und-hochladen)).
 
@@ -63,7 +70,7 @@ Ablago checks everything **before the first package**: origin, permissions, name
 
 Your confirmation only applies to **exactly the permissions you saw**. If they change before the click (e.g. because the catalogue now has a new version with more permissions), Ablago shows the new permissions and asks again. While an installation is running, other installations, updates and removing packages wait – also on a second server with the same database.
 
-**Later on:** under **Workbench → Packages → *package*** are the add-ons that exist for it in the catalogue (e.g. **Further languages** for text recognition), with **Choose …** – then the same process. The [text recognition](texterkennung.md#weitere-sprachen) page suggests languages that occur in your documents.
+**Later on:** under **Workbench → Packages → *package*** the add-ons that exist for it in the catalogue (e.g. **Further languages** for text recognition) are listed at **Goes with it**, with **Choose …** – then the same process. The [text recognition](texterkennung.md#weitere-sprachen) page suggests languages that occur in your documents.
 
 Folder types from packages carry a chip with the package icon and the package's name after their name in **Workbench → Folder types**. You can then adjust them like any other folder type.
 
@@ -119,6 +126,26 @@ Next to a package's name is its **publisher** (#1084), e.g. "Contracts · app.ab
 
 Per package Ablago remembers version, **origin** (the catalogue), **publisher**, when and by whom it was installed or updated and which folder types and views belong to it. These details are part of the [backup](sicherung.md) and of the [full export](export.md) (`struktur/pakete.json`). Installing, updating and removing are in the log.
 
+### What comes with it { #was-mitkommt }
+
+On a package's page, in the preview and in the [joint flow](#mehrere-pakete-in-einem-schritt-installieren) (expandable per package) there is **What comes with it** – the same points in the same order as on the package page in the [catalogue](#im-katalog-ansehen):
+
+- **Folder types** with the number of their fields and a line of description, **views**
+- **Included folders** ([defaults](#vorgaben)) per folder type and text templates to fill in
+- **Examples** and **words with the same meaning** for search
+- **Automations** in plain words: “When 60 days before “End” (Tenancy), checked at 07:00 → To do for “Responsible” (otherwise the person who created the folder)”, plus **once per date** or **recurring** and whether the package suggests switching them on right away
+- **Automation templates** with their cards and **actions in the “Folder” menu** with the permissions they need
+- **Settings** – sections and fields
+- finally **permissions and network**: no code, code without or with access to network and internet; on the page of an installed package with code, the permissions in detail
+
+![Package page with the quick guide after installation and “What comes with it”](bilder/werkbank-pakete-mitkommt.png)
+
+On an **update**, everything that comes with the new version is marked **new in this version**. Before installation the package page only knows what the catalogue tells (folder types, views, examples); the preview shows everything else when you install. Packages installed before this Ablago version show it completely after the next update. Tours and tips from packages will follow as soon as the package format knows them.
+
+### How to use it { #so-nutzt-du-es }
+
+If a package brings a **quick guide** (three to five short steps), Ablago shows it **once right after the installation** at the top of the package page – with **Close**. After that it is under **What comes with it** at **How to use it**, to expand. Ablago shows it in your language, otherwise in German. Big topics are not explained in the guide but in a tour.
+
 ## Examples { #beispiele }
 
 Many packages bring **sample folders** with invented data so that you can see what belongs in a folder. Since Ablago 0.223.0 they can also bring **example documents** – for instance a maintenance contract and two invoices for the folder "Heating". Both are only created if you set the tick **Sample folders** when installing; an update creates no examples.
@@ -155,7 +182,7 @@ The deletion log records removed presets as "unused package presets removed".
 
 ## Updating { #aktualisieren }
 
-**Check for new versions** queries the catalogue (at the push of a button) and marks packages for which there is something newer. In the package, **Update to … …** shows a preview of what is added and a link to the changes.
+**Look for new versions** queries the catalogues (at the push of a button) and marks every package under **Installed** for which there is something newer, with the new version. In the package, **Update to … …** shows a preview of what is added and a link to the changes. After the update the marker disappears at once; if there is an even newer version by now, that one is shown.
 
 An update **only adds** – unless it [converts](#umbau); then the preview says so explicitly:
 
@@ -174,6 +201,18 @@ It **deletes nothing** and **overwrites nothing** you have changed yourself: if 
 
 **New ID (move, #1084):** if a package renames its ID – for instance the additional languages of text recognition from `texterkennung_fra` to `texterkennung.fra` –, this appears as an ordinary update of the installed package. The preview says "The package is now called …". Afterwards it is there under the new ID, with all folder types, folders, settings and data; no second package is created. This only works from the same source and the same publisher. By the way, an ID with a dot always means: the package **extends** the package before the dot.
 
+
+
+### Updating all packages { #alle-pakete-aktualisieren }
+
+If there is something new for several packages, the button **Update all (3)** appears above the **Installed** list. It opens **one** joint preview:
+
+- **Order** – first the packages others depend on, add-ons (e.g. additional languages of text recognition) after their main package. If a package needs a newer version of another one that is updated in the same round, that is no obstacle.
+- **Expanded** is only what you need to decide or confirm – the same confirmations as for a single update: new [permissions](#rechte-eines-pakets), a [conversion](#umbau) with its questions, a publisher set for the first time ([publisher](#herausgeber)), the origin of packages outside the official catalogue and names that already exist.
+- **No questions** – the other packages, summarised. Click a package to see what changes, as in the single preview.
+- Updates that are not possible right now (e.g. an Ablago version that is too old) are listed at the top with the reason and are not included.
+
+**Update all** stays locked until everything necessary is confirmed. Then you see the **progress per package**. If one fails, the others continue; only packages that depend on it are skipped. At the end there is a summary: how many were updated, failed or skipped, each with the reason. You can still update a single package on its own page.
 
 ## Conversion: folder types move to another package { #umbau }
 

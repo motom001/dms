@@ -421,8 +421,8 @@ An installable bundle of folder types, views and examples from a package catalog
 See also: [Package catalogue](#paketkatalog), [Expert mode](#expertenmodus), [Package runner](#paket-laufer), [Publisher](#herausgeber).
 
 <a id="paketkatalog"></a>**Package catalogue** (*Paketkatalog*) · ~ with explanation · administrators  
-The list of packages a DMS can install (a file katalog.json on the internet). Ablago only queries the official catalogue at the push of a button ("Fetch catalogue"). Further catalogues are entered in expert mode under "Further sources".  
-See also: [Package](#paket), [Expert mode](#expertenmodus).
+The list of packages a DMS can install (a file katalog.json on the internet). Ablago only queries the official catalogue at the push of a button ("Fetch catalogue", with installed packages "Look for new versions"). Further catalogues are entered in expert mode under "Further sources".  
+See also: [Package](#paket), [Expert mode](#expertenmodus), [What comes with it](#was-mitkommt).
 
 <a id="paket-laufer"></a>**Package runner** (*Paket-Läufer*) · ✗ technical term · advanced users  
 The part of Ablago that runs the code of packages – isolated in its own process, with limits for memory and time and only with the permissions an administrator confirmed during installation. The code only reaches the network and the internet at the addresses the package names – the preview shows this as "no access to network and internet" or "access to network/internet only to …". Its status is shown under Workbench → Packages → package in the section "Package runner".  
@@ -524,6 +524,10 @@ An account with which someone signs in. Stored as a system folder in Ablago. Peo
 <a id="fassung"></a>**Version (of a setting)** (*Fassung*) · ~ with explanation · administrators  
 A saved state of an entry in the Workbench – folder type (with its permission rules), view, number sequence, stamp template, mailbox, package settings or automation – with the time, who saved it (a person, a package with its version, an automation, an update of Ablago) and a readable list of changes. Every save creates a version; the same person within 10 minutes stays one. Two versions can be compared and an earlier one restored – which is itself a new version. When an entry is deleted, its last version stays with a deletion note as a record.  
 See also: [Version](#version), [Version of Ablago](#version-von-ablago).
+
+<a id="was-mitkommt"></a>**What comes with it** (*Was mitkommt*) · ✓ everyday word · administrators  
+Everything a package brings – folder types, views, included folders, examples, word lists, automations, automation templates, actions in the "Folder" menu, settings, permissions and network – in the same order as in the catalogue. Shown on the package page and in the preview; on an update, new things are marked "new in this version". Plus the quick guide "How to use it", which Ablago shows once right after the installation.  
+See also: [Package](#paket), [Package catalogue](#paketkatalog).
 
 <a id="werkbank-karte"></a>**Workbench card** (*Werkbank-Karte*) · ~ with explanation · administrators  
 Card of an automation that concerns the operation of Ablago instead of a folder – When "Error reported", "Log message", "New version available" and Then "Start a backup". The system account "Automation" has precisely defined Workbench permissions for them; only someone who manages the area themselves may set them up.  

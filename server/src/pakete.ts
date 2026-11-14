@@ -25,7 +25,7 @@ import { typBild, type TypBild } from '../../shared/src/typvergleich';
 import { ergaenzeBeschriftungen, type AbschnittTeile, type Beschriftungen, type NamensTeile, type TypTeile } from '../../shared/src/beschriftung';
 import type { MappenAktion } from '../../shared/src/paketaktionen';
 import { liesMappenaktionen } from './paketaktionen';
-import { ALLE_TYPEN, BEISPIEL_ENDUNGEN, BEISPIEL_ORDNER, BEREICH, CODE_MAX, PAKET_MAX, type BeispielStand, inMB, KATALOG_ALT_TAGE, type HerkunftPruefung, hatSchnittstelle, DMS_RECHTE_TYPEN, DMS_ALIAS, veralteteVerweise, WORTLISTEN_MAX, gleicheRechte, liesCode, rechtePunkte, rechteZeilen, type PaketCode, type RechtePunkt, dmsPasst, liesKatalog, nachAbhaengigkeiten, neuestePassende, OFFIZIELLER_KATALOG, PAKET_ID, passt, vergleicheVersion, VERSION, type InstalliertesPaket, type SichtZustand, type Katalog, type KatalogPaket, type KatalogVersion, auswahlMitAbhaengigkeiten, liesErgaenzt, liesErsetzt, punktIdFehler, type Ergaenzung, type AblaufPlan, type AblaufErgebnis, type AblaufAusgelassen, haengenAn, type AblaufEingabe, type AblaufInstallation } from '../../shared/src/pakete';
+import { ALLE_TYPEN, BEISPIEL_ENDUNGEN, BEISPIEL_ORDNER, BEREICH, CODE_MAX, PAKET_MAX, type BeispielStand, inMB, KATALOG_ALT_TAGE, type HerkunftPruefung, hatSchnittstelle, DMS_RECHTE_TYPEN, DMS_ALIAS, veralteteVerweise, WORTLISTEN_MAX, gleicheRechte, liesCode, rechtePunkte, rechteZeilen, type PaketCode, type RechtePunkt, dmsPasst, liesKatalog, nachAbhaengigkeiten, neuestePassende, OFFIZIELLER_KATALOG, PAKET_ID, passt, vergleicheVersion, VERSION, type InstalliertesPaket, type SichtZustand, type Katalog, type KatalogPaket, type KatalogVersion, auswahlMitAbhaengigkeiten, liesErgaenzt, liesErsetzt, punktIdFehler, katalogPaketZu, type Ergaenzung, type AblaufPlan, type AblaufErgebnis, type AblaufAusgelassen, haengenAn, type AblaufEingabe, type AblaufInstallation } from '../../shared/src/pakete';
 import { TABELLE_NEU_MAX } from '../../shared/src/tabelle';
 import { archivAusPaket, paketArchivFehler, type Archiv, type PaketArchiv } from '../../shared/src/archiv';
 import { zusammengesetztProbleme } from '../../shared/src/zusammengesetzt';
@@ -58,6 +58,8 @@ import {
 } from './pakete/index';
 import { fuehreUmbauAus, liesUmbau, nimmEinstellungenZurueck, planeUmbau, titelKennung, uebernahmeDaten, wendeEntscheidungenAn, type TitelSuche, type UmbauErgebnis, type UmbauLage } from './pakete/index';
 import { sichtFassung, sichtStandNach, sichtZustand } from './pakete/index';
+import { mitkommtVon, type MitkommtNamen } from './pakete/index';
+import { liesKurzanleitung, type Mitkommt } from '../../shared/src/mitkommt';
 import { abhaengigeTypen, abhaengigkeitsKonflikte, anzeigeTypIds, anzeigeWartet, eigeneKonflikte, Namensherkunft, optionaleInTyp, quelleAnlegbar, quellenNachtragen, type SollQuelle } from './pakete/index';
 import type { UmbauEntscheidungen, UmbauPlan, UmbauSchritt } from '../../shared/src/umbau';
 import { istVorgabeWert, vorgabeKennung, vorgabeVerweis, vorgabeWerte, type ErgaenzungPlan, type VorgabeFrage, type VorgabePlan } from '../../shared/src/vorgaben';
@@ -358,7 +360,9 @@ export interface Paket { manifest: Manifest; typen: PaketTyp[]; sichten: PaketSi
   /** Aktionen im Menü „Mappe“ (#1039). */
   mappenaktionen?: MappenAktion[];
   /** Automatisierungsvorlagen (#1044), roh aus inhalt/ablaufvorlagen.yaml; nur erlaubte Karten. */
-  ablaufvorlagen?: PaketAblaufvorlage[] }
+  ablaufvorlagen?: PaketAblaufvorlage[];
+  /** Kurzanleitung „So nutzt du es“ (#1047, Manifest `kurzanleitung`) je Sprache. */
+  kurzanleitung?: Record<string, string[]> }
 /** Inhalt eines Sprachpakets (#731), geprüft gegen das Deutsche dieser Version. */
 export interface PaketSprache { angabe: Sprachangabe; texte: Sprachtexte; uebergangen: string[]; beschriftungen: Record<string, SprachBeschriftung> }
 
@@ -432,14 +436,8 @@ export function neueKennung(kennung: string, installierte: Array<Pick<Installier
   const treffer = installierte.flatMap((p) => Object.keys(p.typen).filter((k) => `${p.id}_${k}` === kennung).map((k) => typKennung(p.id, k)));
   return treffer.length === 1 ? treffer[0] : kennung;
 }
-/**
- * Katalogeintrag zu einer Paket-Id (#1084): die Id selbst, sonst das eine Paket, das sie unter `ersetzt` nennt – so
- * findet ein Update von texterkennung_fra das umgezogene texterkennung.fra.
- */
-export function katalogPaketZu(k: Katalog, id: string): KatalogPaket | undefined {
-  const nach = k.pakete.filter((p) => p.ersetzt?.includes(id));
-  return k.pakete.find((p) => p.id === id) ?? (nach.length === 1 ? nach[0] : undefined);
-}
+/** Katalogeintrag zu einer Paket-Id (#1084) – jetzt in shared/src/pakete.ts, hier für bestehende Aufrufer. */
+export { katalogPaketZu };
 /** Belegt die Prüfung die Herkunft vom Projekt (offizieller Katalog, Sammeldatei mit seiner Signatur, Prüfsumme dort)? */
 const offiziellBelegt = (p: HerkunftPruefung) => (p.offiziell && p.art !== 'ungueltig') || !!p.katalogversion;
 /** Vertrauen einer Herkunft (Sicherheit B): 3 offiziell belegt, 2 signierter weiterer Katalog, 1 sonst. */
@@ -759,6 +757,8 @@ export function liesPaket(roh: Map<string, Buffer>): Paket {
     ...(umbau.length ? { umbau } : {}),
     ...(ma.aktionen.length ? { mappenaktionen: ma.aktionen } : {}),
     ...(ablaufvorlagen.length ? { ablaufvorlagen } : {}),
+    // Kurzanleitung (#1047): Ungültiges übergeht Ablago still, wie ältere Versionen das ganze Feld.
+    ...(() => { const k = liesKurzanleitung(m.kurzanleitung); return k ? { kurzanleitung: k } : {}; })(),
   };
 }
 
@@ -1019,7 +1019,11 @@ export interface TypPlan {
 export interface SichtPlan { schluessel: string; name: string; eltern: string | null; vorhanden: boolean; konflikt: string | null; vorschlag: string | null; /** Wird nicht installiert (#656), mit Grund. */ ausgelassen?: string | null; /** Mappentypen, die hier fehlen – die Ansicht kommt ohne sie (#656). */ ohne?: string[];
   /** Vorhandene Ansicht beim Update (#1125): bleibt, wird ersetzt oder ist geändert (auf Wunsch: `sichtenErsetzen`). */
   zustand?: SichtZustand }
-export interface AbhaengigkeitPlan { id: string; bereich: string; installiert: string | null; ok: boolean; verfuegbar: string | null }
+/**
+ * Abhängigkeit in der Vorschau. problem: der Eintrag aus `probleme`, wenn die installierte Version nicht passt – „Alle
+ * aktualisieren“ (#1168) übergeht ihn, wenn dieselbe Runde die Abhängigkeit vorher auf eine passende Version bringt.
+ */
+export interface AbhaengigkeitPlan { id: string; bereich: string; installiert: string | null; ok: boolean; verfuegbar: string | null; problem?: string }
 export interface Vorschau {
   paket: { id: string; name: string; version: string; beschreibung: string; lizenz: string; autor: { name: string; github: string }; dms: string; abhaengigkeiten: Record<string, string>; readme: string | null; changelog: string | null; quelle: string | null;
     /** Herausgeber (#1084): aus dem Manifest, sonst der des Katalogs (standardHerausgeber); null = unbekannt. */
@@ -1084,6 +1088,10 @@ export interface Vorschau {
    * mit diesem Update dazu oder braucht jetzt andere Rechte.
    */
   aktionen?: Array<{ schluessel: string; name: string; rechte: MappenAktion['rechte']; typen: string[]; dialog?: MappenAktion['dialog']; neu: boolean }>;
+  /** Was mitkommt (#1047): alles, was das Paket mitbringt, wie im Katalog; beim Update mit „neu in dieser Version“. */
+  mitkommt?: Mitkommt;
+  /** Kurzanleitung „So nutzt du es“ (#1047) je Sprache; null ohne. */
+  kurzanleitung?: Record<string, string[]> | null;
 }
 /** Was lege anlegt bzw. ergänzt (#1084: als ein Objekt, damit der Umzug es weiterreichen kann). */
 interface LegeAuftrag { paket: Paket; herkunft: InstalliertesPaket['herkunft']; v: KatalogVersion | undefined; plan: Vorschau; beispiele: boolean; von: Handelnder; alt: InstalliertesPaket | null; ein: string[] }
@@ -2183,7 +2191,7 @@ export class Paketverwaltung {
     }
     for (const a of abhaengigkeiten) {
       if (a.installiert && !a.ok && passt(a.installiert, a.bereich)) continue;
-      if (a.installiert && !a.ok) probleme.push(t('meldungen.pakete.ist-in-version-installiert', { id: a.id, installiert: a.installiert, bereich: a.bereich }));
+      if (a.installiert && !a.ok) { a.problem = t('meldungen.pakete.ist-in-version-installiert', { id: a.id, installiert: a.installiert, bereich: a.bereich }); probleme.push(a.problem); }
     }
     const belegt = new Set([...typen.map((t) => t.name.trim().toLowerCase()), ...(geplant?.typen ?? [])]);
     // Namenskonflikte (#1123): Typen von Abhängigkeiten, die mitinstalliert würden, zählen wie vorhandene (im Ablauf und
@@ -2326,6 +2334,8 @@ export class Paketverwaltung {
       sprache: sp ? { ...sp.angabe, abdeckung: abdeckung(DEUTSCH, sp.texte), uebergangen: sp.uebergangen.length, pakete: Object.keys(sp.beschriftungen) } : null,
     };
     if (umbau.schritte.length) this.umbauLagen.set(vorschau, umbau);
+    vorschau.mitkommt = mitkommtVon(paket, vorschau, this.mitkommtNamen(paket, installierte, typen), !!ich);
+    vorschau.kurzanleitung = paket.kurzanleitung ?? null;
     return vorschau;
   }
 
@@ -2427,6 +2437,24 @@ export class Paketverwaltung {
       if (plan?.zustand === 'neu' && verweise.includes(v.typ.includes(':') ? v.typ : typKennung(m.id, v.typ))) dazu(plan.name, `vorgabe:${v.schluessel}`);
     }
     return (_typen, titel) => index.get(titelKennung(titel)) ?? [];
+  }
+
+  /** Namen für „Was mitkommt“ (#1047): Mappentyp eines Verweises und Bezeichnung eines Felds darin. */
+  private mitkommtNamen(paket: Paket, installierte: InstalliertesPaket[], typen: Mappentyp[]): MitkommtNamen {
+    return {
+      // Ohne „(paket)“ dahinter wie im Katalog: „60 Tage vor „Ende“ (Mietvertrag)“.
+      typ: (vw) => {
+        const [p, s] = vw.includes(':') ? vw.split(':') : [paket.manifest.id, vw];
+        if (p === paket.manifest.id || p === 'dms') return this.typName(vw, paket, installierte, typen);
+        return typen.find((x) => x.id === installierte.find((i) => i.id === p)?.typen[s])?.name ?? s;
+      },
+      feld: (vw, key) => {
+        const [p, s] = vw.includes(':') ? vw.split(':') : [paket.manifest.id, vw];
+        if (p === paket.manifest.id) return paket.typen.find((x) => x.schluessel === s)?.felder.find((f) => f.key === key)?.label ?? key;
+        const id = installierte.find((x) => x.id === p)?.typen[s];
+        return typen.find((x) => x.id === id)?.felder.find((f) => f.key === key)?.label ?? key;
+      },
+    };
   }
 
   private typName(vw: string, paket: Paket, installierte: InstalliertesPaket[], typen: Mappentyp[]): string {
@@ -3001,6 +3029,9 @@ export class Paketverwaltung {
         ...(paket.sprache ? { sprache: { ...paket.sprache.angabe, texte: anzahlTexte(paket.sprache.texte), uebergangen: paket.sprache.uebergangen.length, beschriftungen: Object.keys(paket.sprache.beschriftungen) } } : {}),
         // Aktionen im Menü „Mappe“ (#1039): wie diese Version sie nennt; ausgeschaltete merkt sich die Werkbank getrennt.
         ...(paket.mappenaktionen?.length ? { mappenaktionen: paket.mappenaktionen } : {}),
+        // Was mitkommt und Kurzanleitung (#1047): für die Paketseite, wie diese Version sie mitbringt.
+        mitkommt: mitkommtVon(paket, plan, this.mitkommtNamen(paket, await this.d.kern.repo.listePakete(), await this.d.mappentypen.listeTypen()), false),
+        ...(paket.kurzanleitung ? { kurzanleitung: paket.kurzanleitung } : {}),
         typStand,
       };
       // Code (#338): ersetzt den bisherigen; ohne Code im neuen Paket fällt er weg.

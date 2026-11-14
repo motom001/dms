@@ -22,5 +22,7 @@ export { titelKennung, wandle, type TitelSuche } from './umbau-werte';
 export { sichtFassung, sichtPruefwert, sichtStandNach, sichtZustand, standNachUmbau } from './sichtstand';
 /** Installieren unabhängig von der Reihenfolge (#1122): zweiter Durchgang, optionale Ziele in Bedingungen, Quellen. */
 export { anzeigeTypIds, anzeigeWartet, optionaleInTyp, quelleAnlegbar, quellenNachtragen, type SollQuelle } from './installation';
+/** Was mitkommt (#1047): Inhalt eines Pakets für Vorschau und Paketseite. */
+export { mitkommtVon, type MitkommtNamen } from './mitkommt';
 /** Namenskonflikte in der Vorschau (#1123). */
 export { abhaengigeTypen, abhaengigkeitsKonflikte, eigeneKonflikte, Namensherkunft, type AbhaengigeTypen } from './namen';

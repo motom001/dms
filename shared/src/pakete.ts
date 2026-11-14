@@ -9,6 +9,8 @@ import { DMS_UEBERSETZEN_AB } from './uebersetzung';
 import type { Hilfeort } from './hilfe';
 import type { PaketKatalogArt, VERALTETE_EREIGNISSE } from './ereignisse';
 import { t } from './texte';
+import type { Mitkommt } from './mitkommt';
+import { PAKETE_JE_NUTZUNG } from './einrichtungsplan';
 import { gebietsschema } from './sprache';
 import { hauptpaket, istHerausgeber, PAKET_ID, TYPVERWEIS_ODER_ALLE } from './kennungen';
 
@@ -162,7 +164,42 @@ export interface KatalogPaket {
   /** Ersetzte Ids dieses Pakets (#1084, Manifest `ersetzt`), z. B. texterkennung_fra für texterkennung.fra. */
   ersetzt?: string[];
 }
-export interface Katalog { format: number; erstellt: string; quelle: string; pakete: KatalogPaket[] }
+/**
+ * empfohlen (#1048): „Für den Anfang“ – Paket-Ids in dieser Reihenfolge (Liste im Katalog, dms-registry
+ * `werkzeuge/empfohlen.yaml`); fehlt in älteren Katalogen, dann nimmt Ablago seine eigene Liste.
+ */
+export interface Katalog { format: number; erstellt: string; quelle: string; pakete: KatalogPaket[]; empfohlen?: string[] }
+
+/**
+ * Katalogeintrag zu einer Paket-Id (#1084): die Id selbst, sonst das eine Paket, das sie unter `ersetzt` nennt – so
+ * findet ein Update von texterkennung_fra das umgezogene texterkennung.fra.
+ */
+export function katalogPaketZu(k: Katalog, id: string): KatalogPaket | undefined {
+  const nach = k.pakete.filter((p) => p.ersetzt?.includes(id));
+  return k.pakete.find((p) => p.id === id) ?? (nach.length === 1 ? nach[0] : undefined);
+}
+
+/** Eine neuere Version eines installierten Pakets im Katalog seiner Quelle (#1167). */
+export interface NeueVersion { id: string; name: string; installiert: string; neu: string; quelle: string }
+
+/**
+ * Neuere Versionen der installierten Pakete (#1167, #1168): je Paket aus dem Katalog, aus dem es stammt, die aktuelle
+ * Version – nur, wenn sie neuer ist. Abgeleitet aus den abgerufenen Katalogen und dem Stand der Installation, nicht
+ * gemerkt: Nach einem Update verschwindet der Merker sofort, eine noch neuere Version steht weiter da. Umgezogene
+ * Pakete (#1084) findet es unter der neuen Id. Pakete aus Quellen, die nicht abgerufen wurden, zählen nicht.
+ */
+export function neueVersionen(installiert: ReadonlyArray<Pick<InstalliertesPaket, 'id' | 'name' | 'version' | 'herkunft'>>, kataloge: ReadonlyArray<{ url: string; katalog: Katalog | null }>): NeueVersion[] {
+  const erg: NeueVersion[] = [];
+  for (const p of installiert) {
+    if (p.herkunft.art !== 'katalog') continue;
+    const url = p.herkunft.url;
+    const k = kataloge.find((x) => x.url === url)?.katalog;
+    const kp = k ? katalogPaketZu(k, p.id) : undefined;
+    const v = kp?.versionen.find((x) => x.version === kp.aktuell) ?? kp?.versionen[0];
+    if (v && vergleicheVersion(v.version, p.version) > 0) erg.push({ id: p.id, name: p.name, installiert: p.version, neu: v.version, quelle: url });
+  }
+  return erg;
+}
 
 /** Woher ein installiertes Paket stammt. */
 export type Herkunft =
@@ -257,6 +294,10 @@ export interface InstalliertesPaket {
   sprache?: import('./sprachpaket').SprachpaketInfo;
   /** Aktionen im Menü „Mappe“ (#1039, `mappenaktionen`), wie im Manifest; Mappentypen als Verweise. */
   mappenaktionen?: import('./paketaktionen').MappenAktion[];
+  /** Was mitkommt (#1047), wie diese Version es mitbrachte; fehlt bei Installationen vor #1047 (bis zum nächsten Update). */
+  mitkommt?: Mitkommt;
+  /** Kurzanleitung „So nutzt du es“ (#1047) je Sprache, wenn das Paket eine mitbringt. */
+  kurzanleitung?: Record<string, string[]>;
 }
 
 /**
@@ -435,7 +476,9 @@ export function liesKatalog(j: unknown): Katalog {
       ...anzeige(p as unknown as Record<string, unknown>),
     });
   }
-  return { format: 1, erstellt: text(k.erstellt), quelle: text(k.quelle), pakete: pakete.sort((a, b) => a.name.localeCompare(b.name, 'de')) };
+  // Empfehlungen (#1048): nur gültige Ids, höchstens 20; Ungültiges zählt nicht (wie bei Symbol und Kategorien).
+  const empfohlen = Array.isArray(k.empfohlen) ? [...new Set(k.empfohlen.filter((x): x is string => typeof x === 'string' && PAKET_ID.test(x)))].slice(0, 20) : [];
+  return { format: 1, erstellt: text(k.erstellt), quelle: text(k.quelle), pakete: pakete.sort((a, b) => a.name.localeCompare(b.name, 'de')), ...(empfohlen.length ? { empfohlen } : {}) };
 }
 
 /** Herkunft lesbar, z. B. „offizieller Katalog“ oder „hochgeladen von … am …“. */
@@ -940,6 +983,81 @@ export { DMS_UEBERSETZEN_AB };
 /** Darf das Paket diese Schnittstelle des Kerns nutzen (#442)? */
 export const hatSchnittstelle = (c: PaketCode | undefined, s: Schnittstelle) => !!c?.rechte.schnittstellen?.includes(s);
 
+
+/* ---------- Pakete dazuholen (#1048) ---------- */
+
+/** Art eines Pakets im Katalog (#1048, wie die Katalog-Übersicht, dms-registry #165). */
+export type PaketArt = 'paket' | 'sprache' | 'ergaenzung';
+/**
+ * Sprachpaket, Ergänzung eines anderen Pakets oder ein Paket – nach der neuesten zur Ablago-Version passenden Version.
+ * Sprachen und Ergänzungen stehen nicht in der ersten Liste, sondern beim Filter „Sprachen“, beim Hauptpaket und in der Suche.
+ */
+export function paketArt(p: KatalogPaket, dms = ''): PaketArt {
+  const v = [...p.versionen].sort((a, b) => vergleicheVersion(b.version, a.version)).find((x) => dmsPasst(dms, x.dms)) ?? p.versionen[0];
+  return v?.sprache ? 'sprache' : v?.ergaenzt ? 'ergaenzung' : 'paket';
+}
+
+/** Höchstens so viele Pakete unter „Für dich empfohlen“ (#1048; Katalog: 6–8). */
+export const EMPFOHLEN_MAX = 8;
+/** Ohne Liste im Katalog (#1048): wie der Einrichtungsassistent (#1045) – dazu Texterkennung und Benachrichtigungen (#460). */
+const EMPFOHLEN_OHNE_KATALOG = ['texterkennung', 'benachrichtigungen'];
+
+/**
+ * „Für dich empfohlen“ (#1048): die Empfehlungsliste des Katalogs (sonst die des Einrichtungsassistenten), passend zum
+ * Merkmal „beruflich genutzt“ (#1032) – ohne Pakete, die nur beruflich zählen (z. B. Compliance), solange es nicht
+ * gesetzt ist; mit ihnen, wenn es gesetzt ist. Ohne schon Installiertes, ohne Sprachen und Ergänzungen.
+ */
+export function empfehlungen(k: Katalog, o: { beruflich: boolean; dms: string; installiert: Array<{ id: string }> }): KatalogPaket[] {
+  const nurBeruflich = PAKETE_JE_NUTZUNG.beruflich.filter((id) => !PAKETE_JE_NUTZUNG.privat.includes(id));
+  const grund = k.empfohlen?.length ? k.empfohlen : [...PAKETE_JE_NUTZUNG.privat, ...EMPFOHLEN_OHNE_KATALOG];
+  const ids = o.beruflich ? [...grund, ...nurBeruflich] : grund.filter((id) => !nurBeruflich.includes(id));
+  const da = (p: KatalogPaket) => o.installiert.some((x) => x.id === p.id || p.ersetzt?.includes(x.id));
+  return [...new Set(ids)].flatMap((id) => k.pakete.filter((p) => p.id === id)).filter((p) => !da(p) && paketArt(p, o.dms) === 'paket').slice(0, EMPFOHLEN_MAX);
+}
+
+/* ---------- Alle aktualisieren (#1168) ---------- */
+
+/** Was „Alle aktualisieren“ von einer Vorschau braucht (Vorschau des Servers, hier nur die genutzten Teile). */
+export interface RundenVorschau {
+  paket: { id: string; version: string; abhaengigkeiten: Record<string, string> };
+  abhaengigkeiten: Array<{ id: string; bereich: string; problem?: string }>;
+  probleme: string[]; namenskonflikte?: string[];
+  laeufer?: { bestaetigen: boolean } | null; umbau?: unknown[]; herausgeberBestaetigen?: string | null; pruefung?: { bestaetigen?: boolean } | null;
+}
+/** Ein Paket der Runde: Update, Vorschau (oder warum sie fehlt), was die Runde löst, was bleibt, ob es eine Entscheidung braucht. */
+export interface RundenEintrag<V extends RundenVorschau> {
+  u: NeueVersion; v: V | null; fehler: string | null;
+  /** Id nach dem Update (#1084: Umzug unter eine neue Id); an ihr hängen die Abhängigkeiten. */
+  id: string; abhaengigkeiten: Record<string, string>;
+  /** Probleme, die die Runde selbst löst: eine Abhängigkeit, die vorher auf eine passende Version kommt. */
+  geloest: string[];
+  /** Was das Update auch nach der Runde verhindert (Namenskonflikte zählen nicht – die löst das Umbenennen). */
+  probleme: string[];
+  /** Aus einem Katalog außer dem offiziellen: Herkunft bestätigen wie beim einzelnen Update. */
+  fremd: boolean;
+  /** Muss aufgeklappt und bestätigt werden: neue Rechte, Umbau, Herausgeber neu, Herkunft, Namenskonflikt. */
+  entscheiden: boolean;
+}
+
+/**
+ * Plan für „Alle aktualisieren“ (#1168): je Paket die Vorschau ausgewertet und in der Reihenfolge der Abhängigkeiten –
+ * erst das, wovon andere abhängen; Ergänzungen hängen von ihrem Hauptpaket ab und kommen danach. Eine Abhängigkeit, die
+ * in derselben Runde vorher auf eine passende Version kommt, verhindert nichts. offiziell: Ist das die Adresse des
+ * offiziellen Katalogs?
+ */
+export function aktualisierungsRunde<V extends RundenVorschau>(liste: ReadonlyArray<{ u: NeueVersion; v: V | null; fehler: string | null }>, offiziell: (quelle: string) => boolean): RundenEintrag<V>[] {
+  const runde = liste.flatMap((x) => (x.v ? [{ id: x.v.paket.id, version: x.v.paket.version }] : []));
+  const eintraege = liste.map(({ u, v, fehler }): RundenEintrag<V> => {
+    if (!v) return { u, v, fehler, id: u.id, abhaengigkeiten: {}, geloest: [], probleme: [], fremd: false, entscheiden: false };
+    const geloest = v.abhaengigkeiten.filter((a) => a.problem && runde.some((r) => r.id === a.id && passt(r.version, a.bereich))).map((a) => a.problem!);
+    const probleme = v.probleme.filter((p) => !geloest.includes(p) && !v.namenskonflikte?.includes(p));
+    const fremd = !offiziell(u.quelle) && v.pruefung?.bestaetigen !== false;
+    const entscheiden = !!v.laeufer?.bestaetigen || !!v.umbau?.length || !!v.herausgeberBestaetigen || !!v.pruefung?.bestaetigen || fremd || !!v.namenskonflikte?.length;
+    return { u, v, fehler, id: v.paket.id, abhaengigkeiten: v.paket.abhaengigkeiten, geloest, probleme, fremd, entscheiden };
+  });
+  // Ein Kreis darf es nicht geben – dann bleibt die Reihenfolge, wie sie kam.
+  return nachAbhaengigkeiten(eintraege) ?? eintraege;
+}
 
 /* ---------- Mehrere Pakete in einem Ablauf (#405) ---------- */
 

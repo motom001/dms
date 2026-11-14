@@ -1500,14 +1500,19 @@
       "count": 1
     }
   },
-  "web/src/werkbank/Pakete.tsx": {
+  "web/src/werkbank/PaketVorschau.tsx": {
     "complexity": {
-      "count": 6
-    },
-    "max-lines": {
-      "count": 1
+      "count": 2
     },
     "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "web/src/werkbank/Pakete.tsx": {
+    "complexity": {
+      "count": 4
+    },
+    "max-lines": {
       "count": 1
     }
   },

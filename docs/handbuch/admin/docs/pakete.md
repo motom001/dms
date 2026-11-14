@@ -4,14 +4,21 @@ Ein **Paket** bringt fertige Mappentypen, Ansichten und auf Wunsch Beispiel-Mapp
 
 Pakete kommen aus dem **offiziellen Katalog** des Ablago-Projekts ([dms-registry](https://github.com/motom001/dms-registry)). Jedes Paket dort ist Open Source und wurde vom Maintainer freigegeben. Meist sind es **Konfigurationspakete** (Mappentypen, Ansichten, Beispiele). Pakete mit Code lassen sich installieren und einstellen, ihr Code läuft aber erst mit dem Paket-Läufer.
 
-## Katalog abrufen
+## Katalog abrufen { #katalog-abrufen }
 
-Ablago fragt den Katalog **nur auf Knopfdruck** ab, nie im Hintergrund: Klicke **Katalog abrufen**. Die Seite zeigt dann zwei Listen:
+Ablago fragt den Katalog **nur auf Knopfdruck** ab, nie im Hintergrund: Klicke **Katalog abrufen**. Sobald ein Paket installiert ist, heißt derselbe Knopf **Nach neuen Versionen suchen** – er holt den offiziellen Katalog und die eingeschalteten [weiteren Quellen](#expertenmodus-weitere-kataloge-und-hochladen) und schaut dabei, ob es für installierte Pakete Neueres gibt. Am Knopf steht danach, wann abgerufen wurde und was dabei herauskam: „Abgerufen um 14:32 · 3 neue Versionen“ oder „Alles aktuell“. War kein Katalog erreichbar, steht das dort; den Grund nennt Ablago über der Liste. Die Seite zeigt dann zwei Listen:
 
 - **Installiert** – Pakete in dieser Installation, mit Version und Herkunft
-- **Verfügbar** – Pakete aus dem Katalog, die noch nicht installiert sind
+- **Verfügbar** – Pakete aus dem Katalog, die noch nicht installiert sind, nach denselben Regeln wie die Übersicht im Katalog:
+    - oben **Für dich empfohlen** – die Empfehlungen des Katalogs ohne schon Installiertes; nutzt du Ablago auch beruflich (Merkmal unter [Werkbank → Nutzung](nutzung.md)), kommen dazu Pakete für die Arbeit wie Compliance. Kennt ein älterer Katalog keine Empfehlungen, nimmt Ablago die Vorauswahl des Einrichtungsassistenten.
+    - darunter **Weitere Pakete**
+    - **Sprachen** (Oberflächen-Sprachen) nur über den Umschalter **Pakete · Sprachen**
+    - **Ergänzungen** wie die Zusatzsprachen der Texterkennung nicht in der Liste, sondern beim Hauptpaket unter [Dazu passend](#mehrere-pakete-in-einem-schritt-installieren)
+    - das **Suchfeld** darüber findet alles – Name, Beschreibung und Kennung, auch Sprachen und Ergänzungen
 
-Ein Klick auf ein Paket zeigt Name, Beschreibung, Version, Lizenz, Autor, die nötige Ablago-Version, Abhängigkeiten, die enthaltenen Mappentypen und Ansichten sowie Links zum README und zu den Änderungen.
+![Werkbank → Pakete: „Für dich empfohlen“ und „Weitere Pakete“, darüber Suchfeld und Umschalter „Pakete · Sprachen“](bilder/werkbank-pakete-verfuegbar.png)
+
+Ein Klick auf ein Paket zeigt Name, Beschreibung, Version, Lizenz, Autor, die nötige Ablago-Version, Abhängigkeiten, Links zum README und zu den Änderungen und darunter [Was mitkommt](#was-mitkommt).
 
 Ablago lädt den Katalog von `https://catalog.ablago.app/katalog.json` und prüft seine **Signatur** (siehe [Herkunft](#herkunft-signiert-oder-nicht)). Weiterleitungen folgt es dabei nur auf `https://`-Adressen. Dafür muss Ablago selbst ins Internet kommen. Einen Proxy für ausgehende Abrufe kann Ablago nicht einstellen. Ohne Internetzugang lädst du ein Paket als Datei hoch (siehe [Expertenmodus](#expertenmodus-weitere-kataloge-und-hochladen)).
 
@@ -63,7 +70,7 @@ Ablago prüft **vor dem ersten Paket** alles: Herkunft, Rechte, Namen, Einstellu
 
 Deine Bestätigung gilt nur für **genau die Rechte, die du gesehen hast**. Ändern sie sich bis zum Klick (z. B. weil der Katalog inzwischen eine neue Version mit mehr Rechten hat), zeigt Ablago die neuen Rechte und fragt noch einmal. Während eine Installation läuft, warten andere Installationen, Updates und das Entfernen von Paketen – auch auf einem zweiten Server mit derselben Datenbank.
 
-**Nachträglich:** Unter **Werkbank → Pakete → *Paket*** stehen die Ergänzungen, die es dazu im Katalog gibt (z. B. **Weitere Sprachen** bei der Texterkennung), mit **Auswählen …** – danach derselbe Ablauf. Die Seite der [Texterkennung](texterkennung.md#weitere-sprachen) schlägt Sprachen vor, die in deinen Dokumenten vorkommen.
+**Nachträglich:** Unter **Werkbank → Pakete → *Paket*** stehen bei **Dazu passend** die Ergänzungen, die es dazu im Katalog gibt (z. B. **Weitere Sprachen** bei der Texterkennung), mit **Auswählen …** – danach derselbe Ablauf. Die Seite der [Texterkennung](texterkennung.md#weitere-sprachen) schlägt Sprachen vor, die in deinen Dokumenten vorkommen.
 
 Mappentypen aus Paketen tragen in **Werkbank → Mappentypen** hinter dem Namen einen Chip mit Paket-Symbol und dem Namen des Pakets; ein Klick in der Seite des Mappentyps führt zum Paket. Du kannst sie danach wie jeden anderen Mappentyp anpassen.
 
@@ -119,6 +126,26 @@ Neben dem Namen eines Pakets steht sein **Herausgeber** (#1084), z. B. „Vertr�
 
 Je Paket merkt sich Ablago Version, **Herkunft** (der Katalog), **Herausgeber**, wann und von wem es installiert bzw. aktualisiert wurde und welche Mappentypen und Ansichten dazugehören. Diese Angaben sind Teil der [Sicherung](sicherung.md) und des [Vollexports](export.md) (`struktur/pakete.json`). Installieren, Aktualisieren und Entfernen stehen im Protokoll.
 
+### Was mitkommt { #was-mitkommt }
+
+Auf der Seite eines Pakets, in der Vorschau und im [gemeinsamen Ablauf](#mehrere-pakete-in-einem-schritt-installieren) (je Paket zum Aufklappen) steht **Was mitkommt** – dieselben Punkte in derselben Reihenfolge wie auf der Paketseite im [Katalog](#im-katalog-ansehen):
+
+- **Mappentypen** mit der Zahl ihrer Felder und einer Zeile Beschreibung, **Ansichten**
+- **Mitgelieferte Mappen** ([Vorgaben](#vorgaben)) je Mappentyp und Text-Vorlagen zum Ausfüllen
+- **Beispiele** und **gleichbedeutende Wörter** für die Suche
+- **Automatisierungen** in Klartext: „Wenn 60 Tage vor „Ende“ (Mietvertrag), geprüft um 07:00 → Aufgabe an „Verantwortlich“ (sonst an die Person, die die Mappe angelegt hat)“, dazu **einmal je Termin** oder **wiederkehrend** und ob das Paket vorschlägt, sie gleich einzuschalten
+- **Automatisierungsvorlagen** mit ihren Karten und **Aktionen im Menü „Mappe“** mit den Rechten, die sie brauchen
+- **Einstellungen** – Abschnitte und Felder
+- zuletzt **Rechte und Netz**: kein Code, Code ohne oder mit Zugriff auf Netzwerk und Internet; auf der Seite eines installierten Pakets mit Code die Rechte im Einzelnen
+
+![Paketseite mit der Kurzanleitung nach der Installation und „Was mitkommt“](bilder/werkbank-pakete-mitkommt.png)
+
+Beim **Update** trägt alles, was mit der neuen Version dazukommt, den Merker **neu in dieser Version**. Vor der Installation kennt die Paketseite nur, was der Katalog verrät (Mappentypen, Ansichten, Beispiele); alles Weitere zeigt die Vorschau beim Installieren. Pakete, die vor dieser Ablago-Version installiert wurden, zeigen es vollständig nach dem nächsten Update. Rundgänge und Tipps aus Paketen kommen dazu, sobald das Paketformat sie kennt.
+
+### So nutzt du es { #so-nutzt-du-es }
+
+Bringt ein Paket eine **Kurzanleitung** mit (drei bis fünf kurze Schritte), zeigt Ablago sie **einmal direkt nach der Installation** oben auf der Paketseite – mit **Schließen**. Danach steht sie unter **Was mitkommt** bei **So nutzt du es** zum Aufklappen. Ablago zeigt sie in deiner Sprache, sonst auf Deutsch. Große Themen erklärt kein Paket in der Anleitung, sondern ein Rundgang.
+
 ## Beispiele { #beispiele }
 
 Viele Pakete bringen **Beispiel-Mappen** mit erfundenen Daten mit, damit du siehst, was in eine Mappe gehört. Seit Ablago 0.223.0 können sie auch **Beispiel-Dokumente** mitbringen – etwa einen Wartungsvertrag und zwei Rechnungen zur Mappe „Heizung“. Angelegt wird beides nur, wenn du beim Installieren den Haken **Beispiel-Mappen** setzt; bei einem Update entstehen keine Beispiele.
@@ -155,7 +182,7 @@ Das Löschprotokoll vermerkt entfernte Vorgaben als „Unbenutzte Vorgaben eines
 
 ## Aktualisieren { #aktualisieren }
 
-**Auf neue Versionen prüfen** fragt den Katalog ab (auf Knopfdruck) und markiert Pakete, für die es Neueres gibt. Im Paket zeigt **Auf … aktualisieren …** eine Vorschau mit dem, was dazukommt, und einem Link zu den Änderungen.
+**Nach neuen Versionen suchen** fragt die Kataloge ab (auf Knopfdruck) und markiert unter **Installiert** jedes Paket, für das es Neueres gibt, mit der neuen Version. Im Paket zeigt **Auf … aktualisieren …** eine Vorschau mit dem, was dazukommt, und einem Link zu den Änderungen. Nach dem Update verschwindet der Merker sofort; gibt es inzwischen eine noch neuere Version, steht diese da.
 
 Ein Update **ergänzt nur** – außer es [baut um](#umbau), dann sagt die Vorschau das ausdrücklich:
 
@@ -174,6 +201,17 @@ Es **löscht nichts** und **überschreibt nichts**, was du selbst geändert hast
 
 **Neue Id (Umzug, #1084):** Benennt ein Paket seine Id um – etwa die Zusatzsprachen der Texterkennung von `texterkennung_fra` auf `texterkennung.fra` –, erscheint das als gewöhnliches Update des installierten Pakets. Die Vorschau sagt „Das Paket heißt jetzt …“. Danach steht es unter der neuen Id da, mit allen Mappentypen, Mappen, Einstellungen und Daten; ein zweites Paket entsteht nicht. Das geht nur aus derselben Quelle und vom selben Herausgeber. Eine Id mit Punkt heißt übrigens immer: Das Paket **ergänzt** das Paket vor dem Punkt.
 
+
+### Alle Pakete aktualisieren { #alle-pakete-aktualisieren }
+
+Gibt es für mehrere Pakete Neues, steht über der Liste **Installiert** der Knopf **Alle aktualisieren (3)**. Er öffnet **eine** gemeinsame Vorschau:
+
+- **Reihenfolge** – erst die Pakete, von denen andere abhängen, Ergänzungen (z. B. Zusatzsprachen der Texterkennung) nach ihrem Hauptpaket. Braucht ein Paket eine neuere Version eines anderen, das in derselben Runde aktualisiert wird, ist das kein Hindernis.
+- **Aufgeklappt** ist nur, was du entscheiden oder bestätigen musst – dieselben Bestätigungen wie beim einzelnen Update: neue [Rechte](#rechte-eines-pakets), ein [Umbau](#umbau) mit seinen Rückfragen, ein erstmals gesetzter [Herausgeber](#herausgeber), die Herkunft bei Paketen außerhalb des offiziellen Katalogs und Namen, die es schon gibt.
+- **Ohne Rückfrage** – die übrigen Pakete, zusammengefasst. Ein Klick auf ein Paket zeigt, was sich ändert, wie in der einzelnen Vorschau.
+- Updates, die gerade nicht gehen (z. B. eine zu alte Ablago-Version), stehen mit Grund oben und laufen nicht mit.
+
+**Alle aktualisieren** bleibt gesperrt, bis alles Nötige bestätigt ist. Danach siehst du den **Fortschritt je Paket**. Scheitert eines, laufen die übrigen weiter; nur Pakete, die davon abhängen, werden ausgelassen. Am Ende steht eine Zusammenfassung: wie viele aktualisiert, gescheitert oder ausgelassen sind, jeweils mit Grund. Einzelne Pakete aktualisierst du weiterhin auf ihrer Seite.
 
 ## Umbau: Mappentypen ziehen in ein anderes Paket { #umbau }
 

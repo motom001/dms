@@ -212,6 +212,7 @@
   "ablauf.groesse": "Download {groesse}",
   "ablauf.kategorien": "Filter by category",
   "ablauf.kategorien.alle": "All",
+  "ablauf.kategorien.sprachen": "Languages",
   "kategorie.vorlagen": "Templates for the library",
   "kategorie.dateiformate": "File formats",
   "kategorie.volltext": "Text recognition and full text",

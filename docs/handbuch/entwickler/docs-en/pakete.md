@@ -263,6 +263,7 @@ The format is described by the JSON schemas in the registry: [`schema/manifest.s
     ```
 
     In the catalogue the entry is per version (`versionen[].ergaenzt`, always as `{ paket, gruppe }`). A collective package "all languages" without content of its own isn't needed for this.
+- **Quick guide** (`kurzanleitung`, dms #1047, dms-registry #164): three to five short steps "How to use it" per language, e.g. `kurzanleitung: { de: [...], en: [Create a tenancy under “+ New”., Enter the end.] }`. Ablago shows it once right after the installation and then on the package page under "What comes with it" – in the language of the interface, otherwise German. At most 8 steps of 300 characters each, text only (no `<`, `>`); Ablago silently skips anything invalid, older versions the whole field. No manual in the package – big topics are explained by a tour.
 - **Versions:** `dms` and `abhaengigkeiten` take ranges: `>=1.2.0`, `>1.2.0`, `1.2.0` or `=1.2.0`, `^1.2.0` (same major version), `~1.2.0` (same minor version), optionally with an upper limit ` <2.0.0`. With `0.x`, `^` means the same minor version: `^0.63.0` only fits 0.63.x. For the Ablago version therefore write `>=0.63.0` (or your own minimum version).
 
 On an **update**, Ablago only adds: new folder types, fields, tabs and views. Removing or renaming fields or tabs has no effect on installed Ablago – so plan the format beforehand. Folder types and views that an administrator has deleted are not created again by an update.

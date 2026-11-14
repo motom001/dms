@@ -357,7 +357,10 @@ begriffe:
     beschreibung: A package update that moves existing folder types into another package – with all folders and values (#1041). A type is taken over (same ID) or merged into another; whatever fits no field is kept in a note. With preview and questions, only "Full administration", all or nothing. Permissions never become broader.
   Paketkatalog:
     begriff: Package catalogue
-    beschreibung: The list of packages a DMS can install (a file katalog.json on the internet). Ablago only queries the official catalogue at the push of a button ("Fetch catalogue"). Further catalogues are entered in expert mode under "Further sources".
+    beschreibung: The list of packages a DMS can install (a file katalog.json on the internet). Ablago only queries the official catalogue at the push of a button ("Fetch catalogue", with installed packages "Look for new versions"). Further catalogues are entered in expert mode under "Further sources".
+  Was mitkommt:
+    begriff: What comes with it
+    beschreibung: Everything a package brings – folder types, views, included folders, examples, word lists, automations, automation templates, actions in the "Folder" menu, settings, permissions and network – in the same order as in the catalogue. Shown on the package page and in the preview; on an update, new things are marked "new in this version". Plus the quick guide "How to use it", which Ablago shows once right after the installation.
   Expertenmodus:
     begriff: Expert mode
     beschreibung: An expandable section under Workbench → Packages, directly below the buttons. Expanded, it shows "Further sources" and "Upload package" – for package developers and Ablago without the internet. Collapsed at first; the browser remembers per user whether it is open.

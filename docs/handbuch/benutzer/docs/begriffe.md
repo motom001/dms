@@ -436,8 +436,8 @@ Der Teil von Ablago, der den Code von Paketen ausführt – abgeschottet in eine
 Siehe auch: [Paket](#paket), [Dienstkonto](#dienstkonto).
 
 <a id="paketkatalog"></a>**Paketkatalog** · ~ mit Erklärung · Administratoren  
-Die Liste der Pakete, die ein DMS installieren kann (eine Datei katalog.json im Internet). Ablago fragt den offiziellen Katalog nur auf Knopfdruck ab („Katalog abrufen“). Weitere Kataloge trägt man im Expertenmodus unter „Weitere Quellen“ ein.  
-Siehe auch: [Paket](#paket), [Expertenmodus](#expertenmodus).
+Die Liste der Pakete, die ein DMS installieren kann (eine Datei katalog.json im Internet). Ablago fragt den offiziellen Katalog nur auf Knopfdruck ab („Katalog abrufen“, mit installierten Paketen „Nach neuen Versionen suchen“). Weitere Kataloge trägt man im Expertenmodus unter „Weitere Quellen“ ein.  
+Siehe auch: [Paket](#paket), [Expertenmodus](#expertenmodus), [Was mitkommt](#was-mitkommt).
 
 <a id="passkey"></a>**Passkey** · ~ mit Erklärung · alle  
 Anmelden ohne Passwort, mit Fingerabdruck, Gesicht oder der PIN von Handy oder Rechner (#811). Gilt nur für die Adresse von Ablago, unter der er angelegt wurde, und geht nur über HTTPS. Mehrere je Person; auch als zweiter Faktor und für die erneute Anmeldung.  
@@ -501,6 +501,10 @@ Siehe auch: [Paket](#paket), [Beispiel-Mappe](#beispiel-mappe), [Vorlage](#vorla
 <a id="vorlage"></a>**Vorlage** · ✓ Alltagswort · Administratoren  
 Schlichter Text (Markdown) mit Platzhaltern wie {vertragsnummer}, etwa ein Kündigungsschreiben an einer Vertragsart. Pakete bringen Vorlagen an ihren Vorgaben mit; sie liegen als Dokument im Register der Mappe. Kein HTML, keine Bilder, Links nur https://. Mit „Brief aus Vorlage“ (Mappe ▾) wird daraus ein Brief als PDF mit den Angaben der Mappe.  
 Siehe auch: [Vorgabe](#vorgabe), [Paket](#paket), [Brief aus Vorlage](#brief-aus-vorlage).
+
+<a id="was-mitkommt"></a>**Was mitkommt** · ✓ Alltagswort · Administratoren  
+Alles, was ein Paket mitbringt – Mappentypen, Ansichten, mitgelieferte Mappen, Beispiele, Wortlisten, Automatisierungen, Automatisierungsvorlagen, Aktionen im Menü „Mappe“, Einstellungen, Rechte und Netz – in derselben Reihenfolge wie im Katalog. Steht auf der Paketseite und in der Vorschau; beim Update ist Neues als „neu in dieser Version“ markiert. Dazu die Kurzanleitung „So nutzt du es“, die Ablago einmal direkt nach der Installation zeigt.  
+Siehe auch: [Paket](#paket), [Paketkatalog](#paketkatalog).
 
 <a id="werkbank-anpassen"></a>**Werkbank anpassen** · ~ mit Erklärung · Administratoren  
 Legt fest, welche Bereiche links in der Werkbank stehen – nach einer Vorlage („Haushalt“, „Betrieb“ oder „Alles“) und mit Abweichungen. Ausblenden schaltet nichts ab. Neue Installationen starten mit „Haushalt“; Installationen von vor dieser Einstellung zeigen alles.  
@@ -801,6 +805,7 @@ Wer Oberfläche, Handbuch, Hilfetexte oder Release-Notizen schreibt, verwendet d
 | Vorgabe | Stammdaten, Standardmappe, Voreinstellung | `vorgabe (Mappe), inhalt.vorgaben` |
 | Vorlage | – | `inhalt/vorlagen/*.md` |
 | Vorschaubild | Thumbnail, Miniatur | `vorschau` |
+| Was mitkommt | – | `Mitkommt` |
 | Werkbank anpassen | – | `WerkbankAnsicht, VORLAGEN` |
 | Werkbank-Karte | Betriebskarte, Systemkarte | `BETRIEB_WENN, DannKarte art: sicherung, SYSTEMKONTO_WERKBANK` |
 | Woran man ihn erkennt | – | `Mappentyp.erkennbarAn` |
