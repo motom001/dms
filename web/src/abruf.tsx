@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { liesAnrede, textDritte, type Anrede, type TextDritte } from '../../shared/src/anrede';
 import { CODE_LAENGE } from '../../shared/src/auskunft';
-import {  } from './sprache';
+import { Feld, Knopf } from './bausteine';
 import { sprache } from '../../shared/src/sprache';
 
 /**
@@ -76,18 +76,17 @@ export function Abrufseite() {
             <p className="hinweis gut">{eintrag('abruf.download', { groesse: mb(fertig.groesse) })}</p>
             {fertig.verschluesselt && <p>{eintrag('abruf.passwort')}</p>}
             <p className="leise">{fertig.rest > 0 ? eintrag('abruf.rest', { wieOft: ['', 'einmal', 'zweimal', 'dreimal'][fertig.rest] ?? `${fertig.rest}-mal` }) : eintrag('abruf.aufgebraucht')} {eintrag('abruf.startet.nicht')}</p>
-            {fertig.rest > 0 && <button type="button" className="knopf" onClick={() => setFertig(null)}>{eintrag('abruf.nochmal')}</button>}
+            {fertig.rest > 0 && <Knopf onClick={() => setFertig(null)}>{eintrag('abruf.nochmal')}</Knopf>}
           </div>
         ) : (
           <form onSubmit={(e) => void abrufen(e)} className="abruf-form">
             <p>{eintrag('abruf.einleitung')}</p>
             <p className="leise klein">{eintrag('abruf.code.herkunft')}</p>
-            <label className="eigenschaft"><span>{eintrag('abruf.code')}</span>
+            <Feld beschriftung={eintrag('abruf.code')} hinweis={eintrag('abruf.code.schreibweise')}>
               <input value={code} onChange={(e) => setCode(e.target.value)} autoComplete="one-time-code" autoCapitalize="characters" spellCheck={false} required
-                maxLength={64} placeholder={'XXXX-XXXX'.slice(0, CODE_LAENGE + 1)} className="mono abruf-code" autoFocus aria-describedby="abruf-schreibweise" /></label>
-            <p className="leise klein" id="abruf-schreibweise">{eintrag('abruf.code.schreibweise')}</p>
+                maxLength={64} placeholder={'XXXX-XXXX'.slice(0, CODE_LAENGE + 1)} className="mono abruf-code" autoFocus /></Feld>
             {fehler && <p className="hinweis schlecht" role="alert">{fehler}</p>}
-            <button className="knopf primaer" disabled={laeuft || !code.trim()}>{laeuft ? eintrag('abruf.knopf.laeuft') : eintrag('abruf.knopf')}</button>
+            <Knopf art="haupt" type="submit" laeuft={laeuft} laeuftText={eintrag('abruf.knopf.laeuft')} gesperrt={!code.trim()}>{eintrag('abruf.knopf')}</Knopf>
           </form>
         )}
       </div>

@@ -5,7 +5,9 @@ import { api, type ZweifaktorStand } from '../api';
 import { Hilfe } from '../Hilfe';
 import { useKonto } from '../konto-kontext';
 import { gebietsschema } from '../../../shared/src/sprache';
-import { abfangen } from '../bausteine';
+import { rueckfrage } from '../rueckfrage';
+import { Symbol } from '../Symbol';
+import { abfangen, Feld, HakenFeld, Knopf } from '../bausteine';
 
 /**
  * Zwei-Faktor-Anmeldung (#242): Einrichten mit einer Authenticator-App, Wiederherstellungscodes,
@@ -23,12 +25,12 @@ export function Wiederherstellungscodes({ codes, weiter }: { codes: string[]; we
       <p className="hinweis warn">{t('profil.zweifaktor.bewahre-diese-codes-sicher')}</p>
       <ol className="codes" aria-label={t('profil.zweifaktor.wiederherstellungscodes')}>{codes.map((c) => <li key={c}><code>{c}</code></li>)}</ol>
       <div className="knoepfe">
-        <button type="button" className="knopf" onClick={() => { void navigator.clipboard?.writeText(text); setGesichert(true); }}>{t('profil.zweifaktor.kopieren')}</button>
-        <a className="knopf" href={`data:text/plain;charset=utf-8,${encodeURIComponent(text)}`} download="wiederherstellungscodes.txt" onClick={() => setGesichert(true)}>{t('profil.zweifaktor.als-datei-speichern')}</a>
-        <button type="button" className="knopf" onClick={() => { print(); setGesichert(true); }}>{t('profil.zweifaktor.drucken')}</button>
+        <Knopf onClick={() => { void navigator.clipboard?.writeText(text); setGesichert(true); }}>{t('profil.zweifaktor.kopieren')}</Knopf>
+        <a className="knopf" href={`data:text/plain;charset=utf-8,${encodeURIComponent(text)}`} download="wiederherstellungscodes.txt" onClick={() => setGesichert(true)}><Symbol name="herunterladen" />{t('profil.zweifaktor.als-datei-speichern')}</a>
+        <Knopf onClick={() => { print(); setGesichert(true); }}>{t('profil.zweifaktor.drucken')}</Knopf>
       </div>
-      <label className="haken"><input type="checkbox" checked={gesichert} onChange={(e) => setGesichert(e.target.checked)} /><span>{t('profil.zweifaktor.ich-habe-die-codes')}</span></label>
-      <div className="knoepfe"><button type="button" className="knopf primaer" disabled={!gesichert} onClick={weiter}>{t('profil.zweifaktor.fertig')}</button></div>
+      <HakenFeld beschriftung={t('profil.zweifaktor.ich-habe-die-codes')}><input type="checkbox" checked={gesichert} onChange={(e) => setGesichert(e.target.checked)} /></HakenFeld>
+      <div className="knoepfe"><Knopf art="haupt" gesperrt={!gesichert} onClick={weiter}>{t('profil.zweifaktor.fertig')}</Knopf></div>
     </div>
   );
 }
@@ -66,13 +68,12 @@ export function ZweifaktorEinrichten({ fertig, abbrechen }: { fertig: () => void
           </div>
         </div>
       ) : !fehler && <p className="leise">{t('profil.zweifaktor.erzeuge-schluessel')}</p>}
-      <label className="eigenschaft"><span>{t('profil.zweifaktor.2-sechsstelligen-code-aus')}</span>
+      <Feld beschriftung={t('profil.zweifaktor.2-sechsstelligen-code-aus')} fehler={fehler}>
         <input id="zweifaktor-code" value={code} onChange={(e) => setCode(e.target.value)} inputMode="numeric" autoComplete="one-time-code" pattern="[0-9 ]{6,7}" maxLength={7} required />
-      </label>
-      {fehler && <p className="fehlertext">{fehler}</p>}
+      </Feld>
       <div className="knoepfe">
-        {abbrechen && <button type="button" className="knopf" onClick={abbrechen}>{t('profil.zweifaktor.abbrechen')}</button>}
-        <button className="knopf primaer" disabled={sendet || !entwurf}>{t('profil.zweifaktor.bestaetigen')}</button>
+        {abbrechen && <Knopf onClick={abbrechen}>{t('profil.zweifaktor.abbrechen')}</Knopf>}
+        <Knopf art="haupt" type="submit" laeuft={sendet} gesperrt={!entwurf}>{t('profil.zweifaktor.bestaetigen')}</Knopf>
       </div>
     </form>
   );
@@ -89,8 +90,10 @@ export function ZweifaktorBlatt() {
   const laden = useCallback(async () => { try { setStand(await api.zweifaktor()); } catch (e) { setMeldung({ art: 'schlecht', text: (e as Error).message }); } }, []);
   useEffect(() => { void laden(); }, [laden]);
 
-  async function mitPasswort(e: FormEvent) {
-    e.preventDefault(); setMeldung(undefined);
+  async function mitPasswort(e?: FormEvent) {
+    e?.preventDefault(); setMeldung(undefined);
+    // Enter im Passwortfeld beim Abschalten: erst die Rückfrage wie am Knopf (#1215).
+    if (e && modus === 'aus' && !(await rueckfrage({ titel: t('profil.zweifaktor.abschalten.frage'), text: t('profil.zweifaktor.danach-reicht-wieder-das'), ja: t('profil.zweifaktor.abschalten'), gefahr: true }))) return;
     try {
       if (modus === 'codes') { setNeueCodes((await api.zweifaktorCodes(pw)).codes); }
       else { await api.zweifaktorEntfernen(pw); setModus('ruhe'); setMeldung({ art: 'gut', text: t('profil.zweifaktor.zwei-faktor-anmeldung-abgeschaltet') }); await laden(); }
@@ -112,16 +115,20 @@ export function ZweifaktorBlatt() {
           {stand.codesUebrig <= 3 && <p className="hinweis warn">{t('profil.zweifaktor.nur-noch-wiederherstellungscodes', { codesUebrig: stand.codesUebrig })}</p>}
           {modus === 'ruhe' ? (
             <div className="knoepfe">
-              <button type="button" className="knopf" onClick={() => setModus('codes')}>{t('profil.zweifaktor.neue-wiederherstellungscodes')}</button>
-              {!stand.pflicht && <button type="button" className="knopf" onClick={() => setModus('aus')}>{t('profil.zweifaktor.abschalten')}</button>}
+              <Knopf onClick={() => setModus('codes')}>{t('profil.zweifaktor.neue-wiederherstellungscodes')}</Knopf>
+              {!stand.pflicht && <Knopf onClick={() => setModus('aus')}>{t('profil.zweifaktor.abschalten')}</Knopf>}
             </div>
           ) : (
             <form className="stapel" onSubmit={abfangen(mitPasswort, (text) => setMeldung({ art: 'schlecht', text }))}>
               <p className="leise">{t('profil.zweifaktor.bitte-mit-deinem-passwort', { wert: modus === 'codes' ? t('profil.zweifaktor.die-bisherigen-codes-gelten') : t('profil.zweifaktor.danach-reicht-wieder-das') })}</p>
-              <label className="eigenschaft"><span>{t('profil.zweifaktor.aktuelles-passwort')}</span><input type="password" value={pw} onChange={(e) => setPw(e.target.value)} autoComplete="current-password" autoFocus required /></label>
+              <Feld beschriftung={t('profil.zweifaktor.aktuelles-passwort')}><input type="password" value={pw} onChange={(e) => setPw(e.target.value)} autoComplete="current-password" autoFocus required /></Feld>
               <div className="knoepfe">
-                <button type="button" className="knopf" onClick={() => { setModus('ruhe'); setPw(''); }}>{t('profil.zweifaktor.abbrechen')}</button>
-                <button className={`knopf ${modus === 'aus' ? 'gefahr' : 'primaer'}`} disabled={!pw}>{modus === 'codes' ? t('profil.zweifaktor.neue-codes-erzeugen') : t('profil.zweifaktor.abschalten')}</button>
+                <Knopf onClick={() => { setModus('ruhe'); setPw(''); }}>{t('profil.zweifaktor.abbrechen')}</Knopf>
+                {/* Abschalten ist Gefahr (#1215): leise mit Symbol und Rückfrage; Enter im Feld fragt ebenso nach. */}
+                {modus === 'codes'
+                  ? <Knopf art="haupt" type="submit" gesperrt={!pw}>{t('profil.zweifaktor.neue-codes-erzeugen')}</Knopf>
+                  : <Knopf art="gefahr" symbol="verboten" gesperrt={!pw} onClick={() => mitPasswort()}
+                    rueckfrage={{ titel: t('profil.zweifaktor.abschalten.frage'), text: t('profil.zweifaktor.danach-reicht-wieder-das'), ja: t('profil.zweifaktor.abschalten') }}>{t('profil.zweifaktor.abschalten')}</Knopf>}
               </div>
             </form>
           )}
@@ -129,7 +136,7 @@ export function ZweifaktorBlatt() {
           {stand.passkeyErfuellt && <p className="leise klein">{t('profil.zweifaktor.passkey-erfuellt')}</p>}
         </>
       ) : (
-        <div className="knoepfe"><button type="button" className="knopf primaer" onClick={() => { setMeldung(undefined); setModus('einrichten'); }}>{t('profil.zweifaktor.einrichten')}</button></div>
+        <div className="knoepfe"><Knopf art="haupt" onClick={() => { setMeldung(undefined); setModus('einrichten'); }}>{t('profil.zweifaktor.einrichten')}</Knopf></div>
       )}
       {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
     </div>

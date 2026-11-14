@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { api, ApiFehler, setzeBestaetigung } from './api';
 import { t } from './sprache';
-import { Knopf } from './bausteine';
+import { Feld, Knopf } from './bausteine';
 import { passkeysImBrowser, passkeyVerwenden } from './passkey';
 import { Symbol } from './Symbol';
 import type { Verwaltungsstand } from '../../shared/src/verwaltungsrecht';
@@ -103,21 +103,21 @@ function Dialog({ o, stand, schliesse }: { o: Offen; stand: Verwaltungsstand | n
         <div id={`${id}-x`} className="rueckfrage-text"><p>{text}</p></div>
         {!wieder && passkey && <PasskeyBestaetigen frisch={o.art === 'frisch'} haupt={ohnePasswort} tu={tu} />}
         {!wieder && !ohnePasswort && <>
-          <label className="eigenschaft"><span>{t('anmeldung.passwort')}</span>
+          <Feld beschriftung={t('anmeldung.passwort')}>
             <input ref={feld} id="verwaltung-passwort" type="password" value={passwort} onChange={(e) => setPasswort(e.target.value)} autoComplete="current-password" required />
-          </label>
-          {mitCode && <label className="eigenschaft"><span>{t('anmeldung.code.feld')}</span>
+          </Feld>
+          {mitCode && <Feld beschriftung={t('anmeldung.code.feld')}>
             <input id="verwaltung-code" value={code} onChange={(e) => setCode(e.target.value)} inputMode="numeric" autoComplete="one-time-code" maxLength={7} required />
-          </label>}
+          </Feld>}
         </>}
         {!wieder && ohnePasswort && <p className="leise klein">{t('konten.verwaltung.fehler.anbieter')}</p>}
         {fehler && <p className="fehlertext" role="alert">{fehler}</p>}
         <div className="rueckfrage-knoepfe">
-          <button type="button" className="knopf" onClick={() => schliesse(false)}>{t('konten.verwaltung.dialog.abbrechen')}</button>
-          {wieder && <button type="button" className="textknopf" onClick={() => void api.verwaltungBeenden().catch(() => undefined).finally(() => schliesse(false))}>{t('konten.verwaltung.beenden')}</button>}
+          <Knopf onClick={() => schliesse(false)}>{t('konten.verwaltung.dialog.abbrechen')}</Knopf>
+          {wieder && <Knopf art="link" onClick={() => api.verwaltungBeenden().catch(() => undefined).finally(() => schliesse(false))}>{t('konten.verwaltung.beenden')}</Knopf>}
           {ohnePasswort && !wieder
-            ? <button type="button" className="knopf primaer" onClick={beimAnbieter}>{t('konten.verwaltung.dialog.anbieter')}</button>
-            : <button type="submit" className="knopf primaer" disabled={sendet}>{wieder ? t('konten.verwaltung.dialog.wieder.knopf') : t('konten.verwaltung.dialog.knopf')}</button>}
+            ? <Knopf art="haupt" onClick={beimAnbieter}>{t('konten.verwaltung.dialog.anbieter')}</Knopf>
+            : <Knopf art="haupt" type="submit" laeuft={sendet}>{wieder ? t('konten.verwaltung.dialog.wieder.knopf') : t('konten.verwaltung.dialog.knopf')}</Knopf>}
         </div>
       </form>
     </dialog>

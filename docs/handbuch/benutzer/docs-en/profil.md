@@ -37,7 +37,7 @@ My account has five areas on the left (on a smartphone as buttons at the top):
 - **Name** – this is how you appear under "created by" and "last changed by" – and as the title of your user folder.
 - **Email address** – you sign in with it. To change it you need your current password. If Ablago sends emails, the previous address gets a notice – so if someone else changed the address, you'll notice.
 - <span id="sprache"></span>**Language** – in which language Ablago talks to you: interface, messages and emails to you. **Like the library** follows the language the administrator has set for everyone. You can choose from the languages they have allowed. The page reloads after the change. For machine-translated languages there is a notice with a link to how you can contribute improvements. Dates and numbers follow the language.
-- <span id="ubersetzung-anzeigen"></span>**Offer "Show translation"** – only exists if your library has a translation package. When ticked, you see the button [Show translation](mappen.md#inhalte-ubersetzen) on long texts, notes and full texts; when unticked, you don't. Below it you can read what translates and whether the text leaves your library's device for this.
+- <span id="ubersetzung-anzeigen"></span>**Offer "Show translation"** – only exists if your library has a translation package. When the switch is on, you see the button [Show translation](mappen.md#inhalte-ubersetzen) on long texts, notes and full texts; when it is off, you don't. Below it you can read what translates and whether the text leaves your library's device for this.
 
 #### My data { #meine-daten }
 
@@ -69,8 +69,8 @@ At the bottom of the area *Account*, below name and email address, it says what 
 - **Password** – enter your current password and the new one twice (at least 10 characters). After changing it, all other sign-ins are ended.
 - **Passkeys** – sign in without a password, with your fingerprint, face or device PIN; see [below](#passkeys).
 - **Two-factor sign-in** – see [below](#zwei-faktor-anmeldung).
-- **My signed-in devices** – everywhere you are currently signed in, with browser, device and last activity; *this device* is marked. **Sign out** ends a single sign-in, **Sign out all others** all except this one – for instance if you have lost a phone. Then it's best to change your password too.
-- <span id="passwoerter-fuer-dokumente"></span>**Passwords for documents** – the passwords of protected PDFs that you stored with **Remember for further documents** when [unlocking](dokumente.md#passwortgeschuetzte-pdfs). For each password you see the name, the password hidden and when Ablago last used it. The eye shows it, **Change** lets you enter a new name or a new password, and the small red **×** deletes it. Documents already unlocked stay unlocked.
+- **My signed-in devices** – everywhere you are currently signed in, with browser, device and last activity; *this device* is marked. **Sign out** ends a single sign-in, **Sign out all others** all except this one – for instance if you have lost a phone. Both ask once more first. Then it's best to change your password too.
+- <span id="passwoerter-fuer-dokumente"></span>**Passwords for documents** – the passwords of protected PDFs that you stored with **Remember for further documents** when [unlocking](dokumente.md#passwortgeschuetzte-pdfs). For each password you see the name, the password hidden and when Ablago last used it. The eye shows it, **Change** lets you enter a new name or a new password, and **Delete** deletes it after a confirmation. Documents already unlocked stay unlocked.
     - **Showing and changing** the password only works after you have confirmed yourself again: with your Ablago password, with two-factor sign-in also with a code from the app, or with a [passkey](#passkeys) (**Confirm with a passkey**). The confirmation applies for five minutes to this area.
     - The passwords belong **only to you**: Ablago stores them in your account, encrypted with Ablago's key. Nobody else sees them in Ablago, not even whoever administers Ablago (not even in administration mode), and not in a stand-in arrangement either. They never come out via API keys or packages; they are missing from the full export and are only stored encrypted in the backup. To be honest: whoever has the server itself and Ablago's key in their hands could technically decrypt them – like any password field in a folder.
     - You can remember at most 20 passwords.
@@ -81,7 +81,7 @@ At the bottom of the area *Account*, below name and email address, it says what 
     - **counters only** – for home automation and displays, e.g. a lamp for new post or the number on the wall tablet. The key only retrieves your numbers: new post, To do and overdue deadlines. If it is lost, someone learns at most how much post and how many tasks you have – no titles, senders or contents. Ablago rejects everything else.
 
     How to connect, for example, a Homey Pro with it is described under [Connecting Ablago to home automation](hausautomatisierung.md); the [Administrator manual](https://help.ablago.app/admin/aktuell/en/api/#zaehler) describes the technology.
-- <span id="papierkorb"></span>**Bin** – **Empty on sign-out** deletes your deleted folders permanently as soon as you sign out. Without the tick, they stay in the [Bin](ablage.md#papierkorb) for as long as the administrator has set.
+- <span id="papierkorb"></span>**Bin** – **Empty when signing out** deletes your deleted folders permanently as soon as you sign out. When the switch is off, they stay in the [Bin](ablage.md#papierkorb) for as long as the administrator has set.
 
 !!! note "Signing in with your company account"
     If the sign-in page has a button like **Sign in with company account**, you sign in through it with the account of your company or your sign-in service. You then don't need your Ablago password; the provider manages password and sign-out. It sees when you sign in – it doesn't see your paperwork.
@@ -122,7 +122,7 @@ With two-factor sign-in, Ablago asks after the password additionally for a six-d
 3. Enter the code from the app and **Confirm**.
 4. You receive **ten recovery codes**. Save or print them and keep them separate from your phone – they are only shown this one time.
 
-From now on you sign in with password **and** code – or, if you have a [passkey](#passkeys), with the passkey alone. If your phone isn't at hand, click **Use recovery code** when signing in; each code only works once. When they run low, **New recovery codes** creates fresh ones (the old ones then no longer work). **Switch off** switches two-factor sign-in off again; you confirm both with your password.
+From now on you sign in with password **and** code – or, if you have a [passkey](#passkeys), with the passkey alone. If your phone isn't at hand, click **Use recovery code** when signing in; each code only works once. When they run low, **New recovery codes** creates fresh ones (the old ones then no longer work). **Switch off** switches two-factor sign-in off again; you confirm both with your password, and before switching off Ablago also asks once more.
 
 A link to reset the password also asks for the code afterwards. Lost your phone and no codes left? Then an administrator resets two-factor sign-in for your user.
 

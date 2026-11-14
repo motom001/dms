@@ -1,5 +1,6 @@
 /**
- * Eigene ESLint-Regel `ablago/knopf-farben` (#1210): keine Farbklassen über `className` am Baustein Knopf.
+ * Eigene ESLint-Regeln `ablago/knopf-farben` (#1210): keine Farbklassen über `className` am Baustein Knopf; `ablago/bausteine`
+ * (#968, #1215): unsichtbare Eingaben ohne Feldrahmen.
  * Aufruf: `node --test .github/werkzeuge/eslint-ablago.test.mjs` (CI-Job „pruefen“, Schritt ESLint).
  */
 import { test } from 'node:test';
@@ -29,6 +30,24 @@ test('ablago/knopf-farben: Farbe nur über die Art', () => {
       { code: '<Knopf className={weg ? undefined : "gefahr"}>x</Knopf>', errors: [fehler('gefahr')] },
       { code: '<Knopf className={`breit ${a ? "primaer" : ""}`}>x</Knopf>', errors: [fehler('primaer')] },
       { code: 'knopfAussehen({ art: "neben", className: "gefahr" })', errors: [fehler('gefahr')] },
+    ],
+  });
+});
+
+test('ablago/bausteine: unsichtbare Eingaben brauchen keinen Feldrahmen (#1215)', () => {
+  pruefer.run('bausteine', ablago.rules.bausteine, {
+    valid: [
+      '<input type="hidden" value="x" />',
+      '<input type="file" hidden />',
+      // Benutzername für den Passwortmanager neben einem Passwortfeld.
+      '<input type="email" value={e} autoComplete="username" readOnly hidden />',
+      '<input type="email" hidden={true} />',
+      '<Feld beschriftung="Name"><input /></Feld>',
+    ],
+    invalid: [
+      { code: '<input type="email" />', errors: [{ messageId: 'feld', data: { name: 'input' } }] },
+      { code: '<input hidden={versteckt} />', errors: [{ messageId: 'feld', data: { name: 'input' } }] },
+      { code: '<button>x</button>', errors: [{ messageId: 'knopf' }] },
     ],
   });
 });

@@ -43,7 +43,7 @@ export function ApiDoku() {
                 {op.description && <p>{op.description}</p>}
                 {op.parameters?.length > 0 && (
                   <table><thead><tr><th>{t('profil.apidoku.parameter')}</th><th>{t('profil.apidoku.ort')}</th><th>{t('profil.apidoku.typ')}</th><th>{t('profil.apidoku.beschreibung')}</th></tr></thead>
-                    <tbody>{(op.parameters as J[]).map((p) => <tr key={p.name}><td className="mono">{p.name}{p.required && <span className="pflicht">*</span>}</td><td>{p.in === 'path' ? t('profil.apidoku.pfad') : t('profil.apidoku.abfrage')}</td><td className="mono">{p.schema.type}</td><td>{p.description}</td></tr>)}</tbody>
+                    <tbody>{(op.parameters as J[]).map((p) => <tr key={p.name}><td className="mono">{p.name}{p.required && <> <span className="chip">{t('profil.apidoku.pflicht')}</span></>}</td><td>{p.in === 'path' ? t('profil.apidoku.pfad') : t('profil.apidoku.abfrage')}</td><td className="mono">{p.schema.type}</td><td>{p.description}</td></tr>)}</tbody>
                   </table>
                 )}
                 {op.requestBody && <><h3 className="klein ueber">{t('profil.apidoku.inhalt-der-anfrage')}</h3><Schema s={inhaltSchema(op.requestBody)} doc={doc} /></>}
@@ -84,7 +84,7 @@ function Schema({ s, doc, tiefe = 0 }: { s: J; doc: J; tiefe?: number }) {
     return (
       <ul className="schemafelder">
         {Object.entries(s.properties as J).map(([k, v]) => (
-          <li key={k}><span className="mono">{k}</span>{s.required?.includes(k) && <span className="pflicht">*</span>} <span className="leise klein">{typText(v as J)}</span>
+          <li key={k}><span className="mono">{k}</span>{s.required?.includes(k) && <> <span className="chip">{t('profil.apidoku.pflicht')}</span></>} <span className="leise klein">{typText(v as J)}</span>
             {(v as J).description && <span className="klein"> – {(v as J).description}</span>}
             {tiefe < 3 && ((v as J).$ref || (v as J).items?.$ref) && <Schema s={(v as J).$ref ? v as J : (v as J).items} doc={doc} tiefe={tiefe + 1} />}
           </li>

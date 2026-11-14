@@ -1,7 +1,8 @@
-import { t, tn } from '../sprache';
+import { t } from '../sprache';
 import { useEffect, useState } from 'react';
 import { BUNDESLAENDER, type Bundesland } from '../../../shared/src/feiertage';
 import { api, type Zusammenfassung } from '../api';
+import { Feld, FeldGruppe, HakenFeld, Schalter } from '../bausteine';
 
 /** Profil: tägliche Zusammenfassung der Aufgaben – an/aus, Uhrzeit, Wochentage, Feiertage (#54, #92, #94). */
 const TAGE = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
@@ -23,23 +24,22 @@ export function ZusammenfassungEinstellen() {
   const land = z.standard.bundesland ? BUNDESLAENDER[z.standard.bundesland as Bundesland] : null;
   return (
     <>
-      <label className="haken"><input type="checkbox" checked={z.aktiv} onChange={(e) => void setze({ aktiv: e.target.checked })} />
-        <span>{t('profil.zusammenfassung.taegliche-zusammenfassung-meiner')}</span></label>
+      <Schalter an={z.aktiv} setze={(an) => setze({ aktiv: an })} beschriftung={t('profil.zusammenfassung.taegliche-zusammenfassung-meiner')} />
       {z.aktiv && <div className="zusammenfassung">
-        <label className="eigenschaft schmal"><span>{t('profil.zusammenfassung.uhrzeit')}</span>
+        <Feld className="schmal" beschriftung={t('profil.zusammenfassung.uhrzeit')}>
           <select value={z.uhrzeit ?? ''} onChange={(e) => void setze({ uhrzeit: e.target.value || null })}>
             <option value="">{t('profil.zusammenfassung.standard-uhr', { uhrzeit: z.standard.uhrzeit })}</option>
             {UHRZEITEN.map((u) => <option key={u} value={u}>{t('profil.zusammenfassung.uhr', { u })}</option>)}
-          </select></label>
-        <fieldset className="wahl tagewahl"><legend>{t('profil.zusammenfassung.wochentage')}</legend>
-          <div className="tage">{TAGE.map((text, i) => (
+          </select></Feld>
+        <FeldGruppe className="tagewahl" beschriftung={t('profil.zusammenfassung.wochentage')}>
+          {TAGE.map((text, i) => (
             <label key={text} className="haken"><input type="checkbox" checked={z.tage.includes(i + 1)}
               onChange={(e) => void setze({ tage: e.target.checked ? [...z.tage, i + 1].sort() : z.tage.filter((x) => x !== i + 1) })} /><span>{text}</span></label>
-          ))}</div>
-        </fieldset>
+          ))}
+        </FeldGruppe>
         {!z.tage.length && <p className="hinweis warn klein">{t('profil.zusammenfassung.kein-wochentag-gewaehlt-die')}</p>}
-        <label className={`haken ${land ? '' : 'aus'}`}><input type="checkbox" disabled={!land} checked={!!land && z.feiertage} onChange={(e) => void setze({ feiertage: e.target.checked })} />
-          <span>{tn('profil.zusammenfassung.nicht-an-feiertagen', { klein: <small className="hilfe">{land ? t('profil.zusammenfassung.gesetzliche-feiertage-in', { land }) : t('profil.zusammenfassung.dafuer-muss-in-der')}</small> })}</span></label>
+        <HakenFeld beschriftung={t('profil.zusammenfassung.nicht-an-feiertagen')} hinweis={land ? t('profil.zusammenfassung.gesetzliche-feiertage-in', { land }) : t('profil.zusammenfassung.dafuer-muss-in-der')}>
+          <input type="checkbox" disabled={!land} checked={!!land && z.feiertage} onChange={(e) => void setze({ feiertage: e.target.checked })} /></HakenFeld>
         {!z.versand && <p className="leise klein">{t('profil.zusammenfassung.der-e-mail-versand')}</p>}
       </div>}
       {fehler && <p className="fehlertext">{fehler}</p>}

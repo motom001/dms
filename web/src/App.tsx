@@ -1,9 +1,10 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { abwesenheitWirkt } from '../../shared/src/model';
 import { heuteIn } from '../../shared/src/sichten';
 import { leseSchrift, setzeSchrift } from './design';
 import { api } from './api';
-import { KnopfLink } from './bausteine';
+import { Knopf, KnopfLink } from './bausteine';
+import { Symbol } from './Symbol';
 import { Ablage } from './ablage/Ablage';
 import { useDaten } from './daten';
 import { useKonto } from './konto';
@@ -83,7 +84,7 @@ export function App() {
       {vertretung && (
         <div className="vertretungsbanner" role="alert">
           <p>{tn('oberflaeche.app.seit-alles-was-du', { b: <strong>{t('oberflaeche.app.du-agierst-als', { adminName: vertretung.adminName, wert: ich.name || ich.email })}</strong>, email: ich.email, uhrzeit: uhrzeit(vertretung.beginn) })}</p>
-          <button className="knopf klein" onClick={() => void api.vertretungBeenden().then(() => { geheZu('/werkbank/benutzer', true); return aktualisieren(); })}>{t('oberflaeche.app.zurueck-zum-eigenen-konto')}</button>
+          <Knopf groesse="klein" onClick={() => api.vertretungBeenden().then(() => { geheZu('/werkbank/benutzer', true); return aktualisieren(); })}>{t('oberflaeche.app.zurueck-zum-eigenen-konto')}</Knopf>
         </div>
       )}
       {!vertretung && hinweise.length > 0 && <Hinweise />}
@@ -91,14 +92,14 @@ export function App() {
       {!vertretung && verwaltung && !admin && (
         <div className="hinweisbanner" role="status" id="verwaltung-hinweis">
           <p>{t('konten.verwaltung.hinweis')}</p>
-          <button className="knopf klein" onClick={() => void verwalten()}>{t('konten.verwaltung.anmelden')}</button>
+          <Knopf groesse="klein" onClick={verwalten}>{t('konten.verwaltung.anmelden')}</Knopf>
         </div>
       )}
       {/* #416: Pflicht eingeschaltet, während diese Sitzung lief – weiterarbeiten, aber deutlich darauf hinweisen. */}
       {!vertretung && zweifaktor.ausstehend && (
         <div className="hinweisbanner" role="alert" id="zweifaktor-hinweis">
           <p>{tn('oberflaeche.app.richte-sie-jetzt-ein', { b: <strong>{t('oberflaeche.app.die-zwei-faktor-anmeldung')}</strong> })}</p>
-          {!(bereich === 'profil' && teile[1] === 'sicherheit') && <Link to="/profil/sicherheit" className="knopf klein">{t('oberflaeche.app.jetzt-einrichten')}</Link>}
+          {!(bereich === 'profil' && teile[1] === 'sicherheit') && <KnopfLink to="/profil/sicherheit" groesse="klein">{t('oberflaeche.app.jetzt-einrichten')}</KnopfLink>}
         </div>
       )}
       {/* #811: Passkey vorgeschrieben, während diese Sitzung lief – wie bei der Zwei-Faktor-Anmeldung (#416). */}
@@ -114,7 +115,7 @@ export function App() {
       {admin && !vertretung && (
         <section className="verwaltungsbalken" aria-labelledby="verwaltungsbalken-titel">
           <p role="status"><strong id="verwaltungsbalken-titel">{t('konten.verwaltung.balken.titel')}</strong> {t('konten.verwaltung.balken.text')}</p>
-          <button type="button" id="verwaltung-beenden" className="knopf klein" onClick={() => void verwaltungBeenden()}>{t('konten.verwaltung.beenden')}</button>
+          <Knopf id="verwaltung-beenden" groesse="klein" onClick={verwaltungBeenden}>{t('konten.verwaltung.beenden')}</Knopf>
         </section>
       )}
       {/* #921: nur in der Werkbank und nur im Modus – wer außer mir gerade auch verwaltet. */}
@@ -137,7 +138,7 @@ export function App() {
         </div>
       </header>
       <main className="rumpf" key={ansicht}>
-        {d.fehler && <div className="hinweis schlecht"><p>{d.fehler}</p><button className="knopf klein" onClick={() => void d.neuLaden()}>{t('oberflaeche.app.erneut-versuchen')}</button></div>}
+        {d.fehler && <div className="hinweis schlecht"><p>{d.fehler}</p><Knopf groesse="klein" onClick={() => d.neuLaden()}>{t('oberflaeche.app.erneut-versuchen')}</Knopf></div>}
         {inhalt}
       </main>
       <PostAblage werkbank={bereich === 'werkbank'} />
@@ -155,7 +156,7 @@ function OhneModus({ paket }: { paket: boolean }) {
   return (
     <div className="leer">
       <p>{t('konten.verwaltung.werkbank.text')}</p>
-      <button type="button" className="knopf primaer" onClick={() => void verwalten()}>{t('konten.verwaltung.menue.verwalten')}</button>
+      <Knopf art="haupt" onClick={verwalten}>{t('konten.verwaltung.menue.verwalten')}</Knopf>
     </div>
   );
 }
@@ -183,7 +184,7 @@ function Hinweise() {
         <p>{tn('oberflaeche.app.um-einen-fehler-nachzustellen', { b: <strong>{t('konten.verwaltende.vertretung', { anzahl: hinweise.length })}</strong> })}</p>
         <ul>{hinweise.map((h) => <li key={h.id}>{t('oberflaeche.app.bis', { adminName: h.adminName, uhrzeit: uhrzeit(h.beginn), wert: h.ende ? uhrzeit(h.ende) : t('oberflaeche.app.jetzt-noch-nicht-beendet') })}</li>)}</ul>
       </div>
-      <button className="knopf klein" onClick={() => { setWeg(true); void api.hinweiseGesehen().then(aktualisieren); }}>{t('oberflaeche.app.verstanden')}</button>
+      <Knopf groesse="klein" onClick={() => { setWeg(true); void api.hinweiseGesehen().then(aktualisieren); }}>{t('oberflaeche.app.verstanden')}</Knopf>
     </div>
   );
 }
@@ -196,6 +197,7 @@ function Benutzermenue({ an, abmelden }: { an: boolean; abmelden: () => Promise<
   const [ueber, setUeber] = useState(false);
   const abwesend = abwesenheitWirkt(ich.abwesenheit, heuteIn());
   const rahmen = useRef<HTMLDivElement>(null);
+  const menueId = useId();
   useEffect(() => {
     if (!offen) return;
     const zu = (e: Event) => { if (!rahmen.current?.contains(e.target as Node)) setOffen(false); };
@@ -206,12 +208,14 @@ function Benutzermenue({ an, abmelden }: { an: boolean; abmelden: () => Promise<
   }, [offen]);
   return (
     <div className="benutzermenue" ref={rahmen}>
-      <button type="button" className={`wer ${an ? 'an' : ''}`} data-anker="benutzermenue" aria-haspopup="menu" aria-expanded={offen} onClick={() => setOffen(!offen)}>
-        {ich.name || ich.email}{abwesend && <span className="abwesend-punkt" title={t('oberflaeche.app.du-bist-abwesend')} aria-label={t('oberflaeche.app.abwesend')} />} <span aria-hidden="true">▾</span>
-      </button>
+      {/* Baustein Knopf (#1215) im Aussehen der Kopfzeile (.textknopf.wer); der Pfeil ist ein Symbol (D5). */}
+      {/* Aufklapper (#1215): Links und Handlungen, kein ARIA-Menü – ohne role="menu", das nur Menüpunkte enthalten dürfte. */}
+      <Knopf art="link" className={`wer ${an ? 'an' : ''}`} data-anker="benutzermenue" aria-expanded={offen} aria-controls={offen ? menueId : undefined} onClick={() => setOffen(!offen)}>
+        <span className="wer-name">{ich.name || ich.email}</span>{abwesend && <span className="abwesend-punkt" title={t('oberflaeche.app.du-bist-abwesend')} aria-label={t('oberflaeche.app.abwesend')} />}<Symbol name="pfeil-unten" />
+      </Knopf>
       {offen && <div className="hy-schleier" aria-hidden="true" onClick={() => setOffen(false)} />}
       {offen && (
-        <div className="menue" role="menu">
+        <div className="menue" id={menueId}>
           <div className="menuekopf">
             <strong>{ich.name || ich.email}</strong>
             <span className="leise klein">{ich.email}{verwaltungsmodus.darf ? ` · ${t(verwaltungsmodus.aktiv ? 'konten.verwaltung.menue.aktiv' : 'konten.verwaltung.menue.darf')}` : ''}</span>
@@ -224,15 +228,15 @@ function Benutzermenue({ an, abmelden }: { an: boolean; abmelden: () => Promise<
           <Link to="/profil/konto" className="menuepunkt"><Pikto name="person" />{vertretung ? t('oberflaeche.app.konto-von', { wert: ich.name || ich.email }) : t('oberflaeche.app.mein-konto')}</Link>
           {/* #819: direkt unter „Mein Konto“, nur für Personen mit Verwaltungsrecht; im Modus „Verwaltung beenden“. */}
           {verwaltungsmodus.darf && !vertretung && (verwaltungsmodus.aktiv
-            ? <button type="button" id="menue-verwaltung-beenden" className="menuepunkt" onClick={() => { setOffen(false); void verwaltungBeenden(); }}><Pikto name="beenden" />{t('konten.verwaltung.beenden')}</button>
-            : <button type="button" id="menue-verwalten" className="menuepunkt" onClick={() => { setOffen(false); void verwalten(); }}><Pikto name="verwalten" />{t('konten.verwaltung.menue.verwalten')}</button>)}
+            ? <Knopf art="link" id="menue-verwaltung-beenden" className="menuepunkt" onClick={() => { setOffen(false); void verwaltungBeenden(); }}><Pikto name="beenden" />{t('konten.verwaltung.beenden')}</Knopf>
+            : <Knopf art="link" id="menue-verwalten" className="menuepunkt" onClick={() => { setOffen(false); void verwalten(); }}><Pikto name="verwalten" />{t('konten.verwaltung.menue.verwalten')}</Knopf>)}
           {laufwerk && <Link to="/profil/laufwerk" className="menuepunkt"><Pikto name="laufwerk" />{t('profil.laufwerk.menue')}</Link>}
-          <a href={handbuch('benutzer')} target="_blank" rel="noreferrer" className="menuepunkt" onClick={() => setOffen(false)}><Pikto name="hilfe" />{tn('oberflaeche.app.hilfe', { span: <span aria-hidden="true">↗</span> })}</a>
+          <a href={handbuch('benutzer')} target="_blank" rel="noreferrer" className="menuepunkt" onClick={() => setOffen(false)}><Pikto name="hilfe" />{tn('oberflaeche.app.hilfe', { span: <Symbol name="extern" className="menuepunkt-extern" /> })}</a>
           {/* #832: Rundgänge und Tipps zum Stöbern – bei der Hilfe, ohne eigenen Menüpunkt „Rundgang starten“. */}
           <Link to="/entdecken" className="menuepunkt"><Pikto name="entdecken" />{t('entdecken.menue')}</Link>
           <Link to="/profil/fehler-melden" className="menuepunkt"><Pikto name="fehler" />{t('oberflaeche.app.fehler-melden')}</Link>
-          <button type="button" className="menuepunkt" onClick={() => { setOffen(false); setUeber(true); }}><Pikto name="info" />{t('oberflaeche.app.ueber-ablago')}</button>
-          <button type="button" className="menuepunkt" onClick={() => void abmelden()}><Pikto name="abmelden" />{t('oberflaeche.app.abmelden')}</button>
+          <Knopf art="link" className="menuepunkt" onClick={() => { setOffen(false); setUeber(true); }}><Pikto name="info" />{t('oberflaeche.app.ueber-ablago')}</Knopf>
+          <Knopf art="link" className="menuepunkt" onClick={abmelden}><Pikto name="abmelden" />{t('oberflaeche.app.abmelden')}</Knopf>
         </div>
       )}
       {ueber && <UeberDms schliessen={() => setUeber(false)} />}

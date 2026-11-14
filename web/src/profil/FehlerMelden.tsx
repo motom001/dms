@@ -5,6 +5,7 @@ import { useDaten } from '../daten';
 import { geraeteAngaben } from '../diagnose';
 import { leseSchrift, SCHRIFTEN } from '../design';
 import { useKonto } from '../konto';
+import { Feld, FeldGruppe, Knopf } from '../bausteine';
 
 /**
  * Fehler melden (#70): eigene Beschreibung, bis zu zwei Screenshots und technische Angaben
@@ -74,7 +75,7 @@ export function FehlerMelden() {
     <div className="einspaltig schmal">
       <div className="mappenkopf"><p className="ueber">{t('profil.fehlermelden.hilfe')}</p><h1>{t('profil.fehlermelden.fehler-melden')}</h1></div>
       <div className="hinweis gut"><p>{tn('profil.fehlermelden.sie-melden-sich-bei', { b: <strong>{t('profil.fehlermelden.deine-meldung-ist-angekommen')}</strong> })}</p></div>
-      <div className="knoepfe"><button type="button" className="knopf" onClick={() => { setGesendet(false); setText(''); setBilder([]); }}>{t('profil.fehlermelden.noch-eine-meldung')}</button></div>
+      <div className="knoepfe"><Knopf onClick={() => { setGesendet(false); setText(''); setBilder([]); }}>{t('profil.fehlermelden.noch-eine-meldung')}</Knopf></div>
     </div>
   );
 
@@ -86,17 +87,17 @@ export function FehlerMelden() {
         <p className="leise">{t('profil.fehlermelden.beschreibe-kurz-was-passiert')}</p>
       </div>
       <section className="blatt">
-        <label className="eigenschaft"><span>{t('profil.fehlermelden.was-ist-passiert')}</span>
+        <Feld beschriftung={t('profil.fehlermelden.was-ist-passiert')}>
           <textarea rows={6} value={text} maxLength={5000} onChange={(e) => setText(e.target.value)} onPaste={einfuegen}
-            placeholder={t('profil.fehlermelden.z-b-beim-speichern')} /></label>
-        <div className="eigenschaft">
-          <span>{tn('profil.fehlermelden.screenshots', { klein: <small>{t('profil.fehlermelden.bis-zu-zwei-png')}</small> })}</span>
+            placeholder={t('profil.fehlermelden.z-b-beim-speichern')} /></Feld>
+        <FeldGruppe className="bildgruppe" beschriftung={t('profil.fehlermelden.screenshots')} optional hinweis={t('profil.fehlermelden.bis-zu-zwei-png')}>
           {bilder.length > 0 && <ul className="bildliste">{bilder.map((b, i) => (
             <li key={i}><img src={b.daten} alt={b.name} /><span className="leise klein">{b.name}</span>
-              <button type="button" className="textknopf gefahr" onClick={() => setBilder(bilder.filter((_, j) => j !== i))}>{t('profil.fehlermelden.entfernen')}</button></li>
+              <Knopf art="gefahr" symbol="geloescht" onClick={() => setBilder(bilder.filter((_, j) => j !== i))}
+                rueckfrage={{ titel: t('profil.fehlermelden.entfernen.frage', { name: b.name }), ja: t('profil.fehlermelden.entfernen') }}>{t('profil.fehlermelden.entfernen')}</Knopf></li>
           ))}</ul>}
-          {bilder.length < MAX_BILDER && <input type="file" accept="image/png,image/jpeg,image/webp" multiple onChange={(e) => { void nimm([...(e.target.files ?? [])]); e.target.value = ''; }} />}
-        </div>
+          {bilder.length < MAX_BILDER && <input type="file" aria-label={t('profil.fehlermelden.screenshots')} accept="image/png,image/jpeg,image/webp" multiple onChange={(e) => { void nimm([...(e.target.files ?? [])]); e.target.value = ''; }} />}
+        </FeldGruppe>
       </section>
       <section className="blatt">
         <details>
@@ -106,8 +107,8 @@ export function FehlerMelden() {
       </section>
       {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
       <div className="knoepfe">
-        <button type="button" className="knopf" disabled={!text.trim()} onClick={() => void kopieren()}>{t('profil.fehlermelden.in-die-zwischenablage-kopieren')}</button>
-        <button type="button" className="knopf primaer" disabled={!text.trim() || sendet || server === null} onClick={() => void senden()}>{sendet ? t('profil.fehlermelden.wird-gesendet') : t('profil.fehlermelden.meldung-senden')}</button>
+        <Knopf gesperrt={!text.trim()} onClick={kopieren}>{t('profil.fehlermelden.in-die-zwischenablage-kopieren')}</Knopf>
+        <Knopf art="haupt" gesperrt={!text.trim() || server === null} laeuft={sendet} laeuftText={t('profil.fehlermelden.wird-gesendet')} onClick={senden}>{t('profil.fehlermelden.meldung-senden')}</Knopf>
       </div>
     </div>
   );

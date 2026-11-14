@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { TIPP_BEREICHE, type TippAnzeige } from '../../../shared/src/entdecken';
 import { useDaten } from '../daten';
 import { t } from '../sprache';
+import { Knopf, Suchfeld } from '../bausteine';
 import { starteRundgang, tippHandlung, useEntdecken, zeigeZiel } from './stand';
 
 /**
@@ -37,7 +38,7 @@ export function Entdecken() {
               {stand.rundgaenge.map((r) => (
                 <li key={`${r.herkunft}:${r.schluessel}`}>
                   <div><strong>{r.titel}</strong><span className="leise klein"> · {t('entdecken.seite.schritte', { anzahl: r.schritte.length })}</span><br /><span className="leise">{r.beschreibung}</span></div>
-                  <button type="button" className="knopf" onClick={() => starteRundgang(r.schluessel)}>{t('entdecken.seite.starten')}</button>
+                  <Knopf onClick={() => starteRundgang(r.schluessel)}>{t('entdecken.seite.starten')}</Knopf>
                 </li>
               ))}
             </ul>
@@ -47,8 +48,7 @@ export function Entdecken() {
           <h2 id="ent-tipps" className="h3">{t('entdecken.seite.tipps')}</h2>
           {d.einstellungen.tipps === false && <p className="leise klein">{t('entdecken.seite.aus')}</p>}
           {stand.tipps.length > 0 && (
-            <label className="ent-suche"><span className="sr">{t('entdecken.seite.suche')}</span>
-              <input type="search" value={such} onChange={(e) => setSuch(e.target.value)} placeholder={t('entdecken.seite.suche')} autoComplete="off" /></label>
+            <Suchfeld className="ent-suche" wert={such} setze={setSuch} beschriftung={t('entdecken.seite.suche')} platzhalter={t('entdecken.seite.suche')} />
           )}
           {!stand.tipps.length ? <p className="leise">{t('entdecken.seite.keine-tipps')}</p>
             : !tipps.length ? <p className="leise" role="status">{t('entdecken.seite.suche.leer', { such: such.trim() })}</p>
@@ -75,7 +75,7 @@ function TippEintrag({ x }: { x: TippAnzeige }) {
       <a href={x.ziel?.seite ?? '/entdecken'} className="tipp-satz" onClick={(e) => { e.preventDefault(); void zeigeZiel(x); }}>{x.text}</a>
       {x.ausgeblendet && <>
         {' '}<span className="chip">{t('entdecken.seite.ausgeblendet')}</span>{' '}
-        <button type="button" className="textknopf klein" title={t('entdecken.seite.einblenden.titel')} onClick={() => void tippHandlung(x.schluessel, 'einblenden')}>{t('entdecken.seite.einblenden')}</button>
+        <Knopf art="link" title={t('entdecken.seite.einblenden.titel')} onClick={() => tippHandlung(x.schluessel, 'einblenden')}>{t('entdecken.seite.einblenden')}</Knopf>
       </>}
     </li>
   );

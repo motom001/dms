@@ -20,12 +20,11 @@ import { Farbfelder } from '../werkbank/Designs';
 import { useKonto } from '../konto';
 import { Hilfe } from '../Hilfe';
 import { RECHTE, RECHTE_LISTE } from '../../../shared/src/rechte';
-import { rueckfrage } from '../rueckfrage';
 import { t, tn, wechsleSprache } from '../sprache';
 import { sprachname } from '../../../shared/src/beschriftung';
 import { MITMACHEN_URL } from '../../../shared/src/sprachwahl';
 import { gebietsschema } from '../../../shared/src/sprache';
-import { abfangen, Knopf } from '../bausteine';
+import { abfangen, Feld, FeldGruppe, Knopf, Schalter, Umschalter } from '../bausteine';
 
 const STUFE = { immer: t('profil.profil.stufe.immer'), nie: t('profil.profil.stufe.nie'), teils: t('profil.profil.je-nach-mappe') } as const;
 
@@ -124,9 +123,9 @@ function ProfilBereich({ bereich }: { bereich: keyof typeof BEREICHE }) {
       {bereich === 'konto' && <>
       <form className="blatt" onSubmit={fName.absenden}>
         <h2 className="h3">{t('profil.profil.name')}</h2>
-        <label className="eigenschaft"><span>{t('profil.profil.so-erscheinst-du-bei')}</span><input value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" /></label>
+        <Feld beschriftung={t('profil.profil.so-erscheinst-du-bei')}><input value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" /></Feld>
         {fName.anzeige}
-        <div className="knoepfe"><button className="knopf primaer" disabled={fName.sendet || !name.trim() || name === ich.name}>{t('profil.profil.speichern')}</button></div>
+        <div className="knoepfe"><Knopf art="haupt" type="submit" laeuft={fName.sendet} gesperrt={!name.trim() || name === ich.name}>{t('profil.profil.speichern')}</Knopf></div>
       </form>
 
       <SpracheWaehlen />
@@ -135,11 +134,11 @@ function ProfilBereich({ bereich }: { bereich: keyof typeof BEREICHE }) {
         <h2 className="h3">{t('profil.profil.e-mail-adresse')}</h2>
         <p className="leise">{t('profil.profil.damit-meldest-du-dich', { wert: mail ? t('profil.profil.und-bekommst-links-zum') : '' })}</p>
         <div className="raster">
-          <label className="eigenschaft"><span>{t('profil.profil.neue-adresse')}</span><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" required /></label>
-          <label className="eigenschaft"><span>{t('profil.profil.aktuelles-passwort')}</span><input type="password" value={pwEmail} onChange={(e) => setPwEmail(e.target.value)} autoComplete="current-password" required /></label>
+          <Feld beschriftung={t('profil.profil.neue-adresse')}><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" required /></Feld>
+          <Feld beschriftung={t('profil.profil.aktuelles-passwort')}><input type="password" value={pwEmail} onChange={(e) => setPwEmail(e.target.value)} autoComplete="current-password" required /></Feld>
         </div>
         {fEmail.anzeige}
-        <div className="knoepfe"><button className="knopf primaer" disabled={fEmail.sendet || email === ich.email || !pwEmail}>{t('profil.profil.adresse-aendern')}</button></div>
+        <div className="knoepfe"><Knopf art="haupt" type="submit" laeuft={fEmail.sendet} gesperrt={email === ich.email || !pwEmail}>{t('profil.profil.adresse-aendern')}</Knopf></div>
       </form>
 
       {/* Nur zum Nachlesen – deshalb unter den Formularen (#198). */}
@@ -154,12 +153,12 @@ function ProfilBereich({ bereich }: { bereich: keyof typeof BEREICHE }) {
         <h2 className="h3">{t('profil.profil.passwort')}</h2>
         <input type="email" value={ich.email} autoComplete="username" readOnly hidden />
         <div className="raster">
-          <label className="eigenschaft"><span>{t('profil.profil.aktuelles-passwort')}</span><input type="password" value={alt} onChange={(e) => setAlt(e.target.value)} autoComplete="current-password" required /></label>
-          <label className="eigenschaft"><span>{tn('profil.profil.neues-passwort', { klein: <small>{t('profil.profil.mindestens-zeichen', { PASSWORT_MINDESTLAENGE })}</small> })}</span><input type="password" value={neu} onChange={(e) => setNeu(e.target.value)} autoComplete="new-password" required /></label>
-          <label className="eigenschaft"><span>{t('profil.profil.neues-passwort-wiederholen')}</span><input type="password" value={neu2} onChange={(e) => setNeu2(e.target.value)} autoComplete="new-password" required /></label>
+          <Feld beschriftung={t('profil.profil.aktuelles-passwort')}><input type="password" value={alt} onChange={(e) => setAlt(e.target.value)} autoComplete="current-password" required /></Feld>
+          <Feld beschriftung={t('profil.profil.neues-passwort')} hinweis={t('profil.profil.mindestens-zeichen', { PASSWORT_MINDESTLAENGE })}><input type="password" value={neu} onChange={(e) => setNeu(e.target.value)} autoComplete="new-password" required /></Feld>
+          <Feld beschriftung={t('profil.profil.neues-passwort-wiederholen')}><input type="password" value={neu2} onChange={(e) => setNeu2(e.target.value)} autoComplete="new-password" required /></Feld>
         </div>
         {fPw.anzeige}
-        <div className="knoepfe"><button className="knopf primaer" disabled={fPw.sendet || !alt || !neu}>{t('profil.profil.passwort-aendern')}</button></div>
+        <div className="knoepfe"><Knopf art="haupt" type="submit" laeuft={fPw.sendet} gesperrt={!alt || !neu}>{t('profil.profil.passwort-aendern')}</Knopf></div>
       </form>
 
       <PasskeyBlatt />
@@ -177,9 +176,8 @@ function ProfilBereich({ bereich }: { bereich: keyof typeof BEREICHE }) {
         <div className="blatt">
           <h2 className="h3">{t('profil.profil.papierkorb')}</h2>
           <p className="leise">{t('profil.profil.was-du-loeschst-bleibt', { wert: d.zaehler.papierkorbTage === 1 ? t('profil.profil.einen-tag') : t('profil.profil.tage', { wert: d.zaehler.papierkorbTage ?? 0 }) })}</p>
-          <label className="haken"><input type="checkbox" checked={d.einstellungen.papierkorb_beim_abmelden === true}
-            onChange={(e) => d.setzeEinstellung('papierkorb_beim_abmelden', e.target.checked || null)} />
-            <span>{tn('profil.profil.beim-abmelden-leeren', { klein: <small className="hilfe">{t('profil.profil.deine-geloeschten-mappen-werden')}</small> })}</span></label>
+          <Schalter an={d.einstellungen.papierkorb_beim_abmelden === true} setze={(an) => d.setzeEinstellung('papierkorb_beim_abmelden', an || null)}
+            beschriftung={t('profil.profil.beim-abmelden-leeren')} hinweis={t('profil.profil.deine-geloeschten-mappen-werden')} />
         </div>
       )}
       </>}
@@ -188,7 +186,7 @@ function ProfilBereich({ bereich }: { bereich: keyof typeof BEREICHE }) {
       <div className="blatt">
         <h2 className="h3">{t('profil.profil.design')}</h2>
         <p className="leise">{t('profil.profil.gilt-fuer-dein-konto')}</p>
-        <div className="designwahl" role="radiogroup" aria-label={t('profil.profil.design')}>
+        <FeldGruppe beschriftung={t('profil.profil.design')} beschriftungVerbergen><div className="designwahl">
           <label>
             <input type="radio" name="design" checked={!d.einstellungen.design || !d.designs.some((x) => x.id === d.einstellungen.design)} onChange={() => d.setzeEinstellung('design', null)} />
             <span className="nm"><strong>{t('profil.profil.standard')}</strong><span className="leise klein">{t('profil.profil.zurzeit')}{' '}{d.designs.find((x) => x.id === d.standardDesign)?.name ?? '–'}</span></span>
@@ -199,7 +197,7 @@ function ProfilBereich({ bereich }: { bereich: keyof typeof BEREICHE }) {
               <span className="nm"><strong>{x.name}</strong><span className="leise klein"><Farbfelder d={x} /> {GRUNDLAGEN[x.grundlage]}</span></span>
             </label>
           ))}
-        </div>
+        </div></FeldGruppe>
       </div>
 
       <SchriftWahl />
@@ -208,43 +206,40 @@ function ProfilBereich({ bereich }: { bereich: keyof typeof BEREICHE }) {
       <div className="blatt" data-anker="konto.startseite">
         <h2 className="h3">{t('profil.profil.startseite')}</h2>
         <p className="leise">{t('profil.profil.die-startseite-der-ablage')}</p>
-        <label className="haken"><input type="checkbox" checked={d.einstellungen.startseite !== false}
-          onChange={(e) => d.setzeEinstellung('startseite', e.target.checked ? null : false)} />
-          <span>{tn('profil.profil.mit-der-startseite-beginnen', { klein: <small className="hilfe">{t('profil.profil.aus-nach-der-anmeldung')}</small> })}</span></label>
+        <Schalter an={d.einstellungen.startseite !== false} setze={(an) => d.setzeEinstellung('startseite', an ? null : false)}
+          beschriftung={t('profil.profil.mit-der-startseite-beginnen')} hinweis={t('profil.profil.aus-nach-der-anmeldung')} />
         {d.einstellungen.startseite !== false && (
-          <label className="eigenschaft"><span>{t('profil.profil.vierte-kachel')}</span>
+          <Feld beschriftung={t('profil.profil.vierte-kachel')}>
             <select value={typeof d.einstellungen.startseite_kachel === 'string' ? d.einstellungen.startseite_kachel : 'favoriten'}
               onChange={(e) => d.setzeEinstellung('startseite_kachel', e.target.value === 'favoriten' ? null : e.target.value)}>
               <option value="favoriten">{t('profil.profil.favoriten')}</option>
               {d.sichten.filter((s) => s.typen.length > 0).map((s) => <option key={s.id} value={s.id}>{t('profil.profil.ansicht', { name: s.name })}</option>)}
-            </select></label>
+            </select></Feld>
         )}
         {/* Tipp des Tages (#832): an (Vorgabe) oder aus; „Ablago entdecken“ zeigt alle Tipps trotzdem. */}
-        <label className="haken" data-anker="konto.tipps"><input type="checkbox" checked={d.einstellungen.tipps !== false}
-          onChange={(e) => d.setzeEinstellung('tipps', e.target.checked ? null : false)} />
-          <span>{tn('entdecken.konto.tipps', { klein: <small className="hilfe">{t('entdecken.konto.tipps.hilfe')}</small> })}</span></label>
+        <div data-anker="konto.tipps"><Schalter an={d.einstellungen.tipps !== false} setze={(an) => d.setzeEinstellung('tipps', an ? null : false)}
+          beschriftung={t('entdecken.konto.tipps')} hinweis={t('entdecken.konto.tipps.hilfe')} /></div>
       </div>
 
       {/* #725: Darstellung, keine Benachrichtigung – deshalb hier statt unter Benachrichtigungen. */}
       <div className="blatt">
         <h2 className="h3">{t('profil.profil.geaenderte-mappen')}</h2>
-        <label className="haken"><input type="checkbox" checked={d.einstellungen.geaenderte_hervorheben !== false}
-          onChange={(e) => d.setzeEinstellung('geaenderte_hervorheben', e.target.checked ? null : false)} />
-          <span>{tn('profil.profil.geaenderte-favoriten-und-eigene', { klein: <small className="hilfe">{t('profil.profil.mit-einem-punkt-vor')}</small> })}</span></label>
+        <Schalter an={d.einstellungen.geaenderte_hervorheben !== false} setze={(an) => d.setzeEinstellung('geaenderte_hervorheben', an ? null : false)}
+          beschriftung={t('profil.profil.geaenderte-favoriten-und-eigene')} hinweis={t('profil.profil.mit-einem-punkt-vor')} />
       </div>
 
       <div className="blatt">
         <h2 className="h3">{t('profil.profil.darstellung-auf-diesem-geraet')}</h2>
         <p className="leise">{t('profil.profil.die-breite-der-bereiche')}</p>
-        <div className="knoepfe"><button type="button" className="knopf" onClick={() => { bereicheZuruecksetzen(ich.id); setAnsicht(true); }}>{t('profil.profil.standard-darstellung')}</button></div>
+        <div className="knoepfe"><Knopf symbol="zuruecksetzen" onClick={() => { bereicheZuruecksetzen(ich.id); setAnsicht(true); }}>{t('profil.profil.standard-darstellung')}</Knopf></div>
         {ansicht && <p className="gutertext" role="status">{t('profil.profil.breiten-zurueckgesetzt')}</p>}
       </div>
 
       <div className="blatt">
         <h2 className="h3">{t('profil.profil.entwicklermodus')}</h2>
         <p className="leise">{t('profil.profil.zeigt-unten-rechts-bei')}</p>
-        <label className="haken"><input type="checkbox" checked={entwickler}
-          onChange={(e) => { const an = e.target.checked; setEntwickler(an); void api.entwicklermodus(an).then(aktualisieren).catch(() => setEntwickler(!an)); }} /><span>{t('profil.profil.zeitmessung-anzeigen')}</span></label>
+        <Schalter an={entwickler} beschriftung={t('profil.profil.zeitmessung-anzeigen')}
+          setze={(an) => { setEntwickler(an); void api.entwicklermodus(an).then(aktualisieren).catch(() => setEntwickler(!an)); }} />
       </div>
       </>}
 
@@ -261,9 +256,8 @@ function ProfilBereich({ bereich }: { bereich: keyof typeof BEREICHE }) {
         <p className="leise">{tn('profil.profil.was-dir-wichtig-ist', { b: <strong>{t('profil.profil.eine')}</strong> })}</p>
         {/* #506: Hat die Werkbank die Benachrichtigung für dich abgeschaltet, fehlt der Schalter; die Einstellung bleibt. */}
         {favoritenBenachrichtigung
-          ? <label className="haken"><input type="checkbox" checked={d.einstellungen.favoriten_benachrichtigen !== false}
-              onChange={(e) => d.setzeEinstellung('favoriten_benachrichtigen', e.target.checked ? null : false)} />
-              <span>{t('profil.profil.bei-aenderungen-an-meinen')}</span></label>
+          ? <Schalter an={d.einstellungen.favoriten_benachrichtigen !== false} setze={(an) => d.setzeEinstellung('favoriten_benachrichtigen', an ? null : false)}
+              beschriftung={t('profil.profil.bei-aenderungen-an-meinen')} />
           : <p className="hinweis info">{t('profil.favoriten.abgeschaltet')}</p>}
       </div>
       </>}
@@ -279,12 +273,9 @@ function SchriftWahl() {
     <div className="blatt" data-anker="konto.schrift">
       <h2 className="h3">{t('profil.profil.schriftgroesse-auf-diesem-geraet')}</h2>
       <p className="leise">{t('profil.profil.gilt-nur-fuer-das')}</p>
-      <div className="segmente" role="radiogroup" aria-label={t('profil.profil.schriftgroesse')}>
-        {(Object.keys(SCHRIFTEN) as Schrift[]).map((k) => (
-          <button key={k} type="button" role="radio" aria-checked={schrift === k} className={schrift === k ? 'an' : ''} onClick={() => { setSchrift(k); setzeSchrift(ich.id, k); }}
-            style={{ fontSize: `${13 * SCHRIFTEN[k].skala}px` }}>{SCHRIFTEN[k].name}</button>
-        ))}
-      </div>
+      {/* Umschalter (#1215, C17): jede Wahl in ihrer eigenen Schriftgröße. */}
+      <Umschalter beschriftung={t('profil.profil.schriftgroesse')} wert={schrift} setze={(k) => { setSchrift(k); setzeSchrift(ich.id, k); }}
+        wahlen={(Object.keys(SCHRIFTEN) as Schrift[]).map((k) => ({ wert: k, text: <span style={{ fontSize: `${13 * SCHRIFTEN[k].skala}px` }}>{SCHRIFTEN[k].name}</span> }))} />
     </div>
   );
 }
@@ -318,16 +309,16 @@ function MeineGeraete() {
                 {istGeradeAktiv(s.zuletztAktiv) && <> <span className="chip gut punkt">{t('profil.profil.gerade-aktiv')}</span></>}
                 <span className="leise klein blockzeile">{t('profil.profil.zuletzt-aktiv-angemeldet-seit', { datumZeit: datumZeit(s.zuletztAktiv), datumZeit2: datumZeit(s.erstellt), wert: s.ip ? ` · ${s.ip}` : '' })}</span>
               </div>
-              {!s.aktuell && !vertretung && <button type="button" className="textknopf gefahr" onClick={() => void tu(async () => { await api.meineSitzungBeenden(s.id); return t('profil.profil.geraet-abgemeldet'); })}>{t('profil.profil.abmelden')}</button>}
+              {!s.aktuell && !vertretung && <Knopf art="gefahr" symbol="abmelden" rueckfrage={{ titel: t('profil.profil.geraet-abmelden.frage', { geraet: geraetText(s.geraet) }), text: t('profil.profil.geraet-abmelden.text'), ja: t('profil.profil.abmelden') }}
+                onClick={() => tu(async () => { await api.meineSitzungBeenden(s.id); return t('profil.profil.geraet-abgemeldet'); })}>{t('profil.profil.abmelden')}</Knopf>}
             </li>
           ))}
         </ul>
       )}
       {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
       {andere.length > 0 && !vertretung && (
-        <div className="knoepfe"><Knopf onClick={async () => {
-          if (await rueckfrage({ titel: t('profil.profil.auf-allen-anderen-geraeten', { anzahl: andere.length }), ja: t('profil.profil.abmelden'), gefahr: true })) void tu(async () => { const r = await api.andereSitzungenBeenden(); return t('profil.profil.geraete-abgemeldet', { anzahl: r.beendet }); });
-        }}>{t('profil.profil.alle-anderen-abmelden')}</Knopf></div>
+        <div className="knoepfe"><Knopf art="gefahr" symbol="abmelden" rueckfrage={{ titel: t('profil.profil.auf-allen-anderen-geraeten', { anzahl: andere.length }), ja: t('profil.profil.abmelden') }}
+          onClick={() => tu(async () => { const r = await api.andereSitzungenBeenden(); return t('profil.profil.geraete-abgemeldet', { anzahl: r.beendet }); })}>{t('profil.profil.alle-anderen-abmelden')}</Knopf></div>
       )}
     </div>
   );
@@ -353,11 +344,11 @@ function SpracheWaehlen() {
   return (
     <div className="blatt">
       <h2 className="h3">{tn('profil.sprache.titel', { hilfe: <Hilfe ort="profil.sprache" /> })}</h2>
-      <label className="eigenschaft"><span>{t('profil.sprache.wahl')}</span>
+      <Feld beschriftung={t('profil.sprache.wahl')}>
         <select id="profil-sprache" value={wahl} disabled={sendet} onChange={(e) => void speichern(e.target.value)}>
           <option value="">{t('profil.sprache.wie-ablage', { sprache: name(sprachen.standard) })}</option>
           {sprachen.erlaubt.map((s) => <option key={s} value={s} lang={s}>{name(s)}</option>)}
-        </select></label>
+        </select></Feld>
       {/* Sprachpaket entfernt (#731): Die Wahl bleibt gespeichert, es gilt die Sprache der Ablage – das sagen wir. */}
       {ich.sprache && !sprachen.erlaubt.includes(ich.sprache) && (
         <div className="hinweis info"><p>{t('profil.sprache.weg', { sprache: name(ich.sprache), ablage: name(sprachen.standard) })}</p></div>
@@ -386,13 +377,10 @@ function UebersetzenWahl() {
   }
   return (
     <>
-      <label className="haken">
-        <input type="checkbox" id="profil-uebersetzen" checked={!uebersetzen.aus} disabled={sendet} onChange={(e) => void schalte(e.target.checked)} />
-        <span>{tn('profil.uebersetzen.anbieten', { hilfe: <Hilfe ort="profil.uebersetzen" /> })}</span>
-      </label>
-      <p className="leise klein">{uebersetzen.netz
-        ? t('profil.uebersetzen.netz', { paket: uebersetzen.paket.name, ziele: uebersetzen.netz.join(', ') })
-        : t('profil.uebersetzen.lokal', { paket: uebersetzen.paket.name })}</p>
+      <Schalter id="profil-uebersetzen" an={!uebersetzen.aus} gesperrt={sendet} setze={(an) => schalte(an)} beschriftung={t('profil.uebersetzen.anbieten')}
+        hinweis={<>{uebersetzen.netz
+          ? t('profil.uebersetzen.netz', { paket: uebersetzen.paket.name, ziele: uebersetzen.netz.join(', ') })
+          : t('profil.uebersetzen.lokal', { paket: uebersetzen.paket.name })} <Hilfe ort="profil.uebersetzen" /></>} />
       {fehler && <div className="hinweis schlecht"><p>{fehler}</p></div>}
     </>
   );

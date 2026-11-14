@@ -102,7 +102,7 @@ export function ErreichbarkeitsBanner({ version, ansichtNeuLaden, aussen }: {
     return (
       <div className={`vertretungsbanner erreichbarkeit weg${art}`} role="alert">
         <p>{tn('oberflaeche.erreichbar.vermutlich-laeuft-ein-update', { b: <strong>{NICHT_ERREICHBAR}</strong>, wert: s ? t('oberflaeche.erreichbar.naechster-versuch-in-s', { s }) : ' …' })}</p>
-        <button className="knopf klein" onClick={() => void erreichbarkeit.pruefe()}>{t('oberflaeche.erreichbar.jetzt-pruefen')}</button>
+        <Knopf groesse="klein" onClick={() => erreichbarkeit.pruefe()}>{t('oberflaeche.erreichbar.jetzt-pruefen')}</Knopf>
       </div>
     );
   }
@@ -110,7 +110,7 @@ export function ErreichbarkeitsBanner({ version, ansichtNeuLaden, aussen }: {
     return (
       <div className={`vertretungsbanner erreichbarkeit neu${art}`} role="alert">
         <p>{tn('oberflaeche.erreichbar.lade-die-seite-neu', { b: <strong>{version ? t('oberflaeche.erreichbar.neue-version-ist-da', { version }) : t('oberflaeche.erreichbar.eine-neue-version-ist')}</strong> })}</p>
-        <button className="knopf klein" onClick={() => location.reload()}>{t('oberflaeche.erreichbar.seite-neu-laden')}</button>
+        <Knopf groesse="klein" onClick={() => location.reload()}>{t('oberflaeche.erreichbar.seite-neu-laden')}</Knopf>
       </div>
     );
   }
@@ -119,8 +119,8 @@ export function ErreichbarkeitsBanner({ version, ansichtNeuLaden, aussen }: {
       <div className={`vertretungsbanner erreichbarkeit zurueck${art}`} role="status">
         <p>{tn('oberflaeche.erreichbar.zeigt-die-seite-noch', { b: <strong>{t('oberflaeche.erreichbar.ablago-ist-wieder-erreichbar')}</strong> })}</p>
         <span className="knoepfe">
-          <button className="knopf klein" onClick={() => { erreichbarkeit.schliessen(); ansichtNeuLaden(); }}>{t('oberflaeche.erreichbar.seite-neu-laden')}</button>
-          <button className="knopf klein" onClick={() => erreichbarkeit.schliessen()} aria-label={t('oberflaeche.erreichbar.hinweis-schliessen')}>{t('oberflaeche.erreichbar.ok')}</button>
+          <Knopf groesse="klein" onClick={() => { erreichbarkeit.schliessen(); ansichtNeuLaden(); }}>{t('oberflaeche.erreichbar.seite-neu-laden')}</Knopf>
+          <Knopf groesse="klein" onClick={() => erreichbarkeit.schliessen()} title={t('oberflaeche.erreichbar.hinweis-schliessen')}>{t('oberflaeche.erreichbar.ok')}</Knopf>
         </span>
       </div>
     );
@@ -130,7 +130,7 @@ export function ErreichbarkeitsBanner({ version, ansichtNeuLaden, aussen }: {
     return (
       <div className={`vertretungsbanner erreichbarkeit zurueck${art}`} role="status" id="neu-geladen-hinweis">
         <p>{tn('oberflaeche.veraltet.neu-geladen', { b: <strong>{t('oberflaeche.veraltet.neu-geladen-titel')}</strong> })}</p>
-        <button className="knopf klein" onClick={() => { neuGeladenHinweisSchliessen(); setNeuGeladen(false); }} aria-label={t('oberflaeche.erreichbar.hinweis-schliessen')}>{t('oberflaeche.erreichbar.ok')}</button>
+        <Knopf groesse="klein" onClick={() => { neuGeladenHinweisSchliessen(); setNeuGeladen(false); }} title={t('oberflaeche.erreichbar.hinweis-schliessen')}>{t('oberflaeche.erreichbar.ok')}</Knopf>
       </div>
     );
   }

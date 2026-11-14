@@ -29,7 +29,7 @@
   "zeile.neu": "New since your last visit: {text}",
   "zeile.weitere_one": "and {anzahl} more",
   "zeile.weitere_other": "and {anzahl} more",
-  "konto.tipps": "Show tips on the start page {klein}",
+  "konto.tipps": "Show tips on the start page",
   "konto.tipps.hilfe": "At most one a day, below “Ask your library”. All tips are under “Discover Ablago”.",
   "fuehrung.titel": "Tour: {titel}",
   "fuehrung.schritt": "Step {nr} of {anzahl}",

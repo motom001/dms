@@ -3,7 +3,7 @@ import { fuelleErgebnis, GERAET_MAX, PLATZHALTER, restMinuten, type LasttestLive
 import type { Messpunkt } from '../../shared/src/systemlast';
 import { handbuchUrl } from '../../shared/src/hilfe';
 import { api } from './api';
-import { rueckfrage } from './rueckfrage';
+import { Feld, Knopf } from './bausteine';
 import { t } from './sprache';
 import { Symbol } from './Symbol';
 import { gebietsschema } from '../../shared/src/sprache';
@@ -128,10 +128,8 @@ export function LasttestSeite() {
   const [speicher, setSpeicher] = useState<Speicherwahl | null | undefined>(undefined);
   const [kopiert, setKopiert] = useState<'ja' | 'nein' | null>(null);
   const [beendet, setBeendet] = useState(false);
-  /** Heruntergeladen (#697): gilt wie kopiert – dann fragt „Herunterfahren“ nicht nach. */
+  /** Heruntergeladen (#697): gilt wie kopiert – dann sagt die Rückfrage beim Herunterfahren nichts vom Ergebnis. */
   const [gesichert, setGesichert] = useState(false);
-  /** Rückfrage an Stelle des Knopfs (#697), wenn das Ergebnis noch nicht kopiert oder heruntergeladen ist. */
-  const [nachfragen, setNachfragen] = useState(false);
   const feld = useRef<HTMLTextAreaElement>(null);
   const senden = useRef<ReturnType<typeof setTimeout>>(undefined);
   /** Wann der Stand kam (Uhr des Browsers): Die Restdauer rechnet mit der Uhr des Servers weiter. */
@@ -169,19 +167,12 @@ export function LasttestSeite() {
   const textDatei = stand.ergebnis ? `${stand.ergebnis.bericht}\n\n### ${t('lasttest.ergebnis')}\n\n${block}\n` : '';
 
   async function herunterfahren() {
-    setNachfragen(false);
     try { await api.lasttestBeenden(); setBeendet(true); setFehler(undefined); } catch (e) { setFehler((e as Error).message); }
   }
-  async function beenden() {
-    // Läuft der Test noch, fällt alles weg – das fragt ein Dialog. Ist er fertig, aber das Ergebnis nicht gesichert,
-    // fragt die Seite an Stelle des Knopfs nach (#697).
-    if (zustand === 'laeuft') {
-      if (await rueckfrage({ titel: t('lasttest.beenden.frage'), text: t('lasttest.beenden.frage.laeuft'), ja: t('lasttest.beenden.frage.ja'), gefahr: true })) await herunterfahren();
-      return;
-    }
-    if (stand?.ergebnis && kopiert !== 'ja' && !gesichert) { setNachfragen(true); return; }
-    await herunterfahren();
-  }
+  // Herunterfahren ist Gefahr (#1215): immer mit Rückfrage. Läuft der Test noch, fällt alles weg; ist das Ergebnis
+  // noch nicht kopiert oder heruntergeladen, sagt die Rückfrage das (#697).
+  const beendenText = zustand === 'laeuft' ? t('lasttest.beenden.frage.laeuft')
+    : stand.ergebnis && kopiert !== 'ja' && !gesichert ? t('lasttest.beenden.ungesichert') : t('lasttest.beenden.frage.fertig');
 
   return (
     <div className="kartenseite">
@@ -215,22 +206,18 @@ export function LasttestSeite() {
         {fehler && <div className="hinweis schlecht"><p>{fehler}</p></div>}
 
         <div className="formular">
-          <label className="feld breit">
-            <span>{t('lasttest.geraet')}</span>
+          <Feld className="breit" beschriftung={t('lasttest.geraet')} hinweis={t('lasttest.geraet.hinweis')}>
             <input value={angaben.geraet} maxLength={GERAET_MAX} placeholder={t('lasttest.geraet.beispiel')} disabled={zustand === 'beendet'}
               onChange={(e) => { setGeraet(e.target.value); merke({ geraet: e.target.value }); }} />
-            <span className="klein leise">{t('lasttest.geraet.hinweis')}</span>
-          </label>
-          <label className="feld">
-            <span>{t('lasttest.speicher')}</span>
+          </Feld>
+          <Feld beschriftung={t('lasttest.speicher')} hinweis={stand.speicherErkannt ? t('lasttest.speicher.hinweis.erkannt', { art: stand.speicherErkannt }) : t('lasttest.speicher.hinweis.offen')}>
             <select value={angaben.speicher ?? ''} disabled={zustand === 'beendet'}
               onChange={(e) => { const w = (e.target.value || null) as Speicherwahl | null; setSpeicher(w); merke({ speicher: w }); }}>
               {!angaben.speicher && <option value="">{t('lasttest.speicher.waehlen')}</option>}
               {(['HDD', 'SSD', t('oberflaeche.lasttest.nvme')] as const).map((a) => <option key={a} value={a}>{a === stand.speicherErkannt ? t('lasttest.speicher.erkannt', { art: a }) : a}</option>)}
               <option value="unbekannt">{t('lasttest.speicher.unbekannt')}</option>
             </select>
-            <span className="klein leise">{stand.speicherErkannt ? t('lasttest.speicher.hinweis.erkannt', { art: stand.speicherErkannt }) : t('lasttest.speicher.hinweis.offen')}</span>
-          </label>
+          </Feld>
           <p className="feld breit klein leise lasttest-auto">{t('lasttest.automatisch')}</p>
         </div>
 
@@ -244,10 +231,12 @@ export function LasttestSeite() {
           ) : (
             <>
               <p className="klein leise">{t('lasttest.ergebnis.text')}</p>
-              <textarea ref={feld} className="mono lasttest-block" readOnly value={block} rows={block.split('\n').length} aria-label={t('lasttest.ergebnis')} />
+              <Feld beschriftung={t('lasttest.ergebnis')} beschriftungVerbergen>
+                <textarea ref={feld} className="mono lasttest-block" readOnly value={block} rows={block.split('\n').length} />
+              </Feld>
               <div className="knoepfe">
-                <button type="button" className="knopf primaer" onClick={() => void kopiere(block, feld.current).then((ok) => setKopiert(ok ? 'ja' : 'nein'))}>{kopiert === 'ja' ? <><Symbol name="haken" /> {t('lasttest.kopiert')}</> : t('lasttest.kopieren')}</button>
-                <button type="button" className="knopf" onClick={() => { herunterladen(`lasttest-${stand.wahl}.md`, textDatei); setGesichert(true); }}>{t('lasttest.herunterladen')}</button>
+                <Knopf art="haupt" symbol={kopiert === 'ja' ? 'haken' : undefined} onClick={() => kopiere(block, feld.current).then((ok) => setKopiert(ok ? 'ja' : 'nein'))}>{kopiert === 'ja' ? t('lasttest.kopiert') : t('lasttest.kopieren')}</Knopf>
+                <Knopf symbol="herunterladen" onClick={() => { herunterladen(`lasttest-${stand.wahl}.md`, textDatei); setGesichert(true); }}>{t('lasttest.herunterladen')}</Knopf>
                 <a className="knopf" href={FORMULAR} target="_blank" rel="noreferrer">{t('lasttest.formular')} <Symbol name="extern" /></a>
                 <a className="knopf" href={SAMMEL} target="_blank" rel="noreferrer">{t('lasttest.sammel')} <Symbol name="extern" /></a>
               </div>
@@ -258,8 +247,8 @@ export function LasttestSeite() {
           )}
         </section>
 
-        {/* Ergebnis an Stelle des Knopfs (#697): erst ggf. die Rückfrage, dann der Abschluss – er bleibt stehen, auch wenn
-            der Server nicht mehr antwortet (das Herunterfahren ist ja gewollt; es wird nichts mehr abgefragt). */}
+        {/* Ergebnis an Stelle des Knopfs (#697): nach der Rückfrage der Abschluss – er bleibt stehen, auch wenn der Server
+            nicht mehr antwortet (das Herunterfahren ist ja gewollt; es wird nichts mehr abgefragt). */}
         {zustand === 'beendet' ? (
           <div className="hinweis gut stapel" role="status">
             <p><strong>{t('lasttest.danke')}</strong></p>
@@ -267,19 +256,11 @@ export function LasttestSeite() {
             <p>{t('lasttest.danke.teilen')} <a className="verweis" href={SAMMEL} target="_blank" rel="noreferrer">{t('lasttest.sammel')} <Symbol name="extern" /></a></p>
             <p className="klein">{t('lasttest.beendet.text')}</p>
           </div>
-        ) : nachfragen ? (
-          <div className="hinweis warn stapel" role="alert">
-            <p>{t('lasttest.beenden.ungesichert')}</p>
-            <div className="knoepfe">
-              <button type="button" className="knopf primaer" onClick={() => void kopiere(block, feld.current).then((ok) => { setKopiert(ok ? 'ja' : 'nein'); if (ok) setNachfragen(false); })}>{t('lasttest.beenden.kopieren')}</button>
-              <button type="button" className="knopf" onClick={() => void herunterfahren()}>{t('lasttest.beenden.trotzdem')}</button>
-              <button type="button" className="textknopf" onClick={() => setNachfragen(false)}>{t('lasttest.beenden.abbrechen')}</button>
-            </div>
-          </div>
         ) : (
           <div className="knoepfe lasttest-ende">
             <a className="verweis klein" href={handbuchUrl('admin', null, 'lasttest/')} target="_blank" rel="noreferrer">{t('lasttest.handbuch')} <Symbol name="extern" /></a>
-            <button type="button" className="knopf" onClick={() => void beenden()}>{t('lasttest.beenden')}</button>
+            <Knopf art="gefahr" symbol="abmelden" onClick={herunterfahren}
+              rueckfrage={{ titel: t('lasttest.beenden.frage'), text: beendenText, ja: t('lasttest.beenden.frage.ja') }}>{t('lasttest.beenden')}</Knopf>
           </div>
         )}
       </div>

@@ -3,10 +3,9 @@ import { api, type ApiSchluessel, type ApiSchluesselEingabe, type ApiSchluesselR
 import { Hilfe } from '../Hilfe';
 import { Link } from '../ort';
 import { useKonto } from '../konto';
-import { rueckfrage } from '../rueckfrage';
 import { t, tn } from '../sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
-import { abfangen, Knopf, knopfAussehen } from '../bausteine';
+import { abfangen, Feld, HakenFeld, Knopf, knopfAussehen } from '../bausteine';
 
 /** API-Schlüssel im eigenen Profil (#20): erzeugen, ändern, löschen; ganz sichtbar nur beim Erzeugen. */
 const datum = (iso: string | null) => (iso ? new Date(iso).toLocaleString(gebietsschema(), { dateStyle: 'medium', timeStyle: 'short' }) : '–');
@@ -17,7 +16,7 @@ const alsDatum = (iso: string | null) => (iso ? iso.slice(0, 10) : '');
 const ausDatum = (text: string) => (text ? new Date(`${text}T23:59:59`).toISOString() : null);
 
 export function ApiSchluesselBlatt() {
-  const { ich, laufwerk } = useKonto();
+  const { laufwerk } = useKonto();
   const [liste, setListe] = useState<ApiSchluessel[] | null>(null);
   const [neu, setNeu] = useState<(ApiSchluessel & { schluessel: string }) | null>(null);
   const [fehler, setFehler] = useState<string>();
@@ -54,8 +53,9 @@ export function ApiSchluesselBlatt() {
                   <span className="leise klein blockzeile">{t('profil.apischluessel.erstellt-zuletzt-benutzt', { datum: datum(s.erstellt), datum2: datum(s.zuletztBenutzt), wert: s.ablauf ? t('profil.apischluessel.gueltig-bis', { datum: new Date(s.ablauf).toLocaleDateString(gebietsschema()) }) : t('profil.apischluessel.ohne-ablauf') })}</span>
                 </div>
                 <span className="zeilenaktionen">
-                  <button type="button" className="textknopf" onClick={() => setBearbeite(s.id)}>{t('profil.apischluessel.aendern')}</button>
-                  <Knopf art="link" className="gefahr" onClick={async () => { if (await rueckfrage({ titel: t('profil.apischluessel.schluessel-loeschen', { name: s.name }), text: t('profil.apischluessel.programme-die-ihn-nutzen'), ja: t('profil.apischluessel.loeschen'), gefahr: true })) void aktion(() => api.apiSchluesselLoeschen(s.id)); }}>{t('profil.apischluessel.loeschen')}</Knopf>
+                  <Knopf onClick={() => setBearbeite(s.id)}>{t('profil.apischluessel.aendern')}</Knopf>
+                  <Knopf art="gefahr" symbol="geloescht" onClick={() => aktion(() => api.apiSchluesselLoeschen(s.id))}
+                    rueckfrage={{ titel: t('profil.apischluessel.schluessel-loeschen', { name: s.name }), text: t('profil.apischluessel.programme-die-ihn-nutzen'), ja: t('profil.apischluessel.loeschen') }}>{t('profil.apischluessel.loeschen')}</Knopf>
                 </span>
               </li>
             ))}
@@ -82,18 +82,18 @@ function SchluesselFormular({ start, knopf, senden, abbrechen }: { start?: ApiSc
   }
   return (
     <form className="raster schluesselformular" onSubmit={abfangen(los)}>
-      <label className="eigenschaft"><span>{tn('profil.apischluessel.name', { klein: <small>{t('profil.apischluessel.z-b-scanner-buero')}</small> })}</span><input value={name} onChange={(e) => setName(e.target.value)} required /></label>
-      <label className="eigenschaft"><span>{t('profil.apischluessel.rechte')}</span>
-        <select value={recht} onChange={(e) => setRecht(e.target.value as ApiSchluesselRecht)} aria-describedby="schluessel-stufe-hilfe">
+      <Feld beschriftung={t('profil.apischluessel.name')} hinweis={t('profil.apischluessel.z-b-scanner-buero')}><input value={name} onChange={(e) => setName(e.target.value)} required /></Feld>
+      <Feld beschriftung={t('profil.apischluessel.rechte')} hinweis={t.frei(`api.stufe.hilfe.${recht}`)}>
+        <select value={recht} onChange={(e) => setRecht(e.target.value as ApiSchluesselRecht)}>
           {STUFEN.map((r) => <option key={r} value={r}>{stufe(r)}</option>)}
-        </select></label>
-      <label className="eigenschaft"><span>{tn('profil.apischluessel.gueltig-bis-2', { klein: <small>{t('profil.apischluessel.leer-ohne-ablauf')}</small> })}</span><input type="date" value={ablauf} min={new Date().toISOString().slice(0, 10)} onChange={(e) => setAblauf(e.target.value)} /></label>
-      <p id="schluessel-stufe-hilfe" className="eigenschaft breit hilfe">{t.frei(`api.stufe.hilfe.${recht}`)}</p>
-      {recht !== 'zaehler' && <label className="haken breit"><input type="checkbox" checked={passwoerter} onChange={(e) => setPasswoerter(e.target.checked)} />
-        <span>{tn('profil.apischluessel.passwoerter-lesen-2', { klein: <small className="hilfe">{tn('profil.apischluessel.mit-liefert-die-api', { span: <span className="mono">{'?passwoerter=anzeigen'}</span> })}</small> })}</span></label>}
+        </select></Feld>
+      <Feld beschriftung={t('profil.apischluessel.gueltig-bis-2')} optional hinweis={t('profil.apischluessel.leer-ohne-ablauf')}><input type="date" value={ablauf} min={new Date().toISOString().slice(0, 10)} onChange={(e) => setAblauf(e.target.value)} /></Feld>
+      {recht !== 'zaehler' && <HakenFeld className="breit" beschriftung={t('profil.apischluessel.passwoerter-lesen-2')}
+        hinweis={tn('profil.apischluessel.mit-liefert-die-api', { span: <span className="mono">{'?passwoerter=anzeigen'}</span> })}>
+        <input type="checkbox" checked={passwoerter} onChange={(e) => setPasswoerter(e.target.checked)} /></HakenFeld>}
       <div className="knoepfe">
-        {abbrechen && <button type="button" className="knopf" onClick={abbrechen}>{t('profil.apischluessel.abbrechen')}</button>}
-        <button className="knopf primaer">{knopf}</button>
+        {abbrechen && <Knopf onClick={abbrechen}>{t('profil.apischluessel.abbrechen')}</Knopf>}
+        <Knopf art="haupt" type="submit">{knopf}</Knopf>
       </div>
     </form>
   );
@@ -104,10 +104,12 @@ export function NeuerSchluessel({ s, schliessen }: { s: ApiSchluessel & { schlue
   return (
     <div className="hinweis warn stapel" role="status">
       <p>{tn('profil.apischluessel.kopiere-ihn-jetzt-er', { b: <strong>{t('profil.apischluessel.schluessel-erzeugt', { name: s.name })}</strong> })}</p>
-      <input className="mono" readOnly value={s.schluessel} onFocus={(e) => e.target.select()} aria-label={t('profil.apischluessel.neuer-api-schluessel')} />
+      <Feld beschriftung={t('profil.apischluessel.neuer-api-schluessel')} beschriftungVerbergen>
+        <input className="mono" readOnly value={s.schluessel} onFocus={(e) => e.target.select()} />
+      </Feld>
       <div className="knoepfe">
-        <button type="button" className="knopf" onClick={() => void navigator.clipboard?.writeText(s.schluessel).then(() => setKopiert(true), () => {})}>{kopiert ? t('profil.apischluessel.kopiert') : t('profil.apischluessel.kopieren')}</button>
-        <button type="button" className="knopf" onClick={schliessen}>{t('profil.apischluessel.habe-ihn-gesichert')}</button>
+        <Knopf onClick={() => navigator.clipboard?.writeText(s.schluessel).then(() => setKopiert(true), () => {})}>{kopiert ? t('profil.apischluessel.kopiert') : t('profil.apischluessel.kopieren')}</Knopf>
+        <Knopf onClick={schliessen}>{t('profil.apischluessel.habe-ihn-gesichert')}</Knopf>
       </div>
     </div>
   );

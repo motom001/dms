@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react';
 import { api, type ApiSchluessel } from '../api';
 import { Hilfe, useHandbuch } from '../Hilfe';
-import { useKonto } from '../konto';
-import { Link } from '../ort';
 import { t } from '../sprache';
 import { NeuerSchluessel } from './ApiSchluessel';
+import { Feld, Knopf, KnopfLink } from '../bausteine';
 
 /**
  * Mein Konto → Laufwerk (#720): Adresse, Benutzername, Schlüssel und eine kurze Anleitung je Gerät.
@@ -26,19 +25,18 @@ function KopierFeld({ wert, beschriftung, id }: { wert: string; beschriftung: st
     navigator.clipboard.writeText(wert).then(() => setStand('kopiert'), markieren);
   }
   return (
-    <div className="eigenschaft">
-      <label htmlFor={id}>{beschriftung}</label>
-      <div className="zeile">
-        <input id={id} className="mono" readOnly value={wert} onFocus={(e) => e.target.select()} style={{ flex: 1 }} />
-        <button type="button" className="knopf" onClick={kopieren}>{stand === 'kopiert' ? t('profil.laufwerk.kopiert') : t('profil.laufwerk.kopieren')}</button>
-      </div>
-      {stand === 'markiert' && <p className="leise klein" role="status">{t('profil.laufwerk.markiert')}</p>}
-    </div>
+    <Feld id={id} beschriftung={beschriftung} hinweis={stand === 'markiert' && <span role="status">{t('profil.laufwerk.markiert')}</span>}>
+      {(v) => (
+        <div className="linkzeile">
+          <input {...v} className="mono" readOnly value={wert} onFocus={(e) => e.target.select()} />
+          <Knopf onClick={kopieren}>{stand === 'kopiert' ? t('profil.laufwerk.kopiert') : t('profil.laufwerk.kopieren')}</Knopf>
+        </div>
+      )}
+    </Feld>
   );
 }
 
 export function LaufwerkBereich() {
-  const { ich } = useKonto();
   const handbuch = useHandbuch();
   const [s, setS] = useState<{ adresse: string; https: boolean; benutzername: string } | null>(null);
   const [fehler, setFehler] = useState<string>();
@@ -67,8 +65,8 @@ export function LaufwerkBereich() {
         <p className="leise">{t('profil.laufwerk.schluessel.text')}</p>
         {fehler && <div className="hinweis schlecht"><p>{fehler}</p></div>}
         {neu ? <NeuerSchluessel s={neu} schliessen={() => setNeu(null)} />
-          : <div className="knoepfe"><button type="button" className="knopf primaer" disabled={sendet} onClick={() => void schluessel()}>{t('profil.laufwerk.schluessel.anlegen')}</button>
-              <Link to="/profil/sicherheit" className="knopf">{t('profil.laufwerk.schluessel.alle')}</Link></div>}
+          : <div className="knoepfe"><Knopf art="haupt" laeuft={sendet} onClick={schluessel}>{t('profil.laufwerk.schluessel.anlegen')}</Knopf>
+              <KnopfLink to="/profil/sicherheit">{t('profil.laufwerk.schluessel.alle')}</KnopfLink></div>}
       </section>
       <section className="blatt" aria-labelledby="laufwerk-geraete">
         <h2 className="h3" id="laufwerk-geraete">{t('profil.laufwerk.geraete')}</h2>
