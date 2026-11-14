@@ -2,6 +2,8 @@
 
 `Mehrfachauswahl` (#1211; previously in `web/src/ablage/`) chooses several entries: a search field with a magnifier and suggestions on top, the chosen entries below, each with **Remove**. That is how you choose several folders in a link field or the folder types of the advanced search.
 
+![“Multiple selection” section of the pattern page: search field and chosen entries](bilder/muster-mehrfachauswahl.png){ loading=lazy }
+
 | Prop | Purpose |
 | --- | --- |
 | `name` | name of the list of chosen entries and of the suggestions (for screen readers) |
@@ -16,5 +18,7 @@
 - **Remove** is a quiet button (kind link), not red: the field only changes on saving (principle 5).
 - **On the phone** the search field, suggestions and “Remove” are at least 44 px high.
 - The pattern page shows the building block in the area **Multiple selection**.
+
+![“Multiple selection” section, dark](bilder/muster-mehrfachauswahl-dunkel.png){ loading=lazy }
 
 Code: `web/src/bausteine/mehrfachauswahl/`.

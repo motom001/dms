@@ -1,6 +1,8 @@
 # Menü
 
-`Menue` (#1211, #1212) ist ein Knopf, der eine Liste von Handlungen öffnet: **Mappe ▾** im Kopf einer Mappe, **⋯** an jeder Dokumentzeile und im Kopf einer Ansicht. Alle Menüs sehen gleich aus und bedienen sich gleich.
+`Menue` (#1211, #1212) ist ein Knopf, der eine Liste von Handlungen öffnet: **Mappe ▾** im Kopf einer Mappe und **⋯** an jeder Dokumentzeile. Alle Menüs sehen gleich aus und bedienen sich gleich.
+
+![Bereich „Menü“ der Musterseite: Gruppen, gesperrter Punkt, Gefahr](bilder/muster-menue.png){ loading=lazy }
 
 | Angabe | Wofür |
 | --- | --- |
@@ -33,5 +35,7 @@ import { Menue } from '../bausteine';
 - **Am Handy** öffnet das Menü als Blatt von unten; jeder Punkt ist mindestens 48 px hoch.
 - **Fehler** aus `tu` (abgelehntes Promise) kommen als Hinweisfenster.
 - Die Musterseite zeigt den Baustein im Bereich **Menü**: mit Gruppen, gesperrtem Punkt und Gefahr.
+
+![Bereich „Menü“ dunkel](bilder/muster-menue-dunkel.png){ loading=lazy }
 
 Code: `web/src/bausteine/menue/`.

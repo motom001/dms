@@ -14,7 +14,9 @@
  *     Verwerfen mit Rand, Hauptknopf blau, gesperrt aus einem Grund;
  *   muster-reiter, muster-reiter-dunkel – der Bereich „Reiter“ (#1210);
  *   muster-schalter, muster-schalter-dunkel – der Bereich „Schalter“ (#1188);
- *   muster-paketchip, muster-paketchip-dunkel – der Bereich „PaketChip“ (#1192).
+ *   muster-paketchip, muster-paketchip-dunkel – der Bereich „PaketChip“ (#1192);
+ *   muster-menue, muster-wahlhaken, muster-mehrfachauswahl (je auch -dunkel) – die Bereiche „Menü“, „Wahlhaken“
+ *     und „Mehrfachauswahl“ (#1211).
  *
  * Im Handy-Kontext (390 px, Touch: `pointer: coarse`) misst `tippflaechenPruefen` jedes Bedienelement der Seite
  * (#1027, Musterkatalog D6): Jedes muss eine eigene Tippfläche von mindestens 44 × 44 px haben.
@@ -219,6 +221,7 @@ export async function musterAufnehmen(browser, { basis, ziel, gebiet = 'de-DE', 
         await foto(s.locator('#reiter'), `muster-reiter${suffix}`);
         await foto(s.locator('#schalter'), `muster-schalter${suffix}`);
         await foto(s.locator('#paketchip'), `muster-paketchip${suffix}`);
+        for (const b of ['menue', 'wahlhaken', 'mehrfachauswahl']) await foto(s.locator(`#${b}`), `muster-${b}${suffix}`);
       }
     } finally {
       await k.close();

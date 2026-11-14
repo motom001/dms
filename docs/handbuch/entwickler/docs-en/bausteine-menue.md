@@ -1,6 +1,8 @@
 # Menu
 
-`Menue` (#1211, #1212) is a button that opens a list of actions: **Folder ▾** in the header of a folder, **⋯** on every document row and in the header of a view. All menus look and work the same.
+`Menue` (#1211, #1212) is a button that opens a list of actions: **Folder ▾** in the header of a folder and **⋯** on every document row. All menus look and work the same.
+
+![“Menu” section of the pattern page: groups, disabled item, danger](bilder/muster-menue.png){ loading=lazy }
 
 | Prop | Purpose |
 | --- | --- |
@@ -33,5 +35,7 @@ import { Menue } from '../bausteine';
 - **On the phone** the menu opens as a sheet from the bottom; every item is at least 48 px high.
 - **Errors** from `tu` (rejected promise) appear in a message window.
 - The pattern page shows the building block in the area **Menu**: with groups, a locked item and danger.
+
+![“Menu” section, dark](bilder/muster-menue-dunkel.png){ loading=lazy }
 
 Code: `web/src/bausteine/menue/`.

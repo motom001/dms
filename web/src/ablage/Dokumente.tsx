@@ -103,6 +103,8 @@ export function Dokumente({ register, dokumente: roh, neue, entfernt, hinzufuege
     });
   }, [neue, eigeneMappe]);
   const [versionenOffen, setVersionenOffen] = useState<string>();
+  // „Über dieses Dokument“ ohne geöffnete Anzeige (#1211), etwa bei Originalen, die der Browser nicht zeigt.
+  const [ueberOffen, setUeberOffen] = useState<string>();
   // Archivnummer (#345): direkt speichern, ohne „Mappe speichern“.
   const [asn, setAsn] = useState<{ id: string; wert: string; fehler?: string } | null>(null);
   async function speichereAsn() {
@@ -303,7 +305,7 @@ export function Dokumente({ register, dokumente: roh, neue, entfernt, hinzufuege
    * „⋯“ einer Dokumentzeile (#1211, Vorgabe Dokumentliste): Gruppen Ansehen · Herunterladen · Bearbeiten · Ordnen, abgesetzt
    * „Entfernen“ (neutral, Leitsatz 5). Nur, was bei diesem Dokument geht.
    */
-  function punkte(x: Dokument, z: { anlagen: Dokument[]; ziele: Dokument[]; sicht: ReturnType<typeof ansichtVon>; klickbar: boolean }): MenuePunkt[] {
+  function punkte(x: Dokument, z: { anlagen: Dokument[]; ziele: Dokument[]; sicht: ReturnType<typeof ansichtVon>; klickbar: boolean; auf: boolean }): MenuePunkt[] {
     const g = { ansehen: t('ablage.dokumente.gruppe.ansehen'), laden: t('ablage.dokumente.gruppe.herunterladen'), bearbeiten: t('ablage.dokumente.gruppe.bearbeiten'), ordnen: t('ablage.dokumente.gruppe.ordnen') };
     const s = standVon(x);
     const a = x.archivfassung?.stand === 'fertig' ? x.archivfassung.fassung : undefined;
@@ -312,6 +314,7 @@ export function Dokumente({ register, dokumente: roh, neue, entfernt, hinzufuege
     const pdf = x.mime === 'application/pdf';
     const p: Array<MenuePunkt | false | undefined | null> = [
       z.klickbar && { key: 'tab', gruppe: g.ansehen, symbol: 'extern', inhalt: t('ablage.dokumente.in-neuem-tab-oeffnen'), tu: () => { window.open(z.sicht!.url, '_blank', 'noopener'); } },
+      !z.auf && { key: 'ueber', gruppe: g.ansehen, symbol: 'info', inhalt: t('ablage.dokumente.ueber.titel'), tu: () => setUeberOffen(ueberOffen === x.id ? undefined : x.id) },
       s?.stand === 'fertig' && { key: 'text', gruppe: g.ansehen, symbol: 'dokument', inhalt: text?.id === x.id ? t('ablage.dokumente.text-ausblenden') : t('ablage.dokumente.text-anzeigen'), tu: () => zeigeText(x.id) },
       ...(!mitnehmen
         ? [{ key: 'laden', gruppe: g.laden, symbol: 'herunterladen' as const, inhalt: t('ablage.dokumente.herunterladen'), gesperrt: t('mappen.mitnehmen.grund'), tu: () => {} }]
@@ -462,7 +465,7 @@ export function Dokumente({ register, dokumente: roh, neue, entfernt, hinzufuege
                 const sicht = ansichtVon(x, original.has(x.id));
                 const klickbar = !weg && (!!sicht || !!ansichtVon(x, false));
                 const s = standVon(x);
-                const menuePunkte = weg ? [] : punkte(x, { anlagen, ziele, sicht, klickbar: !!sicht });
+                const menuePunkte = weg ? [] : punkte(x, { anlagen, ziele, sicht, klickbar: !!sicht, auf });
                 return (
                   <li key={x.id} ref={auf ? offenRef : undefined} className={`${auf ? 'an' : ''} ${weg ? 'weg' : ''} ${klickbar ? 'klickbar' : ''} ${gewaehlt.has(x.id) && !weg ? 'gewaehlt' : ''}`}
                     onClick={(e) => zeilenKlick(x, e)}>
@@ -539,6 +542,10 @@ export function Dokumente({ register, dokumente: roh, neue, entfernt, hinzufuege
                       text={() => void zeigeText(x.id)} neu={nurLesen ? undefined : () => void erneut(x.id)}
                       archivnummer={!nurLesen && neuLaden ? () => setAsn({ id: x.id, wert: x.archivnummer ?? '' }) : undefined}
                       versionen={() => setVersionenOffen(versionenOffen === x.id ? undefined : x.id)} />)}
+                    {!auf && !weg && ueberOffen === x.id && <UeberDokument x={x} s={s} versioniert={versioniert} textOffen={text?.id === x.id}
+                      text={() => void zeigeText(x.id)} neu={nurLesen ? undefined : () => void erneut(x.id)}
+                      archivnummer={!nurLesen && neuLaden ? () => setAsn({ id: x.id, wert: x.archivnummer ?? '' }) : undefined}
+                      versionen={() => setVersionenOffen(versionenOffen === x.id ? undefined : x.id)} />}
                   </li>
                 );
               })}

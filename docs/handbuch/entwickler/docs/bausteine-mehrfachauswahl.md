@@ -2,6 +2,8 @@
 
 `Mehrfachauswahl` (#1211; vorher in `web/src/ablage/`) wählt mehrere Einträge: oben ein Suchfeld mit Lupe und Vorschlägen, darunter das Gewählte, jeder Eintrag mit **Entfernen**. So wählt man mehrere Mappen in einem Verweisfeld oder die Mappentypen der erweiterten Suche.
 
+![Bereich „Mehrfachauswahl“ der Musterseite: Suchfeld und gewählte Einträge](bilder/muster-mehrfachauswahl.png){ loading=lazy }
+
 | Angabe | Wofür |
 | --- | --- |
 | `name` | Name der Liste der gewählten Einträge und der Vorschläge (für Bildschirmleser) |
@@ -16,5 +18,7 @@
 - **Entfernen** ist ein leiser Knopf (Art Link), nicht rot: Das Feld ändert sich erst beim Speichern (Leitsatz 5).
 - **Am Handy** sind Suchfeld, Vorschläge und „Entfernen“ mindestens 44 px hoch.
 - Die Musterseite zeigt den Baustein im Bereich **Mehrfachauswahl**.
+
+![Bereich „Mehrfachauswahl“ dunkel](bilder/muster-mehrfachauswahl-dunkel.png){ loading=lazy }
 
 Code: `web/src/bausteine/mehrfachauswahl/`.
