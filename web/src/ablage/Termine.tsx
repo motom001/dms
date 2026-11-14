@@ -155,11 +155,11 @@ export function TermineSicht({ offen, a }: { offen?: string; a: AnsichtDaten }) 
       <Listenkopf className="ka-kopf" titel={t('termine.titel')} hilfe="ablage.eingang" beschreibung={t('termine.beschreibung')} />
       <div className="ka-leiste">
         <ErledigenUmschalter a={a} />
-        <Knopf groesse="klein" className="ka-heute" onClick={zuHeute}>{t('termine.heute')}</Knopf>
+        <Knopf className="ka-heute" onClick={zuHeute}>{t('termine.heute')}</Knopf>
         <div className="ka-blaettern">
-          <Knopf groesse="klein" className="ka-pfeil" onClick={() => blaettern(-1)} nurSymbol={t.frei(`termine.zurueck.${ansicht}`)}><Symbol name="pfeil-links" /></Knopf>
+          <Knopf className="ka-pfeil" onClick={() => blaettern(-1)} nurSymbol={t.frei(`termine.zurueck.${ansicht}`)}><Symbol name="pfeil-links" /></Knopf>
           <h2 className="ka-zeitraum" aria-live="polite">{ansicht === 'jahr' ? jahr : monatJahr(monat)}</h2>
-          <Knopf groesse="klein" className="ka-pfeil" onClick={() => blaettern(1)} nurSymbol={t.frei(`termine.weiter.${ansicht}`)}><Symbol name="pfeil-rechts" /></Knopf>
+          <Knopf className="ka-pfeil" onClick={() => blaettern(1)} nurSymbol={t.frei(`termine.weiter.${ansicht}`)}><Symbol name="pfeil-rechts" /></Knopf>
         </div>
         <HakenFeld className="ka-favoriten" beschriftung={t('termine.nur-favoriten')}><input type="checkbox" checked={favoriten} onChange={(e) => setzeFavoriten(e.target.checked)} /></HakenFeld>
       </div>
