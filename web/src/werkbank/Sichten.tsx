@@ -2,8 +2,8 @@ import { istTeiltyp } from '../../../shared/src/teile';
 import { SprachText } from '../einrichtung/Beschriftung';
 import { optionText, typName } from '../../../shared/src/beschriftung';
 import { useEffect, useMemo, useState } from 'react';
-import { Ansage, useZiehen, ziehTasten, type Ort } from '../ziehen';
-import { einzigesZiel, SYSTEMSPALTEN, istSystemspalte, zieleVon, type Feld, type Mappe, type Mappentyp } from '../../../shared/src/model';
+import { Ansage, useZiehen, Ziehgriff, type Ort } from '../ziehen';
+import { einzigesZiel, SYSTEMSPALTEN, istSystemspalte, zieleVon, type Feld as FeldDef, type Mappe, type Mappentyp } from '../../../shared/src/model';
 import {
   bedingungsfelder, bedingungsProblem, beschreibeBedingung, DYNAMISCH, EINHEITEN, gemeinsameTrefferlisten, kinderVon, mitNachkommen, OPERATOREN, OPERATOREN_JE_ART, operatorenFuer, spaltenDerSicht, trefferlistenProblem, wirksameTypen, typenDerSicht, zeigtAlleTypen, ALLE_TYPEN,
   ZAEHLVERGLEICHE, auswahlProbleme, OPS_EIGENES_FELD, passendeEigeneFelder, type Bedingung, type Bedingungsfeld, type Feldbedingung, type Einheit, type Operator, type Sicht, type SichtDaten, type WertAngabe, type Zaehlvergleich,
@@ -20,10 +20,10 @@ import { Listenkopf } from '../Listenkopf';
 import { elternkette, SichtBerechtigungen, SichtTestlauf } from './SichtRechte';
 import { sichtRegelProblem, sichtRegelwerkVon } from '../../../shared/src/sichtrechte';
 import { ANSICHT_SYMBOLE } from '../../../shared/src/ansichtsymbole';
-import { AnsichtSymbol } from '../Symbol';
+import { AnsichtSymbol, Symbol } from '../Symbol';
 import { t, tn } from '../sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
-import { GeloeschteEintraege, Bereich, Fassungen, FeldGruppe, Fundstellen, Hervorgehoben, KeineTreffer, KnopfLink, ListenSuche, PaketChip, PaketFilter, Suchfeld, useBereiche, useListenSuche, ZeitraumEingabe, type Klappe, type ZeitraumRoh } from '../bausteine';
+import { GeloeschteEintraege, Bereich, Fassungen, Feld, FeldGruppe, Fundstellen, HakenFeld, Hervorgehoben, KeineTreffer, Knopf, KnopfLink, ListenSuche, PaketChip, PaketFilter, Suchfeld, useBereiche, useListenSuche, ZeitraumEingabe, type Klappe, type ZeitraumRoh } from '../bausteine';
 import { paketHerkunft, paketVonSicht, paketWahl, quellenSicht } from './listensuche';
 import type { InstalliertesPaket } from '../../../shared/src/pakete';
 import type { Zeitraumeinheit } from '../../../shared/src/feldarten';
@@ -113,7 +113,7 @@ export function SichtenListe({ offen, pakete = [] }: { offen?: string; pakete?: 
         <KnopfLink to="/werkbank/sichten/neu" art="anlegen" groesse="klein">{t('werkbank.sichten.neu')}</KnopfLink>
       </Listenkopf>
       {fehler && <div className="hinweis schlecht"><p>{fehler}</p></div>}
-      {hinweis && <div className="hinweis info"><p>{hinweis}</p><button type="button" className="textknopf klein" onClick={() => setHinweis(undefined)}>{t('werkbank.sichten.ausblenden')}</button></div>}
+      {hinweis && <div className="hinweis info"><p>{hinweis}</p><Knopf art="link" groesse="klein" onClick={() => setHinweis(undefined)}>{t('werkbank.sichten.ausblenden')}</Knopf></div>}
       <Ansage text={ansage} />
       {alleZeilen.length > 0 && (
         <ListenSuche wert={such.eingabe} setze={such.setEingabe} beschriftung={t('werkbank.listensuche.sichten.beschriftung')} platzhalter={t('werkbank.listensuche.sichten.platzhalter')} anker="werkbank.sichten.suche"
@@ -152,7 +152,7 @@ export function SichtenListe({ offen, pakete = [] }: { offen?: string; pakete?: 
               if (such.aktiv) return <li key={s.id}>{inhalt}</li>;
               return (
                 <li key={s.id} {...e} className={`ziehbar ${e.className}`} style={{ paddingLeft: tiefe * 16 }}>
-                  <button {...z.griff(s.id, s.name)} onKeyDown={(ev) => ziehTasten(ev, tasten(s))}><span aria-hidden="true">⠿</span></button>
+                  <Ziehgriff griff={z.griff(s.id, s.name)} tasten={tasten(s)} />
                   {inhalt}
                 </li>
               );
@@ -267,7 +267,7 @@ export function SichtEditor({ id }: { id: string }) {
       <div className="seitenkopf"><div>
         <p className="ueber">{t('werkbank.sichten.ansicht')}</p>
         <h1>{e.name || (neu ? t('werkbank.sichten.neue-ansicht') : t('werkbank.sichten.ohne-namen'))}</h1>
-        {!neu && <p className="leise"><Link to={`/ablage/${id}`} className="verweis">{t('werkbank.sichten.in-der-ablage-oeffnen')}</Link></p>}
+        {!neu && <p className="leise"><Link to={`/ablage/${id}`} className="verweis tippziel">{t('werkbank.sichten.in-der-ablage-oeffnen')}</Link></p>}
       </div></div>
 
       {b.leiste(hatFehler, t('werkbank.sichten.bereiche-der-ansicht'))}
@@ -276,24 +276,22 @@ export function SichtEditor({ id }: { id: string }) {
         kurz={e.elternId ? t('werkbank.sichten.unter-2', { wert: d.sicht(e.elternId)?.name ?? '…' }) : t('werkbank.sichten.oberste-ebene')}>
         <div className="raster">
           {/* Name und Beschreibung je Sprache (#728). */}
-          <div className="eigenschaft"><span><label htmlFor="sicht-name">{t('werkbank.sichten.name')}</label></span>
-            <SprachText id="sicht-name" wert={e.name} placeholder={t('werkbank.sichten.z-b-vertraege-mit')} autoFocus={neu} teil="name" beschriftungen={e.beschriftungen ?? undefined}
-              setzeWert={(name) => setE({ ...e, name })} setzeBeschriftungen={(b) => setE({ ...e, beschriftungen: (b ?? null) as SichtDaten['beschriftungen'] })} /></div>
-          <label className="eigenschaft"><span>{tn('werkbank.sichten.liegt-unter', { klein: <small>{t('werkbank.sichten.elternsicht-im-baum')}</small> })}</span>
+          <SprachText beschriftung={t('werkbank.sichten.name')} id="sicht-name" wert={e.name} placeholder={t('werkbank.sichten.z-b-vertraege-mit')} autoFocus={neu} teil="name" beschriftungen={e.beschriftungen ?? undefined}
+            setzeWert={(name) => setE({ ...e, name })} setzeBeschriftungen={(b) => setE({ ...e, beschriftungen: (b ?? null) as SichtDaten['beschriftungen'] })} />
+          <Feld beschriftung={t('werkbank.sichten.liegt-unter')} hinweis={t('werkbank.sichten.elternsicht-im-baum')}>
             <select value={e.elternId ?? ''} onChange={(x) => setE({ ...e, elternId: x.target.value || null })}>
               <option value="">{t('werkbank.sichten.oberste-ebene-2')}</option>
               {elternWahl.map(({ s, tiefe }) => <option key={s.id} value={s.id}>{'  '.repeat(tiefe)}{s.name}</option>)}
-            </select></label>
+            </select></Feld>
         </div>
-        <div className="eigenschaft"><span><label htmlFor="sicht-beschreibung">{tn('werkbank.sichten.beschreibung', { klein: <small>{t('werkbank.sichten.steht-in-der-ablage')}</small> })}</label></span>
-          <SprachText id="sicht-beschreibung" wert={e.beschreibung} teil="beschreibung" beschriftungen={e.beschriftungen ?? undefined}
-            setzeWert={(beschreibung) => setE({ ...e, beschreibung })} setzeBeschriftungen={(b) => setE({ ...e, beschriftungen: (b ?? null) as SichtDaten['beschriftungen'] })} /></div>
+        <SprachText beschriftung={t('werkbank.sichten.beschreibung')} hinweis={t('werkbank.sichten.steht-in-der-ablage')} optional id="sicht-beschreibung" wert={e.beschreibung} teil="beschreibung" beschriftungen={e.beschriftungen ?? undefined}
+          setzeWert={(beschreibung) => setE({ ...e, beschreibung })} setzeBeschriftungen={(b) => setE({ ...e, beschriftungen: (b ?? null) as SichtDaten['beschriftungen'] })} />
         <SymbolWahl wert={e.symbol ?? null} setze={(symbol) => setE({ ...e, symbol })} />
         {!neu && geschwister.length > 1 && (
           <div className="knoepfe">
             <span className="leise klein">{t('werkbank.sichten.reihenfolge-auf-dieser-ebene', { wert: stelle + 1, geschwister: geschwister.length })}</span>
-            <button type="button" className="knopf klein" disabled={stelle <= 0 || geaendert} title={geaendert ? t('werkbank.sichten.erst-speichern') : undefined} onClick={() => void verschiebe(-1)}>{t('werkbank.sichten.nach-oben')}</button>
-            <button type="button" className="knopf klein" disabled={stelle >= geschwister.length - 1 || geaendert} title={geaendert ? t('werkbank.sichten.erst-speichern') : undefined} onClick={() => void verschiebe(1)}>{t('werkbank.sichten.nach-unten')}</button>
+            <Knopf symbol="sortiert-auf" gesperrt={geaendert ? t('werkbank.sichten.erst-speichern') : stelle <= 0} onClick={() => verschiebe(-1)}>{t('werkbank.sichten.nach-oben')}</Knopf>
+            <Knopf symbol="sortiert-ab" gesperrt={geaendert ? t('werkbank.sichten.erst-speichern') : stelle >= geschwister.length - 1} onClick={() => verschiebe(1)}>{t('werkbank.sichten.nach-unten')}</Knopf>
           </div>
         )}
         {!neu && vorhanden && e.elternId !== vorhanden.elternId && (
@@ -304,14 +302,15 @@ export function SichtEditor({ id }: { id: string }) {
       <Bereich id="mappentypen" titel={t('werkbank.sichten.mappentypen')} klappe={klappe('mappentypen')}
         kurz={alleTypen ? t('werkbank.sichten.alle-mappentypen') : eigeneTypen.length ? `${eigeneTypen.length}: ${eigeneTypen.map((mappentyp) => mappentyp.name).join(', ')}` : t('werkbank.sichten.nur-zum-gruppieren')}
         beschreibung={<>{t('werkbank.sichten.mappen-dieser-mappentypen-zeigt', { wert: untersichten > 0 ? t('werkbank.sichten.dazu-kommen-die-mappen', { anzahl: untersichten }) : t('werkbank.sichten.ohne-mappentyp-dient-sie') })}</>}>
-        <label className="haken"><input type="checkbox" checked={alleTypen} onChange={(x) => setE((y) => ({ ...y, typen: x.target.checked ? [ALLE_TYPEN] : [] }))} />
-          <span>{tn('werkbank.sichten.alle-mappentypen-2', { span: <span className="leise klein">{t('werkbank.sichten.auch-kuenftige-z-b')}</span> })}</span></label>
-        <div className="typwahl">
+        <HakenFeld beschriftung={t('werkbank.sichten.alle-mappentypen-2')} hinweis={t('werkbank.sichten.auch-kuenftige-z-b')}>
+          <input type="checkbox" checked={alleTypen} onChange={(x) => setE((y) => ({ ...y, typen: x.target.checked ? [ALLE_TYPEN] : [] }))} />
+        </HakenFeld>
+        <FeldGruppe beschriftung={t('werkbank.sichten.typen-gewaehlt')} beschriftungVerbergen className="typwahl">
           {/* Teile (#1031) stehen in keiner Ansicht – nur an ihrer übergeordneten Mappe. */}
           {d.typen.filter((mappentyp) => !istTeiltyp(mappentyp) || e.typen.includes(mappentyp.id)).map((mappentyp) => (
             <label key={mappentyp.id} className="haken"><input type="checkbox" disabled={alleTypen} checked={alleTypen || e.typen.includes(mappentyp.id)} onChange={(x) => setzeTyp(mappentyp.id, x.target.checked)} /><span>{mappentyp.name}</span></label>
           ))}
-        </div>
+        </FeldGruppe>
       </Bereich>
 
       <TrefferlistenWahl e={e} setE={setE} typen={wirksam} klappe={klappe('trefferliste')} />
@@ -352,10 +351,10 @@ function SymbolWahl({ wert, setze }: { wert: string | null; setze(n: string | nu
     <div className="eigenschaft symbolwahl">
       <span id="symbolwahl-t">{t('werkbank.sicht.symbol')} <small>{t('werkbank.sicht.symbol.hinweis')}</small></span>
       <div className="knoepfe">
-        <button type="button" className="knopf klein" aria-expanded={offen} aria-labelledby="symbolwahl-t symbolwahl-w" onClick={() => setOffen(!offen)}>
-          <span id="symbolwahl-w">{wert ? <><AnsichtSymbol name={wert} /> {titel ?? wert}</> : t('werkbank.sicht.symbol.ohne')}</span> <span aria-hidden="true">▾</span>
-        </button>
-        {wert && <button type="button" className="textknopf klein" onClick={() => setze(null)}>{t('werkbank.sicht.symbol.entfernen')}</button>}
+        <Knopf aria-expanded={offen} aria-labelledby="symbolwahl-t symbolwahl-w" onClick={() => setOffen(!offen)}>
+          <span id="symbolwahl-w">{wert ? <><AnsichtSymbol name={wert} /> {titel ?? wert}</> : t('werkbank.sicht.symbol.ohne')}</span> <Symbol name="pfeil-unten" />
+        </Knopf>
+        {wert && <Knopf art="link" symbol="schliessen" onClick={() => setze(null)}>{t('werkbank.sicht.symbol.entfernen')}</Knopf>}
       </div>
       {offen && (
         <div className="symbolraster-rahmen">
@@ -368,8 +367,8 @@ function SymbolWahl({ wert, setze }: { wert: string | null; setze(n: string | nu
                 <legend className="leise klein">{g.gruppe}</legend>
                 <div className="symbolraster">
                   {liste.map((x) => (
-                    <button key={x.name} type="button" className={`symbolknopf${wert === x.name ? ' an' : ''}`} aria-pressed={wert === x.name} title={x.titel} aria-label={x.titel}
-                      onClick={() => { setze(x.name); setOffen(false); }}><AnsichtSymbol name={x.name} /></button>
+                    <Knopf key={x.name} art="link" className={`symbolknopf${wert === x.name ? ' an' : ''}`} aria-pressed={wert === x.name} nurSymbol={x.titel}
+                      onClick={() => { setze(x.name); setOffen(false); }}><AnsichtSymbol name={x.name} /></Knopf>
                   ))}
                 </div>
               </fieldset>
@@ -394,12 +393,12 @@ function TrefferlistenWahl({ e, setE, typen, klappe }: { e: SichtDaten; setE: (f
         ? <p className="leise">{t('werkbank.sichten.ohne-mappentypen-zeigt-die')}</p>
         : <>
             <p className="leise">{tn('werkbank.sichten.welche-spalten-die-liste', { wert: typen.length > 1 && t('werkbank.sichten.bei-mehreren-mappentypen-gibt') })}</p>
-            <label className="eigenschaft schmal"><span>{t('werkbank.sichten.trefferliste')}</span>
+            <Feld beschriftung={t('werkbank.sichten.trefferliste')} className="schmal">
               <select value={e.trefferliste ?? ''} onChange={(x) => setE((y) => ({ ...y, trefferliste: x.target.value || null }))}>
                 <option value="">{standard ? t('werkbank.sichten.standard', { name: standard.name }) : t('werkbank.sichten.standard-systemspalten')}</option>
                 {problem && <option value={e.trefferliste!}>{tn('werkbank.sichten.fehlt', { trefferliste: e.trefferliste })}</option>}
                 {listen.map((l) => <option key={l.key} value={l.key}>{l.name}{l.standard ? t('werkbank.sichten.standard-3') : ''}</option>)}
-              </select></label>
+              </select></Feld>
             {problem
               ? <p className="fehlertext klein">{problem}</p>
               : <p className="leise klein">{t('werkbank.sichten.spalten')}{' '}{wahl.spalten.length ? wahl.spalten.map(name).join(', ') : t('werkbank.sichten.keine-einfache-liste-mit')}</p>}
@@ -472,7 +471,7 @@ function Bedingungen({ e, setE, typen, klappe }: { e: SichtDaten; setE: (f: (x: 
                   return (
                     <li key={i} className={problem ? 'fehlerhaft' : ''}>
                       <div className="bedingungszeile">
-                        <select aria-label={t('werkbank.sichten.feld-oder-register')} value={ziel ? zielKey(ziel) : ''} onChange={(x) => { const z = ziele.find((y) => zielKey(y) === x.target.value); if (z) setze(i, neu(z)); }}>
+                        <Feld beschriftung={t('werkbank.sichten.feld-oder-register')} beschriftungVerbergen><select value={ziel ? zielKey(ziel) : ''} onChange={(x) => { const z = ziele.find((y) => zielKey(y) === x.target.value); if (z) setze(i, neu(z)); }}>
                           {!ziel && <option value="">{t('werkbank.sichten.fehlt-2', { wert: b.art === 'feld' ? b.feld : 'register' in b ? b.register : b.art })}</option>}
                           <optgroup label={t('werkbank.sichten.felder')}>{ziele.filter((z) => z.wert === 'feld' && !z.feld.key.startsWith('_') && (!aus.has(z.feld.key) || zielKey(z) === bKey(b))).map((z) => <option key={zielKey(z)} value={zielKey(z)}>{(z as { feld: Bedingungsfeld }).feld.label}</option>)}</optgroup>
                           <optgroup label={t('werkbank.sichten.systemwerte')}>{ziele.filter((z) => z.wert === 'feld' && z.feld.key.startsWith('_')).map((z) => <option key={zielKey(z)} value={zielKey(z)}>{(z as { feld: Bedingungsfeld }).feld.label}</option>)}</optgroup>
@@ -480,17 +479,17 @@ function Bedingungen({ e, setE, typen, klappe }: { e: SichtDaten; setE: (f: (x: 
                           <optgroup label={t('werkbank.sichten.fristen')}><option value="frist">{ZIEL_GESAMT.frist}</option></optgroup>
                           <optgroup label={t('werkbank.sichten.persoenlich')}><option value="favorit">{ZIEL_GESAMT.favorit}</option></optgroup>
                           <optgroup label={t('werkbank.sichten.ablage')}><option value="merkmal">{ZIEL_GESAMT.merkmal}</option><option value="merkmalNicht">{ZIEL_GESAMT.merkmalNicht}</option></optgroup>
-                        </select>
+                        </select></Feld>
                         {b.art === 'feld' && ziel?.wert === 'feld'
                           ? <FeldBedingung b={b} feld={ziel.feld} setze={(n) => setze(i, n)} titel={titel} merke={merke} />
                           : b.art === 'frist' ? <FristBedingung b={b} typen={typen} setze={(n) => setze(i, n)} />
                           : b.art !== 'feld' && b.art !== 'favorit' && b.art !== 'merkmal' && <>
-                              <select aria-label={t('werkbank.sichten.vergleich')} value={b.vergleich} onChange={(x) => setze(i, { ...b, vergleich: x.target.value as Zaehlvergleich })}>
+                              <Feld beschriftung={t('werkbank.sichten.vergleich')} beschriftungVerbergen><select value={b.vergleich} onChange={(x) => setze(i, { ...b, vergleich: x.target.value as Zaehlvergleich })}>
                                 {Object.entries(ZAEHLVERGLEICHE).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-                              </select>
-                              <input aria-label={t('werkbank.sichten.anzahl')} type="number" min={0} className="kurz" value={b.anzahl} onChange={(x) => setze(i, { ...b, anzahl: Math.max(0, Math.trunc(Number(x.target.value) || 0)) })} />
+                              </select></Feld>
+                              <Feld beschriftung={t('werkbank.sichten.anzahl')} beschriftungVerbergen><input type="number" min={0} className="kurz" value={b.anzahl} onChange={(x) => setze(i, { ...b, anzahl: Math.max(0, Math.trunc(Number(x.target.value) || 0)) })} /></Feld>
                             </>}
-                        <button type="button" className="textknopf gefahr klein" onClick={() => weg(i)}>{t('werkbank.sichten.bedingung-entfernen')}</button>
+                        <Knopf art="link" groesse="klein" symbol="schliessen" onClick={() => weg(i)}>{t('werkbank.sichten.bedingung-entfernen')}</Knopf>
                       </div>
                       <p className={problem ? 'fehlertext klein' : 'leise klein'}>{problem ?? beschreibeBedingung(b, typen, (mid) => titel[mid] ?? d.person(mid), undefined, (id) => d.typ(id)?.name)}</p>
                     </li>
@@ -498,7 +497,7 @@ function Bedingungen({ e, setE, typen, klappe }: { e: SichtDaten; setE: (f: (x: 
                 })}
               </ol>
             )}
-            <div className="knoepfe"><button type="button" className="knopf klein" onClick={() => setE((x) => ({ ...x, bedingungen: [...x.bedingungen, neu(ziele.find((z) => z.wert !== 'feld' || !aus.has(z.feld.key)) ?? ziele[0])] }))}>{t('werkbank.sichten.bedingung')}</button></div>
+            <div className="knoepfe"><Knopf onClick={() => setE((x) => ({ ...x, bedingungen: [...x.bedingungen, neu(ziele.find((z) => z.wert !== 'feld' || !aus.has(z.feld.key)) ?? ziele[0])] }))}>{t('werkbank.sichten.bedingung')}</Knopf></div>
           </>}
     </Bereich>
   );
@@ -509,15 +508,15 @@ function FristBedingung({ b, typen, setze }: { b: Extract<Bedingung, { art: 'fri
   const datumsfelder = typen.length ? typen[0].felder.filter((f) => f.typ === 'datum' && typen.every((mappentyp) => mappentyp.felder.some((g) => g.key === f.key && g.typ === 'datum'))) : [];
   return (
     <span className="wertgruppe umbruch">
-      <select aria-label={t('werkbank.sichten.datumsfeld')} value={b.feld ?? ''} onChange={(x) => setze({ ...b, feld: x.target.value || null })}>
+      <Feld beschriftung={t('werkbank.sichten.datumsfeld')} beschriftungVerbergen><select value={b.feld ?? ''} onChange={(x) => setze({ ...b, feld: x.target.value || null })}>
         <option value="">{t('werkbank.sichten.alle-datumsfelder-die-eine')}</option>
         {datumsfelder.map((f) => <option key={f.key} value={f.key}>{f.label}{f.frist ? t('werkbank.sichten.erinnert') : ''}</option>)}
         {b.feld && !datumsfelder.some((f) => f.key === b.feld) && <option value={b.feld}>{t('werkbank.sichten.fehlt-3', { feld: b.feld })}</option>}
-      </select>
+      </select></Feld>
       <span className="leise">{t('werkbank.sichten.in-den-naechsten')}</span>
-      <input aria-label={t('werkbank.sichten.tage')} type="number" min={0} max={3650} className="kurz" value={b.tage} onChange={(x) => setze({ ...b, tage: Math.max(0, Math.min(3650, Math.trunc(Number(x.target.value) || 0))) })} />
+      <Feld beschriftung={t('werkbank.sichten.tage')} beschriftungVerbergen><input type="number" min={0} max={3650} className="kurz" value={b.tage} onChange={(x) => setze({ ...b, tage: Math.max(0, Math.min(3650, Math.trunc(Number(x.target.value) || 0))) })} /></Feld>
       <span className="leise">{t('werkbank.sichten.tagen')}</span>
-      <label className="haken klein"><input type="checkbox" checked={!!b.nurMeine} onChange={(x) => setze({ ...b, nurMeine: x.target.checked || undefined })} /><span>{t('werkbank.sichten.nur-meine')}</span></label>
+      <HakenFeld beschriftung={t('werkbank.sichten.nur-meine')} className="klein"><input type="checkbox" checked={!!b.nurMeine} onChange={(x) => setze({ ...b, nurMeine: x.target.checked || undefined })} /></HakenFeld>
     </span>
   );
 }
@@ -554,9 +553,9 @@ export function FeldBedingung({ b, feld, setze, titel, merke }: {
 
   return (
     <>
-      <select aria-label={t('werkbank.sichten.vergleich')} value={b.op} onChange={(x) => wechsleOp(x.target.value as Operator)}>
+      <Feld beschriftung={t('werkbank.sichten.vergleich')} beschriftungVerbergen><select value={b.op} onChange={(x) => wechsleOp(x.target.value as Operator)}>
         {ops.map((o) => <option key={o} value={o}>{OPERATOREN[o]}</option>)}
-      </select>
+      </select></Feld>
       {!ohneWert && b.op === 'imZeitraum' && <Zeitraum w={b.wert} setze={(w) => setze({ ...b, wert: w })} />}
       {!ohneWert && b.op === 'einerVon' && <Auswahl feld={feld} w={b.wert} setze={(w) => setze({ ...b, wert: w })} />}
       {!ohneWert && b.op === 'zeigtAuf' && <Verweisziel feld={feld} w={b.wert} setze={(w) => setze({ ...b, wert: w })} titel={titel} merke={merke} system={zielSystem(feld)} />}
@@ -596,18 +595,18 @@ function Einzelwert({ feld, w, setze }: { feld: Bedingungsfeld; w?: WertAngabe; 
     const art: WertArt = w?.art === 'fest' ? 'fest' : 'heute';
     return (
       <span className="wertgruppe">
-        <select aria-label={t('werkbank.sichten.art-des-werts')} value={art} onChange={(x) => setze(x.target.value === 'fest' ? { art: 'fest', wert: new Date().toISOString().slice(0, 10) } : { art: 'heute', versatz: 0, einheit: 'tage' })}>
+        <Feld beschriftung={t('werkbank.sichten.art-des-werts')} beschriftungVerbergen><select value={art} onChange={(x) => setze(x.target.value === 'fest' ? { art: 'fest', wert: new Date().toISOString().slice(0, 10) } : { art: 'heute', versatz: 0, einheit: 'tage' })}>
           <option value="heute">{DYNAMISCH.heute}</option><option value="fest">{t('werkbank.sichten.festes-datum')}</option>
-        </select>
+        </select></Feld>
         {w?.art === 'fest'
-          ? <input aria-label={t('werkbank.sichten.datum')} type="date" value={String(w.wert)} onChange={(x) => setze({ art: 'fest', wert: x.target.value })} />
+          ? <Feld beschriftung={t('werkbank.sichten.datum')} beschriftungVerbergen><input type="date" value={String(w.wert)} onChange={(x) => setze({ art: 'fest', wert: x.target.value })} /></Feld>
           : <Versatz w={w?.art === 'heute' ? w : { art: 'heute' }} setze={setze} einheiten />}
       </span>
     );
   }
   const v = w?.art === 'fest' ? w.wert : '';
-  return <input aria-label={t('werkbank.sichten.wert')} className={zahl ? 'kurz' : ''} inputMode={zahl ? 'decimal' : undefined} value={String(v)}
-    onChange={(x) => setze({ art: 'fest', wert: zahl ? (x.target.value === '' ? '' : Number(x.target.value.replace(',', '.'))) as number : x.target.value })} />;
+  return <Feld beschriftung={t('werkbank.sichten.wert')} beschriftungVerbergen><input className={zahl ? 'kurz' : ''} inputMode={zahl ? 'decimal' : undefined} value={String(v)}
+    onChange={(x) => setze({ art: 'fest', wert: zahl ? (x.target.value === '' ? '' : Number(x.target.value.replace(',', '.'))) as number : x.target.value })} /></Feld>;
 }
 
 const ISO_EINHEIT: Record<Zeitraumeinheit, string> = { tage: 'D', wochen: 'W', monate: 'M', jahre: 'Y' };
@@ -622,14 +621,14 @@ function Versatz({ w, setze, einheiten }: { w: WertAngabe; setze: (w: WertAngabe
   const versatz = 'versatz' in w ? Number(w.versatz) || 0 : 0;
   return (
     <>
-      <select aria-label={t('werkbank.sichten.richtung')} value={versatz < 0 ? '-' : '+'} onChange={(x) => setze({ ...w, versatz: Math.abs(versatz) * (x.target.value === '-' ? -1 : 1) } as WertAngabe)}>
+      <Feld beschriftung={t('werkbank.sichten.richtung')} beschriftungVerbergen><select value={versatz < 0 ? '-' : '+'} onChange={(x) => setze({ ...w, versatz: Math.abs(versatz) * (x.target.value === '-' ? -1 : 1) } as WertAngabe)}>
         <option value="+">+</option><option value="-">−</option>
-      </select>
-      <input aria-label={t('werkbank.sichten.anzahl')} type="number" min={0} className="kurz" value={Math.abs(versatz)} onChange={(x) => setze({ ...w, versatz: Math.abs(Math.trunc(Number(x.target.value) || 0)) * (versatz < 0 ? -1 : 1) } as WertAngabe)} />
+      </select></Feld>
+      <Feld beschriftung={t('werkbank.sichten.anzahl')} beschriftungVerbergen><input type="number" min={0} className="kurz" value={Math.abs(versatz)} onChange={(x) => setze({ ...w, versatz: Math.abs(Math.trunc(Number(x.target.value) || 0)) * (versatz < 0 ? -1 : 1) } as WertAngabe)} /></Feld>
       {einheiten && w.art === 'heute' && (
-        <select aria-label={t('werkbank.sichten.einheit')} value={w.einheit ?? 'tage'} onChange={(x) => setze({ ...w, einheit: x.target.value as Einheit })}>
+        <Feld beschriftung={t('werkbank.sichten.einheit')} beschriftungVerbergen><select value={w.einheit ?? 'tage'} onChange={(x) => setze({ ...w, einheit: x.target.value as Einheit })}>
           {Object.entries(EINHEITEN).map(([k, eintrag]) => <option key={k} value={k}>{eintrag}</option>)}
-        </select>
+        </select></Feld>
       )}
     </>
   );
@@ -640,9 +639,9 @@ function Zeitraum({ w, setze }: { w?: WertAngabe; setze: (w: WertAngabe) => void
   const aktuell: WertAngabe = w && (w.art === 'jahr' || w.art === 'monat') ? w : { art: 'jahr', versatz: 0 };
   return (
     <span className="wertgruppe">
-      <select aria-label={t('werkbank.sichten.zeitraum')} value={art} onChange={(x) => setze({ art: x.target.value as 'jahr' | 'monat', versatz: 'versatz' in aktuell ? aktuell.versatz : 0 })}>
+      <Feld beschriftung={t('werkbank.sichten.zeitraum')} beschriftungVerbergen><select value={art} onChange={(x) => setze({ art: x.target.value as 'jahr' | 'monat', versatz: 'versatz' in aktuell ? aktuell.versatz : 0 })}>
         <option value="jahr">{t('werkbank.sichten.jahr')}</option><option value="monat">{t('werkbank.sichten.monat')}</option>
-      </select>
+      </select></Feld>
       <span className="leise klein">{t('werkbank.sichten.aktuell')}</span>
       <Versatz w={aktuell} setze={setze} />
     </span>
@@ -652,12 +651,12 @@ function Zeitraum({ w, setze }: { w?: WertAngabe; setze: (w: WertAngabe) => void
 function Auswahl({ feld, w, setze }: { feld: Bedingungsfeld; w?: WertAngabe; setze: (w: WertAngabe) => void }) {
   const gewaehlt = w?.art === 'fest' && Array.isArray(w.wert) ? w.wert : [];
   return (
-    <span className="wertgruppe umbruch">
+    <FeldGruppe beschriftung={t('werkbank.sichten.wert')} beschriftungVerbergen className="wertgruppe umbruch">
       {(feld.feld?.optionen ?? []).map((o) => (
         <label key={o} className="haken klein"><input type="checkbox" checked={gewaehlt.includes(o)}
           onChange={(x) => setze({ art: 'fest', wert: x.target.checked ? [...gewaehlt, o] : gewaehlt.filter((y) => y !== o) })} /><span>{feld.feld ? optionText(feld.feld, o) : o}</span></label>
       ))}
-    </span>
+    </FeldGruppe>
   );
 }
 
@@ -673,11 +672,11 @@ function Verweisziel({ feld, w, setze, titel, merke, system }: {
   const zielTypen = person ? [d.typen.find((mappentyp) => mappentyp.system === 'benutzer')?.id].filter((x): x is string => !!x) : feld.feld ? zieleVon(feld.feld) : [];
   return (
     <span className="wertgruppe umbruch">
-      <select aria-label={t('werkbank.sichten.ziel')} value={art} onChange={(x) => setze(x.target.value === 'fest' ? { art: 'fest', wert: [] } : { art: x.target.value as 'ich' | 'meineRollen' })}>
+      <Feld beschriftung={t('werkbank.sichten.ziel')} beschriftungVerbergen><select value={art} onChange={(x) => setze(x.target.value === 'fest' ? { art: 'fest', wert: [] } : { art: x.target.value as 'ich' | 'meineRollen' })}>
         <option value="fest">{person ? t('werkbank.sichten.bestimmter-benutzer') : t('werkbank.sichten.bestimmte-mappe')}</option>
         {(person || system === 'benutzer') && <option value="ich">{DYNAMISCH.ich}</option>}
         {!person && system === 'rolle' && <option value="meineRollen">{DYNAMISCH.meineRollen}</option>}
-      </select>
+      </select></Feld>
       {art === 'fest' && zielTypen.length > 0 && <MappenSuche typId={zielTypen} gewaehlt={gewaehlt} titel={titel} merke={merke} setze={(ids) => setze({ art: 'fest', wert: ids })} />}
     </span>
   );
@@ -699,17 +698,19 @@ export function MappenSuche({ typId, gewaehlt, titel, merke, setze }: { /** Ein 
   }, [eingabe, Array.isArray(typId) ? typId.join(',') : typId]); // eslint-disable-line react-hooks/exhaustive-deps -- die Liste der Typen als Text
   return (
     <span className="mappensuche">
-      {gewaehlt.map((x) => <span key={x} className="chip">{titel[x] ?? '…'} <button type="button" className="textknopf klein" aria-label={t('werkbank.sichten.entfernen-2')} onClick={() => setze(gewaehlt.filter((y) => y !== x))}>×</button></span>)}
-      <span className="wahl">
-        <input aria-label={t('werkbank.sichten.mappe-suchen')} placeholder={t('werkbank.sichten.suchen')} value={eingabe} onChange={(x) => setEingabe(x.target.value)} />
-        {treffer.length > 0 && (
-          <span className="wahlliste" role="listbox">
-            {treffer.filter((m) => !gewaehlt.includes(m.id)).map((m) => (
-              <button key={m.id} type="button" onClick={() => { merke(m.id, titelOder(m.titel)); setze([...gewaehlt, m.id]); setEingabe(''); }}>{titelOder(m.titel)}</button>
-            ))}
-          </span>
-        )}
-      </span>
+      {gewaehlt.map((x) => <span key={x} className="chip">{titel[x] ?? '…'} <Knopf art="link" groesse="klein" nurSymbol={t('werkbank.sichten.entfernen-2')} onClick={() => setze(gewaehlt.filter((y) => y !== x))}><Symbol name="schliessen" /></Knopf></span>)}
+      <Feld beschriftung={t('werkbank.sichten.mappe-suchen')} beschriftungVerbergen className="wahl">
+        {(v) => <>
+          <input {...v} placeholder={t('werkbank.sichten.suchen')} value={eingabe} onChange={(x) => setEingabe(x.target.value)} />
+          {treffer.length > 0 && (
+            <span className="wahlliste" role="listbox">
+              {treffer.filter((m) => !gewaehlt.includes(m.id)).map((m) => (
+                <Knopf key={m.id} art="link" onClick={() => { merke(m.id, titelOder(m.titel)); setze([...gewaehlt, m.id]); setEingabe(''); }}>{titelOder(m.titel)}</Knopf>
+              ))}
+            </span>
+          )}
+        </>}
+      </Feld>
     </span>
   );
 }
@@ -722,7 +723,7 @@ export function AuswahlFilter({ ziel, zielTypen, bedingungen, setze, eigeneFelde
   /** Bei mehreren Zieltypen (#1036) ein Bild mit den Feldern, die alle haben, und den Namen; gezählt wird über `zielTypen`. */
   ziel: Mappentyp; zielTypen?: string[]; bedingungen: Feldbedingung[]; setze: (b: Feldbedingung[]) => void;
   /** Werte aus der eigenen Mappe (#173): Felder dieses Typs und das Referenzfeld selbst (kein Kreis). */
-  eigeneFelder?: Feld[]; feldKey?: string;
+  eigeneFelder?: FeldDef[]; feldKey?: string;
 }) {
   const eigeneNamen = Object.fromEntries(eigeneFelder.map((f) => [f.key, f.label]));
   const d = useDaten();
@@ -751,28 +752,28 @@ export function AuswahlFilter({ ziel, zielTypen, bedingungen, setze, eigeneFelde
             return (
               <li key={i} className={problem ? 'fehlerhaft' : ''}>
                 <div className="bedingungszeile">
-                  <select aria-label={t('werkbank.sichten.feld-des-zieltyps')} value={feld ? b.feld : ''} onChange={(x) => { const f = felder.find((y) => y.key === x.target.value); if (f) aendere(i, neu(f)); }}>
+                  <Feld beschriftung={t('werkbank.sichten.feld-des-zieltyps')} beschriftungVerbergen><select value={feld ? b.feld : ''} onChange={(x) => { const f = felder.find((y) => y.key === x.target.value); if (f) aendere(i, neu(f)); }}>
                     {!feld && <option value="">{t('werkbank.sichten.fehlt-4', { feld: b.feld })}</option>}
                     <optgroup label={t('werkbank.sichten.felder')}>{felder.filter((f) => !f.key.startsWith('_')).map((f) => <option key={f.key} value={f.key}>{f.label}</option>)}</optgroup>
                     <optgroup label={t('werkbank.sichten.systemwerte')}>{felder.filter((f) => f.key.startsWith('_')).map((f) => <option key={f.key} value={f.key}>{f.label}</option>)}</optgroup>
-                  </select>
+                  </select></Feld>
                   {feld && (eigen === null
                     ? <FeldBedingung b={b} feld={feld} setze={(n) => aendere(i, n)} titel={titel} merke={merke} />
                     : <>
-                        <select aria-label={t('werkbank.sichten.vergleich')} value={b.op} onChange={(x) => aendere(i, { ...b, op: x.target.value as Operator })}>
+                        <Feld beschriftung={t('werkbank.sichten.vergleich')} beschriftungVerbergen><select value={b.op} onChange={(x) => aendere(i, { ...b, op: x.target.value as Operator })}>
                           {OPERATOREN_JE_ART[feld.art].filter((o) => OPS_EIGENES_FELD.includes(o)).map((o) => <option key={o} value={o}>{OPERATOREN[o]}</option>)}
-                        </select>
-                        <select aria-label={t('werkbank.sichten.feld-dieser-mappe')} value={eigen} onChange={(x) => aendere(i, { ...b, wert: { art: 'eigenesFeld', feld: x.target.value } })}>
+                        </select></Feld>
+                        <Feld beschriftung={t('werkbank.sichten.feld-dieser-mappe')} beschriftungVerbergen><select value={eigen} onChange={(x) => aendere(i, { ...b, wert: { art: 'eigenesFeld', feld: x.target.value } })}>
                           {!moeglich.some((m) => m.key === eigen) && <option value={eigen}>{t('werkbank.sichten.passt-nicht', { wert: eigeneNamen[eigen] ?? eigen })}</option>}
                           {moeglich.map((m) => <option key={m.key} value={m.key}>{t('werkbank.sichten.dieser-mappe', { label: m.label })}</option>)}
-                        </select>
+                        </select></Feld>
                       </>)}
                   {feld && (moeglich.length > 0 || eigen !== null) && (
-                    <label className="haken klein"><input type="checkbox" checked={eigen !== null} onChange={(x) => aendere(i, x.target.checked
+                    <HakenFeld beschriftung={t('werkbank.sichten.wert-aus-dieser-mappe')} className="klein"><input type="checkbox" checked={eigen !== null} onChange={(x) => aendere(i, x.target.checked
                       ? { art: 'feld', feld: b.feld, op: OPS_EIGENES_FELD.includes(b.op) ? b.op : (OPERATOREN_JE_ART[feld.art].find((o) => OPS_EIGENES_FELD.includes(o)) ?? b.op), wert: { art: 'eigenesFeld', feld: moeglich[0]?.key ?? '' } }
-                      : neu(feld))} /><span>{t('werkbank.sichten.wert-aus-dieser-mappe')}</span></label>
+                      : neu(feld))} /></HakenFeld>
                   )}
-                  <button type="button" className="textknopf gefahr klein" onClick={() => setze(bedingungen.filter((_, j) => j !== i))}>{t('werkbank.sichten.entfernen')}</button>
+                  <Knopf art="link" groesse="klein" symbol="schliessen" onClick={() => setze(bedingungen.filter((_, j) => j !== i))}>{t('werkbank.sichten.entfernen')}</Knopf>
                 </div>
                 <p className={problem ? 'fehlertext klein' : 'leise klein'}>{problem ?? beschreibeBedingung(b, [ziel], (mid) => titel[mid] ?? d.person(mid), eigeneNamen, (id) => d.typ(id)?.name)}{eigen && !problem && <span> {' '}{t('werkbank.sichten.ist-dieses-feld-leer')}</span>}</p>
               </li>
@@ -781,7 +782,7 @@ export function AuswahlFilter({ ziel, zielTypen, bedingungen, setze, eigeneFelde
         </ol>
       )}
       <div className="zeile">
-        <button type="button" className="knopf klein" disabled={!felder.length} onClick={() => setze([...bedingungen, neu(felder[0])])}>{t('werkbank.sichten.bedingung')}</button>
+        <Knopf gesperrt={!felder.length} onClick={() => setze([...bedingungen, neu(felder[0])])}>{t('werkbank.sichten.bedingung')}</Knopf>
         {zahl && bedingungen.length > 0 && <span className="leise klein">{t('werkbank.sichten.von-passen', { passen: zahl.passen.toLocaleString(gebietsschema()), gesamt: zahl.gesamt.toLocaleString(gebietsschema()), name: ziel.name })}</span>}
       </div>
     </div>

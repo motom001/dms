@@ -235,8 +235,8 @@ function WortZeilen({ e, gruppen, ausser, doppelt, fehler, setze, schiebe, entfe
               <span className="zeile">
                 <input id={`wort-${x.k}`} type="text" value={x.wort} maxLength={SYNONYM_LAENGE} aria-label={t('suche.gruppen.wort', nr)} aria-invalid={doppelt.includes(i) || undefined}
                   placeholder={i === 0 ? t('suche.gruppen.wort.erstes') : undefined} onChange={(v) => setze(x.k, v.target.value)} />
-                <Knopf art="link" groesse="klein" nurSymbol={t('suche.gruppen.wort.hoch', nr)} gesperrt={i === 0} onClick={() => schiebe(i, -1)}>↑</Knopf>
-                <Knopf art="link" groesse="klein" nurSymbol={t('suche.gruppen.wort.runter', nr)} gesperrt={i === e.length - 1} onClick={() => schiebe(i, 1)}>↓</Knopf>
+                <Knopf art="link" groesse="klein" nurSymbol={t('suche.gruppen.wort.hoch', nr)} gesperrt={i === 0} onClick={() => schiebe(i, -1)}><Symbol name="sortiert-auf" /></Knopf>
+                <Knopf art="link" groesse="klein" nurSymbol={t('suche.gruppen.wort.runter', nr)} gesperrt={i === e.length - 1} onClick={() => schiebe(i, 1)}><Symbol name="sortiert-ab" /></Knopf>
                 <Knopf art="link" groesse="klein" nurSymbol={t('suche.gruppen.wort.entfernen', nr)} onClick={() => entferne(i)}><Symbol name="schliessen" /></Knopf>
               </span>
               {doppelt.includes(i) && <span className="fehlertext klein">{t('suche.gruppen.wort.doppelt')}</span>}

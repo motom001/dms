@@ -172,7 +172,7 @@ Mit der Wenn-Karte **Aufruf von außen** stößt ein anderes System eine Automat
 
 1. Neue Automatisierung, Wenn-Karte **Aufruf von außen**. Unter **Parameter** trägst du die Namen ein, die ein Aufruf mitschicken darf, z. B. `raum, stufe` – nur Kleinbuchstaben, Ziffern und `_`, höchstens 10. In Texten stehen sie als Platzhalter bereit (`{raum}`), dazu `{zeitpunkt}` (wann aufgerufen wurde), `{heute}` und `{automatisierung}`.
 2. Dann-Karten wie gewohnt, zum Beispiel *Aufgabe / Benachrichtigung* an Markus: `Wassermelder im {raum} um {zeitpunkt}`. Die Karte hat **keine Mappe**: Als Bedingung geht nur ein Merkmal der Ablage, Empfänger sind Personen oder Rollen (wie bei den [Werkbank-Karten](#werkbank-karten)).
-3. Speichern. Erst jetzt erscheint unter der Karte **Adresse und Geheimnis** mit **Adresse anlegen**. Ablago fragt nach deinem Passwort (frische Anmeldung) und zeigt Adresse und Geheimnis. **Kopiere das Geheimnis sofort** – es steht nur dieses eine Mal vollständig da. Die Adresse siehst du jederzeit wieder.
+3. Speichern. Erst jetzt erscheint unter der Karte **Adresse und Geheimnis** mit **+ Adresse**. Ablago fragt nach deinem Passwort (frische Anmeldung) und zeigt Adresse und Geheimnis. **Kopiere das Geheimnis sofort** – es steht nur dieses eine Mal vollständig da. Die Adresse siehst du jederzeit wieder.
 
 Ohne angelegte Adresse nimmt die Automatisierung nichts an; das Speichern allein öffnet keine Tür.
 
@@ -191,7 +191,7 @@ Ein Aufruf ist ein `POST` an die Adresse mit drei Köpfen und einem Inhalt (JSON
 Das ist dasselbe Verfahren wie beim früheren Webhook – nur in die andere Richtung. Gerechnet wird über den **Inhalt, wie er gesendet wird** (Bytes); Ablago liest ihn vorher nicht um. Mit `curl` und `openssl`:
 
 ```sh
-GEHEIMNIS='whsec_…'                                  # aus „Adresse anlegen“
+GEHEIMNIS='whsec_…'                                  # aus „+ Adresse“
 ADRESSE='https://ablago.example.org/api/aufruf/…'    # aus der Karte
 ZEIT=$(date +%s)
 RUMPF='{"raum":"Keller","stufe":"2"}'

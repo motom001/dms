@@ -1,4 +1,5 @@
-import { Bereich, type Klappe } from '../bausteine';
+import { Bereich, Feld, HakenFeld, Knopf, type Klappe } from '../bausteine';
+import { Symbol } from '../Symbol';
 import { t, tn } from '../sprache';
 import { useEffect, useState, type ReactNode } from 'react';
 import { beschreibeRegelBedingung, type Wirkung } from '../../../shared/src/rechte';
@@ -11,7 +12,7 @@ import { api } from '../api';
 import { useDaten } from '../daten';
 import { Hilfe } from '../Hilfe';
 import { Link } from '../ort';
-import { Ansage, umgestellt, useZiehen, ziehTasten } from '../ziehen';
+import { Ansage, umgestellt, useZiehen, Ziehgriff } from '../ziehen';
 import { MappenSuche } from './Sichten';
 import { testlaufSchluessel } from '../../../shared/src/testlauf';
 import { TestBenutzerWahl, useTestlauf } from './TestlaufWahl';
@@ -22,7 +23,7 @@ import { TestBenutzerWahl, useTestlauf } from './TestlaufWahl';
  */
 
 const neueId = () => Math.random().toString(36).slice(2, 10);
-const ZEICHEN: Record<'' | Wirkung, string> = { '': '–', erteilen: '✓', entziehen: '✗' };
+const ZEICHEN: Record<'' | Wirkung, ReactNode> = { '': '–', erteilen: <Symbol name="haken" />, entziehen: <Symbol name="schliessen" /> };
 
 /** Die Elternkette eines Entwurfs, von oben nach unten (ohne Kreise). */
 export function elternkette(alle: Sicht[], elternId: string | null): Sicht[] {
@@ -98,7 +99,7 @@ export function SichtBerechtigungen({ e, setE, alle, klappe }: {
             const x = sichtRegelwerkVon(s);
             return (
               <div key={s.id} className="geerbt">
-                <p className="klein"><strong><Link to={`/werkbank/sichten/${s.id}#berechtigungen`} className="verweis">{s.name}</Link></strong>
+                <p className="klein"><strong><Link to={`/werkbank/sichten/${s.id}#berechtigungen`} className="verweis tippziel">{s.name}</Link></strong>
                   {i === 0 && <> {' '}{tn('werkbank.sichtrechte.standard-2', { span: <span className="chip">{kurzSicht({ ...x.grund })}</span> })}</>}
                   {!x.regeln.length && <span className="leise"> {' '}{t('werkbank.sichtrechte.keine-regeln')}</span>}</p>
                 {x.regeln.length > 0 && (
@@ -121,11 +122,11 @@ export function SichtBerechtigungen({ e, setE, alle, klappe }: {
           <p className="leise klein">{t('werkbank.sichtrechte.gilt-solange-keine-regel')}</p>
           <div className="rechtewahl" role="group" aria-label={t('werkbank.sichtrechte.standard-je-recht')}>
             {SICHT_RECHTE_LISTE.map((k) => (
-              <button key={k} type="button" className={`rechtknopf ${rw.grund[k] ? 'erteilen' : 'entziehen'}`}
-                aria-label={t('werkbank.sichtrechte.standard-4', { SICHT_RECHTE: SICHT_RECHTE[k], wert: rw.grund[k] ? t('werkbank.sichtrechte.erteilt') : t('werkbank.sichtrechte.entzogen') })} title={t('werkbank.sichtrechte.klicken-zum-wechseln', { SICHT_RECHTE: SICHT_RECHTE[k] })}
+              <Knopf key={k} art="link" className={`rechtknopf ${rw.grund[k] ? 'erteilen' : 'entziehen'}`}
+                nurSymbol={t('werkbank.sichtrechte.standard-4', { SICHT_RECHTE: SICHT_RECHTE[k], wert: rw.grund[k] ? t('werkbank.sichtrechte.erteilt') : t('werkbank.sichtrechte.entzogen') })} title={t('werkbank.sichtrechte.klicken-zum-wechseln', { SICHT_RECHTE: SICHT_RECHTE[k] })}
                 onClick={() => setRw((x) => ({ ...x, grund: { ...x.grund, [k]: !x.grund[k] } }))}>
-                <span className="buchstabe">{k}</span><span aria-hidden="true">{rw.grund[k] ? '✓' : '✗'}</span>
-              </button>
+                <span className="buchstabe">{k}</span>{rw.grund[k] ? ZEICHEN.erteilen : ZEICHEN.entziehen}
+              </Knopf>
             ))}
           </div>
         </>
@@ -143,17 +144,17 @@ export function SichtBerechtigungen({ e, setE, alle, klappe }: {
                 umschalten={() => setOffen((x) => { const n = new Set(x); if (n.has(r.id)) n.delete(r.id); else n.add(r.id); return n; })}
                 setze={(n) => setRw((x) => ({ ...x, regeln: x.regeln.map((y, j) => (j === i ? n : y)) }))}
                 weg={() => setRw((x) => ({ ...x, regeln: x.regeln.filter((y) => y.id !== r.id) }))}
-                griff={<button {...zieh.griff(r.id, r.name || t('werkbank.sichtrechte.regel'))} onKeyDown={(ev) => ziehTasten(ev, { hoch: () => verschiebe(i, -1), runter: () => verschiebe(i, 1) })}><span aria-hidden="true">⠿</span></button>} />
+                griff={<Ziehgriff griff={zieh.griff(r.id, r.name || t('werkbank.sichtrechte.regel'))} tasten={{ hoch: () => verschiebe(i, -1), runter: () => verschiebe(i, 1) }} />} />
             </li>
           ))}
         </ol>
       )}
       <Ansage text={ansage} />
-      <div className="knoepfe"><button type="button" className="knopf klein" onClick={() => {
+      <div className="knoepfe"><Knopf onClick={() => {
         const id = neueId();
         setOffen((x) => new Set([...x, id]));
         setRw((x) => ({ ...x, regeln: [...x.regeln, { id, name: '', wenn: [{ art: 'rolle', rollen: [] }], dann: {}, stopp: false }] }));
-      }}>{t('werkbank.sichtrechte.regel-2')}</button></div>
+      }}>{t('werkbank.sichtrechte.regel-2')}</Knopf></div>
     </Bereich>
   );
 }
@@ -174,11 +175,11 @@ function SichtRegelKarte({ r, untersicht, namen, offen, umschalten, setze, weg, 
     <div className={`regel zu ${problem ? 'fehlerhaft' : ''}`}>
       <div className="regelkopf">
         {griff}
-        <button type="button" className="regelsumme" aria-expanded={false} onClick={umschalten}>
+        <Knopf art="link" className="regelsumme" aria-expanded={false} onClick={umschalten}>
           <strong>{r.name || t('werkbank.sichtrechte.ohne-namen')}</strong>
           <span className="chip">{kurzSichtRegel(r.dann)}{r.stopp ? t('werkbank.sichtrechte.stopp') : ''}</span>
           <span className="leise klein">{t('werkbank.sichtrechte.wenn')}{' '}{r.wenn.map(namen.text).join(' und ') || '…'}</span>
-        </button>
+        </Knopf>
       </div>
       {problem && <p className="fehlertext klein">{problem}</p>}
     </div>
@@ -188,7 +189,9 @@ function SichtRegelKarte({ r, untersicht, namen, offen, umschalten, setze, weg, 
     <div className={`regel ${problem ? 'fehlerhaft' : ''}`}>
       <div className="regelkopf">
         {griff}
-        <input aria-label={t('werkbank.sichtrechte.name-der-regel')} placeholder={t('werkbank.sichtrechte.name-z-b-kinder')} value={r.name} onChange={(x) => setze({ ...r, name: x.target.value })} />
+        <Feld beschriftung={t('werkbank.sichtrechte.name-der-regel')} beschriftungVerbergen className="regelname">
+          <input placeholder={t('werkbank.sichtrechte.name-z-b-kinder')} value={r.name} onChange={(x) => setze({ ...r, name: x.target.value })} />
+        </Feld>
         <span className="chip">{kurzSichtRegel(r.dann)}{r.stopp ? t('werkbank.sichtrechte.stopp') : ''}</span>
       </div>
       <p className="ueber klein">{t('werkbank.sichtrechte.wenn-2')}</p>
@@ -196,44 +199,46 @@ function SichtRegelKarte({ r, untersicht, namen, offen, umschalten, setze, weg, 
         {r.wenn.map((b, i) => (
           <li key={i}>
             <div className="bedingungszeile">
-              <select aria-label={t('werkbank.sichtrechte.art-der-bedingung')} value={b.art} onChange={(x) => setzeB(i, x.target.value === 'rolle' ? { art: 'rolle', rollen: [], nicht: b.nicht } : { art: 'benutzer', benutzer: [], nicht: b.nicht })}>
-                <option value="rolle">{t('werkbank.sichtrechte.benutzer-hat-rolle')}</option>
-                <option value="benutzer">{t('werkbank.sichtrechte.benutzer-ist')}</option>
-              </select>
-              <label className="haken klein"><input type="checkbox" checked={!!b.nicht} onChange={(x) => setzeB(i, { ...b, nicht: x.target.checked || undefined })} /><span>{t('werkbank.sichtrechte.nicht')}</span></label>
+              <Feld beschriftung={t('werkbank.sichtrechte.art-der-bedingung')} beschriftungVerbergen>
+                <select value={b.art} onChange={(x) => setzeB(i, x.target.value === 'rolle' ? { art: 'rolle', rollen: [], nicht: b.nicht } : { art: 'benutzer', benutzer: [], nicht: b.nicht })}>
+                  <option value="rolle">{t('werkbank.sichtrechte.benutzer-hat-rolle')}</option>
+                  <option value="benutzer">{t('werkbank.sichtrechte.benutzer-ist')}</option>
+                </select>
+              </Feld>
+              <HakenFeld beschriftung={t('werkbank.sichtrechte.nicht')} className="klein"><input type="checkbox" checked={!!b.nicht} onChange={(x) => setzeB(i, { ...b, nicht: x.target.checked || undefined })} /></HakenFeld>
               {b.art === 'rolle' && rollenTyp && <MappenSuche typId={rollenTyp} gewaehlt={b.rollen} titel={namen.titel} merke={namen.merke} setze={(ids) => setzeB(i, { ...b, rollen: ids })} />}
               {b.art === 'benutzer' && benutzerTyp && <MappenSuche typId={benutzerTyp} gewaehlt={b.benutzer} titel={namen.titel} merke={namen.merke} setze={(ids) => setzeB(i, { ...b, benutzer: ids })} />}
-              <button type="button" className="textknopf gefahr klein" onClick={() => setze({ ...r, wenn: r.wenn.filter((_, j) => j !== i) })}>{t('werkbank.sichtrechte.bedingung-entfernen')}</button>
+              <Knopf art="link" groesse="klein" symbol="schliessen" onClick={() => setze({ ...r, wenn: r.wenn.filter((_, j) => j !== i) })}>{t('werkbank.sichtrechte.bedingung-entfernen')}</Knopf>
             </div>
             <p className="leise klein">{namen.text(b)}</p>
           </li>
         ))}
       </ul>
-      <div className="knoepfe"><button type="button" className="knopf klein" onClick={() => setze({ ...r, wenn: [...r.wenn, { art: 'rolle', rollen: [] }] })}>{t('werkbank.sichtrechte.bedingung')}</button>{r.wenn.length > 1 && <span className="leise klein">{t('werkbank.sichtrechte.alle-bedingungen-muessen-zutreffen')}</span>}</div>
+      <div className="knoepfe"><Knopf onClick={() => setze({ ...r, wenn: [...r.wenn, { art: 'rolle', rollen: [] }] })}>{t('werkbank.sichtrechte.bedingung')}</Knopf>{r.wenn.length > 1 && <span className="leise klein">{t('werkbank.sichtrechte.alle-bedingungen-muessen-zutreffen')}</span>}</div>
       <p className="ueber klein">{t('werkbank.sichtrechte.dann')}</p>
       <div className="rechtewahl" role="group" aria-label={t('werkbank.sichtrechte.wirkung-je-recht')}>
         {SICHT_RECHTE_LISTE.map((k) => {
           const w = r.dann[k] ?? '';
           return (
-            <button key={k} type="button" className={`rechtknopf ${w}`} aria-label={`${SICHT_RECHTE[k]}: ${w || 'unverändert'}`} title={t('werkbank.sichtrechte.klicken-zum-wechseln', { SICHT_RECHTE: SICHT_RECHTE[k] })}
+            <Knopf key={k} art="link" className={`rechtknopf ${w}`} nurSymbol={`${SICHT_RECHTE[k]}: ${w || 'unverändert'}`} title={t('werkbank.sichtrechte.klicken-zum-wechseln', { SICHT_RECHTE: SICHT_RECHTE[k] })}
               onClick={() => { const n = naechste(w); const dann = { ...r.dann }; if (n) dann[k] = n; else delete dann[k]; setze({ ...r, dann }); }}>
-              <span className="buchstabe">{k}</span><span aria-hidden="true">{ZEICHEN[w]}</span>
-            </button>
+              <span className="buchstabe">{k}</span>{ZEICHEN[w]}
+            </Knopf>
           );
         })}
-        <label className="haken"><input type="checkbox" checked={r.stopp} onChange={(x) => setze({ ...r, stopp: x.target.checked })} /><span>{tn('werkbank.sichtrechte.stopp-2', { klein: <small className="leise">{t('werkbank.sichtrechte.trifft-die-regel-zu')}</small> })}</span></label>
+        <HakenFeld beschriftung={t('werkbank.sichtrechte.stopp-2')} hinweis={t('werkbank.sichtrechte.trifft-die-regel-zu')}><input type="checkbox" checked={r.stopp} onChange={(x) => setze({ ...r, stopp: x.target.checked })} /></HakenFeld>
       </div>
       {problem && <p className="fehlertext klein">{problem}</p>}
       <div className="knoepfe">
-        <button type="button" className="textknopf gefahr klein" onClick={weg}>{t('werkbank.sichtrechte.regel-entfernen')}</button>
-        <button type="button" className="knopf klein" onClick={umschalten}>{t('werkbank.sichtrechte.zuklappen')}</button>
+        <Knopf art="link" symbol="schliessen" onClick={weg}>{t('werkbank.sichtrechte.regel-entfernen')}</Knopf>
+        <Knopf onClick={umschalten}>{t('werkbank.sichtrechte.zuklappen')}</Knopf>
       </div>
     </div>
   );
 }
 
 function RechteZeile({ r }: { r: SichtRechte }) {
-  return <span className="rechtezeile">{SICHT_RECHTE_LISTE.map((k) => <span key={k} className={`recht ${r[k] ? 'ja' : 'nein'}`} title={`${SICHT_RECHTE[k]}: ${r[k] ? 'ja' : 'nein'}`}>{k}{r[k] ? '✓' : '✗'}</span>)}</span>;
+  return <span className="rechtezeile">{SICHT_RECHTE_LISTE.map((k) => <span key={k} className={`recht ${r[k] ? 'ja' : 'nein'}`} title={`${SICHT_RECHTE[k]}: ${r[k] ? 'ja' : 'nein'}`}>{k}{r[k] ? ZEICHEN.erteilen : ZEICHEN.entziehen}</span>)}</span>;
 }
 
 /** „Was sieht Benutzer X an dieser Sicht?“ – mit dem Entwurf, auch ungespeichert. */
@@ -252,7 +257,7 @@ export function SichtTestlauf({ id, e, klappe }: { id: string | null; e: SichtDa
         <TestBenutzerWahl id="sicht-testlauf-benutzer" wert={b} setze={setB} />
       </div>
       {!schluessel && <p className="leise klein">{t('werkbank.sichtrechte.waehle-einen-benutzer-das')}</p>}
-      {schluessel && !erg && !fehler && <div className="knoepfe"><button type="button" className="knopf klein primaer" onClick={() => void los()}>{t('werkbank.sichtrechte.pruefen')}</button></div>}
+      {schluessel && !erg && !fehler && <div className="knoepfe"><Knopf art="haupt" onClick={() => los()}>{t('werkbank.sichtrechte.pruefen')}</Knopf></div>}
       {fehler && <p className="fehlertext klein">{fehler}</p>}
       {erg && (
         <div className="testlauf" role="status">

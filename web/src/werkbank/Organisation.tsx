@@ -130,7 +130,7 @@ export function OrganisationPanel({ z }: { z: OrganisationZustand }) {
           <h2>{t('werkbank.organisation.bisher.titel')}</h2>
           <p className="leise">{s.organisationen.length ? t('werkbank.organisation.bisher.ersetzt') : t('werkbank.organisation.bisher.text')}</p>
           <pre className="mehrzeilig">{s.bisher}</pre>
-          {!s.organisationen.length && s.typen.length > 0 && <Knopf art="anlegen" onClick={uebernehmen}>{t('werkbank.organisation.bisher.uebernehmen')}</Knopf>}
+          {!s.organisationen.length && s.typen.length > 0 && <Knopf art="haupt" onClick={uebernehmen}>{t('werkbank.organisation.bisher.uebernehmen')}</Knopf>}
         </section>
       )}
       <section className="blatt">

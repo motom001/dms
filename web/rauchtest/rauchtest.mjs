@@ -1778,6 +1778,29 @@ for (const teil of [0, 1, 2]) {
   });
 }
 
+/* ---------- Werkbank „Ablage aufbauen“ aus Bausteinen: axe (#1213) ---------- */
+
+rauchtest('Werkbank „Ablage aufbauen“ aus Bausteinen: axe ohne Verstoß, hell und dunkel (#1213)', { als: LENA }, async (s) => {
+  const typ = daten.bausteine;
+  await s.goto(BASIS + '/ablage/start');
+  await verwalten(s);
+  const seiten = ['/werkbank', '/werkbank/ansicht', `/werkbank/typen/${typ.id}`, '/werkbank/sichten/neu', '/werkbank/automatisierungen/ziele',
+    '/werkbank/nummernkreise/archivnummer', '/werkbank/stempel/neu', '/werkbank/designs/neu', '/werkbank/woerter/neu', '/werkbank/organisation'];
+  const funde = [];
+  for (const schema of ['light', 'dark']) {
+    await s.emulateMedia({ colorScheme: schema });
+    for (const weg of seiten) {
+      await s.goto(BASIS + weg);
+      await s.waitForLoadState('networkidle');
+      // Editoren mit Bereichen (#1000): alles aufklappen, damit axe auch die Felder darin sieht.
+      const alle = s.locator('[data-sprungleiste]').getByRole('button', { name: 'Alle aufklappen' });
+      if (await alle.count() && await alle.isVisible()) await alle.click();
+      for (const v of await axePruefen(s, WERKBANK_BEREICHE)) funde.push(`${weg} (${schema}): ${v}`);
+    }
+  }
+  assert.deepEqual(funde, [], `axe meldet Verstöße:\n${funde.join('\n')}`);
+});
+
 /* ---------- Ablago antwortet nicht (#1198) ---------- */
 
 rauchtest('Handy: Startbild, „antwortet gerade nicht“ ohne React, von selbst wieder da (#1198)', {

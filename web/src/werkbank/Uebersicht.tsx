@@ -4,6 +4,8 @@ import { Link } from '../ort';
 import { t, tn } from '../sprache';
 import { useHandbuch } from '../Hilfe';
 import { Listenkopf } from '../Listenkopf';
+import { Feld, Knopf, KnopfLink, Suchfeld } from '../bausteine';
+import { Symbol } from '../Symbol';
 import { sicherungsHinweise, useVerwaltetVerschluesselung } from './Sicherung';
 import { exportHinweise } from './Vollexport';
 import { AufrufeUebersicht } from './AutomatisierungAufruf';
@@ -180,24 +182,24 @@ function Akzeptieren({ h, u }: { h: Hinweis; u: UebersichtZustand }) {
   const [sendet, setSendet] = useState(false);
   if (h.erledigen) return (
     <>
-      <button type="button" className="textknopf klein" disabled={sendet} onClick={() => { setSendet(true); setFehler(undefined); u.erledigen(h.schluessel).catch((x) => setFehler((x as Error).message)).finally(() => setSendet(false)); }}>{h.erledigen}</button>
+      <Knopf art="link" groesse="klein" laeuft={sendet} onClick={() => { setSendet(true); setFehler(undefined); return u.erledigen(h.schluessel).catch((x) => setFehler((x as Error).message)).finally(() => setSendet(false)); }}>{h.erledigen}</Knopf>
       {fehler && <p className="fehlertext klein">{fehler}</p>}
     </>
   );
   if (!akzeptierbar(h.art)) return null;
-  if (!offen) return <button type="button" className="textknopf klein" onClick={() => setOffen(true)}>{t('werkbank.uebersicht.akzeptieren')}</button>;
+  if (!offen) return <Knopf art="link" groesse="klein" onClick={() => setOffen(true)}>{t('werkbank.uebersicht.akzeptieren')}</Knopf>;
   return (
     <form className="akzeptieren" onSubmit={(e) => {
       e.preventDefault(); setSendet(true); setFehler(undefined);
       u.akzeptieren(h, grund).catch((x) => setFehler((x as Error).message)).finally(() => setSendet(false));
     }}>
       <p className="leise klein">{t('werkbank.uebersicht.akzeptieren.text')}</p>
-      <label className="eigenschaft"><span>{t('werkbank.uebersicht.akzeptieren.grund')}</span>
-        <input value={grund} maxLength={GRUND_MAX} onChange={(e) => setGrund(e.target.value)} placeholder={t('werkbank.uebersicht.akzeptieren.grund.platzhalter')} autoFocus /></label>
+      <Feld beschriftung={t('werkbank.uebersicht.akzeptieren.grund')} optional>
+        <input value={grund} maxLength={GRUND_MAX} onChange={(e) => setGrund(e.target.value)} placeholder={t('werkbank.uebersicht.akzeptieren.grund.platzhalter')} autoFocus /></Feld>
       {fehler && <p className="fehlertext klein">{fehler}</p>}
       <div className="knoepfe">
-        <button type="submit" className="knopf klein primaer" disabled={sendet}>{t('werkbank.uebersicht.akzeptieren.ja')}</button>
-        <button type="button" className="knopf klein" onClick={() => { setOffen(false); setGrund(''); }}>{t('werkbank.uebersicht.akzeptieren.nein')}</button>
+        <Knopf art="haupt" type="submit" laeuft={sendet}>{t('werkbank.uebersicht.akzeptieren.ja')}</Knopf>
+        <Knopf onClick={() => { setOffen(false); setGrund(''); }}>{t('werkbank.uebersicht.akzeptieren.nein')}</Knopf>
       </div>
     </form>
   );
@@ -210,11 +212,11 @@ function BewusstAkzeptiert({ u }: { u: UebersichtZustand }) {
   if (!liste.length) return null;
   return (
     <section className="aufklappbereich akzeptiert">
-      <button type="button" className="aufklappkopf" aria-expanded={auf} aria-controls="uebersicht-akzeptiert" onClick={() => setAuf(!auf)}>
-        <span className="zeichen" aria-hidden="true">{auf ? '▾' : '▸'}</span>
+      <Knopf art="link" className="aufklappkopf" aria-expanded={auf} aria-controls="uebersicht-akzeptiert" onClick={() => setAuf(!auf)}>
+        <Symbol name={auf ? 'pfeil-unten' : 'pfeil-rechts'} className="zeichen" />
         <span>{t('werkbank.uebersicht.akzeptiert.titel', { anzahl: liste.length })}</span>
         <span className="leise klein">{t('werkbank.uebersicht.akzeptiert.unter')}</span>
-      </button>
+      </Knopf>
       {auf && (
         <ul id="uebersicht-akzeptiert" className="aufklappinhalt akzeptiertliste">
           {liste.map((x) => (
@@ -222,8 +224,8 @@ function BewusstAkzeptiert({ u }: { u: UebersichtZustand }) {
               <p>{x.text}</p>
               <p className="leise klein">{t('werkbank.uebersicht.akzeptiert.von', { von: x.akzeptanz.von, am: kurzDatum(x.akzeptanz.am) })}{x.akzeptanz.grund ? ` · ${t('werkbank.uebersicht.akzeptiert.grund', { grund: x.akzeptanz.grund })}` : ''}</p>
               <div className="knoepfe">
-                <button type="button" className="knopf klein" onClick={() => void u.einblenden(x.schluessel).catch(() => {})}>{t('werkbank.uebersicht.akzeptiert.einblenden')}</button>
-                <Link to={x.ziel} className="knopf klein">{x.knopf}</Link>
+                <Knopf onClick={() => u.einblenden(x.schluessel)}>{t('werkbank.uebersicht.akzeptiert.einblenden')}</Knopf>
+                <KnopfLink to={x.ziel}>{x.knopf}</KnopfLink>
               </div>
             </li>
           ))}
@@ -238,7 +240,7 @@ export function UebersichtListe({ u }: { u: UebersichtZustand }) {
   return (
     <>
       <Listenkopf titel={t('werkbank.uebersicht.uebersicht')} hilfe="werkbank.uebersicht" beschreibung={t('werkbank.uebersicht.was-in-dieser-installation')}>
-        <button type="button" className="knopf klein" onClick={() => void u.laden()}>{t('werkbank.uebersicht.neu-laden')}</button>
+        <Knopf groesse="klein" symbol="neu-laden" onClick={() => u.laden()}>{t('werkbank.uebersicht.neu-laden')}</Knopf>
       </Listenkopf>
       {u.fehler && <div className="hinweis schlecht"><p>{u.fehler}</p></div>}
       {/* Am Handy steht die Übersicht in der Liste: zuerst die Kacheln (#816), darunter die Meldungen. */}
@@ -277,7 +279,7 @@ export function UebersichtPanel({ u }: { u: UebersichtZustand }) {
             ? h.map((x) => (
               <div key={x.schluessel} className={`hinweis ${x.art === 'info' ? '' : x.art} hinweiszeile`}>
                 <p>{x.text}</p>
-                <div className="knoepfe"><Link to={x.ziel} className="knopf klein">{x.knopf}</Link></div>
+                <div className="knoepfe"><KnopfLink to={x.ziel} groesse="klein">{x.knopf}</KnopfLink></div>
                 <Akzeptieren h={x} u={u} />
               </div>
             ))
@@ -351,14 +353,13 @@ export function WerkbankNavigation({ bereich, eintraege, zeigen = () => true, be
       <div className="gruppenwahl" role="tablist" aria-label={t('werkbank.uebersicht.bereiche-der-werkbank')}>
         {liste.filter((e) => !e.gruppe).map(eintrag)}
         {gruppen.map((g) => (
-          <button key={g} type="button" role="tab" aria-selected={gewaehlt === g} className={`sicht ${gewaehlt === g ? 'an' : ''}`} onClick={() => setGewaehlt(g)}>
+          <Knopf key={g} art="link" role="tab" aria-selected={gewaehlt === g} className={`sicht ${gewaehlt === g ? 'an' : ''}`} onClick={() => setGewaehlt(g)}>
             <span className="nm">{GRUPPEN[g]}</span>{warnIn(g) && <span className="zaehler" aria-label={t('werkbank.uebersicht.mit-hinweis')}>!</span>}
-          </button>
+          </Knopf>
         ))}
       </div>
       <nav className="sichtliste werkbankleiste">
-        <input type="search" className="werkbanksuche" value={suche} onChange={(x) => setSuche(x.target.value)}
-          placeholder={t('werkbank.suche.platzhalter')} aria-label={t('werkbank.suche.label')} />
+        <Suchfeld className="werkbanksuche" wert={suche} setze={setSuche} platzhalter={t('werkbank.suche.platzhalter')} beschriftung={t('werkbank.suche.label')} />
         {treffer && (treffer.length
           ? <div className="wbgruppe gewaehlt">{treffer.map((e) => <span key={e.pfad} className="wbtreffer">{eintrag(e)}{e.gruppe && <span className="leise klein">{GRUPPEN[e.gruppe]}</span>}</span>)}</div>
           : <p className="leise klein">{t('werkbank.suche.nichts')}</p>)}
@@ -371,9 +372,9 @@ export function WerkbankNavigation({ bereich, eintraege, zeigen = () => true, be
         ))}
         <p className="ausgeblendet-fuss leise klein">
           {ausgeblendet.length > 0 && <>
-            <button type="button" className="verweis" aria-expanded={alleZeigen} onClick={() => setAlleZeigen(!alleZeigen)}>
+            <Knopf art="link" groesse="klein" aria-expanded={alleZeigen} onClick={() => setAlleZeigen(!alleZeigen)}>
               {alleZeigen ? t('werkbank.uebersicht.ausgeblendete-verbergen') : t('werkbank.uebersicht.bereiche-ausgeblendet', { anzahl: ausgeblendet.length, wert: benutzt ? t('werkbank.uebersicht.davon-eingerichtet', { benutzt }) : '' })}
-            </button>{' · '}</>}
+            </Knopf>{' · '}</>}
           <Link to="/werkbank/ansicht" className="verweis">{t('werkbank.uebersicht.werkbank-anpassen')}</Link>
         </p>
       </nav>

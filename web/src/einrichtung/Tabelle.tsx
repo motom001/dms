@@ -69,10 +69,8 @@ export function TabellenEditor({ f, id, eigeneId, eigenerName, typen, eigeneFeld
         optionen={(gewaehlt?.felder ?? []).map((g) => ({ wert: g.key, text: feldLabel(g) }))} setze={(feldKey) => setzeQuelle({ feldKey })} />
       <Wahl id={id('tabelle-liste')} beschriftung={t('mappentypen.tabelle.liste')} hinweis={t('mappentypen.tabelle.liste-hilfe')} wert={q.trefferliste ?? ''} leer={t('mappentypen.tabelle.liste-standard')} gesperrt={!gewaehlt?.typ}
         optionen={listen.map((l) => ({ wert: l.key, text: listenName(l) }))} setze={(w) => setzeQuelle({ trefferliste: w || undefined })} />
-      <div className="eigenschaft"><span><label htmlFor={id('tabelle-neu')}>{t('mappentypen.tabelle.neu')}</label></span>
-        <SprachText id={id('tabelle-neu')} wert={q.neu ?? ''} placeholder={neuVorgabe} teil="neu" beschriftungen={f.beschriftungen}
-          setzeWert={(neu) => setzeQuelle({ neu: neu.slice(0, TABELLE_NEU_MAX) || undefined })} setzeBeschriftungen={(b) => setze({ beschriftungen: b as FeldDef['beschriftungen'] })} />
-        <small className="hilfe">{t('mappentypen.tabelle.neu-hilfe')}</small></div>
+      <SprachText beschriftung={t('mappentypen.tabelle.neu')} hinweis={t('mappentypen.tabelle.neu-hilfe')} id={id('tabelle-neu')} wert={q.neu ?? ''} placeholder={neuVorgabe} teil="neu" beschriftungen={f.beschriftungen}
+        setzeWert={(neu) => setzeQuelle({ neu: neu.slice(0, TABELLE_NEU_MAX) || undefined })} setzeBeschriftungen={(b) => setze({ beschriftungen: b as FeldDef['beschriftungen'] })} />
       <p className="leise klein">{t('mappentypen.tabelle.ohne-wert')}</p>
     </div>
   );

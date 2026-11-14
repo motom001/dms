@@ -129,11 +129,11 @@ export function NummernkreisEditor({ z, schluessel }: { z: NummernkreisZustand; 
         <Bereich id="grunddaten" titel={t('werkbank.nummernkreise.bereich.grunddaten')} klappe={b.klappe('grunddaten', hatFehler('grunddaten'))}
           kurz={<>{e.name} · <code className="mono">{e.muster}</code></>}>
           <div className="raster">
-            <label className="eigenschaft"><span>{t('werkbank.nummernkreise.name')}</span><input id="nk-name" value={e.name} onChange={(x) => setE({ ...e, name: x.target.value, ...(neu && (!e.schluessel || e.schluessel === schluesselAusName(e.name)) ? { schluessel: schluesselAusName(x.target.value) } : {}) })} required /></label>
-            <label className="eigenschaft"><span>{tn('werkbank.nummernkreise.kennung', { klein: <small>{neu ? t('werkbank.nummernkreise.nach-dem-anlegen-fest') : t('werkbank.nummernkreise.fest')}</small> })}</span><input id="nk-schluessel" className="mono" value={e.schluessel} disabled={!neu} onChange={(x) => setE({ ...e, schluessel: x.target.value })} required /></label>
-            <label className="eigenschaft breit"><span>{tn('werkbank.nummernkreise.muster', { klein: <small>{t('werkbank.nummernkreise.muster.erklaerung')}</small> })}</span>
-              <input id="nk-muster" className="mono" value={e.muster} onChange={(x) => setE({ ...e, muster: x.target.value })} required /></label>
-            <label className="eigenschaft"><span>{t('werkbank.nummernkreise.startwert')}</span><input id="nk-start" type="number" min={0} value={e.start} onChange={(x) => setE({ ...e, start: x.target.value })} /></label>
+            <Feld beschriftung={t('werkbank.nummernkreise.name')}><input id="nk-name" value={e.name} onChange={(x) => setE({ ...e, name: x.target.value, ...(neu && (!e.schluessel || e.schluessel === schluesselAusName(e.name)) ? { schluessel: schluesselAusName(x.target.value) } : {}) })} required /></Feld>
+            <Feld beschriftung={t('werkbank.nummernkreise.kennung')} hinweis={neu ? t('werkbank.nummernkreise.nach-dem-anlegen-fest') : t('werkbank.nummernkreise.fest')}><input id="nk-schluessel" className="mono" value={e.schluessel} readOnly={!neu} onChange={(x) => setE({ ...e, schluessel: x.target.value })} required /></Feld>
+            <Feld beschriftung={t('werkbank.nummernkreise.muster')} className="breit" hinweis={t('werkbank.nummernkreise.muster.erklaerung')}>
+              <input id="nk-muster" className="mono" value={e.muster} onChange={(x) => setE({ ...e, muster: x.target.value })} required /></Feld>
+            <Feld beschriftung={t('werkbank.nummernkreise.startwert')}><input id="nk-start" type="number" min={0} value={e.start} onChange={(x) => setE({ ...e, start: x.target.value })} /></Feld>
           </div>
           {musterFehler ? <p className="fehlertext">{musterFehler}</p> : <p className="klein">{tn('werkbank.nummernkreise.beispiel-heute-zaehler-beginnt', { code: <code className="mono">{beispiel}</code>, b: <strong>{NEUBEGINN_TEXT[neubeginn]}</strong> })}</p>}
         </Bereich>
@@ -213,17 +213,17 @@ export function NummernNachtragen() {
       <h2 className="h3">{t('werkbank.nummernkreise.nummern-nachtraeglich-vergeben')} <Hilfe ort="werkbank.nummernkreise.nachtragen" /></h2>
       <p className="leise">{t('werkbank.nummernkreise.mappen-die-angelegt-wurden')}</p>
       {!felder.length ? <p className="leise">{t('werkbank.nummernkreise.kein-feld-nutzt-einen')}</p> : <>
-        <label className="eigenschaft"><span>{t('werkbank.nummernkreise.feld')}</span>
+        <Feld beschriftung={t('werkbank.nummernkreise.feld')}>
           <select id="nummern-feld" value={wahl} onChange={(e) => setWahl(e.target.value)}>
             <option value="">{t('werkbank.nummernkreise.waehlen')}</option>{felder.map((f) => <option key={f.wert} value={f.wert}>{f.text}</option>)}
-          </select></label>
+          </select></Feld>
         {vorschau && (vorschau.anzahl ? <p>{tn('werkbank.nummernkreise.mappen-bekommen-die-nummern', { anzahl: vorschau.anzahl, code: <code className="mono">{vorschau.von}</code> })}{vorschau.anzahl > 1 && <> {' '}{tn('werkbank.nummernkreise.bis', { code: <code className="mono">{vorschau.bis}</code> })}</>}.</p>
           : <p className="leise">{t('werkbank.nummernkreise.alle-mappen-haben-schon')}</p>)}
         {auftrag?.status === 'laeuft' && <p className="leise" role="status">{fortschrittText(auftrag, t('werkbank.nummernkreise.mappen'))}</p>}
         {ergebnis && <p className="gutertext" role="status">{t('werkbank.nummernkreise.nummern-vergeben', { vergeben: ergebnis.vergeben, wert: ergebnis.erste ? t('werkbank.nummernkreise.bis-2', { erste: ergebnis.erste, letzte: String(ergebnis.letzte) }) : '' })}</p>}
         {(fehler || auftrag?.status === 'fehler') && <p className="fehlertext">{fehler ?? auftrag?.fehler}</p>}
-        <div className="knoepfe"><button type="button" className="knopf primaer" disabled={!vorschau?.anzahl || auftrag?.status === 'laeuft'}
-          onClick={() => void api.nummernNachtragen(typId, feldKey).then(setAuftrag).catch((e) => setFehler((e as Error).message))}>{t('werkbank.nummernkreise.nummern-vergeben-2')}</button></div>
+        <div className="knoepfe"><Knopf art="haupt" gesperrt={!vorschau?.anzahl} laeuft={auftrag?.status === 'laeuft'}
+          onClick={() => api.nummernNachtragen(typId, feldKey).then(setAuftrag).catch((e) => setFehler((e as Error).message))}>{t('werkbank.nummernkreise.nummern-vergeben-2')}</Knopf></div>
       </>}
     </section>
   );
@@ -254,11 +254,11 @@ function Aufkleber({ naechste, neuLaden }: { naechste: string; neuLaden(): Promi
     <>
       <p className="leise">{tn('werkbank.nummernkreise.ein-pdf-mit-aufklebern', { code: <code className="mono">{naechste}</code> })}</p>
       <form className="raster" onSubmit={(e) => { e.preventDefault(); void los(); }}>
-        <label className="eigenschaft"><span>{t('werkbank.nummernkreise.anzahl')}</span><input type="number" min={1} max={500} value={anzahl} onChange={(e) => setAnzahl(e.target.value)} /></label>
-        <label className="eigenschaft breit"><span>{t('werkbank.nummernkreise.etikettenformat-a4')}</span>
-          <select value={etikett} onChange={(e) => { setEtikett(e.target.value); setStart('1'); }}>{Object.entries(ETIKETTEN).map(([k, v]) => <option key={k} value={k}>{v.name}</option>)}</select></label>
-        <label className="eigenschaft"><span>{tn('werkbank.nummernkreise.beginnen-bei-feld', { klein: <small>{t('werkbank.nummernkreise.1-oben-links-zeilenweise')}</small> })}</span><input type="number" min={1} max={felder} value={start} onChange={(e) => setStart(e.target.value)} /></label>
-        <div className="knoepfe"><button className="knopf primaer" disabled={laeuft || !(Number(anzahl) >= 1 && Number(anzahl) <= 500) || !(Number(start) >= 1 && Number(start) <= felder)}>{laeuft ? t('werkbank.nummernkreise.erzeuge') : t('werkbank.nummernkreise.aufkleber-als-pdf')}</button></div>
+        <Feld beschriftung={t('werkbank.nummernkreise.anzahl')}><input type="number" min={1} max={500} value={anzahl} onChange={(e) => setAnzahl(e.target.value)} /></Feld>
+        <Feld beschriftung={t('werkbank.nummernkreise.etikettenformat-a4')} className="breit">
+          <select value={etikett} onChange={(e) => { setEtikett(e.target.value); setStart('1'); }}>{Object.entries(ETIKETTEN).map(([k, v]) => <option key={k} value={k}>{v.name}</option>)}</select></Feld>
+        <Feld beschriftung={t('werkbank.nummernkreise.beginnen-bei-feld')} hinweis={t('werkbank.nummernkreise.1-oben-links-zeilenweise')}><input type="number" min={1} max={felder} value={start} onChange={(e) => setStart(e.target.value)} /></Feld>
+        <div className="knoepfe"><Knopf art="haupt" type="submit" laeuft={laeuft} laeuftText={t('werkbank.nummernkreise.erzeuge')} gesperrt={!(Number(anzahl) >= 1 && Number(anzahl) <= 500) || !(Number(start) >= 1 && Number(start) <= felder)}>{t('werkbank.nummernkreise.aufkleber-als-pdf')}</Knopf></div>
       </form>
       {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
     </>

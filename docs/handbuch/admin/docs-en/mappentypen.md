@@ -62,7 +62,7 @@ Some folders only make sense as part of another one – an **invoice item** belo
 
 ## Fields {#felder}
 
-Every field has a **label** (changeable), a **key** (fixed once saved) and a **field kind**. A click on a field opens it. You change the order with the arrows or by **drag and drop** at the handle **⠿** (see [Dragging instead of clicking](#ziehen-statt-klicken)).
+Every field has a **label** (changeable), a **key** (fixed once saved – it is then shown with a dashed border, read only) and a **field kind**. In the list, tags such as **Required** or **hidden** follow it. A click on a field opens it. You change the order with the arrows or by **drag and drop** at the handle **⠿** (see [Dragging instead of clicking](#ziehen-statt-klicken)).
 
 ![Editing a field](bilder/werkbank-feld.png)
 

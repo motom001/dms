@@ -7,7 +7,7 @@ import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 import { logoUrl, Marke } from '../Marke';
 import { Listenkopf } from '../Listenkopf';
 import { t, tn } from '../sprache';
-import { KnopfLink } from '../bausteine';
+import { Feld, Knopf, KnopfLink } from '../bausteine';
 
 /**
  * Designs in der Werkbank (#21): Mitte die Designs, rechts Bearbeiten mit Vorschau.
@@ -92,11 +92,11 @@ export function DesignEditor({ id }: { id: string }) {
       {meldung && <div className={`hinweis ${meldung.art}`}><p>{meldung.text}</p></div>}
       <div className="blatt">
         <div className="raster">
-          <label className="eigenschaft"><span>{t('werkbank.designs.name')}</span><input value={e.name} onChange={(x) => setze({ name: x.target.value })} placeholder={t('werkbank.designs.z-b-waldgruen')} required /></label>
-          <label className="eigenschaft"><span>{t('werkbank.designs.grundlage')}</span>
+          <Feld beschriftung={t('werkbank.designs.name')}><input value={e.name} onChange={(x) => setze({ name: x.target.value })} placeholder={t('werkbank.designs.z-b-waldgruen')} required /></Feld>
+          <Feld beschriftung={t('werkbank.designs.grundlage')}>
             <select value={e.grundlage} onChange={(x) => setze({ grundlage: x.target.value as Grundlage })}>
               {Object.entries(GRUNDLAGEN).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-            </select></label>
+            </select></Feld>
           <Farbwahl name={t('werkbank.designs.primaerfarbe')} hilfe={t('werkbank.designs.links-hauptknoepfe-markierungen')} wert={e.primaer} setze={(primaer) => setze({ primaer })} />
           <Farbwahl name={t('werkbank.designs.sekundaerfarbe')} hilfe={t('werkbank.designs.speichern-neu-geoeffnete-mappe')} wert={e.sekundaer} setze={(sekundaer) => setze({ sekundaer })} />
         </div>
@@ -106,8 +106,8 @@ export function DesignEditor({ id }: { id: string }) {
         <h2 className="h3">{t('werkbank.designs.logo-und-schriftzug')}</h2>
         <p className="leise">{t('werkbank.designs.stehen-oben-links-in')}</p>
         <div className="raster">
-          <label className="eigenschaft"><span>{tn('werkbank.designs.schriftzug', { klein: <small>{t('werkbank.designs.hoechstens-30-zeichen-leer')}</small> })}</span>
-            <input value={e.schriftzug ?? 'Ablago'} maxLength={30} onChange={(x) => setze({ schriftzug: x.target.value === 'Ablago' ? null : x.target.value })} /></label>
+          <Feld beschriftung={t('werkbank.designs.schriftzug')} hinweis={t('werkbank.designs.hoechstens-30-zeichen-leer')}>
+            <input value={e.schriftzug ?? 'Ablago'} maxLength={30} onChange={(x) => setze({ schriftzug: x.target.value === 'Ablago' ? null : x.target.value })} /></Feld>
           <div className="eigenschaft"><span>{t('werkbank.designs.vorschau')}</span>
             <div className="markenvorschau marke"><Marke logo={logoUrl(vorhanden)} schriftzug={e.schriftzug === null || e.schriftzug === undefined ? 'Ablago' : e.schriftzug} /></div></div>
         </div>
@@ -118,7 +118,7 @@ export function DesignEditor({ id }: { id: string }) {
                 const f = x.target.files?.[0]; x.target.value = '';
                 if (f) void aktion(async () => { await api.designLogo(id, f); await d.designsLaden(); }, t('werkbank.designs.logo-gespeichert'));
               }} /></label>
-            {vorhanden?.logo && <button type="button" className="textknopf" onClick={() => void aktion(async () => { await api.designLogoEntfernen(id); await d.designsLaden(); }, t('werkbank.designs.standard-logo-wiederhergestellt'))}>{t('werkbank.designs.standard-wiederherstellen')}</button>}
+            {vorhanden?.logo && <Knopf groesse="klein" symbol="zuruecksetzen" onClick={() => aktion(async () => { await api.designLogoEntfernen(id); await d.designsLaden(); }, t('werkbank.designs.standard-logo-wiederhergestellt'))}>{t('werkbank.designs.standard-wiederherstellen')}</Knopf>}
             <span className="leise klein">{t('werkbank.designs.png-jpeg-webp-oder')}</span>
           </div>
         )}
@@ -126,18 +126,20 @@ export function DesignEditor({ id }: { id: string }) {
       <div className="blatt">
         <h2 className="h3">{t('werkbank.designs.vorschau')}</h2>
         <div className="designvorschau">
-          <a className="verweis" href="#vorschau" onClick={(x) => x.preventDefault()}>{t('werkbank.designs.ein-verweis')}</a>
+          <a className="verweis tippziel" href="#vorschau" onClick={(x) => x.preventDefault()}>{t('werkbank.designs.ein-verweis')}</a>
           <span className="chip gut">{t('werkbank.designs.bezahlt')}</span>
-          <button type="button" className="knopf primaer klein">{t('werkbank.designs.hauptknopf')}</button>
-          <button type="button" className="knopf gruen klein">{t('werkbank.designs.mappe-speichern')}</button>
+          <Knopf art="haupt" groesse="klein">{t('werkbank.designs.hauptknopf')}</Knopf>
+          <Knopf art="anlegen" groesse="klein">{t('werkbank.designs.neue-mappe-beispiel')}</Knopf>
           <span className="eintrag an vorschaueintrag"><span className="titel">{t('werkbank.designs.geoeffnete-mappe')}</span><span className="unter">{t('werkbank.designs.nebenzeile')}</span></span>
         </div>
       </div>
       <div className="blatt">
         <h2 className="h3">{t('werkbank.designs.eigenes-css-2')}</h2>
         <p className="leise">{tn('werkbank.designs.fuer-alles-was-farben', { span: <span className="mono">{'?design=standard'}</span> })}</p>
-        <textarea className="mono" rows={8} value={e.css} onChange={(x) => setze({ css: x.target.value })} placeholder={'.kopf { border-bottom-width: 3px; }'} spellCheck={false} />
-        <details><summary className="leise klein">{t('werkbank.designs.verfuegbare-farbwerte')}</summary><pre className="protokolldaten">{designCss({ ...e, css: '' })}</pre></details>
+        <Feld beschriftung={t('werkbank.designs.css-feld')} beschriftungVerbergen>
+          <textarea className="mono" rows={8} value={e.css} onChange={(x) => setze({ css: x.target.value })} placeholder={'.kopf { border-bottom-width: 3px; }'} spellCheck={false} />
+        </Feld>
+        <details><summary className="leise klein tippziel">{t('werkbank.designs.verfuegbare-farbwerte')}</summary><pre className="protokolldaten">{designCss({ ...e, css: '' })}</pre></details>
       </div>
       <Speicherleiste ent={ent} gegenstand={t('werkbank.designs.design')} sendet={sendet}
         loeschen={!neu && !standard ? {
@@ -145,8 +147,8 @@ export function DesignEditor({ id }: { id: string }) {
           rueckfrage: { titel: t('werkbank.designs.design-loeschen', { name: vorhanden!.name }), text: t('werkbank.designs.wer-es-nutzt-bekommt'), ja: t('werkbank.designs.loeschen') },
           onClick: () => { void aktion(async () => { await api.designLoeschen(id); loeseWache(); await d.designsLaden(); geheZu('/werkbank/designs'); }, t('werkbank.designs.geloescht')); },
         } : undefined}
-        weitere={!neu && !standard && <button type="button" className="knopf" disabled={geaendert} title={geaendert ? t('werkbank.designs.erst-speichern') : undefined}
-          onClick={() => void aktion(async () => { await api.designStandard(id); await d.designsLaden(); }, t('werkbank.designs.als-standard-festgelegt'))}>{t('werkbank.designs.als-standard-festlegen')}</button>} />
+        weitere={!neu && !standard && <Knopf gesperrt={geaendert && t('werkbank.designs.erst-speichern')}
+          onClick={() => aktion(async () => { await api.designStandard(id); await d.designsLaden(); }, t('werkbank.designs.als-standard-festgelegt'))}>{t('werkbank.designs.als-standard-festlegen')}</Knopf>} />
     </form>
   );
 }
@@ -155,11 +157,13 @@ function Farbwahl({ name, hilfe, wert, setze }: { name: string; hilfe: string; w
   const [text, setText] = useState(wert);
   useEffect(() => setText(wert), [wert]);
   return (
-    <label className="eigenschaft"><span>{name} <small>{hilfe}</small></span>
-      <span className="farbwahl">
-        <input type="color" value={wert} onChange={(x) => setze(x.target.value.toUpperCase())} aria-label={t('werkbank.designs.waehlen', { name })} />
-        <input className="mono" value={text} maxLength={7} onChange={(x) => { setText(x.target.value); if (/^#[0-9a-f]{6}$/i.test(x.target.value)) setze(x.target.value.toUpperCase()); }} />
-      </span>
-    </label>
+    <Feld beschriftung={name} hinweis={hilfe}>
+      {(v) => (
+        <span className="farbwahl">
+          <input type="color" value={wert} onChange={(x) => setze(x.target.value.toUpperCase())} aria-label={t('werkbank.designs.waehlen', { name })} />
+          <input {...v} className="mono" value={text} maxLength={7} onChange={(x) => { setText(x.target.value); if (/^#[0-9a-f]{6}$/i.test(x.target.value)) setze(x.target.value.toUpperCase()); }} />
+        </span>
+      )}
+    </Feld>
   );
 }

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import type { FallOhneLeserecht } from '../../../shared/src/model';
 import { api } from '../api';
 import { useDaten } from '../daten';
-import { Link } from '../ort';
+import { Knopf, KnopfLink } from '../bausteine';
 import { Person } from '../Person';
 import { rueckfrage } from '../rueckfrage';
 import { titelOder } from '../seiten';
@@ -32,8 +32,8 @@ function Spruenge({ f }: { f: FallOhneLeserecht }) {
   if (!f.typId) return <span className="leise klein">{t('werkbank.ohne-leserecht.mappe-weg')}</span>;
   return (
     <span className="knoepfe">
-      <Link to={`/ablage/${f.typId}/${f.mappeId}`} className="knopf klein">{t('werkbank.ohne-leserecht.zur-mappe')}</Link>
-      <Link to={`/werkbank/typen/${f.typId}?testkonto=${f.benutzerId}&testmappe=${f.mappeId}#testlauf`} className="knopf klein">{t('werkbank.ohne-leserecht.zu-rechten')}</Link>
+      <KnopfLink to={`/ablage/${f.typId}/${f.mappeId}`} groesse="klein">{t('werkbank.ohne-leserecht.zur-mappe')}</KnopfLink>
+      <KnopfLink to={`/werkbank/typen/${f.typId}?testkonto=${f.benutzerId}&testmappe=${f.mappeId}#testlauf`} groesse="klein">{t('werkbank.ohne-leserecht.zu-rechten')}</KnopfLink>
     </span>
   );
 }
@@ -79,7 +79,7 @@ export function OhneLeserechtPanel({ nachher }: { nachher?: () => Promise<void> 
                   <span className="unter leise klein">{t('werkbank.ohne-leserecht.seit', { datum: tag(f.beginn) })}
                     {f.leserechtSeit && <> · {t('werkbank.ohne-leserecht.gegeben', { datum: tag(f.leserechtSeit), von: f.leserechtVon ? name(f.leserechtVon) : t('werkbank.ohne-leserecht.unbekannt') })}</>}</span>
                   <span className="knoepfe">
-                    {!f.leserechtSeit && f.typId && <button type="button" className="knopf klein primaer" disabled={sendet === f.id} onClick={() => void geben(f)}>{t('werkbank.ohne-leserecht.geben')}</button>}
+                    {!f.leserechtSeit && f.typId && <Knopf art="haupt" groesse="klein" laeuft={sendet === f.id} onClick={() => geben(f)}>{t('werkbank.ohne-leserecht.geben')}</Knopf>}
                     <Spruenge f={f} />
                   </span>
                 </li>

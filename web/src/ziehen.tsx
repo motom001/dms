@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useId, useRef, useState, type KeyboardEvent, type PointerEvent as ReactPointerEvent } from 'react';
 import { t } from './sprache';
+import { Knopf } from './bausteine';
+import { Symbol } from './Symbol';
 
 /**
  * Drag & Drop für Listen und Bäume (#73, #74) – mit Maus, Touch (langes Antippen des Griffs)
@@ -7,7 +9,7 @@ import { t } from './sprache';
  * Eintrag selbst bleibt ein Klick.
  *
  *   const z = useZiehen({ fertig: (quelle, ziel, ort) => … });
- *   <li {...z.eintrag(id)}><button {...z.griff(id, name)} onKeyDown={…} /> …</li>
+ *   <li {...z.eintrag(id)}><Ziehgriff griff={z.griff(id, name)} tasten={{ hoch, runter }} /> …</li>
  *
  * Einträge einer Liste teilen sich eine Gruppe (je Aufruf von useZiehen). Weitere Ablagen
  * (z. B. Register, auf die man Felder zieht) bekommen z.ablage(id).
@@ -164,4 +166,17 @@ export function umgestellt<T>(liste: T[], von: number, ziel: number, ort: 'vor' 
 /** Ansage für Screenreader, z. B. „Rechnungen steht jetzt an Stelle 2.“ */
 export function Ansage({ text }: { text: string }) {
   return <p className="sr" role="status" aria-live="polite">{text}</p>;
+}
+
+/**
+ * Der Griff zum Ziehen als Baustein Knopf (#1213): Symbol „griff“ statt „⠿“, Name für Screenreader „… verschieben“,
+ * am Rechner mindestens 24 px, am Handy 44 × 44 px (D6). Alt+Pfeiltasten wie `ziehTasten`.
+ */
+export function Ziehgriff({ griff, tasten, className }: { griff: ReturnType<ReturnType<typeof useZiehen>['griff']>; tasten: Parameters<typeof ziehTasten>[1]; className?: string }) {
+  return (
+    <Knopf art="link" nurSymbol={griff['aria-label']} title={griff.title} className={className ? `${griff.className} ${className}` : griff.className}
+      onPointerDown={griff.onPointerDown} onKeyDown={(ev) => ziehTasten(ev, tasten)}>
+      <Symbol name="griff" />
+    </Knopf>
+  );
 }

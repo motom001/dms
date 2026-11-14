@@ -11,7 +11,8 @@ import {
   DECKKRAFT_HINWEIS_AB, einzeilig, NEUER_STEMPEL, pruefeVorlage, STEMPEL_FARBEN, STEMPEL_LAGEN, STEMPEL_MODI, STEMPEL_NAME_MAX, STEMPEL_SEITEN, STEMPEL_TEXT_MAX,
   type Stempel, type StempelFarbe, type StempelLage, type StempelSeiten, type StempelVorlage,
 } from '../../../shared/src/stempel';
-import { GeloeschteEintraege, Bereich, Fassungen, Knopf, KnopfLink, useBereiche, type BereichListe, type Klappe } from '../bausteine';
+import { GeloeschteEintraege, Bereich, Fassungen, Feld, HakenFeld, Knopf, KnopfLink, useBereiche, type BereichListe, type Klappe } from '../bausteine';
+import { Symbol } from '../Symbol';
 import { Kopf } from './Kopf';
 
 /**
@@ -126,10 +127,13 @@ export function StempelEditor({ z, id }: { z: StempelZustand; id: string }) {
         {!ent.geaendert && <p><Knopf groesse="klein" laeuft={sendet} onClick={() => speichern(gespeichert)}>{t('werkbank.stempel.umgestellt.ok')}</Knopf></p>}</div>}
       <Bereich id="grunddaten" titel={t('werkbank.stempel.bereich.grunddaten')} klappe={b.klappe('grunddaten', hatFehler('grunddaten'))} kurz={<span className="stempeltext">{e.name} · {einzeilig(e.text)}</span>}>
         <div className="raster">
-          <label className="eigenschaft"><span>{t('werkbank.stempel.name')}</span><input id="stempel-name" value={e.name} maxLength={STEMPEL_NAME_MAX} onChange={(x) => setze({ name: x.target.value })} required /></label>
-          <div className="eigenschaft breit"><label htmlFor="stempel-text"><span>{t('werkbank.stempel.text')} <small>{t('werkbank.stempel.text.hilfe')}</small></span></label>
-            <textarea id="stempel-text" ref={textfeld} rows={3} value={e.text} maxLength={STEMPEL_TEXT_MAX} onChange={(x) => setze({ text: x.target.value })} required />
-            <PlatzhalterKnoepfe feld={() => textfeld.current} text={e.text} setze={(text) => setze({ text })} /></div>
+          <Feld beschriftung={t('werkbank.stempel.name')}><input id="stempel-name" value={e.name} maxLength={STEMPEL_NAME_MAX} onChange={(x) => setze({ name: x.target.value })} required /></Feld>
+          <Feld beschriftung={t('werkbank.stempel.text')} hinweis={t('werkbank.stempel.text.hilfe')} className="breit" id="stempel-text">
+            {(v) => <>
+              <textarea {...v} ref={textfeld} rows={3} value={e.text} maxLength={STEMPEL_TEXT_MAX} onChange={(x) => setze({ text: x.target.value })} required />
+              <PlatzhalterKnoepfe feld={() => textfeld.current} text={e.text} setze={(text) => setze({ text })} />
+            </>}
+          </Feld>
         </div>
         {Object.values(fehler).map((f) => <p key={f} className="fehlertext klein">{f}</p>)}
       </Bereich>
@@ -163,26 +167,32 @@ function StempelAussehen({ e, setze, klappe }: { e: Entwurf; setze: (p: Partial<
   <Bereich id="aussehen" titel={t('werkbank.stempel.bereich.aussehen')} klappe={klappe}
       kurz={aussehenKurz(e)}>
       <div className="raster">
-        <label className="eigenschaft"><span>{t('werkbank.stempel.lage')}</span>
-          <select id="stempel-lage" value={e.lage} onChange={(x) => setze({ lage: x.target.value as StempelLage })}>{Object.keys(STEMPEL_LAGEN).map((k) => <option key={k} value={k}>{t.frei(`werkbank.stempel.lage.${k}`)}</option>)}</select></label>
-        <label className="eigenschaft"><span>{t('werkbank.stempel.seiten')}</span>
-          <select id="stempel-seiten" value={e.seiten} onChange={(x) => setze({ seiten: x.target.value as StempelSeiten })}>{Object.keys(STEMPEL_SEITEN).map((k) => <option key={k} value={k}>{t.frei(`werkbank.stempel.seiten.${k}`)}</option>)}</select></label>
-        <label className="eigenschaft"><span>{t('werkbank.stempel.farbe')}</span>
-          <select id="stempel-farbe" value={e.farbe} onChange={(x) => setze({ farbe: x.target.value as StempelFarbe })}>{Object.keys(STEMPEL_FARBEN).map((k) => <option key={k} value={k}>{t.frei(`werkbank.stempel.farbe.${k}`)}</option>)}</select></label>
-        <label className="eigenschaft"><span>{t('werkbank.stempel.groesse')} <small>{e.groesse} %</small></span>
-          <input id="stempel-groesse" type="range" min={50} max={200} step={10} value={e.groesse} onChange={(x) => setze({ groesse: Number(x.target.value) })} /></label>
-        <div className="eigenschaft"><label htmlFor="stempel-deckkraft"><span>{t('werkbank.stempel.deckkraft')} <small>{prozent} %</small></span></label>
-          <input id="stempel-deckkraft" type="range" min={10} max={100} step={5} value={prozent} aria-describedby={e.deckkraft >= DECKKRAFT_HINWEIS_AB ? 'stempel-deckkraft-hinweis' : undefined} onChange={(x) => setze({ deckkraft: Number(x.target.value) / 100 })} />
-          {e.deckkraft >= DECKKRAFT_HINWEIS_AB && <small id="stempel-deckkraft-hinweis" className="warntext" role="status">{t('werkbank.stempel.deckkraft.hinweis')}</small>}</div>
-        <div className="eigenschaft"><label htmlFor="stempel-drehung"><span>{t('werkbank.stempel.drehung')} <small>{e.lage === 'diagonal' ? t('werkbank.stempel.drehung.diagonal') : `${e.drehung}°`}</small></span></label>
-          <div className="zeile-mit-zahl">
-            <input id="stempel-drehung" type="range" min={0} max={359} step={1} value={e.drehung} disabled={e.lage === 'diagonal'} onChange={(x) => setze({ drehung: Number(x.target.value) })} />
-            <input id="stempel-drehung-zahl" type="number" min={0} max={359} step={1} value={e.drehung} disabled={e.lage === 'diagonal'} aria-label={`${t('werkbank.stempel.drehung')} (${t('werkbank.stempel.drehung.grad')})`}
-              onChange={(x) => { const n = Number(x.target.value); if (Number.isFinite(n)) setze({ drehung: ((Math.round(n) % 360) + 360) % 360 }); }} />
-          </div></div>
+        <Feld beschriftung={t('werkbank.stempel.lage')}>
+          <select id="stempel-lage" value={e.lage} onChange={(x) => setze({ lage: x.target.value as StempelLage })}>{Object.keys(STEMPEL_LAGEN).map((k) => <option key={k} value={k}>{t.frei(`werkbank.stempel.lage.${k}`)}</option>)}</select></Feld>
+        <Feld beschriftung={t('werkbank.stempel.seiten')}>
+          <select id="stempel-seiten" value={e.seiten} onChange={(x) => setze({ seiten: x.target.value as StempelSeiten })}>{Object.keys(STEMPEL_SEITEN).map((k) => <option key={k} value={k}>{t.frei(`werkbank.stempel.seiten.${k}`)}</option>)}</select></Feld>
+        <Feld beschriftung={t('werkbank.stempel.farbe')}>
+          <select id="stempel-farbe" value={e.farbe} onChange={(x) => setze({ farbe: x.target.value as StempelFarbe })}>{Object.keys(STEMPEL_FARBEN).map((k) => <option key={k} value={k}>{t.frei(`werkbank.stempel.farbe.${k}`)}</option>)}</select></Feld>
+        <Feld beschriftung={t('werkbank.stempel.groesse')} kopfZusatz={<small>{e.groesse} %</small>}>
+          <input id="stempel-groesse" type="range" min={50} max={200} step={10} value={e.groesse} onChange={(x) => setze({ groesse: Number(x.target.value) })} /></Feld>
+        <Feld beschriftung={t('werkbank.stempel.deckkraft')} kopfZusatz={<small>{prozent} %</small>}
+          hinweis={e.deckkraft >= DECKKRAFT_HINWEIS_AB && <span className="warntext" role="status">{t('werkbank.stempel.deckkraft.hinweis')}</span>}>
+          <input id="stempel-deckkraft" type="range" min={10} max={100} step={5} value={prozent} onChange={(x) => setze({ deckkraft: Number(x.target.value) / 100 })} /></Feld>
+        {/* Gesperrt aus einem Grund (#1213): bei „Diagonal“ steht der Grund unter den Feldern, nicht nur grau. */}
+        <Feld beschriftung={t('werkbank.stempel.drehung')} id="stempel-drehung" kopfZusatz={e.lage !== 'diagonal' && <small>{e.drehung}°</small>}
+          hinweis={e.lage === 'diagonal' && <><Symbol name="schloss" /> {t('werkbank.stempel.drehung.diagonal')}</>}>
+          {(v) => (
+            <div className="zeile-mit-zahl">
+              <input {...v} type="range" min={0} max={359} step={1} value={e.drehung} disabled={e.lage === 'diagonal'} onChange={(x) => setze({ drehung: Number(x.target.value) })} />
+              <input id="stempel-drehung-zahl" type="number" min={0} max={359} step={1} value={e.drehung} disabled={e.lage === 'diagonal'} aria-describedby={v['aria-describedby']} aria-label={`${t('werkbank.stempel.drehung')} (${t('werkbank.stempel.drehung.grad')})`}
+                onChange={(x) => { const n = Number(x.target.value); if (Number.isFinite(n)) setze({ drehung: ((Math.round(n) % 360) + 360) % 360 }); }} />
+            </div>
+          )}
+        </Feld>
       </div>
-      <label className="haken"><input id="stempel-tinte" type="checkbox" checked={e.tinte} onChange={(x) => setze({ tinte: x.target.checked })} />
-        <span>{t('werkbank.stempel.tinte')} <small className="hilfe">{t('werkbank.stempel.tinte.hilfe')}</small></span></label>
+      <HakenFeld beschriftung={t('werkbank.stempel.tinte')} hinweis={t('werkbank.stempel.tinte.hilfe')}>
+        <input id="stempel-tinte" type="checkbox" checked={e.tinte} onChange={(x) => setze({ tinte: x.target.checked })} />
+      </HakenFeld>
     </Bereich>
   );
 }

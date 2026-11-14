@@ -9,6 +9,7 @@ import { api } from '../api';
 import { Hilfe } from '../Hilfe';
 import { Link } from '../ort';
 import { t } from '../sprache';
+import { FeldGruppe } from '../bausteine';
 
 export function KiTypenBlock({ paket }: { paket: string }) {
   const [k, setK] = useState<KiUebersicht | null>(null);
@@ -32,16 +33,18 @@ export function KiTypenBlock({ paket }: { paket: string }) {
       <details className="klein" open={!namen.length}>
         <summary>{t('pakete.ki.zulassen', { zugelassen: k.typen.filter((x) => x.zugelassen).length, alle: k.typen.length })}</summary>
         <p className="leise">{t('pakete.ki.zulassen.text')}</p>
-        <ul className="auswahlliste">
-          {k.typen.map((x) => (
-            <li key={x.id}>
-              <label className="haken"><input type="checkbox" checked={x.zugelassen} disabled={sendet === x.id} onChange={(ev) => void setze(x.id, ev.target.checked)} />
-                <span><Link to={`/werkbank/typen/${x.id}#ki`} className="verweis">{x.name}</Link>
-                  {x.zugelassen && !bekommt.has(x.id) && <small className="hilfe">{t('pakete.ki.nicht-lesbar')}</small>}</span>
-              </label>
-            </li>
-          ))}
-        </ul>
+        <FeldGruppe beschriftung={t('pakete.ki.zugelassene-typen')} beschriftungVerbergen>
+          <ul className="auswahlliste">
+            {k.typen.map((x) => (
+              <li key={x.id}>
+                <label className="haken"><input type="checkbox" checked={x.zugelassen} disabled={sendet === x.id} onChange={(ev) => void setze(x.id, ev.target.checked)} />
+                  <span><Link to={`/werkbank/typen/${x.id}#ki`} className="verweis">{x.name}</Link>
+                    {x.zugelassen && !bekommt.has(x.id) && <small className="hilfe">{t('pakete.ki.nicht-lesbar')}</small>}</span>
+                </label>
+              </li>
+            ))}
+          </ul>
+        </FeldGruppe>
       </details>
     </section>
   );

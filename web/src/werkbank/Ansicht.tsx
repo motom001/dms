@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { api, type WerkbankAnsichtStand } from '../api';
 import { Link } from '../ort';
-import { Schalter } from '../bausteine';
+import { FeldGruppe, Schalter } from '../bausteine';
 import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 import {
   ansichtAus, BEREICHE, expertenBereiche, fuerAlle, GRUPPEN, inVorlage, nurImExpertenmodus, OHNE_EINSTELLUNG, sichtbar, VORLAGEN, vorlageFuer, type Gruppe, type Vorlage,
@@ -91,15 +91,14 @@ export function AnsichtPanel({ z, zustand }: { z: WerkbankAnsichtZustand; zustan
       </Kopf>
       {!s.eingestellt && <div className="hinweis"><p>{tn('werkbank.ansicht.noch-nicht-eingestellt-bisher', { b: <strong>{t('werkbank.ansicht.haushalt')}</strong>, b2: <strong>{t('werkbank.ansicht.betrieb')}</strong> })}</p></div>}
       <form className="blatt" onSubmit={(x) => { x.preventDefault(); void speichern(); }} onKeyDown={ent.tasten}>
-        <fieldset className="wahl">
-          <legend className="h3">{t('konten.verwaltende.ansicht.vorlage')}</legend>
-          {(Object.keys(VORLAGEN) as Vorlage[]).map((v) => (
+        <FeldGruppe beschriftung={t('konten.verwaltende.ansicht.vorlage')}>
+          <div className="feldstapel">{(Object.keys(VORLAGEN) as Vorlage[]).map((v) => (
             <label key={v} className="haken"><input type="radio" name="vorlage" value={v} checked={vorlage === v} onChange={() => waehleVorlage(v)} />
               <span><strong>{VORLAGEN[v].name}</strong> <span className="leise">– {VORLAGEN[v].text}</span>
                 {/* Vorgabe aus dem Merkmal „beruflich genutzt“ (#1032, #987). */}
                 {v === vorgabe && <> <small className="chip">{t('werkbank.ansicht.vorgabe-nutzung')}</small></>}</span></label>
-          ))}
-        </fieldset>
+          ))}</div>
+        </FeldGruppe>
         {/* Expertenmodus (#356): Bereiche, die die Vorlage nur für Fortgeschrittene vorsieht – je Administrator. */}
         <fieldset className="wahl">
           <legend className="h3">{t('werkbank.experte.titel')}</legend>
@@ -123,10 +122,10 @@ export function AnsichtPanel({ z, zustand }: { z: WerkbankAnsichtZustand; zustan
                     <span className="ansichtname"><strong>{b.name}</strong> <span className="leise klein">{b.wann}</span>
                       {!fuerAlleAn && nurImExpertenmodus(vorlage, b.pfad) ? <span className="chip" title={t('werkbank.experte.chip.titel')}>{t('werkbank.experte.chip')}</span> : null}
                       {benutzt ? <span className="chip warn" title={t('werkbank.ansicht.bleibt-aktiv-nur-die')}>{t('werkbank.ansicht.aber-ausgeblendet', { wert: zst.warn ? t('werkbank.ansicht.mit-hinweis') : t('werkbank.ansicht.eingerichtet') })}</span> : null}</span>
-                    <span className="ansichtwahl">
+                    <FeldGruppe className="ansichtwahl" beschriftung={b.name} beschriftungVerbergen>
                       <label className="haken"><input type="checkbox" checked={fuerAlleAn} aria-label={t('werkbank.ansicht.fuer-alle-zeigen', { name: b.name })} onChange={(x) => schalte(alle, setAlle, b.pfad, x.target.checked)} /><span>{t('werkbank.ansicht.fuer-alle')}</span></label>
                       <label className="haken"><input type="checkbox" checked={fuerAlleAn || ich.has(b.pfad)} disabled={fuerAlleAn} aria-label={t('werkbank.ansicht.nur-fuer-mich-zeigen', { name: b.name })} onChange={(x) => schalte(ich, setIch, b.pfad, x.target.checked)} /><span>{t('werkbank.ansicht.nur-fuer-mich')}</span></label>
-                    </span>
+                    </FeldGruppe>
                   </li>
                 );
               })}

@@ -3,11 +3,12 @@
  * den Ausgangstext, jede andere erlaubte Sprache ihre Beschriftung (leer = es gilt der Ausgangstext). Optionen eines
  * Auswahlfelds bekommen je Sprache eine Beschriftung; gespeichert wird in den Mappen weiter der feste Wert.
  */
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { AUSGANGSSPRACHE } from '../../../shared/src/sprache';
 import { beschriftungsstand, erlaubteSprachen, sprachname, type Beschriftungen } from '../../../shared/src/beschriftung';
 import type { MappentypDaten } from '../../../shared/src/model';
 import { t } from '../sprache';
+import { Feld, FeldGruppe, Umschalter } from '../bausteine';
 
 type Teile = Record<string, unknown>;
 
@@ -36,45 +37,53 @@ const textIn = (b: Beschriftungen<object> | undefined, spr: string, teil: string
   return typeof v === 'string' ? v : '';
 };
 
-/** Kleiner Umschalter zwischen den erlaubten Sprachen; ein Punkt markiert Sprachen ohne Beschriftung. */
+/**
+ * Kleiner Umschalter zwischen den erlaubten Sprachen (Baustein `Umschalter`, #1213); ein Punkt markiert Sprachen ohne
+ * Beschriftung, für Screenreader mit Text.
+ */
 export function SprachWahl({ sprache, setze, fehlt, mitAusgang = true }: { sprache: string; setze: (s: string) => void; fehlt?: (s: string) => boolean; mitAusgang?: boolean }) {
   const sprachen = erlaubteSprachen().filter((s) => mitAusgang || s !== AUSGANGSSPRACHE);
   if (sprachen.length < 2 && mitAusgang) return null;
   return (
-    <span className="segmente sprachwahl" role="group" aria-label={t('mappentypen.beschriftung.sprache')}>
-      {sprachen.map((s) => {
+    <Umschalter className="sprachwahl" beschriftung={t('mappentypen.beschriftung.sprache')} wert={sprache} setze={setze}
+      wahlen={sprachen.map((s) => {
         const leer = !!fehlt?.(s);
-        return (
-          <button key={s} type="button" className={s === sprache ? 'an' : undefined} aria-pressed={s === sprache} onClick={() => setze(s)}
-            title={leer ? t('mappentypen.beschriftung.fehlt', { sprache: sprachname(s) }) : sprachname(s)}>
-            {s.toUpperCase()}{leer && <span className="sprachwahl-luecke" aria-hidden="true" />}
-          </button>
-        );
-      })}
-    </span>
+        return {
+          wert: s,
+          text: <span title={leer ? t('mappentypen.beschriftung.fehlt', { sprache: sprachname(s) }) : sprachname(s)}>
+            {s.toUpperCase()}{leer && <><span className="sprachwahl-luecke" aria-hidden="true" /><span className="sr">{t('mappentypen.beschriftung.fehlt', { sprache: sprachname(s) })}</span></>}
+          </span>,
+        };
+      })} />
   );
 }
 
 interface SprachTextEigenschaften {
-  id?: string; ariaLabel?: string; placeholder?: string; autoFocus?: boolean;
+  /** Name des Felds; `beschriftungVerbergen` in Zeilen, die ihn schon zeigen (nur für Screenreader). */
+  beschriftung: ReactNode; beschriftungVerbergen?: boolean; hinweis?: ReactNode; optional?: boolean; className?: string;
+  id?: string; placeholder?: string; autoFocus?: boolean;
   /** Ausgangstext (Deutsch) und wie er sich ändert. */
   wert: string; setzeWert: (text: string) => void;
   /** Beschriftungen des Eintrags und welcher Teil (label, hilfe, name, beschreibung). */
   beschriftungen: Beschriftungen<object> | undefined; teil: string; setzeBeschriftungen: (b: Beschriftungen<object> | undefined) => void;
 }
 
-/** Eingabe eines Texts mit Sprachumschalter. */
+/** Eingabe eines Texts mit Sprachumschalter – im Feldrahmen (#1213), der Umschalter rechts neben der Eingabe. */
 export function SprachText(p: SprachTextEigenschaften) {
   const [spr, setSpr] = useState(AUSGANGSSPRACHE);
   const ausgang = spr === AUSGANGSSPRACHE;
   return (
-    <span className="sprachtext">
-      <input id={p.id} aria-label={p.ariaLabel} lang={spr} autoFocus={p.autoFocus}
-        value={ausgang ? p.wert : textIn(p.beschriftungen, spr, p.teil)}
-        placeholder={ausgang ? p.placeholder : p.wert}
-        onChange={(e) => (ausgang ? p.setzeWert(e.target.value) : p.setzeBeschriftungen(mitText(p.beschriftungen, spr, p.teil, e.target.value)))} />
-      <SprachWahl sprache={spr} setze={setSpr} fehlt={(s) => s !== AUSGANGSSPRACHE && !!p.wert.trim() && !textIn(p.beschriftungen, s, p.teil).trim()} />
-    </span>
+    <Feld beschriftung={p.beschriftung} beschriftungVerbergen={p.beschriftungVerbergen} hinweis={p.hinweis} optional={p.optional} className={p.className} id={p.id}>
+      {(v) => (
+        <span className="sprachtext">
+          <input {...v} lang={spr} autoFocus={p.autoFocus}
+            value={ausgang ? p.wert : textIn(p.beschriftungen, spr, p.teil)}
+            placeholder={ausgang ? p.placeholder : p.wert}
+            onChange={(e) => (ausgang ? p.setzeWert(e.target.value) : p.setzeBeschriftungen(mitText(p.beschriftungen, spr, p.teil, e.target.value)))} />
+          <SprachWahl sprache={spr} setze={setSpr} fehlt={(s) => s !== AUSGANGSSPRACHE && !!p.wert.trim() && !textIn(p.beschriftungen, s, p.teil).trim()} />
+        </span>
+      )}
+    </Feld>
   );
 }
 
@@ -87,10 +96,8 @@ export function OptionenBeschriftung({ id, optionen, beschriftungen, setze }: { 
   if (!optionen.length) return null;
   const opt = (s: string, w: string) => ((beschriftungen as Record<string, Teile> | undefined)?.[s]?.optionen as Record<string, string> | undefined)?.[w] ?? '';
   return (
-    <fieldset className="optionsbeschriftung">
-      <legend>{t('mappentypen.beschriftung.optionen')}</legend>
-      <SprachWahl sprache={spr} setze={setSpr} fehlt={(s) => s !== AUSGANGSSPRACHE && optionen.some((w) => !opt(s, w).trim())} />
-      <p className="leise klein">{t('mappentypen.beschriftung.optionen-hilfe')}</p>
+    <FeldGruppe className="optionsbeschriftung" beschriftung={t('mappentypen.beschriftung.optionen')} hinweis={t('mappentypen.beschriftung.optionen-hilfe')}
+      kopfZusatz={<SprachWahl sprache={spr} setze={setSpr} fehlt={(s) => s !== AUSGANGSSPRACHE && optionen.some((w) => !opt(s, w).trim())} />}>
       <div className="optionszeilen">
         {optionen.map((w, i) => (
           <label key={w} className="optionszeile" htmlFor={`${id}-${i}`}>
@@ -100,7 +107,7 @@ export function OptionenBeschriftung({ id, optionen, beschriftungen, setze }: { 
           </label>
         ))}
       </div>
-    </fieldset>
+    </FeldGruppe>
   );
 }
 

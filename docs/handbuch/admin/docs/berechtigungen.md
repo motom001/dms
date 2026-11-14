@@ -67,7 +67,7 @@ Bei einem Verweisfeld mit [mehreren Zieltypen](mappentypen.md#mehrere-zieltypen)
 
 ### Regel in andere Mappentypen kopieren
 
-Mit **In andere Mappentypen kopieren …** an einer gespeicherten Regel übernimmst du sie in weitere Mappentypen (bei ungespeicherten Änderungen erst speichern); sie landet dort am Ende. Bedingungen auf Felder, die es im Zieltyp nicht gibt, fallen weg – Ablago sagt, wie viele.
+Mit **In andere Mappentypen kopieren …** an einer gespeicherten Regel übernimmst du sie in weitere Mappentypen (bei ungespeicherten Änderungen ist der Knopf gesperrt – ein Klick darauf sagt, warum: erst speichern); sie landet dort am Ende. Bedingungen auf Felder, die es im Zieltyp nicht gibt, fallen weg – Ablago sagt, wie viele.
 
 ### Speichern
 
