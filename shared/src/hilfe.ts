@@ -125,6 +125,8 @@ export const HILFE = {
   'werkbank.stempel': admin('stempel/', 'Stempel-Vorlagen'),
   'werkbank.automatisierungen': admin('automatisierungen/', 'Automatisierungen'),
   'werkbank.ablaufvorlagen': admin('automatisierungsvorlagen/', 'Automatisierungsvorlagen'),
+  // #1180: Haken „Datum“ bei „In …“ – das Datum als änderbarer Vorschlag.
+  'werkbank.ablaufvorlagen.datum': admin('automatisierungsvorlagen/', 'Datum vorschlagen', 'datum-vorschlagen'),
   'werkbank.suche': admin('suche/', 'Suche: Tippfehler und Wörterverzeichnis'),
   'werkbank.woerter': admin('suche/', 'Gleichbedeutende Wörter', 'gleichbedeutende-worter'),
   'mappentyp.stempel': admin('stempel/', 'Stempel je Mappentyp', 'stempel-je-mappentyp'),

@@ -340,6 +340,8 @@ async function vorbereiten(cookie) {
   daten.vorbelegen = await vorbelegenDaten(cookie);
   // Archivmodus „Ist der Stichtag leer: läuft noch nicht ab“ (#1051): ein laufender und ein beendeter Mietvertrag.
   daten.archiv = await archivDaten(cookie);
+  // Datum vorschlagen (#1180): eigener Typ ohne Ansicht.
+  daten.vorschlag = await vorschlagDaten(cookie);
   // Ablage aus Bausteinen (#1211, #1212): ein Mappentyp ohne Archivmodus, damit Löschen in den Papierkorb geht.
   daten.bausteine = (await api('POST', '/api/typen', { cookie, body: { name: 'Kellerraum', schluessel: 'kellerraum', titelVorlage: '{objekt}',
     felder: [{ key: 'objekt', label: 'Objekt', typ: 'text', pflicht: true }, { key: 'notiz', label: 'Notiz', typ: 'langtext' }, { key: 'seit', label: 'Seit', typ: 'datum' }] } })).daten;
@@ -388,6 +390,24 @@ async function archivDaten(cookie) {
   const laufend = (await api('POST', '/api/mappen', { cookie, body: { typId: typ.id, werte: { objekt: 'Lager Gartenstraße' } } })).daten;
   const beendet = (await api('POST', '/api/mappen', { cookie, body: { typId: typ.id, werte: { objekt: 'Garage Hofweg', beendet: '2027-06-30' } } })).daten;
   return { typ, laufend, beendet };
+}
+
+/** #1180: Typ „Werkzeug“ mit einer Mappe und der Vorlage „Erinnere mich in 14 Tagen“ (nur dort, Datum als Vorschlag). */
+async function vorschlagDaten(cookie) {
+  const werkzeug = (await api('POST', '/api/typen', { cookie, body: { name: 'Werkzeug', schluessel: 'werkzeug', titelVorlage: '{name}', sichtAnlegen: false,
+    felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }] } })).daten;
+  const mappe = (await api('POST', '/api/mappen', { cookie, body: { typId: werkzeug.id, werte: { name: 'Bohrhammer' } } })).daten;
+  const vorlage = (await api('POST', '/api/werkbank/ablaufvorlagen', { cookie, body: { name: 'Erinnere mich in 14 Tagen', typen: [werkzeug.id],
+    wann: { art: 'in', anzahl: 14, einheit: 'tage' }, fragen: ['datum', 'text'], karten: [{ art: 'aufgabe', als: 'aufgabe', empfaenger: [{ art: 'selbst' }], text: '{eingabe}' }] } })).daten;
+  return { werkzeug, mappe, vorlage };
+}
+
+/** Heute (Europe/Berlin, wie der Browser der Rauchtests) plus `tage` als JJJJ-MM-TT. */
+function inTagen(tage) {
+  const heute = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Berlin' }).format(new Date());
+  const d = new Date(`${heute}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + tage);
+  return d.toISOString().slice(0, 10);
 }
 
 /* ---------- Desktop ---------- */
@@ -2153,4 +2173,81 @@ rauchtest('Handy: „antwortet gerade nicht“ bei abgewiesener Datenbank nennt 
   await meldung.getByText(/erreicht aber seit weniger als einer Minute seine Datenbank nicht – sie ist vermutlich aus\./).waitFor({ timeout: 30_000 });
   assert.match((await meldung.locator('ol.startbild-schritte li').allInnerTexts())[1], /Container der Datenbank läuft/);
   await k.unrouteAll({ behavior: 'ignoreErrors' });
+});
+
+/* ---------- Datum vorschlagen (#1180) ---------- */
+
+/** Den Dialog der Vorlage an der Mappe öffnen (Menü „Mappe“). */
+async function vorschlagDialog(s) {
+  const { werkzeug, mappe, vorlage } = daten.vorschlag;
+  await s.goto(BASIS + `/ablage/${werkzeug.id}/${mappe.id}`);
+  const bereich = s.getByRole('region', { name: 'Mappe' });
+  await bereich.getByRole('heading', { name: 'Bohrhammer', level: 1 }).waitFor();
+  await bereich.getByRole('button', { name: 'Mappe', exact: true }).click();
+  await s.getByRole('menuitem', { name: vorlage.name }).click();
+  const dialog = bereich.getByRole('region', { name: vorlage.name });
+  await dialog.getByLabel('Am').waitFor();
+  return dialog;
+}
+
+rauchtest('Automatisierungsvorlage: Datum „in 14 Tagen“ vorbelegt und änderbar, an der Mappe und beim Ausprobieren (#1180)', { als: LENA }, async (s) => {
+  const { vorlage } = daten.vorschlag;
+  const funde = [];
+  const dialog = await vorschlagDialog(s);
+  assert.equal(await dialog.getByLabel('Am').inputValue(), inTagen(14), 'vorbelegt mit heute + 14 Tage');
+  await dialog.getByText(/^Vorgeschlagen: /).waitFor();
+  for (const schema of ['light', 'dark']) {
+    await s.emulateMedia({ colorScheme: schema });
+    // Knöpfe wechseln ihre Fläche mit einem kurzen Übergang – erst danach messen (wie im Assistenten).
+    await s.waitForTimeout(400);
+    for (const v of await axePruefen(s, ['.spalte.mappe'])) funde.push(`Dialog an der Mappe (${schema}): ${v}`);
+  }
+  await s.emulateMedia({ colorScheme: 'light' });
+  // Geändert: Der Ablauf steht unter „Geplant“ mit dem neuen Datum.
+  await dialog.getByLabel('Am').fill(inTagen(20));
+  await dialog.getByLabel('Text').fill('Akku prüfen');
+  await dialog.getByRole('button', { name: vorlage.name }).click();
+  await dialog.waitFor({ state: 'detached' });
+  const [j, m, t] = inTagen(20).split('-');
+  await s.getByRole('region', { name: 'Mappe' }).getByText(`${t}.${m}.${j}`).first().waitFor();
+  // Werkbank: Haken „Datum“ frei wählbar und an, Kurzform „(änderbar)“, Ausprobieren vorbelegt.
+  await verwalten(s);
+  await s.goto(BASIS + `/werkbank/ablaufvorlagen/${encodeURIComponent(vorlage.kennung)}`);
+  const bearbeitung = s.getByRole('region', { name: 'Bearbeitung' });
+  const fragen = bearbeitung.getByRole('group', { name: 'Fragt beim Anwenden' });
+  const haken = fragen.getByRole('checkbox', { name: 'Datum' });
+  await haken.waitFor();
+  assert.ok(await haken.isChecked() && await haken.isEnabled(), 'bei „In …“ frei wählbar und an');
+  await bearbeitung.getByText('Läuft: In 14 Tagen (änderbar).').waitFor();
+  assert.equal(await bearbeitung.locator('input[type="date"]').inputValue(), inTagen(14), 'Ausprobieren wie der Dialog vorbelegt');
+  for (const schema of ['light', 'dark']) {
+    await s.emulateMedia({ colorScheme: schema });
+    // Knöpfe wechseln ihre Fläche mit einem kurzen Übergang – erst danach messen (wie im Assistenten).
+    await s.waitForTimeout(400);
+    for (const v of await axePruefen(s, WERKBANK_BEREICHE)) funde.push(`Vorlage in der Werkbank (${schema}): ${v}`);
+  }
+  // Ohne Haken: fest – die Kurzform ohne „(änderbar)“ (nicht gespeichert).
+  await haken.uncheck();
+  await bearbeitung.getByText('Läuft: In 14 Tagen.').waitFor();
+  assert.deepEqual(funde, [], `axe meldet Verstöße:\n${funde.join('\n')}`);
+});
+
+rauchtest('Handy: Dialog „Erinnere mich in 14 Tagen“ mit 44-px-Tippflächen (#1180)', { handy: true, als: LENA }, async (s) => {
+  const funde = [];
+  await vorschlagDialog(s);
+  await s.waitForLoadState('networkidle');
+  for (const v of await tippflaechenPruefen(s, ['.spalte.mappe'])) funde.push(`Dialog an der Mappe: ${v}`);
+  assert.deepEqual(funde, [], `Zu kleine Tippflächen am Handy:\n${funde.join('\n')}`);
+});
+
+rauchtest('Handy: Vorlage in der Werkbank mit 44-px-Tippflächen (#1180)', { handy: true, als: LENA }, async (s) => {
+  const { vorlage } = daten.vorschlag;
+  const funde = [];
+  await s.goto(BASIS + '/ablage/start');
+  await verwalten(s);
+  await s.goto(BASIS + `/werkbank/ablaufvorlagen/${encodeURIComponent(vorlage.kennung)}`);
+  await s.getByRole('group', { name: 'Fragt beim Anwenden' }).waitFor();
+  await s.waitForLoadState('networkidle');
+  for (const v of await tippflaechenPruefen(s, WERKBANK_BEREICHE)) funde.push(`Vorlage: ${v}`);
+  assert.deepEqual(funde, [], `Zu kleine Tippflächen am Handy:\n${funde.join('\n')}`);
 });

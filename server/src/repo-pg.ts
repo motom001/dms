@@ -16,7 +16,7 @@ import type { Quelle } from '../../shared/src/model';
 import type { InstalliertesPaket } from '../../shared/src/pakete';
 import { beiVerklemmungWiederholen } from './db';
 import { protokoll } from './protokoll';
-import { erhoeheMappenstand, erhoeheZahlenstand, lesespeicherFuer, liesStand } from './lesespeicher';
+import { erhoeheMappenstand, erhoeheZahlenstand, lesespeicherFuer, liesStand, merkeAenderung } from './lesespeicher';
 import { dienstEmail, feldweise, istUuid, KonfigurationVeraltet, StandVeraltet, WOERTER_JE_LAUF, type AuskunftLinkIntern, type DokumentImPapierkorb, type PapierkorbEintrag, type Repo, type SeitenAnfrage, type Verweis } from './repo';
 import { istSha, type LoeschDokument, type LoeschEintrag } from '../../shared/src/loeschprotokoll';
 import { zeitzone } from '../../shared/src/region';
@@ -2464,6 +2464,9 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
       return gemerkt('ablaufvorlagen', async () => (await sql`SELECT * FROM ablaufvorlagen WHERE haushalt_id = ${haushaltId} ORDER BY reihenfolge, name, kennung`).map(alsVorlage));
     },
     async speichereAblaufvorlage(v, von, erwartet) {
+      // Ändert keine Zahl (OHNE_FOLGEN), aber die gemerkten Vorlagen: Der Stand aus dieser Anfrage gilt nicht mehr – sonst
+      // läse dieselbe Anfrage danach die alte Liste (Anlegen meldete „gibt es nicht“).
+      merkeAenderung();
       const daten = { beschreibung: v.beschreibung, typen: v.typen, wann: v.wann, fragen: v.fragen, karten: v.karten };
       if (erwartet === null) {
         return (await sql`INSERT INTO ablaufvorlagen (haushalt_id, kennung, name, reihenfolge, daten, aktiv, herkunft, paket_id, version, geaendert_von)
@@ -2475,6 +2478,7 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
         WHERE haushalt_id = ${haushaltId} AND kennung = ${v.kennung} AND version = ${erwartet} RETURNING version`).length > 0;
     },
     async loescheAblaufvorlage(kennung) {
+      merkeAenderung();
       await sql`DELETE FROM ablaufvorlagen WHERE haushalt_id = ${haushaltId} AND kennung = ${kennung}`;
     },
     async vermerkeAblauf(e) {

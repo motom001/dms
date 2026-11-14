@@ -340,7 +340,7 @@ A user with access to the workbench. Permissions don't restrict them.
 A setting per folder type for retention obligations – with versions and a deletion lock until the end of the period.
 
 <a id="automatisierungsvorlage"></a>**Automation template** (*Automatisierungsvorlage*) · ~ with explanation · administrators  
-An automation with gaps that you apply to one folder – “Assign task”, “Remind”, “Follow-up”. It runs straight away, on the chosen date or in a number of days, weeks or months, asks for recipient, text or date when applied and only knows the “Task / notification” card. An applied template (folder run) runs with the rights of the person who set it up – checked when it runs. Workbench → Build the library → Automation templates.  
+An automation with gaps that you apply to one folder – “Assign task”, “Remind”, “Follow-up”. It runs straight away, on the chosen date or in a number of days, weeks or months (fixed or as a suggestion that can be changed when applying), asks for recipient, text or date when applied and only knows the “Task / notification” card. An applied template (folder run) runs with the rights of the person who set it up – checked when it runs. Workbench → Build the library → Automation templates.  
 See also: [Planned](#geplant), [Reminder](#erinnerung), [Package](#paket).
 
 <a id="betrieb"></a>**Business** (*Betrieb*) · ✓ everyday word · administrators  

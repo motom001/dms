@@ -288,7 +288,7 @@ A package can bring **automation templates** (dms #1044, from Ablago 0.256.0): r
   name: Wiedervorlage
   beschreibung: In sechs Monaten steht die Mappe wieder bei dir unter „Zu erledigen“.
   wann: { art: in, anzahl: 6, einheit: monate }   # or { art: sofort } or { art: datum }
-  fragen: []                                      # empfaenger, datum (required with art: datum), text
+  fragen: []                                      # empfaenger, datum (required with art: datum; with art: in = a suggestion that can be changed, #1180), text
   karten:
     - { art: aufgabe, als: aufgabe, empfaenger: [{ art: selbst }], text: "Wiedervorlage: {titel}" }
 ```

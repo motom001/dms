@@ -284,7 +284,7 @@ Ein Paket kann **Automatisierungsvorlagen** mitbringen (dms #1044, ab Ablago 0.2
   name: Wiedervorlage
   beschreibung: In sechs Monaten steht die Mappe wieder bei dir unter „Zu erledigen“.
   wann: { art: in, anzahl: 6, einheit: monate }   # oder { art: sofort } bzw. { art: datum }
-  fragen: []                                      # empfaenger, datum (Pflicht bei art: datum), text
+  fragen: []                                      # empfaenger, datum (Pflicht bei art: datum; bei art: in = änderbarer Vorschlag, #1180), text
   karten:
     - { art: aufgabe, als: aufgabe, empfaenger: [{ art: selbst }], text: "Wiedervorlage: {titel}" }
 ```

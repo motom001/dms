@@ -29,7 +29,7 @@ import { t, tAuto } from '../sprache';
 import type { ZugriffDienst } from '../zugriff';
 import {
   type AblaufAngehalten, type AblaufAntworten, type AblaufVerlauf, type Ablaufvorlage, type AblaufvorlageAnsicht, type AblaufvorlageDaten, bereinigeVorlage,
-  istKernVorlage, kernVorlage, KERN_VORLAGEN, laeuftAm, type MappenAblauf, VORLAGEN_GRENZEN, VORLAGEN_REIHENFOLGE, vorlageKurz, vorlagenEingabeFehler, vorlagenProbleme,
+  fragtDatum, istKernVorlage, kernVorlage, KERN_VORLAGEN, laeuftAm, type MappenAblauf, VORLAGEN_GRENZEN, VORLAGEN_REIHENFOLGE, vorlageKurz, vorlagenEingabeFehler, vorlagenProbleme,
   type VorlageZumAnwenden, type VorlagenEmpfaenger, type VorlagenKarte,
 } from '../../../shared/src/ablaufvorlagen';
 import { AUTOMATISIERUNG_GRENZEN } from '../../../shared/src/automatisierung';
@@ -114,8 +114,9 @@ export class MappenAblaeufe {
       if (sofort && text.length > AUFGABE_MAX) throw new Fachfehler(422, t('meldungen.dienst.hoechstens-zeichen', { AUFGABE_MAX }));
       if (!sofort && text.length > ERINNERUNG_TEXT_MAX) throw new Fachfehler(422, t('meldungen.dienst.hoechstens-zeichen-2', { ERINNERUNG_TEXT_MAX }));
     }
+    // Datum: bei „Am gewählten Datum“ immer, bei „In …“ nur mit der Frage „Datum“ (#1180) – sonst steht es fest.
     let datum: string | null = null;
-    if (v.wann.art === 'datum') {
+    if (fragtDatum(v)) {
       if (!istDatum(e.datum)) throw new Fachfehler(422, t('meldungen.dienst.bitte-ein-datum-angeben'));
       datum = e.datum;
     }

@@ -4,7 +4,7 @@
  * Aufgabentechnik mehr.
  *
  * - **Wann** (die Wenn-Karte der Vorlage): sofort, am Datum, das man beim Anwenden angibt, oder in N Tagen, Wochen bzw.
- *   Monaten.
+ *   Monaten – fest oder, mit der Frage „Datum“, als änderbarer Vorschlag (#1180).
  * - **Karten** (Dann): nur aus der erlaubten Liste {@link VORLAGEN_KARTEN} – Aufgabe oder Benachrichtigung. Keine Karte
  *   schickt Daten nach außen (keine E-Mail an frei eingegebene Adressen, kein Adressaufruf); das gilt auch für Vorlagen
  *   aus Paketen und für deren Updates (Sicherheit).
@@ -202,11 +202,19 @@ export function vorlagenEingabeFehler(e: unknown): string[] {
   return fehler;
 }
 
+/**
+ * Fragt die Vorlage beim Anwenden nach dem Datum? Bei „Am gewählten Datum“ immer; bei „In …“ nur mit der Frage „Datum“
+ * (#1180) – dann ist „in 14 Tagen“ ein Vorschlag, den man beim Anwenden ändern darf. Ohne die Frage steht es fest.
+ */
+export function fragtDatum(d: Pick<AblaufvorlageDaten, 'wann' | 'fragen'>): boolean {
+  return d.wann.art === 'datum' || (d.wann.art === 'in' && d.fragen.includes('datum'));
+}
+
 /** Fragen und Wann passen zusammen und zu den Karten. */
 function fragenProbleme(d: AblaufvorlageDaten): string[] {
   const p: string[] = [];
   if (d.wann.art === 'datum' && !d.fragen.includes('datum')) p.push(t('gemeinsam.ablaufvorlagen.datum-fragen'));
-  if (d.wann.art !== 'datum' && d.fragen.includes('datum')) p.push(t('gemeinsam.ablaufvorlagen.datum-nur-am-datum'));
+  if (d.wann.art === 'sofort' && d.fragen.includes('datum')) p.push(t('gemeinsam.ablaufvorlagen.datum-nicht-sofort'));
   const fragtEmpfaenger = d.karten.some((k) => k.empfaenger.some((e) => e.art === 'frage'));
   if (fragtEmpfaenger && !d.fragen.includes('empfaenger')) p.push(t('gemeinsam.ablaufvorlagen.empfaenger-fragen'));
   if (!fragtEmpfaenger && d.fragen.includes('empfaenger')) p.push(t('gemeinsam.ablaufvorlagen.empfaenger-ungenutzt'));
@@ -241,18 +249,30 @@ export function vorlagenProbleme(d: AblaufvorlageDaten, typen: Mappentyp[]): str
   return [...new Set(p)];
 }
 
-/** Am Tag `heute` angewendet: wann läuft der Ablauf? null = sofort. */
+/**
+ * Am Tag `heute` angewendet: wann läuft der Ablauf? null = sofort. `datum` ist die Antwort auf die Frage „Datum“ – nur
+ * übergeben, wenn die Vorlage danach fragt ({@link fragtDatum}); bei „In …“ ersetzt sie den Vorschlag.
+ */
 export function laeuftAm(w: AblaufWann, heute: string, datum?: string | null): string | null {
   if (w.art === 'sofort') return null;
   if (w.art === 'datum') return datum ?? null;
-  return verschiebe(heute, w.anzahl, w.einheit);
+  return datum ?? verschiebe(heute, w.anzahl, w.einheit);
 }
 
-/** „Sofort“, „Am gewählten Datum“, „In 6 Monaten“. */
-export function wannText(w: AblaufWann): string {
+/**
+ * Vorbelegung des Datumsfelds beim Anwenden und Ausprobieren: bei „In …“ der Vorschlag (heute + 14 Tage), bei „Am
+ * gewählten Datum“ wie bisher in einer Woche (#1180).
+ */
+export function vorschlagDatum(w: AblaufWann, heute: string): string {
+  return w.art === 'in' ? verschiebe(heute, w.anzahl, w.einheit) : verschiebe(heute, 7);
+}
+
+/** „Sofort“, „Am gewählten Datum“, „In 6 Monaten“ – mit `aenderbar` (Frage „Datum“ bei „In …“): „In 14 Tagen (änderbar)“. */
+export function wannText(w: AblaufWann, aenderbar = false): string {
   if (w.art === 'sofort') return t('gemeinsam.ablaufvorlagen.wann.sofort');
   if (w.art === 'datum') return t('gemeinsam.ablaufvorlagen.wann.datum');
-  return t.frei(`gemeinsam.ablaufvorlagen.wann.in.${w.einheit}`, { anzahl: w.anzahl });
+  const x = t.frei(`gemeinsam.ablaufvorlagen.wann.in.${w.einheit}`, { anzahl: w.anzahl });
+  return aenderbar ? t('gemeinsam.ablaufvorlagen.wann.aenderbar', { wann: x }) : x;
 }
 
 /** Beschriftung eines Empfängers (`feld`: das Label im Mappentyp, sonst die Kennung). */
@@ -268,7 +288,7 @@ export function karteText(k: VorlagenKarte, typen: Mappentyp[] = []): string {
 
 /** „Sofort → Aufgabe an die gewählte Person“. */
 export function vorlageKurz(d: AblaufvorlageDaten, typen: Mappentyp[] = []): string {
-  return `${wannText(d.wann)} → ${d.karten.map((k) => karteText(k, typen)).join(', ') || '…'}`;
+  return `${wannText(d.wann, d.wann.art === 'in' && fragtDatum(d))} → ${d.karten.map((k) => karteText(k, typen)).join(', ') || '…'}`;
 }
 
 /** Feste Platzhalter einer Vorlage (zusätzlich zu denen des Mappentitels). */

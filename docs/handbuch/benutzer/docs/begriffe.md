@@ -357,7 +357,7 @@ Haken an einem Feld (#938, früher „Für die Erkennung nutzen“) – der Knop
 Siehe auch: [Zum Wiederfinden nutzen](#zum-wiederfinden-nutzen).
 
 <a id="automatisierungsvorlage"></a>**Automatisierungsvorlage** · ~ mit Erklärung · Administratoren  
-Eine Automatisierung mit Lücken, die man an einer Mappe anwendet – „Aufgabe vergeben“, „Erinnern“, „Wiedervorlage“. Sie läuft sofort, am gewählten Datum oder in einigen Tagen, Wochen oder Monaten, fragt beim Anwenden nach Empfänger, Text oder Datum und kennt nur die Karte „Aufgabe / Benachrichtigung“. Eine angewendete Vorlage (Mappen-Ablauf) läuft mit den Rechten der Person, die sie angelegt hat – geprüft, wenn sie läuft. Werkbank → Ablage aufbauen → Automatisierungsvorlagen.  
+Eine Automatisierung mit Lücken, die man an einer Mappe anwendet – „Aufgabe vergeben“, „Erinnern“, „Wiedervorlage“. Sie läuft sofort, am gewählten Datum oder in einigen Tagen, Wochen oder Monaten (fest oder als Vorschlag, den man beim Anwenden ändern darf), fragt beim Anwenden nach Empfänger, Text oder Datum und kennt nur die Karte „Aufgabe / Benachrichtigung“. Eine angewendete Vorlage (Mappen-Ablauf) läuft mit den Rechten der Person, die sie angelegt hat – geprüft, wenn sie läuft. Werkbank → Ablage aufbauen → Automatisierungsvorlagen.  
 Siehe auch: [Geplant](#geplant), [Erinnerung](#erinnerung), [Paket](#paket).
 
 <a id="beim-auswahlen-ubernehmen"></a>**Beim Auswählen übernehmen** · ~ mit Erklärung · Administratoren  

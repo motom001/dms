@@ -1306,6 +1306,20 @@ async function main() {
   await geheZu(s, '/werkbank/ablaufvorlagen/erinnern');
   await s.getByRole('heading', { name: w('Gerade benutzt bei'), exact: true }).waitFor();
   await bild(s, 'werkbank-automatisierungsvorlagen');
+  // Datum vorschlagen (#1180): eigene Vorlage „Erinnere mich in 14 Tagen“ – Wann „In 14 Tagen“, Haken „Datum“ frei wählbar.
+  {
+    const v = await api('POST', '/api/werkbank/ablaufvorlagen', {
+      name: SPRACHE === 'en' ? 'Remind me in 14 days' : 'Erinnere mich in 14 Tagen', wann: { art: 'in', anzahl: 14, einheit: 'tage' }, fragen: ['datum', 'text'],
+      karten: [{ art: 'aufgabe', als: 'aufgabe', empfaenger: [{ art: 'selbst' }], text: '{eingabe}' }],
+    });
+    await geheZu(s, `/werkbank/ablaufvorlagen/${encodeURIComponent(v.kennung)}`);
+    const fragen = s.getByRole('group', { name: w('Fragt beim Anwenden') });
+    await fragen.waitFor();
+    await fragen.evaluate((e) => e.scrollIntoView({ block: 'center' }));
+    await bild(s, 'werkbank-automatisierungsvorlage-vorschlag');
+    // Wieder weg, damit spätere Bilder (Menü „Mappe“) unverändert bleiben.
+    await api('DELETE', `/api/werkbank/ablaufvorlagen/${encodeURIComponent(v.kennung)}`);
+  }
   // Datenschutz (#396): Vertragspartner „betrifft eine Person“, Auskunft für die Stadtwerke gesammelt – Prüfliste.
   await api('PUT', '/api/werkbank/datenschutz', { verantwortlicher: 'Familie Beispiel\nMusterweg 1, 01234 Musterstadt', empfaenger: '', typen: { [d.typ('Vertragspartner').id]: { person: true, zweck: 'Verträge und Rechnungen des Haushalts' } } });
   await geheZu(s, `/werkbank/auskuenfte/neu?mappe=${d.stadtwerke.id}`);

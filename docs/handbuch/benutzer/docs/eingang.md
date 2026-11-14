@@ -47,7 +47,7 @@ Steht bei dir unter „Zu erledigen“ eine **nicht sichtbare Mappe**, hast du e
 
 ### Geplant, Wiedervorlage und andere Vorlagen { #geplant }
 
-„Aufgabe vergeben“ und „Erinnern“ sind **Automatisierungsvorlagen**: kleine Abläufe, die du an einer Mappe anwendest. Die Verwaltung kann weitere einrichten oder über ein Paket bekommen – mit dem Paket **Benachrichtigungen** etwa **Wiedervorlage**: ein Klick, und in sechs Monaten steht die Mappe wieder bei dir unter „Zu erledigen“. Solche Vorlagen stehen im Menü **Mappe ▾** unter „Erinnern“; der kleine Dialog fragt genau das, was die Vorlage braucht.
+„Aufgabe vergeben“ und „Erinnern“ sind **Automatisierungsvorlagen**: kleine Abläufe, die du an einer Mappe anwendest. Die Verwaltung kann weitere einrichten oder über ein Paket bekommen – mit dem Paket **Benachrichtigungen** etwa **Wiedervorlage**: ein Klick, und in sechs Monaten steht die Mappe wieder bei dir unter „Zu erledigen“. Solche Vorlagen stehen im Menü **Mappe ▾** unter „Erinnern“; der kleine Dialog fragt genau das, was die Vorlage braucht. Schlägt sie ein Datum vor (etwa „in 14 Tagen“), ist das Datumsfeld schon ausgefüllt – du kannst es ändern.
 
 Alles, was an einer Mappe noch kommt, steht oben unter **Geplant** – mit Datum, für wen und welcher Vorlage. Ist etwas gelaufen, verschwindet es dort; die Historie der Mappe behält, was passiert ist. Ein Ablauf läuft immer mit **deinen** Rechten, wie sie am Tag selbst sind: Bist du dann deaktiviert oder darfst die Mappe nicht mehr lesen, steht er als **angehalten** da, und die Verwaltung entscheidet, wie es weitergeht.
 

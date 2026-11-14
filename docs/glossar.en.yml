@@ -216,7 +216,7 @@ begriffe:
     beschreibung: Area at the top of a folder with everything still to come there – reminders, follow-ups and other runs from automation templates. What has run disappears and is in the history. “paused” means the person who set it up may no longer carry it out; the administrators see this.
   Automatisierungsvorlage:
     begriff: Automation template
-    beschreibung: An automation with gaps that you apply to one folder – “Assign task”, “Remind”, “Follow-up”. It runs straight away, on the chosen date or in a number of days, weeks or months, asks for recipient, text or date when applied and only knows the “Task / notification” card. An applied template (folder run) runs with the rights of the person who set it up – checked when it runs. Workbench → Build the library → Automation templates.
+    beschreibung: An automation with gaps that you apply to one folder – “Assign task”, “Remind”, “Follow-up”. It runs straight away, on the chosen date or in a number of days, weeks or months (fixed or as a suggestion that can be changed when applying), asks for recipient, text or date when applied and only knows the “Task / notification” card. An applied template (folder run) runs with the rights of the person who set it up – checked when it runs. Workbench → Build the library → Automation templates.
   Weitergeben:
     begriff: Pass on
     beschreibung: Transferring a task to another user.
