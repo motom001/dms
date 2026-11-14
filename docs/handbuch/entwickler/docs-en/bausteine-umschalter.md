@@ -9,6 +9,7 @@
 | `wahlen` | `{ wert, text }` – two to four, short (one word) |
 | `beschriftung` | name of the group for screen readers, e.g. “Ask or search” |
 | `anker` | jump target for tours and tips (`data-anker`), optional |
+| `schmalUntereinander` | long choices (#1217, “New folder · Existing folder · Just mark as done”): stacked on a phone (up to 600 px) instead of cut off, optional |
 
 ```tsx
 import { Umschalter } from '../bausteine';
@@ -23,6 +24,7 @@ import { Umschalter } from '../bausteine';
 - **Unobtrusive:** small type, quiet colour – it sits next to a box without looking like a main action.
 - **Remembering** is up to the page (e.g. as a setting of the person with `d.setzeEinstellung`).
 - **On the phone** each choice is at least 44 × 44 px ([On the phone](bausteine.md#handy)).
-- The pattern page shows the building block in the section **Toggle**: two and three choices.
+- **Long choices** don’t fit side by side on a phone; with `schmalUntereinander` they are stacked there, as wide as the column (example: “Where does this belong?” on *Take over document*, `web/src/ablage/WohinGehoert.tsx`).
+- The pattern page shows the building block in the section **Toggle**: two and three choices, plus long choices that are stacked on a phone.
 
 Older places with the class `segmente` in `styles.css` (List · Month · Year in *To do*, text size in My account) are converted by whoever changes them anyway.

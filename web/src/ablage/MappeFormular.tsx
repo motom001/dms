@@ -1094,7 +1094,8 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
       {/* Gemeinsame Speicherleiste (#1210, #1211): „Mappe löschen“ links (Gefahr mit Rückfrage und Grund), „Verwerfen“
           mit Rand, „Mappe speichern“ blau – wie in der Werkbank. Ohne Recht zum Bearbeiten nur Löschen und der Status. */}
       <Speicherleiste ent={ent} gegenstand={t('ablage.mappeformular.mappe')} sendet={sendet} speicherbar={!!kopf}
-        haupttext={t('ablage.mappeformular.mappe-speichern')} nurLesen={nurLesen}
+        // Neue Post (#1217): „Mappe anlegen“ – passend zur Wahl „Neue Mappe“ unter „Wohin gehört das?“.
+        haupttext={!mappe && zuordnen ? t('ablage.mappeformular.mappe-anlegen') : t('ablage.mappeformular.mappe-speichern')} nurLesen={nurLesen}
         meldung={meldung ? { art: fehler ? 'schlecht' : 'info', text: meldung } : nurLesen ? { art: 'info', text: t('ablage.mappeformular.nur-lesen-bearbeiten-darfst') } : !mappe && aufloesenHinweis ? { art: 'info', text: aufloesenHinweis } : undefined}
         loeschen={loeschenZeigen ? { text: t('ablage.mappeformular.mappe-loeschen-2'), rueckfrage: loeschFrage, onClick: loeschen, gesperrt: sperreErklaerung } : undefined} />
     </form>
@@ -1668,7 +1669,7 @@ function Trefferliste({ treffer }: { treffer: Rueckverweis[] }) {
 
 /* ---------- Auswahl verwiesener Mappen (mit Suche statt langer Klappliste) ---------- */
 
-export function MappenWahl({ id, ziel, ziele, gleicherTyp, mehrfach, wert, eigeneId, bekannt, merke, setze, sicht, pruefen, vorbelegen, unpassend: vomServer = [], gruende: gruendeVomServer, eigene, typFelder = [], ohneAnlegen, platzhalter, quelle, leer }: {
+export function MappenWahl({ id, ziel, ziele, gleicherTyp, mehrfach, wert, eigeneId, bekannt, merke, setze, sicht, pruefen, vorbelegen, unpassend: vomServer = [], gruende: gruendeVomServer, eigene, typFelder = [], ohneAnlegen, platzhalter, eingabeLabel, quelle, leer }: {
   id: string; ziel: Mappentyp; mehrfach: boolean; wert: string | string[] | undefined; eigeneId?: string;
   /**
    * Mehrere Zieltypen (#1036): alle, auf die das Feld zeigen darf (`ziel` ist der erste). Die Vorschläge kommen dann über
@@ -1687,6 +1688,8 @@ export function MappenWahl({ id, ziel, ziele, gleicherTyp, mehrfach, wert, eigen
   ohneAnlegen?: boolean;
   /** Eigener Platzhalter statt „<Typ> suchen …“, z. B. „Mappe suchen …“ für die Testmappe (#710). */
   platzhalter?: string;
+  /** Name des Suchfelds für Bildschirmleser, wo keine Beschriftung darüber steht (#1217: „Mappe suchen“ auf „Dokument übernehmen“). */
+  eingabeLabel?: string;
   /** Eigene Vorschläge statt der Seite des Zieltyps, z. B. nur Mappen, die eine Automatisierung sehen darf (#709). */
   quelle?: (suche: string) => Promise<{ mappen: Array<Pick<Mappe, 'id' | 'titel' | 'typId'>>; gesamt: number }>;
   /** Text, wenn es gar keine Vorschläge gibt. */
@@ -1774,7 +1777,7 @@ export function MappenWahl({ id, ziel, ziele, gleicherTyp, mehrfach, wert, eigen
   const namen = alle.map((x) => typName(x)).join(', ');
 
   return (
-    <Mehrfachauswahl id={id} name={t('felder.verweis.gewaehlt')} platzhalter={platzhalter ?? t('felder.verweis.suchen', { typ: mehrere ? namen : typName(ziel) })}
+    <Mehrfachauswahl id={id} name={t('felder.verweis.gewaehlt')} eingabeLabel={eingabeLabel} platzhalter={platzhalter ?? t('felder.verweis.suchen', { typ: mehrere ? namen : typName(ziel) })}
       eingabe={eingabe} setEingabe={setEingabe} offen={offen} setOffen={setOffen} schliessen={() => setAendern(false)} ohneSuche={!zeigeSuche}
       vorschlaege={treffer === null ? null : auswahl.map((m) => ({ id: m.id, text: titelOder(m.titel), ...(mehrere ? { gruppe: typName(alle.find((x) => x.id === m.typId) ?? ziel) } : {}) }))}
       leerText={eingabe ? t('felder.verweis.nichts') : leer ?? t('felder.verweis.leer', { typ: mehrere ? namen : typName(ziel) })}

@@ -1319,11 +1319,8 @@
     }
   },
   "web/src/ablage/Uebernehmen.tsx": {
-    "ablago/bausteine": {
-      "count": 17
-    },
     "complexity": {
-      "count": 4
+      "count": 3
     },
     "max-lines": {
       "count": 1

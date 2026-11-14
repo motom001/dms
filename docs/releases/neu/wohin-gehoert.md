@@ -1,0 +1,5 @@
+art: minor
+
+## Geändert
+
+- **Neue Post: „Wohin gehört das?“ mit drei Wahlen** (#1217): Auf der Seite *Dokument übernehmen* entscheidest du zuerst im Umschalter neben der Frage – **Neue Mappe · Vorhandene Mappe · Nur erledigen** –, darunter steht nur, was zu dieser Wahl gehört, und unten ein blauer Knopf passend dazu („Mappe anlegen“, „Zu „…“ legen“, „Erledigt“; ohne Wahl blass). Bei *Neue Mappe* stehen die drei passendsten Mappentypen als Vorschläge zum Anklicken da, ohne Prozent. *Vorhandene Mappe* sucht über alle Mappentypen, ohne dass du vorher einen Typ wählst, schlägt Mappen vor, die Ablago im Brief wiedergefunden hat (Absender, Vertrags- oder Kundennummer), und zeigt die gewählte Mappe kurz an. „Kopie in der Post behalten“ gibt es in der Oberfläche nicht mehr; „Als Post öffnen“ steht oben neben „‹ Post 1 von 3 ›“. Das Dokument links sieht aus wie in der Mappe: Umschalter „PDF/A · Original“, „In neuem Tab“ und ein Betrachter mit fester Höhe; lässt sich ein Original nicht anzeigen, gibt es „Original herunterladen“. Am Handy stehen die drei Wahlen untereinander.

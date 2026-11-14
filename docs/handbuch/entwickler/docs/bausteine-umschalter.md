@@ -9,6 +9,7 @@
 | `wahlen` | `{ wert, text }` – zwei bis vier, kurz (ein Wort) |
 | `beschriftung` | Name der Gruppe für Bildschirmleser, z. B. „Fragen oder suchen“ |
 | `anker` | Sprungziel für Rundgänge und Tipps (`data-anker`), optional |
+| `schmalUntereinander` | lange Wahlen (#1217, „Neue Mappe · Vorhandene Mappe · Nur erledigen“): am Handy (bis 600 px) untereinander statt abgeschnitten, optional |
 
 ```tsx
 import { Umschalter } from '../bausteine';
@@ -23,6 +24,7 @@ import { Umschalter } from '../bausteine';
 - **Unauffällig:** kleine Schrift, leise Farbe – er steht neben einem Feld, ohne wie eine Haupthandlung zu wirken.
 - **Merken** ist Sache der Seite (z. B. als Einstellung der Person mit `d.setzeEinstellung`).
 - **Am Handy** ist jede Wahl mindestens 44 × 44 px groß ([Am Handy](bausteine.md#handy)).
-- Die Musterseite zeigt den Baustein im Bereich **Umschalter**: zwei und drei Wahlen.
+- **Lange Wahlen** passen am Handy nicht nebeneinander; mit `schmalUntereinander` stehen sie dort untereinander, so breit wie die Spalte (Beispiel: „Wohin gehört das?“ auf *Dokument übernehmen*, `web/src/ablage/WohinGehoert.tsx`).
+- Die Musterseite zeigt den Baustein im Bereich **Umschalter**: zwei und drei Wahlen, dazu lange Wahlen, die am Handy untereinander stehen.
 
 Ältere Stellen mit der Klasse `segmente` in `styles.css` (Liste · Monat · Jahr in *Zu erledigen*, Schriftgröße in Mein Konto) stellt um, wer sie ohnehin ändert.

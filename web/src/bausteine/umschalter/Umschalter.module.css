@@ -13,3 +13,9 @@
 @media (pointer: coarse) {
   .wahl { min-height: 44px; min-width: 44px; padding: 0 16px; font-size: calc(14px * var(--skala, 1)); }
 }
+
+/* Lange Wahlen (#1217): am Handy untereinander, so breit wie die Spalte – nichts wird abgeschnitten. */
+@media (max-width: 600px) {
+  .untereinander { display: grid; grid-auto-flow: row; grid-auto-columns: auto; width: 100%; box-sizing: border-box; border-radius: 12px; }
+  .untereinander .wahl { border-radius: 10px; white-space: normal; text-align: left; }
+}
