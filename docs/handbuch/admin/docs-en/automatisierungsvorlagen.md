@@ -23,14 +23,14 @@ The middle lists all templates with **on/off**, origin as a chip (**Ablago** or 
 | Field | Meaning |
 |---|---|
 | **Name**, **Order**, **Description** | how it appears in the “Folder” menu; a lower number is higher up (1–99) |
-| **In the “Folder” menu for** | folder types where it is offered – none chosen: all |
-| **When** | **Straight away**, **On the chosen date** or **In …** days, weeks or months |
-| **Asks when applied** | **Recipient**, **Date** and **Text** – exactly what the small dialog on the folder shows. **Date** is always on with “On the chosen date”, off with “Straight away” and your choice with “In …” (see [Suggest a date](#datum-vorschlagen)) |
+| **In the “Folder” menu for** | folder types where it is offered – chosen as in a link field: type, click a hit, take it out again with **Remove**. None chosen: all |
+| **When** | **Straight away**, **On the chosen date** or **In** – number and unit (days, weeks, months) always follow directly. While “In” isn’t chosen they are pale; clicking into them chooses “In” |
+| **Asks when applied** | **Recipient**, **Date** and **Text** – exactly what the small dialog on the folder shows. **Date** is always on with “On the chosen date”, off with “Straight away” and your choice with “In” (see [Suggest a date](#datum-vorschlagen)); the reason is shown below the ticks |
 | **Then** | one or more **Task / notification** cards: for the chosen person, whoever applies the template, whoever created the folder or the person in a field of the folder (only with fixed folder types) |
 
 ### Suggest a date: “Remind me in 14 days” { #datum-vorschlagen }
 
-With **In …** you decide whether the date is fixed or only a **suggestion**:
+With **In** you decide whether the date is fixed or only a **suggestion**:
 
 | When | “Date” tick | What happens on the folder |
 |---|---|---|

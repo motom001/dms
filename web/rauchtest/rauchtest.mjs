@@ -2223,7 +2223,7 @@ rauchtest('Automatisierungsvorlage: Datum „in 14 Tagen“ vorbelegt und änder
   const fragen = bearbeitung.getByRole('group', { name: 'Fragt beim Anwenden' });
   const haken = fragen.getByRole('checkbox', { name: 'Datum' });
   await haken.waitFor();
-  assert.ok(await haken.isChecked() && await haken.isEnabled(), 'bei „In …“ frei wählbar und an');
+  assert.ok(await haken.isChecked() && await haken.isEnabled(), 'bei „In“ frei wählbar und an');
   await bearbeitung.getByText('Läuft: In 14 Tagen (änderbar).').waitFor();
   assert.equal(await bearbeitung.locator('input[type="date"]').inputValue(), inTagen(14), 'Ausprobieren wie der Dialog vorbelegt');
   for (const schema of ['light', 'dark']) {

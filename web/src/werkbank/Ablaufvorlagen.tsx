@@ -16,7 +16,7 @@ import { Listenkopf } from '../Listenkopf';
 import { geheZu, Link, loeseWache } from '../ort';
 import { t } from '../sprache';
 import { Speicherleiste, useEntwurf } from '../Speicherleiste';
-import { Eintragsliste, Fassungen, Feld, FeldGruppe, GeloeschteEintraege, HakenFeld, Knopf, KnopfLink, PaketChip, Schalter, Umschalter, ZeitraumEingabe, type Klappe, type Listeneintrag, type ZeitraumRoh } from '../bausteine';
+import { Eintragsliste, Fassungen, Feld, FeldGruppe, GeloeschteEintraege, HakenFeld, Knopf, KnopfLink, Mehrfachauswahl, PaketChip, Schalter, Umschalter, ZeitraumEingabe, type Klappe, type Listeneintrag, type ZeitraumRoh } from '../bausteine';
 import type { InstalliertesPaket } from '../../../shared/src/pakete';
 import { paketHerkunft } from './listensuche';
 
@@ -128,18 +128,55 @@ function KartenEditor({ karte, typen, gewaehlt, setze, entfernen }: { karte: Vor
   );
 }
 
+/**
+ * Mappentypen fürs Menü „Mappe“ (#1175): dieselbe Mehrfachauswahl wie im Verweisfeld einer Mappe – Suchfeld mit
+ * Vorschlägen, Gewähltes darunter; leer heißt „bei allen Mappentypen“.
+ */
+function TypenWahl({ typen, gewaehlt, setze }: { typen: Mappentyp[]; gewaehlt: string[]; setze: (x: string[]) => void }) {
+  const [eingabe, setEingabe] = useState('');
+  const [offen, setOffen] = useState(false);
+  const q = eingabe.trim().toLowerCase();
+  const name = (id: string) => typen.find((x) => x.id === id)?.name ?? id;
+  return (
+    <Feld beschriftung={t('automatisierung.vorlage.ui.typen')} id="vorlage-typen">
+      {(v) => (
+        <Mehrfachauswahl id={v.id} name={t('automatisierung.vorlage.ui.typen')} platzhalter={t('automatisierung.vorlage.ui.typen.suchen')}
+          eingabe={eingabe} setEingabe={setEingabe} offen={offen} setOffen={setOffen}
+          vorschlaege={typen.filter((x) => !gewaehlt.includes(x.id) && (!q || x.name.toLowerCase().includes(q))).map((x) => ({ id: x.id, text: x.name }))}
+          leerText={t('automatisierung.vorlage.ui.typen.keine')}
+          waehle={(id) => { setze([...gewaehlt, id]); setEingabe(''); }}
+          gewaehlt={gewaehlt.map((id) => ({ id, inhalt: name(id), entfernenText: t('automatisierung.vorlage.ui.typen.entfernen', { name: name(id) }) }))}
+          entferne={(id) => setze(gewaehlt.filter((x) => x !== id))}
+          darunter={!gewaehlt.length && <p className="leise klein">{t('automatisierung.vorlage.ui.typen.text')}</p>} />
+      )}
+    </Feld>
+  );
+}
+
+/**
+ * Wann (#1175): „Sofort | Am gewählten Datum | In [6] [Monaten]“ – Anzahl und Einheit stehen immer direkt hinter „In“,
+ * blass (nicht gesperrt), solange „In“ nicht gewählt ist; ein Klick hinein wählt „In“. So springt nichts, und „In“
+ * erklärt sich selbst. Schmal bricht die Reihe um, die Felder stehen dann fest unter „In“ (rechts).
+ */
 function WannEditor({ wann, setze }: { wann: AblaufWann; setze: (w: AblaufWann) => void }) {
-  const roh: ZeitraumRoh = wann.art === 'in' ? { anzahl: String(wann.anzahl), einheit: wann.einheit } : { anzahl: '6', einheit: 'monate' };
+  // Zuletzt gewählter Zeitraum – bleibt stehen, wenn man kurz „Sofort“ wählt.
+  const [letzter, setLetzter] = useState<ZeitraumRoh>(() => (wann.art === 'in' ? { anzahl: String(wann.anzahl), einheit: wann.einheit } : { anzahl: '6', einheit: 'monate' }));
+  const roh: ZeitraumRoh = wann.art === 'in' ? { anzahl: String(wann.anzahl), einheit: wann.einheit } : letzter;
   const ausRoh = (r: ZeitraumRoh): AblaufWann => {
     const n = Math.max(1, Math.trunc(Number(r.anzahl)) || 1);
     const e = r.einheit as Zeitraumeinheit;
     return e === 'jahre' ? { art: 'in', anzahl: Math.min(VORLAGEN_GRENZEN.anzahl, n * 12), einheit: 'monate' } : { art: 'in', anzahl: Math.min(VORLAGEN_GRENZEN.anzahl, n), einheit: e };
   };
+  const waehle = (art: AblaufWann['art']) => { if (art === 'in') setze(ausRoh(roh)); else { setLetzter(roh); setze({ art }); } };
   return (
     <FeldGruppe beschriftung={t('automatisierung.vorlage.ui.wann')}>
-      <Umschalter beschriftung={t('automatisierung.vorlage.ui.wann')} wert={wann.art} setze={(art) => setze(art === 'in' ? ausRoh(roh) : { art })}
-        wahlen={[{ wert: 'sofort', text: wannText({ art: 'sofort' }) }, { wert: 'datum', text: wannText({ art: 'datum' }) }, { wert: 'in', text: t('automatisierung.vorlage.ui.wann.in') }]} />
-      {wann.art === 'in' && <ZeitraumEingabe aria-label={t('automatisierung.vorlage.ui.wann.in')} wert={roh} setze={(r) => setze(ausRoh(r))} />}
+      <div className="wann-reihe">
+        <Umschalter beschriftung={t('automatisierung.vorlage.ui.wann')} wert={wann.art} setze={waehle}
+          wahlen={[{ wert: 'sofort', text: wannText({ art: 'sofort' }) }, { wert: 'datum', text: wannText({ art: 'datum' }) }, { wert: 'in', text: t('automatisierung.vorlage.ui.wann.in') }]} />
+        <span className={`wann-in${wann.art === 'in' ? '' : ' blass'}`} onFocus={() => { if (wann.art !== 'in') waehle('in'); }}>
+          <ZeitraumEingabe aria-label={t('automatisierung.vorlage.ui.wann.zeitraum')} wert={roh} setze={(r) => { setLetzter(r); setze(ausRoh(r)); }} />
+        </span>
+      </div>
     </FeldGruppe>
   );
 }
@@ -149,14 +186,14 @@ function WannEditor({ wann, setze }: { wann: AblaufWann; setze: (w: AblaufWann) 
  * beim Anwenden ändern darf; bei „Am gewählten Datum“ immer an, bei „Sofort“ aus (beides gesperrt, mit Grund).
  */
 function DatumFrage({ e, setze }: { e: Entwurf; setze: (an: boolean) => void }) {
-  const frei = e.wann.art === 'in';
-  const grund = frei ? 'automatisierung.vorlage.ui.frage.datum.vorschlag' : e.wann.art === 'datum' ? 'automatisierung.vorlage.ui.frage.datum.text' : 'automatisierung.vorlage.ui.frage.datum.sofort';
   return (
-    <HakenFeld beschriftung={t('automatisierung.vorlage.ui.frage.datum')} hinweis={t(grund)} hilfe="werkbank.ablaufvorlagen.datum">
-      <input type="checkbox" checked={fragtDatum(e)} disabled={!frei} onChange={(x) => setze(x.target.checked)} />
+    <HakenFeld beschriftung={t('automatisierung.vorlage.ui.frage.datum')} hilfe="werkbank.ablaufvorlagen.datum">
+      <input type="checkbox" checked={fragtDatum(e)} disabled={e.wann.art !== 'in'} onChange={(x) => setze(x.target.checked)} />
     </HakenFeld>
   );
 }
+/** Warum „Datum“ so steht (#1175): unter den Haken statt dazwischen. */
+const datumGrund = (e: Entwurf) => t(e.wann.art === 'in' ? 'automatisierung.vorlage.ui.frage.datum.vorschlag' : e.wann.art === 'datum' ? 'automatisierung.vorlage.ui.frage.datum.text' : 'automatisierung.vorlage.ui.frage.datum.sofort');
 
 /** Kopf des Editors: Name, an/aus, Kopieren, Zurücksetzen – und ob ein Paket die Vorlage ersetzt. */
 function VorlageKopf({ v, aktion }: { v?: AblaufvorlageAnsicht; aktion: (f: () => Promise<unknown>, gut: string) => Promise<void> }) {
@@ -220,13 +257,9 @@ export function AblaufvorlageEditor({ z, kennung }: { z: AblaufvorlagenZustand; 
           </Feld>
         </div>
         <Feld beschriftung={t('automatisierung.vorlage.ui.beschreibung-feld')} optional><textarea rows={2} maxLength={VORLAGEN_GRENZEN.beschreibung} value={e.beschreibung} onChange={(x) => setE({ ...e, beschreibung: x.target.value })} /></Feld>
-        <FeldGruppe beschriftung={t('automatisierung.vorlage.ui.typen')} hinweis={t('automatisierung.vorlage.ui.typen.text')}>
-          {typen.map((ty) => (
-            <HakenFeld key={ty.id} beschriftung={ty.name}><input type="checkbox" checked={e.typen.includes(ty.id)} onChange={(x) => setE({ ...e, typen: x.target.checked ? [...e.typen, ty.id] : e.typen.filter((y) => y !== ty.id) })} /></HakenFeld>
-          ))}
-        </FeldGruppe>
+        <TypenWahl typen={typen} gewaehlt={e.typen} setze={(x) => setE({ ...e, typen: x })} />
         <WannEditor wann={e.wann} setze={(wann) => setE({ ...e, wann })} />
-        <FeldGruppe beschriftung={t('automatisierung.vorlage.ui.fragen')} hinweis={t('automatisierung.vorlage.ui.fragen.text')}>
+        <FeldGruppe beschriftung={t('automatisierung.vorlage.ui.fragen')} hinweis={<>{t('automatisierung.vorlage.ui.fragen.text')} {t('automatisierung.vorlage.ui.frage.datum.hinweis', { grund: datumGrund(e) })}</>}>
           <HakenFeld beschriftung={t('automatisierung.vorlage.ui.frage.empfaenger')}><input type="checkbox" checked={e.fragen.includes('empfaenger')} onChange={(x) => frage('empfaenger', x.target.checked)} /></HakenFeld>
           <DatumFrage e={e} setze={(an) => frage('datum', an)} />
           <HakenFeld beschriftung={t('automatisierung.vorlage.ui.frage.text')}><input type="checkbox" checked={e.fragen.includes('text')} onChange={(x) => frage('text', x.target.checked)} /></HakenFeld>

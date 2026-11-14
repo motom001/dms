@@ -23,14 +23,14 @@ In der Mitte stehen alle Vorlagen mit **an/aus**, Herkunft als Chip (**Ablago** 
 | Feld | Bedeutung |
 |---|---|
 | **Name**, **Reihenfolge**, **Beschreibung** | so steht sie im Menü „Mappe“; kleinere Zahl weiter oben (1–99) |
-| **Im Menü „Mappe“ bei** | Mappentypen, an denen sie angeboten wird – keiner gewählt: bei allen |
-| **Wann** | **Sofort**, **Am gewählten Datum** oder **In …** Tagen, Wochen bzw. Monaten |
-| **Fragt beim Anwenden** | **Empfänger**, **Datum** und **Text** – genau das steht im kleinen Dialog an der Mappe. **Datum** ist bei „Am gewählten Datum“ immer an, bei „Sofort“ aus und bei „In …“ frei wählbar (siehe [Datum vorschlagen](#datum-vorschlagen)) |
+| **Im Menü „Mappe“ bei** | Mappentypen, an denen sie angeboten wird – gewählt wie in einem Verweisfeld: tippen, Treffer anklicken, mit **Entfernen** wieder heraus. Keiner gewählt: bei allen |
+| **Wann** | **Sofort**, **Am gewählten Datum** oder **In** – Anzahl und Einheit (Tage, Wochen, Monate) stehen immer direkt dahinter. Solange „In“ nicht gewählt ist, sind sie blass; ein Klick hinein wählt „In“ |
+| **Fragt beim Anwenden** | **Empfänger**, **Datum** und **Text** – genau das steht im kleinen Dialog an der Mappe. **Datum** ist bei „Am gewählten Datum“ immer an, bei „Sofort“ aus und bei „In“ frei wählbar (siehe [Datum vorschlagen](#datum-vorschlagen)); warum, steht unter den Haken |
 | **Dann** | eine oder mehrere Karten **Aufgabe / Benachrichtigung**: an die gewählte Person, wer die Vorlage anwendet, wer die Mappe angelegt hat oder die Person in einem Feld der Mappe (nur mit festen Mappentypen) |
 
 ### Datum vorschlagen: „Erinnere mich in 14 Tagen“ { #datum-vorschlagen }
 
-Bei **In …** entscheidest du, ob das Datum fest ist oder nur ein **Vorschlag**:
+Bei **In** entscheidest du, ob das Datum fest ist oder nur ein **Vorschlag**:
 
 | Wann | Haken „Datum“ | Was an der Mappe passiert |
 |---|---|---|

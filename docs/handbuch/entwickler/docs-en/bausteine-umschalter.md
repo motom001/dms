@@ -20,7 +20,7 @@ import { Umschalter } from '../bausteine';
 
 - **For screen readers** a group of radio buttons (`role="radiogroup"` with the label, each choice `role="radio"` with `aria-checked`) – it announces what is chosen.
 - **Keyboard** as with radio buttons: Tab only reaches the chosen choice; the arrow keys (left/right and up/down, wrapping round) as well as Home and End choose and stay in the group; Tab moves on.
-- **Chosen** is not shown by colour alone: filled, bold and with a border in the accent colour.
+- **Chosen** is not shown by colour alone: filled, bold and with a border in the accent colour. The bold type doesn’t change the width (#1175): invisibly, each choice keeps room for its bold text – nothing jumps when switching.
 - **Unobtrusive:** small type, quiet colour – it sits next to a box without looking like a main action.
 - **Remembering** is up to the page (e.g. as a setting of the person with `d.setzeEinstellung`).
 - **On the phone** each choice is at least 44 × 44 px ([On the phone](bausteine.md#handy)).

@@ -1474,6 +1474,11 @@ a.knopf.breit { display: flex; justify-content: center; text-decoration: none; }
 .pa-rechte ul { margin: 2px 0; padding-left: 18px; }
 .pa-einstellungen { border: 1px solid var(--linie); border-radius: 10px; padding: 8px 12px 12px; margin: 0; min-width: 0; }
 /* Mitgelieferte Automatisierungen beim Installieren (#1174): je eine mit Schalter untereinander; Update: selbst geänderte. */
+/* Ablaufvorlage, Wann (#1175): Anzahl und Einheit direkt hinter „In“, blass (nicht gesperrt), solange „In“ nicht gewählt
+   ist. Bricht die Reihe um, füllt der Umschalter die erste Zeile, und die Felder stehen rechts darunter – unter „In“. */
+.wann-reihe { display: inline-flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 6px 8px; max-width: 100%; }
+.wann-reihe > [role="radiogroup"] { flex: 1 1 auto; }
+.wann-in.blass input, .wann-in.blass select { color: var(--leise); background: var(--senke); border-color: var(--linie-stark); }
 .paket-automatisierungen-liste { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
 .paket-automatisierungen-geaendert { list-style: none; margin: 0; padding: 0; }
 .paket-automatisierungen-geaendert .hinweis { margin-top: 4px; }

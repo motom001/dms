@@ -71,7 +71,8 @@ export function Umschalter<T extends string>({ wert, setze, wahlen, beschriftung
         return (
           <button key={w.wert} ref={(el) => { knoepfe.current[i] = el; }} type="button" role="radio" aria-checked={an} tabIndex={an ? 0 : -1}
             className={klassen(s.wahl, an && s.an)} onClick={() => { if (!an) setze(w.wert); }}>
-            {w.text}
+            {/* Platz für die fette Schrift der gewählten Wahl (#1175): Breite und Schrift bleiben beim Wechsel gleich. */}
+            <span className={s.text} data-text={typeof w.text === 'string' ? w.text : undefined}>{w.text}</span>
           </button>
         );
       })}
