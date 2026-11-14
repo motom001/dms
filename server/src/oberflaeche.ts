@@ -42,9 +42,16 @@ export const SEITE_CACHE = 'no-cache';
  * Optionen für @fastify/static (#1198), gleich in allen Betriebsarten: `index.html` mit `Cache-Control: no-cache` – ein
  * Browser verwendet sie nie, ohne nachzufragen, und findet so immer die Dateien der laufenden Version –, Dateien unter
  * `/assets/` lange. Vorher setzte @fastify/static `public, max-age=0` für alles.
+ *
+ * Komprimiert (#1236): Der Web-Build legt `.br`- und `.gz`-Fassungen neben die Dateien. `preCompressed` wählt passend zu
+ * `Accept-Encoding` die beste Fassung (sonst die unkomprimierte) und setzt `Vary: Accept-Encoding`; zur Laufzeit wird nichts
+ * komprimiert. `index.html` wird nie zur Laufzeit verändert und darf deshalb vorkomprimiert kommen. Die Fassungen
+ * selbst bekommen keine eigenen Adressen (`globIgnore`).
  */
 export function statischeDateien(root: string) {
   return {
+    preCompressed: true,
+    globIgnore: ['**/*.br', '**/*.gz'],
     cacheControl: false,
     setHeaders: (res: { setHeader(n: string, v: string): unknown } | { header(n: string, v: string): unknown }, pfad: string) => {
       const rel = relative(root, pfad);

@@ -14,9 +14,18 @@
 2. Choose whether **technical logs** and **passwords** should be included (see below), and confirm the **contacts**.
 3. **Start export** – the work runs in the background; Ablago stays usable.
 
-The export lands in the [export folder](#export-ordner), e.g. `/data/export/dms-export-2026-10-31-14-05-00/`. Download it with **Download as ZIP** (up to 4 GB) – or copy it directly from the folder. **Check** compares every file with its checksum from `manifest.json`. **Delete** removes it.
+The export lands in the [export folder](#export-ordner), e.g. `/data/export/dms-export-2026-10-31-14-05-00/`. Under **Existing exports** each export has, in this order, **Checksums (SHA256SUMS)** and **Download ZIP** (up to 4 GB) – or you copy it directly from the folder. **Check** compares every file on the server with its checksum from `manifest.json`. **Delete** removes it.
 
-**After downloading, Ablago deletes the export**, at the latest after **7 days** – as with the [access copy](datenschutz.md). Under **Existing exports** it says per export until when it is available. If you need it longer, keep the downloaded ZIP file.
+**After the ZIP has been downloaded, Ablago deletes the export on the server**, at the latest after **7 days** – as with the [access copy](datenschutz.md). The Workbench points this out before the download. If you need it longer, keep the downloaded ZIP file.
+
+### Checking the download { #download-prufen }
+
+Ablago puts the ZIP together only while it is downloaded and calculates its checksum (SHA-256) at the same time. Afterwards the entry stays for another 7 days: "Downloaded on … and deleted on the server", with the **SHA-256 of the ZIP** (to copy) and still the **Checksums** button. The list shows this without reloading as soon as the download has finished.
+
+1. Download **Checksums (SHA256SUMS)** – the file is small and stays available after the ZIP has been downloaded.
+2. **Download ZIP**.
+3. Check the ZIP against the SHA-256 in the Workbench: Windows (PowerShell) `Get-FileHash <file>.zip -Algorithm SHA256`, macOS `shasum -a 256 <file>.zip`, Linux `sha256sum <file>.zip`. If both match, the ZIP arrived complete (upper or lower case makes no difference).
+4. After unpacking, `SHA256SUMS` checks every file in it, including `manifest.json` and every `mappe.json`. In the unpacked folder: Linux `sha256sum -c SHA256SUMS`, macOS `shasum -a 256 -c SHA256SUMS`; for Windows, `LIESMICH.md` contains a command for PowerShell. Every line should report "OK".
 
 !!! warning "Unencrypted"
     The full export is deliberately **not encrypted** – that is its purpose. Keep it as safe as the paper files.
@@ -52,6 +61,7 @@ The folder and file names in the export are German:
 dms-export-2026-10-31-14-05-00/
   LIESMICH.md            structure, formats, check script
   manifest.json          format version, counts, size and SHA-256 of every file, where every table is
+  SHA256SUMS             SHA-256 of every file in the standard format (sha256sum -c), see Checking the download
   struktur/              Folder types, views, number sequences, packages (pakete.json), designs, automations and templates, users (without passwords), emergency contacts,
                          versions of the Workbench (fassungen.json, #1006)
   daten/
@@ -94,7 +104,7 @@ Ablago suggests folder types that look like contacts (fields such as name, email
 
 ## Export my data { #meine-daten-exportieren }
 
-Every user can start their own export under **My account → Account → Export my data** (click your name at the top right) – in the same structure, but only with the folders they may read, their own tasks, reminders, favourites and bin entries. Views, number sequences and other users are missing; passwords only from folders in which they may see passwords, and only with confirmation. It is stored in the [export folder](#export-ordner) under `persoenlich/<user id>/`; a new export replaces the old one. After downloading it is deleted, at the latest after 7 days. **It is off by default.** You can switch it on under **Workbench → Full export** in the section *Export my data* with the tick **Users may export their own data**; untick it and it is off again. While it is off, users only see a note under *Export my data* that they can ask you for information about their data – you provide it as described under [Access for a user](datenschutz.md#auskunft-an-einen-benutzer). While an administrator is working as a user via [Reproduce a problem](benutzer.md#fehler-nachstellen), there is no own export for this user.
+Every user can start their own export under **My account → Account → Export my data** (click your name at the top right) – in the same structure, but only with the folders they may read, their own tasks, reminders, favourites and bin entries. Views, number sequences and other users are missing; passwords only from folders in which they may see passwords, and only with confirmation. It is stored in the [export folder](#export-ordner) under `persoenlich/<user id>/`; a new export replaces the old one. After downloading it is deleted, at the latest after 7 days. **It is off by default.** You can switch it on under **Workbench → Back up data → [Settings](daten-einstellungen.md#was-benutzer-selbst-durfen)** in the section *What users may do themselves* with the switch **Users may export their own data**; switch it off and it is off again. While it is off, users only see a note under *Export my data* that they can ask you for information about their data – you provide it as described under [Access for a user](datenschutz.md#auskunft-an-einen-benutzer). While an administrator is working as a user via [Reproduce a problem](benutzer.md#fehler-nachstellen), there is no own export for this user.
 
 ## Processing further {#weiterverarbeiten}
 

@@ -244,6 +244,10 @@ Let's Encrypt needs a domain of your own that points to your connection. If Abla
 
 If you use the [WebDAV drive](webdav.md), you need **HTTPS** even at home (Windows requires it), and the proxy must let the WebDAV methods such as `PROPFIND` and `LOCK` through – see [Behind a reverse proxy](webdav.md#hinter-einem-reverse-proxy).
 
+### Compression { #komprimierung }
+
+Ablago delivers the interface (scripts, styles, start page) already compressed, with Brotli or gzip, depending on what the browser understands. On the first visit over mobile data that is a little over 800 KB instead of almost 4 MB. Ablago does not compress anything at run time, so it costs no computing time. There is nothing to set up on the proxy: it passes the compressed response on unchanged along with `Content-Encoding` and does not compress it a second time. If your proxy compresses itself (such as `encode` in Caddy or `gzip on` in nginx), that does no harm; it leaves responses that are already compressed alone.
+
 ### What the proxy tells Ablago { #was-der-proxy-dem-dms-mitteilt }
 
 The proxy forwards every request to Ablago. For Ablago it therefore looks as if it came from the proxy. What the device behind it is, the proxy writes into additional headers (`X-Forwarded-For`, `X-Forwarded-Proto`). Ablago needs them for:

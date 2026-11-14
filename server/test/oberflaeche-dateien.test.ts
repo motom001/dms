@@ -9,6 +9,8 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { get } from 'node:http';
+import { brotliCompressSync, brotliDecompressSync, gunzipSync, gzipSync } from 'node:zlib';
 import type { ChildProcess } from 'node:child_process';
 import { after, before, describe, it } from 'node:test';
 import { istDateipfad } from '../src/oberflaeche';
@@ -27,12 +29,15 @@ before(async () => {
   await mkdir(join(web, 'hilfe', 'admin'), { recursive: true });
   await writeFile(join(web, 'index.html'), '<!doctype html><title>Ablago</title>OBERFLAECHE');
   await writeFile(join(web, 'assets', 'start-neu.js'), 'console.log("neu")');
+  // Vorkomprimierte Fassungen (#1236) mit erkennbar anderem Inhalt: So zeigt der Text, welche Fassung kam.
+  await writeFile(join(web, 'assets', 'start-neu.js.br'), brotliCompressSync('console.log("brotli")'));
+  await writeFile(join(web, 'assets', 'start-neu.js.gz'), gzipSync('console.log("gzip")'));
   await writeFile(join(web, 'hilfe', 'index.html'), 'HILFE-START');
   await writeFile(join(web, 'hilfe', 'admin', 'index.html'), 'ADMIN-HANDBUCH');
 });
 after(async () => { if (wurzel) await rm(wurzel, { recursive: true, force: true }); });
 
-type Hole = (pfad: string) => Promise<{ status: number; typ: string; text: string; cache?: string }>;
+type Hole = (pfad: string, kodierung?: string) => Promise<{ status: number; typ: string; text: string; cache?: string; kodiert?: string; vary?: string }>;
 
 /** Dieselben Erwartungen für jede Betriebsart. */
 async function pruefeBetriebsart(hole: Hole) {
@@ -51,6 +56,24 @@ async function pruefeBetriebsart(hole: Hole) {
   assert.equal((await hole('/')).cache, 'no-cache');
   assert.equal((await hole('/ablage/eingang')).cache, 'no-cache');
   assert.equal((await hole('/index.html')).cache, 'no-cache');
+  // Komprimiert (#1236): passend zu Accept-Encoding die vorkomprimierte Fassung, sonst die Datei wie bisher.
+  const br = await hole('/assets/start-neu.js', 'br, gzip');
+  assert.equal(br.kodiert, 'br');
+  assert.equal(br.text, 'console.log("brotli")');
+  assert.match(br.typ, /javascript/);
+  assert.match(br.vary ?? '', /accept-encoding/i);
+  assert.equal(br.cache, 'public, max-age=31536000, immutable');
+  const gz = await hole('/assets/start-neu.js', 'gzip');
+  assert.equal(gz.kodiert, 'gzip');
+  assert.equal(gz.text, 'console.log("gzip")');
+  for (const ohne of [undefined, 'identity']) {
+    const klar = await hole('/assets/start-neu.js', ohne);
+    assert.equal(klar.kodiert, undefined, String(ohne));
+    assert.equal(klar.text, 'console.log("neu")', String(ohne));
+    assert.match(klar.vary ?? '', /accept-encoding/i, String(ohne));
+  }
+  // Die Fassungen selbst haben keine eigene Adresse.
+  assert.equal((await hole('/assets/start-neu.js.br')).status, 404);
   // Seiten der Oberfläche (auch mit Punkt, etwa eine E-Mail-Adresse) bekommen index.html.
   for (const pfad of ['/', '/ablage/eingang', '/werkbank/pakete/ablago.steuer', '/ablage/email/lena@example.org', '/anmelden/code', '/passwort/abc']) {
     const r = await hole(pfad);
@@ -67,10 +90,20 @@ async function pruefeBetriebsart(hole: Hole) {
   assert.doesNotMatch(fehlt.text, /OBERFLAECHE/);
 }
 
-const ueberHttp = (port: number): Hole => async (pfad) => {
-  const r = await fetch(`http://127.0.0.1:${port}${pfad}`, { redirect: 'manual' });
-  return { status: r.status, typ: r.headers.get('content-type') ?? '', text: await r.text(), cache: r.headers.get('cache-control') ?? undefined };
-};
+/** Antwort entpacken wie ein Browser; `kodiert` sagt, was der Server geschickt hat. */
+const entpacken = (roh: Buffer, kodiert?: string) => (kodiert === 'br' ? brotliDecompressSync(roh) : kodiert === 'gzip' ? gunzipSync(roh) : roh).toString('utf8');
+
+const ueberHttp = (port: number): Hole => (pfad, kodierung) => new Promise((fertig, fehler) => {
+  // node:http statt fetch: fetch fragt selbst nach gzip/br und entpackt still.
+  get({ host: '127.0.0.1', port, path: pfad, headers: kodierung ? { 'accept-encoding': kodierung } : {} }, (r) => {
+    const teile: Buffer[] = [];
+    r.on('data', (t: Buffer) => teile.push(t));
+    r.on('end', () => {
+      const kodiert = r.headers['content-encoding'];
+      fertig({ status: r.statusCode ?? 0, typ: r.headers['content-type'] ?? '', text: entpacken(Buffer.concat(teile), kodiert), cache: r.headers['cache-control'], kodiert, vary: r.headers.vary });
+    });
+  }).on('error', fehler);
+});
 
 describe('Fehlende Dateien der Oberfläche (#932)', () => {
   it('erkennt Dateipfade an /assets/ und an Endungen der Oberfläche', () => {
@@ -87,11 +120,12 @@ describe('Fehlende Dateien der Oberfläche (#932)', () => {
     const { speicherKontoRepo } = await import('../src/konto-repo');
     const dienst = new Dienst(speicherRepo(), speicherDateien());
     const konten = new Konten(speicherKontoRepo(), null, 'http://nas', dienst.systemtypen.benutzerspiegel());
-    const app = await baueApp(dienst, konten, { webDir: web }) as unknown as { inject(o: { method: string; url: string }): Promise<{ statusCode: number; body: string; headers: Record<string, string> }>; close(): Promise<unknown> };
+    const app = await baueApp(dienst, konten, { webDir: web }) as unknown as { inject(o: { method: string; url: string; headers?: Record<string, string> }): Promise<{ statusCode: number; body: string; rawPayload: Buffer; headers: Record<string, string> }>; close(): Promise<unknown> };
     try {
-      await pruefeBetriebsart(async (pfad) => {
-        const r = await app.inject({ method: 'GET', url: pfad });
-        return { status: r.statusCode, typ: String(r.headers['content-type'] ?? ''), text: r.body, cache: r.headers['cache-control'] };
+      await pruefeBetriebsart(async (pfad, kodierung) => {
+        const r = await app.inject({ method: 'GET', url: pfad, headers: kodierung ? { 'accept-encoding': kodierung } : {} });
+        const kodiert = r.headers['content-encoding'] as string | undefined;
+        return { status: r.statusCode, typ: String(r.headers['content-type'] ?? ''), text: entpacken(r.rawPayload, kodiert), cache: r.headers['cache-control'], kodiert, vary: r.headers.vary as string | undefined };
       });
       assert.equal((await app.inject({ method: 'GET', url: '/api/gibtsnicht' })).statusCode, 404);
     } finally { await app.close(); }

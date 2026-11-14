@@ -3,15 +3,16 @@
 Gelöschte Mappen kommen in den Papierkorb – samt Dokumenten und Verweisen. Einzeln gelöschte **Dokumente** auch, mit allen Versionen und dem Volltext. Nach der eingestellten Aufbewahrung löscht Ablago sie endgültig.
 
 - In der **Ablage** sieht jeder Benutzer unter *Papierkorb* nur, was **er selbst** gelöscht hat, und kann es wiederherstellen oder endgültig löschen. Der Eintrag steht oben bei den festen Einträgen unter *Favoriten* – aber nur, solange der Papierkorb eingeschaltet ist oder noch etwas darin liegt.
-- Unter **Werkbank → Papierkorb** siehst du als Administrator alles, mit „gelöscht von“: in der Mitte oben die **Aufbewahrung** mit **Papierkorb leeren**, darunter die gelöschten Mappen und Dokumente. Wählst du eine Mappe, steht sie rechts – dort stellst du sie wieder her oder löschst sie endgültig.
+- Unter **Werkbank → Papierkorb** siehst du als Administrator alles, mit „gelöscht von“: oben **Papierkorb leeren** und eine Zeile, wie lange Gelöschtes bleibt, darunter Suche, Filter und die gelöschten Mappen und Dokumente. Wählst du eine Mappe, steht sie rechts – dort stellst du sie wieder her oder löschst sie endgültig.
+- **Suchen, filtern, mehrere auf einmal:** Das Suchfeld findet Titel und Dateinamen; filtern lässt sich nach *Art* (Mappen oder Dokumente), *Mappentyp*, *gelöscht von* und wann gelöscht. Mit den Haken vor den Einträgen (oder **Alle auswählen**) gelten **Wiederherstellen (n)** und **Endgültig löschen (n)** für alle gewählten – eins nach dem anderen, Mappen vor Dokumenten; was nicht ging, bleibt ausgewählt und steht mit Grund darüber. In der Ablage geht das genauso, ohne „gelöscht von“.
 
 ![Werkbank → Papierkorb](bilder/werkbank-papierkorb.png)
 
 ## Aufbewahrung
 
-Oben in der Mitte unter **Aufbewahrung** stellst du ein, wie viele Tage gelöschte Mappen und Dokumente bleiben (Standard: 30). Daneben leert **Papierkorb leeren** alles auf einmal. Sofort endgültig ist nur das Entfernen der [Demo-Daten](demo.md). Ablago räumt stündlich auf.
+Unter **Werkbank → Daten sichern → [Einstellungen](daten-einstellungen.md#papierkorb)** stellst du im Abschnitt **Papierkorb** ein, wie viele Tage gelöschte Mappen und Dokumente bleiben (Standard: 30). Im Papierkorb selbst steht nur eine Zeile dazu mit Link dorthin; oben leert **Papierkorb leeren** alles auf einmal. Sofort endgültig ist nur das Entfernen der [Demo-Daten](demo.md). Ablago räumt stündlich auf.
 
-**0 Tage schaltet den Papierkorb aus:** Löschen ist dann sofort endgültig, wie vor Version 0.11. Was gerade im Papierkorb liegt, wird beim Speichern endgültig gelöscht – die Werkbank fragt vorher nach.
+**0 Tage schaltet den Papierkorb aus:** Löschen ist dann sofort endgültig, wie vor Version 0.11. Was gerade im Papierkorb liegt, wird beim Speichern endgültig gelöscht – die Werkbank fragt beim Speichern vorher nach.
 
 Jeder Benutzer kann unter Mein Konto einstellen, dass sein Papierkorb **beim Abmelden geleert** wird.
 

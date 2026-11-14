@@ -117,6 +117,7 @@ nav:
           - Restoring: wiederherstellen.md
           - Exporting data: export.md
           - Bin: papierkorb.md
+          - Settings for backing up: daten-einstellungen.md
       - Settings:
           - Notifications and tasks: aufgaben.md
           - Region: region.md

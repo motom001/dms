@@ -1274,7 +1274,7 @@
   },
   "web/src/ablage/Papierkorb.tsx": {
     "complexity": {
-      "count": 2
+      "count": 1
     }
   },
   "web/src/ablage/Post.tsx": {
@@ -1502,7 +1502,7 @@
   },
   "web/src/werkbank/Pakete.tsx": {
     "complexity": {
-      "count": 4
+      "count": 3
     },
     "max-lines": {
       "count": 1

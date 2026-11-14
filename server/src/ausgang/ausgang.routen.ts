@@ -1,9 +1,12 @@
 /**
  * Export (#960: aus routen.ts): Vollexport und persönlicher Export.
  */
+import { readFile } from 'node:fs/promises';
+import { join } from 'node:path';
 import { Fachfehler } from '../fehler';
 import { exportDateien, exporteIn, exportOrdner, freierPlatz, loescheExport, pruefeExport, vollexport, VOLLEXPORT_PHASEN, type ExportOptionen } from '../vollexport';
 import { oeffneStrom } from '../dateispeicher';
+import { alsHeruntergeladen, mitPruefsumme, PRUEFSUMMEN } from '../vollexport-pruefsummen';
 import { EXPORT_TAGE } from '../../../shared/src/auskunft';
 import { persoenlicherOrdner, umzugGesehen, umzugHinweis } from '../exportordner';
 import { t } from '../sprache';
@@ -68,8 +71,15 @@ export function exportRouten(k: RoutenKontext): Route[] {
       const groesse = zipGroesse(eintraege);
       if (groesse > ZIP_MAX) throw new Fachfehler(422, t('meldungen.routen.der-export-ist-groesser'));
       L.werkbank.info('Vollexport heruntergeladen', { name: a.params.name, von: ich(a).email });
-      const strom = danachLoeschen(zipStrom(eintraege), ordner, () => L.werkbank.info('Vollexport nach dem Herunterladen gelöscht', { name: a.params.name }));
+      // #1195: Prüfsumme der ZIP beim Herunterladen mitrechnen; danach bleiben nur SHA256SUMS und diese Angaben stehen.
+      const strom = mitPruefsumme(zipStrom(eintraege), (zip) => void alsHeruntergeladen(ordner, zip)
+        .then(() => L.werkbank.info('Vollexport nach dem Herunterladen gelöscht', { name: a.params.name, sha256: zip.sha256 }), () => {}));
       return { datei: { inhalt: strom, name: `${a.params.name}.zip`, mime: 'application/zip', anzeigen: false, groesse, koepfe: { 'cache-control': 'no-store' } } };
+    } },
+    // Prüfsummen (#1195): klein, wird nicht gelöscht – auch nach dem Herunterladen der ZIP noch da.
+    { methode: 'GET', pfad: '/api/werkbank/export/:name/pruefsummen', zugang: 'admin', handler: async (a) => {
+      const inhalt = await readFile(join(exportOrdner(exportZiel(), a.params.name), PRUEFSUMMEN)).catch(() => { throw new Fachfehler(404, t('meldungen.routen.diesen-export-gibt-es')); });
+      return { datei: { inhalt, name: `${a.params.name}.${PRUEFSUMMEN}`, mime: 'text/plain; charset=utf-8', anzeigen: false, groesse: inhalt.length, koepfe: { 'cache-control': 'no-store' } } };
     } },
     /* ---------- Persönlicher Export (#255) ---------- */
     { methode: 'PUT', pfad: '/api/werkbank/export/persoenlich', zugang: 'admin', handler: async (a) => ok({ erlaubt: await dienst.auskunftZustellen.setzePersoenlicherExport((a.body as { erlaubt?: unknown })?.erlaubt, ich(a).email) }) },

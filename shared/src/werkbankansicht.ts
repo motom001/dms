@@ -87,6 +87,10 @@ const EINTRAEGE: Eintrag[] = [
   { pfad: 'sicherung', gruppe: 'sichern', in: H },
   { pfad: 'vollexport', gruppe: 'sichern', in: H },
   { pfad: 'papierkorb', gruppe: 'sichern', in: H },
+  // Einstellungen zum Sichern (#1196, #1197): Aufbewahrung im Papierkorb und eigener Export der Benutzer – getrennt von
+  // den Abläufen (Grundsatz: Einstellungen und Abläufe nicht mischen). In dieser Gruppe, weil „Einstellungen“ schon
+  // sieben Bereiche hat (#354).
+  { pfad: 'daten', gruppe: 'sichern', in: H },
   { pfad: 'betrieb', gruppe: 'einstellungen', in: H },
   // Region (#726): Land, Bundesland, Zeitzone an einer Stelle.
   { pfad: 'region', gruppe: 'einstellungen', in: H },

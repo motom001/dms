@@ -1,0 +1,13 @@
+art: minor
+
+## Neu
+
+- **Oberfläche lädt schneller** (#1236): Ablago liefert Skripte, Stile und Startseite fertig komprimiert aus (Brotli oder gzip). Beim ersten Aufruf über Mobilfunk sind das gut 800 KB statt knapp 4 MB. Hinter einem Reverse-Proxy ist nichts einzustellen.
+- **Mehrere Sicherungen auf einmal löschen** (#1169): In Werkbank → Sicherung wählst du Sicherungen mit Haken oder „Alle auswählen“ und löschst sie mit einer Rückfrage, die Anzahl, Zeitraum und frei werdenden Platz nennt. Die neueste geprüfte Sicherung ist geschützt. Über der Liste steht, was die Aufbewahrung von selbst wegräumt.
+- **Vollexport selbst prüfen** (#1195): Jeder Export enthält `SHA256SUMS` zum Prüfen aller Dateien (`sha256sum -c`), die LIESMICH erklärt es für Windows, macOS und Linux. In der Werkbank kommt zuerst „Prüfsummen (SHA256SUMS)“, dann „ZIP herunterladen“ mit dem Hinweis, dass der Export danach auf dem Server gelöscht wird. Nach dem Herunterladen bleibt der Eintrag mit der SHA-256 der ZIP noch 7 Tage stehen, die Liste aktualisiert sich ohne Neuladen.
+
+## Geändert
+
+- **Sicherung ruhiger** (#1193): Die Statuszeile nennt nicht mehr, wann das Notfallblatt heruntergeladen wurde – das steht unter Verschlüsselung. Fehlt das Notfallblatt oder gilt es nicht mehr, warnt die Sicherung weiter. Neben dem Hilfesymbol steht kein zweiter Link ins Handbuch.
+- **Einstellungen zum Sichern** (#1196): „Benutzer dürfen ihre eigenen Daten exportieren“ steht nicht mehr mitten im Vollexport, sondern unter Werkbank → Daten sichern → Einstellungen. Der Vollexport zeigt nur noch neuen Export und vorhandene Exporte, dazu einen Satz mit Link.
+- **Papierkorb mit Suche, Filtern und Mehrfachauswahl** (#1197): Im Papierkorb der Werkbank und der Ablage suchst du nach Titel oder Dateiname, filterst nach Art, Mappentyp, gelöscht von und Zeitraum und stellst mehrere Einträge auf einmal wieder her oder löschst sie endgültig. Die Aufbewahrung stellst du unter Werkbank → Daten sichern → Einstellungen ein; im Papierkorb steht nur noch eine Zeile dazu.

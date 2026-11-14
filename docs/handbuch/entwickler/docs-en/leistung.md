@@ -94,6 +94,18 @@ Finding: evaluating permissions in memory only costs a few milliseconds per page
 
 Target value: with the same data, a member loads start page and Library at most 10 % more slowly than the administrator – met (even faster, because for the administrator deadlines without a recipient are also pending). The event loop delay stayed below 16 ms at 99 %. The biggest item now is `/api/sichten` (counters per type and view, 150–230 ms with 50,000 folders, the same for all users). #512 fixes this (next section).
 
+### Pre-compressed (#1236) { #vorkomprimiert }
+
+The Vite plugin `vorkomprimieren` (`web/vite.config.ts`) places a `.br` (Brotli, highest level) and a `.gz` version (gzip 9) next to every file in `web/dist` of 1 KB or more with a text extension (js, css, html, svg, json, webmanifest, wasm, txt, xml, ttf, otf) after the build, using only Node's `zlib`. `statischeDateien()` (`server/src/oberflaeche.ts`) turns on `preCompressed` in `@fastify/static`: the best version matching `Accept-Encoding`, otherwise the file itself, always with `Vary: Accept-Encoding`; `globIgnore` gives the versions no addresses of their own. `index.html` does not change at run time and is therefore also delivered pre-compressed. The test is in `server/test/oberflaeche-dateien.test.ts`.
+
+| File (as of #1236) | raw | Brotli | gzip |
+|---|---:|---:|---:|
+| `start-….js` | 2,176 KB | 434 KB | 558 KB |
+| `englisch-….js` | 903 KB | 199 KB | 258 KB |
+| `index-….css` | 156 KB | 25 KB | 30 KB |
+| `index.html` | 2.2 KB | 0.7 KB | 0.9 KB |
+| everything compressible | 3,950 KB | 821 KB | |
+
 ## The views' numbers (#512) { #zahlen-der-ansichten-512 }
 
 The numbers next to the views (`GET /api/sichten` → `SichtenDienst.zaehler`) count all visible views with **one** query per `count(*) FILTER (WHERE …)` over all folders of the household, plus types, inbox, favourites and bin – 120–150 ms alone with 50,000 folders, 150–260 ms under the page's load. Two remedies:

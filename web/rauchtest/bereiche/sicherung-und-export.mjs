@@ -1,0 +1,135 @@
+/**
+ * Rauchtests: Werkbank → Daten sichern (Sicherung, Vollexport, Papierkorb) – #1169, #1195, #1196, #1197.
+ * Baut auf werkbank.mjs auf (dort entsteht die erste Sicherung); allein gestartet legt der Test selbst welche an.
+ */
+import assert from 'node:assert/strict';
+import '../einrichtung.mjs';
+import { api, BASIS, daten, LENA, rauchtest, sitzung, verwalten } from '../hilfen.mjs';
+
+// Wiederherstellen (Abschnitt der Sicherung) antwortet außerhalb des Wartungsmodus mit 409 – das ist gewollt.
+const SICHERUNG_ERWARTET = [{ status: 409, pfad: /^\/api\/wiederherstellung\/sicherungen$/ }];
+
+/** Werkbank → Sicherung öffnen; gibt den Bereich „Bearbeitung“ zurück. */
+async function sicherungOeffnen(s) {
+  await s.goto(BASIS + '/werkbank/sicherung');
+  const bearbeitung = s.getByRole('region', { name: 'Bearbeitung' });
+  await bearbeitung.getByRole('heading', { name: 'Sicherung', level: 1 }).waitFor();
+  return bearbeitung;
+}
+
+/** „Jetzt sichern“ und warten, bis die Liste eine Zeile mehr hat. */
+async function sichern(bearbeitung) {
+  const zeilen = bearbeitung.locator('#liste tbody tr');
+  const vorher = await zeilen.count();
+  await bearbeitung.getByRole('button', { name: 'Jetzt sichern' }).click();
+  await zeilen.nth(vorher).waitFor({ timeout: 60_000 });
+  await bearbeitung.getByRole('button', { name: 'Jetzt sichern' }).waitFor({ timeout: 60_000 });
+}
+
+// Mehrere Sicherungen auswählen und mit einer Rückfrage löschen (#1169): die neueste ist geschützt, die Rückfrage nennt
+// Anzahl und Platz, danach ist die gewählte weg. Über der Liste der Hinweis auf die Aufbewahrung.
+rauchtest('Werkbank: Sicherungen auswählen und gemeinsam löschen (#1169)', { als: LENA, erwartet: SICHERUNG_ERWARTET }, async (s) => {
+  await s.goto(BASIS + '/ablage/start');
+  await verwalten(s);
+  const bearbeitung = await sicherungOeffnen(s);
+  await bearbeitung.getByText(/räumt Ablago selbst weg/).waitFor();
+  await bearbeitung.getByRole('link', { name: 'Aufbewahrung ändern' }).waitFor();
+  const zeilen = bearbeitung.locator('#liste tbody tr');
+  while ((await zeilen.count()) < 3) await sichern(bearbeitung);
+  const anzahl = await zeilen.count();
+  // Die neueste (noch keine geprüft) ist geschützt: Haken gesperrt, „geschützt“ in der Zeile.
+  await zeilen.first().getByText('geschützt').waitFor();
+  assert.equal(await zeilen.first().getByRole('checkbox').isDisabled(), true, 'neueste nicht wählbar');
+  // „Alle auswählen“ wählt alle außer der geschützten.
+  await bearbeitung.getByLabel('Alle auswählen').check();
+  await bearbeitung.getByRole('button', { name: `Ausgewählte löschen (${anzahl - 1})` }).waitFor();
+  await bearbeitung.getByLabel('Alle auswählen').uncheck();
+  // Zwei wählen und gemeinsam löschen.
+  await zeilen.nth(1).getByRole('checkbox').check();
+  await zeilen.nth(2).getByRole('checkbox').check();
+  await bearbeitung.getByRole('button', { name: 'Ausgewählte löschen (2)' }).click();
+  const frage = s.getByRole('alertdialog', { name: '2 Sicherungen löschen?' });
+  await frage.getByText(/Frei werden etwa/).waitFor();
+  await frage.getByRole('button', { name: 'Endgültig löschen' }).click();
+  await bearbeitung.getByText('2 Sicherungen gelöscht.').waitFor({ timeout: 30_000 });
+  assert.equal(await zeilen.count(), anzahl - 2);
+  await zeilen.first().getByText('geschützt').waitFor();
+});
+
+// Vollexport mit Prüfsummen (#1195): erst „Prüfsummen (SHA256SUMS)“, dann „ZIP herunterladen“ mit Hinweis aufs Löschen;
+// nach dem Herunterladen bleibt der Eintrag mit der SHA-256 der ZIP stehen – ohne Neuladen der Seite.
+rauchtest('Werkbank: Vollexport mit Prüfsummen, Eintrag bleibt nach dem Herunterladen (#1195)', { als: LENA }, async (s) => {
+  await s.goto(BASIS + '/ablage/start');
+  await verwalten(s);
+  await s.goto(BASIS + '/werkbank/vollexport');
+  const bearbeitung = s.getByRole('region', { name: 'Bearbeitung' });
+  await bearbeitung.getByRole('heading', { name: 'Vollexport', level: 1 }).waitFor();
+  await bearbeitung.getByRole('button', { name: 'Export starten' }).click();
+  const eintrag = bearbeitung.locator('#exporte li').first();
+  await eintrag.getByRole('link', { name: 'ZIP herunterladen' }).waitFor({ timeout: 90_000 });
+  const knoepfe = (await eintrag.locator('.knoepfe').first().locator('a, button').allInnerTexts()).map((x) => x.trim());
+  assert.deepEqual(knoepfe.slice(0, 2), ['Prüfsummen (SHA256SUMS)', 'ZIP herunterladen'], 'Prüfsummen vor der ZIP');
+  await eintrag.getByText(/wird der Export auf dem Server gelöscht/).waitFor();
+  const summen = await Promise.all([s.waitForEvent('download'), eintrag.getByRole('link', { name: 'Prüfsummen (SHA256SUMS)' }).click()]).then(([d]) => d);
+  assert.match(summen.suggestedFilename(), /SHA256SUMS$/);
+  const zip = await Promise.all([s.waitForEvent('download'), eintrag.getByRole('link', { name: 'ZIP herunterladen' }).click()]).then(([d]) => d);
+  assert.equal(await zip.failure(), null);
+  await eintrag.getByText(/^Heruntergeladen am .* und auf dem Server gelöscht/).waitFor({ timeout: 30_000 });
+  assert.match(await eintrag.locator('dd.mono').innerText(), /^[0-9a-f]{64}$/);
+  await eintrag.getByRole('link', { name: 'Prüfsummen (SHA256SUMS)' }).waitFor();
+  await eintrag.getByRole('button', { name: 'Prüfsumme kopieren' }).waitFor();
+});
+
+// „Benutzer dürfen ihre eigenen Daten exportieren“ unter Daten sichern → Einstellungen (#1196): im Vollexport nur ein
+// leiser Satz mit Link.
+rauchtest('Werkbank: eigener Export der Benutzer unter Daten sichern → Einstellungen, nicht im Vollexport (#1196)', { als: LENA }, async (s) => {
+  await s.goto(BASIS + '/ablage/start');
+  await verwalten(s);
+  await s.goto(BASIS + '/werkbank/vollexport');
+  const bearbeitung = s.getByRole('region', { name: 'Bearbeitung' });
+  await bearbeitung.getByRole('heading', { name: 'Vollexport', level: 1 }).waitFor();
+  assert.equal(await bearbeitung.getByRole('switch').count(), 0, 'kein Schalter im Vollexport');
+  await bearbeitung.getByText('Ob Benutzer ihre eigenen Daten exportieren dürfen, stellst du unter Einstellungen ein.').waitFor();
+  await bearbeitung.getByRole('link', { name: 'Einstellungen', exact: true }).click();
+  await s.waitForURL(/\/werkbank\/daten/);
+  await bearbeitung.getByRole('heading', { name: 'Einstellungen', level: 1 }).waitFor();
+  const schalter = bearbeitung.getByRole('switch', { name: 'Benutzer dürfen ihre eigenen Daten exportieren' });
+  const vorher = await schalter.getAttribute('aria-checked');
+  await schalter.click();
+  await bearbeitung.getByText(vorher === 'true' ? 'Meine Daten exportieren ist abgeschaltet.' : 'Benutzer dürfen ihre eigenen Daten exportieren.', { exact: true }).waitFor();
+  await schalter.click();
+  await bearbeitung.getByText(vorher === 'true' ? 'Benutzer dürfen ihre eigenen Daten exportieren.' : 'Meine Daten exportieren ist abgeschaltet.', { exact: true }).waitFor();
+  // In der Leiste unter „Daten sichern“.
+  await s.getByRole('complementary', { name: 'Bereiche' }).getByRole('link', { name: /^Einstellungen/ }).waitFor();
+});
+
+// Papierkorb (#1197): Suche, Filter und Mehrfachauswahl in der Ablage; die Aufbewahrung steht unter Daten sichern →
+// Einstellungen, im Papierkorb der Werkbank nur eine Zeile mit Link dorthin.
+rauchtest('Papierkorb: suchen, mehrere wiederherstellen; Aufbewahrung unter Einstellungen (#1197)', { als: LENA }, async (s) => {
+  const cookie = await sitzung(LENA);
+  for (const objekt of ['Korbtest Eins', 'Korbtest Zwei']) {
+    const m = (await api('POST', '/api/mappen', { cookie, body: { typId: daten.bausteine.id, werte: { objekt } } })).daten;
+    await api('DELETE', `/api/mappen/${m.id}?grund=nicht_noetig`, { cookie });
+  }
+  await s.goto(BASIS + '/ablage/papierkorb');
+  const suche = s.getByRole('search', { name: 'Papierkorb durchsuchen' });
+  await suche.getByRole('searchbox').fill('Korbtest Eins');
+  await suche.getByText('1 Treffer').waitFor();
+  await suche.getByRole('searchbox').fill('Korbtest');
+  await suche.getByText('2 Treffer').waitFor();
+  await suche.getByLabel('Mappentyp').selectOption({ label: 'Kellerraum' });
+  await suche.getByText('2 Treffer').waitFor();
+  await s.getByRole('checkbox', { name: 'Alle auswählen' }).check();
+  await s.getByRole('button', { name: 'Wiederherstellen (2)' }).click();
+  await s.getByText('2 Einträge wiederhergestellt.').waitFor({ timeout: 30_000 });
+  await s.getByText(/Keine Treffer|Papierkorb ist leer/).first().waitFor();
+  // Werkbank: keine Aufbewahrung mehr im Papierkorb, nur die Zeile mit Link zu den Einstellungen.
+  await verwalten(s);
+  await s.goto(BASIS + '/werkbank/papierkorb');
+  await s.getByText(/im Papierkorb – ändern unter/).waitFor();
+  assert.equal(await s.getByLabel('Tage im Papierkorb').count(), 0, 'Aufbewahrung nicht im Papierkorb');
+  await s.getByRole('link', { name: 'Einstellungen', exact: true }).first().click();
+  await s.waitForURL(/\/werkbank\/daten/);
+  await s.getByLabel('Tage im Papierkorb').waitFor();
+  await s.getByLabel('Historie endgültig gelöschter Mappen behalten (Tage)').waitFor();
+});

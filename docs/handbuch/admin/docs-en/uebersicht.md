@@ -8,7 +8,7 @@ The **workbench** only exists in [Administration mode](verwalten.md#der-verwaltu
 | **Build the Library** | [Use](nutzung.md), [Packages](pakete.md), [Folder types](mappentypen.md), [Views](sichten.md), [Number sequences](nummernkreise.md), [Automations](automatisierungen.md), [Automation templates](automatisierungsvorlagen.md) |
 | **Users and security** | [Users](benutzer.md), [Encryption](verschluesselung.md), [Own organisation](organisation.md), [Data protection requests](datenschutz.md#auskunft-erteilen), [Deletion concept](loeschkonzept.md#aus-dem-dms-erzeugen), [Retention expired](archiv.md#nach-der-frist-aufbewahrung-abgelaufen) (only with archive mode), [Stamps](stempel.md) |
 | **Post and intake** | [Mailboxes](postfaecher.md), [Intake folder](eingangsordner.md) (only if the folder is mounted), [WebDAV drive](webdav.md), [Search and full text](texterkennung.md), [Synonyms](suche.md#gleichbedeutende-worter) |
-| **Back up data** | [Backup](sicherung.md), [Full export](export.md), [Bin](papierkorb.md) |
+| **Back up data** | [Backup](sicherung.md), [Full export](export.md), [Bin](papierkorb.md), [Settings](daten-einstellungen.md) |
 | **Settings** | [Email and address](installation.md#e-mail-und-adresse), [Region](region.md), [Languages](sprachen.md), [Tasks](aufgaben.md), [Sign-in protection](anmeldeschutz.md), [Themes](designs.md), [Database connection](installation.md#datenbank-anbindung) |
 | **Maintenance and troubleshooting** | [System health](speicherplatz.md), [Log](fehlersuche.md#protokoll), [Reported errors](fehlersuche.md#gemeldete-fehler), [Maintenance](wartungsmodus.md), [Demo data](demo.md) |
 <!-- /bereiche:gruppen -->
@@ -199,6 +199,7 @@ If a hidden area is set up, for instance a mailbox or sign-in via a provider, it
 | [Backup](sicherung.md) | Set up, check and restore backups | Household, Business |
 | [Full export](export.md) | Take all data with you in open formats | Household, Business |
 | [Bin](papierkorb.md) | Bring back deleted folders | Household, Business |
+| [Settings](daten-einstellungen.md) | How long deleted items stay in the bin and whether users may export their own data | Household, Business |
 | [Email and address](installation.md#e-mail-und-adresse) | Email sending and Ablago’s address | Household, Business |
 | [Region](region.md) | Country, federal state and time zone – for public holidays, “today” and the times of reminders and summaries | Household, Business |
 | [Languages](sprachen.md) | If English or another language is also spoken in your library. | Household, Business |

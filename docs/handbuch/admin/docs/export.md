@@ -14,9 +14,18 @@
 2. Wähle, ob **technische Protokolle** und **Passwörter** mit sollen (siehe unten), und bestätige die **Kontakte**.
 3. **Export starten** – die Arbeit läuft im Hintergrund, Ablago bleibt benutzbar.
 
-Der Export landet im [Export-Ordner](#export-ordner), z. B. `/data/export/dms-export-2026-10-31-14-05-00/`. Lade ihn mit **Als ZIP herunterladen** (bis 4 GB) – oder kopiere ihn direkt aus dem Ordner. **Prüfen** vergleicht jede Datei mit ihrem Prüfwert aus `manifest.json`. **Löschen** entfernt ihn.
+Der Export landet im [Export-Ordner](#export-ordner), z. B. `/data/export/dms-export-2026-10-31-14-05-00/`. Unter **Vorhandene Exporte** stehen je Export in dieser Reihenfolge **Prüfsummen (SHA256SUMS)** und **ZIP herunterladen** (bis 4 GB) – oder du kopierst ihn direkt aus dem Ordner. **Prüfen** vergleicht auf dem Server jede Datei mit ihrem Prüfwert aus `manifest.json`. **Löschen** entfernt ihn.
 
-**Nach dem Herunterladen löscht Ablago den Export**, spätestens nach **7 Tagen** – wie bei der [Auskunft](datenschutz.md). Unter **Vorhandene Exporte** steht je Export, bis wann er bereitliegt. Brauchst du ihn länger, bewahre die heruntergeladene ZIP-Datei auf.
+**Nach dem Herunterladen der ZIP löscht Ablago den Export auf dem Server**, spätestens nach **7 Tagen** – wie bei der [Auskunft](datenschutz.md). Darauf weist die Werkbank vor dem Herunterladen hin. Brauchst du ihn länger, bewahre die heruntergeladene ZIP-Datei auf.
+
+### Download prüfen { #download-prufen }
+
+Die ZIP setzt Ablago erst beim Herunterladen zusammen und rechnet dabei ihre Prüfsumme (SHA-256). Danach bleibt der Eintrag noch 7 Tage stehen: „Heruntergeladen am … und auf dem Server gelöscht“, mit der **SHA-256 der ZIP** (zum Kopieren) und weiter dem Knopf **Prüfsummen**. Die Liste zeigt das ohne Neuladen, sobald der Download fertig ist.
+
+1. **Prüfsummen (SHA256SUMS)** herunterladen – die Datei ist klein und bleibt auch nach dem Herunterladen der ZIP verfügbar.
+2. **ZIP herunterladen**.
+3. Die ZIP gegen die SHA-256 in der Werkbank prüfen: Windows (PowerShell) `Get-FileHash <datei>.zip -Algorithm SHA256`, macOS `shasum -a 256 <datei>.zip`, Linux `sha256sum <datei>.zip`. Stimmen beide überein, ist die ZIP vollständig angekommen (Groß- und Kleinschreibung spielt keine Rolle).
+4. Nach dem Entpacken prüft `SHA256SUMS` jede Datei darin, auch `manifest.json` und jede `mappe.json`. Im entpackten Ordner: Linux `sha256sum -c SHA256SUMS`, macOS `shasum -a 256 -c SHA256SUMS`; unter Windows steht in `LIESMICH.md` ein Befehl für die PowerShell. Jede Zeile sollte „OK“ melden.
 
 !!! warning "Unverschlüsselt"
     Der Vollexport ist absichtlich **nicht verschlüsselt** – das ist sein Zweck. Bewahre ihn so sicher auf wie die Papierakten.
@@ -50,6 +59,7 @@ Vollexporte, [Meine Daten exportieren](#meine-daten-exportieren) und die [Auskü
 dms-export-2026-10-31-14-05-00/
   LIESMICH.md            Aufbau, Formate, Prüfskript
   manifest.json          Formatversion, Anzahlen, Größe und SHA-256 jeder Datei, wo jede Tabelle steht
+  SHA256SUMS             SHA-256 jeder Datei im Standardformat (sha256sum -c), siehe Download prüfen
   struktur/              Mappentypen, Ansichten, Nummernkreise, Pakete (pakete.json), Designs, Automatisierungen und -vorlagen, Benutzer (ohne Passwörter), Notfallkontakte,
                          Fassungen der Werkbank (fassungen.json, #1006)
   daten/
@@ -92,7 +102,7 @@ Ablago schlägt Mappentypen vor, die nach Kontakten aussehen (Felder wie Name, E
 
 ## Meine Daten exportieren
 
-Jeder Benutzer kann unter **Mein Konto → Konto → Meine Daten exportieren** (oben rechts auf deinen Namen klicken) einen eigenen Export anstoßen – im selben Aufbau, aber nur mit den Mappen, die er lesen darf, seinen eigenen Aufgaben, Erinnerungen, Favoriten und Papierkorb-Einträgen. Ansichten, Nummernkreise und andere Benutzer fehlen; Passwörter nur aus Mappen, in denen er Passwörter sehen darf, und nur mit Bestätigung. Er liegt im [Export-Ordner](#export-ordner) unter `persoenlich/<Benutzer-Id>/`; ein neuer Export ersetzt den alten. Nach dem Herunterladen wird er gelöscht, spätestens nach 7 Tagen. **Ab Werk ist das aus.** Einschalten kannst du es unter **Werkbank → Vollexport** im Abschnitt *Meine Daten exportieren* mit dem Haken **Benutzer dürfen ihre eigenen Daten exportieren**; nimmst du den Haken wieder weg, ist es wieder aus. Solange es aus ist, sehen Benutzer unter *Meine Daten exportieren* nur den Hinweis, dass sie eine Auskunft über ihre Daten bei dir bekommen – die erteilst du wie unter [Auskunft an einen Benutzer](datenschutz.md#auskunft-an-einen-benutzer) beschrieben. Solange ein Administrator über [Fehler nachstellen](benutzer.md#fehler-nachstellen) als ein Benutzer arbeitet, gibt es für diesen Benutzer keinen eigenen Export.
+Jeder Benutzer kann unter **Mein Konto → Konto → Meine Daten exportieren** (oben rechts auf deinen Namen klicken) einen eigenen Export anstoßen – im selben Aufbau, aber nur mit den Mappen, die er lesen darf, seinen eigenen Aufgaben, Erinnerungen, Favoriten und Papierkorb-Einträgen. Ansichten, Nummernkreise und andere Benutzer fehlen; Passwörter nur aus Mappen, in denen er Passwörter sehen darf, und nur mit Bestätigung. Er liegt im [Export-Ordner](#export-ordner) unter `persoenlich/<Benutzer-Id>/`; ein neuer Export ersetzt den alten. Nach dem Herunterladen wird er gelöscht, spätestens nach 7 Tagen. **Ab Werk ist das aus.** Einschalten kannst du es unter **Werkbank → Daten sichern → [Einstellungen](daten-einstellungen.md#was-benutzer-selbst-durfen)** im Abschnitt *Was Benutzer selbst dürfen* mit dem Schalter **Benutzer dürfen ihre eigenen Daten exportieren**; schaltest du ihn wieder aus, ist es wieder aus. Solange es aus ist, sehen Benutzer unter *Meine Daten exportieren* nur den Hinweis, dass sie eine Auskunft über ihre Daten bei dir bekommen – die erteilst du wie unter [Auskunft an einen Benutzer](datenschutz.md#auskunft-an-einen-benutzer) beschrieben. Solange ein Administrator über [Fehler nachstellen](benutzer.md#fehler-nachstellen) als ein Benutzer arbeitet, gibt es für diesen Benutzer keinen eigenen Export.
 
 ## Weiterverarbeiten
 

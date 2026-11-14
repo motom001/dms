@@ -29,13 +29,21 @@ Ohne Schlüssel lässt sich keine Sicherung anlegen; die Seite weist dann auf di
 
 ## Jetzt sichern
 
-Oben im Abschnitt steht der Stand in einer Zeile: letzte Sicherung, Anzahl und Größe der Sicherungen, nächster Termin laut Zeitplan, freier Platz und wann das Notfallblatt heruntergeladen wurde – ein Klick darauf führt zum [Notfallblatt](verschluesselung.md#notfallblatt) unter Verschlüsselung.
+Oben im Abschnitt steht der Stand in einer Zeile: letzte Sicherung, Anzahl und Größe der Sicherungen, nächster Termin laut Zeitplan, freier Platz und, falls eingerichtet, die letzte Kopie außer Haus. Zum Notfallblatt steht dort nichts: Es gehört zur [Verschlüsselung](verschluesselung.md#notfallblatt), dort steht auch, wann es zuletzt heruntergeladen wurde.
 
 **Jetzt sichern** startet eine Sicherung im Hintergrund, mit Fortschritt. Du kannst die Seite verlassen. Ist weniger Platz frei als der [Mindest-Speicherplatz](#zeitplan-und-aufbewahrung), beginnt keine Sicherung.
 
-Die Liste zeigt alle Sicherungen im Ordner mit Zeitpunkt, Art, Größe und Inhalt. Je Zeile stehen **Herunterladen · Prüfen · Löschen**. [Herunterladen](#sicherung-herunterladen) holt eine Kopie auf deinen Rechner. **Prüfen** rechnet die Prüfsumme der Datei nach und vergleicht sie mit der aus den Metadaten – „unverändert“ heißt: Die Datei ist so, wie Ablago sie geschrieben hat. **Löschen** entfernt beide Dateien.
+Die Liste zeigt alle Sicherungen im Ordner mit Zeitpunkt, Art, Größe und Inhalt. Je Zeile stehen **Herunterladen**, **Prüfen** und **Löschen**. [Herunterladen](#sicherung-herunterladen) holt eine Kopie auf deinen Rechner. **Prüfen** rechnet die Prüfsumme der Datei nach und vergleicht sie mit der aus den Metadaten – „unverändert“ heißt: Die Datei ist so, wie Ablago sie geschrieben hat. **Löschen** entfernt beide Dateien.
 
 Im Container geht das auch ohne Browser mit dem [Befehl `dms`](konsole.md#betrieb): `dms sicherung` listet die Sicherungen, `dms sicherung jetzt` startet eine, `dms sicherung pruefen <name>` prüft eine.
+
+### Mehrere Sicherungen löschen { #mehrere-loeschen }
+
+Zum Aufräumen setzt du in der Liste die Haken vor den Sicherungen, die weg sollen, oder **Alle auswählen**. **Ausgewählte löschen (n)** fragt einmal für alle nach und nennt dabei Anzahl, Zeitraum und den Platz, der frei wird. Ablago löscht dann eine nach der anderen und zeigt den Fortschritt. Was sich nicht löschen ließ, bleibt ausgewählt und steht mit dem Grund über der Liste.
+
+Die **neueste geprüfte** Sicherung (Prüfsumme „unverändert“ oder Probe in Ordnung) ist geschützt: Sie trägt „geschützt“ und lässt sich nicht zusammen mit anderen löschen, nur einzeln mit ihrem eigenen **Löschen**. Ist noch keine geprüft, gilt das für die neueste. So bleibt beim Aufräumen immer eine Sicherung stehen.
+
+Über der Liste steht, was die [Aufbewahrung](#zeitplan-und-aufbewahrung) von selbst wegräumt, mit dem Link **Aufbewahrung ändern**. Ältere automatische Sicherungen musst du also nicht von Hand löschen.
 
 ## Sicherung herunterladen { #sicherung-herunterladen }
 
@@ -124,7 +132,7 @@ Da die Sicherungen verschlüsselt sind, dürfen sie auch in eine Cloud. Das [Not
 
 ## Notfallblatt
 
-Das Notfallblatt mit dem Schlüssel und dem Notfallcode steht nur unter **Werkbank → [Verschlüsselung](verschluesselung.md#notfallblatt)** – dort lädst du es herunter, und dort steht, was darauf steht und wie du es aufbewahrst. Die Sicherung zeigt in der Zeile oben nur, wann es zuletzt heruntergeladen wurde (ein Klick führt zum Notfallblatt). Fehlt es, gehört es zu einem früheren Schlüssel oder wurde sein Notfallcode benutzt, erscheint oben ein Hinweis mit dem Knopf **Zum Notfallblatt**.
+Das Notfallblatt mit dem Schlüssel und dem Notfallcode steht nur unter **Werkbank → [Verschlüsselung](verschluesselung.md#notfallblatt)** – dort lädst du es herunter, und dort steht, was darauf steht und wie du es aufbewahrst. Auch wann es zuletzt heruntergeladen wurde, steht nur dort. Die Sicherung meldet sich erst, wenn es sie betrifft: Fehlt das Notfallblatt, gehört es zu einem früheren Schlüssel oder wurde sein Notfallcode benutzt, erscheint oben ein Hinweis mit dem Knopf **Zum Notfallblatt**.
 
 Sicherungen mit einem früheren Schlüssel brauchen weiterhin das alte Notfallblatt – bewahre es auf, solange es solche Sicherungen gibt. In der Liste tragen sie den Hinweis „früherer Schlüssel“; mit **Sicherungen mit früherem Schlüssel löschen** entfernst du sie alle auf einmal. Die [Probe-Wiederherstellung](wiederherstellen.md#probe-wiederherstellung) braucht den aktuellen Schlüssel – Sicherungen mit früherem Schlüssel lassen sich nicht probeweise einspielen.
 
