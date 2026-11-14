@@ -70,9 +70,9 @@ Name, E-Mail-Adresse und Passwort **deines eigenen Kontos** – mit deiner einen
 
 ![Nutzung](bilder/einrichtung-nutzung.png)
 
-**Wofür nutzt du Ablago?** Drei Antworten: **Für zu Hause**, **Für meine Arbeit oder meinen Betrieb** oder **Beides**. Weiter geht es erst mit einer Antwort; ändern kannst du sie später unter **Werkbank → [Nutzung](nutzung.md)**.
+**Wofür nutzt du Ablago?** Drei Antworten: **Für zu Hause**, **Für meine Arbeit oder meinen Betrieb** oder **Beides**. Weiter geht es erst mit einer Antwort; ändern kannst du sie später unter **Werkbank → [Nutzung](organisation.md#nutzung)**.
 
-- **Für meine Arbeit oder meinen Betrieb** und **Beides** setzen das Merkmal [beruflich genutzt](nutzung.md): Mappentypen zeigen dann ihre beruflichen Felder, und Pakete, die bei beruflicher Nutzung länger aufbewahren, richten das beim Installieren gleich so ein.
+- **Für meine Arbeit oder meinen Betrieb** und **Beides** setzen das Merkmal [beruflich genutzt](organisation.md#nutzung): Mappentypen zeigen dann ihre beruflichen Felder, und Pakete, die bei beruflicher Nutzung länger aufbewahren, richten das beim Installieren gleich so ein.
 - Die Antwort **wählt im nächsten Schritt Pakete vor**: zu Hause Basis, Haushalt, Verträge und Rechnungen; beruflich Basis, Verträge, Rechnungen und Compliance; bei „Beides“ alle davon. Vorgewählt wird nur, was es im Katalog gibt – abwählen kannst du alles.
 - Die **Werkbank** startet zu Hause mit der Vorlage *Haushalt*, beruflich mit *Betrieb* (siehe [Übersicht](uebersicht.md)).
 

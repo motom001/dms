@@ -14,6 +14,7 @@ import { Dienst } from '../src/dienst';
 import { type Zugriff } from '../src/kern';
 import { liesERechnung } from '../src/erechnung';
 import { speicherEinstellungen } from '../src/einstellungen';
+import { MERKMALE_EINSTELLUNG } from '../../shared/src/merkmale';
 import { ERECHNUNG_XML_MAX } from '../src/grenzen';
 import { Konten } from '../src/konten';
 import { speicherKontoRepo } from '../src/konto-repo';
@@ -235,7 +236,10 @@ describe('Eigene Organisation und Haushalt als Aussteller (#1043)', () => {
 /* ---------- Im Dienst ---------- */
 
 async function aufbau() {
-  const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
+  // Eigene Organisationen wirken nur bei beruflicher Nutzung (#1170).
+  const einstellungen = speicherEinstellungen();
+  await einstellungen.schreibe(MERKMALE_EINSTELLUNG, { beruflich: true });
+  const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen });
   const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: lena } = await konten.einrichten({ email: 'lena@example.org', name: 'Lena Muster', passwort: 'ein-langes-passwort' });

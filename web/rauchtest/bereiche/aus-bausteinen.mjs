@@ -162,6 +162,7 @@ async function werkbankSeiten(s) {
     seite('Betrieb', '/werkbank/betrieb'),
     seite('Region', '/werkbank/region'),
     seite('Sprachen', '/werkbank/sprachen'),
+    seite('Eigene Organisation', '/werkbank/organisation', (s) => s.locator('#eigene-organisation').waitFor()),
     seite('Aufgaben', '/werkbank/aufgaben', (s) => s.locator('[data-anker="werkbank.aufgaben.suche"]').waitFor()),
     seite('Anmeldeschutz', '/werkbank/anmeldeschutz'),
     seite('Systemzustand', '/werkbank/systemzustand'),
@@ -218,7 +219,7 @@ rauchtest('Werkbank „Ablage aufbauen“ aus Bausteinen: axe ohne Verstoß, hel
   await s.goto(BASIS + '/ablage/start');
   await verwalten(s);
   const seiten = ['/werkbank', '/werkbank/ansicht', `/werkbank/typen/${typ.id}`, '/werkbank/sichten/neu', '/werkbank/automatisierungen/ziele',
-    '/werkbank/nummernkreise/archivnummer', '/werkbank/stempel/neu', '/werkbank/designs/neu', '/werkbank/woerter/neu', '/werkbank/organisation'];
+    '/werkbank/nummernkreise/archivnummer', '/werkbank/stempel/neu', '/werkbank/designs/neu', '/werkbank/woerter/neu'];
   const funde = [];
   for (const schema of ['light', 'dark']) {
     await s.emulateMedia({ colorScheme: schema });

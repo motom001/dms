@@ -17,6 +17,7 @@ import { zerlege } from '../../shared/src/markdown';
 import { speicherDateien } from '../src/dateispeicher';
 import { Dienst } from '../src/dienst';
 import { speicherEinstellungen } from '../src/einstellungen';
+import { MERKMALE_EINSTELLUNG } from '../../shared/src/merkmale';
 import { Fachfehler } from '../src/fehler';
 import { TEXTSATZ_SEITEN } from '../src/grenzen';
 import { Konten } from '../src/konten';
@@ -187,7 +188,10 @@ for (const pg of [false, true]) {
       const r = pg ? await pgRepos(name) : { repo: speicherRepo(), konto: speicherKontoRepo() };
       const tresor = new Tresor(speicherEinstellungen(), join(mkdtempSync(join(tmpdir(), 'dms-satz-')), 'dms.schluessel'), () => null);
       await tresor.laden(); await tresor.erzeuge();
-      const d = new Dienst(r.repo, speicherDateien(), { einstellungen: speicherEinstellungen(), tresor });
+      // Eigene Organisationen wirken nur bei beruflicher Nutzung (#1170).
+      const einstellungen = speicherEinstellungen();
+      await einstellungen.schreibe(MERKMALE_EINSTELLUNG, { beruflich: true });
+      const d = new Dienst(r.repo, speicherDateien(), { einstellungen, tresor });
       const konten = new Konten(r.konto, () => null, () => 'http://localhost', d.systemtypen.benutzerspiegel());
       d.verbindeKonten(konten.papierkorbHaken());
       const { benutzer: katrin } = await konten.einrichten({ email: 'katrin@example.org', name: 'Katrin', passwort: 'ein-langes-passwort' });

@@ -10,7 +10,7 @@ Ablago only queries the catalogue **at the push of a button**, never in the back
 
 - **Installed** – packages in this installation, with version and origin
 - **Available** – packages from the catalogue that aren't installed yet, by the same rules as the overview in the catalogue:
-    - at the top **Recommended for you** – the catalogue's recommendations without what is already installed; if you also use Ablago for work (feature under [Workbench → Use](nutzung.md)), packages for work such as Compliance are added. If an older catalogue has no recommendations, Ablago takes the preselection of the setup assistant.
+    - at the top **Recommended for you** – the catalogue's recommendations without what is already installed; if you also use Ablago for work (feature under [Workbench → Settings → Own organisation](organisation.md#nutzung)), packages for work such as Compliance are added. If an older catalogue has no recommendations, Ablago takes the preselection of the setup assistant.
     - below that **More packages**
     - **Languages** (interface languages) only via the switch **Packages · Languages**
     - **Add-ons** such as the additional languages of text recognition are not in the list but with their main package under [Goes with it](#mehrere-pakete-in-einem-schritt-installieren)

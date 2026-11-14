@@ -58,7 +58,7 @@ Ein Feld, dessen Wert ein Paket ausrechnet, z. B. „Kündigen bis“ oder der S
 Siehe auch: [Feld](#feld), [Paket](#paket), [Hinweis von Paketen](#hinweis-von-paketen).
 
 <a id="beruflich-genutzt"></a>**Beruflich genutzt** · ✓ Alltagswort · Administratoren  
-Das eine Merkmal der Ablage – die Ablage wird auch beruflich genutzt (Selbständige, Verein, Betrieb). Vorgabe nein. Mappentypen zeigen damit ihre beruflichen Felder und Abschnitte; Rechte, Ansichten und Automatisierungen können darauf schauen. Gilt für die ganze Ablage, nicht je Person; einstellen in Werkbank → Nutzung.  
+Das eine Merkmal der Ablage – die Ablage wird auch beruflich genutzt (Selbständige, Verein, Betrieb). Vorgabe nein. Mappentypen zeigen damit ihre beruflichen Felder und Abschnitte; Rechte, Ansichten und Automatisierungen können darauf schauen. Gilt für die ganze Ablage, nicht je Person; einstellen in Werkbank → Einstellungen → Eigene Organisation.  
 Siehe auch: [Anzeigen, wenn …](#anzeigen-wenn), [Bedingung](#bedingung).
 
 <a id="darstellung"></a>**Darstellung** · ✓ Alltagswort · alle  

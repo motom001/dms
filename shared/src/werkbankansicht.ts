@@ -54,9 +54,7 @@ type Eintrag = { pfad: string; gruppe: Gruppe; in: readonly Exclude<Vorlage, 'al
  */
 const EINTRAEGE: Eintrag[] = [
   // Ablage aufbauen (#717): erst Fertiges, dann Feinarbeit, zum Schluss, was auf allem aufbaut.
-  // Nutzung (#1032): privat oder auch beruflich – bestimmt, was Mappentypen zeigen; darum vorn bei „Ablage aufbauen“
-  // (Einstellungen hat schon sieben Bereiche). Nur für „Gesamte Verwaltung“ (verwaltungsrecht.ts).
-  { pfad: 'nutzung', gruppe: 'ablage', in: H },
+  // Die Nutzung (#1032, privat oder auch beruflich) steht seit #1170 oben auf „Eigene Organisation“ unter Einstellungen.
   { pfad: 'pakete', gruppe: 'ablage', in: H },
   { pfad: 'typen', gruppe: 'ablage', in: H },
   { pfad: 'sichten', gruppe: 'ablage', in: H },
@@ -67,8 +65,6 @@ const EINTRAEGE: Eintrag[] = [
   { pfad: 'ablaufvorlagen', gruppe: 'ablage', in: O, experte: ['haushalt'] },
   { pfad: 'benutzer', gruppe: 'benutzer', in: H },
   { pfad: 'verschluesselung', gruppe: 'benutzer', in: H },
-  // Eigene Organisation (#995): Verweis auf die Organisation mit dem Merkmal – erst mit der Vorlage für Betriebe.
-  { pfad: 'organisation', gruppe: 'benutzer', in: O },
   // Datenschutz getrennt (#668): Auskünfte (mit Mitte, wachsende Sammlung) und Löschkonzept.
   { pfad: 'auskuenfte', gruppe: 'benutzer', in: O },
   { pfad: 'loeschkonzept', gruppe: 'benutzer', in: O },
@@ -92,6 +88,9 @@ const EINTRAEGE: Eintrag[] = [
   { pfad: 'region', gruppe: 'einstellungen', in: H },
   // Sprachen (#729): erlaubte Sprachen und Sprache der Installation.
   { pfad: 'sprachen', gruppe: 'einstellungen', in: H },
+  // Eigene Organisation (#995) mit der Nutzung obenauf (#1170): einmal gesetzt, dann ist Ruhe – darum unter Einstellungen.
+  // In jeder Vorlage, weil der Haken „auch beruflich genutzt“ gerade für den Haushalt erreichbar sein muss.
+  { pfad: 'organisation', gruppe: 'einstellungen', in: H },
   { pfad: 'aufgaben', gruppe: 'einstellungen', in: H },
   { pfad: 'anmeldeschutz', gruppe: 'einstellungen', in: O },
   { pfad: 'designs', gruppe: 'einstellungen', in: O },
@@ -140,11 +139,13 @@ export const UMGEZOGEN: Readonly<Record<string, string>> = {
   darfweg: 'aufbewahrung', suche: 'texterkennung', wiederherstellung: 'sicherung', technik: 'systemzustand', wartungsmodus: 'wartung',
   // #668: Datenschutz in Auskünfte und Löschkonzept getrennt; die alte Adresse führt zu den Auskünften.
   datenschutz: 'auskuenfte',
+  // #1170: Nutzung und Eigene Organisation auf einer Seite unter Einstellungen.
+  nutzung: 'organisation',
 };
 
 /** Wohin ein umgezogener Bereich innerhalb seiner neuen Seite springt (Abschnitt, `#…`). */
 export const UMGEZOGEN_ABSCHNITT: Readonly<Record<string, string>> = {
-  suche: 'suche', wiederherstellung: 'wiederherstellen', technik: 'version', wartungsmodus: 'wartungsmodus',
+  suche: 'suche', wiederherstellung: 'wiederherstellen', technik: 'version', wartungsmodus: 'wartungsmodus', nutzung: 'nutzung',
 };
 
 /** Für die ganze Installation: Vorlage plus Abweichungen. */

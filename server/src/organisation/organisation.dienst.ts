@@ -73,8 +73,13 @@ export class OrganisationDienst {
     }).sort((a, b) => anzeigename(a.angaben).localeCompare(anzeigename(b.angaben), 'de'));
   }
 
-  /** Die eigene Organisation für Auskünfte und Unterlagen (gewählt oder die einzige). */
+  /**
+   * Die eigene Organisation für Auskünfte und Unterlagen (gewählt oder die einzige). Ohne „beruflich genutzt“ (#1170) keine:
+   * Eine trotzdem gespeicherte eigene Organisation bleibt, Ablago verwendet sie dann aber nicht (Auskünfte, Löschkonzept,
+   * Briefkopf).
+   */
   async geltende(): Promise<EigeneOrganisation | null> {
+    if (!(await this.kern.merkmale()).beruflich) return null;
     return geltendeOrganisation(await this.liste(), await this.einstellung());
   }
 

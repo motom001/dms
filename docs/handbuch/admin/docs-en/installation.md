@@ -70,9 +70,9 @@ Name, email address and password of **your own account** – with your one email
 
 ![Use](bilder/einrichtung-nutzung.png)
 
-**What will you use Ablago for?** Three answers: **For home**, **For my work or my business** or **Both**. You can only continue with an answer; you can change it later under **Workbench → [Use](nutzung.md)**.
+**What will you use Ablago for?** Three answers: **For home**, **For my work or my business** or **Both**. You can only continue with an answer; you can change it later under **Workbench → [Use](organisation.md#nutzung)**.
 
-- **For my work or my business** and **Both** set the attribute [used for work](nutzung.md): folder types then show their work-related fields, and packages that keep records longer for work use set this up straight away when installed.
+- **For my work or my business** and **Both** set the attribute [used for work](organisation.md#nutzung): folder types then show their work-related fields, and packages that keep records longer for work use set this up straight away when installed.
 - The answer **preselects packages in the next step**: for home Basis, Household, Contracts and Invoices; for work Basis, Contracts, Invoices and Compliance; for "Both" all of them. Only what exists in the catalogue is preselected – you can deselect everything.
 - The **Workbench** starts with the *Household* template for home use, with *Business* for work (see [Overview](uebersicht.md)).
 

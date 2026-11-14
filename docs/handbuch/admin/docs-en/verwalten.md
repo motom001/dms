@@ -7,7 +7,7 @@ Ablago has **no separate "Administrator" account**. Administering is a permissio
 Under **Workbench → Users → person**, the area *Roles and rights* contains the section **Administration**; it is saved with **Save user**:
 
 - **May administer Ablago** – without this tick, the person has neither the workbench nor the entry "Administer Ablago".
-- Below it a tree with the workbench's areas, structured by the groups of the sidebar. At the very top is **Full administration**: all areas, including those added in later versions. [Use](nutzung.md) is not in the tree – it always belongs to Full administration.
+- Below it a tree with the workbench's areas, structured by the groups of the sidebar. At the very top is **Full administration**: all areas, including those added in later versions. Only Full administration may change the tick [used for work](organisation.md#nutzung) on the page *Own organisation*.
 - Whoever may use an area may do everything in it. Every person who administers sees the workbench **overview** – with the notices of their own areas.
 - The server checks the same as the interface: an area without the permission can't be reached via a link or the interface either.
 

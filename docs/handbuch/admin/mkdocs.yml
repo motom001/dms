@@ -93,7 +93,6 @@ nav:
       - Werkbank und Übersicht: uebersicht.md
       - "Fassungen: wer hat was geändert?": fassungen.md
       - Ablage aufbauen:
-          - Nutzung (privat oder beruflich): nutzung.md
           - Mappentypen: mappentypen.md
           - Ansichten: sichten.md
           - Nummernkreise: nummernkreise.md
@@ -107,7 +106,6 @@ nav:
       - Benutzer und Sicherheit:
           - Wer darf Ablago verwalten?: verwalten.md
           - Benutzer und Rollen: benutzer.md
-          - Eigene Organisation: organisation.md
           - Berechtigungen: berechtigungen.md
           - Datenschutz in Ablago: datenschutz.md
           - Löschkonzept (Vorlage): loeschkonzept.md
@@ -126,6 +124,7 @@ nav:
           - Benachrichtigungen und Aufgaben: aufgaben.md
           - Region: region.md
           - Sprachen: sprachen.md
+          - Eigene Organisation: organisation.md
           - Anmeldeschutz: anmeldeschutz.md
           - Designs: designs.md
       - Wartung und Fehlersuche:

@@ -5,11 +5,11 @@ The **workbench** only exists in [Administration mode](verwalten.md#der-verwaltu
 <!-- bereiche:gruppen -->
 | Group | Areas |
 | --- | --- |
-| **Build the Library** | [Use](nutzung.md), [Packages](pakete.md), [Folder types](mappentypen.md), [Views](sichten.md), [Number sequences](nummernkreise.md), [Automations](automatisierungen.md), [Automation templates](automatisierungsvorlagen.md) |
-| **Users and security** | [Users](benutzer.md), [Encryption](verschluesselung.md), [Own organisation](organisation.md), [Data protection requests](datenschutz.md#auskunft-erteilen), [Deletion concept](loeschkonzept.md#aus-dem-dms-erzeugen), [Retention expired](archiv.md#nach-der-frist-aufbewahrung-abgelaufen) (only with archive mode), [Stamps](stempel.md) |
+| **Build the Library** | [Packages](pakete.md), [Folder types](mappentypen.md), [Views](sichten.md), [Number sequences](nummernkreise.md), [Automations](automatisierungen.md), [Automation templates](automatisierungsvorlagen.md) |
+| **Users and security** | [Users](benutzer.md), [Encryption](verschluesselung.md), [Data protection requests](datenschutz.md#auskunft-erteilen), [Deletion concept](loeschkonzept.md#aus-dem-dms-erzeugen), [Retention expired](archiv.md#nach-der-frist-aufbewahrung-abgelaufen) (only with archive mode), [Stamps](stempel.md) |
 | **Post and intake** | [Mailboxes](postfaecher.md), [Intake folder](eingangsordner.md) (only if the folder is mounted), [WebDAV drive](webdav.md), [Search and full text](texterkennung.md), [Synonyms](suche.md#gleichbedeutende-worter) |
 | **Back up data** | [Backup](sicherung.md), [Full export](export.md), [Bin](papierkorb.md) |
-| **Settings** | [Email and address](installation.md#e-mail-und-adresse), [Region](region.md), [Languages](sprachen.md), [Tasks](aufgaben.md), [Sign-in protection](anmeldeschutz.md), [Themes](designs.md), [Database connection](installation.md#datenbank-anbindung) |
+| **Settings** | [Email and address](installation.md#e-mail-und-adresse), [Region](region.md), [Languages](sprachen.md), [Own organisation](organisation.md), [Tasks](aufgaben.md), [Sign-in protection](anmeldeschutz.md), [Themes](designs.md), [Database connection](installation.md#datenbank-anbindung) |
 | **Maintenance and troubleshooting** | [System health](speicherplatz.md), [Log](fehlersuche.md#protokoll), [Reported errors](fehlersuche.md#gemeldete-fehler), [Maintenance](wartungsmodus.md), [Demo data](demo.md) |
 <!-- /bereiche:gruppen -->
 
@@ -157,7 +157,7 @@ Not everyone needs every area. A household may never touch number sequences, mai
 
 - **Household**: slim, only what a family needs for setting up and backing up. New installations start with it. **The self-employed and small businesses** choose **Business** right after setup.
 <!-- bereiche:organisation -->
-- **Business**: additionally Number sequences, Automations, Automation templates, Own organisation, Data protection requests, Deletion concept, Retention expired, Mailboxes, Intake folder, Search and full text, Synonyms, Sign-in protection, Themes, Log, Reported errors, Maintenance.
+- **Business**: additionally Number sequences, Automations, Automation templates, Data protection requests, Deletion concept, Retention expired, Mailboxes, Intake folder, Search and full text, Synonyms, Sign-in protection, Themes, Log, Reported errors, Maintenance.
 <!-- /bereiche:organisation -->
 - **Everything**: every area. It stays like this for installations set up before version 0.70 until you choose something else.
 
@@ -177,7 +177,6 @@ If a hidden area is set up, for instance a mailbox or sign-in via a provider, it
 <!-- bereiche:wofuer -->
 | Area | What for | In the preset |
 | --- | --- | --- |
-| [Use](nutzung.md) | Whether the Library is also used for work – folder types then show their work-related fields and sections | Household, Business |
 | [Packages](pakete.md) | Install ready-made folder types and views | Household, Business |
 | [Folder types](mappentypen.md) | Build your own kinds of folders | Household, Business |
 | [Views](sichten.md) | Arrange the collections on the left in the library | Household, Business |
@@ -186,7 +185,6 @@ If a hidden area is set up, for instance a mailbox or sign-in via a provider, it
 | [Automation templates](automatisierungsvorlagen.md) | Templates for runs on a folder: “Assign task”, “Remind”, follow-up – when they run, who gets the task and what is asked when applying them | Business, Household in expert mode |
 | [Users](benutzer.md) | Create users and roles | Household, Business |
 | [Encryption](verschluesselung.md) | The key for passwords and backups | Household, Business |
-| [Own organisation](organisation.md) | Name, address and controllers of your own business – kept at the organisation in the Library | Business |
 | [Data protection requests](datenschutz.md#auskunft-erteilen) | Access requests under Art. 15 GDPR for customers, tenants and contacts: request, create, deliver, evidence | Business |
 | [Deletion concept](loeschkonzept.md#aus-dem-dms-erzeugen) | Create a deletion concept, deletion log and which folder types contain personal data | Business |
 | [Retention expired](archiv.md#nach-der-frist-aufbewahrung-abgelaufen) | Check and delete folders whose retention period has expired (only with archive mode) | Business |
@@ -202,6 +200,7 @@ If a hidden area is set up, for instance a mailbox or sign-in via a provider, it
 | [Email and address](installation.md#e-mail-und-adresse) | Email sending and Ablago’s address | Household, Business |
 | [Region](region.md) | Country, federal state and time zone – for public holidays, “today” and the times of reminders and summaries | Household, Business |
 | [Languages](sprachen.md) | If English or another language is also spoken in your library. | Household, Business |
+| [Own organisation](organisation.md) | Whether the Library is also used for work, plus name, address and controllers of your own business – kept at the organisation in the Library | Household, Business |
 | [Tasks](aufgaben.md) | Keep an eye on all open tasks of all users | Household, Business |
 | [Sign-in protection](anmeldeschutz.md) | Require two-factor, sign-in through a provider, locked addresses | Business |
 | [Themes](designs.md) | Logo, colours and custom CSS | Business |

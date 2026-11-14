@@ -177,17 +177,18 @@ describe('Werkbank: mittlere Spalte für Sammlungen zum Anlegen und Bearbeiten (
     assert.equal(werkbankUmleitung('anmeldeschutz'), null, 'Pfad bleibt, alte Links gelten weiter');
   });
 
-  it('#354, #717, #725: sechs Gruppen nach Aufgaben, je höchstens 7 Bereiche', () => {
+  it('#354, #717, #725, #1170: sechs Gruppen nach Aufgaben, je etwa 7 Bereiche', () => {
     assert.deepEqual(Object.values(GRUPPEN), ['Ablage aufbauen', 'Benutzer und Sicherheit', 'Post und Eingänge', 'Daten sichern', 'Einstellungen', 'Wartung und Fehlersuche']);
     const je = (g: string) => BEREICHE.filter((x) => x.gruppe === g).map((x) => x.pfad);
-    // Nutzung (#1032) vorn bei „Ablage aufbauen“: Sie bestimmt, was die Mappentypen zeigen.
-    assert.deepEqual(je('ablage'), ['nutzung', 'pakete', 'typen', 'sichten', 'nummernkreise', 'automatisierungen', 'ablaufvorlagen']);
-    assert.deepEqual(je('benutzer'), ['benutzer', 'verschluesselung', 'organisation', 'auskuenfte', 'loeschkonzept', 'aufbewahrung', 'stempel']);
+    // Nutzung (#1032) steht seit #1170 auf „Eigene Organisation“ unter Einstellungen.
+    assert.deepEqual(je('ablage'), ['pakete', 'typen', 'sichten', 'nummernkreise', 'automatisierungen', 'ablaufvorlagen']);
+    assert.deepEqual(je('benutzer'), ['benutzer', 'verschluesselung', 'auskuenfte', 'loeschkonzept', 'aufbewahrung', 'stempel']);
     assert.deepEqual(je('post'), ['postfaecher', 'eingangsordner', 'webdav', 'texterkennung', 'woerter']);
     assert.deepEqual(je('sichern'), ['sicherung', 'vollexport', 'papierkorb']);
-    assert.deepEqual(je('einstellungen'), ['betrieb', 'region', 'sprachen', 'aufgaben', 'anmeldeschutz', 'designs', 'anbindung']);
+    assert.deepEqual(je('einstellungen'), ['betrieb', 'region', 'sprachen', 'organisation', 'aufgaben', 'anmeldeschutz', 'designs', 'anbindung']);
     assert.deepEqual(je('wartung'), ['systemzustand', 'protokoll', 'fehlermeldungen', 'wartung', 'demo']);
-    for (const g of Object.keys(GRUPPEN)) assert.ok(je(g).length <= 7, g);
+    // 7 ± 2: Einstellungen hat mit „Eigene Organisation“ (#1170) acht.
+    for (const g of Object.keys(GRUPPEN)) assert.ok(je(g).length <= 8, g);
     assert.equal(bereichName('texterkennung'), 'Suche und Volltext');
     assert.equal(bereichName('aufbewahrung'), 'Aufbewahrung abgelaufen');
     // Aufgaben und Tägliche Zusammenfassung: ein Eintrag unter Einstellungen, Kennung bleibt „aufgaben“.
@@ -201,7 +202,16 @@ describe('Werkbank: mittlere Spalte für Sammlungen zum Anlegen und Bearbeiten (
     for (const p of ['aufgaben', 'verschluesselung', 'papierkorb', 'webdav']) assert.equal(werkbankUmleitung(p), null, p);
     // Vorlagen: Haushalt und Betrieb enthalten dieselben Bereiche wie vor der Neugliederung (dazu Region, #726, und Sprachen, #729).
     assert.deepEqual(BEREICHE.filter((b) => inVorlage('haushalt', b.pfad)).map((b) => b.pfad).sort(),
-      ['aufgaben', 'benutzer', 'betrieb', 'nutzung', 'pakete', 'papierkorb', 'region', 'sicherung', 'sichten', 'sprachen', 'stempel', 'systemzustand', 'typen', 'verschluesselung', 'vollexport', 'webdav']);
+      ['aufgaben', 'benutzer', 'betrieb', 'organisation', 'pakete', 'papierkorb', 'region', 'sicherung', 'sichten', 'sprachen', 'stempel', 'systemzustand', 'typen', 'verschluesselung', 'vollexport', 'webdav']);
+  });
+
+  it('#1170: Nutzung und Eigene Organisation auf einer Seite unter Einstellungen, alte Adresse leitet um', () => {
+    assert.equal(BEREICHE.some((x) => x.pfad === 'nutzung'), false, 'kein eigener Bereich mehr');
+    const b = BEREICHE.find((x) => x.pfad === 'organisation');
+    assert.equal(b?.gruppe, 'einstellungen');
+    assert.deepEqual(b?.in, ['haushalt', 'organisation'], 'der Haken „beruflich“ ist auch im Haushalt erreichbar');
+    assert.equal(werkbankUmleitung('nutzung'), '/werkbank/organisation#nutzung');
+    assert.deepEqual(liesAnsicht({ vorlage: 'haushalt', ein: ['nutzung'], aus: [] }), { vorlage: 'haushalt', ein: ['organisation'], aus: [] });
   });
 
   it('#354 Nacharbeit, #668: Datenschutz-Auskünfte und Löschkonzept unter „Benutzer und Sicherheit“, alte Adresse leitet um', () => {

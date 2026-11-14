@@ -164,3 +164,6 @@ ul.sitzungsliste.festhoehe { border: 1px solid var(--linie); border-radius: var(
 .lb-status select { width: auto; max-width: 100%; font-size: inherit; }
 .lb-summe { margin-top: 8px; }
 @media (max-width: 820px) { .lb-baum { padding-left: 8px; } .lb-status { margin-left: 0; } }
+/* Eigene Organisation ohne berufliche Nutzung (#1170): sichtbar, aber blass – nicht ausgeblendet. */
+.organisation-blass { color: var(--leise); }
+.organisation-blass .blatt { background: var(--senke); border-style: dashed; }

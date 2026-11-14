@@ -88,7 +88,6 @@ nav:
       - Workbench and overview: uebersicht.md
       - "Versions: who changed what?": fassungen.md
       - Building your Library:
-          - "Use (private or work)": nutzung.md
           - Folder types: mappentypen.md
           - Views: sichten.md
           - Number sequences: nummernkreise.md
@@ -102,7 +101,6 @@ nav:
       - Users and security:
           - Who may administer Ablago?: verwalten.md
           - Users and roles: benutzer.md
-          - Own organisation: organisation.md
           - Permissions: berechtigungen.md
           - Data protection in Ablago: datenschutz.md
           - Deletion concept (template): loeschkonzept.md
@@ -121,6 +119,7 @@ nav:
           - Notifications and tasks: aufgaben.md
           - Region: region.md
           - Languages: sprachen.md
+          - Own organisation: organisation.md
           - Sign-in protection: anmeldeschutz.md
           - Designs: designs.md
       - Maintenance and troubleshooting:

@@ -4,8 +4,7 @@ import { useWoerter, WoerterListe, WoerterRechts } from './Woerter';
 import { Symbol } from '../Symbol';
 import { AnmeldeschutzPanel, useAnmeldeschutz } from './Anmeldeschutz';
 import { RegionPanel, useRegion } from './Region';
-import { NutzungPanel, useNutzung } from './Nutzung';
-import { OrganisationPanel, useOrganisation } from './Organisation';
+import { OrganisationPanel, useNutzung, useOrganisation } from './Organisation';
 import { SprachenPanel, useSprachen } from './Sprachen';
 import { NummernkreisEditor, NummernkreiseListe, useNummernkreise } from './Nummernkreise';
 import { StempelEditor, StempelListe, useStempelVorlagenWerkbank } from './Stempel';
@@ -86,6 +85,7 @@ import { typName } from '../../../shared/src/beschriftung';
  * /werkbank/aufgaben[/:id][?filter] Aufgaben aller Benutzer mit Filter (#54, #366, #354; seit #725 „Aufgaben“)
  * /werkbank/wartung                 Wartung: Wartungsmodus und Wartungsoperationen, z. B. Volltext neu erzeugen (#45, #458, #725)
  * /werkbank/fehlermeldungen[/:id]  Fehlermeldungen der Benutzer (#70)
+ * /werkbank/organisation          Eigene Organisation, oben die Nutzung (#995, #1170; früher /werkbank/nutzung, leitet um)
  * /werkbank/sicherung              Sicherung, Zeitplan, Probe, darunter Wiederherstellen (#103–#109, #725)
  * /werkbank/verschluesselung#notfallblatt  Notfallblatt (#106), seit #993 nur hier
  * /werkbank/verschluesselung#notfallkontakte  Notfallkontakte (#812) für „Wen fragen?“ auf dem Notfallblatt
@@ -146,7 +146,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
   const pakete = usePakete(bereich === 'pakete' || (['typen', 'sichten', 'nummernkreise', 'automatisierungen', 'ablaufvorlagen'].includes(bereich) && darf('pakete')));
   const anmeldeschutz = useAnmeldeschutz(bereich === 'anmeldeschutz');
   const region = useRegion(bereich === 'region');
-  const nutzung = useNutzung(bereich === 'nutzung');
+  const nutzung = useNutzung(bereich === 'organisation');
   const organisation = useOrganisation(bereich === 'organisation');
   const sprachen = useSprachen(bereich === 'sprachen');
   const anbindung = useAnbindung(bereich === 'anbindung');
@@ -250,10 +250,9 @@ export function Werkbank({ teile }: { teile: string[] }) {
     rechts = <AnbindungPanel z={anbindung} nachAenderung={() => void uebersicht.laden()} />;
   } else if (bereich === 'region') {
     rechts = <RegionPanel z={region} />;
-  } else if (bereich === 'nutzung') {
-    rechts = <NutzungPanel z={nutzung} />;
   } else if (bereich === 'organisation') {
-    rechts = <OrganisationPanel z={organisation} />;
+    // Nutzung und Eigene Organisation auf einer Seite (#1170).
+    rechts = <OrganisationPanel z={organisation} nutzung={nutzung} />;
   } else if (bereich === 'sprachen') {
     rechts = <SprachenPanel z={sprachen} />;
   } else if (bereich === 'anmeldeschutz') {
@@ -316,7 +315,6 @@ export function Werkbank({ teile }: { teile: string[] }) {
   const eintraege: WerkbankEintrag[] = [
     { pfad: 'uebersicht', name: n('uebersicht'), gruppe: null, warn: uebersicht.hinweise || undefined },
     // Ablage aufbauen (#717)
-    { pfad: 'nutzung', name: n('nutzung'), gruppe: 'ablage' },
     { pfad: 'pakete', name: n('pakete'), gruppe: 'ablage', zahl: zahl(pakete.stand?.installiert.length, uz?.pakete) },
     { pfad: 'typen', name: n('typen'), gruppe: 'ablage', zahl: d.typen.length },
     { pfad: 'sichten', name: n('sichten'), gruppe: 'ablage', zahl: d.sichten.length || undefined },
@@ -328,8 +326,6 @@ export function Werkbank({ teile }: { teile: string[] }) {
     // Benutzer und Sicherheit
     { pfad: 'benutzer', name: n('benutzer'), gruppe: 'benutzer', zahl: zahl(benutzer.geladen ? benutzer.liste.filter((b) => b.aktiv).length : undefined, uz?.benutzer) },
     { pfad: 'verschluesselung', name: n('verschluesselung'), gruppe: 'benutzer', warn: tresor.stand && tresor.stand.zustand !== 'vorhanden' ? t('werkbank.leiste.fehlt') : undefined },
-    // Eigene Organisation (#995): Notizen an die Verwaltung (Merkmal oder Verantwortliche geändert).
-    { pfad: 'organisation', name: n('organisation'), gruppe: 'benutzer', warn: organisation.stand?.neu ? String(organisation.stand.neu) : undefined, warnTitel: t('werkbank.organisation.notizen.titel') },
     { pfad: 'auskuenfte', name: n('auskuenfte'), gruppe: 'benutzer', zahl: datenschutz.stand?.verzeichnis.filter((e) => istOffen(e.zustand)).length || undefined },
     { pfad: 'loeschkonzept', name: n('loeschkonzept'), gruppe: 'benutzer', warn: datenschutz.stand?.loeschkonzept?.luecken.length ? '!' : undefined, warnTitel: t('werkbank.loeschkonzept.personendaten') },
     ...(d.typen.some((x) => x.archiv) ? [{ pfad: 'aufbewahrung', name: n('aufbewahrung'), gruppe: 'benutzer' as const, zahl: zahl(darfWeg.liste?.length, uz?.darfWeg) }] : []),
@@ -348,6 +344,8 @@ export function Werkbank({ teile }: { teile: string[] }) {
     { pfad: 'betrieb', name: n('betrieb'), gruppe: 'einstellungen', warn: uebersicht.stand && !uebersicht.stand.mail ? t('werkbank.leiste.aus') : undefined, warnTitel: t('werkbank.leiste.mail') },
     { pfad: 'region', name: n('region'), gruppe: 'einstellungen' },
     { pfad: 'sprachen', name: n('sprachen'), gruppe: 'einstellungen' },
+    // Eigene Organisation (#995) mit der Nutzung (#1170): Notizen an die Verwaltung (Merkmal oder Verantwortliche geändert).
+    { pfad: 'organisation', name: n('organisation'), gruppe: 'einstellungen', warn: organisation.stand?.neu ? String(organisation.stand.neu) : undefined, warnTitel: t('werkbank.organisation.notizen.titel') },
     { pfad: 'aufgaben', name: n('aufgaben'), gruppe: 'einstellungen', zahl: zahl(aufgaben.liste?.filter((a) => !a.erledigt).length, uebersicht.stand?.aufgaben.offen),
       // #798: Aufgaben bei Personen ohne Leserecht.
       warn: uebersicht.stand?.ohneLeserecht ? '!' : undefined, warnTitel: t('werkbank.ohne-leserecht.titel') },

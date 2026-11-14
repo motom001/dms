@@ -45,7 +45,7 @@ Under **Workbench → Retention expired** are all folders from folder types in a
 
 ## Archive mode from a package { #archivmodus-aus-einem-paket }
 
-A [package](pakete.md) can suggest an archive mode for the folder types it **newly creates** – for example "2 years, 10 years when used for work, from *Replaced on*, if it is empty: doesn't expire yet". The preview when installing names it per folder type; with the attribute ["used for work"](nutzung.md) the longer period applies. Afterwards it is your archive mode: you change it on the folder type like any other.
+A [package](pakete.md) can suggest an archive mode for the folder types it **newly creates** – for example "2 years, 10 years when used for work, from *Replaced on*, if it is empty: doesn't expire yet". The preview when installing names it per folder type; with the attribute ["used for work"](organisation.md#nutzung) the longer period applies. Afterwards it is your archive mode: you change it on the folder type like any other.
 
 A package never changes the archive mode of an **existing** folder type – neither installing nor an update shortens the period, switches archive mode off or on, or changes what you have set. Switching on by a package is recorded in the [log](fehlersuche.md#protokoll) with the package.
 
