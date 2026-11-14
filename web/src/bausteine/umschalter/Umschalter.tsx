@@ -31,6 +31,11 @@ export interface UmschalterProps<T extends string> {
   className?: string;
   /** Sprungziel der ganzen Gruppe (`data-anker`). */
   anker?: string;
+  /**
+   * Lange Wahlen (#1217, „Neue Mappe · Vorhandene Mappe · Nur erledigen“): Am Handy (bis 600 px) stehen sie untereinander,
+   * statt abgeschnitten nebeneinander. Am Rechner bleibt alles in einer Reihe.
+   */
+  schmalUntereinander?: boolean;
 }
 
 /**
@@ -47,7 +52,7 @@ export function zielDerTaste(taste: string, jetzt: number, anzahl: number): numb
 }
 
 /** Segmentknopf: eine Reihe gleich breiter Wahlen, die gewählte gefüllt. */
-export function Umschalter<T extends string>({ wert, setze, wahlen, beschriftung, className, anker }: UmschalterProps<T>) {
+export function Umschalter<T extends string>({ wert, setze, wahlen, beschriftung, className, anker, schmalUntereinander }: UmschalterProps<T>) {
   const knoepfe = useRef<Array<HTMLButtonElement | null>>([]);
   const jetzt = Math.max(0, wahlen.findIndex((w) => w.wert === wert));
 
@@ -60,7 +65,7 @@ export function Umschalter<T extends string>({ wert, setze, wahlen, beschriftung
   };
 
   return (
-    <div role="radiogroup" aria-label={beschriftung} className={klassen(s.umschalter, className)} data-anker={anker} onKeyDown={taste}>
+    <div role="radiogroup" aria-label={beschriftung} className={klassen(s.umschalter, schmalUntereinander && s.untereinander, className)} data-anker={anker} onKeyDown={taste}>
       {wahlen.map((w, i) => {
         const an = w.wert === wert;
         return (

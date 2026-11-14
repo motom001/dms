@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react';
-import { feldLabel, typBeschreibung, typName } from '../../../shared/src/beschriftung';
+import { feldLabel, typName } from '../../../shared/src/beschriftung';
 import type { Abgleich, Abgleichtreffer } from '../../../shared/src/erkennung';
-import type { Einschaetzung, Klassbeleg, Klassifizierung } from '../../../shared/src/klassifizierung';
-import { auswahlText, darfErstellen, formatiere, istVersendet, kannAusPost, POST_STAND, titelAus, zielErlaubt, type Dokument, type Feld, type Mappentyp, type Wert, type Werte } from '../../../shared/src/model';
+import type { Klassifizierung } from '../../../shared/src/klassifizierung';
+import { auswahlText, darfErstellen, formatiere, istVersendet, kannAusPost, POST_STAND, titelAus, zielErlaubt, type Dokument, type Feld as FeldDef, type Mappentyp, type Wert, type Werte } from '../../../shared/src/model';
 import { kannSchwaerzen, type Bereich, type SchwaerzSeite } from '../../../shared/src/schwaerzen';
+import { istTeiltyp } from '../../../shared/src/teile';
 import { textformen, stelleVon, wertAusText } from '../../../shared/src/uebernehmen';
 import type { WortSeite } from '../../../shared/src/archivfassung';
 import { wegfallendeSeiten, type Leerseiten } from '../../../shared/src/leerseiten';
-import { api, schwaerzBildUrl, type Bezuege, type MappeDetails, type TypVorschlaege } from '../api';
+import { api, dokumentUrl, schwaerzBildUrl, type Bezuege, type MappeDetails, type TypVorschlaege } from '../api';
 import { Dreiteilung } from '../bereiche';
 import { useDaten } from '../daten';
 import { Hilfe } from '../Hilfe';
@@ -20,12 +21,12 @@ import { BrueckeKontext, farbeVon, setzeNutzlast, type Bruecke, type FormularAns
 import { ansichtVon } from './Dokumente';
 import { AnlageMarke, anlageZeilentext, OriginalEmailWahl } from './Anlagen';
 import { eingangsreihenfolge, gruppiere, nurHauptdokumente } from '../../../shared/src/anlagen';
-import { Knopf } from '../bausteine';
+import { Feld, Knopf, KnopfLink, Umschalter } from '../bausteine';
 import { GrosseSeiteMarke, grosseSeite, MitLeerseiten, useLeerseiten } from './Leerseiten';
-import { MappeAnsicht, MappenWahl, NeueMappe } from './MappeFormular';
-import { Mehrfachauswahl } from './Mehrfachauswahl';
+import { MappeAnsicht, NeueMappe } from './MappeFormular';
 import { useMappenZiel } from './NeuePost';
 import { AufloesungHinweis, merkeAufloesung, vorschlagFuer } from './Post';
+import { NeueMappeWahl, NurErledigen, VorhandeneMappeWahl, WohinGehoert, ZielLeiste, type MappenVorschlag, type Ziel } from './WohinGehoert';
 
 /**
  * Seite „Dokument übernehmen“ (#934): eine Seite für neue Post aus allen Eingängen und für „Aus Dokument ausfüllen“ an
@@ -229,7 +230,7 @@ function Uebernehmen({ details, typ, sicht, links, neuLaden, dokumentWunsch }: {
   useEffect(() => { if (!meldung) return; const z = window.setTimeout(() => setMeldung(null), 5000); return () => window.clearTimeout(z); }, [meldung]);
   const anschluss = useRef<FormularAnschluss | null>(null);
   const anschliessen = useCallback((a: FormularAnschluss) => { anschluss.current = a; return () => { if (anschluss.current === a) anschluss.current = null; }; }, []);
-  const nimm = useCallback((f: Feld, n: Nutzlast, ziel?: FormularAnschluss) => {
+  const nimm = useCallback((f: FeldDef, n: Nutzlast, ziel?: FormularAnschluss) => {
     const a = ziel ?? anschluss.current;
     if (!a) return;
     let wert: Wert | null = null;
@@ -259,7 +260,7 @@ function Uebernehmen({ details, typ, sicht, links, neuLaden, dokumentWunsch }: {
     if (eigenesFeld) { anschluss.current?.zeige(eigenesFeld); setHervor(eigenesFeld); return; }
     setMeldung({ art: 'warn', text: t('ablage.uebernehmen.erst-feld-waehlen', { text: kurz(n.text) }) });
   }, [aktiv, zielTyp, nimm]);
-  const unterFeld = useCallback((f: Feld): ReactNode => {
+  const unterFeld = useCallback((f: FeldDef): ReactNode => {
     if (f.typ !== 'referenz' || !erkannt?.abgleich) return null;
     const liste = erkannt.abgleich.verweise[f.key] ?? [];
     if (!liste.length) return null;
@@ -269,7 +270,6 @@ function Uebernehmen({ details, typ, sicht, links, neuLaden, dokumentWunsch }: {
   const bruecke = useMemo<Bruecke>(() => ({ marken, hervor, setHervor, aktiv, setAktiv, nimm, anschliessen, unterFeld, fenster }), [marken, hervor, aktiv, nimm, anschliessen, unterFeld, fenster]);
 
   /* ---------- Post: abtrennen, weitere Dokumente, ohne Mappe ---------- */
-  const [kopieren, setKopieren] = useState(false);
   const postRegister = typ.register.find((r) => r.art === 'dokumente')?.key ?? 'dokumente';
   async function abtrennen(ab: number) {
     const weg = doks.slice(ab).map((x) => x.id);
@@ -300,13 +300,16 @@ function Uebernehmen({ details, typ, sicht, links, neuLaden, dokumentWunsch }: {
     } else if (nach) geheZu(`/ablage/${nach.typId}/${nach.id}`);
     else geheZu(`/ablage/${np ?? sicht}`);
   }
-  /** In eine vorhandene Mappe legen (Nacharbeit #936: auch dort wird die Post aufgelöst). */
+  /**
+   * In eine vorhandene Mappe legen (Nacharbeit #936: auch dort wird die Post aufgelöst). „Kopie in der Post behalten“
+   * gibt es in der Oberfläche nicht mehr (#1217, Entscheidung Thomas) – nur die Schnittstelle kennt `kopieren` noch.
+   */
   async function inVorhandene(ziel: { id: string; typId: string; titel: string }) {
     const zt = d.typ(ziel.typId);
     const reg = zt?.register.find((r) => r.art === 'dokumente')?.key;
     if (details.dokumente.length && !reg) { await hinweis({ titel: t('ablage.uebernehmen.nicht-zugeordnet'), text: t('ablage.uebernehmen.ohne-dokumentenregister', { typ: zt ? typName(zt) : '' }) }); return; }
     try {
-      const r = await api.zuordnen(m.id, { ziel: ziel.id, register: reg, dokumente: mitDoks, kopieren, aufloesen: !kopieren, ...emlAus });
+      const r = await api.zuordnen(m.id, { ziel: ziel.id, register: reg, dokumente: mitDoks, kopieren: false, aufloesen: true, ...emlAus });
       if (r.hinweis) await hinweis({ titel: t('ablage.mappeformular.post-bleibt-zugeordnet'), text: r.hinweis });
       await weiter(r.aufgeloest ? { ...ziel, titel: r.ziel.titel ?? ziel.titel, vorhanden: true, leerseiten: r.leerseiten } : undefined);
     } catch (e) { await hinweis({ titel: t('ablage.uebernehmen.nicht-zugeordnet'), text: (e as Error).message }); }
@@ -315,6 +318,18 @@ function Uebernehmen({ details, typ, sicht, links, neuLaden, dokumentWunsch }: {
     try { await api.mappeAendern(m.id, { werte: { stand: POST_STAND.erledigt } }); await weiter(); }
     catch (e) { await hinweis({ titel: t('ablage.uebernehmen.nicht-erledigt'), text: (e as Error).message }); }
   }
+
+  /* ---------- „Wohin gehört das?“ (#1217): Neue Mappe · Vorhandene Mappe · Nur erledigen ---------- */
+  const [ziel, setZiel] = useState<Ziel>('neu');
+  const [vorhandenId, setVorhandenId] = useState('');
+  const [bekannt, setBekannt] = useState<Bezuege>({});
+  const merke = useCallback((id: string, b: { titel: string; typId: string }) => setBekannt((x) => ({ ...x, [id]: b })), []);
+  // Vorhandene Mappen aller Typen, in die die Dokumente passen – ohne Post, Systemtypen und Teile.
+  const mappenZiele = useMemo(() => d.typen.filter((x) => !x.system && !istTeiltyp(x) && (!details.dokumente.length || x.register.some((r) => r.art === 'dokumente'))), [d.typen, details.dokumente.length]);
+  const mappenVorschlaege = useMappenVorschlaege(post ? erkennKey : '', mappenZiele, m.id);
+  const vorhandenZiel = vorhandenId && bekannt[vorhandenId] ? { id: vorhandenId, typId: bekannt[vorhandenId].typId, titel: bekannt[vorhandenId].titel } : null;
+  /** „Stattdessen dorthin legen“ (#938): wählt „Vorhandene Mappe“ mit dieser Mappe – gelegt wird erst mit dem Hauptknopf. */
+  const dorthin = (x: { id: string; typId: string; titel: string }) => { merke(x.id, x); setVorhandenId(x.id); setZiel('vorhanden'); };
 
   // „Passt eher zu …“: Folgedokumente, deren Name im Text (Überschrift) zu einem anderen Typ passt oder deren beste
   // wiedergefundene Mappe eine andere ist als beim ersten Dokument.
@@ -355,13 +370,16 @@ function Uebernehmen({ details, typ, sicht, links, neuLaden, dokumentWunsch }: {
   }, [post, np, d.stand]);
   const pos = reihe ? reihe.indexOf(m.id) : -1;
 
-  const kopf = useCallback((werte: Werte, bekannt: Bezuege) => zielTyp ? <NeuKopf typ={zielTyp} werte={werte} bekannt={bekannt} /> : null, [zielTyp]);
+  const kopf = useCallback((werte: Werte, bek: Bezuege) => zielTyp ? <NeuKopf typ={zielTyp} werte={werte} bekannt={bek} /> : null, [zielTyp]);
   const zuordnen = useMemo(() => {
     const reg = zielTyp?.register.find((r) => r.art === 'dokumente')?.key;
-    return { post: m.id, register: reg, dokumente: mitDoks, kopieren, vorschlag: {} as Record<string, Wert>, ...(eml ? {} : { originalEmail: false as const }) };
-  }, [m.id, mitDoks, kopieren, zielTyp, eml]);
+    return { post: m.id, register: reg, dokumente: mitDoks, kopieren: false, vorschlag: {} as Record<string, Wert>, ...(eml ? {} : { originalEmail: false as const }) };
+  }, [m.id, mitDoks, zielTyp, eml]);
   const ohneRegister = post && !!zielTyp && details.dokumente.length > 0 && !zielTyp.register.some((r) => r.art === 'dokumente');
   const doppelt = (erkannt?.abgleich?.doppelt ?? []).filter((x) => x.mappeId !== m.id);
+  const blaettern = (nach: number) => reihe && np ? () => geheZu(`/ablage/${np}/${reihe[nach]}/uebernehmen`) : undefined;
+  // Original herunterladen, wenn es sich nicht anzeigen lässt (#1211): mit Exportrecht, ohne Pflicht-Stempel.
+  const herunterladen = details.exportierbar !== false && typ.stempel?.modus !== 'pflicht';
 
   return (
     <BrueckeKontext.Provider value={bruecke}>
@@ -369,19 +387,14 @@ function Uebernehmen({ details, typ, sicht, links, neuLaden, dokumentWunsch }: {
         {links}
         <section className="spalte liste ue-mitte" aria-label={t('ablage.uebernehmen.dokument')} data-anker="uebernehmen.dokument">
           <div className="ue-kopf">
-            {post ? <>
-              <h2 className="ue-titel"><Symbol name="posteingang" /> {titelOder(m.titel)}</h2>
-              {pos >= 0 && reihe && <nav className="ue-blaettern" aria-label={t('ablage.uebernehmen.blaettern')}>
-                <button type="button" className="textknopf" disabled={pos <= 0} onClick={() => geheZu(`/ablage/${np}/${reihe[pos - 1]}/uebernehmen`)} aria-label={t('ablage.uebernehmen.vorige')}><Symbol name="pfeil-links" /></button>
-                <span className="klein">{t('ablage.uebernehmen.post-von', { nr: pos + 1, anzahl: reihe.length })}</span>
-                <button type="button" className="textknopf" disabled={pos >= reihe.length - 1} onClick={() => geheZu(`/ablage/${np}/${reihe[pos + 1]}/uebernehmen`)} aria-label={t('ablage.uebernehmen.naechste')}><Symbol name="pfeil-rechts" /></button>
-              </nav>}
-            </> : <>
-              <Link to={`/ablage/${sicht}/${m.id}`} className="verweis ue-zurueck"><Symbol name="pfeil-links" /> {t('ablage.uebernehmen.zurueck-zur-mappe')}</Link>
-              {mitText.length > 1 && <label className="klein ue-dokwahl"><span className="sr">{t('ablage.uebernehmen.dokument')}</span>
-                <select value={dokId} onChange={(e) => setDokId(e.target.value)}>{mitText.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}</select></label>}
-            </>}
-            <Hilfe ort="post.zuordnen" />
+            {post
+              ? <PostKopf titel={titelOder(m.titel)} alsPost={`/ablage/${sicht}/${m.id}?als=post`} pos={pos} anzahl={reihe?.length ?? 0} vorige={blaettern(pos - 1)} naechste={blaettern(pos + 1)} />
+              : <>
+                  <Link to={`/ablage/${sicht}/${m.id}`} className="verweis ue-zurueck"><Symbol name="pfeil-links" /> {t('ablage.uebernehmen.zurueck-zur-mappe')}</Link>
+                  {mitText.length > 1 && <div className="klein ue-dokwahl"><Feld beschriftung={t('ablage.uebernehmen.dokument')} beschriftungVerbergen>
+                    <select value={dokId} onChange={(e) => setDokId(e.target.value)}>{mitText.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}</select></Feld></div>}
+                  <Hilfe ort="post.zuordnen" />
+                </>}
           </div>
           <p className={`ue-meldung klein ${meldung?.art ?? ''}`} role="status" aria-live="polite">{meldung?.text ?? ''}</p>
           {!doks.length && <p className="leise">{t('ablage.uebernehmen.keine-dokumente')}</p>}
@@ -394,7 +407,7 @@ function Uebernehmen({ details, typ, sicht, links, neuLaden, dokumentWunsch }: {
               </p>
               {post && x.originalEmail && <OriginalEmailWahl emails={[x]} an={eml} setze={setEml} wie="uebernehmen" />}
               {offeneAnlagen.has(x.id) && <DokumentBlatt x={x} w={woerter[x.id]} marken={[]} hervor={hervor} setHervor={setHervor} insAktive={insAktive}
-                leer={post ? leer.von(x) : null} setzeLeer={(l) => leer.setze(x.id, l)} />}
+                leer={post ? leer.von(x) : null} setzeLeer={(l) => leer.setze(x.id, l)} herunterladen={herunterladen} />}
             </div>
           ) : (
             <div key={x.id}>
@@ -402,10 +415,10 @@ function Uebernehmen({ details, typ, sicht, links, neuLaden, dokumentWunsch }: {
                 <p>{folge[x.id].mappe
                   ? tn('ablage.uebernehmen.passt-eher-mappe', { name: x.name, typ: d.typ(folge[x.id].mappe!.typId) ? typName(d.typ(folge[x.id].mappe!.typId)!) : '', link: <Link to={`/ablage/${folge[x.id].mappe!.typId}/${folge[x.id].mappe!.id}`} className="verweis">{titelOder(folge[x.id].mappe!.titel)}</Link> })
                   : t('ablage.uebernehmen.passt-eher-typ', { name: x.name, typ: d.typ(folge[x.id].typId) ? typName(d.typ(folge[x.id].typId)!) : '' })}</p>
-                <button type="button" className="knopf klein" onClick={() => void abtrennen(i)}>{t('ablage.uebernehmen.ab-hier-abtrennen')}</button>
+                <Knopf groesse="klein" onClick={() => abtrennen(i)}>{t('ablage.uebernehmen.ab-hier-abtrennen')}</Knopf>
               </div>}
               <DokumentBlatt x={x} w={woerter[x.id]} marken={marken.filter((k) => k.dokId === x.id)} hervor={hervor} setHervor={setHervor} insAktive={insAktive}
-                leer={post ? leer.von(x) : null} setzeLeer={(l) => leer.setze(x.id, l)} />
+                leer={post ? leer.von(x) : null} setzeLeer={(l) => leer.setze(x.id, l)} herunterladen={herunterladen} />
             </div>
           ))}
           {post && <Ablageflaeche hochladen={(f) => void hochladen(f)} />}
@@ -413,22 +426,77 @@ function Uebernehmen({ details, typ, sicht, links, neuLaden, dokumentWunsch }: {
 
         <section className="spalte mappe ue-rechts" aria-label={t('ablage.ablage.mappe')} data-anker="mappe">
           {post && <AufloesungHinweis postId={m.id} />}
-          {post && <WohinGehoert ziele={ziele} zielTyp={zielTyp} klass={klass} waehle={(x) => { setGewaehlt(true); setZielId(x); }}
-            kopieren={kopieren} setKopieren={details.dokumente.length ? setKopieren : undefined} inVorhandene={(z) => void inVorhandene(z)} ohneMappe={() => void ohneMappe()} alsPost={`/ablage/${sicht}/${m.id}?als=post`} />}
-          {doppelt.length > 0 && zielTyp && <DoppeltWarnung liste={doppelt} bezuege={erkannt!.abgleich!.bezuege} post={post} legen={(x) => void inVorhandene(x)} />}
-          {ohneRegister && <div className="hinweis warn"><p>{t('ablage.uebernehmen.ohne-dokumentenregister', { typ: typName(zielTyp!) })}</p></div>}
-          {post
-            ? zielTyp
-              ? <NeueMappe key={zielTyp.id} typ={zielTyp} sicht={sicht} zuordnen={zuordnen} vorschlagStart={vorschlagStart} kopf={kopf} />
-              : <p className="leise ue-leer">{t('ablage.uebernehmen.erst-typ-waehlen')}</p>
-            : <MappeAnsicht key={m.id} typ={typ} details={details} sicht={sicht} neuLaden={neuLaden} vorschlagStart={vorschlagStart} />}
+          {post && <WohinGehoert ziel={ziel} setZiel={setZiel}>
+            {ziel === 'neu' && <NeueMappeWahl ziele={ziele} zielTyp={zielTyp} klass={klass} waehle={(x) => { setGewaehlt(true); setZielId(x); }} />}
+            {ziel === 'vorhanden' && <VorhandeneMappeWahl ziele={mappenZiele} vorschlaege={mappenVorschlaege} wahl={vorhandenId} setze={setVorhandenId} bekannt={bekannt} merke={merke} />}
+            {ziel === 'erledigen' && <NurErledigen />}
+          </WohinGehoert>}
+          {(!post || ziel === 'neu') && doppelt.length > 0 && zielTyp && <DoppeltWarnung liste={doppelt} bezuege={erkannt!.abgleich!.bezuege} legen={post ? dorthin : undefined} />}
+          {ziel === 'neu' && ohneRegister && <div className="hinweis warn"><p>{t('ablage.uebernehmen.ohne-dokumentenregister', { typ: typName(zielTyp!) })}</p></div>}
+          {!post
+            ? <MappeAnsicht key={m.id} typ={typ} details={details} sicht={sicht} neuLaden={neuLaden} vorschlagStart={vorschlagStart} />
+            : ziel === 'vorhanden'
+              ? <ZielLeiste text={vorhandenZiel ? t('ablage.uebernehmen.dorthin-legen', { titel: titelOder(vorhandenZiel.titel) }) : t('ablage.uebernehmen.zur-mappe-legen')} tu={vorhandenZiel ? () => inVorhandene(vorhandenZiel) : undefined} />
+              : ziel === 'erledigen'
+                ? <ZielLeiste text={t('ablage.post.erledigt')} tu={ohneMappe} />
+                : zielTyp
+                  ? <NeueMappe key={zielTyp.id} typ={zielTyp} sicht={sicht} zuordnen={zuordnen} vorschlagStart={vorschlagStart} kopf={kopf} />
+                  : <><p className="leise ue-leer">{t('ablage.uebernehmen.erst-typ-waehlen')}</p><ZielLeiste text={t('ablage.mappeformular.mappe-anlegen')} /></>}
         </section>
       </Dreiteilung>
     </BrueckeKontext.Provider>
   );
 }
 
-/** Kopf der neuen Mappe wie überall sonst: Typ, Titel (wie er nach dem Speichern heißt), Stern und „Mappe ▾“ (erst nach dem Speichern). */
+/**
+ * Kopf der Mitte bei Post (#1217): Titel, „Als Post öffnen“ (ein Weg – sieht aus wie ein Knopf) und „‹ Post 1 von 3 ›“
+ * mit Knöpfen; am Rand das Hilfesymbol.
+ */
+function PostKopf({ titel, alsPost, pos, anzahl, vorige, naechste }: { titel: string; alsPost: string; pos: number; anzahl: number; vorige?: () => void; naechste?: () => void }) {
+  return (
+    <>
+      <h2 className="ue-titel"><Symbol name="posteingang" /> {titel}</h2>
+      <div className="ue-blaettern">
+        <KnopfLink to={alsPost} anker="uebernehmen.als-post">{t('ablage.uebernehmen.als-post')}</KnopfLink>
+        {pos >= 0 && anzahl > 0 && <nav className="ue-blaettern-nav" aria-label={t('ablage.uebernehmen.blaettern')}>
+          <Knopf nurSymbol={t('ablage.uebernehmen.vorige')} gesperrt={pos <= 0 || !vorige} onClick={vorige}><Symbol name="pfeil-links" /></Knopf>
+          <span className="klein">{t('ablage.uebernehmen.post-von', { nr: pos + 1, anzahl })}</span>
+          <Knopf nurSymbol={t('ablage.uebernehmen.naechste')} gesperrt={pos >= anzahl - 1 || !naechste} onClick={naechste}><Symbol name="pfeil-rechts" /></Knopf>
+        </nav>}
+        <Hilfe ort="post.zuordnen" />
+      </div>
+    </>
+  );
+}
+
+/**
+ * Wiedergefundene Mappen für „Vorhandene Mappe“ (#1217): derselbe Abgleich, den das automatische Zuordnen nutzt (Absender,
+ * Vertrags- oder Kundennummer im Brief) – die besten drei in Typen, in die die Dokumente passen, ohne eigene Organisation
+ * und Personen des Haushalts. null: lädt noch.
+ */
+function useMappenVorschlaege(erkennKey: string, ziele: Mappentyp[], postId: string): MappenVorschlag[] | null {
+  const [liste, setListe] = useState<MappenVorschlag[] | null>(null);
+  const zieleKey = ziele.map((x) => x.id).join(',');
+  useEffect(() => {
+    if (!erkennKey) { setListe([]); return; }
+    let aktuell = true;
+    setListe(null);
+    const erlaubt = new Set(zieleKey.split(','));
+    api.abgleich({ dokumente: erkennKey.split(',') }).then((r) => {
+      if (!aktuell) return;
+      const eigene = new Set(r.eigene ?? []);
+      setListe(r.treffer.filter((x) => x.mappeId !== postId && erlaubt.has(x.typId) && !eigene.has(x.mappeId)).slice(0, 3)
+        .map((x) => ({ id: x.mappeId, typId: x.typId, titel: r.bezuege[x.mappeId]?.titel ?? '' })));
+    }, () => aktuell && setListe([]));
+    return () => { aktuell = false; };
+  }, [erkennKey, zieleKey, postId]);
+  return liste;
+}
+
+/**
+ * Kopf der neuen Mappe wie überall sonst: Typ, Titel (wie er nach dem Speichern heißt), Stern und „Mappe ▾“ – beide
+ * gehen erst nach dem Speichern: der Stern blass, „Mappe“ gesperrt mit Grund (Leitsatz 6).
+ */
 function NeuKopf({ typ, werte, bekannt }: { typ: Mappentyp; werte: Werte; bekannt: Bezuege }) {
   const titel = titelAus(typ, werte, (id) => bekannt[id]?.titel ?? '');
   const spaeter = t('ablage.uebernehmen.nach-dem-speichern');
@@ -437,8 +505,8 @@ function NeuKopf({ typ, werte, bekannt }: { typ: Mappentyp; werte: Werte; bekann
       <p className="ueber">{typName(typ)}</p>
       <div className="titelzeile"><h1 className={titel ? '' : 'leise'}>{titel || t('ablage.mappeformular.neue-mappe')}</h1>
         <div className="mappenkopf-knoepfe">
-          <button type="button" className="stern" disabled aria-label={`${t('ablage.stern.zu-den-favoriten')} – ${spaeter}`} title={spaeter}><Symbol name="stern" /></button>
-          <button type="button" className="knopf klein" disabled title={spaeter}>{tn('ablage.aktionen.mappe', { span: <span aria-hidden="true">▾</span> })}</button>
+          <Knopf art="link" className="stern" gesperrt nurSymbol={`${t('ablage.stern.zu-den-favoriten')} – ${spaeter}`}><Symbol name="stern" /></Knopf>
+          <Knopf groesse="klein" gesperrt={spaeter}>{t('ablage.aktionen.mappe')}</Knopf>
         </div>
       </div>
     </div>
@@ -446,102 +514,20 @@ function NeuKopf({ typ, werte, bekannt }: { typ: Mappentyp; werte: Werte; bekann
 }
 
 /**
- * „Wohin gehört das?“ (nur Post) in der Optik eines Verweisfelds: gewählter Typ mit Kurzbeschreibung und „Ändern“,
- * sonst Suche und Liste. Ohne Erkennung „Mappentyp wählen …“. Darunter, was es sonst noch gibt.
+ * Würde die Mappe doppelt (#938): „Rechnungsnummer R-1 gibt es schon: „…““ – mit Link und (bei Post) „Stattdessen
+ * dorthin legen“, das „Vorhandene Mappe“ mit dieser Mappe wählt (#1217).
  */
-function WohinGehoert({ ziele, zielTyp, klass, waehle, kopieren, setKopieren, inVorhandene, ohneMappe, alsPost }: {
-  ziele: Mappentyp[]; zielTyp?: Mappentyp; klass: (Klassifizierung & { bezuege: Bezuege }) | null | undefined; waehle(id: string): void;
-  kopieren: boolean; setKopieren?: (an: boolean) => void;
-  inVorhandene(z: { id: string; typId: string; titel: string }): void; ohneMappe(): void; alsPost: string;
-}) {
-  const [eingabe, setEingabe] = useState('');
-  const [offen, setOffen] = useState(false);
-  const [aendern, setAendern] = useState(false);
-  const [vorhanden, setVorhanden] = useState(false);
-  const [ziel, setZiel] = useState<string>('');
-  const [bekannt, setBekannt] = useState<Bezuege>({});
-  const kurzText = (x: Mappentyp) => { const b = typBeschreibung(x); const s = b.split(/(?<=[.!?])\s/)[0] ?? ''; return kurz(s, 90); };
-  const such = eingabe.trim().toLocaleLowerCase('de-DE');
-  const liste = ziele.filter((x) => !such || typName(x).toLocaleLowerCase('de-DE').includes(such) || typBeschreibung(x).toLocaleLowerCase('de-DE').includes(such));
-  const vorgeschlagen = !!klass?.vorschlag && klass.vorschlag.typId === zielTyp?.id;
-  // Belege des gewählten Typs (auch, wenn er nicht der Vorschlag war) und die anderen in Frage kommenden Typen.
-  const einschaetzung = klass?.typen.find((x) => x.typId === zielTyp?.id);
-  const andere = (klass?.typen ?? []).filter((x) => x.typId !== zielTyp?.id && ziele.some((z) => z.id === x.typId));
-  const hinweise = (klass?.wege ?? []).filter((w) => w.hinweis);
-  return (
-    <section className="ue-wohin feld" aria-labelledby="ue-wohin-titel" data-anker="uebernehmen.wohin">
-      <div className="feldkopf">
-        <span className="label" id="ue-wohin-titel">{t('ablage.uebernehmen.wohin')}</span>
-        {vorgeschlagen && <span className="chip">{t('ablage.mappeformular.vorschlag')}</span>}
-      </div>
-      {klass === undefined && !zielTyp
-        ? <p className="leise klein">{t('ablage.uebernehmen.erkenne')}</p>
-        : <Mehrfachauswahl name={t('ablage.uebernehmen.wohin')} eingabeLabel={t('ablage.uebernehmen.wohin')} platzhalter={zielTyp ? t('ablage.uebernehmen.typ-suchen') : t('ablage.uebernehmen.typ-waehlen')}
-            eingabe={eingabe} setEingabe={setEingabe} offen={offen} setOffen={setOffen} schliessen={() => setAendern(false)} ohneSuche={!!zielTyp && !aendern}
-            vorschlaege={liste.map((x) => ({ id: x.id, text: <span className="ue-typ"><strong>{typName(x)}</strong>{kurzText(x) && <span className="leise klein"> {kurzText(x)}</span>}</span> }))}
-            leerText={ziele.length ? t('ablage.uebernehmen.kein-typ-passt') : t('ablage.uebernehmen.keine-typen')}
-            waehle={(id) => { waehle(id); setEingabe(''); setOffen(false); setAendern(false); setVorhanden(false); setZiel(''); }}
-            gewaehlt={zielTyp ? [{
-              id: zielTyp.id,
-              inhalt: <span className="ue-typ"><strong>{typName(zielTyp)}</strong>{kurzText(zielTyp) && <span className="leise klein"> {kurzText(zielTyp)}</span>}</span>,
-              aktionen: !aendern && <button type="button" className="textknopf klein" onClick={() => { setAendern(true); setOffen(true); }}>{t('felder.verweis.aendern')}</button>,
-              entfernenText: t('ablage.uebernehmen.typ-entfernen'),
-            }] : []}
-            entferne={() => { setAendern(true); setOffen(true); }} />}
-      {einschaetzung && <TypBelege e={einschaetzung} vorgeschlagen={vorgeschlagen} bezuege={klass!.bezuege} />}
-      {andere.length > 0 && <p className="leise klein ue-andere">{t('ablage.uebernehmen.auch-moeglich')}{' '}{andere.map((x, i) => {
-        const zt = ziele.find((z) => z.id === x.typId)!;
-        return <span key={x.typId}>{i > 0 && ', '}<button type="button" className="textknopf klein" onClick={() => waehle(x.typId)}>{t('ablage.uebernehmen.typ-mit-sicherheit', { typ: typName(zt), prozent: Math.round(x.sicherheit * 100) })}</button></span>;
-      })}</p>}
-      {hinweise.map((w, i) => <p key={`h${i}`} className="leise klein ue-weg-hinweis">{w.hinweis}</p>)}
-      <div className="ue-wohin-fuss klein">
-        {setKopieren && <label className="haken klein"><input type="checkbox" checked={kopieren} onChange={(e) => setKopieren(e.target.checked)} /><span>{t('ablage.post.kopie-in-der-post')}</span></label>}
-        {zielTyp && <button type="button" className={`textknopf klein ${vorhanden ? 'an' : ''}`} aria-expanded={vorhanden} onClick={() => setVorhanden(!vorhanden)}>{t('ablage.uebernehmen.in-vorhandene', { typ: typName(zielTyp) })}</button>}
-        <button type="button" className="textknopf klein" onClick={ohneMappe} title={t('ablage.uebernehmen.ohne-mappe-titel')}>{t('ablage.uebernehmen.ohne-mappe')}</button>
-        <Link to={alsPost} className="textknopf klein">{t('ablage.uebernehmen.als-post')}</Link>
-      </div>
-      {vorhanden && zielTyp && (
-        <div className="ue-vorhanden">
-          <MappenWahl id="ue-vorhanden" ziel={zielTyp} mehrfach={false} wert={ziel || undefined} bekannt={bekannt} merke={(id, b) => setBekannt((x) => ({ ...x, [id]: b }))} setze={(v) => setZiel(typeof v === 'string' ? v : '')} ohneAnlegen />
-          <div className="knoepfe">
-            <button type="button" className="knopf primaer klein" disabled={!ziel} onClick={() => inVorhandene({ id: ziel, typId: zielTyp.id, titel: bekannt[ziel]?.titel ?? '' })}>
-              {ziel ? t('ablage.uebernehmen.dorthin-legen', { titel: titelOder(bekannt[ziel]?.titel) }) : t('ablage.post.mappe-waehlen')}</button>
-          </div>
-          <p className="leise klein">{kopieren ? t('ablage.uebernehmen.vorhanden-kopie') : t('ablage.uebernehmen.vorhanden-aufloesen')}</p>
-        </div>
-      )}
-    </section>
-  );
-}
-
-/** Woran Ablago den Typ erkennt (#939): je Weg ein Beleg – Paket mit Begründung und Zitat, Überschrift, wiedergefundene Mappe. */
-function TypBelege({ e, vorgeschlagen, bezuege }: { e: Einschaetzung; vorgeschlagen: boolean; bezuege: Bezuege }) {
-  const text = (b: Klassbeleg) => {
-    switch (b.weg) {
-      case 'kern': return t('ablage.uebernehmen.weil', { wort: b.wort ?? '', fundstelle: b.fundstelle ?? '' });
-      case 'ki': return t('ablage.uebernehmen.beleg-ki', { paket: b.paket?.name ?? '', begruendung: b.begruendung || t('ablage.uebernehmen.ohne-begruendung') });
-      case 'aehnlichkeit': return t('ablage.uebernehmen.beleg-aehnlich', { paket: b.paket?.name ?? '', begruendung: b.begruendung || t('ablage.uebernehmen.ohne-begruendung') });
-      case 'abgleich': return t('ablage.uebernehmen.beleg-abgleich', { feld: b.feld ?? '', titel: titelOder(b.mappeId ? bezuege[b.mappeId]?.titel : ''), merkmal: b.merkmal ?? '' });
-    }
-  };
-  return (
-    <div className="ue-typbelege leise klein" aria-label={t('ablage.uebernehmen.woran-typ')}>
-      <p>{vorgeschlagen ? t('ablage.uebernehmen.vorschlag-sicherheit', { prozent: Math.round(e.sicherheit * 100) }) : t('ablage.uebernehmen.woran-typ')}</p>
-      <ul>{e.belege.map((b, i) => <li key={`${b.weg}:${i}`}>{text(b)}{b.zitat && <> {t('ablage.uebernehmen.beleg-zitat', { zitat: b.zitat })}</>}</li>)}</ul>
-    </div>
-  );
-}
-
-/** Würde die Mappe doppelt (#938): „Rechnungsnummer R-1 gibt es schon: „…““ – mit Link und (bei Post) „Stattdessen dorthin legen“. */
-function DoppeltWarnung({ liste, bezuege, post, legen }: { liste: Abgleichtreffer[]; bezuege: Bezuege; post: boolean; legen(z: { id: string; typId: string; titel: string }): void }) {
+function DoppeltWarnung({ liste, bezuege, legen }: { liste: Abgleichtreffer[]; bezuege: Bezuege; legen?: (z: { id: string; typId: string; titel: string }) => void }) {
   return (
     <div className="hinweis warn ue-doppelt" role="alert">
       {liste.slice(0, 3).map((x) => {
         const b = x.belege.find((y) => !y.ueber && y.stark) ?? x.belege[0];
         const titel = bezuege[x.mappeId]?.titel ?? '';
         return (
-          <p key={x.mappeId}>{tn('ablage.uebernehmen.gibt-es-schon', { feld: b?.feld ?? '', wert: b?.wert ?? '', link: <Link to={`/ablage/${x.typId}/${x.mappeId}`} className="verweis">{titelOder(titel)}</Link> })}
-            {post && <> {' '}<button type="button" className="textknopf klein" onClick={() => legen({ id: x.mappeId, typId: x.typId, titel })}>{t('ablage.uebernehmen.stattdessen-dorthin')}</button></>}</p>
+          <div key={x.mappeId} className="ue-doppelt-zeile">
+            <p>{tn('ablage.uebernehmen.gibt-es-schon', { feld: b?.feld ?? '', wert: b?.wert ?? '', link: <Link to={`/ablage/${x.typId}/${x.mappeId}`} className="verweis">{titelOder(titel)}</Link> })}</p>
+            {legen && <Knopf onClick={() => legen({ id: x.mappeId, typId: x.typId, titel })}>{t('ablage.uebernehmen.stattdessen-dorthin')}</Knopf>}
+          </div>
         );
       })}
     </div>
@@ -549,7 +535,7 @@ function DoppeltWarnung({ liste, bezuege, post, legen }: { liste: Abgleichtreffe
 }
 
 /** Unter einem Verweisfeld: „Woran Ablago das erkennt“ und „auch gefunden … stattdessen nehmen“. */
-function VerweisBelege({ f, liste, bezuege, marken, nehmen }: { f: Feld; liste: Abgleichtreffer[]; bezuege: Bezuege; marken: Marke[]; nehmen(x: Abgleichtreffer): void }) {
+function VerweisBelege({ f, liste, bezuege, marken, nehmen }: { f: FeldDef; liste: Abgleichtreffer[]; bezuege: Bezuege; marken: Marke[]; nehmen(x: Abgleichtreffer): void }) {
   const [erster, ...weitere] = liste;
   return (
     <div className="ue-belege klein" aria-label={t('ablage.uebernehmen.woran', { feld: feldLabel(f) })}>
@@ -560,17 +546,23 @@ function VerweisBelege({ f, liste, bezuege, marken, nehmen }: { f: Feld; liste: 
         return <li key={`${b.feldKey}:${b.wert}:${i}`}>{nr && <span className={`ue-nr ${farbeVon(nr)}`}>{nr}</span>} {b.ueber ? t('ablage.uebernehmen.beleg-ueber', { feld: b.feld, wert: b.wert, ueber: b.ueber.feld }) : t('ablage.uebernehmen.beleg', { feld: b.feld, wert: b.wert })}</li>;
       })}</ul>
       {weitere.length > 0 && <p className="leise">{t('ablage.uebernehmen.auch-gefunden')}{' '}{weitere.map((x, i) => (
-        <span key={x.mappeId}>{i > 0 && ', '}„{titelOder(bezuege[x.mappeId]?.titel)}“ <button type="button" className="textknopf klein" onClick={() => nehmen(x)}>{t('ablage.uebernehmen.stattdessen-nehmen')}</button></span>
+        <span key={x.mappeId}>{i > 0 && ', '}„{titelOder(bezuege[x.mappeId]?.titel)}“ <Knopf groesse="klein" onClick={() => nehmen(x)}>{t('ablage.uebernehmen.stattdessen-nehmen')}</Knopf></span>
       ))}</p>}
     </div>
   );
 }
 
-/** Ein Dokument in der Mitte: Seitenbilder mit Rahmen und markierbarem Text; mit PDF/A „Original | PDF/A“. */
-function DokumentBlatt({ x, w, marken, hervor, setHervor, insAktive, leer, setzeLeer }: {
+/**
+ * Ein Dokument in der Mitte: Seitenbilder mit Rahmen und markierbarem Text. Kopf wie in der Mappe (#1211, #1217):
+ * Umschalter „PDF/A · Original“, „In neuem Tab“; Betrachter mit fester Höhe; ein Original, das sich nicht anzeigen
+ * lässt, mit Satz und „Original herunterladen“.
+ */
+function DokumentBlatt({ x, w, marken, hervor, setHervor, insAktive, leer, setzeLeer, herunterladen }: {
   x: Dokument; w: Woerter | 'keine' | undefined; marken: Marke[]; hervor: string | null; setHervor(k: string | null): void; insAktive(n: Nutzlast, eigenesFeld?: string): void;
   /** Leerseiten (#997): Markierung des Pakets und Wahl je Seite; null ohne. */
   leer: Leerseiten | null; setzeLeer(l: Leerseiten | null): void;
+  /** Darf das Original heruntergeladen werden (Exportrecht, kein Pflicht-Stempel)? */
+  herunterladen: boolean;
 }) {
   const weg = wegfallendeSeiten(leer);
   const mitArchiv = x.archivfassung?.stand === 'fertig';
@@ -580,26 +572,44 @@ function DokumentBlatt({ x, w, marken, hervor, setHervor, insAktive, leer, setze
   const ansicht = ansichtVon(x, !archiv);
   return (
     <article className="ue-dokument" aria-label={x.name}>
-      <div className="ue-dokkopf klein">
-        <span className="ue-dokname">{x.name}</span>
-        {mitArchiv && <span className="ue-fassung" role="group" aria-label={t('ablage.uebernehmen.fassung')}>
-          <button type="button" className={`textknopf klein ${!archiv ? 'an' : ''}`} aria-pressed={!archiv} onClick={() => setArchiv(false)}>{t('ablage.uebernehmen.original')}</button>
-          <span aria-hidden="true">|</span>
-          <button type="button" className={`textknopf klein ${archiv ? 'an' : ''}`} aria-pressed={archiv} onClick={() => setArchiv(true)}>{t('ablage.uebernehmen.pdfa')}</button>
-        </span>}
-      </div>
-      {w === undefined ? <p className="leise klein">{t('ablage.uebernehmen.lade')}</p>
+      <DokKopf x={x} archiv={mitArchiv ? archiv : null} setArchiv={setArchiv} tab={ansicht?.url} />
+      {w === undefined ? <p className="leise klein ue-betrachter-text">{t('ablage.uebernehmen.lade')}</p>
         : seiten?.length
-          ? <>
+          ? <div className="ue-betrachter" tabIndex={0} role="group" aria-label={x.name}>
               {w !== 'keine' && !w.mitText && <p className="leise klein">{x.ocr?.stand === 'wartet' || x.ocr?.stand === 'laeuft' ? t('ablage.uebernehmen.text-kommt') : t('ablage.uebernehmen.ohne-text')}</p>}
               <MitLeerseiten x={x} l={leer} darf geaendert={setzeLeer}>
                 {seiten.map((s, i) => <Seite key={`${i}-${archiv}`} x={x} nr={i + 1} s={s} archiv={archiv} marken={marken} hervor={hervor} setHervor={setHervor} insAktive={insAktive} weg={weg.includes(i + 1)} />)}
               </MitLeerseiten>
-            </>
+            </div>
           : ansicht
-            ? <div className="dokansicht ue-ansicht">{ansicht.pdf ? <iframe src={ansicht.url} title={x.name} /> : <img src={ansicht.url} alt={x.name} />}</div>
-            : <p className="leise klein">{t('ablage.uebernehmen.keine-ansicht')}</p>}
+            ? <div className="ue-ansicht">{ansicht.pdf ? <iframe src={ansicht.url} title={x.name} /> : <img src={ansicht.url} alt={x.name} />}</div>
+            : <NichtAnzeigbar x={x} herunterladen={herunterladen} />}
     </article>
+  );
+}
+
+/** Kopf eines Dokuments wie in der Mappe (#1211): Name, Umschalter „PDF/A · Original“ (`archiv` null: ohne Archivfassung), „In neuem Tab“. */
+function DokKopf({ x, archiv, setArchiv, tab }: { x: Dokument; archiv: boolean | null; setArchiv(an: boolean): void; tab?: string }) {
+  return (
+    <div className="dokansicht-kopf klein ue-dokkopf">
+      <span className="ue-dokname">{x.name}</span>
+      {archiv !== null && <Umschalter wert={archiv ? 'archiv' : 'original'} setze={(v) => setArchiv(v === 'archiv')} beschriftung={t('ablage.dokumente.fassung')}
+        wahlen={[{ wert: 'archiv', text: t('ablage.dokumente.laden.pdfa') }, { wert: 'original', text: t('ablage.dokumente.laden.original') }]} />}
+      {archiv === null && x.archivfassung?.stand === 'wartet' && <span className="leise">{t('volltext.archiv.wird-erstellt')}</span>}
+      {archiv !== null && <Hilfe ort="dokumente.archivfassung" />}
+      {tab && <a className="verweis dokansicht-tab" href={tab} target="_blank" rel="noreferrer" aria-label={t('ablage.dokumente.in-neuem-tab-oeffnen-2', { name: x.name })}>{t('ablage.dokumente.in-neuem-tab')} <Symbol name="extern" /></a>}
+    </div>
+  );
+}
+
+/** Original, das der Browser nicht zeigt (#946, #1211, z. B. eine E-Mail): ein Satz und „Original herunterladen“. */
+function NichtAnzeigbar({ x, herunterladen }: { x: Dokument; herunterladen: boolean }) {
+  const endung = /\.([^.]{1,8})$/.exec(x.name)?.[1]?.toLowerCase();
+  return (
+    <div className="dokansicht-leer">
+      <p>{endung ? t('ablage.dokumente.original-nicht-anzeigbar', { endung }) : t('ablage.dokumente.original-nicht-anzeigbar-ohne')}</p>
+      {herunterladen && <Knopf symbol="herunterladen" onClick={() => { location.assign(dokumentUrl(x.id, true)); }}>{t('ablage.dokumente.original-herunterladen')}</Knopf>}
+    </div>
   );
 }
 
@@ -649,7 +659,7 @@ function Ablageflaeche({ hochladen }: { hochladen(f: File[]): void }) {
   const ref = useRef<HTMLInputElement>(null);
   return (
     <div className="ue-ablage" data-anker="uebernehmen.ablegen">
-      <button type="button" className="ue-ablage-knopf" onClick={() => ref.current?.click()}>{t('ablage.uebernehmen.weitere-hierher')}</button>
+      <Knopf className="ue-ablage-knopf" onClick={() => ref.current?.click()}>{t('ablage.uebernehmen.weitere-hierher')}</Knopf>
       <input ref={ref} type="file" multiple hidden onChange={(e) => { const f = [...(e.target.files ?? [])]; e.target.value = ''; if (f.length) hochladen(f); }} />
     </div>
   );

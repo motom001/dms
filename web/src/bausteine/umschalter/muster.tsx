@@ -3,7 +3,8 @@ import { t } from '../../sprache';
 import { Umschalter } from './Umschalter';
 import s from '../muster.module.css';
 
-/** Umschalter auf der Musterseite (#1002): zwei Wahlen wie über dem Feld der Startseite, drei Wahlen wie bei einer Ansicht. */
+/** Umschalter auf der Musterseite (#1002): zwei Wahlen wie über dem Feld der Startseite, drei Wahlen wie bei einer Ansicht,
+ * lange Wahlen wie bei „Wohin gehört das?“ (#1217), am Handy untereinander. */
 
 function Karte({ zustand, titel, children }: { zustand: string; titel: string; children: ReactNode }) {
   return (
@@ -17,6 +18,7 @@ function Karte({ zustand, titel, children }: { zustand: string; titel: string; c
 export function UmschalterMuster() {
   const [zwei, setZwei] = useState<'fragen' | 'suchen'>('fragen');
   const [drei, setDrei] = useState<'liste' | 'monat' | 'jahr'>('monat');
+  const [lang, setLang] = useState<'neu' | 'vorhanden' | 'erledigen'>('neu');
   return (
     <div className={s.raster}>
       <Karte zustand="umschalter-zwei" titel={t('oberflaeche.muster.umschalter.zwei')}>
@@ -26,6 +28,10 @@ export function UmschalterMuster() {
       <Karte zustand="umschalter-drei" titel={t('oberflaeche.muster.umschalter.drei')}>
         <Umschalter wert={drei} setze={setDrei} beschriftung={t('oberflaeche.muster.umschalter.drei.beschriftung')}
           wahlen={[{ wert: 'liste', text: t('oberflaeche.muster.umschalter.liste') }, { wert: 'monat', text: t('oberflaeche.muster.umschalter.monat') }, { wert: 'jahr', text: t('oberflaeche.muster.umschalter.jahr') }]} />
+      </Karte>
+      <Karte zustand="umschalter-lang" titel={t('oberflaeche.muster.umschalter.lang')}>
+        <Umschalter wert={lang} setze={setLang} beschriftung={t('oberflaeche.muster.umschalter.lang.beschriftung')} schmalUntereinander
+          wahlen={[{ wert: 'neu', text: t('oberflaeche.muster.umschalter.neu') }, { wert: 'vorhanden', text: t('oberflaeche.muster.umschalter.vorhanden') }, { wert: 'erledigen', text: t('oberflaeche.muster.umschalter.erledigen') }]} />
       </Karte>
     </div>
   );

@@ -413,7 +413,8 @@ rauchtest('Dokument übernehmen: Neue Post öffnen, Mappentyp wählen, Text vom 
   const liste = s.getByRole('region', { name: 'Mappen' });
   await liste.getByRole('heading', { name: /^Neue Post/, level: 1 }).waitFor();
   await liste.locator(`a[href$="/${daten.brief.id}"]`).click();
-  // Links bleibt „Neue Post“ markiert, in der Mitte das Dokument mit „Post … von 2“, rechts „Wohin gehört das?“.
+  // Links bleibt „Neue Post“ markiert, in der Mitte das Dokument mit „Post … von 2“, rechts „Wohin gehört das?“ mit dem
+  // Umschalter (#1217), gewählt „Neue Mappe“.
   await s.waitForURL(new RegExp(`/${daten.brief.id}/uebernehmen$`));
   await s.getByRole('complementary', { name: 'Ansichten' }).locator('a.sicht.an', { hasText: 'Neue Post' }).waitFor();
   const dokument = s.getByRole('region', { name: 'Dokument' });
@@ -421,13 +422,19 @@ rauchtest('Dokument übernehmen: Neue Post öffnen, Mappentyp wählen, Text vom 
   await dokument.getByText(/^Post [12] von 2$/).waitFor();
   await dokument.getByRole('img', { name: 'Seite 1' }).waitFor();
   const mappe = s.getByRole('region', { name: 'Mappe' });
-  const wohin = mappe.getByRole('combobox', { name: 'Wohin gehört das?' });
+  await mappe.getByRole('radiogroup', { name: 'Wohin gehört das?' }).getByRole('radio', { name: 'Neue Mappe', checked: true }).waitFor();
+  // „Als Post öffnen“ steht oben im Kopf neben „Post … von 2“ (ein Weg, der aussieht wie ein Knopf).
+  await dokument.getByRole('link', { name: 'Als Post öffnen' }).waitFor();
+  const wohin = mappe.getByRole('combobox', { name: 'Mappentyp suchen …' });
   await wohin.click();
   await mappe.getByRole('option', { name: /^Vertrag Laufender Vertrag/ }).click();
+  // Gewählt ist er auch unter „Vorschläge“ (Knopf, gedrückt).
+  await mappe.getByRole('group', { name: 'Vorschläge' }).getByRole('button', { name: 'Vertrag', pressed: true }).waitFor();
   // Die Mappe darunter: Kopf mit Typ und Titel (aus dem Betreff), Felder, Speicherleiste mit Hinweis zur Post.
   await mappe.getByRole('heading', { name: 'Preisanpassung Strom 2027', level: 1 }).waitFor();
   await mappe.getByText('Beim Speichern wandern Dokumente und Historie der Post hierher, die Post kommt in den Papierkorb.').waitFor();
-  await mappe.getByRole('button', { name: 'Mappe speichern' }).waitFor();
+  await mappe.getByRole('button', { name: 'Mappe anlegen' }).waitFor();
+  assert.equal(await mappe.getByText(/Kopie in der Post behalten/).count(), 0, 'Kein „Kopie in der Post behalten“ mehr (#1217)');
   assert.equal(await mappe.getByRole('button', { name: /Aus Dokument ausfüllen/ }).count(), 0, '„Aus Dokument ausfüllen“ steht hier nicht');
   // Der Betreff steht auch im Dokument: Rahmen 1 an der Fundstelle, die Nummer 1 am Feld „Bezeichnung“.
   const rahmen = dokument.getByRole('button', { name: 'Rahmen 1: Preisanpassung Strom 2027' });
@@ -758,7 +765,8 @@ rauchtest('Handy: Neue Post öffnen', { handy: true, als: LENA }, async (s) => {
   // „Dokument übernehmen“ (#934): bis zur mobilen Fassung alles in einer Spalte untereinander.
   await s.waitForURL(/\/uebernehmen$/);
   await s.getByRole('heading', { name: 'Beitragsrechnung Hausrat 2027' }).waitFor();
-  await s.getByRole('combobox', { name: 'Wohin gehört das?' }).waitFor();
+  await s.getByRole('radiogroup', { name: 'Wohin gehört das?' }).waitFor();
+  await s.getByRole('combobox', { name: 'Mappentyp suchen …' }).waitFor();
   await keineWaagerechteRolle(s);
 });
 
@@ -894,9 +902,10 @@ rauchtest('Dokument übernehmen: Typ erkannt, Folgedokument abtrennen (#934)', {
   const mappe = s.getByRole('region', { name: 'Mappe' });
   // „Rechnung“ steht als Überschrift im ersten Dokument: vorgeschlagen, mit Grund.
   await mappe.getByText(/^Vorschlag, weil „Rechnung“ im Dokument steht/).waitFor();
-  // Klassifizierung mehrstufig (#939): ein Vorschlag mit Sicherheit und den Belegen der Wege.
-  await mappe.getByText(/^Vorschlag \(\d+ %\) – woran Ablago das erkennt:$/).waitFor();
-  await mappe.getByText('Eingegangene Rechnung, gehört zu einem Vertrag oder steht für sich').waitFor();
+  // Klassifizierung mehrstufig (#939): ein Vorschlag mit den Belegen der Wege – als gedrückter Chip, ohne Prozent (#1217).
+  await mappe.getByText('Vorschlag – woran Ablago das erkennt:').waitFor();
+  await mappe.getByRole('group', { name: 'Vorschläge' }).getByRole('button', { name: 'Rechnung', pressed: true }).waitFor();
+  assert.equal(await mappe.getByText(/\d+ %/).count(), 0, 'Keine Prozente bei „Wohin gehört das?“ (#1217)');
   // Das zweite Dokument passt eher zu „Vertrag“: abtrennen.
   const dokument = s.getByRole('region', { name: 'Dokument' });
   await dokument.getByText('„Vertrag Leasing Kombi Beispiel 2027.pdf“ passt eher zu Vertrag.').waitFor();
@@ -922,13 +931,13 @@ rauchtest('Neue Post: Mappentyp wählen, ausfüllen, speichern – die Post wird
   await s.getByRole('region', { name: 'Mappen' }).locator(`a[href$="/${brief.id}"]`).click();
   await s.waitForURL(new RegExp(`/${brief.id}/uebernehmen$`));
   const mappe = s.getByRole('region', { name: 'Mappe' });
-  await mappe.getByRole('combobox', { name: 'Wohin gehört das?' }).click();
+  await mappe.getByRole('combobox', { name: 'Mappentyp suchen …' }).click();
   await mappe.getByRole('option', { name: /^Vertragspartner/ }).click();
   await mappe.getByText('Beim Speichern wandern Dokumente und Historie der Post hierher, die Post kommt in den Papierkorb.').waitFor();
   await mappe.getByRole('tab', { name: 'Stammdaten' }).click();
   await mappe.getByRole('textbox', { name: 'Name', exact: true }).fill('Schornsteinfeger Beispiel');
   await mappe.getByRole('heading', { name: 'Schornsteinfeger Beispiel', level: 1 }).waitFor();
-  await mappe.getByRole('button', { name: 'Mappe speichern' }).click();
+  await mappe.getByRole('button', { name: 'Mappe anlegen' }).click();
   // Danach die nächste Post aus „Neue Post“ auf derselben Seite, oben mit Link zur neuen Mappe.
   await mappe.getByText(/ist angelegt, Dokumente und Historie der Post liegen dort/).waitFor();
   await s.waitForURL((u) => u.pathname.endsWith('/uebernehmen') && !u.pathname.includes(brief.id));
@@ -948,11 +957,13 @@ rauchtest('Dokument übernehmen: in eine vorhandene Mappe legen, auch dann wird 
   await s.getByRole('region', { name: 'Mappen' }).locator(`a[href$="/${daten.brief.id}"]`).click();
   await s.waitForURL(/\/uebernehmen$/);
   const mappe = s.getByRole('region', { name: 'Mappe' });
-  await mappe.getByRole('combobox', { name: 'Wohin gehört das?' }).click();
-  await mappe.getByRole('option', { name: /^Vertrag Laufender Vertrag/ }).click();
-  await mappe.getByRole('button', { name: 'In eine vorhandene Mappe „Vertrag“ legen …' }).click();
-  await mappe.getByPlaceholder('Vertrag suchen …').fill('Stromvertrag');
+  // „Vorhandene Mappe“ (#1217): ohne vorherige Typwahl, Suche über alle Mappentypen; ohne Wahl ist der Hauptknopf blass.
+  await mappe.getByRole('radio', { name: 'Vorhandene Mappe' }).click();
+  assert.ok(await mappe.getByRole('button', { name: 'Zur Mappe legen' }).isDisabled(), 'Ohne Wahl ist „Zur Mappe legen“ blass');
+  await mappe.getByRole('combobox', { name: 'Mappe suchen …' }).fill('Stromvertrag');
   await mappe.getByRole('option', { name: 'Stromvertrag Haus' }).click();
+  // Kurzansicht der Mappe: Typ, Titel, Felder, wohin die Dokumente kommen.
+  await mappe.locator('.ue-kurz').getByText('Vertragsnummer').waitFor();
   await mappe.getByText('Dokumente und Historie der Post wandern dorthin, die Post kommt in den Papierkorb.').waitFor();
   await mappe.getByRole('button', { name: 'Zu „Stromvertrag Haus“ legen' }).click();
   // Weiter mit der nächsten Post; oben der Link zum Vertrag.
@@ -962,6 +973,84 @@ rauchtest('Dokument übernehmen: in eine vorhandene Mappe legen, auch dann wird 
   await mappe.getByRole('tab', { name: 'Vertragsunterlagen 1' }).waitFor();
   await s.goto(BASIS + `/ablage/papierkorb/${daten.brief.id}`);
   await s.getByText(/^Aufgelöst in Vertrag „Stromvertrag Haus“\. Dokumente und Historie liegen dort/).waitFor();
+});
+
+// #1217: „Wohin gehört das?“ mit Umschalter – Tastatur, Vorschläge für „Vorhandene Mappe“ aus dem Brief, „Nur erledigen“.
+rauchtest('Dokument übernehmen: Vorhandene Mappe aus dem Brief, Nur erledigen, Tastatur im Umschalter (#1217)', { als: LENA }, async (s) => {
+  // Ein eigener Mappentyp mit „Zum Wiederfinden nutzen“ (die Beispiele haben keinen) und eine Mappe, deren Nummer im Brief steht.
+  const verwaltung = await sitzung(LENA);
+  await api('POST', '/api/konto/verwaltung', { cookie: verwaltung, body: { passwort: LENA.passwort } });
+  const gas = (await api('POST', '/api/typen', { cookie: verwaltung, body: { name: 'Gasanschluss', schluessel: 'gasanschluss', titelVorlage: '{objekt}',
+    felder: [{ key: 'objekt', label: 'Objekt', typ: 'text', pflicht: true }, { key: 'anschlussnummer', label: 'Anschlussnummer', typ: 'text', wiederfinden: true }] } })).daten;
+  await api('POST', '/api/mappen', { cookie: verwaltung, body: { typId: gas.id, werte: { objekt: 'Gasanschluss Keller', anschlussnummer: 'GA-2027-881' } } });
+  const brief = await eigenePost('Abschlag Gas Beispiel', ['Abschlag Gas\nAnschlussnummer GA-2027-881']);
+  await s.goto(BASIS + `/ablage/eingang/${brief.id}`);
+  await s.waitForURL(new RegExp(`/${brief.id}/uebernehmen$`));
+  const mappe = s.getByRole('region', { name: 'Mappe' });
+  const wohin = mappe.getByRole('radiogroup', { name: 'Wohin gehört das?' });
+  await wohin.getByRole('radio', { name: 'Neue Mappe', checked: true }).focus();
+  // Pfeiltasten wählen im Umschalter (wie Optionsfelder).
+  await s.keyboard.press('ArrowRight');
+  await wohin.getByRole('radio', { name: 'Vorhandene Mappe', checked: true }).waitFor();
+  await s.waitForFunction(() => document.activeElement?.getAttribute('aria-checked') === 'true' && document.activeElement?.textContent === 'Vorhandene Mappe');
+  // Die Erkennung kennt den Gasanschluss (Anschlussnummer im Brief): Vorschlag als Chip, ohne vorherige Typwahl.
+  await mappe.getByRole('group', { name: 'Vorschläge' }).getByRole('button', { name: 'Gasanschluss Keller · Gasanschluss' }).click();
+  await mappe.locator('.ue-kurz').getByText('GA-2027-881').waitFor();
+  await mappe.getByRole('button', { name: 'Zu „Gasanschluss Keller“ legen' }).waitFor();
+  // „Nur erledigen“: ein Satz, ein Knopf „Erledigt“ – nichts wird gelöscht.
+  await wohin.getByRole('radio', { name: 'Nur erledigen' }).click();
+  await mappe.getByText('Nichts wird gelöscht. Die Post verschwindet aus „Neue Post“ und bleibt unter „Post“ mit Stand „Erledigt“.').waitFor();
+  await mappe.getByRole('button', { name: 'Erledigt' }).click();
+  await s.waitForURL((u) => !u.pathname.includes(brief.id));
+  const nachher = (await api('GET', `/api/mappen/${brief.id}`, { cookie: await sitzung(LENA) })).daten;
+  assert.match(JSON.stringify(nachher.mappe.werte.stand), /Erledigt/);
+  assert.equal(nachher.dokumente.length, 1, 'Die Dokumente bleiben in der Post');
+});
+
+/** Die drei Wahlen auf „Dokument übernehmen“ (#1217) und worauf je Wahl gewartet wird. */
+const UEBERNEHMEN_WAHLEN = [
+  ['Neue Mappe', (m) => m.getByRole('combobox', { name: 'Mappentyp suchen …' }).waitFor()],
+  ['Vorhandene Mappe', (m) => m.getByRole('combobox', { name: 'Mappe suchen …' }).waitFor()],
+  ['Nur erledigen', (m) => m.getByRole('button', { name: 'Erledigt' }).waitFor()],
+];
+
+rauchtest('Dokument übernehmen aus Bausteinen: axe ohne Verstoß in allen drei Wahlen, hell und dunkel (#1217)', { als: LENA }, async (s) => {
+  const brief = await eigenePost('Werbung Möbelhaus Beispiel', ['Werbung Möbelhaus Beispiel']);
+  const funde = [];
+  for (const schema of ['light', 'dark']) {
+    await s.emulateMedia({ colorScheme: schema });
+    await s.goto(BASIS + `/ablage/eingang/${brief.id}`);
+    await s.waitForURL(new RegExp(`/${brief.id}/uebernehmen$`));
+    const mappe = s.getByRole('region', { name: 'Mappe' });
+    await s.getByRole('region', { name: 'Dokument' }).getByRole('img', { name: 'Seite 1' }).waitFor();
+    for (const [wahl, warte] of UEBERNEHMEN_WAHLEN) {
+      await mappe.getByRole('radio', { name: wahl }).click();
+      await warte(mappe);
+      await s.waitForLoadState('networkidle');
+      for (const v of await axePruefen(s, ['.spalte.liste', '.spalte.mappe'])) funde.push(`${wahl} (${schema}): ${v}`);
+    }
+  }
+  assert.deepEqual(funde, [], `axe meldet Verstöße:\n${funde.join('\n')}`);
+});
+
+rauchtest('Handy: Dokument übernehmen mit 44-px-Tippflächen in allen drei Wahlen (#1217)', { handy: true, als: LENA }, async (s) => {
+  const brief = await eigenePost('Werbung Gartenmarkt Beispiel', ['Werbung Gartenmarkt Beispiel']);
+  await s.goto(BASIS + `/ablage/eingang/${brief.id}`);
+  await s.waitForURL(new RegExp(`/${brief.id}/uebernehmen$`));
+  const mappe = s.getByRole('region', { name: 'Mappe' });
+  // Am Handy stehen die drei Wahlen untereinander, keine ist abgeschnitten.
+  await mappe.getByRole('radio', { name: 'Nur erledigen' }).waitFor();
+  const breiten = await mappe.getByRole('radio').evaluateAll((l) => l.map((e) => e.scrollWidth <= e.clientWidth));
+  assert.deepEqual(breiten, [true, true, true], 'Wahlen am Handy abgeschnitten');
+  const funde = [];
+  for (const [wahl, warte] of UEBERNEHMEN_WAHLEN) {
+    await mappe.getByRole('radio', { name: wahl }).click();
+    await warte(mappe);
+    await s.waitForLoadState('networkidle');
+    for (const v of await tippflaechenPruefen(s, ['.ue-kopf', '.ue-dokkopf', '.ue-wohin', '.ue-leiste'])) funde.push(`${wahl}: ${v}`);
+  }
+  await keineWaagerechteRolle(s);
+  assert.deepEqual(funde, [], `Zu kleine Tippflächen am Handy:\n${funde.join('\n')}`);
 });
 
 // #935: Steht am Ende – legt einen Vertragspartner an. Die Mappe dahinter (aus der Post) bleibt ungespeichert offen.
@@ -1791,13 +1880,13 @@ rauchtest('Werkbank aus Bausteinen: axe ohne Verstoß, hell und dunkel (#1214)',
   assert.deepEqual(funde, [], `axe meldet Verstöße:\n${funde.join('\n')}`);
 });
 
-// Am Handy in drei Teilen: Die Messung jedes Bedienelements braucht Zeit (Grenze je Rauchtest 120 s).
-for (const teil of [0, 1, 2]) {
+// Am Handy in fünf Teilen: Die Messung jedes Bedienelements braucht Zeit (Grenze je Rauchtest 120 s).
+for (const teil of [0, 1, 2, 3, 4]) {
   rauchtest(`Handy: Werkbank aus Bausteinen mit 44-px-Tippflächen, Teil ${teil + 1} (#1214)`, { handy: true, als: LENA, erwartet: WERKBANK_ERWARTET }, async (s) => {
     await s.goto(BASIS + '/ablage/start');
     await verwalten(s);
     const alle = await werkbankSeiten(s);
-    const seiten = alle.filter((_, i) => i % 3 === teil);
+    const seiten = alle.filter((_, i) => i % 5 === teil);
     const funde = [];
     for (const seite of seiten) {
       await seite.weg(s);

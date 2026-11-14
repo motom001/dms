@@ -784,18 +784,37 @@ async function main() {
   await bild(s, 'mit-verknuepften-loeschen');
   await loeschBaum.getByRole('button', { name: w('Schließen') }).click();
 
-  // Post (#192, #934): neuer Brief in „Neue Post“ öffnet die Seite „Dokument übernehmen“ – Dokument in der Mitte,
-  // rechts „Wohin gehört das?“ mit dem Mappentyp Vertrag und der Mappe darunter.
+  // Post (#192, #934, #1217): neuer Brief in „Neue Post“ öffnet die Seite „Dokument übernehmen“ – Dokument in der Mitte,
+  // rechts „Wohin gehört das?“ mit „Neue Mappe“, dem Mappentyp Vertrag und der Mappe darunter.
   const brief = await briefAnlegen();
   const neuePost = (await api('GET', '/api/sichten')).neuePost ?? brief.typId;
   await geheZu(s, `/ablage/${neuePost}/${brief.id}`);
   await s.waitForURL(/\/uebernehmen$/);
   await s.locator('.ue-wohin').waitFor();
-  await s.getByRole('combobox', { name: w('Wohin gehört das?') }).click();
+  await s.getByRole('combobox', { name: w('Mappentyp suchen …') }).click();
   await s.locator('.ue-wohin .wahlliste button', { hasText: vertrag.beschriftungen?.[SPRACHE]?.name ?? vertrag.name }).first().click();
   await s.locator('.ue-rechts .mappenkopf h1').waitFor();
   await s.locator('.ue-seite img').first().waitFor();
   await bild(s, 'post-zuordnen');
+
+  // „Vorhandene Mappe“ (#1217): ein Abschlag zum Stromvertrag – Vorschlag aus dem Brief (wo die Erkennung ihn kennt),
+  // sonst über die Suche; darunter die Kurzansicht. Danach erledigt, damit „Neue Post“ in den folgenden Bildern gleich bleibt.
+  const abschlag = await api('POST', '/api/post', { betreff: 'Abschlag Strom 2027' });
+  await api('POST', `/api/mappen/${abschlag.id}/dokumente?register=dokumente&name=${encodeURIComponent('Abschlag 2027.pdf')}&typ=application/pdf`, beispielPdf('Abschlag Strom 2027 - Vertragsnummer SV-4711'), true);
+  await geheZu(s, `/ablage/${neuePost}/${abschlag.id}`);
+  await s.waitForURL(/\/uebernehmen$/);
+  await s.locator('.ue-seite img').first().waitFor();
+  await s.getByRole('radio', { name: w('Vorhandene Mappe') }).click();
+  const stromChip = s.locator('.ue-chips').getByRole('button', { name: /^Stromvertrag Haus/ });
+  await s.locator('.ue-chips, .ue-wahl > p.leise').first().waitFor();
+  if (await stromChip.count()) await stromChip.click();
+  else {
+    await s.getByRole('combobox', { name: w('Mappe suchen …') }).fill('Stromvertrag');
+    await s.getByRole('option', { name: 'Stromvertrag Haus' }).click();
+  }
+  await s.locator('.ue-kurz').waitFor();
+  await bild(s, 'post-vorhanden');
+  await api('PUT', `/api/mappen/${abschlag.id}`, { werte: { stand: 'Erledigt' } });
 
   // Leerseiten (#997): beidseitiger Scan mit leeren Rückseiten, Seitenleiste neben dem Dokument. Markiert wird hier wie
   // die Wahl einer Person („Auch weglassen“) – das Paket Leerseiten setzt dieselbe Markierung. Danach erledigt, damit
