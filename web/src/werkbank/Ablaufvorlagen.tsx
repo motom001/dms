@@ -305,7 +305,7 @@ function GeradeBenutzt({ v, nachher }: { v: AblaufvorlageAnsicht; nachher: () =>
       <h2 className="h3">{t('automatisierung.vorlage.ui.benutzt')}</h2>
       {fehler && <p className="fehlertext">{fehler}</p>}
       {!liste ? <p className="leise">{t('automatisierung.ui.lade')}</p> : !liste.length ? <p className="leise">{t('automatisierung.vorlage.ui.benutzt.leer')}</p> : (
-        <ul className="mappenliste">{liste.map((a) => (
+        <ul className="mappenliste benutzt-liste">{liste.map((a) => (
           <li key={a.id}>
             <span><Link to={`/ablage/${a.typId}/${a.mappeId}`} className="verweis">{a.mappeTitel || a.mappeId}</Link>{' '}
               <span className="leise klein">{t('automatisierung.vorlage.ui.benutzt.zeile', { datum: datumDe(a.datum), person: d.person(a.erstelltVon ?? '') })}</span>
