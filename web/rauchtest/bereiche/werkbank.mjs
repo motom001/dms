@@ -90,16 +90,20 @@ rauchtest('Werkbank: Sprungleiste und Bereiche in allen Editoren (#1000)', { als
 });
 
 // Wiederherstellen (Abschnitt der Sicherung) antwortet außerhalb des Wartungsmodus mit 409 – das ist gewollt.
-rauchtest('Werkbank: Notfallblatt nur unter Verschlüsselung, Sicherung verweist dorthin (#993)', { als: LENA, erwartet: [{ status: 409, pfad: /^\/api\/wiederherstellung\/sicherungen$/ }] }, async (s) => {
+rauchtest('Werkbank: Notfallblatt nur unter Verschlüsselung, Sicherung verweist dorthin (#993, #1193)', { als: LENA, erwartet: [{ status: 409, pfad: /^\/api\/wiederherstellung\/sicherungen$/ }] }, async (s) => {
   await s.goto(BASIS + '/ablage/start');
   await verwalten(s);
   await s.getByRole('complementary', { name: 'Bereiche' }).getByRole('link', { name: /^Sicherung/ }).click();
   const bearbeitung = s.getByRole('region', { name: 'Bearbeitung' });
   await bearbeitung.getByRole('heading', { name: 'Sicherung', level: 1 }).waitFor();
   assert.equal(await bearbeitung.getByRole('heading', { name: /^Notfallblatt/ }).count(), 0, 'kein Abschnitt Notfallblatt in der Sicherung');
-  await bearbeitung.getByRole('link', { name: /^Notfallblatt heruntergeladen/ }).click();
-  await s.waitForURL(/\/werkbank\/verschluesselung#notfallblatt$/);
+  // #1193: In der Statuszeile nichts zum Notfallblatt (es ist aktuell), auch kein Handbuch-Link neben dem Hilfesymbol bei „Außer Haus“.
+  assert.equal(await bearbeitung.getByText(/Notfallblatt heruntergeladen/).count(), 0, 'kein Datum des Notfallblatts in der Sicherung');
+  assert.equal(await bearbeitung.getByRole('link', { name: /im Handbuch/ }).count(), 0, 'kein doppelter Handbuch-Link');
+  await bearbeitung.getByRole('link', { name: 'Verschlüsselung', exact: true }).first().click();
+  await s.waitForURL(/\/werkbank\/verschluesselung/);
   await bearbeitung.getByRole('heading', { name: /^Notfallblatt/ }).waitFor();
+  await bearbeitung.getByText(/^Zuletzt heruntergeladen/).waitFor();
   await bearbeitung.getByRole('link', { name: 'Notfallblatt herunterladen (PDF)' }).waitFor();
 });
 

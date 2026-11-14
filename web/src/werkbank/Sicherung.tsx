@@ -140,13 +140,13 @@ function OrtZelle({ e, extern }: { e: SicherungEintrag; extern: ExternZustand | 
   );
 }
 
-/** Abschnitt „Außer Haus“: Ziele (Pakete), letzte Kopie; ohne Paket ein Hinweis auf die Möglichkeiten. */
-function AusserHaus({ x, handbuch }: { x: ExternZustand | null | undefined; handbuch: string }) {
+/** Abschnitt „Außer Haus“: Ziele (Pakete), letzte Kopie; ohne Paket ein Hinweis auf die Möglichkeiten. Das Handbuch nur über das Hilfesymbol (#1193). */
+function AusserHaus({ x }: { x: ExternZustand | null | undefined }) {
   return (
     <section className="blatt" id="ausser-haus">
       <h2 className="h3">{t('werkbank.sicherung.extern.titel')} <Hilfe ort="sicherung.extern" /></h2>
       {!x?.ziele.length ? (
-        <p className="leise">{t('werkbank.sicherung.extern.ohne')} <Link to="/werkbank/pakete" className="verweis">{t('werkbank.sicherung.extern.pakete')}</Link> · <a href={handbuch} target="_blank" rel="noreferrer" className="verweis">{t('werkbank.sicherung.extern.handbuch')}</a></p>
+        <p className="leise">{t('werkbank.sicherung.extern.ohne')} <Link to="/werkbank/pakete" className="verweis">{t('werkbank.sicherung.extern.pakete')}</Link></p>
       ) : (
         <>
           <dl className="eigenschaften">
@@ -162,17 +162,14 @@ function AusserHaus({ x, handbuch }: { x: ExternZustand | null | undefined; hand
 }
 
 /** Stand in einer Zeile (#366: früher die mittlere Spalte). */
-function StandZeile({ s, mitNotfallblatt }: { s: SicherungStand; mitNotfallblatt: boolean }) {
+/** Ohne Notfallblatt (#1193): Das gehört zur Verschlüsselung; fehlt es oder gilt nicht mehr, warnt `sicherungsHinweise`. */
+function StandZeile({ s }: { s: SicherungStand }) {
   const z = s.zustand;
   const teile: ReactNode[] = [
     <>{tn('werkbank.sicherung.letzte-sicherung', { wert: z.letzte ? zeit(z.letzte.ende) : t('werkbank.sicherung.noch-keine'), wert2: (z.fehler || z.zuAlt) && <span className="fehlertext"> ({z.fehler ? t('werkbank.sicherung.fehlgeschlagen') : t('werkbank.sicherung.zu-alt')})</span> })}</>,
     t('werkbank.sicherung.sicherungen', { anzahl: s.liste.length, bytes: bytes(s.speicher.sicherungenBytes) }),
     s.plan.aktiv ? t('werkbank.sicherung.naechste-uhr', { wert: s.plan.haeufigkeit === 'taeglich' ? t('werkbank.sicherung.taeglich') : TAGE[s.plan.wochentag], uhrzeit: s.plan.uhrzeit }) : t('werkbank.sicherung.zeitplan-aus'),
     <>{s.speicher.frei === null ? t('werkbank.sicherung.platz-nicht-feststellbar') : t('werkbank.sicherung.frei', { bytes: bytes(s.speicher.frei) })}{s.speicher.knapp && <span className="fehlertext"> {' '}{t('werkbank.sicherung.knapp')}</span>}</>,
-    // #993: als Link zum Notfallblatt unter Verschlüsselung – nur, wer sie verwaltet.
-    ...(mitNotfallblatt ? [z.notfallblatt.aktuell && z.notfallblatt.am
-      ? <Link to={NOTFALLBLATT_SEITE} className="verweis">{t('werkbank.sicherung.notfallblatt-heruntergeladen', { zeit: zeit(z.notfallblatt.am) })}</Link>
-      : <Link to={NOTFALLBLATT_SEITE} className="verweis fehlertext">{t('werkbank.sicherung.notfallblatt-fehlt')}</Link>] : []),
     ...(z.extern?.ziele.length ? [<>{z.extern.letzte ? t('werkbank.sicherung.extern.zeile', { datum: zeit(z.extern.letzte.stand.am) }) : t('werkbank.sicherung.extern.zeile.keine')}{(z.extern.fehler || z.extern.zuAlt) && <span className="fehlertext"> ({z.extern.fehler ? t('werkbank.sicherung.extern.kurz.fehler') : t('werkbank.sicherung.extern.kurz.alt')})</span>}</>] : []),
   ];
   return <p className="klein standzeile">{teile.map((x, i) => <span key={i}>{i > 0 && ' · '}{x}</span>)}</p>;
@@ -189,7 +186,6 @@ export function SicherungPanel({ z }: { z: SicherungZustand }) {
   const [prueft, setPrueft] = useState<string>();
   // Herunterladen (#975): Name der zuletzt geladenen Sicherung – darunter Hinweis, Größe und Prüfsumme.
   const [geladen, setGeladen] = useState<string>();
-  const handbuch = useHandbuch();
   const mitNotfallblatt = useVerwaltetVerschluesselung();
   const s = z.stand;
   if (z.fehler) return <div className="hinweis schlecht"><p>{z.fehler}</p></div>;
@@ -222,7 +218,7 @@ export function SicherungPanel({ z }: { z: SicherungZustand }) {
   return (
     <div className="einspaltig">
       <Kopf titel={t('werkbank.sicherung.sicherung')} ueber={t('werkbank.sicherung.werkbank')} hilfe="werkbank.sicherung">
-        <p className="leise">{tn('werkbank.sicherung.eine-sicherung-enthaelt-die', { link: <Link to="/werkbank/verschluesselung" className="verweis">{t('werkbank.sicherung.verschluesselung')}</Link>, link2: <a href={handbuch('admin', 'sicherung/')} target="_blank" rel="noreferrer" className="verweis">{t('werkbank.sicherung.administratorhandbuch')}</a> })}</p>
+        <p className="leise">{tn('werkbank.sicherung.eine-sicherung-enthaelt-die', { link: <Link to="/werkbank/verschluesselung" className="verweis">{t('werkbank.sicherung.verschluesselung')}</Link> })}</p>
       </Kopf>
 
       {!s.zustand.schluessel && <div className="hinweis warn"><p>{tn('werkbank.sicherung.erzeuge-ihn-zuerst-unter', { b: <strong>{t('werkbank.sicherung.ohne-schluessel-keine-sicherung')}</strong> })}</p><Link to="/werkbank/verschluesselung" className="knopf klein">{t('werkbank.sicherung.zur-verschluesselung')}</Link></div>}
@@ -230,7 +226,7 @@ export function SicherungPanel({ z }: { z: SicherungZustand }) {
 
       <section className="blatt" id="jetzt">
         <h2 className="h3">{t('werkbank.sicherung.jetzt-sichern')}</h2>
-        <StandZeile s={s} mitNotfallblatt={mitNotfallblatt} />
+        <StandZeile s={s} />
         {laeuft ? (
           <div className="stapel">
             <p><strong>{lauf!.titel}</strong> – {lauf!.schritt}</p>
@@ -309,10 +305,10 @@ export function SicherungPanel({ z }: { z: SicherungZustand }) {
           <dt>{t('werkbank.sicherung.eigenes-volume')}</dt><dd>{s.zustand.ort.volume === null ? t('werkbank.sicherung.nicht-feststellbar') : s.zustand.ort.volume ? t('werkbank.sicherung.ja') : t('werkbank.sicherung.nein')}</dd>
           <dt>{t('werkbank.sicherung.andere-platte-als-die')}</dt><dd>{s.zustand.ort.gleichePlatte === null ? t('werkbank.sicherung.nicht-feststellbar') : s.zustand.ort.gleichePlatte ? t('werkbank.sicherung.nein-dieselbe-platte') : t('werkbank.sicherung.ja')}</dd>
         </dl>
-        <p className="leise klein">{tn('werkbank.sicherung.faustregel-3-2-1', { link: <a href={`${handbuch('admin', 'sicherung/')}#speicherort`} target="_blank" rel="noreferrer" className="verweis">{t('werkbank.sicherung.handbuch')}</a> })}</p>
+        <p className="leise klein">{t('werkbank.sicherung.faustregel-3-2-1')}</p>
       </section>
 
-      <AusserHaus x={s.zustand.extern} handbuch={handbuch('admin', 'sicherung-ausser-haus/')} />
+      <AusserHaus x={s.zustand.extern} />
     </div>
   );
 }
