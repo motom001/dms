@@ -84,6 +84,10 @@
   .sicht { flex: none; border: 1px solid var(--linie); background: var(--flaeche); }
   .sichtzeile { flex: none; padding-left: 0; }
   .drei[data-ebene="liste"] { grid-template-rows: auto minmax(0, 1fr); }
+  /* Werkbank am Handy: Über der Liste stehen die Bereiche der Gruppe untereinander. Die Liste bekommt trotzdem
+     mindestens drei Viertel der Höhe (sonst blieben bei einer großen Gruppe gut 100 px, und der oben haftende Kopf aus
+     Suche und Filtern wäre höher als die Spalte); die Seite rollt dann über die Bereiche hinweg zur Liste. */
+  .rahmen.werkbank .drei[data-ebene="liste"] { flex: none; grid-template-rows: auto minmax(min(75dvh, 640px), 1fr); }
   .spalte.mappe { padding-left: max(16px, env(safe-area-inset-left)); padding-right: max(16px, env(safe-area-inset-right)); }
   .nur-schmal { display: inline; }
   .konto .wer { max-width: 12ch; }
