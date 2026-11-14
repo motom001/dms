@@ -37,6 +37,15 @@ interface Gemeinsam {
   hilfe?: Hilfeort;
   /** Kennzeichnet ein freiwilliges Feld mit „(optional)“. Pflicht ist der Normalfall und wird nicht markiert. */
   optional?: boolean;
+  /**
+   * Beschriftung nur für Screenreader (#1211): für Eingaben, deren Zweck die Umgebung schon zeigt – eine Zeile in einer
+   * Tabelle, die Währung neben dem Betrag, ein Suchbegriff mit Lupe. Die Eingabe bleibt so benannt (`label`).
+   */
+  beschriftungVerbergen?: boolean;
+  /** Rechts in der Kopfzeile, außerhalb der Beschriftung (gehört nicht zum Namen), z. B. die Art eines Verweises. */
+  kopfZusatz?: ReactNode;
+  /** Sprungziel für Rundgänge und Tests (`data-anker`). */
+  anker?: string;
   className?: string;
 }
 
@@ -74,12 +83,15 @@ function verknuepfe(eingabe: FeldEingabe, v: FeldVerknuepfung): ReactNode {
  * aber außerhalb von `<label>`, damit es nicht zum Namen der Eingabe gehört. Mit Hilfesymbol ist die Zeile am Handy
  * 44 px hoch (Tippfläche, #1027).
  */
-function Kopf({ text, optional, hilfe, fuer, textId, className }: { text: ReactNode; optional?: boolean; hilfe?: Hilfeort; fuer?: string; textId?: string; className: string }) {
+function Kopf({ text, optional, hilfe, fuer, textId, className, verbergen, zusatz }: { text: ReactNode; optional?: boolean; hilfe?: Hilfeort; fuer?: string; textId?: string; className: string; verbergen?: boolean; zusatz?: ReactNode }) {
   const inhalt = <>{text}{optional && <span className={s.optional}> {t('oberflaeche.feld.optional')}</span>}</>;
+  // Nur für Screenreader: ohne eigene Zeile, das „?“ und der Zusatz entfallen (die Umgebung erklärt die Eingabe).
+  if (verbergen) return fuer ? <label htmlFor={fuer} className={s.sr}>{inhalt}</label> : <span id={textId} className={s.sr}>{inhalt}</span>;
   return (
     <div className={hilfe ? `${className} ${s.mitHilfe}` : className}>
       {fuer ? <label htmlFor={fuer} className={s.beschriftung}>{inhalt}</label> : <span id={textId} className={s.beschriftung}>{inhalt}</span>}
       {hilfe && <Hilfe ort={hilfe} />}
+      {zusatz && <span className={s.kopfzusatz}>{zusatz}</span>}
     </div>
   );
 }
@@ -105,11 +117,11 @@ const eigeneId = (e: FeldEingabe) => (typeof e !== 'function' && isValidElement(
 const eigeneBeschreibung = (e: FeldEingabe) => (typeof e !== 'function' && isValidElement(e) ? e.props['aria-describedby'] : undefined);
 
 /** Ein Feld: Beschriftung über der Eingabe (Text, Zahl, Datum, Auswahlliste, mehrzeilig …). */
-export function Feld({ beschriftung, hinweis, fehler, hilfe, optional, id, className, children }: FeldProps) {
+export function Feld({ beschriftung, hinweis, fehler, hilfe, optional, beschriftungVerbergen, kopfZusatz, anker, id, className, children }: FeldProps) {
   const { v, hinweisId, fehlerId, fehlerhaft } = useVerknuepfung(id ?? eigeneId(children), { hinweis, fehler }, eigeneBeschreibung(children));
   return (
-    <div className={klassen(s.feld, fehlerhaft && s.fehlerhaft, className)}>
-      <Kopf text={beschriftung} optional={optional} hilfe={hilfe} fuer={v.id} className={s.kopf} />
+    <div className={klassen(s.feld, fehlerhaft && s.fehlerhaft, className)} data-anker={anker}>
+      <Kopf text={beschriftung} optional={optional} hilfe={hilfe} fuer={v.id} className={s.kopf} verbergen={beschriftungVerbergen} zusatz={kopfZusatz} />
       {verknuepfe(children, v)}
       <Unterzeilen hinweis={hinweis} fehler={fehler} hinweisId={hinweisId} fehlerId={fehlerId} />
     </div>
@@ -120,10 +132,10 @@ export function Feld({ beschriftung, hinweis, fehler, hilfe, optional, id, class
  * Ein Haken (Checkbox): steht in der Eingabezeile, die Beschriftung direkt daneben, das „?“ an der Beschriftung, die
  * Beschreibung in der Hinweiszeile (#801). Die Eingabe ist ein `<input type="checkbox">`.
  */
-export function HakenFeld({ beschriftung, hinweis, fehler, hilfe, optional, id, className, children }: FeldProps) {
+export function HakenFeld({ beschriftung, hinweis, fehler, hilfe, optional, anker, id, className, children }: FeldProps) {
   const { v, hinweisId, fehlerId, fehlerhaft } = useVerknuepfung(id ?? eigeneId(children), { hinweis, fehler }, eigeneBeschreibung(children));
   return (
-    <div className={klassen(s.feld, s.haken, fehlerhaft && s.fehlerhaft, className)}>
+    <div className={klassen(s.feld, s.haken, fehlerhaft && s.fehlerhaft, className)} data-anker={anker}>
       <div className={s.hakenzeile}>
         {verknuepfe(children, v)}
         <Kopf text={beschriftung} optional={optional} hilfe={hilfe} fuer={v.id} className={s.hakentext} />
@@ -143,12 +155,12 @@ export interface FeldGruppeProps extends Gemeinsam {
  * (`role="group"`), benannt durch die Beschriftung. Hinweis und Fehler hängen an der Gruppe; `aria-invalid` gibt es für
  * Gruppen nicht, der Fehler steht im Text.
  */
-export function FeldGruppe({ beschriftung, hinweis, fehler, hilfe, optional, className, children }: FeldGruppeProps) {
+export function FeldGruppe({ beschriftung, hinweis, fehler, hilfe, optional, beschriftungVerbergen, kopfZusatz, anker, className, children }: FeldGruppeProps) {
   const { v, hinweisId, fehlerId, fehlerhaft } = useVerknuepfung(undefined, { hinweis, fehler });
   const textId = `${v.id}-beschriftung`;
   return (
-    <div role="group" aria-labelledby={textId} aria-describedby={v['aria-describedby']} className={klassen(s.feld, fehlerhaft && s.fehlerhaft, className)}>
-      <Kopf text={beschriftung} optional={optional} hilfe={hilfe} textId={textId} className={s.kopf} />
+    <div role="group" aria-labelledby={textId} aria-describedby={v['aria-describedby']} className={klassen(s.feld, fehlerhaft && s.fehlerhaft, className)} data-anker={anker}>
+      <Kopf text={beschriftung} optional={optional} hilfe={hilfe} textId={textId} className={s.kopf} verbergen={beschriftungVerbergen} zusatz={kopfZusatz} />
       <div className={s.gruppeninhalt}>{children}</div>
       <Unterzeilen hinweis={hinweis} fehler={fehler} hinweisId={hinweisId} fehlerId={fehlerId} />
     </div>

@@ -1,0 +1,5 @@
+/* Mehrfachauswahl (#602, #1211): Lupe im Suchfeld wie beim Baustein Suche (C16). Grundform in styles.css (.refbox,
+   .wahl, .wahlliste, .gewaehlt); die Vorschlagsliste steht absolut, die Höhe von .wahl ist die des Suchfelds. */
+.lupe { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--leise); pointer-events: none; z-index: 1; }
+.eingabe { width: 100%; padding-left: 32px; }
+@media (pointer: coarse) { .eingabe { min-height: 44px; } }

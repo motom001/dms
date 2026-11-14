@@ -50,7 +50,7 @@ A copy of your ID for the landlord, documents for the property management, an of
 
 The stamp is available in three places:
 
-- **Download:** in the list of documents, next to **Download**, the button **With stamp …**.
+- **Download:** in the list of documents, in the **⋯** menu under *Download*, the item **With stamp …**.
 - **Send by email** (one or several folders): below the attachments, the box **With stamp**.
 - **Export** as ZIP or PDF: in the export dialog, the box **With stamp**.
 

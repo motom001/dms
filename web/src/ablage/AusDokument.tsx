@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 import type { Dokument, Mappentyp } from '../../../shared/src/model';
 import { api, type TypVorschlaege } from '../api';
 import { Hilfe } from '../Hilfe';
-import { Symbol } from '../Symbol';
+import { Feld, HakenFeld, Knopf } from '../bausteine';
 import { istTouch, verkleinere } from './PostKamera';
 import { t } from '../sprache';
 
@@ -56,33 +56,36 @@ export function AusDokument({ typ, titel, mappeId, dokumente, fertig, schliessen
 
   return (
     <section className="blatt ad-blatt" aria-label={titel}>
-      <div className="blattkopf zeile-zwischen"><h2 className="h3">{titel} <Hilfe ort="mappe.ausdokument" /></h2><button type="button" className="textknopf" onClick={schliessen}>{t('ablage.ausdokument.schliessen')}</button></div>
+      <div className="blattkopf zeile-zwischen"><h2 className="h3">{titel} <Hilfe ort="mappe.ausdokument" /></h2><Knopf art="link" onClick={schliessen}>{t('ablage.ausdokument.schliessen')}</Knopf></div>
       <p className="leise">{t('ablage.ausdokument.mach-ein-foto-oder')}</p>
       <div className="knoepfe ad-wahl">
-        {istTouch() && <button type="button" className="knopf primaer" disabled={!!laeuft} onClick={() => kamera.current?.click()}><Symbol name="kamera" /> {dateien.length ? t('ablage.ausdokument.weiteres-foto') : t('ablage.ausdokument.foto-aufnehmen')}</button>}
-        <button type="button" className="knopf" disabled={!!laeuft} onClick={() => wahl.current?.click()}>{istTouch() ? t('ablage.ausdokument.foto-oder-datei-waehlen') : t('ablage.ausdokument.datei-waehlen')}</button>
+        {/* Blau ist nur „Angaben erkennen“ (Leitsatz 1); Foto und Datei sind Nebenknöpfe. */}
+        {istTouch() && <Knopf symbol="kamera" gesperrt={!!laeuft} onClick={() => kamera.current?.click()}>{dateien.length ? t('ablage.ausdokument.weiteres-foto') : t('ablage.ausdokument.foto-aufnehmen')}</Knopf>}
+        <Knopf gesperrt={!!laeuft} onClick={() => wahl.current?.click()}>{istTouch() ? t('ablage.ausdokument.foto-oder-datei-waehlen') : t('ablage.ausdokument.datei-waehlen')}</Knopf>
         <input ref={kamera} type="file" accept="image/*" capture="environment" hidden onChange={(e) => { dazu(e.target.files); e.target.value = ''; }} />
         <input ref={wahl} type="file" accept="image/*,application/pdf,.vcf,text/vcard,.xml,application/xml,text/xml" multiple hidden onChange={(e) => { dazu(e.target.files); e.target.value = ''; }} />
       </div>
       {dateien.length > 0 && (
         <ul className="ad-dateien">{dateien.map((f, i) => (
-          <li key={`${f.name}-${i}`}><span>{f.name}</span><button type="button" className="textknopf klein gefahr" aria-label={t('ablage.ausdokument.entfernen', { name: f.name })} onClick={() => setDateien((x) => x.filter((_, j) => j !== i))}>{t('ablage.ausdokument.entfernen-2')}</button></li>
+          <li key={`${f.name}-${i}`}><span>{f.name}</span><Knopf art="link" groesse="klein" aria-label={t('ablage.ausdokument.entfernen', { name: f.name })} onClick={() => setDateien((x) => x.filter((_, j) => j !== i))}>{t('ablage.ausdokument.entfernen-2')}</Knopf></li>
         ))}</ul>
       )}
       {dokumente.length > 0 && !dateien.length && (
-        <label className="eigenschaft"><span>{t('ablage.ausdokument.oder-ein-dokument-dieser')}</span>
+        <Feld beschriftung={t('ablage.ausdokument.oder-ein-dokument-dieser')}>
           <select value={dokId} onChange={(e) => setDokId(e.target.value)}>
             <option value="">{t('ablage.ausdokument.keins')}</option>
             {dokumente.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
-          </select></label>
+          </select>
+        </Feld>
       )}
       {dateien.length > 0 && register.length > 0 && (
-        <label className="haken klein"><input type="checkbox" checked={ablegen} onChange={(e) => setAblegen(e.target.checked)} />
-          <span>{t('ablage.ausdokument.die-dateien-im-register', { anzahl: dateien.length, name: register[0].name })}</span></label>
+        <HakenFeld beschriftung={t('ablage.ausdokument.die-dateien-im-register', { anzahl: dateien.length, name: register[0].name })}>
+          <input type="checkbox" checked={ablegen} onChange={(e) => setAblegen(e.target.checked)} />
+        </HakenFeld>
       )}
       {fehler && <div className="hinweis schlecht" role="alert"><p>{fehler}</p></div>}
       <div className="knoepfe">
-        <button type="button" className="knopf gruen" disabled={!!laeuft || (!dateien.length && !dokId)} onClick={() => void erkennen()}>{laeuft ?? t('ablage.ausdokument.angaben-erkennen')}</button>
+        <Knopf art="haupt" gesperrt={!dateien.length && !dokId} laeuft={!!laeuft} laeuftText={laeuft ?? undefined} onClick={() => void erkennen()}>{t('ablage.ausdokument.angaben-erkennen')}</Knopf>
       </div>
     </section>
   );

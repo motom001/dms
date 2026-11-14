@@ -1210,12 +1210,6 @@
     }
   },
   "web/src/ablage/Ablage.tsx": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    },
-    "ablago/bausteine": {
-      "count": 19
-    },
     "complexity": {
       "count": 3
     },
@@ -1229,47 +1223,17 @@
       "count": 1
     }
   },
-  "web/src/ablage/Aehnlich.tsx": {
-    "ablago/bausteine": {
-      "count": 3
-    }
-  },
   "web/src/ablage/Aktionen.tsx": {
-    "ablago/bausteine": {
-      "count": 9
-    },
     "complexity": {
       "count": 1
-    }
-  },
-  "web/src/ablage/AnsichtWahl.tsx": {
-    "ablago/bausteine": {
-      "count": 9
     }
   },
   "web/src/ablage/Aufgaben.tsx": {
-    "ablago/bausteine": {
-      "count": 12
-    },
-    "ablago/knopf-farben": {
-      "count": 1
-    },
     "complexity": {
       "count": 1
     }
   },
-  "web/src/ablage/AusDokument.tsx": {
-    "ablago/bausteine": {
-      "count": 7
-    }
-  },
   "web/src/ablage/Dokumente.tsx": {
-    "ablago/bausteine": {
-      "count": 46
-    },
-    "ablago/knopf-farben": {
-      "count": 2
-    },
     "complexity": {
       "count": 4
     },
@@ -1281,37 +1245,11 @@
     }
   },
   "web/src/ablage/EmailMehrere.tsx": {
-    "ablago/bausteine": {
-      "count": 11
-    },
     "complexity": {
       "count": 1
     }
   },
-  "web/src/ablage/Export.tsx": {
-    "ablago/bausteine": {
-      "count": 8
-    }
-  },
-  "web/src/ablage/FassungWahl.tsx": {
-    "ablago/bausteine": {
-      "count": 2
-    }
-  },
-  "web/src/ablage/Formatiert.tsx": {
-    "ablago/bausteine": {
-      "count": 5
-    }
-  },
-  "web/src/ablage/FragAblage.tsx": {
-    "ablago/bausteine": {
-      "count": 1
-    }
-  },
   "web/src/ablage/Historie.tsx": {
-    "ablago/bausteine": {
-      "count": 4
-    },
     "complexity": {
       "count": 1
     },
@@ -1323,25 +1261,11 @@
     }
   },
   "web/src/ablage/LoeschBaum.tsx": {
-    "ablago/bausteine": {
-      "count": 9
-    },
     "complexity": {
       "count": 2
     }
   },
-  "web/src/ablage/Loeschgrund.tsx": {
-    "ablago/bausteine": {
-      "count": 2
-    }
-  },
   "web/src/ablage/MappeFormular.tsx": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 3
-    },
-    "ablago/bausteine": {
-      "count": 42
-    },
     "complexity": {
       "count": 8
     },
@@ -1352,12 +1276,7 @@
       "count": 1
     },
     "no-useless-assignment": {
-      "count": 2
-    }
-  },
-  "web/src/ablage/Mehrfachauswahl.tsx": {
-    "ablago/bausteine": {
-      "count": 3
+      "count": 1
     }
   },
   "web/src/ablage/NeuePost.tsx": {
@@ -1371,57 +1290,22 @@
       "count": 1
     }
   },
-  "web/src/ablage/Notizen.tsx": {
-    "ablago/bausteine": {
-      "count": 4
-    },
-    "ablago/knopf-farben": {
-      "count": 1
-    }
-  },
   "web/src/ablage/Papierkorb.tsx": {
-    "ablago/bausteine": {
-      "count": 8
-    },
     "complexity": {
       "count": 2
     }
   },
-  "web/src/ablage/PdfSeiten.tsx": {
-    "ablago/bausteine": {
-      "count": 9
-    }
-  },
-  "web/src/ablage/PdfVerkleinern.tsx": {
-    "ablago/bausteine": {
-      "count": 5
-    }
-  },
   "web/src/ablage/Post.tsx": {
-    "ablago/bausteine": {
-      "count": 10
-    },
     "complexity": {
-      "count": 3
+      "count": 2
     }
   },
   "web/src/ablage/PostKamera.tsx": {
-    "ablago/bausteine": {
-      "count": 12
-    },
     "react-hooks/exhaustive-deps": {
       "count": 1
     }
   },
-  "web/src/ablage/Sammelweitergabe.tsx": {
-    "ablago/bausteine": {
-      "count": 6
-    }
-  },
   "web/src/ablage/Schwaerzen.tsx": {
-    "ablago/bausteine": {
-      "count": 15
-    },
     "max-lines-per-function": {
       "count": 1
     }
@@ -1437,25 +1321,9 @@
   "web/src/ablage/Stempel.tsx": {
     "@typescript-eslint/no-unused-vars": {
       "count": 1
-    },
-    "ablago/bausteine": {
-      "count": 11
-    }
-  },
-  "web/src/ablage/StempelVorschau.tsx": {
-    "ablago/bausteine": {
-      "count": 3
-    }
-  },
-  "web/src/ablage/Stern.tsx": {
-    "ablago/bausteine": {
-      "count": 1
     }
   },
   "web/src/ablage/Suche.tsx": {
-    "ablago/bausteine": {
-      "count": 19
-    },
     "complexity": {
       "count": 1
     },
@@ -1464,9 +1332,6 @@
     }
   },
   "web/src/ablage/Termine.tsx": {
-    "ablago/bausteine": {
-      "count": 13
-    },
     "complexity": {
       "count": 1
     }
@@ -1482,26 +1347,6 @@
       "count": 1
     },
     "max-lines-per-function": {
-      "count": 1
-    }
-  },
-  "web/src/ablage/Uebersetzung.tsx": {
-    "ablago/bausteine": {
-      "count": 5
-    }
-  },
-  "web/src/ablage/Unscharf.tsx": {
-    "ablago/bausteine": {
-      "count": 1
-    }
-  },
-  "web/src/ablage/VerkleinertWahl.tsx": {
-    "ablago/bausteine": {
-      "count": 2
-    }
-  },
-  "web/src/ablage/VerweisFenster.tsx": {
-    "ablago/bausteine": {
       "count": 1
     }
   },

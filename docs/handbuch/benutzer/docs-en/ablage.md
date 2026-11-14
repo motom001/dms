@@ -22,12 +22,12 @@ On the phone, instead of the list there is a button with the current view, e.g. 
 
 **Hide views …** at the very bottom: remove the tick for views you rarely need. This only applies to you and only to this selection; the view itself remains for everyone, and you still find it via the search.
 
-The list is also more compact on the phone: the header fits in one line, the search field stays at the top when scrolling, and *Search full text*, *Notes*, *Advanced search* and *Export …* are behind **Filter ▾**.
+The list is also more compact on the phone: the header fits in one line, the search field stays at the top when scrolling, and *Search full text*, *Notes* and *Advanced search* are behind **Filter ▾**.
 
 - **Views can have sub-views.** An arrow ▸ in front shows this; a click on it expands or collapses them. Your device remembers what is collapsed.
 - **A view with sub-views shows everything together:** *Finances*, for example, shows all open invoices *and* this year's payments.
 - **Some views filter:** *Open invoices* only shows invoices that are not yet paid. Ablago recalculates values like "today" or "yourself" every time it is opened – so a view *Notice within the next 12 months* is always up to date.
-- **If a view shows several folder types**, *Title* and *Folder type* are in front, and there is no **+ New**. You then create new folders in the view of the individual folder type.
+- **If a view shows several folder types**, *Title* and *Folder type* are in front, and there is no button for creating. You then create new folders in the view of the individual folder type.
 
 Which views exist is set by an administrator. If you'd like one, let them know.
 
@@ -35,7 +35,7 @@ Which views exist is set by an administrator. If you'd like one, let them know.
 
 The list shows the view's folders, sorted by title. It first loads 100 folders and automatically the next ones when you scroll down.
 
-With **+ New** at the top right you create a new folder of this folder type (see [Folders](mappen.md)). If the button is missing, folders of this folder type may not be created in the Library – that is the case for *User*, for example.
+With **+** and the name of the folder type at the top right, e.g. **+ Invoice**, you create a new folder of this folder type (see [Folders](mappen.md)). If the button is missing, folders of this folder type may not be created in the Library – that is the case for *User*, for example. Exporting and deleting work through the selection (see below); administrators edit the view itself in the Workbench under *Views*.
 
 ### Compact or as a table {#kompakt-oder-als-tabelle}
 
@@ -52,9 +52,9 @@ Which details appear as columns is set by the administrator – per folder type,
 
 ### Sorting { #sortieren }
 
-In the table, a click on a column heading sorts by this column, a second click reverses the order (↑ ascending, ↓ descending). Empty values are always at the end.
+In the table, a click on a column heading sorts by this column, a second click reverses the order; an arrow in the column heading shows what is sorted by and in which direction. Empty values are always at the end.
 
-Ablago remembers your sorting per view – on all devices. Above the list it says what it is currently sorted by; **by title** restores the default.
+Ablago remembers your sorting per view – on all devices. If the list is sorted differently, this is shown next to the number of folders; **Sort by title again** beside it restores the default – also in the narrow list, which has no column headings.
 
 Links and long texts can't be sorted by; these columns have no arrow.
 
@@ -151,7 +151,7 @@ In a view's list you select several folders to handle them in one step.
 
 ### Deleting several folders {#mehrere-mappen-loschen}
 
-**Delete** in the action bar asks first, e.g. "Put 12 folders with 30 documents in the bin?", including a [reason](mappen.md#loschen), and then puts them into the [Bin](#papierkorb) – with one entry each in the folder's history. Folders you may not delete or that another folder still links to are skipped and listed afterwards with the reason. If selected folders only link to each other, that doesn't stop it.
+**Delete …** in the action bar asks first, e.g. "Put 12 folders with 30 documents in the bin?", including a [reason](mappen.md#loschen), and then puts them into the [Bin](#papierkorb) – with one entry each in the folder's history. Folders you may not delete or that another folder still links to are skipped; the confirmation says beforehand how many there are, and afterwards each is listed with the reason. If none of the selected folders can be deleted, the button is locked, and the **ⓘ** next to it says why. If selected folders only link to each other, that doesn't stop it.
 
 ### Send by email {#per-e-mail-versenden}
 
@@ -159,7 +159,7 @@ In a view's list you select several folders to handle them in one step.
 
 ### Export { #exportieren }
 
-**Export …** passes folders out of the view – the selection or, without a selection or if you wish, all hits (with your search and sorting):
+**Export …** in the action bar passes the selection out of the view – with **Select all …** first, all hits (with your search and sorting):
 
 - **Excel (.xlsx)** – a table in which dates, amounts and percentages are real values: Excel can sort and calculate with them afterwards. A period is written as text ("3 months").
 - **CSV** – the same table for any spreadsheet program, in German format (semicolon, date DD.MM.YYYY, amounts with a decimal comma).
@@ -183,8 +183,8 @@ You mark folders you need often with the **star** – at the top right of the fo
 
 A star also means: **tell me when something happens here.** If someone else changes one of your favourites – fields, documents, notes, tabs or tasks –, you get **one** notification of the kind **Changed** under [To do](eingang.md), such as "3 changes by Anna and Paul since 01.11.". Further changes only count up as long as you haven't seen them. As soon as you open the folder (or click **Done** on the notification), it's gone; the next change brings a new one. Your own changes never notify you.
 
-- **Highlighting:** in all lists, a **dot** appears in front of the title of favourites and of folders you created yourself if others have changed them since you last opened them – like "unread" in your email program. Your own folders are only highlighted; you only get a notification for them if they are also favourites. Above the list it then says "2 changed · **Mark all as seen**".
-- **Muting:** in the view *Favourites*, below each entry, there is **Notify on changes**. Remove the tick for folders you need often but which change constantly – the star stays. If the switch is missing, an administrator has switched off the notification for your role; your setting stays saved.
+- **Highlighting:** in all lists, a **dot** appears in front of the title of favourites and of folders you created yourself if others have changed them since you last opened them – like "unread" in your email program. Your own folders are only highlighted; you only get a notification for them if they are also favourites. Above the list it then says "2 changed" with the button **All seen**.
+- **Muting:** in the view *Favourites*, below each entry, there is **Notify on changes**. Switch it off for folders you need often but which change constantly – the star stays. If the switch is missing, an administrator has switched off the notification for your role; your setting stays saved.
 - **Switching off completely:** under My account → [Notifications](profil.md#benachrichtigungen) – notification and highlighting separately.
 - Only those who may read the folder are notified; the notification reveals nothing you may not see. If someone has retrieved an [access copy](https://help.ablago.app/admin/aktuell/en/datenschutz/) for a person whose folder is your favourite, you get a separate notification *Access request* about it – likewise only as long as the notification for this favourite is on.
 

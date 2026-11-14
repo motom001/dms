@@ -14,6 +14,7 @@ import { FassungWahl, hatArchivfassung, type Fassung } from './FassungWahl';
 import { t, tn } from '../sprache';
 import { gruppiere } from '../../../shared/src/anlagen';
 import { AnlageMarke, OriginalEmailWahl } from './Anlagen';
+import { Feld, FeldGruppe, HakenFeld, Knopf, KnopfLink } from '../bausteine';
 
 /**
  * Mehrere Mappen per E-Mail (#151): eine E-Mail, je Mappe ihre Angaben als PDF und – wählbar – ihre
@@ -91,12 +92,12 @@ export function EmailMehrere({ ids, fertig }: { ids: string[]; fertig(meldung?: 
   return (
     <section className="exportdialog blatt" role="dialog" aria-label={t('ablage.emailmehrere.per-e-mail-versenden')}>
       <div className="blattkopf zeile-zwischen"><h2 className="h3">{tn('ablage.emailmehrere.mappen-per-e-mail', { anzahl: ids.length, hilfe: <Hilfe ort="ablage.email" /> })}</h2>
-        <button type="button" className="textknopf" onClick={() => fertig(ergebnis ? t('ablage.emailmehrere.die-e-mail-ist') : undefined)}>{t('ablage.emailmehrere.schliessen')}</button></div>
+        <Knopf art="link" onClick={() => fertig(ergebnis ? t('ablage.emailmehrere.die-e-mail-ist') : undefined)}>{t('ablage.emailmehrere.schliessen')}</Knopf></div>
       {ergebnis ? (
         <>
           <p className="gutertext" role="status">{t('ablage.emailmehrere.die-e-mail-ist')}</p>
           <p className="leise">{t('ablage.emailmehrere.sie-ist-als-post', { ids: ids.length })}</p>
-          <div className="knoepfe"><Link to={`/ablage/${ergebnis.typId}/${ergebnis.id}`} className="knopf">{t('ablage.emailmehrere.e-mail-oeffnen')}</Link></div>
+          <div className="knoepfe"><KnopfLink to={`/ablage/${ergebnis.typId}/${ergebnis.id}`}>{t('ablage.emailmehrere.e-mail-oeffnen')}</KnopfLink></div>
         </>
       ) : zuViele ? (
         <div className="hinweis warn"><p>{t('ablage.emailmehrere.hoechstens-mappen-in-einer', { EMAIL_MAPPEN_HOECHSTENS })}</p></div>
@@ -105,21 +106,21 @@ export function EmailMehrere({ ids, fertig }: { ids: string[]; fertig(meldung?: 
       ) : (
         <form onSubmit={(e) => { e.preventDefault(); void senden(); }}>
           <div className="raster">
-            <label className="eigenschaft breit"><span>{tn('ablage.emailmehrere.an', { klein: <small>{t('ablage.emailmehrere.mehrere-durch-komma-getrennt')}</small> })}</span><input type="text" inputMode="email" autoComplete="email" value={an} onChange={(e) => setAn(e.target.value)} placeholder="name@example.org" required /></label>
-            <label className="eigenschaft breit"><span>{t('ablage.emailmehrere.betreff')}</span><input value={betreff} maxLength={250} onChange={(e) => setBetreff(e.target.value)} placeholder={t('ablage.emailmehrere.z-b-belege-2026')} required /></label>
-            <label className="eigenschaft breit"><span>{t('ablage.emailmehrere.nachricht')}</span><textarea rows={4} value={nachricht} onChange={(e) => setNachricht(e.target.value)} /></label>
+            <Feld beschriftung={t('ablage.emailmehrere.an-2')} hinweis={t('ablage.emailmehrere.mehrere-durch-komma-getrennt')} className="eigenschaft breit"><input type="text" inputMode="email" autoComplete="email" value={an} onChange={(e) => setAn(e.target.value)} placeholder="name@example.org" required /></Feld>
+            <Feld beschriftung={t('ablage.emailmehrere.betreff')} className="eigenschaft breit"><input value={betreff} maxLength={250} onChange={(e) => setBetreff(e.target.value)} placeholder={t('ablage.emailmehrere.z-b-belege-2026')} required /></Feld>
+            <Feld beschriftung={t('ablage.emailmehrere.nachricht')} optional className="eigenschaft breit"><textarea rows={4} value={nachricht} onChange={(e) => setNachricht(e.target.value)} /></Feld>
           </div>
           <fieldset className="anhaenge">
             <legend>{t('ablage.emailmehrere.anhaenge')}</legend>
-            <label className="haken"><input type="checkbox" checked={angaben} onChange={(e) => setAngaben(e.target.checked)} /><span>{tn('ablage.emailmehrere.angaben-je-mappe-als', { klein: <small className="leise">{t('ablage.emailmehrere.titel-pdf-mit-allen')}</small> })}</span></label>
-            <fieldset className="wahl"><legend className="klein">{t('ablage.emailmehrere.dokumente')}</legend>
+            <HakenFeld beschriftung={t('ablage.emailmehrere.angaben-je-mappe-als-2')} hinweis={t('ablage.emailmehrere.titel-pdf-mit-allen')}><input type="checkbox" checked={angaben} onChange={(e) => setAngaben(e.target.checked)} /></HakenFeld>
+            <FeldGruppe beschriftung={t('ablage.emailmehrere.dokumente')} className="wahl">
               <label className="haken"><input type="radio" name="em-docs" checked={umfang === 'alle'} onChange={() => setUmfang('alle')} /><span>{t('ablage.emailmehrere.alle-dokumente-der-mappen', { wert: liste ? ` (${alleDocs.length})` : '' })}</span></label>
               <label className="haken"><input type="radio" name="em-docs" checked={umfang === 'auswahl'} onChange={() => setUmfang('auswahl')} /><span>{t('ablage.emailmehrere.auswaehlen')}</span></label>
               <label className="haken"><input type="radio" name="em-docs" checked={umfang === 'keine'} onChange={() => setUmfang('keine')} /><span>{t('ablage.emailmehrere.keine-dokumente')}</span></label>
-            </fieldset>
+            </FeldGruppe>
             {umfang === 'alle' && <OriginalEmailWahl emails={emails} an={eml} setze={setEml} />}
             {umfang === 'auswahl' && (liste === null ? <p className="leise klein">{t('ablage.emailmehrere.lade-dokumente')}</p> : (
-              <ul className="emailmappen">
+              <FeldGruppe beschriftung={t('ablage.emailmehrere.dokumente')} beschriftungVerbergen className="anhangwahl"><ul className="emailmappen">
                 {liste.map((m) => (
                   <li key={m.id}><strong className="klein">{m.titel}</strong>
                     {!m.dokumente.length ? <p className="leise klein">{t('ablage.emailmehrere.keine-dokumente-2')}</p> : <ul>{gruppiere(m.dokumente).flatMap((g) => [g.haupt, ...g.anlagen]).map((x) => (
@@ -127,7 +128,7 @@ export function EmailMehrere({ ids, fertig }: { ids: string[]; fertig(meldung?: 
                     ))}</ul>}
                   </li>
                 ))}
-              </ul>
+              </ul></FeldGruppe>
             ))}
             {docs.length > 0 && stempel && vorlagen && <StempelFelder wahl={stempel} setze={setStempel} vorlagen={vorlagen} empfaengerErsatz={an.trim() || t('ablage.emailmehrere.die-adressen-unter-an')} id="emails-stempel" />}
             {docs.length > 0 && typStempel?.modus === 'pflicht' && <p className="leise klein">{t('ablage.emailmehrere.mappen-deren-mappentyp-einen')}</p>}
@@ -140,8 +141,8 @@ export function EmailMehrere({ ids, fertig }: { ids: string[]; fertig(meldung?: 
           {fehler && <p className="fehlertext" role="alert">{fehler}</p>}
           {stempelProblem && <p className="leise klein">{stempelProblem}</p>}
           <div className="knoepfe">
-            <button type="button" className="knopf" onClick={() => fertig()}>{t('ablage.emailmehrere.abbrechen')}</button>
-            <button className="knopf primaer" disabled={laeuft || bereit === null || !liste || !an.trim() || !betreff.trim() || zuGross || !!stempelProblem}>{laeuft ? t('ablage.emailmehrere.wird-verschickt') : t('ablage.emailmehrere.senden')}</button>
+            <Knopf onClick={() => fertig()}>{t('ablage.emailmehrere.abbrechen')}</Knopf>
+            <Knopf art="haupt" type="submit" gesperrt={stempelProblem || (zuGross && t('ablage.emailmehrere.das-ist-zu-gross').trim()) || bereit === null || !liste || !an.trim() || !betreff.trim()} laeuft={laeuft} laeuftText={t('ablage.emailmehrere.wird-verschickt')}>{t('ablage.emailmehrere.senden')}</Knopf>
           </div>
         </form>
       )}

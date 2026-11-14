@@ -8,6 +8,7 @@ import { Link } from '../ort';
 import { Person } from '../Person';
 import { Formatiert } from './Formatiert';
 import { gebietsschema } from '../../../shared/src/sprache';
+import { Eintragsliste, HakenFeld, Knopf, type Listeneintrag } from '../bausteine';
 
 /** Änderungshistorie einer Mappe (#57): je Eintrag eine Zeile, Einzelheiten zum Aufklappen (#80). */
 const zeit = (iso: string) => new Date(iso).toLocaleString(gebietsschema(), { dateStyle: 'short', timeStyle: 'short' });
@@ -315,8 +316,9 @@ export function Historie({ mappeId, stand, typ, register }: { mappeId: string; s
   if (fehler) return <div className="hinweis schlecht"><p>{fehler}</p></div>;
   if (!liste) return <p className="leise">{t('ablage.historie.lade')}</p>;
   const schalter = gefiltert && (
-    <label className="haken klein historie-alles"><input type="checkbox" checked={alles} onChange={(e) => setAlles(e.target.checked)} />
-      <span>{t('ablage.historie.alles-anzeigen')}</span></label>
+    <HakenFeld beschriftung={t('ablage.historie.alles-anzeigen')} className="historie-alles">
+      <input type="checkbox" checked={alles} onChange={(e) => setAlles(e.target.checked)} />
+    </HakenFeld>
   );
   if (!liste.length) return <>{schalter}<p className="leise">{t('ablage.historie.noch-keine-eintraege-die')}</p></>;
   const eintraege: Listeneintrag[] = liste.map((e) => {
@@ -335,68 +337,7 @@ export function Historie({ mappeId, stand, typ, register }: { mappeId: string; s
     <>
       {schalter}
       <Eintragsliste eintraege={eintraege} />
-      {weitere && <p><button type="button" className="knopf klein" disabled={laedt} onClick={() => lade(liste[liste.length - 1].id)}>{laedt ? t('ablage.historie.lade') : t('ablage.historie.weitere-laden')}</button></p>}
-    </>
-  );
-}
-
-/** Ein Eintrag der Liste im Stil der Historie (#707): Zeile mit Zeit, wer, was, rechts Zähler; Einzelheiten zum Aufklappen. */
-export interface Listeneintrag {
-  id: string | number;
-  wann: string;
-  wer: ReactNode;
-  was: ReactNode;
-  /** Zustand o. Ä. als Chip vor dem Zähler (nicht nur über Farbe: immer mit Text). */
-  zustand?: ReactNode;
-  /** Zähler rechts, z. B. „3 Felder“, „3 Karten“. */
-  mehr?: string;
-  inhalt?: ReactNode;
-  /** Name für Bildschirmleser, wenn aufklappbar. */
-  label?: string;
-  /** Immer offen, z. B. ein Lauf, der gerade läuft. */
-  offen?: boolean;
-}
-
-/**
- * Liste wie die Historie einer Mappe (#57, #80): je Eintrag eine Zeile mit Pfeil, Datum und Uhrzeit, wer, Zusammenfassung
- * und Zähler; aufgeklappt die Einzelheiten; „Alle aufklappen“/„Alle zuklappen“. Auch für Verlauf und Änderungsverlauf
- * einer Automatisierung (#707), damit man sich überall gleich zurechtfindet.
- */
-export function Eintragsliste({ eintraege }: { eintraege: Listeneintrag[] }) {
-  const [alleOffen, setAlleOffen] = useState<boolean | null>(null);
-  const aufklappbar = eintraege.some((x) => Boolean(x.inhalt));
-  return (
-    <>
-      {aufklappbar && (
-        <div className="historie-kopf">
-          <button type="button" className="textknopf" onClick={() => setAlleOffen(true)}>{t('ablage.historie.alle-aufklappen')}</button>
-          <button type="button" className="textknopf" onClick={() => setAlleOffen(false)}>{t('ablage.historie.alle-zuklappen')}</button>
-        </div>
-      )}
-      <ul className="historie">
-        {eintraege.map((x) => {
-          const kopf = (
-            <>
-              <span className="zeichen" aria-hidden="true" />
-              <span className="wann">{x.wann}</span>
-              <span className="wer">{x.wer}</span>
-              <span className="was">{x.was}</span>
-              {x.zustand}
-              {x.mehr && <span className="mehr chip">{x.mehr}</span>}
-            </>
-          );
-          return (
-            <li key={x.id}>
-              {x.inhalt
-                ? <details open={x.offen || (alleOffen ?? undefined)} key={String(alleOffen)}>
-                    <summary aria-label={x.label}>{kopf}</summary>
-                    <div className="einzelheiten">{x.inhalt}</div>
-                  </details>
-                : <div className="zeile">{kopf}</div>}
-            </li>
-          );
-        })}
-      </ul>
+      {weitere && <p><Knopf groesse="klein" laeuft={laedt} laeuftText={t('ablage.historie.lade')} onClick={() => lade(liste[liste.length - 1].id)}>{t('ablage.historie.weitere-laden')}</Knopf></p>}
     </>
   );
 }

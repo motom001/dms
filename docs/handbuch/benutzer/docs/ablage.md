@@ -22,12 +22,12 @@ Am Handy steht statt der Liste ein Knopf mit der aktuellen Ansicht, z. B. **Ansi
 
 **Ansichten ausblenden …** ganz unten: Nimm den Haken bei Ansichten weg, die du selten brauchst. Das gilt nur für dich und nur für diese Auswahl; die Ansicht selbst bleibt für alle, und über die Suche findest du sie weiter.
 
-Auch die Liste ist am Handy kompakter: Die Kopfzeile passt in eine Zeile, das Suchfeld bleibt beim Rollen oben, und *Volltext durchsuchen*, *Notizen*, *Erweiterte Suche* und *Exportieren …* stehen hinter **Filter ▾**.
+Auch die Liste ist am Handy kompakter: Die Kopfzeile passt in eine Zeile, das Suchfeld bleibt beim Rollen oben, und *Volltext durchsuchen*, *Notizen* und *Erweiterte Suche* stehen hinter **Filter ▾**.
 
 - **Ansichten können Unteransichten haben.** Ein Pfeil ▸ davor zeigt das; ein Klick darauf klappt sie auf oder zu. Dein Gerät merkt sich, was zugeklappt ist.
 - **Eine Ansicht mit Unteransichten zeigt alles zusammen:** *Finanzen* zeigt zum Beispiel alle offenen Rechnungen *und* die Zahlungen dieses Jahres.
 - **Manche Ansichten filtern:** *Offene Rechnungen* zeigt nur Rechnungen, die noch nicht bezahlt sind. Werte wie „heute“ oder „du selbst“ rechnet Ablago bei jedem Öffnen neu – eine Ansicht *Kündigung in den nächsten 12 Monaten* ist also immer aktuell.
-- **Zeigt eine Ansicht mehrere Mappentypen**, stehen *Titel* und *Mappentyp* vorn, und es gibt kein **+ Neu**. Neue Mappen legst du dann in der Ansicht des einzelnen Mappentyps an.
+- **Zeigt eine Ansicht mehrere Mappentypen**, stehen *Titel* und *Mappentyp* vorn, und es gibt keinen Knopf zum Anlegen. Neue Mappen legst du dann in der Ansicht des einzelnen Mappentyps an.
 
 Welche Ansichten es gibt, legt ein Administrator fest. Wünschst du dir eine, sag ihm Bescheid.
 
@@ -35,7 +35,7 @@ Welche Ansichten es gibt, legt ein Administrator fest. Wünschst du dir eine, sa
 
 Die Liste zeigt die Mappen der Ansicht, nach Titel sortiert. Sie lädt zunächst 100 Mappen und beim Herunterscrollen automatisch die nächsten.
 
-Mit **+ Neu** oben rechts legst du eine neue Mappe dieses Mappentyps an (siehe [Mappen](mappen.md)). Fehlt der Knopf, dürfen von diesem Mappentyp in der Ablage keine Mappen angelegt werden – bei *Benutzer* zum Beispiel ist das so.
+Mit **+** und dem Namen des Mappentyps oben rechts, etwa **+ Rechnung**, legst du eine neue Mappe dieses Mappentyps an (siehe [Mappen](mappen.md)). Fehlt der Knopf zum Anlegen, dürfen von diesem Mappentyp in der Ablage keine Mappen angelegt werden – bei *Benutzer* zum Beispiel ist das so. Exportieren und Löschen gehen über die Auswahl (siehe unten); die Ansicht selbst bearbeiten Administratoren in der Werkbank unter *Ansichten*.
 
 ### Kompakt oder als Tabelle
 
@@ -52,9 +52,9 @@ Welche Angaben als Spalten erscheinen, legt der Administrator fest – je Mappen
 
 ### Sortieren
 
-In der Tabelle sortiert ein Klick auf eine Spaltenüberschrift nach dieser Spalte, ein zweiter Klick dreht die Reihenfolge um (↑ aufsteigend, ↓ absteigend). Leere Werte stehen immer am Ende.
+In der Tabelle sortiert ein Klick auf eine Spaltenüberschrift nach dieser Spalte, ein zweiter Klick dreht die Reihenfolge um; ein Pfeil im Spaltenkopf zeigt, wonach und in welche Richtung sortiert ist. Leere Werte stehen immer am Ende.
 
-Ablago merkt sich deine Sortierung je Ansicht – auf allen Geräten. Über der Liste steht, wonach gerade sortiert ist; **nach Titel** stellt die Grundeinstellung wieder her.
+Ablago merkt sich deine Sortierung je Ansicht – auf allen Geräten. Ist anders sortiert, steht das neben der Zahl der Mappen; **Wieder nach Titel sortieren** daneben stellt die Grundeinstellung wieder her – auch in der schmalen Liste, die keine Spaltenköpfe hat.
 
 Nach Verweisen und langen Texten lässt sich nicht sortieren; diese Spalten haben keinen Pfeil.
 
@@ -151,7 +151,7 @@ In der Liste einer Ansicht wählst du mehrere Mappen aus, um sie in einem Schrit
 
 ### Mehrere Mappen löschen
 
-**Löschen** in der Aktionsleiste fragt erst nach, z. B. „12 Mappen mit 30 Dokumenten in den Papierkorb legen?“, samt [Grund](mappen.md#loschen), und legt sie dann in den [Papierkorb](#papierkorb) – mit je einem Eintrag in der Historie der Mappe. Mappen, die du nicht löschen darfst oder auf die noch eine andere Mappe verweist, werden ausgelassen und danach mit Grund aufgelistet. Verweisen ausgewählte Mappen nur aufeinander, hält das nicht auf.
+**Löschen …** in der Aktionsleiste fragt erst nach, z. B. „12 Mappen mit 30 Dokumenten in den Papierkorb legen?“, samt [Grund](mappen.md#loschen), und legt sie dann in den [Papierkorb](#papierkorb) – mit je einem Eintrag in der Historie der Mappe. Mappen, die du nicht löschen darfst oder auf die noch eine andere Mappe verweist, werden ausgelassen; die Rückfrage sagt vorher, wie viele es sind, und danach steht jede mit Grund in einer Liste. Lässt sich keine der gewählten Mappen löschen, ist der Knopf gesperrt, und das **ⓘ** daneben sagt, warum. Verweisen ausgewählte Mappen nur aufeinander, hält das nicht auf.
 
 ### Per E-Mail versenden
 
@@ -159,7 +159,7 @@ In der Liste einer Ansicht wählst du mehrere Mappen aus, um sie in einem Schrit
 
 ### Exportieren
 
-**Exportieren …** gibt Mappen aus der Ansicht heraus – die Auswahl oder, ohne Auswahl bzw. auf Wunsch, alle Treffer (mit deiner Suche und Sortierung):
+**Exportieren …** in der Aktionsleiste gibt die Auswahl aus der Ansicht heraus – mit **Alle … auswählen** vorher alle Treffer (mit deiner Suche und Sortierung):
 
 - **Excel (.xlsx)** – eine Tabelle, in der Datum, Beträge und Prozent echte Werte sind: Excel kann danach sortieren und rechnen. Ein Zeitraum steht als Text („3 Monate“).
 - **CSV** – dieselbe Tabelle für jede Tabellenkalkulation, im deutschen Format (Semikolon, Datum TT.MM.JJJJ, Beträge mit Komma).
@@ -183,8 +183,8 @@ Mappen, die du oft brauchst, markierst du mit dem **Stern** – oben rechts in d
 
 Ein Stern heißt auch: **Sag mir, wenn sich hier etwas tut.** Ändert jemand anderes einen deiner Favoriten – Felder, Dokumente, Notizen, Register oder Aufgaben –, bekommst du unter [Zu erledigen](eingang.md) **eine** Benachrichtigung der Art **Geändert**, etwa „3 Änderungen von Anna und Paul seit 01.11.“. Weitere Änderungen zählen nur hoch, solange du sie nicht gesehen hast. Sobald du die Mappe öffnest (oder bei der Benachrichtigung **Erledigt** klickst), ist sie weg; die nächste Änderung bringt wieder eine neue. Eigene Änderungen melden sich nie.
 
-- **Hervorhebung:** In allen Listen steht ein **Punkt** vor dem Titel von Favoriten und von Mappen, die du selbst angelegt hast, wenn andere sie seit deinem letzten Öffnen geändert haben – wie „ungelesen“ im E-Mail-Programm. Eigene Mappen werden nur hervorgehoben, eine Benachrichtigung gibt es für sie nur, wenn sie auch Favorit sind. Über der Liste steht dann „2 geändert · **Alle als gesehen markieren**“.
-- **Stumm schalten:** In der Ansicht *Favoriten* steht unter jedem Eintrag **Bei Änderungen benachrichtigen**. Nimm den Haken weg bei Mappen, die du oft brauchst, die sich aber ständig ändern – der Stern bleibt. Fehlt der Schalter, hat ein Administrator die Benachrichtigung für deine Rolle abgeschaltet; deine Einstellung bleibt gespeichert.
+- **Hervorhebung:** In allen Listen steht ein **Punkt** vor dem Titel von Favoriten und von Mappen, die du selbst angelegt hast, wenn andere sie seit deinem letzten Öffnen geändert haben – wie „ungelesen“ im E-Mail-Programm. Eigene Mappen werden nur hervorgehoben, eine Benachrichtigung gibt es für sie nur, wenn sie auch Favorit sind. Über der Liste steht dann „2 geändert“ mit dem Knopf **Alle gesehen**.
+- **Stumm schalten:** In der Ansicht *Favoriten* steht unter jedem Eintrag **Bei Änderungen benachrichtigen**. Schalte ihn aus bei Mappen, die du oft brauchst, die sich aber ständig ändern – der Stern bleibt. Fehlt der Schalter, hat ein Administrator die Benachrichtigung für deine Rolle abgeschaltet; deine Einstellung bleibt gespeichert.
 - **Ganz abschalten:** unter Mein Konto → [Benachrichtigungen](profil.md#benachrichtigungen) – Benachrichtigung und Hervorhebung getrennt.
 - Benachrichtigt wird nur, wer die Mappe lesen darf; die Benachrichtigung verrät nichts, was du nicht sehen darfst. Hat jemand eine [Auskunft](https://help.ablago.app/admin/aktuell/datenschutz/) zu einer Person abgerufen, deren Mappe dein Favorit ist, bekommst du dazu eine eigene Benachrichtigung *Auskunft* – ebenfalls nur, solange die Benachrichtigung für diesen Favoriten an ist.
 

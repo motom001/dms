@@ -27,16 +27,18 @@ Eine Datei darf bis zu 100 MB groß sein.
 
 Neben jedem PDF und Bild (JPEG, PNG) steht ein **kleines Vorschaubild der ersten Seite**. So erkennst du auch bei nichtssagenden Namen wie „Scan_2026-10-12.pdf“ oder „IMG_4711.jpg“ auf einen Blick, welches die Rechnung und welches das Foto des Zählers ist. Das Bild entsteht kurz nach dem Hochladen im Hintergrund; bis dahin – und bei anderen Dateien wie Word oder Excel – steht dort die Dateiendung. Hat eine Datei eine Archivfassung (PDF/A, z. B. eine **E-Mail**), zeigt das Bild deren erste Seite, sobald sie fertig ist; beim Darüberfahren steht dann „Vorschau aus der umgewandelten Fassung eines Pakets“. Das Vorschaubild sieht nur, wer auch das Dokument sehen darf. Auch beim **Zuordnen einer Post** stehen die Vorschaubilder neben den Dokumenten.
 
-- **PDFs und Bilder:** Ein Klick irgendwo auf die Zeile zeigt das Dokument **direkt darunter** an, ein zweiter Klick schließt es. Es ist immer nur ein Dokument offen. Per Tastatur: mit Tab auf den Namen, dann Enter. Das Symbol **↗** öffnet es in einem neuen Browser-Tab.
+- **PDFs und Bilder:** Ein Klick irgendwo auf die Zeile – oder auf **Ansehen** – zeigt das Dokument **direkt darunter** an, ein zweiter Klick (bzw. **Schließen**) schließt es. Es ist immer nur ein Dokument offen. Per Tastatur: mit Tab auf den Namen, dann Enter. **In neuem Tab** über der Anzeige öffnet es in einem neuen Browser-Tab.
+- **Unter dem Namen** steht in einer Zeile, was du über das Dokument wissen musst: Art, Seiten, Größe, Datum, Herkunft, wer es hochgeladen hat, Version und Archivnummer. Unter der Anzeige steht **Über dieses Dokument** mit Text, Archivfassung, Archivnummer, Eingang und Versionen; ohne Anzeige klappst du es mit **⋯ → Über dieses Dokument** auf.
+- **⋯** neben jedem Dokument hat alles Weitere, nach Gruppen geordnet: *Ansehen* (in neuem Tab, Text anzeigen), *Herunterladen*, *Bearbeiten* (Seiten, Verkleinern, Schwärzen, neue Version) und *Ordnen* (als Anlage, Archivnummer, Versionen). Ganz unten steht **Entfernen**.
 - **Alle anderen Dateien** (z. B. Word, Excel) lassen sich nur herunterladen und dann in ihrem Programm öffnen.
 
 **Beim Ansehen führt Ablago nichts aus dem PDF aus und lädt nichts nach.** Ein PDF kann Skripte, automatische Aktionen, Formulare, die Daten verschicken, und angehängte Dateien enthalten – die Anzeige zeigt eine bereinigte Kopie ohne all das. Links im PDF öffnen sich nur, wenn du sie anklickst. Lässt sich ein PDF nicht bereinigen (z. B. verschlüsselt oder beschädigt), steht statt der Anzeige ein kurzer Hinweis; herunterladen kannst du es weiterhin.
 
-**Herunterladen** speichert jede Datei unverändert auf deinem Gerät. Neben jedem Dokument steht, wie groß es ist und wer es wann hochgeladen hat.
+**Herunterladen** (im Menü **⋯**) speichert jede Datei unverändert auf deinem Gerät. Kann der Browser ein Original nicht anzeigen (z. B. eine E-Mail ohne Archivfassung), steht beim Ansehen ein kurzer Satz dazu und daneben **Original herunterladen**.
 
 ### Ohne Exportrecht { #ohne-exportrecht }
 
-In Ablago gilt: **Lesen heißt ansehen, Exportieren heißt mitnehmen.** Herunterladen, Teilen, Kopien mit Stempel, Versenden per E-Mail, Exportieren und das [Laufwerk](laufwerk.md) brauchen deshalb das Recht **Exportieren (E)**, das ein Administrator an den Ansichten vergibt. Fehlt es dir für eine Mappe, siehst du ihre Dokumente hier weiterhin an; statt **Herunterladen** steht ein gesperrter Knopf (gestrichelt mit Schloss; das **ⓘ** daneben sagt, warum), und Teilen sowie **Mit Stempel …** fehlen. Word- oder Excel-Dateien, die der Browser nicht anzeigen kann, lassen sich dann nicht öffnen.
+In Ablago gilt: **Lesen heißt ansehen, Exportieren heißt mitnehmen.** Herunterladen, Teilen, Kopien mit Stempel, Versenden per E-Mail, Exportieren und das [Laufwerk](laufwerk.md) brauchen deshalb das Recht **Exportieren (E)**, das ein Administrator an den Ansichten vergibt. Fehlt es dir für eine Mappe, siehst du ihre Dokumente hier weiterhin an; **Herunterladen** im Menü **⋯** ist gesperrt, darunter steht, warum, und Teilen sowie **Mit Stempel …** fehlen. Word- oder Excel-Dateien, die der Browser nicht anzeigen kann, lassen sich dann nicht öffnen.
 
 Ganz verhindern lässt sich das Abspeichern beim Ansehen nie – ein Browser kann eine angezeigte Seite speichern, und ein Bildschirmfoto geht immer. Das Recht sorgt dafür, dass man Dokumente nicht mit einem Klick mitnimmt.
 
@@ -46,11 +48,11 @@ Ganz verhindern lässt sich das Abspeichern beim Ansehen nie – ein Browser kan
 
 Ist ein Paket wie **PDF/A** installiert (das macht ein Administrator), bekommt jedes Dokument zusätzlich eine **Archivfassung**: ein durchsuchbares PDF/A, das sich auch in vielen Jahren und ohne Ablago noch öffnen und durchsuchen lässt – praktisch, wenn du Unterlagen an Steuerberater oder Behörde weitergibst. Das Original bleibt unverändert.
 
-- **Anzeige:** Gibt es eine Archivfassung, zeigt Ablago sie an. Über der Anzeige steht **„Ansicht: Archivfassung (PDF/A)“**, daneben **Original anzeigen** (und zurück **Archivfassung anzeigen**). Ohne Archivfassung siehst du die Lesefassung (bei TIFF und Co.) oder das Original; solange das Paket noch arbeitet, steht dort „Archivfassung wird erstellt“.
-- **Herunterladen:** Mit Archivfassung hast du die Wahl – vorn steht, was du gerade siehst (**Herunterladen**), daneben **Original herunterladen** bzw. **Als PDF/A herunterladen**. Bei **E-Rechnungen** (ZUGFeRD, Factur-X) steht immer das Original vorn – nur dort steckt die Rechnung als XML.
-- **E-Mails** (`.eml`, Outlook `.msg`): Kann das Paket es, bekommen auch abgelegte Mails eine Archivfassung – du liest sie dann in Ablago wie einen Brief, mit Absender, Datum und Betreff oben. **Original anzeigen** lädt die Mail-Datei herunter; öffnen kannst du sie mit deinem Mailprogramm.
+- **Anzeige:** Gibt es eine Archivfassung, zeigt Ablago sie an. Über der Anzeige wechselst du mit **PDF/A · Original** zwischen Archivfassung und Original. Ohne Archivfassung siehst du die Lesefassung (bei TIFF und Co.) oder das Original; solange das Paket noch arbeitet, steht dort „Archivfassung wird erstellt“.
+- **Herunterladen:** Mit Archivfassung stehen im Menü **⋯** unter *Herunterladen* beide: **PDF/A** und **Original**. Bei **E-Rechnungen** (ZUGFeRD, Factur-X) nimm das Original – nur dort steckt die Rechnung als XML.
+- **E-Mails** (`.eml`, Outlook `.msg`): Kann das Paket es, bekommen auch abgelegte Mails eine Archivfassung – du liest sie dann in Ablago wie einen Brief, mit Absender, Datum und Betreff oben. Wechselst du auf **Original**, sagt Ablago, dass es die Mail-Datei nicht anzeigen kann; **Original herunterladen** lädt sie herunter, öffnen kannst du sie mit deinem Mailprogramm.
 - **Weitergeben:** Beim Herunterladen mit Stempel, beim Versenden einer oder mehrerer Mappen per E-Mail und beim Export als ZIP oder PDF wählst du **Archivfassung (PDF/A), wo vorhanden** (Vorgabe) oder **Original**. Dokumente ohne Archivfassung und E-Rechnungen gehen immer als Original hinaus – ohne Rückfrage, der Dialog sagt es dazu.
-- **Am Dokument** steht der Stand: *Archivfassung: PDF/A-2b* (fertig), *wird erstellt*, *keine* (mit Grund, z. B. bei verschlüsselten PDFs) oder *Fehler*. Dazu Hinweise:
+- **Unter „Über dieses Dokument“** steht der Stand: *Archivfassung: PDF/A-2b* (fertig), *wird erstellt*, *keine* (mit Grund, z. B. bei verschlüsselten PDFs) oder *Fehler*; ein Fehler steht auch an der Zeile. Dazu Hinweise:
   - „Original ist digital signiert – zum Prüfen der Signatur das Original öffnen.“ Die Archivfassung trägt die Signatur nicht.
   - „Enthielt Verweise auf externe Inhalte, die nicht übernommen wurden.“ Die Archivfassung enthält nur, was in der Datei steckt – nichts wird aus dem Internet nachgeladen (das würde dem Absender verraten, wann du das Dokument öffnest).
   - „Das Original ist schon PDF/A und gilt selbst als Archivfassung.“
@@ -78,7 +80,7 @@ Am Handy zeigt Ablago Dokumente **nicht eingebettet** in der Mappe – so bleibt
 
 - **Öffnen** zeigt das Dokument mit einem Tipp **im Vollbild** in der Anzeige deines Browsers. Dort zoomst du mit zwei Fingern; **Zurück** im Browser bringt dich mit einem Tipp in die Mappe. Ein Tipp auf das (größere) Vorschaubild oder den Namen öffnet ebenso.
 - **Teilen** (wo der Browser es kann, z. B. Safari am iPhone) schickt die Datei über „An … senden“ – etwa per Mail oder Nachricht, wenn dich jemand am Tresen darum bittet. Beim ersten Tipp lädt Ablago die Datei; dauert das zu lange, tippst du danach auf **Jetzt teilen**.
-- **⋯** öffnet alle weiteren Aktionen als Blatt von unten: Herunterladen, Mit Stempel …, Seiten, Schwärzen, Archivnummer, Ersetzen und – nur hier – **Löschen**.
+- **⋯** öffnet alle weiteren Aktionen als Blatt von unten: Herunterladen, Mit Stempel …, Seiten, Schwärzen, Archivnummer, Neue Version hochladen und zuletzt **Entfernen** – wie am Computer.
 
 Alle Knöpfe sind am Handy mindestens 44 Punkte groß. Muss das Dokument lange zu sehen sein, stell die automatische Sperre des Handys kurz länger ein – in der Anzeige des Browsers kann Ablago den Bildschirm nicht wach halten.
 
@@ -92,7 +94,7 @@ Jede Zeile hat ein Kästchen; **Alle auswählen** über der Liste wählt alle (u
 
 - **Herunterladen** – lädt die Dokumente nacheinander unter ihrem Namen herunter. Beim ersten Mal fragt der Browser womöglich, ob die Seite mehrere Dateien herunterladen darf – erlaube es.
 - **Zusammenfügen** – nur bei zwei oder mehr PDFs: hängt sie zu einem neuen PDF aneinander (siehe [PDF bearbeiten](#pdf-bearbeiten)).
-- **Löschen** – markiert sie zum Löschen, wie beim einzelnen Dokument (siehe unten).
+- **Entfernen** – markiert sie zum Löschen, wie beim einzelnen Dokument (siehe unten).
 
 Die Auswahl gilt nur für das Register, in dem du gerade bist.
 
@@ -114,14 +116,14 @@ Jeder Schritt steht in der [Historie](mappen.md) der Mappe.
 - Sie sind **Dokumente wie alle anderen**: mit [Versionen](versionen.md), Volltext und Texterkennung, Archivfassung (PDF/A), Stempel und Aufbewahrung der Mappe. Wer die Mappe sehen darf, sieht auch ihre Anlagen; es gelten dieselben Rechte.
 - **Erkennung, „Wohin gehört das?“ und KI** lesen nur das Hauptdokument – AGB, Preislisten und Protokolle stören das Auslesen nicht.
 - Die **Suche** findet auch Text in Anlagen; der Treffer nennt sie mit „in Anlage 2“.
-- **Herunterladen** und **Weitergeben** fragen **„mit Anlagen?“** – vorgewählt ist *ja*. Mit Anlagen kommt beim Herunterladen eine ZIP-Datei „Werkstattrechnung mit Anlagen.zip“, in der E-Mail hängt jede Anlage hinter ihrem Dokument. Ohne [Exportrecht](#ohne-exportrecht) geht beides nicht – wie beim einzelnen Dokument. In der Historie der Mappe steht der Abruf für das Dokument und für jede Anlage einzeln (mit Weg und gegebenenfalls dem Namen des API-Schlüssels), beim Versand die E-Mail mit allen Anhängen. Hängt die [Original-E-Mail](post.md#original-e-mail) daran, steht sie mit ihrem Kennzeichen darunter (**Original-E-Mail mitnehmen**, vorgewählt) und lässt sich mit einem Klick abwählen: Sie enthält alle Anhänge der Mail.
+- **⋯ → Mit Anlagen (ZIP)** lädt eine ZIP-Datei „Werkstattrechnung mit Anlagen.zip“ mit dem Dokument und allen Anlagen herunter (samt Original-E-Mail, falls eine daranhängt); **Herunterladen** allein nimmt nur das Dokument. **Weitergeben** fragt **„mit Anlagen?“** – vorgewählt ist *ja*; in der E-Mail hängt dann jede Anlage hinter ihrem Dokument. Ohne [Exportrecht](#ohne-exportrecht) geht beides nicht – wie beim einzelnen Dokument. In der Historie der Mappe steht der Abruf für das Dokument und für jede Anlage einzeln (mit Weg und gegebenenfalls dem Namen des API-Schlüssels), beim Versand die E-Mail mit allen Anhängen. Hängt die [Original-E-Mail](post.md#original-e-mail) daran, steht sie beim Weitergeben mit ihrem Kennzeichen darunter (**Original-E-Mail mitnehmen**, vorgewählt) und lässt sich mit einem Klick abwählen: Sie enthält alle Anhänge der Mail.
 - Im [Laufwerk](laufwerk.md) stehen Anlagen gleich hinter ihrem Dokument mit dem Zusatz „– Anlage 1“.
 
 ## PDF bearbeiten
 
 Schief gescannt, eine leere Rückseite zu viel, drei Briefe in einem Scan? Das richtest du direkt in Ablago – ohne anderes Programm.
 
-**Seiten** neben einem PDF öffnet darunter die Seitenansicht mit einem kleinen Bild jeder Seite. Je Seite gibt es:
+**⋯ → Seiten …** an einem PDF öffnet darunter die Seitenansicht mit einem kleinen Bild jeder Seite. Je Seite gibt es:
 
 - **↺ / ↻** – um 90 Grad nach links oder rechts drehen
 - **Löschen** – die Seite fällt weg (**Behalten** holt sie zurück)
@@ -148,7 +150,7 @@ Bearbeiten lassen sich nur PDFs, keine Bilder oder Word-Dateien, und nur mit dem
 
 ## PDF verkleinern
 
-Ein Scan mit 600 dpi oder ein Foto-PDF vom Handy ist schnell 20 MB groß – zu groß für viele E-Mail-Anbieter (oft 10 bis 25 MB) und unnötig viel für Speicher und Sicherung. **Verkleinern** neben einem PDF (ab etwa 0,5 MB) rechnet die Bilder darin auf eine sinnvolle Auflösung herunter und komprimiert sie neu.
+Ein Scan mit 600 dpi oder ein Foto-PDF vom Handy ist schnell 20 MB groß – zu groß für viele E-Mail-Anbieter (oft 10 bis 25 MB) und unnötig viel für Speicher und Sicherung. **⋯ → Verkleinern …** an einem PDF (ab etwa 0,5 MB) rechnet die Bilder darin auf eine sinnvolle Auflösung herunter und komprimiert sie neu.
 
 ![PDF verkleinern: drei Stufen mit geschätzter Größe](bilder/pdf-verkleinern.png)
 
@@ -175,7 +177,7 @@ Gut zu wissen:
 
 ## Schwärzen {#schwaerzen}
 
-Bevor du einen Kontoauszug an die Familienkasse, eine Gehaltsabrechnung an den Vermieter oder einen Beleg an einen Kunden gibst, willst du manches unkenntlich machen: Kontonummer, Gehalt, Gesundheitsangaben, Namen anderer Leute. **Schwärzen** neben einem PDF oder Bild (JPEG, PNG) macht daraus eine **geschwärzte Kopie**, in der diese Stellen wirklich fehlen – nicht nur schwarz überdeckt.
+Bevor du einen Kontoauszug an die Familienkasse, eine Gehaltsabrechnung an den Vermieter oder einen Beleg an einen Kunden gibst, willst du manches unkenntlich machen: Kontonummer, Gehalt, Gesundheitsangaben, Namen anderer Leute. **⋯ → Schwärzen …** an einem PDF oder Bild (JPEG, PNG) macht daraus eine **geschwärzte Kopie**, in der diese Stellen wirklich fehlen – nicht nur schwarz überdeckt.
 
 ![Schwärzen: Suchbegriff und IBAN-Vorschlag, Vorschau der schwarzen Bereiche](bilder/schwaerzen.png)
 
@@ -208,13 +210,13 @@ Gut zu wissen:
 
 ## Volltext
 
-Damit die [Volltextsuche](ablage.md#im-text-der-dokumente-suchen) ein Dokument findet, liest Ablago nach dem Hochladen im Hintergrund seinen Text: bei PDFs die Textebene, bei Scans und Fotos erkennt ihn das Paket **Texterkennung**. Neben dem Dokument steht, wie weit es ist:
+Damit die [Volltextsuche](ablage.md#im-text-der-dokumente-suchen) ein Dokument findet, liest Ablago nach dem Hochladen im Hintergrund seinen Text: bei PDFs die Textebene, bei Scans und Fotos erkennt ihn das Paket **Texterkennung**. Wie weit es ist, steht beim Ansehen unter **Über dieses Dokument** bei *Text*; geht etwas schief, steht es auch an der Zeile („Text nicht lesbar – …“ mit **Erneut versuchen**):
 
 | Anzeige | Bedeutung |
 | --- | --- |
 | *Volltext: wartet* / *läuft* | Der Text wird gerade gelesen; meist dauert das Sekunden. |
 | *Volltext: wartet auf Texterkennung* | Das Dokument hat keinen lesbaren Text (z. B. ein Scan oder Foto); die Texterkennung – ein Paket – erkennt ihn gerade. Bei langen Scans dauert das einige Minuten; daneben steht, wie weit es ist. Steht dort „kein Paket installiert“, bitte deinen Administrator, das Paket „Texterkennung (Deutsch und Englisch)“ zu installieren. |
-| *Volltext: fertig* | Das Dokument ist durchsuchbar. **Text anzeigen** zeigt, was erkannt wurde. |
+| *Volltext: fertig* | Das Dokument ist durchsuchbar. **Zeigen** (oder **⋯ → Text anzeigen**) zeigt, was erkannt wurde. |
 | *Volltext: Fehler* | Etwas ging schief, z. B. eine beschädigte Datei. **Erneut versuchen** stellt es noch einmal an. |
 | *Volltext: wartet auf Paket* | Ablago liest den Dateityp nicht selbst; ein Paket ist dran. Daneben steht, was es tut: „wartet auf Umwandlung (Paket …)“ – es macht aus der Datei (z. B. TIFF) eine Fassung, aus der Vorschau und Text entstehen –, oder „wartet auf Volltext (Paket …)“ – es liest den Text aus der Datei (z. B. Word, Excel, E-Mail). Ein Text von vorher bleibt so lange für die Suche stehen. |
 | *Volltext: ausgelassen* | Für diesen Dateityp oder diese Größe gibt es keinen Volltext. Gibt es ein Paket, das ihn lesen kann (z. B. „Office und E-Mail“ für Word), steht sein Name daneben – frag deinen Administrator. Konnte das Paket die Datei nicht lesen, steht sein Grund daneben, z. B. „Word lässt sich nicht lesen: mit einem Passwort verschlüsselt“. |
@@ -250,8 +252,8 @@ Warum du in Ablago nichts mehr in `_v2` oder `_final` umbenennen musst, erklärt
 
 Ist an einem Dokumentenregister die **Versionierung** eingeschaltet (das macht ein Administrator), bleibt beim Ersetzen die alte Fassung erhalten:
 
-- **Ersetzen** neben einem Dokument lädt eine neue Datei als **neue Version** hoch – sofort, ohne „Mappe speichern“. Name und Dateityp dürfen sich ändern, z. B. `Kassenbon.jpg` → `Kassenbon.pdf`. Die Mappe zeigt danach nur die neueste Version.
-- Am Dokument steht **Version 3**. Ein Klick darauf zeigt alle Versionen mit Datum, wer sie gespeichert hat, Herkunft, Dateiname und Größe. Jede ältere Version lässt sich ansehen (↗) und herunterladen.
+- **⋯ → Neue Version hochladen …** lädt eine neue Datei als **neue Version** hoch – sofort, ohne „Mappe speichern“. Name und Dateityp dürfen sich ändern, z. B. `Kassenbon.jpg` → `Kassenbon.pdf`. Die Mappe zeigt danach nur die neueste Version.
+- Am Dokument steht **Version 3**. **⋯ → Versionen** (oder **Versionen** unter „Über dieses Dokument“) zeigt alle Versionen mit Datum, wer sie gespeichert hat, Herkunft, Dateiname und Größe. Jede ältere Version lässt sich ansehen (in neuem Tab) und herunterladen.
 - **Zurückholen** übernimmt eine ältere Version als neue, höchste Version – aus Version 1 wird z. B. Version 4. Die bisherigen Versionen bleiben dabei stehen.
 - Die Volltextsuche findet nur die aktuelle Version.
 - Hat der Administrator **nur die letzten … Versionen behalten** eingestellt, löscht Ablago ältere Versionen darüber hinaus von selbst – sie lassen sich dann nicht mehr zurückholen.
@@ -266,7 +268,7 @@ Ist an einem Dokumentenregister die **Versionierung** eingeschaltet (das macht e
 
 Bewahrst du Papieroriginale auf, verbindet die **Archivnummer** das Papier mit dem Dokument in Ablago: Auf das Blatt kommt ein Aufkleber mit Barcode und Nummer (z. B. `A-000123`), am Dokument steht dieselbe Nummer. So findest du zum Dokument das Papier – und vom Papier zum Dokument.
 
-- **Eintragen:** **Archivnummer** neben dem Dokument, Nummer eintippen oder mit einem Handscanner einscannen, **Übernehmen**. Das gilt sofort, ohne „Mappe speichern“. Danach steht „Archivnummer A-000123“ unter dem Namen; **ändern** – auch leeren – geht dort.
+- **Eintragen:** **⋯ → Archivnummer …** am Dokument (oder **Vergeben …** unter „Über dieses Dokument“), Nummer eintippen oder mit einem Handscanner einscannen, **Übernehmen**. Das gilt sofort, ohne „Mappe speichern“. Danach steht „Archivnummer A-000123“ unter dem Namen; ändern – auch leeren – geht auf demselben Weg.
 - **Jede Nummer gibt es nur einmal.** Hat ein anderes Dokument sie schon, sagt Ablago das und trägt nichts ein – dann klebt wohl ein falscher Aufkleber.
 - **Finden:** Tippe die Nummer ins **Suchfeld** einer Liste und drücke ++enter++ – oder scanne den Aufkleber mit einem Handscanner (er tippt wie eine Tastatur und drückt selbst ++enter++). Ablago öffnet die Mappe mit dem Register und zeigt das Dokument an. Ist es eine Mappe, die du nicht sehen darfst, sucht es normal weiter.
 - In der [Historie](zusammenarbeit.md#historie) der Mappe steht jede Änderung der Archivnummer.
@@ -278,7 +280,7 @@ Die Aufkleber druckt ein Administrator (Werkbank → Nummernkreise → *Archivnu
 
 ## Entfernen
 
-Ein Klick auf **Löschen** neben einem Dokument markiert es mit „wird beim Speichern gelöscht“. Erst **Mappe speichern** löscht es; **Behalten** oder **Änderungen verwerfen** holt es zurück. Noch nicht gespeicherte Dateien nimmst du mit **Nicht hochladen** wieder aus der Liste.
+**⋯ → Entfernen** neben einem Dokument markiert es mit „wird beim Speichern gelöscht“. Erst **Mappe speichern** löscht es; **Behalten** oder **Änderungen verwerfen** holt es zurück. Noch nicht gespeicherte Dateien nimmst du mit **Nicht hochladen** wieder aus der Liste.
 
 Ein gelöschtes Dokument kommt beim Speichern mit allen seinen Versionen in den [Papierkorb](ablage.md#papierkorb) – ein falscher Klick ist also nicht gleich endgültig. Dort steht es unter **Dokumente** mit der Mappe und dem Register, aus dem es kam; **Wiederherstellen** legt es genau dorthin zurück. Hat es ältere Versionen, fragt Ablago vorher nach und nennt ihre Zahl. Löschst du eine ganze Mappe, kommen ihre Dokumente mit ihr in den Papierkorb.
 

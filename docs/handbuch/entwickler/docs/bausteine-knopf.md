@@ -56,7 +56,7 @@ async function jetztPruefen(): Promise<KnopfErgebnis> {
 | `art` | `haupt`, `anlegen`, `neben` (Vorgabe), `gefahr`, `link` |
 | `groesse` | `normal` (Vorgabe) oder `klein` |
 | `symbol` | Symbol vor der Beschriftung (Name aus `Symbol.tsx`, Lucide); **Pflicht bei Gefahr** |
-| `rueckfrage` | **nur und Pflicht bei Gefahr:** `{ titel, text?, ja, nein?, bestaetigeMit? }` – Titel als Frage, Folgen, Verb auf dem Bestätigungsknopf |
+| `rueckfrage` | **nur und Pflicht bei Gefahr:** `{ titel, text?, ja, nein?, bestaetigeMit?, mitGrund? }` – Titel als Frage, Folgen, Verb auf dem Bestätigungsknopf; `mitGrund` (`true` oder ein Vorschlag) fragt beim Löschen nach dem Grund fürs Löschprotokoll, `onClick(e, anlass)` bekommt ihn |
 | `onClick` | darf ein Promise liefern – siehe [Asynchrone Handler](#asynchron); bei Gefahr erst nach „Ja“ |
 | `gesperrt` | `true` = nichts zu tun (blass); ein **Grund als Text** oder eine `KnopfSperre` = gesperrt aus einem Grund (gestrichelt, Schloss, ⓘ) – siehe [Gesperrt](#gesperrt) |
 | `laeuft`, `laeuftText` | „läuft“ von außen (Formular sendet, Auftrag im Hintergrund) und der Text dazu (Vorgabe „Läuft …“) |

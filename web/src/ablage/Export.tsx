@@ -7,6 +7,7 @@ import type { Stufe } from '../../../shared/src/verkleinern';
 import type { Sortierung } from '../../../shared/src/model';
 import { FassungWahl, type Fassung } from './FassungWahl';
 import { t } from '../sprache';
+import { FeldGruppe, HakenFeld, Knopf } from '../bausteine';
 import { gebietsschema } from '../../../shared/src/sprache';
 
 /**
@@ -64,23 +65,23 @@ export function ExportDialog({ sicht, link, ids, anzahl, gesamt, suche, volltext
     <div className="exportdialog blatt" role="dialog" aria-label={t('ablage.export.exportieren')}>
       <h2 className="h3">{t('ablage.export.exportieren')}</h2>
       {ids && (
-        <fieldset className="wahl"><legend className="klein">{t('ablage.export.welche-mappen')}</legend>
+        <FeldGruppe beschriftung={t('ablage.export.welche-mappen')} className="wahl">
           <label className="haken"><input type="radio" name="umfang" checked={umfang === 'auswahl'} onChange={() => setUmfang('auswahl')} /><span>{t('ablage.export.auswahl', { zahl: anzahl.toLocaleString(gebietsschema()) })}</span></label>
           <label className="haken"><input type="radio" name="umfang" checked={umfang === 'alle'} onChange={() => setUmfang('alle')} /><span>{t('ablage.export.alle-treffer-der-ansicht', { gesamt: gesamt.toLocaleString(gebietsschema()) })}</span></label>
-        </fieldset>
+        </FeldGruppe>
       )}
-      <fieldset className="wahl"><legend className="klein">{t('ablage.export.format')}</legend>
+      <FeldGruppe beschriftung={t('ablage.export.format')} className="wahl">
         {FORMATE.map((x) => (
           <label key={x.f} className="haken"><input type="radio" name="format" checked={format === x.f} onChange={() => setFormat(x.f)} />
             <span>{x.name}<small className="hilfe">{x.text}</small></span></label>
         ))}
-      </fieldset>
+      </FeldGruppe>
       {format !== 'pdf'
-        ? <fieldset className="wahl"><legend className="klein">{t('ablage.export.spalten')}</legend>
+        ? <FeldGruppe beschriftung={t('ablage.export.spalten')} className="wahl">
             <label className="haken"><input type="radio" name="spalten" checked={spalten === 'liste'} onChange={() => setSpalten('liste')} /><span>{t('ablage.export.wie-die-liste')}</span></label>
             <label className="haken"><input type="radio" name="spalten" checked={spalten === 'alle'} onChange={() => setSpalten('alle')} /><span>{t('ablage.export.alle-felder')}</span></label>
-          </fieldset>
-        : <label className="haken"><input type="checkbox" checked={uebersicht} onChange={(e) => setUebersicht(e.target.checked)} /><span>{t('ablage.export.vorne-eine-uebersicht-als')}</span></label>}
+          </FeldGruppe>
+        : <HakenFeld beschriftung={t('ablage.export.vorne-eine-uebersicht-als')}><input type="checkbox" checked={uebersicht} onChange={(e) => setUebersicht(e.target.checked)} /></HakenFeld>}
       {mitDokumenten && <FassungWahl wert={fassung} setze={setFassung} id="export-fassung" />}
       {mitDokumenten && <VerkleinertWahl wert={klein} setze={setKlein} wie="exportieren" id="export-verkleinert" />}
       {mitDokumenten && stempel && vorlagen && <StempelFelder wahl={stempel} setze={setStempel} vorlagen={vorlagen} id="export-stempel" />}
@@ -88,8 +89,9 @@ export function ExportDialog({ sicht, link, ids, anzahl, gesamt, suche, volltext
       <p className="leise klein">{t('ablage.export.passwoerter-werden-nie-exportiert')}</p>
       {fehler && <p className="fehlertext klein">{fehler}</p>}
       <div className="knoepfe">
-        <button type="button" className="knopf primaer klein" disabled={laeuft || !n || !!stempelProblem} title={stempelProblem ?? undefined} onClick={() => void los()}>{laeuft ? t('ablage.export.exportiere') : t('ablage.export.mappen-exportieren', { anzahl: n, n: n.toLocaleString(gebietsschema()) })}</button>
-        <button type="button" className="textknopf klein" onClick={() => fertig()}>{t('ablage.export.abbrechen')}</button>
+        {/* Gesperrt aus einem Grund (Leitsatz 6): der Grund am Knopf, nicht nur im Tooltip. */}
+        <Knopf art="haupt" groesse="klein" gesperrt={stempelProblem || !n} laeuft={laeuft} laeuftText={t('ablage.export.exportiere')} onClick={() => void los()}>{t('ablage.export.mappen-exportieren', { anzahl: n, n: n.toLocaleString(gebietsschema()) })}</Knopf>
+        <Knopf groesse="klein" onClick={() => fertig()}>{t('ablage.export.abbrechen')}</Knopf>
       </div>
     </div>
   );

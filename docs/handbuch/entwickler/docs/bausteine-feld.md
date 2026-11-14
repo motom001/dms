@@ -29,6 +29,11 @@ import { Feld, HakenFeld, FeldGruppe } from '../bausteine';
 | `hilfe` | Stelle im Handbuch aus `shared/src/hilfe.ts` – das „?“ hinter der Beschriftung |
 | `optional` | kennzeichnet ein freiwilliges Feld mit „(optional)“ |
 | `id` | Id der Eingabe; ohne Angabe die des Elements, sonst eine erzeugte |
+| `beschriftungVerbergen` | Beschriftung nur für Bildschirmleser – wo die Zeile schon sagt, worum es geht (z. B. Archivnummer an einem Dokument) |
+| `kopfZusatz` | etwas klein rechts neben der Beschriftung, z. B. die Verweisart eines Verweisfelds |
+| `anker` | Sprungziel für Rundgänge und Tipps (`data-anker`), auch an `HakenFeld` und `FeldGruppe` |
+
+Die Eingabe kann auch eine Funktion sein: `<Feld …>{(v) => <input {...v} />}</Feld>` – `v` bringt `id` und `aria-describedby`, für Eingaben in eigenen Komponenten. Text, Zahl, Datum und Auswahlliste (ohne `multiple`) sind gleich hoch.
 
 ## Varianten { #varianten }
 

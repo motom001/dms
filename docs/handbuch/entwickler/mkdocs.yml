@@ -92,6 +92,9 @@ nav:
       - Umschalter: bausteine-umschalter.md
       - Bereiche: bausteine-bereiche.md
       - Fassungen: bausteine-fassungen.md
+      - Menü: bausteine-menue.md
+      - Wahlhaken: bausteine-wahlhaken.md
+      - Mehrfachauswahl: bausteine-mehrfachauswahl.md
   - Release: release.md
   - Kern:
       - Aufbau: aufbau.md

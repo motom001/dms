@@ -53,7 +53,7 @@ Hat dein Administrator ein [Postfach](https://help.ablago.app/admin/aktuell/post
 
 Ganz hinten steht die Mail selbst als `.eml` mit dem Kennzeichen **Original-E-Mail** – einmal je Post. Sie hängt als letzte [Anlage](dokumente.md#anlagen) am letzten Anhang und geht mit ihm mit, wenn du die Post zuordnest oder dieses Dokument übernimmst. Kam die Mail ohne Anhänge, ist sie selbst das Dokument der Post. Erkennung, Klassifizieren und KI lesen die Original-E-Mail nie – ihr Text steht ja schon an der Post. Soll sie woanders hin, machst du sie mit **Zum eigenen Dokument machen** frei oder hängst sie mit **Als Anlage an …** um. Beim [Übernehmen](#zuordnen), Herunterladen „mit Anlagen“ und beim [Versand](versenden.md) steht sie mit ihrem Kennzeichen in der Liste dessen, was mitgeht, und lässt sich dort mit einem Haken abwählen. Ob die Original-E-Mail mitkommt, stellt dein Administrator am Postfach ein (Standard: ja).
 
-**Aufteilen tust du selbst:** Ablago macht aus einer Mail nie von allein mehrere Posts – auch ein [Trennblatt](#sammelscan-teilen) gilt im Postfach nicht. Gehören die Anhänge zu verschiedenen Vorgängen, nimm **Post ab hier teilen** am ersten Dokument, das woandershin gehört (siehe [Post teilen ab einem Dokument](#post-ab-hier-teilen)); ein langes PDF teilst du über **Seiten** (siehe [Sammelscan teilen](#sammelscan-teilen)).
+**Aufteilen tust du selbst:** Ablago macht aus einer Mail nie von allein mehrere Posts – auch ein [Trennblatt](#sammelscan-teilen) gilt im Postfach nicht. Gehören die Anhänge zu verschiedenen Vorgängen, nimm **⋯ → Post ab hier teilen …** am ersten Dokument, das woandershin gehört (siehe [Post teilen ab einem Dokument](#post-ab-hier-teilen)); ein langes PDF teilst du über **⋯ → Seiten …** (siehe [Sammelscan teilen](#sammelscan-teilen)).
 
 **Scan to E-Mail:** Viele Scanner und Multifunktionsgeräte schicken Scans per Mail. Trag die Adresse des Postfachs als Ziel ein – jeder Scan wird neue Post.
 
@@ -199,14 +199,14 @@ In der Post selbst (**Als Post öffnen**) steht dieselbe Leiste unter dem Dokume
 
 ## Post teilen ab einem Dokument { #post-ab-hier-teilen }
 
-Hat eine Post mehrere Dokumente, die zu verschiedenen Vorgängen gehören (z. B. eine Mail mit Rechnung und Kündigungsbestätigung), öffne die Post und klicke beim ersten Dokument, das woandershin gehört, auf **Post ab hier teilen**. Dieses und alle folgenden Dokumente kommen samt ihren Anlagen als neue Post „… (abgetrennt)“ nach *Neue Post*; die Dokumente davor bleiben. In der Historie beider steht, woher sie kommen. Die Dokumente einer Post stehen dafür immer **wie eingegangen** – bei einer Mail in der Reihenfolge ihrer Anhänge.
+Hat eine Post mehrere Dokumente, die zu verschiedenen Vorgängen gehören (z. B. eine Mail mit Rechnung und Kündigungsbestätigung), öffne die Post und klicke beim ersten Dokument, das woandershin gehört, auf **⋯ → Post ab hier teilen …**; nach einer Rückfrage geht es los. Dieses und alle folgenden Dokumente kommen samt ihren Anlagen als neue Post „… (abgetrennt)“ nach *Neue Post*; die Dokumente davor bleiben. In der Historie beider steht, woher sie kommen. Die Dokumente einer Post stehen dafür immer **wie eingegangen** – bei einer Mail in der Reihenfolge ihrer Anhänge.
 
 ## Sammelscan teilen
 
 Hast du mehrere Briefe auf einmal gescannt, kommen sie als **eine Post** mit einem langen PDF an. So machst du daraus einzelne Posts:
 
 1. Öffne die Post und das Register mit dem PDF.
-2. Klicke neben dem PDF auf **Seiten**.
+2. Klicke neben dem PDF auf **⋯ → Seiten …**.
 3. Klicke bei der ersten Seite jedes weiteren Briefs auf **Teilen ab hier**. Leere Rückseiten kannst du gleich **löschen**, schiefe Seiten **drehen**.
 4. **Übernehmen** und die Rückfrage bestätigen.
 

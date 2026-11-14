@@ -41,7 +41,10 @@ const ent = useEntwurf(gespeichert, e, { neu, zuruecksetzen: () => setE(gespeich
 | `speichern` | handler instead of submitting the form |
 | `formular` | `id` of the form when the bar is outside it (editors with [areas](bausteine-bereiche.md)) |
 | `weitere` | further buttons before “Discard” (e.g. “Set as default”) |
-| `meldung`, `haupttext` | message instead of the state; own label for the main button (rare) |
+| `meldung`, `haupttext` | message instead of the state; own label for the main button (rare, e.g. “Save folder” also for a new folder) |
+| `nurLesen` | only “… delete” and the state, without “Discard” and the main button – e.g. a folder without permission to edit |
+
+`loeschen.rueckfrage` may carry `mitGrund` (see [Button](bausteine-knopf.md)); `loeschen.onClick` then receives the chosen reason.
 
 ## Existing code { #bestand }
 

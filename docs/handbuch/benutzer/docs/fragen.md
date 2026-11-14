@@ -6,7 +6,7 @@
 ??? question "Es gibt keine Ansicht für die Unterlagen, die ich ablegen will."
     Neue Mappentypen richtet ein Administrator ein. Beschreib ihm, was du ablegen willst und welche Angaben dazugehören.
 
-??? question "Der Knopf „+ Neu“ fehlt."
+??? question "Der Knopf zum Anlegen (z. B. „+ Rechnung“) fehlt."
     Dafür gibt es mehrere Gründe:
 
     - Von diesem Mappentyp legt man in der Ablage keine Mappen an – zum Beispiel *Benutzer*. Die legt ein Administrator in der Benutzerverwaltung an.
@@ -50,7 +50,7 @@
     Nicht, wenn das Register Versionen hat: Die alte Fassung liegt als ältere **Version** unter dem Dokument und lässt sich ansehen, herunterladen und zurückholen. Wie das geht, steht unter [Versionen verstehen](versionen.md).
 
 ??? question "Die Suche findet einen Text aus einem PDF nicht."
-    Setze neben dem Suchfeld den Haken **Volltext durchsuchen**. Ist das Dokument gerade erst hochgeladen, steht daneben vielleicht noch *Volltext: wartet* – dann einen Moment warten. Bei *ausgelassen* oder *Fehler* kannst du es mit **Erneut versuchen** am Dokument noch einmal anstoßen; für manche Dateitypen gibt es aber keinen Volltext.
+    Setze neben dem Suchfeld den Haken **Volltext durchsuchen**. Ist das Dokument gerade erst hochgeladen, steht beim Ansehen unter **Über dieses Dokument** vielleicht noch *wartet* – dann einen Moment warten. Steht an der Zeile „Text nicht lesbar“, kannst du es mit **Erneut versuchen** noch einmal anstoßen; für manche Dateitypen gibt es aber keinen Volltext.
 
 ??? question "Die Spalten sind verrutscht oder eine ist verschwunden."
     Unter Mein Konto unter **Darstellung auf diesem Gerät** → **Standard-Darstellung wiederherstellen**. Oder kurz auf den Griff zwischen den Spalten klicken – das klappt eingeklappte Bereiche wieder auf.

@@ -4,6 +4,7 @@ import { erwaehnung, zerlege, type Block, type Inline } from '../../../shared/sr
 import { abwesenheitText, useDaten } from '../daten';
 import { Person } from '../Person';
 import { t } from '../sprache';
+import { Feld, Knopf, Umschalter, type FeldProps } from '../bausteine';
 
 /**
  * Formatierter Text (#53): Anzeige und Eingabe.
@@ -80,7 +81,12 @@ function cursorPosition(el: HTMLTextAreaElement, pos: number): { top: number; le
 }
 
 /** Eingabe: Werkzeugleiste, Schreiben/Vorschau und @-Erwähnungen (#56). */
-export function FormatiertEingabe({ id, wert, setze }: { id: string; wert: string; setze: (v: string) => void }) {
+/**
+ * Eingabe für formatierten Text (#64): Umschalter „Schreiben · Vorschau“ (C17), Werkzeuge, @-Erwähnungen. Im Feldrahmen
+ * (#1211): `rahmen` sind Beschriftung, Hinweis, Fehler des Felds (in der Mappe); ohne Angabe eine Beschriftung nur für
+ * Screenreader (Notizen).
+ */
+export function FormatiertEingabe({ id, wert, setze, rahmen, unter }: { id: string; wert: string; setze: (v: string) => void; rahmen?: Omit<FeldProps, 'children' | 'id'>; /** Unter der Eingabe, z. B. eine Übersetzung (#732). */ unter?: ReactNode }) {
   const d = useDaten();
   const feld = useRef<HTMLTextAreaElement>(null);
   const [vorschau, setVorschau] = useState(!!wert);
@@ -133,18 +139,20 @@ export function FormatiertEingabe({ id, wert, setze }: { id: string; wert: strin
   }
 
   return (
+    <>
+    <Feld {...(rahmen ?? { beschriftung: t('ablage.formatiert.text'), beschriftungVerbergen: true })} id={id}>{(v) => (
     <div className="formateingabe">
-      <div className="formatleiste" role="toolbar" aria-label={t('ablage.formatiert.formatierung')}>
-        <button type="button" className={`textknopf ${vorschau ? '' : 'an'}`} onClick={() => setVorschau(false)}>{t('ablage.formatiert.schreiben')}</button>
-        <button type="button" className={`textknopf ${vorschau ? 'an' : ''}`} onClick={() => setVorschau(true)}>{t('ablage.formatiert.vorschau')}</button>
-        {!vorschau && <span className="werkzeuge">{WERKZEUGE.map((w) => (
-          <button key={w.titel} type="button" className="symbol" title={w.titel} aria-label={w.titel} onMouseDown={(e) => e.preventDefault()} onClick={() => einfuegen(w)}>{w.zeichen}</button>
+      <div className="formatleiste">
+        <Umschalter wert={vorschau ? 'vorschau' : 'schreiben'} setze={(x) => setVorschau(x === 'vorschau')} beschriftung={t('ablage.formatiert.ansicht')}
+          wahlen={[{ wert: 'schreiben', text: t('ablage.formatiert.schreiben') }, { wert: 'vorschau', text: t('ablage.formatiert.vorschau') }]} />
+        {!vorschau && <span className="werkzeuge" role="toolbar" aria-label={t('ablage.formatiert.formatierung')}>{WERKZEUGE.map((w) => (
+          <Knopf key={w.titel} art="link" nurSymbol={w.titel} onMouseDown={(e) => e.preventDefault()} onClick={() => einfuegen(w)}>{w.zeichen}</Knopf>
         ))}</span>}
       </div>
       {vorschau
-        ? <div className="formatvorschau" onDoubleClick={() => setVorschau(false)}>{wert.trim() ? <Formatiert text={wert} /> : <p className="leise">{t('ablage.formatiert.noch-nichts-eingetragen')}</p>}</div>
+        ? <div className="formatvorschau" id={v.id} tabIndex={-1} onDoubleClick={() => setVorschau(false)}>{wert.trim() ? <Formatiert text={wert} /> : <p className="leise">{t('ablage.formatiert.noch-nichts-eingetragen')}</p>}</div>
         : <div className="wahl">
-            <textarea id={id} ref={feld} rows={6} value={wert}
+            <textarea id={v.id} aria-describedby={v['aria-describedby']} aria-invalid={v['aria-invalid']} ref={feld} rows={6} value={wert}
               onChange={(e) => { setze(e.target.value); pruefeErwaehnung(e.target.value, e.target.selectionStart); }}
               onKeyDown={(e) => {
                 if (!suche || !vorschlaege.length) return;
@@ -161,11 +169,15 @@ export function FormatiertEingabe({ id, wert, setze }: { id: string; wert: strin
             {vorschlaege.length > 0 && (
               <div className={`wahlliste am-cursor ${ort?.oben ? 'oben' : ''}`} role="listbox" id={`${id}-erw`} aria-label={t('ablage.formatiert.benutzer-erwaehnen')}
                 style={ort ? { top: ort.top, left: ort.left } : undefined}>
-                {vorschlaege.map((p, i) => <button key={p.id} id={`${id}-erw-${i}`} type="button" role="option" aria-selected={i === aktiv} className={i === aktiv ? 'an' : ''}
-                  onMouseEnter={() => setAktiv(i)} onMouseDown={(e) => e.preventDefault()} onClick={() => waehle(p)}>@{p.name}{p.abwesend && <span className="leise klein"> – {abwesenheitText(p)}</span>}</button>)}
+                {/* Optionen einer Combobox: Die Tastatur bleibt im Textfeld (aria-activedescendant), die Maus wählt hier. */}
+                {vorschlaege.map((p, i) => <div key={p.id} id={`${id}-erw-${i}`} role="option" aria-selected={i === aktiv} className={`wahloption${i === aktiv ? ' an' : ''}`}
+                  onMouseEnter={() => setAktiv(i)} onMouseDown={(e) => e.preventDefault()} onClick={() => waehle(p)}>@{p.name}{p.abwesend && <span className="leise klein"> – {abwesenheitText(p)}</span>}</div>)}
               </div>
             )}
           </div>}
     </div>
+    )}</Feld>
+    {unter}
+    </>
   );
 }

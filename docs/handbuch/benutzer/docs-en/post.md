@@ -53,7 +53,7 @@ If your administrator has set up a [mailbox](https://help.ablago.app/admin/aktue
 
 At the very end is the email itself as `.eml`, marked **Original email** – once per post. It hangs as the last [enclosure](dokumente.md#anlagen) on the last attachment and goes along with it when you assign the post or take over that document. If the email came without attachments, it is the post's document itself. Recognition, classifying and AI never read the original email – its text is on the post already. To put it elsewhere, free it with **Make it a document of its own** or hang it elsewhere with **As enclosure of …**. When [taking over](#zuordnen), downloading "with enclosures" and [sending](versenden.md), it is listed with its label among what goes along and can be unticked there. Whether the original email comes along is set by your administrator on the mailbox (default: yes).
 
-**You split it yourself:** Ablago never turns one email into several posts by itself – a [separator sheet](#sammelscan-teilen) does not apply to the inbox either. If the attachments belong to different matters, use **Split post from here** on the first document that belongs elsewhere (see [Splitting a post from a document](#post-ab-hier-teilen)); you split a long PDF via **Pages** (see [Splitting a batch scan](#sammelscan-teilen)).
+**You split it yourself:** Ablago never turns one email into several posts by itself – a [separator sheet](#sammelscan-teilen) does not apply to the inbox either. If the attachments belong to different matters, use **⋯ → Split post from here …** on the first document that belongs elsewhere (see [Splitting a post from a document](#post-ab-hier-teilen)); you split a long PDF via **⋯ → Pages …** (see [Splitting a batch scan](#sammelscan-teilen)).
 
 **Scan to email:** many scanners and multifunction devices send scans by e-mail. Enter the mailbox's address as the target – every scan becomes new post.
 
@@ -199,14 +199,14 @@ In the post itself (**Open as post**) the same strip appears below the document.
 
 ## Splitting a post from a document { #post-ab-hier-teilen }
 
-If a post has several documents that belong to different matters (e.g. an email with an invoice and a cancellation confirmation), open the post and click **Split post from here** on the first document that belongs elsewhere. This and all following documents go to *New post* with their enclosures as a new post "… (split off)"; the documents before stay. The history of both says where they came from. For this the documents of a post always stand **as received** – for an email in the order of its attachments.
+If a post has several documents that belong to different matters (e.g. an email with an invoice and a cancellation confirmation), open the post and click **⋯ → Split post from here …** on the first document that belongs elsewhere; after a confirmation it starts. This and all following documents go to *New post* with their enclosures as a new post "… (split off)"; the documents before stay. The history of both says where they came from. For this the documents of a post always stand **as received** – for an email in the order of its attachments.
 
 ## Splitting a batch scan {#sammelscan-teilen}
 
 If you scanned several letters at once, they arrive as **one post** with a long PDF. This is how you make separate posts from it:
 
 1. Open the post and the tab with the PDF.
-2. Next to the PDF, click **Pages**.
+2. Next to the PDF, click **⋯ → Pages …**.
 3. At the first page of each further letter, click **Split from here**. You can **delete** blank backs straight away and **rotate** crooked pages.
 4. **Apply** and confirm the question.
 

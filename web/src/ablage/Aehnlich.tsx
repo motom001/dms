@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { api, type AehnlicheMappe, type VektorStand } from '../api';
 import { Hilfe } from '../Hilfe';
+import { Knopf, Schalter } from '../bausteine';
 import { Link } from '../ort';
-import { rueckfrage } from '../rueckfrage';
 import { titelOder } from '../seiten';
 import { t } from '../sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
@@ -63,7 +63,6 @@ export function VektorStandBlock() {
     try { setS(await api.vektorSuche(an)); setMeldung(undefined); } catch (e) { setMeldung({ art: 'schlecht', text: (e as Error).message }); } finally { setLaeuft(false); }
   }
   async function neu() {
-    if (!(await rueckfrage({ titel: t('aehnlich.werkbank.neu.frage'), text: t('aehnlich.werkbank.neu.text'), ja: t('aehnlich.werkbank.neu'), gefahr: true }))) return;
     setLaeuft(true);
     try { const r = await api.vektorenNeu(); setMeldung({ art: 'gut', text: t('aehnlich.werkbank.neu.fertig', { anzahl: r.entfernt }) }); laden(); }
     catch (e) { setMeldung({ art: 'schlecht', text: (e as Error).message }); } finally { setLaeuft(false); }
@@ -78,11 +77,13 @@ export function VektorStandBlock() {
         <dt>{t('ablage.aehnlich.stand')}</dt><dd>{s.mitVolltext ? <><progress className="aehnl-fortschritt" max={s.mitVolltext} value={Math.min(s.mitVektor, s.mitVolltext)} /> {t('aehnlich.werkbank.stand', { mit: s.mitVektor.toLocaleString(gebietsschema()), gesamt: s.mitVolltext.toLocaleString(gebietsschema()) })}</> : t('aehnlich.werkbank.stand.leer')}</dd>
         {s.zwischenspeicherMB !== null && <><dt>{t('aehnlich.werkbank.speicher')}</dt><dd>{t('aehnlich.werkbank.speicher.wert', { mb: s.zwischenspeicherMB.toLocaleString(gebietsschema()) })}</dd></>}
       </dl>
-      <label className="haken"><input type="checkbox" checked={s.suche} disabled={laeuft} onChange={(e) => void suche(e.target.checked)} /><span>{t('aehnlich.werkbank.suche')}</span></label>
-      <p className="leise klein">{t('aehnlich.werkbank.suche.hilfe')}</p>
+      {/* Ein/Aus als Schalter (#1188, #1211). */}
+      <Schalter an={s.suche} gesperrt={laeuft} setze={(an) => suche(an)} beschriftung={t('aehnlich.werkbank.suche')} hinweis={t('aehnlich.werkbank.suche.hilfe')} />
       <div className="knoepfe">
-        <button type="button" className="knopf" disabled={laeuft} onClick={() => void neu()}>{t('aehnlich.werkbank.neu')}</button>
-        <button type="button" className="textknopf" onClick={laden}>{t('aehnlich.werkbank.aktualisieren')}</button>
+        {/* Gefahr leise mit Symbol und Rückfrage (#1210, Leitsatz 4). */}
+        <Knopf art="gefahr" symbol="neu-laden" gesperrt={laeuft} onClick={() => neu()}
+          rueckfrage={{ titel: t('aehnlich.werkbank.neu.frage'), text: t('aehnlich.werkbank.neu.text'), ja: t('aehnlich.werkbank.neu') }}>{t('aehnlich.werkbank.neu')}</Knopf>
+        <Knopf art="link" onClick={laden}>{t('aehnlich.werkbank.aktualisieren')}</Knopf>
       </div>
     </>
   );

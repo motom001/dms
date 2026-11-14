@@ -41,7 +41,10 @@ const ent = useEntwurf(gespeichert, e, { neu, zuruecksetzen: () => setE(gespeich
 | `speichern` | Handler statt Absenden des Formulars |
 | `formular` | `id` des Formulars, wenn die Leiste außerhalb steht (Editoren mit [Bereichen](bausteine-bereiche.md)) |
 | `weitere` | weitere Knöpfe vor „Verwerfen“ (z. B. „Als Standard festlegen“) |
-| `meldung`, `haupttext` | Meldung statt des Stands; eigene Beschriftung des Hauptknopfs (selten) |
+| `meldung`, `haupttext` | Meldung statt des Stands; eigene Beschriftung des Hauptknopfs (selten, z. B. „Mappe speichern“ auch für eine neue Mappe) |
+| `nurLesen` | nur „… löschen“ und der Stand, ohne „Verwerfen“ und Hauptknopf – etwa eine Mappe ohne Recht zum Bearbeiten |
+
+`loeschen.rueckfrage` darf `mitGrund` tragen (siehe [Knopf](bausteine-knopf.md)); `loeschen.onClick` bekommt dann den gewählten Anlass.
 
 ## Bestand { #bestand }
 

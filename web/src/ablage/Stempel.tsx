@@ -7,7 +7,7 @@ import {
 import { t, tn } from '../sprache';
 import { beispielWerte, PlatzhalterKnoepfe, StempelVorschau } from './StempelVorschau';
 import { api } from '../api';
-import { HakenFeld } from '../bausteine';
+import { Feld, HakenFeld, Knopf } from '../bausteine';
 import { Hilfe } from '../Hilfe';
 import { VerkleinertWahl } from './VerkleinertWahl';
 import { OriginalEmailWahl } from './Anlagen';
@@ -85,40 +85,47 @@ export function StempelFelder({ wahl, setze, vorlagen, pflicht, mappe, empfaenge
     <fieldset className="stempelwahl">
       <legend className="sr">{t('ablage.stempel.stempel')}</legend>
       {immer ? <p className="leise klein">{tn('ablage.stempel.nur-die-kopie-bekommt', { wert: pflicht ? t('ablage.stempel.der-mappentyp-verlangt-beim') : '', hilfe: <Hilfe ort="stempel.weitergeben" /> })}</p>
-      : <label className="haken"><input id={`${id}-an`} type="checkbox" checked={wahl.an || !!pflicht} disabled={pflicht} onChange={(e) => s({ an: e.target.checked })} />
-        <span><span className="haken-titel">{tn('ablage.stempel.mit-stempel', { hilfe: <Hilfe ort="stempel.weitergeben" /> })}</span>
-          <small className="hilfe">{pflicht ? t('ablage.stempel.der-mappentyp-verlangt-beim-2') : t('ablage.stempel.nur-die-kopie-bekommt-2')}</small></span></label>}
+      : <HakenFeld id={`${id}-an`} beschriftung={t('ablage.stempel.mit-stempel-2')} hilfe="stempel.weitergeben" hinweis={pflicht ? t('ablage.stempel.der-mappentyp-verlangt-beim-2') : t('ablage.stempel.nur-die-kopie-bekommt-2')}>
+          <input type="checkbox" checked={wahl.an || !!pflicht} disabled={pflicht} onChange={(e) => s({ an: e.target.checked })} />
+        </HakenFeld>}
       {(wahl.an || pflicht || immer) && (
         <div className="stempelfelder">
           <div className="raster">
-            <label className="eigenschaft"><span>{t('ablage.stempel.vorlage')}</span>
-              <select id={`${id}-vorlage`} value={wahl.vorlage} onChange={(e) => setze({ ...wahl, ...ausVorlage(vorlagen.find((v) => v.id === e.target.value)), vorlage: e.target.value })}>
+            <Feld id={`${id}-vorlage`} beschriftung={t('ablage.stempel.vorlage')} className="eigenschaft">
+              <select value={wahl.vorlage} onChange={(e) => setze({ ...wahl, ...ausVorlage(vorlagen.find((v) => v.id === e.target.value)), vorlage: e.target.value })}>
                 <option value="">{t('ablage.stempel.eigener-text')}</option>
                 {vorlagen.map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}
-              </select></label>
-            <label className="eigenschaft"><span>{tn('ablage.stempel.empfaenger', { wert: !nutztEmpfaenger && <small>{t('ablage.stempel.nur-fuer-empfaenger')}</small> })}</span>
-              <input id={`${id}-empfaenger`} value={wahl.empfaenger} maxLength={120} onChange={(e) => s({ empfaenger: e.target.value })}
-                placeholder={empfaengerErsatz ? t('ablage.stempel.ohne-angabe', { empfaengerErsatz }) : t('ablage.stempel.z-b-hausverwaltung-mueller')} required={nutztEmpfaenger && !empfaengerErsatz} /></label>
-            <div className="eigenschaft breit"><label htmlFor={`${id}-text`}><span>{t('werkbank.stempel.text')}</span></label>
-              <textarea id={`${id}-text`} ref={textfeld} rows={2} value={wahl.text} maxLength={STEMPEL_TEXT_MAX} onChange={(e) => s({ text: e.target.value, vorlage: '' })} />
-              <PlatzhalterKnoepfe feld={() => textfeld.current} text={wahl.text} setze={(text) => s({ text, vorlage: '' })} /></div>
-            <label className="eigenschaft"><span>{t('werkbank.stempel.lage')}</span>
-              <select id={`${id}-lage`} value={wahl.lage} onChange={(e) => s({ lage: e.target.value as StempelLage })}>
+              </select>
+            </Feld>
+            <Feld id={`${id}-empfaenger`} beschriftung={t('ablage.stempel.empfaenger-2')} optional={!nutztEmpfaenger || !!empfaengerErsatz} hinweis={!nutztEmpfaenger ? t('ablage.stempel.nur-fuer-empfaenger-2') : undefined} className="eigenschaft">
+              <input value={wahl.empfaenger} maxLength={120} onChange={(e) => s({ empfaenger: e.target.value })}
+                placeholder={empfaengerErsatz ? t('ablage.stempel.ohne-angabe', { empfaengerErsatz }) : t('ablage.stempel.z-b-hausverwaltung-mueller')} required={nutztEmpfaenger && !empfaengerErsatz} />
+            </Feld>
+            <Feld id={`${id}-text`} beschriftung={t('werkbank.stempel.text')} className="eigenschaft breit">{(v) => <>
+              <textarea {...v} ref={textfeld} rows={2} value={wahl.text} maxLength={STEMPEL_TEXT_MAX} onChange={(e) => s({ text: e.target.value, vorlage: '' })} />
+              <PlatzhalterKnoepfe feld={() => textfeld.current} text={wahl.text} setze={(text) => s({ text, vorlage: '' })} />
+            </>}</Feld>
+            <Feld id={`${id}-lage`} beschriftung={t('werkbank.stempel.lage')} className="eigenschaft">
+              <select value={wahl.lage} onChange={(e) => s({ lage: e.target.value as StempelLage })}>
                 {Object.keys(STEMPEL_LAGEN).map((k) => <option key={k} value={k}>{t.frei(`werkbank.stempel.lage.${k}`)}</option>)}
-              </select></label>
-            <div className="eigenschaft"><label htmlFor={`${id}-deckkraft`}><span>{t('werkbank.stempel.deckkraft')} <small>{Math.round(wahl.deckkraft * 100)} %</small></span></label>
-              <input id={`${id}-deckkraft`} type="range" min={10} max={100} step={5} value={Math.round(wahl.deckkraft * 100)} onChange={(e) => s({ deckkraft: Number(e.target.value) / 100 })} />
-              {wahl.deckkraft >= DECKKRAFT_HINWEIS_AB && <small className="warntext" role="status">{t('werkbank.stempel.deckkraft.hinweis')}</small>}</div>
-            <label className="eigenschaft"><span>{t('werkbank.stempel.seiten')}</span>
-              <select id={`${id}-seiten`} value={wahl.seiten} onChange={(e) => s({ seiten: e.target.value as StempelSeiten })}>
+              </select>
+            </Feld>
+            <Feld id={`${id}-deckkraft`} beschriftung={<>{t('werkbank.stempel.deckkraft')} <small>{Math.round(wahl.deckkraft * 100)} %</small></>} className="eigenschaft"
+              hinweis={wahl.deckkraft >= DECKKRAFT_HINWEIS_AB ? <span className="warntext" role="status">{t('werkbank.stempel.deckkraft.hinweis')}</span> : undefined}>
+              <input type="range" min={10} max={100} step={5} value={Math.round(wahl.deckkraft * 100)} onChange={(e) => s({ deckkraft: Number(e.target.value) / 100 })} />
+            </Feld>
+            <Feld id={`${id}-seiten`} beschriftung={t('werkbank.stempel.seiten')} className="eigenschaft">
+              <select value={wahl.seiten} onChange={(e) => s({ seiten: e.target.value as StempelSeiten })}>
                 {Object.keys(STEMPEL_SEITEN).map((k) => <option key={k} value={k}>{t.frei(`werkbank.stempel.seiten.${k}`)}</option>)}
-              </select></label>
+              </select>
+            </Feld>
           </div>
           <div className="stempelzeile">
             <div className="stempelvorschau-klein"><StempelVorschau stempel={wahl} werte={werte} beispiele={['rechnung']} /></div>
             <div>
-              <label className="haken"><input id={`${id}-tinte`} type="checkbox" checked={wahl.tinte} onChange={(e) => s({ tinte: e.target.checked })} />
-                <span>{t('werkbank.stempel.tinte')} <small className="hilfe">{t('werkbank.stempel.tinte.hilfe')}</small></span></label>
+              <HakenFeld id={`${id}-tinte`} beschriftung={t('werkbank.stempel.tinte')} hinweis={t('werkbank.stempel.tinte.hilfe')}>
+                <input type="checkbox" checked={wahl.tinte} onChange={(e) => s({ tinte: e.target.checked })} />
+              </HakenFeld>
             </div>
           </div>
         </div>
@@ -156,7 +163,7 @@ export function StempelDialog({ d, typ, mappe, version, anlagen = [], schliessen
   return (
     <div className="exportdialog blatt stempeldialog" role="dialog" aria-label={t('ablage.stempel.herunterladen-mit-stempel')}>
       <div className="blattkopf zeile-zwischen"><h2 className="h3">{t('ablage.stempel.herunterladen-mit-stempel')}</h2>
-        <button type="button" className="textknopf" onClick={schliessen}>{t('ablage.stempel.schliessen')}</button></div>
+        <Knopf art="link" onClick={schliessen}>{t('ablage.stempel.schliessen')}</Knopf></div>
       <p className="leise klein">{d.name}{version ? t('ablage.stempel.version', { version }) : ''}</p>
       {!wahl || !vorlagen ? <p className="leise">{t('ablage.stempel.lade')}</p> : (
         // Kein eigenes <form>: Der Dialog steht im Formular der Mappe; Enter lädt herunter statt die Mappe zu speichern.
@@ -168,8 +175,8 @@ export function StempelDialog({ d, typ, mappe, version, anlagen = [], schliessen
           {fehler && <p className="leise klein">{fehler}</p>}
           {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
           <div className="knoepfe">
-            <button type="button" className="knopf primaer" disabled={laeuft || !!fehler} onClick={() => void los()}>{laeuft ? t('ablage.stempel.wird-gestempelt') : t('ablage.stempel.herunterladen')}</button>
-            <button type="button" className="knopf" onClick={schliessen}>{t('ablage.stempel.abbrechen')}</button>
+            <Knopf art="haupt" gesperrt={!!fehler} laeuft={laeuft} laeuftText={t('ablage.stempel.wird-gestempelt')} onClick={() => void los()}>{t('ablage.stempel.herunterladen')}</Knopf>
+            <Knopf onClick={schliessen}>{t('ablage.stempel.abbrechen')}</Knopf>
           </div>
         </div>
       )}

@@ -16,6 +16,9 @@ import { SpeicherleisteMuster } from './speicherleiste/muster';
 import { ReiterMuster } from './reiter/muster';
 import { SchalterMuster } from './schalter/muster';
 import { PaketChipMuster } from './paketchip/muster';
+import { WahlhakenMuster } from './wahlhaken/muster';
+import { MehrfachauswahlMuster } from './mehrfachauswahl/muster';
+import { MenueMuster } from './menue/muster';
 import { Rueckfragen } from './rueckfrage/Rueckfrage';
 import s from './muster.module.css';
 
@@ -36,6 +39,9 @@ const BAUSTEINE: Musterbereich[] = [
   { id: 'reiter', titel: () => t('oberflaeche.muster.reiter.titel'), text: () => t('oberflaeche.muster.reiter.text'), Muster: ReiterMuster },
   { id: 'schalter', titel: () => t('oberflaeche.muster.schalter.titel'), text: () => t('oberflaeche.muster.schalter.text'), Muster: SchalterMuster },
   { id: 'paketchip', titel: () => t('oberflaeche.muster.paketchip.titel'), text: () => t('oberflaeche.muster.paketchip.text'), Muster: PaketChipMuster },
+  { id: 'menue', titel: () => t('oberflaeche.muster.menue.titel'), text: () => t('oberflaeche.muster.menue.text'), Muster: MenueMuster },
+  { id: 'wahlhaken', titel: () => t('oberflaeche.muster.wahlhaken.titel'), text: () => t('oberflaeche.muster.wahlhaken.text'), Muster: WahlhakenMuster },
+  { id: 'mehrfachauswahl', titel: () => t('oberflaeche.muster.mehrfachauswahl.titel'), text: () => t('oberflaeche.muster.mehrfachauswahl.text'), Muster: MehrfachauswahlMuster },
   { id: 'einheit', titel: () => t('oberflaeche.muster.einheit.titel'), text: () => t('oberflaeche.muster.einheit.text'), Muster: EinheitMuster },
   { id: 'tabelle', titel: () => t('oberflaeche.muster.tabelle.titel'), text: () => t('oberflaeche.muster.tabelle.text'), Muster: TabelleMuster },
   { id: 'suche', titel: () => t('oberflaeche.muster.suche.titel'), text: () => t('oberflaeche.muster.suche.text'), Muster: SucheMuster },

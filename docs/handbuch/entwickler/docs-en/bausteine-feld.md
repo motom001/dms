@@ -29,6 +29,11 @@ import { Feld, HakenFeld, FeldGruppe } from '../bausteine';
 | `hilfe` | place in the manual from `shared/src/hilfe.ts` – the “?” after the label |
 | `optional` | marks a voluntary field with “(optional)” |
 | `id` | id of the input; if not given, the element's own, otherwise a generated one |
+| `beschriftungVerbergen` | label for screen readers only – where the row already says what it is about (e.g. the archive number on a document) |
+| `kopfZusatz` | something small to the right of the label, e.g. the link kind of a link field |
+| `anker` | jump target for tours and tips (`data-anker`), also on `HakenFeld` and `FeldGruppe` |
+
+The input can also be a function: `<Feld …>{(v) => <input {...v} />}</Feld>` – `v` carries `id` and `aria-describedby`, for inputs inside own components. Text, number, date and select (without `multiple`) have the same height.
 
 ## Variants { #varianten }
 

@@ -5,6 +5,10 @@
 .kopf { display: flex; align-items: baseline; min-width: 0; }
 .beschriftung { font-size: calc(12.5px * var(--skala, 1)); font-weight: 600; overflow-wrap: anywhere; }
 .optional { font-weight: 400; color: var(--leise); }
+/* Zusatz rechts in der Kopfzeile (#1211), z. B. die Art eines Verweises – gehört nicht zum Namen der Eingabe. */
+.kopfzusatz { margin-left: auto; padding-left: 8px; display: inline-flex; align-items: center; gap: 6px; flex: none; }
+/* Beschriftung nur für Screenreader (#1211). */
+.sr { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 
 .hinweis { display: flex; flex-direction: column; gap: 5px; font-size: calc(12.5px * var(--skala, 1)); color: var(--leise); overflow-wrap: anywhere; }
 .fehler { display: flex; gap: 5px; align-items: baseline; margin: 0; font-size: calc(12.5px * var(--skala, 1)); color: var(--schlecht); overflow-wrap: anywhere; }
@@ -25,6 +29,8 @@
 .feld :where(input:not([type="checkbox"], [type="radio"], [type="range"]), select, textarea) { transition: border-color .12s; }
 .feld :where(input:not([type="checkbox"], [type="radio"], [type="range"]), select, textarea):hover:not(:disabled, [readonly]) { border-color: var(--leise); }
 .feld :where(input:not([type="checkbox"], [type="radio"], [type="range"]), select, textarea):focus-visible { border-color: var(--akzent); outline: 2px solid var(--akzent); outline-offset: 1px; }
+/* Gleiche Höhe für Text, Zahl, Datum und Auswahl in einer Zeile (C4, #1211: vorher 36 / 35 / 38 px). */
+.feld :where(input:not([type="checkbox"], [type="radio"], [type="range"], [type="color"], [type="file"]), select:not([multiple])) { box-sizing: border-box; height: calc(1.45em + 16px); }
 /* Haken und Optionsknöpfe: beim Darüberfahren ein zarter Ring. */
 .feld :where(input[type="checkbox"], input[type="radio"]):hover:not(:disabled) { box-shadow: 0 0 0 3px var(--akzent-zart); }
 

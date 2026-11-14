@@ -1,0 +1,28 @@
+/* Menü (#1211, #1212): ein Aussehen für alle Menüs. Nur Werte aus tokens.css. */
+.menue { position: relative; display: inline-flex; }
+.pfeil { transition: transform .12s; }
+.an .pfeil { transform: rotate(180deg); }
+.liste { position: absolute; right: 0; top: calc(100% + 4px); z-index: 30; min-width: 220px; max-width: min(360px, calc(100vw - 32px)); display: flex; flex-direction: column; padding: 4px; background: var(--flaeche); color: var(--tinte); border: 1px solid var(--linie); border-radius: 8px; box-shadow: 0 8px 24px var(--schatten-zart); }
+.liste.links { right: auto; left: 0; }
+.gruppe { margin: 6px 10px 2px; font-size: calc(11.5px * var(--skala, 1)); font-weight: 600; color: var(--leise); }
+.punkt { display: grid; grid-template-columns: 1.1em minmax(0, 1fr); align-items: center; gap: 2px 8px; width: 100%; min-height: 32px; text-align: left; background: none; border: 0; padding: 7px 10px; border-radius: 6px; font: inherit; font-weight: 400; color: inherit; cursor: pointer; }
+.punkt:hover, .punkt:focus-visible { background: var(--senke); outline: none; }
+.punkt:focus-visible { box-shadow: inset 0 0 0 2px var(--akzent); }
+.symbol { display: inline-flex; color: var(--leise); }
+.text { min-width: 0; overflow-wrap: anywhere; }
+/* Gefahr (Leitsatz 4): in Ruhe nicht rot; beim Darüberfahren und mit Tastaturfokus Schrift und Symbol rot. */
+.gefahr:hover, .gefahr:focus-visible, .gefahr:hover .symbol, .gefahr:focus-visible .symbol { color: var(--schlecht); }
+.gefahr:focus-visible { box-shadow: inset 0 0 0 2px var(--schlecht); }
+.gesperrt { color: var(--leise); cursor: not-allowed; }
+.grund { grid-column: 2; color: var(--leise); }
+.trenner { height: 1px; margin: 4px 6px; background: var(--linie); }
+.schleier { display: none; }
+@media (pointer: coarse) {
+  .punkt { min-height: 48px; padding: 12px; }
+}
+/* Am Handy (schmal): das Menü als Blatt von unten über die volle Breite, dahinter ein Schleier. */
+@media (max-width: 600px) {
+  .schleier { display: block; position: fixed; inset: 0; z-index: 40; background: var(--schleier); }
+  .liste { position: fixed; left: 0; right: 0; top: auto; bottom: 0; z-index: 41; min-width: 0; max-width: none; max-height: 80vh; overflow-y: auto; border-radius: 14px 14px 0 0; padding: 10px max(12px, env(safe-area-inset-right)) max(14px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left)); }
+  .punkt { font-size: 16px; }
+}

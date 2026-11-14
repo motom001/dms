@@ -7,6 +7,7 @@ import { titelOder } from '../seiten';
 import { Person } from '../Person';
 import { Listenkopf } from '../Listenkopf';
 import { Speicherleiste, useEntwurf } from '../Speicherleiste';
+import { Feld, Knopf } from '../bausteine';
 import { hinweis, rueckfrage } from '../rueckfrage';
 import { t, tn } from '../sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
@@ -71,9 +72,10 @@ export function PapierkorbListe({ z, werkbank, offen }: { z: PapierkorbZustand; 
     return () => o.disconnect();
   }, []);
 
+  // Rückfrage stellt der Gefahr-Knopf selbst (#1210, Leitsatz 5).
+  const was = [liste.length ? (t('ablage.papierkorb.mappen-samt-dokumenten', { anzahl: liste.length })) : '', z.dokumente.length ? (t('ablage.papierkorb.dokumente', { anzahl: z.dokumente.length })) : ''].filter(Boolean).join(` ${t('ablage.papierkorb.und')} `);
+  const leerenFrage = { titel: t('ablage.papierkorb.leeren', { wert: werkbank ? t('ablage.papierkorb.den-ganzen-papierkorb-alle') : t('ablage.papierkorb.deinen-papierkorb') }), text: t('ablage.papierkorb.werden-endgueltig-geloescht', { anzahl: liste.length + z.dokumente.length, charAt: was.charAt(0).toUpperCase(), was: was.slice(1) }), ja: t('ablage.papierkorb.papierkorb-leeren') };
   async function leeren() {
-    const was = [liste.length ? (t('ablage.papierkorb.mappen-samt-dokumenten', { anzahl: liste.length })) : '', z.dokumente.length ? (t('ablage.papierkorb.dokumente', { anzahl: z.dokumente.length })) : ''].filter(Boolean).join(` ${t('ablage.papierkorb.und')} `);
-    if (!(await rueckfrage({ titel: t('ablage.papierkorb.leeren', { wert: werkbank ? t('ablage.papierkorb.den-ganzen-papierkorb-alle') : t('ablage.papierkorb.deinen-papierkorb') }), text: t('ablage.papierkorb.werden-endgueltig-geloescht', { anzahl: liste.length + z.dokumente.length, charAt: was.charAt(0).toUpperCase(), was: was.slice(1) }), ja: t('ablage.papierkorb.papierkorb-leeren'), gefahr: true }))) return;
     setLaeuft(true); setMeldung(undefined);
     try { await api.papierkorbLeeren(werkbank); melde(); await d.neuLaden(); geheZu(basis(werkbank)); }
     catch (e) { setMeldung((e as Error).message); }
@@ -108,7 +110,7 @@ export function PapierkorbListe({ z, werkbank, offen }: { z: PapierkorbZustand; 
   };
   const tabelle = breite >= spalten.length * 110;
   const leerenKnopf = liste.length + z.dokumente.length > 0
-    ? <button type="button" className="knopf klein" disabled={laeuft} onClick={() => void leeren()}>{laeuft ? t('ablage.papierkorb.leere') : t('ablage.papierkorb.papierkorb-leeren')}</button> : null;
+    ? <Knopf art="gefahr" groesse="klein" symbol="geloescht" rueckfrage={leerenFrage} laeuft={laeuft} laeuftText={t('ablage.papierkorb.leere')} onClick={() => leeren()}>{t('ablage.papierkorb.papierkorb-leeren')}</Knopf> : null;
   return (
     <>
       <div ref={mess} className="breitenmesser" aria-hidden="true" />
@@ -182,7 +184,6 @@ function DokumenteImKorb({ z, werkbank }: { z: PapierkorbZustand; werkbank: bool
     finally { setLaeuft(undefined); }
   }
   async function weg(x: DokumentImKorb) {
-    if (!(await rueckfrage({ titel: t('ablage.papierkorb.endgueltig-loeschen', { name: x.name, wert: x.versionen ? t('ablage.papierkorb.mit-allen-versionen', { wert: x.versionen + 1 }) : '' }), text: t('ablage.papierkorb.das-laesst-sich-nicht'), ja: t('ablage.papierkorb.endgueltig-loeschen-2'), gefahr: true }))) return;
     setLaeuft(x.id); setMeldung(undefined);
     try { await api.dokumentEndgueltig(x.id, werkbank); melde(); await d.neuLaden(); }
     catch (e) { setMeldung({ art: 'schlecht', text: (e as Error).message }); }
@@ -204,8 +205,9 @@ function DokumenteImKorb({ z, werkbank }: { z: PapierkorbZustand; werkbank: bool
               {x.mappe === 'weg' && <span className="leise klein">{t('ablage.papierkorb.die-mappe-gibt-es')}</span>}
             </div>
             <div className="knoepfe">
-              <button type="button" className="knopf klein" disabled={!!laeuft || x.mappe !== 'da'} onClick={() => void zurueck(x)}>{laeuft === x.id ? '…' : t('ablage.papierkorb.wiederherstellen')}</button>
-              <button type="button" className="textknopf gefahr" disabled={!!laeuft} onClick={() => void weg(x)}>{t('ablage.papierkorb.endgueltig-loeschen-2')}</button>
+              <Knopf groesse="klein" symbol="zuruecksetzen" gesperrt={x.mappe !== 'da' || (!!laeuft && laeuft !== x.id)} laeuft={laeuft === x.id} onClick={() => zurueck(x)}>{t('ablage.papierkorb.wiederherstellen')}</Knopf>
+              <Knopf art="gefahr" groesse="klein" symbol="geloescht" gesperrt={!!laeuft} onClick={() => weg(x)}
+                rueckfrage={{ titel: t('ablage.papierkorb.endgueltig-loeschen', { name: x.name, wert: x.versionen ? t('ablage.papierkorb.mit-allen-versionen', { wert: x.versionen + 1 }) : '' }), text: t('ablage.papierkorb.das-laesst-sich-nicht'), ja: t('ablage.papierkorb.endgueltig-loeschen-2') }}>{t('ablage.papierkorb.endgueltig-loeschen-2')}</Knopf>
             </div>
           </li>
         ))}
@@ -261,7 +263,6 @@ export function PapierkorbDetail({ id, werkbank }: { id: string; werkbank: boole
     } catch (x) { setMeldung((x as Error).message); setLaeuft(null); }
   }
   async function endgueltig() {
-    if (!(await rueckfrage({ titel: t('ablage.papierkorb.endgueltig-loeschen-3', { titelOder: titelOder(e && e !== 'fehlt' ? e.titel : '') }), text: t('ablage.papierkorb.das-laesst-sich-nicht'), ja: t('ablage.papierkorb.endgueltig-loeschen-2'), gefahr: true }))) return;
     setLaeuft('weg'); setMeldung(undefined);
     try { await api.endgueltigLoeschen(id, werkbank); melde(); await d.neuLaden(); geheZu(basis(werkbank)); }
     catch (x) { setMeldung((x as Error).message); setLaeuft(null); }
@@ -302,9 +303,12 @@ export function PapierkorbDetail({ id, werkbank }: { id: string; werkbank: boole
         : <p className="leise klein">{t('ablage.papierkorb.beim-wiederherstellen-kommen')}</p>}
       {meldung && <div className="hinweis schlecht"><p>{meldung}</p></div>}
       <div className="knoepfe">
-        <button type="button" className="knopf" disabled={!!laeuft} onClick={() => void endgueltig()}>{laeuft === 'weg' ? t('ablage.papierkorb.loesche') : t('ablage.papierkorb.endgueltig-loeschen-2')}</button>
-        {!e.aufgeloestIn && <button type="button" className={`knopf ${zusammen.length > 1 ? '' : 'gruen'}`} disabled={!!laeuft} onClick={() => void wiederherstellen()}>{laeuft === 'zurueck' ? t('ablage.papierkorb.stelle-wieder-her') : zusammen.length > 1 ? t('ablage.papierkorb.nur-diese-wiederherstellen') : t('ablage.papierkorb.wiederherstellen')}</button>}
-        {zusammen.length > 1 && <button type="button" className="knopf gruen" disabled={!!laeuft} onClick={() => void alleWiederherstellen()}>{laeuft === 'alle' ? t('ablage.papierkorb.stelle-wieder-her') : t('ablage.papierkorb.alle-wiederherstellen-2', { zusammen: zusammen.length })}</button>}
+        {/* Gefahr leise mit Symbol und Rückfrage (Leitsatz 4, 5); Wiederherstellen ist die Hauptaktion, blau (Leitsatz 1) –
+            Grün bleibt „+ …“ vorbehalten (Leitsatz 2). */}
+        <Knopf art="gefahr" symbol="geloescht" gesperrt={!!laeuft && laeuft !== 'weg'} laeuft={laeuft === 'weg'} laeuftText={t('ablage.papierkorb.loesche')} onClick={() => endgueltig()}
+          rueckfrage={{ titel: t('ablage.papierkorb.endgueltig-loeschen-3', { titelOder: titelOder(e.titel) }), text: t('ablage.papierkorb.das-laesst-sich-nicht'), ja: t('ablage.papierkorb.endgueltig-loeschen-2') }}>{t('ablage.papierkorb.endgueltig-loeschen-2')}</Knopf>
+        {!e.aufgeloestIn && <Knopf art={zusammen.length > 1 ? 'neben' : 'haupt'} symbol="zuruecksetzen" gesperrt={!!laeuft && laeuft !== 'zurueck'} laeuft={laeuft === 'zurueck'} laeuftText={t('ablage.papierkorb.stelle-wieder-her')} onClick={() => wiederherstellen()}>{zusammen.length > 1 ? t('ablage.papierkorb.nur-diese-wiederherstellen') : t('ablage.papierkorb.wiederherstellen')}</Knopf>}
+        {zusammen.length > 1 && <Knopf art="haupt" symbol="zuruecksetzen" gesperrt={!!laeuft && laeuft !== 'alle'} laeuft={laeuft === 'alle'} laeuftText={t('ablage.papierkorb.stelle-wieder-her')} onClick={() => alleWiederherstellen()}>{t('ablage.papierkorb.alle-wiederherstellen-2', { zusammen: zusammen.length })}</Knopf>}
       </div>
     </div>
   );
@@ -335,11 +339,12 @@ function PapierkorbEinstellungen({ z, leeren }: { z: PapierkorbZustand; leeren?:
   return (
       <form className="blatt" id="aufbewahrung" onSubmit={(ev) => { ev.preventDefault(); void speichern(); }} onKeyDown={ent.tasten}>
         <div className="blattkopf zeile-zwischen"><h2 className="h3">{t('ablage.papierkorb.aufbewahrung')}</h2>{leeren}</div>
-        <label className="eigenschaft"><span>{tn('ablage.papierkorb.tage', { klein: <small>{t('ablage.papierkorb.0-kein-papierkorb-loeschen')}</small> })}</span>
-          <input type="number" min={0} max={3650} value={tage} onChange={(ev) => { setTage(ev.target.value); setMeldung(undefined); }} /></label>
-        <p className="leise klein">{t('ablage.papierkorb.geloeschte-mappen-und-einzeln')}</p>
-        <label className="eigenschaft"><span>{tn('ablage.papierkorb.historie-endgueltig-geloeschter', { klein: <small>{t('ablage.papierkorb.tage-danach-wird-ihre')}</small> })}</span>
-          <input type="number" min={0} max={36500} value={hTage} onChange={(ev) => { setHTage(ev.target.value); setMeldung(undefined); }} /></label>
+        <Feld beschriftung={t('ablage.papierkorb.tage-feld')} hinweis={[t('ablage.papierkorb.0-kein-papierkorb-loeschen'), t('ablage.papierkorb.geloeschte-mappen-und-einzeln')]}>
+          <input type="number" min={0} max={3650} value={tage} onChange={(ev) => { setTage(ev.target.value); setMeldung(undefined); }} />
+        </Feld>
+        <Feld beschriftung={t('ablage.papierkorb.historie-feld')} hinweis={t('ablage.papierkorb.tage-danach-wird-ihre')}>
+          <input type="number" min={0} max={36500} value={hTage} onChange={(ev) => { setHTage(ev.target.value); setMeldung(undefined); }} />
+        </Feld>
         {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
         <Speicherleiste ent={ent} gegenstand={t('ablage.papierkorb.aufbewahrung')} ungueltig={!Number.isInteger(n) || n < 0 || !Number.isInteger(h) || h < 0} />
       </form>

@@ -29,10 +29,10 @@ Neuer Baustein: Ordner anlegen, in `index.ts` ausgeben, in `BAUSTEINE` in `muste
 
 | Baustein | Wofür |
 | --- | --- |
-| `Feld`, `HakenFeld`, `FeldGruppe` | Rahmen für Eingaben: Beschriftung, Eingabe, Fehler, Hinweis, Hilfesymbol, `aria` |
+| `Feld`, `HakenFeld`, `FeldGruppe` | Rahmen für Eingaben: Beschriftung, Eingabe, Fehler, Hinweis, Hilfesymbol, `aria`; `beschriftungVerbergen`, `kopfZusatz`, `anker`; Kind als Funktion `(v) => …` |
 | `Knopf`, `KnopfLink`, `knopfAussehen` | Knöpfe: Arten Haupt (blau), Anlegen (grün, „+ …“), Neben, Gefahr (mit Symbol und Rückfrage), Link; gesperrt in zwei Formen mit Erklärung am Knopf, „läuft“, Ergebnis am Knopf, Fehler aus asynchronen Handlern |
 | `Rueckfragen` | Das Fenster zu `rueckfrage()`/`hinweis()` (#355, #1210): „Abbrechen“ als Neben, Bestätigung blau – bei Gefahr rot gefüllt, nur hier |
-| `Speicherleiste`, `useEntwurf` | Leiste unten in Formularen (#370, #1210): „… löschen“ links (`loeschen`, Gefahr mit Rückfrage), „Verwerfen“ mit Rand, Hauptknopf blau |
+| `Speicherleiste`, `useEntwurf` | Leiste unten in Formularen (#370, #1210): „… löschen“ links (`loeschen`, Gefahr mit Rückfrage, auf Wunsch `mitGrund`), „Verwerfen“ mit Rand, Hauptknopf blau; `nurLesen` ohne Verwerfen und Speichern |
 | `Schalter` | Schiebeschalter für an/aus (#1188), `role="switch"`, Zustand auch als Wort, sofort wirksam mit Promise |
 | `PaketChip` | Herkunft aus einem Paket (#1192): Symbol und Name, Tooltip mit Version, Link zur Paketseite; „Ablago“ für Mitgeliefertes |
 | `Reiter`, `ReiterFlaeche` | Register über einem Inhalt (#1210): ein aktives Aussehen, Tastatur und `aria` nach WAI-ARIA |
@@ -42,3 +42,6 @@ Neuer Baustein: Ordner anlegen, in `index.ts` ausgeben, in `BAUSTEINE` in `muste
 | `Umschalter` | Segmentknopf (#1002): zwei bis vier gleichrangige Wahlen, genau eine an – z. B. „Fragen · Suchen“; Optionsfelder für Screenreader, Pfeiltasten |
 | `Fassungen`, `GeloeschteEintraege` | Wer hat wann was geändert (#1006): Bereich „Fassungen“ eines Editors der Werkbank – Liste mit lesbaren Änderungen, vergleichen, wiederherstellen mit Vorschau; gelöschte Einträge unter einer Liste |
 | `Bereich`, `useBereiche`, `fehlerBereiche` | Editor rechts (#1000): Sprungleiste mit „Alle aufklappen / Alle zuklappen“, Bereiche zum Auf- und Zuklappen (neu offen, sonst wie zuletzt auf diesem Gerät, Anker öffnet), Fehler öffnen ihren Bereich; unter drei Bereichen ohne Leiste |
+| `Menue` | Knopf, der Handlungen öffnet (#1211, #1212): „Mappe ▾“, „⋯“; Gruppen, Symbole, gesperrte Punkte mit Grund darunter, Gefahr abgesetzt am Ende mit Rückfrage (auf Wunsch `mitGrund`); am Handy als Blatt |
+| `Wahlhaken` | Haken zum Auswählen von Zeilen (#1211): ohne sichtbare Beschriftung, `setze(an, bereich)` mit Umschalttaste, `teilweise` im Kopf; 44 px am Handy |
+| `Mehrfachauswahl` | Mehrere Einträge wählen (#1211, aus `ablage/` hierher): Suchfeld mit Vorschlägen, Gewähltes darunter mit leisem „Entfernen“ |

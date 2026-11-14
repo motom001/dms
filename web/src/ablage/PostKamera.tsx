@@ -6,6 +6,7 @@ import { geheZu } from '../ort';
 import { rueckfrage } from '../rueckfrage';
 import { titelOder } from '../seiten';
 import { Symbol } from '../Symbol';
+import { Knopf } from '../bausteine';
 import { t, tn } from '../sprache';
 
 /**
@@ -144,14 +145,15 @@ export function PostKamera() {
           <p className="pk-titel pk-gut" role="status">{tn('ablage.postkamera.post-gespeichert', { symbol: <Symbol name="haken" /> })}</p>
           <p className="leise">{t('ablage.postkamera.seiten-zuordnen-kannst-du', { anzahl: letzte.seiten, titel: letzte.titel })}</p>
           <div className="pk-knoepfe">
-            <button type="button" className="knopf gruen pk-gross" autoFocus onClick={naechster}>{tn('ablage.postkamera.naechsten-beleg-fotografieren', { symbol: <Symbol name="kamera" /> })}</button>
-            <button type="button" className="knopf pk-gross" onClick={() => { schliessen(); geheZu(`/ablage/${letzte.typId}/${letzte.id}`); }}>{t('ablage.postkamera.jetzt-zuordnen')}</button>
-            <button type="button" className="knopf pk-gross" onClick={() => setPhase('ende')}>{t('ablage.postkamera.fertig')}</button>
+            {/* Blau ist die Hauptaktion (Leitsatz 1), Grün bleibt „+ …“ (Leitsatz 2). */}
+            <Knopf art="haupt" className="pk-gross" symbol="kamera" autoFocus onClick={naechster}>{t('ablage.postkamera.naechsten-beleg-fotografieren')}</Knopf>
+            <Knopf className="pk-gross" onClick={() => { schliessen(); geheZu(`/ablage/${letzte.typId}/${letzte.id}`); }}>{t('ablage.postkamera.jetzt-zuordnen')}</Knopf>
+            <Knopf className="pk-gross" onClick={() => setPhase('ende')}>{t('ablage.postkamera.fertig')}</Knopf>
           </div>
         </> : phase === 'ende' ? <>
           <p className="pk-titel pk-gut" role="status"><Symbol name="haken" /> {t('ablage.postkamera.belege-erfasst', { anzahl: serie.length })}</p>
-          <p>{t('ablage.postkamera.sie-liegen-unter', { anzahl: serie.length })}{' '}{neuePostSicht ? <button type="button" className="textknopf verweis" onClick={() => { schliessen(); geheZu(`/ablage/${neuePostSicht}`); }}>{t('ablage.postkamera.neue-post')}</button> : t('ablage.postkamera.neue-post')}{t('ablage.postkamera.zuordnen-und-einordnen-geht')}</p>
-          <div className="pk-knoepfe"><button type="button" className="knopf primaer pk-gross" autoFocus onClick={schliessen}>{t('ablage.postkamera.schliessen')}</button></div>
+          <p>{t('ablage.postkamera.sie-liegen-unter', { anzahl: serie.length })}{' '}{neuePostSicht ? <Knopf art="link" onClick={() => { schliessen(); geheZu(`/ablage/${neuePostSicht}`); }}>{t('ablage.postkamera.neue-post')}</Knopf> : t('ablage.postkamera.neue-post')}{t('ablage.postkamera.zuordnen-und-einordnen-geht')}</p>
+          <div className="pk-knoepfe"><Knopf art="haupt" className="pk-gross" autoFocus onClick={schliessen}>{t('ablage.postkamera.schliessen')}</Knopf></div>
         </> : <>
           <p className="pk-titel">{ziel ? t('ablage.postkamera.seite-hinzufuegen-2', { titel: ziel.titel }) : seiten.length ? (t('ablage.postkamera.seiten-aufgenommen', { anzahl: seiten.length })) : t('ablage.postkamera.post-fotografieren')}</p>
           {serie.length > 0 && !ziel && <p className="leise klein">{t('ablage.postkamera.belege-schon-gespeichert-das', { anzahl: serie.length })}</p>}
@@ -161,7 +163,7 @@ export function PostKamera() {
                 <li key={s.schluessel} className={s.fehler ? 'pk-fehler' : ''}>
                   <Daumen datei={s.datei} titel={t('ablage.postkamera.seite', { wert: i + 1 })} />
                   <span className="pk-nr">{s.fehler ? '!' : !s.id ? '…' : i + 1}</span>
-                  <button type="button" className="pk-weg" aria-label={t('ablage.postkamera.seite-verwerfen', { wert: i + 1 })} onClick={() => seiteWeg(s.schluessel)}>×</button>
+                  <Knopf art="link" className="pk-weg" nurSymbol={t('ablage.postkamera.seite-verwerfen', { wert: i + 1 })} onClick={() => seiteWeg(s.schluessel)}><Symbol name="schliessen" /></Knopf>
                 </li>
               ))}
             </ol>
@@ -169,17 +171,17 @@ export function PostKamera() {
           {fehler && <p className="fehlertext" role="alert">{fehler}</p>}
           {seiten.length === 0 ? (
             <div className="pk-knoepfe">
-              <button type="button" className="knopf gruen pk-gross" onClick={() => kamera.current?.click()}>{tn('ablage.postkamera.foto-aufnehmen', { symbol: <Symbol name="kamera" /> })}</button>
-              <button type="button" className="knopf pk-gross" onClick={() => galerie.current?.click()}>{t('ablage.postkamera.foto-aus-der-mediathek')}</button>
-              <button type="button" className="textknopf pk-gross" onClick={() => void abbrechen()}>{serie.length ? t('ablage.postkamera.fertig') : t('ablage.postkamera.abbrechen')}</button>
+              <Knopf art="haupt" className="pk-gross" symbol="kamera" onClick={() => kamera.current?.click()}>{t('ablage.postkamera.foto-aufnehmen')}</Knopf>
+              <Knopf className="pk-gross" onClick={() => galerie.current?.click()}>{t('ablage.postkamera.foto-aus-der-mediathek')}</Knopf>
+              <Knopf art="link" className="pk-gross" onClick={() => abbrechen()}>{serie.length ? t('ablage.postkamera.fertig') : t('ablage.postkamera.abbrechen')}</Knopf>
             </div>
           ) : (
             <div className="pk-knoepfe">
-              <button type="button" className="knopf pk-gross" disabled={phase === 'speichert'} onClick={() => kamera.current?.click()}>{tn('ablage.postkamera.weitere-seite', { symbol: <Symbol name="kamera" /> })}</button>
-              <button type="button" className="knopf gruen pk-gross" disabled={phase === 'speichert'} onClick={() => void fertig()}>
-                {phase === 'speichert' ? (laedt ? t('ablage.postkamera.lade-fotos-hoch') : t('ablage.postkamera.speichere')) : ziel ? t('ablage.postkamera.fertig-seiten-anhaengen') : t('ablage.postkamera.fertig-als-post-speichern')}
-              </button>
-              <button type="button" className="textknopf pk-gross" disabled={phase === 'speichert'} onClick={() => void abbrechen()}>{t('ablage.postkamera.abbrechen')}</button>
+              <Knopf className="pk-gross" symbol="kamera" gesperrt={phase === 'speichert'} onClick={() => kamera.current?.click()}>{t('ablage.postkamera.weitere-seite')}</Knopf>
+              <Knopf art="haupt" className="pk-gross" laeuft={phase === 'speichert'} laeuftText={laedt ? t('ablage.postkamera.lade-fotos-hoch') : t('ablage.postkamera.speichere')} onClick={() => fertig()}>
+                {ziel ? t('ablage.postkamera.fertig-seiten-anhaengen') : t('ablage.postkamera.fertig-als-post-speichern')}
+              </Knopf>
+              <Knopf art="link" className="pk-gross" gesperrt={phase === 'speichert'} onClick={() => abbrechen()}>{t('ablage.postkamera.abbrechen')}</Knopf>
             </div>
           )}
           <p className="leise klein">{t('ablage.postkamera.weitere-seite-gehoert-zum')}</p>

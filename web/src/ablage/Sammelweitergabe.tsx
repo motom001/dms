@@ -4,6 +4,7 @@ import { useDaten } from '../daten';
 import { rueckfrage } from '../rueckfrage';
 import { BenutzerWahl } from './Aufgaben';
 import { t, tn } from '../sprache';
+import { HakenFeld, Knopf, Wahlhaken } from '../bausteine';
 
 /**
  * Mehrere Aufgaben auf einmal weitergeben (#415, #419) – eine Komponente für Werkbank → Aufgaben und
@@ -33,18 +34,17 @@ export function SammelKopf({ s }: { s: Sammelauswahl }) {
   const n = s.aktiv.length, gesamt = s.angezeigt.length;
   if (!gesamt) return null;
   return (
-    <label className="haken sammel-kopf">
-      <input type="checkbox" className="wahlhaken" checked={n > 0 && n === gesamt}
+    <HakenFeld className="sammel-kopf" beschriftung={tn('ablage.sammelweitergabe.alle-angezeigten-auswaehlen', { wert: n > 0 && <span className="leise"> {' '}{t('ablage.sammelweitergabe.ausgewaehlt', { n })}</span> })}>
+      <input type="checkbox" checked={n > 0 && n === gesamt}
         ref={(el) => { if (el) el.indeterminate = n > 0 && n < gesamt; }}
         onChange={(e) => s.alle(e.target.checked)} />
-      <span>{tn('ablage.sammelweitergabe.alle-angezeigten-auswaehlen', { wert: n > 0 && <span className="leise"> {' '}{t('ablage.sammelweitergabe.ausgewaehlt', { n })}</span> })}</span>
-    </label>
+    </HakenFeld>
   );
 }
 
 /** Kästchen je Aufgabe. */
 export function SammelHaken({ s, id, titel }: { s: Sammelauswahl; id: string; titel: string }) {
-  return <input type="checkbox" className="wahlhaken" checked={s.ist(id)} aria-label={t('ablage.sammelweitergabe.auswaehlen', { titel })} onChange={(e) => s.umschalten(id, e.target.checked)} />;
+  return <Wahlhaken an={s.ist(id)} beschriftung={t('ablage.sammelweitergabe.auswaehlen', { titel })} setze={(an) => s.umschalten(id, an)} />;
 }
 
 /**
@@ -99,20 +99,20 @@ export function SammelLeiste({ s, titel, vorschlag, ohne, erledigen, nachher }: 
     <>
       {n > 0 && (
         <div className="aktionsleiste sammel-leiste" role="region" aria-label={t('ablage.sammelweitergabe.auswahl')}>
-          <span className="klein">{tn('ablage.sammelweitergabe.ausgewaehlt-2', { b: <strong>{n}</strong> })}{' '}<button type="button" className="textknopf klein" onClick={s.leeren}>{t('ablage.sammelweitergabe.auswahl-aufheben')}</button></span>
+          <span className="klein">{tn('ablage.sammelweitergabe.ausgewaehlt-2', { b: <strong>{n}</strong> })}{' '}<Knopf art="link" groesse="klein" onClick={s.leeren}>{t('ablage.sammelweitergabe.auswahl-aufheben')}</Knopf></span>
           <span className="sammel-ziel">
             <span className="klein">{t('ablage.sammelweitergabe.ausgewaehlte-weitergeben-an')}</span>
             <BenutzerWahl label={t('ablage.sammelweitergabe.ausgewaehlte-weitergeben-an')} wert={ziel} setze={setZiel} ohne={ohne} />
-            <button type="button" className="knopf klein primaer" disabled={!ziel || sendet} onClick={weitergeben}>{t('ablage.sammelweitergabe.weitergeben')}</button>
+            <Knopf art="haupt" groesse="klein" gesperrt={!ziel} laeuft={sendet} onClick={weitergeben}>{t('ablage.sammelweitergabe.weitergeben')}</Knopf>
           </span>
-          {erledigen && <button type="button" className="knopf klein" disabled={sendet} onClick={erledigt}>{t('ablage.sammelweitergabe.als-erledigt-markieren-2')}</button>}
+          {erledigen && <Knopf groesse="klein" gesperrt={sendet} onClick={erledigt}>{t('ablage.sammelweitergabe.als-erledigt-markieren-2')}</Knopf>}
         </div>
       )}
       {meldung && (
         <div className={`hinweis ${meldung.fehler ? 'schlecht' : meldung.nicht.length ? 'warn' : 'info'}`} role="status">
           <p>{meldung.text}{meldung.nicht.length > 0 && t('ablage.sammelweitergabe.gingen-nicht', { anzahl: meldung.nicht.length })}</p>
           {meldung.nicht.length > 0 && <ul className="klein">{meldung.nicht.slice(0, 50).map((x) => <li key={x.id}>{titel(x.id)}: {x.grund}</li>)}{meldung.nicht.length > 50 && <li>{t('ablage.sammelweitergabe.und-weitere', { wert: meldung.nicht.length - 50 })}</li>}</ul>}
-          <button type="button" className="textknopf klein" onClick={() => setMeldung(undefined)}>{t('ablage.sammelweitergabe.ausblenden')}</button>
+          <Knopf art="link" groesse="klein" onClick={() => setMeldung(undefined)}>{t('ablage.sammelweitergabe.ausblenden')}</Knopf>
         </div>
       )}
     </>

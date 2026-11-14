@@ -87,6 +87,9 @@ nav:
       - Toggle: bausteine-umschalter.md
       - Areas: bausteine-bereiche.md
       - Versions: bausteine-fassungen.md
+      - Menu: bausteine-menue.md
+      - Selection checkbox: bausteine-wahlhaken.md
+      - Multiple selection: bausteine-mehrfachauswahl.md
   - Release: release.md
   - Core:
       - Architecture: aufbau.md

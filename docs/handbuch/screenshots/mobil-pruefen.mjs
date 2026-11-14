@@ -281,7 +281,7 @@ for (const g of GROESSEN) {
       if (probleme.length || raus.length) fehler.push(`${ort} Monat:\n  ${[...probleme, ...raus].slice(0, 10).join('\n  ')}`);
       await s.getByRole('radio', { name: 'Liste' }).click();
     }
-    if (seite.mappenmenue) await pruefeMenue(s, `${ort} „Mappe ▾“`, '.aktionsmenue > button', '.aktionsmenue .menue', join(ordner, 'menue-mappe.png'));
+    if (seite.mappenmenue) await pruefeMenue(s, `${ort} „Mappe ▾“`, '[data-anker="mappe.aktionen"]', '.menue-baustein [role="menu"]', join(ordner, 'menue-mappe.png'));
   }
   await k.close();
 }

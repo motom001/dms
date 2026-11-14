@@ -24,8 +24,8 @@ After document and link tabs it says how much is in them. A red dot shows on whi
 ## Creating a folder {#eine-mappe-anlegen}
 
 1. On the left, choose the view of the folder type, for example *Invoice*.
-2. Click **+ New**.
-3. Fill in the fields. Fields with **\*** are required. Below some fields there is a hint about what belongs in them.
+2. At the top of the list, click **+** with the name of the folder type, here **+ Invoice**.
+3. Fill in the fields. Fields marked **(optional)** may stay empty, all others need a value. Below some fields there is a hint about what belongs in them.
 4. Click **Save folder**.
 
 !!! info "Archive – keep until"
@@ -127,7 +127,7 @@ A **link** connects two folders – the invoice with its contract, the contract 
 
 For fields that allow **several links** (e.g. *For invoices* on a payment), you repeat this. The search field stays at the top directly below the label; the chosen folders appear **below it**, each with **Remove**. This is how you choose several entries from a list everywhere, including the folder types in the [advanced search](ablage.md#erweiterte-suche).
 
-If the folder doesn't exist yet, **+ Create …** below the field opens a small window over the page – with header, tabs, fields and save bar like any folder. Drag it aside by its header to see what's behind it. **Save folder** creates the new folder, closes the window and fills it into the field; the folder you are working on stays open and unsaved. **Cancel**, ✕ or **Esc** close the window without changes, and the cursor is back at the field. The entry is only there if you may create folders of this type.
+If the folder doesn't exist yet, **+ Create …** below the field opens a small window over the page – with header, tabs, fields and save bar like any folder. Drag it aside by its header to see what's behind it. **Save folder** creates the new folder, closes the window and fills it into the field; the folder you are working on stays open and unsaved. **Discard draft**, ✕ or **Esc** close the window without changes, and the cursor is back at the field. The entry is only there if you may create folders of this type.
 
 **Fields that follow from another one:** some links follow from another – if you choose the branch for a person, the organisation it belongs to fills in, with "from Branch" below it. That only happens if the field is empty; if another organisation is already there, Ablago asks "Change Organisation?". If you enter a different organisation by hand, Ablago asks whether to clear the branch – with **Keep** it stays and the field shows the yellow notice. Which fields are connected like this is set by the administrator.
 
@@ -141,7 +141,7 @@ Open the folder, change the details and click **Save folder**. As long as someth
 
 If you want to leave the folder with unsaved changes, Ablago asks.
 
-Next to the title are the star for the [favourites](ablage.md#favoriten) and the menu **Folder ▾** (assign task, remind, send by email, export as PDF, copy link). Every folder also has the tabs **Notes** (with a number) and **History** – see [Notes, mentions, history](zusammenarbeit.md) and [Email, PDF and link](versenden.md). On the phone, the row of tabs scrolls horizontally; a shadow at the edge shows that more follow. Menus such as **Folder ▾**, **+ New** and your user menu open on the phone as a sheet from the bottom with large entries; tapping next to it closes it. On the phone, **Delete folder …** is there too. The bar with **Discard** and **Save** only appears on the phone once you have changed something.
+Next to the title are the star for the [favourites](ablage.md#favoriten) and the menu **Folder ▾** (assign task, remind, send by email, export as PDF, copy link). Every folder also has the tabs **Notes** (with a number) and **History** – see [Notes, mentions, history](zusammenarbeit.md) and [Email, PDF and link](versenden.md). On the phone, the row of tabs scrolls horizontally; a shadow at the edge shows that more follow. Menus such as **Folder ▾**, **⋯**, **+ New** and your user menu open on the phone as a sheet from the bottom with large entries; tapping next to it closes it. The bar with **Delete folder**, **Discard** and **Save** is always at the bottom on the phone, as on the computer.
 
 Some details are only for reading and have a dashed border – for example name and email address in a user's folder. Next to them it says where they are changed.
 
@@ -209,7 +209,7 @@ Users and system roles can't be deleted in the Library at all; the button is mis
 
 ### Delete with linked folders { #mit-verknupften-mappen-loschen }
 
-If you want to get rid of a folder **with everything attached to it** – such as a contract partner you haven't had anything to do with for years, including contracts, invoices and documents –, use **Folder ▾ → Delete with linked folders …** (at the bottom of the menu, red). If the folder can't be deleted on its own because others still link to it, the same way is also available under **Why is deleting locked?** at the delete button. You need the permission to delete the folder.
+If you want to get rid of a folder **with everything attached to it** – such as a contract partner you haven't had anything to do with for years, including contracts, invoices and documents –, use **Folder ▾ → Delete with linked folders …** (set apart at the very bottom of the menu, with a bin icon). If the folder can't be deleted on its own because others still link to it, the same way is also available under **Why is deleting locked?** at the delete button. You need the permission to delete the folder.
 
 ![Preview as a tree: what goes along and what stays](bilder/mit-verknuepften-loeschen.png)
 
@@ -236,13 +236,13 @@ If the button is missing, folders of this folder type may not be deleted.
 
 An administrator can set per folder type who may create, read, edit and delete folders and see passwords in them – for example, that only the accounts team edits invoices or that confidential folders are only seen by those responsible. What applies to you is shown under My account in [My permissions](profil.md#meine-rechte).
 
-They can also set permissions on every **view**: who **sees** it, who may **create** there with **+ New** and who may **export** from it. But a view never shows you folders you may not read on the folder type.
+They can also set permissions on every **view**: who **sees** it, who may **create** there with **+ ‹folder type›** and who may **export** from it. But a view never shows you folders you may not read on the folder type.
 
 This is how you notice it:
 
 - **Folders you may not read** don't appear in lists, search, counters and favourites. If a folder links to one of them, it says *Folder not visible* without a link.
 - **Without edit permission**, a folder only displays its fields and documents; "Read only" appears at the bottom. Notes and tasks still work.
-- **Without delete permission**, "Delete folder" is locked (dashed with a padlock; the ⓘ next to it says why), **without create permission** "+ New" is missing, **without see-passwords permission** the eye on password fields is missing.
+- **Without delete permission**, "Delete folder" is locked (dashed with a padlock; the ⓘ next to it says why), **without create permission** the button for creating (e.g. "+ Invoice") is missing, **without see-passwords permission** the eye on password fields is missing.
 - **Without export permission**, the export buttons are missing in a view; views you may not see are missing from the tree.
 - If your permissions depend on a field (such as "Responsible") and you would take away your own read or edit permission with a change, Ablago asks before saving.
 - When choosing users (responsible, mentions, stand-in, tasks), only those you may see appear.

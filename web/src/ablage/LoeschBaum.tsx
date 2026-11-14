@@ -7,7 +7,8 @@ import { Symbol } from '../Symbol';
 import { useDaten } from '../daten';
 import { Hilfe } from '../Hilfe';
 import { geheZu, Link } from '../ort';
-import { mitGrund } from './Loeschgrund';
+import { Feld, HakenFeld, Knopf } from '../bausteine';
+import type { LoeschAnlass } from '../../../shared/src/loeschprotokoll';
 import { hinweis } from '../rueckfrage';
 import { titelOder } from '../seiten';
 import { t, tn } from '../sprache';
@@ -45,15 +46,15 @@ export function LoeschBaum({ mappeId, titel, sicht, schliessen, neuLaden }: { ma
   const setze = (id: string, a: LoeschAktion) => setAuswahl((x) => ({ ...x, [id]: a }));
   const klappe = (id: string) => setZu((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; });
 
-  async function ausfuehren() {
-    if (!v || !plan?.loeschen.length) return;
-    const name = titelOder(titel);
-    const anlass = await mitGrund({
-      titel: t('ablage.loeschbaum.mit-verknuepften-mappen', { name, wert: korb ? t('ablage.loeschbaum.in-den-papierkorb-legen') : t('ablage.loeschbaum.endgueltig-loeschen') }),
-      text: <p>{loeschZusammenfassung(plan, korb)} {korb ? t('ablage.loeschbaum.im-papierkorb-laesst-sich') : t('ablage.loeschbaum.der-papierkorb-ist-ausgeschaltet')}</p>,
-      ja: korb ? t('ablage.loeschbaum.in-den-papierkorb') : t('ablage.loeschbaum.endgueltig-loeschen-2'), gefahr: true, bestaetigeMit: name,
-    });
-    if (!anlass) return;
+  // Rückfrage mit Grund fürs Löschprotokoll (#470) und dem Namen zum Eintippen – stellt der Gefahr-Knopf selbst (#1211).
+  const name = titelOder(titel);
+  const frage = plan && {
+    titel: t('ablage.loeschbaum.mit-verknuepften-mappen', { name, wert: korb ? t('ablage.loeschbaum.in-den-papierkorb-legen') : t('ablage.loeschbaum.endgueltig-loeschen') }),
+    text: <p>{loeschZusammenfassung(plan, korb)} {korb ? t('ablage.loeschbaum.im-papierkorb-laesst-sich') : t('ablage.loeschbaum.der-papierkorb-ist-ausgeschaltet')}</p>,
+    ja: korb ? t('ablage.loeschbaum.in-den-papierkorb') : t('ablage.loeschbaum.endgueltig-loeschen-2'), bestaetigeMit: name, mitGrund: true as const,
+  };
+  async function ausfuehren(anlass?: LoeschAnlass) {
+    if (!v || !plan?.loeschen.length || !anlass) return;
     setLaeuft(true); setFehler(undefined);
     try {
       const r = await api.mitVerknuepftenLoeschen(mappeId, { tiefe, auswahl, grund: anlass.grund ?? undefined, grundText: anlass.text });
@@ -79,24 +80,25 @@ export function LoeschBaum({ mappeId, titel, sicht, schliessen, neuLaden }: { ma
       <li key={k.id}>
         <div className={`lb-knoten ${weg ? 'lb-weg' : 'lb-bleibt'}`}>
           {kinder.length > 0
-            ? <button type="button" className="lb-klapp" aria-expanded={!zu.has(k.id)} aria-label={t('ablage.loeschbaum.darunter', { wert: zu.has(k.id) ? t('ablage.loeschbaum.aufklappen') : t('ablage.loeschbaum.zuklappen'), kinder: kinder.length })} onClick={() => klappe(k.id)}>{zu.has(k.id) ? '▸' : '▾'}</button>
+            ? <Knopf art="link" className="lb-klapp" aria-expanded={!zu.has(k.id)} nurSymbol={t('ablage.loeschbaum.darunter', { wert: zu.has(k.id) ? t('ablage.loeschbaum.aufklappen') : t('ablage.loeschbaum.zuklappen'), kinder: kinder.length })} onClick={() => klappe(k.id)}><Symbol name="pfeil-rechts" /></Knopf>
             : <span className="lb-klapp" aria-hidden="true" />}
-          <label className="haken lb-haken">
-            <input type="checkbox" checked={a !== 'behalten'} disabled={fest || laeuft}
-              onChange={(e) => setze(k.id, e.target.checked ? (z === 'bezug' || (z === 'geteilt' && k.rechte.U) ? 'entkoppeln' : 'loeschen') : 'behalten')} />
-            <span>
+          <HakenFeld className="lb-haken" beschriftung={<>
               <span className="lb-zeichen" title={KENNZEICHEN[z].text} aria-label={KENNZEICHEN[z].text} role="img"><Symbol name={KENNZEICHEN[z].symbol} /></span>{' '}
               <strong>{titelOder(k.titel)}</strong> <span className="leise klein">{k.typ}{k.dokumente ? t('ablage.loeschbaum.dokumente', { anzahl: k.dokumente }) : ''}</span>
-              {k.auchUeber.length > 0 && <span className="chip lb-chip" title={t('ablage.loeschbaum.auf-mehreren-wegen-erreichbar')}>↻ {k.auchUeber.length}</span>}
-            </span>
-          </label>
+              {k.auchUeber.length > 0 && <span className="chip lb-chip" title={t('ablage.loeschbaum.auf-mehreren-wegen-erreichbar')}><Symbol name="neu-laden" /> {k.auchUeber.length}</span>}
+            </>}>
+            <input type="checkbox" checked={a !== 'behalten'} disabled={fest || laeuft}
+              onChange={(e) => setze(k.id, e.target.checked ? (z === 'bezug' || (z === 'geteilt' && k.rechte.U) ? 'entkoppeln' : 'loeschen') : 'behalten')} />
+          </HakenFeld>
           <div className="lb-status leise klein">
             <span>{status}</span>
             {z === 'geteilt' && a !== 'behalten' && !fest && (
-              <select value={a} disabled={laeuft} aria-label={t('ablage.loeschbaum.was-mit-geschieht', { titelOder: titelOder(k.titel) })} onChange={(e) => setze(k.id, e.target.value as LoeschAktion)}>
-                {k.rechte.U && <option value="entkoppeln">{t('ablage.loeschbaum.nur-verweis-entfernen-mappe')}</option>}
-                <option value="loeschen">{t('ablage.loeschbaum.mitloeschen')}</option>
-              </select>
+              <Feld beschriftung={t('ablage.loeschbaum.was-mit-geschieht', { titelOder: titelOder(k.titel) })} beschriftungVerbergen>
+                <select value={a} disabled={laeuft} onChange={(e) => setze(k.id, e.target.value as LoeschAktion)}>
+                  {k.rechte.U && <option value="entkoppeln">{t('ablage.loeschbaum.nur-verweis-entfernen-mappe')}</option>}
+                  <option value="loeschen">{t('ablage.loeschbaum.mitloeschen')}</option>
+                </select>
+              </Feld>
             )}
             {k.nurBezug && k.ueber && <span>{t('ablage.loeschbaum.ueber-bezug-wird-nie', { feld: k.ueber.feld })}</span>}
             {z === 'geteilt' && <span>{t('ablage.loeschbaum.haengt-auch-an')}{' '}{k.aussen.verweistAuf.slice(0, 3).map((x) => x.verborgen ? x.titel : `„${titelOder(x.titel)}“`).join(', ')}{k.aussen.anzahl.verweistAuf > 3 ? ' …' : ''}</span>}
@@ -110,16 +112,18 @@ export function LoeschBaum({ mappeId, titel, sicht, schliessen, neuLaden }: { ma
 
   return (
     <section className="blatt lb-blatt" aria-label={t('ablage.loeschbaum.mit-verknuepften-mappen-loeschen')}>
-      <div className="blattkopf zeile-zwischen"><h2 className="h3">{tn('ablage.loeschbaum.mit-verknuepften-mappen-loeschen-2', { hilfe: <Hilfe ort="mappe.mitVerknuepften" /> })}</h2><button type="button" className="textknopf" onClick={schliessen}>{t('ablage.loeschbaum.schliessen')}</button></div>
+      <div className="blattkopf zeile-zwischen"><h2 className="h3">{tn('ablage.loeschbaum.mit-verknuepften-mappen-loeschen-2', { hilfe: <Hilfe ort="mappe.mitVerknuepften" /> })}</h2><Knopf art="link" onClick={schliessen}>{t('ablage.loeschbaum.schliessen')}</Knopf></div>
       <p className="leise klein">{t('ablage.loeschbaum.alle-mappen-die-zu', { titelOder: titelOder(titel) })}</p>
       <ul className="lb-legende klein" aria-label={t('ablage.loeschbaum.kennzeichnungen')}>
         {(Object.keys(KENNZEICHEN) as LoeschKennzeichen[]).map((x) => <li key={x}><Symbol name={KENNZEICHEN[x].symbol} /> {KENNZEICHEN[x].text}{x === 'geteilt' ? t('ablage.loeschbaum.vorschlag-nur-den-verweis') : x === 'bezug' ? t('ablage.loeschbaum.nur-der-verweis-wird') : x === 'gesperrt' || x === 'ohneRecht' ? t('ablage.loeschbaum.wird-nie-geloescht') : ''}</li>)}
       </ul>
       <div className="zeile-umbruch">
-        <label className="inline">{t('ablage.loeschbaum.tiefe')}{' '}<select value={tiefe} disabled={laeuft} onChange={(e) => setTiefe(Number(e.target.value))}>{Array.from({ length: BAUM_TIEFE_MAX }, (_, i) => i + 1).map((n) => <option key={n} value={n}>{n} {t('ablage.loeschbaum.ebenen', { anzahl: n })}</option>)}</select></label>
+        <Feld beschriftung={t('ablage.loeschbaum.tiefe')} className="lb-tiefe">
+          <select value={tiefe} disabled={laeuft} onChange={(e) => setTiefe(Number(e.target.value))}>{Array.from({ length: BAUM_TIEFE_MAX }, (_, i) => i + 1).map((n) => <option key={n} value={n}>{n} {t('ablage.loeschbaum.ebenen', { anzahl: n })}</option>)}</select>
+        </Feld>
         {v && v.baum.knoten.length > 1 && <>
-          <button type="button" className="textknopf klein" onClick={() => setZu(new Set())}>{t('ablage.loeschbaum.alle-aufklappen')}</button>
-          <button type="button" className="textknopf klein" onClick={() => setZu(new Set(v.baum.knoten.filter((k) => k.ebene >= 1 && kinderVon(v.baum, k.id).length).map((k) => k.id)))}>{t('ablage.loeschbaum.zuklappen')}</button>
+          <Knopf art="link" groesse="klein" onClick={() => setZu(new Set())}>{t('ablage.loeschbaum.alle-aufklappen')}</Knopf>
+          <Knopf art="link" groesse="klein" onClick={() => setZu(new Set(v.baum.knoten.filter((k) => k.ebene >= 1 && kinderVon(v.baum, k.id).length).map((k) => k.id)))}>{t('ablage.loeschbaum.zuklappen')}</Knopf>
         </>}
       </div>
       {fehler && <div className="hinweis schlecht"><p>{fehler}</p></div>}
@@ -139,10 +143,11 @@ export function LoeschBaum({ mappeId, titel, sicht, schliessen, neuLaden }: { ma
           )}
           <div className={`hinweis ${plan!.zahlen.mappen ? 'warn' : 'info'} lb-summe`} role="status"><p>{loeschZusammenfassung(plan!, korb)}</p></div>
           <div className="knoepfe">
-            <button type="button" className="knopf" onClick={schliessen} disabled={laeuft}>{t('ablage.loeschbaum.abbrechen')}</button>
-            <button type="button" className="knopf gefahr" disabled={laeuft || !plan!.zahlen.mappen} onClick={() => void ausfuehren()}>
-              {laeuft ? t('ablage.loeschbaum.loesche') : korb ? t('ablage.loeschbaum.in-den-papierkorb-2') : t('ablage.loeschbaum.endgueltig-loeschen-3')}
-            </button>
+            <Knopf onClick={schliessen} gesperrt={laeuft}>{t('ablage.loeschbaum.abbrechen')}</Knopf>
+            {/* Gefahr leise mit Symbol und Rückfrage (#1210, Leitsatz 4 und 5): rot gefüllt nur in der Rückfrage. */}
+            <Knopf art="gefahr" symbol="geloescht" rueckfrage={frage!} gesperrt={!plan!.zahlen.mappen} laeuft={laeuft} laeuftText={t('ablage.loeschbaum.loesche')} onClick={(_e, anlass) => ausfuehren(anlass)}>
+              {korb ? t('ablage.loeschbaum.in-den-papierkorb-2') : t('ablage.loeschbaum.endgueltig-loeschen-3')}
+            </Knopf>
           </div>
         </>
       )}

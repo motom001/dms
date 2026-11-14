@@ -14,7 +14,9 @@
  *     Verwerfen mit Rand, Hauptknopf blau, gesperrt aus einem Grund;
  *   muster-reiter, muster-reiter-dunkel – der Bereich „Reiter“ (#1210);
  *   muster-schalter, muster-schalter-dunkel – der Bereich „Schalter“ (#1188);
- *   muster-paketchip, muster-paketchip-dunkel – der Bereich „PaketChip“ (#1192).
+ *   muster-paketchip, muster-paketchip-dunkel – der Bereich „PaketChip“ (#1192);
+ *   muster-menue, muster-wahlhaken, muster-mehrfachauswahl (je auch -dunkel) – die Bereiche „Menü“, „Wahlhaken“
+ *     und „Mehrfachauswahl“ (#1211).
  *
  * Im Handy-Kontext (390 px, Touch: `pointer: coarse`) misst `tippflaechenPruefen` jedes Bedienelement der Seite
  * (#1027, Musterkatalog D6): Jedes muss eine eigene Tippfläche von mindestens 44 × 44 px haben.
@@ -41,14 +43,18 @@ export const ANSICHTEN = [
   { name: 'muster-handy-dunkel', schema: 'dark', viewport: HANDY, handy: true },
 ];
 
-/** axe-core in der Seite ausführen; Rückgabe: Verstöße als kurze Zeilen (leer = alles gut). */
-export async function axePruefen(seite) {
+/**
+ * axe-core in der Seite ausführen; Rückgabe: Verstöße als kurze Zeilen (leer = alles gut). `bereich` (CSS-Selektoren,
+ * optional): nur diese Teile der Seite prüfen (#1211, #1212: die Ablage ohne die Kopfzeile, die #1218/#1219 neu bauen).
+ */
+export async function axePruefen(seite, bereich) {
   await seite.evaluate(AXE);
-  const verstoesse = await seite.evaluate(async (regeln) => {
+  const verstoesse = await seite.evaluate(async ([regeln, bereich]) => {
+    const kontext = bereich ? { include: bereich.map((b) => [b]) } : document;
     // eslint-disable-next-line no-undef -- axe kommt mit evaluate(AXE) in die Seite
-    const r = await axe.run(document, { runOnly: { type: 'tag', values: regeln }, resultTypes: ['violations'] });
+    const r = await axe.run(kontext, { runOnly: { type: 'tag', values: regeln }, resultTypes: ['violations'] });
     return r.violations.map((v) => ({ id: v.id, hilfe: v.help, stellen: v.nodes.map((n) => `${n.target.join(' ')}: ${n.failureSummary?.split('\n').slice(1).join(' ').trim()}`) }));
-  }, REGELN);
+  }, [REGELN, bereich ?? null]);
   return verstoesse.map((v) => `${v.id} (${v.hilfe}): ${v.stellen.join(' | ')}`);
 }
 
@@ -70,16 +76,18 @@ export const TIPP_AUSNAHMEN = {};
  * Beschriftungen (`labels`).
  * Rückgabe: Zeilen „Beschreibung: gemessen“ für jedes zu kleine Element (leer = alles gut).
  */
-export async function tippflaechenPruefen(seite) {
-  const elemente = await seite.evaluate((ausnahmen) => {
+export async function tippflaechenPruefen(seite, bereich) {
+  const elemente = await seite.evaluate(([ausnahmen, bereich]) => {
     const AUSWAHL = 'a[href], button, input:not([type="hidden"]), select, textarea, summary, [role="button"], [tabindex]:not([tabindex="-1"])';
     // Inhalt zugeklappter Einzelheiten (<details> ohne open, außer ihrem summary) ist nicht zu sehen – auch wenn Chromium
     // ihm eine leere Fläche gibt (#1006: Fassungen in der Musterseite).
     const verborgen = (el) => { const d = el.closest('details:not([open])'); return !!d && !(el.matches('summary') && el.parentElement === d); };
-    const alle = [...document.querySelectorAll(AUSWAHL)].filter((el) => el.getClientRects().length > 0 && !verborgen(el) && !Object.keys(ausnahmen).some((a) => el.matches(a)));
+    // Nur in den Bereichen (#1211, #1212), wenn angegeben.
+    const drin = (el) => !bereich || bereich.some((b) => el.closest(b));
+    const alle = [...document.querySelectorAll(AUSWAHL)].filter((el) => el.getClientRects().length > 0 && !verborgen(el) && drin(el) && !Object.keys(ausnahmen).some((a) => el.matches(a)));
     alle.forEach((el, i) => { el.dataset.tippnr = String(i); });
     return alle.length;
-  }, TIPP_AUSNAHMEN);
+  }, [TIPP_AUSNAHMEN, bereich ?? null]);
   const zuKlein = [];
   // Oben anfangen (die Seite selbst rollt nicht, das prüft musterAufnehmen vorher).
   await seite.evaluate(() => scrollTo(0, 0));
@@ -213,6 +221,7 @@ export async function musterAufnehmen(browser, { basis, ziel, gebiet = 'de-DE', 
         await foto(s.locator('#reiter'), `muster-reiter${suffix}`);
         await foto(s.locator('#schalter'), `muster-schalter${suffix}`);
         await foto(s.locator('#paketchip'), `muster-paketchip${suffix}`);
+        for (const b of ['menue', 'wahlhaken', 'mehrfachauswahl']) await foto(s.locator(`#${b}`), `muster-${b}${suffix}`);
       }
     } finally {
       await k.close();

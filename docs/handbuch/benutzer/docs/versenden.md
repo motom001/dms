@@ -50,7 +50,7 @@ Eine Ausweiskopie für den Vermieter, Unterlagen für die Hausverwaltung, ein An
 
 Den Stempel gibt es an drei Stellen:
 
-- **Herunterladen:** In der Liste der Dokumente neben **Herunterladen** der Knopf **Mit Stempel …**.
+- **Herunterladen:** In der Liste der Dokumente im Menü **⋯** unter *Herunterladen* der Punkt **Mit Stempel …**.
 - **Per E-Mail versenden** (eine oder mehrere Mappen): unter den Anhängen das Kästchen **Mit Stempel**.
 - **Exportieren** als ZIP oder PDF: im Exportdialog das Kästchen **Mit Stempel**.
 

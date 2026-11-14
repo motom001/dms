@@ -15,7 +15,7 @@
   "werkbank.modell.unbekannt": "not reported yet",
   "werkbank.speicher": "Cache",
   "werkbank.speicher.wert": "{mb} MB in memory",
-  "werkbank.suche": "Show similar results in the search",
+  "werkbank.suche": "Similar results in the search",
   "werkbank.suche.hilfe": "When searching all folders with “also in documents”, folders with similar documents then appear as well, marked “similar”.",
   "werkbank.neu": "Recalculate",
   "werkbank.neu.frage": "Recalculate all vectors?",

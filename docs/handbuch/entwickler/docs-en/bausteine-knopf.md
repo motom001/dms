@@ -51,7 +51,7 @@ import { Knopf, KnopfLink, type KnopfErgebnis } from '../bausteine';
 | `art` | `haupt`, `anlegen`, `neben` (default), `gefahr`, `link` |
 | `groesse` | `normal` (default) or `klein` |
 | `symbol` | icon before the label (name from `Symbol.tsx`, Lucide); **required for danger** |
-| `rueckfrage` | **only and required for danger:** `{ titel, text?, ja, nein?, bestaetigeMit? }` – title as a question, consequences, verb on the confirm button |
+| `rueckfrage` | **only and required for danger:** `{ titel, text?, ja, nein?, bestaetigeMit?, mitGrund? }` – title as a question, consequences, verb on the confirm button; `mitGrund` (`true` or a suggestion) asks for the reason for the deletion log, `onClick(e, anlass)` receives it |
 | `onClick` | may return a promise – see [Asynchronous handlers](#asynchron); for danger only after “yes” |
 | `gesperrt` | `true` = nothing to do (faded); a **reason as text** or a `KnopfSperre` = locked for a reason (dashed, padlock, ⓘ) – see [Disabled](#gesperrt) |
 | `laeuft`, `laeuftText` | “working” from outside (form is sending, job in the background) and its text (default “Working …”) |

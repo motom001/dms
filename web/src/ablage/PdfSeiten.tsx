@@ -2,6 +2,8 @@ import { useEffect, useRef, useState, type DragEvent, type KeyboardEvent } from 
 import type { Dokument, Mappe } from '../../../shared/src/model';
 import { api, seitenbildUrl, type PdfSeiten as Info } from '../api';
 import { Hilfe } from '../Hilfe';
+import { Knopf } from '../bausteine';
+import { Symbol } from '../Symbol';
 import { rueckfrage } from '../rueckfrage';
 import { t } from '../sprache';
 
@@ -36,7 +38,7 @@ export function PdfSeiten({ d, post, versioniert, papierkorb, teilAb, schliessen
   useEffect(() => { if (teilAb && seiten.length >= teilAb) kacheln.current[teilAb - 1]?.scrollIntoView({ block: 'nearest', inline: 'nearest' }); }, [teilAb, seiten.length]);
   useEffect(() => { if (fokus !== undefined) kacheln.current[fokus]?.focus(); }, [fokus, seiten]);
 
-  if (fehler && !info) return <div className="hinweis schlecht pdfseiten"><p>{fehler}</p><button type="button" className="textknopf" onClick={schliessen}>{t('ablage.pdfseiten.schliessen')}</button></div>;
+  if (fehler && !info) return <div className="hinweis schlecht pdfseiten"><p>{fehler}</p><Knopf art="link" onClick={schliessen}>{t('ablage.pdfseiten.schliessen')}</Knopf></div>;
   if (!info) return <p className="leise pdfseiten">{t('ablage.pdfseiten.lade-seiten')}</p>;
 
   const aendere = (i: number, p: Partial<Seite>) => setSeiten((s) => s.map((x, k) => (k === i ? { ...x, ...p } : x)));
@@ -104,14 +106,15 @@ export function PdfSeiten({ d, post, versioniert, papierkorb, teilAb, schliessen
               </div>
               <span className="klein">{t('ablage.pdfseiten.seite-2', { nr: s.nr })}</span>
               <div className="seitenknoepfe">
-                <button type="button" className="symbolknopf" title={t('ablage.pdfseiten.nach-links-drehen')} aria-label={t('ablage.pdfseiten.seite-nach-links-drehen', { nr: s.nr })} disabled={s.weg} onClick={() => aendere(i, { drehung: (s.drehung + 270) % 360 })}>↺</button>
-                <button type="button" className="symbolknopf" title={t('ablage.pdfseiten.nach-rechts-drehen')} aria-label={t('ablage.pdfseiten.seite-nach-rechts-drehen', { nr: s.nr })} disabled={s.weg} onClick={() => aendere(i, { drehung: (s.drehung + 90) % 360 })}>↻</button>
-                <button type="button" className="symbolknopf" title={t('ablage.pdfseiten.nach-vorn')} aria-label={t('ablage.pdfseiten.seite-nach-vorn', { nr: s.nr })} disabled={i === 0} onClick={() => verschiebe(i, i - 1)}>←</button>
-                <button type="button" className="symbolknopf" title={t('ablage.pdfseiten.nach-hinten')} aria-label={t('ablage.pdfseiten.seite-nach-hinten', { nr: s.nr })} disabled={i === seiten.length - 1} onClick={() => verschiebe(i, i + 1)}>→</button>
+                <Knopf art="link" groesse="klein" title={t('ablage.pdfseiten.nach-links-drehen')} nurSymbol={t('ablage.pdfseiten.seite-nach-links-drehen', { nr: s.nr })} gesperrt={s.weg} onClick={() => aendere(i, { drehung: (s.drehung + 270) % 360 })}><Symbol name="zuruecksetzen" /></Knopf>
+                <Knopf art="link" groesse="klein" title={t('ablage.pdfseiten.nach-rechts-drehen')} nurSymbol={t('ablage.pdfseiten.seite-nach-rechts-drehen', { nr: s.nr })} gesperrt={s.weg} onClick={() => aendere(i, { drehung: (s.drehung + 90) % 360 })}><Symbol name="neu-laden" /></Knopf>
+                <Knopf art="link" groesse="klein" title={t('ablage.pdfseiten.nach-vorn')} nurSymbol={t('ablage.pdfseiten.seite-nach-vorn', { nr: s.nr })} gesperrt={i === 0} onClick={() => verschiebe(i, i - 1)}><Symbol name="pfeil-links" /></Knopf>
+                <Knopf art="link" groesse="klein" title={t('ablage.pdfseiten.nach-hinten')} nurSymbol={t('ablage.pdfseiten.seite-nach-hinten', { nr: s.nr })} gesperrt={i === seiten.length - 1} onClick={() => verschiebe(i, i + 1)}><Symbol name="pfeil-rechts" /></Knopf>
               </div>
               <div className="seitenknoepfe">
-                <button type="button" className={`textknopf klein ${s.weg ? '' : 'gefahr'}`} onClick={() => aendere(i, { weg: !s.weg })}>{s.weg ? t('ablage.pdfseiten.behalten') : t('ablage.pdfseiten.loeschen')}</button>
-                {pos > 0 && <button type="button" className="textknopf klein" aria-pressed={s.teilAb} onClick={() => aendere(i, { teilAb: !s.teilAb })}>{s.teilAb ? t('ablage.pdfseiten.nicht-teilen') : t('ablage.pdfseiten.teilen-ab-hier')}</button>}
+                {/* Erst mit „Übernehmen“ wirksam, bis dahin „Behalten“ (Leitsatz 5): kein roter Link. */}
+                <Knopf art="link" groesse="klein" onClick={() => aendere(i, { weg: !s.weg })}>{s.weg ? t('ablage.pdfseiten.behalten') : t('ablage.pdfseiten.loeschen')}</Knopf>
+                {pos > 0 && <Knopf art="link" groesse="klein" aria-pressed={s.teilAb} onClick={() => aendere(i, { teilAb: !s.teilAb })}>{s.teilAb ? t('ablage.pdfseiten.nicht-teilen') : t('ablage.pdfseiten.teilen-ab-hier')}</Knopf>}
               </div>
             </li>
           );
@@ -123,8 +126,8 @@ export function PdfSeiten({ d, post, versioniert, papierkorb, teilAb, schliessen
       {fehler && <div className="hinweis schlecht"><p>{fehler}</p></div>}
       <div className="pdfseiten-fuss">
         <span className="leise klein">{zusammenfassung}</span>
-        <button type="button" className="knopf primaer klein" disabled={!geaendert || !bleiben.length || laeuft} onClick={() => void uebernehmen()}>{laeuft ? t('ablage.pdfseiten.wird-uebernommen') : t('ablage.pdfseiten.uebernehmen')}</button>
-        <button type="button" className="knopf klein" disabled={laeuft} onClick={schliessen}>{t('ablage.pdfseiten.abbrechen')}</button>
+        <Knopf art="haupt" groesse="klein" gesperrt={!geaendert || !bleiben.length} laeuft={laeuft} laeuftText={t('ablage.pdfseiten.wird-uebernommen')} onClick={() => void uebernehmen()}>{t('ablage.pdfseiten.uebernehmen')}</Knopf>
+        <Knopf groesse="klein" gesperrt={laeuft} onClick={schliessen}>{t('ablage.pdfseiten.abbrechen')}</Knopf>
       </div>
       {versioniert && <p className="leise klein">{t('ablage.pdfseiten.das-bisherige-pdf-bleibt')}</p>}
     </div>

@@ -1,7 +1,7 @@
 import { useRef, useSyncExternalStore, type RefObject } from 'react';
 import type { FrageAusschnitt, FrageGekuerzt, VerlaufEintrag } from '../../../shared/src/fragen';
 import { frageStellen } from '../api';
-import { Knopf } from '../bausteine';
+import { Feld, Knopf } from '../bausteine';
 import { Link } from '../ort';
 import { titelOder } from '../seiten';
 import { t } from '../sprache';
@@ -67,10 +67,11 @@ export function FragAblage({ eingabe, setEingabe, paket, feldRef }: { eingabe: s
   return (
     <>
       <form className="frag-form" data-kachel="fragen" data-anker="startseite.fragen" onSubmit={(e) => { e.preventDefault(); void fragen(); }}>
-        <label className="sr" htmlFor="frag-feld">{t('fragen.titel')}</label>
-        <textarea id="frag-feld" ref={feldRef} className="frag-feld" rows={2} maxLength={1000} value={eingabe} placeholder={t('fragen.platzhalter')}
-          onChange={(e) => setEingabe(e.target.value)}
-          onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); void fragen(); } }} />
+        <Feld beschriftung={t('fragen.titel')} beschriftungVerbergen id="frag-feld">
+          <textarea ref={feldRef} className="frag-feld" rows={2} maxLength={1000} value={eingabe} placeholder={t('fragen.platzhalter')}
+            onChange={(e) => setEingabe(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); void fragen(); } }} />
+        </Feld>
         <div className="knoepfe">
           {laeuft
             ? <Knopf onClick={() => abbruch.current?.abort()}>{t('fragen.abbrechen')}</Knopf>

@@ -5,6 +5,8 @@ import { t } from '../../sprache';
 import s from './Knopf.module.css';
 import { hinweis, rueckfrage as stelleRueckfrage, type Rueckfrage } from '../../rueckfrage';
 import { Erklaerung, type KnopfSperre } from './Erklaerung';
+import { mitGrund } from '../rueckfrage/Loeschgrund';
+import type { LoeschAnlass, Loeschgrund } from '../../../../shared/src/loeschprotokoll';
 
 export type { KnopfSperre } from './Erklaerung';
 
@@ -40,8 +42,12 @@ export interface KnopfErgebnis {
   text: ReactNode;
 }
 
-/** Rückfrage eines Gefahr-Knopfs (Leitsatz 5): Titel als Frage, Folgen, Verb auf dem Bestätigungsknopf. */
-export type GefahrRueckfrage = Omit<Rueckfrage, 'gefahr'>;
+/**
+ * Rückfrage eines Gefahr-Knopfs (Leitsatz 5): Titel als Frage, Folgen, Verb auf dem Bestätigungsknopf.
+ * `mitGrund` (#1211): Löschen mit Grund fürs Löschprotokoll (#470) – die Rückfrage fragt Grund und Anmerkung ab
+ * (Vorschlag: der angegebene Grund, bei `true` „nicht mehr nötig“), `onClick` bekommt den Anlass als zweites Argument.
+ */
+export type GefahrRueckfrage = Omit<Rueckfrage, 'gefahr'> & { mitGrund?: Loeschgrund | true };
 
 /**
  * Gesperrt: `true` = nichts zu tun (blass, ohne Erklärung); ein Grund (Text oder `KnopfSperre`) = gesperrt aus einem
@@ -182,8 +188,11 @@ interface KnopfBasis extends Grundlage {
   /** Erklärung einer Sperre schon offen (nur für Musterseite und Bilder). */
   erklaerungOffen?: boolean;
   ref?: Ref<HTMLButtonElement>;
-  /** Darf ein Promise liefern: „läuft“, Fehler und Ergebnis zeigt der Knopf (siehe oben). Bei Gefahr erst nach „Ja“. */
-  onClick?: (e: MouseEvent<HTMLButtonElement>) => void | Promise<unknown>;
+  /**
+   * Darf ein Promise liefern: „läuft“, Fehler und Ergebnis zeigt der Knopf (siehe oben). Bei Gefahr erst nach „Ja“;
+   * mit `rueckfrage.mitGrund` kommt der Anlass fürs Löschprotokoll als zweites Argument.
+   */
+  onClick?: (e: MouseEvent<HTMLButtonElement>, anlass?: LoeschAnlass) => void | Promise<unknown>;
 }
 
 /**
@@ -210,16 +219,23 @@ function useHandlung(onClick: KnopfProps['onClick'], zu: boolean, ergebnis: Knop
   async function klick(e: MouseEvent<HTMLButtonElement>) {
     // Gesperrt oder läuft: nichts tun – auch kein Absenden eines Formulars (Enter in einem Feld klickt den Knopf).
     if (zu || sperre.current) { e.preventDefault(); return; }
+    let anlass: LoeschAnlass | undefined;
     if (frage) {
       // Gefahr (Leitsatz 5): erst die Rückfrage – solange sie offen ist, kein zweiter Klick und kein „läuft“.
       sperre.current = true;
-      const ja = await stelleRueckfrage({ ...frage, gefahr: true }).finally(() => { sperre.current = false; });
-      if (!ja) return;
+      const { mitGrund: grund, ...r } = frage;
+      try {
+        if (grund) {
+          const a = await mitGrund({ ...r, gefahr: true }, grund === true ? undefined : grund);
+          if (!a) return;
+          anlass = a;
+        } else if (!(await stelleRueckfrage({ ...r, gefahr: true }))) return;
+      } finally { sperre.current = false; }
     }
     if (!onClick) return;
     setEigen(null);
     setAusgeblendet(true);
-    const r = onClick(e);
+    const r = onClick(e, anlass);
     if (!r || typeof (r as Promise<unknown>).then !== 'function') return;
     sperre.current = true;
     setLaeuft(true);
