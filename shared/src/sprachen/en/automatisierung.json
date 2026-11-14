@@ -1,6 +1,6 @@
 {
   "angehalten.bremse": "Paused: more than {anzahl} runs in one minute. Check the trigger and switch the automation on again.",
-  "angehalten.wiederherstellung": "Paused after a restore. Check the automation and switch it on again.",
+  "angehalten.wiederherstellung": "Paused after a restore – check it and switch it on again.",
   "angehalten.typ-unbekannt": "Paused: the folder type “{typ}” doesn’t exist in this Library. Without it the automation would run on all folder types – it stays off until the type exists or you adjust it.",
   "karte.aufgabe.als-aufgabe": "Task",
   "karte.aufgabe.als-benachrichtigung": "Notification",
@@ -52,7 +52,6 @@
   "ui.an": "on",
   "ui.angehalten": "paused",
   "ui.aus": "off",
-  "ui.ausgeschaltet": "Switched off.",
   "ui.beschreibung": "When something happens and the conditions are met, Ablago does something by itself.",
   "ui.beschreibung.feld": "Description (optional)",
   "ui.dann": "Then",
@@ -61,7 +60,6 @@
   "ui.sonst.leer": "Optional: what should happen if the conditions are not met? Drag a Then card here or choose one below.",
   "ui.sonst.hinweis": "Run if the And conditions are not met.",
   "ui.sonst.kurz": "otherwise {karten}",
-  "ui.eingeschaltet": "Switched on.",
   "ui.empfaenger": "Recipients",
   "ui.empfaenger.ersteller": "Whoever created the folder",
   "ui.empfaenger.ereignis": "From the event",

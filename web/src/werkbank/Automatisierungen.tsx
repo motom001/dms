@@ -318,7 +318,6 @@ export function AutomatisierungEditor({ z, id }: { z: AutomatisierungenZustand; 
   const [e, setE] = useState<Entwurf>(() => kopie(gespeichert));
   const [offenKarte, setOffenKarte] = useState<string | null>(null);
   const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
-  const [schaltRueckmeldung, setSchaltRueckmeldung] = useState<string | null>(null);
   const [sendet, setSendet] = useState(false);
   const [vorratOffen, setVorratOffen] = useState(false);
   const [ansage, setAnsage] = useState('');
@@ -371,26 +370,19 @@ export function AutomatisierungEditor({ z, id }: { z: AutomatisierungenZustand; 
     <div className="editorform automatisierung">
       <div className="mappenkopf">
         <p className="ueber">{t('automatisierung.ui.ueber')}</p>
-        <h1>{neu ? t('automatisierung.ui.neu.titel') : a!.name} {a && <Zustandszeichen a={a} />}</h1>
+        <h1>{neu ? t('automatisierung.ui.neu.titel') : a!.name}</h1>
         {/* Kann nie laufen, weil das Konto „Automatisierung“ den Mappentyp nicht lesen darf (#709): Hinweis mit Weg zum Testlauf (#710). */}
         {/* „Paket nach Zeitplan ausführen“ läuft ins Leere (#1082): Paket entfernt oder ohne das Ereignis – kein Fehler. */}
         {a?.leer?.map((x) => <div key={x} className="hinweis warn" role="status"><p>{x}</p></div>)}
         {a?.rechte && <div className="hinweis warn" role="status"><p>{a.rechte.text} <Link to={`/werkbank/typen/${a.rechte.typId}${a.rechte.kontoId ? `?testkonto=${a.rechte.kontoId}` : ''}#testlauf`} className="verweis">{t('automatisierung.ui.rechte.link')}</Link></p></div>}
         {a && <p className="leise">{a.kurz}{position > 0 && gleiche.length > 1 && <> · {t('automatisierung.ui.position', { nr: position, anzahl: gleiche.length })}</>}</p>}
-        {/* An/aus an einer Stelle (#706): neu wirkt der Schalter mit dem Speichern, sonst sofort; angehalten mit Grund. */}
+        {/* An/aus an einer Stelle (#706): neu wirkt der Schalter mit dem Speichern, sonst sofort. Er steht immer hier (#1173):
+            angehalten ist er aus, der Grund steht einmal daneben, und Wieder-Einschalten ist das Umlegen. Keine Meldung
+            danach – der Schalter zeigt den Zustand selbst; nur ein Fehler steht am Schalter. */}
         <div className="zeile handlungen">
-          {a?.angehalten ? <>
-            <div className="hinweis schlecht"><p>{t('automatisierung.ui.angehalten')}: {a.angehalten.text}</p></div>
-            <Knopf onClick={() => aktion(() => api.automatisierungSchalten(a.id, true), t('automatisierung.ui.eingeschaltet'))}>{t('automatisierung.ui.wieder-einschalten')}</Knopf>
-          </> : schaltRueckmeldung ? <p className="gut" role="status">{schaltRueckmeldung}</p>
-            : <Schalter an={a ? a.aktiv : e.aktiv} beschriftung={t('automatisierung.ui.schalter')} beschriftungVerbergen setze={(an) => {
-              if (!a) { setE({ ...e, aktiv: an }); return; }
-              return (async () => {
-                try { await api.automatisierungSchalten(a.id, an); await z.laden(); setSchaltRueckmeldung(an ? t('automatisierung.ui.eingeschaltet') : t('automatisierung.ui.ausgeschaltet')); setTimeout(() => setSchaltRueckmeldung(null), 2500); }
-                catch (x) { setMeldung({ art: 'schlecht', text: (x as Error).message }); }
-              })();
-            }} />}
-          {neu && <span className="leise klein">{t('automatisierung.ui.schalter.neu')}</span>}
+          <Schalter an={a ? a.aktiv && !a.angehalten : e.aktiv} beschriftung={t('automatisierung.ui.schalter')} beschriftungVerbergen
+            hinweis={a?.aktiv && a.angehalten ? a.angehalten.text : neu ? t('automatisierung.ui.schalter.neu') : undefined}
+            setze={(an) => { if (!a) { setE({ ...e, aktiv: an }); return; } return api.automatisierungSchalten(a.id, an).then(() => z.laden()); }} />
           {a && <Knopf onClick={() => aktion(async () => { const x = await api.automatisierungKopieren(a.id); geheZu(`/werkbank/automatisierungen/${x.id}`); }, t('automatisierung.ui.kopiert'))}>{t('automatisierung.ui.kopieren')}</Knopf>}
         </div>
       </div>

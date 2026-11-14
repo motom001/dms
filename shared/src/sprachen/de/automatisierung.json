@@ -1,6 +1,6 @@
 {
   "angehalten.bremse": "Angehalten: mehr als {anzahl} Läufe in einer Minute. Prüfe den Auslöser und schalte die Automatisierung wieder ein.",
-  "angehalten.wiederherstellung": "Angehalten nach einer Wiederherstellung. Prüfe die Automatisierung und schalte sie wieder ein.",
+  "angehalten.wiederherstellung": "Angehalten nach einer Wiederherstellung – prüfe sie und schalte sie wieder ein.",
   "angehalten.typ-unbekannt": "Angehalten: Den Mappentyp „{typ}“ gibt es in dieser Ablage nicht. Ohne ihn liefe die Automatisierung auf alle Mappentypen – sie bleibt aus, bis der Typ da ist oder du sie anpasst.",
   "karte.aufgabe.als-aufgabe": "Aufgabe",
   "karte.aufgabe.als-benachrichtigung": "Benachrichtigung",
@@ -52,7 +52,6 @@
   "ui.an": "an",
   "ui.angehalten": "angehalten",
   "ui.aus": "aus",
-  "ui.ausgeschaltet": "Ausgeschaltet.",
   "ui.beschreibung": "Wenn etwas passiert und die Bedingungen stimmen, erledigt Ablago etwas von selbst.",
   "ui.beschreibung.feld": "Beschreibung (optional)",
   "ui.dann": "Dann",
@@ -61,7 +60,6 @@
   "ui.sonst.leer": "Optional: Was soll passieren, wenn die Bedingungen nicht zutreffen? Ziehe eine Dann-Karte hierher oder wähle sie unten aus.",
   "ui.sonst.hinweis": "Laufen, wenn die Und-Bedingungen nicht zutreffen.",
   "ui.sonst.kurz": "sonst {karten}",
-  "ui.eingeschaltet": "Eingeschaltet.",
   "ui.empfaenger": "Empfänger",
   "ui.empfaenger.ersteller": "Wer die Mappe angelegt hat",
   "ui.empfaenger.ereignis": "Aus dem Ereignis",

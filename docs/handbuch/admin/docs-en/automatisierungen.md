@@ -73,8 +73,8 @@ Each automation takes at most two lines in the list:
 
 Whether an automation works you see and change in **one** place: at the switch at the top next to the name; the list shows the same state as a sign (**on**, **off**, **paused**) and switches several at once.
 
-- For a saved automation the switch takes effect immediately; in its place it briefly says "Switched on." or "Switched off.".
-- If it is **paused** (red, see below), the reason is shown there and the button **Switch on again**.
+- For a saved automation the switch takes effect immediately. There is no further message – the switch shows the state itself; only if something goes wrong is the reason shown at the switch.
+- If it is **paused** (see [below](#wenn-etwas-nicht-mehr-passt)), the switch is off and the reason is shown once directly below it, e.g. "Paused after a restore – check it and switch it on again." Switching it on again means flipping the switch. It stays in its place.
 - Next to it is the button **Copy**: it creates a copy of your own and opens it.
 
 ## Schedule {#zeitplan}

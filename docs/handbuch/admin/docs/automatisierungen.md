@@ -73,8 +73,8 @@ Jede Automatisierung steht in der Liste in höchstens zwei Zeilen:
 
 Ob eine Automatisierung arbeitet, siehst und änderst du an **einer** Stelle: am Schalter oben neben dem Namen; die Liste zeigt denselben Zustand als Zeichen (**an**, **aus**, **angehalten**) und schaltet mehrere auf einmal.
 
-- Bei einer gespeicherten Automatisierung wirkt der Schalter sofort; an seiner Stelle steht kurz „Eingeschaltet.“ bzw. „Ausgeschaltet.“.
-- Ist sie **angehalten** (rot, siehe unten), steht dort der Grund und der Knopf **Wieder einschalten**.
+- Bei einer gespeicherten Automatisierung wirkt der Schalter sofort. Eine weitere Meldung gibt es nicht – der Schalter zeigt den Zustand selbst; nur wenn etwas schiefgeht, steht der Grund am Schalter.
+- Ist sie **angehalten** (siehe [unten](#wenn-etwas-nicht-mehr-passt)), steht der Schalter auf aus, und der Grund steht einmal direkt darunter, z. B. „Angehalten nach einer Wiederherstellung – prüfe sie und schalte sie wieder ein.“ Wieder einschalten heißt: den Schalter umlegen. Er bleibt dabei an seiner Stelle.
 - Daneben steht der Knopf **Kopieren**: Er legt eine eigene Kopie an und öffnet sie.
 
 ## Zeitplan
