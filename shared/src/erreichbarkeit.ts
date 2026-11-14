@@ -27,7 +27,11 @@ export interface ErreichbarkeitsZustand {
  * GET /api/gesundheit. `zustand` (#802): „startet“ und „fehler“ (Startseite, HTTP 503), „laeuft“, dazu
  * „einrichtung“ (Einrichtungsmodus) und „lasttest“ (Lasttest-Modus).
  */
-export interface Gesundheit { ok?: boolean; stand?: string; zustand?: 'startet' | 'fehler' | 'laeuft' | 'einrichtung' | 'lasttest' | 'datenbank' }
+export interface Gesundheit {
+  ok?: boolean; stand?: string; zustand?: 'startet' | 'fehler' | 'laeuft' | 'einrichtung' | 'lasttest' | 'datenbank';
+  /** Bei „datenbank“ (#1199): Ablago hängt (`antwortet-nicht`) oder die Datenbank lehnt ab (`abgewiesen`), seit wann. */
+  datenbank?: 'ok' | 'antwortet-nicht' | 'abgewiesen'; seit?: string | null; dauerS?: number | null;
+}
 export interface Umgebung {
   /** GET /api/gesundheit; null, wenn das DMS nicht geantwortet hat. */
   gesundheit(): Promise<Gesundheit | null>;

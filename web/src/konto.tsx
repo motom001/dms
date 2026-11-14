@@ -5,6 +5,7 @@ import { erlaubteSprachen, setzeErlaubteSprachen } from '../../shared/src/beschr
 import { sprache } from '../../shared/src/sprache';
 import { WartungsHinweis } from './wartung';
 import { ErreichbarkeitsBanner, WIEDER_ERREICHBAR } from './erreichbar';
+import { merkeVersion } from './startbild';
 import { Wiederherstellungsbildschirm } from './wiederherstellen';
 import { AssistentAngemeldet, Einrichtungsassistent } from './einrichtung';
 import { geheZu, useOrt } from './ort';
@@ -76,6 +77,8 @@ export function KontoProvider({ children }: { children: ReactNode }) {
       }
       ohneBenutzer.current = !st.benutzer;
       ANGEMELDET = !!st.benutzer;
+      // Version für „Ablago antwortet gerade nicht“ (#1199) merken – ohne Anmeldung nennt der Server sie nicht.
+      merkeVersion(st.version);
       setStatus(st); setFehler(undefined); geladen.current = true;
     }
     catch (e) { if (!geladen.current) setFehler((e as Error).message); }

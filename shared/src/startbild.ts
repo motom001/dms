@@ -65,3 +65,21 @@ export const NEU_GELADEN_MS = 10 * 60_000;
 export function schonNeuGeladen(merker: number | null, jetzt: number): boolean {
   return merker !== null && Number.isFinite(merker) && jetzt - merker >= 0 && jetzt - merker < NEU_GELADEN_MS;
 }
+
+/**
+ * Was ist los? (#1199) Aus der Gesundheitsprüfung: Ablago hängt (`antwortet-nicht`), die Datenbank lehnt ab
+ * (`abgewiesen`) oder Ablago antwortet gar nicht (`unbekannt`) – danach richten sich Lage und Schritt 2 der Meldung.
+ */
+export type StartbildLage = 'antwortet-nicht' | 'abgewiesen' | 'unbekannt';
+export function startbildLage(g: { zustand?: string; datenbank?: string } | null | undefined): StartbildLage {
+  if (g?.zustand !== 'datenbank') return 'unbekannt';
+  return g.datenbank === 'abgewiesen' ? 'abgewiesen' : 'antwortet-nicht';
+}
+
+/** „seit …“ in groben Stufen: unter einer Minute, Minuten, ab einer Stunde Stunden (Texte `startbild.dauer.*`). */
+export function startbildDauer(sekunden: number | null | undefined): { art: 'kurz' | 'minuten' | 'stunden'; anzahl: number } {
+  const s = typeof sekunden === 'number' && Number.isFinite(sekunden) ? Math.max(0, sekunden) : 0;
+  if (s < 60) return { art: 'kurz', anzahl: 0 };
+  if (s < 3600) return { art: 'minuten', anzahl: Math.floor(s / 60) };
+  return { art: 'stunden', anzahl: Math.floor(s / 3600) };
+}

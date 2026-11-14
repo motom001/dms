@@ -20,15 +20,28 @@ Ablago lief, aber jetzt geht es nicht mehr – ohne dass du etwas geändert hast
 **Woran du es erkennst:**
 
 - Die Seite bleibt **schwarz bzw. leer**, oder sie zeigt lange „Verbindung zu Ablago wird aufgebaut …“.
-- Statt der Anmeldung steht dort **„Ablago antwortet gerade nicht.“**
+- Statt der Anmeldung steht dort **„Ablago antwortet gerade nicht.“** – darunter, was los ist, was du tun kannst, und wann zuletzt geprüft wurde.
 - Oben steht eine rote Leiste **„Ablago ist beschäftigt – die Datenbank antwortet nicht.“**
 
 Ablago selbst läuft dann meist noch, kommt aber nicht an seine Datenbank. Deine Dokumente sind davon nicht betroffen.
 
+**Was die Meldung sagt** – der erste Satz unter „Ablago antwortet gerade nicht.“ verrät, wo es hakt:
+
+| Die Meldung sagt … | Das heißt | Was meist hilft |
+|---|---|---|
+| „Ablago läuft, bekommt aber seit … keine Antwort von seiner Datenbank.“ | Ablago hängt: Keine Verbindung zur Datenbank ist frei, oder die Datenbank antwortet nicht rechtzeitig. | Den **Ablago-Container** neu starten (Schritt 2). |
+| „Ablago läuft, erreicht aber seit … seine Datenbank nicht – sie ist vermutlich aus.“ | Die Datenbank lehnt die Verbindung ab: Ihr Container läuft nicht oder ist nicht erreichbar. | Den **Container der Datenbank** bzw. das ganze Projekt starten. Ablago allein neu zu starten hilft hier nicht. |
+| „Ablago meldet sich gar nicht.“ | Ablago selbst antwortet nicht – es startet gerade neu, oder der Container läuft nicht. | Kurz warten; sonst in der Container-Oberfläche nachsehen, ob der Ablago-Container läuft. |
+
+Unten auf der Meldung stehen die **Uhrzeit** der letzten Prüfung und – wenn du in diesem Browser schon einmal angemeldet warst – die **Version** von Ablago. Beides hilft, wenn du jemandem Bescheid sagst oder einen Fehler meldest.
+
+!!! info "Warum gibt es dort keinen Knopf „Ablago neu starten“ und kein Protokoll?"
+    Die Meldung sieht jeder, der die Adresse kennt – und ohne Datenbank kann Ablago nicht prüfen, wer du bist. Ein Knopf zum Neustarten wäre so ein Werkzeug, um Ablago von außen lahmzulegen, und das Protokoll enthält Namen, Adressen und Dateinamen. Deshalb zeigt die Seite nur, was los ist und was du tun kannst; neu starten und ins Protokoll sehen geht über den Container (Schritte 2 und 3).
+
 **Was du tun kannst – der Reihe nach:**
 
-1. **Seite neu laden.** Warte eine Minute und lade die Seite neu (am Handy: Seite nach unten ziehen). Ablago versucht es auch von selbst weiter und lädt die Seite, sobald es wieder antwortet. Steht danach „Schon neu geladen, Ablago antwortet weiter nicht“, geh zu Schritt 2.
-2. **Container neu starten.** Das beendet alle laufenden Anfragen und baut die Verbindungen zur Datenbank neu auf. Nichts geht dabei verloren.
+1. **Seite neu laden.** Warte eine Minute und lade die Seite neu (am Handy: Seite nach unten ziehen). Ablago versucht es auch von selbst weiter und lädt die Seite, sobald es wieder antwortet. Steht danach „Neu laden allein hat nicht geholfen“ (bzw. in der Leiste „Schon neu geladen, Ablago antwortet weiter nicht“), geh zu Schritt 2.
+2. **Container neu starten.** Das beendet alle laufenden Anfragen und baut die Verbindungen zur Datenbank neu auf. Nichts geht dabei verloren. Sagt die Meldung, die Datenbank sei „vermutlich aus“, starte das ganze Projekt bzw. den Container der Datenbank.
     - **Synology (Container Manager):** *Container Manager → Projekt →* dein Ablago-Projekt *→ Aktion → Neu starten*. Bei einem einzelnen Container: *Container →* den Ablago-Container wählen *→ Aktion → Neu starten*.
     - **UGREEN, QNAP, Unraid:** in der Docker-Oberfläche den Ablago-Container wählen und **Neu starten**.
     - **Mit der Kommandozeile** im Ordner mit der Compose-Datei: `docker compose restart` (startet Ablago und die Datenbank neu). Nur Ablago: `docker compose restart app` bzw. bei [dms-komplett](https://help.ablago.app/installieren/aktuell/komplett/) `docker compose restart dms`.

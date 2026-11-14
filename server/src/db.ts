@@ -147,29 +147,68 @@ export const DB_PRUEFUNG_MS = 5000;
  * wartet, kommt keine weitere dazu.
  */
 export class Datenbankpruefung {
-  private ergebnis: { ok: boolean; t: number } | null = null;
-  private laeuft: Promise<boolean> | null = null;
+  private ergebnis: { zustand: DatenbankZustand; t: number } | null = null;
+  private laeuft: Promise<DatenbankZustand> | null = null;
   private haengt: Promise<unknown> | null = null;
+  /** Seit wann der Zustand nicht „ok“ ist (#1199) – Zeitpunkt der ersten fehlgeschlagenen Prüfung in Folge. */
+  private seit: number | null = null;
 
   constructor(private sql: postgres.Sql, private o: { gueltigMs?: number; grenzeMs?: number; jetzt?: () => number } = {}) {}
 
-  pruefe(): Promise<boolean> {
-    const jetzt = (this.o.jetzt ?? Date.now)();
-    if (this.ergebnis && jetzt - this.ergebnis.t < (this.o.gueltigMs ?? DB_PRUEFUNG_GUELTIG_MS)) return Promise.resolve(this.ergebnis.ok);
-    this.laeuft ??= this.jetzt().then((ok) => { this.ergebnis = { ok, t: (this.o.jetzt ?? Date.now)() }; return ok; }).finally(() => { this.laeuft = null; });
+  private uhr() { return (this.o.jetzt ?? Date.now)(); }
+
+  /** Antwortet die Datenbank? */
+  async pruefe(): Promise<boolean> {
+    return (await this.zustand()) === 'ok';
+  }
+
+  /**
+   * Befund für `/api/gesundheit` (#1199): Zustand und seit wann – ohne Fehlertext, Adresse oder Namen (die Antwort
+   * sieht jeder, der die Adresse kennt).
+   */
+  async befund(): Promise<DatenbankBefund> {
+    const zustand = await this.zustand();
+    if (zustand === 'ok' || this.seit === null) return { datenbank: zustand, seit: null, dauerS: null };
+    return { datenbank: zustand, seit: new Date(this.seit).toISOString(), dauerS: Math.max(0, Math.round((this.uhr() - this.seit) / 1000)) };
+  }
+
+  private zustand(): Promise<DatenbankZustand> {
+    if (this.ergebnis && this.uhr() - this.ergebnis.t < (this.o.gueltigMs ?? DB_PRUEFUNG_GUELTIG_MS)) return Promise.resolve(this.ergebnis.zustand);
+    this.laeuft ??= this.jetzt().then((zustand) => {
+      const t = this.uhr();
+      this.ergebnis = { zustand, t };
+      if (zustand === 'ok') this.seit = null; else this.seit ??= t;
+      return zustand;
+    }).finally(() => { this.laeuft = null; });
     return this.laeuft;
   }
 
-  private async jetzt(): Promise<boolean> {
+  private async jetzt(): Promise<DatenbankZustand> {
     // Die vorige Abfrage wartet noch (Pool voll): keine zweite in die Schlange stellen.
-    if (this.haengt) return false;
-    const q = this.sql`SELECT 1`.then(() => true, () => false);
+    if (this.haengt) return 'antwortet-nicht';
+    const q = this.sql`SELECT 1`.then((): DatenbankZustand => 'ok', (e: unknown) => abgewiesenOderHaengt(e));
     this.haengt = q;
     void q.finally(() => { if (this.haengt === q) this.haengt = null; });
     let uhr: NodeJS.Timeout | undefined;
-    const grenze = new Promise<boolean>((ok) => { uhr = setTimeout(() => ok(false), this.o.grenzeMs ?? DB_PRUEFUNG_MS); });
+    const grenze = new Promise<DatenbankZustand>((ok) => { uhr = setTimeout(() => ok('antwortet-nicht'), this.o.grenzeMs ?? DB_PRUEFUNG_MS); });
     try { return await Promise.race([q, grenze]); } finally { clearTimeout(uhr); }
   }
+}
+
+/**
+ * Zustand der Datenbank für die Gesundheitsprüfung (#1199):
+ * - `ok`: `SELECT 1` kam rechtzeitig zurück.
+ * - `antwortet-nicht`: keine freie Verbindung bzw. keine Antwort in der Zeitgrenze – Ablago hängt (ein Neustart des
+ *   Containers hilft meist).
+ * - `abgewiesen`: Die Verbindung wird abgelehnt (Datenbank aus, nicht erreichbar, nimmt keine Verbindungen an).
+ */
+export type DatenbankZustand = 'ok' | 'antwortet-nicht' | 'abgewiesen';
+export interface DatenbankBefund { datenbank: DatenbankZustand; seit: string | null; dauerS: number | null }
+
+/** Fehler von `SELECT 1`: Warten auf eine Verbindung zählt als „antwortet nicht“, alles andere als „abgewiesen“. */
+export function abgewiesenOderHaengt(e: unknown): DatenbankZustand {
+  const code = (e as { code?: unknown } | null)?.code;
+  return code === 'QUEUE_TIMEOUT' || code === 'CONNECT_TIMEOUT' ? 'antwortet-nicht' : 'abgewiesen';
 }
 
 /**

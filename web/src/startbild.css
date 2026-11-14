@@ -8,7 +8,13 @@
 .startbild-text { margin: 0; max-width: 32em; }
 .startbild-titel { margin: 0; font-weight: 600; font-size: 17px; }
 .startbild-hinweis { margin: 0; max-width: 32em; color: var(--warn); }
-.startbild .knopf { margin-top: 8px; }
+.startbild .knopf { margin-top: 8px; min-height: 44px; } /* am Handy gemessen (#1199): Tippfläche ≥ 44 px */
+/* Hilfe zur Selbsthilfe (#1199): Schritte linksbündig (lesbar), Uhrzeit und Version leise darunter. */
+.startbild-zwischentitel { font-weight: 600; margin-top: 6px; }
+.startbild-schritte { box-sizing: border-box; width: 100%; max-width: 32em; margin: 0; padding-left: 1.4em; text-align: left; }
+.startbild-schritte li + li { margin-top: 4px; }
+.startbild-link a { display: inline-block; padding: 11px 4px; } /* eigene Zeile: Tippfläche ≥ 44 px am Handy */
+.startbild-stand { margin: 6px 0 0; color: var(--leise); font-size: 13px; }
 /* Nach einigen Sekunden: „antwortet noch nicht“ – nur CSS, ohne Skript (STARTBILD_WARTET_S). */
 .startbild-spaeter { color: var(--leise); opacity: 0; animation: startbild-zeigen .4s ease 4s forwards; }
 @keyframes startbild-zeigen { to { opacity: 1; } }

@@ -20,15 +20,28 @@ Ablago was running, but now it isn't working – without you having changed anyt
 **How you can tell:**
 
 - The page stays **black or empty**, or it shows "Connecting to Ablago …" for a long time.
-- Instead of the sign-in page it says **"Ablago isn't responding right now."**
+- Instead of the sign-in page it says **"Ablago isn't responding right now."** – below it what is going on, what you can do and when it last checked.
 - A red bar at the top says **"Ablago is busy – the database isn't responding."**
 
 Ablago itself is then usually still running but can't reach its database. Your documents are not affected.
 
+**What the message says** – the first sentence under "Ablago isn't responding right now." tells you where the problem is:
+
+| The message says … | It means | What usually helps |
+|---|---|---|
+| "Ablago is running but hasn't had an answer from its database for …" | Ablago is stuck: no database connection is free, or the database doesn't answer in time. | Restart the **Ablago container** (step 2). |
+| "Ablago is running but hasn't been able to reach its database for … – it is probably switched off." | The database refuses the connection: its container isn't running or can't be reached. | Start the **database container** or the whole project. Restarting only Ablago doesn't help here. |
+| "Ablago doesn't answer at all." | Ablago itself doesn't answer – it is restarting right now, or the container isn't running. | Wait a moment; otherwise check in the container interface that the Ablago container is running. |
+
+At the bottom the message shows the **time** of the last check and – if you have signed in with this browser before – the **version** of Ablago. Both help when you tell someone or report a bug.
+
+!!! info "Why is there no “Restart Ablago” button and no log?"
+    Anyone who knows the address can see the message – and without the database Ablago can't check who you are. A restart button would therefore be a tool for shutting Ablago down from outside, and the log contains names, addresses and file names. So the page only shows what is going on and what you can do; restarting and reading the log happen through the container (steps 2 and 3).
+
 **What you can do – in this order:**
 
-1. **Reload the page.** Wait a minute and reload the page (on a phone: pull the page down). Ablago also keeps trying on its own and loads the page as soon as it responds again. If it then says "Already reloaded and Ablago still isn't responding", go to step 2.
-2. **Restart the container.** This ends all running requests and rebuilds the connections to the database. Nothing is lost.
+1. **Reload the page.** Wait a minute and reload the page (on a phone: pull the page down). Ablago also keeps trying on its own and loads the page as soon as it responds again. If it then says "Reloading alone didn't help" (or in the bar "Already reloaded and Ablago still isn't responding"), go to step 2.
+2. **Restart the container.** This ends all running requests and rebuilds the connections to the database. Nothing is lost. If the message says the database is "probably switched off", restart the whole project or the database container.
     - **Synology (Container Manager):** *Container Manager → Project →* your Ablago project *→ Action → Restart*. For a single container: *Container →* select the Ablago container *→ Action → Restart*.
     - **UGREEN, QNAP, Unraid:** select the Ablago container in the Docker interface and choose **Restart**.
     - **With the command line** in the folder with the Compose file: `docker compose restart` (restarts Ablago and the database). Only Ablago: `docker compose restart app`, or with [dms-komplett](https://help.ablago.app/installieren/aktuell/en/komplett/) `docker compose restart dms`.

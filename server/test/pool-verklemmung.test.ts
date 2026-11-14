@@ -9,12 +9,12 @@ import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { after, before, describe, it } from 'node:test';
-import { Datenbankpruefung, hoechstens, istVerbindungWarten, poolGroesse, verbinde, Verbindungswarten } from '../src/db';
+import { abgewiesenOderHaengt, Datenbankpruefung, hoechstens, istVerbindungWarten, poolGroesse, verbinde, Verbindungswarten, type DatenbankBefund } from '../src/db';
 import { lebenszeichen, pgKurzzustand } from '../src/kurzzustand';
 import { protokoll } from '../src/protokoll';
 import { eigeneSperrquelle, Sperrverbindung } from '../src/sperrverbindung';
 import { versatzMs, wiederkehrend, type Uhren } from '../src/streuung';
-import { schonNeuGeladen, NEU_GELADEN_MS, startbildAusTexten, startbildSprache, STARTBILD_PLATZHALTER } from '../../shared/src/startbild';
+import { schonNeuGeladen, NEU_GELADEN_MS, startbildAusTexten, startbildDauer, startbildLage, startbildSprache, STARTBILD_PLATZHALTER } from '../../shared/src/startbild';
 import { eigeneDatenbank, type EigeneDatenbank } from './hilfe-db';
 
 const url = process.env.TEST_DATABASE_URL;
@@ -147,11 +147,36 @@ describe('Verklemmung im Pool (#1198)', { skip: !url && 'ohne TEST_DATABASE_URL'
       for (let i = 0; i < 5; i++) { jetzt += 1500; assert.equal(await p.pruefe(), false); }
       const stats = (sql as unknown as { stats: { waiting: number } }).stats;
       assert.ok(stats.waiting <= 1, `höchstens eine Prüfung wartet (${stats.waiting})`);
+      // Befund (#1199): „antwortet nicht“ seit der ersten fehlgeschlagenen Prüfung, ohne Fehlertext.
+      const b = await p.befund();
+      assert.equal(b.datenbank, 'antwortet-nicht');
+      assert.equal(b.seit, new Date(1500).toISOString());
+      assert.equal(b.dauerS, Math.round((jetzt - 1500) / 1000));
       v1.release(); v2.release();
       await warte(50);
       jetzt += 1500;
       assert.equal(await p.pruefe(), true, 'wieder frei');
+      assert.deepEqual(await p.befund(), { datenbank: 'ok', seit: null, dauerS: null });
     } finally { await sql.end(); }
+  });
+
+  it('Gesundheitsprüfung: Datenbank aus (Verbindung abgelehnt) → „abgewiesen“, nicht „antwortet nicht“ (#1199)', async () => {
+    // Port 1: Niemand hört zu, der Verbindungsaufbau wird sofort abgelehnt (wie ein gestoppter Datenbank-Container).
+    const sql = verbinde('postgres://postgres:dms@127.0.0.1:1/aus', 1);
+    let jetzt = 10_000;
+    const p = new Datenbankpruefung(sql, { grenzeMs: 3000, gueltigMs: 1000, jetzt: () => jetzt });
+    try {
+      const b = await p.befund();
+      assert.equal(b.datenbank, 'abgewiesen');
+      assert.equal(b.seit, new Date(10_000).toISOString());
+      assert.equal(JSON.stringify(b).includes('127.0.0.1'), false, 'keine Adresse im Befund');
+      jetzt += 61_000;
+      assert.equal((await p.befund()).dauerS, 61);
+    } finally { await sql.end({ timeout: 0 }); }
+    assert.equal(abgewiesenOderHaengt(Object.assign(new Error('x'), { code: 'ECONNREFUSED' })), 'abgewiesen');
+    assert.equal(abgewiesenOderHaengt(Object.assign(new Error('x'), { code: '57P03' })), 'abgewiesen');
+    assert.equal(abgewiesenOderHaengt(Object.assign(new Error('x'), { code: 'QUEUE_TIMEOUT' })), 'antwortet-nicht');
+    assert.equal(abgewiesenOderHaengt(Object.assign(new Error('x'), { code: 'CONNECT_TIMEOUT' })), 'antwortet-nicht');
   });
 
   it('Warten auf eine Verbindung: Grenze (QUEUE_TIMEOUT) und Warnung mit Belegung und Sperren', async () => {
@@ -199,6 +224,7 @@ describe('Ohne Datenbank (#1198)', () => {
     const dienst = new Dienst(speicherRepo(), speicherDateien());
     const konten = new Konten(speicherKontoRepo(), null, 'http://nas', dienst.systemtypen.benutzerspiegel());
     let dbOk = true;
+    let befund: DatenbankBefund = { datenbank: 'antwortet-nicht', seit: '2026-11-14T10:00:00.000Z', dauerS: 180 };
     let sitzungen = 0;
     let haengt = false;
     const echt = konten.anmeldungZu.bind(konten);
@@ -207,7 +233,7 @@ describe('Ohne Datenbank (#1198)', () => {
       if (haengt) return new Promise<never>(() => {});
       return echt(...a);
     };
-    const app = await baueApp(dienst, konten, { datenbank: { pruefe: async () => dbOk } });
+    const app = await baueApp(dienst, konten, { datenbank: { befund: async () => (dbOk ? { datenbank: 'ok', seit: null, dauerS: null } : befund) } });
     const cookie = { cookie: 'dms_sitzung=irgendwas' };
     try {
       let r = await app.inject({ method: 'GET', url: '/api/gesundheit', headers: cookie });
@@ -218,6 +244,15 @@ describe('Ohne Datenbank (#1198)', () => {
       assert.equal(r.statusCode, 503);
       assert.equal(r.json().zustand, 'datenbank');
       assert.equal(r.json().ok, false);
+      // #1199: Zustand und seit wann, für „Ablago antwortet gerade nicht“ – sonst nichts (keine Version, kein Fehlertext).
+      assert.equal(r.json().datenbank, 'antwortet-nicht');
+      assert.equal(r.json().seit, '2026-11-14T10:00:00.000Z');
+      assert.equal(r.json().dauerS, 180);
+      assert.deepEqual(Object.keys(r.json()).sort(), ['datenbank', 'dauerS', 'ok', 'seit', 'stand', 'zustand']);
+      befund = { datenbank: 'abgewiesen', seit: '2026-11-14T10:00:00.000Z', dauerS: 5 };
+      r = await app.inject({ method: 'GET', url: '/api/gesundheit', headers: cookie });
+      assert.equal(r.statusCode, 503);
+      assert.equal(r.json().datenbank, 'abgewiesen');
       assert.equal(sitzungen, 0, 'die Gesundheitsprüfung schaut nicht nach der Sitzung');
       // /api/sprache: Hängt die Anmeldung, antwortet sie nach kurzer Zeit ohne Person.
       haengt = true;
@@ -287,5 +322,25 @@ describe('Ohne Datenbank (#1198)', () => {
     assert.equal(schonNeuGeladen(null, 1000), false);
     assert.equal(schonNeuGeladen(1000, 1000 + 5000), true);
     assert.equal(schonNeuGeladen(1000, 1000 + NEU_GELADEN_MS), false);
+  });
+
+  it('Hilfe zur Selbsthilfe (#1199): Lage aus der Gesundheitsprüfung, „seit …“ in groben Stufen, Texte de und en', () => {
+    assert.equal(startbildLage(null), 'unbekannt');
+    assert.equal(startbildLage({ zustand: 'startet' }), 'unbekannt');
+    assert.equal(startbildLage({ zustand: 'datenbank', datenbank: 'antwortet-nicht' }), 'antwortet-nicht');
+    assert.equal(startbildLage({ zustand: 'datenbank' }), 'antwortet-nicht');
+    assert.equal(startbildLage({ zustand: 'datenbank', datenbank: 'abgewiesen' }), 'abgewiesen');
+    assert.deepEqual(startbildDauer(null), { art: 'kurz', anzahl: 0 });
+    assert.deepEqual(startbildDauer(59), { art: 'kurz', anzahl: 0 });
+    assert.deepEqual(startbildDauer(180), { art: 'minuten', anzahl: 3 });
+    assert.deepEqual(startbildDauer(7300), { art: 'stunden', anzahl: 2 });
+    for (const spr of ['de', 'en']) {
+      const texte = JSON.parse(readFileSync(new URL(`../../shared/src/sprachen/${spr}/oberflaeche.json`, import.meta.url), 'utf8')) as Record<string, string>;
+      for (const k of ['lage.antwortet-nicht', 'lage.abgewiesen', 'lage.unbekannt', 'schritt.neustart', 'schritt.datenbank', 'schritt.verwaltung', 'handbuch', 'stand', 'stand-version', 'dauer.kurz', 'dauer.minuten_one', 'dauer.minuten_other', 'dauer.stunden_one', 'dauer.stunden_other']) {
+        assert.ok(texte[`startbild.${k}`], `${spr}: startbild.${k}`);
+      }
+      // Keine Aktion und kein Protokoll ohne Anmeldung (Entscheidung Sicherheit): Die Meldung bietet keinen Neustart an.
+      assert.doesNotMatch(Object.entries(texte).filter(([k]) => k.startsWith('startbild.')).map(([, v]) => v).join(' '), /docker logs/);
+    }
   });
 });
