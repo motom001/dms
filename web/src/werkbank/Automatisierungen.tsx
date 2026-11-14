@@ -13,7 +13,6 @@ import { einzigesZiel, jedeMappe, zieleVon, type Mappentyp } from '../../../shar
 import { bedingungsfelder, beschreibeBedingung, OPERATOREN_JE_ART, type Bedingung, type Bedingungsfeld } from '../../../shared/src/sichten';
 import { api, type Bezuege } from '../api';
 import { MappenWahl } from '../ablage/MappeFormular';
-import { Eintragsliste, type Listeneintrag } from '../ablage/Historie';
 import { useDaten } from '../daten';
 import { Listenkopf } from '../Listenkopf';
 import { geheZu, Link, loeseWache } from '../ort';
@@ -24,7 +23,7 @@ import { FeldBedingung } from './Sichten';
 import { gebietsschema } from '../../../shared/src/sprache';
 import { AufrufAdresse, AufrufParameterZeile, AufrufWenn } from './AutomatisierungAufruf';
 import { EmailKarte, UrlKarte, Zustellungen } from './AutomatisierungAussen';
-import { GeloeschteEintraege, Bereich, Fassungen, Feld, FeldGruppe, fehlerBereiche, HakenFeld, Knopf, KnopfLink, PaketChip, Schalter, useBereiche, type BereichListe, type Klappe } from '../bausteine';
+import { Eintragsliste, GeloeschteEintraege, Bereich, Fassungen, Feld, FeldGruppe, fehlerBereiche, HakenFeld, Knopf, KnopfLink, PaketChip, Schalter, useBereiche, type BereichListe, type Klappe, type Listeneintrag } from '../bausteine';
 import type { InstalliertesPaket } from '../../../shared/src/pakete';
 import { paketHerkunft } from './listensuche';
 

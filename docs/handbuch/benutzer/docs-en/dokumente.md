@@ -27,16 +27,18 @@ A file may be up to 100 MB in size.
 
 Next to every PDF and image (JPEG, PNG) there is a **small preview of the first page**. That way you recognise at a glance, even with meaningless names like "Scan_2026-10-12.pdf" or "IMG_4711.jpg", which is the invoice and which the photo of the meter. The image is created in the background shortly after uploading; until then – and for other files such as Word or Excel – the file extension is shown there. If a file has an archive version (PDF/A, e.g. an **email**), the image shows its first page once it is ready; on hovering it then says "Preview from a package's converted version". Only those who may see the document see the preview. The previews also appear next to the documents when **assigning a post**.
 
-- **PDFs and images:** a click anywhere on the row shows the document **directly below it**, a second click closes it. Only one document is ever open. By keyboard: Tab to the name, then Enter. The icon **↗** opens it in a new browser tab.
+- **PDFs and images:** a click anywhere on the row – or on **View** – shows the document **directly below it**, a second click (or **Close**) closes it. Only one document is ever open. By keyboard: Tab to the name, then Enter. **In new tab** above the viewer opens it in a new browser tab.
+- **Below the name**, one line tells you what you need to know about the document: type, pages, size, date, origin, who uploaded it, version and archive number. Below the viewer is **About this document** with text, archive version, archive number, receipt and versions.
+- **⋯** next to every document holds everything else, in groups: *View* (in a new tab, show text), *Download*, *Edit* (pages, shrink, redact, new version) and *Organise* (attach to, archive number, versions). At the very bottom is **Remove**.
 - **All other files** (e.g. Word, Excel) can only be downloaded and then opened in their program.
 
 **When viewing, Ablago doesn't run anything from the PDF and doesn't load anything.** A PDF can contain scripts, automatic actions, forms that send data and attached files – the viewer shows a cleaned copy without any of that. Links in the PDF only open when you click them. If a PDF can't be cleaned (e.g. encrypted or damaged), a short notice appears instead of the viewer; you can still download it.
 
-**Download** saves every file unchanged on your device. Next to every document it says how large it is and who uploaded it when.
+**Download** (in the **⋯** menu) saves every file unchanged on your device. If the browser can't display an original (e.g. an email without an archive version), viewing shows a short sentence saying so and **Download original** next to it.
 
 ### Without the export permission { #ohne-exportrecht }
 
-In Ablago the rule is: **reading means viewing, exporting means taking along.** Downloading, sharing, copies with a stamp, sending by email, exporting and the [network drive](laufwerk.md) therefore need the permission **Export (E)**, which an administrator grants on the views. If you lack it for a folder, you can still view its documents here; instead of **Download** there is a locked button (dashed with a padlock; the **ⓘ** next to it says why), and sharing and **With stamp …** are missing. Word or Excel files that the browser can't display then can't be opened.
+In Ablago the rule is: **reading means viewing, exporting means taking along.** Downloading, sharing, copies with a stamp, sending by email, exporting and the [network drive](laufwerk.md) therefore need the permission **Export (E)**, which an administrator grants on the views. If you lack it for a folder, you can still view its documents here; **Download** in the **⋯** menu is locked, with the reason below it, and sharing and **With stamp …** are missing. Word or Excel files that the browser can't display then can't be opened.
 
 Saving while viewing can never be prevented entirely – a browser can save a displayed page, and a screenshot always works. The permission ensures that documents can't be taken along with one click.
 
@@ -46,11 +48,11 @@ Saving while viewing can never be prevented entirely – a browser can save a di
 
 If a package such as **PDF/A** is installed (an administrator does this), every document additionally gets an **archive version**: a searchable PDF/A that can still be opened and searched in many years and without Ablago – handy when you pass documents on to a tax adviser or an authority. The original stays unchanged.
 
-- **Display:** if there is an archive version, Ablago shows it. Above the viewer it says **"View: archive version (PDF/A)"**, next to it **Show original** (and back **Show archive version**). Without an archive version you see the reading version (for TIFF and co.) or the original; while the package is still working, it says "Archive version being created".
-- **Download:** with an archive version you have the choice – in front is what you are currently seeing (**Download**), next to it **Download original** or **Download as PDF/A**. For **e-invoices** (ZUGFeRD, Factur-X) the original is always in front – only there is the invoice included as XML.
-- **Emails** (`.eml`, Outlook `.msg`): if the package can do it, filed emails get an archive version too – you then read them in Ablago like a letter, with sender, date and subject at the top. **Show original** downloads the email file; you can open it with your email program.
+- **Display:** if there is an archive version, Ablago shows it. Above the viewer, **PDF/A · Original** switches between the archive version and the original. Without an archive version you see the reading version (for TIFF and co.) or the original; while the package is still working, it says "Archive version being created".
+- **Download:** with an archive version, the **⋯** menu lists both under *Download*: **PDF/A** and **Original**. For **e-invoices** (ZUGFeRD, Factur-X) take the original – only there is the invoice included as XML.
+- **Emails** (`.eml`, Outlook `.msg`): if the package can do it, filed emails get an archive version too – you then read them in Ablago like a letter, with sender, date and subject at the top. If you switch to **Original**, Ablago says it can't display the email file; **Download original** downloads it, and you can open it with your email program.
 - **Passing on:** when downloading with a stamp, sending one or several folders by email and exporting as ZIP or PDF, you choose **Archive version (PDF/A) where available** (default) or **Original**. Documents without an archive version and e-invoices always go out as the original – without a question; the dialog says so.
-- **On the document** the status is shown: *Archive version: PDF/A-2b* (done), *being created*, *none* (with a reason, e.g. for encrypted PDFs) or *error*. Plus notes:
+- **Under "About this document"** the status is shown: *Archive version: PDF/A-2b* (done), *being created*, *none* (with a reason, e.g. for encrypted PDFs) or *error*; an error also shows on the row. Plus notes:
   - "The original is digitally signed – open the original to check the signature." The archive version doesn't carry the signature.
   - "Contained references to external content that were not taken over." The archive version only contains what is in the file – nothing is loaded from the internet (that would tell the sender when you open the document).
   - "The original is already PDF/A and counts as the archive version itself."
@@ -78,7 +80,7 @@ On the phone, Ablago doesn't show documents **embedded** in the folder – that 
 
 - **Open** shows the document with one tap **in full screen** in your browser's viewer. There you zoom with two fingers; **Back** in the browser takes you back to the folder with one tap. A tap on the (larger) preview or the name also opens it.
 - **Share** (where the browser can, e.g. Safari on the iPhone) sends the file via "Send to …" – for instance by email or message when someone at the counter asks you for it. On the first tap Ablago loads the file; if that takes too long, tap **Share now** afterwards.
-- **⋯** opens all further actions as a sheet from the bottom: download, with stamp …, pages, redact, archive number, replace and – only here – **delete**.
+- **⋯** opens all further actions as a sheet from the bottom: download, with stamp …, pages, redact, archive number, upload new version and finally **Remove** – as on the computer.
 
 All buttons are at least 44 points large on the phone. If the document needs to be visible for a long time, briefly set the phone's auto-lock to longer – in the browser's viewer Ablago can't keep the screen awake.
 
@@ -92,7 +94,7 @@ Every row has a box; **Select all** above the list selects all (and deselects ag
 
 - **Download** – downloads the documents one after another under their names. The first time, the browser may ask whether the page may download several files – allow it.
 - **Merge** – only for two or more PDFs: appends them to a new PDF (see [Edit PDF](#pdf-bearbeiten)).
-- **Delete** – marks them for deletion, as with a single document (see below).
+- **Remove** – marks them for deletion, as with a single document (see below).
 
 The selection only applies to the tab you are currently in.
 
@@ -114,14 +116,14 @@ Every step is recorded in the folder's [history](mappen.md).
 - They are **documents like any other**: with [versions](versionen.md), full text and text recognition, archive version (PDF/A), stamps and the folder's retention. Whoever may see the folder also sees its enclosures; the same rights apply.
 - **Recognition, "Where does this belong?" and AI** only read the main document – terms and conditions, price lists and reports do not get in the way of reading out values.
 - **Search** also finds text in enclosures; the hit names it with "in enclosure 2".
-- **Download** and **passing on** ask **"with enclosures?"** – *yes* is preselected. With enclosures, downloading gives a ZIP file "Garage invoice with enclosures.zip"; in an email every enclosure follows its document. Without the [export right](#ohne-exportrecht) neither works – as with a single document. The folder history records the download for the document and for each enclosure separately (with the route and, where applicable, the name of the API key); when sending, the email with all attachments. If the [original email](post.md#original-e-mail) hangs on it, it is listed below with its label (**Include original email**, preselected) and can be unticked with one click: it contains all attachments of the email.
+- **⋯ → With attachments (ZIP)** downloads a ZIP file "Garage invoice with enclosures.zip" with the document and all its enclosures (including the original email, if one hangs on it); **Download** on its own takes only the document. **Passing on** asks **"with enclosures?"** – *yes* is preselected; in an email every enclosure then follows its document. Without the [export right](#ohne-exportrecht) neither works – as with a single document. The folder history records the download for the document and for each enclosure separately (with the route and, where applicable, the name of the API key); when sending, the email with all attachments. If the [original email](post.md#original-e-mail) hangs on it, it is listed below with its label when passing on (**Include original email**, preselected) and can be unticked with one click: it contains all attachments of the email.
 - In the [drive](laufwerk.md) enclosures come right after their document with the suffix "– Enclosure 1".
 
 ## Edit PDF { #pdf-bearbeiten }
 
 Scanned crookedly, one blank back too many, three letters in one scan? You fix that directly in Ablago – without another program.
 
-**Pages** next to a PDF opens the page view below it with a small image of every page. For each page there is:
+**⋯ → Pages …** on a PDF opens the page view below it with a small image of every page. For each page there is:
 
 - **↺ / ↻** – rotate 90 degrees left or right
 - **Delete** – the page is dropped (**Keep** brings it back)
@@ -148,7 +150,7 @@ Only PDFs can be edited, not images or Word files, and only with the permission 
 
 ## Shrink PDF { #pdf-verkleinern }
 
-A scan at 600 dpi or a photo PDF from the phone quickly reaches 20 MB – too large for many email providers (often 10 to 25 MB) and unnecessarily much for storage and backup. **Shrink** next to a PDF (from about 0.5 MB) recalculates the images in it to a sensible resolution and compresses them anew.
+A scan at 600 dpi or a photo PDF from the phone quickly reaches 20 MB – too large for many email providers (often 10 to 25 MB) and unnecessarily much for storage and backup. **⋯ → Shrink …** on a PDF (from about 0.5 MB) recalculates the images in it to a sensible resolution and compresses them anew.
 
 ![Shrink PDF: three levels with estimated size](bilder/pdf-verkleinern.png)
 
@@ -175,7 +177,7 @@ Good to know:
 
 ## Redact {#schwaerzen}
 
-Before you give a bank statement to the child benefit office, a payslip to the landlord or a receipt to a customer, you want to make some things unrecognisable: account number, salary, health details, other people's names. **Redact** next to a PDF or image (JPEG, PNG) creates a **redacted copy** in which these passages are really missing – not just covered in black.
+Before you give a bank statement to the child benefit office, a payslip to the landlord or a receipt to a customer, you want to make some things unrecognisable: account number, salary, health details, other people's names. **⋯ → Redact …** on a PDF or image (JPEG, PNG) creates a **redacted copy** in which these passages are really missing – not just covered in black.
 
 ![Redact: search term and IBAN suggestion, preview of the black areas](bilder/schwaerzen.png)
 
@@ -208,13 +210,13 @@ Good to know:
 
 ## Full text { #volltext }
 
-So that the [full-text search](ablage.md#im-text-der-dokumente-suchen) finds a document, Ablago reads its text in the background after uploading: for PDFs the text layer; for scans and photos, the package **Text recognition** recognises it. Next to the document it says how far it has got:
+So that the [full-text search](ablage.md#im-text-der-dokumente-suchen) finds a document, Ablago reads its text in the background after uploading: for PDFs the text layer; for scans and photos, the package **Text recognition** recognises it. How far it has got is shown when viewing, under **About this document** at *Text*; if something goes wrong, it also shows on the row ("Text not readable – …" with **Try again**):
 
 | Display | Meaning |
 | --- | --- |
 | *Full text: waiting* / *running* | The text is being read; it usually takes seconds. |
 | *Full text: waiting for text recognition* | The document has no readable text (e.g. a scan or photo); text recognition – a package – is recognising it. For long scans this takes a few minutes; next to it, it says how far it has got. If it says "no package installed", ask your administrator to install the package "Text recognition (German and English)". |
-| *Full text: done* | The document is searchable. **Show text** shows what was recognised. |
+| *Full text: done* | The document is searchable. **Show** (or **⋯ → Show text**) shows what was recognised. |
 | *Full text: error* | Something went wrong, e.g. a damaged file. **Try again** starts it once more. |
 | *Full text: waiting for package* | Ablago doesn't read the file type itself; a package is on it. Next to it, it says what it is doing: "waiting for conversion (package …)" – it makes a version of the file (e.g. TIFF) from which preview and text are created –, or "waiting for full text (package …)" – it reads the text from the file (e.g. Word, Excel, email). A text from before remains for the search in the meantime. |
 | *Full text: skipped* | There is no full text for this file type or this size. If there is a package that can read it (e.g. "Office and email" for Word), its name is shown next to it – ask your administrator. If the package couldn't read the file, its reason is shown, e.g. "Word can't be read: encrypted with a password". |
@@ -250,8 +252,8 @@ Why you no longer have to rename anything to `_v2` or `_final` in Ablago is expl
 
 If **versioning** is switched on for a document tab (an administrator does this), the old edition is kept when replacing:
 
-- **Replace** next to a document uploads a new file as a **new version** – immediately, without "Save folder". Name and file type may change, e.g. `receipt.jpg` → `receipt.pdf`. The folder then only shows the newest version.
-- The document shows **Version 3**. A click on it shows all versions with date, who saved them, origin, file name and size. Every older version can be viewed (↗) and downloaded.
+- **⋯ → Upload new version …** uploads a new file as a **new version** – immediately, without "Save folder". Name and file type may change, e.g. `receipt.jpg` → `receipt.pdf`. The folder then only shows the newest version.
+- The document shows **Version 3**. **⋯ → Versions** (or **Versions** under "About this document") shows all versions with date, who saved them, origin, file name and size. Every older version can be viewed (in a new tab) and downloaded.
 - **Restore** takes over an older version as the new, highest version – version 1 becomes e.g. version 4. The previous versions remain.
 - The full-text search only finds the current version.
 - If the administrator has set **only keep the last … versions**, Ablago deletes older versions beyond that by itself – they can then no longer be restored.
@@ -266,7 +268,7 @@ If **versioning** is switched on for a document tab (an administrator does this)
 
 If you keep paper originals, the **archive number** connects the paper with the document in Ablago: the sheet gets a sticker with a barcode and number (e.g. `A-000123`), and the document shows the same number. That way you find the paper from the document – and the document from the paper.
 
-- **Enter:** **Archive number** next to the document, type the number or scan it with a hand scanner, **Apply**. It applies immediately, without "Save folder". Afterwards "Archive number A-000123" appears below the name; **change** – also emptying – works there.
+- **Enter:** **⋯ → Archive number …** on the document (or **Assign …** under "About this document"), type the number or scan it with a hand scanner, **Apply**. It applies immediately, without "Save folder". Afterwards "Archive number A-000123" appears below the name; changing it – also emptying – works the same way.
 - **Every number exists only once.** If another document already has it, Ablago says so and enters nothing – then a wrong sticker is probably stuck on.
 - **Find:** type the number into the **search field** of a list and press ++enter++ – or scan the sticker with a hand scanner (it types like a keyboard and presses ++enter++ itself). Ablago opens the folder with the tab and shows the document. If it is a folder you may not see, it continues searching normally.
 - The folder's [history](zusammenarbeit.md#historie) records every change of the archive number.
@@ -278,7 +280,7 @@ An administrator prints the stickers (Workbench → number sequences → *Archiv
 
 ## Removing { #entfernen }
 
-A click on **Delete** next to a document marks it with "will be deleted on saving". Only **Save folder** deletes it; **Keep** or **Discard changes** brings it back. Files not yet saved you take out of the list again with **Don't upload**.
+**⋯ → Remove** on a document marks it with "will be deleted on saving". Only **Save folder** deletes it; **Keep** or **Discard changes** brings it back. Files not yet saved you take out of the list again with **Don't upload**.
 
 A deleted document goes on saving with all its versions into the [Bin](ablage.md#papierkorb) – so a wrong click isn't immediately final. There it is listed under **Documents** with the folder and the tab it came from; **Restore** puts it back exactly there. If it has older versions, Ablago asks first and names their number. If you delete a whole folder, its documents go into the bin with it.
 

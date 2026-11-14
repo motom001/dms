@@ -4,6 +4,7 @@ import {
   type Stempel, type StempelWerte,
 } from '../../../shared/src/stempel';
 import { t } from '../sprache';
+import { Feld, Knopf } from '../bausteine';
 
 /**
  * Live-Vorschau des Stempels (#799) auf fest eingebauten, erfundenen Beispielbelegen: Rechnung mit Text, Tabelle
@@ -46,7 +47,7 @@ export function PlatzhalterKnoepfe({ feld, text, setze }: { feld: () => HTMLText
   return (
     <div className="platzhalterknoepfe" role="group" aria-label={t('werkbank.stempel.platzhalter')}>
       <span className="leise klein">{t('werkbank.stempel.platzhalter')}:</span>
-      {PLATZHALTER.map((p) => <button key={p} type="button" className="knopf klein" title={platzhalterText(p)} onClick={() => einfuegen(platzhalterText(p))}>{t.frei(`werkbank.stempel.platzhalter.${p}`)}</button>)}
+      {PLATZHALTER.map((p) => <Knopf key={p} groesse="klein" title={platzhalterText(p)} onClick={() => einfuegen(platzhalterText(p))}>{t.frei(`werkbank.stempel.platzhalter.${p}`)}</Knopf>)}
     </div>
   );
 }
@@ -222,11 +223,12 @@ export function StempelVorschau({ stempel, werte, setze, beispiele = BEISPIELE }
       {setze && <p className="leise klein">{t('werkbank.stempel.vorschau.bedienung')}{fest ? ` ${t('werkbank.stempel.vorschau.fest')}` : ''}</p>}
       {setze && bearbeiten && (
         <div className="stempelvorschau-text">
-          <label className="eigenschaft"><span>{t('werkbank.stempel.vorschau.text')}</span>
+          <Feld beschriftung={t('werkbank.stempel.vorschau.text')}>
             <textarea ref={feld} rows={3} value={stempel.text} maxLength={STEMPEL_TEXT_MAX} onChange={(x) => setze({ text: x.target.value })}
-              onKeyDown={(x) => { if (x.key === 'Escape') { x.preventDefault(); setBearbeiten(false); } }} /></label>
+              onKeyDown={(x) => { if (x.key === 'Escape') { x.preventDefault(); setBearbeiten(false); } }} />
+          </Feld>
           <PlatzhalterKnoepfe feld={() => feld.current} text={stempel.text} setze={(text) => setze({ text })} />
-          <div><button type="button" className="knopf klein" onClick={() => setBearbeiten(false)}>{t('werkbank.stempel.vorschau.fertig')}</button></div>
+          <div><Knopf groesse="klein" onClick={() => setBearbeiten(false)}>{t('werkbank.stempel.vorschau.fertig')}</Knopf></div>
         </div>
       )}
     </div>

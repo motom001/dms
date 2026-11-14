@@ -593,7 +593,7 @@ Everyone only sees folders they may read. The package supplies the vector of the
 | **Model** | what the package computes with (reported by the package itself) |
 | **State** | for how many documents with full text there is already a vector |
 | **Cache** | how much memory the vectors occupy in Ablago |
-| **Show similar results in the search** | setting, default: on. Off: the search no longer asks the package; "Similar documents" on the folder remain. |
+| **Similar results in the search** | switch, default: on. Off: the search no longer asks the package; "Similar documents" on the folder remain. |
 | **Recalculate** | deletes all vectors; the package recalculates them in the background |
 
 **Existing stock and change of model:** after installation the package first only computes new documents. Ablago catches up the existing stock at a throttled pace: when the package has nothing open any more, it gets up to 50 documents without a vector every 30 seconds (event [Full text ready](#ereignis-volltext-fertig)). If the package reports **another model** after an update, the old vectors are invalid: Ablago deletes them and has them recalculated in the same way. Until then, similar documents are missing for the documents still open.

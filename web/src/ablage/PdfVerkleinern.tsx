@@ -3,6 +3,7 @@ import type { Dokument } from '../../../shared/src/model';
 import { ergebnisText, mb, STUFEN, STUFEN_LISTE, type Stufe } from '../../../shared/src/verkleinern';
 import { api, type VerkleinernVorschau } from '../api';
 import { Hilfe } from '../Hilfe';
+import { FeldGruppe, Knopf } from '../bausteine';
 import { rueckfrage } from '../rueckfrage';
 import { t, tn } from '../sprache';
 
@@ -23,7 +24,7 @@ export function PdfVerkleinern({ d, bearbeitbar, mitnehmen = true, schliessen, f
   const [laeuft, setLaeuft] = useState<'speichern' | 'laden'>();
   useEffect(() => { api.verkleinernVorschau(d.id).then(setV, (e: Error) => setFehler(e.message)); }, [d.id, d.sha256]);
 
-  if (fehler && !v) return <div className="hinweis schlecht pdfseiten"><p>{fehler}</p><button type="button" className="textknopf" onClick={schliessen}>{t('ablage.pdfverkleinern.schliessen')}</button></div>;
+  if (fehler && !v) return <div className="hinweis schlecht pdfseiten"><p>{fehler}</p><Knopf art="link" onClick={schliessen}>{t('ablage.pdfverkleinern.schliessen')}</Knopf></div>;
   if (!v) return <p className="leise pdfseiten" role="status">{t('ablage.pdfverkleinern.sehe-mir-die-bilder')}</p>;
   const s = v.stufen[stufe];
 
@@ -54,8 +55,7 @@ export function PdfVerkleinern({ d, bearbeitbar, mitnehmen = true, schliessen, f
         <span className="leise klein">{mb(v.groesse)} · {v.seiten} {t('ablage.pdfverkleinern.seiten', { anzahl: v.seiten })}{v.hoechsteDpi ? t('ablage.pdfverkleinern.bilder-bis-dpi', { hoechsteDpi: v.hoechsteDpi }) : t('ablage.pdfverkleinern.ohne-bilder')}</span>
         <Hilfe ort="dokumente.verkleinern" />
       </div>
-      <fieldset className="stufenwahl">
-        <legend className="sr">{t('ablage.pdfverkleinern.stufe')}</legend>
+      <FeldGruppe beschriftung={t('ablage.pdfverkleinern.stufe')} beschriftungVerbergen className="stufenwahl">
         {STUFEN_LISTE.map((k) => {
           const x = v.stufen[k];
           return (
@@ -69,14 +69,14 @@ export function PdfVerkleinern({ d, bearbeitbar, mitnehmen = true, schliessen, f
             </label>
           );
         })}
-      </fieldset>
+      </FeldGruppe>
       <p className="leise klein">{tn('ablage.pdfverkleinern.die-bilder-werden-heruntergerechnet', { wert: !s.lohnt && t('ablage.pdfverkleinern.bringt-das-verkleinern-weniger') })}</p>
       {fehler && <div className="hinweis schlecht"><p>{fehler}</p></div>}
       <div className="pdfseiten-fuss">
         <span className="leise klein">{s.lohnt ? `${mb(v.groesse)} → ≈ ${mb(s.geschaetzt)}` : t('ablage.pdfverkleinern.lohnt-sich-kaum')}</span>
-        {bearbeitbar && <button type="button" className="knopf primaer klein" disabled={!!laeuft} onClick={() => void verkleinern()}>{laeuft === 'speichern' ? t('ablage.pdfverkleinern.wird-verkleinert') : v.versioniert ? t('ablage.pdfverkleinern.als-neue-version-speichern') : t('ablage.pdfverkleinern.verkleinern-und-ersetzen')}</button>}
-        {mitnehmen && <button type="button" className="knopf klein" disabled={!!laeuft} onClick={() => void herunterladen()} title={t('ablage.pdfverkleinern.nur-eine-verkleinerte-kopie')}>{laeuft === 'laden' ? t('ablage.pdfverkleinern.wird-vorbereitet') : t('ablage.pdfverkleinern.verkleinert-herunterladen')}</button>}
-        <button type="button" className="knopf klein" disabled={!!laeuft} onClick={schliessen}>{t('ablage.pdfverkleinern.abbrechen')}</button>
+        {bearbeitbar && <Knopf art="haupt" groesse="klein" gesperrt={laeuft === 'laden'} laeuft={laeuft === 'speichern'} laeuftText={t('ablage.pdfverkleinern.wird-verkleinert')} onClick={() => void verkleinern()}>{v.versioniert ? t('ablage.pdfverkleinern.als-neue-version-speichern') : t('ablage.pdfverkleinern.verkleinern-und-ersetzen')}</Knopf>}
+        {mitnehmen && <Knopf groesse="klein" gesperrt={laeuft === 'speichern'} laeuft={laeuft === 'laden'} laeuftText={t('ablage.pdfverkleinern.wird-vorbereitet')} onClick={() => void herunterladen()} title={t('ablage.pdfverkleinern.nur-eine-verkleinerte-kopie')}>{t('ablage.pdfverkleinern.verkleinert-herunterladen')}</Knopf>}
+        <Knopf groesse="klein" gesperrt={!!laeuft} onClick={schliessen}>{t('ablage.pdfverkleinern.abbrechen')}</Knopf>
       </div>
     </div>
   );

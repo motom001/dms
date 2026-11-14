@@ -9,14 +9,13 @@ import { datumDe } from '../../../shared/src/fristen';
 import { gebietsschema } from '../../../shared/src/sprache';
 import { api, type Bezuege } from '../api';
 import { BenutzerWahl } from '../ablage/Aufgaben';
-import { Eintragsliste, type Listeneintrag } from '../ablage/Historie';
 import { MappenWahl } from '../ablage/MappeFormular';
 import { useDaten } from '../daten';
 import { Listenkopf } from '../Listenkopf';
 import { geheZu, Link, loeseWache } from '../ort';
 import { t } from '../sprache';
 import { Speicherleiste, useEntwurf } from '../Speicherleiste';
-import { Fassungen, Feld, FeldGruppe, GeloeschteEintraege, HakenFeld, Knopf, KnopfLink, PaketChip, Schalter, Umschalter, ZeitraumEingabe, type Klappe, type ZeitraumRoh } from '../bausteine';
+import { Eintragsliste, Fassungen, Feld, FeldGruppe, GeloeschteEintraege, HakenFeld, Knopf, KnopfLink, PaketChip, Schalter, Umschalter, ZeitraumEingabe, type Klappe, type Listeneintrag, type ZeitraumRoh } from '../bausteine';
 import type { InstalliertesPaket } from '../../../shared/src/pakete';
 import { paketHerkunft } from './listensuche';
 

@@ -9,13 +9,12 @@ import { titelOder } from '../seiten';
 import { Hilfe } from '../Hilfe';
 import { neuePost } from './NeuePost';
 import { istTouch, postFotografieren } from './PostKamera';
-import { Symbol } from '../Symbol';
 import { istVersendet } from '../../../shared/src/model';
 import { rueckfrage } from '../rueckfrage';
 import { t, tn } from '../sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
 import { typName } from '../../../shared/src/beschriftung';
-import { knopfAussehen } from '../bausteine';
+import { Knopf, KnopfLink } from '../bausteine';
 
 /**
  * Post (#192): „+ Post“ in den Sichten mit Post und die Leiste an einer Post-Mappe (Stand, Zuordnen, Erledigt).
@@ -28,8 +27,8 @@ export function PostKnopf() {
   const eingabe = useRef<HTMLInputElement>(null);
   return (
     <>
-      <button type="button" {...knopfAussehen({ art: 'anlegen', groesse: 'klein' })} onClick={() => eingabe.current?.click()} title={t('ablage.post.dateien-auswaehlen-sie-kommen')}>
-        {t('ablage.post.post')}</button>
+      <Knopf art="anlegen" groesse="klein" onClick={() => eingabe.current?.click()} title={t('ablage.post.dateien-auswaehlen-sie-kommen')}>
+        {t('ablage.post.post')}</Knopf>
       {/* Am Handy bietet die Auswahl auch die Kamera an. */}
       <input ref={eingabe} type="file" multiple hidden onChange={(e) => { const f = [...(e.target.files ?? [])]; e.target.value = ''; neuePost(f); }} />
     </>
@@ -93,15 +92,15 @@ export function PostLeiste({ typ, details, neuLaden }: { typ: Mappentyp; details
           })}</span>
         )}
         <span className="luecke" aria-hidden="true" />
-        {darf && !versendet && <Link to={`/ablage/${d.zaehler.neuePost ?? typ.id}/${m.id}/uebernehmen`} className="knopf klein primaer">{t('ablage.post.zuordnen')}</Link>}
-        {darf && stand !== POST_STAND.erledigt && <button type="button" className="knopf klein" onClick={() => void setzeStand(POST_STAND.erledigt)} title={t('ablage.post.nichts-mehr-zu-tun')}>{t('ablage.post.erledigt')}</button>}
-        {darf && stand !== POST_STAND.neu && <button type="button" className="textknopf klein" onClick={() => void setzeStand(POST_STAND.neu)}>{t('ablage.post.wieder-neu')}</button>}
+        {darf && !versendet && <KnopfLink to={`/ablage/${d.zaehler.neuePost ?? typ.id}/${m.id}/uebernehmen`} art="haupt" groesse="klein">{t('ablage.post.zuordnen')}</KnopfLink>}
+        {darf && stand !== POST_STAND.erledigt && <Knopf groesse="klein" symbol="haken" onClick={() => setzeStand(POST_STAND.erledigt)} title={t('ablage.post.nichts-mehr-zu-tun')}>{t('ablage.post.erledigt')}</Knopf>}
+        {darf && stand !== POST_STAND.neu && <Knopf art="link" groesse="klein" onClick={() => setzeStand(POST_STAND.neu)}>{t('ablage.post.wieder-neu')}</Knopf>}
         <Hilfe ort="post.zuordnen" />
         {/* #490: Rückseite vergessen? Seite mit der Kamera anhängen (Handy) bzw. eine zweite Post anhängen. */}
         {darf && !versendet && <div className="pk-postzeile">
-          {istTouch() && <button type="button" className="knopf klein" onClick={() => postFotografieren({ mappeId: m.id, dokumentId: pdf?.id, titel: titelOder(m.titel), fertig: () => { void neuLaden(); void d.neuLaden(); } })}
-            title={pdf ? t('ablage.post.foto-als-weitere-seite', { name: pdf.name }) : t('ablage.post.fotos-als-pdf-an')}>{tn('ablage.post.seite-hinzufuegen', { symbol: <Symbol name="kamera" /> })}</button>}
-          <button type="button" className={`textknopf klein ${zusammen ? 'an' : ''}`} aria-expanded={zusammen} onClick={() => setZusammen(!zusammen)} title={t('ablage.post.die-seiten-einer-anderen')}>{t('ablage.post.mit-anderer-post-zusammenlegen')}</button>
+          {istTouch() && <Knopf groesse="klein" symbol="kamera" onClick={() => postFotografieren({ mappeId: m.id, dokumentId: pdf?.id, titel: titelOder(m.titel), fertig: () => { void neuLaden(); void d.neuLaden(); } })}
+            title={pdf ? t('ablage.post.foto-als-weitere-seite', { name: pdf.name }) : t('ablage.post.fotos-als-pdf-an')}>{t('ablage.post.seite-hinzufuegen')}</Knopf>}
+          <Knopf art="link" groesse="klein" aria-expanded={zusammen} onClick={() => setZusammen(!zusammen)} title={t('ablage.post.die-seiten-einer-anderen')}>{t('ablage.post.mit-anderer-post-zusammenlegen')}</Knopf>
         </div>}
       </div>
       {fehler && <div className="hinweis schlecht" role="alert"><p>{fehler}</p></div>}
@@ -134,14 +133,14 @@ function Zusammenlegen({ typ, post, neuLaden, schliessen }: { typ: Mappentyp; po
   const zeit = (iso: string) => new Date(iso).toLocaleString(gebietsschema(), { dateStyle: 'short', timeStyle: 'short' });
   return (
     <section className="blatt pk-zusammen" aria-label={t('ablage.post.mit-anderer-post-zusammenlegen-2')}>
-      <div className="blattkopf zeile-zwischen"><h2 className="h3">{t('ablage.post.mit-anderer-post-zusammenlegen-2')}</h2><button type="button" className="textknopf" onClick={schliessen}>{t('ablage.post.schliessen')}</button></div>
+      <div className="blattkopf zeile-zwischen"><h2 className="h3">{t('ablage.post.mit-anderer-post-zusammenlegen-2')}</h2><Knopf art="link" onClick={schliessen}>{t('ablage.post.schliessen')}</Knopf></div>
       <p className="leise">{t('ablage.post.welche-post-gehoert-zu')}</p>
       {fehler && <p className="fehlertext" role="alert">{fehler}</p>}
       {liste === null ? !fehler && <p className="leise">{t('ablage.post.lade')}</p> : !liste.length ? <p className="leise">{t('ablage.post.keine-andere-neue-post')}</p> : (
         <ul className="pk-postliste">{liste.map((q) => (
-          <li key={q.id}><button type="button" className="knopf" disabled={laeuft} onClick={() => void legen(q)}>
+          <li key={q.id}><Knopf className="pk-postknopf" gesperrt={laeuft} onClick={() => legen(q)}>
             <span className="pk-postname">{titelOder(q.titel)}</span><span className="leise klein">{zeit(q.erstellt)}</span>
-          </button></li>
+          </Knopf></li>
         ))}</ul>
       )}
     </section>
@@ -204,7 +203,7 @@ function Erkannt({ post, e, darf, neuLaden, neu }: { post: Mappe; e: PostErkennu
         <strong>{t('ablage.post.erkannt')}</strong>
         <span className="leise klein">{t('ablage.post.vorschlaege-aus-dem-text')}</span>
         <span className="luecke" aria-hidden="true" />
-        <button type="button" className="textknopf klein" disabled={laeuft} onClick={() => { setLaeuft(true); void neu().finally(() => setLaeuft(false)); }} title={t('ablage.post.nach-einer-neuen-organisation')}>{t('ablage.post.neu-erkennen')}</button>
+        <Knopf art="link" groesse="klein" laeuft={laeuft} onClick={() => { setLaeuft(true); return neu().finally(() => setLaeuft(false)); }} title={t('ablage.post.nach-einer-neuen-organisation')}>{t('ablage.post.neu-erkennen')}</Knopf>
         <Hilfe ort="post.erkennung" />
       </div>
       {e.auto && <p className="klein er-auto">{e.auto.rueckgaengig ? t('ablage.post.die-automatische-zuordnung-wurde') : t('ablage.post.automatisch-zugeordnet')}
@@ -220,7 +219,7 @@ function Erkannt({ post, e, darf, neuLaden, neu }: { post: Mappe; e: PostErkennu
               <span className="chip">{t('ablage.post.vorschlag')}</span>{' '}
               <Link to={`/ablage/${absender.typId}/${absender.mappeId}`} className="verweis">{titelOder(absender.titel)}</Link>
               <span className="leise klein"> {' '}{t('ablage.post.gefunden', { gruende: absender.gruende.join(', '), wert: !absender.stark || !e.eindeutig ? t('ablage.post.unsicher') : '' })}</span>
-              {darf && auswahlText(post.werte.von) !== absender.titel && <> <button type="button" className="textknopf klein" disabled={laeuft} onClick={() => void eintragen({ von: absender.titel })}>{t('ablage.post.als-absender-eintragen')}</button></>}
+              {darf && auswahlText(post.werte.von) !== absender.titel && <> <Knopf art="link" groesse="klein" gesperrt={laeuft} onClick={() => eintragen({ von: absender.titel })}>{t('ablage.post.als-absender-eintragen')}</Knopf></>}
               {weitere.length > 0 && <span className="leise klein er-weitere"> {' '}{t('ablage.post.auch-moeglich')}{' '}{weitere.map((x, i) => <span key={x.mappeId}>{i > 0 && ', '}<Link to={`/ablage/${x.typId}/${x.mappeId}`} className="verweis">{titelOder(x.titel)}</Link></span>)}</span>}
             </dd>
           </div>}
@@ -236,7 +235,7 @@ function Erkannt({ post, e, darf, neuLaden, neu }: { post: Mappe; e: PostErkennu
           {datum && <div className="er-paar">
             <dt>{t('ablage.post.datum')}</dt>
             <dd>{formatiere({ key: 'd', label: '', typ: 'datum' } as Feld, datum)}<span className="leise klein"> – {e.angaben.datum!.fundstelle}</span>
-              {darf && auswahlText(post.werte.datum) !== datum && <> <button type="button" className="textknopf klein" disabled={laeuft} onClick={() => void eintragen({ datum })}>{t('ablage.post.als-datum-der-post')}</button></>}</dd>
+              {darf && auswahlText(post.werte.datum) !== datum && <> <Knopf art="link" groesse="klein" gesperrt={laeuft} onClick={() => eintragen({ datum })}>{t('ablage.post.als-datum-der-post')}</Knopf></>}</dd>
           </div>}
           {e.angaben.betrag && <div className="er-paar"><dt>{t('ablage.post.betrag')}</dt><dd>{betragText}<span className="leise klein"> – {e.angaben.betrag.fundstelle}</span></dd></div>}
           {e.angaben.nummern.slice(0, 4).map((n) => <div key={`${n.label}:${n.wert}`} className="er-paar"><dt>{n.label}</dt><dd className="mono">{n.wert}</dd></div>)}

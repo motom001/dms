@@ -594,7 +594,7 @@ Jeder sieht dabei nur Mappen, die er lesen darf. Den Vektor des Suchbegriffs lie
 | **Modell** | womit das Paket rechnet (meldet das Paket selbst) |
 | **Stand** | für wie viele Dokumente mit Volltext es schon einen Vektor gibt |
 | **Zwischenspeicher** | wie viel Arbeitsspeicher die Vektoren in Ablago belegen |
-| **Ähnliche Treffer in der Suche zeigen** | Einstellung, Standard: an. Aus: Die Suche fragt das Paket nicht mehr; „Ähnliche Dokumente“ an der Mappe bleiben. |
+| **Ähnliche Treffer in der Suche** | Schalter, Standard: an. Aus: Die Suche fragt das Paket nicht mehr; „Ähnliche Dokumente“ an der Mappe bleiben. |
 | **Neu berechnen** | löscht alle Vektoren; das Paket rechnet sie im Hintergrund neu |
 
 **Bestand und Modellwechsel:** Nach der Installation rechnet das Paket zuerst nur neue Dokumente. Den Bestand holt Ablago gedrosselt nach: Hat das Paket nichts mehr offen, bekommt es alle 30 Sekunden bis zu 50 Dokumente ohne Vektor (Ereignis [Volltext ist da](#ereignis-volltext-fertig)). Meldet das Paket nach einem Update ein **anderes Modell**, sind die alten Vektoren ungültig: Ablago löscht sie und lässt sie auf dieselbe Weise neu berechnen. Bis dahin fehlen ähnliche Dokumente für die noch offenen Dokumente.

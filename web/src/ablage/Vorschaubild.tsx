@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { kernTyp } from '../../../shared/src/dateiumwandlung';
 import { vorschauUrl } from '../api';
 import { t } from '../sprache';
+import { Symbol } from '../Symbol';
 
 /**
  * Kleines Vorschaubild der ersten Seite (#332), 40 × 52 px.
@@ -39,6 +40,7 @@ export function Vorschaubild({ d }: { d: { id: string; name: string; mime: strin
     return () => clearTimeout(timer);
   }, [fehlt, versuche, wartet, versuch]);
   return fehlt
-    ? <span className="vorschaubild ohne" aria-hidden="true">{endung(d.name, d.mime)}</span>
+    // Ohne Bild (#1212): Dateisymbol (Lucide) mit der Endung darunter, statt nur Schrift.
+    ? <span className="vorschaubild ohne" aria-hidden="true"><Symbol name="dokument" /><span>{endung(d.name, d.mime)}</span></span>
     : <img className="vorschaubild" src={vorschauUrl(d, versuch)} alt="" title={kern ? undefined : t('volltext.vorschau.fassung')} width={40} height={52} loading="lazy" decoding="async" onError={() => setFehlt(true)} />;
 }

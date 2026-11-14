@@ -8,9 +8,10 @@ import { AnsichtSymbol, Symbol } from '../Symbol';
 import { ZahlWarte } from './ZahlWarte';
 import { t, tn } from '../sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
+import { FeldGruppe, Knopf, Suchfeld } from '../bausteine';
 
 /**
- * Ansicht wählen am Handy (#498): ein Knopf „<Ansicht> ▾“ statt einer Reiterleiste mit 40 Ansichten.
+ * Ansicht wählen am Handy (#498): ein Knopf „<Ansicht>“ mit Pfeil statt einer Reiterleiste mit 40 Ansichten.
  * Er öffnet ein Blatt von unten: Suche, feste Einträge (Start, Zu erledigen …), „Meine Ansichten“
  * (Stern), „Zuletzt benutzt“ und die Ansichten nach Gruppen, zuklappbar. Ausblenden gilt nur für einen selbst.
  * Am Rechner bleibt die Liste; darüber filtert ein kleines Suchfeld (AnsichtFilter).
@@ -30,8 +31,8 @@ function Zeile({ s, aktiv, angeheftet, tiefe = 0, pfad, anheften }: { s: Sicht; 
         <span className="aw-name">{pfad && <span className="leise klein">{pfad} › </span>}{s.symbol && <><AnsichtSymbol name={s.symbol} className="fest-sym" /> </>}{sichtName(s)}</span>
         {!d.zahlenDa ? <ZahlWarte /> : n !== undefined && <span className={s.id === d.zaehler.neuePost && n > 0 ? 'zaehler' : 'zahl'}>{zahl(n)}</span>}
       </Link>
-      <button type="button" className={`aw-stern ${angeheftet ? 'an' : ''}`} aria-pressed={angeheftet} onClick={() => anheften(s.id)}
-        aria-label={angeheftet ? t('ablage.ansichtwahl.von-meine-ansichten-loesen', { name: s.name }) : t('ablage.ansichtwahl.bei-meine-ansichten-anheften', { name: s.name })}><Symbol name="stern" className={angeheftet ? 'sym-voll' : undefined} /></button>
+      <Knopf art="link" className={`aw-stern ${angeheftet ? 'an' : ''}`} aria-pressed={angeheftet} onClick={() => anheften(s.id)}
+        nurSymbol={angeheftet ? t('ablage.ansichtwahl.von-meine-ansichten-loesen', { name: s.name }) : t('ablage.ansichtwahl.bei-meine-ansichten-anheften', { name: s.name })}><Symbol name="stern" className={angeheftet ? 'sym-voll' : undefined} /></Knopf>
     </li>
   );
 }
@@ -74,23 +75,25 @@ export function AnsichtWahl({ aktiv, aktuell, feste, ohne = [] }: { aktiv?: stri
 
   return (
     <div className="aw">
-      <button type="button" className="aw-knopf" data-anker="navigation.ansicht-waehlen" aria-haspopup="dialog" aria-expanded={offen} onClick={() => setOffen(true)}>
-        <span className="ueber">{t('ablage.ansichtwahl.ansicht')}</span><span className="aw-aktuell">{aktuell}</span><span aria-hidden="true">▾</span>
-      </button>
+      <Knopf className="aw-knopf" data-anker="navigation.ansicht-waehlen" aria-haspopup="dialog" aria-expanded={offen} onClick={() => setOffen(true)}>
+        <span className="ueber">{t('ablage.ansichtwahl.ansicht')}</span><span className="aw-aktuell">{aktuell}</span><Symbol name="pfeil-unten" />
+      </Knopf>
       {offen && <>
         <div className="aw-schleier" aria-hidden="true" onClick={schliessen} />
         <section className="aw-blatt" role="dialog" aria-modal="true" aria-label={t('ablage.ansichtwahl.ansicht-waehlen')}>
           <div className="aw-kopf">
-            <input type="search" className="aw-suche" placeholder={t('ablage.ansichtwahl.ansicht-suchen')} aria-label={t('ablage.ansichtwahl.ansicht-suchen-2')} enterKeyHint="search" value={suche} onChange={(e) => setSuche(e.target.value)} />
-            <button type="button" className="textknopf" onClick={schliessen}>{t('ablage.ansichtwahl.schliessen')}</button>
+            <Suchfeld className="aw-suche" wert={suche} setze={setSuche} beschriftung={t('ablage.ansichtwahl.ansicht-suchen-2')} platzhalter={t('ablage.ansichtwahl.ansicht-suchen')} />
+            <Knopf art="link" onClick={schliessen}>{t('ablage.ansichtwahl.schliessen')}</Knopf>
           </div>
           {verwalten ? <>
             <p className="leise klein">{t('ablage.ansichtwahl.ausgeblendete-ansichten-fehlen-nur')}</p>
-            <ul className="aw-liste">{d.sichten.filter((s) => !suche || s.name.toLocaleLowerCase(t('ablage.ansichtwahl.de-de')).includes(suche.toLocaleLowerCase(t('ablage.ansichtwahl.de-de')))).map((s) => (
-              <li key={s.id} className="aw-zeile"><label className="haken aw-haken"><input type="checkbox" checked={!wegIds.has(s.id)}
-                onChange={() => d.setzeEinstellung(EINSTELLUNG_AUSGEBLENDET, umschalten(ausgeblendet, s.id))} /><span>{sichtName(s)}</span></label></li>
-            ))}</ul>
-            <button type="button" className="knopf aw-gross" onClick={() => setVerwalten(false)}>{t('ablage.ansichtwahl.fertig')}</button>
+            <FeldGruppe beschriftung={t('ablage.ansichtwahl.sichtbare-ansichten')} beschriftungVerbergen className="aw-verwaltung">
+              <ul className="aw-liste">{d.sichten.filter((s) => !suche || s.name.toLocaleLowerCase(t('ablage.ansichtwahl.de-de')).includes(suche.toLocaleLowerCase(t('ablage.ansichtwahl.de-de')))).map((s) => (
+                <li key={s.id} className="aw-zeile"><label className="haken aw-haken"><input type="checkbox" checked={!wegIds.has(s.id)}
+                  onChange={() => d.setzeEinstellung(EINSTELLUNG_AUSGEBLENDET, umschalten(ausgeblendet, s.id))} /><span>{sichtName(s)}</span></label></li>
+              ))}</ul>
+            </FeldGruppe>
+            <Knopf art="haupt" className="aw-gross" onClick={() => setVerwalten(false)}>{t('ablage.ansichtwahl.fertig')}</Knopf>
           </> : a.treffer ? (
             a.treffer.length ? <ul className="aw-liste">{a.treffer.map((eintrag) => <Zeile key={eintrag.sicht.id} s={eintrag.sicht} pfad={eintrag.pfad} aktiv={aktiv} angeheftet={anIds.has(eintrag.sicht.id)} anheften={anheften} />)}</ul>
               : <p className="leise">{t('ablage.ansichtwahl.keine-ansicht-heisst-so')}</p>
@@ -106,15 +109,15 @@ export function AnsichtWahl({ aktiv, aktuell, feste, ohne = [] }: { aktiv?: stri
               const auf = istOffen(g.schluessel, g.eintraege.map((e) => e.sicht.id));
               return (
                 <div key={g.schluessel} className="aw-gruppe">
-                  <button type="button" className="aw-gruppenkopf" aria-expanded={auf} onClick={() => klappe(g.schluessel)}>
-                    <span aria-hidden="true">{auf ? '▾' : '▸'}</span> {g.name} <span className="leise klein">{g.eintraege.length}</span>
-                  </button>
+                  <Knopf art="link" className="aw-gruppenkopf" aria-expanded={auf} onClick={() => klappe(g.schluessel)}>
+                    <Symbol name="pfeil-rechts" className="aw-pfeil" /> {g.name} <span className="leise klein">{g.eintraege.length}</span>
+                  </Knopf>
                   {auf && <ul className="aw-liste">{g.eintraege.map((e) => <Zeile key={e.sicht.id} s={e.sicht} tiefe={e.tiefe} aktiv={aktiv} angeheftet={anIds.has(e.sicht.id)} anheften={anheften} />)}</ul>}
                 </div>
               );
             })}
-            <button type="button" className="textknopf klein aw-verwalten" onClick={() => setVerwalten(true)}>
-              {tn('ablage.ansichtwahl.ansichten-ausblenden', { wert: a.ausgeblendet > 0 && t('ablage.ansichtwahl.ausgeblendet', { ausgeblendet: a.ausgeblendet }) })}</button>
+            <Knopf art="link" groesse="klein" className="aw-verwalten" onClick={() => setVerwalten(true)}>
+              {tn('ablage.ansichtwahl.ansichten-ausblenden', { wert: a.ausgeblendet > 0 && t('ablage.ansichtwahl.ausgeblendet', { ausgeblendet: a.ausgeblendet }) })}</Knopf>
           </>}
         </section>
       </>}
@@ -129,7 +132,7 @@ export function AnsichtFilter({ aktiv, baum }: { aktiv?: string; baum: ReactNode
   const a = suche.trim() ? ansichtAbschnitte(d.sichten, { suche }) : null;
   return (
     <>
-      {d.sichten.length > 12 && <input type="search" className="aw-filter" placeholder={t('ablage.ansichtwahl.ansicht-suchen')} aria-label={t('ablage.ansichtwahl.ansicht-suchen-2')} value={suche} onChange={(e) => setSuche(e.target.value)} />}
+      {d.sichten.length > 12 && <Suchfeld className="aw-filter" wert={suche} setze={setSuche} beschriftung={t('ablage.ansichtwahl.ansicht-suchen-2')} platzhalter={t('ablage.ansichtwahl.ansicht-suchen')} />}
       {a?.treffer ? a.treffer.map((eintrag) => (
         <Link key={eintrag.sicht.id} to={`/ablage/${eintrag.sicht.id}`} className={`sicht ${aktiv === eintrag.sicht.id ? 'an' : ''}`} title={eintrag.pfad || undefined}>
           <span className="nm">{sichtName(eintrag.sicht)}</span>{!d.zahlenDa ? <ZahlWarte /> : d.zaehler.sichten?.[eintrag.sicht.id] !== undefined && <span className="zahl">{zahl(d.zaehler.sichten[eintrag.sicht.id])}</span>}

@@ -1,5 +1,6 @@
 import type { Dokument } from '../../../shared/src/model';
 import { t } from '../sprache';
+import { FeldGruppe } from '../bausteine';
 
 export type Fassung = 'archiv' | 'original';
 
@@ -18,12 +19,11 @@ export const hatArchivfassung = (d: Pick<Dokument, 'archivfassung'>) => {
 export function FassungWahl({ wert, setze, dokumente, id }: { wert: Fassung; setze(f: Fassung): void; dokumente?: Array<Pick<Dokument, 'archivfassung'>>; id: string }) {
   const mit = dokumente ? dokumente.filter(hatArchivfassung).length : null;
   if (mit === 0) return dokumente!.length ? <p className="leise klein fassungwahl">{t('volltext.archiv.wahl.keine')}</p> : null;
+  const hinweis = wert === 'archiv' ? (mit === null ? t('volltext.archiv.wahl.unbekannt') : mit === dokumente!.length ? t('volltext.archiv.wahl.alle') : t('volltext.archiv.wahl.teil', { zahl: mit, gesamt: dokumente!.length })) : undefined;
   return (
-    <fieldset className="fassungwahl">
-      <legend className="klein">{t('volltext.archiv.wahl.legende')}</legend>
+    <FeldGruppe beschriftung={t('volltext.archiv.wahl.legende')} hinweis={hinweis} className="fassungwahl">
       <label className="haken" htmlFor={`${id}-archiv`}><input id={`${id}-archiv`} type="radio" name={id} checked={wert === 'archiv'} onChange={() => setze('archiv')} /><span>{t('volltext.archiv.wahl.archiv')}</span></label>
       <label className="haken" htmlFor={`${id}-original`}><input id={`${id}-original`} type="radio" name={id} checked={wert === 'original'} onChange={() => setze('original')} /><span>{t('volltext.archiv.wahl.original')}</span></label>
-      {wert === 'archiv' && <p className="leise klein">{mit === null ? t('volltext.archiv.wahl.unbekannt') : mit === dokumente!.length ? t('volltext.archiv.wahl.alle') : t('volltext.archiv.wahl.teil', { zahl: mit, gesamt: dokumente!.length })}</p>}
-    </fieldset>
+    </FeldGruppe>
   );
 }

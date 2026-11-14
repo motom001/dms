@@ -33,14 +33,13 @@ import { PostKnopf } from './Post';
 import type { Hilfeort } from '../../../shared/src/hilfe';
 import { Suchkopf, suchFehler, suchTypen } from './Suche';
 import { UnscharfHinweis } from './Unscharf';
-import { mitGrund } from './Loeschgrund';
-import { rueckfrage } from '../rueckfrage';
 import { ZahlWarte } from './ZahlWarte';
 import { AufgabenWeitergeben } from '../profil/Abwesenheit';
 import { ErledigenUmschalter, MeineAufgabenWeitergeben, TermineSicht, useErledigenAnsicht } from './Termine';
 import { Ehemalig } from '../Person';
 import { gebietsschema } from '../../../shared/src/sprache';
-import { KnopfLink, Suchfeld } from '../bausteine';
+import { HakenFeld, Knopf, KnopfLink, Menue, Schalter, Suchfeld, Wahlhaken, type GefahrRueckfrage, type MenuePunkt } from '../bausteine';
+import type { LoeschAnlass } from '../../../shared/src/loeschprotokoll';
 
 /**
  * Ablage in drei Spalten, von groß nach klein:
@@ -211,7 +210,7 @@ export function Ablage({ teile, suche }: { teile: string[]; suche: URLSearchPara
       </section>
 
       <section className="spalte mappe" aria-label={t('ablage.ablage.mappe')} data-anker="mappe">
-        <Link to={`/ablage/${sicht ?? 'eingang'}${anhang}`} className="verweis nur-schmal">{t('ablage.ablage.zur-liste')}</Link>
+        <Link to={`/ablage/${sicht ?? 'eingang'}${anhang}`} className="verweis nur-schmal zur-liste"><Symbol name="pfeil-links" /> {t('ablage.ablage.zur-liste')}</Link>
         {rechts}
       </section>
     </Dreiteilung>
@@ -331,7 +330,7 @@ function Liste(p: {
 }) {
   const d = useDaten();
   // Favoriten benachrichtigen (#506): ohne Freigabe der Werkbank kein Schalter an den Favoriten.
-  const { favoritenBenachrichtigung } = useKonto();
+  const { favoritenBenachrichtigung, ich } = useKonto();
   const anhang = p.anhang ?? '';
   const [eingabe, setEingabe] = useState('');
   const [suche, setSuche] = useState('');
@@ -394,7 +393,7 @@ function Liste(p: {
   const anzahlText = s.gesamt === null ? '' : suche || p.sicht === 'suche'
     ? t('ablage.ablage.treffer', { zahl: zahl(s.gesamt) })
     : t('ablage.ablage.mappen-2', { anzahl: s.gesamt, zahl: zahl(s.gesamt) });
-  const nachladen = !s.alle && (s.laedt ? t('ablage.ablage.lade') : <button type="button" className="textknopf" onClick={s.mehr}>{t('ablage.ablage.weitere-laden')}</button>);
+  const nachladen = !s.alle && (s.laedt ? t('ablage.ablage.lade') : <Knopf art="link" onClick={s.mehr}>{t('ablage.ablage.weitere-laden')}</Knopf>);
   // Favorit = Abo (#422): Geöffnet = gesehen – Hervorhebung weg, Zähler (eine „Geändert“-Aufgabe erledigt sich) neu.
   useEffect(() => {
     if (!p.offen || !s.geaendert.has(p.offen)) return;
@@ -426,19 +425,30 @@ function Liste(p: {
     try { const r = await api.auswahl(p.sicht, suche, volltext, inNotizen, p.link); w.setze(r.ids, true); }
     catch (x) { setErgebnis({ text: (x as Error).message, liste: [] }); }
   }
-  // Mehrere Mappen löschen (#150): erst zählen und fragen, dann löschen; was nicht ging, mit Grund.
-  async function loeschen() {
+  // Mehrere Mappen löschen (#150): Was sich löschen ließe, zählt die Probe schon beim Auswählen – so nennt die Rückfrage
+  // des Gefahr-Knopfs (#1212, Leitsatz 5) Mappen, Dokumente und Ausgelassene; danach mit Grund (#470) löschen.
+  const [probe, setProbe] = useState<{ ids: string; mappen: number; dokumente: number; ausgelassen: Array<{ id: string; titel: string; grund: string }> } | null>(null);
+  const gewaehltText = [...w.gewaehlt].join(',');
+  useEffect(() => {
+    if (!p.auswahl || !gewaehltText) { setProbe(null); return; }
+    let aktuell = true;
+    const z = setTimeout(() => { api.mappenLoeschen(gewaehltText.split(','), true).then((r) => aktuell && setProbe({ ids: gewaehltText, ...r }), () => aktuell && setProbe(null)); }, 250);
+    return () => { aktuell = false; clearTimeout(z); };
+  }, [gewaehltText, p.auswahl]);
+  const korb = (d.zaehler.papierkorbTage ?? 0) > 0;
+  const loeschFrage: GefahrRueckfrage = probe && probe.ids === gewaehltText && probe.mappen ? {
+    titel: t('ablage.ablage.mappen-3', { anzahl: probe.mappen, zahl: zahl(probe.mappen), wert: probe.dokumente ? t('ablage.ablage.mit-dokumenten', { anzahl: probe.dokumente, zahl: zahl(probe.dokumente) }) : '', wert2: korb ? t('ablage.ablage.in-den-papierkorb-legen') : t('ablage.ablage.endgueltig-loeschen') }),
+    text: [korb ? t('ablage.ablage.dort-lassen-sie-sich') : t('ablage.ablage.das-laesst-sich-nicht'),
+      probe.ausgelassen.length ? t('ablage.ablage.mappen-werden-ausgelassen-kein', { anzahl: probe.ausgelassen.length, zahl: zahl(probe.ausgelassen.length) }) : ''].filter(Boolean).join('\n\n'),
+    ja: korb ? t('ablage.ablage.in-den-papierkorb') : t('ablage.ablage.endgueltig-loeschen-2'), mitGrund: true,
+  } : { titel: t('ablage.ablage.loeschen-auswahl'), ja: t('ablage.ablage.loeschen'), mitGrund: true };
+  const loeschSperre = probe && probe.ids === gewaehltText && !probe.mappen
+    ? { grund: t('ablage.ablage.keine-loeschbar'), eintraege: probe.ausgelassen.slice(0, 8).map((x) => <>{titelOder(x.titel)}: {x.grund}</>), weitere: Math.max(0, probe.ausgelassen.length - 8) } : null;
+  async function loeschen(anlass?: LoeschAnlass) {
+    if (!anlass) return;
     setErgebnis(undefined);
     try {
       const ids = [...w.gewaehlt];
-      const probe = await api.mappenLoeschen(ids, true);
-      if (!probe.mappen) { setErgebnis({ text: t('ablage.ablage.keine-der-ausgewaehlten-mappen'), liste: probe.ausgelassen }); return; }
-      const korb = (d.zaehler.papierkorbTage ?? 0) > 0;
-      const titel = t('ablage.ablage.mappen-3', { anzahl: probe.mappen, zahl: zahl(probe.mappen), wert: probe.dokumente ? t('ablage.ablage.mit-dokumenten', { anzahl: probe.dokumente, zahl: zahl(probe.dokumente) }) : '', wert2: korb ? t('ablage.ablage.in-den-papierkorb-legen') : t('ablage.ablage.endgueltig-loeschen') });
-      const text = [korb ? t('ablage.ablage.dort-lassen-sie-sich') : t('ablage.ablage.das-laesst-sich-nicht'),
-        probe.ausgelassen.length ? t('ablage.ablage.mappen-werden-ausgelassen-kein', { anzahl: probe.ausgelassen.length, zahl: zahl(probe.ausgelassen.length) }) : ''].filter(Boolean).join('\n\n');
-      const anlass = await mitGrund({ titel, text, ja: korb ? t('ablage.ablage.in-den-papierkorb') : t('ablage.ablage.endgueltig-loeschen-2'), gefahr: true });
-      if (!anlass) return;
       const r = await api.mappenLoeschen(ids, false, anlass);
       w.leeren();
       await d.neuLaden();
@@ -447,12 +457,23 @@ function Liste(p: {
     } catch (x) { setErgebnis({ text: (x as Error).message, liste: [] }); }
   }
 
+  // „⋯“ im Kopf der Ansicht (#1212): alle exportieren, wieder nach Titel sortieren, Ansicht in der Werkbank bearbeiten.
+  const verwaltet = d.sicht(p.sicht);
+  const kopfMenue = ([
+    p.export && !!s.gesamt && { key: 'export', symbol: 'herunterladen', inhalt: t('ablage.ablage.alle-exportieren', { zahl: zahl(s.gesamt ?? 0) }), tu: () => { w.leeren(); setExportOffen(true); } },
+    sortierung && !p.sortierungFest && { key: 'titel', symbol: 'sortierbar', inhalt: t('ablage.ablage.nach-titel-sortieren'), titel: t('ablage.ablage.sortiert-nach', { spaltenName: spaltenName(sortierung.spalte, p.typ), wert: '' }), tu: () => setzeSortierung(null) },
+    ich.rolle === 'admin' && verwaltet && { key: 'bearbeiten', symbol: 'extern', inhalt: t('ablage.ablage.ansicht-bearbeiten'), tu: () => geheZu(`/werkbank/sichten/${verwaltet.id}`) },
+  ] as Array<MenuePunkt | false | null | undefined | ''>).filter((x): x is MenuePunkt => !!x);
   return (
     <>
       <div ref={mess} className="breitenmesser" aria-hidden="true" />
+      {/* Kopf der Ansicht (#1212): Titel, „+ <Typ>“ (Anlegen) und „⋯“ mit Exportieren und dem Weg in die Werkbank. */}
       <Listenkopf titel={p.titel} hilfe={p.hilfe} beschreibung={p.beschreibung}>
-        {p.neu && <KnopfLink to={`/ablage/${p.sicht}/neu`} art="anlegen" groesse="klein">{t('ablage.ablage.neu')}</KnopfLink>}
-        {p.post && p.typ && <div className="postknopf"><PostKnopf /></div>}
+        <div className="listenkopf-knoepfe">
+          {p.neu && <KnopfLink to={`/ablage/${p.sicht}/neu`} art="anlegen" groesse="klein">{p.typ ? t('ablage.ablage.neu-typ', { typ: typName(p.typ) }) : t('ablage.ablage.neu')}</KnopfLink>}
+          {p.post && p.typ && <div className="postknopf"><PostKnopf /></div>}
+          {kopfMenue.length > 0 && <Menue beschriftung={t('ablage.ablage.mehr')} nurSymbol punkte={kopfMenue} anker="liste.mehr" />}
+        </div>
       </Listenkopf>
       {p.kopf}
       {zeigeSuche && (
@@ -460,24 +481,24 @@ function Liste(p: {
           {/* Baustein Suchfeld (#978): dasselbe Feld wie in den Listen der Werkbank. Enter mit einer Archivnummer springt zum Dokument. */}
           <Suchfeld wert={eingabe} setze={setEingabe} beschriftung={t('ablage.ablage.suchen')} platzhalter={volltext ? t('ablage.ablage.suchen-in-titel-werten') : t('ablage.ablage.suchen-in-titel-und')}
             onEnter={(w) => void zurArchivnummer(w)} />
-          <label className="haken klein" title={t('ablage.ablage.auch-im-text-der')}>
-            <input type="checkbox" checked={volltext} onChange={(e) => d.setzeEinstellung('suche_volltext', e.target.checked || null)} /><span>{t('ablage.ablage.volltext-durchsuchen')}</span>
-          </label>
-          <label className="haken klein" title={t('ablage.ablage.auch-in-den-notizen')}>
-            <input type="checkbox" checked={inNotizen} onChange={(e) => d.setzeEinstellung('suche_notizen', e.target.checked || null)} /><span>{t('ablage.ablage.notizen')}</span>
-          </label>
+          {/* Die Suche der Ansicht zieht mit #1218 in die Kopfzeile; bis dahin die Haken im Feldrahmen. */}
+          <HakenFeld beschriftung={t('ablage.ablage.volltext-durchsuchen')} className="klein">
+            <input type="checkbox" title={t('ablage.ablage.auch-im-text-der')} checked={volltext} onChange={(e) => d.setzeEinstellung('suche_volltext', e.target.checked || null)} />
+          </HakenFeld>
+          <HakenFeld beschriftung={t('ablage.ablage.notizen')} className="klein">
+            <input type="checkbox" title={t('ablage.ablage.auch-in-den-notizen')} checked={inNotizen} onChange={(e) => d.setzeEinstellung('suche_notizen', e.target.checked || null)} />
+          </HakenFeld>
           {p.sicht !== 'suche' && <Link to={`/ablage/suche${p.typ ? `?typ=${encodeURIComponent(p.typ.schluessel ?? p.typ.id)}` : ''}`} className="verweis klein" title={t('ablage.ablage.mappentypen-waehlen-in-feldern')}>{t('ablage.ablage.erweiterte-suche')}</Link>}
-          {p.export && !wahl?.gewaehlt.size && !!s.gesamt && <button type="button" className="textknopf klein lk-nur-schmal" onClick={() => setExportOffen(true)}>{t('ablage.ablage.exportieren')}</button>}
           {/* In der erweiterten Suche (#426) heißt „Filter“ das Suchformular; die Haken stehen dort unter „Volltext“. */}
-          {p.sicht !== 'suche' && <button type="button" className={`knopf klein lk-filterknopf ${filter ? 'an' : ''}`} aria-expanded={filter} onClick={() => setFilter(!filter)}>{tn('ablage.ablage.filter', { span: <span aria-hidden="true">▾</span>, wert: (volltext || inNotizen) && <span className="lk-punkt" aria-label={t('ablage.ablage.aktiv')} /> })}</button>}
+          {p.sicht !== 'suche' && <Knopf groesse="klein" className={`lk-filterknopf ${filter ? 'an' : ''}`} aria-expanded={filter} onClick={() => setFilter(!filter)}>{tn('ablage.ablage.filter', { span: <Symbol name="pfeil-unten" />, wert: (volltext || inNotizen) && <span className="lk-punkt" aria-label={t('ablage.ablage.aktiv')} /> })}</Knopf>}
         </div>
       )}
       {anzahlText && (
         <p className="listenzahl leise klein" aria-live="polite">
           {anzahlText}{s.mappen.length < (s.gesamt ?? 0) ? t('ablage.ablage.geladen', { zahl: zahl(s.mappen.length) }) : ''}
-          {sortierung && <> {' '}{t('ablage.ablage.sortiert-nach', { spaltenName: spaltenName(sortierung.spalte, p.typ), wert: sortierung.absteigend ? '↓' : '↑' })}{' '}<button type="button" className="textknopf" onClick={() => setzeSortierung(null)}>{t('ablage.ablage.nach-titel')}</button></>}
-          {p.export && !wahl?.gewaehlt.size && !!s.gesamt && <span className="lk-nur-breit"> · <button type="button" className="textknopf" onClick={() => setExportOffen(true)}>{t('ablage.ablage.exportieren')}</button></span>}
-          {geaenderteHier.length > 0 && <> {' '}{tn('ablage.ablage.geaendert', { span: <span className="abo-punkt" aria-hidden="true" />, zahl: zahl(geaenderteHier.length) })}{' '}<button type="button" className="textknopf" onClick={() => void alleGesehen()}>{t('ablage.ablage.alle-als-gesehen-markieren')}</button></>}
+          {/* Sortiert wird über die Spaltenköpfe (#1212); „nach Titel“ steht im Menü „⋯“. Kein Exportieren mehr in dieser Zeile. */}
+          {geaenderteHier.length > 0 && <span className="listenzahl-geaendert"> {' '}<span className="abo-punkt" aria-hidden="true" /> {t('ablage.ablage.geaendert-zahl', { zahl: zahl(geaenderteHier.length) })}{' '}
+            <Knopf groesse="klein" onClick={() => alleGesehen()}>{t('ablage.ablage.alle-gesehen')}</Knopf></span>}
         </p>
       )}
       {exportOffen && (
@@ -498,19 +519,20 @@ function Liste(p: {
       {wahl && wahl.gewaehlt.size > 0 && (
         <div className="aktionsleiste" role="region" aria-label={t('ablage.ablage.auswahl')}>
           <span className="klein">{tn('ablage.ablage.von-ausgewaehlt', { b: <strong>{zahl(wahl.gewaehlt.size)}</strong>, zahl: zahl(s.gesamt ?? 0) })}</span>
-          {!wahl.alle && (s.gesamt ?? 0) > wahl.gewaehlt.size && <button type="button" className="textknopf klein" onClick={() => void alleWaehlen()}>{t('ablage.ablage.alle-auswaehlen', { zahl: zahl(s.gesamt ?? 0) })}</button>}
+          {!wahl.alle && (s.gesamt ?? 0) > wahl.gewaehlt.size && <Knopf art="link" groesse="klein" onClick={() => alleWaehlen()}>{t('ablage.ablage.alle-auswaehlen', { zahl: zahl(s.gesamt ?? 0) })}</Knopf>}
           <span className="luecke" aria-hidden="true" />
-          {p.export && <button type="button" className="knopf klein" onClick={() => setExportOffen(true)}>{t('ablage.ablage.exportieren')}</button>}
-          {p.export && <button type="button" className="knopf klein" onClick={() => { setExportOffen(false); setEmailOffen(true); }}>{t('ablage.ablage.per-e-mail')}</button>}
-          <button type="button" className="knopf klein gefahr" onClick={() => void loeschen()}>{t('ablage.ablage.loeschen')}</button>
-          <button type="button" className="textknopf klein" onClick={wahl.leeren}>{t('ablage.ablage.auswahl-aufheben')}</button>
+          {p.export && <Knopf groesse="klein" symbol="herunterladen" onClick={() => setExportOffen(true)}>{t('ablage.ablage.exportieren')}</Knopf>}
+          {p.export && <Knopf groesse="klein" symbol="email" onClick={() => { setExportOffen(false); setEmailOffen(true); }}>{t('ablage.ablage.per-e-mail')}</Knopf>}
+          {/* Gefahr leise mit Mülleimer (Leitsatz 4), Rückfrage mit Grund (#470) – rot gefüllt nur dort. */}
+          <Knopf art="gefahr" groesse="klein" symbol="geloescht" rueckfrage={loeschFrage} gesperrt={loeschSperre} onClick={(_e, anlass) => loeschen(anlass)}>{t('ablage.ablage.loeschen-auswahl')}</Knopf>
+          <Knopf art="link" groesse="klein" onClick={wahl.leeren}>{t('ablage.ablage.auswahl-aufheben')}</Knopf>
         </div>
       )}
       {ergebnis && (
         <div className={`hinweis ${ergebnis.liste.length ? 'warn' : 'info'}`} role="status">
           <p>{ergebnis.text}</p>
           {ergebnis.liste.length > 0 && <ul className="klein">{ergebnis.liste.slice(0, 50).map((x) => <li key={x.id}>{titelOder(x.titel)}: {x.grund}</li>)}{ergebnis.liste.length > 50 && <li>{t('ablage.ablage.und-weitere', { zahl: zahl(ergebnis.liste.length - 50) })}</li>}</ul>}
-          <button type="button" className="textknopf klein" onClick={() => setErgebnis(undefined)}>{t('ablage.ablage.ausblenden')}</button>
+          <Knopf art="link" groesse="klein" onClick={() => setErgebnis(undefined)}>{t('ablage.ablage.ausblenden')}</Knopf>
         </div>
       )}
       <div className={`listenrumpf${wahl?.gewaehlt.size ? ' mit-auswahl' : ''}`}>
@@ -525,8 +547,8 @@ function Liste(p: {
                 const k = kompakt(p.listenSpalten ?? [], !!p.typ, typ, m, s.bezuege, d.person);
                 return (
                   <li key={m.id} className={`mit-stern${wahl ? ' mit-haken' : ''}${wahl?.gewaehlt.has(m.id) ? ' gewaehlt' : ''}${s.geaendert.has(m.id) ? ' abo-geaendert' : ''}`} {...(wahl && !m.verborgen ? wahl.druck(i) : {})}>
-                    {wahl && !m.verborgen && <Wahlhaken an={wahl.gewaehlt.has(m.id)} titel={k.titel} waehle={(an, bereich) => wahl.waehle(i, an, bereich)} />}
-                    {m.verborgen ? <span /> : <Stern mappeId={m.id} an={s.favoriten.has(m.id)} titel={k.titel} klein />}
+                    {wahl && !m.verborgen && <Zeilenhaken an={wahl.gewaehlt.has(m.id)} titel={k.titel} waehle={(an, bereich) => wahl.waehle(i, an, bereich)} />}
+                    {m.verborgen ? <span /> : <Stern mappeId={m.id} an={s.favoriten.has(m.id)} titel={k.titel} />}
                     <Link to={`/ablage/${p.sicht}/${m.id}${anhang}`} className={`eintrag ${p.offen === m.id ? 'an' : ''}`}>
                       <span className={`titel ${m.verborgen ? 'verborgen-titel' : ''}`}>{s.geaendert.has(m.id) && <GeaendertPunkt />}{m.verborgen ? t('ablage.ablage.nicht-sichtbare-mappe') : <Ehemalig id={m.id}>{k.titel}</Ehemalig>}
                         {/* Archivmodus (#212): Hinweis, solange die Frist läuft – oder noch nicht begonnen hat (#1051). */}
@@ -537,14 +559,10 @@ function Liste(p: {
                         ? <span className="problem">{s.aufgaben[m.id]}</span>
                         : m.passt === false && <span className="problem">{p.typ ? t('ablage.ablage.passt-nicht-zur-definition') : m.problem}</span>}
                     </Link>
-                    {/* Favorit = Abo (#422): je Favorit „bei Änderungen benachrichtigen“ – nur in der Favoritenliste. */}
+                    {/* Favorit = Abo (#422): je Favorit „bei Änderungen benachrichtigen“ – nur in der Favoritenliste; Ein/Aus als Schalter (#1188). */}
                     {(p.sicht === 'favoriten' || !!d.sicht(p.sicht)?.bedingungen.some((x) => x.art === 'favorit')) && !m.verborgen && favoritenBenachrichtigung && (
-                      <label className="haken klein abo-schalter">
-                        <input type="checkbox" checked={!s.stumm.has(m.id)} onChange={(e) => {
-                          const an = e.target.checked; s.setzeStumm(m.id, !an);
-                          void api.favoritBenachrichtigen(m.id, an).catch(() => s.setzeStumm(m.id, an));
-                        }} /><span>{t('ablage.ablage.bei-aenderungen-benachrichtigen')}</span>
-                      </label>
+                      <Schalter className="abo-schalter" an={!s.stumm.has(m.id)} beschriftung={t('ablage.ablage.benachrichtigen')}
+                        setze={(an) => { s.setzeStumm(m.id, !an); return api.favoritBenachrichtigen(m.id, an).catch((x) => { s.setzeStumm(m.id, an); throw x; }); }} />
                     )}
                   </li>
                 );
@@ -593,8 +611,8 @@ function Tabelle(p: {
       <table>
         <thead>
           <tr>
-            {p.wahl && <th className="hakenspalte"><input type="checkbox" className="wahlhaken" aria-label={t('ablage.ablage.alle-geladenen-auswaehlen')} checked={alleGeladen}
-              ref={(el) => { if (el) el.indeterminate = einige; }} onChange={(e) => p.wahl!.setze(e.target.checked ? [...new Set([...p.wahl!.gewaehlt, ...geladen.map((m) => m.id)])] : [], false)} /></th>}
+            {p.wahl && <th className="hakenspalte"><Wahlhaken an={alleGeladen} teilweise={einige} beschriftung={t('ablage.ablage.alle-geladenen-auswaehlen')}
+              setze={(an) => p.wahl!.setze(an ? [...new Set([...p.wahl!.gewaehlt, ...geladen.map((m) => m.id)])] : [], false)} /></th>}
             <th className="sternspalte"><span className="sr">{t('ablage.ablage.favorit')}</span></th>
             {p.spalten.map((k) => {
               const kann = sortierbar(k, p.typ);
@@ -602,9 +620,10 @@ function Tabelle(p: {
               return (
                 <th key={k} className={rechts(k) ? 'rechts' : ''} aria-sort={an ? (aktiv.absteigend ? 'descending' : 'ascending') : undefined}>
                   {kann
-                    ? <button type="button" className="spaltenknopf" onClick={() => p.sortiere(k)} title={t('ablage.ablage.nach-sortieren', { spaltenName: spaltenName(k, p.spaltenTyp) })}>
-                        {spaltenName(k, p.spaltenTyp)}<span className="pfeil" aria-hidden="true">{an ? (aktiv.absteigend ? '↓' : '↑') : '↕'}</span>
-                      </button>
+                    // Sortieren über die Spaltenköpfe (#1212): Klick sortiert, zweiter Klick dreht um; Pfeil an der sortierten Spalte.
+                    ? <Knopf art="link" className={`spaltenknopf${an ? ' sortiert' : ''}`} onClick={() => p.sortiere(k)} title={t('ablage.ablage.nach-sortieren', { spaltenName: spaltenName(k, p.spaltenTyp) })}>
+                        {spaltenName(k, p.spaltenTyp)}<Symbol name={an ? (aktiv.absteigend ? 'sortiert-ab' : 'sortiert-auf') : 'sortierbar'} className="pfeil" />
+                      </Knopf>
                     : spaltenName(k, p.spaltenTyp)}
                 </th>
               );
@@ -619,8 +638,8 @@ function Tabelle(p: {
             return (
               <tr key={m.id} className={`${p.offen === m.id ? 'an' : ''} ${m.passt === false ? 'unpassend' : ''}${p.wahl?.gewaehlt.has(m.id) ? ' gewaehlt' : ''}${p.geaendert?.has(m.id) ? ' abo-geaendert' : ''}`} {...(p.wahl && !m.verborgen ? p.wahl.druck(i) : {})}
                 onClick={(e) => { if (!(e.target as HTMLElement).closest('a, button, input')) geheZu(ziel); }}>
-                {p.wahl && <td className="hakenspalte">{!m.verborgen && <Wahlhaken an={p.wahl.gewaehlt.has(m.id)} titel={titelOder(m.titel)} waehle={(an, bereich) => p.wahl!.waehle(i, an, bereich)} />}</td>}
-                <td className="sternspalte"><Stern mappeId={m.id} an={p.favoriten.has(m.id)} titel={titelOder(m.titel)} klein /></td>
+                {p.wahl && <td className="hakenspalte">{!m.verborgen && <Zeilenhaken an={p.wahl.gewaehlt.has(m.id)} titel={titelOder(m.titel)} waehle={(an, bereich) => p.wahl!.waehle(i, an, bereich)} />}</td>}
+                <td className="sternspalte"><Stern mappeId={m.id} an={p.favoriten.has(m.id)} titel={titelOder(m.titel)} /></td>
                 {p.spalten.map((k, i) => {
                   const text = zelle(k, m, typ, p.bezuege, d.person);
                   // Post ohne Absender (#494): „–“ als Hinweis zum Ergänzen beim Zuordnen.
@@ -690,10 +709,8 @@ function useAuswahl(mappen: Mappe[], gesamt: number | null, abhaengig: unknown[]
   return { gewaehlt, alle, waehle, setze, leeren, druck };
 }
 
-function Wahlhaken({ an, titel, waehle }: { an: boolean; titel: string; waehle(an: boolean, bereich: boolean): void }) {
-  // onClick statt onChange: nur dort gibt es die Shift-Taste.
-  return <input type="checkbox" className="wahlhaken" checked={an} aria-label={t('ablage.ablage.auswaehlen', { titel })}
-    onClick={(e) => waehle((e.target as HTMLInputElement).checked, e.shiftKey)} onChange={() => {}} />;
+function Zeilenhaken({ an, titel, waehle }: { an: boolean; titel: string; waehle(an: boolean, bereich: boolean): void }) {
+  return <Wahlhaken an={an} beschriftung={t('ablage.ablage.auswaehlen', { titel })} setze={waehle} />;
 }
 
 /** Fundstelle im Volltext (#45): Dokumentname und Ausschnitt, Treffer hervorgehoben (ohne HTML vom Server). */
@@ -769,11 +786,12 @@ function SichtBaum({ aktiv, ohne = [] }: { aktiv?: string; ohne?: string[] }) {
         const unter = kinder ? mitNachkommen(d.sichten, s.id).length - 1 : 0;
         return (
           <div key={s.id} className="sichtzeile" style={{ '--tiefe': tiefe } as React.CSSProperties}>
+            {/* Aufklapper (#1212): 28 × 28 px, Lucide-Pfeil dreht sich; ohne Unteransichten bleibt der Platz frei. */}
             {kinder
-              ? <button type="button" className="aufklapper" aria-expanded={offen} title={offen ? t('ablage.ablage.unteransichten-zuklappen') : t('ablage.ablage.unteransichten-aufklappen', { anzahl: unter })}
-                  onClick={() => umschalten(s.id)}><span aria-hidden="true">{offen ? '▾' : '▸'}</span><span className="sr">{sichtName(s)} {offen ? t('ablage.ablage.zuklappen') : t('ablage.ablage.aufklappen')}</span></button>
-              : null}
-            <Link to={`/ablage/${s.id}`} className={`sicht ${aktiv === s.id ? 'an' : ''}`} title={s.beschreibung || undefined}>
+              ? <Knopf art="link" className="aufklapper" aria-expanded={offen} title={offen ? t('ablage.ablage.unteransichten-zuklappen') : t('ablage.ablage.unteransichten-aufklappen', { anzahl: unter })}
+                  nurSymbol={`${sichtName(s)} ${offen ? t('ablage.ablage.zuklappen') : t('ablage.ablage.aufklappen')}`} onClick={() => umschalten(s.id)}><Symbol name="pfeil-rechts" /></Knopf>
+              : <span className="aufklapper-platz" aria-hidden="true" />}
+            <Link to={`/ablage/${s.id}`} className={`sicht ${aktiv === s.id ? 'an' : ''}${tiefe === 0 ? ' oben' : ''}`} title={s.beschreibung || undefined}>
               <span className="nm">{s.symbol && <><AnsichtSymbol name={s.symbol} className="fest-sym" /> </>}{sichtName(s)}</span>{!d.zahlenDa ? <ZahlWarte /> : n !== undefined && <span className={s.id === d.zaehler.neuePost && n > 0 ? 'zaehler' : 'zahl'}>{zahl(n)}</span>}
             </Link>
           </div>

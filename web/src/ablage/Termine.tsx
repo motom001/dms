@@ -9,6 +9,7 @@ import { Link } from '../ort';
 import { titelOder } from '../seiten';
 import { t } from '../sprache';
 import { Symbol, type SymbolName } from '../Symbol';
+import { HakenFeld, Knopf, Umschalter } from '../bausteine';
 import { gebietsschema } from '../../../shared/src/sprache';
 
 /**
@@ -56,11 +57,9 @@ type AnsichtDaten = ReturnType<typeof useErledigenAnsicht>;
 export function ErledigenUmschalter({ a }: { a: AnsichtDaten }) {
   const ansichten: ErledigenAnsicht[] = a.schmal ? ['liste', 'monat'] : ['liste', 'monat', 'jahr'];
   return (
-    <div className="segmente ka-umschalter" role="radiogroup" aria-label={t('termine.ansicht')} data-anker="zu-erledigen.ansicht">
-      {ansichten.map((x) => (
-        <button key={x} type="button" role="radio" aria-checked={a.ansicht === x} className={a.ansicht === x ? 'an' : ''} onClick={() => a.setze(x)}>{t.frei(`termine.ansicht.${x}`)}</button>
-      ))}
-    </div>
+    // Baustein Umschalter (C17, #1212): statt des alten, blau gefüllten Segmentknopfs.
+    <Umschalter className="ka-umschalter" wert={a.ansicht} setze={(x) => a.setze(x)} beschriftung={t('termine.ansicht')} anker="zu-erledigen.ansicht"
+      wahlen={ansichten.map((x) => ({ wert: x, text: t.frei(`termine.ansicht.${x}`) }))} />
   );
 }
 
@@ -156,13 +155,13 @@ export function TermineSicht({ offen, a }: { offen?: string; a: AnsichtDaten }) 
       <Listenkopf className="ka-kopf" titel={t('termine.titel')} hilfe="ablage.eingang" beschreibung={t('termine.beschreibung')} />
       <div className="ka-leiste">
         <ErledigenUmschalter a={a} />
-        <button type="button" className="knopf klein ka-heute" onClick={zuHeute}>{t('termine.heute')}</button>
+        <Knopf groesse="klein" className="ka-heute" onClick={zuHeute}>{t('termine.heute')}</Knopf>
         <div className="ka-blaettern">
-          <button type="button" className="knopf klein ka-pfeil" onClick={() => blaettern(-1)} aria-label={t.frei(`termine.zurueck.${ansicht}`)} title={t.frei(`termine.zurueck.${ansicht}`)}><Symbol name="pfeil-links" /></button>
+          <Knopf groesse="klein" className="ka-pfeil" onClick={() => blaettern(-1)} nurSymbol={t.frei(`termine.zurueck.${ansicht}`)}><Symbol name="pfeil-links" /></Knopf>
           <h2 className="ka-zeitraum" aria-live="polite">{ansicht === 'jahr' ? jahr : monatJahr(monat)}</h2>
-          <button type="button" className="knopf klein ka-pfeil" onClick={() => blaettern(1)} aria-label={t.frei(`termine.weiter.${ansicht}`)} title={t.frei(`termine.weiter.${ansicht}`)}><Symbol name="pfeil-rechts" /></button>
+          <Knopf groesse="klein" className="ka-pfeil" onClick={() => blaettern(1)} nurSymbol={t.frei(`termine.weiter.${ansicht}`)}><Symbol name="pfeil-rechts" /></Knopf>
         </div>
-        <label className="haken klein ka-favoriten"><input type="checkbox" checked={favoriten} onChange={(e) => setzeFavoriten(e.target.checked)} /><span>{t('termine.nur-favoriten')}</span></label>
+        <HakenFeld className="ka-favoriten" beschriftung={t('termine.nur-favoriten')}><input type="checkbox" checked={favoriten} onChange={(e) => setzeFavoriten(e.target.checked)} /></HakenFeld>
       </div>
       {ansicht === 'jahr'
         ? <JahrAnsicht jahr={jahr} zumMonat={zumMonat} favoriten={favoriten} />
@@ -226,10 +225,10 @@ function MonatAnsicht({ monat, tag, setTag, offen, blaettern, schmal, favoriten 
       const punkte = liste.slice(0, 3);
       return (
         <td key={iso} className={klasse} aria-current={istHeute ? 'date' : undefined}>
-          <button type="button" className="ka-tagknopf" aria-label={beschriftung} aria-pressed={gewaehlt === iso} onClick={() => setTag(iso)}>
+          <Knopf art="link" className="ka-tagknopf" aria-label={beschriftung} aria-pressed={gewaehlt === iso} onClick={() => setTag(iso)}>
             <span className="ka-zahl">{Number(iso.slice(8))}</span>
             <span className="ka-punkte" aria-hidden="true">{punkte.map((x, i) => <span key={i} className={`ka-punkt art-${x.art}${istUeberfaellig(x, heute) ? ' ka-ueber' : ''}${x.folgetermin ? ' ka-folge' : ''}`} />)}</span>
-          </button>
+          </Knopf>
         </td>
       );
     }
@@ -237,11 +236,11 @@ function MonatAnsicht({ monat, tag, setTag, offen, blaettern, schmal, favoriten 
     return (
       <td key={iso} className={klasse} aria-current={istHeute ? 'date' : undefined}>
         <div className="ka-tagkopf">
-          <button type="button" className="ka-zahl" aria-label={beschriftung} aria-pressed={gewaehlt === iso} onClick={() => setTag(gewaehlt === iso ? null : iso)}>{Number(iso.slice(8))}</button>
+          <Knopf art="link" className="ka-zahl" aria-label={beschriftung} aria-pressed={gewaehlt === iso} onClick={() => setTag(gewaehlt === iso ? null : iso)}>{Number(iso.slice(8))}</Knopf>
           {name && <span className="ka-feiertag" title={name}>{name}</span>}
         </div>
         {(mehr ? liste.slice(0, JE_TAG - 1) : liste).map((x, i) => <Zeile key={schluessel(x, i)} x={x} heute={heute} offen={offen} />)}
-        {mehr > 0 && <button type="button" className="textknopf klein ka-mehr" onClick={() => setTag(iso)}>{t('termine.weitere', { anzahl: mehr })}</button>}
+        {mehr > 0 && <Knopf art="link" groesse="klein" className="ka-mehr" onClick={() => setTag(iso)}>{t('termine.weitere', { anzahl: mehr })}</Knopf>}
       </td>
     );
   };
@@ -251,9 +250,9 @@ function MonatAnsicht({ monat, tag, setTag, offen, blaettern, schmal, favoriten 
     <div ref={ref} className={`ka-monat${kompakt ? ' ka-kompakt' : ''}`}>
       {fehler && <p className="fehlertext">{fehler}</p>}
       {ueberfaellig.length > 0 && (
-        <button type="button" className="ka-ueberzeile" aria-pressed={gewaehlt === 'ueberfaellig'} onClick={() => setTag(gewaehlt === 'ueberfaellig' ? null : 'ueberfaellig')}>
-          <Symbol name="warnung" /> {t('termine.ueberfaellig.zahl', { anzahl: ueberfaellig.length })}
-        </button>
+        <Knopf art="link" className="ka-ueberzeile" symbol="warnung" aria-pressed={gewaehlt === 'ueberfaellig'} onClick={() => setTag(gewaehlt === 'ueberfaellig' ? null : 'ueberfaellig')}>
+          {t('termine.ueberfaellig.zahl', { anzahl: ueberfaellig.length })}
+        </Knopf>
       )}
       <table className="ka-raster" {...wisch} aria-busy={!daten}>
         <caption className="sr">{t('termine.raster', { monat: monatJahr(monat) })}</caption>
@@ -267,7 +266,7 @@ function MonatAnsicht({ monat, tag, setTag, offen, blaettern, schmal, favoriten 
           <div className="ka-tl-kopf">
             <h2 className="h3" id="ka-tl">{gewaehlt === 'ueberfaellig' ? t('termine.gruppe.ueberfaellig') : tagLang(gewaehlt)}</h2>
             {gewaehlt !== 'ueberfaellig' && feiertag(gewaehlt) && <span className="chip">{feiertag(gewaehlt)}</span>}
-            {!kompakt && <button type="button" className="textknopf klein" onClick={() => setTag(null)}>{t('termine.schliessen')}</button>}
+            {!kompakt && <Knopf art="link" groesse="klein" onClick={() => setTag(null)}>{t('termine.schliessen')}</Knopf>}
           </div>
           {tagesliste.length
             ? <ul className="mappenliste">{tagesliste.map((x, i) => <li key={schluessel(x, i)}><Eintrag x={x} heute={heute} offen={offen} mitDatum={gewaehlt === 'ueberfaellig'} /></li>)}</ul>
@@ -304,15 +303,15 @@ function JahrAnsicht({ jahr, zumMonat, favoriten }: { jahr: number; zumMonat(m: 
     <div className="ka-jahr-rahmen">
       {fehler && <p className="fehlertext">{fehler}</p>}
       {ueberfaellig > 0 && (
-        <button type="button" className="ka-ueberzeile" onClick={() => zumMonat(monatVon(heute), 'ueberfaellig')}>
-          <Symbol name="warnung" /> {t('termine.ueberfaellig.zahl', { anzahl: ueberfaellig })}
-        </button>
+        <Knopf art="link" className="ka-ueberzeile" symbol="warnung" onClick={() => zumMonat(monatVon(heute), 'ueberfaellig')}>
+          {t('termine.ueberfaellig.zahl', { anzahl: ueberfaellig })}
+        </Knopf>
       )}
       {!daten && !fehler && <p className="leise klein">{t('termine.lade')}</p>}
       <div className="ka-jahr" aria-busy={!daten}>
         {monate.map((m) => (
           <section key={m} className="ka-jm" aria-labelledby={`ka-jm-${m}`}>
-            <h3 className="h3"><button type="button" id={`ka-jm-${m}`} className="textknopf ka-jm-titel" onClick={() => zumMonat(m, null)}>{monatName(m)}</button></h3>
+            <h3 className="h3"><Knopf art="link" id={`ka-jm-${m}`} className="ka-jm-titel" onClick={() => zumMonat(m, null)}>{monatName(m)}</Knopf></h3>
             <table className="ka-mini">
               <caption className="sr">{t('termine.raster', { monat: monatJahr(m) })}</caption>
               <thead><tr>{WOCHE.map((w) => <th key={w.lang} scope="col" abbr={w.lang}><span aria-hidden="true">{w.kurz.slice(0, 1)}</span><span className="sr">{w.lang}</span></th>)}</tr></thead>
@@ -330,9 +329,9 @@ function JahrAnsicht({ jahr, zumMonat, favoriten }: { jahr: number; zumMonat(m: 
                       const text = `${tagLang(iso)}: ${t('termine.eintraege', { anzahl: liste.length })}${ueber ? `, ${t('termine.gruppe.ueberfaellig')}` : ''}`;
                       return (
                         <td key={iso} className={istHeute ? 'ka-heute-tag' : undefined} aria-current={istHeute ? 'date' : undefined}>
-                          <button type="button" className={`ka-mt ka-mt-knopf${nurFolge ? ' ka-folge' : ''}${ueber ? ' ka-ueber' : ''}`} title={text} aria-label={text} onClick={() => zumMonat(m, iso)}>
+                          <Knopf art="link" className={`ka-mt ka-mt-knopf${nurFolge ? ' ka-folge' : ''}${ueber ? ' ka-ueber' : ''}`} title={text} aria-label={text} onClick={() => zumMonat(m, iso)}>
                             {zahl}<span className="ka-mpunkt" aria-hidden="true" />
-                          </button>
+                          </Knopf>
                         </td>
                       );
                     })}

@@ -101,6 +101,11 @@ function wText(text) {
   if (muster.length === 1 && !/\{[A-Za-z0-9_]+\}/.test(ziele[0])) return ziele[0];
   return new RegExp(muster.map((m) => `(?:${m})`).join('|'));
 }
+/** Punkt im Menü „⋯“ eines Dokuments (#1211): Seiten, Verkleinern, Schwärzen, Mit Stempel … stehen dort. */
+async function dokMenue(zeile, punkt) {
+  await zeile.getByRole('button', { name: w(/^Weitere Handlungen für/) }).click();
+  await zeile.page().getByRole('menuitem', { name: w(punkt) }).click();
+}
 // Persona-Namen (Lena: Einsteigerin, richtet ein; Jonas: Familienmitglied) und nur Beispiel-Domains (example.org).
 const ADMIN = { email: 'lena@example.org', name: 'Lena Beispiel', passwort: 'handbuch-passwort-1' };
 const MITGLIED = { email: 'jonas@example.org', name: 'Jonas Beispiel', passwort: 'handbuch-passwort-2' };
@@ -605,7 +610,7 @@ async function main() {
   await geheZu(s, `/ablage/${vertrag.id}/${d.strom.id}`);
   await s.getByRole('tab', { name: 'Vertragsunterlagen' }).click();
   const scan = s.locator('.dokumentliste li', { hasText: 'Scan Vertragsunterlagen.pdf' });
-  await scan.getByRole('button', { name: w('Seiten'), exact: true }).click();
+  await dokMenue(scan, 'Seiten …');
   await s.waitForFunction(() => [...document.querySelectorAll('.seitenbild img')].length > 0 && [...document.querySelectorAll('.seitenbild img')].every((i) => i.complete && i.naturalWidth > 0), null, { timeout: 20_000 }).catch(() => {});
   await s.getByRole('button', { name: w('Seite 2 nach rechts drehen') }).click();
   await s.locator('.seitenraster .seite').nth(2).getByRole('button', { name: w('Teilen ab hier') }).click();
@@ -614,7 +619,7 @@ async function main() {
 
   // Herunterladen mit Stempel (#394): Dialog am Scan, Vorlage „Kopie für …“ mit Empfänger.
   await s.locator('.pdfseiten').getByRole('button', { name: w('Abbrechen') }).click().catch(() => {});
-  await scan.getByRole('button', { name: w(/Mit Stempel/) }).click();
+  await dokMenue(scan, 'Mit Stempel …');
   const stempel = s.locator('.stempeldialog');
   await stempel.locator('input[id$="-empfaenger"]').fill('Hausverwaltung Müller');
   await s.addStyleTag({ content: '.speicherleiste { position: static !important; }' });
@@ -629,7 +634,7 @@ async function main() {
   await geheZu(s, `/ablage/${vertrag.id}/${d.strom.id}`);
   await s.getByRole('tab', { name: 'Vertragsunterlagen' }).click();
   const foto = s.locator('.dokumentliste li', { hasText: 'Foto Zählerstand.pdf' });
-  await foto.getByRole('button', { name: w('Verkleinern'), exact: true }).click();
+  await dokMenue(foto, 'Verkleinern …');
   const klein = s.locator('.pdfseiten.verkleinern');
   await klein.locator('.stufenwahl').waitFor({ timeout: 30_000 });
   await klein.scrollIntoViewIfNeeded();
@@ -643,12 +648,12 @@ async function main() {
   await geheZu(s, `/ablage/${vertrag.id}/${d.strom.id}`);
   await s.getByRole('tab', { name: 'Vertragsunterlagen' }).click();
   const auszug = s.locator('.dokumentliste li', { hasText: /^Kontoauszug\.pdf/ }).first();
-  await auszug.getByRole('button', { name: w('Schwärzen'), exact: true }).click();
+  await dokMenue(auszug, 'Schwärzen …');
   const schwarz = s.locator('.pdfseiten.schwaerzen');
   await schwarz.locator('.schwarz-seite img').first().waitFor({ timeout: 30_000 });
   await schwarz.getByLabel(w('Überall schwärzen')).fill('Beispiel');
   await schwarz.getByRole('button', { name: w('Hinzufügen') }).click();
-  await schwarz.locator('.schwarz-art', { hasText: w('IBAN') }).locator('legend input').check();
+  await schwarz.locator('.schwarz-art', { hasText: w('IBAN') }).locator('input[type="checkbox"]').first().check();
   await schwarz.getByRole('button', { name: w('Vorschau') }).click();
   await s.waitForTimeout(500);
   await schwarz.scrollIntoViewIfNeeded();
@@ -710,7 +715,7 @@ async function main() {
   await s.getByRole('button', { name: w('Mappe'), exact: true }).click();
   await s.getByRole('menuitem', { name: w(/Aufgabe vergeben/) }).click();
   const neueAufgabe = s.getByRole('region', { name: w('Aufgabe vergeben') });
-  await neueAufgabe.getByLabel(w('Empfänger')).selectOption({ label: MITGLIED.name });
+  await neueAufgabe.getByLabel(w('Für'), { exact: true }).selectOption({ label: MITGLIED.name });
   await neueAufgabe.getByPlaceholder(w('z. B. Bitte Rechnung prüfen und bezahlen')).fill('Sonderkündigung vorbereiten');
   await bild(s, 'aufgabe-vergeben');
   await neueAufgabe.getByRole('button', { name: w('Schließen') }).click();
@@ -771,6 +776,8 @@ async function main() {
   await geheZu(s, `/ablage/${partner.id}/${d.stadtwerke.id}`);
   await s.getByRole('button', { name: w('Mappe'), exact: true }).click();
   await s.getByRole('menuitem', { name: w(/Mit verknüpften Mappen löschen/) }).click();
+  // Gefahr im Menü (#1211): erst die Rückfrage, dann die Auswahl als Baum.
+  await s.getByRole('alertdialog').getByRole('button', { name: w('Weiter zur Auswahl') }).click();
   const loeschBaum = s.getByRole('region', { name: w('Mit verknüpften Mappen löschen') });
   await loeschBaum.locator('.lb-summe').waitFor();
   await loeschBaum.evaluate((e) => e.scrollIntoView({ block: 'start' }));

@@ -5,6 +5,7 @@ import { api } from '../api';
 import { Hilfe } from '../Hilfe';
 import { useKonto } from '../konto';
 import { Symbol } from '../Symbol';
+import { Knopf } from '../bausteine';
 import { t } from '../sprache';
 
 /**
@@ -71,10 +72,10 @@ export function Uebersetzbar({ quelle, original, darstellen = (x) => x, ersetzen
   const ziele = (n: string[]) => n.join(', ');
 
   const knopf = (
-    <button type="button" className="textknopf klein uebersetzen-knopf" onClick={() => void starte()}
+    <Knopf art="link" groesse="klein" className="uebersetzen-knopf" symbol="uebersetzen" onClick={() => void starte()}
       title={netz ? t('ablage.uebersetzung.knopf.netz', { paket: angebot.paket.name, ziele: ziele(netz) }) : t('ablage.uebersetzung.knopf.titel', { paket: angebot.paket.name })}>
-      <Symbol name="uebersetzen" /> {t('ablage.uebersetzung.anzeigen')}
-    </button>
+      {t('ablage.uebersetzung.anzeigen')}
+    </Knopf>
   );
 
   if (stand.art === 'aus') return <>{children}<div className="uebersetzen-zeile">{knopf}</div></>;
@@ -83,7 +84,7 @@ export function Uebersetzbar({ quelle, original, darstellen = (x) => x, ersetzen
       <>{children}
         <div className="uebersetzen-zeile">
           <span className="leise klein" role="status">{stand.teile > 1 ? t('ablage.uebersetzung.abschnitt', { teil: stand.teil + 1, teile: stand.teile }) : t('ablage.uebersetzung.laeuft')}</span>
-          <button type="button" className="textknopf klein" onClick={zurueck}>{t('ablage.uebersetzung.abbrechen')}</button>
+          <Knopf art="link" groesse="klein" onClick={zurueck}>{t('ablage.uebersetzung.abbrechen')}</Knopf>
         </div>
       </>
     );
@@ -96,7 +97,7 @@ export function Uebersetzbar({ quelle, original, darstellen = (x) => x, ersetzen
       <>{children}
         <div className="uebersetzen-zeile">
           <span className="leise klein" role="status">{t('ablage.uebersetzung.gleich', { sprache: sprachname(stand.nach) })}</span>
-          <button type="button" className="textknopf klein" onClick={zurueck}>{t('ablage.uebersetzung.ok')}</button>
+          <Knopf art="link" groesse="klein" onClick={zurueck}>{t('ablage.uebersetzung.ok')}</Knopf>
         </div>
       </>
     );
@@ -121,10 +122,10 @@ export function Uebersetzbar({ quelle, original, darstellen = (x) => x, ersetzen
         </div>
       )}
       <div className="uebersetzen-zeile">
-        <button type="button" className="textknopf klein" aria-expanded={originalSichtbar} aria-controls={`${id}-o`} onClick={() => setFest((x) => !x)}>
+        <Knopf art="link" groesse="klein" aria-expanded={originalSichtbar} aria-controls={`${id}-o`} onClick={() => setFest((x) => !x)}>
           {originalSichtbar ? t('ablage.uebersetzung.original-verbergen') : t('ablage.uebersetzung.original-zeigen')}
-        </button>
-        <button type="button" className="textknopf klein" onClick={zurueck}>{t('ablage.uebersetzung.zurueck')}</button>
+        </Knopf>
+        <Knopf art="link" groesse="klein" onClick={zurueck}>{t('ablage.uebersetzung.zurueck')}</Knopf>
       </div>
     </div>
   );

@@ -28,7 +28,7 @@ import { mkdir, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
 import { join } from 'node:path';
 import { test, after, before } from 'node:test';
 import { chromium } from 'playwright';
-import { musterAufnehmen } from './muster.mjs';
+import { axePruefen, musterAufnehmen, tippflaechenPruefen } from './muster.mjs';
 
 const BASIS = (process.env.DMS_URL ?? 'http://localhost:3000').replace(/\/$/, '');
 const FEHLERORDNER = process.argv[2] ?? process.env.DMS_RAUCHTEST_BILDER ?? 'rauchtest-fehler';
@@ -313,6 +313,9 @@ async function vorbereiten(cookie) {
   daten.vorbelegen = await vorbelegenDaten(cookie);
   // Archivmodus „Ist der Stichtag leer: läuft noch nicht ab“ (#1051): ein laufender und ein beendeter Mietvertrag.
   daten.archiv = await archivDaten(cookie);
+  // Ablage aus Bausteinen (#1211, #1212): ein Mappentyp ohne Archivmodus, damit Löschen in den Papierkorb geht.
+  daten.bausteine = (await api('POST', '/api/typen', { cookie, body: { name: 'Kellerraum', schluessel: 'kellerraum', titelVorlage: '{objekt}',
+    felder: [{ key: 'objekt', label: 'Objekt', typ: 'text', pflicht: true }, { key: 'notiz', label: 'Notiz', typ: 'langtext' }, { key: 'seit', label: 'Seit', typ: 'datum' }] } })).daten;
   const einladung = (await api('POST', '/api/benutzer',{ cookie, body: { email: JONAS.email, name: JONAS.name, rolle: 'mitglied', rollen: [] } })).daten;
   await api('POST', '/api/konto/passwort-setzen', { body: { schluessel: einladung.link.split('/passwort/')[1], passwort: JONAS.passwort } });
 }
@@ -421,7 +424,7 @@ rauchtest('„+ Neu“: Mappe anlegen und speichern', { als: LENA }, async (s) =
   await s.waitForURL(/\/neu$/);
   const mappe = s.getByRole('region', { name: 'Mappe' });
   await mappe.getByRole('heading', { name: 'Neue Mappe', level: 1 }).waitFor();
-  await mappe.getByRole('textbox', { name: 'Name*' }).fill('Versicherung Beispiel AG');
+  await mappe.getByRole('textbox', { name: 'Name', exact: true }).fill('Versicherung Beispiel AG');
   await mappe.getByRole('textbox', { name: 'Kundennummer' }).fill('K-2027-42');
   await mappe.getByRole('button', { name: 'Mappe speichern' }).click();
   await mappe.getByRole('heading', { name: 'Versicherung Beispiel AG', level: 1 }).waitFor();
@@ -760,7 +763,7 @@ rauchtest('Handy: Fenster „+ … anlegen“ passt auf den Bildschirm (#935)', 
   const feld = s.locator('[data-anker="mappe.feld:aussteller"]');
   await feld.getByRole('button', { name: '+ Vertragspartner anlegen' }).click();
   const fenster = s.getByRole('dialog', { name: 'Vertragspartner anlegen' });
-  await fenster.getByRole('textbox', { name: 'Name*' }).waitFor();
+  await fenster.getByRole('textbox', { name: 'Name', exact: true }).waitFor();
   const box = await fenster.boundingBox();
   assert.ok(box && box.x >= 0 && box.x + box.width <= 390, `Fenster breiter als der Bildschirm (${JSON.stringify(box)})`);
   await keineWaagerechteRolle(s);
@@ -781,7 +784,7 @@ rauchtest('Tabelle: Positionen zwischen den Feldern, „+ Position“ im Fenster
   await neu.click();
   const fenster = s.getByRole('dialog', { name: 'Auftragsposition anlegen' });
   await fenster.getByText('A-1').first().waitFor();
-  await fenster.getByRole('textbox', { name: 'Beschreibung*' }).fill('Bremsen vorne');
+  await fenster.getByRole('textbox', { name: 'Beschreibung', exact: true }).fill('Bremsen vorne');
   await fenster.getByRole('button', { name: /speichern/i }).click();
   await fenster.waitFor({ state: 'detached' });
   await tabelle.getByRole('cell', { name: 'Bremsen vorne', exact: true }).waitFor();
@@ -874,7 +877,7 @@ rauchtest('Dokument übernehmen: Typ erkannt, Folgedokument abtrennen (#934)', {
   await dokument.getByText('1 Dokument liegt jetzt als „Werkstatt Kfz (abgetrennt)“ in „Neue Post“.').waitFor();
   await dokument.getByRole('article', { name: 'Vertrag Leasing Kombi Beispiel 2027.pdf' }).waitFor({ state: 'detached' });
   // Text markieren (Textebene): Das zuletzt gewählte Feld übernimmt ihn.
-  await mappe.getByRole('textbox', { name: 'Rechnungsnummer*' }).click();
+  await mappe.getByRole('textbox', { name: 'Rechnungsnummer', exact: true }).click();
   const woerter = dokument.locator('.ue-wort');
   await woerter.nth(1).hover();
   await s.mouse.down();
@@ -896,7 +899,7 @@ rauchtest('Neue Post: Mappentyp wählen, ausfüllen, speichern – die Post wird
   await mappe.getByRole('option', { name: /^Vertragspartner/ }).click();
   await mappe.getByText('Beim Speichern wandern Dokumente und Historie der Post hierher, die Post kommt in den Papierkorb.').waitFor();
   await mappe.getByRole('tab', { name: 'Stammdaten' }).click();
-  await mappe.getByRole('textbox', { name: 'Name*' }).fill('Schornsteinfeger Beispiel');
+  await mappe.getByRole('textbox', { name: 'Name', exact: true }).fill('Schornsteinfeger Beispiel');
   await mappe.getByRole('heading', { name: 'Schornsteinfeger Beispiel', level: 1 }).waitFor();
   await mappe.getByRole('button', { name: 'Mappe speichern' }).click();
   // Danach die nächste Post aus „Neue Post“ auf derselben Seite, oben mit Link zur neuen Mappe.
@@ -948,10 +951,10 @@ rauchtest('Verweisfeld: „+ … anlegen“ im Fenster, mit Werten vom Dokument 
   // Abbrechen und Esc schließen ohne Änderung; danach steht der Fokus wieder am Verweisfeld.
   await anlegen.click();
   const fenster = s.getByRole('dialog', { name: 'Vertragspartner anlegen' });
-  await fenster.getByRole('button', { name: 'Abbrechen' }).click();
+  await fenster.getByRole('button', { name: 'Entwurf verwerfen' }).click();
   await fenster.waitFor({ state: 'detached' });
   await anlegen.click();
-  await fenster.getByRole('textbox', { name: 'Name*' }).waitFor();
+  await fenster.getByRole('textbox', { name: 'Name', exact: true }).waitFor();
   await s.waitForFunction(() => document.activeElement?.closest('[role="dialog"]'));
   await s.keyboard.press('Escape');
   await fenster.waitFor({ state: 'detached' });
@@ -961,7 +964,7 @@ rauchtest('Verweisfeld: „+ … anlegen“ im Fenster, mit Werten vom Dokument 
   await fenster.getByText('Neue Mappe').or(fenster.getByText('Heizungsbau Muster KG', { exact: true })).first().waitFor();
   await fenster.getByRole('tab', { name: 'Stammdaten' }).waitFor();
   await fenster.getByRole('button', { name: 'Mappe speichern' }).waitFor();
-  const name = fenster.getByRole('textbox', { name: 'Name*' });
+  const name = fenster.getByRole('textbox', { name: 'Name', exact: true });
   if (!(await name.inputValue())) await name.fill('Heizungsbau Muster KG');
   // Anklicken vom Dokument geht auch im Fenster: Feld wählen, Text markieren – er landet im Fenster.
   await fenster.getByRole('textbox', { name: 'Kundennummer' }).click();
@@ -1003,9 +1006,9 @@ rauchtest('Verweisfeld folgt aus einem anderen; passt es nicht, sagt die Mappe w
   await s.goto(BASIS + `/ablage/${rechnung.id}/neu`);
   const mappe = s.getByRole('region', { name: 'Mappe' });
   await mappe.getByRole('heading', { name: 'Neue Mappe', level: 1 }).waitFor();
-  await mappe.getByRole('textbox', { name: 'Rechnungsnummer*' }).fill('R-2027-88');
-  await mappe.getByLabel('Rechnungsdatum*').fill('2027-01-15');
-  await mappe.getByRole('textbox', { name: 'Rechnungsbetrag*' }).fill('120,00');
+  await mappe.getByRole('textbox', { name: 'Rechnungsnummer', exact: true }).fill('R-2027-88');
+  await mappe.getByLabel('Rechnungsdatum', { exact: true }).fill('2027-01-15');
+  await mappe.getByRole('textbox', { name: 'Rechnungsbetrag', exact: true }).fill('120,00');
   // Vertrag gewählt → der Aussteller füllt sich und ist markiert.
   const vertrag = mappe.locator('[data-anker="mappe.feld:vertrag"]');
   await vertrag.getByRole('combobox').fill('Wartungsvertrag');
@@ -1139,7 +1142,7 @@ async function anlegeKnoepfe(s) {
     const sichtbar = (el) => el.getClientRects().length > 0;
     const text = (el) => el.textContent.replace(/\s+/g, ' ').trim();
     const alle = [...document.querySelectorAll('a, button, summary, [data-knopf="anlegen"]')].filter(sichtbar)
-      .filter((el) => el.dataset.knopf === 'anlegen' || /^\+ ?Neu/.test(text(el)));
+      .filter((el) => el.dataset.knopf === 'anlegen' || /^\+ ?Neu/.test(text(el)) || /^\+ /.test(text(el)));
     return { alle: alle.map(text), ohneArt: alle.filter((el) => el.dataset.knopf !== 'anlegen').map(text) };
   });
 }
@@ -1155,7 +1158,8 @@ rauchtest('„+ Neu“ in Listen: überall Knopfart „Anlegen“ (#989)', { als
   // Ablage: eine Ansicht mit „+ Neu“ und das Menü „+ Neu“ oben.
   await s.goto(BASIS + '/ablage/start');
   await s.getByRole('complementary', { name: 'Ansichten' }).getByRole('link', { name: /^Vertrag \d/ }).click();
-  await s.getByRole('region', { name: 'Mappen' }).getByRole('link', { name: '+ Neu' }).waitFor();
+  // Kopf der Ansicht (#1212): „+ <Typ>“ statt „+ Neu“.
+  await s.getByRole('region', { name: 'Mappen' }).getByRole('link', { name: /^\+ Vertrag/ }).waitFor();
   await pruefe('Ablage → Vertrag');
   // Mein Konto: API-Schlüssel.
   for (const b of ['sicherheit', 'benachrichtigungen']) {
@@ -1311,7 +1315,7 @@ rauchtest('Werte aus der gewählten Mappe vorschlagen (#1037)', { als: LENA }, a
   await s.goto(BASIS + `/ablage/${abo.id}/neu`);
   const mappe = s.getByRole('region', { name: 'Mappe' });
   await mappe.getByRole('heading', { name: 'Neue Mappe', level: 1 }).waitFor();
-  await mappe.getByRole('textbox', { name: 'Bezeichnung*' }).fill('Handy Lena');
+  await mappe.getByRole('textbox', { name: 'Bezeichnung', exact: true }).fill('Handy Lena');
   const tarifart = mappe.locator('[data-anker="mappe.feld:tarifart"]');
   await tarifart.getByRole('combobox').fill('Mobil');
   await tarifart.getByRole('option', { name: 'Mobilfunk' }).click();
@@ -1616,6 +1620,86 @@ rauchtest('Dokumentliste: E-Mail mit fertiger Archivfassung zeigt ihr Vorschaubi
   assert.equal(await bild.getAttribute('title'), 'Vorschau aus der umgewandelten Fassung eines Pakets');
   await s.waitForFunction((el) => el.complete && el.naturalWidth > 0, await bild.elementHandle(), { timeout: 20_000 });
   assert.equal(await liste.locator('.vorschaubild.ohne').count(), 0);
+});
+
+/* ---------- Ablage aus Bausteinen: axe und Tippflächen (#1211, #1212) ---------- */
+
+/** Bereiche der Ablage, die #1211/#1212 umgestellt haben – ohne die Kopfzeile (#1218, #1219 bauen sie neu). */
+const ABLAGE_BEREICHE = ['.spalte.sichten', '.spalte.liste', '.spalte.mappe'];
+
+/**
+ * Die Seiten der Ablage, die #1211/#1212 auf Bausteine umgestellt haben: Mappe (Formular und Speicherleiste),
+ * Dokumentliste, Post, erweiterte Suche, Zu erledigen (Liste und Monat), Papierkorb. Je Seite ein Name und der Weg
+ * dorthin (Daten über die Schnittstelle).
+ */
+async function ablageSeiten(cookie) {
+  const typ = daten.bausteine;
+  // Eine Mappe mit einem PDF für die Dokumentliste; eine zweite für den Papierkorb.
+  const mitDok = (await api('POST', '/api/mappen', { cookie, body: { typId: typ.id, werte: { objekt: 'Keller Bausteine' } } })).daten;
+  await api('POST', `/api/mappen/${mitDok.id}/dokumente?register=dokumente&name=${encodeURIComponent('Übergabeprotokoll.pdf')}&typ=application/pdf`, { cookie, body: beispielPdf('Übergabeprotokoll Keller'), roh: true });
+  const weg = (await api('POST', '/api/mappen', { cookie, body: { typId: typ.id, werte: { objekt: 'Abstellraum Bausteine' } } })).daten;
+  const post = (await api('POST', '/api/post', { cookie, body: { betreff: 'Kellerschlüssel Bausteine' } })).daten;
+  await api('POST', `/api/mappen/${post.id}/dokumente?register=dokumente&name=${encodeURIComponent('Kellerschlüssel.pdf')}&typ=application/pdf`, { cookie, body: beispielPdf('Kellerschluessel'), roh: true });
+  await api('DELETE', `/api/mappen/${weg.id}?grund=nicht_noetig`, { cookie });
+  return [
+    { name: 'Mappe', weg: async (s) => {
+      await s.goto(BASIS + `/ablage/${typ.id}/${mitDok.id}`);
+      await s.getByRole('region', { name: 'Mappe' }).getByRole('button', { name: 'Mappe speichern' }).waitFor();
+    } },
+    { name: 'Dokumente', weg: async (s) => {
+      await s.goto(BASIS + `/ablage/${typ.id}/${mitDok.id}`);
+      await s.getByRole('region', { name: 'Mappe' }).getByRole('tab', { name: /^Dokumente/ }).click();
+      await s.locator('.dokzeile').filter({ hasText: 'Übergabeprotokoll.pdf' }).first().waitFor();
+    } },
+    { name: 'Post', weg: async (s) => {
+      // Die Post-Mappe selbst (Leiste mit Stand, Zuordnen, Erkannt), nicht die Seite „Dokument übernehmen“ (#1217).
+      await s.goto(BASIS + `/ablage/${post.typId}/${post.id}?als=post`);
+      await s.getByRole('region', { name: 'Mappe' }).getByRole('tab').first().waitFor();
+    } },
+    { name: 'Suche', weg: async (s) => {
+      await s.goto(BASIS + '/ablage/suche');
+      await s.getByRole('form', { name: 'Erweiterte Suche' }).waitFor();
+    } },
+    { name: 'Aufgaben', weg: async (s) => {
+      await s.goto(BASIS + '/ablage/eingang');
+      await s.getByRole('radiogroup', { name: /Ansicht/ }).waitFor();
+    } },
+    { name: 'Termine', weg: async (s) => {
+      await s.goto(BASIS + '/ablage/eingang');
+      await s.getByRole('radio', { name: 'Monat' }).click();
+      await s.locator('.ka-raster, .ka-monat').first().waitFor();
+    } },
+    { name: 'Papierkorb', weg: async (s) => {
+      await s.goto(BASIS + '/ablage/papierkorb');
+      await s.getByRole('region', { name: 'Mappen' }).getByRole('link', { name: /Abstellraum Bausteine/ }).first().click();
+      await s.getByRole('heading', { name: 'Abstellraum Bausteine', level: 1 }).first().waitFor();
+    } },
+  ];
+}
+
+rauchtest('Ablage aus Bausteinen: axe ohne Verstoß, hell und dunkel (#1211, #1212)', { als: LENA }, async (s) => {
+  const seiten = await ablageSeiten(await sitzung(LENA));
+  const funde = [];
+  for (const schema of ['light', 'dark']) {
+    await s.emulateMedia({ colorScheme: schema });
+    for (const seite of seiten) {
+      await seite.weg(s);
+      await s.waitForLoadState('networkidle');
+      for (const v of await axePruefen(s, ABLAGE_BEREICHE)) funde.push(`${seite.name} (${schema}): ${v}`);
+    }
+  }
+  assert.deepEqual(funde, [], `axe meldet Verstöße:\n${funde.join('\n')}`);
+});
+
+rauchtest('Handy: Ablage aus Bausteinen mit 44-px-Tippflächen (#1211, #1212)', { handy: true, als: LENA }, async (s) => {
+  const seiten = await ablageSeiten(await sitzung(LENA));
+  const funde = [];
+  for (const seite of seiten) {
+    await seite.weg(s);
+    await s.waitForLoadState('networkidle');
+    for (const v of await tippflaechenPruefen(s, ABLAGE_BEREICHE)) funde.push(`${seite.name}: ${v}`);
+  }
+  assert.deepEqual(funde, [], `Zu kleine Tippflächen am Handy:\n${funde.join('\n')}`);
 });
 
 /* ---------- Ablago antwortet nicht (#1198) ---------- */

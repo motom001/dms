@@ -6,7 +6,7 @@
 ??? question "There is no view for the paperwork I want to file."
     An administrator sets up new folder types. Describe to them what you want to file and which details belong to it.
 
-??? question "The button "+ New" is missing."
+??? question "The button for creating (e.g. "+ Invoice") is missing."
     There are several reasons for this:
 
     - Folders of this folder type are not created in the Library – for example *User*. An administrator creates those in user management.
@@ -50,7 +50,7 @@
     Not if the tab has versions: the old edition lies under the document as an older **version** and can be viewed, downloaded and restored. How that works is described under [Understanding versions](versionen.md).
 
 ??? question "Search doesn't find a text from a PDF."
-    Next to the search field, tick **Search full text**. If the document has only just been uploaded, it may still say *Full text: waiting* next to it – then wait a moment. With *skipped* or *error* you can trigger it again with **Try again** on the document; for some file types there is no full text, though.
+    Next to the search field, tick **Search full text**. If the document has only just been uploaded, **About this document** may still say *waiting* when you view it – then wait a moment. If the row says "Text not readable", you can trigger it again with **Try again**; for some file types there is no full text, though.
 
 ??? question "The columns have shifted or one has disappeared."
     Under My account, **Appearance on this device** → **Restore default appearance**. Or briefly click the handle between the columns – that expands collapsed areas again.

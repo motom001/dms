@@ -24,8 +24,8 @@ Hinter Dokumenten- und Verknüpfungsregistern steht, wie viel darin liegt. Ein r
 ## Eine Mappe anlegen
 
 1. Wähle links die Ansicht des Mappentyps, zum Beispiel *Rechnung*.
-2. Klicke auf **+ Neu**.
-3. Fülle die Felder aus. Felder mit **\*** sind Pflichtfelder. Unter manchen Feldern steht ein Hinweis, was hineingehört.
+2. Klicke oben in der Liste auf **+** mit dem Namen des Mappentyps, hier **+ Rechnung**.
+3. Fülle die Felder aus. Felder mit dem Zusatz **(optional)** darfst du leer lassen, alle anderen brauchen einen Wert. Unter manchen Feldern steht ein Hinweis, was hineingehört.
 4. Klicke auf **Mappe speichern**.
 
 !!! info "Archiv – aufbewahren bis"
@@ -127,7 +127,7 @@ Ein **Verweis** verbindet zwei Mappen – die Rechnung mit ihrem Vertrag, den Ve
 
 Bei Feldern, die **mehrere Verweise** erlauben (z. B. *Für Rechnungen* bei einer Zahlung), wiederholst du das. Das Suchfeld bleibt oben direkt unter der Beschriftung; die gewählten Mappen stehen **darunter**, jede mit **Entfernen**. So wählst du überall mehrere Einträge aus einer Liste, auch die Mappentypen in der [Erweiterten Suche](ablage.md#erweiterte-suche).
 
-Gibt es die Mappe noch nicht, öffnet **+ … anlegen** unter dem Feld ein kleines Fenster über der Seite – mit Kopf, Registern, Feldern und Speicherleiste wie jede Mappe. Am Kopf ziehst du es beiseite, damit du siehst, was dahinter steht. **Mappe speichern** legt die neue Mappe an, schließt das Fenster und trägt sie ins Feld ein; die Mappe, an der du gerade arbeitest, bleibt ungespeichert offen. **Abbrechen**, ✕ oder **Esc** schließen das Fenster ohne Änderung, danach steht der Cursor wieder am Feld. Den Eintrag gibt es nur, wenn du Mappen dieses Typs anlegen darfst.
+Gibt es die Mappe noch nicht, öffnet **+ … anlegen** unter dem Feld ein kleines Fenster über der Seite – mit Kopf, Registern, Feldern und Speicherleiste wie jede Mappe. Am Kopf ziehst du es beiseite, damit du siehst, was dahinter steht. **Mappe speichern** legt die neue Mappe an, schließt das Fenster und trägt sie ins Feld ein; die Mappe, an der du gerade arbeitest, bleibt ungespeichert offen. **Entwurf verwerfen**, ✕ oder **Esc** schließen das Fenster ohne Änderung, danach steht der Cursor wieder am Feld. Den Eintrag gibt es nur, wenn du Mappen dieses Typs anlegen darfst.
 
 **Felder, die aus einem anderen folgen:** Manche Verweise ergeben sich aus einem anderen – wählst du bei einer Person die Niederlassung, füllt sich die Organisation, zu der sie gehört, und darunter steht „aus Niederlassung“. Das geschieht nur, wenn das Feld leer ist; steht schon eine andere Organisation darin, fragt Ablago „Organisation ändern?“. Trägst du von Hand eine andere Organisation ein, fragt Ablago, ob die Niederlassung geleert werden soll – mit **Behalten** bleibt sie, und am Feld steht der gelbe Hinweis. Welche Felder so zusammenhängen, legt der Administrator fest.
 
@@ -141,7 +141,7 @@ Ein Klick auf einen gesetzten Verweis öffnet die andere Mappe.
 
 Willst du die Mappe mit ungespeicherten Änderungen verlassen, fragt Ablago nach.
 
-Neben dem Titel stehen der Stern für die [Favoriten](ablage.md#favoriten) und das Menü **Mappe ▾** (Aufgabe vergeben, Erinnern, per E-Mail versenden, als PDF exportieren, Link kopieren). Bei jeder Mappe gibt es außerdem die Register **Notizen** (mit Zahl) und **Historie** – siehe [Notizen, Erwähnungen, Historie](zusammenarbeit.md) und [E-Mail, PDF und Link](versenden.md). Am Handy rollt die Reihe der Register waagerecht; ein Schatten am Rand zeigt, dass weitere folgen. Menüs wie **Mappe ▾**, **+ Neu** und dein Benutzermenü öffnen am Handy als Blatt von unten mit großen Einträgen; tippst du daneben, schließt es. Dort steht am Handy auch **Mappe löschen …**. Die Leiste mit **Verwerfen** und **Speichern** erscheint am Handy erst, wenn du etwas geändert hast.
+Neben dem Titel stehen der Stern für die [Favoriten](ablage.md#favoriten) und das Menü **Mappe ▾** (Aufgabe vergeben, Erinnern, per E-Mail versenden, als PDF exportieren, Link kopieren). Bei jeder Mappe gibt es außerdem die Register **Notizen** (mit Zahl) und **Historie** – siehe [Notizen, Erwähnungen, Historie](zusammenarbeit.md) und [E-Mail, PDF und Link](versenden.md). Am Handy rollt die Reihe der Register waagerecht; ein Schatten am Rand zeigt, dass weitere folgen. Menüs wie **Mappe ▾**, **⋯**, **+ Neu** und dein Benutzermenü öffnen am Handy als Blatt von unten mit großen Einträgen; tippst du daneben, schließt es. Die Leiste mit **Mappe löschen**, **Verwerfen** und **Speichern** steht am Handy wie am Computer immer unten.
 
 Manche Angaben sind nur zum Lesen da und haben einen gestrichelten Rahmen – zum Beispiel Name und E-Mail-Adresse in der Mappe eines Benutzers. Daneben steht, wo man sie ändert.
 
@@ -209,7 +209,7 @@ Benutzer und Systemrollen lassen sich in der Ablage gar nicht löschen; dort feh
 
 ### Mit verknüpften Mappen löschen
 
-Willst du eine Mappe **mit allem, was an ihr hängt**, loswerden – etwa einen Vertragspartner, mit dem es seit Jahren nichts mehr gab, samt Verträgen, Rechnungen und Dokumenten –, nimm **Mappe ▾ → Mit verknüpften Mappen löschen …** (unten im Menü, rot). Lässt sich die Mappe allein nicht löschen, weil noch andere auf sie verweisen, steht derselbe Weg auch unter **Warum ist Löschen gesperrt?** am Löschknopf. Du brauchst dafür das Recht, die Mappe zu löschen.
+Willst du eine Mappe **mit allem, was an ihr hängt**, loswerden – etwa einen Vertragspartner, mit dem es seit Jahren nichts mehr gab, samt Verträgen, Rechnungen und Dokumenten –, nimm **Mappe ▾ → Mit verknüpften Mappen löschen …** (abgesetzt ganz unten im Menü, mit Papierkorb-Symbol). Lässt sich die Mappe allein nicht löschen, weil noch andere auf sie verweisen, steht derselbe Weg auch unter **Warum ist Löschen gesperrt?** am Löschknopf. Du brauchst dafür das Recht, die Mappe zu löschen.
 
 ![Vorschau als Baum: was mitgeht und was bleibt](bilder/mit-verknuepften-loeschen.png)
 
@@ -236,13 +236,13 @@ Fehlt der Knopf, dürfen Mappen dieses Mappentyps nicht gelöscht werden.
 
 Ein Administrator kann je Mappentyp festlegen, wer Mappen anlegen, lesen, bearbeiten, löschen und Passwörter darin sehen darf – zum Beispiel, dass nur die Buchhaltung Rechnungen bearbeitet oder dass vertrauliche Mappen nur ihre Verantwortlichen sehen. Was für dich gilt, steht unter Mein Konto unter [Meine Rechte](profil.md#meine-rechte).
 
-Auch an jeder **Ansicht** kann er Rechte setzen: wer sie **sieht**, wer dort mit **+ Neu** **anlegen** darf und wer aus ihr **exportieren** darf. Eine Ansicht zeigt dir aber nie Mappen, die du am Mappentyp nicht lesen darfst.
+Auch an jeder **Ansicht** kann er Rechte setzen: wer sie **sieht**, wer dort mit **+ ‹Mappentyp›** **anlegen** darf und wer aus ihr **exportieren** darf. Eine Ansicht zeigt dir aber nie Mappen, die du am Mappentyp nicht lesen darfst.
 
 Das merkst du so:
 
 - **Mappen, die du nicht lesen darfst**, tauchen in Listen, Suche, Zählern und Favoriten nicht auf. Verweist eine Mappe auf eine solche, steht dort *nicht sichtbare Mappe* ohne Link.
 - **Ohne Bearbeiten** zeigt eine Mappe ihre Felder und Dokumente nur an; unten steht „Nur lesen“. Notizen und Aufgaben gehen trotzdem.
-- **Ohne Löschen** ist „Mappe löschen“ gesperrt (gestrichelt mit Schloss; das ⓘ daneben sagt, warum), **ohne Anlegen** fehlt „+ Neu“, **ohne Passwörter sehen** fehlt das Auge an Passwortfeldern.
+- **Ohne Löschen** ist „Mappe löschen“ gesperrt (gestrichelt mit Schloss; das ⓘ daneben sagt, warum), **ohne Anlegen** fehlt der Knopf zum Anlegen (z. B. „+ Rechnung“), **ohne Passwörter sehen** fehlt das Auge an Passwortfeldern.
 - **Ohne Exportieren** fehlen in einer Ansicht die Knöpfe zum Exportieren; Ansichten, die du nicht sehen darfst, fehlen im Baum.
 - Hängen deine Rechte von einem Feld ab (etwa „Verantwortlich“) und würdest du dir mit einer Änderung selbst das Lesen oder Bearbeiten nehmen, fragt Ablago vor dem Speichern nach.
 - Bei der Auswahl von Benutzern (Verantwortlich, Erwähnungen, Vertretung, Aufgaben) erscheinen nur die, die du sehen darfst.

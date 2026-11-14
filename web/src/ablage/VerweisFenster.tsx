@@ -4,6 +4,7 @@ import type { Mappentyp } from '../../../shared/src/model';
 import { typName } from '../../../shared/src/beschriftung';
 import { t } from '../sprache';
 import { Symbol } from '../Symbol';
+import { Knopf } from '../bausteine';
 import { BrueckeKontext, useBruecke, type Bruecke, type FormularAnschluss, type Nutzlast } from './bruecke';
 
 /**
@@ -91,7 +92,7 @@ export function VerweisFenster({ ziel, zurueck, schliessen, children }: {
         onDragEnter={halt} onDragOver={halt} onDragLeave={halt} onDrop={halt} onMouseOver={halt}>
         <div className="vf-griff" onPointerDown={greife} onPointerMove={ziehe} onPointerUp={lasse} onPointerCancel={lasse} title={t('ablage.fenster.verschieben')}>
           <span className="vf-titel" id={titelId}>{t('ablage.fenster.titel', { typ: typName(ziel) })}</span>
-          <button type="button" className="textknopf vf-zu" aria-label={t('ablage.mappeformular.schliessen')} title={t('ablage.mappeformular.schliessen')} onClick={schliessen}><Symbol name="schliessen" /></button>
+          <Knopf art="link" className="vf-zu" nurSymbol={t('ablage.mappeformular.schliessen')} onClick={schliessen}><Symbol name="schliessen" /></Knopf>
         </div>
         <div className="vf-inhalt spalte mappe">{children}</div>
       </div>

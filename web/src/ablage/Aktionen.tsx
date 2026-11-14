@@ -1,9 +1,8 @@
-import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react';
-import { Symbol } from '../Symbol';
+import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { formatiere, standardRegister, type Dokument, type Feld, type Mappentyp } from '../../../shared/src/model';
+import { formatiere, standardRegister, type Dokument, type Feld as FeldDefinition, type Mappentyp } from '../../../shared/src/model';
 import { gruppiere } from '../../../shared/src/anlagen';
-import { HakenFeld } from '../bausteine';
+import { Feld, FeldGruppe, HakenFeld, Knopf, KnopfLink, Menue, type GefahrRueckfrage, type MenuePunkt } from '../bausteine';
 import { AnlageMarke } from './Anlagen';
 import { ausgeblendeteFelder, sichtbareRegister } from '../../../shared/src/darstellung';
 import { api, type MappeDetails } from '../api';
@@ -28,62 +27,40 @@ const groesse = (b: number) => (b < 1024 ? `${b} B` : b < 1024 * 1024 ? `${(b / 
 export const EMAIL_WARNUNG = 20 * 1024 * 1024;
 const EMAIL_HOECHSTENS = 50_000_000;
 
-/** Ein weiterer Löschweg im Menü (#424), z. B. „Mit verknüpften Mappen löschen …“. */
-export interface Loeschweg { text: string; titel?: string; tu(): void; /** Nur auf dem Handy (#489), z. B. „Mappe löschen …“ statt in der Speicherleiste. */ nurSchmal?: boolean }
+/** Ein weiterer Löschweg im Menü (#424), z. B. „Mit verknüpften Mappen löschen …“ – Gefahr mit Rückfrage (#1210, Leitsatz 5). */
+export interface Loeschweg { text: string; titel?: string; tu(): void; rueckfrage: GefahrRueckfrage }
 
-/**
- * Menü „Mappe ▾“ (#427, früher „Aktionen“): steht in der Kopfzeile neben dem Stern und betrifft
- * die ganze Mappe – nicht die eigene Aufgabe im Banner darunter. `loeschwege` erscheinen
- * abgetrennt am Ende (Platz für #424).
- */
 /** Aktion eines Pakets im Menü (#1039): immer mit dem Namen des Pakets; gesperrt = Bedingung trifft nicht zu, mit Grund. */
 export interface PaketEintrag { key: string; name: string; paket: string; titel?: string; gesperrt?: string; tu(): void }
 
+/**
+ * Menü „Mappe“ (#427, früher „Aktionen“): steht in der Kopfzeile neben dem Stern und betrifft die ganze Mappe – nicht die
+ * eigene Aufgabe im Banner darunter. Baustein `Menue` (#1211); `loeschwege` erscheinen abgetrennt am Ende (Platz für
+ * #424), als Gefahr mit Rückfrage. „Mappe löschen“ selbst steht in der Speicherleiste – auch am Handy (#1211).
+ */
 export function Aktionsmenue({ aufgabe, erinnern, vorlagen = [], email, drucken, brief, link, auskunft, loeschwege = [], aus = [], pakete = [] }: { aufgabe?: () => void; erinnern?: () => void; /** Weitere Automatisierungsvorlagen (#1044), z. B. „Wiedervorlage“. */ vorlagen?: Array<{ key: string; name: string; titel?: string; tu(): void }>; email?: () => void; drucken?: () => void; /** Brief aus Vorlage (#1040). */ brief?: () => void; link?: () => void; auskunft?: () => void; loeschwege?: Loeschweg[];
   /** Eingebaute Aktionen, die die Werkbank ausgeblendet hat (#1039). */ aus?: readonly string[]; /** Aktionen von Paketen (#1039). */ pakete?: PaketEintrag[] }) {
-  const [offen, setOffen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!offen) return;
-    const zu = (e: MouseEvent | KeyboardEvent) => {
-      if (e instanceof KeyboardEvent ? e.key === 'Escape' : !ref.current?.contains(e.target as Node)) setOffen(false);
-    };
-    document.addEventListener('mousedown', zu); document.addEventListener('keydown', zu);
-    return () => { document.removeEventListener('mousedown', zu); document.removeEventListener('keydown', zu); };
-  }, [offen]);
-  const waehle = (f: () => void) => () => { setOffen(false); f(); };
   // Einträge als Liste (#1040: „Brief aus Vorlage“ dazu) – ein Menüpunkt, ein Aussehen.
   // Paket-Aktionen (#1039) reihen sich nach den eingebauten ein – gekennzeichnet mit dem Paket; ausgeblendete fehlen.
-  type Eintrag = { key: string; tu: () => void; titel?: string; inhalt: ReactNode };
   const eintraege = ([
-    aufgabe && { key: 'aufgabe', tu: aufgabe, inhalt: tn('ablage.aktionen.aufgabe-vergeben', { symbol: <Symbol name="aufgabe" /> }) },
-    erinnern && { key: 'erinnern', tu: erinnern, titel: t('ablage.aktionen.zu-einem-datum-an'), inhalt: tn('ablage.aktionen.erinnern', { symbol: <Symbol name="erinnern" /> }) },
+    aufgabe && { key: 'aufgabe', tu: aufgabe, symbol: 'aufgabe', inhalt: t('ablage.aktionen.aufgabe-vergeben') },
+    erinnern && { key: 'erinnern', tu: erinnern, symbol: 'erinnern', titel: t('ablage.aktionen.zu-einem-datum-an'), inhalt: t('ablage.aktionen.erinnern') },
     // Automatisierungsvorlagen (#1044): gleich hinter „Erinnern“ – sie gehören zu denselben Abläufen.
-    ...vorlagen.map((v): Eintrag => ({ key: `vorlage:${v.key}`, tu: v.tu, ...(v.titel ? { titel: v.titel } : {}), inhalt: <><Symbol name="erinnern" />{' '}{v.name}</> })),
-    email && { key: 'email', tu: email, inhalt: tn('ablage.aktionen.per-e-mail-versenden', { symbol: <Symbol name="email" /> }) },
-    drucken && { key: 'drucken', tu: drucken, inhalt: tn('ablage.aktionen.als-pdf-exportieren', { symbol: <Symbol name="pdf" /> }) },
-    brief && { key: 'brief', tu: brief, titel: t('ablage.aktionen.brief-titel'), inhalt: tn('ablage.aktionen.brief-aus-vorlage', { symbol: <Symbol name="dokument" /> }) },
-    link && { key: 'link', tu: link, titel: t('ablage.aktionen.link-ueber-mappentyp-und'), inhalt: tn('ablage.aktionen.link-kopieren', { symbol: <Symbol name="link" /> }) },
-    auskunft && { key: 'auskunft', tu: auskunft, titel: t('ablage.aktionen.alles-zu-dieser-person'), inhalt: tn('ablage.aktionen.auskunft-erstellen', { symbol: <Symbol name="auskunft" /> }) },
-  ] as Array<Eintrag | false | undefined | null | ''>).filter((e): e is Eintrag => !!e && !aus.includes(e.key));
-  // Paket-Aktionen in derselben Liste – ein Menüpunkt, ein Aussehen; davor ein Trenner, gesperrte mit Grund.
-  const alle: Array<{ key: string; tu: () => void; titel?: string; inhalt: ReactNode; gesperrt?: string; trenner?: boolean }> = [...eintraege, ...pakete.map((p, i) => ({
-    key: `paket:${p.key}`, tu: p.tu, titel: p.gesperrt ?? p.titel, gesperrt: p.gesperrt, trenner: i === 0,
-    inhalt: <><Symbol name="paket" />{' '}{p.name}{' '}<span className="chip klein">{p.paket}</span>{p.gesperrt && <small className="aktionsmenue-grund">{p.gesperrt}</small>}</>,
-  }))];
+    ...vorlagen.map((v): MenuePunkt => ({ key: `vorlage:${v.key}`, tu: v.tu, symbol: 'erinnern', ...(v.titel ? { titel: v.titel } : {}), inhalt: v.name })),
+    email && { key: 'email', tu: email, symbol: 'email', inhalt: t('ablage.aktionen.per-e-mail-versenden') },
+    drucken && { key: 'drucken', tu: drucken, symbol: 'pdf', inhalt: t('ablage.aktionen.als-pdf-exportieren') },
+    brief && { key: 'brief', tu: brief, symbol: 'dokument', titel: t('ablage.aktionen.brief-titel'), inhalt: t('ablage.aktionen.brief-aus-vorlage') },
+    link && { key: 'link', tu: link, symbol: 'link', titel: t('ablage.aktionen.link-ueber-mappentyp-und'), inhalt: t('ablage.aktionen.link-kopieren') },
+    auskunft && { key: 'auskunft', tu: auskunft, symbol: 'auskunft', titel: t('ablage.aktionen.alles-zu-dieser-person'), inhalt: t('ablage.aktionen.auskunft-erstellen') },
+  ] as Array<MenuePunkt | false | undefined | null | ''>).filter((e): e is MenuePunkt => !!e && !aus.includes(e.key));
+  // Paket-Aktionen in einer eigenen Gruppe; gesperrte mit Grund darunter.
+  const alle: MenuePunkt[] = [...eintraege, ...pakete.map((p): MenuePunkt => ({
+    key: `paket:${p.key}`, tu: p.tu, titel: p.titel, gesperrt: p.gesperrt, symbol: 'paket', gruppe: t('ablage.aktionen.pakete'),
+    inhalt: <>{p.name}{' '}<span className="chip klein">{p.paket}</span></>,
+  })), ...loeschwege.map((w): MenuePunkt => ({ key: `loeschen:${w.text}`, tu: w.tu, titel: w.titel, symbol: 'geloescht', inhalt: w.text, gefahr: w.rueckfrage }))];
   return (
-    <div className="aktionsmenue" ref={ref}>
-      <button type="button" className={`knopf klein ${offen ? 'an' : ''}`} data-anker="mappe.aktionen" aria-haspopup="menu" aria-expanded={offen} onClick={() => setOffen(!offen)} title={t('ablage.aktionen.was-du-mit-dieser')}>
-        {tn('ablage.aktionen.mappe', { span: <span aria-hidden="true">▾</span> })}</button>
-      {offen && <div className="hy-schleier" aria-hidden="true" onClick={() => setOffen(false)} />}
-      {offen && (
-        <div className="menue" role="menu">
-          {alle.map((e) => <Fragment key={e.key}>{e.trenner && <div role="separator" className="aktionsmenue-trenner" />}
-            <button type="button" role="menuitem" aria-disabled={e.gesperrt ? true : undefined} className={e.gesperrt ? 'aktionsmenue-gesperrt' : undefined} onClick={e.gesperrt ? undefined : waehle(e.tu)} title={e.titel}>{e.inhalt}</button></Fragment>)}
-          {loeschwege.length > 0 && <div role="separator" className={`aktionsmenue-trenner${loeschwege.every((w) => w.nurSchmal) ? ' hy-nur-schmal' : ''}`} />}
-          {loeschwege.map((w) => <button key={w.text} type="button" role="menuitem" className={`aktionsmenue-gefahr${w.nurSchmal ? ' hy-nur-schmal' : ''}`} onClick={waehle(w.tu)} title={w.titel}>{w.text}</button>)}
-        </div>
-      )}
+    <div className="aktionsmenue">
+      <Menue beschriftung={t('ablage.aktionen.mappe')} titel={t('ablage.aktionen.was-du-mit-dieser')} anker="mappe.aktionen" punkte={alle} />
     </div>
   );
 }
@@ -133,32 +110,32 @@ export function EmailMaske({ typ, details, neuLaden, schliessen }: { typ: Mappen
 
   return (
     <section className="blatt" aria-label={t('ablage.aktionen.per-e-mail-versenden-2')}>
-      <div className="blattkopf zeile-zwischen"><h2 className="h3">{t('ablage.aktionen.per-e-mail-versenden-2')}</h2><button type="button" className="textknopf" onClick={schliessen}>{t('ablage.aktionen.schliessen')}</button></div>
+      <div className="blattkopf zeile-zwischen"><h2 className="h3">{t('ablage.aktionen.per-e-mail-versenden-2')}</h2><Knopf art="link" onClick={schliessen}>{t('ablage.aktionen.schliessen')}</Knopf></div>
       {fertig ? (
         <>
           <p className="gutertext" role="status">{t('ablage.aktionen.die-e-mail-ist')}</p>
           <p className="leise">{t('ablage.aktionen.sie-ist-als-post')}</p>
-          <div className="knoepfe"><Link to={`/ablage/${fertig.typId}/${fertig.id}`} className="knopf">{t('ablage.aktionen.e-mail-oeffnen')}</Link></div>
+          <div className="knoepfe"><KnopfLink to={`/ablage/${fertig.typId}/${fertig.id}`}>{t('ablage.aktionen.e-mail-oeffnen')}</KnopfLink></div>
         </>
       ) : bereit === false ? (
         <div className="hinweis warn"><p>{t('ablage.aktionen.der-e-mail-versand')}{ich?.rolle === 'admin' ? <> {' '}{tn('ablage.aktionen.das-geht-unter', { link: <Link to="/werkbank/betrieb" className="verweis">{t('ablage.aktionen.werkbank-e-mail-und')}</Link> })}</> : t('ablage.aktionen.bitte-einen-administrator-ihn')}</p></div>
       ) : (
         <form onSubmit={(e) => { e.preventDefault(); void senden(); }}>
           <div className="raster">
-            <label className="eigenschaft breit"><span>{tn('ablage.aktionen.an', { klein: <small>{t('ablage.aktionen.mehrere-durch-komma-getrennt')}</small> })}</span><input type="text" inputMode="email" autoComplete="email" value={an} onChange={(e) => setAn(e.target.value)} placeholder="name@example.org" required /></label>
-            <label className="eigenschaft breit"><span>{t('ablage.aktionen.betreff')}</span><input value={betreff} maxLength={250} onChange={(e) => setBetreff(e.target.value)} required /></label>
-            <label className="eigenschaft breit"><span>{t('ablage.aktionen.nachricht')}</span><textarea rows={5} value={nachricht} onChange={(e) => setNachricht(e.target.value)} /></label>
+            <Feld beschriftung={t('ablage.aktionen.an-2')} hinweis={t('ablage.aktionen.mehrere-durch-komma-getrennt')} className="eigenschaft breit"><input type="text" inputMode="email" autoComplete="email" value={an} onChange={(e) => setAn(e.target.value)} placeholder="name@example.org" required /></Feld>
+            <Feld beschriftung={t('ablage.aktionen.betreff')} className="eigenschaft breit"><input value={betreff} maxLength={250} onChange={(e) => setBetreff(e.target.value)} required /></Feld>
+            <Feld beschriftung={t('ablage.aktionen.nachricht')} optional className="eigenschaft breit"><textarea rows={5} value={nachricht} onChange={(e) => setNachricht(e.target.value)} /></Feld>
           </div>
           <fieldset className="anhaenge">
             <legend>{t('ablage.aktionen.anhaenge')}</legend>
             {!details.dokumente.length ? <p className="leise klein">{t('ablage.aktionen.diese-mappe-hat-keine')}</p> : (
-              <ul>
+              <FeldGruppe beschriftung={t('ablage.aktionen.anhaenge')} beschriftungVerbergen className="anhangwahl"><ul>
                 {liste.map((x) => (
                   <li key={x.id} className={x.anlageZu ? 'eingerueckt' : undefined}><label className="haken"><input type="checkbox" checked={istGewaehlt(x)} disabled={folgt(x) && !(emlWahl(x) && gewaehlt.has(x.anlageZu!))} data-original-email={emlWahl(x) ? '' : undefined}
                     onChange={() => (emlWahl(x) ? setEml(!eml) : umschalten(x.id))} /><span>{x.name} <AnlageMarke d={x} /> <small className="leise">{groesse(x.groesse)}</small></span></label>
                   {x.originalEmail && istGewaehlt(x) && <p className="leise klein">{t('ablage.anlagen.original-mit-hinweis')}</p>}</li>
                 ))}
-              </ul>
+              </ul></FeldGruppe>
             )}
             {details.dokumente.some((x) => x.anlageZu) && <HakenFeld beschriftung={t('ablage.anlagen.email-mit')} hinweis={t('ablage.anlagen.email-mit-hinweis')} hilfe="dokumente.anlagen">
               <input type="checkbox" checked={mitAnlagen} onChange={(e) => setMitAnlagen(e.target.checked)} />
@@ -172,7 +149,7 @@ export function EmailMaske({ typ, details, neuLaden, schliessen }: { typ: Mappen
           </fieldset>
           <p className="leise klein">{t('ablage.aktionen.absender-ist-die-adresse', { email: ich?.email })}</p>
           {fehler && <p className="fehlertext" role="alert">{fehler}</p>}
-          <div className="knoepfe">{stempelProblem && <p className="leise klein">{stempelProblem}</p>}<button className="knopf primaer" disabled={laeuft || bereit === null || !an.trim() || !betreff.trim() || zuGross || !!stempelProblem}>{laeuft ? t('ablage.aktionen.wird-verschickt') : t('ablage.aktionen.senden')}</button></div>
+          <div className="knoepfe"><Knopf art="haupt" type="submit" gesperrt={stempelProblem || (zuGross && t('ablage.aktionen.das-ist-zu-gross').trim()) || bereit === null || !an.trim() || !betreff.trim()} laeuft={laeuft} laeuftText={t('ablage.aktionen.wird-verschickt')}>{t('ablage.aktionen.senden')}</Knopf></div>
         </form>
       )}
     </section>
@@ -205,7 +182,7 @@ export function Druckansicht({ typ, details, fertig }: { typ: Mappentyp; details
       <p className="klein">{t('ablage.aktionen.angelegt-von-zuletzt-geaendert', { zeit: zeit(mappe.erstellt), person: d.person(mappe.erstelltVon), zeit2: zeit(mappe.geaendert), person2: d.person(mappe.geaendertVon) })}</p>
       {register.filter((r) => r.art === 'felder').map((r) => {
         // Tabellen (#1030) haben keinen Wert; ihre Mappen druckt jede für sich.
-        const felder = (r.felder ?? []).filter((k) => !aus.has(k)).map((k) => typ.felder.find((f) => f.key === k)).filter((f): f is Feld => !!f && f.typ !== 'tabelle');
+        const felder = (r.felder ?? []).filter((k) => !aus.has(k)).map((k) => typ.felder.find((f) => f.key === k)).filter((f): f is FeldDefinition => !!f && f.typ !== 'tabelle');
         return (
           <section key={r.key}>
             {register.filter((x) => x.art === 'felder').length > 1 && <h2>{r.name}</h2>}
