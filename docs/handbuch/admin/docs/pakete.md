@@ -10,7 +10,7 @@ Ablago fragt den Katalog **nur auf Knopfdruck** ab, nie im Hintergrund: Klicke *
 
 - **Installiert** – Pakete in dieser Installation, mit Version und Herkunft
 - **Verfügbar** – Pakete aus dem Katalog, die noch nicht installiert sind, nach denselben Regeln wie die Übersicht im Katalog:
-    - oben **Für dich empfohlen** – die Empfehlungen des Katalogs ohne schon Installiertes; nutzt du Ablago auch beruflich (Merkmal unter [Werkbank → Nutzung](nutzung.md)), kommen dazu Pakete für die Arbeit wie Compliance. Kennt ein älterer Katalog keine Empfehlungen, nimmt Ablago die Vorauswahl des Einrichtungsassistenten.
+    - oben **Für dich empfohlen** – die Empfehlungen des Katalogs ohne schon Installiertes; nutzt du Ablago auch beruflich (Merkmal unter [Werkbank → Einstellungen → Eigene Organisation](organisation.md#nutzung)), kommen dazu Pakete für die Arbeit wie Compliance. Kennt ein älterer Katalog keine Empfehlungen, nimmt Ablago die Vorauswahl des Einrichtungsassistenten.
     - darunter **Weitere Pakete**
     - **Sprachen** (Oberflächen-Sprachen) nur über den Umschalter **Pakete · Sprachen**
     - **Ergänzungen** wie die Zusatzsprachen der Texterkennung nicht in der Liste, sondern beim Hauptpaket unter [Dazu passend](#mehrere-pakete-in-einem-schritt-installieren)

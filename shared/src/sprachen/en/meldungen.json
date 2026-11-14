@@ -1915,7 +1915,7 @@
   "organisation.notiz.verantwortlicher": "controller changed",
   "organisation.notiz.datenschutzbeauftragter": "data protection officer changed",
   "organisation.mail.betreff": "Ablago: own organisation changed",
-  "organisation.mail.text": "Something changed at the own organisation “{name}”: {was} (by {von}).\n\nThese details appear on data protection requests and in the deletion concept. Details under Workbench → Own organisation.",
+  "organisation.mail.text": "Something changed at the own organisation “{name}”: {was} (by {von}).\n\nThese details appear on data protection requests and in the deletion concept. Details under Workbench → Settings → Own organisation.",
   "organisation.nichts-bisher": "There is no previous controller entry to take over.",
   "organisation.schon-da": "There already is an own organisation – please add the previous entry there by hand.",
   "organisation.ohne-basis": "This needs a folder type with the attribute “own organisation” – the package Basis from version 1.7.0.",

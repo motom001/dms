@@ -1,5 +1,5 @@
 /**
- * Eigene Organisation (#995): Werkbank → Benutzer und Sicherheit → Eigene Organisation. Ablago kennt die eigene(n)
+ * Eigene Organisation (#995): Werkbank → Einstellungen → Eigene Organisation (seit #1170). Ablago kennt die eigene(n)
  * Organisation(en) über das Merkmal am Mappentyp (Paket Basis) und liest ihre Angaben **mit Systemrechten, nur die feste
  * Liste** aus shared/src/organisation.ts – auch für Verwaltende, die die Mappe selbst nicht sehen dürfen. Geschrieben wird
  * nur in der Ablage mit normalen Rechten; hier liegen nur der Verweis („für Auskünfte und Unterlagen gilt …“), die
@@ -73,8 +73,13 @@ export class OrganisationDienst {
     }).sort((a, b) => anzeigename(a.angaben).localeCompare(anzeigename(b.angaben), 'de'));
   }
 
-  /** Die eigene Organisation für Auskünfte und Unterlagen (gewählt oder die einzige). */
+  /**
+   * Die eigene Organisation für Auskünfte und Unterlagen (gewählt oder die einzige). Ohne „beruflich genutzt“ (#1170) keine:
+   * Eine trotzdem gespeicherte eigene Organisation bleibt, Ablago verwendet sie dann aber nicht (Auskünfte, Löschkonzept,
+   * Briefkopf).
+   */
   async geltende(): Promise<EigeneOrganisation | null> {
+    if (!(await this.kern.merkmale()).beruflich) return null;
     return geltendeOrganisation(await this.liste(), await this.einstellung());
   }
 

@@ -18,6 +18,7 @@ import { hatNetz, hatSchnittstelle } from '../../shared/src/pakete';
 import type { Einstellungen } from './einstellungen';
 import { auswahlText, geschuetzteFelder, zieleVon, type Betrag, type Feld, type Mappe, type Mappentyp, type MappenBezug, type Werte, type Wert } from '../../shared/src/model';
 import { istEigeneOrganisation, merkmalFeld } from '../../shared/src/organisation';
+import { liesMerkmale, MERKMALE_EINSTELLUNG } from '../../shared/src/merkmale';
 import type { Dienst } from './dienst';
 import type { Zugriff } from './kern';
 import { Fachfehler } from './fehler';
@@ -274,6 +275,8 @@ export class Erkennung {
     const konten = btyp ? (await this.repo().listeMappen(btyp.id)).slice(0, MAX_EIGENE) : [];
     const kontoNamen = new Set(konten.map((k) => auswahlText(k.werte.name).trim().toLowerCase()).filter((n) => n.includes(' ')));
     const kontoMails = new Set(konten.map((k) => auswahlText(k.werte.email).trim().toLowerCase()).filter(Boolean));
+    // Eigene Organisationen nur bei beruflicher Nutzung (#1170); sonst bleibt die Mappe, zählt aber nicht als eigene.
+    const beruflich = liesMerkmale(await this.einst()?.lies(MERKMALE_EINSTELLUNG)).beruflich;
     for (const typ of typen) {
       if (typ.system) continue;
       const org = !!merkmalFeld(typ);
@@ -283,7 +286,7 @@ export class Erkennung {
         const e = eigeneAngaben(typ, m);
         const mails = typ.felder.filter((f) => artVon(f) === 'email').map((f) => auswahlText(m.werte[f.key]).trim().toLowerCase()).filter(Boolean);
         const istPerson = typ.felder.some((f) => artVon(f) === 'nachname') && e.namen.some((n) => kontoNamen.has(n.toLowerCase()));
-        if ((org && istEigeneOrganisation(typ, m.werte as Werte)) || istPerson || (!org && mails.some((x) => kontoMails.has(x)))) { ids.add(m.id); angaben.push(e); }
+        if ((org && beruflich && istEigeneOrganisation(typ, m.werte as Werte)) || istPerson || (!org && mails.some((x) => kontoMails.has(x)))) { ids.add(m.id); angaben.push(e); }
       }
     }
     // Konten selbst zuletzt (eine Person-Mappe geht vor): Name mit Vor- und Nachname als Aussteller, z. B.

@@ -45,7 +45,7 @@ Unter **Werkbank → Aufbewahrung abgelaufen** stehen alle Mappen aus Mappentype
 
 ## Archivmodus aus einem Paket { #archivmodus-aus-einem-paket }
 
-Ein [Paket](pakete.md) kann für die Mappentypen, die es **neu anlegt**, einen Archivmodus vorschlagen – etwa „2 Jahre, bei beruflicher Nutzung 10 Jahre, ab *Abgelöst am*, ist es leer: läuft noch nicht ab“. Die Vorschau beim Installieren nennt ihn je Mappentyp; mit dem Merkmal [„beruflich genutzt“](nutzung.md) gilt die längere Frist. Danach ist es dein Archivmodus: Du änderst ihn am Mappentyp wie jeden anderen.
+Ein [Paket](pakete.md) kann für die Mappentypen, die es **neu anlegt**, einen Archivmodus vorschlagen – etwa „2 Jahre, bei beruflicher Nutzung 10 Jahre, ab *Abgelöst am*, ist es leer: läuft noch nicht ab“. Die Vorschau beim Installieren nennt ihn je Mappentyp; mit dem Merkmal [„beruflich genutzt“](organisation.md#nutzung) gilt die längere Frist. Danach ist es dein Archivmodus: Du änderst ihn am Mappentyp wie jeden anderen.
 
 Den Archivmodus eines **vorhandenen** Mappentyps ändert ein Paket nie – weder die Installation noch ein Update kürzt die Frist, schaltet den Archivmodus aus oder an oder ändert, was du eingestellt hast. Das Einschalten durch ein Paket steht im [Protokoll](fehlersuche.md#protokoll) mit dem Paket.
 

@@ -175,11 +175,11 @@ Steht in einem ausgeblendeten Feld ein Wert, der nach einer späteren Änderung 
 
 ### Anzeigen, wenn … { #anzeigen-wenn }
 
-Ein Mappentyp soll für Lena einfach bleiben und im Betrieb trotzdem alles können – ohne zweiten Mappentyp für dieselbe Sache. Dafür legst du an einem **Feld** oder an einem **Abschnitt** (unter dem Feldregister, **Anzeigen, wenn …**) fest, wann es zu sehen ist. Beispiele: Abschnitt *Miete* nur bei Vertragsart *Miete*, Abschnitt *Abschluss* nur, wenn die Ablage [beruflich genutzt](nutzung.md) wird.
+Ein Mappentyp soll für Lena einfach bleiben und im Betrieb trotzdem alles können – ohne zweiten Mappentyp für dieselbe Sache. Dafür legst du an einem **Feld** oder an einem **Abschnitt** (unter dem Feldregister, **Anzeigen, wenn …**) fest, wann es zu sehen ist. Beispiele: Abschnitt *Miete* nur bei Vertragsart *Miete*, Abschnitt *Abschluss* nur, wenn die Ablage [beruflich genutzt](organisation.md#nutzung) wird.
 
 Bedingungen kommen aus demselben Baukasten wie bei [Ansichten](sichten.md#bedingungen):
 
-- **Ablage wird beruflich genutzt** – das [Merkmal der Ablage](nutzung.md);
+- **Ablage wird beruflich genutzt** – das [Merkmal der Ablage](organisation.md#nutzung);
 - **Feldwert der Mappe** – gleich, ist einer von, leer, nicht leer und die übrigen Vergleiche der Feldart, mit festen Werten (bei Datum auch „heute“);
 - **Verweis zeigt auf eine bestimmte Mappe** – ein Verweisfeld mit „zeigt auf“, z. B. Vertragsart *Miete*;
 - **Verweis zeigt auf eine Mappe vom Typ …** – z. B. „*betrifft* ist ein Fahrzeug“; sinnvoll bei Verweisen auf Mappen verschiedener Typen.
