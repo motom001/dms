@@ -194,7 +194,7 @@ Ist ein ausgeblendeter Bereich eingerichtet, etwa ein Postfach oder die Anmeldun
 | [Postfächer](postfaecher.md) | Post aus einem E-Mail-Konto abholen | Betrieb |
 | [Eingangsordner](eingangsordner.md) | Scans aus einem Ordner übernehmen | Betrieb |
 | [WebDAV-Laufwerk](webdav.md) | Die Ablage im Explorer, Finder oder in der Dateien-App einbinden und Dateien hineinlegen | Haushalt, Betrieb |
-| [Suche und Volltext](texterkennung.md) | Text in gescannten Dokumenten erkennen, Archivfassung, PDFs verkleinern, Tippfehler und Wörterverzeichnis für die Suche | Betrieb, Haushalt im Expertenmodus |
+| [Suche und Volltext](texterkennung.md) | Text in gescannten Dokumenten erkennen, Archivfassung, Tippfehler und Wörterverzeichnis für die Suche | Betrieb, Haushalt im Expertenmodus |
 | [Gleichbedeutende Wörter](suche.md#gleichbedeutende-worter) | Gruppen von Wörtern, die die Suche gleich behandelt (z. B. Kfz, Auto, PKW): eigene anlegen, die aus Paketen ansehen | Betrieb, Haushalt im Expertenmodus |
 | [Sicherung](sicherung.md) | Sicherungen einrichten, prüfen und zurückspielen | Haushalt, Betrieb |
 | [Vollexport](export.md) | Alle Daten in offenen Formaten mitnehmen | Haushalt, Betrieb |
@@ -208,7 +208,7 @@ Ist ein ausgeblendeter Bereich eingerichtet, etwa ein Postfach oder die Anmeldun
 | [Anmeldeschutz](anmeldeschutz.md) | Zwei-Faktor vorschreiben, Anmeldung über einen Anbieter, gesperrte Adressen | Betrieb |
 | [Designs](designs.md) | Logo, Farben und eigenes CSS | Betrieb |
 | [Datenbank-Anbindung](installation.md#datenbank-anbindung) | Die Verbindung zur Datenbank | nur Alles |
-| [Systemzustand](speicherplatz.md) | Sehen, wie es dem Server geht: Speicherplatz, Auslastung von CPU, Arbeitsspeicher, Netzwerk und Datenbank, Version und Updates | Haushalt, Betrieb |
+| [Systemzustand](speicherplatz.md) | Sehen, wie es dem Server geht: Speicherplatz, PDFs verkleinern, Auslastung von CPU, Arbeitsspeicher, Netzwerk und Datenbank, Version und Updates | Haushalt, Betrieb |
 | [Protokoll](fehlersuche.md#protokoll) | Das technische Protokoll lesen | Betrieb |
 | [Gemeldete Fehler](fehlersuche.md#gemeldete-fehler) | Fehler, die Benutzer gemeldet haben | Betrieb |
 | [Wartung](wartungsmodus.md) | Benutzer vorübergehend aussperren (Wartungsmodus) und einmalige Pflegearbeiten | Betrieb |

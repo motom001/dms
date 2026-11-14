@@ -10,7 +10,6 @@ import { SprachenPanel, useSprachen } from './Sprachen';
 import { NummernkreisEditor, NummernkreiseListe, useNummernkreise } from './Nummernkreise';
 import { StempelEditor, StempelListe, useStempelVorlagenWerkbank } from './Stempel';
 import { DarfWegPanel, useDarfWeg } from './Archiv';
-import { AutomatischVerkleinern } from './Verkleinern';
 import { AuskuenfteListe, AuskunftRechts, useDatenschutz } from './Datenschutz';
 import { LoeschkonzeptPanel } from './Loeschkonzept';
 import { LoeschprotokollPanel } from './Loeschprotokoll';
@@ -83,7 +82,7 @@ import { typName } from '../../../shared/src/beschriftung';
  * /werkbank/betrieb                 E-Mail-Versand und Adresse des DMS (#37)
  * /werkbank/verschluesselung        Schlüssel für Passwörter (#39)
  * /werkbank/papierkorb[/:id]        Papierkorb aller Benutzer und Aufbewahrung (#43)
- * /werkbank/texterkennung           Suche und Volltext: Texterkennung, automatisch verkleinern, Suche (#45, #356, #725)
+ * /werkbank/texterkennung           Suche und Volltext: Texterkennung, Suche (#45, #356, #725)
  * /werkbank/woerter[/:id|/neu[?kopie=:id]]  Gleichbedeutende Wörter (#992), dreiteilig
  * /werkbank/aufgaben[/:id][?filter] Aufgaben aller Benutzer mit Filter (#54, #366, #354; seit #725 „Aufgaben“)
  * /werkbank/daten                  Einstellungen zum Sichern: Aufbewahrung im Papierkorb, eigener Export der Benutzer (#1196, #1197)
@@ -248,8 +247,9 @@ export function Werkbank({ teile }: { teile: string[] }) {
     liste = <AufgabenListe z={aufgaben} filter={aufgabenFilter} offen={id} />;
     rechts = <AufgabenPanel z={aufgaben} id={id} />;
   } else if (bereich === 'texterkennung') {
-    // Suche und Volltext (#725): Texterkennung, automatisch verkleinern, Tippfehler und gleichbedeutende Wörter.
-    rechts = <><TexterkennungPanel t={ocr} wartungAn={wartungAn} /><div className="einspaltig"><AutomatischVerkleinern /></div><SuchePanel abschnitt /></>;
+    // Suche und Volltext (#725): Texterkennung, Tippfehler und gleichbedeutende Wörter. „Neue PDFs automatisch
+    // verkleinern“ steht seit #1190 im Systemzustand beim Speicherplatz.
+    rechts = <><TexterkennungPanel t={ocr} wartungAn={wartungAn} /><SuchePanel abschnitt /></>;
   } else if (bereich === 'woerter') {
     // Gleichbedeutende Wörter (#992): Gruppen in der Mitte, rechts die Wörter einer Gruppe.
     liste = <WoerterListe z={woerter} offen={id} />;

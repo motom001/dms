@@ -232,6 +232,9 @@ describe('Werkbank: mittlere Spalte für Sammlungen zum Anlegen und Bearbeiten (
     assert.equal(werkbankUmleitung('datenschutz'), '/werkbank/auskuenfte', 'alte Links führen zu den Auskünften');
     assert.equal(abschnittUmleitung('loeschkonzept', 'loeschprotokoll'), '/werkbank/loeschprotokoll', 'früherer Abschnitt des Löschkonzepts');
     assert.equal(abschnittUmleitung('loeschkonzept', 'personendaten'), null);
+    // #1190: „Neue PDFs automatisch verkleinern“ steht beim Speicherplatz im Systemzustand.
+    assert.equal(abschnittUmleitung('texterkennung', 'automatisch-verkleinern'), '/werkbank/systemzustand#automatisch-verkleinern');
+    assert.equal(abschnittUmleitung('texterkennung', 'warteschlange'), null);
     // Nur bei beruflicher Nutzung in der Leiste (hilfsweise am Merkmal, bis #987).
     assert.equal(inLeiste('datenschutz', { beruflich: false }), false);
     assert.equal(inLeiste('datenschutz', { beruflich: true }), true);

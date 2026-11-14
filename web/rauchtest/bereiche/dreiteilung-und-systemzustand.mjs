@@ -1,5 +1,6 @@
 /**
- * Rauchtests: Dreiteilung fest im Fenster (#1063), Werte vorschlagen, Systemzustand, Passkey, Ansichten-Baum.
+ * Rauchtests: Dreiteilung fest im Fenster (#1063), Werte vorschlagen, Systemzustand (mit automatisch verkleinern, #1190),
+ * Passkey, Ansichten-Baum.
  * Allein starten (frisch gestartetes Ablago, siehe rauchtest.mjs): node web/rauchtest/bereiche/dreiteilung-und-systemzustand.mjs [fehlerordner] [musterordner]
  */
 import assert from 'node:assert/strict';
@@ -108,6 +109,25 @@ rauchtest('Systemzustand: Externe Dienste und KI-Kosten, Monatsbudget speichern 
   await kosten.getByLabel(/^Monatsbudget/).fill('');
   await kosten.getByRole('button', { name: /speichern$/ }).click();
   await s.waitForFunction(() => document.querySelector('#ki-kosten-budget')?.value === '' && !document.querySelector('#ki-kosten-hart')?.checked);
+});
+
+// #1190: „Neue PDFs automatisch verkleinern“ steht beim Speicherplatz im Systemzustand; der alte Link führt dorthin.
+rauchtest('Werkbank: Neue PDFs automatisch verkleinern im Systemzustand, alter Link leitet um (#1190)', { als: LENA, erwartet: [{ status: 409, pfad: /^\/api\/wiederherstellung\/sicherungen$/ }] }, async (s) => {
+  await s.goto(BASIS + '/ablage/start');
+  await verwalten(s);
+  await s.goto(BASIS + '/werkbank/texterkennung');
+  await s.getByRole('heading', { name: 'Warteschlange', exact: true }).waitFor();
+  assert.equal(await s.getByRole('heading', { name: /Neue PDFs automatisch verkleinern/ }).count(), 0, 'nicht mehr unter Suche und Volltext');
+  await s.goto(BASIS + '/werkbank/texterkennung#automatisch-verkleinern');
+  await s.waitForURL(/\/werkbank\/systemzustand#automatisch-verkleinern$/);
+  const form = s.locator('#automatisch-verkleinern');
+  await form.getByRole('heading', { name: /Neue PDFs automatisch verkleinern/ }).waitFor();
+  await form.getByRole('switch', { name: /verkleinern/i }).first().waitFor();
+  // Unter „Große PDFs verkleinern“, auf derselben Seite.
+  assert.ok(await s.evaluate(() => {
+    const gross = document.getElementById('verkleinern'); const auto = document.getElementById('automatisch-verkleinern');
+    return !!gross && !!auto && !!(gross.compareDocumentPosition(auto) & Node.DOCUMENT_POSITION_FOLLOWING);
+  }), 'unter „Große PDFs verkleinern“');
 });
 
 // Passkeys (#811): Chromium mit einem virtuellen Authenticator (DevTools-Protokoll, Fingerabdruck „ja“). Lena fügt in Mein
