@@ -41,6 +41,7 @@ a.marke:focus-visible { outline: 2px solid var(--akzent); outline-offset: 3px; }
 .regler > span { display: flex; justify-content: space-between; gap: 8px; font-size: calc(12.5px * var(--skala, 1)); font-weight: 600; }
 .regler > span output { font-variant-numeric: tabular-nums; font-weight: 600; color: var(--akzent); white-space: nowrap; }
 .regler small { font-weight: 400; color: var(--leise); }
+.regler output { font-variant-numeric: tabular-nums; font-weight: 600; color: var(--akzent); white-space: nowrap; }
 fieldset.mischung { border: 1px solid var(--linie); border-radius: 8px; padding: 10px 12px 12px; margin: 0; min-width: 0; }
 fieldset.mischung legend { font-weight: 600; padding: 0 4px; }
 .knopf { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 7px 13px; border-radius: 6px; border: 1px solid var(--linie-stark); background: var(--flaeche); font-weight: 600; font-size: calc(13px * var(--skala, 1)); cursor: pointer; white-space: nowrap; text-decoration: none; color: var(--tinte); }
@@ -61,6 +62,10 @@ fieldset.mischung legend { font-weight: 600; padding: 0 4px; }
 .aufklappkopf:focus-visible { outline: 2px solid var(--akzent); outline-offset: 2px; }
 .aufklappkopf .zeichen { flex: none; width: 1em; color: var(--akzent); font-size: calc(11px * var(--skala, 1)); }
 .aufklappkopf .leise { font-weight: 400; }
+/* Als Baustein Knopf (#1214): Kopf über die ganze Breite, links bündig, umbrechend; Schrift wie bisher, kein Unterstreichen. */
+.textknopf.aufklappkopf { display: flex; justify-content: flex-start; padding: 6px 10px; color: var(--tinte); }
+.textknopf.aufklappkopf > span, .textknopf.aufklappkopf > span > span:first-child { flex: 1 1 auto; flex-wrap: wrap; justify-content: flex-start; align-items: baseline; gap: 2px 8px; }
+.textknopf.aufklappkopf.aufklappkopf:hover { text-decoration: none; }
 .aufklappinhalt { display: flex; flex-direction: column; gap: 8px; padding: 4px 10px 10px; min-width: 0; }
 .textknopf { background: none; border: 0; padding: 0; cursor: pointer; font-weight: 600; color: var(--akzent); }
 .textknopf.gefahr { color: var(--schlecht); }
@@ -133,6 +138,8 @@ fieldset.mischung legend { font-weight: 600; padding: 0 4px; }
 .haken > span { display: flex; flex-direction: column; gap: 1px; font-weight: 500; }
 /* Beschriftung samt Hilfesymbol in einer Zeile (#801); die Beschreibung (small) steht darunter. */
 .haken-titel { display: flex; align-items: baseline; }
+/* Haken einer FeldGruppe untereinander statt nebeneinander (#1214). */
+.haken-untereinander { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
 .haken-titel > .hilfesymbol { flex: none; }
 .trenner { display: flex; align-items: center; gap: 10px; color: var(--leise); font-size: calc(12px * var(--skala, 1)); }
 .trenner::before, .trenner::after { content: ''; flex: 1; border-top: 1px solid var(--linie); }
@@ -181,6 +188,8 @@ fieldset.mischung legend { font-weight: 600; padding: 0 4px; }
 .raster > .eigenschaft:not(:has(> :nth-child(4))) { display: grid; grid-template-rows: subgrid; align-self: stretch; gap: 5px; }
 .raster > .eigenschaft:not(:has(> :nth-child(4))) > span:first-child { align-self: end; }
 .eigenschaft.unten { justify-content: flex-end; }
+/* Feldrahmen (Baustein Feld) über die ganze Breite des Rasters (#1214). */
+.raster > .breit { grid-column: 1 / -1; }
 /*
  * Haken im Raster (#801): Haken und Beschriftung stehen in der Teilzeile der Eingabefelder, auf Höhe ihres Textes;
  * die Beschreibung steht darunter in der Teilzeile der Hinweise – wie ein Hinweis unter einem Feld. So schiebt sie
@@ -233,6 +242,7 @@ fieldset.mischung legend { font-weight: 600; padding: 0 4px; }
 .zeilenaktionen { display: flex; gap: 12px; flex-wrap: wrap; white-space: nowrap; }
 .linkzeile { display: flex; gap: 8px; }
 .linkzeile input { flex: 1; }
+.linkzeile > :first-child { flex: 1; min-width: 0; }
 
 /* Anmeldeseiten */
 .kartenseite { min-height: 100vh; display: grid; place-items: center; padding: 24px max(16px, env(safe-area-inset-right)) 24px max(16px, env(safe-area-inset-left)); }
@@ -548,8 +558,9 @@ a.textknopf { text-decoration: none; }
 .gerade-im-modus { margin: 0; padding: 6px max(16px, env(safe-area-inset-left)); background: var(--schlecht-zart); color: var(--tinte); border-bottom: 1px solid var(--linie); overflow-wrap: anywhere; }
 /* Verwaltungsrecht an der Person (#818): Baum der Werkbank-Bereiche unter „Gesamte Verwaltung“. */
 .verwaltungsbaum { display: flex; flex-direction: column; gap: 6px; margin: 6px 0 0 26px; }
-.verwaltungsast { border: 0; margin: 4px 0 0; padding: 0 0 0 22px; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr)); gap: 2px 16px; }
-.verwaltungsast legend { padding: 0; margin: 0 0 2px -22px; font-weight: 600; font-size: calc(13px * var(--skala, 1)); color: var(--leise); }
+/* Ein Ast als FeldGruppe (#1214): Name als Beschriftung, Bereiche eingerückt im Raster darunter. */
+.verwaltungsgruppe { margin-top: 4px; }
+.verwaltungsast { flex: 1 1 100%; padding: 0 0 0 22px; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr)); gap: 2px 16px; }
 .verwaltungsast .chip svg { width: 12px; height: 12px; vertical-align: -1px; }
 .hinweisbanner { background: var(--warn-zart); color: var(--tinte); border-bottom: 1px solid var(--linie); }
 .vertretungsbanner p, .hinweisbanner p { margin: 0; }
@@ -901,6 +912,7 @@ input.kurz { width: 7em; }
 .wahlliste.am-cursor { right: auto; width: max-content; min-width: 180px; max-width: min(320px, 100%); }
 .wahlliste.am-cursor.oben { transform: translateY(-100%); margin-top: -4px; }
 .wahlliste button.an, .wahlliste .wahloption.an { background: var(--akzent-zart); }
+.refbox .wahl input[type="search"] { width: 100%; }
 
 /* Löschen vorab prüfen (#79) */
 /* Mappe löschen gesperrt (#423, #648): seit #1210 im Baustein Knopf (gesperrt aus einem Grund, Erklärung am Knopf). */
@@ -1114,6 +1126,16 @@ h2 .hilfesymbol, h3 .hilfesymbol { font-size: .6em; vertical-align: .25em; }
   .mappenkopf-knoepfe { min-height: 48px; }
   .dokleiste { column-gap: 16px; }
   .zur-liste, .ka-weitergeben { display: inline-flex; align-items: center; gap: 4px; min-height: 44px; }
+}
+/* Am Handy (#1214, D6): in der Werkbank (Mitte und rechts) jeder Verweis, jeder Knopf-Verweis (Herunterladen), jeder
+   Haken mit Beschriftung und jede Aufklappzeile mit 44 px Tippfläche. Verweise wachsen unsichtbar nach oben und unten
+   (Innenabstand, ausgeglichen durch negativen Außenabstand), die Zeile bleibt so hoch wie vorher. */
+@media (pointer: coarse) {
+  :is(.spalte.liste, .spalte.mappe) a.verweis:not(.zur-liste, .ka-weitergeben) { display: inline-block; padding-block: 14px; margin-block: -14px; min-width: 44px; }
+  :is(.spalte.liste, .spalte.mappe) a.knopf:not([data-knopf]) { min-height: 44px; }
+  :is(.spalte.liste, .spalte.mappe) .haken-untereinander > label.haken { min-height: 44px; align-items: center; }
+  :is(.spalte.liste, .spalte.mappe) .haken-untereinander > a.verweis { margin-block: 0; padding-block: 14px; }
+  :is(.spalte.liste, .spalte.mappe) summary { padding-block: 8px; min-height: 44px; box-sizing: border-box; }
 }
 .leise a.person { text-decoration: underline; text-underline-offset: 2px; }
 
@@ -1423,6 +1445,7 @@ a.knopf.breit { display: flex; justify-content: center; text-decoration: none; }
 /* Mehrere Pakete in einem Ablauf (#405): Ergänzungen als Häkchen unter ihrem Paket, Fragen je Abschnitt. */
 .pd-ergaenzungen { margin: 8px 0 0 76px; padding: 6px 10px 8px; border: 1px dashed var(--linie); border-radius: 8px; min-width: 0; }
 .pd-ergaenzungen legend { padding: 0 4px; }
+.haken.pd-kachel { flex: 1 1 100%; min-width: 0; }
 .pd-ergaenzungsliste { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 4px 12px; }
 .pd-ergaenzungsliste .haken > span { font-weight: normal; overflow-wrap: anywhere; }
 .pa-rechte h3 { margin: 8px 0 2px; }
@@ -1588,8 +1611,11 @@ ul.sitzungsliste.festhoehe { border: 1px solid var(--linie); border-radius: var(
 .aufklappliste dl { margin: 0; padding: 0 12px 10px; }
 .aufklappzeile { display: block; width: 100%; text-align: left; padding: 7px 12px; border: 0; background: none; color: inherit; font: inherit; cursor: pointer; overflow-wrap: anywhere; }
 .aufklappzeile:hover { background: var(--senke); }
-.aufklappzeile::before { content: '▸ '; color: var(--leise); }
-.aufklappzeile[aria-expanded="true"]::before { content: '▾ '; }
+/* Als Baustein Knopf (#1214): Pfeil als Symbol statt Schriftzeichen, Zeile links bündig und umbrechend. */
+.textknopf.aufklappzeile { display: block; padding: 7px 12px; color: inherit; font-weight: inherit; }
+.textknopf.aufklappzeile > span, .textknopf.aufklappzeile > span > span:first-child { display: block; text-align: left; }
+.textknopf.aufklappzeile.aufklappzeile:hover { text-decoration: none; }
+.aufklappzeile .zeichen { color: var(--leise); vertical-align: -2px; margin-right: 4px; }
 .standzeile { margin: 0; color: var(--leise); }
 .mitpasswoertern { border-left: 3px solid var(--schlecht); padding-left: 10px; }
 /* Namen in der Leiste nicht abschneiden, wenn eine Plakette danebensteht (#366). */
@@ -1899,7 +1925,7 @@ ul.sitzungsliste.festhoehe { border: 1px solid var(--linie); border-radius: var(
 .lp-eintrag.lp-endgueltig { border-left-color: var(--schlecht); }
 .lp-eintrag.lp-wiederhergestellt { border-left-color: var(--gruen); }
 .lp-eintrag code { font-size: 0.92em; }
-.lp-jahre { display: flex; flex-wrap: wrap; align-items: end; gap: 8px 12px; margin-top: 12px; }
+.lp-jahre { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 12px; }
 .lp-jahre .eigenschaft { margin: 0; }
 .lp-jahre-feld { display: inline-flex; align-items: center; gap: 6px; }
 .lp-jahre-feld input { width: 80px; }

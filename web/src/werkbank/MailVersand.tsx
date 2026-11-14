@@ -1,4 +1,4 @@
-import { ErgebnisBlock, Knopf, Schalter } from '../bausteine';
+import { ErgebnisBlock, Feld, HakenFeld, Knopf, Schalter } from '../bausteine';
 import { useEffect, useMemo, useRef, useState, type FormEvent, type MutableRefObject } from 'react';
 import { absenderVorschlag, anbieterFuerAdresse, domainVon, MAIL_ANBIETER, OAUTH_VERSAND_SERVER, type MailAnbieter } from '../../../shared/src/mailanbieter';
 import { PLAN_VERBINDUNGEN } from '../../../shared/src/einrichtungsplan';
@@ -7,6 +7,7 @@ import { useKonto } from '../konto';
 import { Link } from '../ort';
 import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 import { Hilfe } from '../Hilfe';
+import { Symbol } from '../Symbol';
 import { t } from '../sprache';
 import { OAuthBereich, useRueckkehr, type Meldung } from './Postfaecher';
 import type { BetriebZustand } from './Betrieb';
@@ -186,18 +187,19 @@ function MailFormular({ s, email, b, aktualisieren, sammeln }: {
     <>
       {!assistent && <Schalter an={m.aktiv} setze={(an) => setze({ aktiv: an })} beschriftung={t('werkbank.mail.schalter')} hinweis={vor('aktiv') || undefined} />}
       <div className="raster">
-        <label className="eigenschaft" htmlFor="mail-adresse"><span>{t('werkbank.mail.adresse')}</span>
+        <Feld beschriftung={t('werkbank.mail.adresse')} hinweis={t('werkbank.mail.adresse.hilfe')}>
           <input id="mail-adresse" type="email" value={adresse} autoComplete="off" spellCheck={false} onChange={(e) => setAdresse(e.target.value)} onBlur={() => void finden()} />
-          <small className="hilfe">{t('werkbank.mail.adresse.hilfe')}</small></label>
-        {!oauth && <label className="eigenschaft" htmlFor="mail-passwort"><span>{t('werkbank.mail.passwort')} <small>{s.mail.passwortGesetzt && !loeschen ? t('werkbank.mail.passwort.gesetzt') : t('werkbank.mail.passwort.app')}</small></span>
-          <input id="mail-passwort" type="password" value={m.passwort} disabled={!s.passwoerterMoeglich} onChange={(e) => { setze({ passwort: e.target.value }); setLoeschen(false); }} autoComplete="new-password" placeholder={s.mail.passwortGesetzt && !loeschen ? '••••••••' : ''} /></label>}
+        </Feld>
+        {!oauth && <Feld beschriftung={t('werkbank.mail.passwort')} hinweis={s.mail.passwortGesetzt && !loeschen ? t('werkbank.mail.passwort.gesetzt') : t('werkbank.mail.passwort.app')}>
+          <input id="mail-passwort" type="password" value={m.passwort} disabled={!s.passwoerterMoeglich} onChange={(e) => { setze({ passwort: e.target.value }); setLoeschen(false); }} autoComplete="new-password" placeholder={s.mail.passwortGesetzt && !loeschen ? '••••••••' : ''} />
+        </Feld>}
         {oauthAnbieter && (
-          <label className="eigenschaft" htmlFor="mail-anmeldung"><span>{t('werkbank.mail.anmeldung')} {!assistent && <Hilfe ort="werkbank.mail.oauth" />}</span>
+          <Feld beschriftung={t('werkbank.mail.anmeldung')} hilfe={assistent ? undefined : 'werkbank.mail.oauth'} hinweis={assistent ? t('werkbank.mail.anmeldung.spaeter') : undefined}>
             <select id="mail-anmeldung" value={m.anmeldung} disabled={assistent} onChange={(e) => anmeldungWaehlen(e.target.value as 'passwort' | 'oauth')}>
               <option value="passwort">{t('werkbank.mail.anmeldung.passwort')}</option>
               <option value="oauth">{oauthAnbieter === 'microsoft' ? t('werkbank.mail.anmeldung.microsoft') : t('werkbank.mail.anmeldung.google')}</option>
             </select>
-            {assistent && <small className="hilfe">{t('werkbank.mail.anmeldung.spaeter')}</small>}</label>
+          </Feld>
         )}
       </div>
       <div className="knoepfe">
@@ -217,9 +219,9 @@ function MailFormular({ s, email, b, aktualisieren, sammeln }: {
             : <p><strong>{t('werkbank.mail.nicht-gefunden', { domain: suche?.domain ?? '' })}</strong> {t('werkbank.mail.nicht-gefunden.text')}</p>}
           {suche && <p className="leise klein">{suche.gefragt.length ? t('werkbank.mail.gefragt', { wen: suche.gefragt.join(', ') }) : t('werkbank.mail.ohne-netz')}</p>}
           {suche && !suche.fund && !sucht && domain && (
-            <p className="klein"><button type="button" className="knopf klein" onClick={() => void finden(true)}>{t('werkbank.mail.thunderbird')}</button> <span className="leise">{t('werkbank.mail.thunderbird.text', { domain })}</span></p>
+            <p className="klein"><Knopf groesse="klein" onClick={() => finden(true)}>{t('werkbank.mail.thunderbird')}</Knopf> <span className="leise">{t('werkbank.mail.thunderbird.text', { domain })}</span></p>
           )}
-          {anbieter?.hinweise.map((h) => <p key={h.text}>{t.frei(h.text, { anbieter: anbieter.name })}{h.link && <> <a className="verweis" href={h.link} target="_blank" rel="noreferrer noopener">{t('werkbank.mail.hilfe-anbieter', { anbieter: anbieter.name })} ↗</a></>}</p>)}
+          {anbieter?.hinweise.map((h) => <p key={h.text}>{t.frei(h.text, { anbieter: anbieter.name })}{h.link && <> <a className="verweis" href={h.link} target="_blank" rel="noreferrer noopener">{t('werkbank.mail.hilfe-anbieter', { anbieter: anbieter.name })} <Symbol name="extern" /></a></>}</p>)}
           {m.benutzer && <p className="klein">{t('werkbank.mail.benutzer')}: <span className="mono">{m.benutzer}</span>{vor('benutzer')}</p>}
           {m.absender && <p className="klein">{t('werkbank.mail.absender')}: <span className="mono">{m.absender}</span>{vor('absender')}</p>}
         </div>
@@ -228,18 +230,30 @@ function MailFormular({ s, email, b, aktualisieren, sammeln }: {
       <details className="erweitert" open={erweitert} onToggle={(e) => setErweitert((e.target as HTMLDetailsElement).open)}>
         <summary>{t('werkbank.mail.erweitert')}</summary>
         <div className="raster">
-          <label className="eigenschaft"><span>{t('werkbank.mail.server')} <small>{t('werkbank.mail.server.beispiel')}</small></span><input value={m.host} disabled={oauth} onChange={(e) => setze({ host: e.target.value })} autoComplete="off" spellCheck={false} /></label>
-          <label className="eigenschaft"><span>{t('werkbank.mail.verbindung')}</span>
+          <Feld beschriftung={t('werkbank.mail.server')} hinweis={t('werkbank.mail.server.beispiel')}>
+            <input value={m.host} disabled={oauth} onChange={(e) => setze({ host: e.target.value })} autoComplete="off" spellCheck={false} />
+          </Feld>
+          <Feld beschriftung={t('werkbank.mail.verbindung')}>
             <select value={m.verbindung} onChange={(e) => { const v = e.target.value as Verbindung; setze({ verbindung: v, port: m.port === portFuer(m.verbindung) ? portFuer(v) : m.port }); }}>
               {(Object.entries(s.verbindungen) as Array<[Verbindung, string]>).map(([k, v]) => <option key={k} value={k} disabled={oauth && k === 'keine'}>{v}</option>)}
-            </select></label>
-          <label className="eigenschaft"><span>{t('werkbank.mail.port')}</span><input type="number" min={1} max={65535} value={m.port} onChange={(e) => setze({ port: Number(e.target.value) })} /></label>
-          <label className="eigenschaft"><span>{t('werkbank.mail.benutzer')} <small>{oauth ? t('werkbank.mail.benutzer.oauth') : t('werkbank.mail.benutzer.leer')}</small></span><input value={m.benutzer} onChange={(e) => setze({ benutzer: e.target.value })} autoComplete="off" spellCheck={false} /></label>
-          <label className="eigenschaft"><span>{t('werkbank.mail.absender')} <small>{t('werkbank.mail.absender.beispiel')}</small></span><input value={m.absender} onChange={(e) => setze({ absender: e.target.value })} autoComplete="off" spellCheck={false} /></label>
+            </select>
+          </Feld>
+          <Feld beschriftung={t('werkbank.mail.port')}>
+            <input type="number" min={1} max={65535} value={m.port} onChange={(e) => setze({ port: Number(e.target.value) })} />
+          </Feld>
+          <Feld beschriftung={t('werkbank.mail.benutzer')} hinweis={oauth ? t('werkbank.mail.benutzer.oauth') : t('werkbank.mail.benutzer.leer')}>
+            <input value={m.benutzer} onChange={(e) => setze({ benutzer: e.target.value })} autoComplete="off" spellCheck={false} />
+          </Feld>
+          <Feld beschriftung={t('werkbank.mail.absender')} hinweis={t('werkbank.mail.absender.beispiel')}>
+            <input value={m.absender} onChange={(e) => setze({ absender: e.target.value })} autoComplete="off" spellCheck={false} />
+          </Feld>
         </div>
-        {s.mail.passwortGesetzt && !oauth && <label className="haken"><input type="checkbox" checked={loeschen} onChange={(e) => { setLoeschen(e.target.checked); if (e.target.checked) setze({ passwort: '' }); }} /><span>{t('werkbank.mail.passwort.entfernen')}</span></label>}
-        {!oauth && <label className="haken"><input type="checkbox" checked={m.selbstsigniert} onChange={(e) => setze({ selbstsigniert: e.target.checked })} />
-          <span><span className="haken-titel">{t('werkbank.mail.selbstsigniert')}</span><small className="hilfe">{t('werkbank.mail.selbstsigniert.hilfe')}</small></span></label>}
+        {s.mail.passwortGesetzt && !oauth && <HakenFeld beschriftung={t('werkbank.mail.passwort.entfernen')}>
+          <input type="checkbox" checked={loeschen} onChange={(e) => { setLoeschen(e.target.checked); if (e.target.checked) setze({ passwort: '' }); }} />
+        </HakenFeld>}
+        {!oauth && <HakenFeld beschriftung={t('werkbank.mail.selbstsigniert')} hinweis={t('werkbank.mail.selbstsigniert.hilfe')}>
+          <input type="checkbox" checked={m.selbstsigniert} onChange={(e) => setze({ selbstsigniert: e.target.checked })} />
+        </HakenFeld>}
       </details>
 
       {!s.passwoerterMoeglich
@@ -250,8 +264,9 @@ function MailFormular({ s, email, b, aktualisieren, sammeln }: {
 
       {!assistent && <><h3 className="zwischen">{t('werkbank.mail.testen')}</h3>
       <div className="raster">
-        <label className="eigenschaft"><span>{t('werkbank.mail.testmail-an')} {vorgeschlagen.has('an') && <small className="vorschlag">{t('werkbank.mail.vorgeschlagen')}</small>}</span>
-          <input type="email" value={an} onChange={(e) => { setAn(e.target.value); setVorgeschlagen((v) => { const n = new Set(v); n.delete('an'); return n; }); }} /></label>
+        <Feld beschriftung={t('werkbank.mail.testmail-an')} kopfZusatz={vorgeschlagen.has('an') && <small className="vorschlag">{t('werkbank.mail.vorgeschlagen')}</small>}>
+          <input type="email" value={an} onChange={(e) => { setAn(e.target.value); setVorgeschlagen((v) => { const n = new Set(v); n.delete('an'); return n; }); }} />
+        </Feld>
         <div className="eigenschaft unten"><div className="knoepfe">
           <Knopf gesperrt={(!!laeuft && laeuft !== 'testmail') || !m.host || !an} laeuft={laeuft === 'testmail'} laeuftText={t('werkbank.mail.sende')} onClick={() => teste('testmail')}>{t('werkbank.mail.testmail')}</Knopf>
         </div></div>

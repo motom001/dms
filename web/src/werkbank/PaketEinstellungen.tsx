@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { abschnittsfelder, EINTRAG_ID, listen, MEHRFACH_VERWEISE, zahlFehler, type EinstellungBlock, type EinstellungFeld, type FeldVerweis, type GeheimStand } from '../../../shared/src/paketeinstellungen';
 import { Mehrfachauswahl } from '../ablage/Mehrfachauswahl';
-import { Fassungen, Feld, FeldGruppe, type FeldVerknuepfung, HakenFeld, Knopf, type KnopfErgebnis } from '../bausteine';
+import { Fassungen, Feld, FeldGruppe, HakenFeld, Knopf, type FeldProps, type KnopfErgebnis } from '../bausteine';
 import { api, ApiFehler, type PaketEinstellungenStand } from '../api';
 import { rueckfrage } from '../rueckfrage';
 import { Speicherleiste, useEntwurf } from '../Speicherleiste';
+import { Symbol } from '../Symbol';
 import { t, tn } from '../sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
 
@@ -170,9 +171,10 @@ function Block({ blk, werte, setze, fehler, auswahl }: { blk: EinstellungBlock; 
             <div className="zeile-zwischen">
               <strong className="klein">{blk.eintrag} {i + 1}</strong>
               <span className="knoepfe">
-                {blk.sortierbar && <><button type="button" className="textknopf klein" disabled={i === 0} aria-label={t('werkbank.paketeinstellungen.nach-oben', { eintrag: blk.eintrag, wert: i + 1 })} onClick={() => schiebe(i, -1)}>↑</button>
-                  <button type="button" className="textknopf klein" disabled={i === eintraege.length - 1} aria-label={t('werkbank.paketeinstellungen.nach-unten', { eintrag: blk.eintrag, wert: i + 1 })} onClick={() => schiebe(i, 1)}>↓</button></>}
-                <button type="button" className="textknopf klein gefahr" onClick={() => setzeListe(eintraege.filter((_, j) => j !== i))}>{t('werkbank.paketeinstellungen.loeschen')}</button>
+                {blk.sortierbar && <><Knopf art="link" gesperrt={i === 0} nurSymbol={t('werkbank.paketeinstellungen.nach-oben', { eintrag: blk.eintrag, wert: i + 1 })} onClick={() => schiebe(i, -1)}><Symbol name="sortiert-auf" /></Knopf>
+                  <Knopf art="link" gesperrt={i === eintraege.length - 1} nurSymbol={t('werkbank.paketeinstellungen.nach-unten', { eintrag: blk.eintrag, wert: i + 1 })} onClick={() => schiebe(i, 1)}><Symbol name="sortiert-ab" /></Knopf></>}
+                <Knopf art="gefahr" groesse="klein" symbol="geloescht" onClick={() => setzeListe(eintraege.filter((_, j) => j !== i))}
+                  rueckfrage={{ titel: t('werkbank.paketeinstellungen.eintrag-loeschen.frage', { eintrag: blk.eintrag, wert: i + 1 }), text: t('werkbank.paketeinstellungen.eintrag-loeschen.text'), ja: t('werkbank.paketeinstellungen.loeschen') }}>{t('werkbank.paketeinstellungen.loeschen')}</Knopf>
               </span>
             </div>
             {blk.felder.map((f) => <Eingabe key={f.schluessel} f={f} wert={e[f.schluessel]} fehler={fehler[`${blk.schluessel}.${i + 1}.${f.schluessel}`]} auswahl={auswahl}
@@ -180,7 +182,7 @@ function Block({ blk, werte, setze, fehler, auswahl }: { blk: EinstellungBlock; 
           </li>
         ))}
       </ol>
-      <button type="button" className="knopf klein" onClick={() => setzeListe([...eintraege, Object.fromEntries([[EINTRAG_ID, neueId()], ...blk.felder.filter((f) => f.standard !== undefined).map((f) => [f.schluessel, f.standard])])])}>+ {blk.eintrag}</button>
+      <div className="knoepfe"><Knopf art="anlegen" groesse="klein" onClick={() => setzeListe([...eintraege, Object.fromEntries([[EINTRAG_ID, neueId()], ...blk.felder.filter((f) => f.standard !== undefined).map((f) => [f.schluessel, f.standard])])])}>+ {blk.eintrag}</Knopf></div>
     </section>
   );
 }
@@ -213,58 +215,74 @@ export function Eingabe({ f, wert, setze, fehler, auswahl, id, ausgeschlossen }:
   if (f.typ === 'geheim' && !!wert && typeof wert === 'object' && !geheimNeu) return (
     <FeldGruppe beschriftung={name} optional={optional} hinweis={f.hilfe} fehler={meldung}>
       <span className="chip gut">{t('werkbank.paketeinstellungen.gesetzt')}</span>
-      <button type="button" className="textknopf klein" onClick={() => setGeheimNeu(true)}>{t('werkbank.paketeinstellungen.aendern')}</button>
-      <button type="button" className="textknopf klein gefahr" onClick={() => setze(null)}>{t('werkbank.paketeinstellungen.loeschen')}</button>
+      <Knopf groesse="klein" onClick={() => setGeheimNeu(true)}>{t('werkbank.paketeinstellungen.aendern')}</Knopf>
+      <Knopf art="gefahr" groesse="klein" symbol="geloescht" onClick={() => setze(null)}
+        rueckfrage={{ titel: t('werkbank.paketeinstellungen.geheim-loeschen.frage', { name }), text: t('werkbank.paketeinstellungen.geheim-loeschen.text'), ja: t('werkbank.paketeinstellungen.loeschen') }}>{t('werkbank.paketeinstellungen.loeschen')}</Knopf>
     </FeldGruppe>
   );
   return (
-    <Feld beschriftung={name} optional={optional} hinweis={hinweis} fehler={meldung} id={id}>
-      {(v) => <Steuerelement f={f} wert={wert} setze={setze} auswahl={auswahl} v={v} ausgeschlossen={ausgeschlossen} geheim={{ neu: geheimNeu, warGesetzt }} />}
-    </Feld>
+    <Steuerelement f={f} wert={wert} setze={setze} auswahl={auswahl} rahmen={{ beschriftung: name, optional, hinweis, fehler: meldung, id }} ausgeschlossen={ausgeschlossen} geheim={{ neu: geheimNeu, warGesetzt }} />
   );
 }
 
 const VERWEISE: EinstellungFeld['typ'][] = ['mappentyp', 'benutzer', 'rolle', 'sicht'];
 
-/** Das Eingabeelement eines Felds; `v` (id, aria) kommt vom Rahmen. */
-function Steuerelement({ f, wert, setze, auswahl, v, ausgeschlossen, geheim }: { f: EinstellungFeld; wert: unknown; setze: (v: unknown) => void; auswahl: Auswahl; v: FeldVerknuepfung; ausgeschlossen?: string[]; geheim: { neu: boolean; warGesetzt: boolean } }) {
+type Rahmen = Omit<FeldProps, 'children'>;
+
+/**
+ * Das Feld samt Eingabeelement (#1214): jede Art steht selbst im Feldrahmen (`rahmen` aus `Eingabe`), damit kein
+ * Bedienelement ohne Rahmen bleibt; `v` (id, aria) kommt vom Rahmen.
+ */
+function Steuerelement({ f, wert, setze, auswahl, rahmen, ausgeschlossen, geheim }: { f: EinstellungFeld; wert: unknown; setze: (v: unknown) => void; auswahl: Auswahl; rahmen: Rahmen; ausgeschlossen?: string[]; geheim: { neu: boolean; warGesetzt: boolean } }) {
   const liste = (optionen: Array<{ id: string; name: string }>) => (
-    <select {...v} value={String(wert ?? '')} onChange={(e) => setze(e.target.value || null)}>
-      <option value="">{t('werkbank.paketeinstellungen.keine-auswahl')}</option>
-      {optionen.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
-    </select>
+    <Feld {...rahmen}>
+      {(v) => (
+        <select {...v} value={String(wert ?? '')} onChange={(e) => setze(e.target.value || null)}>
+          <option value="">{t('werkbank.paketeinstellungen.keine-auswahl')}</option>
+          {optionen.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
+        </select>
+      )}
+    </Feld>
   );
   if (VERWEISE.includes(f.typ) && !f.mehrfach) return liste(optionenVon(f, auswahl));
-  if (f.mehrfach) return <VerweisWahl id={v.id} name={f.name} optionen={optionenVon(f, auswahl)} gewaehlt={Array.isArray(wert) ? wert.map(String) : wert ? [String(wert)] : []} setze={setze} ausgeschlossen={ausgeschlossen} />;
+  if (f.mehrfach) return <Feld {...rahmen}>{(v) => <VerweisWahl id={v.id} name={f.name} optionen={optionenVon(f, auswahl)} gewaehlt={Array.isArray(wert) ? wert.map(String) : wert ? [String(wert)] : []} setze={setze} ausgeschlossen={ausgeschlossen} />}</Feld>;
   switch (f.typ) {
     // Dienst-Adresse (#444): nie voreingestellt, nur ein Beispiel im leeren Feld; beim Speichern bestätigen.
-    case 'adresse': return <input {...v} type="url" inputMode="url" autoComplete="off" spellCheck={false} placeholder={f.beispiel} value={String(wert ?? '')} onChange={(e) => setze(e.target.value || null)} />;
-    case 'mehrzeilig': return <textarea {...v} rows={4} value={String(wert ?? '')} onChange={(e) => setze(e.target.value)} />;
-    case 'zahl': return <ZahlEingabe f={f} wert={wert} setze={setze} v={v} />;
-    case 'datum': return <input {...v} type="date" value={String(wert ?? '')} onChange={(e) => setze(e.target.value || null)} />;
+    case 'adresse': return <Feld {...rahmen}>{(v) => <input {...v} type="url" inputMode="url" autoComplete="off" spellCheck={false} placeholder={f.beispiel} value={String(wert ?? '')} onChange={(e) => setze(e.target.value || null)} />}</Feld>;
+    case 'mehrzeilig': return <Feld {...rahmen}>{(v) => <textarea {...v} rows={4} value={String(wert ?? '')} onChange={(e) => setze(e.target.value)} />}</Feld>;
+    case 'zahl': return <ZahlEingabe f={f} wert={wert} setze={setze} rahmen={rahmen} />;
+    case 'datum': return <Feld {...rahmen}>{(v) => <input {...v} type="date" value={String(wert ?? '')} onChange={(e) => setze(e.target.value || null)} />}</Feld>;
     case 'auswahl': return liste((f.optionen ?? []).map((o) => ({ id: o, name: o })));
-    case 'geheim': return <GeheimEingabe wert={wert} setze={setze} v={v} geheim={geheim} />;
-    case 'feld': return <FeldWahl wert={wert as FeldVerweis | null} setze={setze} auswahl={auswahl} v={v} />;
-    case 'text': return <input {...v} type="text" value={String(wert ?? '')} onChange={(e) => setze(e.target.value)} />;
-    default: return null;
+    case 'geheim': return <GeheimEingabe wert={wert} setze={setze} rahmen={rahmen} geheim={geheim} />;
+    case 'feld': return <FeldWahl wert={wert as FeldVerweis | null} setze={setze} auswahl={auswahl} rahmen={rahmen} />;
+    case 'text': return <Feld {...rahmen}>{(v) => <input {...v} type="text" value={String(wert ?? '')} onChange={(e) => setze(e.target.value)} />}</Feld>;
+    default: return <Feld {...rahmen}>{() => null}</Feld>;
   }
 }
 
 /** Geheimnis neu eingeben: leer = nicht gesetzt, oder (beim Ändern) das gespeicherte behalten. */
-function GeheimEingabe({ wert, setze, v, geheim }: { wert: unknown; setze: (v: unknown) => void; v: FeldVerknuepfung; geheim: { neu: boolean; warGesetzt: boolean } }) {
+function GeheimEingabe({ wert, setze, rahmen, geheim }: { wert: unknown; setze: (v: unknown) => void; rahmen: Rahmen; geheim: { neu: boolean; warGesetzt: boolean } }) {
   return (
-    <input {...v} type="password" autoComplete="new-password" placeholder={wert === null && !geheim.neu ? t('werkbank.paketeinstellungen.nicht-gesetzt') : t('werkbank.paketeinstellungen.neuer-wert')}
-      value={typeof wert === 'string' ? wert : ''} onChange={(e) => setze(e.target.value || (geheim.warGesetzt && geheim.neu ? { behalten: true } : null))} />
+    <Feld {...rahmen}>
+      {(v) => (
+        <input {...v} type="password" autoComplete="new-password" placeholder={wert === null && !geheim.neu ? t('werkbank.paketeinstellungen.nicht-gesetzt') : t('werkbank.paketeinstellungen.neuer-wert')}
+          value={typeof wert === 'string' ? wert : ''} onChange={(e) => setze(e.target.value || (geheim.warGesetzt && geheim.neu ? { behalten: true } : null))} />
+      )}
+    </Feld>
   );
 }
 
 /** Feld eines Mappentyps (Typ „feld“): gespeichert als { typ, feld }. */
-function FeldWahl({ wert, setze, auswahl, v }: { wert: FeldVerweis | null; setze: (v: unknown) => void; auswahl: Auswahl; v: FeldVerknuepfung }) {
+function FeldWahl({ wert, setze, auswahl, rahmen }: { wert: FeldVerweis | null; setze: (v: unknown) => void; auswahl: Auswahl; rahmen: Rahmen }) {
   const optionen = auswahl.typen.flatMap((eintrag) => eintrag.felder.map((g) => ({ id: `${eintrag.id}|${g.key}`, name: `${eintrag.name} › ${g.label}` })));
   return (
-    <select {...v} value={wert ? `${wert.typ}|${wert.feld}` : ''} onChange={(e) => { const [typ, feld] = e.target.value.split('|'); setze(e.target.value ? { typ, feld } : null); }}>
-      <option value="">{t('werkbank.paketeinstellungen.keine-auswahl')}</option>{optionen.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
-    </select>
+    <Feld {...rahmen}>
+      {(v) => (
+        <select {...v} value={wert ? `${wert.typ}|${wert.feld}` : ''} onChange={(e) => { const [typ, feld] = e.target.value.split('|'); setze(e.target.value ? { typ, feld } : null); }}>
+          <option value="">{t('werkbank.paketeinstellungen.keine-auswahl')}</option>{optionen.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
+        </select>
+      )}
+    </Feld>
   );
 }
 
@@ -273,18 +291,20 @@ function FeldWahl({ wert, setze, auswahl, v }: { wert: FeldVerweis | null; setze
  * `vorschlaege` eine Auswahl mit Beschriftung; „Eigener Wert …“ öffnet das Zahlenfeld (innerhalb von min/max).
  * `v` (id, aria) bekommt das gerade sichtbare Bedienelement, das die Beschriftung meint.
  */
-function ZahlEingabe({ f, wert, setze, v }: { f: EinstellungFeld; wert: unknown; setze: (v: unknown) => void; v: FeldVerknuepfung }) {
+function ZahlEingabe({ f, wert, setze, rahmen }: { f: EinstellungFeld; wert: unknown; setze: (v: unknown) => void; rahmen: Rahmen }) {
   const text = wert == null ? '' : String(wert).replace('.', ',');
   const passend = f.vorschlaege?.find((x) => String(x.wert) === String(wert));
   const [eigen, setEigen] = useState(!!f.vorschlaege && wert != null && wert !== '' && !passend);
   const ganz = f.schritt !== undefined && Number.isInteger(f.schritt) && Number.isInteger(f.min ?? 0);
-  const feld = (
-    <input {...(eigen || !f.vorschlaege ? v : {})} type="text" inputMode={ganz ? 'numeric' : 'decimal'} autoComplete="off" value={text}
-      placeholder={f.min !== undefined && f.max !== undefined ? `${f.min}–${f.max}` : undefined}
-      onChange={(e) => setze(e.target.value.replace(/[^0-9,.-]/g, '').replace('.', ',') || null)} />
-  );
   return (
-    <>
+    <Feld {...rahmen}>
+      {(v) => {
+        const feld = (
+          <input {...(eigen || !f.vorschlaege ? v : {})} type="text" inputMode={ganz ? 'numeric' : 'decimal'} autoComplete="off" value={text}
+            placeholder={f.min !== undefined && f.max !== undefined ? `${f.min}–${f.max}` : undefined}
+            onChange={(e) => setze(e.target.value.replace(/[^0-9,.-]/g, '').replace('.', ',') || null)} />
+        );
+        return <>
       {f.vorschlaege ? (
         <select {...(eigen ? {} : v)} value={eigen ? '__eigen' : passend ? String(passend.wert) : ''} onChange={(e) => {
           if (e.target.value === '__eigen') { setEigen(true); return; }
@@ -296,6 +316,8 @@ function ZahlEingabe({ f, wert, setze, v }: { f: EinstellungFeld; wert: unknown;
         </select>
       ) : feld}
       {f.vorschlaege && eigen && feld}
-    </>
+        </>;
+      }}
+    </Feld>
   );
 }

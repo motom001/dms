@@ -12,7 +12,7 @@ import { Hilfe } from '../Hilfe';
 import { Listenkopf } from '../Listenkopf';
 import { SystemkontenGruppe, SystemkontoKennzeichen } from './Systemkonten';
 import { SYSTEMKONTEN_AUF } from '../../../shared/src/systemkonten';
-import { abfangen, Bereich, KnopfLink, useBereiche } from '../bausteine';
+import { abfangen, Bereich, Feld, HakenFeld, KnopfLink, useBereiche } from '../bausteine';
 import { benutzerBereiche, datumZeit, LinkAnzeige, status, WeitereRollen } from './BenutzerEditor';
 
 export { BenutzerDetail } from './BenutzerEditor';
@@ -41,8 +41,9 @@ export function BenutzerListe({ liste: alle, offen, alltag }: { liste: Benutzer[
         <KnopfLink to="/werkbank/benutzer/neu" art="anlegen" groesse="klein">{t('werkbank.benutzer.neu')}</KnopfLink>
       </Listenkopf>
       {deaktiviert.length > 0 && (
-        <label className="haken klein"><input type="checkbox" checked={zeigeDeaktivierte} onChange={(e) => d.setzeEinstellung('benutzer_deaktivierte', e.target.checked || null)} />
-          <span>{t('werkbank.benutzer.deaktivierte-zeigen', { deaktiviert: deaktiviert.length })}</span></label>
+        <HakenFeld beschriftung={t('werkbank.benutzer.deaktivierte-zeigen', { deaktiviert: deaktiviert.length })} className="klein">
+          <input type="checkbox" checked={zeigeDeaktivierte} onChange={(e) => d.setzeEinstellung('benutzer_deaktivierte', e.target.checked || null)} />
+        </HakenFeld>
       )}
       {/* Systemkonten über den Menschen, eingeklappt als Vorgabe (#817). */}
       <SystemkontenListe offen={offen} />
@@ -158,8 +159,12 @@ export function BenutzerNeu({ neuLaden }: { neuLaden: () => Promise<void> }) {
       {/* Dieselben Bereiche wie am gespeicherten Benutzer (#1000) – nur zwei, also ohne Sprungleiste. */}
       <Bereich id="grunddaten" titel={t('werkbank.benutzer.bereich.grunddaten')} klappe={b.klappe('grunddaten', !!fehler)}>
         <div className="raster">
-          <label className="eigenschaft"><span>{t('werkbank.benutzer.name')}</span><input value={name} onChange={(e) => setName(e.target.value)} autoFocus /></label>
-          <label className="eigenschaft"><span>{t('werkbank.benutzer.e-mail-adresse-2')}</span><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required /></label>
+          <Feld beschriftung={t('werkbank.benutzer.name')}>
+            <input value={name} onChange={(e) => setName(e.target.value)} autoFocus />
+          </Feld>
+          <Feld beschriftung={t('werkbank.benutzer.e-mail-adresse-2')}>
+            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+          </Feld>
         </div>
         {fehler && <p className="fehlertext">{fehler}</p>}
       </Bereich>

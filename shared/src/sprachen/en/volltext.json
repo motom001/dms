@@ -111,5 +111,8 @@
   "archiv.wahl.alle": "All documents have an archive version.",
   "archiv.wahl.unbekannt": "Documents without an archive version (and e-invoices) go as the original.",
   "archiv.wahl.keine": "None of these documents has an archive version – the original goes out.",
-  "archiv.ansicht.entsperrt": "View: unlocked version"
+  "archiv.ansicht.entsperrt": "View: unlocked version",
+  "neu.abbrechen.frage": "Cancel the run?",
+  "neu.abbrechen.text": "Documents that are already done keep their new text; the others stay as they are.",
+  "neu.abbrechen.ja": "Cancel run"
 }

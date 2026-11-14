@@ -1,4 +1,5 @@
 import type { Luecke, Personenbezug, Personenverweis } from '../../../shared/src/loeschkonzept';
+import { Knopf, KnopfLink } from '../bausteine';
 import { Hilfe } from '../Hilfe';
 import { Link } from '../ort';
 import { t } from '../sprache';
@@ -46,8 +47,8 @@ export function LoeschkonzeptBlatt({ luecken }: { luecken: Luecke[] }) {
                   fehlt: l.fehlt.map((f) => t(f === 'zweck' ? 'werkbank.loeschkonzept.fehltZweck' : 'werkbank.loeschkonzept.fehltFrist')).join(' · '),
                 })}</span>
                 <span className="knoepfe klein">
-                  {l.fehlt.includes('zweck') && <button type="button" className="knopf klein" onClick={() => zumZweck(l.typId)}>{t('werkbank.loeschkonzept.zweckEintragen')}</button>}
-                  {l.fehlt.includes('frist') && <Link to={`/werkbank/typen/${l.typId}#archiv`} className="knopf klein">{t('werkbank.loeschkonzept.fristFestlegen')}</Link>}
+                  {l.fehlt.includes('zweck') && <Knopf groesse="klein" onClick={() => zumZweck(l.typId)}>{t('werkbank.loeschkonzept.zweckEintragen')}</Knopf>}
+                  {l.fehlt.includes('frist') && <KnopfLink to={`/werkbank/typen/${l.typId}#archiv`} groesse="klein">{t('werkbank.loeschkonzept.fristFestlegen')}</KnopfLink>}
                 </span>
               </> : l.art === 'verantwortlicher'
                 ? <Link to="/werkbank/organisation" className="verweis">{l.text}</Link>

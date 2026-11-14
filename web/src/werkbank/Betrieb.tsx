@@ -3,7 +3,7 @@ import { api, type BetriebAnsicht } from '../api';
 import { MailVersand } from './MailVersand';
 import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 import { t, tn } from '../sprache';
-import { abfangen } from '../bausteine';
+import { abfangen, Feld, Knopf } from '../bausteine';
 import { Kopf } from './Kopf';
 
 /**
@@ -60,11 +60,12 @@ function Adresse({ b }: { b: BetriebZustand }) {
     <form className="blatt" id="adresse" onSubmit={abfangen(speichern, (text) => setMeldung({ art: 'schlecht', text }))} onKeyDown={ent.tasten}>
       <h2 className="h3">{t('werkbank.betrieb.adresse-von-ablago')}</h2>
       <p className="leise">{tn('werkbank.betrieb.unter-dieser-adresse-oeffnen', { span: <span className="mono">{'https://'}</span> })}</p>
-      <label className="eigenschaft"><span>{tn('werkbank.betrieb.adresse', { klein: <small>{t('werkbank.betrieb.z-b-http-nas')}</small> })}</span>
-        <input value={adresse} onChange={(e) => setAdresse(e.target.value)} placeholder={s.vorschlag ?? 'http://nas.home.arpa:8080'} inputMode="url" autoComplete="off" /></label>
+      <Feld beschriftung={t('werkbank.betrieb.adresse-2')} hinweis={t('werkbank.betrieb.z-b-http-nas')}>
+        <input value={adresse} onChange={(e) => setAdresse(e.target.value)} placeholder={s.vorschlag ?? 'http://nas.home.arpa:8080'} inputMode="url" autoComplete="off" />
+      </Feld>
       {!s.adresse && (
         <div className="hinweis info"><p>{t('werkbank.betrieb.noch-keine-adresse-gepflegt')}{s.vorschlag ? <> {' '}{tn('werkbank.betrieb.hier', { span: <span className="mono">{s.vorschlag}</span> })}</> : ''}.</p>
-          {s.vorschlag && <button type="button" className="knopf klein" onClick={() => { setAdresse(s.vorschlag!); void speichern(undefined, s.vorschlag!); }}>{t('werkbank.betrieb.diese-adresse-uebernehmen')}</button>}
+          {s.vorschlag && <Knopf groesse="klein" onClick={() => { setAdresse(s.vorschlag!); return speichern(undefined, s.vorschlag!); }}>{t('werkbank.betrieb.diese-adresse-uebernehmen')}</Knopf>}
         </div>
       )}
       {s.adresse.startsWith('https://') && s.vorschlag?.startsWith('http://') && (

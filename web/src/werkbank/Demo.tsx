@@ -1,12 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { api, DOKUMENTARTEN, type Auftrag, type DemoAbschaetzung, type DemoErgebnis, type DemoOptionen, type DemoStufe, type Dokumentart } from '../api';
 import { useDaten } from '../daten';
-import { rueckfrage } from '../rueckfrage';
 import { fortschrittText } from '../../../shared/src/auftrag';
 import { t, tn } from '../sprache';
 import { JE_MAPPE_STUFEN, MAX_DEMO, MAX_DEMO_DOKUMENTE, MAX_DUPLIKATE, mengenWarnung, MISCHUNGEN, schaetzeMenge, stelleMischung, stelleVonBis, stufeVon } from '../../../shared/src/demodaten';
 import { gebietsschema } from '../../../shared/src/sprache';
-import { Knopf } from '../bausteine';
+import { Feld, HakenFeld, Knopf } from '../bausteine';
 import { Kopf } from './Kopf';
 
 type Uebersicht = Array<{ typId: string; name: string; demo: number; gesamt: number }>;
@@ -29,10 +28,9 @@ function Regler({ id, name, hinweis, wert, min, max, anzeige, onChange }: {
   id: string; name: string; hinweis?: string; wert: number; min: number; max: number; anzeige: string; onChange: (n: number) => void;
 }) {
   return (
-    <label className="regler" htmlFor={id}>
-      <span><span>{name}{hinweis && <> <small>{hinweis}</small></>}</span><output htmlFor={id} aria-hidden="true">{anzeige}</output></span>
+    <Feld beschriftung={name} hinweis={hinweis} className="regler" kopfZusatz={<output htmlFor={id} aria-hidden="true">{anzeige}</output>}>
       <input id={id} type="range" min={min} max={max} step={1} value={wert} aria-valuetext={anzeige} onChange={(e) => onChange(Number(e.target.value))} />
-    </label>
+    </Feld>
   );
 }
 const dokumente = (n: number) => t('werkbank.demo.dokumente', { anzahl: n, n: n.toLocaleString(gebietsschema()) });
@@ -154,22 +152,26 @@ export function DemoPanel() {
         <div className="blatt">
           <h2 className="h3">{t('werkbank.demo.beispiel-mappentypen')}</h2>
           <p className="leise">{t('werkbank.demo.vertragspartner-vertrag-rechnung-und')}</p>
-          <div className="knoepfe"><button className="knopf primaer" disabled={laeuft} onClick={() => void (async () => {
+          <div className="knoepfe"><Knopf art="haupt" gesperrt={laeuft} onClick={async () => {
             setMeldung(undefined);
             try { await api.beispiele(); setMeldung({ art: 'gut', text: t('werkbank.demo.beispiele-geladen') }); } catch (e) { setMeldung({ art: 'schlecht', text: (e as Error).message }); }
             await d.neuLaden();
-          })()}>{t('werkbank.demo.beispiele-laden')}</button></div>
+          }}>{t('werkbank.demo.beispiele-laden')}</Knopf></div>
         </div>
       ) : (
         <form className="blatt" onSubmit={(e) => { e.preventDefault(); void starte(() => api.demoErzeugen(optionen)); }}>
           <h2 className="h3">{t('werkbank.demo.erzeugen')}</h2>
           <div className="raster">
-            <label className="eigenschaft"><span>{tn('werkbank.demo.anzahl', { klein: <small>{t('werkbank.demo.bis-50-000-je')}</small> })}</span>
-              <input id="demo-anzahl" type="number" min={1} max={50000} value={anzahl} onChange={(e) => setAnzahl(e.target.value)} /></label>
-            <label className="eigenschaft"><span>{tn('werkbank.demo.startwert-2', { klein: <small>{t('werkbank.demo.optional-gleicher-startwert-ergibt')}</small> })}</span>
-              <input id="demo-startwert" value={startwert} maxLength={100} placeholder={t('werkbank.demo.z-b-messung-1')} onChange={(e) => setStartwert(e.target.value)} /></label>
+            <Feld beschriftung={t('werkbank.demo.anzahl')} hinweis={t('werkbank.demo.bis-50-000-je')}>
+              <input id="demo-anzahl" type="number" min={1} max={50000} value={anzahl} onChange={(e) => setAnzahl(e.target.value)} />
+            </Feld>
+            <Feld beschriftung={t('werkbank.demo.startwert-2')} optional hinweis={t('werkbank.demo.optional-gleicher-startwert-ergibt')}>
+              <input id="demo-startwert" value={startwert} maxLength={100} placeholder={t('werkbank.demo.z-b-messung-1')} onChange={(e) => setStartwert(e.target.value)} />
+            </Feld>
           </div>
-          <label className="haken"><input id="demo-dokumente" type="checkbox" checked={mitDok} onChange={(e) => setMitDok(e.target.checked)} /><span>{tn('werkbank.demo.dokumente-erzeugen', { klein: <small className="leise">{t('werkbank.demo.nur-fuer-mappentypen-mit')}</small> })}</span></label>
+          <HakenFeld beschriftung={t('werkbank.demo.dokumente-erzeugen')} hinweis={t('werkbank.demo.nur-fuer-mappentypen-mit')}>
+            <input id="demo-dokumente" type="checkbox" checked={mitDok} onChange={(e) => setMitDok(e.target.checked)} />
+          </HakenFeld>
           {mitDok && <>
             <div className="raster">
               <Regler id="demo-anteil" name={t('werkbank.demo.mappen-mit-dokumenten')} wert={anteil} min={0} max={100} anzeige={`${anteil} %`} onChange={setAnteil} />
@@ -180,11 +182,12 @@ export function DemoPanel() {
               <Regler id="demo-duplikate" name={t('werkbank.demo.gewollte-duplikate')} hinweis={t('werkbank.demo.gleiche-datei-in-mehreren')} wert={duplikate} min={0} max={MAX_DUPLIKATE} anzeige={`${duplikate} %`} onChange={setDuplikate} />
             </div>
             <fieldset className="stapel mischung">
-              <legend>{tn('werkbank.demo.mischung', { klein: <small className="leise">{t('werkbank.demo.zusammen-immer-100')}</small> })}</legend>
-              <label className="eigenschaft schmal"><span>{t('werkbank.demo.vorlage')}</span>
+              <legend>{t('werkbank.demo.mischung')} <small className="leise">{t('werkbank.demo.zusammen-immer-100')}</small></legend>
+              <Feld beschriftung={t('werkbank.demo.vorlage')} className="schmal">
                 <select id="demo-stufe" value={stufe} onChange={(e) => { const v = e.target.value as DemoStufe | 'eigen'; setStufe(v); if (v !== 'eigen') setMischung(MISCHUNGEN[v]); }}>
                   {(['leicht', 'realistisch', 'schwer', 'eigen'] as const).map((x) => <option key={x} value={x}>{STUFENTEXT[x]}</option>)}
-                </select></label>
+                </select>
+              </Feld>
               <div className="raster">
                 {DOKUMENTARTEN.map((a) => (
                   <Regler key={a} id={`demo-mischung-${a}`} name={ARTNAME[a]} wert={mischung[a]} min={0} max={100} anzeige={`${mischung[a]} %`}
@@ -206,16 +209,15 @@ export function DemoPanel() {
               {mitDok && schaetzung && !schaetzung.rastern && <p className="klein">{t('werkbank.demo.ohne-pdftoppm-nur-in')}</p>}
             </div>
           )}
-          <div className="knoepfe"><button className="knopf primaer" disabled={laeuft || !anzahlOk || zuViele || !reicht}>{t('werkbank.demo.demo-daten-erzeugen')}</button></div>
+          <div className="knoepfe"><Knopf art="haupt" type="submit" gesperrt={laeuft || !anzahlOk || zuViele || !reicht}>{t('werkbank.demo.demo-daten-erzeugen')}</Knopf></div>
         </form>
       )}
 
       <div className="blatt">
         <h2 className="h3">{t('werkbank.demo.entfernen')}</h2>
         <p className="leise">{t('werkbank.demo.loescht-alle-demo-mappen', { demo: demo.toLocaleString(gebietsschema()) })}</p>
-        <div className="knoepfe"><Knopf gesperrt={!demo || laeuft} onClick={async () => {
-          if (await rueckfrage({ titel: t('werkbank.demo.alle-demo-mappen-loeschen', { demo: demo.toLocaleString(gebietsschema()) }), text: t('werkbank.demo.echte-mappen-bleiben-unberuehrt'), ja: t('werkbank.demo.demo-mappen-loeschen'), gefahr: true })) void starte(() => api.demoEntfernen());
-        }}>{t('werkbank.demo.alle-demo-mappen-entfernen')}</Knopf></div>
+        <div className="knoepfe"><Knopf art="gefahr" symbol="geloescht" gesperrt={!demo || laeuft} onClick={() => { void starte(() => api.demoEntfernen()); }}
+          rueckfrage={{ titel: t('werkbank.demo.alle-demo-mappen-loeschen', { demo: demo.toLocaleString(gebietsschema()) }), text: t('werkbank.demo.echte-mappen-bleiben-unberuehrt'), ja: t('werkbank.demo.demo-mappen-loeschen') }}>{t('werkbank.demo.alle-demo-mappen-entfernen')}</Knopf></div>
         <DemoTabelle u={u} />
       </div>
     </div>
@@ -227,7 +229,8 @@ function DemoTabelle({ u }: { u: Uebersicht }) {
   if (!u.length) return <p className="leise klein">{t('werkbank.demo.noch-keine-mappentypen')}</p>;
   const z = (n: number) => n.toLocaleString(gebietsschema());
   return (
-    <div className="tabellenrahmen festhoehe">
+    // Rollt die Tabelle (feste Höhe), braucht sie den Tastaturfokus (axe scrollable-region-focusable).
+    <div className="tabellenrahmen festhoehe" tabIndex={0} role="region" aria-label={t('werkbank.demo.tabelle')}>
       <table className="tabelle">
         <thead><tr><th>{t('werkbank.demo.mappentyp')}</th><th className="zahlzelle">{t('werkbank.demo.mappen')}</th><th className="zahlzelle">{t('werkbank.demo.davon-demo')}</th></tr></thead>
         <tbody>{u.map((eintrag) => <tr key={eintrag.typId}><td>{eintrag.name}</td><td className="zahlzelle">{z(eintrag.gesamt)}</td><td className="zahlzelle">{eintrag.demo ? z(eintrag.demo) : '–'}</td></tr>)}</tbody>

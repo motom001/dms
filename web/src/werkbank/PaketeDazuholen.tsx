@@ -7,6 +7,7 @@ import { HerkunftZeile } from './Herkunft';
 import { PaketAblauf, PaketApiKontext, sammelStand, type PaketVorgabe, type PaketWahl } from './PaketAblauf';
 import { t, tn } from '../sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
+import { Knopf } from '../bausteine';
 
 /**
  * Pakete dazuholen (#460): Auswahl aus dem offiziellen Katalog mit Abhängigkeiten und Ergänzungen (#405, z. B. weitere
@@ -81,13 +82,13 @@ export function PaketeDazuholen({ weiter, ueberspringen, geaendert, erneut, zuru
         {stand && <SammeldateiWahl geladen={(x, datei) => setSammel({ s: x, datei })} />}
       </section>}
       <div className="knoepfe">
-        <button type="button" className="knopf" onClick={ueberspringen}>{t('werkbank.paketedazuholen.ueberspringen')}</button>
-        <button type="button" className="knopf" onClick={() => setVersuch((n) => n + 1)}>{t('werkbank.paketedazuholen.nochmal-versuchen')}</button>
+        <Knopf onClick={ueberspringen}>{t('werkbank.paketedazuholen.ueberspringen')}</Knopf>
+        <Knopf onClick={() => setVersuch((n) => n + 1)}>{t('werkbank.paketedazuholen.nochmal-versuchen')}</Knopf>
       </div>
     </>
   );
   if (!katalog || !stand) return <p className="leise">{t('werkbank.paketedazuholen.frage-den-offiziellen-paketkatalog')}</p>;
-  const zurueckKnopf = zurueck ? <button type="button" className="knopf" onClick={zurueck}>{tn('werkbank.paketedazuholen.zurueck', { symbol: <Symbol name="pfeil-links" /> })}</button> : null;
+  const zurueckKnopf = zurueck ? <Knopf onClick={zurueck}>{tn('werkbank.paketedazuholen.zurueck', { symbol: <Symbol name="pfeil-links" /> })}</Knopf> : null;
   const schonDa = erneut && stand.installiert.length > 0
     ? <div className="hinweis gut klein" role="status"><p><strong>{t('werkbank.paketedazuholen.schon-installiert')}</strong> {stand.installiert.map((p) => p.name).join(', ')}{t('werkbank.paketedazuholen.waehle-weitere-pakete-oder')}</p></div> : null;
   // Vorauswahl: Texterkennung, wenn sie hier passt und noch fehlt; empfohlene oben, sonst wie im Katalog nach Namen.
@@ -96,7 +97,7 @@ export function PaketeDazuholen({ weiter, ueberspringen, geaendert, erneut, zuru
     <>
       {schonDa}
       <PaketAblauf quelle={{ art: 'katalog', katalog: sortiert, dms: stand.dms, installiert: stand.installiert }} start={start ?? (erneut ? [] : empfohlen)} empfohlen={empfohlen} sammeln={sammeln} vorgabe={vorgabe}
-        aktionen={<>{zurueckKnopf}<button type="button" className="knopf" onClick={ueberspringen}>{erneut ? t('werkbank.paketedazuholen.weiter-ohne-weitere-pakete') : t('werkbank.paketedazuholen.ueberspringen')}</button></>}
+        aktionen={<>{zurueckKnopf}<Knopf onClick={ueberspringen}>{erneut ? t('werkbank.paketedazuholen.weiter-ohne-weitere-pakete') : t('werkbank.paketedazuholen.ueberspringen')}</Knopf></>}
         geaendert={geaendert} fertig={weiter} />
     </>
   );
@@ -152,7 +153,7 @@ export function SammeldateiAnsicht({ s, datei, dms, installiert, fertig, abbrech
       {!herkunftNoetig && <div className="hinweis gut klein"><p>{t('pakete.herkunft.sammel.ok')}</p></div>}
       {herkunftNoetig && s.datei.nichtImKatalog.length > 0 && <div className="hinweis info klein"><p>{t('pakete.herkunft.sammel.fehlen', { namen: s.datei.nichtImKatalog.join(', ') })}</p></div>}
       <PaketAblauf quelle={{ art: 'sammel', sammeldatei: s, dms, installiert }} start={s.pakete.filter((p) => p.gewaehlt).map((p) => p.upload)}
-        aktionen={<button type="button" className="textknopf" onClick={abbrechen}>{t('werkbank.paketedazuholen.abbrechen')}</button>}
+        aktionen={<Knopf onClick={abbrechen}>{t('werkbank.paketedazuholen.abbrechen')}</Knopf>}
         geaendert={geaendert} fertig={fertig} />
     </section>
   );

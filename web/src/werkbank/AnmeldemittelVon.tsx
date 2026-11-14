@@ -2,7 +2,6 @@ import { useCallback, useEffect, useState } from 'react';
 import type { Benutzer } from '../../../shared/src/model';
 import { api } from '../api';
 import { Knopf } from '../bausteine';
-import { rueckfrage } from '../rueckfrage';
 import { t } from '../sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
 
@@ -45,10 +44,8 @@ export function ZweifaktorVon({ b }: { b: Benutzer }) {
       <h3 className="h4">{t('werkbank.benutzer.zwei-faktor-anmeldung')}</h3>
       {!stand ? !meldung && <p className="leise">{t('werkbank.benutzer.lade')}</p> : stand.aktiv ? <>
         <p><span className="chip gut punkt">{t('werkbank.benutzer.eingerichtet')}</span>{stand.seit && <> {' '}{t('werkbank.benutzer.seit-2', { datum: new Date(stand.seit).toLocaleDateString(gebietsschema()) })}</>} {' '}{t('werkbank.benutzer.wiederherstellungscodes-uebrig', { codesUebrig: stand.codesUebrig })}</p>
-        <div className="knoepfe"><Knopf onClick={async () => {
-          if (await rueckfrage({ titel: t('werkbank.benutzer.zwei-faktor-anmeldung-von', { name }), text: t('werkbank.benutzer.danach-reicht-das-passwort', { name }), ja: t('werkbank.benutzer.zuruecksetzen'), gefahr: true })) {
-            void api.benutzerZweifaktorZuruecksetzen(b.id).then(() => { setMeldung({ art: 'gut', text: t('werkbank.benutzer.zurueckgesetzt') }); return laden(); }).catch((e) => setMeldung({ art: 'schlecht', text: (e as Error).message }));
-          }
+        <div className="knoepfe"><Knopf art="gefahr" symbol="zuruecksetzen" rueckfrage={{ titel: t('werkbank.benutzer.zwei-faktor-anmeldung-von', { name }), text: t('werkbank.benutzer.danach-reicht-das-passwort', { name }), ja: t('werkbank.benutzer.zuruecksetzen') }} onClick={() => {
+          void api.benutzerZweifaktorZuruecksetzen(b.id).then(() => { setMeldung({ art: 'gut', text: t('werkbank.benutzer.zurueckgesetzt') }); return laden(); }).catch((e) => setMeldung({ art: 'schlecht', text: (e as Error).message }));
         }}>{t('werkbank.benutzer.zuruecksetzen')}</Knopf></div>
       </> : <p className="leise">{t('werkbank.benutzer.nicht-eingerichtet')}</p>}
       {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}

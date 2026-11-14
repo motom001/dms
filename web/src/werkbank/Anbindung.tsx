@@ -67,7 +67,7 @@ export function AnbindungPanel({ z, nachAenderung, unten }: { z: AnbindungZustan
       {s.neustartNoetig && (
         <div className="hinweis warn hinweiszeile">
           <p>{tn('werkbank.anbindung.im-container-startet-docker', { b: <strong>{t('werkbank.anbindung.die-anbindung-ist-geaendert')}</strong> })}</p>
-          <button type="button" className="knopf primaer klein" disabled={neustart} onClick={() => void neuStarten()}>{neustart ? t('werkbank.anbindung.startet-neu') : t('werkbank.anbindung.jetzt-neu-starten')}</button>
+          <Knopf art="haupt" groesse="klein" laeuft={neustart} laeuftText={t('werkbank.anbindung.startet-neu')} onClick={() => void neuStarten()}>{t('werkbank.anbindung.jetzt-neu-starten')}</Knopf>
         </div>
       )}
       <form id="anbindung" className="blatt" onSubmit={(ev) => { ev.preventDefault(); void tu(async () => setP(await api.anbindungPruefen(a))); }}>
@@ -76,11 +76,11 @@ export function AnbindungPanel({ z, nachAenderung, unten }: { z: AnbindungZustan
         <AnbindungFormular wert={a} setWert={(x) => { setA(x); setP(null); setLeer(false); }} passwortGesetzt={s.anbindung.passwortGesetzt} felder={felder} />
         <div className="knoepfe">
           <Knopf type="submit" laeuft={laeuft} laeuftText={t('werkbank.anbindung.pruefe')}>{t('werkbank.anbindung.verbindung-pruefen')}</Knopf>
-          <button type="button" className="knopf primaer" disabled={laeuft || !p?.ok}
+          <Knopf art="haupt" gesperrt={laeuft || !p?.ok}
             onClick={() => void tu(async () => {
               const neu = await api.anbindungSpeichern(a, leer);
               z.setStand(neu); setMeldung({ art: 'gut', text: t('werkbank.anbindung.gespeichert-die-neue-anbindung') }); nachAenderung?.();
-            })}>{leer ? t('werkbank.anbindung.trotzdem-uebernehmen') : t('werkbank.anbindung.uebernehmen')}</button>
+            })}>{leer ? t('werkbank.anbindung.trotzdem-uebernehmen') : t('werkbank.anbindung.uebernehmen')}</Knopf>
         </div>
         {/* Ergebnis von „Verbindung prüfen“ und „Übernehmen“ unter den Knöpfen (#986): darüber verschiebt sich nichts. */}
         <ErgebnisBlock anlass={p ?? meldung}>

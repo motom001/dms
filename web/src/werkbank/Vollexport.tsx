@@ -1,11 +1,10 @@
-import { Knopf, Schalter, type KnopfErgebnis } from '../bausteine';
+import { Feld, HakenFeld, Knopf, Schalter, type KnopfErgebnis } from '../bausteine';
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { api, type Auftrag, type ExportUmzug, type KontaktZuordnung, type VollexportStand } from '../api';
 import { t, tn } from '../sprache';
 import { EXPORT_TAGE } from '../../../shared/src/auskunft';
 import { useDaten } from '../daten';
 import { Hilfe } from '../Hilfe';
-import { rueckfrage } from '../rueckfrage';
 import { fortschrittText } from '../../../shared/src/auftrag';
 import { gebietsschema } from '../../../shared/src/sprache';
 import { Kopf } from './Kopf';
@@ -71,7 +70,7 @@ export function VollexportPanel({ z }: { z: VollexportZustand }) {
       {meldung && <div className={`hinweis ${meldung.art}`}><p>{meldung.text}</p></div>}
       {exportHinweise({ pfad: s.ordner, imSicherungsordner: s.imSicherungsordner, umzug: s.umzug }, s.tage).map((x, i) => (
         <div key={i} className={`hinweis ${x.art}`}><p>{x.text}</p>
-          {x.umzug && <button type="button" className="knopf klein" onClick={() => void api.vollexportUmzugGesehen().then(z.laden, (e: Error) => setMeldung({ art: 'schlecht', text: e.message }))}>{t('werkbank.export.umzug.ok')}</button>}
+          {x.umzug && <Knopf groesse="klein" onClick={() => api.vollexportUmzugGesehen().then(z.laden, (e: Error) => setMeldung({ art: 'schlecht', text: e.message }))}>{t('werkbank.export.umzug.ok')}</Knopf>}
         </div>
       ))}
       <div className="blatt">
@@ -81,9 +80,15 @@ export function VollexportPanel({ z }: { z: VollexportZustand }) {
         <p className="leise klein">{t('werkbank.export.ablage', { tage: s.tage })}</p>
         {s.volume === false && <p className="leise klein">{t('werkbank.export.container')}</p>}
         {s.frei !== null && s.frei < noetig && <p className="hinweis schlecht">{t('werkbank.vollexport.zu-wenig-platz-am')}</p>}
-        <label className="haken"><input type="checkbox" checked={protokolle} onChange={(e) => setProtokolle(e.target.checked)} /><span>{tn('werkbank.vollexport.technische-protokolle-mitnehmen', { klein: <small className="hilfe">{t('werkbank.vollexport.das-protokoll-seit-dem')}</small> })}</span></label>
-        <label className="haken"><input type="checkbox" checked={pw} onChange={(e) => { setPw(e.target.checked); if (!e.target.checked) setPwOk(false); }} /><span>{tn('werkbank.vollexport.passwortfelder-im-klartext-als', { klein: <small className="hilfe">{t('werkbank.vollexport.im-format-von-bitwarden')}</small> })}</span></label>
-        {pw && <label className="haken einzug"><input type="checkbox" checked={pwOk} onChange={(e) => setPwOk(e.target.checked)} /><span className="fehlertext">{t('werkbank.vollexport.mir-ist-klar-die')}</span></label>}
+        <HakenFeld beschriftung={t('werkbank.vollexport.technische-protokolle-mitnehmen')} hinweis={t('werkbank.vollexport.das-protokoll-seit-dem')}>
+          <input type="checkbox" checked={protokolle} onChange={(e) => setProtokolle(e.target.checked)} />
+        </HakenFeld>
+        <HakenFeld beschriftung={t('werkbank.vollexport.passwortfelder-im-klartext-als')} hinweis={t('werkbank.vollexport.im-format-von-bitwarden')}>
+          <input type="checkbox" checked={pw} onChange={(e) => { setPw(e.target.checked); if (!e.target.checked) setPwOk(false); }} />
+        </HakenFeld>
+        {pw && <HakenFeld beschriftung={<span className="fehlertext">{t('werkbank.vollexport.mir-ist-klar-die')}</span>} className="einzug">
+          <input type="checkbox" checked={pwOk} onChange={(e) => setPwOk(e.target.checked)} />
+        </HakenFeld>}
         {s.kontakte.length > 0 && <>
           <h3 className="h4">{t('werkbank.vollexport.kontakte-als-vcard')} <Hilfe ort="werkbank.vollexport.kontakte" /></h3>
           <p className="leise klein">{t('werkbank.vollexport.diese-mappentypen-sehen-nach')}</p>
@@ -92,27 +97,30 @@ export function VollexportPanel({ z }: { z: VollexportZustand }) {
             const typ = d.typ(k.typId);
             const felder = typ?.felder.filter((f) => f.typ === 'text' || f.typ === 'langtext') ?? [];
             return (
-              <fieldset key={k.typId} className="wahl">
-                <legend><label className="haken"><input type="checkbox" checked={!!z2} onChange={(e) => setKontakte((x) => ({ ...x, [k.typId]: e.target.checked ? k.zuordnung : null }))} /><span>{k.typ}</span></label></legend>
+              <div key={k.typId} className="wahl">
+                <HakenFeld beschriftung={k.typ}>
+                  <input type="checkbox" checked={!!z2} onChange={(e) => setKontakte((x) => ({ ...x, [k.typId]: e.target.checked ? k.zuordnung : null }))} />
+                </HakenFeld>
                 {z2 && <div className="raster">{ANGABEN.map(([a, label]) => (
-                  <label key={a} className="eigenschaft klein"><span>{label}</span>
+                  <Feld key={a} beschriftung={label} className="klein">
                     <select value={z2[a] ?? ''} onChange={(e) => setKontakte((x) => ({ ...x, [k.typId]: { ...z2, [a]: e.target.value || undefined } as KontaktZuordnung }))}>
                       {a !== 'name' && <option value="">–</option>}
                       {felder.map((f) => <option key={f.key} value={f.key}>{f.label}</option>)}
-                    </select></label>
+                    </select>
+                  </Feld>
                 ))}</div>}
-              </fieldset>
+              </div>
             );
           })}
         </>}
         {auftrag?.status === 'laeuft' && <p className="leise" role="status">{fortschrittText(auftrag)}</p>}
         {fertig && <p className="gutertext" role="status">{t('werkbank.vollexport.fertig-dateien-in', { dateien: fertig.dateien, mb: mb(fertig.bytes), name: fertig.name })}</p>}
         {auftrag?.status === 'fehler' && <p className="fehlertext">{auftrag.fehler}</p>}
-        <div className="knoepfe"><button type="button" className="knopf primaer" disabled={auftrag?.status === 'laeuft' || (pw && !pwOk)}
+        <div className="knoepfe"><Knopf art="haupt" gesperrt={auftrag?.status === 'laeuft' || (pw && !pwOk)}
           onClick={() => void tu(async () => {
             setAuftrag(await api.vollexportStarten({ passwoerter: pw, passwoerterBestaetigt: pwOk, protokolle, kontakte: Object.fromEntries(Object.entries(kontakte).filter((e): e is [string, KontaktZuordnung] => !!e[1])) }));
             return t('werkbank.vollexport.export-laeuft-im-hintergrund');
-          })}>{t('werkbank.vollexport.export-starten')}</button></div>
+          })}>{t('werkbank.vollexport.export-starten')}</Knopf></div>
       </div>
       <div className="blatt">
         <h2 className="h3">{t('werkbank.vollexport.meine-daten-exportieren')}</h2>
@@ -135,7 +143,7 @@ export function VollexportPanel({ z }: { z: VollexportZustand }) {
                   return r.ok ? { art: 'gut', text: t('werkbank.vollexport.alle-dateien-vollstaendig-und', { dateien: r.dateien }) }
                     : { art: 'schlecht', text: t('werkbank.vollexport.abweichungen', { wert: [...r.fehlend.map((x) => t('werkbank.vollexport.fehlt', { x })), ...r.abweichend.map((x) => t('werkbank.vollexport.veraendert', { x }))].slice(0, 5).join(', '), wert2: r.fehlend.length + r.abweichend.length > 5 ? ' …' : '' }) };
                 }}>{t('werkbank.vollexport.pruefen')}</Knopf>
-                <Knopf groesse="klein" onClick={async () => { if (await rueckfrage({ titel: t('werkbank.vollexport.diesen-export-loeschen'), text: e.name, ja: t('werkbank.vollexport.loeschen'), gefahr: true })) void tu(async () => { await api.vollexportLoeschen(e.name); await z.laden(); return t('werkbank.vollexport.export-geloescht'); }); }}>{t('werkbank.vollexport.loeschen')}</Knopf>
+                <Knopf art="gefahr" symbol="geloescht" groesse="klein" rueckfrage={{ titel: t('werkbank.vollexport.diesen-export-loeschen'), text: e.name, ja: t('werkbank.vollexport.loeschen') }} onClick={() => { void tu(async () => { await api.vollexportLoeschen(e.name); await z.laden(); return t('werkbank.vollexport.export-geloescht'); }); }}>{t('werkbank.vollexport.loeschen')}</Knopf>
               </span>
             </li>
           ))}

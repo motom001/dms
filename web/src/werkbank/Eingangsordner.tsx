@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Knopf, Schalter, type KnopfErgebnis } from '../bausteine';
+import { Feld, HakenFeld, Knopf, Schalter, type KnopfErgebnis } from '../bausteine';
 import { api, type EingangEinstellung, type EingangKnoten, type EingangStand, type EingangUeberblick, type EingangWarnung } from '../api';
 import { Link } from '../ort';
 import { Hilfe } from '../Hilfe';
@@ -118,27 +118,34 @@ export function EingangsordnerPanel({ z }: { z: EingangZustand }) {
         <h2 className="h3">{t('werkbank.eingangsordner.einstellungen')}</h2>
         <Schalter id="eingang-aktiv" an={e.aktiv} setze={(an) => setE({ ...e, aktiv: an })} beschriftung={t('werkbank.eingangsordner.schalter')} />
         <div className="raster">
-          <label className="eigenschaft"><span>{tn('werkbank.eingangsordner.pruefabstand', { klein: <small>{t('werkbank.eingangsordner.in-sekunden-5-bis')}</small> })}</span>
-            <input id="eingang-abstand" type="number" min={5} max={3600} value={e.abstand} onChange={(x) => setE({ ...e, abstand: Number(x.target.value) })} /></label>
-          <label className="eigenschaft"><span>{t('werkbank.eingangsordner.nach-dem-uebernehmen')}</span>
+          <Feld beschriftung={t('werkbank.eingangsordner.pruefabstand')} hinweis={t('werkbank.eingangsordner.in-sekunden-5-bis')}>
+            <input id="eingang-abstand" type="number" min={5} max={3600} value={e.abstand} onChange={(x) => setE({ ...e, abstand: Number(x.target.value) })} />
+          </Feld>
+          <Feld beschriftung={t('werkbank.eingangsordner.nach-dem-uebernehmen')}>
             <select id="eingang-nachher" value={e.nachher} onChange={(x) => setE({ ...e, nachher: x.target.value as EingangEinstellung['nachher'] })}>
               <option value="erledigt">{t('werkbank.eingangsordner.in-erledigt-verschieben')}</option>
               <option value="loeschen">{t('werkbank.eingangsordner.loeschen')}</option>
-            </select></label>
+            </select>
+          </Feld>
         </div>
-        <label className="haken"><input type="checkbox" checked={e.doppelteUeberspringen === true} onChange={(x) => setE({ ...e, doppelteUeberspringen: x.target.checked })} />
-          <span>{tn('werkbank.eingangsordner.doppelte-dateien-ueberspringen', { klein: <small className="leise">{t('werkbank.eingangsordner.liegt-genau-diese-datei')}</small> })}</span></label>
-        <label className="haken"><input id="eingang-automatisch" type="checkbox" checked={e.ordnerAutomatisch === true} onChange={(x) => setE({ ...e, ordnerAutomatisch: x.target.checked })} />
-          <span>{tn('werkbank.eingangsordner.ordner-automatisch', { klein: <small className="leise">{t('werkbank.eingangsordner.ordner-automatisch.text')}</small> })}</span></label>
+        <HakenFeld beschriftung={t('werkbank.eingangsordner.doppelte-dateien-ueberspringen')} hinweis={t('werkbank.eingangsordner.liegt-genau-diese-datei')}>
+          <input type="checkbox" checked={e.doppelteUeberspringen === true} onChange={(x) => setE({ ...e, doppelteUeberspringen: x.target.checked })} />
+        </HakenFeld>
+        <HakenFeld beschriftung={t('werkbank.eingangsordner.ordner-automatisch')} hinweis={t('werkbank.eingangsordner.ordner-automatisch.text')}>
+          <input id="eingang-automatisch" type="checkbox" checked={e.ordnerAutomatisch === true} onChange={(x) => setE({ ...e, ordnerAutomatisch: x.target.checked })} />
+        </HakenFeld>
         <h3 className="h4">{t('werkbank.eingangsordner.warnen')}</h3>
         <p className="leise klein">{t('werkbank.eingangsordner.warnen.text')}</p>
         <div className="raster">
-          <label className="eigenschaft"><span>{t('werkbank.eingangsordner.warn-tage')}</span>
-            <input id="eingang-warn-tage" type="number" min={0} max={3650} value={e.warnTage ?? 180} onChange={(x) => setE({ ...e, warnTage: Number(x.target.value) })} /></label>
-          <label className="eigenschaft"><span>{t('werkbank.eingangsordner.warn-gb')}</span>
-            <input id="eingang-warn-gb" type="number" min={0} step="0.1" value={e.warnGb ?? 2} onChange={(x) => setE({ ...e, warnGb: Number(x.target.value) })} /></label>
-          <label className="eigenschaft"><span>{t('werkbank.eingangsordner.warn-dateien')}</span>
-            <input id="eingang-warn-dateien" type="number" min={0} value={e.warnDateien ?? 100} onChange={(x) => setE({ ...e, warnDateien: Number(x.target.value) })} /></label>
+          <Feld beschriftung={t('werkbank.eingangsordner.warn-tage')}>
+            <input id="eingang-warn-tage" type="number" min={0} max={3650} value={e.warnTage ?? 180} onChange={(x) => setE({ ...e, warnTage: Number(x.target.value) })} />
+          </Feld>
+          <Feld beschriftung={t('werkbank.eingangsordner.warn-gb')}>
+            <input id="eingang-warn-gb" type="number" min={0} step="0.1" value={e.warnGb ?? 2} onChange={(x) => setE({ ...e, warnGb: Number(x.target.value) })} />
+          </Feld>
+          <Feld beschriftung={t('werkbank.eingangsordner.warn-dateien')}>
+            <input id="eingang-warn-dateien" type="number" min={0} value={e.warnDateien ?? 100} onChange={(x) => setE({ ...e, warnDateien: Number(x.target.value) })} />
+          </Feld>
         </div>
         <div className="knoepfe">
           <Knopf onClick={jetzt} laeuftText={t('werkbank.eingangsordner.prueft')}>{t('werkbank.eingangsordner.jetzt-pruefen')}</Knopf>
@@ -150,7 +157,7 @@ export function EingangsordnerPanel({ z }: { z: EingangZustand }) {
         <p className="leise">{tn('werkbank.eingangsordner.personen.text', { code: <code>{t('werkbank.eingangsordner.eingang-lena')}</code>, code2: <code>{t('werkbank.eingangsordner.eingang-lena-erledigt')}</code> })}</p>
         <p className="leise klein">{t('werkbank.eingangsordner.personen.leserecht')}</p>
         <div className="knoepfe">
-          <button type="button" className="knopf" disabled={sendet || s.ohneOrdner === 0} onClick={() => void personen()}>{t('werkbank.eingangsordner.personen.anlegen')}</button>
+          <Knopf gesperrt={sendet || s.ohneOrdner === 0} onClick={() => void personen()}>{t('werkbank.eingangsordner.personen.anlegen')}</Knopf>
           <span className="leise klein">{s.ohneOrdner ? t('werkbank.eingangsordner.personen.ohne', { anzahl: s.ohneOrdner }) : t('werkbank.eingangsordner.personen.alle')}</span>
         </div>
       </div>

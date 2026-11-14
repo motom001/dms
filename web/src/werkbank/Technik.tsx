@@ -1,4 +1,4 @@
-import { Knopf } from '../bausteine';
+import { Feld, Knopf } from '../bausteine';
 import { Kopf } from './Kopf';
 import { version as reactVersion } from 'react';
 import { useCallback, useEffect, useState } from 'react';
@@ -137,9 +137,13 @@ export function TechnikPanel({ t: eintrag, abschnitt }: { t: TechnikZustand; abs
       <div className="blatt">
         <h2 className="h3">{t('werkbank.technik.fuer-den-support')}</h2>
         <div className="knoepfe">
-          <button className="knopf primaer" disabled={!eintrag.u} onClick={() => void kopieren()}>{kopiert ? t('werkbank.technik.kopiert') : t('werkbank.technik.uebersicht-fuer-github-kopieren')}</button>
+          <Knopf art="haupt" gesperrt={!eintrag.u} onClick={kopieren}>{kopiert ? t('werkbank.technik.kopiert') : t('werkbank.technik.uebersicht-fuer-github-kopieren')}</Knopf>
         </div>
-        {fehler === t('werkbank.technik.kopieren-nicht-moeglich-der') && eintrag.u && <textarea className="mono klein" rows={8} readOnly value={alsText(zeilenAus(eintrag.u), eintrag.abgleich)} onFocus={(e) => e.target.select()} />}
+        {fehler === t('werkbank.technik.kopieren-nicht-moeglich-der') && eintrag.u && (
+          <Feld beschriftung={t('werkbank.technik.zum-kopieren')}>
+            <textarea className="mono klein" rows={8} readOnly value={alsText(zeilenAus(eintrag.u), eintrag.abgleich)} onFocus={(e) => e.target.select()} />
+          </Feld>
+        )}
       </div>
       <div className="blatt">
         <h2 className="h3">{t('werkbank.technik.neuere-versionen')}</h2>
