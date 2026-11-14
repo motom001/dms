@@ -63,7 +63,7 @@ try {
   const b = await fenster();
   await a.getByLabel('Beitrag').first().fill('412,00');
   await speichere(a); await gespeichert(a);
-  await b.getByRole('textbox', { name: 'Notiz', exact: true }).fill('Laptop');
+  await b.getByRole('textbox', { name: /^Notiz( \(optional\))?$/ }).fill('Laptop');
   await speichere(b); await gespeichert(b);
   pruefe(!(await rueckfrage(b).count()), 'Verschiedene Felder: Es sollte keine Rückfrage geben');
   let w = await werte();
@@ -78,7 +78,7 @@ try {
   await a.getByLabel('Beitrag').first().fill('420,00');
   await speichere(a); await gespeichert(a);
   await b.getByLabel('Beitrag').first().fill('398,50');
-  await b.getByRole('textbox', { name: 'Notiz', exact: true }).fill('Laptop 2');
+  await b.getByRole('textbox', { name: /^Notiz( \(optional\))?$/ }).fill('Laptop 2');
   await speichere(b);
   const r = rueckfrage(b);
   await r.waitFor();
