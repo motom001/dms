@@ -2183,6 +2183,16 @@ rauchtest('Handy: „antwortet gerade nicht“ bei abgewiesener Datenbank nennt 
 
 /* ---------- Datum vorschlagen (#1180) und „In der allgemeinen Suche zeigen“ (#1220) ---------- */
 
+/** Werkbank → Ablaufvorlage → Ausprobieren (#1176): Mappe „Bohrhammer“ wählen und den Dialog als Probe öffnen. */
+async function probeDialog(bearbeitung, name) {
+  await bearbeitung.getByRole('combobox', { name: 'Mappe', exact: true }).fill('Bohr');
+  await bearbeitung.getByRole('option', { name: /Bohrhammer/ }).click();
+  await bearbeitung.getByRole('button', { name: 'Ausprobieren', exact: true }).click();
+  const dialog = bearbeitung.getByRole('region', { name });
+  await dialog.getByText('Probe – es wird nichts angelegt.').waitFor();
+  return dialog;
+}
+
 /** Den Dialog der Vorlage an der Mappe öffnen (Menü „Mappe“). */
 async function vorschlagDialog(s) {
   const { werkzeug, mappe, vorlage } = daten.vorschlag;
@@ -2225,7 +2235,9 @@ rauchtest('Automatisierungsvorlage: Datum „in 14 Tagen“ vorbelegt und änder
   await haken.waitFor();
   assert.ok(await haken.isChecked() && await haken.isEnabled(), 'bei „In“ frei wählbar und an');
   await bearbeitung.getByText('Läuft: In 14 Tagen (änderbar).').waitFor();
-  assert.equal(await bearbeitung.locator('input[type="date"]').inputValue(), inTagen(14), 'Ausprobieren wie der Dialog vorbelegt');
+  // Ausprobieren (#1176): derselbe Dialog wie an der Mappe, als Probe, mit demselben Datum.
+  const probe = await probeDialog(bearbeitung, vorlage.name);
+  assert.equal(await probe.getByLabel('Am').inputValue(), inTagen(14), 'Ausprobieren wie der Dialog vorbelegt');
   for (const schema of ['light', 'dark']) {
     await s.emulateMedia({ colorScheme: schema });
     // Knöpfe wechseln ihre Fläche mit einem kurzen Übergang – erst danach messen (wie im Assistenten).

@@ -37,6 +37,28 @@ export function BenutzerWahl({ wert, setze, ohne, label, fokus, id, sichtbar, cl
 type Folge = { aufgabe: Aufgabe; datum: string };
 
 /**
+ * Ausprobieren in der Werkbank (#1176): derselbe Dialog wie an der Mappe, gekennzeichnet als Probe. Statt anzulegen,
+ * gibt er die Antworten an `anwenden` (dort: Ausprobieren auf dem Server, dann die Vorschau des Ergebnisses).
+ */
+export interface Probe { anwenden(x: { empfaengerId?: string; datum?: string; text?: string }): Promise<void> }
+
+/** „Probe – es wird nichts angelegt“ oben im Dialog (#1176). */
+function ProbeHinweis() {
+  return <div className="hinweis info probe-hinweis"><p><Symbol name="info" /> {t('ablage.aufgaben.probe')}</p></div>;
+}
+
+/**
+ * Der kleine Dialog einer Automatisierungsvorlage, wie an der Mappe (#1176): „Aufgabe vergeben“, „Erinnern“ oder eine
+ * weitere Vorlage – für das Ausprobieren in der Werkbank.
+ */
+export function VorlagenDialog({ mappeId, vorlage, schliessen, probe }: { mappeId: string; vorlage: VorlageZumAnwenden; schliessen: () => void; probe: Probe }) {
+  const nichts = async () => undefined;
+  if (vorlage.kennung === 'aufgabe_vergeben') return <NeueAufgabe mappeId={mappeId} vorlage={vorlage} neuLaden={nichts} schliessen={schliessen} probe={probe} />;
+  if (vorlage.kennung === 'erinnern') return <ErinnerungFormular mappeId={mappeId} vorlage={vorlage} neuLaden={nichts} schliessen={schliessen} probe={probe} />;
+  return <AblaufFormular mappeId={mappeId} vorlage={vorlage} neuLaden={nichts} schliessen={schliessen} probe={probe} />;
+}
+
+/**
  * Zuweisen von Hand (#798): Darf der Empfänger die Mappe nicht lesen, erst Bescheid sagen – „Trotzdem zuweisen“ oder
  * „Abbrechen“. Rechte vergibt hier niemand; das kann nur der Admin in der Werkbank. Klappt die Prüfung nicht, geht es
  * weiter wie bisher (der Server antwortet dann mit einem Hinweis).
@@ -192,7 +214,7 @@ export function Geplant({ liste, vorlagen = [], neuLaden }: { liste: MappenAblau
  * Erinnern (#131) – seit #1044 die Automatisierungsvorlage „Erinnern“ (bzw. die eines Pakets, das sie ersetzt): Datum,
  * Text, für mich oder jemand anderen. Fragt die Vorlage etwas nicht, fehlt das Feld. Auch zum Ändern geplanter Abläufe.
  */
-export function ErinnerungFormular({ mappeId, e, vorlage, neuLaden, schliessen, eingebettet }: { mappeId: string; e?: MappenAblauf; vorlage?: VorlageZumAnwenden; neuLaden: () => Promise<void>; schliessen: () => void; eingebettet?: boolean }) {
+export function ErinnerungFormular({ mappeId, e, vorlage, neuLaden, schliessen, eingebettet, probe }: { mappeId: string; e?: MappenAblauf; vorlage?: VorlageZumAnwenden; neuLaden: () => Promise<void>; schliessen: () => void; eingebettet?: boolean; probe?: Probe }) {
   const d = useDaten();
   const { ich } = useKonto();
   const fragen = vorlage?.fragen ?? ['datum', 'empfaenger', 'text'];
@@ -207,6 +229,7 @@ export function ErinnerungFormular({ mappeId, e, vorlage, neuLaden, schliessen, 
     setFehler(undefined);
     try {
       const x = { datum, ...(mitText ? { text } : {}), ...(mitEmpfaenger ? { empfaengerId: an || undefined } : {}) };
+      if (probe) { await probe.anwenden(x); return; }
       const r = e ? await api.ablaufAendern(e.id, x) : await api.ablaufAnwenden(mappeId, vorlage?.kennung ?? 'erinnern', x);
       await neuLaden(); await d.neuLaden();
       if (r.hinweis) setHinweis(r.hinweis); else schliessen();
@@ -233,6 +256,7 @@ export function ErinnerungFormular({ mappeId, e, vorlage, neuLaden, schliessen, 
   return (
     <section className="blatt" aria-label={t_.name}>
       <div className="blattkopf zeile-zwischen"><h2 className="h3">{t_.titel}</h2><Knopf art="link" onClick={schliessen}>{t('ablage.aufgaben.schliessen')}</Knopf></div>
+      {probe && <ProbeHinweis />}
       {inhalt}
     </section>
   );
@@ -253,7 +277,7 @@ function erinnernTexte(vorlage: VorlageZumAnwenden | undefined, aendern: boolean
 }
 
 /** Aufgabe von Hand vergeben – seit #1044 die Automatisierungsvorlage „Aufgabe vergeben“ (sofort, genauso schnell). */
-export function NeueAufgabe({ mappeId, vorlage, neuLaden, schliessen }: { mappeId: string; vorlage?: VorlageZumAnwenden; neuLaden: () => Promise<void>; schliessen: () => void }) {
+export function NeueAufgabe({ mappeId, vorlage, neuLaden, schliessen, probe }: { mappeId: string; vorlage?: VorlageZumAnwenden; neuLaden: () => Promise<void>; schliessen: () => void; probe?: Probe }) {
   const d = useDaten();
   const fragen = vorlage?.fragen ?? ['empfaenger', 'text'];
   const [an, setAn] = useState('');
@@ -265,7 +289,9 @@ export function NeueAufgabe({ mappeId, vorlage, neuLaden, schliessen }: { mappeI
     setFehler(undefined);
     if (an && !(await trotzdemZuweisen(mappeId, an, d.person(an)))) return;
     try {
-      const r = await api.ablaufAnwenden(mappeId, vorlage?.kennung ?? 'aufgabe_vergeben', { ...(fragen.includes('empfaenger') ? { empfaengerId: an } : {}), ...(fragen.includes('text') ? { text } : {}) });
+      const x = { ...(fragen.includes('empfaenger') ? { empfaengerId: an } : {}), ...(fragen.includes('text') ? { text } : {}) };
+      if (probe) { await probe.anwenden(x); return; }
+      const r = await api.ablaufAnwenden(mappeId, vorlage?.kennung ?? 'aufgabe_vergeben', x);
       await neuLaden(); await d.neuLaden();
       // Empfänger darf die Mappe nicht lesen (#127): Maske offen lassen, Hinweis zeigen.
       if (r.hinweis) { setHinweis(r.hinweis); setText(''); setAn(''); } else schliessen();
@@ -275,6 +301,7 @@ export function NeueAufgabe({ mappeId, vorlage, neuLaden, schliessen }: { mappeI
   return (
     <section className="blatt" aria-label={titel}>
       <div className="blattkopf zeile-zwischen"><h2 className="h3">{titel}</h2><Knopf art="link" onClick={schliessen}>{t('ablage.aufgaben.schliessen')}</Knopf></div>
+      {probe && <ProbeHinweis />}
       <div className="raster">
         {fragen.includes('empfaenger') && <BenutzerWahl label={t('ablage.aufgaben.fuer-2')} sichtbar wert={an} setze={setAn} />}
         {fragen.includes('text') && <Feld beschriftung={t('ablage.aufgaben.was-ist-zu-tun')} className="breit"><input value={text} maxLength={2000} onChange={(e) => setText(e.target.value)} placeholder={t('ablage.aufgaben.z-b-bitte-rechnung')} /></Feld>}
@@ -291,7 +318,7 @@ export function NeueAufgabe({ mappeId, vorlage, neuLaden, schliessen }: { mappeI
  * Weitere Automatisierungsvorlagen im Menü „Mappe“ (#1044), z. B. „Wiedervorlage“ aus dem Paket Benachrichtigungen: ein
  * kleiner Dialog mit genau den Fragen der Vorlage; was sie nicht fragt, steht als Satz da („Läuft am …“).
  */
-export function AblaufFormular({ mappeId, vorlage, neuLaden, schliessen }: { mappeId: string; vorlage: VorlageZumAnwenden; neuLaden: () => Promise<void>; schliessen: () => void }) {
+export function AblaufFormular({ mappeId, vorlage, neuLaden, schliessen, probe }: { mappeId: string; vorlage: VorlageZumAnwenden; neuLaden: () => Promise<void>; schliessen: () => void; probe?: Probe }) {
   const d = useDaten();
   const { ich } = useKonto();
   const [an, setAn] = useState(vorlage.wann.art === 'sofort' ? '' : ich.id);
@@ -308,7 +335,9 @@ export function AblaufFormular({ mappeId, vorlage, neuLaden, schliessen }: { map
     setFehler(undefined);
     if (f.includes('empfaenger') && an && an !== ich.id && !(await trotzdemZuweisen(mappeId, an, d.person(an)))) return;
     try {
-      const r = await api.ablaufAnwenden(mappeId, vorlage.kennung, { ...(f.includes('empfaenger') ? { empfaengerId: an } : {}), ...(mitDatum ? { datum } : {}), ...(f.includes('text') ? { text } : {}) });
+      const x = { ...(f.includes('empfaenger') ? { empfaengerId: an } : {}), ...(mitDatum ? { datum } : {}), ...(f.includes('text') ? { text } : {}) };
+      if (probe) { await probe.anwenden(x); return; }
+      const r = await api.ablaufAnwenden(mappeId, vorlage.kennung, x);
       await neuLaden(); await d.neuLaden();
       if (r.hinweis) setHinweis(r.hinweis); else schliessen();
     } catch (e) { setFehler((e as Error).message); }
@@ -316,6 +345,7 @@ export function AblaufFormular({ mappeId, vorlage, neuLaden, schliessen }: { map
   return (
     <section className="blatt" aria-label={vorlage.name}>
       <div className="blattkopf zeile-zwischen"><h2 className="h3">{vorlage.name}</h2><Knopf art="link" onClick={schliessen}>{t('ablage.aufgaben.schliessen')}</Knopf></div>
+      {probe && <ProbeHinweis />}
       {vorlage.beschreibung && <p className="leise">{vorlage.beschreibung}</p>}
       <div className="raster">
         {mitDatum && <Feld beschriftung={t('ablage.aufgaben.am')} hinweis={vorlage.wann.art === 'in' ? t('ablage.aufgaben.vorschlag', { datum: datumDe(vorschlagDatum(vorlage.wann, heuteIn())) }) : undefined}>

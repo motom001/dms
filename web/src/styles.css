@@ -1479,6 +1479,14 @@ a.knopf.breit { display: flex; justify-content: center; text-decoration: none; }
 .wann-reihe { display: inline-flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 6px 8px; max-width: 100%; }
 .wann-reihe > [role="radiogroup"] { flex: 1 1 auto; }
 .wann-in.blass input, .wann-in.blass select { color: var(--leise); background: var(--senke); border-color: var(--linie-stark); }
+/* Ausprobieren einer Ablaufvorlage (#1176): die Vorschau je Empfänger wie eine Aufgabe an der Mappe. */
+.probe-hinweis p { display: flex; align-items: center; gap: 6px; }
+.probe-karten { list-style: none; margin: 0; padding: 0; }
+.probe-karte { border: 1px solid var(--linie); border-left: 3px solid var(--akzent); border-radius: var(--r); background: var(--flaeche); padding: 8px 12px; }
+.probe-karte p { margin: 2px 0; }
+.probe-karte .probe-kopf { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.probe-karte .probe-text { white-space: pre-wrap; overflow-wrap: anywhere; }
+.probe-karte .warnung { color: var(--warn); }
 .paket-automatisierungen-liste { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
 .paket-automatisierungen-geaendert { list-style: none; margin: 0; padding: 0; }
 .paket-automatisierungen-geaendert .hinweis { margin-top: 4px; }

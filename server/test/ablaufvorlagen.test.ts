@@ -157,8 +157,12 @@ function verhalten(name: string, repos?: () => Promise<{ repo: Repo; konto: Kont
       const { d, lena, petra, m, admin } = await aufbau(await repos?.());
       await d.ablaeufe.legeVorlage({ name: 'Nachfassen', wann: { art: 'sofort' }, fragen: ['empfaenger'], karten: [{ art: 'aufgabe', als: 'aufgabe', empfaenger: [{ art: 'frage' }], text: 'Bitte {titel} nachfassen ({person})' }] }, admin.id);
       const k = (await d.ablaeufe.vorlagen()).find((v) => v.name === 'Nachfassen')!.kennung;
-      const zeilen = await d.ablaeufe.ausprobieren(k, m.id, { empfaengerId: petra.id }, { id: lena.id, rolle: 'mitglied' }, await d.rechtepruefung.zugriff({ id: lena.id, rolle: 'mitglied' }));
+      const { zeilen, vorschau } = await d.ablaeufe.ausprobieren(k, m.id, { empfaengerId: petra.id }, { id: lena.id, rolle: 'mitglied' }, await d.rechtepruefung.zugriff({ id: lena.id, rolle: 'mitglied' }));
       assert.ok(zeilen.some((z) => /nicht sichtbar/.test(z)), zeilen.join(' | '));
+      // Vorschau (#1176): so, wie Petra es sähe – sofort, also ohne Datum, mit dem Hinweis zum Leserecht.
+      assert.equal(vorschau.length, 1);
+      assert.equal(vorschau[0].als, 'aufgabe'); assert.equal(vorschau[0].an, 'Petra'); assert.equal(vorschau[0].datum, null);
+      assert.match(vorschau[0].hinweis ?? '', /Petra darf die Mappe nicht lesen/);
       assert.ok(zeilen.some((z) => /Petra darf die Mappe nicht lesen/.test(z)), zeilen.join(' | '));
       const a = (await d.ablaeufe.anwenden(m.id, k, { empfaengerId: petra.id }, lena.id)).aufgaben[0];
       assert.match(a.text, /\(nicht sichtbar\)/); assert.match(a.text, /\(Lena\)/);
@@ -182,8 +186,10 @@ function verhalten(name: string, repos?: () => Promise<{ repo: Repo; konto: Kont
       assert.equal((await d.ablaeufe.anwenden(m.id, v.kennung, { datum: in_(14), text: 'Angebot prüfen' }, lena.id)).ablauf!.datum, in_(14), 'Vorschlag übernommen');
       assert.equal((await d.ablaeufe.anwenden(m.id, v.kennung, { datum: in_(20), text: 'später' }, lena.id)).ablauf!.datum, in_(20), 'geändert');
       // Ausprobieren zeigt das gewählte Datum.
-      const zeilen = await d.ablaeufe.ausprobieren(v.kennung, m.id, { datum: in_(14), text: 'x' }, { id: lena.id, rolle: 'mitglied' }, await d.rechtepruefung.zugriff({ id: lena.id, rolle: 'mitglied' }));
-      assert.ok(zeilen[0].includes(datumDe(in_(14))), zeilen.join(' | '));
+      const probe = await d.ablaeufe.ausprobieren(v.kennung, m.id, { datum: in_(14), text: 'x' }, { id: lena.id, rolle: 'mitglied' }, await d.rechtepruefung.zugriff({ id: lena.id, rolle: 'mitglied' }));
+      assert.ok(probe.zeilen[0].includes(datumDe(in_(14))), probe.zeilen.join(' | '));
+      // Vorschau (#1176): Aufgabe für Lena, fällig am gewählten Tag, mit ihrem Text; angelegt wird nichts.
+      assert.deepEqual(probe.vorschau, [{ als: 'aufgabe', an: 'Lena', text: 'x', datum: in_(14) }]);
       // Bestehende Vorlagen unverändert: „In …“ ohne Frage „Datum“ übergeht ein mitgeschicktes Datum, „Erinnern“ verlangt es.
       const fest = await d.ablaeufe.legeVorlage({ name: 'Fest', wann: { art: 'in', anzahl: 2, einheit: 'wochen' }, fragen: [], karten: [{ ...karten[0], text: 'Ansehen: {titel}' }] }, admin.id);
       assert.equal((await d.ablaeufe.anwenden(m.id, fest.kennung, { datum: in_(3) }, lena.id)).ablauf!.datum, verschiebe(heute, 2, 'wochen'));

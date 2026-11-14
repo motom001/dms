@@ -39,7 +39,7 @@ Bei **In** entscheidest du, ob das Datum fest ist oder nur ein **Vorschlag**:
 | In 14 Tagen | **an** | Datumsfeld, **vorbelegt mit heute + 14 Tage**, änderbar |
 | Am gewählten Datum | immer an | Datumsfeld, vorbelegt mit heute + 7 Tage |
 
-Beispiel: Lena möchte, dass sich jeder im Haushalt mit einem Klick an eine Mappe erinnern lassen kann – meistens in zwei Wochen, manchmal früher oder später. Sie legt eine Vorlage **Erinnere mich in 14 Tagen** an: Wann **In 14 Tagen**, unter „Fragt beim Anwenden“ **Datum** und **Text**, eine Karte **Aufgabe** an „wer sie anwendet“ mit dem Text `{eingabe}`. In der Liste steht sie als „In 14 Tagen (änderbar) → Aufgabe an wer sie anwendet“. Wendet Jonas sie an einer Mappe an, steht im Datumsfeld schon das Datum in 14 Tagen; er schreibt, woran er denken will, und ändert das Datum nur, wenn es nicht passt. **Ausprobieren** im Editor belegt das Datum genauso vor.
+Beispiel: Lena möchte, dass sich jeder im Haushalt mit einem Klick an eine Mappe erinnern lassen kann – meistens in zwei Wochen, manchmal früher oder später. Sie legt eine Vorlage **Erinnere mich in 14 Tagen** an: Wann **In 14 Tagen**, unter „Fragt beim Anwenden“ **Datum** und **Text**, eine Karte **Aufgabe** an „wer sie anwendet“ mit dem Text `{eingabe}`. In der Liste steht sie als „In 14 Tagen (änderbar) → Aufgabe an wer sie anwendet“. Wendet Jonas sie an einer Mappe an, steht im Datumsfeld schon das Datum in 14 Tagen; er schreibt, woran er denken will, und ändert das Datum nur, wenn es nicht passt. **Ausprobieren** im Editor öffnet genau diesen Dialog, mit demselben Datum.
 
 ![Vorlage „Erinnere mich in 14 Tagen“: Wann „In 14 Tagen“, unter „Fragt beim Anwenden“ ist „Datum“ angehakt](bilder/werkbank-automatisierungsvorlage-vorschlag.png)
 
@@ -51,7 +51,7 @@ Der **Schalter** oben im Editor (aus) nimmt die Vorlage aus dem Menü „Mappe�
 
 Darunter:
 
-- **Ausprobieren:** wähle eine Mappe und die Antworten – Ablago zeigt, was passieren würde (mit deinen Rechten als Person), und wer etwas nicht sehen dürfte. Es entsteht nichts.
+- **Ausprobieren:** wähle eine Mappe und klicke auf **Ausprobieren**. Es öffnet sich **derselbe kleine Dialog wie an der Mappe** – mit genau den Fragen der Vorlage, gleicher Vorbelegung (z. B. das vorgeschlagene Datum), gleicher Beschriftung und Reihenfolge –, oben gekennzeichnet mit **„Probe – es wird nichts angelegt.“** Nach dem Bestätigen zeigt Ablago, was die Empfänger sähen: je Empfänger die Aufgabe (fällig wann) bzw. die Benachrichtigung mit Mappe und Text, und wer die Mappe nicht oder nicht ganz sehen dürfte; unter **Zusammenfassung** dieselben Zeilen kurz. Ablago probiert mit deinen Rechten als Person. Danach **Nochmal** oder **Vorlage anpassen**. Es entsteht nichts.
 - **Gerade benutzt bei:** alle offenen Abläufe der Vorlage mit Link zur Mappe, Datum und Person. Titel stehen nur bei Mappen, die du lesen darfst.
 - **Verlauf:** angewendet, geplant, gelaufen, angehalten, gelöscht, fortgesetzt – mit Zeit und Person. Er bleibt 30 Tage bzw. 200 Einträge je Vorlage.
 - **Fassungen:** wer wann was geändert hat, zwei Fassungen vergleichen und eine frühere wiederherstellen – wie bei allen Einstellungen der Werkbank, siehe [Fassungen](fassungen.md). **Auf Auslieferung zurücksetzen** ist selbst eine Fassung; gelöschte eigene Vorlagen stehen mit Löschvermerk unter der Liste.

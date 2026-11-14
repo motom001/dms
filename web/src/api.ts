@@ -32,7 +32,7 @@ import type { EigeneAnsicht, WerkbankAnsicht } from '../../shared/src/werkbankan
 import type { Merkmale } from '../../shared/src/merkmale';
 import type { SichtRechte, SichtRegelwerk, SichtSchritt } from '../../shared/src/sichtrechte';
 import type { Termin, TermineAntwort } from '../../shared/src/fristen';
-import type { AblaufAntworten, AblaufVerlauf, AblaufvorlageAnsicht, AblaufvorlageDaten, MappenAblauf, VorlageZumAnwenden } from '../../shared/src/ablaufvorlagen';
+import type { AblaufAntworten, AblaufProbe, AblaufVerlauf, AblaufvorlageAnsicht, AblaufvorlageDaten, MappenAblauf, VorlageZumAnwenden } from '../../shared/src/ablaufvorlagen';
 import type { Auftrag } from '../../shared/src/auftrag';
 import type { Baum } from '../../shared/src/baum';
 import type { LoeschAktion, LoeschPlan, LoeschVorschau } from '../../shared/src/loeschbaum';
@@ -881,7 +881,7 @@ export const api = {
   ablaufvorlageZuruecksetzen: (kennung: string) => anfrage<AblaufvorlageAnsicht>('POST', `/api/werkbank/ablaufvorlagen/${encodeURIComponent(kennung)}/zuruecksetzen`),
   ablaufvorlageVerlauf: (kennung: string) => anfrage<AblaufVerlauf[]>('GET', `/api/werkbank/ablaufvorlagen/${encodeURIComponent(kennung)}/verlauf`),
   ablaufvorlageBenutzt: (kennung: string) => anfrage<MappenAblauf[]>('GET', `/api/werkbank/ablaufvorlagen/${encodeURIComponent(kennung)}/benutzt`),
-  ablaufvorlageAusprobieren: (kennung: string, mappeId: string, e: AblaufAntworten) => anfrage<{ zeilen: string[] }>('POST', `/api/werkbank/ablaufvorlagen/${encodeURIComponent(kennung)}/ausprobieren`, { ...e, mappeId }),
+  ablaufvorlageAusprobieren: (kennung: string, mappeId: string, e: AblaufAntworten) => anfrage<{ zeilen: string[]; vorschau: AblaufProbe[] }>('POST', `/api/werkbank/ablaufvorlagen/${encodeURIComponent(kennung)}/ausprobieren`, { ...e, mappeId }),
   aufgabeDelegieren: (id: string, empfaengerId: string) => anfrage<Aufgabe & { hinweis?: string }>('POST', `/api/aufgaben/${id}/delegieren`, { empfaengerId }),
   /** Sammel-Weitergabe und -Erledigen (#415, #419). */
   aufgabenWeitergeben: (ids: string[], empfaengerId: string) => anfrage<{ weitergegeben: string[]; nicht: Array<{ id: string; grund: string }> }>('POST', '/api/aufgaben/weitergeben', { ids, empfaengerId }),

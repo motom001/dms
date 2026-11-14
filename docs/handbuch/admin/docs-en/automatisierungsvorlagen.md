@@ -39,7 +39,7 @@ With **In** you decide whether the date is fixed or only a **suggestion**:
 | In 14 days | **on** | date field, **filled in with today + 14 days**, can be changed |
 | On the chosen date | always on | date field, filled in with today + 7 days |
 
-Example: Lena wants everyone in the household to be able to set a reminder on a folder with one click – usually in two weeks, sometimes earlier or later. She creates a template **Remind me in 14 days**: When **In 14 days**, under “Asks when applied” **Date** and **Text**, one **Task** card for “whoever applies it” with the text `{eingabe}`. The list shows it as “In 14 days (can be changed) → Task for whoever applies it”. When Jonas applies it on a folder, the date field already shows the date in 14 days; he writes what he wants to remember and only changes the date if it does not suit him. **Try it out** in the editor fills in the date the same way.
+Example: Lena wants everyone in the household to be able to set a reminder on a folder with one click – usually in two weeks, sometimes earlier or later. She creates a template **Remind me in 14 days**: When **In 14 days**, under “Asks when applied” **Date** and **Text**, one **Task** card for “whoever applies it” with the text `{eingabe}`. The list shows it as “In 14 days (can be changed) → Task for whoever applies it”. When Jonas applies it on a folder, the date field already shows the date in 14 days; he writes what he wants to remember and only changes the date if it does not suit him. **Try it out** in the editor opens exactly this dialog, with the same date.
 
 ![Template “Remind me in 14 days”: When “In 14 days”, “Date” ticked under “Asks when applied”](bilder/werkbank-automatisierungsvorlage-vorschlag.png)
 
@@ -51,7 +51,7 @@ The **switch** at the top of the editor (off) takes the template out of the “F
 
 Below:
 
-- **Try it out:** choose a folder and the answers – Ablago shows what would happen (with your rights as the person) and who would not be allowed to see something. Nothing is created.
+- **Try it out:** choose a folder and click **Try it out**. **The same small dialog as on the folder** opens – with exactly the template’s questions, the same pre-filled values (e.g. the suggested date), the same labels and order –, marked at the top with **“Trial – nothing is created.”** After confirming, Ablago shows what the recipients would see: per recipient the task (due when) or the notification with folder and text, and who would not be allowed to see the folder or all of it; under **Summary** the same lines in brief. Ablago tries it with your rights as the person. Then **Again** or **Adjust template**. Nothing is created.
 - **In use on:** all open runs of the template with a link to the folder, date and person. Titles appear only for folders you may read.
 - **History:** applied, planned, ran, paused, deleted, resumed – with time and person. It is kept for 30 days or 200 entries per template.
 - **Versions:** who changed what and when, compare two versions and restore an earlier one – as for all settings in the Workbench, see [Versions](fassungen.md). **Reset to delivery** is itself a version; deleted own templates are listed with a deletion note below the list.
