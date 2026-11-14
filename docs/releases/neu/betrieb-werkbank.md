@@ -9,3 +9,4 @@ art: minor
 ## Geändert
 
 - **Sicherung ruhiger** (#1193): Die Statuszeile nennt nicht mehr, wann das Notfallblatt heruntergeladen wurde – das steht unter Verschlüsselung. Fehlt das Notfallblatt oder gilt es nicht mehr, warnt die Sicherung weiter. Neben dem Hilfesymbol steht kein zweiter Link ins Handbuch.
+- **Einstellungen zum Sichern** (#1196): „Benutzer dürfen ihre eigenen Daten exportieren“ steht nicht mehr mitten im Vollexport, sondern unter Werkbank → Daten sichern → Einstellungen. Der Vollexport zeigt nur noch neuen Export und vorhandene Exporte, dazu einen Satz mit Link.

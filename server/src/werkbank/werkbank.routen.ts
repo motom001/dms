@@ -257,6 +257,11 @@ export function werkbankEinstellungenRouten(k: RoutenKontext): Route[] {
     { methode: 'GET', pfad: '/api/region', zugang: 'angemeldet', handler: async () => ok(await region().lies()) },
     // Merkmale der Ablage (#1032) für alle Angemeldeten (Apps mit Formularen, GET /api/v1/merkmale).
     { methode: 'GET', pfad: '/api/merkmale', zugang: 'angemeldet', handler: async () => ok(await dienst.werkbank.merkmale()) },
+    // Papierkorb und Export (#1196, #1197): Aufbewahrung im Papierkorb und „Benutzer dürfen ihre eigenen Daten
+    // exportieren“; gespeichert wird über die bisherigen Wege (PUT …/papierkorb/einstellungen, …/export/persoenlich).
+    { methode: 'GET', pfad: '/api/werkbank/daten', zugang: 'admin', handler: async () => ok({
+      persoenlich: await dienst.auskunftZustellen.persoenlicherExportErlaubt(),
+    }) },
     // Sprachen (#729): Werkbank → Sprachen.
     { methode: 'GET', pfad: '/api/werkbank/sprachen', zugang: 'admin', handler: async () => ok(await sprachen().stand()) },
     { methode: 'PUT', pfad: '/api/werkbank/sprachen', zugang: 'admin', handler: async (a) => { await sprachen().speichere(a.body); return ok(await sprachen().stand()); } },

@@ -31,6 +31,8 @@ export interface ExternZustand {
   fehler: { name: string; paket: string; beginn: string; stand: ExternStand } | null;
   zuAlt: boolean;
 }
+/** Werkbank → Daten sichern → Einstellungen (#1196, #1197). */
+export interface DatenStand { persoenlich: boolean }
 export interface SicherungEintrag { name: string; meta: SicherungsMeta | null; schlank?: SicherungSchlank; bytes: number; pruefung?: { am: string; ok: boolean }; probe?: { am: string; ok: boolean; info: string }; extern?: Record<string, ExternStand> }
 export interface SicherungsPlan { aktiv: boolean; uhrzeit: string; haeufigkeit: 'taeglich' | 'woechentlich'; wochentag: number; aufbewahrung: { taeglich: number; woechentlich: number; monatlich: number }; mindestFreiGB: number; aktivSeit: string | null; /** #585 */ nurNeueste?: boolean }
 export interface SicherungsLauf { art: string; titel: string; status: 'laeuft' | 'fertig' | 'fehler'; schritt: string; bytes: number; gesamt: number; gestartet: string; beendet?: string; fehler?: string; ergebnis?: unknown }
@@ -296,6 +298,7 @@ export const betriebApi = {
   mailOAuthGeraetPruefen: () => anfrage<{ fertig: boolean; text: string }>('POST', '/api/werkbank/betrieb/mail/oauth/geraet/pruefen'),
   mailOAuthAbmelden: () => anfrage<BetriebAnsicht>('POST', '/api/werkbank/betrieb/mail/oauth/abmelden'),
   /* Vollexport (#254) */
+  daten: () => anfrage<DatenStand>('GET', '/api/werkbank/daten'),
   vollexport: () => anfrage<VollexportStand>('GET', '/api/werkbank/export'),
   vollexportStarten: (o: { passwoerter: boolean; passwoerterBestaetigt: boolean; protokolle: boolean; kontakte: Record<string, KontaktZuordnung> }) => anfrage<Auftrag>('POST', '/api/werkbank/export', o),
   vollexportPruefen: (name: string) => anfrage<{ ok: boolean; dateien: number; fehlend: string[]; abweichend: string[] }>('POST', `/api/werkbank/export/${encodeURIComponent(name)}/pruefen`),
