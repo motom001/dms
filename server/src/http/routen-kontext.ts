@@ -28,6 +28,7 @@ import { Paketverwaltung } from '../pakete';
 import { Paketerstellung } from '../paketerstellung';
 import { Umwandlung } from '../umwandlung';
 import { Entdecken } from '../entdecken';
+import { RundgaengeWerkbank, WERKBANK_EINSTELLUNG } from '../entdecken-werkbank';
 import { heuteIn } from '../../../shared/src/sichten';
 import { eigeneVersion } from '../system';
 import { notfallblatt } from '../notfallblatt';
@@ -79,7 +80,20 @@ export function routenKontext(dienst: Dienst, konten: Konten, x: RoutenExtras = 
       const m = mappen.find((x) => lesbar.has(x.id));
       return m ? `/ablage/${typ.id}/${m.id}` : null;
     },
+    werkbank: async () => dienst.kern.einstellungen?.lies(WERKBANK_EINSTELLUNG) ?? null,
     log: L.konto,
+  });
+  // Werkbank → Rundgänge (#941): eigene Rundgänge und An/aus in der Einstellung der Ablage.
+  const rundgaengeWerkbank = new RundgaengeWerkbank({
+    speicher: {
+      lies: async () => dienst.kern.einstellungen?.lies(WERKBANK_EINSTELLUNG) ?? null,
+      schreibe: async (w) => { await dienst.kern.einstellungen?.schreibe(WERKBANK_EINSTELLUNG, w); },
+      ...(dienst.kern.einstellungen?.tausche ? { tausche: (alt: unknown, neu: unknown) => dienst.kern.einstellungen!.tausche!(WERKBANK_EINSTELLUNG, alt, neu) } : {}),
+    },
+    pruefung: async () => {
+      const typen = new Map((await dienst.kern.repo.listeTypen()).map((x) => [x.schluessel ?? x.id, { kennung: x.schluessel ?? x.id, felder: x.felder.map((f) => f.key), register: x.register.map((r) => r.key) }]));
+      return { anker: entdecken.ablago().anker, typ: (k: string) => typen.get(k) ?? null };
+    },
   });
   const umwandlung = new Umwandlung(dienst);
   const wer = (a: Anfrage) => ({ id: a.benutzer?.id ?? null, email: a.benutzer?.email ?? null });
@@ -384,7 +398,7 @@ export function routenKontext(dienst: Dienst, konten: Konten, x: RoutenExtras = 
   };
   return {
     dienst, konten, x, fotostapel, messung, system, designs, log,
-    pakete, paketerstellung, entdecken, umwandlung, wer, einrichtungZugang, weitergabe, mitnehmen,
+    pakete, paketerstellung, entdecken, rundgaengeWerkbank, umwandlung, wer, einrichtungZugang, weitergabe, mitnehmen,
     abgerufen, herausgeben, seitenquelle, zumAbspeichern, fuerAnzeige, ausgabeDatei, typName, nurSelbst,
     betrieb, region, sprachen, spracheFuer, regionStand, zusammenfassung, ocr,
     meldungen, tresor, schluessel, autos, passwoerterAnzeigen, verwaltungHinweis, modusSpur,

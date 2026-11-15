@@ -14,7 +14,8 @@
  * `baue` ist eine reine Funktion (testbar ohne DMS); die Klasse holt den Stand aus dem Dienst.
  */
 import { buffer as alsPuffer } from 'node:stream/consumers';
-import { stringify } from 'yaml';
+import { parse, stringify } from 'yaml';
+import { insPaket, werkbankAus, WERKBANK_EINSTELLUNG } from './entdecken-werkbank';
 import { istLeer, standardliste, trefferlistenVon, type Feld, type Mappe, type Mappentyp, type Register } from '../../shared/src/model';
 import { kreisImStandard } from '../../shared/src/nummernkreis';
 import { ALLE_TYPEN, BEISPIEL_DOKUMENTE_AB, BEISPIEL_ENDUNGEN, BEREICH, DMS_ALIAS, DMS_WORTLISTEN_AB, inMB, PAKET_ID, VERSION, WORTLISTEN_MAX, vergleicheVersion, type InstalliertesPaket } from '../../shared/src/pakete';
@@ -175,6 +176,8 @@ export interface ErstellenDaten {
   dokumenteZuGross?: number;
   /** Alle Gruppen gleichbedeutender Wörter (#661); eigene haben die Quelle „werkbank“. */
   wortlisten?: Synonymgruppe[];
+  /** Eigene Rundgänge der Werkbank (#941), wie geschrieben (YAML gelesen, nicht geprüft). */
+  rundgaenge?: Array<{ schluessel: string; roh: Record<string, unknown> }>;
   dmsVersion: string;
   /** Zuletzt exportierter Entwurf mit derselben Id. */
   entwurf: PaketEntwurf | null;
@@ -603,7 +606,11 @@ export function baue(e: PaketErstellenEingabe, d: ErstellenDaten): Bau {
   if (wortlisten.length > WORTLISTEN_MAX) probleme.push(t('meldungen.paketerstellung.wortlisten-hoechstens-gruppen', { WORTLISTEN_MAX }));
   if (wortlisten.length) hinweis(t('meldungen.paketerstellung.gruppen-gleichbedeutender-woerter', { anzahl: wortlisten.length }));
 
-  if (!paketTypen.length && !paketSichten.length && !wortlisten.length) probleme.push(t('meldungen.paketerstellung.waehle-mindestens-einen-eigenen'));
+  // 7. Eigene Rundgänge (#941): Mappentypen werden zu Schlüsseln im Paket bzw. zu Abhängigkeiten.
+  const rundgaenge = rundgaengeInsPaket(e.rundgaenge ?? [], d, { schluessel, typPaket, abhaengig, probleme });
+  if (rundgaenge.length) hinweis(t('meldungen.paketerstellung.rundgaenge', { anzahl: rundgaenge.length }));
+
+  if (!paketTypen.length && !paketSichten.length && !wortlisten.length && !rundgaenge.length) probleme.push(t('meldungen.paketerstellung.waehle-mindestens-einen-eigenen'));
   // Nötige Ablago-Version (#651): Mindestversion aus den benutzten Funktionen, Angabe aus der Auswahl.
   const genutzt: MindestFunktion[] = [];
   if (dmsVerweise) genutzt.push('dmsVerweise');
@@ -646,6 +653,7 @@ export function baue(e: PaketErstellenEingabe, d: ErstellenDaten): Bau {
     beispiele: beispiele.length,
     ...(wortlisten.length ? { wortlisten: wortlisten.length } : {}),
     ...(dokDateien.length ? { beispielDokumente: dokDateien.length } : {}),
+    ...(rundgaenge.length ? { rundgaenge: rundgaenge.length } : {}),
   };
   if (probleme.length) return { probleme, fehlend, hinweise, abhaengigkeiten: abh, inhalt, schluessel, dateien: [], version: versionLage, felder: felderJetzt, lizenz };
 
@@ -653,7 +661,7 @@ export function baue(e: PaketErstellenEingabe, d: ErstellenDaten): Bau {
   const y = (v: unknown) => Buffer.from(stringify(v, { version: '1.1', lineWidth: 0 }));
   const manifest = {
     schema: 1, id, name, version, beschreibung, autor, lizenz, dms, abhaengigkeiten: abh,
-    inhalt: { mappentypen: 'inhalt/mappentypen.yaml', sichten: 'inhalt/sichten.yaml', ...(beispiele.length ? { beispiele: 'inhalt/beispiele.yaml' } : {}), ...(wortlisten.length ? { wortlisten: 'inhalt/wortlisten.yaml' } : {}) },
+    inhalt: { mappentypen: 'inhalt/mappentypen.yaml', sichten: 'inhalt/sichten.yaml', ...(beispiele.length ? { beispiele: 'inhalt/beispiele.yaml' } : {}), ...(wortlisten.length ? { wortlisten: 'inhalt/wortlisten.yaml' } : {}), ...(rundgaenge.length ? { rundgaenge: 'inhalt/rundgaenge.yaml' } : {}) },
   };
   const datum = d.jetzt.toISOString().slice(0, 10);
   const text = aenderungsText(e, d.entwurf);
@@ -686,12 +694,39 @@ export function baue(e: PaketErstellenEingabe, d: ErstellenDaten): Bau {
     ...(beispiele.length ? [{ name: 'inhalt/beispiele.yaml', daten: y(beispiele) }] : []),
     ...dokDateien,
     ...(wortlisten.length ? [{ name: 'inhalt/wortlisten.yaml', daten: y(wortlisten) }] : []),
+    ...(rundgaenge.length ? [{ name: 'inhalt/rundgaenge.yaml', daten: y(rundgaenge) }] : []),
     { name: 'README.md', daten: Buffer.from(readme) },
     { name: 'CHANGELOG.md', daten: Buffer.from(changelog) },
     { name: 'LICENSE', daten: Buffer.from(lizenzDatei) },
     { name: 'tests/erwartung.yaml', daten: y(erwartung) },
   ];
   return { probleme, fehlend, hinweise, abhaengigkeiten: abh, inhalt, schluessel, dateien, version: versionLage, felder: felderJetzt, lizenz };
+}
+
+/**
+ * Gewählte eigene Rundgänge fürs Paket (#941): Mappentypen der Ablage werden zum Schlüssel im Paket, Typen aus
+ * installierten Paketen zu `paket:typ` samt Abhängigkeit; ein Typ, der weder mitkommt noch aus einem Paket stammt, ist
+ * ein Problem.
+ */
+function rundgaengeInsPaket(gewaehlt: string[], d: ErstellenDaten, k: { schluessel: Record<string, string>; typPaket: Map<string, { p: InstalliertesPaket; s: string }>; abhaengig(p: InstalliertesPaket): void; probleme: string[] }): Array<Record<string, unknown>> {
+  const kennung = (x: string): string | null => {
+    const typ = d.typen.find((y) => (y.schluessel ?? y.id) === x);
+    if (!typ) return null;
+    if (k.schluessel[typ.id]) return k.schluessel[typ.id];
+    const h = k.typPaket.get(typ.id);
+    if (!h) return null;
+    k.abhaengig(h.p);
+    return `${h.p.id}:${h.s}`;
+  };
+  const aus: Array<Record<string, unknown>> = [];
+  for (const s of new Set(gewaehlt)) {
+    const r = (d.rundgaenge ?? []).find((x) => x.schluessel === s);
+    if (!r) { k.probleme.push(t('meldungen.paketerstellung.rundgang-fehlt', { schluessel: s })); continue; }
+    const x = insPaket(r.roh, kennung);
+    for (const f of x.fehlt) k.probleme.push(t('meldungen.paketerstellung.rundgang-typ', { schluessel: s, typ: f }));
+    aus.push(x.roh);
+  }
+  return aus;
 }
 
 /** Eintrag im CHANGELOG für diese Version; ohne Angabe ein Standardtext. */
@@ -705,6 +740,7 @@ export function liesEingabe(x: unknown): PaketErstellenEingabe {
   const a = (o.autor && typeof o.autor === 'object' ? o.autor : {}) as Record<string, unknown>;
   return {
     typen: ids(o.typen, 500), sichten: ids(o.sichten, 500), beispiele: ids(o.beispiele, 100), wortlisten: ids(o.wortlisten, 1000),
+    ...(Array.isArray(o.rundgaenge) ? { rundgaenge: ids(o.rundgaenge, 50) } : {}),
     id: t(o.id, 40), name: t(o.name, 200), version: t(o.version, 40), beschreibung: t(o.beschreibung, 1000),
     autor: { name: t(a.name, 200), github: t(a.github, 100) }, lizenz: t(o.lizenz, 40), dms: t(o.dms, 60), aenderungen: t(o.aenderungen, 2000),
     lizenzArt: o.lizenzArt === 'eigen' || o.lizenzArt === 'keine' ? o.lizenzArt : 'frei',
@@ -755,6 +791,7 @@ export class Paketerstellung {
       }).sort((a, b) => a.name.localeCompare(b.name, 'de')),
       sichten: sichten.map((s) => ({ id: s.id, name: s.name, elternId: s.elternId ?? null, paket: herkunft((x) => x.sichten, s.id) })),
       wortlisten: (await this.d.suche.sucheStand()).synonyme.map((g) => ({ id: g.id, woerter: g.woerter, paket: g.quelle === 'werkbank' ? null : { id: g.quelle, name: g.paketName ?? g.quelle } })),
+      rundgaenge: (await this.eigeneRundgaenge()).map((x) => ({ schluessel: x.schluessel, titel: typeof x.roh.titel === 'string' ? x.roh.titel : x.schluessel })),
       entwuerfe,
       dms: this.o.version(),
       // #652: nie ungefragt vorbelegen – „Neue Version von …“ wählt man im ersten Schritt.
@@ -765,7 +802,7 @@ export class Paketerstellung {
   /** Angaben eines gemerkten Entwurfs mit höherer Version und aktueller DMS-Version. */
   ausEntwurf(e: PaketEntwurf): PaketErstellenEingabe {
     return {
-      typen: e.typen, sichten: e.sichten, beispiele: e.beispiele, wortlisten: e.wortlisten ?? [], ...(e.beispielDokumente ? { beispielDokumente: true } : {}), id: e.id, name: e.name, version: naechsteVersion(e.version), beschreibung: e.beschreibung, autor: e.autor,
+      typen: e.typen, sichten: e.sichten, beispiele: e.beispiele, wortlisten: e.wortlisten ?? [], ...(e.rundgaenge?.length ? { rundgaenge: e.rundgaenge } : {}), ...(e.beispielDokumente ? { beispielDokumente: true } : {}), id: e.id, name: e.name, version: naechsteVersion(e.version), beschreibung: e.beschreibung, autor: e.autor,
       lizenz: e.lizenz, lizenzArt: e.lizenzArt ?? 'frei', ...(e.lizenzName ? { lizenzName: e.lizenzName } : {}), ...(e.lizenzText ? { lizenzText: e.lizenzText } : {}), dms: '', aenderungen: '',
     };
   }
@@ -797,8 +834,17 @@ export class Paketerstellung {
     return {
       dokumente, dokumenteAusgelassen: ausgelassen, ...(summe > ARCHIV_MAX ? { dokumenteZuGross: summe } : {}), vorgaben,
       typen, sichten: await this.d.sichtenVerwaltung.listeSichten(), pakete: await this.d.kern.repo.listePakete(), dmsTypen: await this.dmsTypen(), mappen, wortlisten: (await this.d.suche.sucheStand()).synonyme,
+      rundgaenge: await this.eigeneRundgaenge(),
       dmsVersion: this.o.version(), entwurf: (await paketEntwuerfe(this.d.kern)).find((x) => x.id === e.id.trim()) ?? null, entwuerfe: await paketEntwuerfe(this.d.kern), jetzt: new Date(),
     };
+  }
+
+  /** Eigene Rundgänge der Werkbank (#941), gelesen (Dateien, die sich nicht lesen lassen, fehlen). */
+  private async eigeneRundgaenge(): Promise<Array<{ schluessel: string; roh: Record<string, unknown> }>> {
+    const w = werkbankAus(await this.d.kern.einstellungen?.lies(WERKBANK_EINSTELLUNG));
+    return w.rundgaenge.flatMap((r) => {
+      try { const x = parse(r.yaml) as unknown; const roh = Array.isArray(x) ? x[0] : x; return roh && typeof roh === 'object' ? [{ schluessel: r.schluessel, roh: roh as Record<string, unknown> }] : []; } catch { return []; }
+    });
   }
 
   /** Baut das Paket und prüft das Archiv wie beim Hochladen. */

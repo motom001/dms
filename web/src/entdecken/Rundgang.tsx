@@ -26,12 +26,12 @@ import { beendeRundgang, findeAnker, istSchmal, useAktiverRundgang, warteAufAnke
 export function RundgangAnzeige() {
   const aktiv = useAktiverRundgang();
   if (!aktiv) return null;
-  return <Fuehrung key={`${aktiv.rundgang.herkunft}:${aktiv.rundgang.schluessel}`} rundgang={aktiv.rundgang} vonSelbst={aktiv.vonSelbst} />;
+  return <Fuehrung key={`${aktiv.rundgang.herkunft}:${aktiv.rundgang.schluessel}:${aktiv.probe ? 'probe' : ''}`} rundgang={aktiv.rundgang} vonSelbst={aktiv.vonSelbst} probe={aktiv.probe} />;
 }
 
 interface Ziel { schritt: RundgangSchritt; anker: string | null }
 
-function Fuehrung({ rundgang, vonSelbst }: { rundgang: Rundgang; vonSelbst: boolean }) {
+function Fuehrung({ rundgang, vonSelbst, probe }: { rundgang: Rundgang; vonSelbst: boolean; probe?: { pfad: string | null } }) {
   const ref = useRef<HTMLDialogElement>(null);
   const weiterKnopf = useRef<HTMLButtonElement>(null);
   const vorher = useRef<Element | null>(typeof document === 'undefined' ? null : document.activeElement);
@@ -47,7 +47,7 @@ function Fuehrung({ rundgang, vonSelbst }: { rundgang: Rundgang; vonSelbst: bool
   useEffect(() => {
     let aus = false;
     void (async () => {
-      const vorher = await oeffneVorher(rundgang);
+      const vorher = await oeffneVorher(rundgang, probe);
       if (aus) return;
       // Nichts zu öffnen: statt der Schritte ein Satz (`ersatz`).
       if (vorher === 'ersatz') { setSchritte([{ schritt: { schluessel: 'ersatz', ziel: [], fuer: 'lesen', titel: rundgang.titel, text: rundgang.ersatz ?? t('entdecken.fuehrung.ersatz') }, anker: null }]); return; }
@@ -64,7 +64,7 @@ function Fuehrung({ rundgang, vonSelbst }: { rundgang: Rundgang; vonSelbst: bool
       setSchritte(liste);
     })();
     return () => { aus = true; };
-  }, [rundgang]);
+  }, [rundgang, probe]);
 
   // Dialog öffnen; beim Schließen den Fokus zurückgeben.
   useEffect(() => {
@@ -164,11 +164,12 @@ function Fuehrung({ rundgang, vonSelbst }: { rundgang: Rundgang; vonSelbst: bool
  * Vor dem ersten Schritt öffnen, was der Rundgang nennt: eine Seite, die erste lesbare Mappe eines Typs oder ein leeres
  * Formular. Liefert, wohin es am Ende zurückgeht (nur beim leeren Formular), oder 'ersatz', wenn es nichts zu öffnen gibt.
  */
-async function oeffneVorher(rundgang: Rundgang): Promise<string | null | 'ersatz'> {
+async function oeffneVorher(rundgang: Rundgang, probe?: { pfad: string | null }): Promise<string | null | 'ersatz'> {
   const o = rundgang.oeffne;
   if (o && 'seite' in o) { if (location.pathname !== OEFFNE_SEITEN[o.seite]) geheZu(OEFFNE_SEITEN[o.seite]); return null; }
   if (!oeffneTyp(o)) return null;
-  const pfad = await kontoApi.rundgangOeffnen(rundgang.schluessel).then((x) => x.pfad, () => null);
+  // Beim Ausprobieren (#941) hat die Prüfung den Pfad schon geliefert – der Rundgang ist ja noch nicht gespeichert.
+  const pfad = probe ? probe.pfad : await kontoApi.rundgangOeffnen(rundgang.schluessel).then((x) => x.pfad, () => null);
   if (!pfad) return 'ersatz';
   const zurueck = o && 'neu' in o ? location.pathname + location.search : null;
   if (location.pathname !== pfad) geheZu(pfad);

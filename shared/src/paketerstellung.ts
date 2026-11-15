@@ -51,7 +51,7 @@ export const GITHUB = /^[A-Za-z0-9-]+$/;
 /** Was ins Paket soll: Ids aus diesem DMS. Beispiele nur aus ausdrücklich gewählten Mappen. */
 /** Wortlisten (#661): Ids eigener Gruppen gleichbedeutender Wörter (Werkbank → Suche). */
 /** Beispiel-Dokumente (#878): Dokumente (PDF, PNG, JPEG) der gewählten Beispiel-Mappen kommen mit – nur auf ausdrücklichen Wunsch. */
-export interface PaketAuswahl { typen: string[]; sichten: string[]; beispiele: string[]; wortlisten?: string[]; beispielDokumente?: boolean }
+export interface PaketAuswahl { typen: string[]; sichten: string[]; beispiele: string[]; wortlisten?: string[]; beispielDokumente?: boolean; /** Eigene Rundgänge (#941), Schlüssel ohne „eigen:“. */ rundgaenge?: string[] }
 
 /** Angaben für das Manifest. */
 export interface PaketAngaben {
@@ -138,6 +138,8 @@ export interface ErstellenStand {
   sichten: Array<{ id: string; name: string; elternId: string | null; paket: { id: string; name: string; version: string } | null }>;
   /** Gruppen gleichbedeutender Wörter (#661): eigene zum Ankreuzen, aus Paketen nur zur Anzeige. */
   wortlisten: Array<{ id: string; woerter: string[]; paket: { id: string; name: string } | null }>;
+  /** Eigene Rundgänge (#941) zum Ankreuzen. */
+  rundgaenge?: Array<{ schluessel: string; titel: string }>;
   entwuerfe: PaketEntwurf[];
   dms: string;
   /** Angaben für einen neuen Export: aus dem zuletzt exportierten Entwurf mit höherer Version, sonst leer mit Vorschlägen. */
@@ -157,7 +159,7 @@ export interface PaketPruefung {
   hinweise: string[];
   abhaengigkeiten: Record<string, string>;
   /** Was ins Paket kommt (Kennung im Paket und Name). */
-  inhalt: { typen: Array<{ schluessel: string; name: string }>; sichten: Array<{ schluessel: string; name: string; eltern: string | null }>; beispiele: number; wortlisten?: number; /** Beispiel-Dokumente (#878). */ beispielDokumente?: number };
+  inhalt: { typen: Array<{ schluessel: string; name: string }>; sichten: Array<{ schluessel: string; name: string; eltern: string | null }>; beispiele: number; wortlisten?: number; /** Beispiel-Dokumente (#878). */ beispielDokumente?: number; /** Eigene Rundgänge (#941). */ rundgaenge?: number };
   /** Mappen der gewählten eigenen Typen, aus denen man Beispiele wählen kann (je Typ höchstens 200). */
   beispielMappen: Array<{ typId: string; typ: string; mappen: Array<{ id: string; titel: string; demo: boolean }>; mehr: boolean }>;
   /** Dieselbe Prüfung wie beim Hochladen ist gelaufen: Das Paket ließe sich so wieder einspielen. */

@@ -18,14 +18,13 @@ import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parse } from 'yaml';
-import {
-  ANGEBOT_TAGE, istNeu, oeffneTyp, pruefeAnker, pruefeRundgaenge, pruefeTipps, rundgangFuer, rundgangMerkerAus, startetVonSelbst, tippDesTages, tippHandlung, tippPasst, tippStandAus,
-  type Anker, type EntdeckenStand, type Funktion, type Rundgang, type Texte, type Tipp, type TippAnzeige, type TypInfo,
-} from '../../shared/src/entdecken';
+import { ANGEBOT_TAGE, istNeu, oeffneTyp, pruefeAnker, pruefeRundgaenge, pruefeTipps, rundgangFuer, rundgangMerkerAus, startetVonSelbst, tippDesTages, tippHandlung, tippPasst, tippStandAus, type Anker, type EntdeckenStand, type Funktion, type Rundgang, type Texte, type Tipp, type TippAnzeige, type TypInfo } from '../../shared/src/entdecken';
+import { ausSchluessel } from '../../shared/src/entdecken-werkbank';
 import { sprache } from '../../shared/src/sprache';
 import type { Benutzer } from '../../shared/src/model';
 import type { InstalliertesPaket } from '../../shared/src/pakete';
 import { darfVerwalten } from '../../shared/src/verwaltungsrecht';
+import { eigeneRundgaenge, werkbankAus } from './entdecken-werkbank';
 import { Fachfehler } from './fehler';
 import { t } from './sprache';
 
@@ -126,6 +125,8 @@ export interface EntdeckenOptionen {
    * darf, bzw. des leeren Formulars, wenn sie den Typ anlegen darf – sonst null (dann gilt der Ersatztext).
    */
   oeffnen?(b: Benutzer, typ: string, art: 'mappe' | 'neu'): Promise<string | null>;
+  /** Was die Werkbank gespeichert hat (#941, #942): eigene Rundgänge, ausgeschaltete Einträge. */
+  werkbank?(): Promise<unknown>;
   /** Jetzt (Tests). */
   jetzt?(): number;
   ordner?: string | null;
@@ -162,11 +163,13 @@ export class Entdecken {
    * Alle Quellen: Ablago und die installierten Pakete. Ein Rundgang aus einem Paket mit `nach_installation` bzw.
    * `nach_update` kommt kurz nach Installation bzw. Update als Angebot unter die Tipps (`angebot:<rundgang>`, „neu“).
    */
-  async quellen(): Promise<Inhalt & { neu: Map<string, boolean> }> {
+  async quellen(o: { alle?: boolean } = {}): Promise<Inhalt & { neu: Map<string, boolean>; eigeneFehler: Map<string, string[]> }> {
     const a = this.ablago();
     const neu = new Map<string, boolean>();
     const pakete = (await this.o.pakete?.()) ?? [];
-    if (!pakete.some((p) => p.entdecken)) return { ...a, neu };
+    const w = werkbankAus(await this.o.werkbank?.());
+    const eigeneFehler = new Map<string, string[]>();
+    if (!pakete.some((p) => p.entdecken) && !w.rundgaenge.length && !w.aus.length) return { ...a, neu, eigeneFehler };
     const typen = new Map(((await this.o.typen?.()) ?? []).map((x) => [x.kennung, x]));
     const rundgaenge = [...a.rundgaenge], tipps = [...a.tipps];
     const jetzt = this.o.jetzt?.() ?? Date.now();
@@ -175,7 +178,13 @@ export class Entdecken {
       rundgaenge.push(...x.rundgaenge);
       for (const [y, istNeuHier] of x.tipps) { tipps.push(y); neu.set(y.schluessel, istNeuHier); }
     }
-    return { anker: a.anker, rundgaenge, tipps, fehler: a.fehler, neu };
+    // Eigene Rundgänge aus der Werkbank (#941): nie von selbst, fehlerhafte fallen weg (die Werkbank zeigt sie).
+    const eigene = eigeneRundgaenge(w, { anker: a.anker, typ: (k) => typen.get(k) ?? null });
+    rundgaenge.push(...eigene.rundgaenge);
+    for (const [k, f] of eigene.fehler) eigeneFehler.set(k, f);
+    // Ausgeschaltet (Werkbank): fällt für alle weg – samt Tipps, die einen solchen Rundgang starten.
+    const aus = new Set(o.alle ? [] : w.aus);
+    return { anker: a.anker, rundgaenge: rundgaenge.filter((r) => !aus.has(ausSchluessel('rundgang', r.schluessel))), tipps: tipps.filter((x) => !aus.has(ausSchluessel('tipp', x.schluessel))), fehler: a.fehler, neu, eigeneFehler };
   }
 
   /** Fehler eines Pakets einmal je Version ins Protokoll – ein Paket für eine neuere Ablago-Version kann Anker nennen, die es hier nicht gibt. */
@@ -266,6 +275,17 @@ export class Entdecken {
     merker[schluessel] = { stand, am: new Date().toISOString() };
     await this.o.setzeEinstellung(b, EINSTELLUNG.rundgaenge, merker);
     this.o.log?.debug(`Rundgang „${schluessel}“: ${stand}`);
+  }
+
+  /**
+   * „Ausprobieren“ in der Werkbank (#941): ein ungespeicherter Rundgang, wie diese Person ihn sähe, und was er vorher
+   * öffnet. Ändert nichts für andere.
+   */
+  async probe(b: Benutzer, r: Rundgang): Promise<{ rundgang: Rundgang | null; pfad: string | null }> {
+    const fuer = rundgangFuer(r, await this.fuerwen(b, { rundgaenge: [r], tipps: [] }));
+    const o = r.oeffne;
+    const pfad = fuer && o && !('seite' in o) ? (await this.o.oeffnen?.(b, 'mappe' in o ? o.mappe : o.neu, 'mappe' in o ? 'mappe' : 'neu')) ?? null : null;
+    return { rundgang: fuer, pfad };
   }
 
   /**

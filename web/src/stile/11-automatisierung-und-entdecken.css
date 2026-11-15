@@ -140,3 +140,22 @@ dialog.rundgang.schmal.mit-ziel .rg-karte { left: 16px; right: 16px; width: auto
 main.rumpf[tabindex="-1"]:focus { outline: none; }
 /* Außerhalb der angemeldeten Ablage (#933): Anmelden, Einrichtung – die Leiste bleibt beim Blättern oben. */
 .erreichbarkeit.aussen { position: sticky; top: 0; z-index: 20; }
+
+/* Werkbank → Rundgänge (#941) und Tipps (#942): Datei mit fester Zeichenbreite, daneben die Ankerhilfe. */
+.yaml-datei { font-family: var(--mono); font-size: calc(13px * var(--skala, 1)); line-height: 1.5; tab-size: 2; white-space: pre; overflow: auto; }
+textarea.yaml-datei { width: 100%; min-height: 24em; resize: vertical; }
+pre.yaml-datei { margin: 0; padding: 8px 10px; background: var(--senke); border-radius: 6px; max-height: 32em; }
+.rundgang-editor { display: grid; grid-template-columns: minmax(0, 1fr) minmax(220px, 300px); gap: 16px; align-items: start; }
+.rundgang-editor > .speicherleiste, .rundgang-editor > :last-child { grid-column: 1 / -1; }
+@media (max-width: 1100px) { .rundgang-editor { grid-template-columns: minmax(0, 1fr); } }
+.anker-hilfe { border: 1px solid var(--linie); border-radius: 8px; padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.anker-hilfe h2, .anker-hilfe h3 { margin: 4px 0 0; }
+.anker-liste { list-style: none; margin: 0; padding: 0; max-height: 16em; overflow: auto; }
+.anker-liste li { margin: 0 0 2px; }
+.anker-liste button { display: block; width: 100%; text-align: left; white-space: normal; height: auto; padding-top: 4px; padding-bottom: 4px; }
+.anker-liste code { display: block; font-family: var(--mono); font-size: .9em; }
+.zeilenfehler { margin: 0; padding-left: 18px; }
+/* „Ziel zeigen“: Rahmen um die Stelle unter dem Zeiger, Leiste unten. */
+.ziel-wahl-rahmen { position: fixed; pointer-events: none; z-index: 1000; border-radius: 6px; box-shadow: 0 0 0 3px var(--akzent); }
+.ziel-wahl-leiste { position: fixed; left: 16px; right: 16px; bottom: 16px; z-index: 1001; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 10px 14px; background: var(--flaeche); color: var(--tinte); border: 1px solid var(--linie-stark); border-radius: 10px; box-shadow: 0 8px 24px var(--schatten-stark); }
+.ziel-wahl-leiste code { font-family: var(--mono); }

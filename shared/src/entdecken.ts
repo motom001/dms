@@ -79,8 +79,8 @@ export interface TypInfo { kennung: string; felder?: readonly string[]; register
 export const BILDER = ['dreiteilung'] as const;
 export type Bild = (typeof BILDER)[number];
 
-/** Herkunft eines Eintrags: `ablago` oder `paket:<id>` (Stufe 2). */
-export type Herkunft = 'ablago' | `paket:${string}`;
+/** Herkunft eines Eintrags: `ablago`, `paket:<id>` oder `eigen` (in der Werkbank geschrieben, #941/#942). */
+export type Herkunft = 'ablago' | 'eigen' | `paket:${string}`;
 
 /** Ein Ankerpunkt aus `anker.yaml`. `muster`: mit Platzhalter, z. B. `mappe.register:<key>`. */
 export interface Anker {

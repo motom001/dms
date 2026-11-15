@@ -57,7 +57,7 @@ describe('Werkbank-Ansicht: Expertenmodus (#356)', () => {
     assert.equal(nurImExpertenmodus('haushalt', 'texterkennung'), true);
     assert.equal(nurImExpertenmodus('organisation', 'texterkennung'), false);
     assert.equal(fuerAlle({ vorlage: 'organisation', ein: [], aus: [] }, 'texterkennung'), true);
-    assert.deepEqual(expertenBereiche('haushalt').map((b) => b.pfad), ['automatisierungen', 'ablaufvorlagen', 'texterkennung', 'woerter']);
+    assert.deepEqual(expertenBereiche('haushalt').map((b) => b.pfad), ['automatisierungen', 'ablaufvorlagen', 'rundgaenge', 'texterkennung', 'woerter']);
     assert.deepEqual(expertenBereiche('alles'), []);
     // Der Expertenmodus zeigt nur, was die Vorlage dafür vorsieht – nicht alles.
     assert.equal(sichtbar(haushalt, { ein: [], experte: true }, 'protokoll'), false);
@@ -182,7 +182,7 @@ describe('Werkbank: mittlere Spalte für Sammlungen zum Anlegen und Bearbeiten (
     assert.deepEqual(Object.values(GRUPPEN), ['Ablage aufbauen', 'Benutzer und Sicherheit', 'Datenschutz', 'Post und Eingänge', 'Daten sichern', 'Einstellungen', 'Wartung und Fehlersuche']);
     const je = (g: string) => BEREICHE.filter((x) => x.gruppe === g).map((x) => x.pfad);
     // Nutzung (#1032) steht seit #1170 auf „Eigene Organisation“ unter Einstellungen.
-    assert.deepEqual(je('ablage'), ['pakete', 'typen', 'sichten', 'nummernkreise', 'automatisierungen', 'ablaufvorlagen']);
+    assert.deepEqual(je('ablage'), ['pakete', 'typen', 'sichten', 'nummernkreise', 'automatisierungen', 'ablaufvorlagen', 'rundgaenge']);
     assert.deepEqual(je('benutzer'), ['benutzer', 'verschluesselung', 'aufbewahrung', 'stempel']);
     assert.deepEqual(je('datenschutz'), ['auskuenfte', 'loeschkonzept', 'loeschprotokoll']);
     assert.deepEqual(je('post'), ['postfaecher', 'eingangsordner', 'webdav', 'texterkennung', 'woerter']);

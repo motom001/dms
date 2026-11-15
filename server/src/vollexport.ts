@@ -136,6 +136,8 @@ export interface ExportQuelle {
    * deren Adresse in den aufgenommenen Mappen steht. Fehlt, wenn es keine gibt.
    */
   notfallkontakte?(): Promise<unknown[]>;
+  /** Eigene Rundgänge und Tipps, Anpassungen und An/aus aus der Werkbank (#941, #942); fehlt bei Auskunft und persönlichem Export. */
+  entdecken?(): Promise<unknown>;
   /** Fassungen der Werkbank (#1006) samt Löschvermerken; fehlt bei Auskunft und persönlichem Export. */
   fassungen?(): Promise<unknown[]>;
   mappen(typId: string): Promise<Mappe[]>;
@@ -396,6 +398,7 @@ async function schreibeExport(q: ExportQuelle, w: Schreiber, name: string, opt: 
     const k = await q.notfallkontakte();
     if (k.length) await w.schreibe('struktur/notfallkontakte.json', json(k));
   }
+  if (q.entdecken) { const e = await q.entdecken(); if (e) await w.schreibe('struktur/entdecken.json', json(e)); }
   if (q.fassungen) await w.schreibe('struktur/fassungen.json', json(await q.fassungen()));
   await w.schreibe('struktur/benutzer.json', json(b.benutzer));
 

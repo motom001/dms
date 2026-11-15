@@ -17,6 +17,7 @@ import { MB, PLATZ_RESERVE } from '../grenzen';
 import { L, ok, leer, ich, kontaktVorschlaege } from '../http/routen-hilfen';
 import type { RoutenKontext } from '../http/routen-kontext';
 import type { Route } from '../routen';
+import { WERKBANK_EINSTELLUNG } from '../entdecken-werkbank';
 
 export function exportRouten(k: RoutenKontext): Route[] {
   const { dienst, konten, x, zg, EXPORT_LAEUFT, EXPORT_FEHLER, eigenerExport, exportZiel, danachLoeschen } = k;
@@ -46,6 +47,8 @@ export function exportRouten(k: RoutenKontext): Route[] {
         merkmale: () => dienst.werkbank.merkmale(),
         // Eigene Organisation (#995): Verweis, Rollen und Notizen als struktur/organisation.json (die Angaben stehen in der Mappe).
         organisation: () => dienst.organisation.einstellung(),
+        // Rundgänge und Tipps der Werkbank (#941, #942) als struktur/entdecken.json.
+        entdecken: async () => (await dienst.kern.einstellungen?.lies(WERKBANK_EINSTELLUNG)) ?? null,
       });
       const von = ich(a).email;
       if (e.passwoerter === true) L.werkbank.warn('Vollexport mit Passwörtern im Klartext gestartet', { von });

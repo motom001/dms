@@ -5,12 +5,14 @@
 import { Fachfehler } from '../fehler';
 import { t } from '../sprache';
 import { GEMERKT_MAX } from '../../../shared/src/entsperren';
+import { EIGEN, type RundgangPruefergebnis, type WerkbankRundgaengeStand } from '../../../shared/src/entdecken-werkbank';
+import { BEREICHE } from '../../../shared/src/werkbankansicht';
 import { L, ok, leer, b, info, ich } from '../http/routen-hilfen';
 import type { RoutenKontext } from '../http/routen-kontext';
 import type { Route } from '../routen';
 
 export function kontenRouten(k: RoutenKontext): Route[] {
-  const { dienst, konten, log, entdecken, nurSelbst, zg, empfaengerSichtbar, mitRollen, zf } = k;
+  const { dienst, konten, log, entdecken, rundgaengeWerkbank, nurSelbst, zg, empfaengerSichtbar, mitRollen, zf } = k;
   return [
     /* ---------- Eigenes Profil ---------- */
     { methode: 'PUT', pfad: '/api/konto/profil', zugang: 'angemeldet', handler: async (a) => {
@@ -75,6 +77,30 @@ export function kontenRouten(k: RoutenKontext): Route[] {
     { methode: 'GET', pfad: '/api/entdecken/rundgaenge/:schluessel/oeffnen', zugang: 'angemeldet', handler: async (a) => ok(await entdecken.oeffnen(ich(a), a.params.schluessel)) },
     // Tipp mit Ziel in einer Mappe (#832, `typ`): erste lesbare Mappe dieses Typs, sonst null.
     { methode: 'GET', pfad: '/api/entdecken/tipps/:schluessel/oeffnen', zugang: 'angemeldet', handler: async (a) => ok(await entdecken.oeffnen(ich(a), a.params.schluessel, 'tipp')) },
+
+    /* ---------- Werkbank → Rundgänge (#941) ---------- */
+    // Alle Rundgänge (auch ausgeschaltete) mit Datei, dazu Anker, Mappentypen und Bereiche für die Hilfe beim Schreiben.
+    { methode: 'GET', pfad: '/api/werkbank/rundgaenge', zugang: 'admin', handler: async () => {
+      const q = await entdecken.quellen({ alle: true });
+      const pakete = await dienst.kern.repo.listePakete();
+      const typen = (await dienst.kern.repo.listeTypen()).filter((x) => !x.system);
+      return ok({
+        rundgaenge: await rundgaengeWerkbank.liste(q.rundgaenge, (id) => pakete.find((p) => p.id === id)?.name, q.eigeneFehler), anker: q.anker,
+        typen: typen.map((x) => ({ kennung: x.schluessel ?? x.id, name: x.name, felder: x.felder.map((f) => ({ key: f.key, name: f.label })), register: x.register.map((r) => ({ key: r.key, name: r.name })) })),
+        bereiche: BEREICHE.map((x) => ({ pfad: x.pfad, name: x.name })),
+      } satisfies WerkbankRundgaengeStand);
+    } },
+    // Prüfen wie beim Installieren eines Pakets; ohne Fehler der Rundgang für „Ausprobieren“ (nur für mich).
+    { methode: 'POST', pfad: '/api/werkbank/rundgaenge/pruefen', zugang: 'admin', handler: async (a) => {
+      const p = await rundgaengeWerkbank.pruefe(b(a).yaml);
+      const probe = p.rundgang ? await entdecken.probe(ich(a), { ...p.rundgang, schluessel: `${EIGEN}:${p.rundgang.schluessel}` }) : { rundgang: null, pfad: null };
+      return ok({ fehler: p.fehler, rundgang: probe.rundgang, pfad: probe.pfad } satisfies RundgangPruefergebnis);
+    } },
+    { methode: 'POST', pfad: '/api/werkbank/rundgaenge', zugang: 'admin', handler: async (a) => ok(await rundgaengeWerkbank.speichere(null, a.body, ich(a).email)) },
+    { methode: 'PUT', pfad: '/api/werkbank/rundgaenge/:schluessel', zugang: 'admin', handler: async (a) => ok(await rundgaengeWerkbank.speichere(a.params.schluessel, a.body, ich(a).email)) },
+    { methode: 'DELETE', pfad: '/api/werkbank/rundgaenge/:schluessel', zugang: 'admin', handler: async (a) => { await rundgaengeWerkbank.loesche(a.params.schluessel); return leer; } },
+    // An/aus für alle (voller Schlüssel, z. B. ablago, vertraege:kennenlernen, eigen:urlaub).
+    { methode: 'PUT', pfad: '/api/werkbank/rundgaenge/:schluessel/an', zugang: 'admin', handler: async (a) => { await rundgaengeWerkbank.schalte('rundgang', a.params.schluessel, b(a).an); return leer; } },
 
     /* ---------- Benutzer ---------- */
     // #137: nur Benutzer, deren Benutzer-Mappe man lesen darf (Administratoren: alle).

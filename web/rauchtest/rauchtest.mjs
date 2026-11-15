@@ -47,3 +47,4 @@ import './bereiche/startbild-und-vorschlaege.mjs';
 import './bereiche/automatisierungen.mjs';
 import './bereiche/organisation-und-datenschutz.mjs';
 import './bereiche/werkbank-post.mjs';
+import './bereiche/rundgaenge-und-tipps.mjs';
