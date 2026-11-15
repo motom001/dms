@@ -124,6 +124,7 @@ Manche Pakete müssen regelmäßig rechnen, weil sich ihr Ergebnis nur durch das
 - **Nur das eigene Paket:** Eine mitgelieferte Automatisierung ruft immer nur das Paket auf, das sie mitbringt – das Feld *Paket* ist dort fest. In einer selbst angelegten Automatisierung stehen nur Pakete zur Wahl, die Zeitpläne annehmen.
 - **Paket entfernt:** Die Karte läuft dann ins Leere. Die Automatisierung bleibt an und zeigt „Paket … ist nicht installiert“; im Verlauf steht der Lauf als *übersprungen* – kein Fehler, kein Hinweis auf fehlgeschlagene Läufe.
 - Jeden Lauf siehst du im **Verlauf** der Automatisierung; das Paket bekommt ihn wie jedes andere Ereignis (mit Wiederholung, falls es gerade nicht erreichbar ist).
+- **Karten aus Paketen** (seit 0.287): Ein Paket mit Code kann eigene Karten anbieten. Sie stehen im Vorrat als „*Paket*: *Name*“ (z. B. „Compliance: Monatsbericht ablegen“), mit einem Hilfetext und Feldern, die du ausfüllst (Text, Zahl, Ja/Nein). Sie laufen wie diese Karte nur nach Zeitplan; das Paket bekommt die Aufgabe und deine Werte – mit seinen bestätigten Rechten, nicht mehr.
 
 ## Sonst { #sonst }
 

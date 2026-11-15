@@ -1,12 +1,13 @@
 /**
  * Rauchtests: Einrichtung und Nachweise für Pakete (#1054) auf der Paketseite – Haken je Bereich, Vorgabe nichts,
  * gesperrt mit Grund, „wirkt nicht“ am Haken, Speichern; axe hell/dunkel und Tippflächen am Handy. Katalog und Paket
- * kommen als Attrappe (ohne Internet, ohne Paket-Läufer); die Regeln selbst prüfen die Server-Tests.
+ * kommen als Attrappe (ohne Internet, ohne Paket-Läufer); die Regeln selbst prüfen die Server-Tests. Dazu #680: Karten
+ * aus Paketen im Kartenvorrat und eigene Automatisierungen in „Paket erstellen“.
  * Allein starten (frisch gestartetes Ablago, siehe rauchtest.mjs): node web/rauchtest/bereiche/paket-daten.mjs [fehlerordner] [musterordner]
  */
 import assert from 'node:assert/strict';
 import '../einrichtung.mjs';
-import { BASIS, LENA, rauchtest, verwalten, WERKBANK_BEREICHE } from '../hilfen.mjs';
+import { api, BASIS, LENA, rauchtest, sitzung, verwalten, WERKBANK_BEREICHE } from '../hilfen.mjs';
 import { axePruefen, tippflaechenPruefen } from '../muster.mjs';
 
 const LAEUFER = { sprache: 'c', ereignisse: [], netz: [], modul: { sha256: '0'.repeat(64), groesse: 1 },
@@ -98,5 +99,84 @@ rauchtest('Handy: Einrichtung und Nachweise mit 44-px-Tippflächen (#1054)', { h
   await zurPaketseite(s);
   await s.waitForLoadState('networkidle');
   const funde = await tippflaechenPruefen(s, WERKBANK_BEREICHE);
+  assert.deepEqual(funde, [], `Zu kleine Tippflächen am Handy:\n${funde.join('\n')}`);
+});
+
+/* ---------- Automatisierungen und Karten in Paketen (#680) ---------- */
+
+const KARTE = { schluessel: 'bericht', name: 'Monatsbericht ablegen', hilfe: 'Legt den Bericht des Vormonats als Mappe ab.', felder: [{ schluessel: 'tage', name: 'Tage zurück', typ: 'zahl' }, { schluessel: 'leise', name: 'Ohne Benachrichtigung', typ: 'janein' }] };
+
+rauchtest('Automatisierung: Karte aus einem Paket im Kartenvorrat, mit Feldern und Hilfe (#680)', { als: LENA, timeout: 90_000 }, async (s) => {
+  // Attrappe: Compliance nimmt Zeitpläne an und bietet eine eigene Karte (ohne echtes Paket mit Code).
+  await s.route('**/api/werkbank/automatisierungen', async (r) => {
+    if (r.request().method() !== 'GET') return r.fallback();
+    const echt = await (await r.fetch()).json();
+    await r.fulfill({ json: { ...echt, kontext: { ...echt.kontext, pakete: [...(echt.kontext.pakete ?? []), { id: 'compliance', name: 'Compliance', zeitplan: true, aufgaben: [], karten: [KARTE] }] } } });
+  });
+  await s.goto(BASIS + '/ablage/start');
+  await verwalten(s);
+  await s.goto(BASIS + '/werkbank/automatisierungen/neu');
+  const bearbeitung = s.getByRole('region', { name: 'Bearbeitung' });
+  await bearbeitung.getByRole('button', { name: 'Kartenvorrat' }).click();
+  await bearbeitung.locator('.automatisierung-vorrat').getByRole('button', { name: 'Zeitplan', exact: true }).click();
+  const karte = bearbeitung.locator('.automatisierung-vorrat').getByRole('button', { name: 'Compliance: Monatsbericht ablegen', exact: true });
+  await karte.click();
+  await bearbeitung.getByRole('spinbutton', { name: /Tage zurück/ }).fill('30');
+  await bearbeitung.getByRole('checkbox', { name: 'Ohne Benachrichtigung' }).check();
+  await bearbeitung.getByText('Legt den Bericht des Vormonats als Mappe ab.').waitFor();
+  assert.equal(await bearbeitung.getByRole('combobox', { name: 'Aufgabe' }).inputValue(), 'bericht');
+  await axeHellUndDunkel(s);
+});
+
+/** axe ohne Verstoß auf der offenen Seite, hell und dunkel. */
+async function axeHellUndDunkel(s) {
+  const funde = [];
+  for (const schema of ['light', 'dark']) {
+    await s.emulateMedia({ colorScheme: schema });
+    // Knöpfe wechseln ihre Fläche mit einem kurzen Übergang – erst danach messen (wie einrichtung.mjs).
+    await s.waitForTimeout(400);
+    for (const v of await axePruefen(s, WERKBANK_BEREICHE)) funde.push(`${schema}: ${v}`);
+  }
+  assert.deepEqual(funde, [], `axe meldet Verstöße:\n${funde.join('\n')}`);
+}
+
+rauchtest('Paket erstellen: eigene Automatisierungen zum Ankreuzen (#680)', { als: LENA, timeout: 90_000 }, async (s) => {
+  const cookie = await sitzung(LENA);
+  await api('POST', '/api/konto/verwaltung', { cookie, body: {} });
+  await api('POST', '/api/werkbank/automatisierungen', { cookie, body: { name: 'Rauchtest Wochenrückblick', aktiv: false, wenn: { art: 'zeitplan', uhrzeit: '07:00', jeBenutzer: true }, dann: [{ id: 'z', art: 'zusammenfassung' }] } });
+  await s.goto(BASIS + '/ablage/start');
+  await verwalten(s);
+  await s.goto(BASIS + '/werkbank/pakete');
+  await s.getByRole('link', { name: 'Paket erstellen' }).click();
+  const neu = s.getByRole('button', { name: 'Neues Paket' });
+  if (await neu.isVisible().catch(() => false)) await neu.click();
+  const autos = s.getByRole('region', { name: 'Automatisierungen' });
+  await autos.getByRole('checkbox', { name: /Rauchtest Wochenrückblick/ }).check();
+  await autos.getByText(/Feste Personen und Rollen werden zum Ersteller der Mappe/).waitFor();
+  await axeHellUndDunkel(s);
+});
+
+rauchtest('Handy: Karte aus einem Paket und „Paket erstellen“ mit 44-px-Tippflächen (#680)', { handy: true, als: LENA, timeout: 90_000 }, async (s) => {
+  await s.route('**/api/werkbank/automatisierungen', async (r) => {
+    if (r.request().method() !== 'GET') return r.fallback();
+    const echt = await (await r.fetch()).json();
+    await r.fulfill({ json: { ...echt, kontext: { ...echt.kontext, pakete: [...(echt.kontext.pakete ?? []), { id: 'compliance', name: 'Compliance', zeitplan: true, aufgaben: [], karten: [KARTE] }] } } });
+  });
+  await s.goto(BASIS + '/ablage/start');
+  await verwalten(s);
+  await s.goto(BASIS + '/werkbank/automatisierungen/neu');
+  const bearbeitung = s.getByRole('region', { name: 'Bearbeitung' });
+  await bearbeitung.getByRole('button', { name: 'Kartenvorrat' }).click();
+  await bearbeitung.locator('.automatisierung-vorrat').getByRole('button', { name: 'Zeitplan', exact: true }).click();
+  await bearbeitung.locator('.automatisierung-vorrat').getByRole('button', { name: 'Compliance: Monatsbericht ablegen', exact: true }).click();
+  await bearbeitung.getByRole('checkbox', { name: 'Ohne Benachrichtigung' }).waitFor();
+  // Nur die neue Karte: Wenn-Karte und „Entfernen“ prüft der Rauchtest der Automatisierungen.
+  const funde = (await tippflaechenPruefen(s, ['[data-paketkarte] .raster'])).map((v) => `Karte: ${v}`);
+  await s.goto(BASIS + '/werkbank/pakete');
+  await s.getByRole('link', { name: 'Paket erstellen' }).click();
+  const neu = s.getByRole('button', { name: 'Neues Paket' });
+  if (await neu.isVisible().catch(() => false)) await neu.click();
+  await s.getByRole('region', { name: 'Automatisierungen' }).getByRole('checkbox').first().waitFor();
+  funde.push(...(await tippflaechenPruefen(s, WERKBANK_BEREICHE)).map((v) => `Paket erstellen: ${v}`));
   assert.deepEqual(funde, [], `Zu kleine Tippflächen am Handy:\n${funde.join('\n')}`);
 });

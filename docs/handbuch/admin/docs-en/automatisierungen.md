@@ -124,6 +124,7 @@ Some packages have to calculate regularly because their result changes only with
 - **Only its own package:** an automation supplied with a package only ever calls the package that brings it – the field *Package* is fixed there. In an automation you create yourself, only packages that accept schedules can be chosen.
 - **Package removed:** the card then has nothing to run. The automation stays on and shows "Package … is not installed"; the run history lists the run as *skipped* – no error, no notice about failed runs.
 - You see every run in the automation's **run history**; the package receives it like any other event (with retries if it is not reachable at the moment).
+- **Cards from packages** (since 0.287): a package with code can offer its own cards. They appear in the store as "*package*: *name*" (e.g. "Compliance: File monthly report"), with a help text and fields you fill in (text, number, yes/no). Like this card they only run on schedule; the package gets the task and your values – with its confirmed permissions, nothing more.
 
 ## Otherwise { #sonst }
 

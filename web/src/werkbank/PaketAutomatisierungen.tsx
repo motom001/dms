@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { ereignisSchluessel, istKatalogArt } from '../../../shared/src/ereignisse';
+import { automatisierungAussen, automatisierungKlartext, type Mitkommt } from '../../../shared/src/mitkommt';
 import { Knopf, Schalter } from '../bausteine';
 import { Link } from '../ort';
 import { t } from '../sprache';
@@ -14,6 +16,19 @@ export interface MitgelieferteAutomatisierung {
   name: string;
   /** Beschreibung samt Herkunft und Zeitplan, unter dem Schalter. */
   hinweis?: string;
+}
+
+const ereignisName = (art: string) => (istKatalogArt(art) ? t.frei(`ereignisse.name.${ereignisSchluessel(art)}`) : art);
+
+/**
+ * Hinweis unter dem Schalter (#680): die Automatisierung in Klartext („Wenn … → Dann …“) aus „Was mitkommt“ und was
+ * sie über die Ablage hinaus tut (E-Mails, Code des Pakets). Ohne „Was mitkommt“ (ältere Vorschau) nur die Teile.
+ */
+export function automatisierungHinweis(a: { schluessel: string; zeitplan?: string; beschreibung?: string }, m: Mitkommt | undefined, vorne: string[] = []): string | undefined {
+  const x = m?.automatisierungen.find((y) => y.schluessel === a.schluessel);
+  const k = x ? automatisierungKlartext(x, ereignisName) : null;
+  return [...vorne, k && t('pakete.ablauf.automatisierungen.klartext', { wenn: k.wenn, dann: k.dann }), !k && a.zeitplan && t('pakete.ablauf.automatisierungen.zeitplan', { zeitplan: a.zeitplan }),
+    a.beschreibung, ...(x ? automatisierungAussen(x, m!.netz) : [])].filter(Boolean).join(' · ') || undefined;
 }
 
 export function AutomatisierungenSchalter({ liste, aus, setAus }: { liste: MitgelieferteAutomatisierung[]; aus: string[]; setAus: (aus: string[]) => void }) {

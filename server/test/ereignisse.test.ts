@@ -57,7 +57,9 @@ describe('Ereigniskatalog (#670): Katalog', () => {
       assert.ok(texte[`gruppe.${EREIGNISKATALOG[a].gruppe}`], `Gruppe für ${a}`);
       // Einzige Ausnahme (#677): Die Protokollmeldung trägt ihren Text (ohne Geheimnisse wie im Protokoll) – das Protokoll
       // lebt nur im Arbeitsspeicher des Prozesses, der sie schrieb. Sie geht nie an Pakete (unten) oder nach außen.
-      for (const f of EREIGNISKATALOG[a].felder) if (!(a === 'protokoll.meldung' && f === 'text')) assert.doesNotMatch(f, /titel|name|wert|text/i, `${a}: nur Ids/Schlüssel/Datum (${f})`);
+      // Zweite Ausnahme (#680): `werte` an zeitplan.ausgefuehrt sind die Felder einer Karte aus dem Paket, die der Admin in der
+      // Automatisierung einträgt (Einstellung, kein Inhalt der Ablage) – nur Felder, die die Karte im Manifest nennt.
+      for (const f of EREIGNISKATALOG[a].felder) if (!(a === 'protokoll.meldung' && f === 'text') && !(a === 'zeitplan.ausgefuehrt' && f === 'werte')) assert.doesNotMatch(f, /titel|name|wert|text/i, `${a}: nur Ids/Schlüssel/Datum (${f})`);
     }
     for (const a of BETRIEB_WENN) {
       assert.ok(!(EREIGNISKATALOG[a] as { paket?: boolean }).paket, `${a}: nur für Automatisierungen`);

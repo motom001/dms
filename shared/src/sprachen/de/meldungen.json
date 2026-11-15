@@ -2073,5 +2073,16 @@
   "geheimnisse.aussen.was": "Geheimnis von „URL aufrufen“ in „{wert}“",
   "vollexport.nicht-enthalten-ausgang": "nicht enthalten: Zustellungen nach außen (#671, Protokoll, technisch)",
   "vollexport.nicht-enthalten-aussen-geheimnisse": "nicht enthalten: Geheimnisse von „URL aufrufen“ (#671) – nach dem Übernehmen neu anlegen",
-  "pakete.automatisierung-aussen": "{wo}: „URL aufrufen“ und „E-Mail senden“ gibt es nur in der Werkbank, nicht in Paketen – Daten nach außen zu geben, entscheidet die Verwaltung selbst."
+  "pakete.automatisierung-aussen": "{wo}: „URL aufrufen“ und „E-Mail senden“ gibt es nur in der Werkbank, nicht in Paketen – Daten nach außen zu geben, entscheidet die Verwaltung selbst.",
+  "paketerstellung.automatisierungen_one": "Eine eigene Automatisierung kommt als inhalt/automatisierungen.yaml mit – beim Installieren ausgeschaltet; wer installiert, schaltet sie an.",
+  "paketerstellung.automatisierungen_other": "{anzahl} eigene Automatisierungen kommen als inhalt/automatisierungen.yaml mit – beim Installieren ausgeschaltet; wer installiert, schaltet sie an.",
+  "paketerstellung.automatisierungen-version": "mitgelieferte Automatisierungen",
+  "paketerstellung.automatisierung-fehlt": "Die Automatisierung {id} gibt es nicht mehr.",
+  "paketerstellung.automatisierung-passt-nicht": "Automatisierung „{name}“ passt nicht in ein Paket: {grund}",
+  "paketerstellung.automatisierung-typ": "Der Mappentyp „{typ}“ kommt nicht mit und stammt aus keinem Paket – wähle ihn oben aus.",
+  "paketerstellung.automatisierung-aufruf": "„Aufruf von außen“ gehört zu dieser Ablage.",
+  "paketerstellung.automatisierung-karte": "Die Dann-Karte „{karte}“ gibt es in Paketen nicht (Werkbank, nach außen, Paket aufrufen).",
+  "paketerstellung.automatisierung-und": "Bedingungen mit Ansichten, Favoriten oder festen Mappen gehören zu dieser Ablage.",
+  "paketerstellung.automatisierung-feld": "„Feld ändern“ setzt einen Verweis oder eine Person dieser Ablage.",
+  "paketerstellung.automatisierung-personen": "„{name}“: feste Personen und Rollen kommen nicht mit – Aufgaben gehen dort an die Person, die die Mappe angelegt hat. Nach der Installation anpassen."
 }

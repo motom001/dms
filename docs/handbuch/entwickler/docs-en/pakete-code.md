@@ -285,6 +285,32 @@ code:
 - **At least once:** after an error the package runner delivers it again. The event id is fixed per automation, card and day – if the same one comes again, don't do anything twice. If Ablago was off at the time, the run follows on the same day.
 - An admin can create their own automations with this card; only packages that subscribe to `zeitplan.ausgefuehrt` can be chosen.
 
+### Own cards for automations (`code.karten`) { #eigene-karten }
+
+Since 0.287.0 (#680). A package with code can offer its own **then cards**. They appear in the card store of the automations as "*package*: *name*" – with help and fields the admin fills in:
+
+```yaml
+code:
+  ereignisse: [zeitplan.ausgefuehrt]
+  karten:
+    - schluessel: bericht                 # a–z, 0–9, _
+      name: File monthly report
+      hilfe: Files the report of the previous month as a folder.
+      felder:
+        - { schluessel: tage, name: Days back, typ: zahl }      # text, zahl or janein
+        - { schluessel: leise, name: Without notification, typ: janein }
+```
+
+- The card runs like "Run package on schedule": only with the when card `zeitplan`, as event `zeitplan.ausgefuehrt` with `aufgabe` = key of the card and `werte` – only fields of the card, numbers as numbers, yes/no as `true`/`false`, text at most 500 characters. The package works with its confirmed permissions in the package runner; the card grants none in addition.
+- At most 20 cards with 10 fields each. When cards from packages do not exist (yet).
+
+### Automations in the package { #automatisierungen-im-paket }
+
+- **Installation:** The preview shows every bundled automation with a switch and in plain language ("When … → then …"), plus what it does beyond the library: emails to people of the library, calling the package code (with network access: data may leave the house). Outward cards (call URL, email to outsiders) do not exist in packages.
+- **Update:** Unchanged automations take over the new version; ones the admin changed stay as they are – the preview shows what the new version would do differently (#1174).
+- **Execution:** Bundled automations run like your own under the system account "Automation"; the card "Run package on schedule" and own cards call the package code, which works with the package's service account.
+- **Create package:** Your own automations can be ticked and come along as `inhalt/automatisierungen.yaml`, `eingeschaltet: false`. Folder types become keys in the package (or `paket:typ`, `dms:post`); fixed people and roles become the creator of the folder. Workbench cards, outward cards, "Call from outside", views in conditions and fixed folders in "Change field" do not fit into a package – "Create package" lists them as problems.
+
 ## Calculated fields and notes { #berechnet-und-hinweise }
 
 Since Ablago 0.231 (#1034) a package can **calculate** fields of its folder type and set **notes** on folders – for example *Verträge* (status, cancel by) and *Rechnungen* (checking the sum). Both go through the [API v1](#nutzliche-endpunkte-der-api-v1) with the package's service account.

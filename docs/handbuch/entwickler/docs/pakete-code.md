@@ -285,6 +285,32 @@ code:
 - **Mindestens einmal:** Nach einem Fehler stellt der Paket-Läufer es wieder zu. Die Ereignis-Id ist je Automatisierung, Karte und Tag fest – kommt dieselbe noch einmal, nichts doppelt tun. War Ablago zur Uhrzeit aus, kommt der Lauf am selben Tag nach.
 - Ein Admin kann eigene Automatisierungen mit dieser Karte anlegen; zur Wahl stehen nur Pakete, die `zeitplan.ausgefuehrt` abonnieren.
 
+### Eigene Karten für Automatisierungen (`code.karten`) { #eigene-karten }
+
+Seit 0.287.0 (#680). Ein Paket mit Code kann eigene **Dann-Karten** anbieten. Sie stehen im Kartenvorrat der Automatisierungen als „*Paket*: *Name*“ – mit Hilfe und Feldern, die der Admin ausfüllt:
+
+```yaml
+code:
+  ereignisse: [zeitplan.ausgefuehrt]
+  karten:
+    - schluessel: bericht                 # a–z, 0–9, _
+      name: Monatsbericht ablegen
+      hilfe: Legt den Bericht des Vormonats als Mappe ab.
+      felder:
+        - { schluessel: tage, name: Tage zurück, typ: zahl }      # text, zahl oder janein
+        - { schluessel: leise, name: Ohne Benachrichtigung, typ: janein }
+```
+
+- Ausgeführt wird die Karte wie „Paket nach Zeitplan ausführen“: nur mit der Wenn-Karte `zeitplan`, als Ereignis `zeitplan.ausgefuehrt` mit `aufgabe` = Schlüssel der Karte und `werte` – nur Felder der Karte, Zahlen als Zahl, Ja/Nein als `true`/`false`, Text höchstens 500 Zeichen. Das Paket arbeitet mit seinen bestätigten Rechten im Paket-Läufer; die Karte gibt keine zusätzlichen.
+- Höchstens 20 Karten mit je 10 Feldern. Wenn-Karten aus Paketen gibt es (noch) nicht.
+
+### Automatisierungen im Paket { #automatisierungen-im-paket }
+
+- **Installation:** Die Vorschau zeigt jede mitgelieferte Automatisierung mit Schalter und in Klartext („Wenn … → Dann …“), dazu, was sie über die Ablage hinaus tut: E-Mails an Personen der Ablage, Aufruf des Paket-Codes (mit Netz: Daten können das Haus verlassen). Karten nach außen (URL aufrufen, E-Mail an Fremde) gibt es in Paketen nicht.
+- **Update:** Unveränderte Automatisierungen ziehen die neue Fassung nach; vom Admin geänderte bleiben, wie sie sind – die Vorschau zeigt, was die neue Fassung anders machen würde (#1174).
+- **Ausführung:** Mitgelieferte Automatisierungen laufen wie eigene unter dem Systemkonto „Automatisierung“; die Karte „Paket nach Zeitplan ausführen“ und eigene Karten rufen den Code des Pakets, der mit dem Dienstkonto des Pakets arbeitet.
+- **Paket erstellen:** Eigene Automatisierungen lassen sich ankreuzen und kommen als `inhalt/automatisierungen.yaml` mit, `eingeschaltet: false`. Mappentypen werden zu Schlüsseln im Paket (bzw. `paket:typ`, `dms:post`); feste Personen und Rollen werden zum Ersteller der Mappe. Werkbank-Karten, Karten nach außen, „Aufruf von außen“, Ansichten in Bedingungen und feste Mappen in „Feld ändern“ passen nicht in ein Paket – „Paket erstellen“ nennt sie als Problem.
+
 ## Berechnete Felder und Hinweise { #berechnet-und-hinweise }
 
 Seit Ablago 0.231 (#1034) kann ein Paket Felder seines Mappentyps **berechnen** und an Mappen **Hinweise** setzen – etwa *Verträge* (Status, Kündigen bis) und *Rechnungen* (Summenprüfung). Beides läuft über die [API v1](#nutzliche-endpunkte-der-api-v1) mit dem Dienstkonto des Pakets.

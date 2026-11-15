@@ -696,5 +696,6 @@
   "daten.verlauf": "Changes to the release",
   "daten.verlauf.zeile": "{datum} · {von}: setup {einrichtung}; evidence {nachweise}",
   "daten.zeile": "Released – setup: {einrichtung}; evidence: {nachweise}.",
-  "daten.verlauf.eintrag": "Setup and evidence: setup {einrichtung}; evidence {nachweise}"
+  "daten.verlauf.eintrag": "Setup and evidence: setup {einrichtung}; evidence {nachweise}",
+  "ablauf.automatisierungen.klartext": "When {wenn} → then {dann}"
 }

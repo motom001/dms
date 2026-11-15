@@ -696,5 +696,6 @@
   "daten.verlauf": "Änderungen der Freigabe",
   "daten.verlauf.zeile": "{datum} · {von}: Einrichtung {einrichtung}; Nachweise {nachweise}",
   "daten.zeile": "Freigegeben – Einrichtung: {einrichtung}; Nachweise: {nachweise}.",
-  "daten.verlauf.eintrag": "Einrichtung und Nachweise: Einrichtung {einrichtung}; Nachweise {nachweise}"
+  "daten.verlauf.eintrag": "Einrichtung und Nachweise: Einrichtung {einrichtung}; Nachweise {nachweise}",
+  "ablauf.automatisierungen.klartext": "Wenn {wenn} → Dann {dann}"
 }
