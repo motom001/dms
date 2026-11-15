@@ -365,7 +365,12 @@ function feldBedingung(sql: Sql, f: Extract<Filter, { art: 'feld' }>): Teil {
     case 'zeigtAuf': {
       const l = liste(f.a);
       if (f.feldart === 'person') return sql`${x} = ANY(${l}::text[])`;
-      return sql`EXISTS (SELECT 1 FROM verweise v WHERE v.quelle_id = mappen.id AND v.feld_key = ${k} AND v.ziel_id::text = ANY(${l}::text[]))`;
+      // Von den Zielen aus (#1265): Der Index auf verweise.ziel_id liefert die wenigen Quellen; so muss PostgreSQL nicht je
+      // Mappe des Typs nachsehen (Tabellenfeld unter Last: im Mittel 599 ms). Gleiche Treffer wie vorher (ziel_id::text
+      // = Id): Nur Ids in der Schreibweise von PostgreSQL (klein) können passen, alle anderen nie.
+      const ziele = l.filter((id) => istUuid(id) && id === id.toLowerCase());
+      if (!ziele.length) return sql`false`;
+      return sql`mappen.id IN (SELECT v.quelle_id FROM verweise v WHERE v.ziel_id = ANY(${ziele}::uuid[]) AND v.feld_key = ${k})`;
     }
     case 'gleich': return f.feldart === 'text' || f.feldart === 'zusammengesetzt' ? sql`lower(${x}) = lower(${String(f.a ?? '')})` : sql`${x} = ${wert(f.a)}`;
     case 'kleiner': return sql`${x} < ${wert(f.a)}`;
@@ -748,6 +753,8 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
     // Berechtigungen (#124): nur, was der Benutzer lesen darf.
     const lesen = o.lesen ? sql`AND ${lesefilterSql(sql, o.lesen)}` : sql``;
     const wo = sql`${typ} ${eingang} ${textfilter} ${lesen}`;
+    // Ohne Lesefilter (#1265): für die Zahl der verborgenen Zeilen in derselben Abfrage wie die Seite.
+    const ohneLesen = sql`${typ} ${eingang} ${textfilter}`;
     const so = o.sortierung;
     const k = so?.key ?? '';
     const ausdruck = !so || so.art === 'titel' ? sql`lower(titel)`
@@ -766,7 +773,7 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
     // Index auch rückwärts (#740). Ebenso Titel absteigend: Ein Titel fehlt nur kurz vor dem ersten Berechnen.
     const ohneLeere = !so || ['titel', 'erstellt', 'geaendert'].includes(so.art);
     const richtung = so?.absteigend ? (ohneLeere ? sql`DESC` : sql`DESC NULLS LAST`) : sql`ASC NULLS LAST`;
-    return { wo, treffer, ausdruck, richtung, tf, enthaelt, schreibweisen, anfragen, v, teilSql };
+    return { wo, ohneLesen, treffer, ausdruck, richtung, tf, enthaelt, schreibweisen, anfragen, v, teilSql };
   };
 
   return {
@@ -1230,9 +1237,25 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
       return r;
     },
     async seite(o) {
-      const { wo, treffer, ausdruck, richtung, tf, enthaelt, schreibweisen, anfragen, v, teilSql } = await seitenTeile(o);
+      const { wo, ohneLesen, treffer, ausdruck, richtung, tf, enthaelt, schreibweisen, anfragen, v, teilSql } = await seitenTeile(o);
       let n: number | undefined;
       let r: postgres.Row[];
+      if (o.mitVerborgenen && !treffer && o.zahl === undefined) {
+        // Tabellenfeld (#1265): Seite, Zahl der lesbaren und Zahl aller Mappen in einer Abfrage – vorher zwei bis drei
+        // Zählungen über alle Mappen des Haushalts. Innen ohne Lesefilter, dafür je Mappe „lesbar“; nur lesbare Zeilen
+        // verlassen die Datenbank, von den anderen nur ihre Zahl (#1208). Ohne Lesefilter ist jede lesbar.
+        const lesbar = o.lesen ? sql`coalesce(${lesefilterSql(sql, o.lesen)}, false)` : sql`true`;
+        r = await sql`
+          SELECT * FROM (
+            SELECT *, count(*) OVER () AS dms_alle, count(*) FILTER (WHERE dms_lesbar) OVER () AS dms_gesamt FROM (
+              SELECT ${MAP}, ${lesbar} AS dms_lesbar FROM mappen WHERE haushalt_id = ${haushaltId} ${ohneLesen} OFFSET 0) AS mappen
+          ) AS mappen WHERE dms_lesbar
+          ORDER BY ${ausdruck} ${richtung}, lower(titel), id OFFSET ${o.von} LIMIT ${o.anzahl}`;
+        // Blatt hinter dem Ende: keine Zeile, die die Zahlen trägt – dann eigens zählen (auch das in einer Abfrage).
+        const [z] = r.length ? [{ n: Number(r[0].dms_gesamt), alle: Number(r[0].dms_alle) }]
+          : await sql`SELECT count(*) FILTER (WHERE ${lesbar})::int AS n, count(*)::int AS alle FROM mappen WHERE haushalt_id = ${haushaltId} ${ohneLesen}`;
+        return { gesamt: Number(z.n), verborgen: Math.max(0, Number(z.alle) - Number(z.n)), mappen: r.map(alsMappe) };
+      }
       if (o.zahl !== undefined) {
         // Zahl der Treffer schon bekannt (#918): nur die Seite, ohne Zählen.
         n = o.zahl;

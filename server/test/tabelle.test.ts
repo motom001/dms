@@ -331,4 +331,44 @@ describe('Tabelle – PostgreSQL (#1030)', { skip: !process.env.TEST_DATABASE_UR
       assert.equal((await d.sichten.tabelle(andere.id, 'positionen', {})).gesamt, 1);
     } finally { await db.ende(); }
   });
+
+  it('verborgene Zeilen (#1208, #1265): Seite und beide Zahlen in einer Abfrage, auch beim Blättern; keine Daten der anderen', async () => {
+    const db = await eigeneDatenbank('tabelle_verborgen');
+    const { pgRepo } = await import('../src/repo-pg');
+    let abfragen = 0;
+    const postgres = (await import('postgres')).default;
+    const sql = postgres(db.url, { max: 2, onnotice: () => {}, debug: () => { abfragen++; } });
+    try {
+      const d = new Dienst(pgRepo(sql, '00000000-0000-4000-8000-000000000001') as never as Repo, speicherDateien(), { einstellungen: speicherEinstellungen() });
+      const { rechnung, position } = await rechnungen(d);
+      const r = await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-1' } });
+      for (let i = 1; i <= 53; i++) await d.mappen.legeMappeAn({ typId: position.id, werte: { rechnung: r.id, nr: i, beschreibung: `Offen ${i}` } });
+      for (let i = 1; i <= 2; i++) await d.mappen.legeMappeAn({ typId: position.id, werte: { rechnung: r.id, nr: 100 + i, beschreibung: `Geheim ${i}`, privat: true } });
+      // Eine Position einer anderen Rechnung zählt nirgends mit.
+      const andere = await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-2' } });
+      await d.mappen.legeMappeAn({ typId: position.id, werte: { rechnung: andere.id, nr: 1, beschreibung: 'Fremd', privat: true } });
+      await d.berechtigungen.setzeBerechtigungen(position.id, privatNurErsteller, true);
+      const lena = await d.rechtepruefung.zugriff({ id: '00000000-0000-4000-8000-0000000000bb', rolle: 'mitglied' });
+      assert.ok(lena.lesen, 'Lena hat einen Lesefilter');
+      await d.sichten.tabelle(r.id, 'positionen', {}, lena); // Typen, Rechte und Lesespeicher vorab laden
+      abfragen = 0;
+      const s1 = await d.sichten.tabelle(r.id, 'positionen', { sortierung: 'nr' }, lena);
+      const proSeite = abfragen;
+      assert.deepEqual([s1.gesamt, s1.verborgen, s1.mappen.length], [53, 2, TABELLE_SEITE]);
+      assert.ok(!JSON.stringify(s1).includes('Geheim'));
+      // Blättern: eine mitgegebene Zahl verfälscht nichts, gezählt wird in derselben Abfrage.
+      abfragen = 0;
+      const s2 = await d.sichten.tabelle(r.id, 'positionen', { sortierung: 'nr', von: 50, gesamt: '0' }, lena);
+      assert.deepEqual([s2.gesamt, s2.verborgen, s2.mappen.map((m) => m.werte.nr)], [53, 2, [51, 52, 53]]);
+      assert.ok(abfragen <= proSeite, `Blättern: ${abfragen} Abfragen, erste Seite ${proSeite}`);
+      // Hinter dem Ende: keine Zeile, die Zahlen stimmen trotzdem.
+      const s3 = await d.sichten.tabelle(r.id, 'positionen', { von: 100 }, lena);
+      assert.deepEqual([s3.gesamt, s3.verborgen, s3.mappen.length], [53, 2, 0]);
+      // Verwaltung ohne Lesefilter: alle, nichts verborgen.
+      const alle = await d.sichten.tabelle(r.id, 'positionen', {});
+      assert.deepEqual([alle.gesamt, alle.verborgen], [55, 0]);
+      // Seite samt beiden Zahlen ist eine Abfrage; dazu nur die Mappe selbst (Leserecht) und die Bezüge der Zellen.
+      assert.ok(proSeite <= 3, `Abfragen je Tabellenseite: ${proSeite}`);
+    } finally { await sql.end(); await db.ende(); }
+  });
 });

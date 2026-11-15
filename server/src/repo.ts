@@ -125,6 +125,11 @@ export interface SeitenAnfrage {
    * nicht beim ersten Blatt oder mit Suche, und gibt diese Zahl zurück.
    */
   zahl?: number;
+  /**
+   * Tabellenfeld (#1265): dazu `verborgen` – die Zahl der Mappen, die ohne Lesefilter dazukämen (ohne Lesefilter 0) –
+   * in derselben Abfrage wie Seite und Gesamtzahl; zählt auf jedem Blatt (`gesamt` gilt dann nicht). Mit Suche: wirkungslos.
+   */
+  mitVerborgenen?: boolean;
 }
 /** Mappe als Kandidat für Termine (#918): nur, was die Termine brauchen. */
 export interface FristKandidat { id: string; typId: string; titel?: string | null; werte: Werte }
@@ -360,7 +365,7 @@ export interface Repo {
   /** Titel und Typ je Mappe (unbekannte Ids fehlen). */
   bezuege(ids: string[]): Promise<Map<string, MappenBezug>>;
   /** Eine Seite einer Sicht, sortiert nach Titel. */
-  seite(o: SeitenAnfrage): Promise<{ gesamt: number; mappen: Mappe[]; ausschnitte?: Record<string, Ausschnitt> }>;
+  seite(o: SeitenAnfrage): Promise<{ gesamt: number; mappen: Mappe[]; ausschnitte?: Record<string, Ausschnitt>; verborgen?: number }>;
   /** Ob die Anfrage mindestens eine Mappe findet (#740, „Meintest du …?“) – ohne zu zählen und ohne Seite. */
   gibtTreffer(o: SeitenAnfrage): Promise<boolean>;
   /** Zähler für die Sichten. `lesen` gilt für typen und favoriten; eingang zählt immer ohne Lesefilter (#127: auch Aufgaben zu nicht lesbaren Mappen, #477: eigene schnelle Abfrage). */
