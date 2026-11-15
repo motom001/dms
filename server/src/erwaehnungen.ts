@@ -1,6 +1,9 @@
 /**
  * Erwähnen mit @ (#889): Jede Mappe lässt sich erwähnen, ein Benutzer ist der Sonderfall mit Konto. Gespeichert wird
- * `@[Titel](mappe:<id>)`; `benutzer:<id>` aus älteren Notizen gilt weiter.
+ * nur die Kennung `@[](mappe:<id>)` (#1293); `benutzer:<id>` aus älteren Notizen gilt weiter.
+ * - **Titel beim Ausgeben** (#1293): `titelFuer`, `mitTiteln` und `mappenMitTiteln` setzen den aktuellen Titel nach den
+ *   Rechten der lesenden Person ein – sonst „Mappe (nicht sichtbar)“ bzw. „gelöschte Mappe“. Für Export, Auskunft,
+ *   Textsatz und Aufgabentexte; die Oberfläche fragt dafür `verweise`.
  *
  * - **Vorschläge** nach `@`: nur lesbare Mappen, Favoriten zuerst; bei gleichem Typ und Titel die erste Spalte der
  *   Trefferliste als Zusatz. Benutzer kennt die Oberfläche schon (lesbare Personen) und stellt sie selbst nach oben.
@@ -12,7 +15,7 @@
 import { Fachfehler } from './fehler';
 import { t } from './sprache';
 import { istUuid } from './repo';
-import { erwaehnungen } from '../../shared/src/markdown';
+import { erwaehnungen, mitTiteln } from '../../shared/src/markdown';
 import { SICHTBARKEIT_MAX, type Sichtbarkeit } from '../../shared/src/sichtbarkeit';
 import type { Mappe, Mappentyp } from '../../shared/src/model';
 import type { Kern, Zugriff } from './kern';
@@ -78,6 +81,37 @@ export class MappenErwaehnungen {
       const m = x === 'sichtbar' ? b.get(id) : undefined;
       return [id, m ? { sichtbarkeit: 'sichtbar', titel: m.titel, typId: m.typId } : { sichtbarkeit: x === 'sichtbar' ? 'geloescht' : x }];
     }));
+  }
+
+  /**
+   * Titel der in `texte` erwähnten Mappen nach den Rechten von `z` (#1293): lesbar → aktueller Titel, sonst
+   * „Mappe (nicht sichtbar)“, gelöscht → „gelöschte Mappe“. Nie ein gespeicherter Titel.
+   */
+  async titelFuer(z: Zugriff | undefined, texte: string[]): Promise<(id: string) => string> {
+    const ids = [...new Set(texte.flatMap((x) => erwaehnungen(x)))];
+    const v: Record<string, Verweis> = {};
+    for (let i = 0; i < ids.length; i += SICHTBARKEIT_MAX) Object.assign(v, await this.verweise(z, ids.slice(i, i + SICHTBARKEIT_MAX)));
+    return (id) => {
+      const x = v[id];
+      if (x?.sichtbarkeit === 'sichtbar') return x.titel || t('meldungen.dienst.ohne-titel');
+      return x?.sichtbarkeit === 'geloescht' ? t('meldungen.dienst.erwaehnung-geloescht') : t('meldungen.dienst.erwaehnung-nicht-sichtbar');
+    };
+  }
+
+  /** Texte mit eingesetzten Titeln (#1293), für Ausgaben, die den Markdown-Text weiterverarbeiten. */
+  async mitTiteln(z: Zugriff | undefined, texte: string[]): Promise<string[]> {
+    const name = await this.titelFuer(z, texte);
+    return texte.map((x) => mitTiteln(x, name));
+  }
+
+  /** Mappen mit eingesetzten Titeln in formatierten Feldern (#1293) – Kopien, für Export, Auskunft und Textsatz. */
+  async mappenMitTiteln<M extends Pick<Mappe, 'typId' | 'werte'>>(z: Zugriff | undefined, mappen: M[], typVon: (id: string) => Mappentyp | undefined): Promise<M[]> {
+    const felder = (m: M) => (typVon(m.typId)?.felder ?? []).filter((f) => f.typ === 'formatiert' && typeof m.werte[f.key] === 'string').map((f) => f.key);
+    const name = await this.titelFuer(z, mappen.flatMap((m) => felder(m).map((k) => String(m.werte[k]))));
+    return mappen.map((m) => {
+      const keys = felder(m);
+      return keys.length ? { ...m, werte: { ...m.werte, ...Object.fromEntries(keys.map((k) => [k, mitTiteln(String(m.werte[k]), name)])) } } : m;
+    });
   }
 
   /** Wo eine Mappe erwähnt ist und was sie selbst erwähnt – nur, was die Person lesen darf. */

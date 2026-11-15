@@ -149,6 +149,16 @@ describe('Inhalte übersetzen (#732): Ablauf', () => {
     await assert.rejects(x.uebersetze(x.lena, { art: 'feld', mappe: leer.id, feld: 'inhalt' }), status(422));
   });
 
+  it('Erwähnungen nur mit Kennung an das Paket und in den Zwischenspeicher, auch bei älterem Text mit Titel (#1293)', async () => {
+    const x = await aufbau();
+    const n = await x.d.mappenNotizen.legeNotizAn(x.m.id, NOTIZ, x.lena.id);
+    // Wie ein Bestand vor Migration 119: Titel im gespeicherten Text.
+    await x.d.kern.repo.aendereNotiz(n.id, `${NOTIZ} Siehe @[Abmahnung Jonas](mappe:${x.m.id}).`, x.lena.id);
+    const r = await x.uebersetze(x.lena, { art: 'notiz', notiz: n.id });
+    assert.ok(!JSON.stringify(x.eingaenge.at(-1)!.e).includes('Abmahnung'), 'kein Titel an das Paket');
+    assert.ok(!String(r.text).includes('Abmahnung') && String(r.text).includes(`@[](mappe:${x.m.id})`));
+  });
+
   it('Rechte: Was die Person nicht lesen darf, wird nicht übersetzt – und das Paket sieht nichts davon', async () => {
     const x = await aufbau();
     const n = await x.d.mappenNotizen.legeNotizAn(x.m.id, NOTIZ, x.lena.id);

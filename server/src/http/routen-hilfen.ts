@@ -22,6 +22,9 @@ import { ARBEITER_MAX, arbeiterStand } from '../arbeit';
 import { VERBINDUNGEN_MAX, VERBINDUNGEN_MIN } from '../db';
 import { MAX_ANFRAGEN_MAX, MAX_ANFRAGEN_MIN } from '../ueberlast';
 import { engpaesseAus, VARIABLE, type Grenzwert, type Grenzwerte, type ProzessZeile } from '../../../shared/src/systemlast';
+
+/** Cache-Control für eigene Dateien (Vorschaubilder, Fassungen): nur im Browser der Person (#1264: im Code, nicht übersetzbar). */
+export const privatZwischenspeichern = (sekunden: number) => `private, max-age=${sekunden}`;
 import { MB } from '../grenzen';
 import type { Anfrage, Antwort, RoutenExtras } from '../routen';
 

@@ -8,6 +8,8 @@
  * kommt in den Zwischenspeicher (Kurzzustand, #744: für alle Prozesse gleich, nicht in der Sicherung) unter dem
  * Prüfwert des Abschnitts, der Zielsprache, dem Paket und seiner Version. Ändert sich das Original, passt der Prüfwert
  * nicht mehr: Die alte Übersetzung gilt nicht und wird beim nächsten Abruf bzw. mit dem Ereignis der Änderung gelöscht.
+ * Erwähnungen gehen nur mit Kennung hinaus und in den Zwischenspeicher (#1293, `ohneTitel`); ältere Einträge mit Titeln
+ * verwirft Migration 119.
  */
 import { createHash } from 'node:crypto';
 import type { KatalogEreignis } from '../../shared/src/ereignisse';
@@ -17,6 +19,7 @@ import {
   abschnitte, liesUebersetzenEinstellung, spracheAusTesseract, SPRACHKENNUNG_KURZ, UEBERSETZBARE_FELDER, UEBERSETZEN_MS, UEBERSETZEN_TEXT_MAX,
   UEBERSETZUNG_TAGE, type UebersetzenAngebot, type UebersetzenEinstellung, type Uebersetzt, type Uebersetzungsquelle,
 } from '../../shared/src/uebersetzung';
+import { ohneTitel } from '../../shared/src/markdown';
 import type { Benutzer } from '../../shared/src/model';
 import type { Dienst } from './dienst';
 import type { Zugriff } from './kern';
@@ -138,13 +141,14 @@ export class Uebersetzung {
       const f = typ?.felder.find((x) => x.key === q.feld);
       if (!f || !(UEBERSETZBARE_FELDER as readonly string[]).includes(f.typ) || (f.typ === 'text' && f.format)) throw new Fachfehler(422, t('meldungen.uebersetzung.feld-nicht'));
       const v = m.werte[q.feld];
-      return { mappe: m.id, text: typeof v === 'string' ? v : '', format: f.typ === 'formatiert' ? 'markdown' : 'text', von: null, gemischt: false };
+      // Erwähnungen nur mit Kennung (#1293): Kein Titel geht an das Paket oder in den Zwischenspeicher.
+      return { mappe: m.id, text: typeof v === 'string' ? (f.typ === 'formatiert' ? ohneTitel(v) : v) : '', format: f.typ === 'formatiert' ? 'markdown' : 'text', von: null, gemischt: false };
     }
     if (q.art === 'notiz') {
       const n = await this.repo().holeNotiz(q.notiz);
       if (!n) throw new Fachfehler(404, t('meldungen.dienst.diese-notiz-gibt-es'));
       await this.d.rechtepruefung.pruefeRecht(z, n.mappeId, 'R');
-      return { mappe: n.mappeId, text: n.text, format: 'markdown', von: null, gemischt: false };
+      return { mappe: n.mappeId, text: ohneTitel(n.text), format: 'markdown', von: null, gemischt: false };
     }
     const mappe = await this.d.rechtepruefung.mappeVon('dokument', q.dokument);
     await this.d.rechtepruefung.pruefeRecht(z, mappe, 'R');

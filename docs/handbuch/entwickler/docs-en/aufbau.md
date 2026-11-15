@@ -619,6 +619,8 @@ Texts for users are not in the code but in **language files** (#473, #727, part 
 
 **Rule:** a text that people read belongs in the language file – never as words in the code. CI doesn't let new fixed texts in the interface through (see below).
 
+**The other way round (#1264):** technical values – Content-Security-Policy, Permissions-Policy, Cache-Control, Content-Disposition, SQL, the header of the backup file – are constants in the code, never in a language file. `t()` follows the language of the request; a translation would otherwise silently change them for that language only. `server/test/sprachdateien-technik.test.ts` checks this.
+
 ```
 shared/src/sprachen/de/<area>.json            source language German (du), always complete
 shared/src/sprachen/de-formal/dritte.json     texts for third parties with "Sie" (see below)

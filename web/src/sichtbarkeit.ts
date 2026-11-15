@@ -17,7 +17,9 @@ function sammelstelle<T>(frageServer: (ids: string[]) => Promise<Record<string, 
   /** Zählt bei jedem Verwerfen hoch: Antworten auf ältere Fragen gelten nicht mehr. */
   let runde = 0;
   let geplant = false;
-  const melde = () => { for (const f of hoerer) f(); };
+  /** Zählt bei jeder Antwort hoch (für `useViele`). */
+  let stand = 0;
+  const melde = () => { stand++; for (const f of hoerer) f(); };
   async function frage() {
     geplant = false;
     const ids = [...offen].slice(0, SICHTBARKEIT_MAX);
@@ -50,6 +52,18 @@ function sammelstelle<T>(frageServer: (ids: string[]) => Promise<Record<string, 
       }, [id, fragen, aktuell]);
       return fragen ? wert : undefined;
     },
+    /** Mehrere auf einmal (#1293: Titel in der Eingabe); liefert eine Abfrage für die bekannten Antworten. */
+    useViele(ids: readonly string[]): (id: string) => T | undefined {
+      useSyncExternalStore(abonniere, () => stand);
+      const aktuell = useSyncExternalStore(abonniere, () => runde);
+      const schluessel = ids.join(',');
+      useEffect(() => {
+        let neu = false;
+        for (const id of schluessel ? schluessel.split(',') : []) if (!bekannt.has(id) && !gefragt.has(id)) { gefragt.add(id); offen.add(id); neu = true; }
+        if (neu) plane();
+      }, [schluessel, aktuell]);
+      return (id) => bekannt.get(id);
+    },
   };
 }
 
@@ -74,4 +88,9 @@ export function useSichtbarkeit(id: string | null | undefined, fragen: boolean):
 /** Erwähnte Mappe (#889): Sichtbarkeit, bei lesbaren dazu aktueller Titel und Typ. */
 export function useVerweis(id: string | null | undefined, fragen: boolean): Verweis | undefined {
   return verweise.use(id, fragen);
+}
+
+/** Mehrere erwähnte Mappen (#1293): aktuelle Titel zum Einsetzen in die Eingabe. */
+export function useVerweise(ids: readonly string[]): (id: string) => Verweis | undefined {
+  return verweise.useViele(ids);
 }

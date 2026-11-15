@@ -9,7 +9,7 @@ import { umschluesseleTief } from './tresor';
 import { datumIn, ziehe, type Nummernkreis } from '../../shared/src/nummernkreis';
 import type { InstalliertesPaket } from '../../shared/src/pakete';
 import { normalisiereZiele, standardliste, TREFFER_ANFANG, TREFFER_ENDE, trefferlistenVon, type Aufgabe, type Ausschnitt, type Dokument, type FallOhneLeserecht, type DokumentVersion, type Historieneintrag, type Mappe, type Notiz, type Mappentyp, type MappentypDaten, type Werte } from '../../shared/src/model';
-import { alsText } from '../../shared/src/markdown';
+import { alsText, ohneTitel } from '../../shared/src/markdown';
 import { teileKennung } from '../../shared/src/kennungen';
 import { SPRACHE_MARKE, spracheAusInfo } from '../../shared/src/textsprache';
 import { teilenAb, type Seitensprache } from '../../shared/src/seitensprachen';
@@ -1037,8 +1037,8 @@ export function speicherRepo(): Repo {
       return [...notizen.values()].filter((n) => ids.has(n.mappeId)).sort((a, b) => a.mappeId.localeCompare(b.mappeId) || a.erstellt.localeCompare(b.erstellt)).map(kopie);
     },
     async holeNotiz(id) { const n = notizen.get(id); return n && kopie(n); },
-    async legeNotizAn(n) { const x = { ...kopie(n), erstellt: jetzt(), geaendert: jetzt(), geaendertVon: n.erstelltVon }; notizen.set(n.id, x); return kopie(x); },
-    async aendereNotiz(id, text, von) { const n = notizen.get(id)!; n.text = text; n.geaendert = jetzt(); n.geaendertVon = von; return kopie(n); },
+    async legeNotizAn(n) { const x = { ...kopie(n), text: ohneTitel(n.text), erstellt: jetzt(), geaendert: jetzt(), geaendertVon: n.erstelltVon }; notizen.set(n.id, x); return kopie(x); },
+    async aendereNotiz(id, text, von) { const n = notizen.get(id)!; n.text = ohneTitel(text); n.geaendert = jetzt(); n.geaendertVon = von; return kopie(n); },
     async loescheNotiz(id) { notizen.delete(id); },
     async historieSchreibe(e) {
       for (const x of e) historie.push({ id: ++historieNr, mappeId: x.mappeId, zeit: jetzt(), benutzerId: x.benutzerId, art: x.art, daten: kopie(x.daten ?? {}) });

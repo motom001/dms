@@ -125,11 +125,22 @@ export function pruefeIdToken(token: string, schluessel: JsonWebKey[], p: Pruefu
 }
 class SchluesselFehlt extends Fachfehler { constructor() { super(401, t('meldungen.oidc.zum-id-token-passt')); } }
 
+/**
+ * Fehler des Anbieters fürs Protokoll (#1263): Der Code nur in fester Form (Buchstaben, Ziffern, _ . -), die Beschreibung
+ * gekürzt und nur mit druckbaren Zeichen (keine Steuerzeichen, Zeilenumbrüche oder Richtungswechsel). Auf die
+ * Anmeldeseite kommt davon nichts – dort steht nur der feste Code von Ablago.
+ */
+export function anbieterMeldung(code: unknown, beschreibung?: unknown): string {
+  const c = typeof code === 'string' && /^[A-Za-z0-9_.-]{1,64}$/.test(code) ? code : 'unbekannt';
+  const b = typeof beschreibung === 'string' ? beschreibung.replace(/[^\p{L}\p{N}\p{P}\p{S}\p{Zs}]/gu, ' ').replace(/\s+/g, ' ').trim().slice(0, 120) : '';
+  return b ? `${c} (${b})` : c;
+}
+
 /** E-Mail, Name und Gruppen aus den Claims (Entra liefert die Adresse oft nur als preferred_username). */
 export function identitaetAus(claims: Record<string, unknown>, gruppenClaim: string): AnbieterIdentitaet {
-  if (claims.email_verified === false) throw new Fachfehler(403, t('meldungen.oidc.der-anbieter-hat-die'));
+  if (claims.email_verified === false) throw new Fachfehler(403, t('meldungen.oidc.der-anbieter-hat-die'), { anmeldefehler: 'email-fehlt' });
   const kandidat = [claims.email, claims.preferred_username, claims.upn].find((x) => typeof x === 'string' && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(x));
-  if (!kandidat) throw new Fachfehler(403, t('meldungen.oidc.der-anbieter-liefert-keine'));
+  if (!kandidat) throw new Fachfehler(403, t('meldungen.oidc.der-anbieter-liefert-keine'), { anmeldefehler: 'email-fehlt' });
   const roh = claims[gruppenClaim || 'groups'];
   const gruppen = Array.isArray(roh) ? roh.map(String) : typeof roh === 'string' ? [roh] : [];
   const name = [claims.name, [claims.given_name, claims.family_name].filter(Boolean).join(' ')].find((x) => typeof x === 'string' && x.trim()) as string | undefined;
@@ -277,10 +288,10 @@ export class Oidc {
     const x = q.state ? await this.zustand.nimm(OFFEN, hashe(q.state)) : null;
     const klar = typeof x?.wert === 'string' ? this.deps.entschluessele(x.wert) : null;
     const o = klar ? JSON.parse(klar) as Offen : null;
-    if (!o) throw new Fachfehler(400, t('meldungen.oidc.die-anmeldung-ist-abgelaufen'));
-    if (!bindung || bindung !== o.bindung) throw new Fachfehler(400, t('meldungen.oidc.die-anmeldung-wurde-in'));
-    if (q.error) throw new Fachfehler(401, t('meldungen.oidc.der-anbieter-hat-die-2', { wert: String(q.error_description || q.error).slice(0, 300) }));
-    if (!q.code) throw new Fachfehler(400, t('meldungen.oidc.der-anbieter-hat-keinen'));
+    if (!o) throw new Fachfehler(400, t('meldungen.oidc.die-anmeldung-ist-abgelaufen'), { anmeldefehler: 'abgelaufen' });
+    if (!bindung || bindung !== o.bindung) throw new Fachfehler(400, t('meldungen.oidc.die-anmeldung-wurde-in'), { anmeldefehler: 'anderer-browser' });
+    if (q.error) throw new Fachfehler(401, t('meldungen.oidc.der-anbieter-hat-die-2', { wert: anbieterMeldung(q.error, q.error_description) }), { anmeldefehler: 'abgelehnt' });
+    if (!q.code) throw new Fachfehler(400, t('meldungen.oidc.der-anbieter-hat-keinen'), { anmeldefehler: 'abgelehnt' });
     const d = await this.discovery(e.aussteller);
     const secret = e.clientSecret ? this.deps.entschluessele(e.clientSecret) : '';
     if (e.clientSecret && secret === null) throw new Fachfehler(500, t('meldungen.oidc.das-client-secret-ist'));
@@ -293,7 +304,7 @@ export class Oidc {
     const r = await this.abruf(d.token_endpoint, { method: 'POST', headers: koepfe, body: body.toString() }, 'token');
     const antwort = (await r.json().catch(() => null)) as { id_token?: string; error?: string; error_description?: string } | null;
     if (!r.ok || !antwort?.id_token) {
-      throw new Fachfehler(502, t('meldungen.oidc.der-anbieter-hat-den', { wert: antwort?.error_description || antwort?.error || t('meldungen.oidc.http', { status: r.status }) }));
+      throw new Fachfehler(502, t('meldungen.oidc.der-anbieter-hat-den', { wert: antwort?.error ? anbieterMeldung(antwort.error, antwort.error_description) : t('meldungen.oidc.http', { status: r.status }) }));
     }
     const p = { aussteller: e.aussteller, clientId: e.clientId, nonce: o.nonce, jetzt: this.jetzt };
     let claims: Record<string, unknown>;

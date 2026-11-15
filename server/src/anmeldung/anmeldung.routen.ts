@@ -7,6 +7,7 @@ import { pflichtRolle } from '../zweifaktor';
 import { PASSKEYS_HOECHSTENS } from '../passkeys';
 import { t } from '../sprache';
 import { hatGesamt } from '../../../shared/src/verwaltungsrecht';
+import { anmeldefehlerCode, type Anmeldefehler } from '../../../shared/src/anmeldefehler';
 import { eigeneVersion, standKennung } from '../system';
 import { SPRACHE_HOECHSTENS_MS } from '../sprachwahl';
 import { zeitzone } from '../../../shared/src/region';
@@ -18,6 +19,21 @@ import type { Route } from '../routen';
 /** Eigene Anmeldung ändern geht nicht, während jemand als diese Person agiert (#43, #811). */
 function ohneVertretung(a: { sitzungsDaten?: { vertretungId?: string | null } }) {
   if (a.sitzungsDaten?.vertretungId) throw new Fachfehler(403, t('anmeldung.passkey.fehler.vertretung'));
+}
+
+/**
+ * Fehler der Anmeldung über einen Anbieter (#1263) als fester Code für die Adresse – nie der Text des Fehlers (der steht
+ * nur im Protokoll). Was keinen eigenen Code trägt, ordnet der Status ein.
+ */
+export function anbieterFehlerCode(e: unknown): Anmeldefehler {
+  if (!(e instanceof Fachfehler)) return 'unbekannt';
+  const code = (e.details as { anmeldefehler?: unknown } | undefined)?.anmeldefehler;
+  if (code !== undefined) return anmeldefehlerCode(code);
+  if (e.status === 503) return 'wartung';
+  if (e.status === 502) return 'anbieter-nicht-erreichbar';
+  if (e.status === 404) return 'nicht-eingerichtet';
+  if (e.status === 401) return 'token-ungueltig';
+  return 'unbekannt';
 }
 
 export function anmeldungRouten(k: RoutenKontext): Route[] {
@@ -199,7 +215,7 @@ export function anmeldungRouten(k: RoutenKontext): Route[] {
         return { weiterleiten: s.url, cookies: [kurzCookie(BINDUNG_COOKIE, s.bindung, 600, '/api/konto/anbieter')] };
       } catch (e) {
         L.konto.warn('Anmeldung über den Anbieter nicht begonnen', { fehler: (e as Error).message });
-        return { weiterleiten: `/?anmeldefehler=${encodeURIComponent((e as Error).message)}` };
+        return { weiterleiten: `/?anmeldefehler=${anbieterFehlerCode(e)}` };
       }
     } },
     { methode: 'GET', pfad: '/api/konto/anbieter/rueckkehr', zugang: 'offen', handler: async (a) => {
@@ -220,7 +236,7 @@ export function anmeldungRouten(k: RoutenKontext): Route[] {
         return { weiterleiten: '/', sitzungSetzen: r.schluessel, cookies: raus };
       } catch (e) {
         L.konto.warn('Anmeldung über den Anbieter fehlgeschlagen', { ip: a.ip, grund: (e as Error).message });
-        return { weiterleiten: `/?anmeldefehler=${encodeURIComponent((e as Error).message)}`, cookies: raus };
+        return { weiterleiten: `/?anmeldefehler=${anbieterFehlerCode(e)}`, cookies: raus };
       }
     } },
     { methode: 'GET', pfad: '/api/werkbank/anbieter', zugang: 'admin', handler: async () => ok({ ...(await oidc().ansicht()), rueckkehr: `${adresse()}/api/konto/anbieter/rueckkehr`, abmeldenZurueck: `${adresse()}/` }) },

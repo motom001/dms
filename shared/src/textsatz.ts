@@ -12,7 +12,7 @@
  * - Fehlt ein Wert oder darf die Person ihn nicht sehen, steht die sichtbare Lücke „[Vertragsnummer]“ da.
  * - Links werden Text mit der Adresse in Klammern – im PDF gibt es nichts zum Anklicken.
  */
-import { zerlege, type Block, type Inline } from './markdown';
+import { erwaehnungsErsatz, zerlege, type Block, type Inline } from './markdown';
 
 /** Ab dieser Version bietet Ablago Paketen „Text setzen“ (`POST /api/v1/mappen/{id}/vorlagen/{dokument}/setzen`). */
 export const DMS_TEXTSATZ_AB = '0.242.0';
@@ -134,7 +134,7 @@ function laeufe(teile: Inline[], werte: Platzhalterwert[], stil: Stil = {}): Lau
     switch (t.art) {
       case 'text': text(t.text, stil); break;
       case 'code': text(t.text, { ...stil, mono: true }); break;
-      case 'erwaehnung': text(`@${t.name}`, stil); break;
+      case 'erwaehnung': text(`@${erwaehnungsErsatz(t.name)}`, stil); break;
       case 'fett': aus.push(...laeufe(t.kinder, werte, { ...stil, fett: true })); break;
       case 'kursiv': aus.push(...laeufe(t.kinder, werte, { ...stil, kursiv: true })); break;
       case 'link': aus.push(...laeufe(t.kinder, werte, stil)); text(` (${t.ziel})`, stil); break;

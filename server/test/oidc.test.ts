@@ -8,8 +8,11 @@ import { speicherEinstellungen } from '../src/einstellungen';
 import { Fachfehler } from '../src/fehler';
 import { Konten } from '../src/konten';
 import { speicherKontoRepo } from '../src/konto-repo';
-import { identitaetAus, Oidc, pruefeAussteller, pruefeIdToken, type Abruf, type JsonWebKey } from '../src/oidc';
+import { anbieterMeldung, identitaetAus, Oidc, pruefeAussteller, pruefeIdToken, type Abruf, type JsonWebKey } from '../src/oidc';
 import { speicherRepo } from '../src/repo-speicher';
+import { anbieterFehlerCode } from '../src/anmeldung/anmeldung.routen';
+import { routen, type Anfrage } from '../src/routen';
+import { ANMELDEFEHLER, anmeldefehlerCode } from '../../shared/src/anmeldefehler';
 
 const ISS = 'https://login.example.org/tenant/v2.0';
 const status = (s: number) => (e: unknown) => e instanceof Fachfehler && e.status === s;
@@ -106,12 +109,44 @@ describe('Anmeldung über OpenID Connect (#241)', () => {
     assert.deepEqual(id, { sub: 'abc', email: 'anna@example.org', name: 'Anna A.', gruppen: ['dms-admins'] });
     // Fehler vom Anbieter
     const s3 = await o.start('https://dms.example.org/r');
-    await assert.rejects(o.rueckkehr({ state: new URL(s3.url).searchParams.get('state')!, error: 'access_denied', error_description: 'nein' }, s3.bindung), /abgelehnt: nein/);
+    await assert.rejects(o.rueckkehr({ state: new URL(s3.url).searchParams.get('state')!, error: 'access_denied', error_description: 'nein' }, s3.bindung), /abgelehnt: access_denied \(nein\)/);
     // Abgelaufen
     const s4 = await o.start('https://dms.example.org/r');
     t += 11 * 60_000;
     await assert.rejects(o.rueckkehr(a.anmelden(s4.url), s4.bindung), /abgelaufen/);
     assert.equal(await o.abmeldeUrl('https://dms.example.org/'), 'https://login.example.org/logout?client_id=dms-client&post_logout_redirect_uri=https%3A%2F%2Fdms.example.org%2F');
+  });
+
+  it('Fehler nur als fester Code in der Adresse, nie als Text (#1263)', async () => {
+    let t = 1_800_000_000_000;
+    const a = anbieter({ schluessel: [schluesselpaar('rsa', 'k1')], jetzt: () => t });
+    const o = await oidcMit(a, () => t);
+    const code = async (p: Promise<unknown>) => { try { await p; } catch (e) { return anbieterFehlerCode(e); } return 'kein Fehler'; };
+    const s = await o.start('https://dms.example.org/r');
+    assert.equal(await code(o.rueckkehr(a.anmelden(s.url), 'fremd')), 'anderer-browser');
+    const s2 = await o.start('https://dms.example.org/r');
+    const boese = 'Bitte melde dich unter https://boese.example.net an';
+    assert.equal(await code(o.rueckkehr({ state: new URL(s2.url).searchParams.get('state')!, error: 'access_denied', error_description: boese }, s2.bindung)), 'abgelehnt');
+    const s3 = await o.start('https://dms.example.org/r');
+    t += 11 * 60_000;
+    assert.equal(await code(o.rueckkehr(a.anmelden(s3.url), s3.bindung)), 'abgelaufen');
+    assert.equal(anbieterFehlerCode(new Fachfehler(502, boese)), 'anbieter-nicht-erreichbar');
+    assert.equal(anbieterFehlerCode(new Fachfehler(500, boese, { anmeldefehler: boese })), 'unbekannt', 'nur bekannte Codes');
+    assert.equal(anbieterFehlerCode(new Error(boese)), 'unbekannt');
+    // Ins Protokoll nur gekürzt und druckbar, der Code nur in fester Form.
+    assert.equal(anbieterMeldung('access_denied', `Zeile 1\nZeile 2\u202e${'x'.repeat(300)}`).length, 'access_denied ()'.length + 120);
+    assert.ok(!/[\n\u202e]/.test(anbieterMeldung('access_denied', 'a\nb\u202ec')));
+    assert.equal(anbieterMeldung('<script>', 'x'), 'unbekannt (x)');
+    // Die Anmeldeseite: ein beliebiger Text in der Adresse wird zum allgemeinen Text.
+    assert.equal(anmeldefehlerCode(boese), 'unbekannt');
+    assert.equal(anmeldefehlerCode('kein-konto'), 'kein-konto');
+    // Über die Route: nicht eingerichtet → nur der Code.
+    const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
+    const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
+    const start = routen(d, konten, {}).find((r) => r.methode === 'GET' && r.pfad === '/api/konto/anbieter/start')!;
+    const r = await start.handler({ body: {}, params: {}, query: {}, ip: '127.0.0.1' } as unknown as Anfrage) as { weiterleiten: string };
+    const wert = new URL(r.weiterleiten, 'http://x').searchParams.get('anmeldefehler');
+    assert.ok((ANMELDEFEHLER as readonly unknown[]).includes(wert), r.weiterleiten);
   });
 
   it('holt neue Schlüssel, wenn der Anbieter gewechselt hat; EC und Ed25519', async () => {
@@ -173,7 +208,7 @@ describe('Anmeldung über OpenID Connect (#241)', () => {
     const r = await konten.anmeldenMitAnbieter({ sub: 'x', email: 'chef@example.org', name: '', gruppen: [] }, basis, g);
     assert.equal((r as { benutzer: { id: string } }).benutzer.id, chef.id);
     // Unbekannt, ohne Anlegen
-    await assert.rejects(konten.anmeldenMitAnbieter({ sub: 'y', email: 'neu@example.org', name: 'Neu', gruppen: [] }, basis, g), status(403));
+    await assert.rejects(konten.anmeldenMitAnbieter({ sub: 'y', email: 'neu@example.org', name: 'Neu', gruppen: [] }, basis, g), (e) => anbieterFehlerCode(e) === 'kein-konto');
     // Anlegen mit Standardrolle bzw. Admin-Gruppe
     const neu = await konten.anmeldenMitAnbieter({ sub: 'y', email: 'neu@example.org', name: 'Neu', gruppen: [] }, { ...basis, anlegen: true }, g);
     assert.equal((neu as { benutzer: { rolle: string; name: string } }).benutzer.rolle, 'mitglied');

@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Symbol } from '../Symbol';
-import { erwaehnung, zerlege, type Block, type Inline } from '../../../shared/src/markdown';
+import { erwaehnung, erwaehnungen, mitTiteln, zerlege, type Block, type Inline } from '../../../shared/src/markdown';
 import { abwesenheitText, useDaten } from '../daten';
 import { Person, useOhneLinks } from '../Person';
 import { Link } from '../ort';
-import { useVerweis } from '../sichtbarkeit';
+import { useVerweis, useVerweise } from '../sichtbarkeit';
 import { mappenApi, type ErwaehnungsVorschlag } from '../api/mappen';
 import { t } from '../sprache';
 import { Feld, Knopf, Umschalter, type FeldProps } from '../bausteine';
@@ -73,13 +73,18 @@ export function Formatiert({ text }: { text: string }) {
   return <div className="formatiert"><Bloecke bloecke={bloecke} /></div>;
 }
 
-type Werkzeug = { titel: string; zeichen: ReactNode; vor: string; nach?: string; zeile?: boolean; platzhalter: string };
+/**
+ * Werkzeuge der Leiste. `aufschrift` (#1268, WCAG 2.5.3): Buchstaben und Ziffern, die man sieht, stehen auch im Namen
+ * („1. Nummerierte Liste“, „F Fett“; die Buchstaben je Sprache aus den Sprachdateien, en „B Bold“), damit Sprachsteuerung
+ * sie trifft; reine Zeichen (•, „“, Link) sind für Hilfsmittel verborgen, der Name steht dann allein.
+ */
+type Werkzeug = { titel: string; zeichen: ReactNode; aufschrift?: string; vor: string; nach?: string; zeile?: boolean; platzhalter: string };
 const WERKZEUGE: Werkzeug[] = [
-  { titel: t('ablage.formatiert.fett'), zeichen: <strong>F</strong>, vor: '**', nach: '**', platzhalter: 'fett' },
-  { titel: t('ablage.formatiert.kursiv'), zeichen: <em>K</em>, vor: '*', nach: '*', platzhalter: 'kursiv' },
-  { titel: t('ablage.formatiert.ueberschrift'), zeichen: 'Ü', vor: '## ', zeile: true, platzhalter: t('ablage.formatiert.ueberschrift') },
+  { titel: t('ablage.formatiert.fett'), zeichen: <strong>{t('ablage.formatiert.zeichen.fett')}</strong>, aufschrift: t('ablage.formatiert.zeichen.fett'), vor: '**', nach: '**', platzhalter: 'fett' },
+  { titel: t('ablage.formatiert.kursiv'), zeichen: <em>{t('ablage.formatiert.zeichen.kursiv')}</em>, aufschrift: t('ablage.formatiert.zeichen.kursiv'), vor: '*', nach: '*', platzhalter: 'kursiv' },
+  { titel: t('ablage.formatiert.ueberschrift'), zeichen: t('ablage.formatiert.zeichen.ueberschrift'), aufschrift: t('ablage.formatiert.zeichen.ueberschrift'), vor: '## ', zeile: true, platzhalter: t('ablage.formatiert.ueberschrift') },
   { titel: t('ablage.formatiert.liste'), zeichen: '•', vor: '- ', zeile: true, platzhalter: t('ablage.formatiert.punkt') },
-  { titel: t('ablage.formatiert.nummerierte-liste'), zeichen: '1.', vor: '1. ', zeile: true, platzhalter: t('ablage.formatiert.punkt') },
+  { titel: t('ablage.formatiert.nummerierte-liste'), zeichen: '1.', aufschrift: '1.', vor: '1. ', zeile: true, platzhalter: t('ablage.formatiert.punkt') },
   { titel: t('ablage.formatiert.zitat'), zeichen: '„“', vor: '> ', zeile: true, platzhalter: t('ablage.formatiert.zitat') },
   { titel: t('ablage.formatiert.link'), zeichen: <Symbol name="link" />, vor: '[', nach: '](https://)', platzhalter: t('ablage.formatiert.linktext') },
 ];
@@ -105,6 +110,16 @@ function cursorPosition(el: HTMLTextAreaElement, pos: number): { top: number; le
   return r;
 }
 
+/** Titel einer Erwähnung in der Eingabe (#1293): wie in der Anzeige; solange die Antwort aussteht, leer. */
+function erwaehnungsTitel(d: ReturnType<typeof useDaten>, id: string, v: ReturnType<ReturnType<typeof useVerweise>>): string {
+  const person = d.personen.find((p) => p.id === id);
+  if (person) return person.name;
+  if (!v) return '';
+  if (v.sichtbarkeit === 'geloescht') return t('ablage.formatiert.erwaehnung.geloescht');
+  if (v.sichtbarkeit !== 'sichtbar') return t('ablage.formatiert.erwaehnung.verborgen');
+  return v.titel || t('ablage.formatiert.erwaehnung.ohne-titel');
+}
+
 type Vorschlag = { id: string; name: string; typ: string; hinweis?: string; zusatz?: string };
 
 /**
@@ -127,17 +142,34 @@ function erwaehnVorschlaege(d: ReturnType<typeof useDaten>, suche: string, mappe
  * (#1211): `rahmen` sind Beschriftung, Hinweis, Fehler des Felds (in der Mappe); ohne Angabe eine Beschriftung nur für
  * Screenreader (Notizen).
  */
-export function FormatiertEingabe({ id, wert, setze, rahmen, unter }: { id: string; wert: string; setze: (v: string) => void; rahmen?: Omit<FeldProps, 'children' | 'id'>; /** Unter der Eingabe, z. B. eine Übersetzung (#732). */ unter?: ReactNode }) {
+export function FormatiertEingabe({ id, wert: gespeichert, setze, rahmen, unter }: { id: string; wert: string; setze: (v: string) => void; rahmen?: Omit<FeldProps, 'children' | 'id'>; /** Unter der Eingabe, z. B. eine Übersetzung (#732). */ unter?: ReactNode }) {
   const d = useDaten();
+  // Erwähnungen (#1293): gespeichert ist nur die Kennung; zum Schreiben stehen die aktuellen Titel im Text (nach den
+  // Rechten der Person). Der Server nimmt sie beim Speichern wieder heraus.
+  const verweis = useVerweise(useMemo(() => erwaehnungen(gespeichert), [gespeichert]));
+  const wert = mitTiteln(gespeichert, (x, bisher) => erwaehnungsTitel(d, x, verweis(x)) || bisher);
   const feld = useRef<HTMLTextAreaElement>(null);
   const [vorschau, setVorschau] = useState(!!wert);
   const [suche, setSuche] = useState<{ start: number; text: string } | null>(null);
   const [aktiv, setAktiv] = useState(0);
   const [ort, setOrt] = useState<{ top: number; left: number; oben: boolean } | null>(null);
+  /**
+   * Schreibmarke nach dem Einsetzen (#1267): gleich nach dem Zeichnen setzen, nicht erst im nächsten Bild – sonst landen
+   * schnell getippte Zeichen davor oder gehen verloren. `suchen`: danach die Auswahl nach @ prüfen.
+   */
+  const marke = useRef<{ von: number; bis: number; suchen?: boolean } | null>(null);
+  useLayoutEffect(() => {
+    const m = marke.current, el = feld.current;
+    if (!m || !el) return;
+    marke.current = null;
+    el.setSelectionRange(m.von, m.bis);
+    if (m.suchen) pruefeErwaehnung(el.value, m.bis);
+  });
 
   function einfuegen(w: Werkzeug) {
     const el = feld.current;
     if (!el) return;
+    el.focus();
     const [a, e] = [el.selectionStart, el.selectionEnd];
     let auswahl = wert.slice(a, e) || w.platzhalter;
     let start = a;
@@ -149,8 +181,8 @@ export function FormatiertEingabe({ id, wert, setze, rahmen, unter }: { id: stri
       vor = '';
     }
     const neu = wert.slice(0, start) + vor + auswahl + (w.nach ?? '') + wert.slice(w.zeile ? Math.max(e, start) : e);
+    marke.current = { von: start + vor.length, bis: start + vor.length + auswahl.length };
     setze(neu);
-    requestAnimationFrame(() => { el.focus(); const s = start + vor.length; el.setSelectionRange(s, s + auswahl.length); });
   }
 
   // @-Erwähnung: Wort nach @ bis zum Cursor.
@@ -184,20 +216,24 @@ export function FormatiertEingabe({ id, wert, setze, rahmen, unter }: { id: stri
     if (!el || !suche) return;
     const ende = el.selectionStart;
     const einsatz = `${erwaehnung(p.name, p.id)} `;
+    el.focus();
+    marke.current = { von: suche.start + einsatz.length, bis: suche.start + einsatz.length };
     setze(wert.slice(0, suche.start) + einsatz + wert.slice(ende));
     setSuche(null);
-    requestAnimationFrame(() => { el.focus(); const s = suche.start + einsatz.length; el.setSelectionRange(s, s); });
   }
 
-  /** „Erwähnen“ (#889): ein @ an der Schreibmarke (mit Leerzeichen davor, wenn nötig) und die Auswahl öffnen. */
+  /**
+   * „Erwähnen“ (#889): ein @ an der Schreibmarke (mit Leerzeichen davor, wenn nötig) und die Auswahl öffnen. Der Fokus
+   * geht sofort ins Feld (#1267): Wer gleich weitertippt, verliert kein Zeichen.
+   */
   function erwaehnen() {
     const el = feld.current;
     if (!el) return;
+    el.focus();
     const [a, e] = [el.selectionStart, el.selectionEnd];
     const vor = a > 0 && !/\s/.test(wert[a - 1]) ? ' @' : '@';
-    const neu = wert.slice(0, a) + vor + wert.slice(e);
-    setze(neu);
-    requestAnimationFrame(() => { el.focus(); const p = a + vor.length; el.setSelectionRange(p, p); pruefeErwaehnung(neu, p); });
+    marke.current = { von: a + vor.length, bis: a + vor.length, suchen: true };
+    setze(wert.slice(0, a) + vor + wert.slice(e));
   }
 
   return (
@@ -208,10 +244,12 @@ export function FormatiertEingabe({ id, wert, setze, rahmen, unter }: { id: stri
         <Umschalter wert={vorschau ? 'vorschau' : 'schreiben'} setze={(x) => setVorschau(x === 'vorschau')} beschriftung={t('ablage.formatiert.ansicht')}
           wahlen={[{ wert: 'schreiben', text: t('ablage.formatiert.schreiben') }, { wert: 'vorschau', text: t('ablage.formatiert.vorschau') }]} />
         {!vorschau && <span className="werkzeuge" role="toolbar" aria-label={t('ablage.formatiert.formatierung')}>{WERKZEUGE.map((w) => (
-          <Knopf key={w.titel} art="link" nurSymbol={w.titel} onMouseDown={(e) => e.preventDefault()} onClick={() => einfuegen(w)}>{w.zeichen}</Knopf>
+          <Knopf key={w.titel} art="link" nurSymbol={w.aufschrift ? `${w.aufschrift} ${w.titel}` : w.titel} title={w.titel} onMouseDown={(e) => e.preventDefault()} onClick={() => einfuegen(w)}>
+            {w.aufschrift ? w.zeichen : <span aria-hidden="true">{w.zeichen}</span>}
+          </Knopf>
         ))}
-          {/* Erwähnen (#889): für alle, die @ nicht kennen – öffnet dieselbe Auswahl. */}
-          <Knopf art="link" nurSymbol={t('ablage.formatiert.erwaehnen')} onMouseDown={(e) => e.preventDefault()} onClick={erwaehnen}>@</Knopf>
+          {/* Erwähnen (#889): für alle, die @ nicht kennen – öffnet dieselbe Auswahl. Das @ ist ein Zeichen (#1268). */}
+          <Knopf art="link" nurSymbol={t('ablage.formatiert.erwaehnen')} onMouseDown={(e) => e.preventDefault()} onClick={erwaehnen}><span aria-hidden="true">@</span></Knopf>
         </span>}
       </div>
       {vorschau

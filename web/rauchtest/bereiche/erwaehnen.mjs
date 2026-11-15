@@ -1,6 +1,6 @@
 /**
- * Rauchtests: Erwähnen mit @ – alle Mappen (#889). Auswahl mit Mappentyp vor dem Titel, „Erwähnen“ in der Leiste,
- * Anzeige mit aktuellem Titel, Hinweis „Erwähnt in …“ in der erwähnten Mappe; axe hell und dunkel, Tippflächen am Handy.
+ * Rauchtests: Erwähnen mit @ – alle Mappen (#889), ohne Pause weitertippen (#1267), Werkzeugleiste mit axe (#1268). Auswahl mit Mappentyp vor dem Titel, „Erwähnen“ in der Leiste,
+ * Anzeige mit aktuellem Titel (gespeichert nur die Kennung, #1293), Hinweis „Erwähnt in …“ in der erwähnten Mappe; axe hell und dunkel, Tippflächen am Handy.
  * Allein starten (frisch gestartetes Ablago, siehe rauchtest.mjs): node web/rauchtest/bereiche/erwaehnen.mjs [fehlerordner] [musterordner]
  */
 import assert from 'node:assert/strict';
@@ -27,9 +27,9 @@ rauchtest('Erwähnen mit @: Mappe auswählen, aktueller Titel, Hinweis in der er
   await notizen(s, quelle);
   // „Erwähnen“ in der Leiste öffnet dieselbe Auswahl wie @.
   await s.getByRole('button', { name: 'Erwähnen' }).last().click();
-  // Erst tippen, wenn das @ im Feld steht (sonst überschreibt das Einsetzen die ersten Zeichen).
-  await s.waitForFunction(() => document.querySelector('#neue-notiz')?.value === '@');
+  // Ohne Pause weitertippen (#1267): Kein Zeichen darf verloren gehen.
   await s.keyboard.type('Erwähnziel Eins');
+  assert.equal(await s.locator('#neue-notiz').inputValue(), '@Erwähnziel Eins');
   const auswahl = s.getByRole('listbox', { name: 'Mappe oder Benutzer erwähnen' });
   const option = auswahl.getByRole('option', { name: /Kellerraum · Erwähnziel Eins/ });
   await option.waitFor();
@@ -42,6 +42,9 @@ rauchtest('Erwähnen mit @: Mappe auswählen, aktueller Titel, Hinweis in der er
   const link = s.locator('.notizliste').getByRole('link', { name: '@Erwähnziel Eins neu' });
   await link.waitFor();
   assert.match(await link.getAttribute('title'), /^Kellerraum: Erwähnziel Eins neu/);
+  // Gespeichert ist nur die Kennung (#1293), der Titel kommt erst beim Anzeigen hinzu.
+  const gespeichert = (await api('GET', `/api/mappen/${quelle.id}/notizen`, { cookie })).daten.map((n) => n.text);
+  assert.deepEqual(gespeichert, [`@[](mappe:${ziel.id})`]);
   // In der erwähnten Mappe: ruhiger Hinweis oben im Register Notizen, mit Link zurück.
   await notizen(s, ziel);
   const hinweis = s.getByRole('list', { name: 'Hier erwähnt' });
@@ -54,13 +57,15 @@ rauchtest('Erwähnen mit @: Mappe auswählen, aktueller Titel, Hinweis in der er
   }
   await notizen(s, quelle);
   await s.getByRole('button', { name: 'Erwähnen' }).last().click();
-  await s.waitForFunction(() => document.querySelector('#neue-notiz')?.value === '@');
   await s.keyboard.type('Erwähnziel');
+  // Auch nach einem @ von Hand: alles kommt an (#1267).
+  await s.keyboard.type(' und @Erwähnquelle');
+  assert.equal(await s.locator('#neue-notiz').inputValue(), '@Erwähnziel und @Erwähnquelle');
   await auswahl.getByRole('option').first().waitFor();
   for (const schema of ['light', 'dark']) {
     await schemaWechseln(s, schema);
-    // Nur Auswahl und erwähnte Mappe: Die übrigen Werkzeuge der Leiste gehören nicht zu #889 (siehe Bericht).
-    for (const v of await axePruefen(s, ['.wahlliste', '.notizliste .formatiert'])) funde.push(`Auswahl (${schema}): ${v}`);
+    // Auswahl, erwähnte Mappe und die ganze Werkzeugleiste (#1268: sichtbare Aufschrift im Namen der Knöpfe).
+    for (const v of await axePruefen(s, ['.wahlliste', '.notizliste .formatiert', '.neuenotiz .formatleiste'])) funde.push(`Auswahl (${schema}): ${v}`);
   }
   assert.deepEqual(funde, [], `axe meldet Verstöße:\n${funde.join('\n')}`);
 });

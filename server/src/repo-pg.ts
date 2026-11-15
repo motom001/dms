@@ -1,6 +1,6 @@
 import type postgres from 'postgres';
 import { AEHNLICH_AB, falte, normal, suchbegriffe, teilwoerter, TIPPFEHLER_MIN, type Varianten } from '../../shared/src/suche';
-import { alsText } from '../../shared/src/markdown';
+import { alsText, ohneTitel } from '../../shared/src/markdown';
 import { VERLAUF_FEHLER, VERLAUF_MAX, VERLAUF_TAGE, type VerlaufEintrag } from '../../shared/src/paketreiter';
 import { SPRACHE_MARKE, SPRACHE_SQL_MUSTER, spracheAusInfo, suchkonfig } from '../../shared/src/textsprache';
 import { alsSeitensprachen, teilenAb } from '../../shared/src/seitensprachen';
@@ -159,11 +159,11 @@ export const MAPPEN_SPALTEN = ['id', 'haushalt_id', 'typ_id', 'werte', 'erstellt
  * auch die Statistik des Index `to_tsvector('german', volltext)` – über eine Minute bei 20.000 Dokumenten.
  */
 export const STATISTIK_SPALTEN: Record<string, string> = {
-  dokumente: t('meldungen.repopg.id-haushalt-id-mappe'),
+  dokumente: 'id, haushalt_id, mappe_id, register_key, sha256, erstellt, erstellt_von, ocr_stand, archivnummer, weitere_sprachen',
   dokument_versionen: 'dokument_id, haushalt_id, sha256',
 };
-/** Spalten einer älteren Version ohne `volltext`. */
-const VERSION_SPALTEN = t('meldungen.repopg.dokument-id-haushalt-id');
+/** Spalten einer älteren Version ohne `volltext`. SQL steht im Code, nie in den Sprachdateien (#1264). */
+const VERSION_SPALTEN = 'dokument_id, haushalt_id, nummer, name, mime, groesse, sha256, anzeigbar, erstellt, erstellt_von, herkunft';
 /**
  * Suchindex der Dokumente (#356, #400, Migration 048): gespeicherter tsvector mit Wortstämmen in der Sprache des
  * Dokuments, Umlauten gefaltet und Wörtern mit Bindestrich auch zusammengeschrieben; ein Trigger hält ihn aktuell.
@@ -184,7 +184,7 @@ function suchanfrage(sql: Sql, t: string, v: Varianten, konfigs: string[] = ['dm
   }).reduce((x, y) => sql`(${x} || ${y})`);
 }
 /** Ausschnitte aus dem Volltext: höchstens zwei Stellen, Treffer markiert (#45). */
-const AUSSCHNITT = t('meldungen.repopg.startsel-stopsel-maxfragments-2', { TREFFER_ANFANG, TREFFER_ENDE });
+const AUSSCHNITT = `StartSel=${TREFFER_ANFANG}, StopSel=${TREFFER_ENDE}, MaxFragments=2, MaxWords=18, MinWords=6, FragmentDelimiter=" … "`;
 const alsFall = (r: Zeile): FallOhneLeserecht => ({
   id: r.id as string, aufgabeId: r.aufgabe_id as string, mappeId: r.mappe_id as string, benutzerId: r.benutzer_id as string,
   aufgabentext: r.aufgabentext as string, beginn: iso(r.beginn), ende: isoOder(r.ende), endeGrund: (r.ende_grund as FallEnde | null) ?? null,
@@ -558,7 +558,7 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
   const MAP = sql.unsafe(MAPPEN_SPALTEN.join(', '));
   const SUCHINDEX = sql.unsafe(SUCHINDEX_TEXT);
   // „Zuletzt geändert“ (#609): auf Millisekunden genau (wie in der API) und bei jedem Schreiben größer als vorher.
-  const STAND_WEITER = sql.unsafe(t('meldungen.repopg.greatest-date-trunc-milliseconds'));
+  const STAND_WEITER = sql.unsafe("greatest(date_trunc('milliseconds', clock_timestamp()), date_trunc('milliseconds', geaendert) + interval '1 millisecond')");
   /**
    * Suchkonfigurationen der Sprachen, die in der Ablage vorkommen (#400): Deutsch immer, dazu die der Dokumente.
    * Eine Minute gemerkt; neu, sobald eine Sprache gesetzt wird. Lockerer Indexlauf über (haushalt_id, sprache), dazu
@@ -2615,15 +2615,16 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
       const [r] = await sql`SELECT * FROM notizen WHERE haushalt_id = ${haushaltId} AND id = ${id}`;
       return r ? alsNotiz(r) : undefined;
     },
+    // Erwähnungen nie mit Titel speichern (#1293) – auch für Wege am Dienst vorbei (z. B. Umbau eines Pakets).
     async legeNotizAn(n) {
       const [r] = await sql`
         INSERT INTO notizen (id, haushalt_id, mappe_id, text, erstellt_von, geaendert_von)
-        VALUES (${n.id}, ${haushaltId}, ${n.mappeId}, ${n.text}, ${istUuid(n.erstelltVon) ? n.erstelltVon : null}::uuid, ${istUuid(n.erstelltVon) ? n.erstelltVon : null}::uuid)
+        VALUES (${n.id}, ${haushaltId}, ${n.mappeId}, ${ohneTitel(n.text)}, ${istUuid(n.erstelltVon) ? n.erstelltVon : null}::uuid, ${istUuid(n.erstelltVon) ? n.erstelltVon : null}::uuid)
         RETURNING *`;
       return alsNotiz(r);
     },
     async aendereNotiz(id, text, von) {
-      const [r] = await sql`UPDATE notizen SET text = ${text}, geaendert = now(), geaendert_von = ${istUuid(von) ? von : null}::uuid
+      const [r] = await sql`UPDATE notizen SET text = ${ohneTitel(text)}, geaendert = now(), geaendert_von = ${istUuid(von) ? von : null}::uuid
         WHERE haushalt_id = ${haushaltId} AND id = ${id} RETURNING *`;
       return alsNotiz(r);
     },

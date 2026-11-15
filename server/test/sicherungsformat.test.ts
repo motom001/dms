@@ -1,11 +1,12 @@
 /** Dateiformat der Sicherung (#103): schreiben, lesen, falscher Schlüssel, veränderte Datei. */
 import assert from 'node:assert/strict';
-import { randomBytes } from 'node:crypto';
+import { createCipheriv, randomBytes } from 'node:crypto';
 import { mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, it } from 'node:test';
-import { liesKopf, liesSicherung, sammle, schreibeSicherung, sha256Von, type Eintrag } from '../src/sicherungsformat';
+import { gzipSync } from 'node:zlib';
+import { ABLEITUNG, FORMAT, liesKopf, liesSicherung, MAGIE, sammle, schreibeSicherung, sha256Von, type Eintrag } from '../src/sicherungsformat';
 
 async function* beispiel(gross: Buffer): AsyncGenerator<Eintrag> {
   yield { art: 'M', kopf: { format: 1, tabellen: ['a'] } };
@@ -21,7 +22,33 @@ async function allesLesen(pfad: string, k: Buffer) {
   return erg;
 }
 
+/** Eine Sicherung, wie sie ältere Fassungen schrieben – mit `ableitung` aus den Sprachdateien (#1264). */
+function alteSicherung(k: Buffer, ableitung: string): Buffer {
+  const u32 = (n: number) => { const b = Buffer.alloc(4); b.writeUInt32BE(n); return b; };
+  const nonce = randomBytes(12);
+  const kopf = Buffer.from(JSON.stringify({ format: FORMAT, verfahren: 'AES-256-GCM', ableitung, kompression: 'gzip', fingerabdruck: 'ALT', nonce: nonce.toString('base64url') }), 'utf8');
+  const vorspann = Buffer.concat([MAGIE, u32(kopf.length), kopf]);
+  const eintrag = (art: string, k2: object) => { const j = Buffer.from(JSON.stringify(k2), 'utf8'); return Buffer.concat([Buffer.from(art, 'latin1'), u32(j.length), j, u32(0)]); };
+  const c = createCipheriv('aes-256-gcm', k, nonce);
+  c.setAAD(vorspann);
+  const inhalt = Buffer.concat([c.update(gzipSync(Buffer.concat([eintrag('M', { format: 1 }), eintrag('E', { tabellen: 0 })]))), c.final()]);
+  return Buffer.concat([vorspann, inhalt, c.getAuthTag()]);
+}
+
 describe('Sicherungsformat (#103)', () => {
+  it('ableitung fest im Code; ältere Sicherungen mit deutschem oder englischem Text bleiben lesbar (#1264)', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'dms-format-'));
+    const k = randomBytes(32);
+    await schreibeSicherung(join(dir, 'neu.dms-sicherung'), k, 'NEU', beispiel(Buffer.from('x')));
+    assert.equal((await liesKopf(join(dir, 'neu.dms-sicherung'))).kopf.ableitung, ABLEITUNG);
+    assert.equal(ABLEITUNG, 'HKDF-SHA256 „dms-sicherung“ aus dem Schlüssel der Werkbank', 'wie bisher auf Deutsch');
+    for (const alt of ['HKDF-SHA256 „dms-sicherung“ aus dem Schlüssel der Werkbank', 'HKDF-SHA256 “dms-sicherung” from the Workbench key']) {
+      const pfad = join(dir, `alt-${alt.length}.dms-sicherung`);
+      await writeFile(pfad, alteSicherung(k, alt));
+      assert.deepEqual((await allesLesen(pfad, k)).map((x) => x.art), ['M', 'E'], alt);
+    }
+  });
+
   it('schreibt und liest Einträge beliebiger Größe; Prüfsumme stimmt', async () => {
     const dir = await mkdtemp(join(tmpdir(), 'dms-format-'));
     const k = randomBytes(32);

@@ -168,7 +168,7 @@ Then click **Check connection**. Afterwards turn on the switch **Sign-in with th
 - **On signing out, also sign out at the provider:** whoever signed in via the provider is also signed out there on signing out (if the provider offers this).
 - A set-up [two-factor sign-in](#zwei-faktor-anmeldung) in Ablago also applies here. If the provider already requires a second factor, don't additionally require it in Ablago for these roles.
 
-Every sign-in, refusal and created user is in the [log](fehlersuche.md#protokoll). If a sign-in fails, the sign-in page shows the reason.
+Every sign-in, refusal and created user is in the [log](fehlersuche.md#protokoll). If a sign-in fails, the sign-in page shows the reason as a fixed sentence from Ablago (e.g. “The sign-in provider cannot be reached right now” or “There is no account in Ablago for this provider account”); the details, such as the provider’s message, are only in the log. The address only carries a short code, never text – so nobody can build a link that shows a foreign sentence on the real sign-in page.
 
 !!! tip "In your own network"
     If the provider runs in the home network (e.g. Keycloak on the NAS), `http://` also works – but only for addresses in your own network. Ablago must be able to reach the provider itself.

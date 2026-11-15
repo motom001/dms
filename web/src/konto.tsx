@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { PASSWORT_MINDESTLAENGE } from '../../shared/src/model';
+import { anmeldefehlerCode } from '../../shared/src/anmeldefehler';
 import { ABGEMELDET } from './api/anfrage';
 import { kontoApi, type KontoStatus, type WartungOeffentlich, type ZweiteWege } from './api/konto';
 import { erlaubteSprachen, setzeErlaubteSprachen } from '../../shared/src/beschriftung';
@@ -288,11 +289,13 @@ function CodeSchritt({ kennung, wege = { code: true, passkey: false }, fertig, z
 }
 
 function Anmelden({ mail, wartung, anbieter, passkey, fertig }: { mail: boolean; wartung?: WartungOeffentlich | null; anbieter: KontoStatus['anbieter']; passkey: boolean; fertig: () => Promise<void> }) {
-  // Fehler der Anmeldung über einen Anbieter (#241) kommen als ?anmeldefehler= zurück.
+  // Fehler der Anmeldung über einen Anbieter (#241) kommen als ?anmeldefehler=<Code> zurück (#1263): Der Text kommt aus
+  // den Sprachdateien, ein unbekannter Code (oder ein beliebiger Text) zeigt den allgemeinen.
   const [anbieterFehler] = useState(() => {
     const m = new URLSearchParams(location.search).get('anmeldefehler');
-    if (m) history.replaceState(null, '', location.pathname);
-    return m;
+    if (m === null) return null;
+    history.replaceState(null, '', location.pathname);
+    return t(`anmeldung.anbieterfehler.${anmeldefehlerCode(m)}`);
   });
   const [mitPasswort, setMitPasswort] = useState(false);
   const [email, setEmail] = useState('');
@@ -324,6 +327,8 @@ function Anmelden({ mail, wartung, anbieter, passkey, fertig }: { mail: boolean;
   return (
     <Karte titel={t('anmeldung.titel')}>
       <WartungsHinweis start={wartung} />
+      {/* Auch ohne Anbieter-Knopf (#1263): z. B. „nicht eingerichtet“, wenn die Anmeldung inzwischen ausgeschaltet ist. */}
+      {!anbieter && anbieterFehler && <p className="fehlertext" role="alert">{anbieterFehler}</p>}
       {anbieter && <>
         <a id="anmelden-anbieter" className="knopf primaer breit" href="/api/konto/anbieter/start" onClick={merkeZiel}>{anbieter.knopf}</a>
         {anbieterFehler && <p className="fehlertext" role="alert">{anbieterFehler}</p>}

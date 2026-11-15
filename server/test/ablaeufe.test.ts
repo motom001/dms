@@ -274,7 +274,7 @@ describe('Ablauftests vor dem Umbau (#959, PostgreSQL)', { skip: url ? false : '
       // Neue Aufgaben für Lena gehen an Jonas – mit Eintrag in der Historie.
       let x = await erwaehne(petra, 'Telefon');
       assert.equal(x.a.empfaengerId, jonas.id);
-      assert.ok((await historie(x.m.id)).some((h) => h.art === 'aufgabe' && h.daten.text === 'weitergegeben wegen Abwesenheit von Lena an Jonas: Erwähnt von Petra in „Notiz“'));
+      assert.ok((await historie(x.m.id)).some((h) => h.art === 'aufgabe' && h.daten.text === 'weitergegeben wegen Abwesenheit von Lena an Jonas: Erwähnung (Text nur für die erwähnte Person)'));
       const post = await d.post.legePostAn({ betreff: 'Brief', fuer: lena.id }, { id: markus.id, name: 'Markus' });
       await verteile();
       assert.deepEqual((await offene(post.id, 'post')).map((a) => a.empfaengerId), [jonas.id]);
