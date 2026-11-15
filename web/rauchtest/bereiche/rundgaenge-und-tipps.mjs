@@ -76,3 +76,54 @@ rauchtest('Handy: Werkbank → Rundgänge, Tippflächen (#941)', { handy: true, 
   const zuKlein = await tippflaechenPruefen(s, ['.spalte.liste']);
   assert.deepEqual(zuKlein, [], `Zu kleine Tippflächen:\n${zuKlein.join('\n')}`);
 });
+
+rauchtest('Werkbank → Tipps: eigener Tipp mit Vorschau, Tipp von Ablago anpassen und zurücksetzen (#942)', { als: LENA, timeout: 110_000 }, async (s) => {
+  const funde = [];
+  await s.goto(BASIS + '/ablage/start');
+  await verwalten(s);
+  await s.goto(BASIS + '/werkbank/tipps/neu');
+  const bearbeitung = s.getByRole('region', { name: 'Bearbeitung' });
+  const text = bearbeitung.getByRole('textbox', { name: 'Text' });
+  await text.waitFor();
+  await text.fill('Rauchtest: Oben suchst du in allen Mappen.');
+  await bearbeitung.locator('.tipp-vorschau').getByText('Rauchtest: Oben suchst du in allen Mappen.').waitFor();
+  await bearbeitung.getByRole('combobox', { name: 'Stelle' }).selectOption('startseite.suche');
+  await bearbeitung.getByRole('button', { name: 'Tipp anlegen' }).click();
+  await s.waitForURL(/\/werkbank\/tipps\/eigen%3Atipp_1$/);
+  const liste = s.getByRole('region', { name: 'Elemente' });
+  await liste.getByRole('link', { name: /Rauchtest: Oben suchst du/ }).waitFor();
+  for (const schema of ['light', 'dark']) {
+    await s.emulateMedia({ colorScheme: schema });
+    await s.waitForTimeout(400);
+    for (const v of await axePruefen(s, WERKBANK_BEREICHE)) funde.push(`Eigener Tipp (${schema}): ${v}`);
+  }
+  await s.emulateMedia({ colorScheme: 'light' });
+  // Tipp von Ablago anpassen: Original bleibt, „angepasst“ in der Liste, zurücksetzen.
+  await s.goto(BASIS + '/werkbank/tipps/favoriten');
+  await text.waitFor();
+  const original = await text.inputValue();
+  await text.fill('Rauchtest: Bei uns heißen Favoriten Merkliste.');
+  await bearbeitung.getByRole('button', { name: 'Tipp speichern' }).click();
+  await liste.getByRole('link', { name: /Merkliste.*angepasst/ }).waitFor();
+  await bearbeitung.getByText(`Original: ${original}`).waitFor();
+  for (const schema of ['light', 'dark']) {
+    await s.emulateMedia({ colorScheme: schema });
+    await s.waitForTimeout(400);
+    for (const v of await axePruefen(s, WERKBANK_BEREICHE)) funde.push(`Angepasster Tipp (${schema}): ${v}`);
+  }
+  await s.emulateMedia({ colorScheme: 'light' });
+  await bearbeitung.getByRole('button', { name: 'Auf Original zurücksetzen' }).click();
+  await liste.getByRole('link', { name: original.slice(0, 30) }).first().waitFor();
+  assert.equal(await liste.getByRole('link', { name: /Merkliste/ }).count(), 0);
+  assert.deepEqual(funde, [], `axe meldet Verstöße:\n${funde.join('\n')}`);
+});
+
+rauchtest('Handy: Werkbank → Tipps, Tippflächen (#942)', { handy: true, als: LENA }, async (s) => {
+  await s.goto(BASIS + '/ablage/start');
+  await verwalten(s);
+  await s.goto(BASIS + '/werkbank/tipps');
+  await s.getByRole('region', { name: 'Elemente' }).getByRole('link').nth(2).waitFor();
+  await keineWaagerechteRolle(s);
+  const zuKlein = await tippflaechenPruefen(s, ['.spalte.liste']);
+  assert.deepEqual(zuKlein, [], `Zu kleine Tippflächen:\n${zuKlein.join('\n')}`);
+});

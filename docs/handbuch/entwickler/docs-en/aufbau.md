@@ -920,6 +920,8 @@ A package names `inhalt.tipps: inhalt/tipps.yaml`; the text is written directly 
   ziel: mappe.feld:kuendigen_bis      # … or leads to this place (in the first readable folder of the type)
 ```
 
+**Workbench → Tips** (#942): own tips (`eigen:tipp_<n>`) and adaptations of tips from Ablago and from packages are stored in the setting `entdecken_werkbank` – adaptations per full key with the new values and the original as it was then (this is how the Workbench sees that the original has changed since the adaptation). An adaptation that no longer passes the check (e.g. tour deleted) does not apply; the original applies again. “Create package” writes own tips to `inhalt/tipps.yaml`; adaptations of other packages' tips only come along with #654 as an addendum.
+
 `bereich` is optional in packages (default `mappen`). A target inside a folder (`mappe.feld:`, `mappe.register:`) needs `typ`; the interface then opens the first folder of that type the person may read (`GET /api/entdecken/tipps/:schluessel/oeffnen`). “New since your last visit” applies for 30 days after the package was updated to a version from `ab_version` (Ablago keeps the previous version with the installed package). The check on installation works like for tours: schema, known anchors, fields and registers, tours of the package, at most 20 tips and 160 characters, two sentences.
 
 ### Anchor points { #anker }

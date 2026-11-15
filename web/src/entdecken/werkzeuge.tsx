@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import type { Rundgang } from '../../../shared/src/entdecken';
 import { Knopf } from '../bausteine';
 import { t } from '../sprache';
-import { probiereRundgang } from './stand';
+import { ladeEntdecken, probiereRundgang, starteRundgang, zeigeZiel } from './stand';
 
 /**
  * Werkzeuge der Werkbank für Rundgänge (#941) und Tipps (#942), die in einem **eigenen Fenster** laufen – so bleibt
@@ -14,6 +14,8 @@ import { probiereRundgang } from './stand';
  *   endet). Stellen mit Ankerpunkt (`data-anker`) werden beim Überfahren hervorgehoben; ein Klick wählt sie, Esc bricht
  *   ab. Stellen ohne Anker sind nicht wählbar – ein Klick dort bedient die Seite wie sonst (z. B. eine Mappe öffnen).
  *   Der gewählte Anker geht über einen BroadcastChannel an den Editor zurück, dann schließt sich das Fenster.
+ * - **Tipp ausprobieren** (#942): Ablago öffnet das Ziel mit `?tipp-probe=<anker>` (hebt die Stelle hervor wie „Zeig es
+ *   mir“) bzw. mit `?rundgang-start=<rundgang>` (startet den Rundgang).
  */
 
 const PROBE = 'ablago:rundgang-probe';
@@ -39,6 +41,12 @@ export function starteProbe(rundgang: Rundgang, pfad: string | null): boolean {
 /** „Ziel zeigen“: Ablago im Auswahlmodus öffnen. false, wenn das Fenster blockiert wurde. */
 export function zielZeigen(start = '/ablage/start'): boolean {
   return !!window.open(`${start}?ziel-zeigen=1`, '_blank');
+}
+
+/** Tipp ausprobieren: Seite mit hervorgehobener Stelle bzw. Rundgang im neuen Fenster. false, wenn blockiert. */
+export function tippProbe(ziel: { pfad: string; anker: string } | { rundgang: string }): boolean {
+  const url = 'rundgang' in ziel ? `/ablage/start?rundgang-start=${encodeURIComponent(ziel.rundgang)}` : `${ziel.pfad}${ziel.pfad.includes('?') ? '&' : '?'}tipp-probe=${encodeURIComponent(ziel.anker)}`;
+  return !!window.open(url, '_blank');
 }
 
 /** Auf die Wahl im anderen Fenster warten: der Anker oder null (abgebrochen). */
@@ -67,6 +75,16 @@ export function EntdeckenWerkzeuge() {
       const roh = speicher.hole(lokal(), PROBE);
       speicher.weg(lokal(), PROBE);
       try { if (roh) { const x = JSON.parse(roh) as { rundgang: Rundgang; pfad: string | null }; probiereRundgang(x.rundgang, x.pfad); } } catch { /* nichts auszuprobieren */ }
+    }
+    const anker = q.get('tipp-probe');
+    if (anker) {
+      ohneParameter('tipp-probe');
+      void zeigeZiel({ schluessel: 'probe', herkunft: 'eigen', bereich: 'mappen', text: '', neu: false, ausgeblendet: false, clients: false, ziel: { anker, seite: location.pathname } });
+    }
+    const rundgang = q.get('rundgang-start');
+    if (rundgang) {
+      ohneParameter('rundgang-start');
+      void ladeEntdecken().then(() => starteRundgang(rundgang));
     }
     if (q.get('ziel-zeigen') === '1') {
       ohneParameter('ziel-zeigen');

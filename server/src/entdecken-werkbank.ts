@@ -9,8 +9,8 @@
  * Eigene Rundgänge starten nie von selbst (`start` ist immer `manuell`), Texte sind reiner Text.
  */
 import { LineCounter, parseDocument, stringify, isMap, isSeq, type Document, type Node } from 'yaml';
-import { pruefeRundgaenge, SCHLUESSEL, type Anker, type Pfad, type Rundgang, type TypInfo } from '../../shared/src/entdecken';
-import { ausSchluessel, EIGEN, type WerkbankRundgang, type ZeilenFehler } from '../../shared/src/entdecken-werkbank';
+import { pruefeRundgaenge, pruefeTipps, SCHLUESSEL, TIPP_BEREICHE, type Anker, type Pfad, type Rundgang, type Tipp, type TypInfo } from '../../shared/src/entdecken';
+import { ausSchluessel, EIGEN, type FeldFehler, type TippDaten, type WerkbankRundgang, type WerkbankTipp, type ZeilenFehler } from '../../shared/src/entdecken-werkbank';
 import { Fachfehler } from './fehler';
 import { t } from './sprache';
 
@@ -22,8 +22,17 @@ export const EIGENE_RUNDGAENGE_MAX = 50;
 export const RUNDGANG_DATEI_MAX = 20_000;
 
 export interface EigenerRundgang { schluessel: string; yaml: string; geaendert: string; von: string | null }
+/** Eigener Tipp (#942). */
+export interface EigenerTipp { schluessel: string; daten: TippDaten; geaendert: string; von: string | null }
+/** Anpassung eines Tipps von Ablago oder aus einem Paket (#942): neue Angaben und das Original, wie es damals war. */
+export interface TippAnpassung { daten: TippDaten; original: TippDaten; geaendert: string; von: string | null }
+/** So viele eigene Tipps höchstens. */
+export const EIGENE_TIPPS_MAX = 100;
 export interface EntdeckenWerkbank {
   rundgaenge: EigenerRundgang[];
+  tipps: EigenerTipp[];
+  /** Je vollem Schlüssel des Tipps (ablago-Tipp ohne Präfix, paket:schluessel). */
+  anpassungen: Record<string, TippAnpassung>;
   /** Ausgeschaltet: `rundgang:<schluessel>` bzw. `tipp:<schluessel>` (volle Schlüssel, z. B. rundgang:vertraege:kennenlernen). */
   aus: string[];
 }
@@ -36,7 +45,57 @@ export function werkbankAus(x: unknown): EntdeckenWerkbank {
   const rundgaenge = (Array.isArray(o.rundgaenge) ? o.rundgaenge : []).filter(istObjekt)
     .filter((r) => typeof r.schluessel === 'string' && typeof r.yaml === 'string')
     .map((r) => ({ schluessel: String(r.schluessel), yaml: String(r.yaml), geaendert: String(r.geaendert ?? ''), von: typeof r.von === 'string' ? r.von : null }));
-  return { ...o, rundgaenge, aus: (Array.isArray(o.aus) ? o.aus : []).filter((y): y is string => typeof y === 'string') };
+  const tipps = (Array.isArray(o.tipps) ? o.tipps : []).filter(istObjekt).filter((x) => typeof x.schluessel === 'string' && istObjekt(x.daten))
+    .map((x) => ({ schluessel: String(x.schluessel), daten: x.daten as unknown as TippDaten, geaendert: String(x.geaendert ?? ''), von: typeof x.von === 'string' ? x.von : null }));
+  const anpassungen = Object.fromEntries(Object.entries(istObjekt(o.anpassungen) ? o.anpassungen : {}).filter(([, v]) => istObjekt(v) && istObjekt(v.daten) && istObjekt(v.original))
+    .map(([k, v]) => { const a = v as Record<string, unknown>; return [k, { daten: a.daten as TippDaten, original: a.original as TippDaten, geaendert: String(a.geaendert ?? ''), von: typeof a.von === 'string' ? a.von : null }]; }));
+  return { ...o, rundgaenge, tipps, anpassungen, aus: (Array.isArray(o.aus) ? o.aus : []).filter((y): y is string => typeof y === 'string') };
+}
+
+/* ---------- Tipps (#942) ---------- */
+
+/** Angaben eines Tipps, wie die Werkbank sie zeigt. */
+export const tippDaten = (x: Tipp): TippDaten => ({ text: x.text, bereich: x.bereich, fuer: x.fuer, ...(x.ziel ? { ziel: x.ziel } : {}), ...(x.rundgang ? { rundgang: x.rundgang } : {}), ...(x.typ ? { typ: x.typ } : {}) });
+const gleich = (a: TippDaten, b: TippDaten) => JSON.stringify(tippDatenAus(a)) === JSON.stringify(tippDatenAus(b));
+
+/** Eingabe des Formulars vereinheitlichen (nur bekannte Felder, Texte getrimmt). */
+export function tippDatenAus(x: unknown): TippDaten {
+  const o = istObjekt(x) ? x : {};
+  const s = (v: unknown) => (typeof v === 'string' && v.trim() ? v.trim() : undefined);
+  const bereich = TIPP_BEREICHE.includes(o.bereich as never) ? o.bereich as TippDaten['bereich'] : 'mappen';
+  const ziel = s(o.ziel), rundgang = s(o.rundgang), typ = s(o.typ);
+  return { text: typeof o.text === 'string' ? o.text.trim() : '', bereich, fuer: o.fuer === 'verwalten' ? 'verwalten' : 'lesen', ...(ziel ? { ziel } : {}), ...(rundgang ? { rundgang } : {}), ...(typ ? { typ } : {}) };
+}
+
+/**
+ * Angaben eines Tipps prüfen wie beim Installieren eines Pakets (Länge, zwei Sätze, Anker, Rundgang, Mappentyp).
+ * `rundgaenge`: volle Schlüssel aller Rundgänge; `herkunft`: wessen Tipp.
+ */
+export function pruefeTippDaten(d: TippDaten, o: { anker: readonly Anker[]; rundgaenge: readonly string[]; typ: (kennung: string) => TypInfo | null; herkunft?: Tipp['herkunft'] }): { fehler: FeldFehler[]; tipp: Tipp | null } {
+  const r = pruefeTipps([{ schluessel: 'tipp', ...d }], { herkunft: o.herkunft ?? EIGEN, anker: o.anker, rundgaenge: o.rundgaenge, typ: o.typ });
+  return { fehler: r.fehler.map((text, i) => ({ feld: typeof r.orte[i][1] === 'string' ? String(r.orte[i][1]) : null, text: text.replace(/^Tipp („[^“]*“|\d+): /, '') })), tipp: r.tipps[0] ?? null };
+}
+
+/** Eigene Tipps und Anpassungen anwenden (für „Ablago entdecken“). Fehlerhafte Anpassungen gelten nicht – dann das Original. */
+export function tippsMitWerkbank(tipps: Tipp[], w: EntdeckenWerkbank, o: { anker: readonly Anker[]; rundgaenge: readonly string[]; typ: (kennung: string) => TypInfo | null }): { tipps: Tipp[]; originale: Map<string, Tipp>; fehler: Map<string, string[]> } {
+  const originale = new Map<string, Tipp>();
+  const fehler = new Map<string, string[]>();
+  const aus = tipps.map((x) => {
+    const a = w.anpassungen[x.schluessel];
+    if (!a) return x;
+    originale.set(x.schluessel, x);
+    const p = pruefeTippDaten(a.daten, { ...o, herkunft: x.herkunft });
+    if (!p.tipp) { fehler.set(x.schluessel, p.fehler.map((f) => f.text)); return x; }
+    const basis: Tipp = { ...x };
+    delete basis.ziel; delete basis.rundgang; delete basis.typ;
+    return { ...basis, ...tippDaten(p.tipp), schluessel: x.schluessel };
+  });
+  for (const e of w.tipps) {
+    const p = pruefeTippDaten(e.daten, o);
+    if (p.tipp) aus.push({ ...p.tipp, schluessel: `${EIGEN}:${e.schluessel}` });
+    else fehler.set(`${EIGEN}:${e.schluessel}`, p.fehler.map((f) => f.text));
+  }
+  return { tipps: aus, originale, fehler };
 }
 
 /** Zeile (1-basiert) eines Ortes in der Datei: der tiefste Knoten, den es gibt. */
@@ -111,6 +170,9 @@ export class RundgaengeWerkbank {
 
   async lies(): Promise<EntdeckenWerkbank> { return werkbankAus(await this.o.speicher.lies()); }
 
+  /** Anker und Mappentypen der Ablage zum Prüfen. */
+  pruefungDaten() { return this.o.pruefung(); }
+
   /** Schreiben; gab es inzwischen einen anderen Stand, 409 (#917) – nichts wird überschrieben. */
   private async aendere(f: (w: EntdeckenWerkbank) => EntdeckenWerkbank): Promise<EntdeckenWerkbank> {
     for (let versuch = 0; versuch < 3; versuch++) {
@@ -160,6 +222,86 @@ export class RundgaengeWerkbank {
     if (typeof an !== 'boolean') throw new Fachfehler(422, t('werkbank.rundgaenge.fehler.an'));
     const k = ausSchluessel(art, schluessel);
     await this.aendere((w) => ({ ...w, aus: an ? w.aus.filter((x) => x !== k) : [...new Set([...w.aus, k])] }));
+  }
+
+  /**
+   * Tipp speichern: neu (`alt` = null, eigener), eigener ändern oder Tipp von Ablago bzw. aus einem Paket anpassen
+   * (`original`: wie er jetzt ist – die Anpassung steht getrennt, das Original bleibt). Mit `stand` (#917).
+   */
+  async speichereTipp(alt: string | null, e: unknown, von: string | null, k: { anker: readonly Anker[]; rundgaenge: readonly string[]; typ: (kennung: string) => TypInfo | null; original?: Tipp }): Promise<{ schluessel: string; geaendert: string }> {
+    const x = istObjekt(e) ? e : {};
+    const daten = tippDatenAus(x.daten);
+    const p = pruefeTippDaten(daten, { ...k, herkunft: k.original?.herkunft });
+    if (p.fehler.length) throw new Fachfehler(422, t('werkbank.tipps.fehler.pruefung'), { fehler: p.fehler });
+    const geaendert = (this.o.jetzt?.() ?? new Date()).toISOString();
+    const stand = typeof x.stand === 'string' ? x.stand : undefined;
+    const konflikt = () => new Fachfehler(409, t('werkbank.rundgaenge.fehler.konflikt'), { konflikt: true });
+    let schluessel = alt ?? '';
+    await this.aendere((w) => {
+      if (k.original && alt) {
+        const vorher = w.anpassungen[alt];
+        if (stand !== undefined && (vorher?.geaendert ?? '') !== stand) throw konflikt();
+        // Wie das Original: keine Anpassung (zurück auf das Original).
+        const anpassungen = { ...w.anpassungen };
+        if (gleich(daten, tippDaten(k.original))) delete anpassungen[alt];
+        else anpassungen[alt] = { daten, original: vorher?.original ?? tippDaten(k.original), geaendert, von };
+        return { ...w, anpassungen };
+      }
+      if (alt) {
+        const lokal = alt.slice(EIGEN.length + 1);
+        const vorher = w.tipps.find((y) => y.schluessel === lokal);
+        if (!vorher) throw new Fachfehler(404, t('werkbank.tipps.fehler.gibt-es-nicht'));
+        if (stand !== undefined && vorher.geaendert !== stand) throw konflikt();
+        return { ...w, tipps: w.tipps.map((y) => (y === vorher ? { ...y, daten, geaendert, von } : y)) };
+      }
+      if (w.tipps.length >= EIGENE_TIPPS_MAX) throw new Fachfehler(422, t('werkbank.tipps.fehler.viele', { max: EIGENE_TIPPS_MAX }));
+      let n = w.tipps.length + 1;
+      while (w.tipps.some((y) => y.schluessel === `tipp_${n}`)) n++;
+      schluessel = `${EIGEN}:tipp_${n}`;
+      return { ...w, tipps: [...w.tipps, { schluessel: `tipp_${n}`, daten, geaendert, von }] };
+    });
+    return { schluessel, geaendert };
+  }
+
+  /** Eigenen Tipp löschen bzw. Anpassung entfernen („Auf Original zurücksetzen“). */
+  async loescheTipp(schluessel: string): Promise<void> {
+    await this.aendere((w) => {
+      if (schluessel.startsWith(`${EIGEN}:`)) {
+        const lokal = schluessel.slice(EIGEN.length + 1);
+        if (!w.tipps.some((y) => y.schluessel === lokal)) throw new Fachfehler(404, t('werkbank.tipps.fehler.gibt-es-nicht'));
+        return { ...w, tipps: w.tipps.filter((y) => y.schluessel !== lokal), aus: w.aus.filter((x) => x !== ausSchluessel('tipp', schluessel)) };
+      }
+      const anpassungen = { ...w.anpassungen };
+      delete anpassungen[schluessel];
+      return { ...w, anpassungen };
+    });
+  }
+
+  /** Liste der Tipps für die Werkbank: wirksam, mit Original und Hinweis, wenn sich das Original seit der Anpassung geändert hat. */
+  async tippListe(tipps: Tipp[], originale: Map<string, Tipp>, paketName: (id: string) => string | undefined, fehler: Map<string, string[]>): Promise<WerkbankTipp[]> {
+    const w = await this.lies();
+    const aus = new Set(w.aus);
+    const liste: WerkbankTipp[] = tipps.filter((x) => !x.schluessel.startsWith('angebot:')).map((x) => {
+      const eigen = x.herkunft === EIGEN ? w.tipps.find((y) => `${EIGEN}:${y.schluessel}` === x.schluessel) : undefined;
+      const a = w.anpassungen[x.schluessel];
+      const original = originale.get(x.schluessel) ?? (x.herkunft === EIGEN ? undefined : x);
+      const paket = x.herkunft.startsWith('paket:') ? x.herkunft.slice(6) : null;
+      const stand = eigen ?? a;
+      return {
+        schluessel: x.schluessel, herkunft: x.herkunft, ...(paket ? { paketName: paketName(paket) ?? paket } : {}),
+        daten: a?.daten ?? tippDaten(x), an: !aus.has(ausSchluessel('tipp', x.schluessel)), angepasst: !!a,
+        ...(original ? { original: tippDaten(original) } : {}), ...(a && original && !gleich(a.original, tippDaten(original)) ? { originalVorher: a.original } : {}),
+        ...(x.funktion ? { funktion: x.funktion } : {}), ...(stand ? { geaendert: stand.geaendert, von: stand.von } : {}),
+        ...(fehler.has(x.schluessel) ? { fehler: fehler.get(x.schluessel) } : {}),
+      };
+    });
+    // Eigene, die gerade nicht gelten: trotzdem zeigen, zum Reparieren.
+    for (const e of w.tipps) {
+      const k = `${EIGEN}:${e.schluessel}`;
+      if (liste.some((x) => x.schluessel === k)) continue;
+      liste.push({ schluessel: k, herkunft: EIGEN, daten: e.daten, an: !aus.has(ausSchluessel('tipp', k)), angepasst: false, geaendert: e.geaendert, von: e.von, fehler: fehler.get(k) ?? [] });
+    }
+    return liste;
   }
 
   /** Liste für die Werkbank aus allen Rundgängen (wie „Ablago entdecken“, ungefiltert) und den eigenen Dateien. */

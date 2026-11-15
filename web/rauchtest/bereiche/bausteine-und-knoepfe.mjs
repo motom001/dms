@@ -187,12 +187,12 @@ rauchtest('Werkbank: Hilfesymbol direkt hinter der Überschrift, nie im Text des
   await s.waitForURL(/\/werkbank/);
   const bereiche = s.getByRole('complementary', { name: 'Bereiche' });
   await bereiche.getByRole('link').first().waitFor();
-  const alle = ['pakete', 'typen', 'sichten', 'nummernkreise', 'automatisierungen', 'rundgaenge', 'benutzer', 'verschluesselung', 'organisation', 'auskuenfte', 'loeschkonzept', 'loeschprotokoll',
+  const alle = ['pakete', 'typen', 'sichten', 'nummernkreise', 'automatisierungen', 'rundgaenge', 'tipps', 'benutzer', 'verschluesselung', 'organisation', 'auskuenfte', 'loeschkonzept', 'loeschprotokoll',
     'aufbewahrung', 'stempel', 'postfaecher', 'eingangsordner', 'webdav', 'texterkennung', 'sicherung', 'vollexport', 'papierkorb', 'daten',
     'betrieb', 'region', 'sprachen', 'aufgaben', 'anmeldeschutz', 'designs', 'anbindung', 'systemzustand', 'protokoll', 'fehlermeldungen', 'wartung', 'demo']
     .map((b) => `/werkbank/${b}`);
   const leiste = await bereiche.evaluate((b) => [...b.querySelectorAll('a[href^="/werkbank/"]')].map((a) => a.getAttribute('href').split(/[?#]/)[0]));
-  const wege = [...new Set([...alle, ...leiste, '/werkbank/stempel/neu', '/werkbank/auskuenfte/neu', '/werkbank/rundgaenge/neu'])];
+  const wege = [...new Set([...alle, ...leiste, '/werkbank/stempel/neu', '/werkbank/auskuenfte/neu', '/werkbank/rundgaenge/neu', '/werkbank/tipps/neu'])];
   const imText = [];
   const mitHilfe = [];
   for (const weg of wege) {

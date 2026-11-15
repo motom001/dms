@@ -5,7 +5,7 @@ Die **Werkbank** gibt es nur im [Verwaltungsmodus](verwalten.md#der-verwaltungsm
 <!-- bereiche:gruppen -->
 | Gruppe | Bereiche |
 | --- | --- |
-| **Ablage aufbauen** | [Pakete](pakete.md), [Mappentypen](mappentypen.md), [Ansichten](sichten.md), [Nummernkreise](nummernkreise.md), [Automatisierungen](automatisierungen.md), [Automatisierungsvorlagen](automatisierungsvorlagen.md), [Rundgänge](rundgaenge.md) |
+| **Ablage aufbauen** | [Pakete](pakete.md), [Mappentypen](mappentypen.md), [Ansichten](sichten.md), [Nummernkreise](nummernkreise.md), [Automatisierungen](automatisierungen.md), [Automatisierungsvorlagen](automatisierungsvorlagen.md), [Rundgänge](rundgaenge.md), [Tipps](tipps.md) |
 | **Benutzer und Sicherheit** | [Benutzer](benutzer.md), [Verschlüsselung](verschluesselung.md), [Aufbewahrung abgelaufen](archiv.md#nach-der-frist-aufbewahrung-abgelaufen) (nur mit Archivmodus), [Stempel](stempel.md) |
 | **Datenschutz** | [Auskünfte](datenschutz.md#auskunft-erteilen) (nur bei beruflicher Nutzung), [Löschkonzept](loeschkonzept.md#aus-dem-dms-erzeugen) (nur bei beruflicher Nutzung), [Löschprotokoll](datenschutz.md#loschprotokoll) (nur bei beruflicher Nutzung) |
 | **Post und Eingänge** | [Postfächer](postfaecher.md), [Eingangsordner](eingangsordner.md) (nur wenn der Ordner eingebunden ist), [WebDAV-Laufwerk](webdav.md), [Suche und Volltext](texterkennung.md), [Gleichbedeutende Wörter](suche.md#gleichbedeutende-worter) |
@@ -158,7 +158,7 @@ Nicht jeder braucht jeden Bereich. Ein Haushalt fasst Nummernkreise, Postfächer
 
 - **Haushalt**: schlank, nur was eine Familie zum Einrichten und Sichern braucht. Neue Installationen beginnen damit. **Selbständige und kleine Betriebe** wählen gleich nach der Einrichtung **Betrieb**.
 <!-- bereiche:organisation -->
-- **Betrieb**: zusätzlich Nummernkreise, Automatisierungen, Automatisierungsvorlagen, Rundgänge, Aufbewahrung abgelaufen, Auskünfte, Löschkonzept, Löschprotokoll, Postfächer, Eingangsordner, Suche und Volltext, Gleichbedeutende Wörter, Anmeldeschutz, Designs, Protokoll, Gemeldete Fehler, Wartung.
+- **Betrieb**: zusätzlich Nummernkreise, Automatisierungen, Automatisierungsvorlagen, Rundgänge, Tipps, Aufbewahrung abgelaufen, Auskünfte, Löschkonzept, Löschprotokoll, Postfächer, Eingangsordner, Suche und Volltext, Gleichbedeutende Wörter, Anmeldeschutz, Designs, Protokoll, Gemeldete Fehler, Wartung.
 <!-- /bereiche:organisation -->
 - **Alles**: jeder Bereich. So bleibt es bei Installationen, die vor Version 0.70 eingerichtet wurden, bis du etwas anderes wählst.
 
@@ -185,6 +185,7 @@ Ist ein ausgeblendeter Bereich eingerichtet, etwa ein Postfach oder die Anmeldun
 | [Automatisierungen](automatisierungen.md) | Abläufe nach dem Muster Wenn – Und – Dann einrichten: bei einem Ereignis oder Datum Felder setzen oder jemandem eine Aufgabe geben | Betrieb, Haushalt im Expertenmodus |
 | [Automatisierungsvorlagen](automatisierungsvorlagen.md) | Vorlagen für Abläufe an einer Mappe: „Aufgabe vergeben“, „Erinnern“, Wiedervorlage – wann sie laufen, wer die Aufgabe bekommt und was beim Anwenden gefragt wird | Betrieb, Haushalt im Expertenmodus |
 | [Rundgänge](rundgaenge.md) | Wenn du Rundgänge sehen, ein- und ausschalten oder eigene schreiben willst – kurze Führungen an der echten Oberfläche. | Betrieb, Haushalt im Expertenmodus |
+| [Tipps](tipps.md) | Wenn du Tipps an eure Arbeitsweise anpassen, eigene schreiben oder einzelne ausschalten willst. | Betrieb, Haushalt im Expertenmodus |
 | [Benutzer](benutzer.md) | Benutzer und Rollen anlegen | Haushalt, Betrieb |
 | [Verschlüsselung](verschluesselung.md) | Den Schlüssel für Passwörter und Sicherungen | Haushalt, Betrieb |
 | [Aufbewahrung abgelaufen](archiv.md#nach-der-frist-aufbewahrung-abgelaufen) | Mappen, deren Aufbewahrungsfrist abgelaufen ist, prüfen und löschen (nur mit Archivmodus) | Betrieb |

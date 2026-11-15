@@ -920,6 +920,8 @@ Ein Paket nennt `inhalt.tipps: inhalt/tipps.yaml`; der Text steht direkt in der 
   ziel: mappe.feld:kuendigen_bis      # … oder führt an diese Stelle (in der ersten lesbaren Mappe des Typs)
 ```
 
+**Werkbank → Tipps** (#942): Eigene Tipps (`eigen:tipp_<n>`) und Anpassungen an Tipps von Ablago und aus Paketen stehen in der Einstellung `entdecken_werkbank` – Anpassungen je vollem Schlüssel mit den neuen Angaben und dem Original von damals (so erkennt die Werkbank, dass sich das Original seit der Anpassung geändert hat). Eine Anpassung, die nicht mehr besteht (z. B. Rundgang gelöscht), gilt nicht; dann wieder das Original. „Paket erstellen“ schreibt eigene Tipps nach `inhalt/tipps.yaml`; Anpassungen fremder Tipps gehen erst mit #654 als Nachtrag mit.
+
 `bereich` ist in Paketen freiwillig (Vorgabe `mappen`). Ein Ziel in einer Mappe (`mappe.feld:`, `mappe.register:`) geht nur mit `typ`; die Oberfläche öffnet dann die erste Mappe dieses Typs, die die Person lesen darf (`GET /api/entdecken/tipps/:schluessel/oeffnen`). „Neu seit deinem letzten Besuch“ gilt 30 Tage nach dem Update des Pakets auf eine Version ab `ab_version` (Ablago merkt sich die Version davor am installierten Paket). Geprüft wird beim Installieren wie bei Rundgängen: Schema, bekannte Anker, Felder und Register, Rundgänge des Pakets, höchstens 20 Tipps und 160 Zeichen, zwei Sätze.
 
 ### Ankerpunkte { #anker }

@@ -58,6 +58,8 @@ const REGELN: Regel[] = [
   R('*', '/api/werkbank/ablaeufe*', 'ablaufvorlagen'),
   // Rundgänge (#941).
   R('*', '/api/werkbank/rundgaenge*', 'rundgaenge'),
+  // Tipps (#942).
+  R('*', '/api/werkbank/tipps*', 'tipps'),
   // Gelöschte Einträge mit ihrer letzten Fassung (#1006): wer einen der Bereiche verwaltet – die Liste zeigt nur dessen Einträge.
   R('GET', '/api/werkbank/fassungen/geloescht', 'typen', 'sichten', 'nummernkreise', 'stempel', 'postfaecher', 'pakete', 'automatisierungen', 'ablaufvorlagen'),
 

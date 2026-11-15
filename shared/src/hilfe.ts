@@ -134,6 +134,7 @@ export const HILFE = {
   'werkbank.suche': admin('suche/', 'Suche: Tippfehler'),
   'werkbank.woerter': admin('suche/', 'Gleichbedeutende Wörter', 'gleichbedeutende-worter'),
   'werkbank.rundgaenge': admin('rundgaenge/', 'Rundgänge'),
+  'werkbank.tipps': admin('tipps/', 'Tipps'),
   'mappentyp.stempel': admin('stempel/', 'Stempel je Mappentyp', 'stempel-je-mappentyp'),
   'werkbank.vollexport': admin('export/', 'Daten exportieren'),
   'werkbank.vollexport.kontakte': admin('export/', 'Kontakte als vCard', 'kontakte-als-vcard'),

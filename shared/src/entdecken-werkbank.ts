@@ -2,7 +2,7 @@
  * Werkbank → Rundgänge (#941) und Tipps (#942): gemeinsame Typen für Server und Oberfläche. Die Regeln (Prüfen, Filtern)
  * stehen in `entdecken.ts`.
  */
-import type { Anker, Fuer, Herkunft, Rundgang, RundgangStart } from './entdecken';
+import type { Anker, Fuer, Herkunft, Rundgang, RundgangStart, TippBereich } from './entdecken';
 
 /** Eigene Rundgänge heißen `eigen:<schluessel>`; so kommen sie Ablagos und denen der Pakete nicht in die Quere. */
 export const EIGEN = 'eigen';
@@ -49,3 +49,51 @@ export interface RundgangPruefergebnis {
   pfad: string | null;
 }
 
+
+/* ---------- Werkbank → Tipps (#942) ---------- */
+
+/** Was man an einem Tipp in der Werkbank einstellt – dieselben Felder wie in tipps.yaml. */
+export interface TippDaten {
+  text: string;
+  bereich: TippBereich;
+  fuer: Fuer;
+  /** Anker (genau eines von ziel und rundgang). */
+  ziel?: string;
+  /** Voller Schlüssel eines Rundgangs, z. B. ablago, vertraege:kennenlernen, eigen:urlaub. */
+  rundgang?: string;
+  /** Nur, wer diesen Mappentyp lesen darf (Kennung). */
+  typ?: string;
+}
+
+/** Ein Tipp in der Werkbank: wirksame Angaben, Herkunft, an/aus, Anpassung. */
+export interface WerkbankTipp {
+  schluessel: string;
+  herkunft: Herkunft;
+  paketName?: string;
+  /** Wie er gerade gilt (mit Anpassung). */
+  daten: TippDaten;
+  an: boolean;
+  /** Tipp von Ablago oder aus einem Paket, getrennt angepasst; das Original bleibt erhalten. */
+  angepasst: boolean;
+  /** Tipps von Ablago und aus Paketen: das Original, wie es jetzt ist. */
+  original?: TippDaten;
+  /** Angepasst, und das Original hat sich seitdem geändert (z. B. nach einem Update des Pakets): so war es damals. */
+  originalVorher?: TippDaten;
+  /** Nur, wenn diese Funktion eingeschaltet ist (fragen, laufwerk, mail) – fest am Original. */
+  funktion?: string;
+  /** Eigene und Anpassungen: Stand für den Konfliktschutz (#917) und wer zuletzt gespeichert hat. */
+  geaendert?: string;
+  von?: string | null;
+  /** Gilt gerade nicht (z. B. Ziel oder Rundgang fehlt inzwischen). */
+  fehler?: string[];
+}
+
+export interface WerkbankTippsStand {
+  tipps: WerkbankTipp[];
+  anker: Anker[];
+  typen: WerkbankRundgaengeStand['typen'];
+  rundgaenge: Array<{ schluessel: string; titel: string }>;
+}
+
+/** Fehler eines Tipps am Feld (für das Formular); `feld` null = am ganzen Tipp. */
+export interface FeldFehler { feld: string | null; text: string }

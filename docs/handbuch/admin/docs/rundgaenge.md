@@ -40,7 +40,7 @@ schritte:
 
 - Höchstens **8 Schritte**, Titel bis 60, Texte bis 200 Zeichen. Texte sind reiner Text – HTML oder Formatierungen zeigt Ablago nicht an.
 - Zu jedem `ziel` gehört `ort`: ein Satz für Screenreader, wo die Stelle steht.
-- Eigene Rundgänge starten **nie von selbst**. Wer sie sehen darf, findet sie unter „Ablago entdecken“; als Tipp anbieten kannst du sie unter **Werkbank → Tipps**.
+- Eigene Rundgänge starten **nie von selbst**. Wer sie sehen darf, findet sie unter „Ablago entdecken“; als Tipp anbieten kannst du sie unter [Tipps](tipps.md).
 
 ### Ziele finden { #ziele }
 

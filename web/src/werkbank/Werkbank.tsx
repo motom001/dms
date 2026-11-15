@@ -2,6 +2,7 @@ import type { InstalliertesPaket } from '../../../shared/src/pakete';
 import { SuchePanel } from './SucheEinstellungen';
 import { useWoerter, WoerterListe, WoerterRechts } from './Woerter';
 import { RundgaengeListe, RundgaengeRechts, useRundgaenge } from './Rundgaenge';
+import { TippsListe, TippsRechts, useTippsWerkbank } from './TippsWerkbank';
 import { Symbol } from '../Symbol';
 import { AnmeldeschutzPanel, useAnmeldeschutz } from './Anmeldeschutz';
 import { RegionPanel, useRegion } from './Region';
@@ -106,6 +107,7 @@ import { typName } from '../../../shared/src/beschriftung';
  *                                  /werkbank/organisation#auskunft-vorgaben
  * /werkbank/loeschkonzept          Löschkonzept, Personendaten in Mappentypen (#469, #668), Gruppe Datenschutz (#1184)
  * /werkbank/rundgaenge[/:schluessel|/neu[?kopie=:schluessel]]  Rundgänge (#941), dreiteilig
+ * /werkbank/tipps[/:schluessel|/neu]  Tipps (#942), dreiteilig
  * /werkbank/loeschprotokoll        Löschprotokoll (#470; seit #1184 eigener Bereich, früher …/loeschkonzept#loeschprotokoll)
  *
  * Die Mitte bekommt jede Sammlung, in der man etwas anlegt und bearbeitet (#366, seit #990 auch kleine; `hatMitte`);
@@ -146,6 +148,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
   const automatisierungen = useAutomatisierungen(bereich === 'automatisierungen');
   const ablaufvorlagen = useAblaufvorlagen(bereich === 'ablaufvorlagen');
   const rundgaenge = useRundgaenge(bereich === 'rundgaenge');
+  const tipps = useTippsWerkbank(bereich === 'tipps');
   const postfaecher = usePostfaecher(bereich === 'postfaecher');
   const nummernkreise = useNummernkreise(bereich === 'nummernkreise');
   const stempel = useStempelVorlagenWerkbank(bereich === 'stempel');
@@ -175,7 +178,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
       protokoll: protokoll.neu, betrieb: betrieb.laden,
       verschluesselung: tresor.laden, papierkorb: papierkorb.laden, aufgaben: aufgaben.laden, texterkennung: ocr.laden, woerter: woerter.laden,
       wartung: async () => { await ocr.laden(); await wartungsmodus.laden(); }, fehlermeldungen: meldungen.laden, sicherung: sicherung.laden,
-      systemzustand: async () => { await speicherplatz.laden(); await systemlast.laden(); await technik.laden(); await datenbank.laden(); }, anbindung: anbindung.laden, benutzer: benutzer.laden, webdav: webdav.laden, automatisierungen: automatisierungen.laden, ablaufvorlagen: ablaufvorlagen.laden, rundgaenge: rundgaenge.laden,
+      systemzustand: async () => { await speicherplatz.laden(); await systemlast.laden(); await technik.laden(); await datenbank.laden(); }, anbindung: anbindung.laden, benutzer: benutzer.laden, webdav: webdav.laden, automatisierungen: automatisierungen.laden, ablaufvorlagen: ablaufvorlagen.laden, rundgaenge: rundgaenge.laden, tipps: tipps.laden,
       auskuenfte: datenschutz.laden, loeschkonzept: datenschutz.laden, daten: daten.laden,
     };
     void offen[bereich]?.();
@@ -310,6 +313,11 @@ export function Werkbank({ teile }: { teile: string[] }) {
     const schluessel = id ? decodeURIComponent(id) : undefined;
     liste = <RundgaengeListe z={rundgaenge} offen={schluessel} />;
     rechts = <RundgaengeRechts z={rundgaenge} schluessel={schluessel} />;
+  } else if (bereich === 'tipps') {
+    // Tipps (#942): alle in der Mitte, rechts das Formular.
+    const schluessel = id ? decodeURIComponent(id) : undefined;
+    liste = <TippsListe z={tipps} offen={schluessel} />;
+    rechts = <TippsRechts z={tipps} schluessel={schluessel} />;
   } else if (bereich === 'stempel') {
     // Dreiteilig seit #990: Vorlagen in der Mitte, rechts die gewählte mit Live-Vorschau (#799).
     liste = <StempelListe z={stempel} offen={id} />;
@@ -352,6 +360,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
     { pfad: 'ablaufvorlagen', name: n('ablaufvorlagen'), gruppe: 'ablage', zahl: ablaufvorlagen.stand?.vorlagen.length || undefined,
       warn: (ablaufvorlagen.stand?.angehalten.length ?? uebersicht.stand?.ablaeufe?.angehalten.length) ? '!' : undefined, warnTitel: t('automatisierung.vorlage.ui.leiste') },
     { pfad: 'rundgaenge', name: n('rundgaenge'), gruppe: 'ablage', zahl: rundgaenge.stand?.rundgaenge.length || undefined },
+    { pfad: 'tipps', name: n('tipps'), gruppe: 'ablage', zahl: tipps.stand?.tipps.length || undefined },
     // Benutzer und Sicherheit
     { pfad: 'benutzer', name: n('benutzer'), gruppe: 'benutzer', zahl: zahl(benutzer.geladen ? benutzer.liste.filter((b) => b.aktiv).length : undefined, uz?.benutzer) },
     { pfad: 'verschluesselung', name: n('verschluesselung'), gruppe: 'benutzer', warn: tresor.stand && tresor.stand.zustand !== 'vorhanden' ? t('werkbank.leiste.fehlt') : undefined },

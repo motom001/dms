@@ -159,3 +159,7 @@ pre.yaml-datei { margin: 0; padding: 8px 10px; background: var(--senke); border-
 .ziel-wahl-rahmen { position: fixed; pointer-events: none; z-index: 1000; border-radius: 6px; box-shadow: 0 0 0 3px var(--akzent); }
 .ziel-wahl-leiste { position: fixed; left: 16px; right: 16px; bottom: 16px; z-index: 1001; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 10px 14px; background: var(--flaeche); color: var(--tinte); border: 1px solid var(--linie-stark); border-radius: 10px; box-shadow: 0 8px 24px var(--schatten-stark); }
 .ziel-wahl-leiste code { font-family: var(--mono); }
+.tipp-vorschau { display: flex; flex-direction: column; gap: 6px; }
+.tipp-vorschau-karte { border: 1px solid var(--linie); border-radius: 10px; padding: 12px 14px; background: var(--flaeche); display: flex; flex-direction: column; gap: 8px; align-items: flex-start; max-width: 420px; }
+.tipp-vorschau-karte p { margin: 0; }
+.tipp-vorschau-kopf { font-weight: 600; display: flex; align-items: center; gap: 6px; }

@@ -1508,6 +1508,11 @@ async function main() {
   await geheZu(s, '/werkbank/rundgaenge/eigen%3Asuchen');
   await s.locator('textarea.yaml-datei').first().waitFor();
   await bild(s, 'werkbank-rundgaenge');
+  // Tipps (#942): alle in der Mitte, rechts das Formular mit Vorschau.
+  const tipp = await api('POST', '/api/werkbank/tipps', { daten: { text: SPRACHE === 'en' ? 'Search finds words inside documents too.' : 'Die Suche findet auch Wörter in Dokumenten.', bereich: 'suche', ziel: 'startseite.suche' } }).catch(() => null);
+  await geheZu(s, tipp?.schluessel ? `/werkbank/tipps/${encodeURIComponent(tipp.schluessel)}` : '/werkbank/tipps');
+  await s.locator('.tipp-vorschau').first().waitFor();
+  await bild(s, 'werkbank-tipps');
   // Ohne Mitte (#366): lange Zugriffe unter den Einstellungen, „Installiert“ unter „Neuere Versionen“.
   // #407: unter Einstellungen → Datenbank-Anbindung, unter der Verbindung.
   // #725: lange Datenbankzugriffe stehen im Systemzustand.

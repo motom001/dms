@@ -24,7 +24,7 @@ import { sprache } from '../../shared/src/sprache';
 import type { Benutzer } from '../../shared/src/model';
 import type { InstalliertesPaket } from '../../shared/src/pakete';
 import { darfVerwalten } from '../../shared/src/verwaltungsrecht';
-import { eigeneRundgaenge, werkbankAus } from './entdecken-werkbank';
+import { eigeneRundgaenge, tippsMitWerkbank, werkbankAus } from './entdecken-werkbank';
 import { Fachfehler } from './fehler';
 import { t } from './sprache';
 
@@ -163,13 +163,13 @@ export class Entdecken {
    * Alle Quellen: Ablago und die installierten Pakete. Ein Rundgang aus einem Paket mit `nach_installation` bzw.
    * `nach_update` kommt kurz nach Installation bzw. Update als Angebot unter die Tipps (`angebot:<rundgang>`, „neu“).
    */
-  async quellen(o: { alle?: boolean } = {}): Promise<Inhalt & { neu: Map<string, boolean>; eigeneFehler: Map<string, string[]> }> {
+  async quellen(o: { alle?: boolean } = {}): Promise<Inhalt & { neu: Map<string, boolean>; eigeneFehler: Map<string, string[]>; tippOriginale: Map<string, Tipp>; tippFehler: Map<string, string[]> }> {
     const a = this.ablago();
     const neu = new Map<string, boolean>();
     const pakete = (await this.o.pakete?.()) ?? [];
     const w = werkbankAus(await this.o.werkbank?.());
     const eigeneFehler = new Map<string, string[]>();
-    if (!pakete.some((p) => p.entdecken) && !w.rundgaenge.length && !w.aus.length) return { ...a, neu, eigeneFehler };
+    if (!pakete.some((p) => p.entdecken) && !w.rundgaenge.length && !w.tipps.length && !Object.keys(w.anpassungen).length && !w.aus.length) return { ...a, neu, eigeneFehler, tippOriginale: new Map(), tippFehler: new Map() };
     const typen = new Map(((await this.o.typen?.()) ?? []).map((x) => [x.kennung, x]));
     const rundgaenge = [...a.rundgaenge], tipps = [...a.tipps];
     const jetzt = this.o.jetzt?.() ?? Date.now();
@@ -182,9 +182,14 @@ export class Entdecken {
     const eigene = eigeneRundgaenge(w, { anker: a.anker, typ: (k) => typen.get(k) ?? null });
     rundgaenge.push(...eigene.rundgaenge);
     for (const [k, f] of eigene.fehler) eigeneFehler.set(k, f);
+    // Eigene Tipps und Anpassungen (#942).
+    const mitW = tippsMitWerkbank(tipps, w, { anker: a.anker, rundgaenge: rundgaenge.map((r) => r.schluessel), typ: (k) => typen.get(k) ?? null });
     // Ausgeschaltet (Werkbank): fällt für alle weg – samt Tipps, die einen solchen Rundgang starten.
     const aus = new Set(o.alle ? [] : w.aus);
-    return { anker: a.anker, rundgaenge: rundgaenge.filter((r) => !aus.has(ausSchluessel('rundgang', r.schluessel))), tipps: tipps.filter((x) => !aus.has(ausSchluessel('tipp', x.schluessel))), fehler: a.fehler, neu, eigeneFehler };
+    return {
+      anker: a.anker, rundgaenge: rundgaenge.filter((r) => !aus.has(ausSchluessel('rundgang', r.schluessel))), tipps: mitW.tipps.filter((x) => !aus.has(ausSchluessel('tipp', x.schluessel))),
+      fehler: a.fehler, neu, eigeneFehler, tippOriginale: mitW.originale, tippFehler: mitW.fehler,
+    };
   }
 
   /** Fehler eines Pakets einmal je Version ins Protokoll – ein Paket für eine neuere Ablago-Version kann Anker nennen, die es hier nicht gibt. */
@@ -276,6 +281,9 @@ export class Entdecken {
     await this.o.setzeEinstellung(b, EINSTELLUNG.rundgaenge, merker);
     this.o.log?.debug(`Rundgang „${schluessel}“: ${stand}`);
   }
+
+  /** „Ausprobieren“ eines Tipps (#942): erste Mappe dieses Typs, die die Person lesen darf, sonst null. */
+  async mappeVonTyp(b: Benutzer, typ: string): Promise<string | null> { return (await this.o.oeffnen?.(b, typ, 'mappe')) ?? null; }
 
   /**
    * „Ausprobieren“ in der Werkbank (#941): ein ungespeicherter Rundgang, wie diese Person ihn sähe, und was er vorher

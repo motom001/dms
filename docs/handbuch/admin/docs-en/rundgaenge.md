@@ -40,7 +40,7 @@ schritte:
 
 - At most **8 steps**, titles up to 60, texts up to 200 characters. Texts are plain text – Ablago does not show HTML or formatting.
 - Every `ziel` needs `ort`: a sentence for screen readers saying where the place is.
-- Your own tours **never start by themselves**. Whoever may see them finds them under “Discover Ablago”; you can offer them as a tip under **Workbench → Tips**.
+- Your own tours **never start by themselves**. Whoever may see them finds them under “Discover Ablago”; you can offer them as a tip under [Tips](tipps.md).
 
 ### Finding targets { #ziele }
 
