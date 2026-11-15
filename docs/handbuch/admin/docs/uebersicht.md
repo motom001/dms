@@ -5,13 +5,13 @@ Die **Werkbank** gibt es nur im [Verwaltungsmodus](verwalten.md#der-verwaltungsm
 <!-- bereiche:gruppen -->
 | Gruppe | Bereiche |
 | --- | --- |
-| **Ablage aufbauen** | [Pakete](pakete.md), [Mappentypen](mappentypen.md), [Ansichten](sichten.md), [Nummernkreise](nummernkreise.md), [Automatisierungen](automatisierungen.md), [Automatisierungsvorlagen](automatisierungsvorlagen.md), [Rundgänge](rundgaenge.md), [Tipps](tipps.md) |
+| **Ablage aufbauen** | [Pakete](pakete.md), [Beispiel-Ablage](beispielablage.md), [Mappentypen](mappentypen.md), [Ansichten](sichten.md), [Nummernkreise](nummernkreise.md), [Automatisierungen](automatisierungen.md), [Automatisierungsvorlagen](automatisierungsvorlagen.md), [Rundgänge](rundgaenge.md), [Tipps](tipps.md) |
 | **Benutzer und Sicherheit** | [Benutzer](benutzer.md), [Verschlüsselung](verschluesselung.md), [Aufbewahrung abgelaufen](archiv.md#nach-der-frist-aufbewahrung-abgelaufen) (nur mit Archivmodus), [Stempel](stempel.md) |
 | **Datenschutz** | [Auskünfte](datenschutz.md#auskunft-erteilen) (nur bei beruflicher Nutzung), [Löschkonzept](loeschkonzept.md#aus-dem-dms-erzeugen) (nur bei beruflicher Nutzung), [Löschprotokoll](datenschutz.md#loschprotokoll) (nur bei beruflicher Nutzung) |
 | **Post und Eingänge** | [Postfächer](postfaecher.md), [Eingangsordner](eingangsordner.md) (nur wenn der Ordner eingebunden ist), [WebDAV-Laufwerk](webdav.md), [Suche und Volltext](texterkennung.md), [Gleichbedeutende Wörter](suche.md#gleichbedeutende-worter) |
 | **Daten sichern** | [Sicherung](sicherung.md), [Vollexport](export.md), [Papierkorb](papierkorb.md), [Einstellungen](daten-einstellungen.md) |
 | **Einstellungen** | [E-Mail und Adresse](installation.md#e-mail-und-adresse), [Region](region.md), [Sprachen](sprachen.md), [Eigene Organisation](organisation.md), [Aufgaben](aufgaben.md), [Anmeldeschutz](anmeldeschutz.md), [Designs](designs.md), [Datenbank-Anbindung](installation.md#datenbank-anbindung) |
-| **Wartung und Fehlersuche** | [Systemzustand](speicherplatz.md), [Protokoll](fehlersuche.md#protokoll), [Gemeldete Fehler](fehlersuche.md#gemeldete-fehler), [Wartung](wartungsmodus.md), [Demo-Daten](demo.md) |
+| **Wartung und Fehlersuche** | [Systemzustand](speicherplatz.md), [Protokoll](fehlersuche.md#protokoll), [Gemeldete Fehler](fehlersuche.md#gemeldete-fehler), [Wartung](wartungsmodus.md), [Lasttest-Daten](demo.md) |
 <!-- /bereiche:gruppen -->
 
 Jede Einstellung hat genau einen Ort. Die Adressen der Bereiche (`/werkbank/sicherung` …) sind beim Umsortieren in Version 0.116 gleich geblieben; Lesezeichen und eine gespeicherte Auswahl unter *Werkbank anpassen* gelten weiter.
@@ -169,6 +169,7 @@ Die Stufe wählst du im [Einrichtungsassistenten](einrichtungsassistent.md) im S
 | --- | :-: | :-: | :-: | :-: | :-: |
 | Übersicht | ● | ● | ● | ● | ● |
 | [Pakete](pakete.md) | ● | ● | ● | ● | ● |
+| [Beispiel-Ablage](beispielablage.md) | ● | ● | ● | ● | ● |
 | [Mappentypen](mappentypen.md) |   | ● | ● | ● | ● |
 | [Ansichten](sichten.md) |   | ● | ● | ● | ● |
 | [Nummernkreise](nummernkreise.md) |   |   | ● | ● | ● |
@@ -204,8 +205,8 @@ Die Stufe wählst du im [Einrichtungsassistenten](einrichtungsassistent.md) im S
 | [Protokoll](fehlersuche.md#protokoll) |   | ● | ● | ● | ● |
 | [Gemeldete Fehler](fehlersuche.md#gemeldete-fehler) |   | ● | ● | ● | ● |
 | [Wartung](wartungsmodus.md) |   | ● | ● | ● | ● |
-| [Demo-Daten](demo.md) |   |   |   |   | ● |
-| **Anzahl** | **9** | **30** | **35** | **36** | **38** |
+| [Lasttest-Daten](demo.md) |   |   |   |   | ● |
+| **Anzahl** | **10** | **31** | **36** | **37** | **39** |
 <!-- /bereiche:stufen -->
 
 Die Datenschutz-Bereiche stehen außerdem nur bei beruflicher Nutzung in der Leiste.
@@ -227,6 +228,7 @@ Ist ein ausgeblendeter Bereich eingerichtet, etwa ein Postfach oder die Anmeldun
 | Bereich | Wofür | Stufe |
 | --- | --- | --- |
 | [Pakete](pakete.md) | Fertige Mappentypen und Ansichten installieren | ab Einsteiger |
+| [Beispiel-Ablage](beispielablage.md) | Eine gefüllte Ablage zum Umsehen anlegen und wieder entfernen | ab Einsteiger |
 | [Mappentypen](mappentypen.md) | Eigene Arten von Mappen bauen | ab Haushalt |
 | [Ansichten](sichten.md) | Die Sammlungen links in der Ablage ordnen | ab Haushalt |
 | [Nummernkreise](nummernkreise.md) | Fortlaufende Nummern, z. B. für Rechnungen | ab Selbständig |
@@ -262,5 +264,5 @@ Ist ein ausgeblendeter Bereich eingerichtet, etwa ein Postfach oder die Anmeldun
 | [Protokoll](fehlersuche.md#protokoll) | Das technische Protokoll lesen | ab Haushalt |
 | [Gemeldete Fehler](fehlersuche.md#gemeldete-fehler) | Fehler, die Benutzer gemeldet haben | ab Haushalt |
 | [Wartung](wartungsmodus.md) | Benutzer vorübergehend aussperren (Wartungsmodus) und einmalige Pflegearbeiten | ab Haushalt |
-| [Demo-Daten](demo.md) | Beispielmappen zum Ausprobieren | nur Alles |
+| [Lasttest-Daten](demo.md) | Viele Mappen für Lasttests und Messungen | nur Alles |
 <!-- /bereiche:wofuer -->

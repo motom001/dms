@@ -359,7 +359,7 @@ Nobody can delete a folder that is still linked to.
 A field of the field kind **Password** takes, for example, the password of an online account. Ablago stores it encrypted with the key from **Workbench → [Encryption](verschluesselung.md)**; as long as there is none, no value can be saved, and the field points this out.
 
 - In the folder it only says "••••••••". The eye shows the password – and every display is in the [log](fehlersuche.md) with user, folder and field, never with the value.
-- Password fields never appear in the title, in the result list, in the search, in conditions of views or in demo data.
+- Password fields never appear in the title, in the result list, in the search, in conditions of views or in load test data.
 - Via the [API](api.md) there are passwords only with a key that has the permission "Read passwords".
 
 ### Formatted text { #formatierter-text }

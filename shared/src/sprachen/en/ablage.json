@@ -892,7 +892,7 @@
   "papierkorb.gespeichert": "Saved.{wert}",
   "papierkorb.aufbewahrung": "Retention",
   "papierkorb.0-kein-papierkorb-loeschen": "0 = no bin, deleting is permanent immediately.",
-  "papierkorb.geloeschte-mappen-und-einzeln": "Deleted folders and individually deleted documents go to the bin. Only removing the demo data is always permanent immediately.",
+  "papierkorb.geloeschte-mappen-und-einzeln": "Deleted folders and individually deleted documents go to the bin. Only removing the load test data is always permanent immediately.",
   "papierkorb.tage-danach-wird-ihre": "After that their change history is deleted.",
   "pdfseiten.schliessen": "Close",
   "pdfseiten.lade-seiten": "Loading pages …",

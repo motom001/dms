@@ -18,7 +18,7 @@ Dieses Handbuch ist für alle, die Ablago **installieren, einrichten und betreib
 | Festlegen, welche Ansichten die Ablage anbietet | Werkbank → Ansichten | [Ansichten](sichten.md) |
 | Benutzer einladen, Rollen vergeben, Zugänge sperren | Werkbank → Benutzer | [Benutzer und Rollen](benutzer.md) |
 | Farben, Logo und Schriftzug anpassen | Werkbank → Designs | [Designs](designs.md) |
-| Ausprobieren mit Beispieldaten | Werkbank → Demo-Daten | [Demo-Daten](demo.md) |
+| Ausprobieren mit Beispieldaten | Werkbank → Lasttest-Daten | [Lasttest-Daten](demo.md) |
 | Überblick, was zu tun ist | Werkbank → Übersicht | [Werkbank und Übersicht](uebersicht.md) |
 | Festlegen, welche Bereiche die Werkbank zeigt | Werkbank → Werkbank anpassen (unten in der Leiste) | [Werkbank anpassen](uebersicht.md#werkbank-anpassen) |
 | Festlegen, wer was sehen und ändern darf | Werkbank → Mappentypen → Berechtigungen, Werkbank → Ansichten | [Berechtigungen](berechtigungen.md) |

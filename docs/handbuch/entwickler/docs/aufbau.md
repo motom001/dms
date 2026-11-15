@@ -312,7 +312,7 @@ Der erste Fachbereich mit eigener Fachlogik im Fachordner (Probelauf der Zielauf
 
 | Datei | Klasse (im Dienst) | Inhalt |
 |---|---|---|
-| `datenschutz.dienst.ts` | `DatenschutzDienst` (`dienst.datenschutzDienst`) | Auskunft nach Art. 15 DSGVO (#396, #472, #668), Demo-Daten (#248) |
+| `datenschutz.dienst.ts` | `DatenschutzDienst` (`dienst.datenschutzDienst`) | Auskunft nach Art. 15 DSGVO (#396, #472, #668), Lasttest-Daten (#248) |
 | `vollexport.ts` | `VollexportQuellen` (`dienst.vollexport`) | Datenquellen für Vollexport (#254) und persönlichen Export (#255) |
 | `zustellen.ts` | `AuskunftZustellen` (`dienst.auskunftZustellen`) | E-Mail und Abruf-Links mit Abrufcode (#455), „Meine Daten exportieren“ |
 
@@ -977,7 +977,7 @@ Was in Ablago passiert, steht an **einer** Stelle: `shared/src/ereignisse.ts` (`
 - **Veraltete Namen:** `texterkennung.fertig` meldet der Kern nicht mehr. Ein Paket, das es abonniert hat, bekommt `volltext.fertig` mit `quelle: kern` unter dem alten Namen (Übergang, `VERALTETE_EREIGNISSE`, entfällt mit 1.0.0). **Alle Übergangsausnahmen** stehen mit der Version, mit der sie entfallen, in `server/src/uebergaenge.ts` (#902); `uebergaenge.test.ts` wird rot, sobald Ablago diese Version erreicht. Neue Sonderwege für alte Pakete oder Dateien nur mit Eintrag dort.
 - **Bündeln:** Einträge mit `buendelS` (heute `mappe.geaendert`, 5 s) fassen schnelle Folgen zur selben Mappe zusammen, solange das Ereignis noch nicht verteilt ist; die Feldschlüssel werden vereinigt (`mischeFelder`).
 - **Frist erreicht** genau einmal: `frist_meldungen` (Mappe, Feld, Datum, Zeitpunkt) als Primärschlüssel; Merken und Ereignis in einer Transaktion.
-- **Still:** `dienst.kern.ohneEreignisse(f)` – Beispiele, Demo-Daten (Erzeugen und Entfernen). Nur Ereignisse, die Pakete an Dateien verarbeiten (Volltext, Vektoren, Post), kommen mit `ausloeser.still` in den Ausgangskorb – Automatisierungen übergehen sie, Mappen-Ereignisse entstehen gar nicht. Eine Wiederherstellung markiert alle offenen Ereignisse als verteilt; in Wartung und während einer Wiederherstellung ruht der Verteiler.
+- **Still:** `dienst.kern.ohneEreignisse(f)` – Beispiele, Lasttest-Daten (Erzeugen und Entfernen). Nur Ereignisse, die Pakete an Dateien verarbeiten (Volltext, Vektoren, Post), kommen mit `ausloeser.still` in den Ausgangskorb – Automatisierungen übergehen sie, Mappen-Ereignisse entstehen gar nicht. Eine Wiederherstellung markiert alle offenen Ereignisse als verteilt; in Wartung und während einer Wiederherstellung ruht der Verteiler.
 
 **Abnehmer**
 
@@ -1036,7 +1036,7 @@ Kleine Abläufe ohne Code: **Wenn · Und · Dann · Sonst** (Sonst seit #677). M
 
 - Keine Selbstauslösung (eigene Änderungen lösen dieselbe Automatisierung nicht aus), Ketten höchstens 3 tief, Bremse 30 Läufe je Minute (dann angehalten), Laufzeit 60 s, 200 Automatisierungen, je Bereich 20 Karten, Verlauf 200 Läufe bzw. 30 Tage.
 - **Bearbeiten geht vor Automatisierung:** Fehlt etwas (Mappentyp, Feld, Ansicht), blockiert das nie das Arbeiten – die Automatisierung wird rot und angehalten (`angehalten.grund = 'fehlerhaft'`), spätestens beim nächsten Lauf oder Zeitplan-Durchgang. Speichern geht nur mit gültigem Stand.
-- Demo-Daten und Beispiele lösen nichts aus (`ohneEreignisse`), in Wartung und Wiederherstellung ruht der Verteiler. Nach einer Wiederherstellung sind alle eingeschalteten Automatisierungen angehalten, bis ein Admin sie wieder einschaltet.
+- Lasttest-Daten und Beispiele lösen nichts aus (`ohneEreignisse`), in Wartung und Wiederherstellung ruht der Verteiler. Nach einer Wiederherstellung sind alle eingeschalteten Automatisierungen angehalten, bis ein Admin sie wieder einschaltet.
 - Speichern mit `version` (veralteter Stand → 409). Fassungen wie bei allen Einstellungen der Werkbank (#1006, `server/src/fassungen/`, Tabelle `fassungen`): wiederherstellen über das normale Speichern. Im Vollexport: `struktur/automatisierungen.json` (je Automatisierung ihre Fassungen, `version` = Nummer der Fassung) und `struktur/fassungen.json`; in der Sicherung alle Tabellen.
 
 ## Automatisierungsvorlagen und Mappen-Abläufe (#1044) { #ablaufvorlagen }

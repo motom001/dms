@@ -147,6 +147,8 @@ export interface WerkbankUebersicht {
   anbindung?: { umgebung: 'fehlt' | 'gleich' | 'abweichend'; neustartNoetig: boolean; /** #943 */ ohneVolume?: boolean } | null;
   /** DMS_LASTTEST gesetzt, aber nicht gestartet, weil hier echte Daten liegen (#612). */
   lasttestAbbruch?: string | null;
+  /** Beispiel-Mappen aus Paketen (#988, Beispiel-Ablage); 0 = keine. */
+  beispielablage?: number;
   /** Einrichtungsassistent (#119): übersprungene Schritte. */
   einrichtung?: EinrichtungStand | null;
   /** Pakete, deren Pflicht-Einstellungen fehlen (#405) – Aufgabe für den Administrator. */

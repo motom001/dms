@@ -121,7 +121,7 @@ The filter of **Workbench → Log** lists all modules with their name – includ
 | User accounts and sign-in | `konto` | Sign-in, **sign-in protection** (blocked accounts and IP addresses), sessions, users, roles, stand-ins |
 | Library | `ablage` | Creating, changing, deleting folders; views, bin, notes, tasks |
 | Documents | `dokumente` | Uploading, displaying, deleting |
-| Workbench | `werkbank` | Folder types, packages, demo data, settings, version check |
+| Workbench | `werkbank` | Folder types, packages, load test data, settings, version check |
 | Data protection | `datenschutz` | Access requests, retrieval links, deletion concept |
 | Text recognition | `texterkennung` | completed, skipped, failed, restarted, cancelled; settings |
 | Converting files | `umwandlung` | Versions from packages (e.g. TIFF → PDF) |

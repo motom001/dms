@@ -1538,6 +1538,10 @@ async function main() {
   await s.locator('#demo-dokumente').check();
   await s.getByText(w('Abschätzung:')).waitFor();
   await bild(s, 'werkbank-demo');
+  // Beispiel-Ablage (#988): nötige Pakete mit Stand, Anlegen und – falls schon da – Entfernen.
+  await geheZu(s, '/werkbank/beispielablage');
+  await s.getByRole('heading', { name: w('Anlegen'), level: 2 }).waitFor();
+  await bild(s, 'werkbank-beispielablage');
 
   // Sicherung (#103–#106): jetzt sichern, Zeitplan. Das Notfallblatt steht seit #993 nur unter Verschlüsselung:
   // dort herunterladen (als Bild fürs Handbuch) und den Abschnitt aufnehmen.

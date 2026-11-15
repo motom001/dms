@@ -8,6 +8,7 @@ import type { Feldbedingung, Sicht, SichtDaten } from '../../../shared/src/sicht
 import type { Ergebnis, Regelwerk } from '../../../shared/src/rechte';
 import type { PlanOrganisation } from '../../../shared/src/einrichtungsplan';
 import type { EigeneAnsicht, WerkbankAnsicht } from '../../../shared/src/werkbankansicht';
+import type { BeispielAblageAnlegen, BeispielAblageEntfernen, BeispielAblageStand } from '../../../shared/src/beispielablage';
 import type { Merkmale } from '../../../shared/src/merkmale';
 import type { SichtRechte, SichtRegelwerk, SichtSchritt } from '../../../shared/src/sichtrechte';
 import type { Sicherheit, Vorschlag } from '../../../shared/src/erkennung';
@@ -138,6 +139,10 @@ export const werkbankApi = {
   // Ansicht der Werkbank (#281)
   werkbankAnsicht: () => anfrage<WerkbankAnsichtStand>('GET', '/api/werkbank/ansicht'),
   setzeWerkbankAnsicht: (e: { installation?: WerkbankAnsicht; eigene?: EigeneAnsicht }) => anfrage<WerkbankAnsichtStand>('PUT', '/api/werkbank/ansicht', e),
+  // Beispiel-Ablage (#988).
+  beispielAblage: () => anfrage<BeispielAblageStand>('GET', '/api/werkbank/beispielablage'),
+  beispielAblageAnlegen: () => anfrage<BeispielAblageAnlegen>('POST', '/api/werkbank/beispielablage'),
+  beispielAblageEntfernen: () => anfrage<BeispielAblageEntfernen>('DELETE', '/api/werkbank/beispielablage'),
   nummernkreisAnlegen: (k: NummernkreisEingabe) => anfrage<NummernkreisAnsicht[]>('POST', '/api/werkbank/nummernkreise', k),
   nummernkreisAendern: (s: string, k: Omit<NummernkreisEingabe, 'schluessel'>) => anfrage<NummernkreisAnsicht[]>('PUT', `/api/werkbank/nummernkreise/${encodeURIComponent(s)}`, k),
   nummernkreisLoeschen: (s: string) => anfrage<NummernkreisAnsicht[]>('DELETE', `/api/werkbank/nummernkreise/${encodeURIComponent(s)}`),

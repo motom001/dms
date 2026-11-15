@@ -1606,6 +1606,22 @@ function ohneGeheimnisse(w: unknown): Record<string, unknown> {
   return (w && typeof w === 'object' ? maske(w) : {}) as Record<string, unknown>;
 }
 
+/**
+ * Feldwerte eines Beispiels (#347): Beträge dürfen im Paket als Zahl stehen; Zeiträume als P3M oder { anzahl, einheit }
+ * gleicht bereinigeWerte an (#1035). Verweise auf Beispiele und Vorgaben löst `aufloesen` auf; ohne Ziel bleibt das Feld leer.
+ */
+async function beispielWerte(roh: Record<string, unknown>, felder: Feld[], aufloesen: (w: unknown) => Promise<string | undefined>): Promise<Record<string, unknown>> {
+  const werte: Record<string, unknown> = {};
+  for (const [k, w] of Object.entries(roh)) {
+    const f = felder.find((x) => x.key === k);
+    if (f?.typ === 'betrag' && typeof w === 'number') werte[k] = { betrag: w, waehrung: f.waehrung || 'EUR' };
+    else if (Array.isArray(w) && w.some((x) => istBeispielVerweis(x) || istVorgabeWert(x))) { const l = (await Promise.all(w.map(aufloesen))).filter((x): x is string => !!x); if (l.length) werte[k] = l; }
+    else if (istBeispielVerweis(w) || istVorgabeWert(w)) { const z = await aufloesen(w); if (z) werte[k] = f?.mehrfach ? [z] : z; }
+    else werte[k] = w;
+  }
+  return werte;
+}
+
 export class Paketverwaltung {
   private kataloge = new Map<string, { katalog: Katalog; pruefung: HerkunftPruefung; zeit: number }>();
   private uploads = new Map<string, Hochgeladen>();
@@ -2970,55 +2986,7 @@ export class Paketverwaltung {
       }
       // 4. Beispiele (nur bei der Installation, auf Wunsch).
       if (beispiele && !alt) {
-        // Verweise zwischen Beispielen (#347): erst die Ziele anlegen; fremde Beispiele aus dem Eintrag der Abhängigkeit.
-        const reihenfolge = ordneBeispiele(paket.beispiele.map((b) => ({ ...b, werte: eigeneVerweise(b.werte, m.id) }))) ?? paket.beispiele;
-        const ohneZiel = new Set<string>();
-        const aufloesen = async (w: unknown): Promise<string | undefined> => {
-          // Verweis auf eine Vorgabe (#1038): eigene über die Lage, fremde über die feste Kennung.
-          if (istVorgabeWert(w)) {
-            const id = vorgabeId(w.vorgabe) ?? (vorgabeVerweis(w.vorgabe, m.id).paket !== m.id ? (await this.vorgabeMappe(w.vorgabe, m.id))?.id : undefined);
-            if (!id) ohneZiel.add(w.vorgabe);
-            return id ?? undefined;
-          }
-          if (!istBeispielVerweis(w)) return undefined;
-          const [p, s] = w.beispiel.includes(':') ? w.beispiel.split(':') : [m.id, w.beispiel];
-          const zielId = p === m.id ? beispielIds.get(s) : installierte.find((x) => x.id === p)?.beispiele?.[s];
-          if (zielId && (p === m.id || (await this.d.eingangskanaele.gibtMappe(zielId)))) return zielId;
-          ohneZiel.add(w.beispiel);
-          return undefined;
-        };
-        for (const b of reihenfolge) {
-          const typId = ziel(b.typ, false)!;
-          const felder = (await this.d.mappentypen.listeTypen()).find((t) => t.id === typId)?.felder ?? [];
-          const werte: Record<string, unknown> = {};
-          for (const [k, w] of Object.entries(b.werte)) {
-            const f = felder.find((x) => x.key === k);
-            // Beträge dürfen im Paket als Zahl stehen; Zeiträume als P3M oder { anzahl, einheit } gleicht bereinigeWerte an (#1035).
-            if (f?.typ === 'betrag' && typeof w === 'number') werte[k] = { betrag: w, waehrung: f.waehrung || 'EUR' };
-            else if (Array.isArray(w) && w.some((x) => istBeispielVerweis(x) || istVorgabeWert(x))) { const l = (await Promise.all(w.map(aufloesen))).filter((x): x is string => !!x); if (l.length) werte[k] = l; }
-            else if (istBeispielVerweis(w) || istVorgabeWert(w)) { const z = await aufloesen(w); if (z) werte[k] = f?.mehrfach ? [z] : z; }
-            else werte[k] = w;
-          }
-          let mappeId: string;
-          try { mappeId = (await this.d.kern.ohneEreignisse(() => this.d.mappen.legeMappeAn({ typId, werte }, von.id))).id; } catch (f) { throw new Fachfehler(422, t('meldungen.pakete.beispiel', { meldungen: meldungen(f) })); }
-          mappen.push(mappeId);
-          if (b.schluessel) beispielIds.set(b.schluessel, mappeId);
-          // Beispiel-Dokumente (#878): wie beim Hochladen (Größe, Art, Vorschau, Volltext, Archivfassung), ohne
-          // Mappen-Ereignisse (Frage 71) – Pakete, die Dateien verarbeiten, bekommen sie trotzdem.
-          if (b.dokumente?.length) {
-            const register = (await this.d.mappentypen.listeTypen()).find((t) => t.id === typId)?.register.filter((r) => r.art === 'dokumente') ?? [];
-            for (const dok of b.dokumente) {
-              const reg = dok.register ? register.find((r) => r.key === dok.register) : register[0];
-              const inhalt = paket.beispielDateien?.get(dok.datei);
-              if (!reg || !inhalt) throw new Fachfehler(422, t('meldungen.pakete.beispiel', { meldungen: t('meldungen.pakete.beispiel-dokument-ohne-register', { wert: paket.beispiele.indexOf(b) + 1, datei: dok.datei, register: dok.register ?? '–' }) }));
-              const name = beispielName(dok);
-              try {
-                await this.d.kern.ohneEreignisse(() => this.d.dokumente.ladeHoch(mappeId, { register: reg.key, name, typ: beispielDateiart(dok.datei, inhalt) ?? undefined, herkunft: 'paket', ...(dok.datum ? { erstellt: `${dok.datum}T12:00:00.000Z` } : {}) }, inhalt, von.id));
-              } catch (f) { throw new Fachfehler(422, t('meldungen.pakete.beispiel', { meldungen: `${name}: ${meldungen(f)}` })); }
-            }
-          }
-        }
-        if (ohneZiel.size) log.info('Paket: Verweise in Beispielen ohne Ziel bleiben leer', { paket: m.id, ziele: [...ohneZiel] });
+        await this.legeBeispielMappen({ paket, ziel: (vw) => ziel(vw, false)!, vorgabeId, installierte, von, mappen, beispielIds });
         // Stand direkt nach dem Anlegen (#878): Unveränderte Beispiele lassen sich später samt Dokumenten entfernen.
         beispielStaende = await this.d.beispielMappen.beispielStand(mappen);
       }
@@ -3138,6 +3106,65 @@ export class Paketverwaltung {
       if (einstellungenGeschrieben) await setzePaketEinstellungen(this.d.kern, m.id, alteEinstellungen).catch(() => {});
       if (wortlistenGeschrieben) await this.d.suche.setzePaketSynonyme(m.id, alteWortlisten).catch(() => {});
       throw f;
+    }
+  }
+
+  /**
+   * Beispiel-Mappen eines Pakets anlegen (#347, #878): Verweise zwischen Beispielen zuerst die Ziele, fremde Beispiele aus
+   * dem Eintrag der Abhängigkeit, Vorgaben über ihre Kennung; Dokumente wie beim Hochladen. Ohne Mappen-Ereignisse
+   * (Frage 71) – also keine Automatisierungen und Benachrichtigungen. Beim Installieren und nachträglich für die
+   * Beispiel-Ablage (#988); `mappen` sammelt die angelegten zum Zurückrollen.
+   */
+  private async legeBeispielMappen({ paket, ziel, vorgabeId, installierte, von, mappen, beispielIds }: {
+    paket: Paket; ziel: (vw: string) => string; vorgabeId: (vw: string) => string | null; installierte: InstalliertesPaket[]; von: Handelnder;
+    mappen: string[]; beispielIds: Map<string, string>;
+  }): Promise<void> {
+    const m = paket.manifest;
+    // Verweise zwischen Beispielen (#347): erst die Ziele anlegen; fremde Beispiele aus dem Eintrag der Abhängigkeit.
+    const reihenfolge = ordneBeispiele(paket.beispiele.map((b) => ({ ...b, werte: eigeneVerweise(b.werte, m.id) }))) ?? paket.beispiele;
+    const ohneZiel = new Set<string>();
+    const aufloesen = async (w: unknown): Promise<string | undefined> => {
+      // Verweis auf eine Vorgabe (#1038): eigene über die Lage, fremde über die feste Kennung.
+      if (istVorgabeWert(w)) {
+        const id = vorgabeId(w.vorgabe) ?? (vorgabeVerweis(w.vorgabe, m.id).paket !== m.id ? (await this.vorgabeMappe(w.vorgabe, m.id))?.id : undefined);
+        if (!id) ohneZiel.add(w.vorgabe);
+        return id ?? undefined;
+      }
+      if (!istBeispielVerweis(w)) return undefined;
+      const [p, s] = w.beispiel.includes(':') ? w.beispiel.split(':') : [m.id, w.beispiel];
+      const zielId = p === m.id ? beispielIds.get(s) : installierte.find((x) => x.id === p)?.beispiele?.[s];
+      if (zielId && (p === m.id || (await this.d.eingangskanaele.gibtMappe(zielId)))) return zielId;
+      ohneZiel.add(w.beispiel);
+      return undefined;
+    };
+    for (const b of reihenfolge) {
+      const typId = ziel(b.typ);
+      const felder = (await this.d.mappentypen.listeTypen()).find((t) => t.id === typId)?.felder ?? [];
+      const werte = await beispielWerte(b.werte, felder, aufloesen);
+      let mappeId: string;
+      try { mappeId = (await this.d.kern.ohneEreignisse(() => this.d.mappen.legeMappeAn({ typId, werte }, von.id))).id; } catch (f) { throw new Fachfehler(422, t('meldungen.pakete.beispiel', { meldungen: meldungen(f) })); }
+      mappen.push(mappeId);
+      if (b.schluessel) beispielIds.set(b.schluessel, mappeId);
+      await this.legeBeispielDokumente(paket, b, typId, mappeId, von);
+    }
+    if (ohneZiel.size) log.info('Paket: Verweise in Beispielen ohne Ziel bleiben leer', { paket: m.id, ziele: [...ohneZiel] });
+  }
+
+  /**
+   * Beispiel-Dokumente (#878): wie beim Hochladen (Größe, Art, Vorschau, Volltext, Archivfassung), ohne Mappen-Ereignisse
+   * (Frage 71) – Pakete, die Dateien verarbeiten, bekommen sie trotzdem.
+   */
+  private async legeBeispielDokumente(paket: Paket, b: PaketBeispiel, typId: string, mappeId: string, von: Handelnder): Promise<void> {
+    if (!b.dokumente?.length) return;
+    const register = (await this.d.mappentypen.listeTypen()).find((t) => t.id === typId)?.register.filter((r) => r.art === 'dokumente') ?? [];
+    for (const dok of b.dokumente) {
+      const reg = dok.register ? register.find((r) => r.key === dok.register) : register[0];
+      const inhalt = paket.beispielDateien?.get(dok.datei);
+      if (!reg || !inhalt) throw new Fachfehler(422, t('meldungen.pakete.beispiel', { meldungen: t('meldungen.pakete.beispiel-dokument-ohne-register', { wert: paket.beispiele.indexOf(b) + 1, datei: dok.datei, register: dok.register ?? '–' }) }));
+      const name = beispielName(dok);
+      try {
+        await this.d.kern.ohneEreignisse(() => this.d.dokumente.ladeHoch(mappeId, { register: reg.key, name, typ: beispielDateiart(dok.datei, inhalt) ?? undefined, herkunft: 'paket', ...(dok.datum ? { erstellt: `${dok.datum}T12:00:00.000Z` } : {}) }, inhalt, von.id));
+      } catch (f) { throw new Fachfehler(422, t('meldungen.pakete.beispiel', { meldungen: `${name}: ${meldungen(f)}` })); }
     }
   }
 
@@ -3753,6 +3780,46 @@ export class Paketverwaltung {
     await this.d.kern.repo.speicherePaket({ ...rest, ...(Object.keys(schluessel).length ? { beispiele: schluessel } : {}) });
     log.info('Beispiele eines Pakets entfernt', { von: von.email, paket: id, entfernt: b.unveraendert.length, behalten: b.geaendert.length });
     return { entfernt: b.unveraendert.length, behalten: b.geaendert.map(({ typId: _t, ...g }) => g) };
+  }
+
+  /**
+   * Beispiele eines installierten Pakets nachträglich anlegen (#988, Beispiel-Ablage): dieselbe Version aus dem Katalog,
+   * dieselben Regeln wie beim Installieren. Sind schon Beispiele da, passiert nichts; scheitert etwas, kommen die eben
+   * angelegten wieder weg. Hochgeladene Pakete lassen sich nicht erneut holen.
+   */
+  async beispieleAnlegen(id: string, von: Handelnder): Promise<{ angelegt: number }> {
+    const installierte = await this.d.kern.repo.listePakete();
+    const p = installierte.find((x) => x.id === id);
+    if (!p) throw new Fachfehler(404, t('meldungen.pakete.ist-nicht-installiert', { id }));
+    if (p.beispielMappen?.length) return { angelegt: 0 };
+    if (p.herkunft.art !== 'katalog') throw new Fachfehler(409, t('meldungen.pakete.beispiele-nur-katalog', { name: p.name }));
+    const { paket } = await this.lade(p.id, p.version, p.herkunft.url);
+    if (!paket.beispiele.length) return { angelegt: 0 };
+    const typen = new Set((await this.d.mappentypen.listeTypen()).map((x) => x.id));
+    const dmsTypen = await this.dmsTypen();
+    const ziel = (vw: string): string => {
+      const [pk, s] = vw.includes(':') ? vw.split(':') : [p.id, vw];
+      const tid = pk === 'dms' ? dmsTypen.get(s)?.id : installierte.find((x) => x.id === pk)?.typen[s];
+      if (!tid || !typen.has(tid)) throw new Fachfehler(422, t('meldungen.pakete.der-verweis-laesst-sich-2', { vw, p: pk, s }));
+      return tid;
+    };
+    // Vorgaben (#1038) über ihre feste Kennung – eigene wie fremde.
+    const vorgaben = new Map<string, string | null>();
+    for (const w of paket.beispiele.flatMap((b) => Object.values(b.werte).flatMap((x) => (Array.isArray(x) ? x : [x])))) {
+      if (istVorgabeWert(w) && !vorgaben.has(w.vorgabe)) vorgaben.set(w.vorgabe, (await this.vorgabeMappe(w.vorgabe, p.id))?.id ?? null);
+    }
+    const mappen: string[] = [];
+    const beispielIds = new Map<string, string>();
+    try {
+      await this.legeBeispielMappen({ paket, ziel, vorgabeId: (vw) => vorgaben.get(vw) ?? null, installierte, von, mappen, beispielIds });
+    } catch (e) {
+      await this.d.loeschen.entferneMappenEndgueltig(mappen).catch(() => {});
+      throw e;
+    }
+    const beispielMappen = await this.d.beispielMappen.beispielStand(mappen);
+    await this.d.kern.repo.speicherePaket({ ...p, ...(beispielIds.size ? { beispiele: Object.fromEntries(beispielIds) } : {}), beispielMappen });
+    log.info('Beispiele eines Pakets angelegt', { von: von.email, paket: id, angelegt: mappen.length });
+    return { angelegt: mappen.length };
   }
 
   /** Tabellen (#1030) der Typen aus `bleibt` entfernen, die Mappen anderer Typen aus `bleibt` zeigen; true, wenn es welche gab. */

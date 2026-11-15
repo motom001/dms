@@ -1,10 +1,12 @@
 /**
- * Rauchtests: Werkbank: Mappentyp, Stempel, Sprungleiste, Notfallblatt, Sicherung, Stufen der Leiste; Rundgang und Abmelden.
+ * Rauchtests: Werkbank: Mappentyp, Stempel, Sprungleiste, Notfallblatt, Sicherung, Stufen der Leiste, Beispiel-Ablage; Rundgang und
+ * Abmelden.
  * Allein starten (frisch gestartetes Ablago, siehe rauchtest.mjs): node web/rauchtest/bereiche/werkbank.mjs [fehlerordner] [musterordner]
  */
 import assert from 'node:assert/strict';
 import '../einrichtung.mjs';
-import { BASIS, benutzermenue, JONAS, LENA, rauchtest, verwalten } from '../hilfen.mjs';
+import { BASIS, benutzermenue, JONAS, keineWaagerechteRolle, LENA, rauchtest, verwalten, WERKBANK_BEREICHE } from '../hilfen.mjs';
+import { axePruefen, tippflaechenPruefen } from '../muster.mjs';
 
 rauchtest('Werkbank: Mappentyp bearbeiten (Felder)', { als: LENA }, async (s) => {
   await s.goto(BASIS + '/ablage/start');
@@ -133,7 +135,7 @@ rauchtest('Werkbank: Sicherung anlegen und herunterladen (#975)', { als: LENA, e
 
 // Bereiche je Stufe, aufsteigend (shared/src/werkbankansicht.ts, Feld `ab`); jede Stufe enthält die vorige.
 const STUFE_NEU = {
-  einsteiger: ['pakete', 'benutzer', 'verschluesselung', 'sicherung', 'papierkorb', 'betrieb', 'region', 'systemzustand'],
+  einsteiger: ['pakete', 'beispielablage', 'benutzer', 'verschluesselung', 'sicherung', 'papierkorb', 'betrieb', 'region', 'systemzustand'],
   haushalt: ['typen', 'sichten', 'automatisierungen', 'ablaufvorlagen', 'rundgaenge', 'tipps', 'stempel', 'postfaecher', 'eingangsordner', 'webdav',
     'texterkennung', 'woerter', 'vollexport', 'daten', 'sprachen', 'organisation', 'aufgaben', 'anmeldeschutz', 'protokoll', 'fehlermeldungen', 'wartung'],
   selbstaendig: ['nummernkreise', 'aufbewahrung', 'auskuenfte', 'loeschkonzept', 'loeschprotokoll'],
@@ -168,7 +170,7 @@ rauchtest('Werkbank: fünf Stufen – Einträge je Stufe, Meine Leiste nur für 
       const fehlt = bisher.filter((p) => !leiste.includes(p) && !BEDINGT.includes(p));
       assert.deepEqual([fremd, fehlt], [[], []], `Stufe ${stufe}: nicht in der Stufe ${fremd.join(', ')} | fehlt ${fehlt.join(', ')}`);
       assert.ok(leiste.length > vorher, `Stufe ${stufe} zeigt mehr als die vorige (${leiste.length} > ${vorher})`);
-      if (stufe === 'einsteiger') assert.equal(leiste.length, 9, 'Einsteiger: Übersicht und acht Bereiche');
+      if (stufe === 'einsteiger') assert.equal(leiste.length, 10, 'Einsteiger: Übersicht und neun Bereiche');
       vorher = leiste.length;
     }
     // Meine Leiste: für alle Einsteiger, für mich Alles.
@@ -181,6 +183,44 @@ rauchtest('Werkbank: fünf Stufen – Einträge je Stufe, Meine Leiste nur für 
     // Zurück auf die Stufe aus der Einrichtung (einrichtung.mjs: Haushalt).
     await ansichtSetzen(s, { installation: { vorlage: 'haushalt', ein: [], aus: [] }, eigene: { ein: [] } });
   }
+});
+
+/* ---------- Beispiel-Ablage (#988) ---------- */
+
+/** Seite der Beispiel-Ablage: nötige Pakete mit Stand; ohne sie ist „Anlegen“ gesperrt und der Weg zu den Paketen steht da. */
+async function beispielAblageOeffnen(s) {
+  await s.goto(BASIS + '/ablage/start');
+  await verwalten(s);
+  await s.goto(BASIS + '/werkbank/beispielablage');
+  await s.getByRole('heading', { name: 'Beispiel-Ablage', level: 1 }).waitFor();
+  await s.getByRole('heading', { name: 'Anlegen', level: 2 }).waitFor();
+}
+
+rauchtest('Werkbank → Beispiel-Ablage: nötige Pakete vorher genannt, axe hell und dunkel (#988)', { als: LENA }, async (s) => {
+  await beispielAblageOeffnen(s);
+  const stand = await (await s.request.get(BASIS + '/api/werkbank/beispielablage', { headers: { 'x-dms': '1' } })).json();
+  assert.deepEqual(stand.noetig.map((p) => p.id), ['basis', 'haushalt', 'vertraege']);
+  const anlegen = s.getByRole('button', { name: /^Beispiel-Ablage anlegen/ });
+  if (stand.noetig.some((p) => !p.installiert)) {
+    await s.getByText(/Installiere zuerst unter/).waitFor();
+    assert.equal(await anlegen.getAttribute('aria-disabled'), 'true', 'Ohne nötige Pakete ist „Anlegen“ gesperrt');
+  }
+  // Getrennt von den Lasttest-Daten (früher „Demo-Daten“): eigener Name in der Leiste.
+  const leiste = s.getByRole('complementary', { name: 'Bereiche' });
+  await leiste.getByRole('link', { name: /^Beispiel-Ablage/ }).waitFor();
+  const funde = [];
+  for (const schema of ['light', 'dark']) {
+    await s.emulateMedia({ colorScheme: schema });
+    for (const v of await axePruefen(s, WERKBANK_BEREICHE)) funde.push(`${schema}: ${v}`);
+  }
+  assert.deepEqual(funde, [], `axe meldet Verstöße:\n${funde.join('\n')}`);
+});
+
+rauchtest('Handy: Werkbank → Beispiel-Ablage, Tippflächen (#988)', { handy: true, als: LENA }, async (s) => {
+  await beispielAblageOeffnen(s);
+  await keineWaagerechteRolle(s);
+  const zuKlein = await tippflaechenPruefen(s, WERKBANK_BEREICHE);
+  assert.deepEqual(zuKlein, [], `Zu kleine Tippflächen:\n${zuKlein.join('\n')}`);
 });
 
 rauchtest('Rundgang beim ersten Anmelden und „Ablago entdecken“', {}, async (s) => {

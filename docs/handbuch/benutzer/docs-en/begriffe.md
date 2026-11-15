@@ -387,6 +387,10 @@ See also: [Appearance](#darstellung).
 Approved beginning of an address (host and path) to which the Then card "Call URL" of an automation may report – under Workbench → Automations → Destinations outside. Only https; "On the home network" explicitly also allows http and devices on your own network. Ablago does not call other addresses and never follows redirects. The emergency sheet lists the hosts.  
 See also: [Call from outside](#aufruf-von-auen), [Emergency sheet](#notfallblatt).
 
+<a id="beispiel-ablage"></a>**Example Library** (*Beispiel-Ablage*) · ✓ everyday word · administrators  
+A small, consistent Library of an invented family to look around in – the example folders of the installed packages in one click, without automations and notifications. Gone again in one click; your own data and changed examples stay.  
+See also: [Sample folder](#beispiel-mappe), [Load test data](#lasttest-daten).
+
 <a id="expertenmodus"></a>**Expert mode** (*Expertenmodus*) · ✗ technical term · advanced users  
 An expandable section under Workbench → Packages, directly below the buttons. Expanded, it shows "Further sources" and "Upload package" – for package developers and Ablago without the internet. Collapsed at first; the browser remembers per user whether it is open.  
 See also: [Package](#paket), [Package catalogue](#paketkatalog).
@@ -486,7 +490,7 @@ See also: [Package](#paket), [Calculated field](#berechnetes-feld), [Switched on
 
 <a id="beispiel-mappe"></a>**Sample folder** (*Beispiel-Mappe*) · ✓ everyday word · administrators  
 A folder with invented data that a package creates on request when installing (tick "Create sample folders"), so you can see what belongs in a folder – to try out, not to keep. Unchanged examples can be removed again together with their documents. Unlike a preset.  
-See also: [Package](#paket), [Preset](#vorgabe), [Demo data](#demo-daten).
+See also: [Package](#paket), [Preset](#vorgabe), [Example Library](#beispiel-ablage), [Load test data](#lasttest-daten).
 
 <a id="suche-und-volltext"></a>**Search and full text** (*Suche und Volltext*) · ~ with explanation · administrators  
 The workbench area under Post and incoming for text recognition, archive version, typos and the way to the synonyms. "Shrink new PDFs automatically" has been under System health since
@@ -564,9 +568,6 @@ The command "dms" in the container for emergencies and operation.
 <a id="debug-modus"></a>**Debug mode** (*Debug-Modus*) · ✗ technical term · advanced users  
 A more detailed technical log for troubleshooting.
 
-<a id="demo-daten"></a>**Demo data** (*Demo-Daten*) · ✓ everyday word · administrators  
-Generated sample folders for trying out and for load tests.
-
 <a id="notfallkontakt"></a>**Emergency contact** (*Notfallkontakt*) · ✓ everyday word · administrators  
 A person you trust who should be asked in an emergency. They appear on the emergency sheet and get a short info email, but no access.  
 See also: [Emergency sheet](#notfallblatt).
@@ -588,11 +589,14 @@ The level under "Customise the workbench" for a household that sets up more itse
 See also: [Business](#betrieb), [Customise the workbench](#werkbank-anpassen), [Library](#ablage).
 
 <a id="auftrag"></a>**Job** (*Auftrag*) · ✗ technical term · administrators  
-Work that Ablago does in the background and whose progress you can see, e.g. creating demo data, full export, assigning numbers retrospectively. Only one job runs at a time. Work for people is called a task.
+Work that Ablago does in the background and whose progress you can see, e.g. creating load test data, full export, assigning numbers retrospectively. Only one job runs at a time. Work for people is called a task.
 
 <a id="schlussel"></a>**Key** (*Schlüssel*) · ~ with explanation · administrators  
 The secret key with which password fields and backups are encrypted. It is never in the database. The fixed name of a field, on the other hand, is called identifier.  
 See also: [Fingerprint](#fingerabdruck), [Emergency sheet](#notfallblatt).
+
+<a id="lasttest-daten"></a>**Load test data** (*Lasttest-Daten*) · ✓ everyday word · administrators  
+Many generated folders with random values for load tests and measurements, only at the level "Everything". Formerly "demo data". To see what a filled Library looks like, use the example Library.
 
 <a id="protokoll"></a>**Log** (*Protokoll*) · ~ with explanation · advanced users  
 The server's running operating log with modules and levels (Workbench → Log). A folder's story, on the other hand, is called history.  

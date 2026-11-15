@@ -34,7 +34,7 @@
   "warnung.schleife": "For at least 5 minutes, the server often had to wait longer than 100 ms before it could process a request (in 99 % of measurements).",
   "warnung.cpu": "The CPU has been more than 90 % busy for at least 5 minutes.",
   "warnung.speicher": "Memory has been more than 90 % used for at least 5 minutes.",
-  "warnung.text": "Ablago then reacts slowly. Typical causes: text recognition is working through many scans, demo data is being created, large exports are running, a package is computing a lot or the container’s limit is too tight.",
+  "warnung.text": "Ablago then reacts slowly. Typical causes: text recognition is working through many scans, load test data is being created, large exports are running, a package is computing a lot or the container’s limit is too tight.",
   "warnung.uebersicht": "High load.",
   "warnung.knopf": "Go to system health",
   "warnung.leiste": "Load high",

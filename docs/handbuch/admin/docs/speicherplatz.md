@@ -40,7 +40,7 @@ Ist Ablago langsam, siehst du hier, woran es liegt – ohne Konsole des NAS. Abl
 **Typische Ursachen und was hilft:**
 
 - **Texterkennung** arbeitet viele neue Scans ab – das geht vorbei; die Warteschlange steht unter [Texterkennung](texterkennung.md).
-- **Demo-Daten** werden angelegt oder entfernt – ebenfalls vorübergehend.
+- **Lasttest-Daten** werden angelegt oder entfernt – ebenfalls vorübergehend.
 - Ein **Paket mit Code** rechnet viel – der Anteil *Paket-Läufer* zeigt das; die Auslastung je Paket folgt in einer späteren Version.
 - Der Arbeitsspeicher ist dauerhaft knapp – erhöhe `mem_limit` in der Compose-Datei (zu Hause und in kleinen Betrieben reichen meist 1–2 GB, mit Texterkennung eher 2 GB; Messwerte unter [Was Ablago verkraftet](verkraftet.md)) oder gib dem NAS mehr Speicher.
 - Die Systemlast des Rechners ist hoch, die CPU von Ablago aber nicht – dann bremst ein anderer Dienst auf dem NAS.

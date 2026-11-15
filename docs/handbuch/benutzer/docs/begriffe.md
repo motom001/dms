@@ -368,9 +368,13 @@ Siehe auch: [Geplant](#geplant), [Erinnerung](#erinnerung), [Paket](#paket).
 Einstellung an einem Verweisfeld (#1037) – Paare „Feld der verwiesenen Mappe → Feld dieser Mappe“. Wählt man eine Mappe, schlägt Ablago deren Werte in leeren Feldern vor, markiert „vorgeschlagen aus …“ (z. B. Kündigungsfrist aus der Vertragsart). Nie überschreiben, nie Passwörter, nur Werte, die man lesen darf.  
 Siehe auch: [Aus Dokument füllen](#aus-dokument-fullen).
 
+<a id="beispiel-ablage"></a>**Beispiel-Ablage** · ✓ Alltagswort · Administratoren  
+Eine kleine, stimmige Ablage einer erfundenen Familie zum Umsehen – die Beispiel-Mappen der installierten Pakete auf einen Klick, ohne Automatisierungen und Benachrichtigungen. Mit einem Klick wieder weg; eigene Daten und geänderte Beispiele bleiben.  
+Siehe auch: [Beispiel-Mappe](#beispiel-mappe), [Lasttest-Daten](#lasttest-daten).
+
 <a id="beispiel-mappe"></a>**Beispiel-Mappe** · ✓ Alltagswort · Administratoren  
 Eine Mappe mit erfundenen Daten, die ein Paket auf Wunsch beim Installieren anlegt (Haken „Beispiel-Mappen anlegen“), damit man sieht, was in eine Mappe gehört – zum Ausprobieren, nicht zum Behalten. Unveränderte Beispiele lassen sich samt Dokumenten wieder entfernen. Anders als eine Vorgabe.  
-Siehe auch: [Paket](#paket), [Vorgabe](#vorgabe), [Demo-Daten](#demo-daten).
+Siehe auch: [Paket](#paket), [Vorgabe](#vorgabe), [Beispiel-Ablage](#beispiel-ablage), [Lasttest-Daten](#lasttest-daten).
 
 <a id="benutzer"></a>**Benutzer** · ✓ Alltagswort · alle  
 Ein Konto, mit dem sich jemand anmeldet. Liegt als Systemmappe in Ablago. Personen und Firmen, mit denen man zu tun hat (Kontakte), sind keine Benutzer, sondern gewöhnliche Mappen vom Mappentyp „Person“ bzw. „Organisation“ aus dem Paket Basis.
@@ -551,13 +555,10 @@ Siehe auch: [Werkbank](#werkbank).
 Die Schnittstelle, über die Programme mit Ablago arbeiten. Zugang mit einem persönlichen API-Schlüssel.
 
 <a id="auftrag"></a>**Auftrag** · ✗ Fachwort · Administratoren  
-Arbeit, die Ablago im Hintergrund erledigt und deren Fortschritt man sieht, z. B. Demo-Daten erzeugen, Vollexport, Nummern nachträglich vergeben. Es läuft immer nur ein Auftrag. Arbeit für Menschen heißt Aufgabe.
+Arbeit, die Ablago im Hintergrund erledigt und deren Fortschritt man sieht, z. B. Lasttest-Daten erzeugen, Vollexport, Nummern nachträglich vergeben. Es läuft immer nur ein Auftrag. Arbeit für Menschen heißt Aufgabe.
 
 <a id="debug-modus"></a>**Debug-Modus** · ✗ Fachwort · Fortgeschrittene  
 Ein ausführlicheres technisches Protokoll für die Fehlersuche.
-
-<a id="demo-daten"></a>**Demo-Daten** · ✓ Alltagswort · Administratoren  
-Erzeugte Beispielmappen zum Ausprobieren und für Lasttests.
 
 <a id="eingebautes-werkzeug"></a>**Eingebautes Werkzeug** · ~ mit Erklärung · Administratoren  
 Ein Programm, das das Ablago-Image mitbringt und das Ablago selbst aufruft – zum Lesen von PDFs (Poppler) und zum Bearbeiten von PDFs (qpdf). Die Werkbank nennt es nur, wenn eins fehlt, dann mit Folge und Abhilfe (Suche und Volltext, Systemzustand).  
@@ -582,6 +583,9 @@ Siehe auch: [Betrieb](#betrieb), [Werkbank anpassen](#werkbank-anpassen), [Ablag
 
 <a id="konsole"></a>**Konsole** · ✗ Fachwort · Fortgeschrittene  
 Der Befehl „dms“ im Container für Notfall und Betrieb.
+
+<a id="lasttest-daten"></a>**Lasttest-Daten** · ✓ Alltagswort · Administratoren  
+Viele erzeugte Mappen mit zufälligen Werten für Lasttests und Messungen, nur in der Stufe „Alles“. Früher „Demo-Daten“. Wer sehen will, wie eine gefüllte Ablage aussieht, nimmt die Beispiel-Ablage.
 
 <a id="meine-daten-exportieren"></a>**Meine Daten exportieren** · ✓ Alltagswort · alle  
 Ein Benutzer lädt unter Mein Konto seine eigenen Daten herunter.
@@ -738,7 +742,8 @@ Wer Oberfläche, Handbuch, Hilfetexte oder Release-Notizen schreibt, verwendet d
 | Automatisierungsvorlage | Makro, Workflow-Vorlage, Ablaufvorlage | `Ablaufvorlage, ablaufvorlagen, inhalt.ablaufvorlagen` |
 | Bedingung | – | `Bedingung` |
 | Beim Auswählen übernehmen | Vorbelegen (in der Oberfläche), Erben | `Feld.vorbelegen` |
-| Beispiel-Mappe | Demo-Mappe | `inhalt/beispiele, beispielMappen` |
+| Beispiel-Ablage | Demo-Daten | `beispielablage` |
+| Beispiel-Mappe | Lasttest-Mappe | `inhalt/beispiele, beispielMappen` |
 | Benutzer | User, Account | `Benutzer` |
 | Berechnetes Feld | Formelfeld, berechnete Spalte, automatisches Feld | `Feld.berechnetVon, berechnet (Paket)` |
 | Berechtigungen | Permissions | `Rechte` |
@@ -770,6 +775,7 @@ Wer Oberfläche, Handbuch, Hilfetexte oder Release-Notizen schreibt, verwendet d
 | Ist Teil einer anderen Mappe | Untertyp, Untermappentyp, Vererbung | `Mappentyp.teilVon, gehoertZu, shared/src/teile.ts` |
 | Kann aus Post angelegt werden | – | `Mappentyp.ausPost` |
 | Kennung | Schlüssel (für Felder), Key | `key, schluessel` |
+| Lasttest-Daten | Demo-Daten | – |
 | Leerseite | Blindseite, Vakatseite, leeres Blatt | `Dokument.leerseiten, dms:leerseiten` |
 | Link | Direktlink, sprechender Link | `Direktlink` |
 | Mappe | Akte, Ordner, Datensatz | `Mappe` |

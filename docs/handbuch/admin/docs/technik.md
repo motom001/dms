@@ -121,7 +121,7 @@ Im Filter von **Werkbank → Protokoll** stehen alle Module mit ihrem Namen – 
 | Benutzerkonten und Anmeldung | `konto` | Anmeldung, **Anmeldeschutz** (gesperrte Konten und IP-Adressen), Sitzungen, Benutzer, Rollen, Vertretung |
 | Ablage | `ablage` | Mappen anlegen, ändern, löschen; Ansichten, Papierkorb, Notizen, Aufgaben |
 | Dokumente | `dokumente` | Hochladen, Anzeigen, Löschen |
-| Werkbank | `werkbank` | Mappentypen, Pakete, Demo-Daten, Einstellungen, Versionsabgleich |
+| Werkbank | `werkbank` | Mappentypen, Pakete, Lasttest-Daten, Einstellungen, Versionsabgleich |
 | Datenschutz | `datenschutz` | Auskünfte, Abruf-Links, Löschkonzept |
 | Texterkennung | `texterkennung` | abgeschlossen, ausgelassen, fehlgeschlagen, neu gestartet, abgebrochen; Einstellungen |
 | Dateien umwandeln | `umwandlung` | Fassungen aus Paketen (z. B. TIFF → PDF) |

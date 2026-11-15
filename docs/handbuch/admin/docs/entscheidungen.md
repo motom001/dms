@@ -42,7 +42,7 @@ Kurz festgehalten, damit spätere Änderungen wissen, warum etwas so ist.
 - **Trefferliste** als Liste von Spaltenkennungen am Mappentyp (`mappentypen.trefferliste`); Systemspalten beginnen mit `_` und kollidieren so nie mit Feldschlüsseln. Kompakt oder Tabelle entscheidet die Breite der Liste selbst (ResizeObserver), nicht die Bildschirmbreite.
 - **Sortieren auf dem Server** (wegen des seitenweisen Ladens), leere Werte immer zuletzt; nicht nach Verweisen und langen Texten. Gespeichert je Benutzer und Ansicht in `benutzer_einstellungen`.
 - **Passung gespeichert** (`mappen.passt`, `mappen.problem`): Ob eine Mappe zur Definition passt, prüft der Server beim Ändern des Mappentyps für alle Mappen dieses Mappentyps (eindeutige Werte im Arbeitsspeicher statt je Mappe in der Datenbank) und nach dem Speichern für bisher unpassende Mappen desselben Mappentyps.
-- **Lange Arbeiten im Hintergrund:** Demo-Daten laufen als Auftrag mit Fortschritt, damit ein Reverse-Proxy nicht nach seiner Wartezeit abbricht.
+- **Lange Arbeiten im Hintergrund:** Lasttest-Daten laufen als Auftrag mit Fortschritt, damit ein Reverse-Proxy nicht nach seiner Wartezeit abbricht.
 
 ## Register und Dokumente
 
@@ -89,13 +89,13 @@ Kurz festgehalten, damit spätere Änderungen wissen, warum etwas so ist.
 - **Rolle löschen:** erlaubt, auch wenn Benutzer sie haben – deren Zuordnung fällt weg. Verweise aus normalen Feldern (z. B. „verantwortliche Rolle“) verhindern das Löschen wie bei jeder Mappe.
 - **Deaktivieren statt löschen:** Wer sich schon angemeldet hat, wird deaktiviert; seine Mappe behält den Namen, der überall kursiv und durchgestrichen erscheint, und Verweise bleiben gültig. Löschen geht nur für nie angenommene Einladungen.
 - **Neue Mappen / Löschen erlauben** als Eigenschaft jedes Mappentyps (`erstellen_erlaubt`, `loeschen_erlaubt`); die Oberfläche blendet die Knöpfe aus, der Server prüft es. Beim Mappentyp *Benutzer* ist beides fest aus. *Seit 0.32 (#146) abgelöst: Anlegen und Löschen regeln die Berechtigungen (C, D); fest bleiben nur die Systemregeln für Benutzer-Mappen (seit 0.41, #192, gilt für Post die normale Berechtigung C).*
-- Demo-Daten und Beispiele lassen die Systemtypen aus.
+- Lasttest-Daten und Beispiele lassen die Systemtypen aus.
 
 ## Handbuch und Releases (#25)
 
 - **Zwei getrennte Handbücher** (MkDocs Material, je eine eigene Seite mit eigener Suche): Benutzer sollen sich auf ihre Möglichkeiten konzentrieren und nicht in Technik suchen müssen. Sie verweisen aufeinander, statt Inhalte doppelt zu pflegen. Technik und Entscheidungen gehören zum Administratorhandbuch.
 - **Deutsche Suche** über das Suchplugin von MkDocs (`lang: de`, mit Wortstammbildung); läuft im Browser, ohne Server.
-- **Screenshots werden erzeugt, nicht gepflegt:** Der Workflow *Handbuch* startet Ablago mit leerer Datenbank, legt Beispiele und Demo-Daten an und nimmt die Seiten mit Playwright auf (`docs/handbuch/screenshots/aufnehmen.mjs`). So passen die Bilder immer zur Version auf `main`. Die Bilder liegen nicht im Repository.
+- **Screenshots werden erzeugt, nicht gepflegt:** Der Workflow *Handbuch* startet Ablago mit leerer Datenbank, legt Beispiele und Lasttest-Daten an und nimmt die Seiten mit Playwright auf (`docs/handbuch/screenshots/aufnehmen.mjs`). So passen die Bilder immer zur Version auf `main`. Die Bilder liegen nicht im Repository.
 - **GitHub Pages** über GitHub Actions; Pull Requests bauen nur und legen die Screenshots als Artefakt ab.
 - **Changelog = GitHub Releases.** Der Text kommt aus `docs/releases/<tag>.md` oder, falls es die Datei nicht gibt, aus den Commit-Überschriften seit dem vorigen Tag.
 - **Release bei neuer Versionsnummer (#34).** Steht auf `main` eine Version in `package.json`, zu der es noch keinen Tag gibt, legt „Prüfen und Image bauen“ nach bestandenen Prüfungen das Image mit Versionsnummer und danach Tag und Release an (`release.yml` als wiederverwendbarer Workflow). Nicht bei jedem Commit: So bleibt die Versionsnummer aussagekräftig, und mehrere Wünsche lassen sich bündeln.

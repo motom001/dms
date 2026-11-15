@@ -5,13 +5,13 @@ The **workbench** only exists in [Administration mode](verwalten.md#der-verwaltu
 <!-- bereiche:gruppen -->
 | Group | Areas |
 | --- | --- |
-| **Build the Library** | [Packages](pakete.md), [Folder types](mappentypen.md), [Views](sichten.md), [Number sequences](nummernkreise.md), [Automations](automatisierungen.md), [Automation templates](automatisierungsvorlagen.md), [Tours](rundgaenge.md), [Tips](tipps.md) |
+| **Build the Library** | [Packages](pakete.md), [Example Library](beispielablage.md), [Folder types](mappentypen.md), [Views](sichten.md), [Number sequences](nummernkreise.md), [Automations](automatisierungen.md), [Automation templates](automatisierungsvorlagen.md), [Tours](rundgaenge.md), [Tips](tipps.md) |
 | **Users and security** | [Users](benutzer.md), [Encryption](verschluesselung.md), [Retention expired](archiv.md#nach-der-frist-aufbewahrung-abgelaufen) (only with archive mode), [Stamps](stempel.md) |
 | **Data protection** | [Access requests](datenschutz.md#auskunft-erteilen) (only when used for work), [Deletion concept](loeschkonzept.md#aus-dem-dms-erzeugen) (only when used for work), [Deletion log](datenschutz.md#loschprotokoll) (only when used for work) |
 | **Post and intake** | [Mailboxes](postfaecher.md), [Intake folder](eingangsordner.md) (only if the folder is mounted), [WebDAV drive](webdav.md), [Search and full text](texterkennung.md), [Synonyms](suche.md#gleichbedeutende-worter) |
 | **Back up data** | [Backup](sicherung.md), [Full export](export.md), [Bin](papierkorb.md), [Settings](daten-einstellungen.md) |
 | **Settings** | [Email and address](installation.md#e-mail-und-adresse), [Region](region.md), [Languages](sprachen.md), [Own organisation](organisation.md), [Tasks](aufgaben.md), [Sign-in protection](anmeldeschutz.md), [Themes](designs.md), [Database connection](installation.md#datenbank-anbindung) |
-| **Maintenance and troubleshooting** | [System health](speicherplatz.md), [Log](fehlersuche.md#protokoll), [Reported errors](fehlersuche.md#gemeldete-fehler), [Maintenance](wartungsmodus.md), [Demo data](demo.md) |
+| **Maintenance and troubleshooting** | [System health](speicherplatz.md), [Log](fehlersuche.md#protokoll), [Reported errors](fehlersuche.md#gemeldete-fehler), [Maintenance](wartungsmodus.md), [Load test data](demo.md) |
 <!-- /bereiche:gruppen -->
 
 Every setting has exactly one place. The areas' addresses (`/werkbank/sicherung` …) stayed the same when they were re-sorted in version 0.116; bookmarks and a saved selection under *Customise workbench* still apply.
@@ -169,6 +169,7 @@ You choose the level in the [setup wizard](einrichtungsassistent.md) in the step
 | --- | :-: | :-: | :-: | :-: | :-: |
 | Overview | ● | ● | ● | ● | ● |
 | [Packages](pakete.md) | ● | ● | ● | ● | ● |
+| [Example Library](beispielablage.md) | ● | ● | ● | ● | ● |
 | [Folder types](mappentypen.md) |   | ● | ● | ● | ● |
 | [Views](sichten.md) |   | ● | ● | ● | ● |
 | [Number sequences](nummernkreise.md) |   |   | ● | ● | ● |
@@ -204,8 +205,8 @@ You choose the level in the [setup wizard](einrichtungsassistent.md) in the step
 | [Log](fehlersuche.md#protokoll) |   | ● | ● | ● | ● |
 | [Reported errors](fehlersuche.md#gemeldete-fehler) |   | ● | ● | ● | ● |
 | [Maintenance](wartungsmodus.md) |   | ● | ● | ● | ● |
-| [Demo data](demo.md) |   |   |   |   | ● |
-| **Number** | **9** | **30** | **35** | **36** | **38** |
+| [Load test data](demo.md) |   |   |   |   | ● |
+| **Number** | **10** | **31** | **36** | **37** | **39** |
 <!-- /bereiche:stufen -->
 
 The data protection areas are also only in the bar when Ablago is used for work.
@@ -227,6 +228,7 @@ If a hidden area is set up, for instance a mailbox or sign-in via a provider, it
 | Area | What for | Level |
 | --- | --- | --- |
 | [Packages](pakete.md) | Install ready-made folder types and views | from Beginner |
+| [Example Library](beispielablage.md) | Create a filled Library to look around in and remove it again | from Beginner |
 | [Folder types](mappentypen.md) | Build your own kinds of folders | from Household |
 | [Views](sichten.md) | Arrange the collections on the left in the library | from Household |
 | [Number sequences](nummernkreise.md) | Sequential numbers, e.g. for invoices | from Self-employed |
@@ -262,5 +264,5 @@ If a hidden area is set up, for instance a mailbox or sign-in via a provider, it
 | [Log](fehlersuche.md#protokoll) | Read the technical log | from Household |
 | [Reported errors](fehlersuche.md#gemeldete-fehler) | Errors users have reported | from Household |
 | [Maintenance](wartungsmodus.md) | Temporarily lock users out (maintenance mode) and one-off upkeep work | from Household |
-| [Demo data](demo.md) | Example folders to try things out | Everything only |
+| [Load test data](demo.md) | Many folders for load tests and measurements | Everything only |
 <!-- /bereiche:wofuer -->

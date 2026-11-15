@@ -10,7 +10,7 @@ Deleted folders go into the bin – including documents and links. Individually 
 
 ## Retention { #aufbewahrung }
 
-Under **Workbench → Back up data → [Settings](daten-einstellungen.md#papierkorb)** you set in the **Bin** section how many days deleted folders and documents stay (default: 30). The bin itself only shows one line about it with a link there; at the top, **Empty bin** empties everything at once. Only removing the [demo data](demo.md) is permanent immediately. Ablago tidies up hourly.
+Under **Workbench → Back up data → [Settings](daten-einstellungen.md#papierkorb)** you set in the **Bin** section how many days deleted folders and documents stay (default: 30). The bin itself only shows one line about it with a link there; at the top, **Empty bin** empties everything at once. Only removing the [load test data](demo.md) is permanent immediately. Ablago tidies up hourly.
 
 **0 days switches the bin off:** deleting is then permanent immediately, as before version 0.11. What is currently in the bin is deleted permanently on saving – the workbench asks first when saving.
 
@@ -43,7 +43,7 @@ Every folder has a **history** (who changed what when). If a folder is deleted p
 - Backup and restore contain the bin; the [full export](export.md) lists the documents in the bin in `papierkorb-dokumente.jsonl`.
 
 !!! note "Permanent immediately"
-    **Workbench → Demo data → remove** doesn't go via the bin.
+    **Workbench → Load test data → remove** doesn't go via the bin.
 
 ## Users and roles {#benutzer-und-rollen}
 

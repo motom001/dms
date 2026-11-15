@@ -20,14 +20,14 @@ describe('Werkbank-Ansicht: Regeln', () => {
     const je = STUFEN.map((v) => BEREICHE.filter((b) => inVorlage(v, b.pfad)).map((b) => b.pfad));
     for (let i = 1; i < je.length; i++) assert.ok(je[i - 1].every((p) => je[i].includes(p)), `${STUFEN[i]} enthält ${STUFEN[i - 1]}`);
     const [e, h, s, b] = je;
-    assert.deepEqual(e, ['pakete', 'benutzer', 'verschluesselung', 'sicherung', 'papierkorb', 'betrieb', 'region', 'systemzustand']);
+    assert.deepEqual(e, ['pakete', 'beispielablage', 'benutzer', 'verschluesselung', 'sicherung', 'papierkorb', 'betrieb', 'region', 'systemzustand']);
     assert.ok(h.includes('automatisierungen') && h.includes('texterkennung') && h.includes('protokoll') && h.includes('anmeldeschutz') && !h.includes('nummernkreise'));
     assert.deepEqual(s.filter((p) => !h.includes(p)), ['nummernkreise', 'aufbewahrung', 'auskuenfte', 'loeschkonzept', 'loeschprotokoll']);
     assert.deepEqual(b.filter((p) => !s.includes(p)), ['designs']);
     assert.deepEqual(BEREICHE.filter((x) => !inVorlage('organisation', x.pfad)).map((x) => x.pfad), ['anbindung', 'demo']);
     assert.equal(BEREICHE.filter((x) => inVorlage('alles', x.pfad)).length, BEREICHE.length);
     // Anzahl der Einträge in der Leiste samt Übersicht – so im Handbuch und im Rauchtest.
-    assert.deepEqual(STUFEN.map(anzahlInVorlage), [9, 30, 35, 36, 38]);
+    assert.deepEqual(STUFEN.map(anzahlInVorlage), [10, 31, 36, 37, 39]);
     assert.deepEqual(BEREICHE.find((x) => x.pfad === 'stempel')?.in, ['haushalt', 'selbstaendig', 'organisation']);
   });
 
@@ -192,15 +192,16 @@ describe('Werkbank: mittlere Spalte für Sammlungen zum Anlegen und Bearbeiten (
     assert.deepEqual(Object.values(GRUPPEN), ['Ablage aufbauen', 'Benutzer und Sicherheit', 'Datenschutz', 'Post und Eingänge', 'Daten sichern', 'Einstellungen', 'Wartung und Fehlersuche']);
     const je = (g: string) => BEREICHE.filter((x) => x.gruppe === g).map((x) => x.pfad);
     // Nutzung (#1032) steht seit #1170 auf „Eigene Organisation“ unter Einstellungen.
-    assert.deepEqual(je('ablage'), ['pakete', 'typen', 'sichten', 'nummernkreise', 'automatisierungen', 'ablaufvorlagen', 'rundgaenge', 'tipps']);
+    assert.deepEqual(je('ablage'), ['pakete', 'beispielablage', 'typen', 'sichten', 'nummernkreise', 'automatisierungen', 'ablaufvorlagen', 'rundgaenge', 'tipps']);
     assert.deepEqual(je('benutzer'), ['benutzer', 'verschluesselung', 'aufbewahrung', 'stempel']);
     assert.deepEqual(je('datenschutz'), ['auskuenfte', 'loeschkonzept', 'loeschprotokoll']);
     assert.deepEqual(je('post'), ['postfaecher', 'eingangsordner', 'webdav', 'texterkennung', 'woerter']);
     assert.deepEqual(je('sichern'), ['sicherung', 'vollexport', 'papierkorb', 'daten']);
     assert.deepEqual(je('einstellungen'), ['betrieb', 'region', 'sprachen', 'organisation', 'aufgaben', 'anmeldeschutz', 'designs', 'anbindung']);
     assert.deepEqual(je('wartung'), ['systemzustand', 'protokoll', 'fehlermeldungen', 'wartung', 'demo']);
-    // 7 ± 2: Einstellungen hat mit „Eigene Organisation“ (#1170) acht.
-    for (const g of Object.keys(GRUPPEN)) assert.ok(je(g).length <= 8, g);
+    // 7 ± 2: Einstellungen hat mit „Eigene Organisation“ (#1170) acht, „Ablage aufbauen“ mit der Beispiel-Ablage (#988)
+    // neun – Einsteiger sehen davon nur Pakete und Beispiel-Ablage.
+    for (const g of Object.keys(GRUPPEN)) assert.ok(je(g).length <= (g === 'ablage' ? 9 : 8), g);
     assert.equal(bereichName('texterkennung'), 'Suche und Volltext');
     assert.equal(bereichName('aufbewahrung'), 'Aufbewahrung abgelaufen');
     // Aufgaben und Tägliche Zusammenfassung: ein Eintrag unter Einstellungen, Kennung bleibt „aufgaben“.
@@ -214,7 +215,7 @@ describe('Werkbank: mittlere Spalte für Sammlungen zum Anlegen und Bearbeiten (
     for (const p of ['aufgaben', 'verschluesselung', 'papierkorb', 'webdav']) assert.equal(werkbankUmleitung(p), null, p);
     // Haushalt (#987): was er vorher zeigte, dazu der frühere Expertenmodus und Post, Protokoll, Wartung.
     assert.deepEqual(BEREICHE.filter((b) => inVorlage('haushalt', b.pfad)).map((b) => b.pfad).sort(),
-      ['ablaufvorlagen', 'anmeldeschutz', 'aufgaben', 'automatisierungen', 'benutzer', 'betrieb', 'daten', 'eingangsordner', 'fehlermeldungen', 'organisation', 'pakete', 'papierkorb', 'postfaecher', 'protokoll',
+      ['ablaufvorlagen', 'anmeldeschutz', 'aufgaben', 'automatisierungen', 'beispielablage', 'benutzer', 'betrieb', 'daten', 'eingangsordner', 'fehlermeldungen', 'organisation', 'pakete', 'papierkorb', 'postfaecher', 'protokoll',
         'region', 'rundgaenge', 'sicherung', 'sichten', 'sprachen', 'stempel', 'systemzustand', 'texterkennung', 'tipps', 'typen', 'verschluesselung', 'vollexport', 'wartung', 'webdav', 'woerter']);
   });
 

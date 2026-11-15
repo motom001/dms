@@ -40,7 +40,7 @@ If Ablago is slow, you see here what the cause is – without the NAS's console.
 **Typical causes and what helps:**
 
 - **Text recognition** is working through many new scans – that passes; the queue is under [Text recognition](texterkennung.md).
-- **Demo data** is being created or removed – also temporary.
+- **Load test data** is being created or removed – also temporary.
 - A **package with code** is computing a lot – the share *package runner* shows this; load per package follows in a later version.
 - Memory is permanently tight – raise `mem_limit` in the Compose file (at home and in small businesses 1–2 GB is usually enough, with text recognition rather 2 GB; measurements under [What Ablago copes with](verkraftet.md)) or give the NAS more memory.
 - The computer's system load is high, but Ablago's CPU isn't – then another service on the NAS is slowing things down.

@@ -42,7 +42,7 @@ Briefly recorded so that later changes know why something is the way it is.
 - **Result list** as a list of column keys on the folder type (`mappentypen.trefferliste`); system columns begin with `_` and so never collide with field keys. Compact or table is decided by the list's own width (ResizeObserver), not the screen width.
 - **Sorting on the server** (because of page-by-page loading), empty values always last; not by links and long texts. Saved per user and view in `benutzer_einstellungen`.
 - **Fit stored** (`mappen.passt`, `mappen.problem`): whether a folder fits the definition is checked by the server when the folder type changes, for all folders of this folder type (unique values in memory instead of per folder in the database), and after saving for folders of the same folder type that didn't fit so far.
-- **Long jobs in the background:** demo data runs as a job with progress so that a reverse proxy doesn't cancel after its waiting time.
+- **Long jobs in the background:** load test data runs as a job with progress so that a reverse proxy doesn't cancel after its waiting time.
 
 ## Tabs and documents {#register-und-dokumente}
 
@@ -89,13 +89,13 @@ Briefly recorded so that later changes know why something is the way it is.
 - **Deleting a role:** allowed even if users have it – their assignment goes. Links from normal fields (e.g. "responsible role") prevent deletion as with every folder.
 - **Deactivating instead of deleting:** whoever has already signed in is deactivated; their folder keeps the name, which appears everywhere in italics and struck through, and links stay valid. Deleting only works for invitations never accepted.
 - **Allow new folders / deleting** as a property of every folder type (`erstellen_erlaubt`, `loeschen_erlaubt`); the interface hides the buttons, the server checks it. For the folder type *User* both are fixed off. *Replaced since 0.32 (#146): creating and deleting are governed by the permissions (C, D); only the system rules for user folders remain fixed (since 0.41, #192, the normal permission C applies to post).*
-- Demo data and examples leave out the system types.
+- Load test data and examples leave out the system types.
 
 ## Manual and releases (#25) {#handbuch-und-releases-25}
 
 - **Two separate manuals** (MkDocs Material, each a site of its own with its own search): users should concentrate on their possibilities and not have to search through technology. They link to each other instead of maintaining content twice. Technology and decisions belong to the Administrator manual.
 - **German search** via MkDocs' search plugin (`lang: de`, with stemming); runs in the browser, without a server. The English manuals (#730) use `lang: en`.
-- **Screenshots are generated, not maintained:** the workflow *Handbuch* starts Ablago with an empty database, creates examples and demo data and records the pages with Playwright (`docs/handbuch/screenshots/aufnehmen.mjs`). That way the images always match the version on `main`. The images are not in the repository.
+- **Screenshots are generated, not maintained:** the workflow *Handbuch* starts Ablago with an empty database, creates examples and load test data and records the pages with Playwright (`docs/handbuch/screenshots/aufnehmen.mjs`). That way the images always match the version on `main`. The images are not in the repository.
 - **GitHub Pages** via GitHub Actions; pull requests only build and store the screenshots as an artefact.
 - **Changelog = GitHub Releases.** The text comes from `docs/releases/<tag>.md` or, if the file doesn't exist, from the commit subjects since the previous tag.
 - **Release on a new version number (#34).** If a version is on `main` in `package.json` for which there is no tag yet, "Prüfen und Image bauen" creates the image with the version number after passed checks, then tag and release (`release.yml` as a reusable workflow). Not with every commit: that way the version number stays meaningful, and several requests can be bundled.

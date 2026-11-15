@@ -1,10 +1,10 @@
-# Demo-Daten
+# Lasttest-Daten
 
-Unter **Werkbank → Demo-Daten** füllst du Ablago zum Ausprobieren oder Testen mit Inhalt.
+Unter **Werkbank → Lasttest-Daten** (früher „Demo-Daten“) füllst du Ablago für Lasttests und Messungen mit vielen Mappen. Wer nur sehen will, wie eine gefüllte Ablage aussieht, nimmt die [Beispiel-Ablage](beispielablage.md).
 
 --8<-- "ausgeblendet-alles.md"
 
-![Demo-Daten](bilder/werkbank-demo.png)
+![Lasttest-Daten](bilder/werkbank-demo.png)
 
 ## Beispiel-Mappentypen
 
@@ -12,17 +12,17 @@ Unter **Werkbank → Demo-Daten** füllst du Ablago zum Ausprobieren oder Testen
 
 Das geht nur, solange es außer den Systemmappentypen *Benutzer*, *Rolle* und *Post* (und einem früheren [Ablageort](mappentypen.md#ablageort-wo-die-originale-liegen)) noch keine Mappentypen gibt. Gibt es einen Ablageort, bekommen *Vertrag* und *Rechnung* das Feld *Verbleib Originaldokumente*; dazu kommen ein paar Ablageorte (zu Hause › Arbeitszimmer Schrank › roter Ordner, Safe im Flur, beim Notar, vernichtet) und die Ansicht *Originale nach Ort*. In einer neuen Ablage gibt es keinen – die Beispiele kommen dann ohne dieses Feld.
 
-## Demo-Mappen erzeugen
+## Lasttest-Mappen erzeugen
 
 Erzeugt bis zu **50.000 Mappen je Durchlauf** für die vorhandenen Mappentypen – mit passenden Werten je Feld und Verweisen auf vorhandene Mappen. So lässt sich prüfen, wie sich Listen, Suche, Sortierung, Texterkennung, Speicherplatz und Sicherung mit vielen Mappen und Dokumenten verhalten. Mehrere Durchläufe hintereinander sind möglich; neue Mappen verweisen auch auf die schon vorhandenen.
 
 Das läuft im Hintergrund; du kannst die Seite verlassen. Der Fortschritt steht auf dieser Seite – je Phase mit dem, was gezählt wird, z. B. „Mappen anlegen: 1.000 von 1.000 ✓ · Dokumente erzeugen: 1.326 von 1.907“. Die Zahl der Mappen entspricht deiner Eingabe. Nur wenn sich für einen Mappentyp keine passenden Werte erzeugen lassen, werden es weniger:
 
-- **Schon vor dem Start** nennt die Abschätzung Mappentypen, die sich nicht erzeugen lassen, mit Anzahl und Grund – z. B. ein Pflicht-Passwort (Passwörter gibt es in Demo-Daten nie) oder ein Pflicht-Verweis, für den es keine Mappen des Zieltyps gibt und der Zieltyp im selben Lauf auch keine bekommt. Zieltypen, die selbst Demo-Mappen bekommen, legt Ablago zuerst an.
+- **Schon vor dem Start** nennt die Abschätzung Mappentypen, die sich nicht erzeugen lassen, mit Anzahl und Grund – z. B. ein Pflicht-Passwort (Passwörter gibt es in Lasttest-Daten nie) oder ein Pflicht-Verweis, für den es keine Mappen des Zieltyps gibt und der Zieltyp im selben Lauf auch keine bekommt. Zieltypen, die selbst Lasttest-Mappen bekommen, legt Ablago zuerst an.
 - **Sobald die Mappen angelegt sind**, zeigt der Fortschritt statt des Hakens z. B. „Mappen anlegen: 1.415 von 1.500 – 85 übersprungen“; unter *Warum wurden Mappen übersprungen?* stehen die Gründe je Mappentyp. Das kann auch ein eindeutiges Feld sein, dessen mögliche Werte vergeben sind.
 - Das Ergebnis am Ende nennt die Gründe noch einmal.
 
-Demo-Mappen sind gekennzeichnet. Die Systemmappentypen *Benutzer*, *Rolle* und *Post* bekommen keine Demo-Mappen.
+Lasttest-Mappen sind gekennzeichnet. Die Systemmappentypen *Benutzer*, *Rolle* und *Post* bekommen keine Lasttest-Mappen.
 
 ### Startwert
 
@@ -62,9 +62,9 @@ Damit du nebenher normal weiterarbeiten kannst, legt der Lauf nach jedem Dokumen
 
 ## Entfernen
 
-Unter dem Knopf steht je Mappentyp, wie viele Mappen es gibt und wie viele davon Demo-Mappen sind, mit Summe.
+Unter dem Knopf steht je Mappentyp, wie viele Mappen es gibt und wie viele davon Lasttest-Mappen sind, mit Summe.
 
-**Alle Demo-Mappen entfernen** löscht alle Demo-Mappen samt ihrer Dokumente – in Paketen zu je 1.000 mit Fortschritt, auch bei vielen Dateien. Echte Mappen bleiben unberührt. Verweist eine echte Mappe auf eine Demo-Mappe, wird nichts gelöscht – entferne dann zuerst diesen Verweis.
+**Alle Lasttest-Mappen entfernen** löscht alle Lasttest-Mappen samt ihrer Dokumente – in Paketen zu je 1.000 mit Fortschritt, auch bei vielen Dateien. Echte Mappen bleiben unberührt. Verweist eine echte Mappe auf eine Lasttest-Mappe, wird nichts gelöscht – entferne dann zuerst diesen Verweis.
 
 !!! tip "Ausprobieren ohne Risiko"
     Für Versuche mit größeren Änderungen an Mappentypen eignet sich eine zweite Installation mit eigener Datenbank besser als die echte.

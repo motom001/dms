@@ -59,6 +59,8 @@ const EINTRAEGE: Eintrag[] = [
   // Ablage aufbauen (#717): erst Fertiges, dann Feinarbeit, zum Schluss, was auf allem aufbaut.
   // Die Nutzung (#1032, privat oder auch beruflich) steht seit #1170 oben auf „Eigene Organisation“ unter Einstellungen.
   { pfad: 'pakete', gruppe: 'ablage', ab: E },
+  // Beispiel-Ablage (#988): gleich nach den Paketen, deren Beispiele sie anlegt – schon für Einsteiger.
+  { pfad: 'beispielablage', gruppe: 'ablage', ab: E },
   { pfad: 'typen', gruppe: 'ablage', ab: H },
   { pfad: 'sichten', gruppe: 'ablage', ab: H },
   { pfad: 'nummernkreise', gruppe: 'ablage', ab: S },

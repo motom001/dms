@@ -412,16 +412,16 @@ Hier misst du, wie lange das Paket **Texterkennung** auf dem Pi für eine Seite 
 
 1. Öffne `http://dms.local:8099` und melde dich mit dem Konto an, das der Lasttest angelegt hat: E-Mail `lena@example.org`, Passwort `lasttest-passwort-1`. (Beides gilt nur für diese Test-Installation, die du danach löschst.)
 2. **Werkbank → Pakete** → **Katalog abrufen** → bei **Texterkennung** auf **Installieren** und die Rechte bestätigen.
-3. **Werkbank → Demo-Daten** – der Bereich ist in der Leiste ausgeblendet; unten in der Leiste stehen die ausgeblendeten Bereiche, ein Klick zeigt sie. Dort einstellen:
+3. **Werkbank → Lasttest-Daten** – der Bereich ist in der Leiste ausgeblendet; unten in der Leiste stehen die ausgeblendeten Bereiche, ein Klick zeigt sie. Dort einstellen:
     - **Anzahl:** `20`
     - **Startwert:** `pi-probe-1` – so bekommen alle, die messen, **dieselben** Dokumente, und die Zeiten lassen sich vergleichen.
     - Haken bei **Dokumente erzeugen**, **Mappen mit Dokumenten** auf 100 %, **Dokumente je Mappe** von 1 bis 1.
     - Bei **Mischung** den Regler **„Gescanntes“ PDF** ganz nach rechts auf 100 % (die anderen gehen von selbst auf 0 %).
     - Schreib die Zahl aus der **Abschätzung** auf: „≈ … Seiten für die Texterkennung“.
 
-    ![Werkbank → Demo-Daten](bilder/werkbank-demo.png)
+    ![Werkbank → Lasttest-Daten](bilder/werkbank-demo.png)
 
-4. **Demo-Daten erzeugen** klicken. Sobald darunter „… Demo-Mappen und … Dokumente erzeugt“ steht, **Uhrzeit notieren**.
+4. **Lasttest-Daten erzeugen** klicken. Sobald darunter „… Lasttest-Mappen und … Dokumente erzeugt“ steht, **Uhrzeit notieren**.
 5. **Werkbank → Suche und Volltext** öffnen und ab und zu neu laden. Wenn unter *Texterkennung für Scans und Bilder* **nichts mehr wartet**, wieder **Uhrzeit notieren**.
 6. **Rechnen:** Minuten × 60 ÷ Seiten = **Sekunden je Seite**. Beispiel: 6 Minuten für 45 Seiten → 360 ÷ 45 = 8 Sekunden je Seite.
 

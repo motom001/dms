@@ -415,16 +415,16 @@ Here you measure how long the **Text recognition** package needs per page on the
 
 1. Open `http://dms.local:8099` and sign in with the account the load test created: email `lena@example.org`, password `lasttest-passwort-1`. (Both only apply to this test installation, which you delete afterwards.)
 2. **Workbench → Packages** → **Fetch catalogue** → at **Text recognition**, click **Install** and confirm the permissions.
-3. **Workbench → Demo data** – the area is hidden in the sidebar; the hidden areas are listed at the bottom of the sidebar, and one click shows them. Set there:
+3. **Workbench → Load test data** – the area is hidden in the sidebar; the hidden areas are listed at the bottom of the sidebar, and one click shows them. Set there:
     - **Number:** `20`
     - **Seed:** `pi-probe-1` – this way everyone who measures gets **the same** documents, and the times can be compared.
     - Tick **Create documents**, **Folders with documents** at 100 %, **Documents per folder** from 1 to 1.
     - Under **Mix**, move the slider **"Scanned" PDF** all the way to the right to 100 % (the others go to 0 % by themselves).
     - Write down the number from the **estimate**: "≈ … pages for text recognition".
 
-    ![Workbench → Demo data](bilder/werkbank-demo.png)
+    ![Workbench → Load test data](bilder/werkbank-demo.png)
 
-4. Click **Create demo data**. As soon as "… demo folders and … documents created" appears below, **note the time**.
+4. Click **Create load test data**. As soon as "… load test folders and … documents created" appears below, **note the time**.
 5. Open **Workbench → Search and full text** and reload now and then. When **nothing is waiting any more** under *Text recognition for scans and images*, **note the time** again.
 6. **Calculate:** minutes × 60 ÷ pages = **seconds per page**. Example: 6 minutes for 45 pages → 360 ÷ 45 = 8 seconds per page.
 

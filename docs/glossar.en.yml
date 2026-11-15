@@ -493,9 +493,12 @@ begriffe:
   Speicherplatz:
     begriff: Storage space
     beschreibung: How full the data folders are, with thresholds for warnings (under system health).
-  Demo-Daten:
-    begriff: Demo data
-    beschreibung: Generated sample folders for trying out and for load tests.
+  Lasttest-Daten:
+    begriff: Load test data
+    beschreibung: Many generated folders with random values for load tests and measurements, only at the level "Everything". Formerly "demo data". To see what a filled Library looks like, use the example Library.
+  Beispiel-Ablage:
+    begriff: Example Library
+    beschreibung: A small, consistent Library of an invented family to look around in – the example folders of the installed packages in one click, without automations and notifications. Gone again in one click; your own data and changed examples stay.
   API:
     begriff: API
     beschreibung: The interface through which programs work with Ablago. Access with a personal API key.
@@ -507,4 +510,4 @@ begriffe:
     beschreibung: The command "dms" in the container for emergencies and operation.
   Auftrag:
     begriff: Job
-    beschreibung: Work that Ablago does in the background and whose progress you can see, e.g. creating demo data, full export, assigning numbers retrospectively. Only one job runs at a time. Work for people is called a task.
+    beschreibung: Work that Ablago does in the background and whose progress you can see, e.g. creating load test data, full export, assigning numbers retrospectively. Only one job runs at a time. Work for people is called a task.

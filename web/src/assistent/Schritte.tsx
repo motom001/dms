@@ -489,6 +489,9 @@ function OptionalSchritt({ s, zurWahl, leiste }: { s: Sammlung; zurWahl: () => v
           <p className="leise klein">{t('einrichtung.optional.beispiele.text')}</p>
           <HakenFeld beschriftung={t('einrichtung.optional.beispiele')} hinweis={mitTypen && t('einrichtung.optional.beispiele.pakete')}>
             <input type="checkbox" checked={o.beispiele && !mitTypen} disabled={mitTypen} onChange={(e) => setO({ ...o, beispiele: e.target.checked })} /></HakenFeld>
+          {/* „Erst mal umsehen“ (#988): Beispiel-Ablage aus den Beispielen der gewählten Pakete. */}
+          {mitTypen && <HakenFeld beschriftung={t('einrichtung.optional.beispielablage')} hinweis={t('einrichtung.optional.beispielablage.hinweis')}>
+            <input type="checkbox" checked={!!o.beispielablage} onChange={(e) => setO({ ...o, beispielablage: e.target.checked })} /></HakenFeld>}
         </section>
         <section className="blatt" id="mail">
           <h2 className="h3">{t('einrichtung.optional.mail')}</h2>
@@ -594,10 +597,10 @@ function Zusammenfassung({ s, zurWahl, leiste }: { s: Sammlung; zurWahl: () => v
 const STUFE_TEXT: Record<Stufe, string> = {
   ablage: 'einrichtung.lauf.ablage', schluessel: 'einrichtung.lauf.schluessel', adresse: 'einrichtung.lauf.adresse', region: 'einrichtung.lauf.region',
   nutzung: 'einrichtung.lauf.nutzung', mail: 'einrichtung.lauf.mail', notfallkontakte: 'einrichtung.lauf.notfallkontakte', beispiele: 'einrichtung.lauf.beispiele', pakete: 'einrichtung.lauf.pakete',
-  organisation: 'einrichtung.lauf.organisation',
+  organisation: 'einrichtung.lauf.organisation', beispielablage: 'einrichtung.lauf.beispielablage',
 };
 /** Welcher Schritt eine Stufe ändert (nach einem Fehler). */
-const SCHRITT_JE_STUFE: Partial<Record<Stufe, Ansicht>> = { ablage: 'konto', adresse: 'optional', region: 'optional', nutzung: 'nutzung', mail: 'optional', notfallkontakte: 'optional', beispiele: 'optional', pakete: 'pakete', organisation: 'nutzung' };
+const SCHRITT_JE_STUFE: Partial<Record<Stufe, Ansicht>> = { ablage: 'konto', adresse: 'optional', region: 'optional', nutzung: 'nutzung', mail: 'optional', notfallkontakte: 'optional', beispiele: 'optional', pakete: 'pakete', organisation: 'nutzung', beispielablage: 'optional' };
 
 function LaufAnsicht() {
   const st = useAssistent();

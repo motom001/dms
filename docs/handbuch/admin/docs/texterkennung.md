@@ -126,7 +126,7 @@ Unter **Aufträge** siehst du in einer Liste mit fester Höhe die Dokumente je S
 - **Neu starten** lässt den Volltext ausdrücklich neu erzeugen: Auch ein Paket erkennt dann Dokumente neu, die schon Text haben.
 - **Alle Fehler neu starten** reiht alle Dokumente mit Fehler wieder ein.
 
-**Wenn die Datenbank ausgelastet ist:** Speichern viele Vorgänge gleichzeitig (ein Stapel Scans, Demo-Daten, ein Import), kann die Datenbank das Speichern eines Ergebnisses ausnahmsweise abbrechen. Ablago versucht es dann von selbst noch einige Male mit kurzer Pause. Klappt es auch dann nicht, steht das Dokument auf *Fehler* mit dem Grund „Text erkannt, aber nicht gespeichert – die Datenbank war ausgelastet“ und einem Eintrag im Protokoll – nie still ohne Volltext. **Neu starten** bzw. **Alle Fehler neu starten** holt es nach. Das gilt auch, wenn ein Paket den Text schreibt: Es bekommt dann die Antwort 503 und sendet erneut.
+**Wenn die Datenbank ausgelastet ist:** Speichern viele Vorgänge gleichzeitig (ein Stapel Scans, Lasttest-Daten, ein Import), kann die Datenbank das Speichern eines Ergebnisses ausnahmsweise abbrechen. Ablago versucht es dann von selbst noch einige Male mit kurzer Pause. Klappt es auch dann nicht, steht das Dokument auf *Fehler* mit dem Grund „Text erkannt, aber nicht gespeichert – die Datenbank war ausgelastet“ und einem Eintrag im Protokoll – nie still ohne Volltext. **Neu starten** bzw. **Alle Fehler neu starten** holt es nach. Das gilt auch, wenn ein Paket den Text schreibt: Es bekommt dann die Antwort 503 und sendet erneut.
 
 **Passwortgeschützte PDFs** erkennt Ablago und lässt sie mit dem Grund „Das PDF ist mit einem Passwort geschützt“ aus, statt einen Fehler zu melden – ein neuer Versuch würde nichts ändern.
 

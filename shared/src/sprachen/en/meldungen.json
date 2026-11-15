@@ -470,8 +470,8 @@
   "dienst.dokumente-aeltere-versionen-notizen": "{dokumente} documents, {versionen} older versions, {notizen} notes, {verweise} links removed",
   "dienst.sha-256-bytes": "SHA-256 {sha256} · {groesse} bytes · {mime}{wert}",
   "dienst.loeschprotokoll-pdf": "Deletion log {tag}.pdf",
-  "dienst.echte-mappen-verweisen-auf_one": "{anzahl} real folder links to demo folders. Remove these links first.",
-  "dienst.echte-mappen-verweisen-auf_other": "{anzahl} real folders link to demo folders. Remove these links first.",
+  "dienst.echte-mappen-verweisen-auf_one": "{anzahl} real folder links to load test folders. Remove these links first.",
+  "dienst.echte-mappen-verweisen-auf_other": "{anzahl} real folders link to load test folders. Remove these links first.",
   "dienst.die-datei-ist-zu": "The file is too large.",
   "dienst.hoechstens-100-pruefwerte-auf": "At most 100 checksums at once.",
   "dienst.dieses-dokumentenregister-gibt-es-2": "This documents tab doesn’t exist on the folder.",
@@ -1475,7 +1475,7 @@
   "routen.in-einer-vertretung-lassen": "Sessions can’t be ended while standing in.",
   "routen.das-ist-dieses-geraet": "This is this device. Please sign out to end it.",
   "routen.mit-dokumenten": " with documents",
-  "routen.demo-mappen-erzeugen": "Create {zahl} demo folders{wert}",
+  "routen.demo-mappen-erzeugen": "Create {zahl} load test folders{wert}",
   "routen.passwoerter-im-klartext-nur": "Passwords in plain text only with explicit confirmation.",
   "routen.zu-wenig-platz-am": "Not enough space at the destination: {round} MB free, about {round2} MB needed.",
   "routen.diesen-export-gibt-es": "This export doesn’t exist.",
@@ -2084,5 +2084,7 @@
   "paketerstellung.automatisierung-karte": "The then card “{karte}” does not exist in packages (Workbench, outward, call package).",
   "paketerstellung.automatisierung-und": "Conditions with views, favourites or fixed folders belong to this library.",
   "paketerstellung.automatisierung-feld": "“Change field” sets a reference or a person of this library.",
-  "paketerstellung.automatisierung-personen": "“{name}”: fixed people and roles do not come along – tasks there go to the person who created the folder. Adjust after installation."
+  "paketerstellung.automatisierung-personen": "“{name}”: fixed people and roles do not come along – tasks there go to the person who created the folder. Adjust after installation.",
+  "beispielablage.pakete-fehlen": "Packages for the example Library are missing: {pakete}. First install them under Workbench → Packages.",
+  "pakete.beispiele-nur-katalog": "The examples of “{name}” can only be created afterwards for packages from the catalogue."
 }

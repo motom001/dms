@@ -83,7 +83,7 @@ Alongside, without routes:
 `server/src/systemausstattung/` creates what every library needs: the system folder types “Role”, “User” and “Post” with their system fields and labels, the system roles and the views that ship with Ablago. It is a flow **above** the subject areas: `sicherstellen()` calls, one after the other, folder types (types and roles), views (own view of a type just created), post (the post views) and views (“Favourites”); it gets these steps from the service when it is assembled. Each step only creates what is missing.
 
 - **At start-up** (`dienst.postSystemmappen.gleicheBenutzerAb`, leader only) and so after every restore, which restarts.
-- **As a fallback**: if `kern.system()` does not find everything, it calls `systemausstattung.anlegen()` – for paths without a start (tests, restore, removing demo data). Concurrent calls share one run.
+- **As a fallback**: if `kern.system()` does not find everything, it calls `systemausstattung.anlegen()` – for paths without a start (tests, restore, removing load test data). Concurrent calls share one run.
 - Whoever only needs ids uses `kern.system()`; start-up calls `dienst.systemausstattung.sicherstellen()`. The core keeps the ids only if it looked them up outside a transaction.
 
 ### Hook points (#962) { #anschlusspunkte }
@@ -313,7 +313,7 @@ The first subject area with its own business logic in its subject folder (trial 
 
 | File | Class (in the service) | Content |
 |---|---|---|
-| `datenschutz.dienst.ts` | `DatenschutzDienst` (`dienst.datenschutzDienst`) | subject access request under Art. 15 GDPR (#396, #472, #668), demo data (#248) |
+| `datenschutz.dienst.ts` | `DatenschutzDienst` (`dienst.datenschutzDienst`) | subject access request under Art. 15 GDPR (#396, #472, #668), load test data (#248) |
 | `vollexport.ts` | `VollexportQuellen` (`dienst.vollexport`) | data sources for the full export (#254) and personal export (#255) |
 | `zustellen.ts` | `AuskunftZustellen` (`dienst.auskunftZustellen`) | e-mail and retrieval links with retrieval code (#455), "Export my data" |
 
@@ -977,7 +977,7 @@ What happens in Ablago is defined in **one** place: `shared/src/ereignisse.ts` (
 - **Outdated names:** the core no longer reports `texterkennung.fertig`. A package that subscribed to it gets `volltext.fertig` with `quelle: kern` under the old name (transition, `VERALTETE_EREIGNISSE`, dropped with 1.0.0). **All transitional exceptions** are listed with the version that drops them in `server/src/uebergaenge.ts` (#902); `uebergaenge.test.ts` fails as soon as Ablago reaches that version. New special paths for old packages or files only with an entry there.
 - **Bundling:** entries with `buendelS` (today `mappe.geaendert`, 5 s) combine quick successions for the same folder as long as the event hasn't been dispatched yet; the field keys are merged (`mischeFelder`).
 - **Deadline reached** exactly once: `frist_meldungen` (folder, field, date, time) as the primary key; remembering and event in one transaction.
-- **Silent:** `dienst.kern.ohneEreignisse(f)` – examples, demo data (creating and removing). Only events in which packages process files (full text, vectors, post) go into the outbox with `ausloeser.still` – automations skip them, folder events aren't created at all. A restore marks all open events as dispatched; during maintenance and a restore the dispatcher rests.
+- **Silent:** `dienst.kern.ohneEreignisse(f)` – examples, load test data (creating and removing). Only events in which packages process files (full text, vectors, post) go into the outbox with `ausloeser.still` – automations skip them, folder events aren't created at all. A restore marks all open events as dispatched; during maintenance and a restore the dispatcher rests.
 
 **Consumers**
 
@@ -1036,7 +1036,7 @@ Small routines without code: **When · And · Then · Otherwise** (Otherwise sin
 
 - No self-triggering (own changes don't trigger the same automation), chains at most 3 deep, brake at 30 runs per minute (then paused), run time 60 s, 200 automations, 20 cards per area, history of 200 runs or 30 days.
 - **Working comes before automating:** if something is missing (folder type, field, view), that never blocks work – the automation turns red and is paused (`angehalten.grund = 'fehlerhaft'`), at the latest on the next run or schedule pass. Saving only works with a valid state.
-- Demo data and examples trigger nothing (`ohneEreignisse`); during maintenance and restore the dispatcher rests. After a restore all switched-on automations are paused until an admin switches them on again.
+- Load test data and examples trigger nothing (`ohneEreignisse`); during maintenance and restore the dispatcher rests. After a restore all switched-on automations are paused until an admin switches them on again.
 - Saving with `version` (outdated state → 409). Versions as for all Workbench settings (#1006, `server/src/fassungen/`, table `fassungen`): restoring goes through the normal save. In the full export: `struktur/automatisierungen.json` (each automation with its versions, `version` = number of the version) and `struktur/fassungen.json`; all tables in the backup.
 
 ## Automation templates and folder runs (#1044) { #ablaufvorlagen }

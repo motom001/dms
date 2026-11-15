@@ -470,8 +470,8 @@
   "dienst.dokumente-aeltere-versionen-notizen": "{dokumente} Dokumente, {versionen} ältere Versionen, {notizen} Notizen, {verweise} Verweise entfernt",
   "dienst.sha-256-bytes": "SHA-256 {sha256} · {groesse} Bytes · {mime}{wert}",
   "dienst.loeschprotokoll-pdf": "Löschprotokoll {tag}.pdf",
-  "dienst.echte-mappen-verweisen-auf_one": "{anzahl} echte Mappe verweist auf Demo-Mappen. Entferne zuerst diese Verweise.",
-  "dienst.echte-mappen-verweisen-auf_other": "{anzahl} echte Mappen verweisen auf Demo-Mappen. Entferne zuerst diese Verweise.",
+  "dienst.echte-mappen-verweisen-auf_one": "{anzahl} echte Mappe verweist auf Lasttest-Mappen. Entferne zuerst diese Verweise.",
+  "dienst.echte-mappen-verweisen-auf_other": "{anzahl} echte Mappen verweisen auf Lasttest-Mappen. Entferne zuerst diese Verweise.",
   "dienst.die-datei-ist-zu": "Die Datei ist zu groß.",
   "dienst.hoechstens-100-pruefwerte-auf": "Höchstens 100 Prüfwerte auf einmal.",
   "dienst.dieses-dokumentenregister-gibt-es-2": "Dieses Dokumentenregister gibt es an der Mappe nicht.",
@@ -1475,7 +1475,7 @@
   "routen.in-einer-vertretung-lassen": "In einer Vertretung lassen sich Sitzungen nicht beenden.",
   "routen.das-ist-dieses-geraet": "Das ist dieses Gerät. Zum Beenden bitte abmelden.",
   "routen.mit-dokumenten": " mit Dokumenten",
-  "routen.demo-mappen-erzeugen": "{zahl} Demo-Mappen{wert} erzeugen",
+  "routen.demo-mappen-erzeugen": "{zahl} Lasttest-Mappen{wert} erzeugen",
   "routen.passwoerter-im-klartext-nur": "Passwörter im Klartext nur mit ausdrücklicher Bestätigung.",
   "routen.zu-wenig-platz-am": "Zu wenig Platz am Ziel: frei {round} MB, nötig etwa {round2} MB.",
   "routen.diesen-export-gibt-es": "Diesen Export gibt es nicht.",
@@ -2084,5 +2084,7 @@
   "paketerstellung.automatisierung-karte": "Die Dann-Karte „{karte}“ gibt es in Paketen nicht (Werkbank, nach außen, Paket aufrufen).",
   "paketerstellung.automatisierung-und": "Bedingungen mit Ansichten, Favoriten oder festen Mappen gehören zu dieser Ablage.",
   "paketerstellung.automatisierung-feld": "„Feld ändern“ setzt einen Verweis oder eine Person dieser Ablage.",
-  "paketerstellung.automatisierung-personen": "„{name}“: feste Personen und Rollen kommen nicht mit – Aufgaben gehen dort an die Person, die die Mappe angelegt hat. Nach der Installation anpassen."
+  "paketerstellung.automatisierung-personen": "„{name}“: feste Personen und Rollen kommen nicht mit – Aufgaben gehen dort an die Person, die die Mappe angelegt hat. Nach der Installation anpassen.",
+  "beispielablage.pakete-fehlen": "Für die Beispiel-Ablage fehlen Pakete: {pakete}. Installiere sie zuerst unter Werkbank → Pakete.",
+  "pakete.beispiele-nur-katalog": "Die Beispiele von „{name}“ lassen sich nachträglich nur für Pakete aus dem Katalog anlegen."
 }

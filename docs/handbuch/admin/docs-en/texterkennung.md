@@ -126,7 +126,7 @@ Under **Jobs** you see, in a list of fixed height, the documents per status (*er
 - **Restart** explicitly has the full text regenerated: a package then also re-recognises documents that already have text.
 - **Restart all errors** queues all documents with errors again.
 
-**If the database is at capacity:** if many processes save at once (a stack of scans, demo data, an import), the database may exceptionally cancel saving a result. Ablago then tries again a few more times by itself with a short pause. If that doesn't work either, the document shows *error* with the reason "Text recognised but not saved – the database was at capacity" and an entry in the log – never silently without full text. **Restart** or **Restart all errors** catches up. This also applies when a package writes the text: it then gets the answer 503 and sends again.
+**If the database is at capacity:** if many processes save at once (a stack of scans, load test data, an import), the database may exceptionally cancel saving a result. Ablago then tries again a few more times by itself with a short pause. If that doesn't work either, the document shows *error* with the reason "Text recognised but not saved – the database was at capacity" and an entry in the log – never silently without full text. **Restart** or **Restart all errors** catches up. This also applies when a package writes the text: it then gets the answer 503 and sends again.
 
 **Password-protected PDFs** are recognised by Ablago and skipped with the reason "The PDF is protected with a password" instead of reporting an error – a new attempt wouldn't change anything.
 

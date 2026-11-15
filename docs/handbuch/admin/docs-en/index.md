@@ -18,7 +18,7 @@ This manual is for everyone who **installs, sets up and runs** Ablago. How to wo
 | Set which views the Library offers | Workbench → Views | [Views](sichten.md) |
 | Invite users, assign roles, block accounts | Workbench → Users | [Users and roles](benutzer.md) |
 | Adjust colours, logo and lettering | Workbench → Designs | [Themes](designs.md) |
-| Try things out with sample data | Workbench → Demo data | [Demo data](demo.md) |
+| Try things out with sample data | Workbench → Load test data | [Load test data](demo.md) |
 | Overview of what needs doing | Workbench → Overview | [Workbench and overview](uebersicht.md) |
 | Set which areas the workbench shows | Workbench → Customise the workbench (at the bottom of the sidebar) | [Customise the workbench](uebersicht.md#werkbank-anpassen) |
 | Set who may see and change what | Workbench → folder types → Permissions, Workbench → Views | [Permissions](berechtigungen.md) |

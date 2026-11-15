@@ -10,7 +10,7 @@ Gelöschte Mappen kommen in den Papierkorb – samt Dokumenten und Verweisen. Ei
 
 ## Aufbewahrung
 
-Unter **Werkbank → Daten sichern → [Einstellungen](daten-einstellungen.md#papierkorb)** stellst du im Abschnitt **Papierkorb** ein, wie viele Tage gelöschte Mappen und Dokumente bleiben (Standard: 30). Im Papierkorb selbst steht nur eine Zeile dazu mit Link dorthin; oben leert **Papierkorb leeren** alles auf einmal. Sofort endgültig ist nur das Entfernen der [Demo-Daten](demo.md). Ablago räumt stündlich auf.
+Unter **Werkbank → Daten sichern → [Einstellungen](daten-einstellungen.md#papierkorb)** stellst du im Abschnitt **Papierkorb** ein, wie viele Tage gelöschte Mappen und Dokumente bleiben (Standard: 30). Im Papierkorb selbst steht nur eine Zeile dazu mit Link dorthin; oben leert **Papierkorb leeren** alles auf einmal. Sofort endgültig ist nur das Entfernen der [Lasttest-Daten](demo.md). Ablago räumt stündlich auf.
 
 **0 Tage schaltet den Papierkorb aus:** Löschen ist dann sofort endgültig, wie vor Version 0.11. Was gerade im Papierkorb liegt, wird beim Speichern endgültig gelöscht – die Werkbank fragt beim Speichern vorher nach.
 
@@ -43,7 +43,7 @@ Jede Mappe hat eine **Historie** (wer wann was geändert hat). Wird eine Mappe e
 - Sicherung und Wiederherstellung enthalten den Papierkorb; der [Vollexport](export.md) listet die Dokumente im Papierkorb in `papierkorb-dokumente.jsonl`.
 
 !!! note "Sofort endgültig"
-    **Werkbank → Demo-Daten → entfernen** geht nicht über den Papierkorb.
+    **Werkbank → Lasttest-Daten → entfernen** geht nicht über den Papierkorb.
 
 ## Benutzer und Rollen
 
