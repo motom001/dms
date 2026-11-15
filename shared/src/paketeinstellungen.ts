@@ -12,8 +12,22 @@ export const EINSTELLUNG_TYPEN = {
   auswahl: 'Auswahl', mehrfachauswahl: 'Mehrfachauswahl', geheim: 'Geheimnis',
   mappentyp: 'Mappentyp', feld: 'Feld eines Mappentyps', benutzer: 'Benutzer', rolle: 'Rolle', sicht: 'Ansicht',
   adresse: t('gemeinsam.paketeinstellungen.dienst-adresse'),
+  // Feldarten des Kerns (#996): Das Paket nennt sie im Manifest, Ablago kennt Wert, Darstellung und Speicherort.
+  ki_mappentypen: 'Mappentypen für KI-Dienste', fragen_grenzen: 'Grenzen für „Frag deine Ablage“', erkennung_standard: 'Standard für „Aus Dokument ausfüllen“',
+  mappenaktionen: 'Aktionen im Menü „Mappe“',
 } as const;
 export type EinstellungTyp = keyof typeof EINSTELLUNG_TYPEN;
+/**
+ * Feldarten des Kerns (#996): Einstellungen, die Ablago selbst hält (gelten teils für alle Pakete einer Art). Sie stehen
+ * im Reiter „Einstellungen“ wie jedes andere Feld, werden aber nicht in den Paketeinstellungen gespeichert, sondern
+ * dort, wo der Kern sie liest. Ohne Angabe im Manifest hängt Ablago sie an (siehe paketreiter.ts).
+ */
+export const KERN_TYPEN = ['ki_mappentypen', 'fragen_grenzen', 'erkennung_standard', 'mappenaktionen'] as const satisfies readonly EinstellungTyp[];
+export type KernTyp = typeof KERN_TYPEN[number];
+export const istKernFeld = (f: Pick<EinstellungFeld, 'typ'>): f is EinstellungFeld & { typ: KernTyp } => (KERN_TYPEN as readonly string[]).includes(f.typ);
+/** Prüfregeln (#996): Länge höchstens so viele Zeichen, Muster höchstens so lang. */
+export const MUSTER_MAX = 300;
+export const MELDUNG_MAX = 200;
 const VERWEISE: EinstellungTyp[] = ['mappentyp', 'feld', 'benutzer', 'rolle', 'sicht'];
 /** Verweise, die es auch als Mehrfachauswahl gibt (#658): gespeichert als Liste von Ids. */
 export const MEHRFACH_VERWEISE: EinstellungTyp[] = ['mappentyp', 'benutzer', 'rolle', 'sicht'];
@@ -32,6 +46,21 @@ export interface EinstellungFeld {
   mehrfach?: true;
   /** Gegenseitiger Ausschluss (#658): Was in diesem Feld gewählt ist, steht im genannten Feld nicht zur Wahl (und umgekehrt). */
   schliesstAus?: string;
+  /** Prüfregeln (#996) bei text und mehrzeilig: Länge in Zeichen; nur bei text ein Muster (Regex) mit eigener Meldung. */
+  laengeMin?: number; laengeMax?: number; muster?: string; meldung?: string;
+}
+
+/** Meldung, wenn ein Text nicht zu den Prüfregeln passt (#996) – dieselbe im Formular und auf dem Server. */
+export function textFehler(f: Pick<EinstellungFeld, 'laengeMin' | 'laengeMax' | 'muster' | 'meldung'>, v: string): string | null {
+  const n = [...v].length;
+  if (f.laengeMin !== undefined && n < f.laengeMin) return t('gemeinsam.paketeinstellungen.laenge-mindestens', { anzahl: f.laengeMin });
+  if (f.laengeMax !== undefined && n > f.laengeMax) return t('gemeinsam.paketeinstellungen.laenge-hoechstens', { anzahl: f.laengeMax });
+  if (f.muster && v && !passtMuster(f.muster, v)) return f.meldung || t('gemeinsam.paketeinstellungen.muster-passt-nicht');
+  return null;
+}
+/** Passt der ganze Wert zum Muster? Ein Muster, das sich nicht übersetzen lässt, passt nie. */
+function passtMuster(muster: string, v: string): boolean {
+  try { return new RegExp(`^(?:${muster})$`, 'u').test(v); } catch { return false; }
 }
 /** Ein Vorschlag für eine Zahl (#657), z. B. { wert: 300, name: "normal – empfohlen" }. */
 export interface ZahlVorschlag { wert: number; name: string }
@@ -118,6 +147,21 @@ export function liesBeschreibung(code: unknown): { beschreibung: Einstellungsbes
     }
     if (f.mehrfach !== undefined && (f.mehrfach !== true || !MEHRFACH_VERWEISE.includes(typ))) fehler.push(`${wo}/${str(f.schluessel)}: mehrfach: true gibt es nur bei ${MEHRFACH_VERWEISE.join(', ')}.`);
     if (f.schliesst_aus !== undefined && !SCHLUESSEL.test(str(f.schliesst_aus))) fehler.push(`${wo}/${str(f.schluessel)}: schliesst_aus nennt keinen gültigen Schlüssel.`);
+    // Prüfregeln (#996): Länge bei text/mehrzeilig, Muster nur bei text (kurze Werte), das Muster muss sich übersetzen lassen.
+    const ganz = (x: unknown) => typeof x === 'number' && Number.isInteger(x) && x >= 0;
+    for (const k of ['laenge_min', 'laenge_max'] as const) {
+      if (f[k] !== undefined && (!['text', 'mehrzeilig'].includes(typ) || !ganz(f[k]))) fehler.push(`${wo}/${str(f.schluessel)}: ${k} nur bei text und mehrzeilig, als ganze Zahl ab 0.`);
+    }
+    if (ganz(f.laenge_min) && ganz(f.laenge_max) && (f.laenge_min as number) > (f.laenge_max as number)) fehler.push(`${wo}/${str(f.schluessel)}: laenge_min ist größer als laenge_max.`);
+    if (f.muster !== undefined) {
+      let ok = typ === 'text' && typeof f.muster === 'string' && f.muster.length > 0 && f.muster.length <= MUSTER_MAX;
+      if (ok) try { new RegExp(f.muster as string, 'u'); } catch { ok = false; }
+      if (!ok) fehler.push(`${wo}/${str(f.schluessel)}: muster nur bei text, als gültiger regulärer Ausdruck (höchstens ${MUSTER_MAX} Zeichen).`);
+    }
+    if (f.meldung !== undefined && (f.muster === undefined || typeof f.meldung !== 'string' || f.meldung.length > MELDUNG_MAX)) fehler.push(`${wo}/${str(f.schluessel)}: meldung nur zusammen mit muster, höchstens ${MELDUNG_MAX} Zeichen.`);
+    // Feldarten des Kerns (#996): ohne Vorgabe und Pflicht – den Wert hält Ablago.
+    if ((KERN_TYPEN as readonly string[]).includes(typ) && (f.standard !== undefined || f.pflicht !== undefined)) fehler.push(`${wo}/${str(f.schluessel)}: ${typ} hat keine Vorgabe und keine Pflicht – den Wert hält Ablago.`);
+    const mitMuster = typ === 'text' && typeof f.muster === 'string' && f.muster.length > 0 && f.muster.length <= MUSTER_MAX;
     return {
       schluessel: str(f.schluessel), name: str(f.name) || str(f.schluessel), typ,
       ...(f.hilfe ? { hilfe: str(f.hilfe) } : {}), ...(f.pflicht === true ? { pflicht: true } : {}),
@@ -130,6 +174,9 @@ export function liesBeschreibung(code: unknown): { beschreibung: Einstellungsbes
       ...(typ === 'feld' && f.mappentyp ? { mappentyp: str(f.mappentyp) } : {}),
       ...(f.mehrfach === true && MEHRFACH_VERWEISE.includes(typ) ? { mehrfach: true as const } : {}),
       ...(f.schliesst_aus !== undefined && SCHLUESSEL.test(str(f.schliesst_aus)) ? { schliesstAus: str(f.schliesst_aus) } : {}),
+      ...(['text', 'mehrzeilig'].includes(typ) && ganz(f.laenge_min) ? { laengeMin: f.laenge_min as number } : {}),
+      ...(['text', 'mehrzeilig'].includes(typ) && ganz(f.laenge_max) ? { laengeMax: f.laenge_max as number } : {}),
+      ...(mitMuster ? { muster: f.muster as string, ...(typeof f.meldung === 'string' && f.meldung ? { meldung: f.meldung.slice(0, MELDUNG_MAX) } : {}) } : {}),
     };
   };
   const bloecke: EinstellungBlock[] = [];
@@ -143,6 +190,7 @@ export function liesBeschreibung(code: unknown): { beschreibung: Einstellungsbes
       einmal(str(b.liste), oben, 'einstellungen');
       const innen = new Set<string>();
       for (const f of felder) einmal(f.schluessel, innen, `Liste ${str(b.liste)}`);
+      for (const f of felder) if (istKernFeld(f)) fehler.push(`Liste ${str(b.liste)}/${f.schluessel}: ${f.typ} geht nur in einem Abschnitt.`);
       for (const f of felder) if (f.typ === 'adresse') fehler.push(t('gemeinsam.paketeinstellungen.liste-adresse-geht-nur', { str: str(b.liste), schluessel: f.schluessel }));
       bloecke.push({ art: 'liste', schluessel: str(b.liste), name: str(b.name) || str(b.liste), eintrag: str(b.eintrag) || 'Eintrag', ...(b.hilfe ? { hilfe: str(b.hilfe) } : {}), sortierbar: b.sortierbar === true, felder });
     } else {
@@ -151,6 +199,7 @@ export function liesBeschreibung(code: unknown): { beschreibung: Einstellungsbes
     }
   }
   if (bloecke.flatMap((x) => (x.art === 'abschnitt' ? x.felder : [])).filter((f) => f.typ === 'adresse').length > 1) fehler.push(t('gemeinsam.paketeinstellungen.einstellungen-hoechstens-eine'));
+  for (const k of KERN_TYPEN) if (bloecke.flatMap((x) => x.felder).filter((f) => f.typ === k).length > 1) fehler.push(`einstellungen: ${k} höchstens einmal.`);
   // schliesst_aus (#658): nur zwischen Feldern eines Abschnitts mit demselben Verweistyp.
   const oberste = bloecke.flatMap((x) => (x.art === 'abschnitt' ? x.felder : []));
   for (const x of bloecke) for (const f of x.felder) {
@@ -269,6 +318,8 @@ export function pruefeWerte(b: Einstellungsbeschreibung, eingabe: unknown, q: Ve
       case 'text': case 'mehrzeilig': {
         if (typeof v !== 'string') { fehler[pfad] = t('gemeinsam.paketeinstellungen.text-erwartet'); return null; }
         if (v.length > (f.typ === 'text' ? 500 : 10000)) { fehler[pfad] = t('gemeinsam.paketeinstellungen.zu-lang'); return null; }
+        const falsch = textFehler(f, f.typ === 'text' ? v.trim() : v);
+        if (falsch) { fehler[pfad] = falsch; return null; }
         return f.typ === 'text' ? v.trim() : v;
       }
       case 'adresse': {
@@ -306,7 +357,7 @@ export function pruefeWerte(b: Einstellungsbeschreibung, eingabe: unknown, q: Ve
     }
     return null;
   };
-  for (const f of abschnittsfelder(b)) werte[f.schluessel] = eins(f, e[f.schluessel], f.schluessel);
+  for (const f of abschnittsfelder(b)) if (!istKernFeld(f)) werte[f.schluessel] = eins(f, e[f.schluessel], f.schluessel);
   // Gegenseitiger Ausschluss (#658): dieselbe Kennung nicht in beiden Feldern.
   const ids = (v: unknown) => (Array.isArray(v) ? v.map(String) : v == null || v === '' ? [] : [String(v)]);
   for (const f of abschnittsfelder(b)) {

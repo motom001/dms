@@ -226,7 +226,7 @@ Alle Funktionen sind synchron; Zeiger und Längen beziehen sich auf den importie
 | `speicher_lesen(schluessel, len)` | Länge oder `-1`: ein Wert aus dem **Speicher des Pakets** (Text je Schlüssel, zusammen höchstens 64 KB; bleibt zwischen Aufrufen und Updates). |
 | `speicher_schreiben(schluessel, len, wert, wlen)` | `0` oder `-1`. |
 | `ergebnis(text, len)` | Kurzer Text für die Übersicht (bei Aktionen: die Antwort, die der Administrator sieht). Mit einem Fehlercode ist der Text seit 0.124.0 die Fehlermeldung (sonst „Das Paket meldet Fehler n“). |
-| `log(stufe, text, len)` | Zeile ins Protokoll des Pakets (`0` Debug, `1` Info, `2` Warnung, `3` Fehler). `stdout`/`stderr` landen ebenfalls dort. |
+| `log(stufe, text, len)` | Zeile ins Protokoll des Pakets (`0` Debug, `1` Info, `2` Warnung, `3` Fehler), zu sehen im Verlauf des Pakets (höchstens 60 Zeilen je Stunde). `stdout`/`stderr` landen ebenfalls dort. |
 
 ### Grenzen
 
@@ -245,7 +245,7 @@ Ein Paket, das die Grenzen reißt, beeinträchtigt Ablago nicht; der Aufruf bric
 
 ### Netzaufrufe im Protokoll { #netzprotokoll }
 
-Jeden Aufruf von `netz` bzw. `netz_strom` hält der Läufer fest (#807) – im Protokoll des Pakets in der Werkbank und als Summe je Aufruf im Protokoll von Ablago (Stufe *info*, „Paket *id*: Netzaufrufe“ mit `anfragen`, `abgelehnt`, `hosts`, `hin`, `zurueck`). Je Eintrag: Zeit, Methode, **Host mit Port**, Bytes hin (Körper) und zurück (bei `netz_strom` alle mit `netz_weiter` gelesenen Stücke), Status bzw. „keine Antwort“. Gleiche Anfragen (Methode, Host, Status) eines Aufrufs und kurz hintereinander (innerhalb einer Minute, auch über Aufrufe) stehen in **einem** Eintrag mit Anzahl. Abgelehnte Adressen stehen als Warnung darin, ebenso eine Methode, die nicht auf `^[A-Z]{1,10}$` passt (nach Großschreibung; ohne Angabe `GET`) – sie wird nicht ausgeführt und steht als `?` im Protokoll. **Nie** Pfad, Query, Zugangsdaten, Köpfe oder Inhalte – trotzdem gehören Schlüssel in Köpfe (`kopf`), nicht in die Adresse. Ein Paket muss dafür nichts tun.
+Jeden Aufruf von `netz` bzw. `netz_strom` hält der Läufer fest (#807) – im Verlauf des Pakets in der Werkbank (#1003, beim Aufruf) und als Summe je Aufruf im Protokoll von Ablago (Stufe *info*, „Paket *id*: Netzaufrufe“ mit `anfragen`, `abgelehnt`, `hosts`, `hin`, `zurueck`). Je Eintrag: Zeit, Methode, **Host mit Port**, Bytes hin (Körper) und zurück (bei `netz_strom` alle mit `netz_weiter` gelesenen Stücke), Status bzw. „keine Antwort“. Gleiche Anfragen (Methode, Host, Status) eines Aufrufs und kurz hintereinander (innerhalb einer Minute, auch über Aufrufe) stehen in **einem** Eintrag mit Anzahl. Abgelehnte Adressen stehen als Warnung darin, ebenso eine Methode, die nicht auf `^[A-Z]{1,10}$` passt (nach Großschreibung; ohne Angabe `GET`) – sie wird nicht ausgeführt und steht als `?` im Protokoll. **Nie** Pfad, Query, Zugangsdaten, Köpfe oder Inhalte – trotzdem gehören Schlüssel in Köpfe (`kopf`), nicht in die Adresse. Ein Paket muss dafür nichts tun.
 
 **Messung (#565):** Außerdem stoppt der Läufer je Aufruf die Netzaufrufe – Zeit bis zur Antwort (Kopf) und gesamt, Bytes, Fehler (keine Antwort, Status 5xx), Zeitüberschreitungen – und gibt die Summe mit dem Ergebnis an Ablago (`messung` in der Meldung `ergebnis`). Ablago zeigt das in der Werkbank unter Systemzustand → Externe Dienste und beim Paket; ein KI-Paket (siehe unten) zählt als *KI-Dienst*, jedes andere als *Netz eines Pakets*. Bei Antworten mit `content-type` JSON, NDJSON oder `text/event-stream` liest der Läufer die **Token** aus `usage` (Namen wie bei OpenAI, Anthropic, Ollama und Gemini: `prompt_tokens`/`completion_tokens`, `input_tokens`/`output_tokens`, `prompt_eval_count`/`eval_count`, `promptTokenCount`/`candidatesTokenCount`; bei Strömen zählt der letzte Wert) – nur die Zahlen, gespeichert wird nichts aus der Antwort. Für Kosten und Budget sollte ein KI-Paket die Zählung beim Dienst also nicht abschalten (z. B. bei OpenAI im Strom `stream_options: { include_usage: true }`). Hat der Administrator ein Budget mit harter Grenze gesetzt und ist es erreicht, ruft Ablago Pakete mit Preis nicht mehr auf (Schnittstellen melden „KI-Funktionen pausiert bis …“, Ereignisse warten bis zum Monatsanfang).
 
@@ -366,6 +366,26 @@ POST /dokumente/{id}/seiten   { "seiten": [{"nr":1}, …, {"nr":5}], "teile": [0
 - **Höchstens 99 Anlagen je Teil.** Die Seiten lädt das Paket wie bisher über `GET /dokumente/{id}/seiten/{nr}/scan`.
 - Von Hand (`POST/PUT/DELETE /dokumente/{id}/anlagen…`) darf ein Paket Anlagen nur mit `dms:anlagen` und nur in Post ändern. Erkennung, Klassifizieren und KI-Pakete bekommen nie den Text von Anlagen.
 - **Nie Post aus dem E-Mail-Postfach** (seit 0.265.0, dms #999): Eine E-Mail ist genau eine Post. Post mit Kanal *E-Mail* teilt der Kern für kein Paket (`teile` oder `anlagen`: 409) – Trennblätter gelten im Postfach nicht. Lass den Kanal in der Auswahl „Nur Post aus diesen Kanälen“ weg. Die abgeholte E-Mail selbst trägt `originalEmail: true` (letzte Anlage am letzten Anhang, ohne Anhänge das Hauptdokument), `eingangNr` die Reihenfolge der Anhänge; Erkennung, Klassifizieren und KI-Pakete bekommen ihren Text nie.
+
+## Ausprobieren anbieten { #ausprobieren-anbieten }
+
+Mit `code.ausprobieren` zeigt Ablago bei deinem Paket den Reiter **Ausprobieren** (#1004): Der Administrator lädt eine Datei hoch, und dein Paket zeigt, was es damit tun würde – ohne etwas zu ändern.
+
+```yaml
+code:
+  ereignisse: [post.angelegt]
+  ausprobieren:
+    ereignis: post.angelegt                   # muss in code.ereignisse stehen
+    dateiarten: [application/pdf, "image/*"]  # 1 bis 20 Dateiarten
+    hilfe: Zeigt, wo Trennblätter erkannt werden und welche Seiten leer sind.
+```
+
+- Dein Paket bekommt das genannte Ereignis wie sonst (`dms_ereignis`), dazu **`"probe": true`**. Unter `daten` stehen `dokument` (Id der Probedatei), `name`, `mime` und `groesse`; `einstellungen` sind die **gerade im Formular eingetragenen**, noch nicht gespeicherten Werte.
+- Die Datei liest es mit `GET /dokumente/<id>` – wie bei [Aktionen im Menü „Mappe“](#aktionen-im-menue-mappe). **Sonst nichts:** Im Probemodus gibt es weder das Dienstkonto noch Mappen oder andere Dokumente (403 bzw. 404), der eigene Speicher ist nur lesbar. Netz wie immer.
+- **Ergebnis zum Anzeigen** über `ergebnis`: `{"zeilen": ["2 leere Seiten entfernt"], "seiten": [{"seite": 1, "text": "Barcode ABLAGO-TRENNEN"}]}` (auch unter `"ergebnis": {…}`); jede andere Antwort zeigt Ablago als Textzeilen. Höchstens 200 Zeilen bzw. Seiten, je 500 Zeichen.
+- **Erzeugte Datei** (z. B. die Archivfassung) mit `POST /dateien?name=…&typ=…` ablegen – höchstens 3 Dateien je 10 MB. Ablago bietet sie zum Ansehen und Herunterladen an; gespeichert wird nichts.
+- Dauer und Speicher zeigt Ablago mit; die Grenzen des Läufers gelten wie immer. Im Verlauf steht nur „ausprobiert von …“.
+- Ältere Ablago-Versionen ignorieren `code.ausprobieren`.
 
 ## Aktionen im Menü „Mappe“ { #aktionen-im-menue-mappe }
 
@@ -1017,7 +1037,7 @@ Ein kleines Test-Paket steht in `server/test/uebersetzung.test.ts`: ein WebAssem
 ## Ausprobieren
 
 1. Paket als ZIP im **Expertenmodus** hochladen (siehe [Eigenes Paket testen](pakete.md#eigenes-paket-testen)) und die Rechte bestätigen.
-2. **Werkbank → Pakete → *Paket***: Der Abschnitt **Paket-Läufer** zeigt, ob der Läufer läuft, die letzten Aufrufe mit Dauer und Speicher, offene und aufgegebene Ereignisse und das Protokoll des Pakets.
+2. **Werkbank → Pakete → *Paket***: Der Abschnitt **Paket-Läufer** zeigt, ob der Läufer läuft; der Reiter **Verlauf** (#1003) die Aufrufe mit Ergebnis, Dauer, Speicher und Netzaufrufen, offene und aufgegebene Ereignisse, die Protokollzeilen des Pakets und die Auslastung der letzten 7 bzw. 30 Tage.
 3. Ereignis auslösen (z. B. eine Datei hochladen) oder eine Aktion klicken.
 
 ## Erkennung: Feldbeschreibung und Antwort

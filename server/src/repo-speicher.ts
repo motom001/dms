@@ -1,5 +1,6 @@
 import type { GespeicherteFassung } from '../../shared/src/fassungen';
 import { volltextHerkunft } from '../../shared/src/volltext';
+import { VERLAUF_FEHLER, VERLAUF_MAX, VERLAUF_TAGE, type VerlaufEintrag, type VerlaufTag } from '../../shared/src/paketreiter';
 import { randomUUID } from 'node:crypto';
 import { lesbar, werte } from '../../shared/src/rechte';
 import { kannTerminHaben } from '../../shared/src/fristen';
@@ -36,6 +37,9 @@ export function speicherRepo(): Repo {
   const pakete = new Map<string, InstalliertesPaket>();
   const paketCode = new Map<string, Array<{ name: string; inhalt: Buffer }>>();
   const sprachpakete = new Map<string, import('./repo').SprachpaketDaten>();
+  // Verlauf der Pakete (#1003).
+  const verlauf: Array<VerlaufEintrag & { paket: string }> = [];
+  let verlaufNr = 1;
   const ereignisse = new Map<string, { id: string; paketId: string; art: string; daten: Record<string, unknown>; erstellt: string; faellig: number; versuche: number; zugestellt: string | null; fehler: string | null }>();
   // Ereigniskatalog (#670)
   const katalog = new Map<string, { id: string; nr: number; art: string; daten: Record<string, unknown>; ausloeser: Record<string, unknown>; buendel: string | null; erstellt: string; faellig: number; gesperrtBis: number; versuche: number; fehler: string | null; verteilt: string | null }>();
@@ -260,6 +264,7 @@ export function speicherRepo(): Repo {
       if (p) { pakete.delete(alt); pakete.set(neu, { ...p, id: neu }); }
       for (const x of pakete.values()) if (alt in x.abhaengigkeiten) { x.abhaengigkeiten[neu] = x.abhaengigkeiten[alt]; delete x.abhaengigkeiten[alt]; }
       const c = paketCode.get(alt); if (c) { paketCode.delete(alt); paketCode.set(neu, c); }
+      for (const e of verlauf) if (e.paket === alt) e.paket = neu;
       const s = sprachpakete.get(alt); if (s) { sprachpakete.delete(alt); sprachpakete.set(neu, s); }
       for (const x of sprachpakete.values()) if (x.beschriftungen[alt]) { x.beschriftungen[neu] = x.beschriftungen[alt]; delete x.beschriftungen[alt]; }
       for (const e of ereignisse.values()) if (e.paketId === alt) e.paketId = neu;
@@ -344,6 +349,35 @@ export function speicherRepo(): Repo {
     },
     async ereignisDaten(id, daten) { const e = ereignisse.get(id); if (e) e.daten = kopie(daten); },
     async loescheEreignisse(id) { for (const [k, e] of ereignisse) if (e.paketId === id) ereignisse.delete(k); },
+    async notiereVerlauf(liste) {
+      for (const e of liste) {
+        verlauf.push({ paket: e.paket, nr: verlaufNr++, zeit: jetzt(), art: e.art, was: (e.was ?? '').slice(0, 200), ergebnis: e.ergebnis ?? null, ms: e.ms ?? null, speicherMB: e.speicherMB ?? null,
+          text: (e.text ?? '').slice(0, 500), wer: e.wer ?? null, bezug: e.bezug ? kopie(e.bezug) : null, netz: (e.netz ?? []).slice(0, 20) });
+      }
+      const grenze = Date.now() - VERLAUF_TAGE * 86_400_000;
+      for (let i = verlauf.length - 1; i >= 0; i--) if (Date.parse(verlauf[i].zeit) < grenze || verlauf.filter((x) => x.paket === verlauf[i].paket && x.nr > verlauf[i].nr).length >= VERLAUF_MAX) verlauf.splice(i, 1);
+    },
+    async paketVerlauf(id, f) {
+      const such = f.suche?.trim().toLowerCase();
+      return verlauf.filter((e) => e.paket === id && (!f.vor || e.nr < f.vor) && (!f.nurFehler || (e.ergebnis && VERLAUF_FEHLER.includes(e.ergebnis)))
+        && (!such || `${e.was} ${e.text}`.toLowerCase().includes(such))).sort((a, b) => b.nr - a.nr).slice(0, f.anzahl)
+        .map((e) => kopie(Object.fromEntries(Object.entries(e).filter(([k]) => k !== 'paket')) as VerlaufEintrag));
+    },
+    async paketAuslastung(id, tage) {
+      const ab = Date.now() - tage * 86_400_000;
+      const aufrufe = verlauf.filter((e) => e.paket === id && (e.art === 'ereignis' || e.art === 'aufruf'));
+      const jeTag = new Map<string, VerlaufTag>();
+      for (const e of aufrufe.filter((x) => Date.parse(x.zeit) >= ab)) {
+        const tag = e.zeit.slice(0, 10);
+        const d = jeTag.get(tag) ?? { tag, aufrufe: 0, fehler: 0, zeit: 0, speicher: 0, msSumme: 0, msMax: 0, speicherMax: 0 };
+        d.aufrufe++; if (e.ergebnis === 'fehler' || e.ergebnis === 'zeit' || e.ergebnis === 'speicher') d.fehler++;
+        if (e.ergebnis === 'zeit') d.zeit++; if (e.ergebnis === 'speicher') d.speicher++;
+        d.msSumme += e.ms ?? 0; d.msMax = Math.max(d.msMax, e.ms ?? 0); d.speicherMax = Math.max(d.speicherMax, e.speicherMB ?? 0);
+        jeTag.set(tag, d);
+      }
+      return { tage: [...jeTag.values()].sort((a, b) => a.tag.localeCompare(b.tag)), zuletzt: aufrufe.at(-1)?.zeit ?? null };
+    },
+    async loescheVerlauf(id) { for (let i = verlauf.length - 1; i >= 0; i--) if (verlauf[i].paket === id) verlauf.splice(i, 1); },
     async loescheOffeneEreignisse(art, dokumente) {
       let n = 0;
       for (const [k, e] of ereignisse) if (e.art === art && !e.zugestellt && dokumente.includes(String(e.daten.dokument))) { ereignisse.delete(k); n++; }

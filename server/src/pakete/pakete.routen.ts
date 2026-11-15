@@ -4,7 +4,7 @@
 import { ARCHIV_MAX, SAMMEL_MAX, type InstallierenEingabe, type UmbauEingabe } from '../pakete';
 import type { AblaufEingabe, AblaufInstallation } from '../../../shared/src/pakete';
 import { eigeneVersion } from '../system';
-import { KOERPER_SPIELRAUM } from '../grenzen';
+import { KOERPER_SPIELRAUM, PROBE_KOERPER_MAX } from '../grenzen';
 import { ok } from '../http/routen-hilfen';
 import { extern } from '../externmessung';
 import { hatGesamt } from '../../../shared/src/verwaltungsrecht';
@@ -71,6 +71,12 @@ export function paketeEinstellungenRouten(k: RoutenKontext): Route[] {
     // Externe Dienste je Paket (#565): Dauer, Bytes, Fehler, Token der Netzaufrufe – nur Metadaten.
     { methode: 'GET', pfad: '/api/werkbank/pakete/:id/extern', zugang: 'admin', handler: async (a) => ok(await extern.uebersicht(Number(a.query.stunden) || 24, a.params.id)) },
     { methode: 'GET', pfad: '/api/werkbank/pakete/:id/einstellungen', zugang: 'admin', handler: async (a) => ok(await pakete.einstellungen(a.params.id)) },
+    { methode: 'GET', pfad: '/api/werkbank/pakete/:id/anzeigen', zugang: 'admin', handler: async (a) => ok(await pakete.anzeigen(a.params.id)) },
+    // Verlauf und Auslastung (#1003): nur lesen; Mappen nur mit Titel, wenn die Person sie lesen darf.
+    { methode: 'GET', pfad: '/api/werkbank/pakete/:id/verlauf', zugang: 'admin', handler: async (a) => ok(await pakete.verlauf(a.params.id, a.query, await zg(a))) },
+    // Ausprobieren (#1004): Probedatei als Base64 mit den noch nicht gespeicherten Einstellungen; nichts wird gespeichert.
+    { methode: 'POST', pfad: '/api/werkbank/pakete/:id/ausprobieren', zugang: 'admin', lesend: true, roh: PROBE_KOERPER_MAX, handler: async (a) => ok(await pakete.ausprobieren(a.params.id, a.body, wer(a))) },
+    { methode: 'GET', pfad: '/api/werkbank/pakete/:id/auslastung', zugang: 'admin', handler: async (a) => ok(await pakete.auslastung(a.params.id)) },
     { methode: 'PUT', pfad: '/api/werkbank/pakete/:id/einstellungen', zugang: 'admin', handler: async (a) => ok(await pakete.speichereEinstellungen(a.params.id, a.body, wer(a))) },
     { methode: 'POST', pfad: '/api/werkbank/pakete/:id/aktionen/:aktion', zugang: 'admin', handler: async (a) => ok(await pakete.aktion(a.params.id, a.params.aktion, wer(a))) },
   ];

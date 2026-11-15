@@ -84,7 +84,7 @@ export const OHNE_FOLGEN = new Set<string>([
   'faelleOhneLeserecht', 'leserechteAufZeit', 'legeFallAn',
   'verschluesselteFundstellen', 'ablaeufe', 'holeAblauf', 'notizen', 'notizenVon', 'holeNotiz', 'historie', 'historieVon', 'letzterAbruf',
   // schreiben, ohne Folgen für die Zahlen
-  'legeEreignisseAn', 'ereignisZugestellt', 'ereignisDaten', 'ereignisFehlgeschlagen', 'loescheEreignisse', 'loescheOffeneEreignisse', 'speicherePaketCode', 'loeschePaketCode',
+  'legeEreignisseAn', 'ereignisZugestellt', 'ereignisDaten', 'ereignisFehlgeschlagen', 'loescheEreignisse', 'loescheOffeneEreignisse', 'notiereVerlauf', 'paketVerlauf', 'paketAuslastung', 'loescheVerlauf', 'speicherePaketCode', 'loeschePaketCode',
   // Sprachpakete (#731): nur Texte.
   'sprachpakete', 'speichereSprachpaket', 'loescheSprachpaket',
   'speichereNummernkreis', 'loescheNummernkreis', 'setzeZaehler', 'zieheNummern', 'aktualisiereStatistik',

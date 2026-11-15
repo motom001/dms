@@ -337,6 +337,10 @@ See also: [Task](#aufgabe), [Deadline](#frist).
 
 ## Administration (workbench) {#verwaltung-werkbank}
 
+<a id="verlauf"></a>**Activity** (*Verlauf*) · ~ with explanation · administrators  
+Tab on the page of a package with code (Workbench → Packages → package → Activity), kept by Ablago itself – what Ablago delivered to the package, how it went (ok, error, time or memory limit reached), duration, memory, network calls, the package's log lines as well as installing, updating, changed settings and trying out. At the top the load of the last 7 or 30 days with a traffic light (“running smoothly”, “often reaches its limits”, “fails often”). Never content from documents; entries are kept for 30 days. A folder's story, on the other hand, is called history.  
+See also: [Package runner](#paket-laufer), [History](#historie), [Log](#protokoll).
+
 <a id="administrator"></a>**Administrator** · ✓ everyday word · everyone  
 A user with access to the workbench. Permissions don't restrict them.
 
@@ -512,7 +516,7 @@ Checks which permissions a particular user ends up with.
 Recognises text in images and scanned PDFs so that it becomes searchable.
 
 <a id="probelauf"></a>**Trial run** (*Probelauf*) · ~ with explanation · administrators  
-Trying out an automation with a chosen folder without anything being changed or anyone being notified – Ablago only shows what would happen. For an automation template, “Try it out” opens the same dialog as on the folder, marked “Trial – nothing is created”, and then shows what the recipients would see.  
+Trying out an automation with a chosen folder without anything being changed or anyone being notified – Ablago only shows what would happen. For an automation template, “Try it out” opens the same dialog as on the folder, marked “Trial – nothing is created”, and then shows what the recipients would see. For packages that offer it, the tab is also called “Try out” – upload a document and see what the package would do with it (in trial mode the package may not write anything, the file is discarded afterwards).  
 See also: [Test run](#testlauf).
 
 <a id="zwei-faktor-anmeldung"></a>**Two-factor sign-in** (*Zwei-Faktor-Anmeldung*) · ~ with explanation · everyone  
@@ -628,4 +632,4 @@ See also: [Version](#version).
 
 Which German words are still being discussed, which questions have been decided and which words the German texts avoid is listed on the [German page](../../begriffe/). It concerns the German wording.
 
-*As of: 2026-11-12*
+*As of: 2026-11-15*

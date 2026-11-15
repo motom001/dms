@@ -72,7 +72,5 @@
   "gruppe.verarbeitung": "Processing",
   "gruppe.betrieb": "Operations",
   "gruppe.auftrag": "Jobs for a package",
-  "pakete.zuletzt": "last delivered: {zeit}",
-  "pakete.nie": "never delivered",
   "katalog.titel": "Which events there are"
 }

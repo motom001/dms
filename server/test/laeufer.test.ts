@@ -296,6 +296,21 @@ describe('Paket-Läufer (#338): Ablauf', () => {
     assert.equal(await l.aktion('echo', 'test', {}), 'Aktion ok');
   });
 
+  it('Ausprobieren (#1004): Probemodus ohne Dienstkonto – die API antwortet 403, das Paket scheitert; kein Ereignis im Verlauf', async () => {
+    const { d, l } = await aufbau();
+    await installiere(d, 'echo', ECHO);
+    await l.start();
+    await warte(() => l.aktionBereit('echo'));
+    const probe = { id: '00000000-0000-4000-8000-0000000000aa', name: 'probe.pdf', typ: 'application/pdf', daten: Buffer.from('%PDF-1.7').toString('base64') };
+    const r = await l.ausprobieren('echo', { art: 'dokument.hochgeladen', probe: true, daten: { dokument: probe.id }, einstellungen: { b: 2 } }, probe);
+    assert.equal(r.ok, false, 'GET /typen mit dem Schlüssel des Dienstkontos ist im Probemodus gesperrt');
+    assert.deepEqual(r.dateien, []);
+    const p = (await l.uebersicht()).pakete[0];
+    assert.match(p.protokoll[0].text, /"probe":true.*"einstellungen":\{"b":2\}/, 'bekommt die Einstellungen aus dem Formular');
+    assert.deepEqual((await d.kern.repo.paketVerlauf('echo', { anzahl: 10 })).filter((e) => e.art !== 'protokoll'), [], 'den Eintrag „ausprobiert“ schreibt die Paketverwaltung');
+    assert.deepEqual(await d.kern.repo.ereignisStand(), {}, 'kein Ereignis im Ausgangskorb');
+  });
+
   it('Fortsetzung (#458): {"weiter": …} ruft das Paket gleich wieder auf, mit weiter und abschnitt; höchstens weiterMax-mal', async () => {
     const { d, l } = await aufbau({}, undefined, { weiterMax: 3 });
     // Antwort jedes Aufrufs (#636) – auch der Fortsetzungen – geht an den Dienst.

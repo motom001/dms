@@ -350,6 +350,63 @@ code:
 
 `werkzeuge/pruefen.py` prüft Kennungen, Vorgaben, Optionen, Geheimnisse und Verweise. Zum Ausprobieren eignet sich der Expertenmodus mit **Paket hochladen**.
 
+## Einstellungen und Anzeigen beschreiben { #einstellungen-und-anzeigen }
+
+**Das Paket beschreibt, Ablago stellt dar** (#996): Die Seite eines Pakets ist bei allen Paketen gleich aufgebaut – der Reiter **Übersicht** liest nur, der Reiter **Einstellungen** enthält alles, was man ändern kann. Kein Paket bringt eine eigene Einstellungs- oder Übersichtsseite mit.
+
+**Prüfregeln** je Feld – im Formular und beim Speichern mit derselben Meldung geprüft:
+
+| Angabe | bei | Bedeutung |
+|---|---|---|
+| `pflicht: true` | allen außer Feldarten des Kerns | ein Wert ist nötig |
+| `min`, `max`, `schritt` | `zahl` | kleinste und größte Zahl, Schrittweite |
+| `laenge_min`, `laenge_max` | `text`, `mehrzeilig` | Länge in Zeichen (ganze Zahl ab 0) |
+| `muster`, `meldung` | `text` | regulärer Ausdruck für den **ganzen** Wert (höchstens 300 Zeichen) und die Meldung, wenn er nicht passt (höchstens 200 Zeichen) |
+
+```yaml
+- { schluessel: kennung, name: Kundennummer, typ: text, pflicht: true, laenge_max: 12, muster: "[A-Z]{2}-\\d+", meldung: "Bitte wie „AB-12“." }
+```
+
+**Prüffunktion des Pakets:** Mit `code.einstellungen_pruefen: true` ruft Ablago vor dem Speichern – nach den Regeln oben – die Aktion `einstellungen_pruefen` des Pakets auf (`dms_aktion`, Eingabe `{ "aktion": "einstellungen_pruefen", "einstellungen": {…} }` mit allen Werten im Klartext). Sie läuft höchstens 10 Sekunden und **ohne Schreibrechte**: kein Dienstkonto, keine Mappe, keine Dokumente, eigener Speicher nur lesen. Die Antwort `{"fehler": {"kennung": "Dieses Konto kennt der Dienst nicht."}}` zeigt Ablago am Feld und speichert nicht; `{}` oder `{"fehler": {}}` heißt: passt. Läuft das Paket nicht, gilt nur die Prüfung von Ablago.
+
+**Feldarten des Kerns:** Was nur Ablago weiß, gibt es als eigene Feldart. Ein Paket nennt sie in einem Abschnitt (ohne `standard`, ohne `pflicht`, je höchstens einmal); den Wert hält Ablago, das Paket bekommt ihn nicht unter seinen Einstellungen.
+
+| Typ | Abschnitt in Ablago | Wer ihn bekommt, auch ohne Angabe |
+|---|---|---|
+| `ki_mappentypen` | Was die KI lesen darf (neue Mappentypen gesperrt; gilt für alle KI-Pakete) | KI-Pakete (siehe [KI-Pakete](pakete-code.md#ki-pakete)) |
+| `fragen_grenzen` | Frag deine Ablage: Höchstmenge je Frage | Pakete mit `dms:antworten` |
+| `erkennung_standard` | Aus Dokument ausfüllen: als Standard nutzen | Pakete mit `dms:erkennen` |
+| `mappenaktionen` | Aktionen im Menü „Mappe“ an oder aus | Pakete mit `mappenaktionen` |
+
+Nennt ein Paket eine dieser Feldarten nicht, hängt Ablago sie als eigenen Abschnitt **nach** den Feldern des Manifests an. Ein Paket ohne eigene Felder hat damit trotzdem den Reiter „Einstellungen“.
+
+```yaml
+code:
+  einstellungen:
+    - abschnitt: Datenschutz
+      hilfe: Nur zugelassene Mappentypen gehen an den Dienst.
+      felder:
+        - { schluessel: typen, name: Mappentypen, typ: ki_mappentypen }
+```
+
+**Anzeigen:** `code.anzeigen` beschreibt Kennzahlen und Zustände, die das Paket meldet (höchstens 12). Ablago zeigt sie in der Übersicht unter **Meldet das Paket**, gleich bei allen Paketen. Die Werte schreibt das Paket mit `speicher_schreiben` in seinen eigenen Speicher unter `anzeige.<schluessel>` – nur Werte, keine Oberfläche:
+
+| `art` | Wert im Speicher | Darstellung |
+|---|---|---|
+| `zahl` | `1234` | Zahl |
+| `anteil` | `1234/1300` | „1.234 von 1.300“ mit Balken |
+| `text` | beliebig (höchstens 200 Zeichen) | Text |
+| `zustand` | `ok`, `warnung` oder `fehler`, optional `: Text` | Chip „in Ordnung“, „Hinweis“, „Fehler“ mit Text |
+
+```yaml
+code:
+  anzeigen:
+    - { schluessel: vektoren, name: Dokumente mit Vektor, art: anteil }
+    - { schluessel: modell, name: Modell, art: zustand, hilfe: Lädt beim ersten Start. }
+```
+
+Fehlt ein Wert oder passt er nicht zur Art, steht „noch nicht gemeldet“. Ältere Ablago-Versionen ignorieren `code.anzeigen`, `code.einstellungen_pruefen` und die neuen Angaben an Feldern.
+
 Was das Paket mit den Einstellungen macht und welche Rechte es braucht, beschreibt [Pakete mit Code](pakete-code.md).
 
 ## Text-Vorlagen schreiben { #text-vorlagen-schreiben }

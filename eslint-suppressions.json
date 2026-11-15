@@ -1499,7 +1499,7 @@
   },
   "web/src/werkbank/Pakete.tsx": {
     "complexity": {
-      "count": 3
+      "count": 2
     },
     "max-lines": {
       "count": 1

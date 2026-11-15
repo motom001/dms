@@ -1424,6 +1424,7 @@ async function main() {
   await bild(s, 'werkbank-pakete');
   await s.getByRole('button', { name: w(/Expertenmodus/) }).click();
   await paketBilder(s, bild, geheZu);
+  await paketReiterBilder(s, bild, geheZu);
   // Postfächer (#358): Anmeldung mit OAuth 2.0 – App eingetragen, noch nicht angemeldet (kein echter Anbieter).
   await api('PUT', '/api/werkbank/postfaecher-oauth/microsoft', { clientId: '0b5c6a1e-1234-4c8d-9e0f-5a6b7c8d9e0f', clientSecret: 'nur-fuer-bilder', tenant: 'common' });
   const pfOauth = (await api('POST', '/api/werkbank/postfaecher', { name: 'Büro', aktiv: false, server: 'outlook.office365.com', benutzer: 'buero@example.org', anmeldung: 'oauth', anbieter: 'microsoft' })).at(-1);
@@ -1681,6 +1682,63 @@ main().catch((e) => { console.error(e); process.exit(1); });
  * Pakete mit Katalog (#1047, #1048, #1168): Der Workflow hat kein Internet – Katalog und ein installiertes Paket mit
  * „Was mitkommt“ kommen als Attrappe. Danach ist die Seite wieder echt.
  */
+/**
+ * Reiter der Paketseite (#996): ein KI-Paket als Attrappe – Übersicht liest (eine Zeile zur KI, was das Paket meldet),
+ * Einstellungen ändern (Feld des Pakets, „Was die KI lesen darf“, ein Speichern); Verlauf mit Auslastung (#1003);
+ * Ausprobieren mit Seitenhinweisen und erzeugter Datei (#1004).
+ */
+async function paketReiterBilder(s, bild, geheZu) {
+  const id = 'ki_assistent';
+  const laeufer = { sprache: 'c', ereignisse: ['post.angelegt'], rechte: { lesen: [], schreiben: [], dokumente: 'lesen' }, netz: ['https://ki.example.org'],
+    reiter: { anzeigen: [{ schluessel: 'vektoren', name: 'Dokumente mit Vektor', art: 'anteil' }, { schluessel: 'modell', name: 'Modell', art: 'zustand' }],
+      ausprobieren: { ereignis: 'post.angelegt', dateiarten: ['application/pdf', 'image/*'] } } };
+  const eigene = { art: 'abschnitt', titel: 'Dienst', felder: [{ schluessel: 'modell', name: 'Modell', typ: 'text', hilfe: 'Name des Modells beim KI-Dienst, z. B. „llama3.1“.', laengeMax: 40 }] };
+  const paket = { id, name: 'KI-Assistent', version: '1.4.0', beschreibung: 'Fragen an die Ablage und Vorschläge mit einem KI-Dienst.', lizenz: 'Apache-2.0', autor: { name: 'Ablago-Projekt', github: '' },
+    herausgeber: 'app.ablago', herausgeberGeprueft: true, herkunft: { art: 'hochgeladen', von: null, am: '2026-11-01T08:00:00Z' }, installiert: '2026-11-01T08:00:00Z', installiertVon: null,
+    aktualisiert: null, aktualisiertVon: null, typen: {}, sichten: {}, abhaengigkeiten: {}, code: true, laeufer, einstellungen: { bloecke: [eigene], aktionen: [] } };
+  const typen = [{ id: 'a', name: 'Rechnung', zugelassen: true }, { id: 'b', name: 'Vertrag', zugelassen: true }, { id: 'c', name: 'Gesundheit', zugelassen: false }];
+  const kern = { art: 'abschnitt', titel: w('Was die KI lesen darf'), felder: [{ schluessel: 'ki_mappentypen', name: w('Was die KI lesen darf'), typ: 'ki_mappentypen' }] };
+  await s.route('**/api/werkbank/pakete', async (r) => {
+    if (r.request().method() !== 'GET') return r.fallback();
+    const echt = await (await r.fetch()).json();
+    await r.fulfill({ json: { ...echt, installiert: [...echt.installiert, paket] } });
+  });
+  await s.route(`**/api/werkbank/pakete/${id}/einstellungen`, (r) => r.fulfill({ json: { beschreibung: { bloecke: [eigene, kern], aktionen: [] }, werte: { modell: 'llama3.1' }, fehlend: [], status: null, laeufer: true, auswahl: { typen: [], benutzer: [], rollen: [], sichten: [] } } }));
+  await s.route(`**/api/werkbank/pakete/${id}/anzeigen`, (r) => r.fulfill({ json: { anzeigen: [{ ...laeufer.reiter.anzeigen[0], wert: { art: 'anteil', zahl: 1234, von: 1300 } }, { ...laeufer.reiter.anzeigen[1], wert: { art: 'zustand', zustand: 'ok', text: 'llama3.1' } }], status: null } }));
+  await s.route(`**/api/werkbank/pakete/${id}/umwandlungen`, (r) => r.fulfill({ json: { felder: [], vorgaenge: [] } }));
+  await s.route('**/api/werkbank/ki-typen', (r) => r.fulfill({ json: { typen, pakete: [{ id, name: 'KI-Assistent', bekommt: ['a', 'b'] }], hinweis: false } }));
+  await s.route('**/api/werkbank/pakete/laeufer', (r) => r.fulfill({ json: { laeuft: true, pausiert: false, grenzen: { speicherMB: 256, sekunden: 120, parallel: 2 }, zustand: 'bereit', absturz: null,
+    pakete: [{ id, name: 'KI-Assistent', version: '1.4.0', dienstkonto: 'Paket KI-Assistent', geladen: true, fehler: null, aufrufe: 41, fehlgeschlagen: 2, letzterAufruf: null, dauerMs: null, speicherMB: null,
+      ereignisse: { offen: 0, aufgegeben: 0, zugestellt: 39 }, letzte: [], protokoll: [] }] } }));
+  const vor = (min) => new Date(Date.now() - min * 60_000).toISOString();
+  const tag = (d) => new Date(Date.now() - d * 86_400_000).toISOString().slice(0, 10);
+  await s.route(`**/api/werkbank/pakete/${id}/auslastung`, (r) => r.fulfill({ json: { zuletzt: vor(5), tage: [0, 1, 2, 3, 4, 5, 6].map((d) => ({ tag: tag(d), aufrufe: 5 + d, fehler: d === 2 ? 2 : 0, zeit: 0, speicher: 0, msSumme: (5 + d) * 6000, msMax: 14_000, speicherMax: 48 })) } }));
+  await s.route(`**/api/werkbank/pakete/${id}/verlauf*`, (r) => r.fulfill({ json: { mehr: true, eintraege: [
+    { nr: 9, zeit: vor(5), art: 'ereignis', was: 'post.angelegt', ergebnis: 'ok', ms: 6200, speicherMB: 41, text: '', wer: null, bezug: null, netz: ['Netz: 1 × POST ki.example.org – 200, 4,1 KB hin, 1,2 KB zurück'] },
+    { nr: 8, zeit: vor(48), art: 'aufruf', was: w('Frage beantwortet'), ergebnis: 'ok', ms: 11_800, speicherMB: 48, text: '', wer: null, bezug: null, netz: ['Netz: 1 × POST ki.example.org – 200, 9,8 KB hin, 2,4 KB zurück'] },
+    { nr: 7, zeit: vor(2 * 1440), art: 'ereignis', was: 'post.angelegt', ergebnis: 'fehler', ms: 3100, speicherMB: 22, text: 'Der KI-Dienst antwortet nicht (503).', wer: null, bezug: null, netz: ['Netz: 1 × POST ki.example.org – 503, 4,0 KB hin, 0 B zurück'] },
+    { nr: 6, zeit: vor(3 * 1440), art: 'einstellungen', was: 'Modell', ergebnis: null, ms: null, speicherMB: null, text: '', wer: 'markus@example.org', bezug: null, netz: [] },
+  ] } }));
+  await s.route(`**/api/werkbank/pakete/${id}/ausprobieren`, (r) => r.fulfill({ json: { ok: true, fehler: null, ms: 2300, speicherMB: 38, zeilen: ['2 leere Seiten würden entfernt.'],
+    seiten: [{ seite: 1, text: 'Barcode ABLAGO-TRENNEN' }, { seite: 4, text: 'Barcode ABLAGO-ANLAGE' }], dateien: [{ name: 'Rechnung-archiv.pdf', typ: 'application/pdf', daten: Buffer.from('%PDF-1.7').toString('base64') }] } }));
+  await geheZu(s, `/werkbank/pakete/${id}`);
+  await s.getByRole('tab', { name: w('Übersicht') }).waitFor();
+  await s.getByText(w('Meldet das Paket')).waitFor();
+  await bild(s, 'werkbank-paket-uebersicht');
+  await s.getByRole('tab', { name: w('Einstellungen') }).click();
+  await s.getByRole('heading', { name: w('Was die KI lesen darf') }).waitFor();
+  await bild(s, 'werkbank-paket-einstellungen', { fullPage: true });
+  await s.getByRole('tab', { name: w('Ausprobieren') }).click();
+  await s.getByLabel(w('Datei zum Ausprobieren')).setInputFiles({ name: 'Rechnung.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.7') });
+  await s.getByRole('button', { name: w('Ausprobieren'), exact: true }).click();
+  await s.getByText('Barcode ABLAGO-TRENNEN').waitFor();
+  await bild(s, 'werkbank-paket-ausprobieren', { fullPage: true });
+  await s.getByRole('tab', { name: w('Verlauf') }).click();
+  await s.getByRole('list', { name: w('Verlauf') }).locator('li').first().waitFor();
+  await bild(s, 'werkbank-paket-verlauf', { fullPage: true });
+  await s.unrouteAll({ behavior: 'ignoreErrors' });
+}
+
 async function paketBilder(s, bild, geheZu) {
   let katalogUrl = '';
   const version = (version, mehr = {}) => ({ version, dms: '>=0.0.0', abhaengigkeiten: {}, inhalt: { mappentypen: [], sichten: [], beispiele: 0 }, code: false, archiv: 'a.zip', sha256: '0'.repeat(64), groesse: 4096, veroeffentlicht: '2026-11-01T00:00:00Z', quelle: '', readme: '', changelog: '', ...mehr });

@@ -25,7 +25,7 @@ import { typBild, type TypBild } from '../../shared/src/typvergleich';
 import { ergaenzeBeschriftungen, type AbschnittTeile, type Beschriftungen, type NamensTeile, type TypTeile } from '../../shared/src/beschriftung';
 import type { MappenAktion } from '../../shared/src/paketaktionen';
 import { liesMappenaktionen } from './paketaktionen';
-import { ALLE_TYPEN, BEISPIEL_ENDUNGEN, BEISPIEL_ORDNER, BEREICH, CODE_MAX, PAKET_MAX, type BeispielStand, inMB, KATALOG_ALT_TAGE, type HerkunftPruefung, hatSchnittstelle, DMS_RECHTE_TYPEN, DMS_ALIAS, veralteteVerweise, WORTLISTEN_MAX, gleicheRechte, liesCode, rechtePunkte, rechteZeilen, type PaketCode, type RechtePunkt, dmsPasst, liesKatalog, nachAbhaengigkeiten, neuestePassende, OFFIZIELLER_KATALOG, PAKET_ID, passt, vergleicheVersion, VERSION, type InstalliertesPaket, type SichtZustand, type Katalog, type KatalogPaket, type KatalogVersion, auswahlMitAbhaengigkeiten, liesErgaenzt, liesErsetzt, punktIdFehler, katalogPaketZu, type Ergaenzung, type AblaufPlan, type AblaufErgebnis, type AblaufAusgelassen, haengenAn, type AblaufEingabe, type AblaufInstallation } from '../../shared/src/pakete';
+import { ALLE_TYPEN, BEISPIEL_ENDUNGEN, BEISPIEL_ORDNER, BEREICH, CODE_MAX, PAKET_MAX, type BeispielStand, inMB, KATALOG_ALT_TAGE, type HerkunftPruefung, hatSchnittstelle, istKiPaket, DMS_RECHTE_TYPEN, DMS_ALIAS, veralteteVerweise, WORTLISTEN_MAX, gleicheRechte, liesCode, rechtePunkte, rechteZeilen, type PaketCode, type RechtePunkt, dmsPasst, liesKatalog, nachAbhaengigkeiten, neuestePassende, OFFIZIELLER_KATALOG, PAKET_ID, passt, vergleicheVersion, VERSION, type InstalliertesPaket, type SichtZustand, type Katalog, type KatalogPaket, type KatalogVersion, auswahlMitAbhaengigkeiten, liesErgaenzt, liesErsetzt, punktIdFehler, katalogPaketZu, type Ergaenzung, type AblaufPlan, type AblaufErgebnis, type AblaufAusgelassen, haengenAn, type AblaufEingabe, type AblaufInstallation } from '../../shared/src/pakete';
 import { TABELLE_NEU_MAX } from '../../shared/src/tabelle';
 import { archivAusPaket, paketArchivFehler, type Archiv, type PaketArchiv } from '../../shared/src/archiv';
 import { zusammengesetztProbleme } from '../../shared/src/zusammengesetzt';
@@ -36,9 +36,14 @@ import { bereinigeVorbelegen, passtZusammen, VORBELEGEN_MAX } from '../../shared
 import { istBetriebWenn } from '../../shared/src/ereignisse';
 import { hauptpaket, istHerausgeber, istOffiziellerHerausgeber, OFFIZIELLER_HERAUSGEBER, PAKET_ID_TEIL, SCHLUESSEL, TYP_KENNUNG, TYPVERWEIS, typKennung } from '../../shared/src/kennungen';
 import { bedingungEingabeFehler, kinderVon, OPERATOREN, type Bedingung, type Operator, type Sicht } from '../../shared/src/sichten';
+import { istKernFeld } from '../../shared/src/paketeinstellungen';
+import { mitKern } from '../../shared/src/paketkern';
+import { ANZEIGE_SPEICHER, anzeigeWert, dateiartPasst, liesProbeErgebnis, liesReiterAngaben, VERLAUF_TAGE, type ProbeAntwort, type Auslastung, type AnzeigeWert, type PaketAnzeige, type VerlaufEintrag } from '../../shared/src/paketreiter';
 import { adressfelder, EINTRAG_ID, einstellungsAenderung, fehlendePflicht, liesBeschreibung, listen, pruefeWerte, ueberfuehre, abschnittsfelder, type EinstellungFeld, type Einstellungsbeschreibung, type GeheimStand, type Verweisquelle } from '../../shared/src/paketeinstellungen';
 import type { Dienst } from './dienst';
 import type { PaketQuelleEintrag } from './pakete/index';
+import type { Zugriff } from './kern/index';
+import type { Probedatei } from './paketaktionen/index';
 import { Fachfehler } from './fehler';
 import { istVerschluesselt } from './tresor';
 import { protokoll } from './protokoll';
@@ -51,9 +56,9 @@ import { abdeckung, anzahlTexte, BESCHRIFTUNGEN_ORDNER, liesSprachangabe, liesSp
 import { gebietsschema } from '../../shared/src/sprache';
 import { mkdir, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { ARCHIV_MAX, ENTPACKT_MAX, KB, KLEIN_MAX, MB, SAMMEL_ENTPACKT_MAX, SAMMEL_MAX, SAMMEL_VERZEICHNIS_MAX as VERZEICHNIS_MAX, UPLOADS_SPEICHER_MAX, VORLAGE_MAX } from './grenzen';
+import { ARCHIV_MAX, ENTPACKT_MAX, KB, KLEIN_MAX, MB, PROBE_DATEI_MAX, SAMMEL_ENTPACKT_MAX, SAMMEL_MAX, SAMMEL_VERZEICHNIS_MAX as VERZEICHNIS_MAX, UPLOADS_SPEICHER_MAX, VORLAGE_MAX } from './grenzen';
 import {
-  anzeigeMitVorgaben, anzeigeVorgaben, legeVorgaben, liesVorgaben, paketEinstellungen, paketKatalogStaende, paketQuellen, passwortFelder, planeErgaenzungen, planeVorgaben, setzePaketEinstellungen,
+  anzeigeMitVorgaben, anzeigeVorgaben, legeVorgaben, liesVorgaben, paketEinstellungen, paketKatalogStaende, paketSpeicher, paketQuellen, passwortFelder, planeErgaenzungen, planeVorgaben, setzePaketEinstellungen,
   setzePaketKatalogStand, setzePaketQuellen, setzePaketSpeicher, vorgabeMappen, vorgabenLage, vorgabeVerweisFehler, type PaketErgaenzung, type PaketVorgabe, type VorgabenErgebnis, type VorgabenLage,
 } from './pakete/index';
 import { fuehreUmbauAus, liesUmbau, nimmEinstellungenZurueck, planeUmbau, titelKennung, uebernahmeDaten, wendeEntscheidungenAn, type TitelSuche, type UmbauErgebnis, type UmbauLage } from './pakete/index';
@@ -730,6 +735,9 @@ export function liesPaket(roh: Map<string, Buffer>): Paket {
   fehler.push(...einst.fehler.map((f) => `manifest.yaml: code.${f}`));
   // Code (#338): Manifest-Angaben, gebautes Modul und Daten.
   const cl = liesCode(m.code, [...dateien].map(([name, inhalt]) => ({ name, groesse: inhalt.length })));
+  // Anzeigen, Prüffunktion und Ausprobieren (#996, #1004): beschreibt das Paket, Ablago stellt dar.
+  const rg = liesReiterAngaben(m.code, cl.code?.ereignisse ?? []);
+  fehler.push(...rg.fehler.map((f) => `manifest.yaml: ${f}`));
   fehler.push(...cl.fehler.map((f) => (f.startsWith('code/:') ? f.slice('code/: '.length) : `manifest.yaml: ${f}`)));
   // „Paket nach Zeitplan ausführen“ (#1082): Das Paket muss das Ereignis abonnieren, sonst liefe die Karte ins Leere.
   if (zeitplanKarten.length && !cl.code?.ereignisse.includes('zeitplan.ausgefuehrt')) fehler.push(t('meldungen.pakete.automatisierung-paket-ereignis', { wo: [...new Set(zeitplanKarten)].join(', ') }));
@@ -764,7 +772,7 @@ export function liesPaket(roh: Map<string, Buffer>): Paket {
     if (!modul) { /* Hinweis in der Vorschau */ }
     else if (modul.length < 8 || !modul.subarray(0, 8).equals(WASM_KOPF)) fehler.push(t('meldungen.pakete.code-modul-wasm-ist'));
     // Andere Dateien unter code/ (Quellcode) stören nicht; geladen werden nur modul.wasm und daten/….
-    if (modul) code = { info: cl.code, dateien: [...dateien].filter(([n]) => CODE_DATEI.test(n)).map(([n, inhalt]) => ({ name: n.slice('code/'.length), inhalt })) };
+    if (modul) code = { info: rg.angaben ? { ...cl.code, reiter: rg.angaben } : cl.code, dateien: [...dateien].filter(([n]) => CODE_DATEI.test(n)).map(([n, inhalt]) => ({ name: n.slice('code/'.length), inhalt })) };
   }
   if (fehler.length) throw new Fachfehler(422, t('meldungen.pakete.das-paket-ist-ungueltig'), { gruende: fehler });
   return {
@@ -1413,6 +1421,10 @@ export interface SprachpaketHaken {
 /** Schnittstelle zum Paket-Läufer (#197); kommt mit den Paketen mit Code. */
 export interface PaketLaeufer {
   aktion(paket: string, aktion: string, einstellungen: Record<string, unknown>): Promise<string>;
+  /** Prüffunktion des Pakets (#996): Meldungen je Feld; null = das Paket lief nicht (dann gilt die Prüfung von Ablago). */
+  pruefeEinstellungen?(paket: string, einstellungen: Record<string, unknown>): Promise<Record<string, string> | null>;
+  /** Ausprobieren (#1004): Ereignis im Probemodus mit der Probedatei; erzeugte Dateien kommen mit. */
+  ausprobieren?(paket: string, eingang: Record<string, unknown>, probe: Probedatei): Promise<{ ok: boolean; text: string; fehler: string | null; ms: number; speicherMB: number; dateien: Array<{ name: string; typ: string; inhalt: Buffer }> }>;
   ereignis?(paket: string, name: 'paket.einstellungen_geaendert', felder: string[]): void;
   /** Code eines Pakets installiert, aktualisiert oder entfernt (#338): Läufer lädt neu (fertig, wenn er die Pakete kennt). */
   codeGeaendert?(): void | Promise<void>;
@@ -1900,9 +1912,13 @@ export class Paketverwaltung {
       const a = p.sprache ? this.o.sprachen?.abdeckung?.(p.sprache.kennung) : null;
       return a == null ? p : { ...p, spracheAbdeckung: a };
     };
-    return Promise.all((await this.d.kern.repo.listePakete()).map(async (p) => (p.einstellungen
-      ? { ...p, einstellungenNoetig: fehlendePflicht(p.einstellungen, (await paketEinstellungen(this.d.kern, p.id))?.werte ?? {}).length > 0 }
-      : mitSprache(p))));
+    // KI-Pakete (#996): Warnzeichen am Reiter, solange das Paket aus keinem Mappentyp Inhalte bekommt.
+    const pakete = await this.d.kern.repo.listePakete();
+    const ki = pakete.some((p) => istKiPaket(p.laeufer)) ? await this.d.ki.kiUebersicht().catch(() => null) : null;
+    const kiOhne = (p: InstalliertesPaket) => istKiPaket(p.laeufer) && !!ki && !(ki.pakete.find((x) => x.id === p.id)?.bekommt.length);
+    return Promise.all(pakete.map(async (p) => (p.einstellungen
+      ? { ...p, einstellungenNoetig: kiOhne(p) || fehlendePflicht(p.einstellungen, (await paketEinstellungen(this.d.kern, p.id))?.werte ?? {}).length > 0 }
+      : kiOhne(p) ? { ...mitSprache(p), einstellungenNoetig: true } : mitSprache(p))));
   }
 
   /** Paket einer Version aus einem Katalog holen und gegen die Prüfsumme prüfen. */
@@ -2578,17 +2594,23 @@ export class Paketverwaltung {
    * Legt Typen, Sichten und ggf. Beispiele an bzw. ergänzt sie (Update) und speichert den Eintrag.
    * Bei einem Fehler wird alles zurückgenommen.
    */
+  /** Verlauf (#1003): installiert bzw. aktualisiert, von wem und welche Version. */
+  private async mitVerlauf(neu: InstalliertesPaket, a: LegeAuftrag): Promise<InstalliertesPaket> {
+    await this.d.kern.repo.notiereVerlauf([{ paket: neu.id, art: a.alt ? 'aktualisiert' : 'installiert', was: a.alt ? `${a.alt.version} → ${neu.version}` : neu.version, wer: a.von.email }]).catch(() => {});
+    return neu;
+  }
+
   private async lege(paket: Paket, herkunft: InstalliertesPaket['herkunft'], v: KatalogVersion | undefined, plan: Vorschau, beispiele: boolean, von: Handelnder, alt: InstalliertesPaket | null, ein: string[] = []): Promise<InstalliertesPaket> {
     // Umzug (#1084): erst die Installation auf die neue Id ziehen – danach ist es ein gewöhnliches Update. Scheitert es,
     // kommt die alte Id zurück.
     const umzugVon = alt && alt.id !== paket.manifest.id ? alt.id : null;
     const auftrag: LegeAuftrag = { paket, herkunft, v, plan, beispiele, von, alt, ein };
-    if (!umzugVon) return this.legeMitUmbau(auftrag);
+    if (!umzugVon) return this.mitVerlauf(await this.legeMitUmbau(auftrag), auftrag);
     await this.zieheUm(umzugVon, paket.manifest.id);
     try {
       const neu = await this.legeMitUmbau({ ...auftrag, alt: { ...alt!, id: paket.manifest.id, ersetzt: [...new Set([...(alt!.ersetzt ?? []), umzugVon])] } });
       log.info('Paket umgezogen', { von: von.email, paket: neu.id, vorher: umzugVon });
-      return neu;
+      return this.mitVerlauf(neu, auftrag);
     } catch (f) {
       await this.zieheUm(paket.manifest.id, umzugVon).catch((e: Error) => log.error('Umzug nicht zurückgenommen', { paket: paket.manifest.id, vorher: umzugVon, fehler: e.message }));
       throw f;
@@ -3444,8 +3466,10 @@ export class Paketverwaltung {
   private async beschreibungVon(id: string) {
     const p = (await this.d.kern.repo.listePakete()).find((x) => x.id === id);
     if (!p) throw new Fachfehler(404, t('meldungen.pakete.ist-nicht-installiert', { id }));
-    if (!p.einstellungen) throw new Fachfehler(404, t('meldungen.pakete.hat-keine-einstellungen', { name: p.name }));
-    return { p, b: p.einstellungen };
+    // Mit den Feldarten des Kerns (#996): auch ein Paket ohne Felder im Manifest kann Einstellungen haben.
+    const b = mitKern(p.einstellungen, p);
+    if (!b) throw new Fachfehler(404, t('meldungen.pakete.hat-keine-einstellungen', { name: p.name }));
+    return { p, b };
   }
 
   /** Alles, was es zur Auswahl gibt: Mappentypen mit Feldern, Benutzer, Rollen, Sichten. */
@@ -3509,6 +3533,11 @@ export class Paketverwaltung {
       });
     }
     if (Object.keys(r.fehler).length) throw new Fachfehler(422, t('meldungen.pakete.bitte-die-markierten-einstellungen'), { felderFehler: r.fehler, gruende: Object.values(r.fehler) });
+    // Prüffunktion des Pakets (#996): nach den Regeln aus dem Manifest, mit den Werten im Klartext, ohne Schreibrechte.
+    if (p.laeufer?.reiter?.einstellungenPruefen && this.o.laeufer?.pruefeEinstellungen) {
+      const ff = await this.o.laeufer.pruefeEinstellungen(id, this.klartext(b, structuredClone(r.werte)));
+      if (ff && Object.keys(ff).length) throw new Fachfehler(422, t('meldungen.pakete.bitte-die-markierten-einstellungen'), { felderFehler: ff, gruende: Object.values(ff) });
+    }
     const geaendert = Object.keys(r.werte).filter((k) => JSON.stringify(r.werte[k]) !== JSON.stringify(alt.werte[k]));
     // Dienst-Adresse (#444): Eine neue oder geänderte Adresse gilt erst, wenn der Administrator den Hinweis bestätigt –
     // dorthin schickt das Paket Daten. Gespeichert wird nur eine bestätigte Adresse; nur zu ihr lässt der Läufer Netz zu.
@@ -3520,6 +3549,9 @@ export class Paketverwaltung {
     await this.d.kern.fassungen.halte('paketeinstellungen', id);
     if (geaendert.length) {
       log.info(`Einstellungen von Paket ${p.name} geändert (Felder ${geaendert.join(', ')})`, { von: von.email, paket: id, felder: geaendert });
+      // Verlauf (#1003): welche Einstellungen, von wem – nie Werte.
+      const namen = new Map(abschnittsfelder(b).map((f) => [f.schluessel, f.name] as const));
+      await this.d.kern.repo.notiereVerlauf([{ paket: id, art: 'einstellungen', was: geaendert.map((k) => namen.get(k) ?? listen(b).find((l) => l.schluessel === k)?.name ?? k).join(', '), wer: von.email }]).catch(() => {});
       for (const f of adressfelder(b).filter((x) => geaendert.includes(x.schluessel))) {
         log.info(`Dienst-Adresse von Paket ${p.name} ${r.werte[f.schluessel] ? 'bestätigt' : 'entfernt'}`, { von: von.email, paket: id, feld: f.schluessel, adresse: r.werte[f.schluessel] ?? null });
       }
@@ -3536,11 +3568,93 @@ export class Paketverwaltung {
   /** Einstellungen im Klartext – nur für das eigene Paket über den Paket-Läufer, nie über die API. */
   async einstellungenFuerPaket(id: string): Promise<Record<string, unknown>> {
     const { b } = await this.beschreibungVon(id);
-    const w = structuredClone((await paketEinstellungen(this.d.kern, id))?.werte ?? {});
+    return this.klartext(b, structuredClone((await paketEinstellungen(this.d.kern, id))?.werte ?? {}));
+  }
+
+  /** Geheimnisse der Werte entschlüsseln (für das Paket selbst). */
+  private klartext(b: Einstellungsbeschreibung, w: Record<string, unknown>): Record<string, unknown> {
     const klar = (f: EinstellungFeld, v: unknown) => (f.typ === 'geheim' && typeof v === 'string' ? this.d.entschluessele(v) : v);
-    for (const f of abschnittsfelder(b)) w[f.schluessel] = klar(f, w[f.schluessel]);
+    for (const f of abschnittsfelder(b)) if (!istKernFeld(f)) w[f.schluessel] = klar(f, w[f.schluessel]);
     for (const l of listen(b)) for (const e of (Array.isArray(w[l.schluessel]) ? w[l.schluessel] as Record<string, unknown>[] : [])) for (const f of l.felder) e[f.schluessel] = klar(f, e[f.schluessel]);
     return w;
+  }
+
+  /**
+   * Verlauf des Pakets (#1003), neueste zuerst: Mappen nur mit Titel, wenn die Person sie lesen darf – sonst ohne Bezug.
+   * Je Seite 50 Einträge; `mehr`: es gibt ältere.
+   */
+  async verlauf(id: string, f: { vor?: unknown; nurFehler?: unknown; suche?: unknown }, z: Zugriff): Promise<{ eintraege: VerlaufEintrag[]; mehr: boolean }> {
+    const p = (await this.d.kern.repo.listePakete()).find((x) => x.id === id);
+    if (!p) throw new Fachfehler(404, t('meldungen.pakete.ist-nicht-installiert', { id }));
+    const anzahl = 50;
+    const l = await this.d.kern.repo.paketVerlauf(id, { vor: Number(f.vor) || null, anzahl: anzahl + 1, nurFehler: f.nurFehler === true || f.nurFehler === '1', suche: typeof f.suche === 'string' ? f.suche.slice(0, 200) : '' });
+    const ids = [...new Set(l.flatMap((e) => (e.bezug ? [e.bezug.mappe] : [])))];
+    const lesbar = ids.length ? await this.d.kern.repo.lesbare(ids, z.lesen) : new Set<string>();
+    const titel = lesbar.size ? await this.d.kern.repo.titelVon([...lesbar]) : new Map<string, string>();
+    const eintraege = l.slice(0, anzahl).map((e) => ({ ...e, bezug: e.bezug && lesbar.has(e.bezug.mappe) ? { mappe: e.bezug.mappe, titel: titel.get(e.bezug.mappe) ?? '' } : null }));
+    return { eintraege, mehr: l.length > anzahl };
+  }
+
+  /**
+   * Ausprobieren (#1004): Das Paket bekommt die hochgeladene Datei zu dem Ereignis aus `code.ausprobieren` im
+   * Probemodus – mit den gerade eingetragenen, noch nicht gespeicherten Einstellungen (geprüft wie beim Speichern;
+   * Geheimnisse „behalten“ = der gespeicherte Wert). Es kann nichts schreiben; die Datei bleibt nur im Arbeitsspeicher
+   * und wird danach verworfen. Im Verlauf steht „ausprobiert von …“ ohne Inhalt und Dateiname.
+   */
+  async ausprobieren(id: string, eingabe: unknown, von: Handelnder): Promise<ProbeAntwort> {
+    const p = (await this.d.kern.repo.listePakete()).find((x) => x.id === id);
+    if (!p) throw new Fachfehler(404, t('meldungen.pakete.ist-nicht-installiert', { id }));
+    const pr = p.laeufer?.reiter?.ausprobieren;
+    if (!pr) throw new Fachfehler(404, t('meldungen.pakete.ausprobieren-nicht', { name: p.name }));
+    const e = (eingabe ?? {}) as { name?: unknown; typ?: unknown; daten?: unknown; werte?: unknown };
+    const datei = Buffer.from(typeof e.daten === 'string' ? e.daten : '', 'base64');
+    const typ = typeof e.typ === 'string' ? e.typ : '';
+    if (!datei.length) throw new Fachfehler(422, t('meldungen.pakete.ausprobieren-leer'));
+    if (datei.length > PROBE_DATEI_MAX) throw new Fachfehler(413, t('meldungen.pakete.ausprobieren-gross', { mb: PROBE_DATEI_MAX / MB }));
+    if (!dateiartPasst(pr.dateiarten, typ)) throw new Fachfehler(422, t('meldungen.pakete.ausprobieren-art', { arten: pr.dateiarten.join(', ') }));
+    const einstellungen = p.einstellungen ? await this.probeWerte(p, p.einstellungen, e.werte) : {};
+    if (!this.o.laeufer?.ausprobieren) throw new Fachfehler(409, t('meldungen.pakete.ausprobieren-laeufer'));
+    const probe = { id: randomUUID(), name: (typeof e.name === 'string' ? e.name : 'probe').slice(0, 200), typ, daten: datei.toString('base64') };
+    const r = await this.o.laeufer.ausprobieren(id, { art: pr.ereignis, id: probe.id, erstellt: new Date().toISOString(), versuch: 1, probe: true,
+      daten: { dokument: probe.id, name: probe.name, mime: typ, groesse: datei.length }, einstellungen }, probe);
+    await this.d.kern.repo.notiereVerlauf([{ paket: id, art: 'ausprobiert', ergebnis: r.ok ? 'ok' : 'fehler', ms: r.ms, speicherMB: r.speicherMB, wer: von.email }]).catch(() => {});
+    log.info(`Paket ${p.name} ausprobiert`, { von: von.email, paket: id, ok: r.ok, ms: r.ms });
+    return { ok: r.ok, fehler: r.ok ? null : r.fehler, ms: r.ms, speicherMB: r.speicherMB, ...liesProbeErgebnis(r.ok ? r.text : ''), dateien: r.dateien.map((x) => ({ name: x.name, typ: x.typ, daten: x.inhalt.toString('base64') })) };
+  }
+
+  /** Werte zum Ausprobieren: geprüft wie beim Speichern, Geheimnisse im Klartext (neu eingetragen oder gespeichert). */
+  private async probeWerte(p: InstalliertesPaket, b: Einstellungsbeschreibung, eingabe: unknown): Promise<Record<string, unknown>> {
+    const q = await this.auswahl(p);
+    const r = pruefeWerte(b, eingabe, { ...q, benutzer: q.benutzer.map((x) => x.id), rollen: q.rollen.map((x) => x.id), sichten: q.sichten.map((x) => x.id) });
+    if (Object.keys(r.fehler).length) throw new Fachfehler(422, t('meldungen.pakete.bitte-die-markierten-einstellungen'), { felderFehler: r.fehler, gruende: Object.values(r.fehler) });
+    const alt = await this.einstellungenFuerPaket(p.id).catch(() => ({} as Record<string, unknown>));
+    const geheim = (f: EinstellungFeld, v: unknown, altWert: unknown) => (f.typ !== 'geheim' ? v : v && typeof v === 'object' ? altWert ?? null : v);
+    for (const f of abschnittsfelder(b)) if (!istKernFeld(f)) r.werte[f.schluessel] = geheim(f, r.werte[f.schluessel], alt[f.schluessel]);
+    for (const l of listen(b)) {
+      const alte = Array.isArray(alt[l.schluessel]) ? alt[l.schluessel] as Record<string, unknown>[] : [];
+      for (const e of r.werte[l.schluessel] as Record<string, unknown>[]) for (const f of l.felder) e[f.schluessel] = geheim(f, e[f.schluessel], alte.find((x) => x[EINTRAG_ID] === e[EINTRAG_ID])?.[f.schluessel]);
+    }
+    return r.werte;
+  }
+
+  /** Auslastung des Pakets (#1003): je Tag der letzten 30 Tage und wann es zuletzt lief. */
+  async auslastung(id: string): Promise<Auslastung> {
+    if (!(await this.d.kern.repo.listePakete()).some((x) => x.id === id)) throw new Fachfehler(404, t('meldungen.pakete.ist-nicht-installiert', { id }));
+    return this.d.kern.repo.paketAuslastung(id, VERLAUF_TAGE);
+  }
+
+  /**
+   * Anzeigen des Pakets (#996): was es im Manifest beschreibt, mit den Werten aus seinem eigenen Speicher
+   * (`anzeige.<schluessel>`). Das Paket liefert nur Werte; Ablago stellt sie dar.
+   */
+  async anzeigen(id: string): Promise<{ anzeigen: Array<PaketAnzeige & { wert: AnzeigeWert | null }>; status: { letzterLauf: string | null; meldungen: string[] } | null }> {
+    const p = (await this.d.kern.repo.listePakete()).find((x) => x.id === id);
+    if (!p) throw new Fachfehler(404, t('meldungen.pakete.ist-nicht-installiert', { id }));
+    const l = p.laeufer?.reiter?.anzeigen ?? [];
+    const sp = l.length ? await paketSpeicher(this.d.kern, id) : {};
+    // Statusbereich (#197): schreibt nur das Paket – eine Anzeige, darum in der Übersicht (#996).
+    const status = p.einstellungen ? (await paketEinstellungen(this.d.kern, id))?.status ?? null : null;
+    return { anzeigen: l.map((a) => ({ ...a, wert: anzeigeWert(a.art, sp[`${ANZEIGE_SPEICHER}${a.schluessel}`]) })), status };
   }
 
   /** Statusbereich: schreibt nur das Paket (über den Läufer); in der Oberfläche schreibgeschützt. */
@@ -3780,7 +3894,7 @@ export class Paketverwaltung {
     await this.d.paketAutomatisierungen?.(p, []).catch((e: Error) => log.warn('Automatisierungen des Pakets nicht entfernt', { paket: id, fehler: e.message }));
     // #1044: Vorlagen gehen mit; überlagerte Kern-Vorgaben gelten wieder, Vorlagen mit offenen Abläufen bleiben als eigene.
     await this.d.ablaeufe.ausPaket(p, []).catch((e: Error) => log.warn('Automatisierungsvorlagen des Pakets nicht entfernt', { paket: id, fehler: e.message }));
-    if (p.laeufer) { await this.d.kern.repo.loeschePaketCode(id); await this.d.kern.repo.loescheEreignisse(id); await setzePaketSpeicher(this.d.kern, id, null).catch(() => {}); await this.o.laeufer?.codeGeaendert?.(); }
+    if (p.laeufer) { await this.d.kern.repo.loeschePaketCode(id); await this.d.kern.repo.loescheEreignisse(id); await this.d.kern.repo.loescheVerlauf(id); await setzePaketSpeicher(this.d.kern, id, null).catch(() => {}); await this.o.laeufer?.codeGeaendert?.(); }
     // Volltext und Umwandeln (Frage 51): Was noch auf dieses Paket wartete, wartet nicht mehr.
     const wartetAuf = [...(hatSchnittstelle(p.laeufer, 'dms:volltext') ? p.laeufer?.volltext ?? [] : []), ...(hatSchnittstelle(p.laeufer, 'dms:umwandeln') ? p.laeufer?.umwandeln ?? [] : [])];
     if (wartetAuf.length) await this.d.volltextAusPaketen.paketWegFuerDateien(p, wartetAuf).catch((e: Error) => log.warn('Wartende Dokumente nach dem Entfernen nicht zurückgesetzt', { paket: id, fehler: e.message }));

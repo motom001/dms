@@ -24,7 +24,8 @@ import type { AnLaeufer, Grenzen, NetzEintrag, NetzMessung, VomLaeufer } from '.
 import { gebietsschema } from '../../../shared/src/sprache';
 import type { Hostantwort } from './arbeiter';
 import { t, t as tx } from '../sprache';
-import { beantworteZugang, type AktionsDatei, type Zugang } from '../paketaktionen';
+import { beantworteZugang, type AktionsDatei, type Probedatei, type Zugang } from '../paketaktionen';
+import { PRUEF_AKTION } from '../../../shared/src/paketreiter';
 
 /** Eingeschränkter Zugriff eines laufenden Aufrufs einer Paket-Aktion (#1039). */
 interface AktionsZugang { paket: string; zugang: Zugang; dateien: AktionsDatei[] }
@@ -54,6 +55,10 @@ export function liesWeiter(text: string): Record<string, unknown> | null {
 }
 
 const LETZTE = 20;
+/** Protokollzeilen eines Pakets im Verlauf (#1003): höchstens so viele je Stunde. */
+const VERLAUF_ZEILEN = 60;
+/** Zeitgrenze der Prüffunktion der Einstellungen (#996). */
+const PRUEF_MS = 10_000;
 /** Nachberechnung der Vektoren (#442): alle so viele ms höchstens so viele Dokumente – nur, wenn das Paket nichts offen hat. */
 const NACHLAUF_MS = 30_000;
 const NACHLAUF_JE_RUNDE = 50;
@@ -257,6 +262,35 @@ export class Paketlaeufer implements PaketLaeufer {
     return r.text || 'Erledigt.';
   }
 
+  /**
+   * Prüffunktion des Pakets (#996): Aktion `einstellungen_pruefen` mit den Werten im Klartext, kurzer Zeitgrenze und
+   * leerem Zugriff (keine Mappe, keine Dokumente, eigener Speicher nur lesen) – das Paket kann nichts schreiben. Antwort
+   * `{"fehler": {"feld": "Meldung"}}`; null, wenn das Paket nicht lief (dann gilt nur die Prüfung von Ablago).
+   */
+  async pruefeEinstellungen(paket: string, einstellungen: Record<string, unknown>): Promise<Record<string, string> | null> {
+    if (!this.aktionBereit(paket)) return null;
+    const r = await this.rufe(paket, 'aktion', { aktion: PRUEF_AKTION, einstellungen }, { ms: PRUEF_MS, vorrang: true, bezeichnung: t('meldungen.verwaltung.einstellungen-geprueft'), zugang: { zugang: { mappe: {}, dokumente: {} }, dateien: [] }, ohneInhalt: true, funktion: PRUEF_AKTION });
+    if (!r.ok) { log.warn(`Paket ${paket}: Prüffunktion der Einstellungen fehlgeschlagen`, { paket, fehler: r.fehler }); return null; }
+    try {
+      const j = JSON.parse(r.text) as { fehler?: unknown };
+      if (!j.fehler || typeof j.fehler !== 'object' || Array.isArray(j.fehler)) return {};
+      return Object.fromEntries(Object.entries(j.fehler as Record<string, unknown>).slice(0, 50).map(([k, v]) => [k.slice(0, 100), String(v).slice(0, 300)]));
+    } catch { return {}; }
+  }
+
+  /**
+   * Ausprobieren (#1004): das Ereignis aus `code.ausprobieren` im Probemodus – vor die Warteschlange, mit leerem
+   * Zugriff außer der Probedatei (kein Dienstkonto, keine Mappen, eigener Speicher nur lesen). Erzeugte Dateien
+   * (`POST /dateien`) kommen mit dem Ergebnis zurück; in den Verlauf schreibt die Paketverwaltung („ausprobiert von …“).
+   */
+  async ausprobieren(paket: string, eingang: Record<string, unknown>, probe: Probedatei): Promise<{ ok: boolean; text: string; fehler: string | null; ms: number; speicherMB: number; dateien: AktionsDatei[] }> {
+    if (this.o.pausiert?.() || !this.aktionBereit(paket)) return { ok: false, text: '', fehler: t('meldungen.verwaltung.der-paket-laeufer-laeuft'), ms: 0, speicherMB: 0, dateien: [] };
+    try { await extern.pruefePause(paket); } catch (e) { return { ok: false, text: '', fehler: (e as Error).message, ms: 0, speicherMB: 0, dateien: [] }; }
+    const dateien: AktionsDatei[] = [];
+    const r = await this.rufe(paket, 'ereignis', eingang, { vorrang: true, bezeichnung: t('meldungen.verwaltung.ausprobiert'), zugang: { zugang: { mappe: {}, dokumente: {}, probe }, dateien }, ohneInhalt: true, funktion: 'ausprobieren', ohneVerlauf: true });
+    return { ok: r.ok, text: r.text, fehler: r.fehler, ms: r.ms, speicherMB: r.speicherMB, dateien };
+  }
+
   /** Paket-Aktionen (#1039): fehlerfrei geladene Pakete (für den Schnappschuss der anderen Prozesse). */
   aktionPakete(): string[] { return this.pakete.filter((p) => this.ladefehler.has(p.id) && !this.ladefehler.get(p.id)).map((p) => p.id); }
 
@@ -454,8 +488,36 @@ export class Paketlaeufer implements PaketLaeufer {
     return { status: r.status, body: new Uint8Array(r.body) };
   }
 
+  /**
+   * Verlauf (#1003): je Aufruf ein Eintrag – Art, Ergebnis (Grenze erreicht: zeit/speicher), Dauer, Speicher, Mappe des
+   * Ereignisses und Netzaufrufe als Text; nie das Ergebnis selbst (es kann Inhalte tragen), bei Fehlern die Meldung.
+   */
+  private verlauf(paket: string, art: 'ereignis' | 'aktion', eingang: Record<string, unknown>, opt: { bezeichnung?: string; ohneVerlauf?: boolean }, r: Ergebnis) {
+    if (opt.ohneVerlauf) return;
+    const bezeichnung = opt.bezeichnung;
+    const daten = art === 'ereignis' && eingang.daten && typeof eingang.daten === 'object' ? eingang.daten as Record<string, unknown> : {};
+    const ergebnis = r.ok ? 'ok' : r.ms >= this.grenzen.sekunden * 1000 || /zeitgrenze|time limit/i.test(r.fehler ?? '') ? 'zeit' : /speichergrenze|memory limit/i.test(r.fehler ?? '') ? 'speicher' : 'fehler';
+    void this.o.dienst.kern.repo.notiereVerlauf([{
+      paket, art: art === 'ereignis' ? 'ereignis' : 'aufruf', was: art === 'ereignis' ? String(eingang.art) : bezeichnung ?? String(eingang.aktion ?? ''),
+      ergebnis, ms: r.ms, speicherMB: r.speicherMB, text: r.ok ? '' : (r.fehler ?? '').slice(0, 300),
+      bezug: typeof daten.mappe === 'string' ? { mappe: daten.mappe } : null, netz: (r.netz ?? []).map(netzText),
+    }]).catch(() => {});
+  }
+
+  /** Protokollzeilen des Pakets im Verlauf (#1003): höchstens VERLAUF_ZEILEN je Stunde und Paket, damit es ihn nicht flutet. */
+  private zeilen = new Map<string, { stunde: number; anzahl: number }>();
+  private protokollVerlauf(paket: string, e: { stufe: number; text: string }) {
+    const stunde = Math.floor(Date.now() / 3_600_000);
+    const z = this.zeilen.get(paket);
+    const n = z && z.stunde === stunde ? z.anzahl + 1 : 1;
+    this.zeilen.set(paket, { stunde, anzahl: n });
+    if (n > VERLAUF_ZEILEN) return;
+    void this.o.dienst.kern.repo.notiereVerlauf([{ paket, art: 'protokoll', ergebnis: e.stufe >= 2 ? 'warnung' : null, text: n === VERLAUF_ZEILEN ? t('meldungen.verwaltung.verlauf-zeilen-max', { anzahl: VERLAUF_ZEILEN }) : e.text.slice(0, 300) }]).catch(() => {});
+  }
+
   private notiere(paket: string, e: { stufe: number; text: string }) {
     const s = this.standVon(paket);
+    this.protokollVerlauf(paket, e);
     s.protokoll.push({ zeit: new Date().toISOString(), ...e });
     if (s.protokoll.length > PROTOKOLL_MAX) s.protokoll.splice(0, s.protokoll.length - PROTOKOLL_MAX);
     (e.stufe >= 2 ? log.warn : log.info).call(log, `Paket ${paket}: ${e.text}`, { paket });
@@ -585,7 +647,7 @@ export class Paketlaeufer implements PaketLaeufer {
   }
 
   /** Einen Aufruf ausführen und auf das Ergebnis warten. ms: eigene, kürzere Wartezeit; vorrang: vor die Warteschlange. */
-  private async rufe(paket: string, art: 'ereignis' | 'aktion', eingang: Record<string, unknown>, opt: { ms?: number; vorrang?: boolean; bezeichnung?: string; teil?: (text: string) => void; ohneInhalt?: boolean; zugang?: Omit<AktionsZugang, 'paket'>; funktion?: string } = {}): Promise<Ergebnis> {
+  private async rufe(paket: string, art: 'ereignis' | 'aktion', eingang: Record<string, unknown>, opt: { ms?: number; vorrang?: boolean; bezeichnung?: string; teil?: (text: string) => void; ohneInhalt?: boolean; zugang?: Omit<AktionsZugang, 'paket'>; funktion?: string; ohneVerlauf?: boolean } = {}): Promise<Ergebnis> {
     if (!this.kind || !this.bereit) return abbruch(t('meldungen.verwaltung.der-paket-laeufer-laeuft'), true);
     const p = this.pakete.find((x) => x.id === paket);
     if (!p) throw new Error('Dieses Paket hat keinen Code.');
@@ -610,6 +672,7 @@ export class Paketlaeufer implements PaketLaeufer {
     if (s.letzte.length > LETZTE) s.letzte.splice(0, s.letzte.length - LETZTE);
     if (!r.ok) log.warn(`Paket ${paket}: Aufruf fehlgeschlagen`, { paket, art, fehler: r.fehler, ms: r.ms });
     erfasseNetz(p, { ereignis: art === 'ereignis', funktion: opt.funktion, art: String(eingang.art) }, r.messung);
+    this.verlauf(paket, art, eingang, opt, r);
     // Netzaufrufe (#807): ins Protokoll des Pakets und eine Zeile mit der Summe ins Systemprotokoll – Hosts und Bytes, nie Inhalte.
     if (r.netz?.length) {
       merkeNetz(s.protokoll, r.netz);

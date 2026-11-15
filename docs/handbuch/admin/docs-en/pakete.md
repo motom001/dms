@@ -276,15 +276,33 @@ If the package supplies full text or converts files (e.g. **Office and email**, 
 
 ## Settings { #einstellungen }
 
-Some packages need settings – for instance rules by which they assign post, or an access key for a service. The package only **describes** them; Ablago builds a form from them, checks the values and stores them. You find it under **Workbench → Packages → *package* → tab "Settings"** – the tab only exists for packages that have settings.
+Some packages need settings – for instance rules by which they assign post, or an access key for a service. The package only **describes** them; Ablago builds a form from them, checks the values and stores them. You find it under **Workbench → Packages → *package* → tab "Settings"** – the tab only exists for packages that have something to set.
+
+**Overview reads, Settings changes:** the page looks the same for every package. The **Overview** tab only shows what the package is and how it is doing – version, origin, licence, content, state, figures and what it receives. **Everything you can change** is in the **Settings** tab, with **one** button to save; if you leave the tab with unsaved changes, Ablago asks. If a necessary setting is missing (a required field, or no allowed folder type yet for an AI package), the tab shows a warning sign.
+
+What Ablago manages itself appears there in sections of its own **after the package's fields** – depending on what the package can do:
+
+| Section | For packages that … | applies to |
+|---|---|---|
+| **What the AI may read** – allow or block folder types | are AI services (see [AI services](#ki-dienste)) | **all** AI packages at once |
+| **Ask your Library: limits per question** | answer questions (see [Ask your library](#frag-deine-ablage)) | the answering package |
+| **Fill in from document** – use as default | suggest fields (see [Recognition by a package](#erkennung-durch-ein-paket)) | all folder types |
+| **Actions in the “Folder” menu** – each action on or off | bring actions (see [Actions](#aktionen-im-menue-mappe)) | this package |
+
+A package can also name these sections itself and show them in its own place; values and checks stay with Ablago.
+
+Figures and states the package reports (such as “Documents with vector: 1,234 of 1,300”) and its **status** (last run, messages) appear in the overview under **Reported by the package** – read-only.
+
+![Overview of an AI package: one line “Receives content from 2 folder types” with “Change” and what the package reports](bilder/werkbank-paket-uebersicht.png)
+
+![The “Settings” tab of the same package: the package's field, below it “What the AI may read” and one button to save](bilder/werkbank-paket-einstellungen.png)
 
 - **Sections** with fields and **lists** of entries with the same structure (e.g. one rule per entry) with **+ Entry**, deleting and – if the package allows it – sorting with ↑/↓.
 - **Fields** as with folder types: text, multi-line text, number, yes/no, date, choice, multiple choice and **links** to a folder type, a field of a folder type, a user, a role or a view. You choose links from lists; the fixed id is stored, not the name – so renaming does no harm.
 - **Service address** (e.g. of an AI service): the only address, apart from the fixed addresses from its manifest, to which the package may go on the network – see [Service address](#dienst-adresse). It is never preset; the empty field at most shows an example. When saving a new or changed address, Ablago asks and shows where data goes.
 - **Secrets** (e.g. credentials) Ablago encrypts with its key (see [Encryption](verschluesselung.md)). After saving it never shows them again, only **set** with **Change** and **Delete**.
-- On **saving**, Ablago checks folder type, required fields, choice values and whether links exist, and shows errors at the field.
+- On **saving**, Ablago checks folder type, required fields, choice values and whether links exist, plus the **checking rules** the package names: smallest and largest number, length of a text and an expected form (e.g. “like AB-12”) with its own message. Some packages also check for themselves (for instance whether an account exists at the service) – without being able to change anything while doing so. Errors appear at the field; nothing is saved until everything fits.
 - The package's **actions** appear as buttons (e.g. "Apply rules now"); the package's answer is shown above. A time limit prevents a button from hanging.
-- The **status** (last run, messages) comes from the package itself and is read-only.
 - Below it are the **[versions](fassungen.md)**: who changed which setting when – including the package itself when it is installed or updated. Secrets only appear as “changed”, never with their value.
 
 **Life cycle:**
@@ -312,7 +330,7 @@ Packages can add actions to the **Folder ▾** menu of matching folders, e.g. **
 - **Before installing:** The preview lists every action with its folder types and rights under “Actions in the “Folder” menu”. If an update adds an action or one needs different rights, it is marked **new**, and the code's rights must be confirmed again.
 - **Who sees them:** Only people who have exactly these rights on the folder – and only if the package has them too (its confirmed rights, rules for the “Package” role, “Packages” on the folder type). A package with network access (AI service) offers no action on folder types that are not approved for AI services.
 - **On behalf of the person:** The package only acts within the intersection of announced rights, the person's rights and the package's rights; Ablago checks them again at every step. During an action, the package only sees this folder (and its documents, if it may read documents) – not via its service account. Dialogs are data only (text, choice, tick box, text field, date), never with password input; the package name is always shown in the header.
-- **Switching off:** **Workbench → Packages → *package*** lists every action with its rights under “Actions in the “Folder” menu”; without a tick it is in nobody's menu. You hide the **built-in** actions (Assign a to do, Remind, Send by email, Export as PDF, Copy link) in one place: **Workbench → Packages**, section **“Folder” menu**. Hiding is about tidiness, not rights – the API routes remain.
+- **Switching off:** **Workbench → Packages → *package* → tab "Settings"** lists every action with its rights under “Actions in the “Folder” menu”; without a tick (and after **Save**) it is in nobody's menu. You hide the **built-in** actions (Assign a to do, Remind, Send by email, Export as PDF, Copy link) in one place: **Workbench → Packages**, section **“Folder” menu**. Hiding is about tidiness, not rights – the API routes remain.
 - **Traceable:** Every run is listed in the folder's history (person and package, group “Package actions”) and in the package runner's history (“Action “…” for …, step 1”); the log names package, action and folder, never contents.
 
 At most one action per person and package runs at a time; a step waits at most 30 seconds for the package. The switches are part of the backup (setting `mappenaktionen`).
@@ -327,7 +345,7 @@ Some packages bring **code** – for instance their own text recognition or rule
 - **Limits:** every call has at most 256 MB of memory and 2 minutes of time; at most two calls run at the same time. Whatever breaks the limits is cancelled without disturbing Ablago.
 - **Retrying:** Ablago remembers events. If a call fails, the runner tries again after 1, 5, 30, 120 and 360 minutes and then gives up. During maintenance (e.g. when restoring) the runner rests.
 
-**Workbench → Packages → *package*** shows in the section **Package runner** the state, the latest calls with duration and memory, open and given-up events and the package's log – with its [network calls](#netzaufrufe). Messages are additionally in Ablago's [log](fehlersuche.md#protokoll). The **state** is one of these:
+**Workbench → Packages → *package*** shows in the overview, in the section **Package runner**, the state, the service account, what the package subscribes to, and one line **Last run: 5 min ago · 2 errors in 7 days** with **Activity** – everything else is in the [Activity](#verlauf) tab. Messages are additionally in Ablago's [log](fehlersuche.md#protokoll). The **state** is one of these:
 
 | State | Meaning |
 |---|---|
@@ -338,6 +356,41 @@ Some packages bring **code** – for instance their own text recognition or rule
 | **restarted after crash at …** | The runner is running again; the time names the last crash. The cause is in Ablago's log. |
 | **paused (maintenance mode)** | During maintenance the runner rests. |
 | *error message in red* | The module couldn't be loaded – for example because it requires functions this version of Ablago does not know (the package was built for a newer version), or because its file is damaged. The message names the reason. Remedy: update Ablago or install a matching version of the package. After a [restore](wiederherstellen.md#ohne-internet) you do **not** need to reinstall packages – their code is in the backup. |
+
+### Activity { #verlauf }
+
+Packages with code have an **Activity** tab next to **Overview** and **Settings**. Ablago keeps it itself – the package cannot write anything into it except its log lines. This way you can tell without expert knowledge whether a package causes problems. It is visible to anyone with the administration right **Packages**.
+
+**Load** (at the top, for the last **7** or **30 days**):
+
+- a **traffic light** with one sentence on what you can do: **running smoothly** · **often reaches its limits** (at least three aborts due to time or memory, or a call needed 80 % of a limit) · **fails often** (at least three failures and at least every fifth call)
+- **calls** (with the daily average), **failures**, **duration** (average and longest call), **highest memory** per call compared with the limit, and how often the **time** or **memory** limit was reached
+- the **runner's limits** (memory and time per call, simultaneous calls) – for information only; they are the same for all packages
+- open and given-up events
+
+Ablago does not show computing time (CPU) per package: all packages run in the same runner process, and there is no reliable per-package measurement there. Duration and memory per call say enough about how much a package loads the computer.
+
+**List** below, newest first, with a search field and the tick **Show errors only**:
+
+- every **delivered event** (type, the folder or post as a link – only if you may read it) and every other **call** (action, question, recognition, settings check …) with its **result** – *ok*, *Error*, *Time limit* or *Memory limit* –, duration, memory, error message and the [network calls](#netzaufrufe) of that call
+- the package's **log lines** (at most 60 per hour; further ones only in Ablago's log)
+- **Installed**, **Updated** and **Settings changed** – who, when and which settings (never values)
+
+The activity **never contains content** from documents or answers of the package. Entries are kept for **30 days** (at most 5000 per package) so that the load can show a month – longer than Ablago's [log](fehlersuche.md#protokoll), which only goes back one day. If you remove the package, its activity goes with it.
+
+![The “Activity” tab of a package: load with traffic light, below the list with “Show errors only”](bilder/werkbank-paket-verlauf.png)
+
+### Try out { #ausprobieren }
+
+If a package offers it, there is a **Try out** tab – built the same way for every package. You upload a document and see what the package would do with it, **without anything changing in the Library**: for the separator sheet, for instance, “Page 1: barcode ABLAGO-TRENNEN · Page 4: ABLAGO-ANLAGE · 2 blank pages”, for PDF/A the archive version it creates, to **View** or **Download**.
+
+- **Which files** the package takes (e.g. PDF and images) is shown below the field; the file may be at most 20 MB.
+- **With your settings:** if you changed something in the **Settings** tab and have not saved it yet, Ablago tries out with exactly these values – “this is how it would look with these settings”. You can switch between **Settings** and **Try out** without losing the changes; they are only saved with the button in the settings.
+- **Trial mode:** the package gets the file but **may not write anything** – no splitting post, no archive number, no fields, no documents, not even its own storage. It does not see folders and documents from the Library while doing so; it may only go on the network as usual.
+- The result shows **duration** and **memory** of the trial run; the [runner's limits](#verlauf) apply as always.
+- The file **never goes into the Library** and is discarded after viewing. The [activity](#verlauf) only records “Tried out”, by whom and when – without file name and content.
+
+![The “Try out” tab: a file chosen, below “This is how it would look” with notes per page](bilder/werkbank-paket-ausprobieren.png)
 
 If an **update** fails, the old version stays installed with its old code. A package may be at most **128 MB** in size – that applies to the archive when downloading, uploading and in the bundle file as well as to all files under `code/` together. If a package is larger, Ablago names size and limit and doesn't even download it.
 
@@ -453,7 +506,7 @@ An **AI package** – Ablago also says *AI service* – is a package with code t
 An AI package **only receives content from folder types that are allowed for AI services**:
 
 - **Per folder type:** Workbench → Folder types → *folder type* → section **AI services** → **May go to AI services**. Without the tick no AI package gets anything from this folder type – no folders, no documents, no excerpts, no events. This takes effect immediately and for all AI packages.
-- **On the package's page:** Workbench → Packages → *AI package* → **AI service: folder types** shows which folder types the package receives content from, and below all folder types to allow or block. For packages that read folders themselves, their permissions and [Packages on the folder type](berechtigungen.md#pakete-am-mappentyp) also count.
+- **On the package's page:** Workbench → Packages → *AI package* shows only one line in the **Overview**, “Receives content from *n* folder types”, with **Change**. You allow and block in the **Settings** tab, section **What the AI may read**: which folder types the package receives, and below all folder types with ticks – saved with the tab's button. For packages that read folders themselves, their permissions and [Packages on the folder type](berechtigungen.md#pakete-am-mappentyp) also count.
 - **New folder types are blocked until you allow them.** That way sensitive folder types such as *Health* never go out unintentionally – not even when a package brings them or you copy a folder type. A **new installation** has nothing allowed yet; after installing an AI package you allow on its page what it should receive.
 - **After the update** your existing folder types stay allowed as before, so nothing quietly stops working. The [Overview](uebersicht.md) points this out once (*New: exclude folder types from AI services*) as long as AI packages are installed; **Got it** hides the notice.
 - **Users** never go to a package.
@@ -474,7 +527,7 @@ Not affected: search terms sent to a vector package for the similarity search do
 
 ### Network calls in the log { #netzaufrufe }
 
-The package runner writes every call a package makes to the network into the **package's log** (Workbench → Packages → *package* → Package runner → **Log: output and network calls**): time, method, **host** (with port, without path, query and credentials), bytes **sent** and **received** and the status, e.g. "Network: 12 × PUT cloud.example.org – 201, 3.4 MB sent, 2 KB received". Identical calls in quick succession (within one minute) share one entry, so that e.g. chunked uploads of the off-site copy don't flood the log.
+The package runner writes every call a package makes to the network into the package's **[activity](#verlauf)** (Workbench → Packages → *package* → tab **Activity**, with the call it belongs to): time, method, **host** (with port, without path, query and credentials), bytes **sent** and **received** and the status, e.g. "Network: 12 × PUT cloud.example.org – 201, 3.4 MB sent, 2 KB received". Identical calls in quick succession (within one minute) share one entry, so that e.g. chunked uploads of the off-site copy don't flood the log.
 
 - **Blocked** calls (address neither in the package nor confirmed as service address, or a method that isn't only capital letters – shown as “?”) appear as a **warning** – nothing went out.
 - Ablago's [log](fehlersuche.md#protokoll) gets **one line** per event or action, "Paket *id*: Netzaufrufe" (level *info*), with the totals: number, blocked, hosts, bytes sent and received.
@@ -488,7 +541,7 @@ How **long** the network calls take is shown below under **External services** (
 
 **Fill in from document** (button in the folder) normally uses the **built-in recognition** – patterns for email, phone, date, amount and the like, without AI. A package with the permission [Suggest fields from documents](#recht-erkennen) – for instance an AI assistant via Ollama – also recognises free text, letterheads and difficult receipts. The package **Read QR code** takes over the details from the QR code (vCard) on business cards and, without a code, lets the built-in recognition work; for this it reads the page images of documents that have already been filed (permission *Read documents*) and needs no network.
 
-- **Default for all folder types:** Workbench → Packages → *package* → section **Fill in from document** → **Use this package as the default for all folder types**. Without the tick, the built-in recognition stays the default.
+- **Default for all folder types:** Workbench → Packages → *package* → tab **Settings** → section **Fill in from document** → **Use this package as the default for all folder types**, then **Save**. Without the tick, the built-in recognition stays the default.
 - **Per folder type:** in the [folder type's recognition](mappentypen.md#erkennung) you choose *Default from the Workbench*, *built in* or a specific package.
 - **Data outflow:** if the package may go on the network (fixed address or [service address](#dienst-adresse)), it sends the documents' text there. This choice only works explicitly: Ablago asks **"Send the documents' text to a service?"**, and only with **Confirm and choose** does it apply.
 
@@ -529,7 +582,7 @@ If a package with the permission [Answer questions about the Library](#recht-ant
 4. The package asks the service at the [service address](#dienst-adresse) and returns the answer piece by piece.
 5. Ablago shows the answer as **text** (nothing of it is executed or stored) and below it the named **sources** – only folders from the excerpts passed along, checked once more for readability. Below every answer there is an expandable **"Sent to the AI: n excerpts from m folders"** with exactly these passages.
 
-**Workbench → Packages → *package*** shows in the section **Ask your library** the **maximum per question**:
+**Workbench → Packages → *package* → tab "Settings"** shows in the section **Ask your Library: limits per question** the **maximum per question**:
 
 | Setting | Range | Default |
 |---|---|---|

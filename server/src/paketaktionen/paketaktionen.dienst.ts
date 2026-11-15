@@ -56,7 +56,12 @@ export interface AktionsDatei { kennung: string; name: string; typ: string; inha
  * beantworten kann (mehrere Prozesse, #745): die Mappe (wie in der Eingabe) und die Dokumente, die das Paket lesen darf
  * (Id → Prüfwert der Datei). Ablegen von Dateien und alles andere beantwortet der Läufer mit {@link beantworteZugang}.
  */
-export interface Zugang { mappe: Record<string, unknown>; dokumente: Record<string, string> }
+export interface Zugang { mappe: Record<string, unknown>; dokumente: Record<string, string>; probe?: Probedatei }
+/**
+ * Ausprobieren (#1004): die hochgeladene Probedatei – nur im Arbeitsspeicher, als Base64, damit sie auch zum Läufer im
+ * Leiter kommt. Das Paket liest sie wie ein Dokument (`GET /dokumente/<id>`); in die Ablage kommt sie nie.
+ */
+export interface Probedatei { id: string; name: string; typ: string; daten: string }
 
 /** Was der Paket-Läufer für Aktionen bietet (setzt der Läufer beim Start, wie bei „Frag deine Ablage“). */
 export interface AktionsLaeufer {
@@ -69,6 +74,13 @@ export interface AktionsLaeufer {
 const jsonAntwort = (status: number, x: unknown) => ({ status, body: Buffer.from(JSON.stringify(x)) });
 const dateiname = (s: string) => s.replace(/[\\/:*?"<>|\p{Cc}]/gu, '_').trim().slice(0, 200) || 'datei';
 
+/** Ein Dokument aus dem Zugriff – oder die Probedatei beim Ausprobieren (#1004). */
+async function dokumentAntwort(zugang: Zugang, id: string, liesGanz: (sha256: string) => Promise<Buffer>): Promise<{ status: number; body: Buffer }> {
+  if (zugang.probe?.id === id) return { status: 200, body: Buffer.from(zugang.probe.daten, 'base64') };
+  const sha = Object.hasOwn(zugang.dokumente, id) ? zugang.dokumente[id] : undefined;
+  return sha ? { status: 200, body: await liesGanz(sha) } : jsonAntwort(404, { fehler: t('meldungen.paketaktionen.zugang-dokument') });
+}
+
 /**
  * Anfrage des Pakets während eines Schritts beantworten (im Läufer): `GET /mappe`, `GET /dokumente/<id>` (nur die aus
  * `zugang.dokumente`), `POST /dateien?name=…&typ=…` (höchstens AKTION_DATEIEN_MAX, je AKTION_DATEI_MAX). Alles andere 403.
@@ -77,10 +89,7 @@ export async function beantworteZugang(zugang: Zugang, dateien: AktionsDatei[], 
   const pfad = q.pfad.split('?')[0];
   if (q.methode === 'GET' && pfad === '/mappe') return jsonAntwort(200, zugang.mappe);
   const dok = /^\/dokumente\/([0-9a-f-]{36})$/.exec(pfad);
-  if (q.methode === 'GET' && dok) {
-    const sha = Object.hasOwn(zugang.dokumente, dok[1]) ? zugang.dokumente[dok[1]] : undefined;
-    return sha ? { status: 200, body: await liesGanz(sha) } : jsonAntwort(404, { fehler: t('meldungen.paketaktionen.zugang-dokument') });
-  }
+  if (q.methode === 'GET' && dok) return dokumentAntwort(zugang, dok[1], liesGanz);
   if (q.methode !== 'POST' || pfad !== '/dateien') return jsonAntwort(403, { fehler: t('meldungen.paketaktionen.zugang-verboten') });
   const query = new URLSearchParams(q.pfad.includes('?') ? q.pfad.slice(q.pfad.indexOf('?') + 1) : '');
   if (dateien.length >= AKTION_DATEIEN_MAX) return jsonAntwort(413, { fehler: t('meldungen.paketaktionen.zugang-dateien', { max: AKTION_DATEIEN_MAX }) });

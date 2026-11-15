@@ -1,9 +1,7 @@
 {
-  "werkbank.titel": "Fill in from document",
   "werkbank.text": "Instead of the built-in recognition, this package can suggest fields from documents. It receives the document’s text and the description of the fields (without password fields and fields the user may not edit); Ablago checks every answer and shows it only as a suggestion.",
   "werkbank.standard": "Use this package as the default for all folder types",
   "werkbank.standard.hilfe": "Without the tick, the built-in recognition stays the default. You can override the choice on the folder type.",
-  "werkbank.gespeichert": "Saved.",
   "werkbank.laeuft-nicht": "The package isn’t running right now – until it is, the built-in recognition takes over.",
   "klassifizieren.titel": "Where does this belong?",
   "klassifizieren.netz": "On the page “Take over document”, this package also suggests the folder type – only if it is chosen above as the standard for “Fill in from document”. It then gets the start of the document and the name, short description and “How to recognise it” of the folder types that are allowed for AI services – no folders.",

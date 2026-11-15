@@ -1,7 +1,8 @@
 /**
- * KI-Dienste und Mappentypen (#796) auf der Seite eines KI-Pakets: welche Mappentypen es bekommt, und alle Mappentypen
- * zum Zulassen oder Sperren. Ein KI-Paket ist ein Paket, das Inhalte lesen oder bekommen kann und ins Netz darf.
- * Neue Mappentypen sind gesperrt, bis man sie zulässt. Gilt sofort für alle KI-Pakete.
+ * KI-Dienste und Mappentypen (#796) im Reiter „Einstellungen“ eines KI-Pakets (#996, Feldart `ki_mappentypen`): welche
+ * Mappentypen es bekommt, und alle Mappentypen zum Zulassen oder Sperren. Ein KI-Paket ist ein Paket, das Inhalte lesen
+ * oder bekommen kann und ins Netz darf. Neue Mappentypen sind gesperrt, bis man sie zulässt. Gilt sofort für alle
+ * KI-Pakete – gespeichert wird mit dem Knopf des Reiters.
  */
 import { useEffect, useState } from 'react';
 import type { KiUebersicht } from '../../../shared/src/pakete';
@@ -9,43 +10,41 @@ import { sucheApi } from '../api/suche';
 import { Hilfe } from '../Hilfe';
 import { Link } from '../ort';
 import { t } from '../sprache';
-import { FeldGruppe } from '../bausteine';
+import { FeldGruppe, Knopf } from '../bausteine';
 
-export function KiTypenBlock({ paket }: { paket: string }) {
-  const [k, setK] = useState<KiUebersicht | null>(null);
-  const [fehler, setFehler] = useState('');
-  const [sendet, setSendet] = useState('');
-  useEffect(() => { sucheApi.kiTypen().then(setK, (e: Error) => setFehler(e.message)); }, []);
-  if (!k) return fehler ? <p className="fehlertext">{fehler}</p> : null;
-  const p = k.pakete.find((x) => x.id === paket);
-  const bekommt = new Set(p?.bekommt ?? []);
-  const setze = async (typId: string, zugelassen: boolean) => {
-    setSendet(typId); setFehler('');
-    try { setK(await sucheApi.setzeKiTyp(typId, zugelassen)); } catch (e) { setFehler((e as Error).message); } finally { setSendet(''); }
-  };
+/** Die Feldart im Formular: `wert` sind die zugelassenen Mappentypen (Ids). */
+export function KiTypenFeld({ paket, k, wert, setze, fehler }: { paket: string; k: KiUebersicht; wert: string[]; setze: (v: string[]) => void; fehler?: string }) {
+  const bekommt = new Set(k.pakete.find((x) => x.id === paket)?.bekommt ?? []);
   const namen = k.typen.filter((x) => bekommt.has(x.id)).map((x) => x.name);
+  const an = new Set(wert);
   return (
-    <section aria-labelledby="ki-typen-titel">
-      <h2 className="h3" id="ki-typen-titel">{t('pakete.ki.titel')} <Hilfe ort="pakete.ki" /></h2>
-      <p className="leise klein">{t('pakete.ki.text')}</p>
+    <div className="stapel" data-anker="pakete.ki-typen">
+      <p className="leise klein">{t('pakete.ki.text')} <Hilfe ort="pakete.ki" /></p>
       <p>{namen.length ? t('pakete.ki.bekommt', { namen: namen.join(', ') }) : <strong>{t('pakete.ki.bekommt-nichts')}</strong>}</p>
-      {fehler && <p className="hinweis schlecht" role="alert">{fehler}</p>}
-      <details className="klein" open={!namen.length}>
-        <summary>{t('pakete.ki.zulassen', { zugelassen: k.typen.filter((x) => x.zugelassen).length, alle: k.typen.length })}</summary>
-        <p className="leise">{t('pakete.ki.zulassen.text')}</p>
-        <FeldGruppe beschriftung={t('pakete.ki.zugelassene-typen')} beschriftungVerbergen>
-          <ul className="auswahlliste">
-            {k.typen.map((x) => (
-              <li key={x.id}>
-                <label className="haken"><input type="checkbox" checked={x.zugelassen} disabled={sendet === x.id} onChange={(ev) => void setze(x.id, ev.target.checked)} />
-                  <span><Link to={`/werkbank/typen/${x.id}#ki`} className="verweis">{x.name}</Link>
-                    {x.zugelassen && !bekommt.has(x.id) && <small className="hilfe">{t('pakete.ki.nicht-lesbar')}</small>}</span>
-                </label>
-              </li>
-            ))}
-          </ul>
-        </FeldGruppe>
-      </details>
-    </section>
+      <FeldGruppe beschriftung={t('pakete.ki.zulassen', { zugelassen: an.size, alle: k.typen.length })} hinweis={t('pakete.ki.zulassen.text')} fehler={fehler}>
+        <ul className="auswahlliste">
+          {k.typen.map((x) => (
+            <li key={x.id}>
+              <label className="haken"><input type="checkbox" checked={an.has(x.id)} onChange={(ev) => setze(ev.target.checked ? [...wert, x.id] : wert.filter((y) => y !== x.id))} />
+                <span><Link to={`/werkbank/typen/${x.id}#ki`} className="verweis">{x.name}</Link>
+                  {x.zugelassen && !bekommt.has(x.id) && <small className="hilfe">{t('pakete.ki.nicht-lesbar')}</small>}</span>
+              </label>
+            </li>
+          ))}
+        </ul>
+      </FeldGruppe>
+    </div>
+  );
+}
+
+/** Übersicht eines KI-Pakets (#996): nur eine Zeile, aus wie vielen Mappentypen es Inhalte bekommt, mit „Ändern“. */
+export function KiTypenZeile({ paket, aendern }: { paket: string; aendern: () => void }) {
+  const [k, setK] = useState<KiUebersicht | null>(null);
+  useEffect(() => { sucheApi.kiTypen().then(setK, () => setK(null)); }, []);
+  if (!k) return null;
+  const n = k.pakete.find((x) => x.id === paket)?.bekommt.length ?? 0;
+  return (
+    <p>{n ? t('pakete.reiter.ki-zeile', { anzahl: n }) : <strong>{t('pakete.ki.bekommt-nichts')}</strong>}
+      {' '}<Knopf art="link" onClick={aendern}>{t('pakete.reiter.aendern')}</Knopf></p>
   );
 }

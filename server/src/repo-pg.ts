@@ -1,6 +1,7 @@
 import type postgres from 'postgres';
 import { AEHNLICH_AB, falte, normal, suchbegriffe, teilwoerter, TIPPFEHLER_MIN, type Varianten } from '../../shared/src/suche';
 import { alsText } from '../../shared/src/markdown';
+import { VERLAUF_FEHLER, VERLAUF_MAX, VERLAUF_TAGE, type VerlaufEintrag } from '../../shared/src/paketreiter';
 import { SPRACHE_MARKE, SPRACHE_SQL_MUSTER, spracheAusInfo, suchkonfig } from '../../shared/src/textsprache';
 import { alsSeitensprachen, teilenAb } from '../../shared/src/seitensprachen';
 import { alsLeerseiten } from '../../shared/src/leerseiten';
@@ -590,6 +591,7 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
     .then((r) => (r[0] ? `"${String(r[0].nspname).replace(/"/g, '""')}"` : null), () => null));
   const VERS = sql.unsafe(VERSION_SPALTEN);
   let ereignisseAufgeraeumt = 0;
+  let verlaufAufgeraeumt = 0;
   /** Nummer ziehen (#171) – nur innerhalb einer Transaktion; die Zeile bleibt bis zu deren Ende gesperrt. */
   async function zieheIn(tx: postgres.TransactionSql, schluessel: string, mappeId: string | null, jetzt: Date): Promise<string> {
     const [r] = await tx`SELECT * FROM nummernkreise WHERE haushalt_id = ${haushaltId} AND schluessel = ${schluessel} FOR UPDATE`;
@@ -925,6 +927,7 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
         await tx`UPDATE paket_sprachen SET paketbeschriftungen = (paketbeschriftungen - ${alt}::text) || jsonb_build_object(${neu}::text, paketbeschriftungen->${alt}::text)
           WHERE haushalt_id = ${haushaltId} AND paketbeschriftungen ? ${alt}::text`;
         await tx`UPDATE paket_ereignisse SET paket_id = ${neu} WHERE haushalt_id = ${haushaltId} AND paket_id = ${alt}`;
+        await tx`UPDATE paket_verlauf SET paket_id = ${neu} WHERE haushalt_id = ${haushaltId} AND paket_id = ${alt}`;
         await tx`UPDATE synonyme SET quelle = ${neu} WHERE haushalt_id = ${haushaltId} AND quelle = ${alt}`;
         await tx`UPDATE mappentypen SET paket = ${neu} WHERE haushalt_id = ${haushaltId} AND paket = ${alt}`;
         // Vorgaben (#1038): Die feste Kennung nennt das Paket – sie zieht mit um.
@@ -1043,6 +1046,44 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
       return r.length > 0;
     },
     async loescheEreignisse(id) { await sql`DELETE FROM paket_ereignisse WHERE haushalt_id = ${haushaltId} AND paket_id = ${id}`; },
+    async notiereVerlauf(liste) {
+      if (!liste.length) return;
+      await sql`INSERT INTO paket_verlauf ${sql(liste.map((e) => ({
+        haushalt_id: haushaltId, paket_id: e.paket, art: e.art, was: (e.was ?? '').slice(0, 200), ergebnis: e.ergebnis ?? null, ms: e.ms ?? null, speicher_mb: e.speicherMB ?? null,
+        text: (e.text ?? '').slice(0, 500), wer: e.wer ?? null, bezug: e.bezug ? json(sql, e.bezug) : null, netz: e.netz?.length ? json(sql, e.netz.slice(0, 20)) : null,
+      })))}`;
+      // Aufräumen höchstens alle 10 Minuten: 30 Tage, höchstens VERLAUF_MAX je Paket.
+      if (Date.now() - verlaufAufgeraeumt < 600_000) return;
+      verlaufAufgeraeumt = Date.now();
+      await sql`DELETE FROM paket_verlauf WHERE haushalt_id = ${haushaltId} AND zeit < now() - make_interval(days => ${VERLAUF_TAGE})`;
+      await sql`DELETE FROM paket_verlauf v USING (SELECT nr FROM (SELECT nr, row_number() OVER (PARTITION BY paket_id ORDER BY nr DESC) AS rang
+        FROM paket_verlauf WHERE haushalt_id = ${haushaltId}) x WHERE x.rang > ${VERLAUF_MAX}) alt WHERE v.nr = alt.nr`;
+    },
+    async paketVerlauf(id, f) {
+      const fehler = f.nurFehler ? sql`AND ergebnis = ANY(${[...VERLAUF_FEHLER]}::text[])` : sql``;
+      const suche = f.suche?.trim() ? sql`AND (was || ' ' || text) ILIKE ${`%${f.suche.trim().replace(/[\\%_]/g, (x) => `\\${x}`)}%`}` : sql``;
+      const vor = f.vor ? sql`AND nr < ${f.vor}` : sql``;
+      return (await sql`SELECT nr, zeit, art, was, ergebnis, ms, speicher_mb, text, wer, bezug, netz FROM paket_verlauf
+        WHERE haushalt_id = ${haushaltId} AND paket_id = ${id} ${vor} ${fehler} ${suche} ORDER BY nr DESC LIMIT ${f.anzahl}`).map((r) => ({
+        nr: Number(r.nr), zeit: (r.zeit as Date).toISOString(), art: r.art as VerlaufEintrag['art'], was: r.was as string, ergebnis: (r.ergebnis as VerlaufEintrag['ergebnis']) ?? null,
+        ms: (r.ms as number | null) ?? null, speicherMB: (r.speicher_mb as number | null) ?? null, text: r.text as string, wer: (r.wer as string | null) ?? null,
+        bezug: (r.bezug as VerlaufEintrag['bezug']) ?? null, netz: (r.netz as string[] | null) ?? [],
+      }));
+    },
+    async paketAuslastung(id, tage) {
+      const zeilen = await sql`SELECT to_char(date_trunc('day', zeit AT TIME ZONE 'UTC'), 'YYYY-MM-DD') AS tag,
+          count(*)::int AS aufrufe, count(*) FILTER (WHERE ergebnis IN ('fehler', 'zeit', 'speicher'))::int AS fehler,
+          count(*) FILTER (WHERE ergebnis = 'zeit')::int AS zeit, count(*) FILTER (WHERE ergebnis = 'speicher')::int AS speicher,
+          coalesce(sum(ms), 0)::bigint AS ms_summe, coalesce(max(ms), 0)::int AS ms_max, coalesce(max(speicher_mb), 0)::int AS speicher_max
+        FROM paket_verlauf WHERE haushalt_id = ${haushaltId} AND paket_id = ${id} AND art IN ('ereignis', 'aufruf') AND zeit >= now() - make_interval(days => ${tage})
+        GROUP BY 1 ORDER BY 1`;
+      const [z] = await sql`SELECT max(zeit) AS zuletzt FROM paket_verlauf WHERE haushalt_id = ${haushaltId} AND paket_id = ${id} AND art IN ('ereignis', 'aufruf')`;
+      return {
+        tage: zeilen.map((r) => ({ tag: r.tag as string, aufrufe: r.aufrufe as number, fehler: r.fehler as number, zeit: r.zeit as number, speicher: r.speicher as number, msSumme: Number(r.ms_summe), msMax: r.ms_max as number, speicherMax: r.speicher_max as number })),
+        zuletzt: z?.zuletzt ? (z.zuletzt as Date).toISOString() : null,
+      };
+    },
+    async loescheVerlauf(id) { await sql`DELETE FROM paket_verlauf WHERE haushalt_id = ${haushaltId} AND paket_id = ${id}`; },
     async loescheOffeneEreignisse(art, dokumente) {
       if (!dokumente.length) return 0;
       const r = await sql`DELETE FROM paket_ereignisse WHERE haushalt_id = ${haushaltId} AND art = ${art} AND zugestellt IS NULL AND daten->>'dokument' = ANY(${dokumente}::text[])`;
