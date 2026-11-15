@@ -342,6 +342,8 @@ void merkeVersion(nachweisEinstellungen, eigeneVersion()).catch((e) => log.warn(
 beiFehlenderDatei((f) => { void dienst.dateienFehlen.merkeFehlendeDatei(f).catch((e) => log.warn('Fehlende Datei nicht vermerkt', { fehler: (e as Error).message })); });
 // Benutzer erscheinen als Mappen (#26); die Konten halten sie auf dem neuesten Stand.
 const konten = new Konten(messung.umhuelle(pgKontoRepo(sql, cfg.haushalt), 'konto'), () => betrieb.mailer(), () => betrieb.adresseFuerLinks(), dienst.systemtypen.benutzerspiegel());
+// Links in Mails nur mit gepflegter Adresse, nie aus dem Host-Kopf der Anfrage.
+konten.verbindeMailAdresse(() => betrieb.gepflegteAdresse());
 dienst.verbindeKonten(konten.papierkorbHaken());
 // Startseite „Zuletzt geöffnet“ (#940): Anlegen und Ändern zählen wie Öffnen.
 dienst.kern.beiEigenerAenderung = (benutzerId, mappeId) => konten.merkeGeoeffnet({ id: benutzerId }, mappeId);
@@ -468,7 +470,7 @@ const aufgabenmail = new Aufgabenmail({
   // Erwähnte Favoriten (#889): gemerkt bis zur nächsten Zusammenfassung, nur lesbare.
   favoritenErwaehnt: async (b) => dienst.erwaehnungen.fuerZusammenfassung(await dienst.rechtepruefung.zugriff(b), (await konten.einstellungen(b))[FAVORIT_ERWAEHNT_OFFEN]),
   favoritenErwaehntGesendet: (b) => konten.setzeEinstellung(b, FAVORIT_ERWAEHNT_OFFEN, null),
-}, () => betrieb.mailer(), () => betrieb.adresseFuerLinks());
+}, () => betrieb.mailer(), () => betrieb.adresseFuerMails());
 const designs = new Designs(messung.umhuelle(pgDesignRepo(sql, cfg.haushalt), 'designs'), mitPruefung(ordnerSpeicher(ordner.dateien, `${cfg.haushalt}/designs`), hochladen));
 // Einrichtungsassistent (#119): Mandant und Administrator mit Code, danach die weiteren Schritte.
 const einrichtungNoetig = await konten.einrichtungNoetig();
@@ -608,7 +610,7 @@ const automatisierungen = new Automatisierungen({
   // Aufruf von außen (#679): Adressen in der Datenbank; Bremse und Wiederholschutz im Kurzzustand des Dienstes, Geheimnis mit dessen Tresor.
   aufruf: { repo: pgAufrufRepo(sql, cfg.haushalt), basis: () => betrieb.adresseFuerLinks() },
   // Karten nach außen (#671): Ausgangskorb und Geheimnisse in der Datenbank, Mailversand wie überall, Adresse für Links.
-  aussen: { repo: pgAusgangRepo(sql, cfg.haushalt), geheimnisse: pgAussenGeheimnisRepo(sql, cfg.haushalt), mailer: () => betrieb.mailer(), basis: () => betrieb.adresseFuerLinks() },
+  aussen: { repo: pgAusgangRepo(sql, cfg.haushalt), geheimnisse: pgAussenGeheimnisRepo(sql, cfg.haushalt), mailer: () => betrieb.mailer(), basis: () => betrieb.adresseFuerMails() },
   pause: () => (wartung.aktiv ? 'Wartungsmodus' : wiederherstellung.laeuft() ? t('meldungen.index.wiederherstellung-laeuft') : null),
 });
 // Wenn-Karte „Protokollmeldung“ (#677): jeder Prozess meldet seine Warnungen und Fehler in den Ausgangskorb – nur solange
@@ -625,7 +627,7 @@ const verwaltung = new Verwaltung({
   einstellungen: pgEinstellungen(sql, cfg.haushalt),
   personen: () => konten.listeBenutzer(),
   sende: async (an, betreff, text) => { await betrieb.mailer()?.sende(an, betreff, text); },
-  adresse: () => betrieb.adresseFuerLinks(),
+  adresse: () => betrieb.adresseFuerMails(),
   quellen: [
     async () => {
       const z = await sicherung.zustand();

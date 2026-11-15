@@ -116,6 +116,15 @@ export class Konten {
   private get mailer(): Mailer | null { return typeof this.mailQuelle === 'function' ? this.mailQuelle() : this.mailQuelle; }
   private get appUrl(): string { return typeof this.adresse === 'function' ? this.adresse() : this.adresse; }
 
+  /**
+   * Adresse für Links **in Mails**: nur die gepflegte Adresse, nie die der Anfrage. Sonst könnte jemand mit einem
+   * eigenen Host-Kopf „Passwort vergessen“ aufrufen und Ablago eine echte Mail mit Link auf seinen Server verschicken
+   * lassen. Leer: keine Links per Mail – wie ohne Mailversand. Ohne Verbindung (Tests) gilt `adresse`.
+   */
+  private mailAdresse?: () => string;
+  verbindeMailAdresse(f: () => string) { this.mailAdresse = f; }
+  private get mailUrl(): string { return (this.mailAdresse ? this.mailAdresse() : this.appUrl).replace(/\/+$/, ''); }
+
   /** Benutzer-Mappe nachziehen; `abwesenheit` (#962), wenn sich die Abwesenheit geändert hat – dann in derselben Transaktion. */
   private async spiegle(b: Benutzer, von: string | null = null, abwesenheit?: { vorher: Abwesenheit; wegen?: string }) {
     if (this.spiegel) await this.spiegel.aktualisiere(b, von, abwesenheit);
@@ -1111,10 +1120,14 @@ export class Konten {
     await this.repo.legeLinkAn(hasheSchluessel(schluessel), b.id, zweck, new Date(Date.now() + dauer));
     const link = `${this.appUrl.replace(/\/$/, '')}/passwort/${schluessel}`;
     if (!this.mailer) return { benutzer: b, mailVerschickt: false, link };
+    // Ohne gepflegte Adresse kein Link per Mail: Die Verwaltung bekommt ihn angezeigt wie ohne Mailversand.
+    const basis = this.mailUrl;
+    if (!basis) return { benutzer: b, mailVerschickt: false, link, mailFehler: t('meldungen.konten.link-ohne-adresse') };
+    const mailLink = `${basis}/passwort/${schluessel}`;
     // In der Sprache der Person (#729); eine neue Person hat noch keine Wahl – dann die der Installation.
     const m = mitSpracheVon(b, () => (zweck === 'einladung'
-      ? mailtexte.einladung(b.name, b.email, link, EINLADUNG_TAGE)
-      : mailtexte.zuruecksetzen(b.name, b.email, link, ZURUECKSETZEN_STUNDEN)));
+      ? mailtexte.einladung(b.name, b.email, mailLink, EINLADUNG_TAGE)
+      : mailtexte.zuruecksetzen(b.name, b.email, mailLink, ZURUECKSETZEN_STUNDEN)));
     try {
       await this.mailer.sende(b.email, m.betreff, m.text);
       return { benutzer: b, mailVerschickt: true };
@@ -1129,6 +1142,8 @@ export class Konten {
   async passwortVergessen(e: { email?: unknown }, log: (m: string) => void = () => {}) {
     const email = text(e.email);
     if (!this.mailer || !istEmail(email)) return;
+    // Ohne gepflegte Adresse keine Mail mit Link (siehe mailAdresse); antwortet trotzdem gleich.
+    if (!this.mailUrl) { log(`Passwort vergessen für ${email}: keine Mail, weil die Adresse von Ablago nicht gepflegt ist`); return; }
     const t = await this.repo.holeHash(email);
     if (!t || !t.benutzer.aktiv) return;
     const r = await this.verschickeLink(t.benutzer, t.benutzer.hatPasswort ? 'zuruecksetzen' : 'einladung');

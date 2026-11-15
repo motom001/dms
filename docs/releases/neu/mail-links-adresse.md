@@ -1,0 +1,7 @@
+art: patch
+
+## Sicherheit
+
+- **Links in E-Mails nur mit gepflegter Adresse** (#1294): Ohne gepflegte Adresse von Ablago hat Ablago Links in Mails aus der Adresse der Anfrage gebaut, also aus dem Host-Kopf, den der Absender selbst wählt. So ließ sich über „Passwort vergessen“ eine echte Mail von Ablago mit einem Link auf einen fremden Server auslösen. Jetzt gilt:
+  - Einladungen und Passwort-Links gehen nur noch mit gepflegter Adresse (Werkbank → E-Mail und Adresse) per Mail hinaus. Ohne sie zeigt die Benutzerverwaltung den Link zum Weitergeben, und „Passwort vergessen“ verschickt keine Mail.
+  - Die tägliche Zusammenfassung, Mails an die Verwaltung und Mails aus Automatisierungen nehmen nie mehr die Adresse der Anfrage.
