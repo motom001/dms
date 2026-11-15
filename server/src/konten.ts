@@ -1143,7 +1143,7 @@ export class Konten {
     const email = text(e.email);
     if (!this.mailer || !istEmail(email)) return;
     // Ohne gepflegte Adresse keine Mail mit Link (siehe mailAdresse); antwortet trotzdem gleich.
-    if (!this.mailUrl) { log(`Passwort vergessen für ${email}: keine Mail, weil die Adresse von Ablago nicht gepflegt ist`); return; }
+    if (!this.mailUrl) { log('Passwort vergessen: keine Mail, weil die Adresse von Ablago nicht gepflegt ist'); return; }
     const t = await this.repo.holeHash(email);
     if (!t || !t.benutzer.aktiv) return;
     const r = await this.verschickeLink(t.benutzer, t.benutzer.hatPasswort ? 'zuruecksetzen' : 'einladung');
