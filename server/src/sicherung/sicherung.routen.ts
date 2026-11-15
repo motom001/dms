@@ -13,7 +13,8 @@ export function sicherungRouten(k: RoutenKontext): Route[] {
   const { dienst, konten, x, tresor, sicherung, sicherungsPaket, notfallblattDatei, wh, whStand, darfWiederherstellen } = k;
   return [
     /* ---------- Wiederherstellen (#107): frisches System ohne Anmeldung, sonst Admin im Wartungsmodus ---------- */
-    { methode: 'GET', pfad: '/api/wiederherstellung/status', zugang: 'offen', handler: async () => ok(await whStand()) },
+    // Stand der Läufe (#1341): `laufStand()` fragt bei mehreren Prozessen den Leiter – aus jedem Prozess derselbe Stand.
+    { methode: 'GET', pfad: '/api/wiederherstellung/status', zugang: 'offen', handler: async () => ok(await whStand({ frisch: true })) },
     { methode: 'POST', pfad: '/api/wiederherstellung/abschluss-gesehen', zugang: 'offen', handler: async () => {
       if (x.sicherung && !x.wiederherstellung?.laeuft()) await x.sicherung.einstellungen.schreibe('wiederherstellung_abschluss', null);
       return leer;
@@ -34,7 +35,7 @@ export function sicherungRouten(k: RoutenKontext): Route[] {
     } },
     // Probe-Wiederherstellung (#109)
     { methode: 'POST', pfad: '/api/werkbank/sicherung/probe', zugang: 'admin', handler: async (a) => ok((await wh().starteProbe(typeof b(a).name === 'string' ? b(a).name as string : null, ich(a).email)).lauf) },
-    { methode: 'GET', pfad: '/api/werkbank/sicherung/probe', zugang: 'admin', handler: async () => ok(x.wiederherstellung?.aktuellerLauf() ?? null) },
+    { methode: 'GET', pfad: '/api/werkbank/sicherung/probe', zugang: 'admin', handler: async () => ok(await x.wiederherstellung?.laufStand() ?? null) },
     { methode: 'PUT', pfad: '/api/werkbank/sicherung/probe-plan', zugang: 'admin', handler: async (a) => ok(await sicherung().speichereProbePlan(a.body, ich(a).email)) },
 
     /* ---------- Sicherung (#103–#105) und Notfallblatt (#106) ---------- */
@@ -43,9 +44,9 @@ export function sicherungRouten(k: RoutenKontext): Route[] {
       const liste = await s.liste();
       // Entfernte Sicherungen (#976): eigene Merkliste und die Listen der Ziele; ?ziele=neu fragt die Ziele gleich neu.
       const entfernt = await s.entfernt.stand(liste.map((e) => e.name), a.query.ziele === 'neu').catch(() => null);
-      return ok({ lauf: s.aktuellerLauf(), liste, entfernt, plan: await s.plan(), speicher: await s.speicher(), zustand: await s.zustand(), probe: x.wiederherstellung?.aktuellerLauf() ?? null });
+      return ok({ lauf: await s.laufStand(), liste, entfernt, plan: await s.plan(), speicher: await s.speicher(), zustand: await s.zustand(), probe: await x.wiederherstellung?.laufStand() ?? null });
     } },
-    { methode: 'GET', pfad: '/api/werkbank/sicherung/lauf', zugang: 'admin', handler: async () => ok(sicherung().aktuellerLauf()) },
+    { methode: 'GET', pfad: '/api/werkbank/sicherung/lauf', zugang: 'admin', handler: async () => ok(await sicherung().laufStand()) },
     { methode: 'POST', pfad: '/api/werkbank/sicherung/jetzt', zugang: 'admin', handler: async (a) => ok((await sicherung().starte('manuell', ich(a).email)).lauf) },
     { methode: 'PUT', pfad: '/api/werkbank/sicherung/plan', zugang: 'admin', handler: async (a) => ok(await sicherung().speicherePlan(a.body, ich(a).email)) },
     { methode: 'POST', pfad: '/api/werkbank/sicherung/:name/pruefen', zugang: 'admin', handler: async (a) => ok(await sicherung().pruefe(a.params.name, ich(a).email)) },

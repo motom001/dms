@@ -117,6 +117,8 @@ export class Wiederherstellung {
   constructor(private q: WiederherstellungsQuellen) { this.jetzt = q.jetzt ?? (() => new Date()); }
 
   aktuellerLauf(): Wiederherstellungslauf | null { return this.lauf ? structuredClone(this.lauf) : null; }
+  /** Stand für die Routen (#1341), in weiteren Prozessen vom Leiter – wie `Sicherung.laufStand`. */
+  laufStand: () => Promise<Wiederherstellungslauf | null> = async () => this.aktuellerLauf();
   laeuft() { return this.belegt || this.lauf?.status === 'laeuft' || this.lauf?.status === 'neustart'; }
 
   /** Belegen (synchron, vor jedem await) – sonst könnten zwei Starts gleichzeitig durchrutschen. */

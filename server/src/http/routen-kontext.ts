@@ -376,9 +376,12 @@ export function routenKontext(dienst: Dienst, konten: Konten, x: RoutenExtras = 
   const wh = () => { if (!x.wiederherstellung) throw new Fachfehler(404, t('meldungen.routen.die-wiederherstellung-ist-nicht')); return x.wiederherstellung; };
   const anbindung = () => { if (!x.anbindung) throw new Fachfehler(404, t('meldungen.routen.die-datenbank-anbindung-ist')); return x.anbindung; };
   const speicherplatz = () => { if (!x.speicherplatz) throw new Fachfehler(404, t('meldungen.routen.die-speicherplatz-ueberwachung-ist')); return x.speicherplatz; };
-  /** Stand für den Wiederherstellungsbildschirm: läuft etwas, oder gibt es eine Abschlussmeldung? */
-  const whStand = async () => {
-    const lauf = x.wiederherstellung?.aktuellerLauf();
+  /**
+   * Stand für den Wiederherstellungsbildschirm: läuft etwas, oder gibt es eine Abschlussmeldung? `frisch` (#1341): bei
+   * mehreren Prozessen vom Leiter; ohne genügt der Spiegel (bis 1 s alt) – `/api/konto/status` fragt jede Seite oft.
+   */
+  const whStand = async (o: { frisch?: boolean } = {}) => {
+    const lauf = o.frisch ? await x.wiederherstellung?.laufStand() : x.wiederherstellung?.aktuellerLauf();
     const abschluss = x.sicherung ? (await x.sicherung.einstellungen.lies('wiederherstellung_abschluss')) as Record<string, unknown> | null : null;
     // Ohne Anmeldung lesbar: ohne die Adresse dessen, der sie gestartet hat.
     return {

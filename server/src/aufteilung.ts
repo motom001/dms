@@ -6,7 +6,10 @@
  *   Ereignisverteiler ohne die Abnehmer der Automatisierungen hätte Ereignisse als verteilt markiert.
  * - **Aufrufe beim Leiter** (mit Ergebnis): Sicherung, Prüfsumme, Probe und Wiederherstellung starten, Postfach abrufen,
  *   Eingangsordner prüfen, Vorschaubilder nachholen. Was dort läuft, spiegelt der Leiter jede Sekunde an alle
- *   (`laeuft()`/`aktuellerLauf()` bleiben in jedem Prozess gleich und ohne Warten).
+ *   (`laeuft()`/`aktuellerLauf()` ohne Warten, bis zu einer Sekunde alt).
+ * - **Stand für die Oberfläche** (#1341): Was nur der Leiter fortschreibt und eine Route anzeigt, fragen die anderen beim
+ *   Leiter ab – Fortschritt von Sicherung, Prüfsumme, Probe und Wiederherstellung (`laufStand()`), Stand des
+ *   Eingangsordners, Texterkennung. Sonst sprang die Anzeige je nach Prozess zwischen Fortschritt und „kein Lauf“.
  * - **Einstellungen im Arbeitsspeicher** (Schlüssel der Verschlüsselung, E-Mail-Versand, OIDC, Schwelle der
  *   Zeitmessung): Jeder Prozess liest alle 2 Sekunden den Haushaltsstand `lesen` (#741); hat er sich geändert, lädt er
  *   sie neu. Das gilt auch für weitere Server an derselben Datenbank.
@@ -41,6 +44,8 @@ const log = protokoll.modul('system');
 export const UPLOAD_ALTER_MS = 6 * 3600_000;
 /** So oft spiegelt der Leiter laufende Sicherungen und Wiederherstellungen an die anderen. */
 export const SPIEGEL_MS = 1000;
+/** So lange wartet ein Prozess auf den Stand vom Leiter (#1341), dann gilt der Spiegel. */
+export const STAND_MS = 5000;
 /** So oft prüft jeder Prozess, ob sich Einstellungen geändert haben (Haushaltsstand `lesen`). */
 export const NACHLADEN_MS = 2000;
 
@@ -156,6 +161,8 @@ export function teileArbeit(v: Verbund, o: TeilungsDeps): { start(): Promise<voi
     v.hoere('ereignisse.wecke', () => o.dienst.ereignisse.wecke());
     v.bediene('postfach.abrufen', ([id]) => o.postfaecher.abrufen(String(id)));
     v.bediene('eingang.pruefe', ([sofort]) => o.eingangsordner.pruefe(sofort === true));
+    v.bediene('eingang.stand', () => o.eingangsordner.stand());
+    v.bediene('texterkennung.status', ([neu]) => te.status(neu === true));
     v.bediene('sicherung.starte', async ([art, von]) => (await si.starte(art as Parameters<Sicherung['starte']>[0], String(von))).lauf);
     v.bediene('sicherung.pruefe', ([name, von]) => si.pruefe(String(name), String(von)));
     v.bediene('wiederherstellung.starte', ([e, admin, code]) => wh.starte(e as Parameters<Wiederherstellung['starte']>[0], admin as { email: string } | null, code));
@@ -188,18 +195,29 @@ export function teileArbeit(v: Verbund, o: TeilungsDeps): { start(): Promise<voi
   dienst.ereignisse.verteile = async () => { v.melde('ereignisse.wecke'); return 0; };
   o.postfaecher.abrufen = (id) => v.rufe<number>('postfach.abrufen', [id]);
   o.eingangsordner.pruefe = (sofort = false) => v.rufe<number>('eingang.pruefe', [sofort]);
+  // Letzte Prüfung, wartende Dateien, Pause und Sperre kennt nur der Leiter (#1341).
+  o.eingangsordner.stand = () => v.rufe<Awaited<ReturnType<Eingangsordner['stand']>>>('eingang.stand', [], { ms: STAND_MS });
+  // Laufende Aufträge der Texterkennung zählt nur der Leiter (#1341).
+  te.status = (neu = false) => v.rufe<Awaited<ReturnType<Texterkennung['status']>>>('texterkennung.status', [neu], { ms: STAND_MS });
 
   let s: Spiegel = { sicherung: null, wiederherstellung: null, whLaeuft: false };
   v.hoere('spiegel', (x) => { s = x as Spiegel; });
+  /** Stand frisch vom Leiter (#1341); antwortet er nicht (z. B. Neustart), gilt der Spiegel. */
+  const frisch = async () => { s = await v.rufe<Spiegel>('spiegel', [], { ms: STAND_MS }).catch(() => s); };
   si.aktuellerLauf = () => (s.sicherung ? { ...s.sicherung } : null);
   si.laeuft = () => s.sicherung?.status === 'laeuft';
-  si.starte = async (art, von) => ({ lauf: await v.rufe<Lauf>('sicherung.starte', [art, von]), fertig: Promise.resolve(null) });
+  si.laufStand = async () => { await frisch(); return si.aktuellerLauf(); };
+  // Den gestarteten Lauf gleich in den Spiegel – nicht erst mit dem nächsten Spiegeln (#1341).
+  const merkeSi = (lauf: Lauf) => { s = { ...s, sicherung: lauf }; return lauf; };
+  const merkeWh = (lauf: Wiederherstellungslauf) => { s = { ...s, wiederherstellung: lauf, whLaeuft: s.whLaeuft || lauf.status === 'laeuft' }; return lauf; };
+  si.starte = async (art, von) => ({ lauf: merkeSi(await v.rufe<Lauf>('sicherung.starte', [art, von])), fertig: Promise.resolve(null) });
   // Gibt hier ein Versprechen statt des Laufs zurück; die Route wartet darauf (await).
-  si.pruefe = ((name: string, von: string) => v.rufe<Lauf>('sicherung.pruefe', [name, von])) as unknown as Sicherung['pruefe'];
+  si.pruefe = (async (name: string, von: string) => merkeSi(await v.rufe<Lauf>('sicherung.pruefe', [name, von]))) as unknown as Sicherung['pruefe'];
   wh.aktuellerLauf = () => (s.wiederherstellung ? { ...s.wiederherstellung } : null);
+  wh.laufStand = async () => { await frisch(); return wh.aktuellerLauf(); };
   wh.laeuft = () => s.whLaeuft;
-  wh.starte = (e, admin, code) => v.rufe<Wiederherstellungslauf>('wiederherstellung.starte', [e, admin ? JSON.parse(JSON.stringify(admin)) : null, code]);
-  wh.starteProbe = async (name, von) => ({ lauf: await v.rufe<Wiederherstellungslauf>('wiederherstellung.probe', [name, von]), fertig: Promise.resolve(false) });
+  wh.starte = async (e, admin, code) => merkeWh(await v.rufe<Wiederherstellungslauf>('wiederherstellung.starte', [e, admin ? JSON.parse(JSON.stringify(admin)) : null, code]));
+  wh.starteProbe = async (name, von) => ({ lauf: merkeWh(await v.rufe<Wiederherstellungslauf>('wiederherstellung.probe', [name, von])), fertig: Promise.resolve(false) });
 
   for (const u of uhren) u.unref?.();
   return {
