@@ -124,6 +124,7 @@ Zwei Hinweise schließt du stattdessen mit einem eigenen Knopf ab – sie kommen
 | DATABASE_URL weicht von der Datenbank-Anbindung ab | gelb | `anbindung.abweichend` |
 | Datenbank-Anbindung geändert, Neustart nötig | gelb | `anbindung.neustart` |
 | DMS_LASTTEST in einer echten Installation | gelb | `lasttest` |
+| Die [Beispiel-Ablage](beispielablage.md) ist angelegt (bis du sie entfernst) | Hinweis | `beispielablage` |
 | Paket braucht noch Einstellungen | gelb | `paket-einstellungen` |
 | Neu: Mappentypen von KI-Diensten ausschließen (einmal nach dem Update, mit KI-Paketen; „Verstanden“) | Hinweis | `ki.typen` |
 | Aus der Einrichtung übersprungen | Hinweis | `einrichtung` |
@@ -162,7 +163,7 @@ Nicht jeder braucht jeden Bereich. Ein Haushalt fasst Nummernkreise, Postfächer
 - **Betrieb**: dazu Designs – für Betriebe mit mehreren Leuten.
 - **Alles**: jeder Bereich, auch Datenbank-Anbindung und Daten für Messungen. So bleibt es bei Installationen, die vor Version 0.70 eingerichtet wurden, bis du etwas anderes wählst.
 
-Die Stufe wählst du im [Einrichtungsassistenten](einrichtungsassistent.md) im Schritt „Nutzung“ und später hier. Bestehende Installationen behalten ihre Vorlage (Haushalt, Betrieb oder Alles).
+Die Stufe wählst du im Einrichtungsassistenten im Schritt „Nutzung“ und später hier. Bestehende Installationen behalten ihre Vorlage (Haushalt, Betrieb oder Alles).
 
 <!-- bereiche:stufen -->
 | Bereich | Einsteiger | Haushalt | Selbständig | Betrieb | Alles |

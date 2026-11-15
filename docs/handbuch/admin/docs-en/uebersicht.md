@@ -124,6 +124,7 @@ Two notices you close with a button of their own instead – they don't come bac
 | DATABASE_URL differs from the database connection | yellow | `anbindung.abweichend` |
 | Database connection changed, restart needed | yellow | `anbindung.neustart` |
 | DMS_LASTTEST in a real installation | yellow | `lasttest` |
+| The [Example Library](beispielablage.md) is set up (until you remove it) | notice | `beispielablage` |
 | Package still needs settings | yellow | `paket-einstellungen` |
 | New: exclude folder types from AI services (once after the update, with AI packages; “Got it”) | notice | `ki.typen` |
 | Skipped during setup | notice | `einrichtung` |
@@ -162,7 +163,7 @@ Not everyone needs every area. A household may never touch number sequences, mai
 - **Business**: adds themes – for businesses with several people.
 - **Everything**: every area, including the database connection and data for measurements. It stays like this for installations set up before version 0.70 until you choose something else.
 
-You choose the level in the [setup wizard](einrichtungsassistent.md) in the step “Use” and later here. Existing installations keep their template (Household, Business or Everything).
+You choose the level in the setup wizard in the step “Use” and later here. Existing installations keep their template (Household, Business or Everything).
 
 <!-- bereiche:stufen -->
 | Area | Beginner | Household | Self-employed | Business | Everything |
