@@ -16,7 +16,12 @@
         // Bindet mkdocs über extra_javascript ein (docs/handbuch/benutzer/mkdocs.yml).
         "docs/handbuch/benutzer/docs/javascripts/selbstcheck.js"
       ],
-      "project": [".github/werkzeuge/**", "docs/handbuch/**/*.{js,mjs,ts}", "shared/src/**"]
+      "project": [".github/werkzeuge/**", "docs/handbuch/**/*.{js,mjs,ts}"]
+    },
+    // Gemeinsamer Code; shared/package.json ist kein npm-Workspace, nur für die Tests unter shared/test (#1282).
+    "shared": {
+      "entry": ["test/**/*.test.ts"],
+      "project": ["src/**", "test/**"]
     },
     "server": {
       "entry": ["src/{index,ablago,dms,pakete-pruefen}.ts", "src/laeufer/{prozess,arbeiter}.ts", "src/arbeit/arbeitsfaden.ts", "werkzeuge/*.ts", "test/**/*.{ts,mjs}"],
@@ -26,9 +31,12 @@
       "entry": [
         "src/start.tsx",
         // Nie geladen, nur von `tsc` geprüft: legt fest, dass Knopf art="gefahr" ohne Symbol/Rückfrage nicht übersetzt (#1210).
-        "src/bausteine/knopf/typpruefung.ts"
+        "src/bausteine/knopf/typpruefung.ts",
+        // Oberflächentests (#1282), Lader für *.css?raw und *.module.css.
+        "test/**/*.test.{ts,tsx}",
+        "test/lader.mjs"
       ],
-      "project": ["src/**"]
+      "project": ["src/**", "test/**"]
     },
     // Eigenes Lockfile, kein npm-Workspace (#1272): Playwright für Rauchtests und Handbuchbilder.
     "web/rauchtest": {
