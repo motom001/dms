@@ -10,6 +10,7 @@ import type { MappenDienst, MappenHistorie } from '../mappen';
 import { protokoll } from '../protokoll';
 import type { Repo } from '../repo';
 import { t } from '../sprache';
+import { historienAufgabentext } from './historientext';
 import { NICHT_SICHTBAR, type ZugriffDienst } from '../zugriff';
 import { type Abwesenheit, abwesenheitWirkt, type Aufgabe, AUFGABE_MAX, type Aufgabenart, type Benutzer, VERTRETER_SCHRITTE } from '../../../shared/src/model';
 import { heuteIn } from '../../../shared/src/sichten';
@@ -88,8 +89,8 @@ export class AufgabenVertretung {
     await this.repo.delegiereAufgabe(a.id, ziel);
     const namen = (await Promise.all(abwesende.map((x) => this.name(x)))).join(', ');
     await this.notiere(a.mappeId, null, 'aufgabe', {
-      text: t('meldungen.dienst.weitergegeben-wegen-abwesenheit-von', { namen, name: await this.name(ziel), text: a.text }),
-      aufgabe: a.id, aufgabenart: a.art, vonId: a.empfaengerId, anId: ziel, aufgabentext: a.text,
+      text: t('meldungen.dienst.weitergegeben-wegen-abwesenheit-von', { namen, name: await this.name(ziel), text: historienAufgabentext(a) }),
+      aufgabe: a.id, aufgabenart: a.art, vonId: a.empfaengerId, anId: ziel, aufgabentext: historienAufgabentext(a),
     });
     protokoll.modul('ablage').info('Aufgabe wegen Abwesenheit weitergegeben', { mappeId: a.mappeId, von: namen, an: await this.name(ziel) });
     return (await this.repo.holeAufgabe(a.id)) ?? a;
@@ -111,8 +112,8 @@ export class AufgabenVertretung {
     for (const a of offen) {
       await this.repo.delegiereAufgabe(a.id, ziel);
       await this.notiere(a.mappeId, von, 'aufgabe', {
-        text: t('meldungen.dienst.weitergegeben-von-an', { name: await this.name(id), name2: await this.name(ziel), text: a.text }),
-        aufgabe: a.id, aufgabenart: a.art, vonId: id, anId: ziel, aufgabentext: a.text,
+        text: t('meldungen.dienst.weitergegeben-von-an', { name: await this.name(id), name2: await this.name(ziel), text: historienAufgabentext(a) }),
+        aufgabe: a.id, aufgabenart: a.art, vonId: id, anId: ziel, aufgabentext: historienAufgabentext(a),
       });
     }
     if (offen.length) protokoll.modul('ablage').info('Offene Aufgaben übergeben', { von: await this.name(id), an: await this.name(ziel), anzahl: offen.length });
@@ -188,7 +189,7 @@ export class AufgabenVertretung {
     // „Geändert“ bestätigen (#422) = gesehen; ohne Eintrag in der Historie der Mappe.
     if (a.art === 'aenderung') { await this.gesehen(ich, [a.mappeId]); return (await this.repo.holeAufgabe(id))!; }
     await this.repo.erledigeAufgabe(id, ich.id);
-    await this.notiere(a.mappeId, ich.id, 'aufgabe', { text: t('meldungen.dienst.erledigt-2', { text: a.text }), aufgabe: id, aufgabenart: a.art, fuer: a.empfaengerId, aufgabentext: a.text });
+    await this.notiere(a.mappeId, ich.id, 'aufgabe', { text: t('meldungen.dienst.erledigt-2', { text: historienAufgabentext(a) }), aufgabe: id, aufgabenart: a.art, fuer: a.empfaengerId, aufgabentext: historienAufgabentext(a) });
     protokoll.modul('ablage').info('Aufgabe erledigt', { mappeId: a.mappeId, aufgabe: a.text });
     await this.faelleNach([a.mappeId]);
     const folgetermin = await this.folgeterminVon(a);
@@ -202,7 +203,7 @@ export class AufgabenVertretung {
     if (ziel === a.empfaengerId) return a;
     await this.repo.delegiereAufgabe(id, ziel);
     const von = await this.name(a.empfaengerId), nach = await this.name(ziel);
-    await this.notiere(a.mappeId, ich.id, 'aufgabe', { text: t('meldungen.dienst.weitergegeben-von-an-2', { von, nach, text: a.text }), aufgabe: id, aufgabenart: a.art, vonId: a.empfaengerId, anId: ziel, aufgabentext: a.text });
+    await this.notiere(a.mappeId, ich.id, 'aufgabe', { text: t('meldungen.dienst.weitergegeben-von-an-2', { von, nach, text: historienAufgabentext(a) }), aufgabe: id, aufgabenart: a.art, vonId: a.empfaengerId, anId: ziel, aufgabentext: historienAufgabentext(a) });
     protokoll.modul('ablage').info('Aufgabe weitergegeben', { mappeId: a.mappeId, von, an: nach, aufgabe: a.text });
     await this.faelleNach([a.mappeId]);
     return (await this.repo.holeAufgabe(id))!;
@@ -233,7 +234,7 @@ export class AufgabenVertretung {
       await this.repo.delegiereAufgabe(id, ziel);
       if (!(await this.kannLesen(ziel, a.mappeId))) { await this.repo.delegiereAufgabe(id, a.empfaengerId); nicht.push({ id, grund: t('meldungen.dienst.darf-die-mappe-nicht', { nach }) }); continue; }
       const von = await this.name(a.empfaengerId);
-      await this.notiere(a.mappeId, ich.id, 'aufgabe', { text: t('meldungen.dienst.weitergegeben-von-an-2', { von, nach, text: a.text }), aufgabe: id, aufgabenart: a.art, vonId: a.empfaengerId, anId: ziel, aufgabentext: a.text, sammel: true });
+      await this.notiere(a.mappeId, ich.id, 'aufgabe', { text: t('meldungen.dienst.weitergegeben-von-an-2', { von, nach, text: historienAufgabentext(a) }), aufgabe: id, aufgabenart: a.art, vonId: a.empfaengerId, anId: ziel, aufgabentext: historienAufgabentext(a), sammel: true });
       weitergegeben.push(id);
       mappenWeiter.push(a.mappeId);
     }

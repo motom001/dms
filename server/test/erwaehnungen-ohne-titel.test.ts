@@ -77,6 +77,20 @@ describe('Erwähnungen ohne Titel im Text (#1293)', () => {
     assert.ok(!vorschau.includes(GEHEIM), vorschau);
   });
 
+  it('Historie: kein für den Empfänger aufbereiteter Text – auch nicht beim Erledigen', async () => {
+    const { d, konten, markus, geheim, vertrag } = await aufbau();
+    // Lena darf die private Mappe lesen; ihr Aufgabentext nennt den Titel, die Historie nicht.
+    const { benutzer: lena } = await konten.legeBenutzerAn({ email: 'lena@example.org', name: 'Lena' });
+    await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
+    await d.mappenNotizen.legeNotizAn(vertrag.id, `${erwaehnung('Lena', lena.id)} bitte ${erwaehnung(GEHEIM, geheim.id)} ansehen`, markus.id);
+    const [a] = (await d.vertretung.meineAufgaben({ id: lena.id, rolle: 'mitglied' })).filter((x) => x.art === 'erwaehnung');
+    assert.match(a.text, new RegExp(GEHEIM), 'der Empfänger sieht den Titel');
+    await d.vertretung.erledigeAufgabe(a.id, { id: lena.id, rolle: 'mitglied' });
+    const hist = JSON.stringify(await d.mappenHistorie.historie(vertrag.id));
+    assert.ok(!hist.includes(GEHEIM), `Historie ohne Titel: ${hist}`);
+    assert.match(hist, /@Erwähnung/);
+  });
+
   it('Person mit Leserecht sieht den aktuellen Titel, auch nach einer Umbenennung', async () => {
     const { d, markus, typ, geheim, vertrag, b } = await aufbau();
     await d.mappen.aendereMappe(geheim.id, { werte: { name: 'Abmahnung (erledigt)' } }, markus.id);

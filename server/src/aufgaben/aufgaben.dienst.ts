@@ -13,9 +13,10 @@ import type { MappenDienst, MappenHistorie } from '../mappen';
 import type { PostSystemmappen } from '../post';
 import { istUuid, type Repo } from '../repo';
 import { t } from '../sprache';
+import { historienAufgabentext } from './historientext';
 import type { Gueltigkeit } from '../zaehlerspeicher';
 import type { ZugriffDienst } from '../zugriff';
-import { alsText, erwaehnungen } from '../../../shared/src/markdown';
+import { alsText, erwaehnungen, ohneTitel } from '../../../shared/src/markdown';
 import { FAVORIT_ERWAEHNT, FAVORIT_ERWAEHNT_OFFEN, favoritErwaehntWahl, type FavoritErwaehntMerk } from '../../../shared/src/erwaehnen';
 import { type Aufgabe, AUFGABE_MAX, type AufgabenAnlass, type Benutzer, type Mappentyp, type Werte } from '../../../shared/src/model';
 import type { AblaufPlatzhalter, MappenAblaeufe } from './ablaeufe';
@@ -125,7 +126,8 @@ export class AufgabenDienst {
         text: await this.erwaehntText(id, von, quelle, neuText),
         erstellt: '', erstelltVon: von, erledigt: null, erledigtVon: null,
       });
-      await this.notiere(mappeId, von, 'aufgabe', { text: t('meldungen.dienst.erwaehnt', { name: await this.name(id), ort: quelle.ort }), aufgabe: a.id, aufgabenart: 'erwaehnung', fuer: id, aufgabentext: a.text });
+      // In die Historie nur der neutrale Text (#1293): Der Text der Aufgabe ist für den Empfänger aufbereitet.
+      await this.notiere(mappeId, von, 'aufgabe', { text: t('meldungen.dienst.erwaehnt', { name: await this.name(id), ort: quelle.ort }), aufgabe: a.id, aufgabenart: 'erwaehnung', fuer: id, aufgabentext: historienAufgabentext(a, this.neutralerErwaehntText(quelle, neuText)) });
       await this.leiteUm(a);
     }
     for (const id of vorher) {
@@ -133,6 +135,13 @@ export class AufgabenDienst {
       const m = await this.repo.holeMappe(id);
       if (m?.typId === benutzer.id) await this.notiere(mappeId, von, 'aufgabe', { text: t('meldungen.dienst.erwaehnung-von-entfernt', { name: await this.name(id), ort: quelle.ort }) });
     }
+  }
+
+  /** Derselbe Text neutral für die Historie (#1293): ohne Namen, Erwähnungen im Auszug nur als „@Erwähnung“. */
+  private neutralerErwaehntText(quelle: { ort: string; auszug?: string }, text: string): string {
+    const x = quelle.auszug === undefined ? '' : alsText(ohneTitel(text));
+    const auszug = quelle.auszug === undefined ? '' : `: ${x.length > 80 ? `${x.slice(0, 77)} …` : x}`;
+    return t('meldungen.dienst.erwaehnt-ohne-name', { ort: quelle.ort, wert: auszug }).slice(0, AUFGABE_MAX);
   }
 
   /**
@@ -265,7 +274,7 @@ export class AufgabenDienst {
     for (const a of await this.repo.offeneAufgaben({ mappeIds: [mappeId] })) {
       if (!a.anlass || !passt(a.anlass, a)) continue;
       await this.repo.erledigeAufgabe(a.id, null);
-      await this.notiere(mappeId, null, 'aufgabe', { text: t('meldungen.dienst.erledigt-3', { grund, text: a.text }), aufgabe: a.id, aufgabenart: a.art, fuer: a.empfaengerId, aufgabentext: a.text });
+      await this.notiere(mappeId, null, 'aufgabe', { text: t('meldungen.dienst.erledigt-3', { grund, text: historienAufgabentext(a) }), aufgabe: a.id, aufgabenart: a.art, fuer: a.empfaengerId, aufgabentext: historienAufgabentext(a) });
       n++;
     }
     if (n) await this.faelleNach([mappeId]);

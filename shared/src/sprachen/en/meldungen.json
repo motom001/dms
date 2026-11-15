@@ -206,6 +206,7 @@
   "dienst.erwaehnt-ohne-name": "Mentioned {ort}{wert}",
   "dienst.erwaehnung-nicht-sichtbar": "folder (not visible)",
   "dienst.erwaehnung-geloescht": "deleted folder",
+  "dienst.erwaehnung-historie": "Mention (text only for the person mentioned)",
   "dienst.favorit-erwaehnt": "Your favourite “{titel}” was mentioned {ort}",
   "dienst.weitergegeben-wegen-abwesenheit-von": "handed over because of the absence of {namen} to {name}: {text}",
   "dienst.bitte-einen-anderen-benutzer": "Please choose another user.",

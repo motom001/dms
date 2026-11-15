@@ -206,6 +206,7 @@
   "dienst.erwaehnt-ohne-name": "Erwähnt {ort}{wert}",
   "dienst.erwaehnung-nicht-sichtbar": "Mappe (nicht sichtbar)",
   "dienst.erwaehnung-geloescht": "gelöschte Mappe",
+  "dienst.erwaehnung-historie": "Erwähnung (Text nur für die erwähnte Person)",
   "dienst.favorit-erwaehnt": "Dein Favorit „{titel}“ wurde erwähnt {ort}",
   "dienst.weitergegeben-wegen-abwesenheit-von": "weitergegeben wegen Abwesenheit von {namen} an {name}: {text}",
   "dienst.bitte-einen-anderen-benutzer": "Bitte einen anderen Benutzer wählen.",
