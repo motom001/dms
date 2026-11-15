@@ -147,6 +147,8 @@ rauchtest('Pakete dazuholen: empfohlen zuerst, Sprachen über den Filter, Ergän
   const elemente = await zuDenPaketen(s);
   await elemente.getByRole('button', { name: 'Nach neuen Versionen suchen' }).click();
   const namen = async (region) => (await elemente.getByRole('region', { name: region }).locator('.eintrag .titel').allInnerTexts()).map((x) => x.split(' · ')[0].trim());
+  // Der Katalog kommt nach dem Klick: erst auslesen, wenn die Empfehlungen stehen.
+  for (const region of ['Für dich empfohlen', 'Weitere Pakete']) await elemente.getByRole('region', { name: region }).locator('.eintrag .titel').first().waitFor();
   assert.deepEqual(await namen('Für dich empfohlen'), ['Haushalt', 'Verträge', 'Trennblatt']);
   assert.deepEqual(await namen('Weitere Pakete'), ['Fahrzeuge']);
   await elemente.getByText(/Ergänzungen wie die Zusatzsprachen/).waitFor();
