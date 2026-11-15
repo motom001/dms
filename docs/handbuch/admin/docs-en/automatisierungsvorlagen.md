@@ -53,7 +53,7 @@ The **switch** at the top of the editor (off) takes the template out of the “F
 
 Below:
 
-- **Try it out:** choose a folder and click **Try it out**. **The same small dialog as on the folder** opens – with exactly the template’s questions, the same pre-filled values (e.g. the suggested date), the same labels and order –, marked at the top with **“Trial – nothing is created.”** After confirming, Ablago shows what the recipients would see: per recipient the task (due when) or the notification with folder and text, and who would not be allowed to see the folder or all of it; under **Summary** the same lines in brief. Ablago tries it with your rights as the person. Then **Again** or **Adjust template**. Nothing is created.
+- **Try it out:** choose a folder and click **Try it out**. You can choose folders of all types the template applies to – without chosen folder types, all your own types, those from packages and Post. **The same small dialog as on the folder** opens – with exactly the template’s questions, the same pre-filled values (e.g. the suggested date), the same labels and order –, marked at the top with **“Trial – nothing is created.”** After confirming, Ablago shows what the recipients would see: per recipient the task (due when) or the notification with folder and text, and who would not be allowed to see the folder or all of it; under **Summary** the same lines in brief. Ablago tries it with your rights as the person. Then **Again** or **Adjust template**. Nothing is created.
 
   ![Try it out: “Remind me in 14 days” on the electricity contract – the task as the recipient would see it, due in 14 days](bilder/werkbank-automatisierungsvorlage-probe.png)
 
