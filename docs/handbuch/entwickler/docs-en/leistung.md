@@ -235,6 +235,17 @@ In the load test "+ saving", creating a task or a note was the slowest operation
 
 On the server (handler, median): creating a task 304 → 204 ms with 31 → 22 accesses before the answer, note 142 → 118 ms with 12 → 11. "Change folder" remains the slowest writing operation (transaction); that is a topic of its own. `server/test/aufgaben-zaehler.test.ts` records: the same numbers as the previous query, with and without cache, with deputy, temporary read permission, tasks without recipient and from automations; your own task and note are visible in the next request; temporary read permission ends with completing the task straight away.
 
+**Measurement for #1253** (evidence journal in its own table; container with 2 cores, PostgreSQL 16 local, 50,000 load-test folders, the month's journal filled with 1,800 entries beforehand; 400 failed sign-ins, 10 at a time, each attempt with its own address; alongside, one person opening folders one after another; **no NAS values**):
+
+| | before (0.288.0) known account | after known account | before unknown account | after unknown account |
+| --- | --- | --- | --- | --- |
+| failed sign-ins per s | 18 | 19 | 21 | 17–22 |
+| failed sign-in p50 / p95 | 544 / 730 ms | 520 / 699 ms | 478 / 686 ms | 439–541 / 730–787 ms |
+| "open folder" alongside p50 / p95 | 6 / 552 ms | 13 / 54 ms | 5 / 25 ms | 6–16 / 30–54 ms |
+| lost entries | 106 of 400 | 0 | 83 of 400 | 0 |
+
+Without failed sign-ins: "open folder" p95 8–13 ms. The failed sign-in itself mostly costs the deliberately slow password check; the journal now needs one statement per attempt (`INSERT … SELECT` behind the increment in `nachweis_zaehler`) instead of reading, copying and compare-and-swap of up to 300 KB.
+
 ## Load test { #lasttest }
 
 `server/test/lasttest.mjs` (#544, #563) sends many **simultaneous HTTP requests** to a running Ablago – the counterpart to the measuring script, which measures individual database accesses. Without dependencies, only with Node.js's `fetch`. In the image it is the command `dms-lasttest` (operators: Administrator manual → [Running the load test yourself](https://help.ablago.app/admin/aktuell/en/lasttest/)).
@@ -268,6 +279,8 @@ You start a matching Ablago from `server/` with an own, empty database (e.g. `dm
 | klein | 25 at once, `--dauer` seconds | 5,000 folders | **Target:** p95 < 300 ms. **CI limit:** p95 300 ms, no errors (no 5xx, no request without an answer), no 503 |
 | mittel | 100 at once, alongside one large export after another: PDF of up to 1000 folders with overview, PDF of the folders with documents, ZIP of the largest view | 50,000 folders | **Target:** p95 < 1 s. **CI limit:** p95 1,000 ms (equal to the target), error rate < 0.1 %, no 503, every export succeeds |
 | klein/mittel/gross + saving (#739) | like the level (gross: limit), 10 % writing, tidying up afterwards | like the level | **Measurement**, no target, no CI limit, no influence on the exit code |
+| klein/mittel/gross + Pakete und Tabellen (#1254) | like "+ saving", profile `PROFIL_PAKETE` (read shares × 0.85, 10 % table field `lasttest_rechnungen` on the contract, 5 % change a folder); the load-test package (`lasttestPaket()`, WebAssembly and ZIP built by the script, no network) reacts to `mappe.geaendert` and is installed only during this run; package calls from the package history | like the level | **Measurement**, no target; CI limit only after the first run on GitHub (+ 20 %) |
+| klein/mittel/gross + Anmeldeschutz (#1254) | once per run fill the evidence journal with `--journal` (1,800) failed sign-ins, then read like the level for at most 60 s with 10 failed sign-ins at the same time alongside (as in #1253; half known, half unknown accounts, each attempt with its own address via X-Forwarded-For); lost evidence = warnings "Nachweis … nicht eingetragen" in the log | like the level | **Measurement**, no target; CI limit only after the first run on GitHub (+ 20 %) |
 | gross | 5, 10, then from 25 at once 25 more every `--schritt-dauer` (120) seconds (`--start` begins exactly there), until p95 > 3 s, error rate > 1 % or the overload protection kicks in (503); then 1000 at once (at most 60 s) with a sign-in protection probe, then recovery | 200,000 folders | **Measurement:** limit = highest level without stopping; with `--vorher` a warning if it is more than 20 % below that of the last run. **Required:** no request without an answer after 60 s, Ablago's memory ≤ 1.5 GB **per process** (#920, `speicherVerfehlt`: highest process from `engpass.speicherJeProzess`, without per-process figures the sum against 1.5 GB × 1), server stays reachable, recovery (20 requests in a row with p95 ≤ 1 s) within 30 s, sign-in protection blocks even the right password after wrong ones (429) |
 | extrem (#739) | like gross; only by hand, not in `alle` and not in the schedule | 500,000 (default) or 1,000,000 folders (`--mappen`) | **Measurement** like gross; in the workflow without `--grenzen`. In report and result block additionally: duration of creating the load test data (runs of 50,000 each via the Workbench, then background work) and size of database and documents (`GET /api/werkbank/system`) |
 

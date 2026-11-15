@@ -68,7 +68,7 @@ body:
     id: ergebnis
     attributes:
       label: Ergebnisblock · Result block
-      description: Der Block „Messergebnis Lasttest“ aus der Ausgabe des Lasttests, unverändert – mit den Zeilen „… + Speichern“, falls vorhanden. · The block "Messergebnis Lasttest" from the output of the load test, unchanged – including the lines "… + Speichern" (with saving), if present.
+      description: Der Block „Messergebnis Lasttest“ aus der Ausgabe des Lasttests, unverändert – mit den Zeilen „… + Speichern“, „… + Pakete und Tabellen“, „Paketaufrufe …“ und „… + Anmeldeschutz“ (#1254), falls vorhanden. · The block "Messergebnis Lasttest" from the output of the load test, unchanged – including the lines "… + Speichern" (with saving), "… + Pakete und Tabellen" (packages and tables), "Paketaufrufe …" (package calls) and "… + Anmeldeschutz" (sign-in protection, #1254), if present.
       render: text
     validations:
       required: true

@@ -15,9 +15,11 @@ export const EXTREM_MAPPEN: readonly number[] = [500_000, 1_000_000];
 
 /**
  * Geschätzte Dauer je Stufe in Minuten (von–bis), wie im Administratorhandbuch – mit dem Durchgang „mit Speichern“
- * (#739, je Stufe gut 2 Minuten mehr). extrem: 500.000 Mappen; mit 1 Mio. etwa doppelt so lange (`dauerVon`).
+ * (#739, je Stufe gut 2 Minuten mehr) und den Durchgängen mit Paketen, Tabellen und Anmeldeschutz (#1254, je Stufe gut
+ * 4 Minuten, dazu einmal das Füllen des Nachweis-Journals). extrem: 500.000 Mappen; mit 1 Mio. etwa doppelt so lange
+ * (`dauerVon`).
  */
-export const LASTTEST_DAUER: Record<LasttestStufe, [number, number]> = { klein: [5, 8], mittel: [18, 35], gross: [35, 70], extrem: [60, 150] };
+export const LASTTEST_DAUER: Record<LasttestStufe, [number, number]> = { klein: [10, 15], mittel: [23, 42], gross: [40, 77], extrem: [65, 157] };
 
 /** Dauer einer Stufe; extrem mit 1 Mio. Mappen etwa doppelt so lang wie mit 500.000. */
 export const dauerVon = (stufe: LasttestStufe, mappen: number | null = null): [number, number] => {

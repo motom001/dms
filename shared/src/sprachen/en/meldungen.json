@@ -1649,6 +1649,7 @@
   "vollexport.nicht-enthalten-code-installierter": "not included: code of installed packages (#338, it is in the package itself)",
   "vollexport.nicht-enthalten-ereignisse-fuer": "not included: events for packages with code (#338, technical)",
   "vollexport.nicht-enthalten-verlauf-pakete": "not included: activity of packages with code (#1003, technical, 30 days)",
+  "vollexport.nicht-enthalten-nachweis-journal": "not included: monthly evidence journal (#1053, technical, part of the backup)",
   "vollexport.nicht-enthalten-notfallcode-vom": "not included: emergency code from the emergency sheet (#815, only a hash)",
   "vollexport.nicht-enthalten-abruf-links": "not included: download links of access requests (#455, hashes; the evidence is in daten/historie.jsonl)",
   "vollexport.nicht-enthalten-anmeldungen": "not included: sign-ins",

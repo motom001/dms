@@ -15,7 +15,7 @@ import { speicherKontoRepo } from '../src/konto-repo';
 import { speicherRepo } from '../src/repo-speicher';
 import { routen, type Anfrage } from '../src/routen';
 import { heikleHandlung } from '../src/verwaltungsbereiche';
-import { Nachweisjournal, setzeNachweisjournal } from '../src/nachweisjournal';
+import { Nachweisjournal, setzeNachweisjournal, speicherJournal } from '../src/nachweisjournal';
 import type { Benutzer } from '../../shared/src/model';
 import type { PaketdatenAnsicht } from '../../shared/src/paketdaten';
 
@@ -126,7 +126,7 @@ describe('Freigabe je Bereich (#1054)', () => {
 
   it('Nachweise mit Gesamter Verwaltung; der Monat wird geprüft; Änderungen stehen im Journal', async () => {
     const x = await aufbau();
-    const j = new Nachweisjournal(speicherEinstellungen());
+    const j = new Nachweisjournal(speicherJournal());
     setzeNachweisjournal(j);
     try {
       await x.setze(x.lena, [], ['sicherung']);

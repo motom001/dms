@@ -59,6 +59,7 @@
  * Grenzen und ihre Begründung: Entwicklerhandbuch → Leistung → Lasttest.
  */
 import { randomInt } from 'node:crypto';
+import { crc32 } from 'node:zlib';
 import { readFile, writeFile } from 'node:fs/promises';
 import { realpathSync } from 'node:fs';
 import { cpus } from 'node:os';
@@ -533,11 +534,13 @@ const SCHREIBARTEN = new Set(SCHREIBEN.map(([a]) => a));
  */
 function naechsteAnfrage(v, p = null, wer = zufall(personenVon(v))) {
   const cookie = wer.cookie;
-  const profil = p ? PROFIL_SPEICHERN : PROFIL;
+  // #1254: Der Durchgang „+ Pakete und Tabellen“ bringt sein eigenes Profil mit (PROFIL_PAKETE).
+  const profil = p ? p.s.profil ?? PROFIL_SPEICHERN : PROFIL;
   let x = Math.random() * 100;
   let art = profil[0][0];
   for (const [a, g] of profil) { if ((x -= g) < 0) { art = a; break; } }
   if (p && SCHREIBARTEN.has(art)) return schreibAnfrage(v, p, art, wer);
+  if (p && art === 'Tabelle') return tabellenAnfrage(v, p, wer);
   // Dokumente und Historie: Personen ohne Rolle nur in Mappentypen, die sie ganz sehen (#920) – wie früher mit dem
   // Administrator gibt es dafür kein 404. Personen mit Rolle (und die Sitzungen von früher) sehen alle.
   const alles = wer.art !== 'ohneRolle';
@@ -730,7 +733,7 @@ export async function teuersteAbfragen(cookie, zurueck) {
  * Ein Durchgang: `n` Personen schicken `dauer` Sekunden lang Anfragen; optional läuft nebenher ein großer
  * Export nach dem anderen (als Administrator).
  */
-export async function durchgang(v, { name, n, dauer, mitExport, speichern = null }) {
+export async function durchgang(v, { name, n, dauer, mitExport, speichern = null, zusatz = null, neben = null }) {
   const ende = Date.now() + dauer * 1000;
   const zeiten = []; const jeArt = {};
   const z = { anfragen: 0, ok: 0, abgewiesen: 0, client: 0, fehler: 0, ohneAntwort: 0, retryAfter: 0, status: {} };
@@ -757,6 +760,10 @@ export async function durchgang(v, { name, n, dauer, mitExport, speichern = null
           const t = await r.text();
           if (r.ok && a.danach) { try { a.danach(t ? JSON.parse(t) : null); } catch { /* Antwort ohne JSON */ } }
           if (r.status >= 400 && r.status < 500) abgelehnt[`${a.art} ${r.status}`] = (abgelehnt[`${a.art} ${r.status}`] ?? 0) + 1;
+        } else if (a.auswerten) {
+          // #1254: Antwort lesen (z. B. Tabelle: verborgene Zeilen zählen).
+          const t = await r.text();
+          if (r.ok) { try { a.auswerten(JSON.parse(t)); } catch { /* Antwort ohne JSON */ } }
         } else await r.arrayBuffer();
         const ms = performance.now() - t0;
         if (a.methode && r.status !== 503) schreibZeiten.push(ms);
@@ -820,8 +827,11 @@ export async function durchgang(v, { name, n, dauer, mitExport, speichern = null
   melde({ art: 'live', ...liveAus([], [], { name, n, seit: SKRIPT_START }) });
   const mess = messen();
   const ex = mitExport ? exportieren() : Promise.resolve();
+  // #1254: Last nebenher (Fehlanmeldungen) bis zum Ende des Durchgangs.
+  const nb = neben ? neben(ende) : Promise.resolve(null);
   await Promise.all(Array.from({ length: n }, (_, i) => person(i)));
   await ex;
+  const nebenErgebnis = await nb;
   laeuft = false;
   await mess;
   const sek = (Date.now() - start) / 1000;
@@ -831,7 +841,9 @@ export async function durchgang(v, { name, n, dauer, mitExport, speichern = null
   const ergebnis = {
     name, n, dauer: Math.round(sek), mitExport,
     // #739: Durchgang mit Schreibanteil – eigene Zeile, ohne Ziel und ohne CI-Grenze.
-    ...(speichern ? { speichern: true, schreiben: { anfragen: schreibZeiten.length, median: rund(quantil(schreibZeiten, 0.5)), p95: rund(quantil(schreibZeiten, 0.95)) }, abgelehnt } : {}),
+    ...(speichern ? { ...(zusatz ? {} : { speichern: true }), schreiben: { anfragen: schreibZeiten.length, median: rund(quantil(schreibZeiten, 0.5)), p95: rund(quantil(schreibZeiten, 0.95)) }, abgelehnt } : {}),
+    // #1254: Zusatz-Durchgang (Pakete und Tabellen, Anmeldeschutz) – zählt in keiner bisherigen Zeile mit.
+    ...(zusatz ? { zusatz } : {}), ...(neben ? { neben: nebenErgebnis } : {}),
     anfragen: z.anfragen, jeSekunde: Math.round(z.anfragen / sek), ok: z.ok, client: z.client, fehler: z.fehler, abgewiesen: z.abgewiesen, retryAfter: z.retryAfter, ohneAntwort: z.ohneAntwort, status: z.status,
     ohneAntwortJe: z.ohneAntwortJe ?? {}, fehlerJe: z.fehlerJe ?? {},
     fehlerquote: z.anfragen ? (z.fehler + z.ohneAntwort) / z.anfragen : 0,
@@ -1233,6 +1245,221 @@ async function anmeldeschutz() {
   return { falsch: status, richtig, wirkt: richtig === 429 && !status.includes(200) };
 }
 
+/* ---------- Pakete, Tabellenfelder, Anmeldeschutz mit vollem Journal (#1254) ---------- */
+
+/*
+ * Drei Durchgänge, die nach den bisherigen jeder Stufe dazukommen – eigene Zeilen, ohne Ziel und (bis zum ersten Lauf auf
+ * den Rechnern von GitHub) ohne CI-Grenze; die bisherigen Durchgänge, ihre Reihenfolge und Zeilen bleiben, wie sie
+ * waren. `--ohne-zusatz` lässt sie weg.
+ *
+ * - „+ Pakete und Tabellen“: Das Lasttest-Paket (unten, mit Code, offline aus diesem Skript) reagiert auf „Mappe
+ *   geändert“; rund 5 % der Anfragen ändern eine Mappe, 10 % öffnen das Tabellenfeld „Rechnungen“ an einem Vertrag.
+ *   Personen ohne Rolle sehen große Rechnungen nicht (Regel des Lasttests) – sie bekommen den Hinweis „Du siehst n
+ *   von m“ (#1208). Das Paket ist nur in diesem Durchgang installiert.
+ * - „+ Anmeldeschutz“: einmal je Lauf das Nachweis-Journal des Monats mit `ZUSATZ.journalFuellen` Fehlanmeldungen füllen
+ *   (#1253: Größenordnung der Obergrenze von 2000; `--journal <n>`), dann Fehlversuche nebenher (bekannte und unbekannte Konten, je
+ *   Versuch eine eigene vorgetäuschte Adresse, damit nichts sperrt), während die Personen wie gewohnt lesen.
+ */
+export const ZUSATZ = { paket: 'lasttest_paket', feld: 'lasttest_rechnungen', fehlParallel: 10, journalFuellen: 1800, fuellenParallel: 10 };
+/** Gewichte im Durchgang „+ Pakete und Tabellen“: das Leseprofil zu 85 %, dazu Tabelle und Mappe ändern. */
+export const PROFIL_PAKETE = [...PROFIL.map(([a, g]) => [a, g * 0.85]), ['Tabelle', 10], ['Mappe ändern', 5]];
+
+/** Kleiner WebAssembly-Baustein (wie server/test/laeufer.test.ts), damit das Paket ohne Werkzeuge entsteht. */
+const leb = (n) => { const b = []; do { let x = n & 0x7f; n >>>= 7; if (n) x |= 0x80; b.push(x); } while (n); return b; };
+const sleb = (n) => { const b = []; for (;;) { const x = n & 0x7f; n >>= 7; if ((n === 0 && !(x & 0x40)) || (n === -1 && x & 0x40)) { b.push(x); return b; } b.push(x | 0x80); } };
+const wvec = (l) => [...leb(l.length), ...l.flat()];
+const wstr = (t) => { const b = [...Buffer.from(t)]; return [...leb(b.length), ...b]; };
+const wsek = (id, b) => [id, ...leb(b.length), ...b];
+
+/**
+ * Modul nach der Paket-ABI: importiert Speicher und dms.log/api/ergebnis, exportiert dms_puffer, dms_ereignis und
+ * dms_aktion. Zu jedem Ereignis fragt es GET /typen und meldet 0 (ok), wenn die Antwort 200 ist – eine kleine echte
+ * Arbeit mit einem Aufruf zurück in Ablago, ohne Inhalte ins Protokoll zu schreiben.
+ */
+export function lasttestModul() {
+  const I32 = 0x7f;
+  const typ = (p, r) => [0x60, ...wvec(p.map((x) => [x])), ...wvec(r.map((x) => [x]))];
+  const anfrage = JSON.stringify({ methode: 'GET', pfad: '/typen' });
+  const typen = [typ([I32, I32, I32], [I32]), typ([I32, I32], [I32]), typ([], [I32]), typ([I32], [I32])];
+  const importe = [[...wstr('env'), ...wstr('memory'), 0x02, 0x00, ...leb(1)], [...wstr('dms'), ...wstr('log'), 0x00, 0], [...wstr('dms'), ...wstr('api'), 0x00, 1], [...wstr('dms'), ...wstr('ergebnis'), 0x00, 1]];
+  const exporte = [[...wstr('dms_puffer'), 0x00, 3], [...wstr('dms_ereignis'), 0x00, 4], [...wstr('dms_aktion'), 0x00, 5]];
+  const koerper = (b) => { const k = [0x00, ...b, 0x0b]; return [...leb(k.length), ...k]; };
+  const API = 1;
+  const code = [koerper([0x41, ...sleb(1024)]), koerper([0x41, ...sleb(64), 0x41, ...sleb(anfrage.length), 0x10, API, 0x41, ...sleb(200), 0x47]), koerper([0x41, 0])];
+  return Buffer.from([0x00, 0x61, 0x73, 0x6d, 0x01, 0, 0, 0, ...wsek(1, wvec(typen)), ...wsek(2, wvec(importe)), ...wsek(3, wvec([[3], [1], [1]])),
+    ...wsek(7, wvec(exporte)), ...wsek(10, wvec(code)), ...wsek(11, wvec([[0x00, 0x41, ...sleb(64), 0x0b, ...wstr(anfrage)]]))]);
+}
+
+/** ZIP ohne Kompression (gespeichert) – genügt für das kleine Paket, ohne Bibliothek. */
+export function zipGespeichert(dateien) {
+  const teile = []; const zentral = []; let ort = 0;
+  for (const d of dateien) {
+    const name = Buffer.from(d.name); const crc = crc32(d.daten) >>> 0; const n = d.daten.length;
+    const kopf = Buffer.alloc(30);
+    kopf.writeUInt32LE(0x04034b50, 0); kopf.writeUInt16LE(20, 4); kopf.writeUInt16LE(0x0800, 6); kopf.writeUInt16LE(0, 8); kopf.writeUInt16LE(0, 10); kopf.writeUInt16LE(33, 12);
+    kopf.writeUInt32LE(crc, 14); kopf.writeUInt32LE(n, 18); kopf.writeUInt32LE(n, 22); kopf.writeUInt16LE(name.length, 26); kopf.writeUInt16LE(0, 28);
+    const z = Buffer.alloc(46);
+    z.writeUInt32LE(0x02014b50, 0); z.writeUInt16LE(20, 4); z.writeUInt16LE(20, 6); z.writeUInt16LE(0x0800, 8); z.writeUInt16LE(0, 10); z.writeUInt16LE(0, 12); z.writeUInt16LE(33, 14);
+    z.writeUInt32LE(crc, 16); z.writeUInt32LE(n, 20); z.writeUInt32LE(n, 24); z.writeUInt16LE(name.length, 28); z.writeUInt32LE(ort, 42);
+    teile.push(kopf, name, d.daten); zentral.push(z, name);
+    ort += 30 + name.length + n;
+  }
+  const zl = zentral.reduce((s, b) => s + b.length, 0);
+  const ende = Buffer.alloc(22);
+  ende.writeUInt32LE(0x06054b50, 0); ende.writeUInt16LE(dateien.length, 8); ende.writeUInt16LE(dateien.length, 10); ende.writeUInt32LE(zl, 12); ende.writeUInt32LE(ort, 16);
+  return Buffer.concat([...teile, ...zentral, ende]);
+}
+
+/** Das Lasttest-Paket als ZIP: Manifest und Code, sonst nichts – offline im Skript (und damit im Image). */
+export function lasttestPaket() {
+  const manifest = [
+    'schema: 1', `id: ${ZUSATZ.paket}`, 'name: Lasttest-Paket', 'version: 1.0.0',
+    'beschreibung: Beispielpaket des Lasttests (#1254) – reagiert auf geänderte Mappen und fragt die Mappentypen ab. Nur für Test-Installationen.',
+    'autor: { name: Ablago-Lasttest, github: motom001 }', 'lizenz: MIT', 'dms: ">=0.153.0"', 'inhalt: {}',
+    'code:', '  sprache: c', '  quelle: code/', '  ereignisse: [mappe.geaendert]', '  mappentypen: ["*"]', '  rechte: { lesen: ["*"], dokumente: keine }', '',
+  ].join('\n');
+  return zipGespeichert([{ name: 'manifest.yaml', daten: Buffer.from(manifest) }, { name: 'code/modul.wasm', daten: lasttestModul() }]);
+}
+
+async function paketInstallieren(admin) {
+  await paketEntfernen(admin);
+  const r = await fetch(`${BASIS}/api/werkbank/pakete/hochladen`, { method: 'POST', headers: { 'x-dms': '1', cookie: admin, 'content-type': 'application/octet-stream' }, body: lasttestPaket(), signal: AbortSignal.timeout(ANTWORT_MAX_MS) });
+  const d = await r.json().catch(() => null);
+  if (!r.ok || !d?.upload) throw new Error(`Lasttest-Paket nicht hochgeladen (${r.status}): ${[d?.fehler, ...(d?.gruende ?? [])].filter(Boolean).join(' ')}`);
+  await json('POST', '/api/werkbank/pakete/installieren', { cookie: admin, body: { upload: d.upload, bestaetigt: true, rechteBestaetigt: true, herausgeberBestaetigt: true }, zeit: 120_000 });
+}
+async function paketEntfernen(admin) {
+  const r = await anfrage('DELETE', `/api/werkbank/pakete/${ZUSATZ.paket}`, { cookie: admin, zeit: 120_000 });
+  await r.arrayBuffer();
+}
+
+/** Einträge des Paket-Verlaufs ab `nachNr` (neueste zuerst, je 50), höchstens `max`. */
+async function paketVerlauf(admin, nachNr = 0, max = 5000) {
+  const alle = []; let vor = '';
+  for (;;) {
+    const { daten } = await json('GET', `/api/werkbank/pakete/${ZUSATZ.paket}/verlauf${vor}`, { cookie: admin });
+    const neu = (daten?.eintraege ?? []).filter((e) => e.nr > nachNr);
+    alle.push(...neu);
+    if (!daten?.mehr || neu.length < (daten?.eintraege ?? []).length || alle.length >= max) return alle;
+    vor = `?vor=${daten.eintraege.at(-1).nr}`;
+  }
+}
+
+/** Warten, bis das Paket alle Ereignisse des Durchgangs bekommen hat (Zahl der Aufrufe 6 s lang gleich, höchstens 120 s). */
+async function paketRuhe(cookie) {
+  const t0 = Date.now(); let alt = -1; let gleich = 0;
+  while (Date.now() - t0 < 120_000) {
+    const { daten } = await json('GET', `/api/werkbank/pakete/${ZUSATZ.paket}/auslastung`, { cookie }).catch(() => ({ daten: null }));
+    const n = (daten?.tage ?? []).reduce((s, t) => s + t.aufrufe, 0);
+    gleich = n === alt ? gleich + 1 : 0; alt = n;
+    if (gleich >= 3) break;
+    await warte(2000);
+  }
+  return Math.round((Date.now() - t0) / 1000);
+}
+
+/** Paketaufrufe aus dem Verlauf: Anzahl, p50/p95 der Laufzeit, Fehler (Fehler, Zeit, Speicher). */
+export function paketAufrufe(eintraege) {
+  const aufrufe = eintraege.filter((e) => e.art === 'ereignis' || e.art === 'aufruf');
+  const ms = aufrufe.map((e) => e.ms).filter((x) => typeof x === 'number');
+  return { anzahl: aufrufe.length, median: rund(quantil(ms, 0.5)), p95: rund(quantil(ms, 0.95)), fehler: aufrufe.filter((e) => ['fehler', 'zeit', 'speicher'].includes(e.ergebnis)).length, verlauf: eintraege.length };
+}
+
+/**
+ * Tabellenfeld „Rechnungen“ am Vertrag des Lasttests (über das Verweisfeld „Vertrag“ der Rechnung), einmal anlegen.
+ * Ziele: Verträge, die auch Personen ohne Rolle lesen dürfen und die Rechnungen haben (aus den ersten 200).
+ */
+async function vorbereitenTabelle(v) {
+  const admin = { cookie: v.sitzungen.admin };
+  const { daten: typen } = await json('GET', '/api/typen', admin);
+  const vertrag = typen.find((t) => t.name === 'Vertrag' && !t.system); const rechnung = typen.find((t) => t.name === 'Rechnung' && !t.system);
+  const verweis = rechnung?.felder.find((x) => x.typ === 'referenz' && x.zielTypen?.includes(vertrag?.id));
+  if (!vertrag || !verweis) return { vertraege: [] };
+  if (!vertrag.felder.some((x) => x.key === ZUSATZ.feld)) {
+    const feld = { key: ZUSATZ.feld, label: 'Rechnungen (Lasttest)', typ: 'tabelle', quelle: { typId: rechnung.id, feldKey: verweis.key } };
+    const erstes = vertrag.register.findIndex((r) => r.art === 'felder');
+    const register = vertrag.register.map((r, i) => (i === erstes ? { ...r, felder: [...(r.felder ?? []), ZUSATZ.feld] } : r));
+    await json('PUT', `/api/typen/${vertrag.id}`, { ...admin, body: { ...vertrag, felder: [...vertrag.felder, feld], register }, zeit: 600_000 });
+  }
+  const { daten } = await json('GET', `/api/mappen?sicht=${vertrag.id}&von=0&anzahl=200`, { cookie: v.sitzungen.ohneRolle });
+  const vertraege = [];
+  for (const m of daten.mappen) {
+    const { daten: s } = await json('GET', `/api/mappen/${m.id}/tabelle/${ZUSATZ.feld}`, admin);
+    if (s.gesamt > 0) vertraege.push(m.id);
+    if (vertraege.length >= 100) break;
+  }
+  return { vertraege };
+}
+
+/** Anfrage „Tabelle“: eine Seite des Tabellenfelds; zählt, wie oft der Hinweis auf verborgene Zeilen käme (#1208). */
+function tabellenAnfrage(v, p, wer) {
+  const z = p.s.tabelle;
+  if (!v.tabellen?.vertraege.length) return { art: 'Mappe öffnen', cookie: wer.cookie, pfad: `/api/mappen/${zufall(v.mappen)}` };
+  return {
+    art: 'Tabelle', cookie: wer.cookie, pfad: `/api/mappen/${zufall(v.tabellen.vertraege)}/tabelle/${ZUSATZ.feld}`,
+    auswerten: (d) => { z.seiten++; if (d?.verborgen > 0) { z.mitHinweis++; z.verborgen += d.verborgen; } },
+  };
+}
+
+/** Fehlanmeldungen nebenher bis `ende` (oder `anzahl` Versuche): je Versuch eine eigene Adresse 10.x.y.z. */
+export async function fehlversuche({ ende = Infinity, anzahl = Infinity, parallel, nurBekannt = false }) {
+  const netz = randomInt(256); let k = 0;
+  const zeiten = []; const status = {}; let bekannt = 0; let unbekannt = 0;
+  const t0 = Date.now();
+  await Promise.all(Array.from({ length: parallel }, async () => {
+    while (Date.now() < ende && k < anzahl) {
+      const nr = k++;
+      const mitKonto = nurBekannt || nr % 2 === 0;
+      const email = mitKonto ? SPERRKONTO[0] : `lasttest-niemand-${nr}@example.org`;
+      const t = performance.now();
+      try {
+        const r = await anfrage('POST', '/api/konto/anmelden', { body: { email, passwort: `lasttest-falsch-${nr}` }, koepfe: { 'x-forwarded-for': `10.${netz}.${(nr >> 8) & 255}.${nr & 255}` }, zeit: 30_000 });
+        await r.arrayBuffer();
+        status[r.status] = (status[r.status] ?? 0) + 1;
+        if (r.status === 503) { await warte(Math.min(5000, 1000 * Number(r.headers.get('retry-after') ?? 1))); continue; }
+        zeiten.push(performance.now() - t);
+        if (mitKonto) bekannt++; else unbekannt++;
+      } catch (e) { status[e.name] = (status[e.name] ?? 0) + 1; await warte(200); }
+    }
+  }));
+  const sek = (Date.now() - t0) / 1000;
+  return { versuche: zeiten.length, bekannt, unbekannt, jeSekunde: Math.round((zeiten.length / sek) * 10) / 10, median: rund(quantil(zeiten, 0.5)), p95: rund(quantil(zeiten, 0.95)), status, sekunden: Math.round(sek) };
+}
+
+/** Verlorene Nachweis-Einträge eines Durchgangs: Warnungen „Nachweis … nicht eingetragen“ im Protokoll (#1253). */
+export const verloreneNachweise = (protokoll) => (protokoll?.eintraege ?? []).filter((m) => /^Nachweis.*nicht eingetragen/.test(m.text)).reduce((s, m) => s + m.anzahl, 0);
+
+/** Beide Zusatz-Durchgänge einer Stufe mit `n` gleichzeitig (#1254). */
+async function zusatz(v, lauf, { name, n, dauer }) {
+  if (hat('--ohne-zusatz')) return {};
+  const admin = v.sitzungen.admin;
+  melde({ art: 'schritt', schritt: 'vorbereiten' });
+  v.speichernZiele ??= await vorbereitenSpeichern(v);
+  v.tabellen ??= await vorbereitenTabelle(v);
+  await paketInstallieren(admin);
+  const runde = { ...schreibrunde(v.speichernZiele), profil: PROFIL_PAKETE, tabelle: { seiten: 0, mitHinweis: 0, verborgen: 0 } };
+  const pakete = await lauf({ name: `${name} + Pakete und Tabellen`, n, dauer, mitExport: false, speichern: runde, zusatz: 'pakete' });
+  const ruhe = await paketRuhe(admin);
+  pakete.paket = { ...paketAufrufe(await paketVerlauf(admin)), ruheSekunden: ruhe };
+  pakete.tabelle = runde.tabelle;
+  await paketEntfernen(admin);
+  const aufgeraeumt = await aufraeumen(v, runde);
+  // Journal einmal je Lauf füllen – der Monat bleibt derselbe, weitere Stufen messen mit vollem Journal.
+  if (!journalGefuellt) {
+    melde({ art: 'schritt', schritt: 'vorbereiten' });
+    // --journal bzw. im Lasttest-Modus DMS_LASTTEST_JOURNAL (z. B. für kurze Proben); sonst JOURNAL_FUELLEN.
+    const n0 = Number(arg('--journal', process.env.DMS_LASTTEST_JOURNAL || ZUSATZ.journalFuellen));
+    console.log(`Nachweis-Journal füllen: ${n0} Fehlanmeldungen mit bekanntem Konto …`);
+    journalGefuellt = await fehlversuche({ anzahl: n0, parallel: ZUSATZ.fuellenParallel, nurBekannt: true });
+    console.log(`  ${journalGefuellt.versuche} in ${journalGefuellt.sekunden} s (${journalGefuellt.jeSekunde} je s)`);
+  }
+  const anmeldung = await lauf({ name: `${name} + Anmeldeschutz`, n, dauer: Math.min(dauer, 60), mitExport: false, zusatz: 'anmeldeschutz', neben: (ende) => fehlversuche({ ende, parallel: ZUSATZ.fehlParallel }) });
+  anmeldung.anmeldung = { ...anmeldung.neben, verloren: verloreneNachweise(anmeldung.protokoll), gefuellt: journalGefuellt };
+  return { pakete, anmeldung, zusatzAufgeraeumt: aufgeraeumt };
+}
+/** Ergebnis des Füllens (einmal je Lauf). */
+let journalGefuellt = null;
+
 /* ---------- Stufen ---------- */
 
 const f = (x) => (x === null || x === undefined ? '–' : String(x));
@@ -1263,6 +1490,8 @@ async function festeStufe(v, name, dauer, lauf) {
   const e = pruefeFesteStufe(name, await lauf({ name, n: s.gleichzeitig, dauer, mitExport }));
   // #739: danach derselbe Durchgang mit Schreibanteil – zählt nicht für Ziel, CI-Grenze und Exit-Code.
   if (v.speichern) Object.assign(e, await mitSpeichern(v, lauf, { name: `${name} + Speichern`, n: s.gleichzeitig, dauer, mitExport }));
+  // #1254: danach Pakete und Tabellen, Anmeldeschutz mit vollem Journal – eigene Zeilen, ohne Ziel.
+  Object.assign(e, await zusatz(v, lauf, { name, n: s.gleichzeitig, dauer }));
   return e;
 }
 
@@ -1331,6 +1560,8 @@ async function grosseStufe(v, lauf, dauer, stufe = 'gross') {
   // Erst nach allem Bisherigen, damit Schritte, Überlast und Erholung genau so laufen wie vorher.
   const nSpeichern = grenze?.n ?? stufenfolge[0] ?? start;
   const extra = v.speichern ? await mitSpeichern(v, lauf, { name: `${kurz} + Speichern`, n: nSpeichern, dauer: schrittDauer, mitExport: false }) : {};
+  // #1254: zuletzt die Zusatz-Durchgänge mit derselben Zahl gleichzeitig.
+  Object.assign(extra, await zusatz(v, lauf, { name: kurz, n: nSpeichern, dauer: schrittDauer }));
   return {
     stufe, art: 'messung', schritte, ueberlast, erholung: erholt, anmeldeschutz: anmelde, verfehlt, speicher: speicherHoechstens([...schritte, ueberlast]),
     // Schon der erste Schritt zu viel: Grenze 0 heißt „unter dem ersten Schritt“.
@@ -1400,7 +1631,7 @@ const zahl = (n) => Number(n).toLocaleString('de-DE');
 const gb = (b) => (b < 1024 ** 3 ? `${Math.round(b / 1024 ** 2)} MB` : `${(b / 1024 ** 3).toFixed(1).replace('.', ',')} GB`);
 const dauerText = (s) => (s < 120 ? `${s} s` : `${Math.round(s / 60)} min`);
 /** Bisherige Durchgänge – ohne „mit Speichern“; nur sie zählen für die alten Zeilen (Speicher, Schleife). */
-const bisherige = (laeufe) => laeufe.filter((l) => !l.speichern);
+const bisherige = (laeufe) => laeufe.filter((l) => !l.speichern && !l.zusatz);
 
 /** Durchgang „mit Speichern“ im Bericht (#739). */
 function speichernBericht(e) {
@@ -1471,6 +1702,7 @@ export function bericht(ergebnisse, x) {
       if (e.speicher) z.push(`Arbeitsspeicher (Pflicht): ${speicherText(e.speicher)}.`);
     }
     if (e.speichern) z.push('', ...speichernBericht(e));
+    if (e.pakete || e.anmeldung) z.push('', ...zusatzBericht(e));
     if (e.daten) z.push('', datenText(e));
   }
   const verfehlt = ergebnisse.flatMap((e) => e.verfehlt);
@@ -1561,6 +1793,8 @@ export function ergebnisblock(ergebnisse, x, u, angaben = { geraet: arg('--gerae
     if (e.speichern) kz.push(speichernZeile(e.speichern));
     if (e.speichern?.engpass) kz.push(`  Engpass ${e.speichern.name}: ${engpassText(e.speichern.engpass)}`);
     if (e.speichern && fehlerText(e.speichern)) kz.push(`  Fehler ${e.speichern.name}: ${fehlerText(e.speichern)}`);
+    // #1254: Zusatz-Durchgänge – neue Zeilen, die bisherigen bleiben genau so.
+    kz.push(...zusatzZeilen(e));
     if (e.stufe === 'extrem' && e.daten) kz.push(`extrem Demo-Daten: ${datenText(e).replace(/^Demo-Daten \(extrem\): /, '')}`);
   }
   // Wie bisher nur über die bisherigen Durchgänge; „mit Speichern“ in einer eigenen Zeile (#739).
@@ -1578,6 +1812,39 @@ export function ergebnisblock(ergebnisse, x, u, angaben = { geraet: arg('--gerae
   if (protokollZeile(x.protokoll)) kz.push(protokollZeile(x.protokoll));
   kz.push(`Gemessen: ${new Date().toISOString().slice(0, 10)}`, '```');
   return kz.join('\n');
+}
+
+/** „klein + Pakete und Tabellen …“, Paketaufrufe und „klein + Anmeldeschutz …“ für den Ergebnisblock (#1254). */
+export function zusatzZeilen(e) {
+  const z = [];
+  const p = e.pakete; const a = e.anmeldung;
+  if (p) {
+    const tb = p.jeArt?.Tabelle; const h = p.tabelle;
+    z.push(`${p.name} ${String(p.n).padStart(4)} gleichzeitig: p50 ${f(p.median)} ms, p95 ${f(p.p95)} ms, p99 ${f(p.p99)} ms, Fehler ${prozent(p.fehlerquote)} – Messung ohne Ziel (Tabelle p50 ${f(tb?.median)} ms, p95 ${f(tb?.p95)} ms; Hinweis „n von m“ bei ${f(h?.mitHinweis)} von ${f(h?.seiten)} Seiten)`);
+    if (p.paket) z.push(`  Paketaufrufe ${p.name}: ${p.paket.anzahl} (p50 ${f(p.paket.median)} ms, p95 ${f(p.paket.p95)} ms, Fehler ${p.paket.fehler}) · Einträge im Paket-Verlauf: ${p.paket.verlauf}`);
+  }
+  if (a?.anmeldung) {
+    const m = a.anmeldung; const mo = a.jeArt?.['Mappe öffnen'];
+    z.push(`${a.name} ${String(a.n).padStart(4)} gleichzeitig: Fehlversuche ${String(m.jeSekunde).replace('.', ',')} je s (p50 ${f(m.median)} ms, p95 ${f(m.p95)} ms; ${m.bekannt} bekannte, ${m.unbekannt} unbekannte Konten, ${ZUSATZ.fehlParallel} gleichzeitig) · Mappe öffnen p95 ${f(mo?.p95)} ms · verlorene Nachweise ${m.verloren}${m.gefuellt ? ` – Journal vorher mit ${m.gefuellt.versuche} Fehlanmeldungen gefüllt (${String(m.gefuellt.jeSekunde).replace('.', ',')} je s)` : ''}`);
+  }
+  return z;
+}
+
+/** Zusatz-Durchgänge im Bericht (#1254). */
+function zusatzBericht(e) {
+  const z = [];
+  const p = e.pakete; const a = e.anmeldung;
+  if (p) {
+    z.push(`**${p.name}** (${p.n} gleichzeitig; Lasttest-Paket reagiert auf „Mappe geändert“, rund 5 % Mappe ändern, 10 % Tabellenfeld „Rechnungen“ am Vertrag): p50 ${f(p.median)} ms, p95 ${f(p.p95)} ms, Fehlerquote ${prozent(p.fehlerquote)} – Messung ohne Ziel und (bis zum ersten Lauf auf GitHub) ohne CI-Grenze.`);
+    if (p.paket) z.push('', `Paketaufrufe: ${p.paket.anzahl}, p50 ${f(p.paket.median)} ms, p95 ${f(p.paket.p95)} ms, Fehler ${p.paket.fehler}; Einträge im Paket-Verlauf: ${p.paket.verlauf}; alle Ereignisse zugestellt nach ${p.paket.ruheSekunden} s.`);
+    if (p.tabelle) z.push('', `Tabelle: ${p.tabelle.seiten} Seiten, davon ${p.tabelle.mitHinweis} mit dem Hinweis „Du siehst n von m“ (#1208, zusammen ${p.tabelle.verborgen} verborgene Zeilen).`);
+    z.push('', `Median und p95 je Art (${p.name}):`, '', ...Object.entries(p.jeArt).map(([k, w]) => `- ${k}: ${w.anzahl} Anfragen, Median ${w.median} ms, p95 ${w.p95} ms`));
+  }
+  if (a?.anmeldung) {
+    const m = a.anmeldung;
+    z.push('', `**${a.name}** (${a.n} gleichzeitig lesend, dazu ${ZUSATZ.fehlParallel} Fehlanmeldungen gleichzeitig, halb bekannte, halb unbekannte Konten): ${m.versuche} Fehlversuche, ${String(m.jeSekunde).replace('.', ',')} je s, p50 ${f(m.median)} ms, p95 ${f(m.p95)} ms; Mappe öffnen anderer Personen p95 ${f(a.jeArt?.['Mappe öffnen']?.p95)} ms; verlorene Nachweis-Einträge: ${m.verloren}.${m.gefuellt ? ` Nachweis-Journal vorher gefüllt: ${m.gefuellt.versuche} Fehlanmeldungen in ${dauerText(m.gefuellt.sekunden)} (${String(m.gefuellt.jeSekunde).replace('.', ',')} je s, p95 ${f(m.gefuellt.p95)} ms).` : ''}`);
+  }
+  return z;
 }
 
 /** „mittel + Speichern  100 gleichzeitig: p50 …, p95 …, p99 …, Fehler … – Messung ohne Ziel (Speichern p95 … ms)“ (#739). */
@@ -1599,6 +1866,9 @@ export function containerZeile(laeufe) {
 }
 
 /* ---------- Ablauf ---------- */
+
+/** Ganze Durchgänge stehen schon unter `laeufe` – in `stufen` des JSON nur der Rest (#1254: auch die Zusatz-Durchgänge). */
+const OHNE_JSON = ['durchgang', 'schritte', 'ueberlast', 'speichern', 'pakete', 'anmeldung'];
 
 async function messen(stufen) {
   const dauer = Number(arg('--dauer', 120));
@@ -1648,7 +1918,7 @@ async function messen(stufen) {
   }
   for (const z of ergebnisse.flatMap((e) => e.zielVerfehlt ?? [])) console.log(process.env.GITHUB_ACTIONS ? `::notice title=Lasttest Ziel verfehlt::${z}` : `HINWEIS: Ziel verfehlt – ${z}`);
   if (arg('--bericht')) await writeFile(arg('--bericht'), `${text}\n`);
-  if (arg('--json')) await writeFile(arg('--json'), JSON.stringify({ stufen: ergebnisse.map(({ durchgang: _d, schritte: _s, ueberlast: _u, speichern: _sp, ...r }) => r), laeufe, umgebung: u, bestand, vergleich: x.vergleich, protokoll: x.protokoll }, null, 2));
+  if (arg('--json')) await writeFile(arg('--json'), JSON.stringify({ stufen: ergebnisse.map((e) => Object.fromEntries(Object.entries(e).filter(([k]) => !OHNE_JSON.includes(k)))), laeufe, umgebung: u, bestand, vergleich: x.vergleich, protokoll: x.protokoll }, null, 2));
   if (x.geprueft && ergebnisse.some((e) => e.verfehlt.length)) process.exitCode = 1;
 }
 

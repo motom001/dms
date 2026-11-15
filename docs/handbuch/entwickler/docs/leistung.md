@@ -235,6 +235,17 @@ Im Lasttest „+ Speichern“ waren Aufgabe und Notiz anlegen die langsamsten Vo
 
 Auf dem Server (Handler, Median): Aufgabe anlegen 304 → 204 ms bei 31 → 22 Zugriffen vor der Antwort, Notiz 142 → 118 ms bei 12 → 11. „Mappe ändern“ bleibt der langsamste schreibende Vorgang (Transaktion); das ist ein eigenes Thema. `server/test/aufgaben-zaehler.test.ts` hält fest: gleiche Zahlen wie die bisherige Abfrage, mit und ohne Zwischenspeicher, mit Vertretung, Leserecht auf Zeit, Aufgaben ohne Empfänger und aus Automatisierungen; die eigene Aufgabe und Notiz sind in der nächsten Anfrage zu sehen; Leserecht auf Zeit endet mit dem Erledigen sofort.
 
+**Messung zu #1253** (Nachweis-Journal in eigener Tabelle; Container mit 2 Kernen, PostgreSQL 16 lokal, 50.000 Lasttest-Mappen, Journal des Monats vorher mit 1.800 Einträgen; 400 Fehlanmeldungen, 10 gleichzeitig, je Versuch eine eigene Adresse; daneben eine Person mit „Mappe öffnen“ nacheinander; **keine NAS-Werte**):
+
+| | vorher (0.288.0) bekanntes Konto | nachher bekanntes Konto | vorher unbekanntes Konto | nachher unbekanntes Konto |
+| --- | --- | --- | --- | --- |
+| Fehlanmeldungen je s | 18 | 19 | 21 | 17–22 |
+| Fehlanmeldung p50 / p95 | 544 / 730 ms | 520 / 699 ms | 478 / 686 ms | 439–541 / 730–787 ms |
+| „Mappe öffnen“ nebenher p50 / p95 | 6 / 552 ms | 13 / 54 ms | 5 / 25 ms | 6–16 / 30–54 ms |
+| verlorene Einträge | 106 von 400 | 0 | 83 von 400 | 0 |
+
+Ohne Fehlanmeldungen: „Mappe öffnen“ p95 8–13 ms. Die Fehlanmeldung selbst kostet vor allem das absichtlich langsame Prüfen des Passworts; das Journal braucht je Versuch nur noch eine Anweisung (`INSERT … SELECT` hinter dem Hochzählen in `nachweis_zaehler`) statt Lesen, Kopieren und Vergleichen-und-Tauschen von bis zu 300 KB.
+
 ## Lasttest { #lasttest }
 
 `server/test/lasttest.mjs` (#544, #563) schickt viele **gleichzeitige HTTP-Anfragen** an ein laufendes Ablago – das Gegenstück zum Mess-Skript, das einzelne Datenbankzugriffe misst. Ohne Abhängigkeiten, nur mit `fetch` von Node.js. Im Image steckt es als Befehl `dms-lasttest` (Betreiber: Administratorhandbuch → [Lasttest selbst durchführen](https://help.ablago.app/admin/aktuell/lasttest/)).
@@ -268,6 +279,8 @@ Ein passendes Ablago startet man aus `server/` mit eigener, leerer Datenbank (z.
 | klein | 25 gleichzeitig, `--dauer` Sekunden | 5.000 Mappen | **Ziel:** p95 < 300 ms. **CI-Grenze:** p95 300 ms, keine Fehler (kein 5xx, keine Anfrage ohne Antwort), keine 503 |
 | mittel | 100 gleichzeitig, nebenher ein großer Export nach dem anderen: PDF von bis zu 1000 Mappen mit Übersicht, PDF der Mappen mit Dokumenten, ZIP der größten Ansicht | 50.000 Mappen | **Ziel:** p95 < 1 s. **CI-Grenze:** p95 1.000 ms (gleich dem Ziel), Fehlerquote < 0,1 %, keine 503, jeder Export gelingt |
 | klein/mittel/groß + Speichern (#739) | wie die Stufe (groß: Grenze), 10 % schreibend, danach Aufräumen | wie die Stufe | **Messung**, kein Ziel, keine CI-Grenze, kein Einfluss auf den Exit-Code |
+| klein/mittel/groß + Pakete und Tabellen (#1254) | wie „+ Speichern“, Profil `PROFIL_PAKETE` (Leseanteile × 0,85, 10 % Tabellenfeld `lasttest_rechnungen` am Vertrag, 5 % Mappe ändern); das Lasttest-Paket (`lasttestPaket()`, WebAssembly und ZIP aus dem Skript, ohne Netz) reagiert auf `mappe.geaendert` und ist nur in diesem Durchgang installiert; Paketaufrufe aus dem Paket-Verlauf | wie die Stufe | **Messung**, kein Ziel; CI-Grenze erst nach dem ersten Lauf auf GitHub (+ 20 %) |
+| klein/mittel/groß + Anmeldeschutz (#1254) | einmal je Lauf das Nachweis-Journal mit `--journal` (1.800) Fehlanmeldungen füllen, dann höchstens 60 s lesen wie die Stufe und nebenher 10 Fehlanmeldungen gleichzeitig (wie in #1253; halb bekannte, halb unbekannte Konten, je Versuch eigene Adresse über X-Forwarded-For); verlorene Nachweise = Warnungen „Nachweis … nicht eingetragen“ im Protokoll | wie die Stufe | **Messung**, kein Ziel; CI-Grenze erst nach dem ersten Lauf auf GitHub (+ 20 %) |
 | groß | 5, 10, dann ab 25 gleichzeitig alle `--schritt-dauer` (120) Sekunden 25 mehr (`--start` beginnt genau dort), bis p95 > 3 s, Fehlerquote > 1 % oder der Überlastschutz greift (503); danach 1000 gleichzeitig (höchstens 60 s) mit Anmeldeschutz-Probe, dann Erholung | 200.000 Mappen | **Messung:** Grenze = höchste Stufe ohne Abbruch; mit `--vorher` Warnung, wenn sie mehr als 20 % unter der des letzten Laufs liegt. **Pflicht:** keine Anfrage ohne Antwort nach 60 s, Arbeitsspeicher von Ablago ≤ 1,5 GB **je Prozess** (#920, `speicherVerfehlt`: höchster Prozess aus `engpass.speicherJeProzess`, ohne Angabe je Prozess die Summe gegen 1,5 GB × 1), Server bleibt erreichbar, Erholung (20 Anfragen in Folge mit p95 ≤ 1 s) innerhalb von 30 s, Anmeldeschutz sperrt nach falschen Passwörtern auch das richtige (429) |
 | extrem (#739) | wie groß; nur von Hand, nicht in `alle` und nicht im Zeitplan | 500.000 (Vorgabe) oder 1.000.000 Mappen (`--mappen`) | **Messung** wie groß; im Workflow ohne `--grenzen`. Im Bericht und im Ergebnisblock zusätzlich: Dauer des Anlegens der Lasttest-Daten (Läufe zu je 50.000 über die Werkbank, danach Arbeit im Hintergrund) und Größe von Datenbank und Dokumenten (`GET /api/werkbank/system`) |
 

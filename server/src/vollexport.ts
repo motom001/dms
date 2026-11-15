@@ -80,6 +80,8 @@ export const EXPORT_TABELLEN: Record<string, string> = {
   paket_sprachen: t('meldungen.vollexport.nicht-enthalten-sprachpakete'),
   paket_ereignisse: t('meldungen.vollexport.nicht-enthalten-ereignisse-fuer'),
   paket_verlauf: t('meldungen.vollexport.nicht-enthalten-verlauf-pakete'),
+  nachweis_journal: t('meldungen.vollexport.nicht-enthalten-nachweis-journal'),
+  nachweis_zaehler: t('meldungen.vollexport.nicht-enthalten-nachweis-journal'),
   passwort_links: t('meldungen.vollexport.nicht-enthalten-geheimnisse'),
   notfallcode: t('meldungen.vollexport.nicht-enthalten-notfallcode-vom'),
   auskunft_links: t('meldungen.vollexport.nicht-enthalten-abruf-links'),
