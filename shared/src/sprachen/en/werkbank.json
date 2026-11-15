@@ -122,6 +122,7 @@
   "sicherung.extern.letzte": "Last off-site copy",
   "sicherung.extern.letzte.wert": "Backup of {datum}",
   "sicherung.extern.letzte.keine": "none yet",
+  "sicherung.extern.letzte.entfernt": "already removed locally",
   "sicherung.extern.erklaerung": "Every backup is first created here in the backup folder; then the package copies it in the background and checks it at the destination. The local backup stays – it is the fast restore; the off-site copy is the protection against fire, theft or disk failure. The key is never at the destination.",
   "sicherung.extern.spalte": "Where",
   "sicherung.extern.lokal": "local",

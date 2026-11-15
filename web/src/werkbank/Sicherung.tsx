@@ -118,7 +118,7 @@ function AusserHaus({ x }: { x: ExternZustand | null | undefined }) {
           <dl className="eigenschaften">
             {x.ziele.flatMap((z) => [<dt key={`n${z.id}`}>{z.name}</dt>, <dd key={`a${z.id}`} className="mono">{z.adresse ?? z.ziel ?? '–'}</dd>])}
             <dt>{t('werkbank.sicherung.extern.letzte')}</dt>
-            <dd>{x.letzte ? <>{t('werkbank.sicherung.extern.letzte.wert', { datum: zeit(x.letzte.beginn) })} · {externText(x.letzte.stand)}</> : <span className="leise">{t('werkbank.sicherung.extern.letzte.keine')}</span>}</dd>
+            <dd>{x.letzte ? <>{t('werkbank.sicherung.extern.letzte.wert', { datum: zeit(x.letzte.beginn) })} · {zielName(x, x.letzte.paket)} · {externText(x.letzte.stand)}{x.letzte.entfernt && <span className="leise"> ({t('werkbank.sicherung.extern.letzte.entfernt')})</span>}</> : <span className="leise">{t('werkbank.sicherung.extern.letzte.keine')}</span>}</dd>
           </dl>
           <p className="leise klein">{t('werkbank.sicherung.extern.erklaerung')}</p>
         </>

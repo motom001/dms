@@ -122,6 +122,7 @@
   "sicherung.extern.letzte": "Letzte Kopie außer Haus",
   "sicherung.extern.letzte.wert": "Sicherung vom {datum}",
   "sicherung.extern.letzte.keine": "noch keine",
+  "sicherung.extern.letzte.entfernt": "lokal schon weggeräumt",
   "sicherung.extern.erklaerung": "Jede Sicherung entsteht zuerst hier im Sicherungsordner, danach kopiert das Paket sie im Hintergrund und prüft sie am Ziel. Die lokale Sicherung bleibt – sie ist die schnelle Wiederherstellung, die Kopie außer Haus der Schutz bei Brand, Diebstahl oder Plattenausfall. Der Schlüssel liegt nie auf dem Ziel.",
   "sicherung.extern.spalte": "Wo",
   "sicherung.extern.lokal": "lokal",

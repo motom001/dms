@@ -34,7 +34,7 @@ Under **Workbench → Backup**, the column **Where** shows per backup what exist
 | local · external uploaded, size confirmed | The target only confirms the size; reading back isn't possible (e.g. a [file drop](#loschschutz)). |
 | local · external failed | With a reason in the title, e.g. "password wrong" or "storage full". |
 
-The section **Off site** names the target and the last copy. The workbench overview shows a notice, and all administrators get **one email per incident** if
+The section **Off site** names the target and the last copy (**Last off-site copy**: date of the backup, target and status). If that backup has already been removed locally, it is still shown there, with the note "already removed locally" – the off-site copy still exists (see [Backups that only exist off-site](#nur-ausser-haus)). The workbench overview shows a notice, and all administrators get **one email per incident** if
 
 - a copy has **finally failed** (checksum at the target wrong, sign-in refused, given up after all retries) or
 - no newer backup has arrived off site for more than **2 days**.

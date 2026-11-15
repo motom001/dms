@@ -797,7 +797,10 @@ export class Sicherung {
       if (f && !fehler) fehler = { name: e.name, paket: f[0], beginn, stand: f[1] };
       aeltesteOffen = e.meta?.ende ?? st[0][1].seit;
     }
-    return { ziele, letzte, fehler, zuAlt: !!aeltesteOffen && jetzt - Date.parse(aeltesteOffen) > ZU_ALT_TAGE * TAG_MS };
+    // Lokal schon weggeräumt (#1327): Die Kopie außer Haus gibt es trotzdem – sie steht in der Merkliste (#976).
+    const weg = await this.entfernt.letzteKopie(ids).catch(() => null);
+    const neueste = weg && (!letzte || weg.beginn > letzte.beginn) ? weg : letzte;
+    return { ziele, letzte: neueste, fehler, zuAlt: !!aeltesteOffen && jetzt - Date.parse(aeltesteOffen) > ZU_ALT_TAGE * TAG_MS };
   }
 
   /**
@@ -807,8 +810,8 @@ export class Sicherung {
   async nurNeuesteMoeglich(liste?: Eintragsliste[], extern?: Awaited<ReturnType<Sicherung['externZustand']>>): Promise<boolean> {
     const x = extern !== undefined ? extern : await this.externZustand(liste).catch(() => null);
     if (!x?.ziele.length || x.fehler || x.zuAlt) return false;
-    // Die letzte erfolgreiche Kopie kann lokal schon weggeräumt sein – dann steht sie in der Merkliste (#976).
-    return !!x.letzte || await this.entfernt.angekommen(new Set(x.ziele.map((z) => z.id))).catch(() => false);
+    // Die letzte erfolgreiche Kopie kann lokal schon weggeräumt sein – auch dann steht sie in `letzte` (#976, #1327).
+    return !!x.letzte;
   }
 
   /* ---------- Zustand und Hinweise (#105) ---------- */

@@ -34,7 +34,7 @@ Unter **Werkbank → Sicherung** steht je Sicherung in der Spalte **Wo**, was es
 | lokal · extern hochgeladen, Größe bestätigt | Das Ziel bestätigt nur die Größe, zurücklesen geht nicht (z. B. eine [Dateiablage](#loschschutz)). |
 | lokal · extern fehlgeschlagen | Mit Grund im Titel, z. B. „Passwort falsch“ oder „Speicher voll“. |
 
-Der Abschnitt **Außer Haus** nennt das Ziel und die letzte Kopie. Die Übersicht der Werkbank zeigt einen Hinweis, und alle Administratoren bekommen **eine E-Mail je Vorfall**, wenn
+Der Abschnitt **Außer Haus** nennt das Ziel und die letzte Kopie (**Letzte Kopie außer Haus**: Datum der Sicherung, Ziel und Stand). Ist diese Sicherung lokal schon weggeräumt, steht sie trotzdem dort, mit dem Zusatz „lokal schon weggeräumt“ – die Kopie außer Haus gibt es ja noch (siehe [Sicherungen, die es nur noch außer Haus gibt](#nur-ausser-haus)). Die Übersicht der Werkbank zeigt einen Hinweis, und alle Administratoren bekommen **eine E-Mail je Vorfall**, wenn
 
 - eine Kopie **endgültig fehlgeschlagen** ist (Prüfsumme am Ziel falsch, Anmeldung abgelehnt, nach allen Wiederholungen aufgegeben) oder
 - seit mehr als **2 Tagen** keine neuere Sicherung außer Haus angekommen ist.
