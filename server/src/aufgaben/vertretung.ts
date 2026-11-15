@@ -39,22 +39,41 @@ export class AufgabenVertretung {
   private lesbare(...a: Parameters<ZugriffDienst['lesbare']>) { return this.teile.rechte.lesbare(...a); }
 
   /**
+   * Personen einzeln lesen (#1256): Vertretung und Alltags-Empfänger brauchen nur die Personen der Kette, nicht die
+   * Liste aller Personen samt letzter Aktivität. Jede Person höchstens einmal je Leser; nie über den Aufruf hinaus
+   * gemerkt – Abwesenheit, Vertretung und Deaktivieren wirken sofort (#741). Ohne Konten: undefined.
+   */
+  personenLeser(): ((id: string) => Promise<Benutzer | undefined>) | undefined {
+    const k = this.konten;
+    if (k?.person) {
+      const gelesen = new Map<string, Promise<Benutzer | undefined>>();
+      return (id) => {
+        let b = gelesen.get(id);
+        if (!b) { b = k.person!(id); gelesen.set(id, b); }
+        return b;
+      };
+    }
+    if (!k?.benutzer) return undefined;
+    let alle: Promise<Map<string, Benutzer>> | undefined;
+    return async (id) => (await (alle ??= k.benutzer!().then((l) => new Map(l.map((b) => [b.id, b] as const))))).get(id);
+  }
+
+  /**
    * Wer eine Aufgabe für `id` bekommt: der Benutzer selbst – oder, solange seine Abwesenheit wirkt
    * bzw. er deaktiviert ist, sein Vertreter. Ketten höchstens VERTRETER_SCHRITTE weit; bei einem
    * Kreis oder einem deaktivierten Vertreter bleibt sie beim letzten erreichbaren Empfänger.
    */
-  async empfaengerAufloesen(id: string | null): Promise<{ ziel: string | null; abwesende: string[] }> {
-    if (!id || !this.konten?.benutzer) return { ziel: id, abwesende: [] };
-    const alle = new Map((await this.konten.benutzer()).map((b) => [b.id, b] as const));
+  async empfaengerAufloesen(id: string | null, lies = this.personenLeser()): Promise<{ ziel: string | null; abwesende: string[] }> {
+    if (!id || !lies) return { ziel: id, abwesende: [] };
     const heute = heuteIn();
     let ziel = id;
     const abwesende: string[] = [];
     const gesehen = new Set([id]);
     for (let i = 0; i < VERTRETER_SCHRITTE; i++) {
-      const b = alle.get(ziel);
+      const b = await lies(ziel);
       if (!b || (b.aktiv && !abwesenheitWirkt(b.abwesenheit, heute))) break;
       const v = b.abwesenheit?.vertreterId;
-      const vb = v ? alle.get(v) : undefined;
+      const vb = v ? await lies(v) : undefined;
       if (!v || !vb || !vb.aktiv || gesehen.has(v)) break;
       abwesende.push(ziel); gesehen.add(v); ziel = v;
     }

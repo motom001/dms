@@ -6,7 +6,7 @@ import { randomUUID } from 'node:crypto';
 import type { Benutzer, Mappe } from '../../../shared/src/model';
 import type { Recht } from '../../../shared/src/rechte';
 import { optionsGruppen } from '../../../shared/src/beschriftung';
-import { istMeintest, liesWortgruppe, MEINTEST_STANDARD, suchbegriffe, variantenVon, type Meintest, type Varianten } from '../../../shared/src/suche';
+import { falte, istMeintest, liesWortgruppe, MEINTEST_STANDARD, suchbegriffe, variantenVon, type Meintest, type Varianten } from '../../../shared/src/suche';
 import { Fachfehler } from '../fehler';
 import { MB } from '../grenzen';
 import type { Kern, Zugreifender, Zugriff } from '../kern';
@@ -17,6 +17,9 @@ import { liesStand } from '../mappentypen';
 import { t } from '../sprache';
 import { jeMappe, liesModell, liesVektor, SCHWELLE_STANDARD, Vektorindex, type Treffer } from '../vektoren';
 
+/** Ähnliche Wörter je Begriff so lange gemerkt (#1256) und höchstens für so viele Begriffe. */
+const AEHNLICH_MERKEN_MS = 60_000;
+const AEHNLICH_MERKEN_MAX = 2000;
 /** Höchstens so viele eigene Gruppen gleichbedeutender Wörter (#356). */
 const SYNONYM_GRUPPEN_MAX = 2000;
 /** So lange wartet die Suche höchstens auf den Vektor des Suchbegriffs (#442); danach ohne Ähnlichkeit. */
@@ -75,6 +78,34 @@ export class SucheDienst {
 
   /* ---------- Unscharfe Suche (#356) ---------- */
 
+  /**
+   * Ähnliche Wörter aus dem Wörterverzeichnis (#356) je Wort und Höchstzahl, eine Minute gemerkt (#1256): Im Lasttest
+   * fragte fast jede Suche ohne Treffer dieselben Wörter erneut ab. Das Verzeichnis gilt für den ganzen Haushalt und
+   * kennt keine Rechte – ob ein Vorschlag etwas Lesbares findet, prüft die Suche danach je Person. Ein neuer
+   * Haushaltsstand (Änderungen in diesem Prozess), neue Wörter (`woerterEinarbeiten`) und der Neuaufbau machen ihn
+   * ungültig; Wörter aus anderen Prozessen gelten spätestens nach einer Minute (das Verzeichnis übernimmt neue Wörter
+   * ohnehin erst nach einigen Sekunden).
+   */
+  private aehnlichZwischen = new Map<string, { zeit: number; stand: number; woerter: string[] }>();
+  async aehnlicheWoerter(begriffe: string[], max: number): Promise<Record<string, string[]>> {
+    const jetzt = Date.now();
+    const stand = this.kern.stand.stand;
+    const erg: Record<string, string[]> = {};
+    const fehlen: string[] = [];
+    // Das Repo faltet die Begriffe (Umlaute, Groß/klein) und nennt sie so in der Antwort – gemerkt wird gefaltet.
+    for (const w of new Set(begriffe.map(falte))) {
+      const x = this.aehnlichZwischen.get(`${max}|${w}`);
+      if (x && x.stand === stand && jetzt - x.zeit <= AEHNLICH_MERKEN_MS) { if (x.woerter.length) erg[w] = [...x.woerter]; } else fehlen.push(w);
+    }
+    if (!fehlen.length) return erg;
+    const neu = await this.repo.aehnlicheWoerter(fehlen, max);
+    for (const w of fehlen) {
+      if (this.aehnlichZwischen.size >= AEHNLICH_MERKEN_MAX) this.aehnlichZwischen.delete(this.aehnlichZwischen.keys().next().value!);
+      this.aehnlichZwischen.set(`${max}|${w}`, { zeit: jetzt, stand, woerter: [...neu[w] ?? []] });
+    }
+    return { ...erg, ...neu };
+  }
+
   /** Gruppen gleichbedeutender Wörter, eine Minute gemerkt (jede Suche braucht sie). */
   private synonymZwischen: { zeit: number; gruppen: string[][] } | null = null;
   private async synonymGruppen(): Promise<string[][]> {
@@ -111,7 +142,7 @@ export class SucheDienst {
     let n = 0;
     for (;;) {
       const r = await this.repo.woerterEinarbeiten(WOERTER_JE_LAUF);
-      if (r > 0) n += r;
+      if (r > 0) { n += r; this.aehnlichZwischen.clear(); }
       if (r < WOERTER_JE_LAUF) return n;
     }
   }
@@ -192,6 +223,7 @@ export class SucheDienst {
   async woerterNeu(von: string) {
     const t0 = Date.now();
     const n = await this.repo.woerterNeu();
+    this.aehnlichZwischen.clear();
     protokoll.modul('werkbank').info('Suche: Wörterverzeichnis neu aufgebaut', { von, woerter: n, ms: Date.now() - t0 });
     return this.sucheStand();
   }

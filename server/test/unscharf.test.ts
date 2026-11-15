@@ -195,6 +195,41 @@ function faelle(pg: boolean) {
       assert.deepEqual([stand.unscharf, stand.meintest], [true, 'ohne-treffer']);
     });
 
+    it('#1256: Tippfehler-Abfrage nur, wenn sie gebraucht wird; „Meintest du …?“ wie bisher', async () => {
+      const { d, r, mappe, suche } = await aufbau();
+      await mappe('Rechnung Haushaltsgerät', 'Lieferung einer Waschmaschine mit Garantie');
+      await mappe('Garantieschein', 'Garantie für die Waschmaschine, 24 Monate');
+      await mappe('Notiz', 'Waschmaschiene (so geschrieben)');
+      const abgefragt: string[][] = [];
+      const echt = r.aehnlicheWoerter.bind(r);
+      r.aehnlicheWoerter = async (w, max) => { abgefragt.push(w); return echt(w, max); };
+      // Mit Treffern und der Vorgabe „nur ohne Treffer“: keine Abfrage im Wörterverzeichnis.
+      let x = await suche('Waschmaschine');
+      assert.deepEqual([x.titel.length, x.unscharf], [2, null]);
+      x = await suche('Waschmaschiene');
+      assert.deepEqual([x.titel, x.unscharf], [['Notiz'], null]);
+      assert.equal(abgefragt.length, 0, 'mit Treffern keine Tippfehler-Abfrage');
+      // Ohne Treffer: „Meintest du …?“ wie bisher – dieselbe Suche noch einmal fragt nicht erneut ab.
+      x = await suche('Waschmashine');
+      assert.equal(x.unscharf?.vorschlag, 'waschmaschine');
+      assert.equal(x.titel.length, 3);
+      x = await suche('Waschmashine');
+      assert.equal(x.unscharf?.vorschlag, 'waschmaschine');
+      assert.equal(abgefragt.length, 1, 'ähnliche Wörter je Begriff gemerkt');
+      // Eine Änderung am Bestand macht das Gemerkte ungültig: neue Wörter wirken sofort.
+      await mappe('Waschmashine', 'so heißt das Modell');
+      x = await suche('Waschmashine');
+      assert.deepEqual([x.titel, x.unscharf], [['Waschmashine'], null]);
+      x = await suche('Waschmaschene');
+      assert.equal(abgefragt.length, 2, 'nach der Änderung wieder abgefragt');
+      assert.equal(x.unscharf?.statt, 'Waschmaschene');
+      // „auch bei Treffern“ (#1191) eingeschaltet: Abfrage auch mit Treffern, Vorschlag wie bisher.
+      await d.suche.setzeSuche({ meintest: 'mehr-treffer' }, ICH.email);
+      x = await suche('Waschmaschiene');
+      assert.deepEqual([x.titel, x.unscharf?.vorschlag, x.unscharf?.treffer], [['Notiz'], 'waschmaschine', 2]);
+      assert.equal(abgefragt.length, 3, 'mit „auch bei Treffern“ abgefragt');
+    });
+
     it('keine Treffer und kein Vorschlag aus Mappen ohne Leserecht', async () => {
       const { d, mappe, suche, lese, typ } = await aufbau();
       await mappe('Geheim', 'Das Wort Steuererklaerung steht nur hier', undefined, lese);
