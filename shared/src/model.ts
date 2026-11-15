@@ -13,7 +13,7 @@ import { kreisImStandard, kreisVon } from './nummernkreis';
 import { folgtAusKreis, folgtAusProbleme } from './folgtaus';
 import { vorbelegenProbleme } from './vorbelegen';
 import { ibanGruppen, pruefeFormatDefinition } from './feldformate';
-import { datumsformat } from './region';
+import { datumsformat, zahlformat } from './region';
 import { hatZeitraumform, istZeitraum, leseProzent, leseZeitraum, prozentText, ZEITRAUM_ANZAHL_MAX, zeitraumText, type Zeitraum } from './feldarten';
 import { t, t as tx } from './texte';
 import { SCHLUESSEL, TYP_KENNUNG } from './kennungen';
@@ -1406,15 +1406,15 @@ export function formatiere(f: Feld, v: Wert | undefined, titelVon: (id: string) 
     case 'betrag': {
       const b = v as Betrag;
       if (typeof b.betrag !== 'number') return '';
-      try { return new Intl.NumberFormat(gebietsschema(), { style: 'currency', currency: b.waehrung || 'EUR' }).format(b.betrag); }
+      try { return zahlformat(gebietsschema(), { style: 'currency', currency: b.waehrung || 'EUR' }).format(b.betrag); }
       catch { return `${b.betrag.toLocaleString(gebietsschema(), { minimumFractionDigits: 2 })} ${b.waehrung}`; }
     }
     case 'datum': {
       const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(v));
-      return m ? new Intl.DateTimeFormat(gebietsschema(), { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'UTC' }).format(new Date(Date.UTC(+m[1], +m[2] - 1, +m[3]))) : String(v);
+      return m ? datumsformat(gebietsschema(), { day: '2-digit', month: '2-digit', year: 'numeric' }, 'UTC').format(new Date(Date.UTC(+m[1], +m[2] - 1, +m[3]))) : String(v);
     }
     case 'janein': return v ? t('gemeinsam.model.ja') : t('gemeinsam.model.nein');
-    case 'zahl': return typeof v === 'number' ? v.toLocaleString(gebietsschema(), { maximumFractionDigits: f.nachkomma ?? 10 }) : String(v);
+    case 'zahl': return typeof v === 'number' ? zahlformat(gebietsschema(), { maximumFractionDigits: f.nachkomma ?? 10 }).format(v) : String(v);
     // Zeitraum und Prozent (#1035): „3 Monate“, „19 %“.
     case 'zeitraum': return istZeitraum(v) ? zeitraumText(v) : '';
     case 'prozent': return typeof v === 'number' ? prozentText(v, f.nachkomma) : String(v);

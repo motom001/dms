@@ -76,7 +76,9 @@ jobs:
         run: |
           mkdir -p "$RUNNER_TEMP/daten"
           cd server
-          NODE_ENV=production DMS_DATENWURZEL="$RUNNER_TEMP/daten" DMS_EINRICHTUNGSCODE=aus \
+          # Ein Prozess (#970): Die Speichergrenze von 1,5 GB gilt je Prozess und ist mit einem am strengsten – der
+          # Lasttest prüft sie in jeder Stufe. Ausdrücklich gesetzt, damit eine andere Vorgabe das nicht still ändert.
+          NODE_ENV=production DMS_PROZESSE=1 DMS_DATENWURZEL="$RUNNER_TEMP/daten" DMS_EINRICHTUNGSCODE=aus \
             DATABASE_URL=postgres://dms:dms@127.0.0.1:5432/dmslast PORT=3100 HOST=127.0.0.1 LOG_LEVEL=warn \
             nohup node --enable-source-maps dist/index.js > "$RUNNER_TEMP/dms.log" 2>&1 &
           echo $! > "$RUNNER_TEMP/dms.pid"
@@ -115,7 +117,7 @@ jobs:
         run: |
           kill "$(cat "$RUNNER_TEMP/dms.pid")" && timeout 60 bash -c 'while curl -s -o /dev/null http://127.0.0.1:3100/api/gesundheit; do sleep 1; done'
           cd server
-          NODE_ENV=production DMS_DATENWURZEL="$RUNNER_TEMP/daten" DMS_EINRICHTUNGSCODE=aus \
+          NODE_ENV=production DMS_PROZESSE=1 DMS_DATENWURZEL="$RUNNER_TEMP/daten" DMS_EINRICHTUNGSCODE=aus \
             DATABASE_URL=postgres://dms:dms@127.0.0.1:5432/dmslast PORT=3100 HOST=127.0.0.1 LOG_LEVEL=warn \
             node test/startzeit.mjs --ziel http://127.0.0.1:3100 --bericht "$RUNNER_TEMP/bericht.md" --json "$RUNNER_TEMP/startzeit.json" \
               --log "$RUNNER_TEMP/dms.log" -- node --enable-source-maps dist/index.js
