@@ -77,7 +77,7 @@ Siehe auch: [Beruflich genutzt](#beruflich-genutzt).
 Ein Feldwert, der in diesem Mappentyp nur einmal vorkommen darf, z. B. eine Rechnungsnummer.
 
 <a id="favoriten"></a>**Favoriten** · ✓ Alltagswort · alle  
-Mappen, die ein Benutzer mit dem Stern markiert hat. Die Ansicht „Favoriten“ zeigt sie. Ein Favorit ist zugleich ein Abo – ändern andere die Mappe, gibt es eine gebündelte Benachrichtigung „Geändert“ (je Favorit abschaltbar).
+Mappen, die ein Benutzer mit dem Stern markiert hat – „das interessiert mich“. Die Ansicht „Favoriten“ zeigt sie. Ein Favorit ist zugleich ein Abo – ändern andere die Mappe, gibt es eine gebündelte Benachrichtigung „Geändert“ (je Favorit abschaltbar); wird sie mit @ erwähnt, erfährt man es je nach Einstellung sofort, in der täglichen Zusammenfassung oder nie.
 
 <a id="feld"></a>**Feld** · ~ mit Erklärung · alle  
 Eine Angabe in einer Mappe, z. B. die Vertragsnummer. Jedes Feld hat eine Feldart – Text, Langtext, Formatierter Text, Zahl, Betrag, Datum, Ja/Nein, Auswahlliste, Verweis, Passwort, Zeitraum oder Prozent.  
@@ -250,7 +250,7 @@ Siehe auch: [Geplant](#geplant), [Automatisierungsvorlage](#automatisierungsvorl
 Ein Suchformular über die Felder mehrerer Mappentypen und den Text in Dokumenten. Enter im Suchfeld oben führt mit dem Begriff hierher.
 
 <a id="erwahnung"></a>**Erwähnung** · ✓ Alltagswort · alle  
-Die Nennung eines Benutzers mit @ in formatiertem Text. Sie erzeugt für ihn eine Aufgabe.
+Die Nennung einer Mappe mit @ in formatiertem Text oder einer Notiz – ein Benutzer ist der Sonderfall mit Konto. Ein erwähnter Benutzer bekommt eine Aufgabe; bei anderen Mappen erfahren es die, die sie als Favorit haben. Angezeigt wird der aktuelle Titel.
 
 <a id="export"></a>**Export** · ~ mit Erklärung · alle  
 Ausgewählte Mappen einer Ansicht als Excel, CSV, ZIP oder PDF herunterladen.  
@@ -609,7 +609,7 @@ Der geheime Schlüssel, mit dem Passwortfelder und Sicherungen verschlüsselt si
 Siehe auch: [Fingerabdruck](#fingerabdruck), [Notfallblatt](#notfallblatt).
 
 <a id="sicherung"></a>**Sicherung** · ✓ Alltagswort · Administratoren  
-Eine verschlüsselte Gesamtsicherung, die sich in Ablago zurückspielen lässt. Kein Export – ohne Ablago nicht lesbar.  
+Eine verschlüsselte Gesamtsicherung, die sich in Ablago zurückspielen lässt. Kein Export – ohne Ablago nicht lesbar. Mit einem Ziel außer Haus gibt es sie lokal, am Ziel oder an beiden Orten; eine Sicherung „nur außer Haus“ holt Ablago zum Herunterladen, Prüfen oder Wiederherstellen erst zurück.  
 Siehe auch: [Wiederherstellen](#wiederherstellen), [Probe-Wiederherstellung](#probe-wiederherstellung), [Vollexport](#vollexport).
 
 <a id="speicherplatz"></a>**Speicherplatz** · ✓ Alltagswort · Administratoren  

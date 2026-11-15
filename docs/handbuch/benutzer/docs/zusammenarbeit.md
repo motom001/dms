@@ -14,13 +14,25 @@ Notizen sind kurze, formatierte Texte an einer Mappe – „Mit Herrn Müller te
 
 ## Erwähnungen
 
-In formatierten Texten und Notizen erwähnst du mit **@** einen Benutzer: Tippe **@** und die ersten Buchstaben, die Vorschläge erscheinen direkt an der Schreibstelle; mit ↑/↓ wählen, Enter oder Tab übernehmen, Esc schließt. Er bekommt eine [Aufgabe](eingang.md), und die Mappe steht bei ihm unter „Zu erledigen“, bis er sie erledigt.
+In formatierten Texten und Notizen erwähnst du mit **@** einen Benutzer – oder jede andere Mappe, etwa einen Vertrag oder eine Person: Tippe **@** und die ersten Buchstaben (oder wähle **@ Erwähnen** in der Werkzeugleiste), die Vorschläge erscheinen direkt an der Schreibstelle; mit ↑/↓ wählen, Enter oder Tab übernehmen, Esc schließt. Er bekommt eine [Aufgabe](eingang.md), und die Mappe steht bei ihm unter „Zu erledigen“, bis er sie erledigt.
 
 - Speicherst du den Text noch einmal, entsteht keine zweite Aufgabe.
 - Nimmst du die Erwähnung wieder heraus, bleibt die Aufgabe offen; in der Historie steht, dass sie entfernt wurde.
 - Wer sich selbst erwähnt, bekommt keine Aufgabe.
 - Darfst du einen erwähnten Benutzer nicht sehen, steht dort **@Benutzer (nicht sichtbar)** – ohne Namen und ohne Link. **Gelöschter Benutzer** bzw. der graue Name mit dem Hinweis „Diesen Benutzer gibt es nicht mehr“ erscheint nur, wenn es ihn wirklich nicht mehr gibt.
 - Öffnest du einen erwähnten Benutzer, steht daneben die Liste **Alle Mappen: Benutzer** – die Liste des Mappentyps, nicht eine Ansicht.
+
+### Mappen erwähnen { #mappen-erwahnen }
+
+![Auswahl nach @: Mappentyp vor dem Titel](bilder/erwaehnen-auswahl.png){ loading=lazy }
+
+Eine Erwähnung ist ein Verweis auf eine Mappe; ein Benutzer ist nur der Sonderfall, hinter dem ein Mensch mit Konto steht. Darum erwähnst du mit demselben **@** auch Verträge, Personen, Organisationen und jede andere Mappe, die du lesen darfst.
+
+- **Auswahl:** Jeder Vorschlag nennt erst den Mappentyp, dann den Titel – „Person · Dr. Bernd Beispiel“, „Organisation · Dr. Bernd Beispiel“, „Benutzer · Lena“. Gibt es zwei Mappen mit gleichem Typ und Titel, steht darunter leise die erste Spalte der Trefferliste (z. B. der Ort). Benutzer stehen oben, danach deine Favoriten und zuletzt geöffneten Mappen, dann der Rest. Es erscheinen nur Mappen, die du lesen darfst.
+- **Anzeige:** Im Text steht immer der **aktuelle** Titel – wird die Mappe umbenannt, ändert sich die Erwähnung mit. Beim Darüberfahren steht der Mappentyp; ein Klick öffnet die Mappe. Darfst du sie nicht lesen, steht **@Mappe (nicht sichtbar)** ohne Titel; gibt es sie nicht mehr, **@gelöschte Mappe**.
+- **Wer erfährt es:** Ein erwähnter Benutzer bekommt wie bisher eine Aufgabe. Bei jeder anderen Mappe erfahren es alle, die sie als [Favorit](ablage.md#favoriten-als-abo) haben – je nach ihrer Einstellung unter Mein Konto → [Benachrichtigungen](profil.md#benachrichtigungen) sofort, in der täglichen Zusammenfassung oder nie. Nur neue Erwähnungen melden sich, nicht jedes Speichern, und nur bei Personen, die **beide** Mappen lesen dürfen. Personen-Mappen sind keine Benutzer: `@Dr. Bernd Beispiel` meldet sich nur bei denen, die ihn als Favorit haben.
+- **In der erwähnten Mappe:** Im Register **Notizen** steht oben ein ruhiger Hinweis, z. B. „Erwähnt in einer Notiz bei Dr. Bernd Beispiel, 05.11.2026“ mit Link – keine echte Notiz. Er verschwindet, wenn die Erwähnung entfernt wird, und zeigt nur Stellen in Mappen, die du lesen darfst.
+- Im Export und im PDF steht der Titel als Text.
 
 ## Historie
 

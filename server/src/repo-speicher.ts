@@ -1022,6 +1022,13 @@ export function speicherRepo(): Repo {
       return n;
     },
     async notizen(mappeId) { return [...notizen.values()].filter((n) => n.mappeId === mappeId).sort((a, b) => a.erstellt.localeCompare(b.erstellt)).map(kopie); },
+    async erwaehntIn(mappeId) {
+      const drin = (t: unknown) => typeof t === 'string' && (t.includes(`(mappe:${mappeId})`) || t.includes(`(benutzer:${mappeId})`));
+      return [
+        ...[...notizen.values()].filter((n) => n.mappeId !== mappeId && drin(n.text)).map((n) => ({ mappeId: n.mappeId, stelle: `notiz:${n.id}`, am: n.geaendert })),
+        ...[...mappen.values()].filter((m) => m.id !== mappeId).flatMap((m) => Object.entries(m.werte).filter(([, w]) => drin(w)).map(([k]) => ({ mappeId: m.id, stelle: k, am: m.geaendert }))),
+      ].sort((a, b) => b.am.localeCompare(a.am)).slice(0, 200);
+    },
     async notizenVon(mappeIds) {
       const ids = new Set(mappeIds);
       return [...notizen.values()].filter((n) => ids.has(n.mappeId)).sort((a, b) => a.mappeId.localeCompare(b.mappeId) || a.erstellt.localeCompare(b.erstellt)).map(kopie);

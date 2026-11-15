@@ -7,6 +7,7 @@ import { ok, leer, b, ich } from '../http/routen-hilfen';
 import type { RoutenKontext } from '../http/routen-kontext';
 import type { Route } from '../routen';
 import { abruf } from '../http/teilabruf';
+import { STUECK_MAX } from '../grenzen';
 
 export function sicherungRouten(k: RoutenKontext): Route[] {
   const { dienst, konten, x, tresor, sicherung, sicherungsPaket, notfallblattDatei, wh, whStand, darfWiederherstellen } = k;
@@ -37,9 +38,12 @@ export function sicherungRouten(k: RoutenKontext): Route[] {
     { methode: 'PUT', pfad: '/api/werkbank/sicherung/probe-plan', zugang: 'admin', handler: async (a) => ok(await sicherung().speichereProbePlan(a.body, ich(a).email)) },
 
     /* ---------- Sicherung (#103–#105) und Notfallblatt (#106) ---------- */
-    { methode: 'GET', pfad: '/api/werkbank/sicherung', zugang: 'admin', handler: async () => {
+    { methode: 'GET', pfad: '/api/werkbank/sicherung', zugang: 'admin', handler: async (a) => {
       const s = sicherung();
-      return ok({ lauf: s.aktuellerLauf(), liste: await s.liste(), plan: await s.plan(), speicher: await s.speicher(), zustand: await s.zustand(), probe: x.wiederherstellung?.aktuellerLauf() ?? null });
+      const liste = await s.liste();
+      // Entfernte Sicherungen (#976): eigene Merkliste und die Listen der Ziele; ?ziele=neu fragt die Ziele gleich neu.
+      const entfernt = await s.entfernt.stand(liste.map((e) => e.name), a.query.ziele === 'neu').catch(() => null);
+      return ok({ lauf: s.aktuellerLauf(), liste, entfernt, plan: await s.plan(), speicher: await s.speicher(), zustand: await s.zustand(), probe: x.wiederherstellung?.aktuellerLauf() ?? null });
     } },
     { methode: 'GET', pfad: '/api/werkbank/sicherung/lauf', zugang: 'admin', handler: async () => ok(sicherung().aktuellerLauf()) },
     { methode: 'POST', pfad: '/api/werkbank/sicherung/jetzt', zugang: 'admin', handler: async (a) => ok((await sicherung().starte('manuell', ich(a).email)).lauf) },
@@ -58,6 +62,8 @@ export function sicherungRouten(k: RoutenKontext): Route[] {
       const m = await sicherung().metadatenDatei(a.params.name);
       return { datei: { inhalt: m.inhalt, name: m.dateiname, mime: 'application/json', anzeigen: false, groesse: m.inhalt.length, koepfe: { 'cache-control': 'no-store' } } };
     } },
+    // Entfernte Sicherung zurückholen (#976): heikel wie Herunterladen; danach liegt sie lokal (Herunterladen, Prüfen, Wiederherstellen).
+    { methode: 'POST', pfad: '/api/werkbank/sicherung/:name/holen', zugang: 'admin', handler: async (a) => ok(await sicherung().entfernt.hole(a.params.name, b(a).paket, ich(a).email)) },
     { methode: 'DELETE', pfad: '/api/werkbank/sicherung/:name', zugang: 'admin', handler: async (a) => { await sicherung().loesche(a.params.name, ich(a).email); return leer; } },
     // Sicherung außer Haus (#585): nur Pakete mit dms:sicherung-lesen, nur die Sicherungen aus ihrem Ereignis sicherung.fertig –
     // die verschlüsselte Datei in Stücken, schlanke Metadaten und die Rückmeldung. Nie Schlüssel, nie andere Dateien.
@@ -66,6 +72,8 @@ export function sicherungRouten(k: RoutenKontext): Route[] {
       const s = await sicherung().externStueck(await sicherungsPaket(a), a.params.name, a.query.versatz, a.query.laenge);
       return { datei: { inhalt: s.inhalt, name: `${a.params.name}.dms-sicherung`, mime: 'application/octet-stream', anzeigen: false, groesse: s.inhalt.length, koepfe: { 'x-dms-groesse': String(s.groesse), 'cache-control': 'no-store' } } };
     } },
+    // Zurückholen (#976): Pakete mit dms:sicherung-holen liefern die angeforderte Sicherung in Stücken (höchstens 8 MB, roh).
+    { methode: 'PUT', pfad: '/api/sicherungen/:name/holen', zugang: 'angemeldet', roh: STUECK_MAX, handler: async (a) => ok(await sicherung().entfernt.nimmStueck(await sicherungsPaket(a, 'dms:sicherung-holen'), a.params.name, a.query.versatz, a.body)) },
     { methode: 'PUT', pfad: '/api/sicherungen/:name/extern', zugang: 'angemeldet', handler: async (a) => ok(await sicherung().externRueckmeldung(await sicherungsPaket(a), a.params.name, a.body)) },
     { methode: 'GET', pfad: '/api/werkbank/notfallblatt', zugang: 'admin', handler: async (a) => notfallblattDatei(ich(a).email) },
 

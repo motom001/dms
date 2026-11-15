@@ -213,6 +213,8 @@ export class Paketlaeufer implements PaketLaeufer {
     };
     // Paket-Aktionen im Menü „Mappe“ (#1039): Schritt mit Antwort und Zeitgrenze, mit eingeschränktem Zugriff.
     o.dienst.paketaktionen.laeufer = { geladen: (paket) => this.aktionBereit(paket), rufe: (paket, eingang, a) => this.mappenaktion(paket, eingang, a) };
+    // Entfernte Sicherungen (#976): auflisten und zurückholen über Pakete mit dms:sicherung-holen; kein Inhalt in der Werkbank.
+    o.dienst.sicherungHolen = { rufe: async (paket, eingang, ms) => (await this.schnittstelle(paket, 'dms:sicherung-holen', eingang, { bezeichnung: t(eingang.auftrag === 'auflisten' ? 'meldungen.verwaltung.sicherungen-aufgelistet' : 'meldungen.verwaltung.sicherung-geholt'), ...(ms ? { ms } : {}) })).text };
     // Inhalte übersetzen (#732): Pakete mit dms:uebersetzen, je Abschnitt ein Aufruf mit Zeitlimit; kein Inhalt in der Werkbank.
     o.dienst.uebersetzung.anbieter = {
       pakete: () => this.uebersetzPakete(),

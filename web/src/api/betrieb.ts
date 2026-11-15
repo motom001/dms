@@ -57,8 +57,16 @@ export interface SicherungsZustand {
   /** Kopie außer Haus (#585); null ohne Paket mit dms:sicherung-lesen. */
   extern?: ExternZustand | null;
 }
+/** Sicherung außer Haus ohne lokale Kopie (#976); grund, wenn Ablago sie nicht selbst zurückholen kann. */
+export interface EntfernteSicherung {
+  name: string; datei: string; paket: string; paketName: string; ziel: string | null; groesse: number | null; sha256: string | null; beginn: string | null;
+  holbar: boolean; grund?: 'kann-nicht' | 'nicht-erreichbar' | 'nicht-am-ziel' | 'ohne-pruefsumme' | 'abweichend';
+}
+export interface EntferntStand { nur: EntfernteSicherung[]; auchAmZiel: Record<string, string[]>; fehler: Array<{ paket: string; paketName: string; grund: string }> }
 export interface SicherungStand {
   lauf: SicherungsLauf | null; liste: SicherungEintrag[]; plan: SicherungsPlan; zustand: SicherungsZustand;
+  /** Entfernte Sicherungen (#976); null ohne Ziel außer Haus. */
+  entfernt?: EntferntStand | null;
   /** Laufende oder letzte Probe-Wiederherstellung (#109). */
   probe?: WhLauf | null;
   speicher: { dateienBytes: number; dateien: number; datenbankBytes: number; sicherungenBytes: number; anzahl: number; frei: number | null; gesamt: number | null; hochrechnung: { stueck: number; bytes: number }; mindestBytes: number; knapp: boolean };
@@ -225,7 +233,9 @@ export interface OAuthStatus { angemeldet: boolean; zustand: 'ok' | 'abgelaufen'
 
 export const betriebApi = {
   wartung: () => anfrage<WartungOeffentlich>('GET', '/api/wartung'),
-  sicherung: () => anfrage<SicherungStand>('GET', '/api/werkbank/sicherung'),
+  /** zieleNeu (#976): die Listen der Ziele außer Haus gleich neu abfragen. */
+  sicherung: (zieleNeu = false) => anfrage<SicherungStand>('GET', `/api/werkbank/sicherung${zieleNeu ? '?ziele=neu' : ''}`),
+  sicherungHolen: (name: string, paket: string) => anfrage<SicherungsLauf>('POST', `/api/werkbank/sicherung/${encodeURIComponent(name)}/holen`, { paket }),
   sicherungLauf: () => anfrage<SicherungsLauf | null>('GET', '/api/werkbank/sicherung/lauf'),
   sicherungJetzt: () => anfrage<SicherungsLauf>('POST', '/api/werkbank/sicherung/jetzt'),
   sicherungPlan: (p: Partial<SicherungsPlan>) => anfrage<SicherungsPlan>('PUT', '/api/werkbank/sicherung/plan', p),

@@ -18,6 +18,7 @@ Besides events and the [API v1](#nutzliche-endpunkte-der-api-v1), the core offer
 | `dms:volltext` | 0.145.0 | supplying full text for files the core doesn't read (Word, Excel, emails …) – only with "read documents" | **[Supplying full text](#volltext-liefern)** – event, writing, limits |
 | `dms:archivfassung` | 0.149.0 | storing a searchable PDF/A for documents with finished full text – with word positions, only with "read documents" | **[Storing an archive version](#archivfassung)** – event, word positions, acceptance, limits |
 | `dms:sicherung-lesen` | 0.142.0 | reading every backup encrypted and copying it off-site, reporting the state in the answer (read-only key) | **[Off-site backup](#sicherung-ausser-haus)** – event, reading in pieces, feedback |
+| `dms:sicherung-holen` | – | List backups at the destination and deliver requested ones back (only with `dms:sicherung-lesen`) | **[Listing and fetching backups back](#sicherung-holen)** |
 | `dms:klassifizieren` | 0.226.0 | suggesting a folder type for "Where does this belong?" – from the start of the document and the list of candidates; without network access also from the types of similar documents | **[Suggest a folder type](#klassifizieren)** – call, answer, checks, similarity |
 | `dms:hinweise` | 0.231.0 | setting and removing notes on folders the package may change (e.g. “The items add up to €118.40”) – text only, with the package's name, they never stop saving | **[Calculated fields and notes](#berechnet-und-hinweise)** |
 | `dms:leerseiten` | 0.255.0 | marking blank pages of documents in new post – marking only, never deleting; needs `lesen: [dms:post]` and `dokumente: lesen` | **[Marking blank pages](#leerseiten)** |
@@ -1004,6 +1005,25 @@ code:
     **Workbench → Backup** shows the state per backup ("local ✓ · off-site ✓ checked"), the overview a notice on errors or when no newer copy has arrived for more than 2 days. If the runner gives up the event after all repetitions, the core itself sets `fehlgeschlagen` (final).
 
 The endpoints' answers: 403 if the package doesn't have the permission or the backup wasn't reported to it; 404 if it is no longer there (retention); 422 for invalid details – don't repeat any of the three. Locally the core deletes nothing because the copy has arrived; retention lets a backup whose copy is still running stand for up to 2 days.
+
+### Listing and fetching backups back { #sicherung-holen }
+
+With the additional right `dms:sicherung-holen` (only together with `dms:sicherung-lesen`, #976) **Workbench → Backup** also shows backups that only exist at your destination and fetches them back on request. The core calls the action `dms:sicherung-holen` for this (like the other [interfaces](#schnittstellen), with no content in the workbench) – with `auftrag` in the input:
+
+1. **`auflisten`** (time limit 30 s, the core asks at most every 2 minutes): answer with JSON
+
+    ```json
+    { "ziel": "WebDAV https://cloud.example.org/Ablago",
+      "sicherungen": [ { "name": "2026-11-02_0300-automatisch", "groesse": 1834567890,
+                         "meta": { "format": 1, "schlank": true, "datei": "2026-11-02_0300-automatisch.dms-sicherung", "groesse": 1834567890, "sha256": "…", "beginn": "…", "verschluesselung": { "verfahren": "…", "fingerabdruck": "…" } } } ] }
+    ```
+
+    Only `*.dms-sicherung` from your own destination folder; `meta` is the content of the `<name>.json` next to it (leave `meta` out if it is missing). At most 150 entries – the result of a call has 64 KB. Names only of letters, digits, `_`, `.`, `-`; `ziel` without credentials.
+2. **`holen`** with `name`, `datei`, `versatz` and `groesse`: read the file at the destination from `versatz` (e.g. `Range`) and deliver it **unchanged** in pieces of at most 8 MB via `PUT /sicherungen/{name}/holen?versatz=…` (raw body, `dms.api`). The response names the new `versatz`; 409 names the expected one. After about half the time limit simply answer (e.g. `{"versatz": …}`) – the core calls you again right away with the new `versatz` until the file is complete. If nothing arrives three times in a row, it gives up.
+
+The core only accepts pieces for the backup it has just requested from **your** package, without gaps and never beyond `groesse`, and in the end checks the SHA-256 against its own record (or against `meta`). Only then does it put file and `.json` into the backup folder. Your API key stays a read key; `PUT /sicherungen/{name}/holen` is the only exception. At the destination you only need read access.
+
+Without `dms:sicherung-holen` the workbench shows backups that Ablago removed locally only with destination and file name and a pointer to the guide.
 
 ### Deletion protection { #sicherung-loeschschutz }
 

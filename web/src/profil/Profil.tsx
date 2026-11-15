@@ -1,3 +1,4 @@
+import { FAVORIT_ERWAEHNT, FAVORIT_ERWAEHNT_WAHL, favoritErwaehntWahl } from '../../../shared/src/erwaehnen';
 import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import { MeineAbwesenheit } from './Abwesenheit';
 import { ZusammenfassungEinstellen } from './Zusammenfassung';
@@ -259,6 +260,11 @@ function ProfilBereich({ bereich }: { bereich: keyof typeof BEREICHE }) {
           ? <Schalter an={d.einstellungen.favoriten_benachrichtigen !== false} setze={(an) => d.setzeEinstellung('favoriten_benachrichtigen', an ? null : false)}
               beschriftung={t('profil.profil.bei-aenderungen-an-meinen')} />
           : <p className="hinweis info">{t('profil.favoriten.abgeschaltet')}</p>}
+        {/* Erwähnen mit @ (#889): Wird ein Favorit in einer Notiz oder einem Feld erwähnt – sofort, täglich, nie. */}
+        <p id="favorit-erwaehnt">{t('profil.favoriten.erwaehnt.hilfe')}</p>
+        <Umschalter wert={favoritErwaehntWahl(d.einstellungen[FAVORIT_ERWAEHNT])} setze={(x) => d.setzeEinstellung(FAVORIT_ERWAEHNT, x === 'zusammenfassung' ? null : x)}
+          beschriftung={t('profil.favoriten.erwaehnt')}
+          wahlen={FAVORIT_ERWAEHNT_WAHL.map((w) => ({ wert: w, text: t(`profil.favoriten.erwaehnt.${w}`) }))} />
       </div>
       </>}
     </div>

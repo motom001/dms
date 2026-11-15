@@ -42,6 +42,13 @@ export interface Seite { gesamt: number; von: number; mappen: Mappe[]; bezuege: 
  * Unscharfe Suche (#356): statt = gesuchter Text, vorschlag = „Meintest du …?“ (null, wenn nichts Besseres da ist).
  * treffer (#1191): Es gab genaue Treffer, der Vorschlag findet aber mehr (so viele) – dann sind die Treffer die genauen.
  */
+/** Erwähnte Mappe (#889): bei lesbaren Titel und Typ, sonst nur verborgen bzw. gelöscht. */
+export interface Verweis { sichtbarkeit: Sichtbarkeit; titel?: string; typId?: string }
+export interface ErwaehnungsVorschlag { id: string; titel: string; typId: string; favorit: boolean; zusatz?: string }
+export interface ErwaehnungsUebersicht {
+  erwaehnt: Array<Verweis & { id: string }>;
+  erwaehntIn: Array<{ mappeId: string; titel: string; typId: string; stelle: 'notiz' | 'feld'; feld?: string; am: string }>;
+}
 export interface Unscharf { statt: string; vorschlag: string | null; begriffe: Record<string, string[]>; treffer?: number }
 /** Eine Mappe mit einem ähnlichen Dokument (#442); aehnlichkeit = Kosinus (0 bis 1). */
 export interface AehnlicheMappe { id: string; titel: string; typId: string; dokument: { id: string; name: string }; aehnlichkeit: number }
@@ -74,6 +81,10 @@ export interface SeitenWahl { sortierung?: Sortierung | null; volltext?: boolean
 export const mappenApi = {
   /** Sichtbarkeit verwiesener Mappen (#888): je Id sichtbar, verborgen oder gelöscht – ohne Titel. */
   sichtbarkeit: (ids: string[]) => anfrage<Record<string, Sichtbarkeit>>('POST', '/api/mappen/sichtbarkeit', { ids }),
+  /** Erwähnen mit @ (#889): aktuelle Titel erwähnter Mappen, Vorschläge nach @, wo eine Mappe erwähnt ist. */
+  verweise: (ids: string[]) => anfrage<Record<string, Verweis>>('POST', '/api/mappen/verweise', { ids }),
+  erwaehnen: (suche: string) => anfrage<ErwaehnungsVorschlag[]>('GET', `/api/mappen/erwaehnen?suche=${encodeURIComponent(suche)}`),
+  erwaehnungen: (id: string) => anfrage<ErwaehnungsUebersicht>('GET', `/api/mappen/${id}/erwaehnungen`),
   /** Eine Seite einer Sicht („eingang“, Sicht- oder Typ-Id; „link“ mit den Parametern eines sprechenden Links, #98). */
   seite: (sicht: string, von = 0, anzahl = 100, suche = '', { sortierung, volltext = false, notizen = false, link, eigene, gesamt }: SeitenWahl = {}) =>
     anfrage<Seite>('GET', `/api/mappen?${new URLSearchParams({

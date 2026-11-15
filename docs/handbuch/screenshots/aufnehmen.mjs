@@ -254,7 +254,9 @@ async function vorbereiten() {
   const mitgliedId = einladung.benutzer.id;
   await api('PUT', `/api/mappen/${strom.id}`, { werte: { ...strom.werte, verantwortlich: admin.id,
     bemerkung: `**Preisanpassung zum 1. April.** Bitte bis Ende März prüfen:\n\n- neuer Arbeitspreis\n- Grundgebühr\n\n@[${MITGLIED.name}](benutzer:${mitgliedId}), magst du die Angebote vergleichen?` } });
-  await api('POST', `/api/mappen/${strom.id}/notizen`, { text: 'Kundenservice angerufen: Sonderkündigung wegen Preisanpassung ist **bis 31. März** möglich.' });
+  // Erwähnung einer Mappe (#889): der Vertragspartner – dort steht dann „Erwähnt in einer Notiz bei Stromvertrag Haus“.
+  const stadtwerkeErw = mappe('name', 'Stadtwerke Musterstadt');
+  await api('POST', `/api/mappen/${strom.id}/notizen`, { text: `Kundenservice von @[Stadtwerke Musterstadt](mappe:${stadtwerkeErw.id}) angerufen: Sonderkündigung wegen Preisanpassung ist **bis 31. März** möglich.` });
   await api('POST', `/api/mappen/${strom.id}/notizen`, { text: 'Zählerstand am 01.03.: 48 211 kWh' });
   await api('POST', `/api/mappen/${strom.id}/aufgaben`, { empfaengerId: mitgliedId, text: 'Zählerstand an die Stadtwerke melden' });
   // E-Mail-Versand eingerichtet (ohne zu senden), damit die Maske zum Versenden erscheint (#58)
@@ -711,6 +713,13 @@ async function main() {
   await s.getByRole('tab', { name: /Notizen/ }).click();
   await s.locator('.notizliste li').first().waitFor();
   await bild(s, 'notizen');
+  // Erwähnen mit @ (#889): „Erwähnen“ in der Leiste, Auswahl mit Mappentyp vor dem Titel.
+  await s.getByRole('button', { name: w('Erwähnen') }).last().click();
+  await s.keyboard.type('Stadt');
+  await s.getByRole('listbox', { name: w('Mappe oder Benutzer erwähnen') }).getByRole('option').first().waitFor();
+  await bild(s, 'erwaehnen-auswahl');
+  await s.keyboard.press('Escape');
+  await s.locator('#neue-notiz').fill('');
   await s.getByRole('tab', { name: 'Vertrag', exact: true }).click();
   await s.getByRole('button', { name: w('Mappe'), exact: true }).click();
   await s.getByRole('menuitem', { name: w(/Aufgabe vergeben/) }).click();

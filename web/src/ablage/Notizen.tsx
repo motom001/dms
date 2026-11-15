@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { Notiz } from '../../../shared/src/model';
-import { mappenApi } from '../api/mappen';
+import { mappenApi, type ErwaehnungsUebersicht } from '../api/mappen';
+import { Link } from '../ort';
 import { Formatiert, FormatiertEingabe } from './Formatiert';
 import { Uebersetzbar } from './Uebersetzung';
 import { Person } from '../Person';
-import { t } from '../sprache';
+import { t, tn } from '../sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
 import { Knopf } from '../bausteine';
 
@@ -24,6 +25,7 @@ export function Notizen({ mappeId, notizen, neuLaden }: { mappeId: string; notiz
 
   return (
     <section className="notizen notizregister" aria-label={t('ablage.notizen.notizen')}>
+      <ErwaehntIn mappeId={mappeId} />
       {!notizen.length && <p className="leise">{t('ablage.notizen.noch-keine-notizen-notizen')}</p>}
       <ul className="notizliste">
         {notizen.map((n) => (
@@ -57,5 +59,30 @@ export function Notizen({ mappeId, notizen, neuLaden }: { mappeId: string; notiz
       </div>
       {fehler && <p className="fehlertext">{fehler}</p>}
     </section>
+  );
+}
+
+/**
+ * Erwähnt in … (#889): ruhiger Hinweis oben im Register – keine Notiz. Er entsteht aus Erwähnungen in Notizen und
+ * formatierten Feldern anderer Mappen und verschwindet mit ihnen; der Server nennt nur Stellen in lesbaren Mappen.
+ */
+function ErwaehntIn({ mappeId }: { mappeId: string }) {
+  const [liste, setListe] = useState<ErwaehnungsUebersicht['erwaehntIn']>([]);
+  useEffect(() => {
+    let weg = false;
+    void mappenApi.erwaehnungen(mappeId).then((x) => { if (!weg) setListe(x.erwaehntIn); }, () => { if (!weg) setListe([]); });
+    return () => { weg = true; };
+  }, [mappeId]);
+  if (!liste.length) return null;
+  const datum = (iso: string) => new Date(iso).toLocaleDateString(gebietsschema(), { day: '2-digit', month: '2-digit', year: 'numeric' });
+  return (
+    <ul className="erwaehnt-in leise klein" aria-label={t('ablage.notizen.erwaehnt-liste')}>
+      {liste.map((x) => {
+        const titel = <Link to={`/ablage/${x.typId}/${x.mappeId}`} className="verweis">{x.titel || t('ablage.formatiert.erwaehnung.ohne-titel')}</Link>;
+        return <li key={`${x.mappeId}-${x.stelle}-${x.feld ?? ''}`}>{x.stelle === 'feld'
+          ? tn('ablage.notizen.erwaehnt-in-feld', { feld: x.feld ?? '', titel, datum: datum(x.am) })
+          : tn('ablage.notizen.erwaehnt-in', { titel, datum: datum(x.am) })}</li>;
+      })}
+    </ul>
   );
 }

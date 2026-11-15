@@ -1,3 +1,4 @@
+import { FAVORIT_ERWAEHNT_OFFEN } from '../../shared/src/erwaehnen';
 import { existsSync } from 'node:fs';
 import { liesMail, verbindeImap } from './imap';
 import { Postfaecher } from './postfach';
@@ -462,6 +463,9 @@ const aufgabenmail = new Aufgabenmail({
   // Aufgaben zu Mappen, die der Empfänger nicht lesen darf, ohne Titel (#127).
   aufgabenVon: async (b) => dienst.vertretung.meineAufgaben(b, await dienst.rechtepruefung.zugriff(b)),
   typName,
+  // Erwähnte Favoriten (#889): gemerkt bis zur nächsten Zusammenfassung, nur lesbare.
+  favoritenErwaehnt: async (b) => dienst.erwaehnungen.fuerZusammenfassung(await dienst.rechtepruefung.zugriff(b), (await konten.einstellungen(b))[FAVORIT_ERWAEHNT_OFFEN]),
+  favoritenErwaehntGesendet: (b) => konten.setzeEinstellung(b, FAVORIT_ERWAEHNT_OFFEN, null),
 }, () => betrieb.mailer(), () => betrieb.adresseFuerLinks());
 const designs = new Designs(messung.umhuelle(pgDesignRepo(sql, cfg.haushalt), 'designs'), mitPruefung(ordnerSpeicher(ordner.dateien, `${cfg.haushalt}/designs`), hochladen));
 // Einrichtungsassistent (#119): Mandant und Administrator mit Code, danach die weiteren Schritte.
@@ -577,9 +581,11 @@ sicherung.extern = {
   pakete: async () => Promise.all((await dienst.kern.repo.listePakete()).filter((p) => hatSchnittstelle(p.laeufer, 'dms:sicherung-lesen')).map(async (p) => {
     const werte = p.einstellungen ? (await paketEinstellungen(dienst.kern, p.id))?.werte ?? {} : {};
     const adresse = p.einstellungen ? adressfelder(p.einstellungen).map((f) => werte[f.schluessel]).find((v): v is string => typeof v === 'string' && !!v) ?? null : null;
-    return { id: p.id, name: p.name, adresse };
+    return { id: p.id, name: p.name, adresse, holen: hatSchnittstelle(p.laeufer, 'dms:sicherung-holen') };
   })),
   melde: (daten) => dienst.kern.ereignis('sicherung.fertig', { ...daten }),
+  // Entfernte Sicherungen (#976): Aufträge an Pakete mit dms:sicherung-holen über den Paket-Läufer.
+  holen: (paket, eingang, ms) => { if (!dienst.sicherungHolen) throw new Error(tDe('meldungen.sicherung.entfernt.laeufer')); return dienst.sicherungHolen.rufe(paket, eingang, ms); },
 };
 dienst.sicherungAufgegeben = (paket, name, fehler) => sicherung.externAufgegeben(paket, name, fehler);
 dienst.sicherungAntwort = (paket, name, r) => sicherung.externAntwort(paket, name, r);

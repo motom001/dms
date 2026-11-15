@@ -14,13 +14,25 @@ Notes are short, formatted texts on a folder – "Called Mr Özdemir, he's comin
 
 ## Mentions {#erwahnungen}
 
-In formatted texts and notes you mention a user with **@**: type **@** and the first letters, and the suggestions appear right where you are writing; choose with ↑/↓, accept with Enter or Tab, Esc closes. The user gets a [task](eingang.md), and the folder appears under "To do" for them until they complete it.
+In formatted texts and notes you mention a user with **@** – or any other folder, such as a contract or a person: type **@** and the first letters (or choose **@ Mention** in the toolbar), and the suggestions appear right where you are writing; choose with ↑/↓, accept with Enter or Tab, Esc closes. The user gets a [task](eingang.md), and the folder appears under "To do" for them until they complete it.
 
 - If you save the text again, no second task is created.
 - If you remove the mention again, the task stays open; the history records that it was removed.
 - If you mention yourself, you don't get a task.
 - If you aren't allowed to see a mentioned user, it says **@User (not visible)** – without the name and without a link. **Deleted user**, or the greyed-out name with the note "This user no longer exists", only appears if the user really no longer exists.
 - If you open a mentioned user, the list next to it is **All folders: User** – the list of the folder type, not a view.
+
+### Mentioning folders { #mappen-erwahnen }
+
+![Choice after @: folder type before the title](bilder/erwaehnen-auswahl.png){ loading=lazy }
+
+A mention is a reference to a folder; a user is just the special case with a person and an account behind it. That's why the same **@** also mentions contracts, persons, organisations and any other folder you may read.
+
+- **Choice:** each suggestion names the folder type first, then the title – "Person · Dr. Bernd Beispiel", "Organisation · Dr. Bernd Beispiel", "User · Lena". If two folders have the same type and title, the first column of the results list (e.g. the town) appears quietly below. Users come first, then your favourites and recently opened folders, then the rest. Only folders you may read appear.
+- **Display:** the text always shows the **current** title – if the folder is renamed, the mention changes with it. Hovering shows the folder type; a click opens the folder. If you may not read it, it says **@folder (not visible)** without a title; if it no longer exists, **@deleted folder**.
+- **Who hears about it:** a mentioned user gets a task as before. For any other folder, everyone who has it as a [favourite](ablage.md#favoriten-als-abo) hears about it – depending on their setting under My account → [Notifications](profil.md#benachrichtigungen) right away, in the daily summary or never. Only new mentions count, not every save, and only people who may read **both** folders. Person folders aren't users: `@Dr. Bernd Beispiel` only reaches those who have him as a favourite.
+- **In the mentioned folder:** the **Notes** tab shows a quiet notice at the top, e.g. "Mentioned in a note at Dr. Bernd Beispiel, 05/11/2026" with a link – not a real note. It disappears when the mention is removed and only shows places in folders you may read.
+- Exports and PDFs show the title as text.
 
 ## History {#historie}
 

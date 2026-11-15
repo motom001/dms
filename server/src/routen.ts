@@ -188,6 +188,11 @@ export interface Route {
 
 /** Rückmeldung zur Kopie außer Haus per PUT (#585) – nur noch im Übergang für Pakete vor #636; entfällt mit 1.0.0 (uebergaenge.ts, #902). */
 const SICHERUNG_EXTERN_PFAD = '/api/v1/sicherungen/:name/extern';
+/**
+ * Zurückholen entfernter Sicherungen (#976): Pakete mit dms:sicherung-holen haben nur einen Leseschlüssel und liefern
+ * hier die angeforderte Sicherung in Stücken. Die Route prüft Recht, Anforderung, Stelle und Größe.
+ */
+const SICHERUNG_HOLEN_PFAD = '/api/v1/sicherungen/:name/holen';
 
 export interface RoutenExtras {
   /** Rundgänge und Tipps (#831, #832); Standard: aus shared/entdecken. */
@@ -477,7 +482,7 @@ export async function pruefeZugang(r: Route, a: Anfrage, kopf: (n: string) => st
     // Übergang (#636): Pakete für die Kopie außer Haus haben seit 0.158.1 nur noch einen Leseschlüssel und melden ihren
     // Stand in der Antwort auf das Ereignis. Ältere Fassungen dürfen noch per PUT melden (die Route prüft, ob ein Paket
     // mit dms:sicherung-lesen fragt). Entfällt mit 1.0.0 (uebergaenge.ts, #902).
-    const uebergang = r.methode === 'PUT' && r.pfad === SICHERUNG_EXTERN_PFAD;
+    const uebergang = r.methode === 'PUT' && (r.pfad === SICHERUNG_EXTERN_PFAD || r.pfad === SICHERUNG_HOLEN_PFAD);
     if (r.methode !== 'GET' && s.recht === 'lesen' && !uebergang) throw new Fachfehler(403, t('meldungen.routen.dieser-api-schluessel-darf'));
     // #818 (Frage 9 von Sicherheit): API-Schlüssel bekommen nie Verwaltungsrechte – auch nicht von Verwaltenden.
     a.benutzer = { ...b, rolle: 'mitglied' };

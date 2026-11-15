@@ -149,7 +149,7 @@ Auch ein Link zum Zurücksetzen des Passworts fragt danach den Code ab. Handy ve
     - **Wochentage** – Standard Montag bis Freitag. Ohne Wochentag kommt keine Zusammenfassung.
     - **Nicht an Feiertagen** – an gesetzlichen Feiertagen des Bundeslands, das der Administrator gewählt hat, kommt keine (Standard: an). Ohne Bundesland ist der Haken ausgegraut.
 
-- **Favoriten** – **Bei Änderungen an meinen Favoriten benachrichtigen** (Standard: an); das Hervorheben geänderter Mappen steht unter [Darstellung](#geaenderte). Was dahintersteckt, steht unter [Favoriten als Abo](ablage.md#favoriten-als-abo). Hat ein Administrator die Benachrichtigung für deine Rolle abgeschaltet, steht hier statt des ersten Schalters ein Hinweis.
+- **Favoriten** – **Bei Änderungen an meinen Favoriten benachrichtigen** (Standard: an); das Hervorheben geänderter Mappen steht unter [Darstellung](#geaenderte). Was dahintersteckt, steht unter [Favoriten als Abo](ablage.md#favoriten-als-abo). Hat ein Administrator die Benachrichtigung für deine Rolle abgeschaltet, steht hier statt des ersten Schalters ein Hinweis. Darunter **Wenn ein Favorit erwähnt wird**: *sofort* (eine Aufgabe), *in der täglichen Zusammenfassung* (Vorgabe) oder *nie* – siehe [Mappen erwähnen](zusammenarbeit.md#mappen-erwahnen).
 
 ![Mein Konto → Benachrichtigungen](bilder/profil-benachrichtigungen.png){ loading=lazy }
 

@@ -278,11 +278,11 @@ export function routenKontext(dienst: Dienst, konten: Konten, x: RoutenExtras = 
   /** Benutzer mit ihren weiteren Rollen (#27). */
   const mitRollen = async (b: Benutzer) => ({ ...b, rollen: (await dienst.systemtypen.weitereRollen()).get(b.id) ?? [] });
   const sicherung = () => { if (!x.sicherung) throw new Fachfehler(404, t('meldungen.routen.sicherungen-sind-nicht-eingerichtet')); return x.sicherung; };
-  /** Paket mit dms:sicherung-lesen (#585) – Menschen und andere Pakete bekommen 403. */
-  const sicherungsPaket = async (a: Anfrage): Promise<string> => {
+  /** Paket mit dms:sicherung-lesen (#585) bzw. dms:sicherung-holen (#976) – Menschen und andere Pakete bekommen 403. */
+  const sicherungsPaket = async (a: Anfrage, recht: 'dms:sicherung-lesen' | 'dms:sicherung-holen' = 'dms:sicherung-lesen'): Promise<string> => {
     const p = (await zg(a)).paket;
     if (!p) throw new Fachfehler(403, t('pakete.sicherung.nur-pakete'));
-    if (!p.schnittstellen?.includes('dms:sicherung-lesen')) throw new Fachfehler(403, t('pakete.sicherung.recht'));
+    if (!p.schnittstellen?.includes('dms:sicherung-lesen') || !p.schnittstellen.includes(recht)) throw new Fachfehler(403, t('pakete.sicherung.recht'));
     return p.id;
   };
   /**

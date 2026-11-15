@@ -784,6 +784,11 @@ export interface Repo {
 
   /* ---------- Notizen (#55) ---------- */
   notizen(mappeId: string): Promise<Notiz[]>;
+  /**
+   * Wo ist diese Mappe erwähnt (#889)? Notizen und Felder anderer Mappen mit `@[…](mappe:<id>)` bzw. `benutzer:<id>` –
+   * je Stelle die Mappe, `stelle` (`notiz:<id>` oder Feldschlüssel) und wann sie zuletzt geändert wurde. Höchstens 200.
+   */
+  erwaehntIn(mappeId: string): Promise<Array<{ mappeId: string; stelle: string; am: string }>>;
   /** Notizen mehrerer Mappen (#367), je Mappe älteste zuerst. */
   notizenVon(mappeIds: string[]): Promise<Notiz[]>;
   holeNotiz(id: string): Promise<Notiz | undefined>;

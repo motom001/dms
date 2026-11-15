@@ -149,7 +149,7 @@ A link to reset the password also asks for the code afterwards. Lost your phone 
     - **Weekdays** – default Monday to Friday. Without a weekday, no summary comes.
     - **Not on public holidays** – on public holidays of the region the administrator has chosen, none comes (default: on). Without a region, the tick is greyed out.
 
-- **Favourites** – **Notify me of changes to my favourites** (default: on); highlighting changed folders is under [Appearance](#geaenderte). What's behind it is described under [Favourites as a subscription](ablage.md#favoriten-als-abo). If an administrator has switched off the notification for your role, a notice appears here instead of the first switch.
+- **Favourites** – **Notify me of changes to my favourites** (default: on); highlighting changed folders is under [Appearance](#geaenderte). What's behind it is described under [Favourites as a subscription](ablage.md#favoriten-als-abo). If an administrator has switched off the notification for your role, a notice appears here instead of the first switch. Below it, **When a favourite is mentioned**: *right away* (a task), *in the daily summary* (default) or *never* – see [Mentioning folders](zusammenarbeit.md#mappen-erwahnen).
 
 ![My account → Notifications](bilder/profil-benachrichtigungen.png){ loading=lazy }
 

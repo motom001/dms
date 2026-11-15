@@ -547,6 +547,7 @@ export const SCHNITTSTELLEN = {
   'dms:texterkennung': t('gemeinsam.pakete.texterkennung-fuer-scans-und'),
   'dms:umwandeln': t('gemeinsam.pakete.dateien-umwandeln-die-ablago'),
   'dms:sicherung-lesen': t('gemeinsam.pakete.die-verschluesselte-sicherung-lesen'),
+  'dms:sicherung-holen': t('gemeinsam.pakete.sicherung-holen'),
   'dms:volltext': t('gemeinsam.pakete.volltext-fuer-dateien-liefern'),
   'dms:archivfassung': t('gemeinsam.pakete.archivfassung-pdf-a-ablegen'),
   'dms:uebersetzen': t('gemeinsam.pakete.inhalte-uebersetzen'),
@@ -565,7 +566,7 @@ export const DMS_VEKTOREN_AB = '0.120.0';
  */
 export const DMS_ANTWORTEN_AB = '0.124.0';
 /** Hilfe-Ort je Schnittstelle (Administratorhandbuch, Pakete mit Code). */
-export const SCHNITTSTELLE_HILFE: Record<Schnittstelle, Hilfeort> = { 'dms:vektoren': 'pakete.recht.vektoren', 'dms:antworten': 'pakete.recht.antworten', 'dms:erkennen': 'pakete.recht.erkennen', 'dms:texterkennung': 'pakete.recht.texterkennung', 'dms:umwandeln': 'pakete.recht.umwandeln', 'dms:sicherung-lesen': 'pakete.recht.sicherung', 'dms:volltext': 'pakete.recht.volltext', 'dms:archivfassung': 'pakete.recht.archivfassung', 'dms:uebersetzen': 'pakete.recht.uebersetzen', 'dms:klassifizieren': 'pakete.recht.klassifizieren', 'dms:hinweise': 'pakete.recht.hinweise', 'dms:leerseiten': 'pakete.recht.leerseiten', 'dms:anlagen': 'pakete.recht.anlagen' };
+export const SCHNITTSTELLE_HILFE: Record<Schnittstelle, Hilfeort> = { 'dms:vektoren': 'pakete.recht.vektoren', 'dms:antworten': 'pakete.recht.antworten', 'dms:erkennen': 'pakete.recht.erkennen', 'dms:texterkennung': 'pakete.recht.texterkennung', 'dms:umwandeln': 'pakete.recht.umwandeln', 'dms:sicherung-lesen': 'pakete.recht.sicherung', 'dms:sicherung-holen': 'pakete.recht.sicherung', 'dms:volltext': 'pakete.recht.volltext', 'dms:archivfassung': 'pakete.recht.archivfassung', 'dms:uebersetzen': 'pakete.recht.uebersetzen', 'dms:klassifizieren': 'pakete.recht.klassifizieren', 'dms:hinweise': 'pakete.recht.hinweise', 'dms:leerseiten': 'pakete.recht.leerseiten', 'dms:anlagen': 'pakete.recht.anlagen' };
 /**
  * Ab dieser Version (#585) kennt das DMS das Ereignis `sicherung.fertig` und die Schnittstelle `dms:sicherung-lesen`:
  * Ein Paket liest die verschlüsselte Sicherung in Stücken, kopiert sie außer Haus und meldet je Sicherung zurück.
@@ -857,6 +858,8 @@ export function liesCode(c: unknown, dateien: Array<{ name: string; groesse: num
   const willSichern = schnittstellen.includes('dms:sicherung-lesen');
   if (willSichern && !ereignisse.includes('sicherung.fertig')) fehler.push(t('gemeinsam.pakete.code-rechte-schnittstellen-dms-11'));
   if (!willSichern && ereignisse.includes('sicherung.fertig')) fehler.push(t('gemeinsam.pakete.code-ereignisse-sicherung-fertig'));
+  // Entfernte Sicherungen zurückholen (#976): nur zusammen mit dem Lesen – dasselbe Ziel.
+  if (schnittstellen.includes('dms:sicherung-holen') && !willSichern) fehler.push(t('gemeinsam.pakete.code-sicherung-holen'));
   const netz = liste(x.netz, 'code.netz');
   for (const n of netz) {
     let ok = false;

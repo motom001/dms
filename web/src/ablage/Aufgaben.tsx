@@ -95,7 +95,7 @@ function Zeile({ a, neuLaden, setBestaetigt, setFolge, zuNotizen }: { a: Aufgabe
     <li className={meine ? 'meine' : ''}>
       <div className="aufgabentext">
         {/* „Deine Aufgabe:“ (#427) – damit klar ist, dass Erledigt/Weitergeben rechts zur Aufgabe gehören. */}
-        <strong>{meine ? aufgabenBeschriftung(a.art, true) : <>{aufgabenBeschriftung(a.art, false)} {a.empfaengerId ? <Person id={a.empfaengerId} /> : t('konten.verwaltende.ohneEmpfaenger')}</>}:</strong> {a.text}
+        <strong>{meine ? aufgabenBeschriftung(a.art, true, a.anlass) : <>{aufgabenBeschriftung(a.art, false, a.anlass)} {a.empfaengerId ? <Person id={a.empfaengerId} /> : t('konten.verwaltende.ohneEmpfaenger')}</>}:</strong> {a.text}
         {a.art === 'frist' && a.datum && <span className={`chip ${a.datum <= heuteIn() ? 'schlecht' : 'warn'}`} title={t('ablage.aufgaben.frist')}>{noch(a.datum)}</span>}
         <span className="leise klein"> {' '}{t('ablage.aufgaben.seit', { AUFGABENARTEN: AUFGABENARTEN[a.art], datum: datum(a.erstellt) })}{a.erstelltVon && <> {' '}{t('ablage.aufgaben.von')}{' '}<Person id={a.erstelltVon} /></>}</span>
       </div>

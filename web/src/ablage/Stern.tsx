@@ -7,7 +7,8 @@ import { Knopf } from '../bausteine';
 
 /**
  * Favorit (#62): Stern zum Merken einer Mappe. Persönlich – ändert weder „zuletzt geändert“
- * noch das Protokoll. Nach dem Umschalten werden Zähler und Listen neu geladen.
+ * noch das Protokoll. Nach dem Umschalten werden Zähler und Listen neu geladen. Der Hinweis beim Darüberfahren nennt,
+ * was ein Favorit bedeutet (#889): Ändern und Erwähnen anderer melden sich.
  */
 export function Stern({ mappeId, an, titel, anker }: { mappeId: string; an: boolean; titel?: string; anker?: string }) {
   const d = useDaten();
@@ -25,7 +26,7 @@ export function Stern({ mappeId, an, titel, anker }: { mappeId: string; an: bool
   return (
     // Baustein Knopf (#1211): eine Größe überall (Liste und Mappe), 24 px am Rechner, 44 px am Handy.
     <Knopf art="link" className={`stern ${jetzt ? 'an' : ''}`} data-anker={anker} aria-pressed={jetzt}
-      nurSymbol={titel ? `${titel}: ${text}` : text} title={text} onClick={(e) => void umschalten(e)}>
+      nurSymbol={titel ? `${titel}: ${text}` : text} title={`${text} – ${t('ablage.stern.hinweis')}`} onClick={(e) => void umschalten(e)}>
       {/* #507: Symbol statt Textzeichen; gesetzt = gefüllt. */}
       <Symbol name="stern" className={jetzt ? 'sym-voll' : undefined} />
     </Knopf>

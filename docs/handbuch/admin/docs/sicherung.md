@@ -60,6 +60,7 @@ Gut zu wissen:
 - Heruntergeladen wird die Sicherung **verschlüsselt und unverändert**, genau wie sie im Sicherungsordner liegt. Ohne den Schlüssel vom [Notfallblatt](verschluesselung.md#notfallblatt) kann niemand sie lesen – darum gehört das Notfallblatt nicht auf denselben Stick.
 - Dürfen musst du den Bereich **Sicherung** im [Verwaltungsrecht](verwalten.md). Die Metadaten enthalten keinen Schlüssel; für sie fragt Ablago nicht erneut nach dem Passwort.
 - Bricht der Download ab, setzt der Browser ihn fort, wo er aufgehört hat (HTTP-Range). Liegt die Anmeldung dann mehr als 10 Minuten zurück, wähle in der Werkbank erneut **Herunterladen**.
+- Sicherungen, die es **nur noch außer Haus** gibt, stehen mit in der Liste; **Herunterladen** holt sie erst über das Paket des Ziels zurück (siehe [Sicherung außer Haus](sicherung-ausser-haus.md#nur-ausser-haus)).
 - Jedes Herunterladen steht im [Protokoll](fehlersuche.md#protokoll), Modul *sicherung*: wer, wann, welche Sicherung (beim Fortsetzen mit der Stelle). Eine neue Datei legt Ablago dafür nicht an – weder im Sicherungs- noch im Export-Ordner.
 
 ### Kopie am Rechner prüfen { #kopie-prufen }

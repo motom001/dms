@@ -16,6 +16,7 @@ import { t } from './sprache';
 import { gebietsschema } from '../../shared/src/sprache';
 import { GB, MB, STUECK_MAX } from './grenzen';
 import type { Abrufbar } from './http/teilabruf';
+import { EntfernteSicherungen, type HolAufruf } from './sicherung-entfernt';
 
 /**
  * Sicherungen (#103–#105): Datenbank und Dateien zum selben Zeitpunkt, verschlüsselt mit dem
@@ -109,8 +110,11 @@ export interface ExternStand {
 export interface Sicherungsziel { id: string; name: string; adresse: string | null; ziel?: string | null }
 /** Verbindung zu den Paketen (index.ts): Pakete mit dms:sicherung-lesen und das Ereignis sicherung.fertig. */
 export interface ExternAnbindung {
-  pakete(): Promise<Array<{ id: string; name: string; adresse: string | null }>>;
+  /** holen: Das Paket hat auch dms:sicherung-holen (#976). */
+  pakete(): Promise<Array<{ id: string; name: string; adresse: string | null; holen?: boolean }>>;
   melde(daten: SchlankeMetadaten & { name: string }): Promise<void>;
+  /** Aufträge „auflisten“ und „holen“ an ein Paket mit dms:sicherung-holen (#976). */
+  holen?: HolAufruf;
 }
 export { STUECK_MAX };
 const EXTERN_STATUS: ExternStatus[] = ['laeuft', 'hochgeladen', 'geprueft', 'fehlgeschlagen'];
@@ -120,7 +124,7 @@ const erfolgreich = (s: ExternStand) => s.status === 'hochgeladen' || s.status =
 export const ohneZugangsdaten = (t: string) => t.replace(/(\w+:\/\/)[^/@\s]*@/g, '$1');
 
 export interface Lauf {
-  art: 'sicherung' | 'pruefsumme';
+  art: 'sicherung' | 'pruefsumme' | 'holen';
   titel: string;
   status: 'laeuft' | 'fertig' | 'fehler';
   schritt: string;
@@ -255,6 +259,8 @@ export class Sicherung {
   sperre: () => boolean = () => false;
   /** Pakete, die jede Sicherung außer Haus kopieren (#585); null = keine Pakete eingerichtet (Tests, frühe Startphase). */
   extern: ExternAnbindung | null = null;
+  /** Entfernte Sicherungen (#976): auflisten und zurückholen. */
+  readonly entfernt = new EntfernteSicherungen(this);
 
   constructor(
     /** Ordner der Sicherungen (eigenes Volume). */
@@ -378,7 +384,8 @@ export class Sicherung {
     return erg.sort((a, b) => beginn(b).localeCompare(beginn(a)));
   }
 
-  private pfad(name: string) {
+  /** Pfad der Sicherungsdatei; wirft bei ungültigem Namen (auch für entfernte Sicherungen, #976). */
+  pfad(name: string) {
     if (!/^[\w.-]+$/.test(name) || name.startsWith('.')) throw new Fachfehler(422, t('meldungen.sicherung.ungueltiger-name-einer-sicherung'));
     return join(this.ordner, `${name}${ENDUNG}`);
   }
@@ -386,6 +393,8 @@ export class Sicherung {
   async loesche(name: string, von: string) {
     const p = this.pfad(name);
     if (!(await stat(p).catch(() => null))) throw new Fachfehler(404, t('meldungen.sicherung.diese-sicherung-gibt-es'));
+    // Liegt eine Kopie außer Haus, bleibt die Sicherung als entfernte in der Liste (#976).
+    await this.entfernt.merke([name], await this.externStaende());
     await rm(p, { force: true });
     await rm(join(this.ordner, `${name}.json`), { force: true });
     await this.vergissExtern([name]);
@@ -421,6 +430,12 @@ export class Sicherung {
     else log.info('Sicherung heruntergeladen (Teil)', { name, von, ab: bereich.start, bis: bereich.ende, bytes: groesse });
   }
 
+  /** Ergebnis einer Prüfung merken (Spalte „Prüfsumme“); auch nach dem Zurückholen (#976). */
+  async merkePruefung(name: string, ok: boolean) {
+    const alle = ((await this.q.einstellungen.lies('sicherung_pruefungen')) as Record<string, unknown> | null) ?? {};
+    await this.q.einstellungen.schreibe('sicherung_pruefungen', { ...alle, [name]: { am: this.jetzt().toISOString(), ok } });
+  }
+
   /** Prüfsummen-Check: Ist die Datei unverändert seit dem Anlegen? */
   pruefe(name: string, von: string): Lauf {
     const p = this.pfad(name);
@@ -434,8 +449,7 @@ export class Sicherung {
         lauf.gesamt = (await stat(p)).size;
         const sha = await sha256Von(p, (n) => { lauf.bytes = n; });
         const ok = sha === meta.sha256;
-        const alle = ((await this.q.einstellungen.lies('sicherung_pruefungen')) as Record<string, unknown> | null) ?? {};
-        await this.q.einstellungen.schreibe('sicherung_pruefungen', { ...alle, [name]: { am: this.jetzt().toISOString(), ok } });
+        await this.merkePruefung(name, ok);
         lauf.ergebnis = { ok };
         if (ok) log.info('Prüfsumme in Ordnung', { name, von }); else log.error('Prüfsumme weicht ab – die Sicherungsdatei wurde verändert oder ist beschädigt', { name, von });
         lauf.status = 'fertig';
@@ -602,6 +616,7 @@ export class Sicherung {
     const unterwegs = (n: string) => Object.values(liste.find((x) => x.name === n)?.extern ?? {})
       .some((s) => (s.status === 'offen' || s.status === 'laeuft') && jetzt - Date.parse(s.seit) < ZU_ALT_TAGE * TAG_MS);
     const weg = auto.filter((x) => !bleibt.has(x.name) && !unterwegs(x.name)).map((x) => x.name);
+    if (weg.length) await this.entfernt.merke(weg, await this.externStaende()).catch((e) => log.warn('Entfernte Sicherungen nicht gemerkt', { fehler: (e as Error).message }));
     for (const n of weg) {
       await rm(join(this.ordner, `${n}${ENDUNG}`), { force: true });
       await rm(join(this.ordner, `${n}.json`), { force: true });
@@ -881,7 +896,8 @@ export class Sicherung {
   async raeumeTeileAuf() {
     let namen: string[] = [];
     try { namen = await readdir(this.ordner); } catch { return; }
-    for (const n of namen.filter((x) => x.startsWith('.') && x.endsWith('.teil'))) await rm(join(this.ordner, n), { force: true });
+    // Auch angefangenes Zurückholen (#976): Teildatei und Stand.
+    for (const n of namen.filter((x) => (x.startsWith('.') && x.endsWith('.teil')) || x.startsWith('.holen-'))) await rm(join(this.ordner, n), { force: true });
   }
 
   start(ms = 60_000) {

@@ -182,7 +182,7 @@ export function SicherungPanel({ z }: { z: SicherungZustand }) {
             <div className="knoepfe"><Knopf art="haupt" gesperrt={!s.zustand.schluessel} onClick={() => tu(() => betriebApi.sicherungJetzt())}>{t('werkbank.sicherung.jetzt-sichern')}</Knopf></div>
             {/* Ergebnis unter dem Knopf (#986). */}
             {lauf?.status === 'fehler' && <p className="fehlertext" role="alert">{tn('werkbank.sicherung.fehlgeschlagen-2', { titel: lauf.titel, fehler: lauf.fehler })}</p>}
-            {lauf?.status === 'fertig' && lauf.art === 'sicherung' && <p className="gutertext" role="status">{t('werkbank.sicherung.fertig', { titel: lauf.titel, wert: lauf.beendet ? zeit(lauf.beendet) : '' })}</p>}
+            {lauf?.status === 'fertig' && (lauf.art === 'sicherung' || lauf.art === 'holen') && <p className="gutertext" role="status">{t('werkbank.sicherung.fertig', { titel: lauf.titel, wert: lauf.beendet ? zeit(lauf.beendet) : '' })}</p>}
           </>
         )}
         {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
