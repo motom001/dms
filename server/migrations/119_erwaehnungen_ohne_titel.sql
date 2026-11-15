@@ -10,7 +10,8 @@
 -- „@Titel“ steht.
 -- Dort ersetzt die Migration „@Titel“ durch „@…“ für jeden Titel, der vorher in einer Erwähnung derselben Mappe stand
 -- (Werte, Notizen, Papierkorb, Historie) – auch abgeschnitten am Ende einer Vorschau („@Titel …“).
--- Ältere Sicherungen laufen beim Wiederherstellen durch dieselbe Migration.
+-- Zwischengespeicherte Übersetzungen werden verworfen. Ältere Sicherungen laufen beim Wiederherstellen durch dieselbe
+-- Migration.
 
 CREATE FUNCTION dms_119_ohne_titel(t text) RETURNS text LANGUAGE sql IMMUTABLE AS $$
   SELECT regexp_replace(t, '@\[[^]\n]{1,80}\]\((benutzer|mappe):([0-9a-fA-F-]{36})\)', '@[](\1:\2)', 'gi')
@@ -97,6 +98,10 @@ UPDATE papierkorb SET notizen = (
   SELECT coalesce(jsonb_agg(CASE WHEN jsonb_typeof(x -> 'text') = 'string' THEN jsonb_set(x, '{text}', to_jsonb(dms_119_ohne_titel(x ->> 'text'))) ELSE x END ORDER BY i), '[]'::jsonb)
   FROM jsonb_array_elements(notizen) WITH ORDINALITY AS e(x, i))
   WHERE jsonb_typeof(notizen) = 'array' AND notizen::text LIKE '%@[%](%:%';
+
+-- 4. Zwischengespeicherte Übersetzungen (#732, Kurzzustand) können Titel aus Erwähnungen enthalten: verwerfen. Sie
+--    entstehen beim nächsten Abruf neu, dann aus dem Text ohne Titel.
+DELETE FROM kurzzustand WHERE art = 'uebersetzung';
 
 DROP FUNCTION dms_119_historie(jsonb, text[]);
 DROP FUNCTION dms_119_klartext(text, text[]);
