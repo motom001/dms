@@ -400,6 +400,9 @@ begriffe:
   Postfach:
     begriff: Mailbox
     beschreibung: A connected email account (IMAP) from which Ablago fetches post.
+  Störung:
+    begriff: Problem
+    beschreibung: Fetching a mailbox is currently failing – shown in red in the area "Status" with "Failing since …" and the way to fix it. Once fetching works again, it becomes an earlier problem with "resolved on …", quiet and collapsed.
   Eingangsordner:
     begriff: Intake folder
     beschreibung: A folder that Ablago watches, e.g. for "Scan to Folder". Every file in it becomes post.

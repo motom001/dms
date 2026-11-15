@@ -60,6 +60,7 @@ export const HILFE = {
   'werkbank.texterkennung.umwandlung': admin('texterkennung/', 'Andere Dateitypen', 'andere-dateitypen'),
   'werkbank.texterkennung.archivfassung': admin('texterkennung/', 'Archivfassung (PDF/A)', 'archivfassung-pdfa'),
   'werkbank.eingangsordner': admin('eingangsordner/', 'Eingangsordner'),
+  'werkbank.eingangsordner.personen': admin('eingangsordner/', 'Ordner je Person', 'ordner-je-person'),
   'werkbank.webdav': admin('webdav/', 'WebDAV-Laufwerk'),
   'webdav.stempel': admin('webdav/', 'Stempel beim Lesen', 'stempel-beim-lesen'),
   'webdav.nurLesend': admin('webdav/', 'Nur lesend', 'nur-lesend'),

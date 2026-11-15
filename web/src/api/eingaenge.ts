@@ -40,7 +40,7 @@ export type OAuthAnbieter = 'microsoft' | 'google' | 'andere';
 export interface OAuthAppAnsicht { clientId: string; secretGesetzt: boolean; tenant?: string; autorisierung?: string; token?: string; geraet?: string; bereich?: string }
 export interface OAuthAppEingabe { clientId: string; clientSecret?: string; clientSecretLoeschen?: boolean; tenant?: string; autorisierung?: string; token?: string; geraet?: string; bereich?: string }
 export interface OAuthAppsStand { apps: Partial<Record<OAuthAnbieter, OAuthAppAnsicht>>; rueckruf: string }
-export interface PostfachEreignis { zeit: string; betreff?: string; absender?: string; mappeId?: string; fehler?: string }
+export interface PostfachEreignis { zeit: string; betreff?: string; absender?: string; mappeId?: string; fehler?: string; behobenAm?: string }
 export interface PostfachAnsicht extends Omit<PostfachEingabe, 'passwort' | 'absender'> {
   id: string; absender: string[]; passwortGesetzt: boolean; oauth: OAuthStatus | null;
   stand: { letzterAbruf: string | null; naechsterAbruf: string | null; fehlerFolge: number; uebernommen: PostfachEreignis[]; fehler: PostfachEreignis[] };

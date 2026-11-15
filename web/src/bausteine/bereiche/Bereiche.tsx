@@ -9,7 +9,8 @@ import s from './Bereiche.module.css';
  *
  * - `useBereiche(liste, editor, id)` hält, welche Bereiche offen sind: neu (`id` null) = alles offen, bestehend = wie
  *   zuletzt auf diesem Gerät (sonst zu, mit `{ offen: true }` offen – für Editoren ohne Speichern), ein Anker in der
- *   Adresse (`#felder`) öffnet seinen Bereich und springt hin.
+ *   Adresse (`#felder`) öffnet seinen Bereich und springt hin. `{ immerOffen: [k] }` öffnet `k` bei jedem Anzeigen
+ *   (z. B. die Vorschau des Stempels, #1185).
  * - Ein Sprung aus der Leiste öffnet den Bereich, rollt hin und setzt den Fokus auf seinen Kopf.
  * - `leiste()` zeichnet oben die Sprungleiste mit „Alle aufklappen / Alle zuklappen“ – erst ab drei Bereichen
  *   (`SPRUNGLEISTE_AB`). Kleinere Editoren zeigen ihre Bereiche fest offen, ohne Leiste und ohne Klappen.
@@ -129,6 +130,11 @@ export interface BereicheOptionen {
    * Ansehen und Sofortaktionen, z. B. die Datenschutz-Auskunft), wo man sonst vor jeder Handlung erst aufklappen müsste.
    */
   offen?: boolean;
+  /**
+   * Bereiche, die bei jedem Anzeigen offen stehen – zusätzlich zu den gemerkten (#1185, z. B. die Vorschau des
+   * Stempels: Wer Grunddaten oder Aussehen aufklappt, sieht die Wirkung sofort darunter). Zuklappen geht weiterhin.
+   */
+  immerOffen?: readonly string[];
 }
 
 /**
@@ -139,6 +145,7 @@ export function useBereiche<K extends string>(liste: BereichListe<K>, editor: st
   const [auf, setAuf] = useState<Set<K>>(() => {
     const alle = liste.map(([k]) => k);
     const x = new Set<K>(!id ? alle : liesOffen<K>(editor, id) ?? (optionen.offen ? alle : []));
+    for (const k of alle) if (optionen.immerOffen?.includes(k)) x.add(k);
     const h = anker();
     if (liste.some(([k]) => k === h)) x.add(h as K);
     return x;

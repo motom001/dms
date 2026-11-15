@@ -30,7 +30,15 @@ Ablago can **fetch one or more email mailboxes via IMAP** and take over **every 
 
 **Test connection** signs in, names the number of emails in the folder and says in case of errors what the cause is: sign-in refused, server unreachable, certificate invalid. A stored password (or the OAuth sign-in) only goes to the stored server, port and encryption: if you change one of them, enter the password anew (or save and sign in anew). **Fetch now** (area *Status*) fetches immediately. **Remove mailbox** (bottom left) deletes the mailbox from Ablago after a confirmation; the emails in the mailbox stay as they are.
 
-Under *Status* are the last fetch, the emails taken over most recently with a link to the post, and errors. If fetching fails several times in a row, Ablago waits longer and longer between attempts (up to 6 hours) and writes an email to the administrators after the third error.
+### Status { #stand }
+
+At the top of *Status*, one sentence says whether fetching works:
+
+- **Running** – "Running – last fetched 15/11/2026, 10:41, next fetch 15/11/2026, 10:56." in normal text.
+- **Failing** – in red: "Failing since 09/11/2026, 14:02 – 3 attempts failed: …" with the reason for the last error and the next attempt. Next to it, **Check connection** leads to the area *Connection* (with an expired OAuth sign-in, **Go to sign-in** leads to the area *Sign-in via OAuth 2.0*). Collapsed, *Status* then shows "failing since …".
+- **Not fetched yet**, or **Off** if the checkbox *Fetch* is off.
+
+Below are **Fetch now** and the emails taken over most recently with a link to the post. Errors after which fetching worked again are not red: they are collapsed under **Earlier problems**, each with "resolved on …" (the time of the next successful fetch; for errors from older versions "resolved since"). If fetching fails several times in a row, Ablago waits longer and longer between attempts (up to 6 hours) and writes an email to the administrators after the third error.
 
 ## App passwords { #app-passworter }
 

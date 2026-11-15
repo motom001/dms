@@ -952,6 +952,12 @@ begriffe:
     beschreibung: Ein angebundenes E-Mail-Konto (IMAP), aus dem Ablago Post abholt.
     einsteiger: erklaeren
     begegnet: admin
+  - begriff: Störung
+    bereich: werkbank
+    beschreibung: Ein Abruf eines Postfachs schlägt gerade fehl – rot im Bereich „Stand“ mit „Gestört seit …“ und dem Weg zur Abhilfe. Klappt der Abruf wieder, wird sie zur früheren Störung mit „behoben am …“, leise und zugeklappt.
+    einsteiger: alltag
+    begegnet: admin
+    verwandt: [Postfach]
   - begriff: Eingangsordner
     bereich: werkbank
     beschreibung: Ein Ordner, den Ablago beobachtet, z. B. für „Scan to Folder“. Jede Datei darin wird Post.

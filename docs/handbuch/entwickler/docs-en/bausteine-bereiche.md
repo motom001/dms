@@ -7,7 +7,7 @@
 ## Behaviour { #verhalten }
 
 - **New** (`id` is `null`): everything open, nothing is remembered.
-- **Existing:** as last time on this device (`localStorage`, per editor the 200 entries edited last); without memory collapsed. **Editors without saving** (viewing and immediate actions only, e.g. the data protection request) pass `{ offen: true }` and start expanded as long as the device has remembered nothing. Folder types and views keep their previous storage keys (`dms.typeditor.offen`, `dms.sichteditor.offen`), all others are called `dms.<editor>editor.offen`.
+- **Existing:** as last time on this device (`localStorage`, per editor the 200 entries edited last); without memory collapsed. **Editors without saving** (viewing and immediate actions only, e.g. the data protection request) pass `{ offen: true }` and start expanded as long as the device has remembered nothing. Sections in `{ immerOffen: [...] }` are expanded every time the editor is shown, in addition to the remembered ones – such as the stamp preview, so every change to the basics or the appearance is visible right below. Folder types and views keep their previous storage keys (`dms.typeditor.offen`, `dms.sichteditor.offen`), all others are called `dms.<editor>editor.offen`.
 - **Anchor in the address** (`…/werkbank/postfaecher/<id>#verbindung`) opens its area and jumps there.
 - **Jump bar:** every jump opens its area, scrolls there and moves the focus to the head of the area (`focus({ preventScroll: true })`) – with the keyboard, Tab then continues inside the area; an area with an error is red and carries "!". On the desktop the bar stays below the page header, on the phone (up to 700 px) it scrolls along.
 - **Fewer than three areas** (`SPRUNGLEISTE_AB`): neither bar nor collapsing. The areas are always open, only with their title.
@@ -40,7 +40,7 @@ const hatFehler = (k: PfBereich) => fehlerOrte.has(k);
 
 | Part | What for |
 | --- | --- |
-| `useBereiche(liste, editor, id, optionen?)` | state: `auf`, `klappe(k, fehler?)`, `oeffne(ks, springen?, fokus?)`, `leiste(fehler?, beschriftung?)`, `merke(neueId)`, `mitLeiste`; `optionen.offen` for editors without saving |
+| `useBereiche(liste, editor, id, optionen?)` | state: `auf`, `klappe(k, fehler?)`, `oeffne(ks, springen?, fokus?)`, `leiste(fehler?, beschriftung?)`, `merke(neueId)`, `mitLeiste`; `optionen.offen` for editors without saving, `optionen.immerOffen` for sections expanded every time |
 | `Bereich` | `id` (also the anchor), `titel`, `klappe`; plus `hilfe` (help symbol after the title), `kurz` (summary when collapsed), `beschreibung` (sentence above the content), `className` |
 | `fehlerBereiche(fehler, liste, ersatz)` | areas of an error on saving: `details.orte` of the server's response, known ones only; otherwise `ersatz` |
 | `liesOffen`, `merkeOffen` | the memory directly, e.g. for tests |

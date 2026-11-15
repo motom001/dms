@@ -473,6 +473,10 @@ Siehe auch: [Werkbank-Karte](#werkbank-karte), [Automatisierungsvorlage](#automa
 Das Datumsfeld, ab dem die Frist im Archivmodus läuft – bis zum 31.12. seines Jahres plus die Jahre. Ist es leer, zählt das Anlagedatum der Mappe oder, mit „läuft noch nicht ab“, die Frist beginnt erst, wenn es gefüllt ist.  
 Siehe auch: [Archivmodus](#archivmodus).
 
+<a id="storung"></a>**Störung** · ✓ Alltagswort · Administratoren  
+Ein Abruf eines Postfachs schlägt gerade fehl – rot im Bereich „Stand“ mit „Gestört seit …“ und dem Weg zur Abhilfe. Klappt der Abruf wieder, wird sie zur früheren Störung mit „behoben am …“, leise und zugeklappt.  
+Siehe auch: [Postfach](#postfach).
+
 <a id="suche-und-volltext"></a>**Suche und Volltext** · ~ mit Erklärung · Administratoren  
 Der Werkbank-Bereich unter Post und Eingänge für Texterkennung, Archivfassung, Tippfehler und den Weg zu den gleichbedeutenden Wörtern. „Neue PDFs automatisch verkleinern“ steht seit
 

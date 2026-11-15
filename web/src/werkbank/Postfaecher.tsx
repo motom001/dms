@@ -8,6 +8,7 @@ import { geheZu, Link, loeseWache } from '../ort';
 import { Speicherleiste, useEntwurf, useGespeichertNachziehen } from '../Speicherleiste';
 import { Hilfe } from '../Hilfe';
 import { Listenkopf } from '../Listenkopf';
+import { PostfachStand } from './PostfachStand';
 import { gebietsschema } from '../../../shared/src/sprache';
 import { Bereich, Fassungen, fehlerBereiche, Feld, GeloeschteEintraege, HakenFeld, Knopf, KnopfLink, Schalter, useBereiche, type BereichListe, type Klappe, type KnopfErgebnis } from '../bausteine';
 
@@ -102,7 +103,7 @@ export function PostfaecherListe({ z, offen }: { z: PostfachZustand; offen?: str
 }
 
 /** Bereiche eines Postfachs (#1000): Anmeldung beim Anbieter nur mit OAuth, der Stand erst nach dem Anlegen. */
-type PostfachBereich = 'grunddaten' | 'verbindung' | 'abholen' | 'anbieter' | 'stand' | 'fassungen';
+export type PostfachBereich = 'grunddaten' | 'verbindung' | 'abholen' | 'anbieter' | 'stand' | 'fassungen';
 function postfachBereiche(oauth: boolean, gespeichert: boolean): BereichListe<PostfachBereich> {
   return [
     ['grunddaten', t('werkbank.postfaecher.bereich.grunddaten')], ['verbindung', t('werkbank.postfaecher.bereich.verbindung')],
@@ -226,7 +227,7 @@ export function PostfachEditor({ z, id }: { z: PostfachZustand; id: string }) {
           <HakenFeld beschriftung={t('werkbank.postfaecher.original-mail-als-eml')}><input id="pf-original" type="checkbox" checked={e.original} onChange={(x) => setze({ original: x.target.checked })} /></HakenFeld>
         </Bereich>
       </form>
-      {vorhanden && <PostfachStand p={vorhanden} klappe={klappe('stand')} geaendert={ent.geaendert} abrufen={abrufen} />}
+      {vorhanden && <PostfachStand p={vorhanden} klappe={klappe('stand')} geaendert={ent.geaendert} abrufen={abrufen} oeffne={(x) => b.oeffne([x], true, true)} />}
       {vorhanden && <Fassungen art="postfach" eintrag={vorhanden.id} stand={JSON.stringify(gespeichert)} nachher={() => z.laden()} klappe={klappe('fassungen')} />}
       <Speicherleiste ent={ent} gegenstand={t('werkbank.postfaecher.postfach')} sendet={sendet} formular="pf-formular"
         loeschen={vorhanden ? {
@@ -279,24 +280,6 @@ function Verbindung({ e, vorhanden, setze, bestaetigt, setBestaetigt, klappe, te
           <HakenFeld beschriftung={t('werkbank.postfaecher.trotzdem-ohne-verschluesselung')}><input id="pf-unsicher" type="checkbox" checked={bestaetigt} onChange={(x) => setBestaetigt(x.target.checked)} /></HakenFeld></div>
       )}
       <div className="knoepfe"><Knopf onClick={testen} laeuftText={t('werkbank.postfaecher.verbinde')}>{t('werkbank.postfaecher.verbindung-testen')}</Knopf></div>
-    </Bereich>
-  );
-}
-
-/** Stand des Abrufs (#196): letzter und nächster Abruf, „Jetzt abrufen“ (Sofortaktion), zuletzt Übernommenes und Fehler. */
-function PostfachStand({ p, klappe, geaendert, abrufen }: { p: PostfachAnsicht; klappe: Klappe; geaendert: boolean; abrufen: () => Promise<KnopfErgebnis | undefined> }) {
-  const s = p.stand;
-  return (
-    <Bereich id="stand" titel={t('werkbank.postfaecher.stand')} klappe={klappe}
-      kurz={[s.letzterAbruf ? t('werkbank.postfaecher.zuletzt', { zeit: zeit(s.letzterAbruf) }) : t('werkbank.postfaecher.noch-nicht-abgerufen'), s.fehlerFolge > 0 ? t('werkbank.postfaecher.fehler') : ''].filter(Boolean).join(' · ')}>
-      <dl className="eigenschaften">
-        <dt>{t('werkbank.postfaecher.letzter-abruf')}</dt><dd>{s.letzterAbruf ? zeit(s.letzterAbruf) : '–'}</dd>
-        {s.naechsterAbruf && <><dt>{t('werkbank.postfaecher.naechster-versuch')}</dt><dd>{zeit(s.naechsterAbruf)}{s.fehlerFolge > 1 ? t('werkbank.postfaecher.nach-fehlern-mit-laengerem', { fehlerFolge: s.fehlerFolge }) : ''}</dd></>}
-      </dl>
-      <div className="knoepfe"><Knopf gesperrt={geaendert && t('werkbank.postfaecher.erst-speichern')} onClick={abrufen} laeuftText={t('werkbank.postfaecher.rufe-ab')}>{t('werkbank.postfaecher.jetzt-abrufen')}</Knopf></div>
-      {s.uebernommen.length > 0 && <><h3 className="h4">{t('werkbank.postfaecher.zuletzt-uebernommen')}</h3>
-        <ul>{s.uebernommen.map((u) => <li key={`${u.zeit}-${u.mappeId}`}>{zeit(u.zeit)}: {u.mappeId ? <Link to={`/ablage/eingang/${u.mappeId}`} className="verweis">{u.betreff || t('werkbank.postfaecher.ohne-betreff')}</Link> : u.betreff} <span className="leise">– {u.absender}</span></li>)}</ul></>}
-      {s.fehler.length > 0 && <><h3 className="h4">{t('werkbank.postfaecher.fehler')}</h3><ul>{s.fehler.map((f) => <li key={f.zeit}>{zeit(f.zeit)}: {f.fehler}</li>)}</ul></>}
     </Bereich>
   );
 }

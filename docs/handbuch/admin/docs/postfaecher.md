@@ -30,7 +30,15 @@ Ablago kann ein oder mehrere **E-Mail-Postfächer per IMAP abholen** und **jede 
 
 **Verbindung testen** meldet sich an, nennt die Zahl der Mails im Ordner und sagt bei Fehlern, woran es liegt: Anmeldung abgelehnt, Server nicht erreichbar, Zertifikat ungültig. Ein gespeichertes Passwort (oder die OAuth-Anmeldung) geht dabei nur an den gespeicherten Server, Port und die gespeicherte Verschlüsselung: Änderst du eins davon, gib das Passwort neu ein (bzw. speichere und melde dich neu an). **Jetzt abrufen** (Bereich *Stand*) holt sofort ab. **Postfach entfernen** (links unten) löscht das Postfach aus Ablago, nach einer Rückfrage; die Mails im Postfach bleiben, wie sie sind.
 
-Unter *Stand* stehen der letzte Abruf, die zuletzt übernommenen Mails mit Link zur Post und Fehler. Schlägt der Abruf mehrmals hintereinander fehl, wartet Ablago immer länger zwischen den Versuchen (bis 6 Stunden) und schreibt den Administratoren nach dem dritten Fehler eine Mail.
+### Stand { #stand }
+
+Ganz oben unter *Stand* steht in einem Satz, ob der Abruf läuft:
+
+- **Läuft** – „Läuft – zuletzt abgerufen 15.11.26, 10:41, nächster Abruf 15.11.26, 10:56.“ in normaler Schrift.
+- **Gestört** – rot: „Gestört seit 09.11.26, 14:02 – 3 Versuche gescheitert: …“ mit dem Grund des letzten Fehlers und dem nächsten Versuch. Daneben führt **Verbindung prüfen** zum Bereich *Verbindung* (bei abgelaufener OAuth-Anmeldung **Zur Anmeldung** zum Bereich *Anmeldung per OAuth 2.0*). Eingeklappt zeigt *Stand* dann „gestört seit …“.
+- **Noch nicht abgerufen** oder **Aus**, wenn der Haken *Abrufen* aus ist.
+
+Darunter stehen **Jetzt abrufen** und die zuletzt übernommenen Mails mit Link zur Post. Fehler, nach denen der Abruf wieder geklappt hat, sind nicht rot: Sie stehen zugeklappt unter **Frühere Störungen**, je mit „behoben am …“ (der Zeitpunkt des nächsten erfolgreichen Abrufs; bei Fehlern aus älteren Versionen „seitdem behoben“). Schlägt der Abruf mehrmals hintereinander fehl, wartet Ablago immer länger zwischen den Versuchen (bis 6 Stunden) und schreibt den Administratoren nach dem dritten Fehler eine Mail.
 
 ## App-Passwörter
 

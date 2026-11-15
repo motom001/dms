@@ -60,7 +60,8 @@ export interface Postfach {
 }
 export type PostfachAnsicht = Omit<Postfach, 'passwort'> & { passwortGesetzt: boolean; stand: PostfachStand; /** #358: ohne Token. */ oauth: OAuthStatus | null };
 
-export interface PostfachEreignis { zeit: string; betreff?: string; absender?: string; mappeId?: string; fehler?: string }
+/** `behobenAm` (#1186): beim Fehler der Zeitpunkt des nächsten erfolgreichen Abrufs – dann ist er eine frühere Störung. */
+export interface PostfachEreignis { zeit: string; betreff?: string; absender?: string; mappeId?: string; fehler?: string; behobenAm?: string }
 export interface PostfachStand { letzterAbruf: string | null; naechsterAbruf: string | null; fehlerFolge: number; uebernommen: PostfachEreignis[]; fehler: PostfachEreignis[] }
 
 /** Zugangsdaten mit Klartext-Passwort bzw. Zugriffstoken (OAuth, #358), nur für die Verbindung. */
@@ -378,7 +379,9 @@ export class Postfaecher {
     try {
       const s = await this.d.verbinde(await this.zugang(p), p.ordner);
       try { n = await this.uebernimmAlle(p, s); } finally { await s.schliessen().catch(() => {}); }
-      await this.setzeStand(p.id, (st) => ({ ...st, letzterAbruf: new Date(this.jetzt()).toISOString(), fehlerFolge: 0 }));
+      // Geht der Abruf wieder, sind die Fehler der Störung behoben (#1186): Zeitpunkt vermerken.
+      const jetzt = new Date(this.jetzt()).toISOString();
+      await this.setzeStand(p.id, (st) => ({ ...st, letzterAbruf: jetzt, fehlerFolge: 0, fehler: st.fehler.map((f, i) => (i < st.fehlerFolge && !f.behobenAm ? { ...f, behobenAm: jetzt } : f)) }));
       this.naechster.set(p.id, this.jetzt() + p.abstand * 60_000);
       return n;
     } catch (e) {
