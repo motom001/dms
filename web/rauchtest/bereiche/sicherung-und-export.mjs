@@ -170,9 +170,13 @@ rauchtest('Werkbank: Sicherungen nur außer Haus in der Liste, axe hell und dunk
   assert.match(await zeilen.nth(1).getByRole('link', { name: 'Anleitung' }).getAttribute('href'), /wiederherstellen\/#aus-einer-kopie-ausser-haus$/);
   assert.equal(await zeilen.nth(1).getByRole('button').count(), 0, 'kein toter Knopf');
   await bearbeitung.getByRole('button', { name: 'Ziele außer Haus neu abfragen' }).waitFor();
+  // axe hell und dunkel ohne Maus über den Knöpfen und erst nach dem Farbübergang (Hover und Übergang beim Wechsel des
+  // Schemas verfälschen sonst den Kontrast, vgl. #1189).
   const funde = [];
+  await s.mouse.move(0, 0);
   for (const schema of ['light', 'dark']) {
     await s.emulateMedia({ colorScheme: schema });
+    await s.waitForFunction(() => document.getAnimations().every((a) => a.playState !== 'running'));
     for (const v of await axePruefen(s, ['#liste'])) funde.push(`${schema}: ${v}`);
   }
   assert.deepEqual(funde, [], `axe meldet Verstöße:\n${funde.join('\n')}`);
