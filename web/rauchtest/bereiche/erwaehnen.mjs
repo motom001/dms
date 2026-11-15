@@ -1,5 +1,5 @@
 /**
- * Rauchtests: Erwähnen mit @ – alle Mappen (#889). Auswahl mit Mappentyp vor dem Titel, „Erwähnen“ in der Leiste,
+ * Rauchtests: Erwähnen mit @ – alle Mappen (#889), ohne Pause weitertippen (#1267). Auswahl mit Mappentyp vor dem Titel, „Erwähnen“ in der Leiste,
  * Anzeige mit aktuellem Titel (gespeichert nur die Kennung, #1293), Hinweis „Erwähnt in …“ in der erwähnten Mappe; axe hell und dunkel, Tippflächen am Handy.
  * Allein starten (frisch gestartetes Ablago, siehe rauchtest.mjs): node web/rauchtest/bereiche/erwaehnen.mjs [fehlerordner] [musterordner]
  */
@@ -27,9 +27,9 @@ rauchtest('Erwähnen mit @: Mappe auswählen, aktueller Titel, Hinweis in der er
   await notizen(s, quelle);
   // „Erwähnen“ in der Leiste öffnet dieselbe Auswahl wie @.
   await s.getByRole('button', { name: 'Erwähnen' }).last().click();
-  // Erst tippen, wenn das @ im Feld steht (sonst überschreibt das Einsetzen die ersten Zeichen).
-  await s.waitForFunction(() => document.querySelector('#neue-notiz')?.value === '@');
+  // Ohne Pause weitertippen (#1267): Kein Zeichen darf verloren gehen.
   await s.keyboard.type('Erwähnziel Eins');
+  assert.equal(await s.locator('#neue-notiz').inputValue(), '@Erwähnziel Eins');
   const auswahl = s.getByRole('listbox', { name: 'Mappe oder Benutzer erwähnen' });
   const option = auswahl.getByRole('option', { name: /Kellerraum · Erwähnziel Eins/ });
   await option.waitFor();
@@ -57,8 +57,10 @@ rauchtest('Erwähnen mit @: Mappe auswählen, aktueller Titel, Hinweis in der er
   }
   await notizen(s, quelle);
   await s.getByRole('button', { name: 'Erwähnen' }).last().click();
-  await s.waitForFunction(() => document.querySelector('#neue-notiz')?.value === '@');
   await s.keyboard.type('Erwähnziel');
+  // Auch nach einem @ von Hand: alles kommt an (#1267).
+  await s.keyboard.type(' und @Erwähnquelle');
+  assert.equal(await s.locator('#neue-notiz').inputValue(), '@Erwähnziel und @Erwähnquelle');
   await auswahl.getByRole('option').first().waitFor();
   for (const schema of ['light', 'dark']) {
     await schemaWechseln(s, schema);

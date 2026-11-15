@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Symbol } from '../Symbol';
 import { erwaehnung, erwaehnungen, mitTiteln, zerlege, type Block, type Inline } from '../../../shared/src/markdown';
 import { abwesenheitText, useDaten } from '../daten';
@@ -148,10 +148,23 @@ export function FormatiertEingabe({ id, wert: gespeichert, setze, rahmen, unter 
   const [suche, setSuche] = useState<{ start: number; text: string } | null>(null);
   const [aktiv, setAktiv] = useState(0);
   const [ort, setOrt] = useState<{ top: number; left: number; oben: boolean } | null>(null);
+  /**
+   * Schreibmarke nach dem Einsetzen (#1267): gleich nach dem Zeichnen setzen, nicht erst im nächsten Bild – sonst landen
+   * schnell getippte Zeichen davor oder gehen verloren. `suchen`: danach die Auswahl nach @ prüfen.
+   */
+  const marke = useRef<{ von: number; bis: number; suchen?: boolean } | null>(null);
+  useLayoutEffect(() => {
+    const m = marke.current, el = feld.current;
+    if (!m || !el) return;
+    marke.current = null;
+    el.setSelectionRange(m.von, m.bis);
+    if (m.suchen) pruefeErwaehnung(el.value, m.bis);
+  });
 
   function einfuegen(w: Werkzeug) {
     const el = feld.current;
     if (!el) return;
+    el.focus();
     const [a, e] = [el.selectionStart, el.selectionEnd];
     let auswahl = wert.slice(a, e) || w.platzhalter;
     let start = a;
@@ -163,8 +176,8 @@ export function FormatiertEingabe({ id, wert: gespeichert, setze, rahmen, unter 
       vor = '';
     }
     const neu = wert.slice(0, start) + vor + auswahl + (w.nach ?? '') + wert.slice(w.zeile ? Math.max(e, start) : e);
+    marke.current = { von: start + vor.length, bis: start + vor.length + auswahl.length };
     setze(neu);
-    requestAnimationFrame(() => { el.focus(); const s = start + vor.length; el.setSelectionRange(s, s + auswahl.length); });
   }
 
   // @-Erwähnung: Wort nach @ bis zum Cursor.
@@ -198,20 +211,24 @@ export function FormatiertEingabe({ id, wert: gespeichert, setze, rahmen, unter 
     if (!el || !suche) return;
     const ende = el.selectionStart;
     const einsatz = `${erwaehnung(p.name, p.id)} `;
+    el.focus();
+    marke.current = { von: suche.start + einsatz.length, bis: suche.start + einsatz.length };
     setze(wert.slice(0, suche.start) + einsatz + wert.slice(ende));
     setSuche(null);
-    requestAnimationFrame(() => { el.focus(); const s = suche.start + einsatz.length; el.setSelectionRange(s, s); });
   }
 
-  /** „Erwähnen“ (#889): ein @ an der Schreibmarke (mit Leerzeichen davor, wenn nötig) und die Auswahl öffnen. */
+  /**
+   * „Erwähnen“ (#889): ein @ an der Schreibmarke (mit Leerzeichen davor, wenn nötig) und die Auswahl öffnen. Der Fokus
+   * geht sofort ins Feld (#1267): Wer gleich weitertippt, verliert kein Zeichen.
+   */
   function erwaehnen() {
     const el = feld.current;
     if (!el) return;
+    el.focus();
     const [a, e] = [el.selectionStart, el.selectionEnd];
     const vor = a > 0 && !/\s/.test(wert[a - 1]) ? ' @' : '@';
-    const neu = wert.slice(0, a) + vor + wert.slice(e);
-    setze(neu);
-    requestAnimationFrame(() => { el.focus(); const p = a + vor.length; el.setSelectionRange(p, p); pruefeErwaehnung(neu, p); });
+    marke.current = { von: a + vor.length, bis: a + vor.length, suchen: true };
+    setze(wert.slice(0, a) + vor + wert.slice(e));
   }
 
   return (
