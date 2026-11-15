@@ -32,7 +32,7 @@ Bereiche, in denen du etwas anlegst und bearbeitest – egal ob viele oder wenig
 
 Unter jedem Treffer steht, **wo** Ablago das Wort gefunden hat – fett der Bereich, dahinter die Stelle mit dem hervorgehobenen Wort, z. B. „Feld „Kündigen bis“ · Hilfetext: … bis wann du **kündigen** musst …“. Mehr als zwei Fundstellen fasst „+ 3 weitere“ zusammen. Ein Treffer im Namen ist im Namen selbst hervorgehoben. Findet die Suche nichts, setzt **Suche und Filter zurücksetzen** alles zurück.
 
-Wo Einträge aus [Paketen](pakete.md) kommen, gibt es den Filter **Paket**: *Alle*, *Eigene (ohne Paket)* oder ein Paket, z. B. nur *Haushalt*. Zur Wahl stehen die Pakete, die in der Liste vorkommen. Suche und Filter wirken zusammen; die Trefferzahl zeigt das Ergebnis.
+Wo Einträge aus [Paketen](pakete.md) kommen, gibt es den Filter **Paket**: *Alle*, *Eigene (ohne Paket)* oder ein Paket, z. B. nur *Haushalt*. Fest eingebaute Einträge wie die Mappentypen *Benutzer*, *Post* und *Rolle* stehen unter *Ablago (eingebaut)*, nicht bei den eigenen. Zur Wahl stehen die Pakete, die in der Liste vorkommen. Suche und Filter wirken zusammen; die Trefferzahl zeigt das Ergebnis.
 
 Das **Suchfeld oben in der Kopfzeile** der Ablage gibt es in der Werkbank nicht – hier suchst du in den Listen der Mitte. Der **Assistent** unten rechts ist auch hier da: Unter **Handbuch** sucht er in der Werkbank im **Admin-Handbuch** (in der Ablage im Benutzerhandbuch), ohne Internet im Handbuch, das deine Installation mitbringt; dazu **Tipps** und, mit einem Antwort-Paket, **Fragen** ([Benutzerhandbuch: Assistent](https://help.ablago.app/benutzer/aktuell/assistent/)).
 

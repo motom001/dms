@@ -522,6 +522,7 @@
   "suche.paket": "Paket",
   "suche.paket.alle": "Alle",
   "suche.paket.eigene": "Eigene (ohne Paket)",
+  "suche.paket.eingebaut": "Ablago (eingebaut)",
   "suche.keine": "Keine Treffer.",
   "suche.zuruecksetzen": "Suche und Filter zurücksetzen",
   "suche.weitere_one": "+ {zahl} weitere",

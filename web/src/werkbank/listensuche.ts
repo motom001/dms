@@ -6,7 +6,7 @@
 import type { NummernkreisAnsicht } from '../api/werkbank';
 import { feldHilfe, feldLabel, listenName, registerName, typBeschreibung, typName } from '../../../shared/src/beschriftung';
 import type { InstalliertesPaket } from '../../../shared/src/pakete';
-import type { Fundquelle } from '../../../shared/src/listensuche';
+import { EINGEBAUT, type Fundquelle } from '../../../shared/src/listensuche';
 import { trefferlistenVon, type Mappentyp } from '../../../shared/src/model';
 import { regelwerkVon } from '../../../shared/src/rechte';
 import { typenDerSicht, zeigtAlleTypen, type Sicht } from '../../../shared/src/sichten';
@@ -19,6 +19,10 @@ type PaketeMitVersion = readonly Pick<InstalliertesPaket, 'id' | 'name' | 'versi
 /** Paket, aus dem ein Mappentyp stammt: das installierte Paket, das ihn mitgebracht hat, sonst der Teil vor „:“ der Kennung (#1084). */
 export function paketVonTyp(typ: Pick<Mappentyp, 'id' | 'paket'>, pakete: Pakete): string | null {
   return pakete.find((p) => Object.values(p.typen).includes(typ.id))?.id ?? typ.paket ?? null;
+}
+/** Herkunft eines Mappentyps für den Filter (#1171): eingebaute Typen (Benutzer, Post, Rolle …) haben ihre eigene. */
+export function herkunftTyp(typ: Pick<Mappentyp, 'id' | 'paket' | 'system'>, pakete: Pakete): string | null {
+  return typ.system ? EINGEBAUT : paketVonTyp(typ, pakete);
 }
 /** Paket, aus dem eine Ansicht stammt. */
 export function paketVonSicht(s: Pick<Sicht, 'id'>, pakete: Pakete): string | null {
@@ -44,9 +48,11 @@ export function paketHerkunft(id: string | null | undefined, pakete: PaketeMitVe
   const p = pakete.find((x) => x.id === id);
   return { id, name: p?.name ?? id, version: p?.version ?? null };
 }
-/** Pakete für den Filter: die Ids, die in der Liste vorkommen, mit Namen, nach Namen sortiert. */
-export const paketWahl = (ids: readonly string[], pakete: Pakete) =>
-  ids.map((id) => ({ id, name: paketName(id, pakete) })).sort((a, b) => a.name.localeCompare(b.name));
+/** Pakete für den Filter: die Ids, die in der Liste vorkommen, mit Namen, nach Namen sortiert; „Ablago (eingebaut)“ vorn (#1171). */
+export const paketWahl = (ids: readonly string[], pakete: Pakete) => [
+  ...(ids.includes(EINGEBAUT) ? [{ id: EINGEBAUT, name: t('oberflaeche.suche.paket.eingebaut') }] : []),
+  ...ids.filter((id) => id !== EINGEBAUT).map((id) => ({ id, name: paketName(id, pakete) })).sort((a, b) => a.name.localeCompare(b.name)),
+];
 
 const q = (wo: string, text: string | null | undefined): Fundquelle[] => (text ? [{ wo, text }] : []);
 

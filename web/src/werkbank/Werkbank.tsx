@@ -63,7 +63,7 @@ import { istOffen } from '../../../shared/src/auskunft';
 import { useBeiWiederErreichbar } from '../erreichbar';
 import { gebietsschema } from '../../../shared/src/sprache';
 import { GeloeschteEintraege, Fundstellen, Hervorgehoben, KeineTreffer, KnopfLink, ListenSuche, PaketChip, PaketFilter, useListenSuche } from '../bausteine';
-import { paketHerkunft, paketVonTyp, paketWahl, quellenTyp } from './listensuche';
+import { herkunftTyp, paketHerkunft, paketVonTyp, paketWahl, quellenTyp } from './listensuche';
 import { uebergeordneterTyp } from '../../../shared/src/teile';
 import { typName } from '../../../shared/src/beschriftung';
 
@@ -445,7 +445,7 @@ function TypenListe({ offen, pakete }: { offen?: string; pakete: InstalliertesPa
   const d = useDaten();
   const z = useListenSuche(d.typen, {
     quellen: (typ) => quellenTyp(typ, { pakete, typen: d.typen, person: d.person }),
-    herkunft: (typ) => paketVonTyp(typ, pakete),
+    herkunft: (typ) => herkunftTyp(typ, pakete),
   });
   return (
     <>

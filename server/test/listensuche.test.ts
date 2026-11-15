@@ -5,10 +5,11 @@
  * (Mappentypen, Ansichten, Nummernkreise). Gezeichnet mit react-dom/server wie baustein-feld.test.ts; Beispiele erfunden.
  */
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { describe, it } from 'node:test';
 import React, { createElement as h, type ReactElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { ALLE_HERKUENFTE, ausschnitt, durchsuche, EIGENE, gefaltet, herkunftPasst, type Fundquelle } from '../../shared/src/listensuche';
+import { ALLE_HERKUENFTE, ausschnitt, durchsuche, EIGENE, EINGEBAUT, gefaltet, herkunftPasst, type Fundquelle } from '../../shared/src/listensuche';
 import type { Feld, Mappentyp } from '../../shared/src/model';
 
 const g = globalThis as Record<string, unknown>;
@@ -28,7 +29,7 @@ g.React = React;
 const WEB = new URL('../../web/src/', import.meta.url).href;
 const lade = (pfad: string): Promise<any> => import(WEB + pfad); // eslint-disable-line @typescript-eslint/no-explicit-any -- Module der Oberfläche, je Pfad ein anderes
 const { Suchfeld, ListenSuche, Fundstellen, KeineTreffer, PaketFilter, FilterHaken, useListenSuche, Hervorgehoben } = await lade('bausteine/index.ts');
-const { quellenTyp, quellenSicht, quellenKreis, paketVonTyp, paketVonSicht, paketVonKreis, paketWahl } = await lade('werkbank/listensuche.ts');
+const { quellenTyp, quellenSicht, quellenKreis, paketVonTyp, paketVonSicht, paketVonKreis, paketWahl, herkunftTyp } = await lade('werkbank/listensuche.ts');
 const zeichne = (e: ReactElement) => renderToStaticMarkup(e);
 const nichts = () => {};
 
@@ -213,5 +214,21 @@ describe('Worin die Werkbank-Listen suchen (#978)', () => {
     assert.equal(paketVonKreis(k, typen, pakete), 'haushalt');
     assert.equal(paketVonKreis({ verwendet: [] }, typen, pakete), null);
     assert.deepEqual(paketWahl(['haushalt', 'fremd'], pakete), [{ id: 'fremd', name: 'fremd' }, { id: 'haushalt', name: 'Haushalt' }]);
+  });
+
+  it('Filter „Paket“ (#1171): eingebaute Mappentypen nicht unter „Eigene (ohne Paket)“, sondern unter „Ablago (eingebaut)“', () => {
+    const eingebaut = [{ id: 'benutzer', system: 'benutzer' }, { id: 'post', system: 'post' }, { id: 'rolle', system: 'rolle' }];
+    const eigen = { id: 'werkzeug', paket: null };
+    for (const typ of eingebaut) {
+      const h = herkunftTyp(typ, pakete);
+      assert.equal(h, EINGEBAUT);
+      assert.ok(!herkunftPasst(EIGENE, h), `${typ.id} gehört nicht zu den eigenen`);
+      assert.ok(herkunftPasst(EINGEBAUT, h) && herkunftPasst(ALLE_HERKUENFTE, h));
+    }
+    assert.ok(herkunftPasst(EIGENE, herkunftTyp(eigen, pakete)) && !herkunftPasst(EINGEBAUT, herkunftTyp(eigen, pakete)));
+    assert.deepEqual(paketWahl(['haushalt', EINGEBAUT], pakete), [{ id: EINGEBAUT, name: 'Ablago (eingebaut)' }, { id: 'haushalt', name: 'Haushalt' }]);
+    // Die Liste der Mappentypen nimmt diese Herkunft.
+    const quelle = readFileSync(new URL('../../web/src/werkbank/Werkbank.tsx', import.meta.url), 'utf8');
+    assert.match(quelle, /herkunft: \(typ\) => herkunftTyp\(typ, pakete\)/);
   });
 });
