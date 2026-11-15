@@ -857,6 +857,37 @@ Texts: title, description and closing sentence under `rundgang.<tour>.titel | .b
 
 At runtime a step is dropped silently if none of its anchors is visible (for example on a phone) – with a note in the console (`console.debug`), without a message for the person.
 
+#### Tours from packages { #paket-rundgaenge }
+
+A package names `inhalt.rundgaenge: inhalt/rundgaenge.yaml` in its manifest. The texts are written directly into the file; in Ablago the tours are called `<package>:<key>`. Tours should lead through a task and carry a task-based title (“Record an incoming invoice”) – it is listed under “What comes with it”.
+
+```yaml
+# inhalt/rundgaenge.yaml
+- schluessel: vertraege_kennenlernen
+  titel: Verträge im Überblick
+  beschreibung: Wo Fristen und Unterlagen eines Vertrags stehen.
+  start: nach_installation          # manuell | nach_installation | nach_update – never starts by itself
+  fuer: lesen                       # lesen = whoever may read the folder type · verwalten = with the right to administer
+  oeffne:
+    mappe: { typ: vertrag }         # first folder of the type the person may read; neu: { typ } = empty form
+  ersatz: Sobald du einen Vertrag angelegt hast, zeigt dir Ablago hier, wie es geht.
+  schritte:
+    - schluessel: frist
+      ziel: mappe.feld:kuendigen_bis
+      ort: Rechts in der Mappe
+      titel: Kündigen bis
+      text: Hier steht, bis wann du kündigen musst. Ablago erinnert dich rechtzeitig.
+      handbuch: admin/pakete/#so-nutzt-du-es               # page in the bundled manual (benutzer/ or admin/)
+      sonst_verwalten: Frag die Person, die Ablago bei euch verwaltet.   # only for people without the right to administer
+```
+
+- **Check on installation** (like the package check, dms-registry #132): unknown fields and anchors, fields and registers the package's own folder type does not have (`mappe.feld:<key>`, `mappe.register:<key>` against `oeffne`), folder types that belong neither to the package nor to a dependency, more than 8 steps, texts over 200 (titles 60) characters, `nach_installation` more than once per package, `erste_anmeldung`. An error makes the package invalid.
+- **At runtime** Ablago checks again against its own anchors and the installed folder types (a package for a newer version may name anchors that do not exist here yet): faulty tours are dropped and logged once; if a target is missing, the step is dropped silently.
+- **`oeffne`:** `mappe` opens the most recently changed folder of the type that the person may read; `neu` an empty form, only if they may create the type – nothing is saved, and at the end Ablago goes back. Otherwise `ersatz` (or a general sentence) is shown instead of the steps. `GET /api/entdecken/rundgaenge/:schluessel/oeffnen` returns the path.
+- **Quiet:** tours from packages never start by themselves. With `nach_installation` or `nach_update` Ablago offers them as a tip for 30 days after installing or updating (“Contracts at a glance – a short tour”, `angebot:<tour>`, “new”); the tip-of-the-day rule applies (at most one a day). All of them are on “Discover Ablago”.
+- **Own tours** (#941) are written by administrators under Workbench → Tours in the same format (one tour per file, `start` always `manuell`, key `eigen:<key>`); together with the on/off of all tours they are stored in the setting `entdecken_werkbank` (`server/src/entdecken-werkbank.ts`) and go into a package as `inhalt/rundgaenge.yaml` with “Create package”. The check reports the location of each error (`orte` of `pruefeRundgaenge`), which the Workbench turns into the line.
+- **Languages:** until package language files for tours arrive, the package writes the texts in its language (usually German) directly into the file.
+
 ### Tip {#tipp}
 
 ```yaml
@@ -870,6 +901,28 @@ At runtime a step is dropped silently if none of its anchors is visible (for exa
 ```
 
 Text under `tipp.<key>`: at most 160 characters and two sentences, addressing the reader as “du”/“you”, only terms from the [glossary](https://github.com/motom001/dms/blob/main/docs/glossar.yml). **Every visible new feature brings its tip in the same PR** (with `ab_version` of the version in which it appears); the wording is checked in the ongoing quality control. At most 20 tips per package.
+
+#### Tips from packages { #paket-tipps }
+
+A package names `inhalt.tipps: inhalt/tipps.yaml`; the text is written directly into the file, and in Ablago the tips are called `<package>:<key>`.
+
+```yaml
+# inhalt/tipps.yaml
+- schluessel: ausfuellen_neu
+  text: Neu in Verträge 2.1 – Ablago liest Anbieter, Nummer und Laufzeit direkt aus dem Vertrag.
+  ab_version: 2.1.0                   # “new” for everyone who updated the package to this version
+  fuer: lesen                         # lesen | verwalten
+  typ: vertrag                        # optional: only whoever may read this folder type
+  rundgang: vertraege_kennenlernen    # the sentence starts this tour of the package …
+- schluessel: kuendigen
+  text: Wusstest du schon? Ablago erinnert dich an jede Kündigungsfrist.
+  typ: vertrag
+  ziel: mappe.feld:kuendigen_bis      # … or leads to this place (in the first readable folder of the type)
+```
+
+**Workbench → Tips** (#942): own tips (`eigen:tipp_<n>`) and adaptations of tips from Ablago and from packages are stored in the setting `entdecken_werkbank` – adaptations per full key with the new values and the original as it was then (this is how the Workbench sees that the original has changed since the adaptation). An adaptation that no longer passes the check (e.g. tour deleted) does not apply; the original applies again. “Create package” writes own tips to `inhalt/tipps.yaml`; adaptations of other packages' tips only come along with #654 as an addendum.
+
+`bereich` is optional in packages (default `mappen`). A target inside a folder (`mappe.feld:`, `mappe.register:`) needs `typ`; the interface then opens the first folder of that type the person may read (`GET /api/entdecken/tipps/:schluessel/oeffnen`). “New since your last visit” applies for 30 days after the package was updated to a version from `ab_version` (Ablago keeps the previous version with the installed package). The check on installation works like for tours: schema, known anchors, fields and registers, tours of the package, at most 20 tips and 160 characters, two sentences.
 
 ### Anchor points { #anker }
 
@@ -886,10 +939,11 @@ Targets are fixed anchor points, not HTML ids: the element carries `data-anker="
 - `GET /api/entdecken` – tours and tips for the signed-in person in their language (filtered by the right to administer and by switched-on features), plus the tip of the day (`tipp`), whether the tip line is on (`tippsAn`) and which tour starts by itself now (`starten`). Per tip: anchor and page or tour, origin (`ablago`, later `paket:<id>`), `neu`, `ausgeblendet` and `clients` (suitable for clients: no tour, the anchor exists there too).
 - `POST /api/entdecken/tipps/:schluessel` with `aktion`: `gezeigt`, `erledigt`, `ausblenden`, `einblenden`.
 - `POST /api/entdecken/rundgaenge/:schluessel` with `stand`: `gesehen` or `spaeter`.
+- In `/api/v1` (for clients, #831/#832): `GET /entdecken` with a key of the level “read”, `POST /entdecken/tipps/{schluessel}` and `POST /entdecken/rundgaenge/{schluessel}` with “write” – so the interface and the app do not report twice. Clients only show tips with `clients: true`. A client's own tips use the same format; `pruefeTipps` in `shared/src/entdecken.ts` does not need a package for that.
 
 This is stored per person in their settings (`entdecken_rundgaenge`, `entdecken_tipps`, `entdecken_version`; tip of the day off: `tipps` = false) – no telemetry. While standing in for someone, nothing starts by itself and nothing is remembered. Migration 088 sets Ablago's tour to “seen” for accounts that had signed in before the update. The manual's screenshot and timing scripts mark their accounts the same way (`aufnehmen.mjs`, `ladezeiten.mjs`).
 
-**Packages follow:** `inhalt.rundgaenge` and `inhalt.tipps` in the manifest, the check on installation, Workbench → managing tips (own tips, adjustments) and the export in “Create package” come in a later stage; so do the entries in `/api/v1`.
+Tours and tips from packages: see [Tours from packages](#paket-rundgaenge) and [Tips from packages](#paket-tipps).
 
 ## Several processes (#745) { #mehrere-prozesse }
 

@@ -23,6 +23,7 @@
   "bereich.konto": "My account",
   "bereich.verwalten": "Administration",
   "zeile.neu": "New since your last visit: {text}",
+  "zeile.neu-weitere": "New since your last visit: {text} – and {anzahl} more",
   "konto.tipps": "Tip of the day",
   "konto.tipps.hilfe": "At most one a day: a dot on the assistant at the bottom right shows it, and it is under “Tips”. All tips are under “Discover Ablago”.",
   "fuehrung.titel": "Tour: {titel}",
@@ -34,6 +35,9 @@
   "fuehrung.ueberspringen.titel": "End the tour – it will not appear again by itself",
   "fuehrung.spaeter": "Later",
   "fuehrung.spaeter.titel": "Close now and offer it again the next time you sign in",
+  "fuehrung.handbuch": "More in the manual",
+  "fuehrung.ersatz": "There is nothing to show here yet.",
+  "angebot": "{titel} – a short tour",
   "bild.titel": "Simplified picture of Ablago: views on the left, the list in the middle, the open folder on the right.",
   "bild.titel-handy": "Simplified picture of Ablago on a phone: the view at the top, the list below it.",
   "bild.ansichten": "Views",
@@ -83,5 +87,7 @@
   "tipp.pakete": "Ready-made folder types, for example for contracts or insurance, come as packages. You find them via “Administer Ablago” under “Packages”.",
   "tipp.benutzer-einladen": "Under “Administer Ablago” → “Users” you invite more people. Each of them gets their own account.",
   "tipp.sicherung": "Now and then, check under “Administer Ablago” → “Backup” when Ablago last backed everything up.",
-  "tipp.meintest-auch-bei-treffern": "The search can suggest “Did you mean …?” even when it has already found something. You set this under “Search and full text”."
+  "tipp.meintest-auch-bei-treffern": "The search can suggest “Did you mean …?” even when it has already found something. You set this under “Search and full text”.",
+  "ziel-zeigen.leiste": "Show target: click a highlighted place – its anchor goes into the file. Esc cancels.",
+  "ziel-zeigen.abbrechen": "Cancel"
 }

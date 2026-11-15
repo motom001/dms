@@ -23,6 +23,7 @@
   "bereich.konto": "Mein Konto",
   "bereich.verwalten": "Verwalten",
   "zeile.neu": "Neu seit deinem letzten Besuch: {text}",
+  "zeile.neu-weitere": "Neu seit deinem letzten Besuch: {text} – und {anzahl} weitere",
   "konto.tipps": "Tipp des Tages",
   "konto.tipps.hilfe": "Höchstens einer am Tag: Ein Punkt am Assistenten unten rechts zeigt ihn an, unter „Tipps“ steht er. Alle Tipps stehen unter „Ablago entdecken“.",
   "fuehrung.titel": "Rundgang: {titel}",
@@ -34,6 +35,9 @@
   "fuehrung.ueberspringen.titel": "Rundgang beenden – er erscheint nicht wieder von selbst",
   "fuehrung.spaeter": "Später",
   "fuehrung.spaeter.titel": "Jetzt schließen und bei der nächsten Anmeldung wieder anbieten",
+  "fuehrung.handbuch": "Mehr dazu im Handbuch",
+  "fuehrung.ersatz": "Dazu gibt es hier noch nichts zu zeigen.",
+  "angebot": "{titel} – kurzer Rundgang",
   "bild.titel": "Vereinfachte Darstellung von Ablago: links die Ansichten, in der Mitte die Liste, rechts die geöffnete Mappe.",
   "bild.titel-handy": "Vereinfachte Darstellung von Ablago auf dem Handy: oben die Ansicht, darunter die Liste.",
   "bild.ansichten": "Ansichten",
@@ -83,5 +87,7 @@
   "tipp.pakete": "Fertige Mappentypen, etwa für Verträge oder Versicherungen, gibt es als Paket. Du findest sie über „Ablago verwalten“ unter „Pakete“.",
   "tipp.benutzer-einladen": "Über „Ablago verwalten“ → „Benutzer“ lädst du weitere Personen ein. Jede bekommt ihr eigenes Konto.",
   "tipp.sicherung": "Schau ab und zu über „Ablago verwalten“ unter „Sicherung“ nach, wann Ablago zuletzt alles gesichert hat.",
-  "tipp.meintest-auch-bei-treffern": "„Meintest du …?“ kann die Suche auch vorschlagen, wenn sie schon etwas gefunden hat. Das stellst du unter „Suche und Volltext“ ein."
+  "tipp.meintest-auch-bei-treffern": "„Meintest du …?“ kann die Suche auch vorschlagen, wenn sie schon etwas gefunden hat. Das stellst du unter „Suche und Volltext“ ein.",
+  "ziel-zeigen.leiste": "Ziel zeigen: Klicke auf eine hervorgehobene Stelle – ihr Anker kommt in die Datei. Esc bricht ab.",
+  "ziel-zeigen.abbrechen": "Abbrechen"
 }

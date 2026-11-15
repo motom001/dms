@@ -64,6 +64,10 @@ const EINTRAEGE: Eintrag[] = [
   { pfad: 'automatisierungen', gruppe: 'ablage', in: O, experte: ['haushalt'] },
   // Automatisierungsvorlagen (#1044): daneben, gleich sichtbar – „Aufgabe vergeben“, „Erinnern“, Wiedervorlage …
   { pfad: 'ablaufvorlagen', gruppe: 'ablage', in: O, experte: ['haushalt'] },
+  // Rundgänge (#941): alle sehen, an/aus, eigene schreiben – zum Schluss, weil sie auf allem anderen aufbauen.
+  { pfad: 'rundgaenge', gruppe: 'ablage', in: O, experte: ['haushalt'] },
+  // Tipps (#942): daneben – Tipps können Rundgänge starten.
+  { pfad: 'tipps', gruppe: 'ablage', in: O, experte: ['haushalt'] },
   { pfad: 'benutzer', gruppe: 'benutzer', in: H },
   { pfad: 'verschluesselung', gruppe: 'benutzer', in: H },
   // „Aufbewahrung abgelaufen“ (#725, früher „Darf weg“) und Stempel (#717) regeln, was die Ablage verlässt.
@@ -261,6 +265,10 @@ export const MIT_MITTE: ReadonlySet<string> = new Set([
   'stempel',
   // Gleichbedeutende Wörter (#992): Gruppen in der Mitte, rechts die Wörter einer Gruppe.
   'woerter',
+  // Rundgänge (#941): alle in der Mitte, rechts der gewählte (eigene zum Bearbeiten).
+  'rundgaenge',
+  // Tipps (#942): alle in der Mitte, rechts das Formular.
+  'tipps',
 ]);
 
 export const hatMitte = (bereich: string) => MIT_MITTE.has(bereich);

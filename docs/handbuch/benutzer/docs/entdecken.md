@@ -24,13 +24,20 @@ Am Handy ist der Rundgang kürzer: Die drei Spalten stehen dort untereinander, u
 
 Der Rundgang kommt nur bei der ersten Anmeldung eines **neuen** Kontos von selbst. Wer Ablago schon vor diesem Update benutzt hat, bekommt ihn nicht automatisch – findet ihn aber wie alle anderen jederzeit unter **Ablago entdecken → Rundgänge**.
 
+### Rundgänge aus Paketen { #paket-rundgaenge }
+
+Manche Pakete bringen eigene Rundgänge mit, zum Beispiel „Verträge im Überblick“. Sie führen durch eine Aufgabe und zeigen die Stellen an einer echten Mappe – an der ersten Mappe dieser Art, die du sehen darfst – oder an einem leeren Formular, ohne etwas zu speichern. Gibt es noch keine passende Mappe, steht dort nur ein Satz, was dich erwartet.
+
+Solche Rundgänge **starten nie von selbst.** Kurz nach der Installation oder einem Update bietet Ablago sie einmal als Tipp an („Verträge im Überblick – kurzer Rundgang“); alle stehen unter **Ablago entdecken → Rundgänge**. Du bekommst nur Rundgänge zu Mappen, die du lesen darfst.
+
 Der Rundgang geht mit der Tastatur: Tab wechselt zwischen den Knöpfen und bleibt im Rundgang, Enter drückt den Knopf. Ein Screenreader liest zu jedem Schritt vor, wo die hervorgehobene Stelle steht. Hast du am Gerät „Bewegung reduzieren“ eingeschaltet, springt der Rundgang ohne Übergang von Schritt zu Schritt.
 
 ## Der Tipp des Tages { #tipps }
 
 Den Tipp des Tages zeigt der [Assistent](assistent.md#tipps) unten rechts unter **Tipps** – als Karte, zum Beispiel: „Steht auf einem Papier eine Archivnummer? Tippe sie oben ins Suchfeld und drück Enter, dann öffnet sich genau dieses Dokument.“
 
-- **Höchstens ein neuer Tipp am Tag.** Ein kleiner Punkt am Knopf des Assistenten zeigt ihn an; sobald du die Tipps angesehen hast, ist der Punkt weg. Der Tipp bleibt bis zum Abend derselbe.
+- **Höchstens ein neuer Tipp am Tag.** Ein kleiner Punkt am Knopf des Assistenten zeigt ihn an; sobald du die Tipps angesehen hast, ist der Punkt weg. Der Tipp bleibt bis zum Abend derselbe. Gibt es nach einem Update mehrere Neuheiten, steht dort eine mit „… und 2 weitere“ – nicht mehrere Karten.
+- **Auch aus Paketen:** Installierte Pakete bringen eigene Tipps mit, etwa „Neu in Verträge 2.1 – …“ nach einem Update. Tipps zu Mappen bekommst du nur, wenn du diese Mappen lesen darfst.
 - **Zeig es mir** führt an die passende Stelle und hebt sie kurz hervor – oder startet den Rundgang. **Nächster Tipp** blättert weiter.
 - **Nur, was du nutzen kannst:** Tipps zu Dingen, die du nicht darfst oder die bei euch nicht eingerichtet sind, bekommst du nicht.
 
@@ -41,7 +48,7 @@ Den Punkt für den Tipp des Tages schaltest du jederzeit unter [Mein Konto](prof
 Du erreichst sie über das Menü unter deinem Namen → **Ablago entdecken**. Sie beginnt mit dem Satz „Was Ablago noch kann, kurz erklärt.“ und hat diese Abschnitte – jeweils nur mit dem, was du nutzen darfst:
 
 - **Neu seit deinem letzten Besuch** – nur, wenn nach einem Update etwas Neues dazugekommen ist.
-- **Rundgänge** – mit **Rundgang starten** siehst du ihn noch einmal.
+- **Rundgänge** – Ablagos eigener und die der installierten Pakete; mit **Rundgang starten** siehst du einen (noch einmal).
 - **Tipps** – alle Tipps nach Bereich (Suche, Post, Zu erledigen und Fristen, Mappen, Mein Konto), mit einem kleinen Suchfeld. Ein Klick auf einen Tipp zeigt die Stelle.
 
 ![Ablago entdecken](bilder/entdecken.png)

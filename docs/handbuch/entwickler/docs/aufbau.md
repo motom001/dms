@@ -857,6 +857,37 @@ Texte: Titel, Beschreibung und Schlusssatz unter `rundgang.<rundgang>.titel | .b
 
 Zur Laufzeit fällt ein Schritt still weg, wenn keiner seiner Anker sichtbar ist (z. B. am Handy) – mit einem Vermerk in der Konsole (`console.debug`), ohne Meldung für die Person.
 
+#### Rundgänge aus Paketen { #paket-rundgaenge }
+
+Ein Paket nennt im Manifest `inhalt.rundgaenge: inhalt/rundgaenge.yaml`. Die Texte stehen direkt in der Datei; Rundgänge heißen in Ablago `<paket>:<schluessel>`. Rundgänge sollen durch eine Aufgabe führen und tragen einen aufgabenbezogenen Titel („Eingangsrechnung anlegen“) – er steht in „Was mitkommt“.
+
+```yaml
+# inhalt/rundgaenge.yaml
+- schluessel: vertraege_kennenlernen
+  titel: Verträge im Überblick
+  beschreibung: Wo Fristen und Unterlagen eines Vertrags stehen.
+  start: nach_installation          # manuell | nach_installation | nach_update – startet nie von selbst
+  fuer: lesen                       # lesen = wer den Mappentyp lesen darf · verwalten = mit Verwaltungsrecht
+  oeffne:
+    mappe: { typ: vertrag }         # erste Mappe des Typs, die die Person lesen darf; neu: { typ } = leeres Formular
+  ersatz: Sobald du einen Vertrag angelegt hast, zeigt dir Ablago hier, wie es geht.
+  schritte:
+    - schluessel: frist
+      ziel: mappe.feld:kuendigen_bis
+      ort: Rechts in der Mappe
+      titel: Kündigen bis
+      text: Hier steht, bis wann du kündigen musst. Ablago erinnert dich rechtzeitig.
+      handbuch: admin/pakete/#so-nutzt-du-es               # Seite im mitgelieferten Handbuch (benutzer/ oder admin/)
+      sonst_verwalten: Frag die Person, die Ablago bei euch verwaltet.   # nur für Personen ohne Verwaltungsrecht
+```
+
+- **Prüfung beim Installieren** (wie die Paketprüfung, dms-registry #132): unbekannte Felder und Anker, Felder und Register, die es im eigenen Mappentyp nicht gibt (`mappe.feld:<key>`, `mappe.register:<key>` gegen `oeffne`), Mappentypen, die weder zum Paket noch zu einer Abhängigkeit gehören, mehr als 8 Schritte, Texte über 200 (Titel 60) Zeichen, `nach_installation` mehr als einmal je Paket, `erste_anmeldung`. Ein Fehler macht das Paket ungültig.
+- **Zur Laufzeit** prüft Ablago noch einmal gegen die eigenen Anker und die installierten Mappentypen (ein Paket für eine neuere Version kann Anker nennen, die es hier noch nicht gibt): Fehlerhafte Rundgänge fallen weg, einmal im Protokoll; fehlt ein Ziel, fällt der Schritt still weg.
+- **`oeffne`:** `mappe` öffnet die zuletzt geänderte Mappe des Typs, die die Person lesen darf; `neu` ein leeres Formular, nur wenn sie den Typ anlegen darf – gespeichert wird nichts, am Ende geht es zurück. Sonst steht `ersatz` (bzw. ein allgemeiner Satz) statt der Schritte. Den Pfad liefert `GET /api/entdecken/rundgaenge/:schluessel/oeffnen`.
+- **Ruhig:** Rundgänge aus Paketen starten nie von selbst. Mit `nach_installation` bzw. `nach_update` bietet Ablago sie 30 Tage nach Installation bzw. Update als Tipp an („Verträge im Überblick – kurzer Rundgang“, `angebot:<rundgang>`, „neu“); es gilt die Regel des Tipps des Tages (höchstens einer am Tag). Alle stehen unter „Ablago entdecken“.
+- **Eigene Rundgänge** (#941) schreibt die Verwaltung unter Werkbank → Rundgänge im selben Format (ein Rundgang je Datei, `start` immer `manuell`, Schlüssel `eigen:<schluessel>`); sie stehen mit dem An/aus aller Rundgänge in der Einstellung `entdecken_werkbank` (`server/src/entdecken-werkbank.ts`) und kommen mit „Paket erstellen“ als `inhalt/rundgaenge.yaml` ins Paket. Die Prüfung meldet je Fehler den Ort (`orte` von `pruefeRundgaenge`), die Werkbank macht daraus die Zeile.
+- **Sprachen:** Bis Paket-Sprachdateien für Rundgänge kommen, schreibt das Paket die Texte in seiner Sprache (meist Deutsch) direkt in die Datei.
+
 ### Tipp
 
 ```yaml
@@ -870,6 +901,28 @@ Zur Laufzeit fällt ein Schritt still weg, wenn keiner seiner Anker sichtbar ist
 ```
 
 Text unter `tipp.<schluessel>`: höchstens 160 Zeichen und zwei Sätze, Du-Form, nur Begriffe aus dem [Glossar](https://github.com/motom001/dms/blob/main/docs/glossar.yml). **Jede sichtbare neue Funktion bringt ihren Tipp im selben PR mit** (mit `ab_version` der Version, in der sie erscheint); den Wortlaut prüft die laufende Qualitätskontrolle. Höchstens 20 Tipps je Paket.
+
+#### Tipps aus Paketen { #paket-tipps }
+
+Ein Paket nennt `inhalt.tipps: inhalt/tipps.yaml`; der Text steht direkt in der Datei, Tipps heißen in Ablago `<paket>:<schluessel>`.
+
+```yaml
+# inhalt/tipps.yaml
+- schluessel: ausfuellen_neu
+  text: Neu in Verträge 2.1 – Ablago liest Anbieter, Nummer und Laufzeit direkt aus dem Vertrag.
+  ab_version: 2.1.0                   # „Neu“ für alle, die das Paket auf diese Version aktualisiert haben
+  fuer: lesen                         # lesen | verwalten
+  typ: vertrag                        # optional: nur, wer diesen Mappentyp lesen darf
+  rundgang: vertraege_kennenlernen    # der Satz startet diesen Rundgang des Pakets …
+- schluessel: kuendigen
+  text: Wusstest du schon? Ablago erinnert dich an jede Kündigungsfrist.
+  typ: vertrag
+  ziel: mappe.feld:kuendigen_bis      # … oder führt an diese Stelle (in der ersten lesbaren Mappe des Typs)
+```
+
+**Werkbank → Tipps** (#942): Eigene Tipps (`eigen:tipp_<n>`) und Anpassungen an Tipps von Ablago und aus Paketen stehen in der Einstellung `entdecken_werkbank` – Anpassungen je vollem Schlüssel mit den neuen Angaben und dem Original von damals (so erkennt die Werkbank, dass sich das Original seit der Anpassung geändert hat). Eine Anpassung, die nicht mehr besteht (z. B. Rundgang gelöscht), gilt nicht; dann wieder das Original. „Paket erstellen“ schreibt eigene Tipps nach `inhalt/tipps.yaml`; Anpassungen fremder Tipps gehen erst mit #654 als Nachtrag mit.
+
+`bereich` ist in Paketen freiwillig (Vorgabe `mappen`). Ein Ziel in einer Mappe (`mappe.feld:`, `mappe.register:`) geht nur mit `typ`; die Oberfläche öffnet dann die erste Mappe dieses Typs, die die Person lesen darf (`GET /api/entdecken/tipps/:schluessel/oeffnen`). „Neu seit deinem letzten Besuch“ gilt 30 Tage nach dem Update des Pakets auf eine Version ab `ab_version` (Ablago merkt sich die Version davor am installierten Paket). Geprüft wird beim Installieren wie bei Rundgängen: Schema, bekannte Anker, Felder und Register, Rundgänge des Pakets, höchstens 20 Tipps und 160 Zeichen, zwei Sätze.
 
 ### Ankerpunkte { #anker }
 
@@ -886,10 +939,11 @@ Ziele sind feste Ankerpunkte, keine HTML-Ids: Das Element trägt `data-anker="<a
 - `GET /api/entdecken` – Rundgänge und Tipps für die angemeldete Person in ihrer Sprache (gefiltert nach Verwaltungsrecht und eingeschalteten Funktionen), dazu der Tipp des Tages (`tipp`), ob die Tipp-Zeile an ist (`tippsAn`) und welcher Rundgang jetzt von selbst startet (`starten`). Je Tipp: Anker und Seite bzw. Rundgang, Herkunft (`ablago`, später `paket:<id>`), `neu`, `ausgeblendet` und `clients` (für Clients geeignet: kein Rundgang, Anker gibt es auch dort).
 - `POST /api/entdecken/tipps/:schluessel` mit `aktion`: `gezeigt`, `erledigt`, `ausblenden`, `einblenden`.
 - `POST /api/entdecken/rundgaenge/:schluessel` mit `stand`: `gesehen` oder `spaeter`.
+- In `/api/v1` (für Clients, #831/#832): `GET /entdecken` mit Schlüssel der Stufe „lesen“, `POST /entdecken/tipps/{schluessel}` und `POST /entdecken/rundgaenge/{schluessel}` mit „schreiben“ – so melden sich Oberfläche und App nicht doppelt. Clients zeigen nur Tipps mit `clients: true`. Eigene Tipps eines Clients schreiben dasselbe Format; `pruefeTipps` in `shared/src/entdecken.ts` braucht dafür kein Paket.
 
 Gemerkt wird je Person in ihren Einstellungen (`entdecken_rundgaenge`, `entdecken_tipps`, `entdecken_version`; Tipp des Tages aus: `tipps` = false) – keine Telemetrie. In einer Vertretung startet nichts von selbst, und nichts wird gemerkt. Migration 088 setzt für Konten, die sich vor dem Update schon angemeldet hatten, Ablagos Rundgang auf „gesehen“. Die Handbuch-Aufnahmen und Messskripte markieren ihre Konten ebenso (`aufnehmen.mjs`, `ladezeiten.mjs`).
 
-**Pakete folgen:** `inhalt.rundgaenge` und `inhalt.tipps` im Manifest, die Prüfung beim Installieren, Werkbank → Tipps verwalten (eigene Tipps, Anpassungen) und der Export in „Paket erstellen“ kommen in einer späteren Stufe; ebenso die Einträge in `/api/v1`.
+Rundgänge und Tipps aus Paketen: siehe [Rundgänge aus Paketen](#paket-rundgaenge) und [Tipps aus Paketen](#paket-tipps).
 
 ## Mehrere Prozesse (#745) { #mehrere-prozesse }
 

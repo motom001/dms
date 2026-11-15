@@ -2,9 +2,13 @@
  * Ablago entdecken (#831, #832): Rundgänge und Tipps für die angemeldete Person.
  *
  * Ablagos eigene Rundgänge und Tipps liegen als YAML in `shared/entdecken/` (im Container unter
- * /app/shared/entdecken, siehe Dockerfile) – im selben Format, das Pakete später mitbringen. Hier werden sie gelesen,
- * geprüft (`shared/src/entdecken.ts`) und je Person gefiltert: nach Verwaltungsrecht und eingeschalteten Funktionen.
- * Pakete fügen später nur eine weitere Quelle hinzu (`quellen`).
+ * /app/shared/entdecken, siehe Dockerfile). Installierte Pakete bringen sie im selben Format mit (`inhalt.rundgaenge`,
+ * `inhalt.tipps`, gespeichert am installierten Paket unter `entdecken`). Hier werden alle Quellen gelesen, geprüft
+ * (`shared/src/entdecken.ts`) und je Person gefiltert: nach Verwaltungsrecht, eingeschalteten Funktionen und lesbaren
+ * Mappentypen. Rundgänge aus Paketen heißen `<paket>:<schluessel>` – so kommen sich Pakete nicht in die Quere.
+ *
+ * Rundgänge aus Paketen starten nie von selbst: Mit `start: nach_installation`/`nach_update` bietet Ablago sie eine
+ * Zeit lang als Tipp an („Verträge im Überblick – kurzer Rundgang“, höchstens ein Tipp am Tag).
  *
  * Was die Person gesehen, ausgeblendet oder auf „Später“ gestellt hat, merkt sich Ablago in ihren Einstellungen
  * (`entdecken_rundgaenge`, `entdecken_tipps`, `entdecken_version`; Tipp-Zeile aus: `tipps` = false). Das bleibt in
@@ -14,13 +18,13 @@ import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parse } from 'yaml';
-import {
-  istNeu, pruefeAnker, pruefeRundgaenge, pruefeTipps, rundgangFuer, rundgangMerkerAus, startetVonSelbst, tippDesTages, tippHandlung, tippPasst, tippStandAus,
-  type Anker, type EntdeckenStand, type Funktion, type Rundgang, type Texte, type Tipp, type TippAnzeige,
-} from '../../shared/src/entdecken';
+import { ANGEBOT_TAGE, istNeu, oeffneTyp, pruefeAnker, pruefeRundgaenge, pruefeTipps, rundgangFuer, rundgangMerkerAus, startetVonSelbst, tippDesTages, tippHandlung, tippPasst, tippStandAus, type Anker, type EntdeckenStand, type Funktion, type Rundgang, type Texte, type Tipp, type TippAnzeige, type TypInfo } from '../../shared/src/entdecken';
+import { ausSchluessel } from '../../shared/src/entdecken-werkbank';
 import { sprache } from '../../shared/src/sprache';
 import type { Benutzer } from '../../shared/src/model';
+import type { InstalliertesPaket } from '../../shared/src/pakete';
 import { darfVerwalten } from '../../shared/src/verwaltungsrecht';
+import { eigeneRundgaenge, tippsMitWerkbank, werkbankAus } from './entdecken-werkbank';
 import { Fachfehler } from './fehler';
 import { t } from './sprache';
 
@@ -43,6 +47,48 @@ const lies = (ordner: string, datei: string): unknown => {
   const p = join(ordner, datei);
   return existsSync(p) ? parse(readFileSync(p, 'utf8')) : null;
 };
+
+let ankerGelesen: Anker[] | null = null;
+/**
+ * Die Ankerliste (`anker.yaml`) – für die Prüfung beim Installieren eines Pakets (#831). Ohne Ordner (Tests ohne
+ * shared/entdecken) leer: Dann lehnt die Prüfung jedes Ziel ab, statt still Falsches durchzulassen.
+ */
+export function ankerListe(): Anker[] {
+  if (!ankerGelesen) { const o = entdeckenOrdner(); ankerGelesen = o ? pruefeAnker(lies(o, 'anker.yaml')).anker : []; }
+  return ankerGelesen;
+}
+
+
+/**
+ * Mappentyp in einem Paket auflösen: ohne Präfix ein eigener Typ des Pakets (`vertrag` → `vertraege:vertrag`), sonst
+ * die Kennung, wie sie dasteht. `typen`: was über die Typen bekannt ist (Kennung → Felder und Register).
+ */
+export function paketTyp(paket: string, roh: string, typen: (kennung: string) => TypInfo | null | undefined): TypInfo | null {
+  const kennung = roh.includes(':') ? roh : `${paket}:${roh}`;
+  return typen(kennung) ?? null;
+}
+
+/** Rundgänge eines installierten Pakets prüfen; Schlüssel bekommen den Präfix des Pakets. */
+export function paketRundgaenge(p: Pick<InstalliertesPaket, 'id'>, roh: unknown, o: { anker: readonly Anker[]; typen: (kennung: string) => TypInfo | null | undefined }): { rundgaenge: Rundgang[]; fehler: string[] } {
+  const r = pruefeRundgaenge(roh, { herkunft: `paket:${p.id}`, anker: o.anker, typ: (x) => paketTyp(p.id, x, o.typen) });
+  return { rundgaenge: r.rundgaenge.map((x) => ({ ...x, schluessel: `${p.id}:${x.schluessel}` })), fehler: r.fehler.map((f) => `${p.id}: ${f}`) };
+}
+
+/**
+ * Tipps eines installierten Pakets prüfen; Schlüssel bekommen den Präfix des Pakets, `rundgang` meint einen Rundgang
+ * desselben Pakets.
+ */
+export function paketTipps(p: Pick<InstalliertesPaket, 'id'>, roh: unknown, o: { anker: readonly Anker[]; rundgaenge: readonly string[]; typen: (kennung: string) => TypInfo | null | undefined }): { tipps: Tipp[]; fehler: string[] } {
+  const x = pruefeTipps(roh, { herkunft: `paket:${p.id}`, anker: o.anker, rundgaenge: o.rundgaenge, typ: (k) => paketTyp(p.id, k, o.typen) });
+  return {
+    tipps: x.tipps.map((y) => ({ ...y, schluessel: `${p.id}:${y.schluessel}`, ...(y.rundgang ? { rundgang: `${p.id}:${y.rundgang}` } : {}) })),
+    fehler: x.fehler.map((f) => `${p.id}: ${f}`),
+  };
+}
+
+const TAG_MS = 24 * 3600 * 1000;
+/** Liegt der Zeitpunkt höchstens {@link ANGEBOT_TAGE} zurück? */
+const kuerzlich = (wann: string | null | undefined, jetzt: number) => !!wann && jetzt - Date.parse(wann) <= ANGEBOT_TAGE * TAG_MS;
 
 /** Ablagos eigene Rundgänge und Tipps aus dem Ordner lesen und prüfen; `texte` liefert die Texte der Sprachdatei. */
 export function ladeAblago(ordner: string, texte: Texte): Inhalt {
@@ -68,6 +114,21 @@ export interface EntdeckenOptionen {
   heute(): string;
   /** Eingeschaltete Funktionen für diese Person. */
   funktionen(b: Benutzer): Promise<ReadonlySet<Funktion>>;
+  /** Installierte Pakete (#831): ihre Rundgänge und Tipps stehen unter `entdecken`. Ohne: nur Ablagos eigene. */
+  pakete?(): Promise<InstalliertesPaket[]>;
+  /** Mappentypen mit Kennung, Feldern und Registern – zum Prüfen der Rundgänge aus Paketen. */
+  typen?(): Promise<TypInfo[]>;
+  /** Kennungen der Mappentypen, die die Person lesen darf; ohne gilt jeder als lesbar. */
+  lesbareTypen?(b: Benutzer): Promise<ReadonlySet<string>>;
+  /**
+   * Was ein Rundgang öffnet (`oeffne.mappe`/`oeffne.neu`): Pfad der ersten Mappe dieses Typs, die die Person lesen
+   * darf, bzw. des leeren Formulars, wenn sie den Typ anlegen darf – sonst null (dann gilt der Ersatztext).
+   */
+  oeffnen?(b: Benutzer, typ: string, art: 'mappe' | 'neu'): Promise<string | null>;
+  /** Was die Werkbank gespeichert hat (#941, #942): eigene Rundgänge, ausgeschaltete Einträge. */
+  werkbank?(): Promise<unknown>;
+  /** Jetzt (Tests). */
+  jetzt?(): number;
   ordner?: string | null;
   log?: { warn(m: string, d?: Record<string, unknown>): void; debug(m: string, d?: Record<string, unknown>): void };
 }
@@ -82,8 +143,8 @@ export class Entdecken {
     this.ordner = o.ordner === undefined ? entdeckenOrdner() : o.ordner;
   }
 
-  /** Alle Quellen in der Sprache der Anfrage: heute nur Ablago selbst, später dazu die installierten Pakete. */
-  quellen(): Inhalt {
+  /** Ablagos eigene Rundgänge und Tipps in der Sprache der Anfrage (je Sprache einmal gelesen). */
+  ablago(): Inhalt {
     const spr = sprache();
     let x = this.inhalt.get(spr);
     if (!x) {
@@ -95,8 +156,73 @@ export class Entdecken {
     return x;
   }
 
-  private async fuerwen(b: Benutzer) {
-    return { verwalten: b.rolle === 'admin' || darfVerwalten(b), funktionen: await this.o.funktionen(b) };
+  /** Schon gemeldete Fehler der Pakete (je Paket und Version einmal ins Protokoll). */
+  private readonly paketGemeldet = new Set<string>();
+
+  /**
+   * Alle Quellen: Ablago und die installierten Pakete. Ein Rundgang aus einem Paket mit `nach_installation` bzw.
+   * `nach_update` kommt kurz nach Installation bzw. Update als Angebot unter die Tipps (`angebot:<rundgang>`, „neu“).
+   */
+  async quellen(o: { alle?: boolean } = {}): Promise<Inhalt & { neu: Map<string, boolean>; eigeneFehler: Map<string, string[]>; tippOriginale: Map<string, Tipp>; tippFehler: Map<string, string[]> }> {
+    const a = this.ablago();
+    const neu = new Map<string, boolean>();
+    const pakete = (await this.o.pakete?.()) ?? [];
+    const w = werkbankAus(await this.o.werkbank?.());
+    const eigeneFehler = new Map<string, string[]>();
+    if (!pakete.some((p) => p.entdecken) && !w.rundgaenge.length && !w.tipps.length && !Object.keys(w.anpassungen).length && !w.aus.length) return { ...a, neu, eigeneFehler, tippOriginale: new Map(), tippFehler: new Map() };
+    const typen = new Map(((await this.o.typen?.()) ?? []).map((x) => [x.kennung, x]));
+    const rundgaenge = [...a.rundgaenge], tipps = [...a.tipps];
+    const jetzt = this.o.jetzt?.() ?? Date.now();
+    for (const p of pakete) {
+      const x = this.paketQuelle(p, a.anker, (k) => typen.get(k), jetzt);
+      rundgaenge.push(...x.rundgaenge);
+      for (const [y, istNeuHier] of x.tipps) { tipps.push(y); neu.set(y.schluessel, istNeuHier); }
+    }
+    // Eigene Rundgänge aus der Werkbank (#941): nie von selbst, fehlerhafte fallen weg (die Werkbank zeigt sie).
+    const eigene = eigeneRundgaenge(w, { anker: a.anker, typ: (k) => typen.get(k) ?? null });
+    rundgaenge.push(...eigene.rundgaenge);
+    for (const [k, f] of eigene.fehler) eigeneFehler.set(k, f);
+    // Eigene Tipps und Anpassungen (#942).
+    const mitW = tippsMitWerkbank(tipps, w, { anker: a.anker, rundgaenge: rundgaenge.map((r) => r.schluessel), typ: (k) => typen.get(k) ?? null });
+    // Ausgeschaltet (Werkbank): fällt für alle weg – samt Tipps, die einen solchen Rundgang starten.
+    const aus = new Set(o.alle ? [] : w.aus);
+    return {
+      anker: a.anker, rundgaenge: rundgaenge.filter((r) => !aus.has(ausSchluessel('rundgang', r.schluessel))), tipps: mitW.tipps.filter((x) => !aus.has(ausSchluessel('tipp', x.schluessel))),
+      fehler: a.fehler, neu, eigeneFehler, tippOriginale: mitW.originale, tippFehler: mitW.fehler,
+    };
+  }
+
+  /** Fehler eines Pakets einmal je Version ins Protokoll – ein Paket für eine neuere Ablago-Version kann Anker nennen, die es hier nicht gibt. */
+  private melde(p: InstalliertesPaket, art: string, fehler: string[]) {
+    const k = `${p.id}@${p.version}:${art}`;
+    if (!fehler.length || this.paketGemeldet.has(k)) return;
+    this.paketGemeldet.add(k);
+    this.o.log?.warn(`${art} eines Pakets übergangen`, { paket: p.id, fehler: fehler.slice(0, 20) });
+  }
+
+  /**
+   * Rundgänge und Tipps eines Pakets, je Tipp, ob er „neu“ ist: Tipps mit ab_version nach einem Update darauf, Angebote
+   * für Rundgänge mit nach_installation/nach_update – jeweils {@link ANGEBOT_TAGE} lang.
+   */
+  private paketQuelle(p: InstalliertesPaket, anker: readonly Anker[], typen: (k: string) => TypInfo | undefined, jetzt: number): { rundgaenge: Rundgang[]; tipps: Array<[Tipp, boolean]> } {
+    if (!p.entdecken) return { rundgaenge: [], tipps: [] };
+    const r = paketRundgaenge(p, p.entdecken.rundgaenge, { anker, typen });
+    this.melde(p, 'Rundgänge', r.fehler);
+    const x = paketTipps(p, p.entdecken.tipps, { anker, rundgaenge: r.rundgaenge.map((y) => y.schluessel.slice(p.id.length + 1)), typen });
+    this.melde(p, 'Tipps', x.fehler);
+    const tipps: Array<[Tipp, boolean]> = x.tipps.map((y) => [y, kuerzlich(p.aktualisiert, jetzt) && istNeu(y, p.entdecken?.vorher ?? null, p.version)]);
+    for (const y of r.rundgaenge) {
+      const wann = y.start === 'nach_installation' ? (p.aktualisiert ? null : p.installiert) : y.start === 'nach_update' ? p.aktualisiert : null;
+      if (!kuerzlich(wann, jetzt)) continue;
+      tipps.push([{ schluessel: `angebot:${y.schluessel}`, herkunft: y.herkunft, bereich: 'mappen', text: t('entdecken.angebot', { titel: y.titel }), fuer: y.fuer, rundgang: y.schluessel }, true]);
+    }
+    return { rundgaenge: r.rundgaenge, tipps };
+  }
+
+  private async fuerwen(b: Benutzer, q: { rundgaenge: Rundgang[]; tipps: Tipp[] }) {
+    // Lesbare Mappentypen nur holen, wenn ein Eintrag einen Mappentyp nennt.
+    const mitTyp = q.rundgaenge.some((r) => oeffneTyp(r.oeffne)) || q.tipps.some((x) => x.typ);
+    return { verwalten: b.rolle === 'admin' || darfVerwalten(b), funktionen: await this.o.funktionen(b), ...(mitTyp && this.o.lesbareTypen ? { lesbar: await this.o.lesbareTypen(b) } : {}) };
   }
 
   /**
@@ -104,8 +230,8 @@ export class Entdecken {
    * (#418) startet nichts von selbst und Ablago merkt sich nichts für die vertretene Person.
    */
   async stand(b: Benutzer, o: { vertretung?: boolean } = {}): Promise<EntdeckenStand> {
-    const q = this.quellen();
-    const p = await this.fuerwen(b);
+    const q = await this.quellen();
+    const p = await this.fuerwen(b, q);
     const e = await this.o.einstellungen(b);
     const rundgaenge = q.rundgaenge.map((r) => rundgangFuer(r, p)).filter((r): r is Rundgang => !!r);
     // Version (#832): beim ersten Mal und nach jedem Update merken, welche die Person davor benutzt hat.
@@ -118,12 +244,13 @@ export class Entdecken {
     }
     const stand = tippStandAus(e[EINSTELLUNG.tipps]);
     const aus = new Set(stand.aus);
-    const tipps: TippAnzeige[] = q.tipps.filter((x) => tippPasst(x, p)).map((x) => {
+    // Tipps, die einen Rundgang starten, nur, wenn die Person ihn auch bekommt.
+    const tipps: TippAnzeige[] = q.tipps.filter((x) => tippPasst(x, p) && (!x.rundgang || rundgaenge.some((r) => r.schluessel === x.rundgang))).map((x) => {
       const a = x.ziel ? q.anker.find((y) => y.anker === x.ziel) : undefined;
       return {
         schluessel: x.schluessel, herkunft: x.herkunft, bereich: x.bereich, text: x.text,
-        ...(a?.seite ? { ziel: { anker: a.anker, seite: a.seite } } : {}), ...(x.rundgang ? { rundgang: x.rundgang } : {}),
-        neu: istNeu(x, vorher, jetzt), ausgeblendet: aus.has(x.schluessel), clients: x.rundgang ? false : !!a?.clients,
+        ...(a?.seite ? { ziel: { anker: a.anker, seite: a.seite } } : x.ziel && x.typ ? { ziel: { anker: x.ziel, typ: x.typ } } : {}), ...(x.rundgang ? { rundgang: x.rundgang } : {}),
+        neu: q.neu.get(x.schluessel) ?? istNeu(x, vorher, jetzt), ausgeblendet: aus.has(x.schluessel), clients: x.rundgang ? false : !!a?.clients,
       };
     });
     const tippsAn = e[EINSTELLUNG.tippsAn] !== false;
@@ -136,7 +263,7 @@ export class Entdecken {
   /** Tipp gezeigt, angeklickt (erledigt), mit × ausgeblendet oder auf „Ablago entdecken“ wieder eingeblendet. */
   async tipp(b: Benutzer, schluessel: string, aktion: unknown): Promise<void> {
     if (aktion !== 'gezeigt' && aktion !== 'erledigt' && aktion !== 'ausblenden' && aktion !== 'einblenden') throw new Fachfehler(422, t('meldungen.entdecken.aktion'));
-    if (!this.quellen().tipps.some((x) => x.schluessel === schluessel)) throw new Fachfehler(404, t('meldungen.entdecken.tipp'));
+    if (!(await this.quellen()).tipps.some((x) => x.schluessel === schluessel)) throw new Fachfehler(404, t('meldungen.entdecken.tipp'));
     const e = await this.o.einstellungen(b);
     const neu = tippHandlung(tippStandAus(e[EINSTELLUNG.tipps]), schluessel, aktion, this.o.heute());
     await this.o.setzeEinstellung(b, EINSTELLUNG.tipps, { ...neu, gesehen: (neu.gesehen ?? []).slice(-MERKEN_MAX), aus: (neu.aus ?? []).slice(-MERKEN_MAX) });
@@ -145,7 +272,7 @@ export class Entdecken {
   /** Rundgang gesehen (Fertig, Überspringen) oder „Später“ (wieder bei der nächsten Anmeldung). */
   async rundgang(b: Benutzer, schluessel: string, stand: unknown): Promise<void> {
     if (stand !== 'gesehen' && stand !== 'spaeter') throw new Fachfehler(422, t('meldungen.entdecken.stand'));
-    if (!this.quellen().rundgaenge.some((r) => r.schluessel === schluessel)) throw new Fachfehler(404, t('meldungen.entdecken.rundgang'));
+    if (!(await this.quellen()).rundgaenge.some((r) => r.schluessel === schluessel)) throw new Fachfehler(404, t('meldungen.entdecken.rundgang'));
     const e = await this.o.einstellungen(b);
     const merker = rundgangMerkerAus(e[EINSTELLUNG.rundgaenge]);
     // „gesehen“ bleibt gesehen: Wer den Rundgang über „Ablago entdecken“ noch einmal startet und „Später“ wählt, bekommt ihn nicht wieder von selbst.
@@ -153,5 +280,37 @@ export class Entdecken {
     merker[schluessel] = { stand, am: new Date().toISOString() };
     await this.o.setzeEinstellung(b, EINSTELLUNG.rundgaenge, merker);
     this.o.log?.debug(`Rundgang „${schluessel}“: ${stand}`);
+  }
+
+  /** „Ausprobieren“ eines Tipps (#942): erste Mappe dieses Typs, die die Person lesen darf, sonst null. */
+  async mappeVonTyp(b: Benutzer, typ: string): Promise<string | null> { return (await this.o.oeffnen?.(b, typ, 'mappe')) ?? null; }
+
+  /**
+   * „Ausprobieren“ in der Werkbank (#941): ein ungespeicherter Rundgang, wie diese Person ihn sähe, und was er vorher
+   * öffnet. Ändert nichts für andere.
+   */
+  async probe(b: Benutzer, r: Rundgang): Promise<{ rundgang: Rundgang | null; pfad: string | null }> {
+    const fuer = rundgangFuer(r, await this.fuerwen(b, { rundgaenge: [r], tipps: [] }));
+    const o = r.oeffne;
+    const pfad = fuer && o && !('seite' in o) ? (await this.o.oeffnen?.(b, 'mappe' in o ? o.mappe : o.neu, 'mappe' in o ? 'mappe' : 'neu')) ?? null : null;
+    return { rundgang: fuer, pfad };
+  }
+
+  /**
+   * Was ein Rundgang vor dem ersten Schritt öffnet (`oeffne.mappe`/`oeffne.neu`): Pfad oder null (dann zeigt die
+   * Oberfläche den Ersatztext). Nur für Rundgänge, die die Person bekommt; andere gelten als unbekannt.
+   */
+  async oeffnen(b: Benutzer, schluessel: string, art: 'rundgang' | 'tipp' = 'rundgang'): Promise<{ pfad: string | null }> {
+    const s = await this.stand(b, { vertretung: true });
+    if (art === 'tipp') {
+      const x = s.tipps.find((y) => y.schluessel === schluessel);
+      if (!x) throw new Fachfehler(404, t('meldungen.entdecken.tipp'));
+      return { pfad: x.ziel?.typ ? (await this.o.oeffnen?.(b, x.ziel.typ, 'mappe')) ?? null : x.ziel?.seite ?? null };
+    }
+    const r = s.rundgaenge.find((x) => x.schluessel === schluessel);
+    if (!r) throw new Fachfehler(404, t('meldungen.entdecken.rundgang'));
+    const o = r.oeffne;
+    if (!o || 'seite' in o) return { pfad: null };
+    return { pfad: (await this.o.oeffnen?.(b, 'mappe' in o ? o.mappe : o.neu, 'mappe' in o ? 'mappe' : 'neu')) ?? null };
   }
 }

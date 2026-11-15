@@ -80,7 +80,7 @@ export function PaketErstellen({ onErstellt }: { onErstellt?: () => void } = {})
   if (!stand || !e) return <div className="leer"><p>{t('werkbank.paketerstellen.lade')}</p></div>;
 
   const setze = (x: Partial<PaketErstellenEingabe>) => { setFertig(undefined); setE({ ...e, ...x }); };
-  const umschalten = (liste: 'typen' | 'sichten' | 'beispiele' | 'wortlisten', id: string, an: boolean) => { const l = e[liste] ?? []; setze({ [liste]: an ? [...l, id] : l.filter((x) => x !== id) }); };
+  const umschalten = (liste: 'typen' | 'sichten' | 'beispiele' | 'wortlisten' | 'rundgaenge' | 'tipps', id: string, an: boolean) => { const l = e[liste] ?? []; setze({ [liste]: an ? [...l, id] : l.filter((x) => x !== id) }); };
   const ausEntwurf = (x: PaketEntwurf) => { const n = alsNeueVersion(x, stand); setIdAuto(false); setHochgeladen(false); setWeg(n.weg); setFrage(false); setze(n.e); };
   const neuesPaket = () => { setIdAuto(true); setHochgeladen(false); setWeg(undefined); setFrage(false); setze(stand.vorschlag); };
   async function letzteHochladen(datei: File) {
@@ -229,7 +229,7 @@ function alsNeueVersion(w: PaketEntwurf, stand: ErstellenStand): { e: PaketErste
   const fehlt = w.typen.length - typen.length + w.sichten.length - sichten.length + (w.wortlisten ?? []).length - wortlisten.length;
   return {
     e: {
-      typen, sichten, beispiele: w.beispiele, wortlisten, ...(w.beispielDokumente ? { beispielDokumente: true } : {}), id: w.id, name: w.name, version: '', beschreibung: w.beschreibung, autor: w.autor,
+      typen, sichten, beispiele: w.beispiele, wortlisten, ...(w.beispielDokumente ? { beispielDokumente: true } : {}), ...(w.rundgaenge?.length ? { rundgaenge: w.rundgaenge.filter((x) => stand.rundgaenge?.some((r) => r.schluessel === x)) } : {}), ...(w.tipps?.length ? { tipps: w.tipps.filter((x) => stand.tipps?.some((r) => r.schluessel === x)) } : {}), id: w.id, name: w.name, version: '', beschreibung: w.beschreibung, autor: w.autor,
       lizenz: w.lizenz, lizenzArt: w.lizenzArt ?? 'frei', lizenzName: w.lizenzName, lizenzText: w.lizenzText, dms: '', aenderungen: '',
     },
     weg: fehlt ? t('pakete.erstellen.frage.weg', { anzahl: fehlt }) : undefined,
@@ -259,7 +259,7 @@ function NeuOderVersion({ stand, neu, version }: { stand: ErstellenStand; neu():
 /** Schritt 1: Mappentypen, Ansichten und (optional) Beispiel-Mappen wählen. */
 function Auswahl({ stand, e, suche, setSuche, umschalten, mitDokumenten, pruefung }: {
   stand: ErstellenStand; e: PaketErstellenEingabe; suche: string; setSuche(s: string): void; pruefung: PaketPruefung | null;
-  umschalten(liste: 'typen' | 'sichten' | 'beispiele' | 'wortlisten', id: string, an: boolean): void;
+  umschalten(liste: 'typen' | 'sichten' | 'beispiele' | 'wortlisten' | 'rundgaenge' | 'tipps', id: string, an: boolean): void;
   /** Beispiel-Dokumente (#878) mitnehmen. */
   mitDokumenten(an: boolean): void;
 }) {
@@ -320,6 +320,36 @@ function Auswahl({ stand, e, suche, setSuche, umschalten, mitDokumenten, pruefun
         </ul>
         </FeldGruppe>
       </section>
+      {/* Eigene Rundgänge (#941): als inhalt/rundgaenge.yaml. */}
+      {!!stand.rundgaenge?.length && (
+        <section className="blatt" aria-label={t('werkbank.paketerstellen.rundgaenge')}>
+          <h2 className="h3">{t('werkbank.paketerstellen.rundgaenge')}</h2>
+          <p className="leise klein">{t('werkbank.paketerstellen.rundgaenge.text')}</p>
+          <FeldGruppe beschriftung={t('werkbank.paketerstellen.rundgaenge')} beschriftungVerbergen>
+            <ul className="stapel">
+              {stand.rundgaenge.filter((r) => passt(r.titel)).map((r) => (
+                <li key={r.schluessel}><label className="haken"><input type="checkbox" checked={(e.rundgaenge ?? []).includes(r.schluessel)} onChange={(x) => umschalten('rundgaenge', r.schluessel, x.target.checked)} />
+                  <span>{r.titel}</span></label></li>
+              ))}
+            </ul>
+          </FeldGruppe>
+        </section>
+      )}
+      {/* Eigene Tipps (#942): als inhalt/tipps.yaml. */}
+      {!!stand.tipps?.length && (
+        <section className="blatt" aria-label={t('werkbank.paketerstellen.tipps')}>
+          <h2 className="h3">{t('werkbank.paketerstellen.tipps')}</h2>
+          <p className="leise klein">{t('werkbank.paketerstellen.tipps.text')}</p>
+          <FeldGruppe beschriftung={t('werkbank.paketerstellen.tipps')} beschriftungVerbergen>
+            <ul className="stapel">
+              {stand.tipps.filter((x) => passt(x.text)).map((x) => (
+                <li key={x.schluessel}><label className="haken"><input type="checkbox" checked={(e.tipps ?? []).includes(x.schluessel)} onChange={(y) => umschalten('tipps', x.schluessel, y.target.checked)} />
+                  <span>{x.text}</span></label></li>
+              ))}
+            </ul>
+          </FeldGruppe>
+        </section>
+      )}
       <section className="blatt" aria-label={t('werkbank.paketerstellen.beispiel-mappen')}>
         <h2 className="h3">{t('werkbank.paketerstellen.beispiel-mappen-optional')}</h2>
         <p className="leise klein">{t('werkbank.paketerstellen.ohne-auswahl-enthaelt-das')}</p>
@@ -354,6 +384,8 @@ function Inhalt({ p }: { p: PaketPruefung }) {
       <dt>{t('werkbank.paketerstellen.ansichten')}</dt><dd>{p.inhalt.sichten.map((s) => (s.eltern ? `${p.inhalt.sichten.find((x) => x.schluessel === s.eltern)?.name} → ${s.name}` : s.name)).join(', ') || '–'}</dd>
       <dt>{t('werkbank.paketerstellen.beispiele')}</dt><dd>{p.inhalt.beispiele ? <>{p.inhalt.beispiele}{p.inhalt.beispielDokumente ? ` ${t('werkbank.paketerstellen.mit-dokumenten-anzahl', { anzahl: p.inhalt.beispielDokumente })}` : ''}</> : t('werkbank.paketerstellen.keine')}</dd>
       <dt>{t('werkbank.paketerstellen.wortlisten')}</dt><dd>{p.inhalt.wortlisten || t('werkbank.paketerstellen.keine')}</dd>
+      {!!p.inhalt.rundgaenge && <><dt>{t('werkbank.paketerstellen.rundgaenge')}</dt><dd>{p.inhalt.rundgaenge}</dd></>}
+      {!!p.inhalt.tipps && <><dt>{t('werkbank.paketerstellen.tipps')}</dt><dd>{p.inhalt.tipps}</dd></>}
       <dt>{t('werkbank.paketerstellen.abhaengigkeiten')}</dt><dd>{abh.length ? abh.map(([k, v]) => `${k} ${v}`).join(', ') : t('werkbank.paketerstellen.keine')}</dd>
     </dl>
   );

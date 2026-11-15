@@ -7,7 +7,7 @@ import { teiltypen } from '../../../shared/src/teile';
 import type { Readable } from 'node:stream';
 import { buffer as alsPuffer } from 'node:stream/consumers';
 import { pdfFuerAnzeige } from '../pdfanzeige';
-import type { Abruffassung, Benutzer, Mappe } from '../../../shared/src/model';
+import { darfErstellen, type Abruffassung, type Benutzer, type Mappe } from '../../../shared/src/model';
 import type { Recht } from '../../../shared/src/rechte';
 import type { DemoPlatz } from '../demo';
 import type { Dienst } from '../dienst';
@@ -28,6 +28,7 @@ import { Paketverwaltung } from '../pakete';
 import { Paketerstellung } from '../paketerstellung';
 import { Umwandlung } from '../umwandlung';
 import { Entdecken } from '../entdecken';
+import { RundgaengeWerkbank, WERKBANK_EINSTELLUNG } from '../entdecken-werkbank';
 import { heuteIn } from '../../../shared/src/sichten';
 import { eigeneVersion } from '../system';
 import { notfallblatt } from '../notfallblatt';
@@ -60,7 +61,39 @@ export function routenKontext(dienst: Dienst, konten: Konten, x: RoutenExtras = 
       if (konten.mailAktiv) f.add('mail');
       return f;
     },
+    // Rundgänge aus Paketen (#831): Pakete, Mappentypen und die Rechte der Person daran.
+    pakete: () => dienst.kern.repo.listePakete(),
+    typen: async () => (await dienst.kern.repo.listeTypen()).map((x) => ({ kennung: x.schluessel ?? x.id, felder: x.felder.map((f) => f.key), register: x.register.map((r) => r.key) })),
+    lesbareTypen: async (b) => {
+      const z = await dienst.rechtepruefung.zugriff(b);
+      const lesbar = new Set((await dienst.mappentypen.rechteUebersicht(z)).filter((x) => x.rechte.R !== 'nie').map((x) => x.typId));
+      return new Set([...z.typen.values()].filter((x) => lesbar.has(x.id)).map((x) => x.schluessel ?? x.id));
+    },
+    oeffnen: async (b, kennung, art) => {
+      const z = await dienst.rechtepruefung.zugriff(b);
+      const typ = (await dienst.mappentypen.typenFuer(z)).find((x) => (x.schluessel ?? x.id) === kennung);
+      if (!typ) return null;
+      if (art === 'neu') return darfErstellen(typ) ? `/ablage/${typ.id}/neu` : null;
+      // Die erste Mappe des Typs, die die Person lesen darf – zuletzt geänderte zuerst.
+      const mappen = (await dienst.kern.repo.listeMappen(typ.id)).sort((a, b2) => b2.geaendert.localeCompare(a.geaendert));
+      const lesbar = await dienst.rechtepruefung.lesbare(z, mappen.slice(0, 500).map((m) => m.id));
+      const m = mappen.find((x) => lesbar.has(x.id));
+      return m ? `/ablage/${typ.id}/${m.id}` : null;
+    },
+    werkbank: async () => dienst.kern.einstellungen?.lies(WERKBANK_EINSTELLUNG) ?? null,
     log: L.konto,
+  });
+  // Werkbank → Rundgänge (#941): eigene Rundgänge und An/aus in der Einstellung der Ablage.
+  const rundgaengeWerkbank = new RundgaengeWerkbank({
+    speicher: {
+      lies: async () => dienst.kern.einstellungen?.lies(WERKBANK_EINSTELLUNG) ?? null,
+      schreibe: async (w) => { await dienst.kern.einstellungen?.schreibe(WERKBANK_EINSTELLUNG, w); },
+      ...(dienst.kern.einstellungen?.tausche ? { tausche: (alt: unknown, neu: unknown) => dienst.kern.einstellungen!.tausche!(WERKBANK_EINSTELLUNG, alt, neu) } : {}),
+    },
+    pruefung: async () => {
+      const typen = new Map((await dienst.kern.repo.listeTypen()).map((x) => [x.schluessel ?? x.id, { kennung: x.schluessel ?? x.id, felder: x.felder.map((f) => f.key), register: x.register.map((r) => r.key) }]));
+      return { anker: entdecken.ablago().anker, typ: (k: string) => typen.get(k) ?? null };
+    },
   });
   const umwandlung = new Umwandlung(dienst);
   const wer = (a: Anfrage) => ({ id: a.benutzer?.id ?? null, email: a.benutzer?.email ?? null });
@@ -365,7 +398,7 @@ export function routenKontext(dienst: Dienst, konten: Konten, x: RoutenExtras = 
   };
   return {
     dienst, konten, x, fotostapel, messung, system, designs, log,
-    pakete, paketerstellung, entdecken, umwandlung, wer, einrichtungZugang, weitergabe, mitnehmen,
+    pakete, paketerstellung, entdecken, rundgaengeWerkbank, umwandlung, wer, einrichtungZugang, weitergabe, mitnehmen,
     abgerufen, herausgeben, seitenquelle, zumAbspeichern, fuerAnzeige, ausgabeDatei, typName, nurSelbst,
     betrieb, region, sprachen, spracheFuer, regionStand, zusammenfassung, ocr,
     meldungen, tresor, schluessel, autos, passwoerterAnzeigen, verwaltungHinweis, modusSpur,

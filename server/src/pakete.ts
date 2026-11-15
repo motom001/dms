@@ -62,6 +62,8 @@ import { mitkommtVon, type MitkommtNamen } from './pakete/index';
 import { liesKurzanleitung, type Mitkommt } from '../../shared/src/mitkommt';
 import { abhaengigeTypen, abhaengigkeitsKonflikte, anzeigeTypIds, anzeigeWartet, eigeneKonflikte, Namensherkunft, optionaleInTyp, quelleAnlegbar, quellenNachtragen, type SollQuelle } from './pakete/index';
 import type { UmbauEntscheidungen, UmbauPlan, UmbauSchritt } from '../../shared/src/umbau';
+import { pruefeRundgaenge, pruefeTipps } from '../../shared/src/entdecken';
+import { ankerListe, paketTyp } from './entdecken';
 import { istVorgabeWert, vorgabeKennung, vorgabeVerweis, vorgabeWerte, type ErgaenzungPlan, type VorgabeFrage, type VorgabePlan } from '../../shared/src/vorgaben';
 
 const log = protokoll.modul('werkbank');
@@ -362,7 +364,9 @@ export interface Paket { manifest: Manifest; typen: PaketTyp[]; sichten: PaketSi
   /** Automatisierungsvorlagen (#1044), roh aus inhalt/ablaufvorlagen.yaml; nur erlaubte Karten. */
   ablaufvorlagen?: PaketAblaufvorlage[];
   /** Kurzanleitung „So nutzt du es“ (#1047, Manifest `kurzanleitung`) je Sprache. */
-  kurzanleitung?: Record<string, string[]> }
+  kurzanleitung?: Record<string, string[]>;
+  /** Rundgänge und Tipps (#831, #832; `inhalt.rundgaenge`, `inhalt.tipps`), roh und geprüft. */
+  entdecken?: { rundgaenge?: unknown[]; tipps?: unknown[] } }
 /** Inhalt eines Sprachpakets (#731), geprüft gegen das Deutsche dieser Version. */
 export interface PaketSprache { angabe: Sprachangabe; texte: Sprachtexte; uebergangen: string[]; beschriftungen: Record<string, SprachBeschriftung> }
 
@@ -694,6 +698,28 @@ export function liesPaket(roh: Map<string, Buffer>): Paket {
     }
   }
   const doppelt = (l: string[]) => l.filter((x, i) => l.indexOf(x) !== i);
+  // Rundgänge (#831) und Tipps (#832): Format, Anker, Felder und Register der eigenen Mappentypen, Grenzen – wie die Paketprüfung
+  // (dms-registry #132). Mappentypen anderer Pakete nur als Abhängigkeit; ihre Felder prüft Ablago bei der Anzeige.
+  const entdecken: NonNullable<Paket['entdecken']> = {};
+  const typInfo = (k: string) => {
+    const [pk, sl] = k.split(':');
+    if (pk === str(m.id)) { const ty = typen.find((y) => y.schluessel === sl); return ty ? { kennung: k, felder: ty.felder.map((f) => str(f.key)), register: ty.register.map((g) => str(g.key)) } : null; }
+    return pk in abh ? { kennung: k } : null;
+  };
+  if (inhalt.rundgaenge) {
+    const roh = liste('rundgaenge');
+    const r = pruefeRundgaenge(roh, { herkunft: `paket:${str(m.id)}`, anker: ankerListe(), typ: (x) => paketTyp(str(m.id), x, typInfo) });
+    fehler.push(...r.fehler.map((f) => `${str(inhalt.rundgaenge)}: ${f}`));
+    if (roh.length) entdecken.rundgaenge = roh;
+  }
+  // Tipps (#832): höchstens 20, 160 Zeichen; Ziele wie bei Rundgängen, `rundgang` nennt einen Rundgang des Pakets.
+  if (inhalt.tipps) {
+    const roh = liste('tipps');
+    const eigeneRundgaenge = (entdecken.rundgaenge ?? []).map((x) => str((x as Record<string, unknown>).schluessel));
+    const x = pruefeTipps(roh, { herkunft: `paket:${str(m.id)}`, anker: ankerListe(), rundgaenge: eigeneRundgaenge, typ: (y) => paketTyp(str(m.id), y, typInfo) });
+    fehler.push(...x.fehler.map((f) => `${str(inhalt.tipps)}: ${f}`));
+    if (roh.length) entdecken.tipps = roh;
+  }
   for (const s of doppelt(typen.map((t) => t.schluessel))) fehler.push(t('meldungen.pakete.mappentypen-kennung-doppelt', { s }));
   for (const s of doppelt(sichten.map((t) => t.schluessel))) fehler.push(t('meldungen.pakete.sichten-kennung-doppelt', { s }));
   for (const vw of new Set(typverweise(typen, sichten).filter(istDmsVerweis))) {
@@ -759,6 +785,7 @@ export function liesPaket(roh: Map<string, Buffer>): Paket {
     ...(ablaufvorlagen.length ? { ablaufvorlagen } : {}),
     // Kurzanleitung (#1047): Ungültiges übergeht Ablago still, wie ältere Versionen das ganze Feld.
     ...(() => { const k = liesKurzanleitung(m.kurzanleitung); return k ? { kurzanleitung: k } : {}; })(),
+    ...(Object.keys(entdecken).length ? { entdecken } : {}),
   };
 }
 
@@ -3032,6 +3059,8 @@ export class Paketverwaltung {
         // Was mitkommt und Kurzanleitung (#1047): für die Paketseite, wie diese Version sie mitbringt.
         mitkommt: mitkommtVon(paket, plan, this.mitkommtNamen(paket, await this.d.kern.repo.listePakete(), await this.d.mappentypen.listeTypen()), false),
         ...(paket.kurzanleitung ? { kurzanleitung: paket.kurzanleitung } : {}),
+        // Rundgänge und Tipps (#831, #832): wie diese Version sie mitbringt; vorher = Version vor diesem Update.
+        ...(paket.entdecken ? { entdecken: { ...paket.entdecken, vorher: alt?.version ?? null } } : {}),
         typStand,
       };
       // Code (#338): ersetzt den bisherigen; ohne Code im neuen Paket fällt er weg.

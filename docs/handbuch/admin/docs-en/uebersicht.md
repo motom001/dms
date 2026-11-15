@@ -5,7 +5,7 @@ The **workbench** only exists in [Administration mode](verwalten.md#der-verwaltu
 <!-- bereiche:gruppen -->
 | Group | Areas |
 | --- | --- |
-| **Build the Library** | [Packages](pakete.md), [Folder types](mappentypen.md), [Views](sichten.md), [Number sequences](nummernkreise.md), [Automations](automatisierungen.md), [Automation templates](automatisierungsvorlagen.md) |
+| **Build the Library** | [Packages](pakete.md), [Folder types](mappentypen.md), [Views](sichten.md), [Number sequences](nummernkreise.md), [Automations](automatisierungen.md), [Automation templates](automatisierungsvorlagen.md), [Tours](rundgaenge.md), [Tips](tipps.md) |
 | **Users and security** | [Users](benutzer.md), [Encryption](verschluesselung.md), [Retention expired](archiv.md#nach-der-frist-aufbewahrung-abgelaufen) (only with archive mode), [Stamps](stempel.md) |
 | **Data protection** | [Access requests](datenschutz.md#auskunft-erteilen) (only when used for work), [Deletion concept](loeschkonzept.md#aus-dem-dms-erzeugen) (only when used for work), [Deletion log](datenschutz.md#loschprotokoll) (only when used for work) |
 | **Post and intake** | [Mailboxes](postfaecher.md), [Intake folder](eingangsordner.md) (only if the folder is mounted), [WebDAV drive](webdav.md), [Search and full text](texterkennung.md), [Synonyms](suche.md#gleichbedeutende-worter) |
@@ -158,7 +158,7 @@ Not everyone needs every area. A household may never touch number sequences, mai
 
 - **Household**: slim, only what a family needs for setting up and backing up. New installations start with it. **The self-employed and small businesses** choose **Business** right after setup.
 <!-- bereiche:organisation -->
-- **Business**: additionally Number sequences, Automations, Automation templates, Retention expired, Access requests, Deletion concept, Deletion log, Mailboxes, Intake folder, Search and full text, Synonyms, Sign-in protection, Themes, Log, Reported errors, Maintenance.
+- **Business**: additionally Number sequences, Automations, Automation templates, Tours, Tips, Retention expired, Access requests, Deletion concept, Deletion log, Mailboxes, Intake folder, Search and full text, Synonyms, Sign-in protection, Themes, Log, Reported errors, Maintenance.
 <!-- /bereiche:organisation -->
 - **Everything**: every area. It stays like this for installations set up before version 0.70 until you choose something else.
 
@@ -184,6 +184,8 @@ If a hidden area is set up, for instance a mailbox or sign-in via a provider, it
 | [Number sequences](nummernkreise.md) | Sequential numbers, e.g. for invoices | Business |
 | [Automations](automatisierungen.md) | Set up procedures following the pattern When – And – Then: on an event or date set fields or give someone a task | Business, Household in expert mode |
 | [Automation templates](automatisierungsvorlagen.md) | Templates for runs on a folder: “Assign task”, “Remind”, follow-up – when they run, who gets the task and what is asked when applying them | Business, Household in expert mode |
+| [Tours](rundgaenge.md) | When you want to see tours, switch them on or off or write your own – short guided tours of the real interface. | Business, Household in expert mode |
+| [Tips](tipps.md) | When you want to adapt tips to the way you work, write your own or switch some off. | Business, Household in expert mode |
 | [Users](benutzer.md) | Create users and roles | Household, Business |
 | [Encryption](verschluesselung.md) | The key for passwords and backups | Household, Business |
 | [Retention expired](archiv.md#nach-der-frist-aufbewahrung-abgelaufen) | Check and delete folders whose retention period has expired (only with archive mode) | Business |

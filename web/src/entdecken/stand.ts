@@ -36,7 +36,8 @@ export async function tippHandlung(schluessel: string, aktion: 'gezeigt' | 'erle
 
 /* ---------- Rundgang starten (von selbst, aus einem Tipp, von „Ablago entdecken“) ---------- */
 
-let aktiv: { rundgang: Rundgang; vonSelbst: boolean } | null = null;
+/** Laufender Rundgang; `probe`: „Ausprobieren“ in der Werkbank (#941) – ungespeichert, nichts wird gemerkt. */
+let aktiv: { rundgang: Rundgang; vonSelbst: boolean; probe?: { pfad: string | null } } | null = null;
 const rundgangHoerer = new Set<() => void>();
 
 export function starteRundgang(schluessel: string, vonSelbst = false) {
@@ -46,11 +47,17 @@ export function starteRundgang(schluessel: string, vonSelbst = false) {
   for (const h of rundgangHoerer) h();
 }
 
+/** „Ausprobieren“ (#941): diesen Rundgang sofort zeigen, nur für mich; `pfad`: was er vorher öffnet. */
+export function probiereRundgang(rundgang: Rundgang, pfad: string | null) {
+  aktiv = { rundgang, vonSelbst: false, probe: { pfad } };
+  for (const h of rundgangHoerer) h();
+}
+
 export function beendeRundgang(stand2: 'gesehen' | 'spaeter' | null) {
   const a = aktiv;
   aktiv = null;
   for (const h of rundgangHoerer) h();
-  if (a && stand2) void kontoApi.rundgangMerken(a.rundgang.schluessel, stand2).catch(() => {}).then(() => ladeEntdecken());
+  if (a && stand2 && !a.probe) void kontoApi.rundgangMerken(a.rundgang.schluessel, stand2).catch(() => {}).then(() => ladeEntdecken());
 }
 
 export const useAktiverRundgang = () => useSyncExternalStore((h) => { rundgangHoerer.add(h); return () => { rundgangHoerer.delete(h); }; }, () => aktiv);
@@ -104,7 +111,10 @@ export const istSchmal = () => typeof innerWidth === 'number' && innerWidth <= 8
 export async function zeigeZiel(x: TippAnzeige) {
   if (x.rundgang) { starteRundgang(x.rundgang); return; }
   if (!x.ziel) return;
-  if (location.pathname !== x.ziel.seite) geheZu(x.ziel.seite);
+  // Ziel in einer Mappe (Tipp mit Mappentyp, #832): erst die erste Mappe öffnen, die die Person lesen darf.
+  const seite = x.ziel.seite ?? await kontoApi.tippOeffnen(x.schluessel).then((r) => r.pfad, () => null);
+  if (!seite) { console.debug(`Tipp „${x.schluessel}“: keine Mappe vom Typ „${x.ziel.typ ?? ''}“ zum Zeigen.`); return; }
+  if (location.pathname !== seite) geheZu(seite);
   const z = await warteAufAnker([x.ziel.anker]);
   if (!z) { console.debug(`Tipp „${x.schluessel}“: Anker „${x.ziel.anker}“ ist hier nicht sichtbar.`); return; }
   z.el.scrollIntoView({ block: 'center', behavior: wenigBewegung() ? 'auto' : 'smooth' });

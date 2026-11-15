@@ -29,6 +29,7 @@ import { t, tn } from './sprache';
 import { gebietsschema } from '../../shared/src/sprache';
 import { Entdecken } from './entdecken/Entdecken';
 import { RundgangAnzeige } from './entdecken/Rundgang';
+import { EntdeckenWerkzeuge } from './entdecken/werkzeuge';
 import { starteRundgang, useEntdecken } from './entdecken/stand';
 
 /**
@@ -157,6 +158,7 @@ export function App() {
       <PostAblage werkbank={bereich === 'werkbank'} />
       <PostKamera />
       <RundgangAnzeige />
+      <EntdeckenWerkzeuge />
       {/* #1219: Assistent unten rechts auf jeder Seite – Fragen, Tipps, Handbuch; öffnet sich nie von selbst. */}
       {d.geladen && bereich !== 'werkbank' && <Begleiter werkbank={false} />}
       {ich.entwicklermodus && <Messpanel />}

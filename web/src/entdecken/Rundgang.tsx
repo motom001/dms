@@ -1,8 +1,12 @@
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties, type KeyboardEvent } from 'react';
-import { OEFFNE_SEITEN, type Rundgang, type RundgangSchritt } from '../../../shared/src/entdecken';
+import { HANDBUCH_VERWEIS, oeffneTyp, OEFFNE_SEITEN, type Rundgang, type RundgangSchritt } from '../../../shared/src/entdecken';
+import type { Handbuch } from '../../../shared/src/hilfe';
+import { useHandbuch } from '../Hilfe';
+import { kontoApi } from '../api/konto';
 import { geheZu } from '../ort';
 import { t } from '../sprache';
 import { Knopf } from '../bausteine';
+import { Symbol } from '../Symbol';
 import { DreiteilungBild } from './Bild';
 import { beendeRundgang, findeAnker, istSchmal, useAktiverRundgang, warteAufAnker, wenigBewegung } from './stand';
 
@@ -15,16 +19,19 @@ import { beendeRundgang, findeAnker, istSchmal, useAktiverRundgang, warteAufAnke
  *   Screenreader sagt jeder Schritt in Worten, wo die Stelle ist („ort“); Schritt, Titel und Text werden vorgelesen.
  * - Fehlt ein Ziel (z. B. am Handy ausgeblendet), fällt der Schritt still weg – nur ein Vermerk in der Konsole.
  * - Mit „Bewegung reduzieren“ springt alles ohne Übergang.
+ * - Rundgänge aus Paketen (#831) öffnen vorher die erste Mappe eines Typs, die die Person lesen darf, oder ein leeres
+ *   Formular (`oeffne.neu`) – gespeichert wird dabei nichts; am Ende geht es zurück, wo die Person war. Gibt es nichts
+ *   zu öffnen, steht statt der Schritte der Ersatztext.
  */
 export function RundgangAnzeige() {
   const aktiv = useAktiverRundgang();
   if (!aktiv) return null;
-  return <Fuehrung key={`${aktiv.rundgang.herkunft}:${aktiv.rundgang.schluessel}`} rundgang={aktiv.rundgang} vonSelbst={aktiv.vonSelbst} />;
+  return <Fuehrung key={`${aktiv.rundgang.herkunft}:${aktiv.rundgang.schluessel}:${aktiv.probe ? 'probe' : ''}`} rundgang={aktiv.rundgang} vonSelbst={aktiv.vonSelbst} probe={aktiv.probe} />;
 }
 
 interface Ziel { schritt: RundgangSchritt; anker: string | null }
 
-function Fuehrung({ rundgang, vonSelbst }: { rundgang: Rundgang; vonSelbst: boolean }) {
+function Fuehrung({ rundgang, vonSelbst, probe }: { rundgang: Rundgang; vonSelbst: boolean; probe?: { pfad: string | null } }) {
   const ref = useRef<HTMLDialogElement>(null);
   const weiterKnopf = useRef<HTMLButtonElement>(null);
   const vorher = useRef<Element | null>(typeof document === 'undefined' ? null : document.activeElement);
@@ -33,12 +40,18 @@ function Fuehrung({ rundgang, vonSelbst }: { rundgang: Rundgang; vonSelbst: bool
   const [schritte, setSchritte] = useState<Ziel[] | null>(null);
   const [nr, setNr] = useState(0);
   const [rechteck, setRechteck] = useState<DOMRect | null>(null);
+  // Leeres Formular (`oeffne.neu`): danach zurück, wo die Person war – angelegt wird nichts.
+  const zurueckNach = useRef<string | null>(null);
 
   // Seite öffnen, dann prüfen, welche Ziele es gibt; Schritte ohne sichtbares Ziel fallen weg.
   useEffect(() => {
     let aus = false;
-    if (rundgang.oeffne && location.pathname !== OEFFNE_SEITEN[rundgang.oeffne.seite]) geheZu(OEFFNE_SEITEN[rundgang.oeffne.seite]);
     void (async () => {
+      const vorher = await oeffneVorher(rundgang, probe);
+      if (aus) return;
+      // Nichts zu öffnen: statt der Schritte ein Satz (`ersatz`).
+      if (vorher === 'ersatz') { setSchritte([{ schritt: { schluessel: 'ersatz', ziel: [], fuer: 'lesen', titel: rundgang.titel, text: rundgang.ersatz ?? t('entdecken.fuehrung.ersatz') }, anker: null }]); return; }
+      zurueckNach.current = vorher;
       const liste: Ziel[] = [];
       for (const s of rundgang.schritte) {
         if (!s.ziel.length) { liste.push({ schritt: s, anker: null }); continue; }
@@ -51,7 +64,7 @@ function Fuehrung({ rundgang, vonSelbst }: { rundgang: Rundgang; vonSelbst: bool
       setSchritte(liste);
     })();
     return () => { aus = true; };
-  }, [rundgang]);
+  }, [rundgang, probe]);
 
   // Dialog öffnen; beim Schließen den Fokus zurückgeben.
   useEffect(() => {
@@ -96,7 +109,10 @@ function Fuehrung({ rundgang, vonSelbst }: { rundgang: Rundgang; vonSelbst: bool
   const letzter = nr === schritte.length - 1;
   const s = aktuell.schritt;
   const text = schmal && s.textHandy ? s.textHandy : s.text;
-  const ende = (stand: 'gesehen' | 'spaeter') => beendeRundgang(stand);
+  const ende = (stand: 'gesehen' | 'spaeter') => {
+    beendeRundgang(stand);
+    if (zurueckNach.current) geheZu(zurueckNach.current);
+  };
   const weiter = () => (letzter ? ende('gesehen') : setNr(nr + 1));
   const zurueck = () => setNr(Math.max(0, nr - 1));
 
@@ -125,7 +141,7 @@ function Fuehrung({ rundgang, vonSelbst }: { rundgang: Rundgang; vonSelbst: bool
           {s.bild === 'dreiteilung' && <DreiteilungBild schmal={schmal} />}
           <div id={`${id}-x`}>
             <p>{text}</p>
-            {s.ort && <p className="sr">{s.ort}</p>}
+            <SchrittZusatz s={s} />
             {letzter && rundgang.ende && <p className="rg-ende">{rundgang.ende}</p>}
           </div>
         </div>
@@ -144,6 +160,22 @@ function Fuehrung({ rundgang, vonSelbst }: { rundgang: Rundgang; vonSelbst: bool
   );
 }
 
+/**
+ * Vor dem ersten Schritt öffnen, was der Rundgang nennt: eine Seite, die erste lesbare Mappe eines Typs oder ein leeres
+ * Formular. Liefert, wohin es am Ende zurückgeht (nur beim leeren Formular), oder 'ersatz', wenn es nichts zu öffnen gibt.
+ */
+async function oeffneVorher(rundgang: Rundgang, probe?: { pfad: string | null }): Promise<string | null | 'ersatz'> {
+  const o = rundgang.oeffne;
+  if (o && 'seite' in o) { if (location.pathname !== OEFFNE_SEITEN[o.seite]) geheZu(OEFFNE_SEITEN[o.seite]); return null; }
+  if (!oeffneTyp(o)) return null;
+  // Beim Ausprobieren (#941) hat die Prüfung den Pfad schon geliefert – der Rundgang ist ja noch nicht gespeichert.
+  const pfad = probe ? probe.pfad : await kontoApi.rundgangOeffnen(rundgang.schluessel).then((x) => x.pfad, () => null);
+  if (!pfad) return 'ersatz';
+  const zurueck = o && 'neu' in o ? location.pathname + location.search : null;
+  if (location.pathname !== pfad) geheZu(pfad);
+  return zurueck;
+}
+
 /** Wo die Karte steht: unter dem Ziel, sonst darüber, sonst daneben; ohne Ziel in der Mitte. Am Handy unten oder oben. */
 function lageDerKarte(r: DOMRect | null, schmal: boolean): CSSProperties | undefined {
   if (!r) return undefined;
@@ -156,4 +188,21 @@ function lageDerKarte(r: DOMRect | null, schmal: boolean): CSSProperties | undef
   if (r.top > 260) return { bottom: hoehe - r.top + abstand, left: links };
   // Hohes Ziel (z. B. eine ganze Spalte): daneben.
   return r.right + abstand + breite < innerWidth ? { top: Math.max(16, r.top), left: r.right + abstand } : { top: Math.max(16, r.top), left: Math.max(16, r.left - abstand - breite) };
+}
+
+/** Unter dem Text eines Schritts: Satz für Personen ohne Verwaltungsrecht, Ort für Screenreader, Verweis ins Handbuch. */
+function SchrittZusatz({ s }: { s: RundgangSchritt }) {
+  return <>
+    {s.sonstVerwalten && <p>{s.sonstVerwalten}</p>}
+    {s.ort && <p className="sr">{s.ort}</p>}
+    {s.handbuch && <HandbuchVerweis verweis={s.handbuch} />}
+  </>;
+}
+
+/** Verweis ins mitgelieferte Handbuch an einem Schritt (`handbuch: admin/pakete/#…`), in neuem Fenster. */
+function HandbuchVerweis({ verweis }: { verweis: string }) {
+  const handbuch = useHandbuch();
+  if (!HANDBUCH_VERWEIS.test(verweis)) return null;
+  const [h, ...rest] = verweis.split('/');
+  return <p><a className="verweis" href={handbuch(h as Handbuch, rest.join('/'))} target="_blank" rel="noreferrer">{t('entdecken.fuehrung.handbuch')} <Symbol name="extern" /></a></p>;
 }

@@ -1500,6 +1500,19 @@ async function main() {
   await s.locator('.spalte.liste').first().waitFor();
   if (gruppe) await s.getByRole('heading', { name: gruppen[ids.indexOf(gruppe)][0], exact: true }).first().waitFor();
   await bild(s, 'werkbank-woerter');
+  // Rundgänge (#941): alle in der Mitte, rechts ein eigener Rundgang als Datei mit der Ankerhilfe daneben.
+  const rundgang = SPRACHE === 'en'
+    ? 'schluessel: suchen\ntitel: Finding things\nbeschreibung: Where to search.\nschritte:\n  - schluessel: suche\n    ziel: startseite.suche\n    ort: At the top in the header\n    titel: Search\n    text: Search all folders here.\n'
+    : 'schluessel: suchen\ntitel: Etwas finden\nbeschreibung: Wo du suchst.\nschritte:\n  - schluessel: suche\n    ziel: startseite.suche\n    ort: Oben in der Kopfzeile\n    titel: Suchen\n    text: Hier suchst du in allen Mappen.\n';
+  await api('POST', '/api/werkbank/rundgaenge', { yaml: rundgang }).catch(() => null);
+  await geheZu(s, '/werkbank/rundgaenge/eigen%3Asuchen');
+  await s.locator('textarea.yaml-datei').first().waitFor();
+  await bild(s, 'werkbank-rundgaenge');
+  // Tipps (#942): alle in der Mitte, rechts das Formular mit Vorschau.
+  const tipp = await api('POST', '/api/werkbank/tipps', { daten: { text: SPRACHE === 'en' ? 'Search finds words inside documents too.' : 'Die Suche findet auch Wörter in Dokumenten.', bereich: 'suche', ziel: 'startseite.suche' } }).catch(() => null);
+  await geheZu(s, tipp?.schluessel ? `/werkbank/tipps/${encodeURIComponent(tipp.schluessel)}` : '/werkbank/tipps');
+  await s.locator('.tipp-vorschau').first().waitFor();
+  await bild(s, 'werkbank-tipps');
   // Ohne Mitte (#366): lange Zugriffe unter den Einstellungen, „Installiert“ unter „Neuere Versionen“.
   // #407: unter Einstellungen → Datenbank-Anbindung, unter der Verbindung.
   // #725: lange Datenbankzugriffe stehen im Systemzustand.
