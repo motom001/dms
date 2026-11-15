@@ -901,6 +901,26 @@ A package names `inhalt.rundgaenge: inhalt/rundgaenge.yaml` in its manifest. The
 
 Text under `tipp.<key>`: at most 160 characters and two sentences, addressing the reader as “du”/“you”, only terms from the [glossary](https://github.com/motom001/dms/blob/main/docs/glossar.yml). **Every visible new feature brings its tip in the same PR** (with `ab_version` of the version in which it appears); the wording is checked in the ongoing quality control. At most 20 tips per package.
 
+#### Tips from packages { #paket-tipps }
+
+A package names `inhalt.tipps: inhalt/tipps.yaml`; the text is written directly into the file, and in Ablago the tips are called `<package>:<key>`.
+
+```yaml
+# inhalt/tipps.yaml
+- schluessel: ausfuellen_neu
+  text: Neu in Verträge 2.1 – Ablago liest Anbieter, Nummer und Laufzeit direkt aus dem Vertrag.
+  ab_version: 2.1.0                   # “new” for everyone who updated the package to this version
+  fuer: lesen                         # lesen | verwalten
+  typ: vertrag                        # optional: only whoever may read this folder type
+  rundgang: vertraege_kennenlernen    # the sentence starts this tour of the package …
+- schluessel: kuendigen
+  text: Wusstest du schon? Ablago erinnert dich an jede Kündigungsfrist.
+  typ: vertrag
+  ziel: mappe.feld:kuendigen_bis      # … or leads to this place (in the first readable folder of the type)
+```
+
+`bereich` is optional in packages (default `mappen`). A target inside a folder (`mappe.feld:`, `mappe.register:`) needs `typ`; the interface then opens the first folder of that type the person may read (`GET /api/entdecken/tipps/:schluessel/oeffnen`). “New since your last visit” applies for 30 days after the package was updated to a version from `ab_version` (Ablago keeps the previous version with the installed package). The check on installation works like for tours: schema, known anchors, fields and registers, tours of the package, at most 20 tips and 160 characters, two sentences.
+
 ### Anchor points { #anker }
 
 Targets are fixed anchor points, not HTML ids: the element carries `data-anker="<anchor>"` (on `Link` the property `anker`). The list is in `shared/entdecken/anker.yaml` with page, description, `handy` (also visible on a phone) and `clients` (also exists in clients). Patterns such as `mappe.register:<key>`, `mappe.feld:<key>` and `werkbank.bereich:<route>` match any key. Today they include:
@@ -916,10 +936,11 @@ Targets are fixed anchor points, not HTML ids: the element carries `data-anker="
 - `GET /api/entdecken` – tours and tips for the signed-in person in their language (filtered by the right to administer and by switched-on features), plus the tip of the day (`tipp`), whether the tip line is on (`tippsAn`) and which tour starts by itself now (`starten`). Per tip: anchor and page or tour, origin (`ablago`, later `paket:<id>`), `neu`, `ausgeblendet` and `clients` (suitable for clients: no tour, the anchor exists there too).
 - `POST /api/entdecken/tipps/:schluessel` with `aktion`: `gezeigt`, `erledigt`, `ausblenden`, `einblenden`.
 - `POST /api/entdecken/rundgaenge/:schluessel` with `stand`: `gesehen` or `spaeter`.
+- In `/api/v1` (for clients, #831/#832): `GET /entdecken` with a key of the level “read”, `POST /entdecken/tipps/{schluessel}` and `POST /entdecken/rundgaenge/{schluessel}` with “write” – so the interface and the app do not report twice. Clients only show tips with `clients: true`. A client's own tips use the same format; `pruefeTipps` in `shared/src/entdecken.ts` does not need a package for that.
 
 This is stored per person in their settings (`entdecken_rundgaenge`, `entdecken_tipps`, `entdecken_version`; tip of the day off: `tipps` = false) – no telemetry. While standing in for someone, nothing starts by itself and nothing is remembered. Migration 088 sets Ablago's tour to “seen” for accounts that had signed in before the update. The manual's screenshot and timing scripts mark their accounts the same way (`aufnehmen.mjs`, `ladezeiten.mjs`).
 
-**Packages follow:** `inhalt.rundgaenge` and `inhalt.tipps` in the manifest, the check on installation, Workbench → managing tips (own tips, adjustments) and the export in “Create package” come in a later stage; so do the entries in `/api/v1`.
+Tours and tips from packages: see [Tours from packages](#paket-rundgaenge) and [Tips from packages](#paket-tipps).
 
 ## Several processes (#745) { #mehrere-prozesse }
 

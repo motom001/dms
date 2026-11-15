@@ -23,6 +23,7 @@
   "bereich.konto": "My account",
   "bereich.verwalten": "Administration",
   "zeile.neu": "New since your last visit: {text}",
+  "zeile.neu-weitere": "New since your last visit: {text} – and {anzahl} more",
   "konto.tipps": "Tip of the day",
   "konto.tipps.hilfe": "At most one a day: a dot on the assistant at the bottom right shows it, and it is under “Tips”. All tips are under “Discover Ablago”.",
   "fuehrung.titel": "Tour: {titel}",

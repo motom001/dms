@@ -132,3 +132,56 @@ describe('Rundgänge aus Paketen: Anzeige je Person (#831)', () => {
     assert.ok(rundgangFuer(r, { verwalten: false, funktionen: new Set(), lesbar: new Set(['p:rechnung']) }));
   });
 });
+
+describe('Tipps aus Paketen (#832)', () => {
+  const MAN = MANIFEST.replace('  rundgaenge: inhalt/rundgaenge.yaml\n', '  rundgaenge: inhalt/rundgaenge.yaml\n  tipps: inhalt/tipps.yaml\n');
+  const TIPPS = `- schluessel: ausfuellen_neu
+  text: Neu in Verträge 2.1 – Ablago liest Anbieter und Laufzeit direkt aus dem Vertrag.
+  ab_version: 2.1.0
+  typ: vertrag
+  rundgang: kennenlernen
+- schluessel: kuendigen
+  text: Wusstest du schon? Ablago erinnert dich an jede Kündigungsfrist.
+  typ: vertrag
+  ziel: mappe.feld:kuendigen_bis
+`;
+  const liesT = (tipps: string) => liesPaket(new Map([['manifest.yaml', Buffer.from(MAN)], ['inhalt/mappentypen.yaml', Buffer.from(TYPEN)], ['inhalt/rundgaenge.yaml', Buffer.from(RUNDGANG)], ['inhalt/tipps.yaml', Buffer.from(tipps)]]));
+
+  it('Prüfung beim Installieren: Rundgang des Pakets, Feld im Mappentyp, Mappen-Anker nur mit typ', () => {
+    assert.equal(liesT(TIPPS).entdecken?.tipps?.length, 2);
+    assert.match(gruende(() => liesT(TIPPS.replace('rundgang: kennenlernen', 'rundgang: fehlt'))), /unbekannter Rundgang „fehlt“/);
+    assert.match(gruende(() => liesT(TIPPS.replace('mappe.feld:kuendigen_bis', 'mappe.feld:nichts'))), /Das Feld „nichts“/);
+    assert.match(gruende(() => liesT(TIPPS.replace('  typ: vertrag\n  ziel:', '  ziel:'))), /geht er nur mit „typ“/);
+    assert.match(gruende(() => liesT(TIPPS.replace('Kündigungsfrist.', `${'x'.repeat(160)}.`))), /höchstens 160/);
+  });
+
+  it('je Person: Präfix, Rundgang des Pakets, nur mit Leserecht, „Neu“ nach dem Update auf ab_version', async () => {
+    const konten = new Konten(speicherKontoRepo(), null, 'http://nas');
+    const { benutzer: lena } = await konten.einrichten({ email: 'lena@example.org', name: 'Lena', passwort: 'ein-langes-passwort' });
+    const { benutzer: jonas } = await konten.legeBenutzerAn({ email: 'jonas@example.org', name: 'Jonas' }, lena.id);
+    const jetzt = Date.parse('2026-11-15T10:00:00Z');
+    const p = liesT(TIPPS).entdecken!;
+    const paket = { id: 'vertraege', version: '2.1.0', installiert: '2026-01-01T00:00:00Z', aktualisiert: '2026-11-14T00:00:00Z', entdecken: { ...p, vorher: '2.0.0' } } as unknown as InstalliertesPaket;
+    const lesbar = new Map<string, string[]>([[jonas.id, []], [lena.id, ['vertraege:vertrag']]]);
+    const e = new Entdecken({
+      einstellungen: (b) => konten.einstellungen(b), setzeEinstellung: (b, k, w) => konten.setzeEinstellung(b, k, w),
+      version: () => '0.260.0', heute: () => '2026-11-15', funktionen: async () => new Set(), jetzt: () => jetzt,
+      pakete: async () => [paket], typen: async () => [{ kennung: 'vertraege:vertrag', felder: ['anbieter', 'kuendigen_bis'], register: ['dokumente'] }],
+      lesbareTypen: async (b) => new Set(lesbar.get(b.id)), oeffnen: async () => '/ablage/t1/m1',
+    });
+    const sl = await e.stand({ ...lena, letzteAnmeldung: null });
+    const neu = sl.tipps.find((x) => x.schluessel === 'vertraege:ausfuellen_neu');
+    assert.equal(neu?.rundgang, 'vertraege:kennenlernen');
+    assert.equal(neu?.neu, true);
+    assert.equal(neu?.herkunft, 'paket:vertraege');
+    const k = sl.tipps.find((x) => x.schluessel === 'vertraege:kuendigen');
+    assert.deepEqual(k?.ziel, { anker: 'mappe.feld:kuendigen_bis', typ: 'vertraege:vertrag' });
+    assert.equal(k?.neu, false);
+    assert.equal(k?.clients, false);
+    assert.deepEqual(await e.oeffnen(lena, 'vertraege:kuendigen', 'tipp'), { pfad: '/ablage/t1/m1' });
+    const sj = await e.stand({ ...jonas, letzteAnmeldung: null });
+    assert.ok(!sj.tipps.some((x) => x.herkunft === 'paket:vertraege'), 'ohne Leserecht auf Verträge keine Tipps dazu');
+    await e.tipp(lena, 'vertraege:kuendigen', 'ausblenden');
+    assert.ok((await e.stand(lena)).tipps.find((x) => x.schluessel === 'vertraege:kuendigen')?.ausgeblendet);
+  });
+});

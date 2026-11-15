@@ -36,7 +36,8 @@ The tour works with the keyboard: Tab moves between the buttons and stays inside
 
 The [assistant](assistent.md#tipps) at the bottom right shows the tip of the day under **Tips** – as a card, for example: “Is there an archive number on a paper? Type it into the search box at the top and press Enter to open exactly that document.”
 
-- **At most one new tip a day.** A small dot on the assistant's button shows it; as soon as you have looked at the tips, the dot is gone. The tip stays the same until the evening.
+- **At most one new tip a day.** A small dot on the assistant's button shows it; as soon as you have looked at the tips, the dot is gone. The tip stays the same until the evening. If there are several new things after an update, you see one with “… and 2 more” – not several cards.
+- **Also from packages:** installed packages bring their own tips, such as “New in Contracts 2.1 – …” after an update. You only get tips about folders you are allowed to read.
 - **Show me** takes you to the right place and highlights it briefly – or starts the tour. **Next tip** moves on.
 - **Only what you can use:** you do not get tips about things you are not allowed to do or that are not set up for you.
 

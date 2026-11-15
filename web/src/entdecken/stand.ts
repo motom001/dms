@@ -104,7 +104,10 @@ export const istSchmal = () => typeof innerWidth === 'number' && innerWidth <= 8
 export async function zeigeZiel(x: TippAnzeige) {
   if (x.rundgang) { starteRundgang(x.rundgang); return; }
   if (!x.ziel) return;
-  if (location.pathname !== x.ziel.seite) geheZu(x.ziel.seite);
+  // Ziel in einer Mappe (Tipp mit Mappentyp, #832): erst die erste Mappe öffnen, die die Person lesen darf.
+  const seite = x.ziel.seite ?? await kontoApi.tippOeffnen(x.schluessel).then((r) => r.pfad, () => null);
+  if (!seite) { console.debug(`Tipp „${x.schluessel}“: keine Mappe vom Typ „${x.ziel.typ ?? ''}“ zum Zeigen.`); return; }
+  if (location.pathname !== seite) geheZu(seite);
   const z = await warteAufAnker([x.ziel.anker]);
   if (!z) { console.debug(`Tipp „${x.schluessel}“: Anker „${x.ziel.anker}“ ist hier nicht sichtbar.`); return; }
   z.el.scrollIntoView({ block: 'center', behavior: wenigBewegung() ? 'auto' : 'smooth' });

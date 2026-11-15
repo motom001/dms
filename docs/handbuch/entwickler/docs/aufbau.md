@@ -901,6 +901,26 @@ Ein Paket nennt im Manifest `inhalt.rundgaenge: inhalt/rundgaenge.yaml`. Die Tex
 
 Text unter `tipp.<schluessel>`: höchstens 160 Zeichen und zwei Sätze, Du-Form, nur Begriffe aus dem [Glossar](https://github.com/motom001/dms/blob/main/docs/glossar.yml). **Jede sichtbare neue Funktion bringt ihren Tipp im selben PR mit** (mit `ab_version` der Version, in der sie erscheint); den Wortlaut prüft die laufende Qualitätskontrolle. Höchstens 20 Tipps je Paket.
 
+#### Tipps aus Paketen { #paket-tipps }
+
+Ein Paket nennt `inhalt.tipps: inhalt/tipps.yaml`; der Text steht direkt in der Datei, Tipps heißen in Ablago `<paket>:<schluessel>`.
+
+```yaml
+# inhalt/tipps.yaml
+- schluessel: ausfuellen_neu
+  text: Neu in Verträge 2.1 – Ablago liest Anbieter, Nummer und Laufzeit direkt aus dem Vertrag.
+  ab_version: 2.1.0                   # „Neu“ für alle, die das Paket auf diese Version aktualisiert haben
+  fuer: lesen                         # lesen | verwalten
+  typ: vertrag                        # optional: nur, wer diesen Mappentyp lesen darf
+  rundgang: vertraege_kennenlernen    # der Satz startet diesen Rundgang des Pakets …
+- schluessel: kuendigen
+  text: Wusstest du schon? Ablago erinnert dich an jede Kündigungsfrist.
+  typ: vertrag
+  ziel: mappe.feld:kuendigen_bis      # … oder führt an diese Stelle (in der ersten lesbaren Mappe des Typs)
+```
+
+`bereich` ist in Paketen freiwillig (Vorgabe `mappen`). Ein Ziel in einer Mappe (`mappe.feld:`, `mappe.register:`) geht nur mit `typ`; die Oberfläche öffnet dann die erste Mappe dieses Typs, die die Person lesen darf (`GET /api/entdecken/tipps/:schluessel/oeffnen`). „Neu seit deinem letzten Besuch“ gilt 30 Tage nach dem Update des Pakets auf eine Version ab `ab_version` (Ablago merkt sich die Version davor am installierten Paket). Geprüft wird beim Installieren wie bei Rundgängen: Schema, bekannte Anker, Felder und Register, Rundgänge des Pakets, höchstens 20 Tipps und 160 Zeichen, zwei Sätze.
+
 ### Ankerpunkte { #anker }
 
 Ziele sind feste Ankerpunkte, keine HTML-Ids: Das Element trägt `data-anker="<anker>"` (bei `Link` die Eigenschaft `anker`). Die Liste steht in `shared/entdecken/anker.yaml` mit Seite, Beschreibung, `handy` (auch in der Handyfassung sichtbar) und `clients` (gibt es so auch in Clients). Muster wie `mappe.register:<key>`, `mappe.feld:<key>` und `werkbank.bereich:<route>` passen auf jeden Schlüssel. Heute gibt es unter anderem:
@@ -916,10 +936,11 @@ Ziele sind feste Ankerpunkte, keine HTML-Ids: Das Element trägt `data-anker="<a
 - `GET /api/entdecken` – Rundgänge und Tipps für die angemeldete Person in ihrer Sprache (gefiltert nach Verwaltungsrecht und eingeschalteten Funktionen), dazu der Tipp des Tages (`tipp`), ob die Tipp-Zeile an ist (`tippsAn`) und welcher Rundgang jetzt von selbst startet (`starten`). Je Tipp: Anker und Seite bzw. Rundgang, Herkunft (`ablago`, später `paket:<id>`), `neu`, `ausgeblendet` und `clients` (für Clients geeignet: kein Rundgang, Anker gibt es auch dort).
 - `POST /api/entdecken/tipps/:schluessel` mit `aktion`: `gezeigt`, `erledigt`, `ausblenden`, `einblenden`.
 - `POST /api/entdecken/rundgaenge/:schluessel` mit `stand`: `gesehen` oder `spaeter`.
+- In `/api/v1` (für Clients, #831/#832): `GET /entdecken` mit Schlüssel der Stufe „lesen“, `POST /entdecken/tipps/{schluessel}` und `POST /entdecken/rundgaenge/{schluessel}` mit „schreiben“ – so melden sich Oberfläche und App nicht doppelt. Clients zeigen nur Tipps mit `clients: true`. Eigene Tipps eines Clients schreiben dasselbe Format; `pruefeTipps` in `shared/src/entdecken.ts` braucht dafür kein Paket.
 
 Gemerkt wird je Person in ihren Einstellungen (`entdecken_rundgaenge`, `entdecken_tipps`, `entdecken_version`; Tipp des Tages aus: `tipps` = false) – keine Telemetrie. In einer Vertretung startet nichts von selbst, und nichts wird gemerkt. Migration 088 setzt für Konten, die sich vor dem Update schon angemeldet hatten, Ablagos Rundgang auf „gesehen“. Die Handbuch-Aufnahmen und Messskripte markieren ihre Konten ebenso (`aufnehmen.mjs`, `ladezeiten.mjs`).
 
-**Pakete folgen:** `inhalt.rundgaenge` und `inhalt.tipps` im Manifest, die Prüfung beim Installieren, Werkbank → Tipps verwalten (eigene Tipps, Anpassungen) und der Export in „Paket erstellen“ kommen in einer späteren Stufe; ebenso die Einträge in `/api/v1`.
+Rundgänge und Tipps aus Paketen: siehe [Rundgänge aus Paketen](#paket-rundgaenge) und [Tipps aus Paketen](#paket-tipps).
 
 ## Mehrere Prozesse (#745) { #mehrere-prozesse }
 

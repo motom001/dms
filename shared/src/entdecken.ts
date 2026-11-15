@@ -143,6 +143,8 @@ export interface Tipp {
   funktion?: Funktion;
   /** „Neu seit deinem letzten Besuch“ für alle, die von einer älteren Version auf diese aktualisiert haben. */
   abVersion?: string;
+  /** Nur für Personen, die diesen Mappentyp (Kennung) lesen dürfen; Ziele an einer Mappe öffnen die erste davon. */
+  typ?: string;
 }
 
 /** Ein Tipp, wie ihn die Person sieht (GET /api/entdecken). */
@@ -152,8 +154,11 @@ export interface TippAnzeige {
   bereich: TippBereich;
   /** In der Sprache der Person. */
   text: string;
-  /** Anker und seine Seite: Der Satz öffnet die Seite und hebt die Stelle hervor. */
-  ziel?: { anker: string; seite: string };
+  /**
+   * Anker und seine Seite: Der Satz öffnet die Seite und hebt die Stelle hervor. Ohne `seite` liegt die Stelle in einer
+   * Mappe des Typs `typ` – die Oberfläche öffnet zuerst die erste, die die Person lesen darf (…/oeffnen).
+   */
+  ziel?: { anker: string; seite?: string; typ?: string };
   rundgang?: string;
   /** „Neu seit deinem letzten Besuch“. */
   neu: boolean;
@@ -193,7 +198,7 @@ export const textSchluesselTipp = (t: string) => `entdecken.tipp.${teil(t)}`;
 
 const FELDER_RUNDGANG = new Set(['schluessel', 'start', 'fuer', 'oeffne', 'ersatz', 'titel', 'beschreibung', 'ende', 'schritte']);
 const FELDER_SCHRITT = new Set(['schluessel', 'ziel', 'bild', 'fuer', 'titel', 'text', 'text_handy', 'text_verwalten', 'ort', 'handbuch', 'sonst_verwalten']);
-const FELDER_TIPP = new Set(['schluessel', 'bereich', 'text', 'fuer', 'ziel', 'rundgang', 'funktion', 'ab_version']);
+const FELDER_TIPP = new Set(['schluessel', 'bereich', 'text', 'fuer', 'ziel', 'rundgang', 'funktion', 'ab_version', 'typ']);
 const VERSION = /^\d+\.\d+\.\d+$/;
 
 const istObjekt = (x: unknown): x is Record<string, unknown> => !!x && typeof x === 'object' && !Array.isArray(x);
@@ -370,44 +375,84 @@ export function pruefeRundgaenge(roh: unknown, o: RundgangPruefung): { rundgaeng
   return ende();
 }
 
-/** Prüft die Tipps einer Quelle; fehlerhafte fallen weg. `rundgaenge`: Schlüssel der Rundgänge, die ein Tipp starten darf. */
-export function pruefeTipps(roh: unknown, o: { herkunft: Herkunft; anker: readonly Anker[]; rundgaenge: readonly string[]; texte?: Texte }): { tipps: Tipp[]; fehler: string[]; orte: Pfad[] } {
+/** Optionen der Prüfung von Tipps. */
+export interface TippPruefung {
+  herkunft: Herkunft;
+  anker: readonly Anker[];
+  /** Schlüssel der Rundgänge, die ein Tipp starten darf. */
+  rundgaenge: readonly string[];
+  texte?: Texte;
+  /** Mappentyp zu `typ` auflösen (Pakete, eigene Tipps): null = gibt es nicht. Ohne diese Funktion gibt es kein `typ`. */
+  typ?: (roh: string) => TypInfo | null;
+}
+
+/** Ziel eines Tipps: Anker mit fester Seite – oder mit `typ` auch ein Feld oder Register einer Mappe dieses Typs. */
+function pruefeTippZiel(ziel: unknown, typ: TypInfo | null, o: TippPruefung, o2: string, m: Melde) {
+  if (typeof ziel !== 'string' || !ankerBekannt(ziel, o.anker)) { m(`${o2}: unbekannter Anker „${String(ziel)}“.`, 'ziel'); return; }
+  const teil = mappenTeil(ziel);
+  if (teil && typ) {
+    const liste = teil.art === 'feld' ? typ.felder : typ.register;
+    if (liste && !liste.includes(teil.key)) m(`${o2}: ${teil.art === 'feld' ? 'Das Feld' : 'Das Register'} „${teil.key}“ gibt es im Mappentyp „${typ.kennung}“ nicht.`, 'ziel');
+    return;
+  }
+  if (!o.anker.find((a) => a.anker === ziel)?.seite) m(`${o2}: Der Anker „${ziel}“ hat keine feste Seite – als Ziel eines Tipps geht er nur mit „typ“ (Feld oder Register einer Mappe).`, 'ziel');
+}
+
+/** Mappentyp eines Tipps (`typ`) auflösen. */
+function tippTyp(x: unknown, o: TippPruefung, o2: string, m: Melde): TypInfo | null {
+  if (x === undefined) return null;
+  if (typeof x !== 'string' || !o.typ) { m(`${o2}: „typ“ gibt es nur für Tipps aus Paketen und eigene Tipps.`, 'typ'); return null; }
+  const typ = o.typ(x);
+  if (!typ) m(`${o2}: Den Mappentyp „${x}“ gibt es nicht.`, 'typ');
+  return typ;
+}
+
+/** Einen Tipp prüfen; null bei Fehlern (gemeldet). */
+function pruefeTipp(x: Record<string, unknown>, k: { o: TippPruefung; ort: string; m: Melde; gesehen: Set<string>; vorher: () => number; jetzt: () => number }): Tipp | null {
+  const { o, m } = k;
+  unbekannte(x, FELDER_TIPP, k.ort, m);
+  const schluessel = typeof x.schluessel === 'string' ? x.schluessel : '';
+  if (!SCHLUESSEL.test(schluessel)) m(`${k.ort}: „schluessel“ fehlt oder ist ungültig.`, x.schluessel === undefined ? undefined : 'schluessel');
+  else if (k.gesehen.has(schluessel)) m(`${k.ort}: „${schluessel}“ gibt es doppelt.`, 'schluessel');
+  k.gesehen.add(schluessel);
+  const o2 = `Tipp „${schluessel || k.ort}“`;
+  // Bereich: in Paketen und eigenen Tipps freiwillig (dann „Mappen“).
+  const bereich = (x.bereich ?? (o.herkunft === 'ablago' ? undefined : 'mappen')) as TippBereich;
+  if (!TIPP_BEREICHE.includes(bereich)) m(`${o2}: „bereich“ muss einer von ${TIPP_BEREICHE.join(', ')} sein.`, x.bereich === undefined ? undefined : 'bereich');
+  const text = textVon(x, 'text', textSchluesselTipp(schluessel), o.texte, TIPP_TEXT_MAX, o2, m);
+  if (text && (text.match(/[.!?](\s|$)/g)?.length ?? 0) > 2) m(`${o2}: höchstens zwei Sätze.`, 'text');
+  const fuer = fuerVon(x.fuer, o2, m);
+  const typ = tippTyp(x.typ, o, o2, m);
+  const ziel = x.ziel, rundgang = x.rundgang;
+  if ((ziel === undefined) === (rundgang === undefined)) m(`${o2}: genau eines von „ziel“ (Anker) oder „rundgang“.`);
+  if (ziel !== undefined) pruefeTippZiel(ziel, typ, o, o2, m);
+  if (rundgang !== undefined && (typeof rundgang !== 'string' || !o.rundgaenge.includes(rundgang))) m(`${o2}: unbekannter Rundgang „${String(rundgang)}“.`, 'rundgang');
+  if (x.funktion !== undefined && !FUNKTIONEN.includes(x.funktion as Funktion)) m(`${o2}: unbekannte Funktion „${String(x.funktion)}“.`, 'funktion');
+  const ab = x.ab_version === undefined ? undefined : String(x.ab_version);
+  if (ab !== undefined && !VERSION.test(ab)) m(`${o2}: „ab_version“ muss eine Version wie 1.2.0 sein.`, 'ab_version');
+  if (k.jetzt() > k.vorher()) return null;
+  const frei = { ziel: typeof ziel === 'string' ? ziel : undefined, rundgang: typeof rundgang === 'string' ? rundgang : undefined, funktion: x.funktion as Funktion | undefined, abVersion: ab, typ: typ?.kennung };
+  return { schluessel, herkunft: o.herkunft, bereich, text: text!, fuer, ...ohneLeere(frei) };
+}
+
+/** Prüft die Tipps einer Quelle; fehlerhafte fallen weg. */
+export function pruefeTipps(roh: unknown, o: TippPruefung): { tipps: Tipp[]; fehler: string[]; orte: Pfad[] } {
   const fl = fehlerliste();
   const tipps: Tipp[] = [];
-  if (roh === null || roh === undefined) return { tipps, fehler: fl.fehler, orte: fl.orte };
-  if (!Array.isArray(roh)) { fl.bei([])('Tipps: Die Datei muss eine Liste sein.'); return { tipps, fehler: fl.fehler, orte: fl.orte }; }
+  const ende = () => ({ tipps, fehler: fl.fehler, orte: fl.orte });
+  if (roh === null || roh === undefined) return ende();
+  if (!Array.isArray(roh)) { fl.bei([])('Tipps: Die Datei muss eine Liste sein.'); return ende(); }
   const max = o.herkunft === 'ablago' ? TIPPS_MAX_ABLAGO : TIPPS_MAX;
   if (roh.length > max) fl.bei([max])(`Tipps: ${roh.length} Tipps, höchstens ${max}.`);
   const gesehen = new Set<string>();
   for (const [i, x] of roh.slice(0, max).entries()) {
-    const ort = `Tipp ${i + 1}`;
     const m = fl.bei([i]);
-    if (!istObjekt(x)) { m(`${ort}: kein Eintrag mit Feldern.`); continue; }
+    if (!istObjekt(x)) { m(`Tipp ${i + 1}: kein Eintrag mit Feldern.`); continue; }
     const vorher = fl.fehler.length;
-    unbekannte(x, FELDER_TIPP, ort, m);
-    const schluessel = typeof x.schluessel === 'string' ? x.schluessel : '';
-    if (!SCHLUESSEL.test(schluessel)) m(`${ort}: „schluessel“ fehlt oder ist ungültig.`, x.schluessel === undefined ? undefined : 'schluessel');
-    else if (gesehen.has(schluessel)) m(`${ort}: „${schluessel}“ gibt es doppelt.`, 'schluessel');
-    gesehen.add(schluessel);
-    const o2 = `Tipp „${schluessel || i + 1}“`;
-    const bereich = x.bereich as TippBereich;
-    if (!TIPP_BEREICHE.includes(bereich)) m(`${o2}: „bereich“ muss einer von ${TIPP_BEREICHE.join(', ')} sein.`, x.bereich === undefined ? undefined : 'bereich');
-    const text = textVon(x, 'text', textSchluesselTipp(schluessel), o.texte, TIPP_TEXT_MAX, o2, m);
-    if (text && (text.match(/[.!?](\s|$)/g)?.length ?? 0) > 2) m(`${o2}: höchstens zwei Sätze.`, 'text');
-    const fuer = fuerVon(x.fuer, o2, m);
-    const ziel = x.ziel, rundgang = x.rundgang;
-    if ((ziel === undefined) === (rundgang === undefined)) m(`${o2}: genau eines von „ziel“ (Anker) oder „rundgang“.`);
-    if (ziel !== undefined && (typeof ziel !== 'string' || !ankerBekannt(ziel, o.anker))) m(`${o2}: unbekannter Anker „${String(ziel)}“.`, 'ziel');
-    else if (typeof ziel === 'string' && !o.anker.find((a) => a.anker === ziel)?.seite) m(`${o2}: Der Anker „${ziel}“ hat keine feste Seite – als Ziel eines Tipps geht er nicht.`, 'ziel');
-    if (rundgang !== undefined && (typeof rundgang !== 'string' || !o.rundgaenge.includes(rundgang))) m(`${o2}: unbekannter Rundgang „${String(rundgang)}“.`, 'rundgang');
-    if (x.funktion !== undefined && !FUNKTIONEN.includes(x.funktion as Funktion)) m(`${o2}: unbekannte Funktion „${String(x.funktion)}“.`, 'funktion');
-    const ab = x.ab_version === undefined ? undefined : String(x.ab_version);
-    if (ab !== undefined && !VERSION.test(ab)) m(`${o2}: „ab_version“ muss eine Version wie 1.2.0 sein.`, 'ab_version');
-    if (fl.fehler.length > vorher) continue;
-    tipps.push({ schluessel, herkunft: o.herkunft, bereich, text: text!, fuer, ...(typeof ziel === 'string' ? { ziel } : {}), ...(typeof rundgang === 'string' ? { rundgang } : {}),
-      ...(x.funktion ? { funktion: x.funktion as Funktion } : {}), ...(ab ? { abVersion: ab } : {}) });
+    const tipp = pruefeTipp(x, { o, ort: `Tipp ${i + 1}`, m, gesehen, vorher: () => vorher, jetzt: () => fl.fehler.length });
+    if (tipp) tipps.push(tipp);
   }
-  return { tipps, fehler: fl.fehler, orte: fl.orte };
+  return ende();
 }
 
 /** Prüft die Ankerliste selbst (`anker.yaml`). */
@@ -456,7 +501,7 @@ export function rundgangFuer(r: Rundgang, p: Fuerwen): Rundgang | null {
   return schritte.length ? { ...r, schritte } : null;
 }
 
-export const tippPasst = (x: Tipp, p: Fuerwen) => passtFuer(x.fuer, p) && (!x.funktion || p.funktionen.has(x.funktion));
+export const tippPasst = (x: Tipp, p: Fuerwen) => passtFuer(x.fuer, p) && (!x.funktion || p.funktionen.has(x.funktion)) && liestTyp(x.typ, p);
 
 /**
  * „Neu seit deinem letzten Besuch“: Tipp mit `ab_version` über der Version, die die Person zuletzt benutzt hat, und

@@ -73,6 +73,8 @@ export function kontenRouten(k: RoutenKontext): Route[] {
     } },
     // Was ein Rundgang öffnet (#831, `oeffne.mappe`/`oeffne.neu`): erste lesbare Mappe bzw. leeres Formular, sonst null.
     { methode: 'GET', pfad: '/api/entdecken/rundgaenge/:schluessel/oeffnen', zugang: 'angemeldet', handler: async (a) => ok(await entdecken.oeffnen(ich(a), a.params.schluessel)) },
+    // Tipp mit Ziel in einer Mappe (#832, `typ`): erste lesbare Mappe dieses Typs, sonst null.
+    { methode: 'GET', pfad: '/api/entdecken/tipps/:schluessel/oeffnen', zugang: 'angemeldet', handler: async (a) => ok(await entdecken.oeffnen(ich(a), a.params.schluessel, 'tipp')) },
 
     /* ---------- Benutzer ---------- */
     // #137: nur Benutzer, deren Benutzer-Mappe man lesen darf (Administratoren: alle).

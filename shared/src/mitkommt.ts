@@ -49,6 +49,8 @@ export interface Mitkommt {
   aktionen: Array<MitkommtEintrag & { rechte: string[] }>;
   /** Rundgänge (#831) mit ihrem aufgabenbezogenen Titel; fehlt bei älteren Installationen. */
   rundgaenge?: MitkommtEintrag[];
+  /** Anzahl der Tipps (#832); fehlt bei älteren Installationen. */
+  tipps?: number;
   /** Einstellungen (#197): Abschnitte und Listen mit ihren Feldern. */
   einstellungen: Array<{ titel: string; felder: Array<{ name: string; typ: string }>; liste: boolean; neu?: boolean }>;
   /** Rechte und Netz: Code (läuft im Paket-Läufer), Zugriff auf Netzwerk/Internet, nur Texte (Sprachpaket). */
@@ -102,7 +104,7 @@ export function mitkommtKurz(m: Mitkommt): string {
   const teile: Array<[number, string]> = [
     [m.mappentypen.length, 'mappentypen'], [m.sichten.length, 'sichten'], [m.vorgaben.reduce((n, v) => n + v.namen.length, 0), 'vorgaben'], [m.beispiele, 'beispiele'],
     [m.wortlisten.length, 'wortlisten'], [m.automatisierungen.length, 'automatisierungen'], [m.ablaufvorlagen.length, 'ablaufvorlagen'], [m.aktionen.length, 'aktionen'],
-    [m.rundgaenge?.length ?? 0, 'rundgaenge'], [m.einstellungen.reduce((n, e) => n + e.felder.length, 0), 'einstellungen'],
+    [m.rundgaenge?.length ?? 0, 'rundgaenge'], [m.tipps ?? 0, 'tipps'], [m.einstellungen.reduce((n, e) => n + e.felder.length, 0), 'einstellungen'],
   ];
   const text = teile.filter(([n]) => n > 0).map(([n, k]) => t.frei(`gemeinsam.mitkommt.kurz.${k}`, { anzahl: n }));
   if (m.sprache) return t('gemeinsam.mitkommt.kurz.sprache');

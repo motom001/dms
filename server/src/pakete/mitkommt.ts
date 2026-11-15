@@ -105,6 +105,7 @@ export function mitkommtVon(paket: PaketTeile, plan: PlanTeile, n: MitkommtNamen
     aktionen: (paket.mappenaktionen ?? []).map((a) => ({ schluessel: a.schluessel, name: a.name, ...(a.beschreibung ? { beschreibung: a.beschreibung } : {}), rechte: [...a.rechte], ...neu(!!plan.aktionen?.find((x) => x.schluessel === a.schluessel)?.neu) })),
     // Rundgänge (#831): Titel und Beschreibung wie im Paket (die Texte stehen direkt in der Datei).
     rundgaenge: (paket.entdecken?.rundgaenge ?? []).filter(istObjekt).map((r) => ({ schluessel: text(r.schluessel), name: text(r.titel) || text(r.schluessel), ...(text(r.beschreibung) ? { beschreibung: text(r.beschreibung) } : {}) })),
+    tipps: paket.entdecken?.tipps?.length ?? 0,
     einstellungen: (paket.einstellungen?.bloecke ?? []).map((b) => {
       const titel = b.art === 'abschnitt' ? b.titel : b.name;
       const felder = b.felder.map((f) => ({ name: f.name, typ: f.typ }));

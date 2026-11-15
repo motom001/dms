@@ -23,6 +23,7 @@
   "bereich.konto": "Mein Konto",
   "bereich.verwalten": "Verwalten",
   "zeile.neu": "Neu seit deinem letzten Besuch: {text}",
+  "zeile.neu-weitere": "Neu seit deinem letzten Besuch: {text} – und {anzahl} weitere",
   "konto.tipps": "Tipp des Tages",
   "konto.tipps.hilfe": "Höchstens einer am Tag: Ein Punkt am Assistenten unten rechts zeigt ihn an, unter „Tipps“ steht er. Alle Tipps stehen unter „Ablago entdecken“.",
   "fuehrung.titel": "Rundgang: {titel}",

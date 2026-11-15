@@ -39,7 +39,7 @@ export function TippKarte({ schliessen }: { schliessen(): void }) {
       {x ? (
         <section className={s.tippkarte} data-anker="startseite.tipp" aria-labelledby="begleiter-tipp">
           <h3 id="begleiter-tipp" className={s.tippkopf}><Symbol name="tipp" />{desTages ? t('oberflaeche.begleiter.tipps.des-tages') : t('oberflaeche.begleiter.tipps.tipp')}</h3>
-          <p>{x.neu ? t('entdecken.zeile.neu', { text: x.text }) : x.text}</p>
+          <p>{!x.neu ? x.text : desTages && stand.tipp?.weitere ? t('entdecken.zeile.neu-weitere', { text: x.text, anzahl: stand.tipp.weitere }) : t('entdecken.zeile.neu', { text: x.text })}</p>
           <div className="knoepfe">
             {(x.ziel || x.rundgang) && (
               <Knopf onClick={() => { schliessen(); if (desTages) void tippHandlung(x.schluessel, 'erledigt'); void zeigeZiel(x); }}>{t('oberflaeche.begleiter.tipps.zeigen')}</Knopf>

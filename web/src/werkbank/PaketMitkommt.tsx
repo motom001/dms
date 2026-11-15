@@ -20,7 +20,19 @@ const ereignisName = (art: string) => (istKatalogArt(art) ? t.frei(`ereignisse.n
 const Neu = ({ e }: { e: { neu?: boolean } }) => (e.neu ? <> <span className="chip">{t('werkbank.pakete.mitkommt.neu')}</span></> : null);
 
 /** Ein Abschnitt mit Überschrift, nur wenn er etwas enthält. */
-function Teil({ titel, text, children }: { titel: string; text?: string; children: ReactNode }) {
+/** Rundgänge und Tipps (#831, #832), die das Paket mitbringt. */
+function EntdeckenTeile({ m }: { m: Mitkommt }) {
+  return <>
+    {!!m.rundgaenge?.length && (
+      <Teil titel={t('werkbank.pakete.mitkommt.rundgaenge')} text={t('werkbank.pakete.mitkommt.rundgaenge.text')}>
+        <Namen liste={m.rundgaenge} />
+      </Teil>
+    )}
+    {!!m.tipps && <Teil titel={t('werkbank.pakete.mitkommt.tipps')} text={t('werkbank.pakete.mitkommt.tipps.text', { anzahl: m.tipps })} />}
+  </>;
+}
+
+function Teil({ titel, text, children }: { titel: string; text?: string; children?: ReactNode }) {
   return (
     <div className="mitkommt-teil">
       <h3 className="h4">{titel}</h3>
@@ -97,11 +109,7 @@ export function MitkommtInhalt({ m, rechte }: { m: Mitkommt; rechte?: string[] }
           <Namen liste={m.aktionen} zusatz={(e) => <span className="leise"> · {t('werkbank.pakete.mitkommt.braucht', { rechte: rechteText((e as Mitkommt['aktionen'][number]).rechte as AktionRecht[]) })}</span>} />
         </Teil>
       )}
-      {!!m.rundgaenge?.length && (
-        <Teil titel={t('werkbank.pakete.mitkommt.rundgaenge')} text={t('werkbank.pakete.mitkommt.rundgaenge.text')}>
-          <Namen liste={m.rundgaenge} />
-        </Teil>
-      )}
+      <EntdeckenTeile m={m} />
       {m.einstellungen.length > 0 && (
         <Teil titel={t('werkbank.pakete.mitkommt.einstellungen')} text={t('werkbank.pakete.mitkommt.einstellungen.text')}>
           <ul className="klein">{m.einstellungen.map((e) => <li key={e.titel}><strong>{e.titel}</strong>{e.liste && <span className="leise"> {t('werkbank.pakete.mitkommt.liste')}</span>}<Neu e={e} /><span className="leise mitkommt-zeile">{e.felder.map((f) => f.name).join(' · ')}</span></li>)}</ul>

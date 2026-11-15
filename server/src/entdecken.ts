@@ -3,7 +3,7 @@
  *
  * Ablagos eigene Rundgänge und Tipps liegen als YAML in `shared/entdecken/` (im Container unter
  * /app/shared/entdecken, siehe Dockerfile). Installierte Pakete bringen sie im selben Format mit (`inhalt.rundgaenge`,
- * gespeichert am installierten Paket unter `entdecken`). Hier werden alle Quellen gelesen, geprüft
+ * `inhalt.tipps`, gespeichert am installierten Paket unter `entdecken`). Hier werden alle Quellen gelesen, geprüft
  * (`shared/src/entdecken.ts`) und je Person gefiltert: nach Verwaltungsrecht, eingeschalteten Funktionen und lesbaren
  * Mappentypen. Rundgänge aus Paketen heißen `<paket>:<schluessel>` – so kommen sich Pakete nicht in die Quere.
  *
@@ -73,6 +73,18 @@ export function paketTyp(paket: string, roh: string, typen: (kennung: string) =>
 export function paketRundgaenge(p: Pick<InstalliertesPaket, 'id'>, roh: unknown, o: { anker: readonly Anker[]; typen: (kennung: string) => TypInfo | null | undefined }): { rundgaenge: Rundgang[]; fehler: string[] } {
   const r = pruefeRundgaenge(roh, { herkunft: `paket:${p.id}`, anker: o.anker, typ: (x) => paketTyp(p.id, x, o.typen) });
   return { rundgaenge: r.rundgaenge.map((x) => ({ ...x, schluessel: `${p.id}:${x.schluessel}` })), fehler: r.fehler.map((f) => `${p.id}: ${f}`) };
+}
+
+/**
+ * Tipps eines installierten Pakets prüfen; Schlüssel bekommen den Präfix des Pakets, `rundgang` meint einen Rundgang
+ * desselben Pakets.
+ */
+export function paketTipps(p: Pick<InstalliertesPaket, 'id'>, roh: unknown, o: { anker: readonly Anker[]; rundgaenge: readonly string[]; typen: (kennung: string) => TypInfo | null | undefined }): { tipps: Tipp[]; fehler: string[] } {
+  const x = pruefeTipps(roh, { herkunft: `paket:${p.id}`, anker: o.anker, rundgaenge: o.rundgaenge, typ: (k) => paketTyp(p.id, k, o.typen) });
+  return {
+    tipps: x.tipps.map((y) => ({ ...y, schluessel: `${p.id}:${y.schluessel}`, ...(y.rundgang ? { rundgang: `${p.id}:${y.rundgang}` } : {}) })),
+    fehler: x.fehler.map((f) => `${p.id}: ${f}`),
+  };
 }
 
 const TAG_MS = 24 * 3600 * 1000;
@@ -156,28 +168,46 @@ export class Entdecken {
     const pakete = (await this.o.pakete?.()) ?? [];
     if (!pakete.some((p) => p.entdecken)) return { ...a, neu };
     const typen = new Map(((await this.o.typen?.()) ?? []).map((x) => [x.kennung, x]));
-    const rundgaenge = [...a.rundgaenge], tipps = [...a.tipps], fehler = [...a.fehler];
+    const rundgaenge = [...a.rundgaenge], tipps = [...a.tipps];
     const jetzt = this.o.jetzt?.() ?? Date.now();
     for (const p of pakete) {
-      if (!p.entdecken) continue;
-      const r = paketRundgaenge(p, p.entdecken.rundgaenge, { anker: a.anker, typen: (k) => typen.get(k) });
-      // Ein Paket für eine neuere Ablago-Version kann Anker nennen, die es hier nicht gibt: still übergehen, einmal protokollieren.
-      if (r.fehler.length && !this.paketGemeldet.has(`${p.id}@${p.version}`)) { this.paketGemeldet.add(`${p.id}@${p.version}`); this.o.log?.warn('Rundgänge eines Pakets übergangen', { paket: p.id, fehler: r.fehler.slice(0, 20) }); }
-      rundgaenge.push(...r.rundgaenge);
-      for (const x of r.rundgaenge) {
-        const wann = x.start === 'nach_installation' ? (p.aktualisiert ? null : p.installiert) : x.start === 'nach_update' ? p.aktualisiert : null;
-        if (!kuerzlich(wann, jetzt)) continue;
-        const schluessel = `angebot:${x.schluessel}`;
-        tipps.push({ schluessel, herkunft: x.herkunft, bereich: 'mappen', text: t('entdecken.angebot', { titel: x.titel }), fuer: x.fuer, rundgang: x.schluessel });
-        neu.set(schluessel, true);
-      }
+      const x = this.paketQuelle(p, a.anker, (k) => typen.get(k), jetzt);
+      rundgaenge.push(...x.rundgaenge);
+      for (const [y, istNeuHier] of x.tipps) { tipps.push(y); neu.set(y.schluessel, istNeuHier); }
     }
-    return { anker: a.anker, rundgaenge, tipps, fehler, neu };
+    return { anker: a.anker, rundgaenge, tipps, fehler: a.fehler, neu };
+  }
+
+  /** Fehler eines Pakets einmal je Version ins Protokoll – ein Paket für eine neuere Ablago-Version kann Anker nennen, die es hier nicht gibt. */
+  private melde(p: InstalliertesPaket, art: string, fehler: string[]) {
+    const k = `${p.id}@${p.version}:${art}`;
+    if (!fehler.length || this.paketGemeldet.has(k)) return;
+    this.paketGemeldet.add(k);
+    this.o.log?.warn(`${art} eines Pakets übergangen`, { paket: p.id, fehler: fehler.slice(0, 20) });
+  }
+
+  /**
+   * Rundgänge und Tipps eines Pakets, je Tipp, ob er „neu“ ist: Tipps mit ab_version nach einem Update darauf, Angebote
+   * für Rundgänge mit nach_installation/nach_update – jeweils {@link ANGEBOT_TAGE} lang.
+   */
+  private paketQuelle(p: InstalliertesPaket, anker: readonly Anker[], typen: (k: string) => TypInfo | undefined, jetzt: number): { rundgaenge: Rundgang[]; tipps: Array<[Tipp, boolean]> } {
+    if (!p.entdecken) return { rundgaenge: [], tipps: [] };
+    const r = paketRundgaenge(p, p.entdecken.rundgaenge, { anker, typen });
+    this.melde(p, 'Rundgänge', r.fehler);
+    const x = paketTipps(p, p.entdecken.tipps, { anker, rundgaenge: r.rundgaenge.map((y) => y.schluessel.slice(p.id.length + 1)), typen });
+    this.melde(p, 'Tipps', x.fehler);
+    const tipps: Array<[Tipp, boolean]> = x.tipps.map((y) => [y, kuerzlich(p.aktualisiert, jetzt) && istNeu(y, p.entdecken?.vorher ?? null, p.version)]);
+    for (const y of r.rundgaenge) {
+      const wann = y.start === 'nach_installation' ? (p.aktualisiert ? null : p.installiert) : y.start === 'nach_update' ? p.aktualisiert : null;
+      if (!kuerzlich(wann, jetzt)) continue;
+      tipps.push([{ schluessel: `angebot:${y.schluessel}`, herkunft: y.herkunft, bereich: 'mappen', text: t('entdecken.angebot', { titel: y.titel }), fuer: y.fuer, rundgang: y.schluessel }, true]);
+    }
+    return { rundgaenge: r.rundgaenge, tipps };
   }
 
   private async fuerwen(b: Benutzer, q: { rundgaenge: Rundgang[]; tipps: Tipp[] }) {
     // Lesbare Mappentypen nur holen, wenn ein Eintrag einen Mappentyp nennt.
-    const mitTyp = q.rundgaenge.some((r) => oeffneTyp(r.oeffne));
+    const mitTyp = q.rundgaenge.some((r) => oeffneTyp(r.oeffne)) || q.tipps.some((x) => x.typ);
     return { verwalten: b.rolle === 'admin' || darfVerwalten(b), funktionen: await this.o.funktionen(b), ...(mitTyp && this.o.lesbareTypen ? { lesbar: await this.o.lesbareTypen(b) } : {}) };
   }
 
@@ -205,7 +235,7 @@ export class Entdecken {
       const a = x.ziel ? q.anker.find((y) => y.anker === x.ziel) : undefined;
       return {
         schluessel: x.schluessel, herkunft: x.herkunft, bereich: x.bereich, text: x.text,
-        ...(a?.seite ? { ziel: { anker: a.anker, seite: a.seite } } : {}), ...(x.rundgang ? { rundgang: x.rundgang } : {}),
+        ...(a?.seite ? { ziel: { anker: a.anker, seite: a.seite } } : x.ziel && x.typ ? { ziel: { anker: x.ziel, typ: x.typ } } : {}), ...(x.rundgang ? { rundgang: x.rundgang } : {}),
         neu: q.neu.get(x.schluessel) ?? istNeu(x, vorher, jetzt), ausgeblendet: aus.has(x.schluessel), clients: x.rundgang ? false : !!a?.clients,
       };
     });
@@ -242,12 +272,17 @@ export class Entdecken {
    * Was ein Rundgang vor dem ersten Schritt öffnet (`oeffne.mappe`/`oeffne.neu`): Pfad oder null (dann zeigt die
    * Oberfläche den Ersatztext). Nur für Rundgänge, die die Person bekommt; andere gelten als unbekannt.
    */
-  async oeffnen(b: Benutzer, schluessel: string): Promise<{ pfad: string | null }> {
-    const r = (await this.stand(b, { vertretung: true })).rundgaenge.find((x) => x.schluessel === schluessel);
+  async oeffnen(b: Benutzer, schluessel: string, art: 'rundgang' | 'tipp' = 'rundgang'): Promise<{ pfad: string | null }> {
+    const s = await this.stand(b, { vertretung: true });
+    if (art === 'tipp') {
+      const x = s.tipps.find((y) => y.schluessel === schluessel);
+      if (!x) throw new Fachfehler(404, t('meldungen.entdecken.tipp'));
+      return { pfad: x.ziel?.typ ? (await this.o.oeffnen?.(b, x.ziel.typ, 'mappe')) ?? null : x.ziel?.seite ?? null };
+    }
+    const r = s.rundgaenge.find((x) => x.schluessel === schluessel);
     if (!r) throw new Fachfehler(404, t('meldungen.entdecken.rundgang'));
     const o = r.oeffne;
     if (!o || 'seite' in o) return { pfad: null };
-    const art = 'mappe' in o ? 'mappe' : 'neu';
-    return { pfad: (await this.o.oeffnen?.(b, 'mappe' in o ? o.mappe : o.neu, art)) ?? null };
+    return { pfad: (await this.o.oeffnen?.(b, 'mappe' in o ? o.mappe : o.neu, 'mappe' in o ? 'mappe' : 'neu')) ?? null };
   }
 }

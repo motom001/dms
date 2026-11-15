@@ -36,7 +36,8 @@ Der Rundgang geht mit der Tastatur: Tab wechselt zwischen den Knöpfen und bleib
 
 Den Tipp des Tages zeigt der [Assistent](assistent.md#tipps) unten rechts unter **Tipps** – als Karte, zum Beispiel: „Steht auf einem Papier eine Archivnummer? Tippe sie oben ins Suchfeld und drück Enter, dann öffnet sich genau dieses Dokument.“
 
-- **Höchstens ein neuer Tipp am Tag.** Ein kleiner Punkt am Knopf des Assistenten zeigt ihn an; sobald du die Tipps angesehen hast, ist der Punkt weg. Der Tipp bleibt bis zum Abend derselbe.
+- **Höchstens ein neuer Tipp am Tag.** Ein kleiner Punkt am Knopf des Assistenten zeigt ihn an; sobald du die Tipps angesehen hast, ist der Punkt weg. Der Tipp bleibt bis zum Abend derselbe. Gibt es nach einem Update mehrere Neuheiten, steht dort eine mit „… und 2 weitere“ – nicht mehrere Karten.
+- **Auch aus Paketen:** Installierte Pakete bringen eigene Tipps mit, etwa „Neu in Verträge 2.1 – …“ nach einem Update. Tipps zu Mappen bekommst du nur, wenn du diese Mappen lesen darfst.
 - **Zeig es mir** führt an die passende Stelle und hebt sie kurz hervor – oder startet den Rundgang. **Nächster Tipp** blättert weiter.
 - **Nur, was du nutzen kannst:** Tipps zu Dingen, die du nicht darfst oder die bei euch nicht eingerichtet sind, bekommst du nicht.
 
