@@ -1,0 +1,53 @@
+{
+  // knip (#1286): meldet ungenutzte Dateien, Exporte und Abhängigkeiten. `npm run lint:tot` bzw. in der CI
+  // .github/werkzeuge/knip-pruefen.mjs vergleicht mit dem Bestand in knip-bestand.json – neue Funde machen den Lauf
+  // rot. Jede Ausnahme hier steht mit Begründung; Einstiegspunkte, die knip nicht selbst findet, ebenso.
+  "$schema": "https://unpkg.com/knip@6/schema-jsonc.json",
+  "workspaces": {
+    ".": {
+      "entry": [
+        // Werkzeuge der CI und der Entwickler, aus Workflows oder von Hand gestartet.
+        ".github/werkzeuge/*.mjs",
+        // Handbuch-Prüfungen im Browser; start-pruefen.mjs startet der Workflow „Handbuch“ nach einem `cd`.
+        "docs/handbuch/screenshots/*.mjs",
+        "docs/handbuch/werkzeuge/*.ts",
+        // Lädt die Einstiegsseite der Handbücher (docs/handbuch/start/*.html) per <script type="module">.
+        "docs/handbuch/start/suche.mjs",
+        // Bindet mkdocs über extra_javascript ein (docs/handbuch/benutzer/mkdocs.yml).
+        "docs/handbuch/benutzer/docs/javascripts/selbstcheck.js"
+      ],
+      "project": [".github/werkzeuge/**", "docs/handbuch/**/*.{js,mjs,ts}", "shared/src/**"]
+    },
+    "server": {
+      "entry": ["src/{index,ablago,dms,pakete-pruefen}.ts", "src/laeufer/{prozess,arbeiter}.ts", "src/arbeit/arbeitsfaden.ts", "werkzeuge/*.ts", "test/**/*.{ts,mjs}"],
+      "project": ["src/**", "test/**", "werkzeuge/**"]
+    },
+    "web": {
+      "entry": [
+        "src/start.tsx",
+        // Nie geladen, nur von `tsc` geprüft: legt fest, dass Knopf art="gefahr" ohne Symbol/Rückfrage nicht übersetzt (#1210).
+        "src/bausteine/knopf/typpruefung.ts"
+      ],
+      "project": ["src/**"]
+    },
+    // Eigenes Lockfile, kein npm-Workspace (#1272): Playwright für Rauchtests und Handbuchbilder.
+    "web/rauchtest": {
+      "entry": ["rauchtest.mjs", "bereiche/*.mjs", "playwright.mjs"],
+      "project": ["**/*.mjs"]
+    }
+  },
+  "ignoreDependencies": [
+    // Wird als Datei gelesen, nicht importiert: createRequire(…).resolve('axe-core/axe.min.js') in
+    // web/rauchtest/muster.mjs und docs/handbuch/screenshots/start-pruefen.mjs (axe in der Seite ausführen).
+    "axe-core"
+  ],
+  "ignoreBinaries": [
+    // Systemprogramme aus apt bzw. dem Image (poppler-utils, qpdf, coreutils), keine npm-Pakete.
+    "pdftoppm",
+    "pdftotext",
+    "qpdf",
+    "sha256sum",
+    // Mermaid-CLI: optional, nur wenn lokal vorhanden (abhaengigkeitsbild.mjs prüft das selbst).
+    "mmdc"
+  ]
+}

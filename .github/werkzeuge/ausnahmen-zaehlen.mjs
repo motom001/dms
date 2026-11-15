@@ -5,7 +5,8 @@
  * `node .github/werkzeuge/ausnahmen-zaehlen.mjs [basis]` vergleicht die Zahl der Einträge mit dem Stand der Basis
  * (im Pull Request dessen Basis, sonst `git merge-base origin/main HEAD`):
  * - eslint-suppressions.json: Summe der `count` über alle Dateien und Regeln,
- * - .dependency-cruiser-known-violations.json: Zahl der bekannten Verstöße.
+ * - .dependency-cruiser-known-violations.json: Zahl der bekannten Verstöße,
+ * - knip-bestand.json: Zahl der ungenutzten Exporte und Typen von heute (#1286, Namen je Datei).
  * Steigt eine der beiden Zahlen, schlägt der Aufruf fehl. Zieht Code in eine andere Datei um, dürfen die Einträge
  * mitwandern – solange die Summe gleich bleibt oder sinkt. Gibt es die Datei in der Basis noch nicht, gilt der
  * jetzige Stand als Ausgangspunkt.
@@ -18,10 +19,12 @@
  */
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
+import { zaehleKnip } from './knip-pruefen.mjs';
 
 export const LISTEN = [
   { datei: 'eslint-suppressions.json', name: 'ESLint-Bestand', zaehle: zaehleEslint },
   { datei: '.dependency-cruiser-known-violations.json', name: 'Bestand dependency-cruiser', zaehle: (j) => j.length },
+  { datei: 'knip-bestand.json', name: 'Bestand knip', zaehle: zaehleKnip },
 ];
 
 /** Summe der Einträge in eslint-suppressions.json, gesamt und je Regel. */

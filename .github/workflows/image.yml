@@ -283,6 +283,12 @@ jobs:
         run: |
           node --test .github/werkzeuge/eslint-ablago.test.mjs
           npx eslint --pass-on-unpruned-suppressions --quiet --format ./.github/werkzeuge/eslint-github.mjs .
+      # Toter Code (#1286): knip meldet ungenutzte Dateien, Exporte und Abhängigkeiten. Bestand in knip-bestand.json
+      # (wächst nie, siehe „Bestandslisten wachsen nicht“), begründete Ausnahmen in knip.jsonc. Rot bei neuen Funden.
+      - name: Toter Code (knip)
+        run: |
+          node --test .github/werkzeuge/knip-pruefen.test.mjs
+          node .github/werkzeuge/knip-pruefen.mjs
       # Warnungen (z. B. Komplexität über 15) nur für die geänderten Dateien – als Hinweis, sie brechen nichts.
       - name: Hinweise zu geänderten Dateien
         if: github.event_name == 'pull_request'
