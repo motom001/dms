@@ -8,7 +8,7 @@ import { speicherEinstellungen } from '../src/einstellungen';
 import { Fachfehler } from '../src/fehler';
 import { Konten } from '../src/konten';
 import { speicherKontoRepo } from '../src/konto-repo';
-import { identitaetAus, Oidc, pruefeAussteller, pruefeIdToken, type Abruf, type JsonWebKey } from '../src/oidc';
+import { anbieterMeldung, identitaetAus, Oidc, pruefeAussteller, pruefeIdToken, type Abruf, type JsonWebKey } from '../src/oidc';
 import { speicherRepo } from '../src/repo-speicher';
 import { anbieterFehlerCode } from '../src/anmeldung/anmeldung.routen';
 import { routen, type Anfrage } from '../src/routen';
@@ -109,7 +109,7 @@ describe('Anmeldung über OpenID Connect (#241)', () => {
     assert.deepEqual(id, { sub: 'abc', email: 'anna@example.org', name: 'Anna A.', gruppen: ['dms-admins'] });
     // Fehler vom Anbieter
     const s3 = await o.start('https://dms.example.org/r');
-    await assert.rejects(o.rueckkehr({ state: new URL(s3.url).searchParams.get('state')!, error: 'access_denied', error_description: 'nein' }, s3.bindung), /abgelehnt: nein/);
+    await assert.rejects(o.rueckkehr({ state: new URL(s3.url).searchParams.get('state')!, error: 'access_denied', error_description: 'nein' }, s3.bindung), /abgelehnt: access_denied \(nein\)/);
     // Abgelaufen
     const s4 = await o.start('https://dms.example.org/r');
     t += 11 * 60_000;
@@ -133,6 +133,10 @@ describe('Anmeldung über OpenID Connect (#241)', () => {
     assert.equal(anbieterFehlerCode(new Fachfehler(502, boese)), 'anbieter-nicht-erreichbar');
     assert.equal(anbieterFehlerCode(new Fachfehler(500, boese, { anmeldefehler: boese })), 'unbekannt', 'nur bekannte Codes');
     assert.equal(anbieterFehlerCode(new Error(boese)), 'unbekannt');
+    // Ins Protokoll nur gekürzt und druckbar, der Code nur in fester Form.
+    assert.equal(anbieterMeldung('access_denied', `Zeile 1\nZeile 2\u202e${'x'.repeat(300)}`).length, 'access_denied ()'.length + 120);
+    assert.ok(!/[\n\u202e]/.test(anbieterMeldung('access_denied', 'a\nb\u202ec')));
+    assert.equal(anbieterMeldung('<script>', 'x'), 'unbekannt (x)');
     // Die Anmeldeseite: ein beliebiger Text in der Adresse wird zum allgemeinen Text.
     assert.equal(anmeldefehlerCode(boese), 'unbekannt');
     assert.equal(anmeldefehlerCode('kein-konto'), 'kein-konto');
