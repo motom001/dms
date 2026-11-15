@@ -76,7 +76,9 @@ export function setzeStandSalz(geheim: string): void {
   standSalz = lesen();
   if (standSalz) return;
   const neu = randomBytes(16).toString('hex');
-  try { writeFileSync(datei, neu, { flag: 'wx', mode: 0o600 }); standSalz = neu; } catch { standSalz = lesen() || neu; }
+  // Lässt sich nichts anlegen (Ordner nur lesbar), lieber ohne Zufallswert als je Prozess ein anderer: verschiedene
+  // Kennungen hinter einem Port ließen die Oberfläche bei mehreren Prozessen (#1259) ständig „neu laden“.
+  try { writeFileSync(datei, neu, { flag: 'wx', mode: 0o600 }); standSalz = neu; } catch { standSalz = lesen(); }
 }
 
 /**
