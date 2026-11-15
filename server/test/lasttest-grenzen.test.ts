@@ -155,3 +155,46 @@ describe('Lasttest (#920): eigene Konten je Person, Speicher je Prozess', () => 
     assert.deepEqual([g.eintraege[0].durchgang, g.eintraege[0].erste], ['groß 25', iso(100)]);
   });
 });
+
+describe('Lasttest (#1254): Pakete, Tabellenfeld, Anmeldeschutz mit vollem Journal', () => {
+  interface Zusatz {
+    PROFIL: Array<[string, number]>;
+    PROFIL_PAKETE: Array<[string, number]>;
+    ZUSATZ: { paket: string; fehlParallel: number; journalFuellen: number };
+    lasttestPaket(): Buffer;
+    paketAufrufe(e: Array<{ art: string; ms: number | null; ergebnis: string | null }>): { anzahl: number; median: number | null; p95: number | null; fehler: number; verlauf: number };
+    verloreneNachweise(p: { eintraege: Array<{ text: string; anzahl: number }> } | null): number;
+    zusatzZeilen(e: Record<string, unknown>): string[];
+  }
+  const z = lt as unknown as Zusatz;
+
+  it('das Lasttest-Paket kommt aus dem Skript (ohne Netz) und ist ein gültiges Paket mit Code', async () => {
+    const { liesPaket, liesZip } = await import('../src/pakete');
+    const p = liesPaket(liesZip(z.lasttestPaket()));
+    assert.equal(p.manifest.id, z.ZUSATZ.paket);
+    assert.deepEqual(p.code?.info.ereignisse, ['mappe.geaendert']);
+    assert.ok(new WebAssembly.Module(new Uint8Array(p.code!.dateien.find((d) => d.name === 'modul.wasm')!.inhalt)));
+  });
+
+  it('eigenes Profil: Leseanteile wie bisher × 0,85, dazu Tabelle und Mappe ändern; das bisherige Profil bleibt', () => {
+    assert.equal(Math.round(z.PROFIL_PAKETE.reduce((s, [, g]) => s + g, 0)), 100);
+    assert.deepEqual(z.PROFIL.map(([a]) => a), ['Startseite', 'Liste', 'Mappe öffnen', 'Suche', 'Vorschaubild', 'Herunterladen']);
+    assert.deepEqual(z.PROFIL_PAKETE.slice(-2), [['Tabelle', 10], ['Mappe ändern', 5]]);
+  });
+
+  it('Paketaufrufe aus dem Verlauf, verlorene Nachweise aus dem Protokoll, neue Zeilen im Ergebnisblock', () => {
+    const a = z.paketAufrufe([{ art: 'installiert', ms: null, ergebnis: null }, ...Array.from({ length: 20 }, (_, i) => ({ art: 'ereignis', ms: i + 1, ergebnis: i === 0 ? 'fehler' : 'ok' }))]);
+    assert.deepEqual(a, { anzahl: 20, median: 11, p95: 20, fehler: 1, verlauf: 21 });
+    assert.equal(z.verloreneNachweise({ eintraege: [{ text: 'Nachweis nicht eingetragen', anzahl: 3 }, { text: 'Nachweis nach mehreren Versuchen nicht eingetragen', anzahl: 2 }, { text: 'Lange Anfrage', anzahl: 9 }] }), 5);
+    assert.equal(z.verloreneNachweise(null), 0);
+    const zeilen = z.zusatzZeilen({
+      pakete: { name: 'klein + Pakete und Tabellen', n: 25, median: 60, p95: 200, p99: 300, fehlerquote: 0, jeArt: { Tabelle: { median: 20, p95: 50 } }, tabelle: { seiten: 100, mitHinweis: 30 }, paket: { anzahl: 400, median: 3, p95: 9, fehler: 0, verlauf: 401 } },
+      anmeldung: { name: 'klein + Anmeldeschutz', n: 25, jeArt: { 'Mappe öffnen': { p95: 54 } }, anmeldung: { jeSekunde: 19.5, median: 500, p95: 700, bekannt: 600, unbekannt: 590, verloren: 0, gefuellt: { versuche: 1800, jeSekunde: 21 } } },
+    });
+    assert.equal(zeilen.length, 3);
+    assert.match(zeilen[0], /^klein \+ Pakete und Tabellen +25 gleichzeitig: p50 60 ms, p95 200 ms.*Tabelle p50 20 ms, p95 50 ms; Hinweis „n von m“ bei 30 von 100 Seiten/);
+    assert.match(zeilen[1], /Paketaufrufe .*: 400 \(p50 3 ms, p95 9 ms, Fehler 0\) · Einträge im Paket-Verlauf: 401/);
+    assert.match(zeilen[2], /Fehlversuche 19,5 je s .* Mappe öffnen p95 54 ms · verlorene Nachweise 0 – Journal vorher mit 1800 Fehlanmeldungen gefüllt/);
+    assert.deepEqual(z.zusatzZeilen({}), [], 'ohne Zusatz-Durchgänge (ältere Läufe, --ohne-zusatz) keine Zeile');
+  });
+});

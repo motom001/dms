@@ -247,15 +247,15 @@ describe('Lasttest-Modus (#612): Ergebnisblock', () => {
 
   it('Restdauer: Schätzung der Stufe minus vergangene Zeit, mindestens der laufende Durchgang', () => {
     const s = { wahl: 'alle' as const, stufe: 'klein' as const, fertigeStufen: [], stufeBegonnen: 0, jetzt: 60_000, durchgang: null, zustand: 'laeuft' as const };
-    // Mit dem Durchgang „mit Speichern“ (#739): klein 5–8, mittel 18–35, groß 35–70 Minuten.
-    assert.deepEqual(restMinuten(s), [4 + 18 + 35, 7 + 35 + 70]);
-    assert.deepEqual(restMinuten({ ...s, wahl: 'klein' }), [4, 7]);
-    assert.equal(restMinuten({ ...s, wahl: 'klein', jetzt: 10 * 60_000 }), null, 'gleich fertig');
-    assert.deepEqual(restMinuten({ ...s, wahl: 'klein', jetzt: 10 * 60_000, durchgang: { name: 'klein', n: 25, ende: 12 * 60_000 } }), [2, 2]);
-    // extrem: 500.000 Mappen 60–150 Minuten, 1 Mio. doppelt so lang; „alle“ ohne extrem.
+    // Mit „mit Speichern“ (#739) und den Zusatz-Durchgängen (#1254): klein 10–15, mittel 23–42, groß 40–77 Minuten.
+    assert.deepEqual(restMinuten(s), [9 + 23 + 40, 14 + 42 + 77]);
+    assert.deepEqual(restMinuten({ ...s, wahl: 'klein' }), [9, 14]);
+    assert.equal(restMinuten({ ...s, wahl: 'klein', jetzt: 16 * 60_000 }), null, 'gleich fertig');
+    assert.deepEqual(restMinuten({ ...s, wahl: 'klein', jetzt: 16 * 60_000, durchgang: { name: 'klein', n: 25, ende: 18 * 60_000 } }), [2, 2]);
+    // extrem: 500.000 Mappen 65–157 Minuten, 1 Mio. doppelt so lang; „alle“ ohne extrem.
     const e = { ...s, wahl: 'extrem' as const, stufe: 'extrem' as const, jetzt: 0 };
-    assert.deepEqual(restMinuten({ ...e, mappen: 500_000 }), [60, 150]);
-    assert.deepEqual(restMinuten({ ...e, mappen: 1_000_000 }), [120, 300]);
+    assert.deepEqual(restMinuten({ ...e, mappen: 500_000 }), [65, 157]);
+    assert.deepEqual(restMinuten({ ...e, mappen: 1_000_000 }), [130, 314]);
     assert.deepEqual(stufenVon('alle'), ['klein', 'mittel', 'gross']);
     assert.equal(restMinuten({ ...s, zustand: 'fertig' }), null);
   });

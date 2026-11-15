@@ -88,7 +88,8 @@ describe('Lasttest-Modus Ende zu Ende (#612)', { skip: !URL_DB && 'TEST_DATABASE
   it('nur DMS_LASTTEST=klein, ohne Ordner: Seite, Lauf bis zum Ergebnis, Herunterfahren, Neustart ohne zweiten Lauf', async () => {
     const db = await neueDatenbank('frisch');
     const wurzel = join(tmp, 'frisch');
-    const env = { DMS_LASTTEST: 'klein', DMS_LASTTEST_DAUER: '3' };
+    // #1254: Das Journal für den Durchgang „+ Anmeldeschutz“ nur kurz füllen (sonst 1.800 Fehlanmeldungen).
+    const env = { DMS_LASTTEST: 'klein', DMS_LASTTEST_DAUER: '3', DMS_LASTTEST_JOURNAL: '30' };
     const d = await starte(db, wurzel, env);
     const status = await json<{ lasttest?: boolean }>(fetch(`${d.basis}/api/konto/status`));
     assert.equal(status.lasttest, true);
@@ -111,8 +112,8 @@ describe('Lasttest-Modus Ende zu Ende (#612)', { skip: !URL_DB && 'TEST_DATABASE
     }
     assert.equal(s.zustand, 'fertig', `${s.meldung}\n${d.log()}`);
     assert.deepEqual(s.fertigeStufen, ['klein']);
-    // Der bisherige Durchgang und danach „mit Speichern“ (#739) als eigene Zeile.
-    assert.deepEqual(s.durchgaenge.map((x) => x.name), ['klein', 'klein + Speichern']);
+    // Der bisherige Durchgang, danach „mit Speichern“ (#739) und die Zusatz-Durchgänge (#1254) als eigene Zeilen.
+    assert.deepEqual(s.durchgaenge.map((x) => x.name), ['klein', 'klein + Speichern', 'klein + Pakete und Tabellen', 'klein + Anmeldeschutz']);
     assert.match(s.ergebnis!.vorlage, /Messergebnis Lasttest[\s\S]*Gerät\/Modell: \{\{geraet\}\}[\s\S]*klein\s+25 gleichzeitig: p50[^\n]*\n  Engpass klein: Warten auf DB-Verbindung p95 [^\n]*\n(?:  Teuerste Abfragen klein: [^\n]*\n)?(?:  CPU je Gruppe klein [^\n]*\n)?klein \+ Speichern\s+25 gleichzeitig: p50/);
     // #895: CPU je Gruppe unter der Stufe, Protokoll als Zeile; im Bericht ausführlich; live auf der Seite.
     assert.match(s.ergebnis!.vorlage, /\n  CPU je Gruppe klein \(% eines Kerns, Speicher RSS höchstens\): Ablago Prozess 1 \d+ % \d+ MB · Lastgenerator \d+ % /);
