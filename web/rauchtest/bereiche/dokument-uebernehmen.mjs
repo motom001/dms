@@ -235,6 +235,37 @@ rauchtest('Handy: E-Mail mit Archivfassung beim Übernehmen – Seitenbild, 44-p
   await api('PUT', `/api/mappen/${brief.id}`, { cookie: await sitzung(LENA), body: { werte: { stand: 'Erledigt' } } });
 });
 
+rauchtest('Lange Post übernehmen: Tippen bleibt flüssig, während die Rahmen erscheinen (#1255)', { als: LENA }, async (s) => {
+  // 80 Seiten mit je 55 Zeilen Text (rund 40 000 Wörter); der Betreff steht erst auf der letzten Seite.
+  const zeile = (n) => `Versicherungsbedingungen Abschnitt ${n} Beitrag 84,20 EUR ab 01.03.2027 Hausrat Beispielweg 12 Dresden Seite`;
+  const seiten = Array.from({ length: 80 }, (_, i) => Array.from({ length: 55 }, (_, k) => zeile(i * 55 + k)).join('\n'));
+  seiten[79] += '\nHausrat Versicherung Beispiel 2027';
+  const cookie = await sitzung(LENA);
+  const brief = (await api('POST', '/api/post', { cookie, body: { betreff: 'Hausrat Versicherung Beispiel 2027' } })).daten;
+  await api('POST', `/api/mappen/${brief.id}/dokumente?register=dokumente&name=${encodeURIComponent('Hausrat Bedingungen.pdf')}&typ=application/pdf`, { cookie, body: beispielPdfSeiten(seiten), roh: true });
+  try {
+    await s.goto(BASIS + `/ablage/eingang/${brief.id}`);
+    await s.waitForURL(new RegExp(`/${brief.id}/uebernehmen$`));
+    const dokument = s.getByRole('region', { name: 'Dokument' });
+    await dokument.getByRole('img', { name: 'Seite 80' }).waitFor();
+    const mappe = s.getByRole('region', { name: 'Mappe' });
+    await mappe.getByRole('combobox', { name: 'Mappentyp suchen …' }).click();
+    await mappe.getByRole('option', { name: /^Vertrag Laufender Vertrag/ }).click();
+    // Gleich danach tippen: Jede Taste kommt sofort an, auch wenn die Rahmen noch gesucht werden.
+    const feld = mappe.getByRole('textbox', { name: 'Vertragsnummer' });
+    await feld.click();
+    const start = Date.now();
+    await feld.pressSequentially('HR-2027-0815');
+    const dauer = Date.now() - start;
+    assert.equal(await feld.inputValue(), 'HR-2027-0815');
+    assert.ok(dauer < 4000, `Tippen dauerte ${dauer} ms`);
+    // Die Rahmen erscheinen nach und nach – auch der für den Betreff auf der letzten Seite.
+    await dokument.getByRole('button', { name: 'Rahmen 1: Hausrat Versicherung Beispiel 2027' }).waitFor({ timeout: 30_000 });
+  } finally {
+    await api('DELETE', `/api/mappen/${brief.id}?grund=nicht_noetig`, { cookie });
+  }
+});
+
 /** Post mit einem eingescannten PDF: Rechnung (Seite 1–2) und HU-Protokoll (Seite 3–5) in einer Datei (#1162). */
 async function postMitScan(betreff) {
   const cookie = await sitzung(LENA);

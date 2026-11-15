@@ -54,20 +54,44 @@ const norm = (s: string) => s.replace(/[\u00AD\u200B-\u200D\u2060\uFEFF]/g, '').
   .normalize('NFKC').toLocaleLowerCase('de-DE').replace(/ß/g, 'ss').replace(/[\u2010\u2011]/g, '-');
 
 interface Seitentext { text: string; wortVon: Int32Array }
+interface Seitentexte { normal: Seitentext; kompakt?: Seitentext; woerter: string[] }
+
+/**
+ * Zwischenspeicher am Wörter-Array der Seite (#1255): Der Seitentext wird je Seite einmal gebaut, `norm()` läuft je
+ * Wort einmal – nicht je Suchbegriff und Textform neu. Ein neues Wörter-Array (andere Seite) baut neu; die Wörter
+ * selbst werden nie verändert (sie kommen so vom Server).
+ */
+const speicher = new WeakMap<Wort[], Seitentexte>();
+
 /** Wörter mit Leerzeichen verbunden (`kompakt`: ohne Leerraum), dazu je Zeichen das Wort. */
-function seitentext(woerter: Wort[], kompakt: boolean): Seitentext {
+function verbinde(woerter: string[], kompakt: boolean): Seitentext {
   let text = '';
   const idx: number[] = [];
   woerter.forEach((w, i) => {
-    let t = norm(w[0]);
     // Ohne Leerraum und Bindestriche, also auch über Silbentrennung hinweg: „Mül-“ + „ler“ ergibt „müller“.
-    if (kompakt) t = t.replace(/[\s-]+/g, '');
+    const t = kompakt ? w.replace(/[\s-]+/g, '') : w;
     if (!t) return;
     if (!kompakt && text) { text += ' '; idx.push(-1); }
     text += t;
     for (let k = 0; k < t.length; k++) idx.push(i);
   });
   return { text, wortVon: Int32Array.from(idx) };
+}
+
+function seitentext(woerter: Wort[], kompakt: boolean): Seitentext {
+  let s = speicher.get(woerter);
+  if (!s) {
+    const normiert = woerter.map((w) => norm(w[0]));
+    s = { normal: verbinde(normiert, false), woerter: normiert };
+    speicher.set(woerter, s);
+  }
+  if (!kompakt) return s.normal;
+  return (s.kompakt ??= verbinde(s.woerter, true));
+}
+
+/** Seitentext im Voraus bauen – zum Verteilen der Arbeit in Häppchen (#1255); danach ist jede Suche schnell. */
+export function seiteVorbereiten(woerter: Wort[]): void {
+  seitentext(woerter, true);
 }
 
 /** Wörter, die der Ausschnitt [von, bis) berührt. */
