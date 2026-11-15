@@ -129,6 +129,7 @@ Scanned crookedly, one blank back too many, three letters in one scan? You fix t
 - **Delete** – the page is dropped (**Keep** brings it back)
 - **← / →** – move forwards or backwards. You can also **drag** pages to another place with the mouse, or by keyboard: select the page with Tab, then **Alt + arrow key**.
 - **Split from here** – a new part begins with this page
+- **Enclosure from here** – only in a post: the pages from here become an [enclosure](#anlagen) of the document, see [Enclosure from here](post.md#anlage-ab-hier)
 
 ![Editing a PDF's pages: page 2 rotated, a new part from page 3](bilder/pdf-bearbeiten.png)
 

@@ -176,7 +176,7 @@ export function Dokumente({ register, dokumente: roh, neue, entfernt, hinzufuege
   async function pdfFertig(r: { dokumente: Dokument[]; posten: Mappe[] }) {
     setSeitenOffen(undefined);
     setPdfMeldung(r.posten.length
-      ? <>{t('ablage.dokumente.neue-posts-angelegt', { posten: r.posten.length })}{' '}{r.posten.map((p, i) => <span key={p.id}>{i > 0 && ', '}<Link to={`/ablage/${p.typId}/${p.id}`} className="verweis">{String(p.werte.betreff ?? t('ablage.dokumente.post'))}</Link></span>)}{t('ablage.dokumente.diese-post-ist-erledigt')}</>
+      ? <>{t('ablage.dokumente.neue-posts-angelegt', { anzahl: r.posten.length })}{' '}{r.posten.map((p, i) => <span key={p.id}>{i > 0 && ', '}<Link to={`/ablage/${p.typId}/${p.id}`} className="verweis">{String(p.werte.betreff ?? t('ablage.dokumente.post'))}</Link></span>)}{t('ablage.dokumente.diese-post-ist-erledigt')}</>
       : r.dokumente.length > 1 ? t('ablage.dokumente.in-dokumente-geteilt', { dokumente: r.dokumente.length }) : t('ablage.dokumente.gespeichert', { name: r.dokumente[0]?.name, wert: versioniert ? t('ablage.dokumente.version', { wert: r.dokumente[0]?.version ?? 1 }) : '' }));
     await neuLaden?.();
   }
@@ -537,6 +537,7 @@ export function Dokumente({ register, dokumente: roh, neue, entfernt, hinzufuege
                     {post && !weg && seitenOffen !== x.id && <LeerseitenBlock x={x} l={leer.von(x)} darf={bearbeitbar} geaendert={(l) => leer.setze(x.id, l)} />}
                     {seitenOffen === x.id && !weg && (
                       <PdfSeiten d={x} post={!!post} versioniert={versioniert} papierkorb={!!d.zaehler.papierkorbTage} teilAb={teilVorschlag?.id === x.id ? teilVorschlag.ab : undefined}
+                        anlagenMoeglich={!!post && !anlagen.length}
                         schliessen={() => { setSeitenOffen(undefined); setTeilVorschlag(undefined); }} fertig={(r) => { setTeilVorschlag(undefined); void pdfFertig(r); }} />
                     )}
                     {auf && anzeige(x, sicht, <UeberDokument x={x} s={s} versioniert={versioniert} textOffen={text?.id === x.id}

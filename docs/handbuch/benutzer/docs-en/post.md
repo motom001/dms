@@ -91,7 +91,7 @@ If you enter a user under **To**, the post appears under [To do](eingang.md) for
 When you click a post in **New post**, the page **Take over document** opens – no matter whether the post was filed, photographed, scanned, emailed or came via the network drive. **Assign …** in a post and [Fill in from document](mappen.md#aus-dokument-ausfullen) in a folder open the same page. It always looks the same:
 
 - **On the left** the usual views, with *New post* highlighted.
-- **In the middle** the document; if the post has several, they are shown one below the other. [Enclosures](dokumente.md#anlagen) are collapsed behind their document ("Enclosure 1 · MOT report · 2 pages") and go with it when taking over; suggestions and frames only come from main documents. At the top right, **Open as post** opens the post itself – e.g. to change *To* or write a note –, and next to it you browse through *New post* with **‹ Post 1 of 3 ›**. As in a folder, each document sits in a viewer of fixed height; above it its name, with an [archive version](dokumente.md#archivfassung-pdfa) the toggle **PDF/A · Original** (the archive version is shown) and **In new tab**. If an original cannot be shown (such as an email), a sentence and **Download original** appear instead. At the very bottom there is the area **Drag more documents here**: what you drop there (or anywhere in the window, target *Into this post*) is added to this post as a further document.
+- **In the middle** the document; if the post has several, they are shown one below the other. [Enclosures](dokumente.md#anlagen) are collapsed behind their document ("Enclosure 1 · MOT report · 2 pages") and go with it when taking over; suggestions and frames only come from main documents. At the top right, **Open as post** opens the post itself – e.g. to change *To* or write a note –, and next to it you browse through *New post* with **‹ Post 1 of 3 ›**. As in a folder, each document sits in a viewer of fixed height; above it its name, with an [archive version](dokumente.md#archivfassung-pdfa) the toggle **PDF/A · Original** (the archive version is shown) and **In new tab**. An email with a finished archive version appears like a letter, as page images of the archive version – with text you can select. If an original cannot be shown (such as the email under **Original**), a sentence and **Download original** appear instead. At the very bottom there is the area **Drag more documents here**: what you drop there (or anywhere in the window, target *Into this post*) is added to this post as a further document.
 - **On the right** at the top **Where does this belong?**, below it the folder the document goes into – as everywhere else with type, title (as it will be called after saving), tabs, fields and save bar. The star and **Folder** work once the folder is created.
 
 If the post came by email, the [original email](#original-e-mail) is shown with its label in the middle below the document it hangs on, and it goes into the folder too. **The original email contains all attachments of the email. If not all of them belong in this folder, free it first or delete it.** The quickest way is to untick **Take original email along** there – it then stays in the post as a document of its own.
@@ -132,7 +132,7 @@ The folder is already filled in: dates, amounts, numbers and links (e.g. the iss
 - **Frames:** where a recognised value appears in the document, it has a coloured, numbered frame; the same number appears at the field. When you move the mouse over a frame, the field lights up – and the other way round.
 - **Drag:** you can drag a frame into any field, including a link field.
 - **Choose a field, then click:** click into a field and then on a frame – the field takes the value.
-- **Select:** if the document has text (a PDF with text or text from text recognition), you select words with the mouse. The field you chose last takes them; Ablago reads dates and amounts correctly, e.g. "03.11.2026" or "1.284,20 €".
+- **Select:** if the document has text (a PDF with text, text from text recognition or the archive version of an email), you select words with the mouse. The field you chose last takes them; Ablago reads dates and amounts correctly, e.g. "03.11.2026" or "1.284,20 €".
 
 If a folder for a link field is missing, **+ Create …** opens the [window for a new folder](mappen.md#auf-andere-mappen-verweisen) – here already filled with what Ablago recognised in the document, such as name, address and customer number from the letterhead. Dragging, clicking and selecting also work into the window: click into a field of the window and then onto the document. After **Save folder** the new folder is in the field and you carry on with the post.
 
@@ -225,6 +225,18 @@ With the package **Trennblatt** this happens by itself: a separator sheet betwee
 For each part, a **new post** with status *New* is created: subject "Batch scan (part 1)", "Batch scan (part 2)" …, date, “From” and “To” as in the original post. You can then [assign](#zuordnen) each one as usual. The original post keeps the whole PDF, is *Done* and links to the new ones under "Assigned to" – nothing is lost. At the top there is a notice with links to the new posts.
 
 It also works the other way round: if two posts belong together (e.g. front and back scanned separately), open the first one, choose its PDFs and **Merge** – see [Edit PDF](dokumente.md#pdf-bearbeiten). Via the interface (API), a program can also merge PDFs from several posts; a post that becomes empty as a result is completed.
+
+## Enclosure from here { #anlage-ab-hier }
+
+If a letter and its enclosure are in **one** scanned PDF – say the garage invoice (pages 1–2) with the MOT report (pages 3–5) –, you turn the last pages into an enclosure in one step:
+
+1. Open the post and click **⋯ → Pages …** next to the PDF.
+2. At the first page of the enclosure, click **Enclosure from here**. The page then carries the mark "Enclosure 1"; the same for further enclosures (**Enclosure 2, 3** …). **No enclosure** removes the mark.
+3. **Apply** and confirm the question.
+
+![Pages of a post: enclosure 1 begins at page 3](bilder/post-anlage-ab-hier.png)
+
+The same rules apply as for [splitting a batch scan](#sammelscan-teilen): a **new post** is created with the document (the pages before the first enclosure) and its enclosures "<name of the document> – Enclosure 1", "– Enclosure 2" …; the subject stays. The original post keeps the whole PDF as the earlier version, is *Done* and links to the new one; the history of both says what happened. If you also set **Split from here**, the enclosures belong to the part before them. This only works in a post, only with the permission *Edit* and only for a document that has no enclosures yet. To undo it, use **Make it a document of its own** on the enclosure (see [Enclosures](dokumente.md#anlagen)).
 
 ## Emails sent { #versendete-e-mails }
 

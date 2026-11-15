@@ -131,11 +131,11 @@ export class DokumentArchivfassung {
   }
 
   /** Wortpositionen eines Dokuments (#631, GET /dokumente/{id}/wortpositionen). */
-  async wortpositionen(id: string) {
+  async wortpositionen(id: string, o: { fassung?: 'archiv' } = {}) {
     if (!this.archiv) throw new Fachfehler(404, t('pakete.archiv.aus'));
     const d = await this.repo.holeDokument(id);
     if (!d) throw new Fachfehler(404, t('meldungen.dienst.dieses-dokument-gibt-es'));
-    return this.archiv.wortpositionen(d);
+    return this.archiv.wortpositionen(d, o);
   }
 
   /** Werkbank → Texterkennung → Archivfassung (#631). */

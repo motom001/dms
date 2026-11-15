@@ -862,6 +862,7 @@ code:
 - Ein Wort ist `[Text, x, y, b, h]`: Lage **relativ zur angezeigten Seite** (0…1, Ursprung **oben links**, `b`/`h` Breite und Höhe) – unabhängig von der Auflösung. Für die Textebene im PDF: x<sub>pt</sub> = x · breite, y<sub>pt</sub> = (1 − y − h) · hoehe.
 - `breite`/`hoehe`: Seite in pt (PDF, gedreht wie angezeigt) bzw. in Bildpunkten (Bild).
 - `quelle` je Seite: `textebene` (Text im PDF – die Seite braucht keine neue Textebene), `texterkennung` (Wörter der Texterkennung), `keine`. `vollstaendig`: jede Seite hat Wörter.
+- **`?fassung=archiv`** (#1137): Seiten, Größen und Wörter aus der Textebene der fertigen **Archivfassung** (`quelle` „archiv“, `mime` `application/pdf`) – so zeigt „Übernehmen“ E-Mails als Seitenbilder (`…/schwaerzen/seiten/{nr}?fassung=archiv`). 404 ohne Archivfassung.
 - **Für Texterkennungen:** Die Wortpositionen schickt das Paket mit `dms:texterkennung` zusammen mit dem Text: `PUT /dokumente/{id}/volltext` mit `woerter` – je durch `\f` getrennter Seite eine Liste von Wörtern im selben Format (relativ zur Seite, **wie `GET …/seiten/{nr}/scan` sie liefert** – hat das Paket die Seite zum Lesen gedreht, rechnet es die Lage zurück) oder `null` (Seite ohne Angabe, z. B. eine Textseite eines gemischten PDFs). Höchstens 1,5 Millionen Wörter, Text höchstens 200 Zeichen je Wort. Schreibt ein Paket den Volltext **ohne** `woerter`, fallen die alten weg (sie gehörten zu einem anderen Text). Der Kern speichert sie zur Datei (`<haushalt>/wortpositionen/`, gzip, in der Sicherung).
 
 ### Farbige Seitenbilder { #archivfassung-farbe }

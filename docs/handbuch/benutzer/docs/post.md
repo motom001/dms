@@ -91,7 +91,7 @@ Trägst du bei **An** einen Benutzer ein, steht die Post bei ihm unter [Zu erled
 Klickst du in **Neue Post** eine Post an, öffnet sich die Seite **Dokument übernehmen** – egal ob die Post abgelegt, fotografiert, gescannt, gemailt oder über das Laufwerk kam. Dieselbe Seite öffnet **Zuordnen …** in einer Post und [Aus Dokument ausfüllen](mappen.md#aus-dokument-ausfullen) in einer Mappe. Sie sieht immer gleich aus:
 
 - **Links** die gewohnten Ansichten, *Neue Post* ist markiert.
-- **In der Mitte** das Dokument; hat die Post mehrere, stehen sie untereinander. [Anlagen](dokumente.md#anlagen) stehen eingeklappt hinter ihrem Dokument („Anlage 1 · HU/AU-Protokoll · 2 Seiten“) und wandern beim Übernehmen mit; Vorschläge und Rahmen kommen nur aus den Hauptdokumenten. Oben rechts öffnet **Als Post öffnen** die Post selbst – etwa um *An* zu ändern oder eine Notiz zu schreiben –, daneben blätterst du mit **‹ Post 1 von 3 ›** durch *Neue Post*. Jedes Dokument steht wie in der Mappe in einem Betrachter mit fester Höhe; darüber sein Name, bei einer [Archivfassung](dokumente.md#archivfassung-pdfa) der Umschalter **PDF/A · Original** (gezeigt wird die Archivfassung) und **In neuem Tab**. Lässt sich ein Original nicht anzeigen (etwa eine E-Mail), steht dort ein Satz und **Original herunterladen**. Ganz unten liegt die Fläche **Weitere Dokumente hierher ziehen**: Was du dort (oder irgendwo ins Fenster, Ziel *In diese Post*) ablegst, kommt als weiteres Dokument in diese Post.
+- **In der Mitte** das Dokument; hat die Post mehrere, stehen sie untereinander. [Anlagen](dokumente.md#anlagen) stehen eingeklappt hinter ihrem Dokument („Anlage 1 · HU/AU-Protokoll · 2 Seiten“) und wandern beim Übernehmen mit; Vorschläge und Rahmen kommen nur aus den Hauptdokumenten. Oben rechts öffnet **Als Post öffnen** die Post selbst – etwa um *An* zu ändern oder eine Notiz zu schreiben –, daneben blätterst du mit **‹ Post 1 von 3 ›** durch *Neue Post*. Jedes Dokument steht wie in der Mappe in einem Betrachter mit fester Höhe; darüber sein Name, bei einer [Archivfassung](dokumente.md#archivfassung-pdfa) der Umschalter **PDF/A · Original** (gezeigt wird die Archivfassung) und **In neuem Tab**. Eine E-Mail mit fertiger Archivfassung erscheint wie ein Brief als Seitenbilder der Archivfassung – mit Text zum Markieren. Lässt sich ein Original nicht anzeigen (etwa die E-Mail unter **Original**), steht dort ein Satz und **Original herunterladen**. Ganz unten liegt die Fläche **Weitere Dokumente hierher ziehen**: Was du dort (oder irgendwo ins Fenster, Ziel *In diese Post*) ablegst, kommt als weiteres Dokument in diese Post.
 - **Rechts** oben **Wohin gehört das?**, darunter die Mappe, in die das Dokument kommt – wie überall sonst mit Typ, Titel (so, wie er nach dem Speichern heißt), Registern, Feldern und Speicherleiste. Stern und **Mappe** gehen erst nach dem Anlegen.
 
 Kam die Post per E-Mail, steht die [Original-E-Mail](#original-e-mail) mit ihrem Kennzeichen in der Mitte unter dem Dokument, an dem sie hängt, und geht mit in die Mappe. **Die Original-E-Mail enthält alle Anhänge der Mail. Gehören nicht alle in diese Mappe, lös sie vorher oder lösch sie.** Am schnellsten nimmst du dort den Haken bei **Original-E-Mail mit übernehmen** weg – dann bleibt sie als eigenes Dokument in der Post.
@@ -132,7 +132,7 @@ Die Mappe ist schon vorausgefüllt: Datum, Betrag, Nummern und Verweise (z. B. d
 - **Rahmen:** Wo ein erkannter Wert im Dokument steht, ist er farbig umrahmt und nummeriert; dieselbe Nummer steht am Feld. Fährst du über einen Rahmen, leuchtet das Feld auf – und umgekehrt.
 - **Ziehen:** Einen Rahmen ziehst du in ein beliebiges Feld, auch in ein Verweisfeld.
 - **Feld wählen, dann klicken:** Klick in ein Feld und dann auf einen Rahmen – das Feld übernimmt den Wert.
-- **Markieren:** Hat das Dokument Text (ein PDF mit Text oder Text aus der Texterkennung), markierst du Wörter mit der Maus. Das zuletzt gewählte Feld übernimmt sie; Datum und Betrag liest Ablago dabei richtig, z. B. „03.11.2026“ oder „1.284,20 €“.
+- **Markieren:** Hat das Dokument Text (ein PDF mit Text, Text aus der Texterkennung oder die Archivfassung einer E-Mail), markierst du Wörter mit der Maus. Das zuletzt gewählte Feld übernimmt sie; Datum und Betrag liest Ablago dabei richtig, z. B. „03.11.2026“ oder „1.284,20 €“.
 
 Fehlt eine Mappe für ein Verweisfeld, öffnet **+ … anlegen** das [Fenster für eine neue Mappe](mappen.md#auf-andere-mappen-verweisen) – hier schon mit dem gefüllt, was Ablago im Dokument erkannt hat, etwa Name, Anschrift und Kundennummer aus dem Briefkopf. Ziehen, Anklicken und Markieren gehen auch ins Fenster: Klick in ein Feld des Fensters und dann aufs Dokument. Nach **Mappe speichern** steht die neue Mappe im Feld, und du machst mit der Post weiter.
 
@@ -225,6 +225,18 @@ Mit dem Paket **Trennblatt** geht das von selbst: Ein Trennblatt zwischen den Br
 Je Teil entsteht eine **neue Post** mit Stand *Neu*: Betreff „Sammelscan (Teil 1)“, „Sammelscan (Teil 2)“ …, Datum, „Von“ und „An“ wie bei der Ausgangspost. Jede kannst du dann wie gewohnt [zuordnen](#zuordnen). Die Ausgangspost behält das ganze PDF, ist *Erledigt* und verweist unter „Zugeordnet zu“ auf die neuen – nichts geht verloren. Oben steht ein Hinweis mit Links zu den neuen Posts.
 
 Umgekehrt geht es auch: Gehören zwei Posts zusammen (z. B. Vorder- und Rückseite einzeln gescannt), öffne die erste, wähle ihre PDFs und **Zusammenfügen** – siehe [PDF bearbeiten](dokumente.md#pdf-bearbeiten). Über die Schnittstelle (API) fügt ein Programm auch PDFs aus mehreren Posts zusammen; eine Post, die dadurch leer ist, wird erledigt.
+
+## Anlage ab hier { #anlage-ab-hier }
+
+Steckt ein Brief samt Anlage in **einem** eingescannten PDF – etwa die Werkstattrechnung (Seite 1–2) mit dem HU-Protokoll (Seite 3–5) –, machst du die hinteren Seiten in einem Schritt zur Anlage:
+
+1. Öffne die Post und klicke neben dem PDF auf **⋯ → Seiten …**.
+2. Klicke bei der ersten Seite der Anlage auf **Anlage ab hier**. Die Seite trägt dann die Marke „Anlage 1“; bei weiteren Anlagen genauso (**Anlage 2, 3** …). **Keine Anlage** nimmt die Markierung zurück.
+3. **Übernehmen** und die Rückfrage bestätigen.
+
+![Seitenansicht einer Post: ab Seite 3 beginnt Anlage 1](bilder/post-anlage-ab-hier.png)
+
+Es gelten dieselben Regeln wie beim [Sammelscan teilen](#sammelscan-teilen): Es entsteht eine **neue Post** mit dem Dokument (Seiten vor der ersten Anlage) und seinen Anlagen „<Name des Dokuments> – Anlage 1“, „– Anlage 2“ …; der Betreff bleibt. Die Ausgangspost behält das ganze PDF als frühere Fassung, ist *Erledigt* und verweist auf die neue; in der Historie beider steht, was geschah. Setzt du zusätzlich **Teilen ab hier**, gehören die Anlagen zum Teil davor. Das geht nur in einer Post, nur mit dem Recht *Bearbeiten* und nur bei einem Dokument, das noch keine Anlagen hat. Rückgängig machst du es an der Anlage mit **Zum eigenen Dokument machen** (siehe [Anlagen](dokumente.md#anlagen)).
 
 ## Versendete E-Mails
 
