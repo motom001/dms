@@ -10,8 +10,9 @@ import { axePruefen } from './muster.mjs';
 
 rauchtest('Einrichtung: Assistent im Browser', {
   einrichtung: true,
-  // Nach „Übernehmen und weiter“ startet Ablago mit der Datenbank neu; bis dahin antwortet der Status mit 503.
-  erwartet: [{ status: 503, pfad: /^\/api\/konto\/status$/ }],
+  // Nach „Übernehmen und weiter“ startet Ablago mit der Datenbank neu; bis dahin antworten Status und Gesundheit
+  // mit 503 (die Gesundheit fragt die Oberfläche unter Last manchmal genau in diesem Moment ab).
+  erwartet: [{ status: 503, pfad: /^\/api\/konto\/status$/ }, { status: 503, pfad: /^\/api\/gesundheit$/ }],
   // … und zwischen Beenden und Start lehnt der Port die Verbindung kurz ab.
   neustart: [/^\/api\/konto\/status$/],
 }, async (s, k) => {
