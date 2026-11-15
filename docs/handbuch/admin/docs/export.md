@@ -4,7 +4,7 @@
 
 | | Wofür | Format |
 | --- | --- | --- |
-| [Sicherung](sicherung.md) | wiederherstellen *in ein DMS* | eigenes Format, verschlüsselt |
+| [Sicherung](sicherung.md) | wiederherstellen *in Ablago* | eigenes Format, verschlüsselt |
 | Export einer Ansicht ([Ablage](https://help.ablago.app/benutzer/aktuell/ablage/)) | ausgewählte Mappen weitergeben | Excel, CSV, ZIP, PDF |
 | **Vollexport** | alles mitnehmen, Ausstieg, Weiterverarbeitung | offene Formate, ohne Ablago lesbar |
 

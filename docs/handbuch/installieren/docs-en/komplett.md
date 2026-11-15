@@ -46,7 +46,7 @@ Open `http://<device>:8080`. The wizard asks for the **setup code**. It is in th
 
 --8<-- "assistent-weiter.md"
 
-If you already have a DMS with two containers, choose **Restore from a backup** in the wizard and restore a backup from there. This way you move without losing anything.
+If Ablago already runs with two containers for you, choose **Restore from a backup** in the wizard and restore a backup from there. This way you move without losing anything.
 
 ## Database on the SSD {#datenbank-auf-der-ssd}
 

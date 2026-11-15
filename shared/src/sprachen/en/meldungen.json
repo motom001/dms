@@ -10,7 +10,7 @@
   "anbindung.der-benutzer-darf-sich": "The user “{benutzer}” may not sign in (unknown or not admitted by the server). In the Compose template it is called “dms”.",
   "anbindung.die-datenbank-gibt-es": "The database “{datenbank}” doesn’t exist on the server yet.",
   "anbindung.die-verbindung-ist-fehlgeschlagen": "The connection failed: {wert}",
-  "anbindung.in-dieser-datenbank-gibt": "There is no DMS in this database yet. After the restart, setup begins there from scratch – please confirm.",
+  "anbindung.in-dieser-datenbank-gibt": "There is no Ablago data in this database yet. After the restart, setup begins there from scratch – please confirm.",
   "anmeldesperre.vom-bis_one": "On {datum}",
   "anmeldesperre.vom-bis_other": "From {datum} to {datum2}",
   "anmeldesperre.ip-adressen_one": "one IP address",

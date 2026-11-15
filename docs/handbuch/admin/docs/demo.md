@@ -1,6 +1,6 @@
 # Demo-Daten
 
-Unter **Werkbank → Demo-Daten** füllst du ein DMS zum Ausprobieren oder Testen mit Inhalt.
+Unter **Werkbank → Demo-Daten** füllst du Ablago zum Ausprobieren oder Testen mit Inhalt.
 
 --8<-- "ausgeblendet-alles.md"
 
