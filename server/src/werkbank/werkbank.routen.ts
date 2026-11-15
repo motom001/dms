@@ -144,6 +144,8 @@ export function werkbankUebersichtRouten(k: RoutenKontext): Route[] {
         texterkennung: x.texterkennung ? await sicher(() => x.texterkennung!.zaehler()) : null,
         // #459: Ist ein Paket für die Texterkennung installiert? Sonst Hinweis „Texterkennung ist jetzt ein Paket“.
         texterkennungPaket: !!(await sicher(() => dienst.volltexte.texterkennungPaket())),
+        // #1329: poppler findet für nicht eingebettete Schriften keinen Ersatz – Seiten-, Vorschaubilder und Archivfassung ohne Text.
+        schriftenFehlen: x.texterkennung ? (await sicher(() => x.texterkennung!.werkzeugeLaden()))?.schriften === false : false,
         aufgaben: { offen: aufgaben.length, ohneEmpfaenger: aufgaben.filter((y) => !y.empfaengerId).length },
         // #798: Aufgaben bei Personen ohne Leserecht (offene Fälle, abgeglichen alle fünf Minuten und beim Öffnen).
         ohneLeserecht: (await sicher(async () => (await dienst.ohneLeserecht.offeneFaelle()).length)) ?? 0,

@@ -17,6 +17,7 @@ import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Fachfehler } from './fehler';
+import { merkeSchriftfehler } from './ersatzschriften';
 import { t } from './sprache';
 import { AUSGABE_KLEIN } from './grenzen';
 
@@ -35,7 +36,12 @@ export async function graubild(pdf: Buffer, nr: number, dpi: number, farbe = fal
     await new Promise<void>((ok, fehler) => {
       execFile('pdftoppm', [...(farbe ? [] : ['-gray']), '-r', String(dpi), '-f', String(nr), '-l', String(nr), '-singlefile', join(dir, 'q.pdf'), join(dir, 's')],
         { timeout: ZEIT_MS, maxBuffer: AUSGABE_KLEIN }, (e, _o, err) => {
-          if (!e) return ok();
+          // Ersatzschrift fehlt (#1329): Für die Archivfassung (Farbe) kein Bild ohne Text – lieber ein Fehler mit Grund
+          // am Dokument; die bisherige Archivfassung bleibt. Graustufen (Texterkennung) wie bisher, nur gemeldet.
+          if (!e) {
+            const ohneSchrift = merkeSchriftfehler(err, farbe ? 'archivfassung' : 'graubild');
+            return ohneSchrift && farbe ? fehler(new Fachfehler(503, t('meldungen.graubild.schrift-fehlt'))) : ok();
+          }
           if ((e as NodeJS.ErrnoException).code === 'ENOENT') return fehler(new Fachfehler(503, t('meldungen.graubild.pdftoppm-fehlt-seiten-lassen')));
           fehler(/Wrong page range|first page/i.test(String(err)) ? new Fachfehler(404, t('meldungen.graubild.seite-gibt-es-in', { nr })) : new Fachfehler(422, t('meldungen.graubild.die-seite-laesst-sich', { wert: String(err).trim().slice(0, 200) || e.message })));
         });

@@ -387,6 +387,7 @@ Die Prüfung **Abhängigkeiten** (`.github/workflows/abhaengigkeiten.yml`) melde
 | `qrcode` | Oberfläche | MIT | QR-Code für die Zwei-Faktor-Anmeldung |
 | `poppler-utils` | Image (Alpine) | GPL-2.0-or-later, als eigenes Programm aufgerufen | `pdftotext`, `pdftoppm`: Text und Bilder aus PDFs |
 | `qpdf` | Image (Alpine) | Apache-2.0 | Struktur von PDFs beim Verkleinern optimieren |
+| `font-liberation`, `font-dejavu` (mit `fontconfig`) | Image (Alpine) | OFL-1.1 bzw. Bitstream-Vera (frei) | Ersatzschriften für nicht eingebettete Schriften in PDFs ([#1329](https://github.com/motom001/dms/issues/1329)); ohne sie rendert `pdftoppm` solche PDFs ohne Text. Etwa 14 MB; Prüfung im Image-Workflow mit `.github/werkzeuge/schriften-pruefen.mjs` |
 | `postgresql17`, `postgresql17-contrib` | nur `dms-komplett` | PostgreSQL | Datenbank im selben Container; `contrib` für `pg_trgm` |
 | `tini`, `su-exec` | nur `dms-komplett` | MIT | Prozesse starten und sauber beenden, PostgreSQL ohne root |
 

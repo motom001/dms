@@ -28,7 +28,8 @@ export interface ExternStand { status: ExternStatus; pruefung?: 'pruefsumme' | '
 export interface Sicherungsziel { id: string; name: string; adresse: string | null; ziel?: string | null }
 export interface ExternZustand {
   ziele: Sicherungsziel[];
-  letzte: { name: string; paket: string; beginn: string; stand: ExternStand } | null;
+  /** `entfernt` (#1327): lokal schon weggeräumt, die Kopie außer Haus gibt es noch. */
+  letzte: { name: string; paket: string; beginn: string; stand: ExternStand; entfernt?: true } | null;
   fehler: { name: string; paket: string; beginn: string; stand: ExternStand } | null;
   zuAlt: boolean;
 }
@@ -114,6 +115,8 @@ export interface WerkbankUebersicht {
   texterkennung: Record<'keiner' | 'wartet' | 'laeuft' | 'fertig' | 'fehler' | 'ausgelassen' | 'paket', number> | null;
   /** #459: Ein Paket übernimmt die Texterkennung. */
   texterkennungPaket?: boolean;
+  /** #1329: Für nicht eingebettete Schriften in PDFs fehlt der Ersatz. */
+  schriftenFehlen?: boolean;
   aufgaben: { offen: number; ohneEmpfaenger: number };
   /** #798: offene Fälle – Aufgaben bei Personen ohne Leserecht. */
   ohneLeserecht?: number;

@@ -9,6 +9,7 @@ import type { ArchivAblage, ArchivAnbindung, Archivfassung } from '../archivfass
 import { Fachfehler } from '../fehler';
 import type { Kern, Zugriff } from '../kern';
 import { liesPdfA, textebeneWoerter } from '../pdf';
+import { nichtEingebettet, pruefeSchriften } from '../ersatzschriften';
 import { protokoll } from '../protokoll';
 import type { Repo } from '../repo';
 import { t } from '../sprache';
@@ -17,6 +18,8 @@ import type { DokumentUmwandlung } from './umwandeln';
 /** Vorschaubilder aus der Archivfassung (#1216) – vorschau.ts, angebunden in ablago.ts. */
 export interface VorschauAusArchiv {
   ausArchiv(docs: Dokument[]): unknown;
+  /** Vorhandene Bilder neu erzeugen (#1329); das alte bleibt, bis das neue da ist. */
+  neuErzeugen(docs: Dokument[]): number;
   nachlaufArchiv(shas: Iterable<string>, dokumente: (sha: string) => Promise<Dokument[]>): Promise<number>;
   nachlaufStand(): Promise<{ offen: number; erledigt: number; ohne: number; seit: string; zeit: string } | null>;
 }
@@ -30,6 +33,21 @@ export interface ArchivfassungAnschluss {
   /** Gespeicherte Einstellungen eines Pakets (Pakete, Schicht 3). */
   paketEinstellungen(paket: string): Promise<{ werte: Record<string, unknown> } | null>;
 }
+
+/**
+ * Einmalige Reparatur nach dem Update (#1329): Bis dahin hatte das Image keine Schriften – PDFs mit nicht eingebetteten
+ * Schriften bekamen Seiten-, Vorschaubilder und Archivfassung ohne Text. Stand in der Einstellung `SCHRIFT_NACHLAUF`
+ * (bis zu welchem Prüfwert geprüft, wie viele neu, wann fertig), damit es nach einem Neustart weitergeht.
+ */
+export const SCHRIFT_NACHLAUF = 'schrift_nachlauf';
+/** Je Lauf höchstens so viele PDFs prüfen (`pdffonts`) … */
+export const SCHRIFT_STAPEL = 100;
+/** … und höchstens so viele neu anstoßen – die Archivfassung rechnet jede Seite mit 300 dpi. */
+export const SCHRIFT_NEU_JE_LAUF = 10;
+/** Pause vor jedem geprüften PDF (Raspberry Pi). */
+export const SCHRIFT_PAUSE_MS = 500;
+const SCHRIFT_LOG = protokoll.modul('archivfassung');
+export interface SchriftNachlaufStand { bis: string; geprueft: number; neu: number; seit: string; fertig?: string }
 
 export class DokumentArchivfassung {
   constructor(private readonly kern: Kern, private readonly fassungen: DokumentUmwandlung, private readonly anschluss: ArchivfassungAnschluss) {}
@@ -57,6 +75,55 @@ export class DokumentArchivfassung {
   async vorschauNachlauf(): Promise<number> {
     if (!this.archiv || !this.vorschau) return 0;
     return this.vorschau.nachlaufArchiv(await this.archiv.alle(), (sha) => this.repo.dokumenteMitSha(sha));
+  }
+
+  /**
+   * Einmalige Reparatur nach dem Update (#1329, Zeitplan): PDFs, deren Schriften nicht eingebettet sind (`pdffonts`),
+   * bekommen ihre Archivfassung (nur wo es eine eigene gibt) und ihr Vorschaubild neu – im Hintergrund, gedrosselt,
+   * nach Prüfwert geordnet. Läuft nur, wenn poppler jetzt Ersatzschriften findet. Die Archivfassung ersetzt die
+   * bisherige erst, wenn sie die Prüfung besteht (`setze`); die Historie nennt den Grund. Seitenbilder liegen nur im
+   * Arbeitsspeicher und entstehen nach dem Neustart ohnehin neu. Liefert den Stand oder null (nichts zu tun).
+   */
+  async schriftNachlauf(o: { pruefe?: () => Promise<boolean | undefined>; pauseMs?: number } = {}): Promise<SchriftNachlaufStand | null> {
+    const e = this.kern.einstellungen;
+    const alt = e ? (await e.lies(SCHRIFT_NACHLAUF)) as SchriftNachlaufStand | null : null;
+    if (!e || alt?.fertig) return null;
+    if ((await (o.pruefe ?? pruefeSchriften)().catch(() => undefined)) !== true) return null;
+    const stand: SchriftNachlaufStand = alt ?? { bis: '', geprueft: 0, neu: 0, seit: new Date().toISOString() };
+    if (!alt) SCHRIFT_LOG.info('Archivfassungen und Vorschaubilder von PDFs mit nicht eingebetteten Schriften werden einmalig neu erzeugt (#1329)');
+    const jeSha = new Map<string, Dokument[]>();
+    for (const d of await this.repo.dokumenteMitTyp(['application/pdf'])) {
+      if (d.sha256 > stand.bis) jeSha.set(d.sha256, [...(jeSha.get(d.sha256) ?? []), d]);
+    }
+    const offen = [...jeSha.keys()].sort();
+    const pause = o.pauseMs ?? SCHRIFT_PAUSE_MS;
+    let neu = 0, n = 0;
+    for (const sha of offen) {
+      if (n >= SCHRIFT_STAPEL || neu >= SCHRIFT_NEU_JE_LAUF) break;
+      n++;
+      if (pause) await new Promise((ok) => { setTimeout(ok, pause); });
+      stand.bis = sha;
+      stand.geprueft++;
+      if (await this.schriftNeu(sha, jeSha.get(sha)!)) { neu++; stand.neu++; }
+    }
+    if (n >= offen.length) {
+      stand.fertig = new Date().toISOString();
+      SCHRIFT_LOG.info('PDFs mit nicht eingebetteten Schriften: einmalige Neuerzeugung abgeschlossen (#1329)', { geprueft: stand.geprueft, neu: stand.neu });
+    }
+    await e.schreibe(SCHRIFT_NACHLAUF, stand);
+    return stand;
+  }
+
+  /** Eine Datei: Bettet sie Schriften nicht ein, Archivfassung (nur eine eigene) und Vorschaubild neu anstoßen. */
+  private async schriftNeu(sha: string, docs: Dokument[]): Promise<boolean> {
+    const fehlt = await this.kern.liesGanz(sha).then((b) => nichtEingebettet(b), () => null);
+    if (!fehlt?.length) return false;
+    const info = await this.archiv?.info(sha);
+    const archiv = !!info && !info.imOriginal && await this.archiv!.anfordern(docs[0], { neu: true, grund: t('pakete.archiv.grund.schriften') })
+      .catch((x: Error) => { SCHRIFT_LOG.warn('Archivfassung nicht neu angefordert', { dokument: docs[0].id, fehler: x.message }); return false; });
+    const bild = (this.vorschau?.neuErzeugen(docs) ?? 0) > 0;
+    SCHRIFT_LOG.info('PDF mit nicht eingebetteten Schriften: neu erzeugt', { dokument: docs[0].id, schriften: fehlt.slice(0, 10), archivfassung: archiv, vorschaubild: bild });
+    return true;
   }
 
   /** Was Archivfassung vom Dienst braucht (#631) – für index.ts und Tests. */

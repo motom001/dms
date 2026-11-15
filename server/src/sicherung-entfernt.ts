@@ -65,7 +65,8 @@ export interface ZielPaket { id: string; name: string; adresse?: string | null; 
 /** Aufruf eines Pakets mit dms:sicherung-holen (Läufer); Ergebnis als Text. */
 export type HolAufruf = (paket: string, eingang: Record<string, unknown>, ms?: number) => Promise<string>;
 
-type Merkeintrag = { ziel?: string; meta: SchlankeMetadaten; am: string };
+/** `status`/`pruefung` seit #1327 (ältere Einträge ohne: hochgeladen). */
+type Merkeintrag = { ziel?: string; meta: SchlankeMetadaten; am: string; status?: ExternStand['status']; pruefung?: ExternStand['pruefung'] };
 type Merkliste = Record<string, Record<string, Merkeintrag>>;
 type ZielEintrag = { name: string; groesse: number; meta: SchlankeMetadaten | null };
 type Holstand = { paket: string; name: string; groesse: number; sha256: string; meta: SchlankeMetadaten; seit: string };
@@ -163,7 +164,7 @@ export class EntfernteSicherungen {
         sha256: j.sha256, beginn: j.beginn, verschluesselung: j.verschluesselung,
       }, name);
       if (!meta) continue;
-      neu[name] = Object.fromEntries(ok.map(([paket, st]) => [paket, { ...(st.ziel ? { ziel: st.ziel } : {}), meta, am: st.am }]));
+      neu[name] = Object.fromEntries(ok.map(([paket, st]) => [paket, { ...(st.ziel ? { ziel: st.ziel } : {}), meta, am: st.am, status: st.status, ...(st.pruefung ? { pruefung: st.pruefung } : {}) }]));
     }
     if (!Object.keys(neu).length) return;
     const alle = { ...await this.merkliste(), ...neu };
@@ -171,9 +172,20 @@ export class EntfernteSicherungen {
     await this.s.einstellungen.schreibe('sicherung_entfernt', Object.fromEntries(behalten));
   }
 
-  /** Ist eine schon lokal entfernte Sicherung bei einem dieser Pakete außer Haus angekommen (#1194)? */
-  async angekommen(pakete: Set<string>): Promise<boolean> {
-    return Object.values(await this.merkliste()).some((x) => Object.keys(x).some((p) => pakete.has(p)));
+  /**
+   * Die neueste schon lokal entfernte Sicherung, die bei einem dieser Pakete außer Haus angekommen ist (#1194, #1327) –
+   * im Aufbau wie die letzte Kopie aus der lokalen Liste; null, wenn keine.
+   */
+  async letzteKopie(pakete: Set<string>): Promise<{ name: string; paket: string; beginn: string; stand: ExternStand; entfernt: true } | null> {
+    let erg: { name: string; paket: string; beginn: string; stand: ExternStand; entfernt: true } | null = null;
+    for (const [name, je] of Object.entries(await this.merkliste())) {
+      for (const [paket, m] of Object.entries(je)) {
+        if (!pakete.has(paket) || (erg && erg.beginn >= m.meta.beginn)) continue;
+        const stand: ExternStand = { status: m.status ?? 'hochgeladen', ...(m.pruefung ? { pruefung: m.pruefung } : {}), ...(m.ziel ? { ziel: m.ziel } : {}), seit: m.am, am: m.am };
+        erg = { name, paket, beginn: m.meta.beginn, stand, entfernt: true };
+      }
+    }
+    return erg;
   }
 
   /** Paket entfernt oder Sicherung wieder lokal: aus der Merkliste nehmen. */

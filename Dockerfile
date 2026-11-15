@@ -46,7 +46,11 @@ ARG APK_TAG=""
 # (Tesseract als WebAssembly im Paket-Läufer); weitere Sprachen kommen als Zusatzpakete dazu.
 # PDF verkleinern (#393): qpdf (Apache-2.0, Alpine „community“) optimiert die Struktur; die Bilder rechnet
 # pdftoppm aus poppler-utils. Bewusst kein Ghostscript (AGPL). Fehlt qpdf, geht es auch ohne.
-RUN echo "Alpine-Pakete Stand ${APK_TAG}" && apk upgrade --no-cache && apk add --no-cache poppler-utils qpdf
+# Schriften (#1329): PDFs, die ihre Schriften nicht einbetten (Helvetica, Arial, Times, Courier – oft bei Rechnungen
+# aus Druckstraßen), rendert poppler mit Ersatz aus dem System; ohne eine einzige Schrift fehlte der Text in Seiten-,
+# Vorschaubildern und Archivfassung. font-liberation (SIL OFL 1.1): metrisch passend für Helvetica/Arial, Times und
+# Courier; font-dejavu (Bitstream-Vera-Lizenz, frei): weitere Zeichen. fontconfig kommt mit poppler. Zusammen etwa 14 MB.
+RUN echo "Alpine-Pakete Stand ${APK_TAG}" && apk upgrade --no-cache && apk add --no-cache poppler-utils qpdf fontconfig font-liberation font-dejavu
 # Stand des Images für die Versionsübersicht in der Werkbank (setzt GitHub Actions).
 ARG DMS_COMMIT=""
 ARG DMS_GEBAUT=""

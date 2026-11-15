@@ -817,6 +817,7 @@
   "graubild.seite-gibt-es-in": "Seite {nr} gibt es in diesem PDF nicht.",
   "graubild.die-seite-laesst-sich": "Die Seite lässt sich nicht rastern: {wert}",
   "graubild.die-seite-ist-bei": "Die Seite ist bei {dpi} dpi zu groß – bitte mit weniger dpi anfragen.",
+  "graubild.schrift-fehlt": "Für eine Schrift in diesem PDF fehlt der Ersatz – das Seitenbild hätte keinen Text. Die bisherige Archivfassung bleibt; das offizielle Image bringt die Schriften mit (Werkbank → Systemzustand).",
   "hilfe.diese-seite-gibt-es": "Diese Seite gibt es in der Hilfe nicht.",
   "hochladen.die-datei-kam-nicht": "Die Datei kam nicht vollständig an. Bitte noch einmal hochladen.",
   "hochladen.die-datei-ist-zu": "Die Datei ist zu groß (höchstens {round} MB).",

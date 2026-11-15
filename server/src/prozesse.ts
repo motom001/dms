@@ -375,8 +375,12 @@ export async function verbundFuerProzess(): Promise<Verbund> {
 /** Neustart eines abgestürzten Prozesses: 1 s, dann doppelt so lange bis höchstens 60 s; nach 5 Minuten Laufzeit wieder 1 s. */
 export const neustartWarten = (folge: number) => Math.min(60_000, 1000 * 2 ** folge);
 const STABIL_MS = 5 * 60_000;
-/** So lange warten die Prozesse beim Beenden, bevor der Hauptprozess sie hart beendet. */
-const BEENDEN_MS = 20_000;
+/**
+ * So lange warten die Prozesse beim Beenden, bevor der Hauptprozess sie hart beendet (#1328): unter den 10 Sekunden, nach
+ * denen `docker stop` (Vorgabe) den Container mit SIGKILL beendet – so beendet der Hauptprozess Säumige selbst, schreibt
+ * es ins Protokoll und endet mit seinem Code. Früher 20 Sekunden, die Docker nie abwartete.
+ */
+export const BEENDEN_MS = 8_000;
 
 /**
  * Der Hauptprozess: startet den Leiter, nach dessen „bereit“ die übrigen; reicht Aufrufe und Meldungen weiter, startet
@@ -542,7 +546,8 @@ export function leite(e: ProzessEinstellung): Promise<never> {
     ende = code;
     if (!plaetze.size) process.exit(code);
     for (const p of plaetze.values()) p.w.process.kill('SIGTERM');
-    setTimeout(() => { for (const p of plaetze.values()) p.w.process.kill('SIGKILL'); process.exit(code); }, BEENDEN_MS).unref();
+    // Säumige (#1328): ins Protokoll, dann hart beenden.
+    setTimeout(() => { if (plaetze.size) log.warn(`Beenden: Prozess ${[...plaetze.keys()].join(', ')} nach ${BEENDEN_MS / 1000} s noch nicht beendet – hart beendet`); for (const p of plaetze.values()) p.w.process.kill('SIGKILL'); process.exit(code); }, BEENDEN_MS).unref();
   };
   process.on('SIGTERM', () => beendeAlle(0));
   process.on('SIGINT', () => beendeAlle(0));

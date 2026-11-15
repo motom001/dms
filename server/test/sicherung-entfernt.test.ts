@@ -102,6 +102,22 @@ describe('Entfernte Sicherungen (#976)', () => {
     await assert.rejects(s.entfernt.hole(name, 'webdav', 'markus@example.org'), /kann Sicherungen nicht zurückholen/);
   });
 
+  it('„Letzte Kopie außer Haus“ (#1327): Kopie erfolgreich, lokale Sicherung weggeräumt – die Anzeige zeigt die Kopie mit Datum und Ziel', async () => {
+    const ziel: Ziel = { dateien: new Map(), meta: new Map(), holen: false };
+    const { s, name, meta } = await aufbau(ziel);
+    assert.equal((await s.externZustand())?.letzte?.name, name);
+    await s.loesche(name, 'markus@example.org');
+    const x = (await s.zustand()).extern!;
+    assert.equal(x.letzte?.name, name, 'nicht „keine“');
+    assert.equal(x.letzte?.paket, 'webdav');
+    assert.equal(x.letzte?.beginn, meta.beginn);
+    assert.equal(x.letzte?.stand.status, 'geprueft');
+    assert.equal(x.letzte?.stand.ziel, 'WebDAV https://cloud.example.org/Ablago');
+    assert.equal((x.letzte as { entfernt?: boolean }).entfernt, true);
+    // Damit bleibt auch „lokal nur die neueste“ wählbar (#1194).
+    assert.equal((await s.zustand()).nurNeueste.moeglich, true);
+  });
+
   it('zurückholen: in Stücken, Größe und Prüfsumme geprüft, danach lokal mit .json und „unverändert“', async () => {
     const ziel: Ziel = { dateien: new Map(), meta: new Map(), holen: true };
     const { s, name, aufrufe, meta } = await aufbau(ziel);

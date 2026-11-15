@@ -60,8 +60,11 @@ export const WOERTER_PFAD = /^wortpositionen\/[0-9a-f]{2}\/([0-9a-f]{64})\.json\
 export const archivOrdner = (dateiWurzel: string, haushalt: string) => join(dateiWurzel, haushalt, ARCHIV_ORDNER);
 export const woerterOrdner = (dateiWurzel: string, haushalt: string) => join(dateiWurzel, haushalt, WOERTER_ORDNER);
 
-/** Stand einer Datei, solange es keine (neue) Archivfassung gibt: wartet, ausgelassen oder Fehler. */
-export interface ArchivStandDatei { stand: Exclude<ArchivStandArt, 'fertig'>; info: string | null; paket: { id: string; name: string; version?: string } | null; zeit: string }
+/**
+ * Stand einer Datei, solange es keine (neue) Archivfassung gibt: wartet, ausgelassen oder Fehler. `grund`: warum neu
+ * erzeugt wird (#1329, z. B. „fehlende Schriften“) – steht dann mit in der Historie.
+ */
+export interface ArchivStandDatei { stand: Exclude<ArchivStandArt, 'fertig'>; info: string | null; paket: { id: string; name: string; version?: string } | null; zeit: string; grund?: string }
 /** Wortpositionen aus der Texterkennung: je Seite des Volltexts die Wörter oder null. */
 export interface GespeicherteWoerter { seiten: Array<Wort[] | null>; von: string; erstellt: string }
 
@@ -320,7 +323,7 @@ export class Archivfassung {
    * einem Paket für den Volltext warten sie wie alle anderen, bis er da ist. Der Stand „wartet“ steht in der Ablage,
    * bevor das Ereignis hinausgeht. Liefert, ob gemeldet wurde.
    */
-  async anfordern(d: Dokument, o: { neu?: boolean; liste?: ArchivPaket[] } = {}): Promise<boolean> {
+  async anfordern(d: Dokument, o: { neu?: boolean; liste?: ArchivPaket[]; grund?: string } = {}): Promise<boolean> {
     const mail = mailTyp(d.mime, d.name);
     if (d.ocr?.stand !== 'fertig' && !(mail && d.ocr?.stand === 'ausgelassen')) return false;
     const p = await this.paketFuer(d.mime, o.liste, d.name);
@@ -379,7 +382,7 @@ export class Archivfassung {
       for (let i = 0; i < anzahl; i++) if (!mitText(seiten?.[i]) && !w?.seiten[i]) wortpositionen = false;
     }
     this.angefordert.set(d.sha256, jetzt);
-    await this.o.ablage.setzeStand(d.sha256, { stand: 'wartet', info: null, paket, zeit: jetztIso });
+    await this.o.ablage.setzeStand(d.sha256, { stand: 'wartet', info: null, paket, zeit: jetztIso, ...(o.grund ? { grund: o.grund } : {}) });
     const daten = (x: Dokument) => ({
       dokument: x.id, mappe: x.mappeId, name: x.name, mime: x.mime, groesse: x.groesse, sha256: x.sha256,
       quelle: q.art, ...(q.fassung ? { lesefassung: { mime: q.fassung.mime, sha256: q.fassung.sha256 } } : {}),
@@ -455,7 +458,8 @@ export class Archivfassung {
     }
     const b = inhalt as Buffer;
     // Was das Original mitbringt (Signatur, E-Rechnung, externe Inhalte) – für die Hinweise am Dokument.
-    const q = await this.quelle(d);
+    // Neu angefordert mit Grund (#1329): Der Grund steht mit in der Historie.
+    const q = await this.quelle(d), grund = (await this.o.ablage.stand(d.sha256).catch(() => null))?.grund;
     const vom = q?.mime === 'application/pdf' ? await this.o.liesPdfA(await q.inhalt()).catch(() => null) : null;
     const weggelassen = !!vom && (vom.javascript || vom.aktionen.length > 0 || vom.extern.length > 0);
     if (weggelassen) log.info('Externe Inhalte des Originals nicht in die Archivfassung übernommen', { dokument: d.id, adressen: vom!.extern, aktionen: vom!.aktionen, javascript: vom!.javascript });
@@ -466,9 +470,9 @@ export class Archivfassung {
     this.angefordert.delete(d.sha256);
     log.info('Archivfassung gespeichert', { dokument: d.id, typ: d.mime, pdfa: pdfaName(k.pdfa), bytes: b.length, seiten: k.seiten, paket: p.id });
     const alle = await this.o.dokumenteMitSha(d.sha256).catch(() => [] as Dokument[]);
-    const text = t('pakete.archiv.historie', { typ: dateitypName(d.mime), pdfa: pdfaName(k.pdfa), paket: `${p.name} ${p.version}` });
+    const werte = { typ: dateitypName(d.mime), pdfa: pdfaName(k.pdfa), paket: `${p.name} ${p.version}` }, text = grund ? t('pakete.archiv.historie.neu', { ...werte, grund }) : t('pakete.archiv.historie', werte);
     for (const x of alle.length ? alle : [d]) {
-      await this.o.notiere(x, p.id, { dokument: x.name, text, pdfa: pdfaName(k.pdfa), groesse: b.length, paket: `${p.name} ${p.version}` })
+      await this.o.notiere(x, p.id, { dokument: x.name, text, pdfa: pdfaName(k.pdfa), groesse: b.length, paket: `${p.name} ${p.version}`, ...(grund ? { grund } : {}) })
         .catch((e: Error) => log.warn('Historie zur Archivfassung nicht geschrieben', { dokument: x.id, fehler: e.message }));
     }
     return info;

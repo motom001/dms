@@ -2,7 +2,7 @@
 export { dateiname, DokumenteDienst, erkenneAnzeigbar, type DokumenteAnschluss, type DokumenteTeile, type TexterkennungAnbindung } from './dokumente.dienst';
 export { GeschuetztePdfs, type GeschuetztePdfsAnschluss, type GeschuetztePdfsTeile } from './geschuetzte-pdf';
 export { DokumentUmwandlung, type UmwandelnAnschluss } from './umwandeln';
-export { DokumentArchivfassung, type ArchivfassungAnschluss } from './archivfassung';
+export { DokumentArchivfassung, SCHRIFT_NEU_JE_LAUF, type ArchivfassungAnschluss } from './archivfassung';
 export { FehlendeDateien } from './fehlende-dateien';
 export { DokumentVersionen, type VersionenAnschluss } from './versionen';
 export { DokumentAnlagen, type AnlagenStand } from './anlagen';

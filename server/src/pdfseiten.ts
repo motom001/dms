@@ -3,6 +3,7 @@ import { mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Fachfehler } from './fehler';
+import { merkeSchriftfehler } from './ersatzschriften';
 import type { SeitenWahl } from './pdf';
 import { t } from './sprache';
 import { anteilVon } from './zwischenspeicher';
@@ -83,7 +84,8 @@ export class Seitenbilder {
 function starte(cmd: string, args: string[], ms: number): Promise<void> {
   return new Promise((ok, fehler) => {
     execFile(cmd, args, { timeout: ms, maxBuffer: AUSGABE_MITTEL }, (e, _out, err) => {
-      if (!e) { ok(); return; }
+      // Ersatzschrift fehlt (#1329): Das Bild entsteht, aber ohne den Text – in der Werkbank melden.
+      if (!e) { merkeSchriftfehler(err, 'seitenbilder'); ok(); return; }
       const f = e as NodeJS.ErrnoException & { killed?: boolean };
       fehler(new Error(f.code === 'ENOENT' ? `${cmd} ist nicht installiert.` : f.killed ? `${cmd} brauchte zu lange.` : String(err || f.message).trim().split('\n').slice(-2).join(' ')));
     });

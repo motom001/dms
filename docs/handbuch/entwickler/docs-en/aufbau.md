@@ -388,6 +388,7 @@ The check **Abhängigkeiten** (`.github/workflows/abhaengigkeiten.yml`) reports 
 | `qrcode` | interface | MIT | QR code for two-factor sign-in |
 | `poppler-utils` | image (Alpine) | GPL-2.0-or-later, called as a separate program | `pdftotext`, `pdftoppm`: text and images from PDFs |
 | `qpdf` | image (Alpine) | Apache-2.0 | optimising the structure of PDFs when shrinking |
+| `font-liberation`, `font-dejavu` (with `fontconfig`) | image (Alpine) | OFL-1.1 and Bitstream-Vera (free) | substitute fonts for non-embedded fonts in PDFs ([#1329](https://github.com/motom001/dms/issues/1329)); without them `pdftoppm` renders such PDFs without text. About 14 MB; checked in the image workflow with `.github/werkzeuge/schriften-pruefen.mjs` |
 | `postgresql17`, `postgresql17-contrib` | only `dms-komplett` | PostgreSQL | database in the same container; `contrib` for `pg_trgm` |
 | `tini`, `su-exec` | only `dms-komplett` | MIT | starting and cleanly ending processes, PostgreSQL without root |
 

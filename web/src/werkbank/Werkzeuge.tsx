@@ -29,11 +29,11 @@ export function WerkzeugeHinweis({ werkzeuge, pruefen }: { werkzeuge: Werkzeuge 
 }
 
 /** Name des Programmpakets für Fachleute (so heißt es in den Paketquellen der Linux-Distributionen). */
-const PAKET: Record<WerkzeugArt, string> = { poppler: 'Poppler', qpdf: 'qpdf' };
+const PAKET: Record<WerkzeugArt, string> = { poppler: 'Poppler', qpdf: 'qpdf', schriften: 'Alpine' };
 
 /** Zeilen für „Installiert“ unter Version und Updates: je Werkzeug „vorhanden“ oder „fehlt“. */
 export function werkzeugZeilen(w: Werkzeuge | null | undefined): Array<[string, string]> {
   if (!w) return [];
   const fehlt = fehlendeWerkzeuge(w);
-  return (['poppler', 'qpdf'] as const).map((art) => [t.frei(`werkbank.werkzeuge.${art}.name`), fehlt.includes(art) ? t('werkbank.werkzeuge.fehlt') : t('werkbank.werkzeuge.vorhanden')]);
+  return (['poppler', 'qpdf', 'schriften'] as const).filter((art) => art !== 'schriften' || w.schriften !== undefined).map((art) => [t.frei(`werkbank.werkzeuge.${art}.name`), fehlt.includes(art) ? t('werkbank.werkzeuge.fehlt') : t('werkbank.werkzeuge.vorhanden')]);
 }

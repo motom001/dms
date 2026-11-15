@@ -111,7 +111,7 @@ Mit **SIGTERM** oder **SIGINT** (z. B. `docker stop`, Strg+C) beendet sich Ablag
 - **Programme**, die Ablago startet (`pdftoppm`, `qpdf`, Ghostscript, Texterkennung …), beendet Ablago mit sich, nach dem geordneten Beenden ebenso wie nach einem Absturz.
 - Nur ein **SIGKILL** (`kill -9`) lässt Ablago keine Zeit dafür; im Container endet dann ohnehin alles mit dem Container.
 
-**`docker stop`:** Docker schickt SIGTERM und nach 10 Sekunden (Vorgabe) SIGKILL. Im Image `dms` empfängt Node.js das Signal selbst (Prozess 1); in `dms-komplett` reicht `tini` es an das Start-Skript, das erst Ablago und dann PostgreSQL beendet. Mit mehreren Prozessen wartet der Hauptprozess bis zu 20 Sekunden auf sie – wer ganz sicher geordnet beenden will, setzt in der Compose-Datei `stop_grace_period: 30s`.
+**`docker stop`:** Docker schickt SIGTERM und nach 10 Sekunden (Vorgabe) SIGKILL. Im Image `dms` empfängt Node.js das Signal selbst (Prozess 1); in `dms-komplett` reicht `tini` es an das Start-Skript, das erst Ablago und dann PostgreSQL beendet. Mit mehreren Prozessen (`DMS_PROZESSE`) wartet der Hauptprozess **bis zu 8 Sekunden** auf sie – unter den 10 Sekunden von `docker stop`. Ist ein Prozess bis dahin nicht fertig, beendet ihn der Hauptprozess selbst hart und schreibt das ins Protokoll („Beenden: Prozess … nach 8 s noch nicht beendet“); Docker muss dafür nicht eingreifen. Eine längere Wartezeit des Containers (`stop_grace_period`) ist deshalb für Ablago selbst nicht nötig; nur `dms-komplett` braucht sie für PostgreSQL (siehe [Installation](https://help.ablago.app/installieren/aktuell/komplett/)).
 
 ## Schnittstelle
 
