@@ -88,6 +88,31 @@ describe('Konten', () => {
     await wirft(k.anmelden({ email: 'admin@example.org', passwort: 'ein-langes-passwort' }, 'y'), 401);
   });
 
+  it('Links in Mails nur mit gepflegter Adresse, nie aus dem Host-Kopf der Anfrage', async () => {
+    const { mails, mailer } = postfach();
+    // Die Adresse der Anfrage bestimmt der Absender (Host-Kopf): hier die eines Angreifers.
+    let gepflegt = '';
+    const k = new Konten(speicherKontoRepo(), mailer, () => 'https://boese.example');
+    k.verbindeMailAdresse(() => gepflegt);
+    const admin = imModus((await k.einrichten({ email: 'admin@example.org', passwort: 'ein-langes-passwort' })).benutzer);
+    const protokolliert: string[] = [];
+    // Ohne gepflegte Adresse: „Passwort vergessen“ verschickt nichts, antwortet aber gleich.
+    await k.passwortVergessen({ email: 'admin@example.org' }, (m) => protokolliert.push(m));
+    assert.equal(mails.length, 0);
+    assert.match(protokolliert.join('\n'), /nicht gepflegt/);
+    // Neue Person: keine Mail, die Verwaltung bekommt den Link angezeigt (aus ihrer eigenen Anfrage) und einen Hinweis.
+    const r = await k.legeBenutzerAn({ email: 'sabine@example.org', name: 'Sabine' }, admin.id);
+    assert.equal(r.mailVerschickt, false);
+    assert.ok(r.link && r.mailFehler);
+    assert.equal(mails.length, 0);
+    // Mit gepflegter Adresse: der Link in der Mail zeigt dorthin, egal welcher Host-Kopf kam.
+    gepflegt = 'https://ablage.example.org/';
+    await k.passwortVergessen({ email: 'admin@example.org' });
+    assert.equal(mails.length, 1);
+    assert.match(mails[0].text, /https:\/\/ablage\.example\.org\/passwort\/[\w-]+/);
+    assert.ok(!mails[0].text.includes('boese.example'));
+  });
+
   it('schützt die letzte Person mit „Gesamte Verwaltung“ und deaktiviert Sitzungen (#818)', async () => {
     const k = new Konten(speicherKontoRepo(), null, 'http://nas:3000');
     const admin = imModus((await k.einrichten({ email: 'admin@example.org', passwort: 'ein-langes-passwort' })).benutzer);

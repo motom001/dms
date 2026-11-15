@@ -78,7 +78,11 @@ describe('Adresse von Ablago', () => {
     assert.equal(imKontext(() => b.adresseFuerLinks()), 'https://dms.example.org');
     assert.equal(imKontext(() => b.cookieNurHttps()), true);
     assert.equal(imKontext(() => b.ansicht().vorschlag), 'https://dms.example.org');
+    // Links in Mails nie aus der Anfrage (Host-Kopf bestimmt der Absender).
+    assert.equal(imKontext(() => b.adresseFuerMails()), 'http://localhost:3000');
+    assert.equal(imKontext(() => b.gepflegteAdresse()), '');
     await b.speichereAdresse('nas:8080');
+    assert.equal(imKontext(() => b.adresseFuerMails()), 'http://nas:8080');
     assert.equal(imKontext(() => b.adresseFuerLinks()), 'http://nas:8080');
     assert.equal(imKontext(() => b.cookieNurHttps()), false);
   });

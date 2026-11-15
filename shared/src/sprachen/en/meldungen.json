@@ -852,6 +852,7 @@
   "koepfe.geolocation-microphone-payment-usb": "geolocation=(), microphone=(), payment=(), usb=()",
   "konsole.unter-gibt-es-keine": "There is no active person with “Full administration” under {als}.",
   "konsole.es-gibt-noch-keine": "There is no active person with “Full administration” yet. Set up Ablago in the browser (or use the emergency access).",
+  "konten.link-ohne-adresse": "No email sent: Without a configured address, Ablago does not send links by email. Enter it under Workbench → Email and address; until then, pass on the link shown here.",
   "konten.die-einrichtung-ist-bereits": "Setup is already complete.",
   "konten.unter-gibt-es-keinen": "There is no user under {text}.",
   "konten.das-passwort-stimmt-nicht": "The password is wrong.",

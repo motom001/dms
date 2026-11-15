@@ -852,6 +852,7 @@
   "koepfe.geolocation-microphone-payment-usb": "geolocation=(), microphone=(), payment=(), usb=()",
   "konsole.unter-gibt-es-keine": "Unter {als} gibt es keine aktive Person mit „Gesamte Verwaltung“.",
   "konsole.es-gibt-noch-keine": "Es gibt noch keine aktive Person mit „Gesamte Verwaltung“. Richte Ablago im Browser ein (oder nutze den Notfallzugang).",
+  "konten.link-ohne-adresse": "Keine Mail verschickt: Ohne gepflegte Adresse von Ablago verschickt Ablago keine Links per Mail. Trage sie unter Werkbank → E-Mail und Adresse ein; bis dahin hier den Link weitergeben.",
   "konten.die-einrichtung-ist-bereits": "Die Einrichtung ist bereits abgeschlossen.",
   "konten.unter-gibt-es-keinen": "Unter {text} gibt es keinen Benutzer.",
   "konten.das-passwort-stimmt-nicht": "Das Passwort stimmt nicht.",

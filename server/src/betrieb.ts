@@ -336,6 +336,12 @@ export class Betrieb {
 
   adresseFuerLinks(): string { return this.adresse || kontext.getStore()?.ursprung || this.standardAdresse; }
 
+  /**
+   * Adresse für Links in Mails: nie die Adresse der Anfrage, denn deren Host-Kopf bestimmt der Absender. Gepflegt oder
+   * die Standardadresse (Start ohne Anfrage); für Mails mit Anmelde-Links nur die gepflegte (`gepflegteAdresse`).
+   */
+  adresseFuerMails(): string { return this.adresse || this.standardAdresse; }
+
   /** Sitzungs-Cookie nur über HTTPS, wenn die Adresse https ist (oder die Anfrage über HTTPS kam). */
   cookieNurHttps(): boolean {
     if (this.adresse) return this.adresse.startsWith('https://');
