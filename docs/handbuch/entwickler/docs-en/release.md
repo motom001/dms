@@ -45,6 +45,7 @@ How to read it: is the sentence still true? If not, correct it. If it is intende
     - **Exceptions** (`ignore` in `dependabot.yml`) that deliberately come by hand: new major versions of `node` (base image, LTS series only), `@types/node` and `typescript`; for `esbuild` (still 0.x) also new minor versions.
 - **`npm audit`** runs in CI over everything that ends up in the image (`--omit=dev`). From level "high" the check fails. If a report demonstrably has no effect on Ablago, this is justified in the PR.
 - **`package-lock.json`** records the exact versions; CI and image install with `npm ci`. If a `package.json` changes without a matching lockfile, the workflow *Lockfile erzeugen* puts a new one on the branch `werkzeug/lockfile`; from there it is taken over with a normal commit.
+- **Node version in two places** (#1272): `engines` in `package.json` (all workflows read it via `node-version-file`) and the base image once in the `Dockerfile` (stage `node-basis`, on which build and runtime are based). Changing the major version changes both.
 - **Security fix = patch release** with the note "Security update – please update" in the release notes. Reports from outside are handled confidentially, see [`SECURITY.md`](https://github.com/motom001/dms/blob/main/SECURITY.md).
 
 ### Checking images, provenance and bill of materials { #images-prufen-herkunftsnachweis-und-stuckliste }

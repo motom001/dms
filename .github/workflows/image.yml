@@ -41,7 +41,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: 24
+          node-version-file: package.json
       - run: npm ci --no-audit --no-fund
       # poppler und qpdf (#45, #459): dieselben Werkzeuge wie im Image – ohne Texterkennung (die ist ein Paket).
       # Erst ohne „apt-get update“ (#905), nur wenn das scheitert mit – das Update dauert mal 10 s, mal über 3 Minuten.
@@ -94,7 +94,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: 24
+          node-version-file: package.json
       # Genau die Versionen aus package-lock.json (#215).
       # Versionsnummer erst beim Merge (#952): Wer das Programm ändert, bringt genau einen Schnipsel
       # docs/releases/neu/<name>.md mit („art: patch|minor|keine“). Dependabot ist ausgenommen.
@@ -255,7 +255,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: 24
+          node-version-file: package.json
       - name: Bestandslisten wachsen nicht
         if: github.event_name == 'pull_request'
         # Gegen das aktuelle main (erster Elternteil des Merge-Refs), wie bei der Release-Notiz (#952).
@@ -312,7 +312,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: 24
+          node-version-file: package.json
       - run: npm ci --no-audit --no-fund
       - name: dms-registry main holen
         run: git clone --quiet --depth 1 https://github.com/motom001/dms-registry "$RUNNER_TEMP/registry"

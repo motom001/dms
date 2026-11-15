@@ -26,7 +26,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: 24
+          node-version-file: package.json
       - run: npm ci --no-audit --no-fund
       # Erst ohne „apt-get update“ (#905), nur wenn das scheitert mit – das Update dauert mal 10 s, mal über 3 Minuten.
       - name: poppler und qpdf installieren

@@ -70,6 +70,7 @@ So liest du sie: Stimmt der Satz noch? Wenn nicht, korrigieren. Ist er gewollt (
     - **Ausnahmen** (`ignore` in `dependabot.yml`), die bewusst von Hand kommen: neue Hauptversionen von `node` (Basis-Image, nur LTS-Reihen), `@types/node` und `typescript`; bei `esbuild` (noch 0.x) auch neue Nebenversionen.
 - **`npm audit`** läuft in der CI über alles, was im Image landet (`--omit=dev`). Ab Stufe „hoch“ schlägt die Prüfung fehl. Ist eine Meldung für Ablago nachweislich ohne Wirkung, wird das im PR begründet.
 - **`package-lock.json`** hält die genauen Versionen fest; CI und Image installieren mit `npm ci`. Ändert sich eine `package.json` ohne passende Lockfile, legt der Workflow *Lockfile erzeugen* eine neue auf den Branch `werkzeug/lockfile`; von dort wird sie mit einem normalen Commit übernommen.
+- **Node-Version an zwei Stellen** (#1272): `engines` in `package.json` (alle Workflows lesen sie mit `node-version-file`) und das Basis-Image einmal im `Dockerfile` (Stufe `node-basis`, auf der Bau und Laufzeit aufbauen). Ein Wechsel der Hauptversion ändert beide.
 - **Sicherheitskorrektur = Patch-Release** mit dem Hinweis „Sicherheitsupdate – bitte aktualisieren“ in den Release-Notes. Meldungen von außen laufen vertraulich, siehe [`SECURITY.md`](https://github.com/motom001/dms/blob/main/SECURITY.md).
 
 ### Images prüfen, Herkunftsnachweis und Stückliste
