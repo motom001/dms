@@ -338,7 +338,7 @@ Manche Pakete bringen **Code** mit – etwa eine eigene Texterkennung oder Regel
 | **abgestürzt um … – startet neu …** | Der Läufer-Prozess ist abgestürzt. Ablago startet ihn nach einer kurzen Pause selbst neu (bei wiederholten Abstürzen wartet es länger, höchstens eine Minute). Ereignisse gehen dabei nicht verloren. |
 | **neu gestartet nach Absturz um …** | Der Läufer läuft wieder; die Zeit nennt den letzten Absturz. Die Ursache steht im Protokoll von Ablago. |
 | **pausiert (Wartungsmodus)** | Während einer Wartung ruht der Läufer. |
-| *Fehlermeldung in Rot* | Das Modul ließ sich nicht laden (z. B. fehlt der Code nach einer Wiederherstellung) – das Paket neu installieren. |
+| *Fehlermeldung in Rot* | Das Modul ließ sich nicht laden – etwa, weil es Funktionen verlangt, die diese Version von Ablago nicht kennt (das Paket ist für eine neuere Version gebaut), oder weil seine Datei beschädigt ist. Die Meldung nennt den Grund. Abhilfe: Ablago aktualisieren oder eine passende Version des Pakets installieren. Nach einer [Wiederherstellung](wiederherstellen.md#ohne-internet) musst du Pakete **nicht** neu installieren – ihr Code steckt in der Sicherung. |
 
 Schlägt ein **Update** fehl, bleibt die alte Version mit ihrem alten Code installiert. Ein Paket darf höchstens **128 MB** groß sein – das gilt für das Archiv beim Herunterladen, Hochladen und in der Sammeldatei ebenso wie für alle Dateien unter `code/` zusammen. Ist ein Paket größer, nennt Ablago Größe und Grenze und lädt es gar nicht erst herunter.
 

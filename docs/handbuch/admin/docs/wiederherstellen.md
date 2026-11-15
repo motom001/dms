@@ -33,6 +33,26 @@ Dieser Weg ist nur offen, solange es noch keinen Benutzer gibt, und nur mit dem 
 
 Ist das Gerät weg, holst du beide Dateien vom [Ziel außer Haus](sicherung-ausser-haus.md) – die `.dms-sicherung` und die `.json` daneben – und legst sie in den Ordner `sicherung`. Die `.json` dort ist die **schlanke** Fassung (ohne Versionen, Zähler und Ablage-Id). Die Liste zeigt die Sicherung als *Kopie außer Haus*; sobald du den **Schlüssel vom Notfallblatt** eingibst, liest Ablago Datenbank-Stand, Ablage-Id und Anzahl Mappen, Dokumente und Benutzer aus der Sicherung selbst. Die Ablago-Version, mit der sie entstand, steht dann als „unbekannt“ im Abgleich – maßgeblich ist der Datenbank-Stand. Beim Einspielen prüft Ablago jede Datei gegen ihren Prüfwert und am Ende die ganze Sicherung (GCM-Prüfwert); erst dann wird umgeschaltet.
 
+## Wiederherstellen ohne Internet { #ohne-internet }
+
+Ablago braucht für eine Wiederherstellung **keinen Zugang zum Internet** – weder den [Paketkatalog](pakete.md) noch einen Download. Ohne Netz lässt sich aber nichts nachholen, was du nicht vorher abgelegt hast. Halte deshalb an einem sicheren Ort bereit:
+
+1. **die Sicherungsdatei** (`.dms-sicherung`) mit der **`.json` daneben**,
+2. **den Schlüssel**: die Schlüsseldatei aus dem Ordner `geheim` (im Container `/data/geheim`) oder das [Notfallblatt](verschluesselung.md#notfallblatt) – er steht nie in der Sicherung,
+3. **das Ablago-Image** in derselben oder einer neueren Version als die Sicherung, vorher z. B. mit `docker save ghcr.io/motom001/dms:stabil -o ablago.tar` abgelegt und auf dem neuen Gerät mit `docker load -i ablago.tar` geladen. Ohne Internet lässt es sich nicht ziehen. Bei [dms-komplett](https://help.ablago.app/installieren/aktuell/komplett/) dasselbe mit `ghcr.io/motom001/dms-komplett:stabil`; bei zwei Containern auch das Image der Datenbank (z. B. `postgres:17`),
+4. **deine Compose-Datei** und die `.env` bzw. deine Umgebungsvariablen.
+
+Dann gehst du vor wie unter [Neues NAS, alte Sicherung](#neues-nas-alte-sicherung) beschrieben.
+
+**Was danach von selbst passiert:**
+
+- **Pakete müssen nicht neu installiert werden.** Die Sicherung enthält die installierten Pakete samt ihrem Code, ihre Einstellungen, Systemkonten, bestätigten Rechte und Sprachpakete. Sie kommen zusammen mit Mappentypen und Mappen als ein Stand zurück; der Paket-Läufer lädt den Code danach aus der Datenbank.
+- Der **Suchindex** und die **Vorschaubilder** entstehen neu – je nach Menge der Dokumente dauert das eine Weile; Suche und Vorschau füllen sich in dieser Zeit nach und nach.
+- **Alle melden sich neu an** – mit den Zugangsdaten aus der Zeit der Sicherung.
+- **Automatisierungen sind angehalten**, bis du sie geprüft und unter **Werkbank → Automatisierungen** wieder eingeschaltet hast.
+
+Was ein Paket selbst aus dem Internet holt (etwa ein Abgleich mit einem Dienst), geht erst wieder, wenn das Netz da ist – an der Wiederherstellung ändert das nichts.
+
 ## Auf dem laufenden System
 
 ![Wiederherstellen in der Werkbank](bilder/werkbank-wiederherstellen.png)

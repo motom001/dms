@@ -337,7 +337,7 @@ Some packages bring **code** – for instance their own text recognition or rule
 | **crashed at … – restarting …** | The runner process has crashed. Ablago restarts it by itself after a short pause (with repeated crashes it waits longer, at most one minute). Events aren't lost in the process. |
 | **restarted after crash at …** | The runner is running again; the time names the last crash. The cause is in Ablago's log. |
 | **paused (maintenance mode)** | During maintenance the runner rests. |
-| *error message in red* | The module couldn't be loaded (e.g. the code is missing after a restore) – reinstall the package. |
+| *error message in red* | The module couldn't be loaded – for example because it requires functions this version of Ablago does not know (the package was built for a newer version), or because its file is damaged. The message names the reason. Remedy: update Ablago or install a matching version of the package. After a [restore](wiederherstellen.md#ohne-internet) you do **not** need to reinstall packages – their code is in the backup. |
 
 If an **update** fails, the old version stays installed with its old code. A package may be at most **128 MB** in size – that applies to the archive when downloading, uploading and in the bundle file as well as to all files under `code/` together. If a package is larger, Ablago names size and limit and doesn't even download it.
 
