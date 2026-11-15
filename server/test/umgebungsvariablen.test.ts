@@ -69,12 +69,12 @@ describe('DATABASE_URL vom Image oder aus der Compose-Datei (#805)', () => {
   }
 
   /** Was die Werkbank-Übersicht zu DATABASE_URL meldet (wie in werkbank/werkbank.routen.ts). */
-  function hinweis(env: Record<string, string | undefined>, laufend = ausUrl(INTERN)!) {
+  async function hinweis(env: Record<string, string | undefined>, laufend = ausUrl(INTERN)!) {
     const variante = process.env.DMS_VARIANTE;
     try {
       if (env.DMS_VARIANTE) process.env.DMS_VARIANTE = env.DMS_VARIANTE; else delete process.env.DMS_VARIANTE;
       const v = new AnbindungVerwaltung('/gibt-es-nicht', laufend, umgebungAusCompose(env, ausUrl(env.DATABASE_URL)), () => {});
-      const umgebung = v.stand().umgebung;
+      const umgebung = (await v.stand()).umgebung;
       return { umgebung, variablen: ueberfluessigeVariablen({ datenbank: umgebung === 'gleich' }).map((x) => x.name) };
     } finally {
       if (variante === undefined) delete process.env.DMS_VARIANTE; else process.env.DMS_VARIANTE = variante;
@@ -86,38 +86,38 @@ describe('DATABASE_URL vom Image oder aus der Compose-Datei (#805)', () => {
     assert.equal(nachStartSkript({}).DATABASE_URL, INTERN);
   });
 
-  it('dms-komplett mit minimaler Compose-Datei: Variable vom Image, kein Hinweis', () => {
+  it('dms-komplett mit minimaler Compose-Datei: Variable vom Image, kein Hinweis', async () => {
     const env = nachStartSkript({ DMS_EINRICHTUNGSCODE: '123456' });
     assert.equal(env.DMS_DATENBANK_VOM_IMAGE, '1');
     assert.equal(datenbankVomImage(env), true);
-    assert.deepEqual(hinweis(env), { umgebung: 'fehlt', variablen: [] });
+    assert.deepEqual(await hinweis(env), { umgebung: 'fehlt', variablen: [] });
   });
 
-  it('dms-komplett, Anbindung später geändert: auch kein „weicht ab“ wegen der Variable vom Image', () => {
+  it('dms-komplett, Anbindung später geändert: auch kein „weicht ab“ wegen der Variable vom Image', async () => {
     const env = nachStartSkript({});
-    assert.equal(hinweis(env, { ...ausUrl(INTERN)!, host: 'db.example.org' }).umgebung, 'fehlt');
+    assert.equal((await hinweis(env, { ...ausUrl(INTERN)!, host: 'db.example.org' })).umgebung, 'fehlt');
   });
 
-  it('dms-komplett mit DATABASE_URL in der Compose-Datei: Hinweis wie bisher', () => {
+  it('dms-komplett mit DATABASE_URL in der Compose-Datei: Hinweis wie bisher', async () => {
     const env = nachStartSkript({ DATABASE_URL: INTERN });
     assert.equal(env.DMS_DATENBANK_VOM_IMAGE, undefined);
     assert.equal(datenbankVomImage(env), false);
-    assert.deepEqual(hinweis(env), { umgebung: 'gleich', variablen: ['DATABASE_URL'] });
+    assert.deepEqual(await hinweis(env), { umgebung: 'gleich', variablen: ['DATABASE_URL'] });
   });
 
-  it('dms-komplett: eine Kennzeichnung aus der Compose-Datei hebelt den Hinweis nicht aus', () => {
+  it('dms-komplett: eine Kennzeichnung aus der Compose-Datei hebelt den Hinweis nicht aus', async () => {
     const env = nachStartSkript({ DATABASE_URL: INTERN, DMS_DATENBANK_VOM_IMAGE: '1' });
     assert.equal(env.DMS_DATENBANK_VOM_IMAGE, undefined);
-    assert.deepEqual(hinweis(env).variablen, ['DATABASE_URL']);
+    assert.deepEqual((await hinweis(env)).variablen, ['DATABASE_URL']);
   });
 
-  it('Image dms: DATABASE_URL steht immer in der Compose-Datei, Hinweis wie bisher', () => {
+  it('Image dms: DATABASE_URL steht immer in der Compose-Datei, Hinweis wie bisher', async () => {
     const url = 'postgres://dms:geheim@db:5432/dms';
-    assert.deepEqual(hinweis({ DATABASE_URL: url }, ausUrl(url)!), { umgebung: 'gleich', variablen: ['DATABASE_URL'] });
-    assert.equal(hinweis({ DATABASE_URL: url }, { ...ausUrl(url)!, host: 'anders' }).umgebung, 'abweichend');
+    assert.deepEqual(await hinweis({ DATABASE_URL: url }, ausUrl(url)!), { umgebung: 'gleich', variablen: ['DATABASE_URL'] });
+    assert.equal((await hinweis({ DATABASE_URL: url }, { ...ausUrl(url)!, host: 'anders' })).umgebung, 'abweichend');
     // Die Kennzeichnung gilt nur für dms-komplett.
     assert.equal(datenbankVomImage({ DATABASE_URL: url, DMS_DATENBANK_VOM_IMAGE: '1' }), false);
-    assert.deepEqual(hinweis({ DATABASE_URL: url, DMS_DATENBANK_VOM_IMAGE: '1' }, ausUrl(url)!).variablen, ['DATABASE_URL']);
-    assert.deepEqual(hinweis({}, ausUrl(url)!), { umgebung: 'fehlt', variablen: [] });
+    assert.deepEqual((await hinweis({ DATABASE_URL: url, DMS_DATENBANK_VOM_IMAGE: '1' }, ausUrl(url)!)).variablen, ['DATABASE_URL']);
+    assert.deepEqual(await hinweis({}, ausUrl(url)!), { umgebung: 'fehlt', variablen: [] });
   });
 });

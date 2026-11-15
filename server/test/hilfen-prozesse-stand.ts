@@ -2,11 +2,18 @@
  * Hilfe für prozesse-stand.test.ts (#1341): Hauptprozess mit zwei Prozessen und der echten Aufteilung (`teileArbeit`).
  * Sicherung und Probe-Wiederherstellung sind im Leiter kleine Stellvertreter, deren Lauf nur auf Zuruf (`POST /weiter`)
  * einen Schritt weitergeht. Jeder Prozess hat einen eigenen Port (exclusive) mit Starten und Abfragen wie die Routen
- * (`starte…()`, `laufStand()`). Ausgabe: JSON-Zeilen.
+ * (`starte…()`, `laufStand()`). Dazu Eingangsordner und Datenbank-Anbindung echt, mit gemeinsamem Ordner
+ * (`DMS_TEST_ORDNER`, Einstellungen als Datei): Speichern in einem Prozess, Zeitgeber und „Neustart nötig“ in beiden.
+ * Ausgabe: JSON-Zeilen.
  */
 import cluster from 'node:cluster';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:http';
+import { join } from 'node:path';
+import { AnbindungVerwaltung, type Anbindung, type Pruefung } from '../src/anbindung';
 import { teileArbeit, type TeilungsDeps } from '../src/aufteilung';
+import { Eingangsordner } from '../src/eingangsordner';
+import type { Einstellungen } from '../src/einstellungen';
 import { leite, verbundFuerProzess } from '../src/prozesse';
 import type { Lauf } from '../src/sicherung';
 import type { Wiederherstellungslauf } from '../src/wiederherstellung';
@@ -57,9 +64,22 @@ if (cluster.isPrimary) {
   const wh = new ProbeStellvertreter();
   const si = new SicherungStellvertreter();
   const nichts = () => {};
+  const ordner = process.env.DMS_TEST_ORDNER!;
+  // Einstellungen aller Prozesse in einer Datei – wie die gemeinsame Datenbank.
+  const datei = join(ordner, 'einstellungen.json');
+  const alle = (): Record<string, unknown> => { try { return JSON.parse(readFileSync(datei, 'utf8')) as Record<string, unknown>; } catch { return {}; } };
+  const einstellungen = {
+    lies: async (k: string) => alle()[k] ?? null,
+    schreibe: async (k: string, w: unknown) => { writeFileSync(datei, JSON.stringify({ ...alle(), [k]: w })); },
+  } as unknown as Einstellungen;
+  const eo = new Eingangsordner(join(ordner, 'eingang'), { dienst: {} as never, einstellungen, benutzer: async () => [] });
+  const laufend: Anbindung = { host: 'db', port: 5432, datenbank: 'dms', benutzer: 'dms', passwort: 'geheim-1' };
+  const anbindung = new AnbindungVerwaltung(ordner, laufend, null, nichts, async () => ({ ok: true, eingerichtet: true, benutzer: 2, text: '' }) as unknown as Pruefung, false);
+  /** Abstand des Zeitgebers in diesem Prozess (ms) oder null. */
+  const zeitgeber = () => (eo as unknown as { zeitgeber?: { _idleTimeout: number; _destroyed: boolean } }).zeitgeber;
   const deps = {
     dienst: { auftraege: { teile: nichts }, stand: { teileEigene: nichts }, mappenstand: { teileEigene: nichts }, ereignisse: {} },
-    texterkennung: {}, vorschau: {}, postfaecher: {}, eingangsordner: {}, paketlaeufer: null, fernlaeufer: null,
+    texterkennung: {}, vorschau: {}, postfaecher: {}, eingangsordner: eo, paketlaeufer: null, fernlaeufer: null,
     sicherung: si, wiederherstellung: wh, tresor: {}, betrieb: {}, oidc: {}, messung: {}, zustand: {},
     sql: () => Promise.reject(new Error('ohne Datenbank')), haushalt: 'test', ueberlast: {}, verbindungen: {},
   } as unknown as TeilungsDeps;
@@ -73,6 +93,10 @@ if (cluster.isPrimary) {
       if (weg === 'GET /probe') return antworte(res, await wh.laufStand());
       if (weg === 'POST /sicherung') return antworte(res, (await si.starte()).lauf);
       if (weg === 'GET /sicherung') return antworte(res, await si.laufStand());
+      if (weg === 'POST /eingang') return antworte(res, (await eo.speichere({ abstand: 42, aktiv: false }, 'lena@example.org')).einstellung);
+      if (weg === 'GET /eingang/zeitgeber') { const z = zeitgeber(); return antworte(res, z && !z._destroyed ? z._idleTimeout : null); }
+      if (weg === 'POST /anbindung') return antworte(res, await anbindung.speichere({ host: 'db-neu', port: 5432, datenbank: 'dms', benutzer: 'dms', passwort: 'geheim-2' }, 'lena@example.org'));
+      if (weg === 'GET /anbindung') return antworte(res, await anbindung.stand());
       if (weg === 'POST /weiter' && v.leiter) { wh.weiter(); si.weiter(); return antworte(res, true); }
       res.statusCode = 404; res.end();
     })().catch((e: Error) => { res.statusCode = 500; res.end(e.message); });
@@ -83,5 +107,5 @@ if (cluster.isPrimary) {
     v.bereit();
     zeige({ art: 'bereit', nr: v.nr, leiter: v.leiter, port: typeof a === 'object' && a ? a.port : 0 });
   });
-  process.on('SIGTERM', () => { teilung.stop(); s.close(); process.exit(0); });
+  process.on('SIGTERM', () => { teilung.stop(); eo.stop(); s.close(); process.exit(0); });
 }

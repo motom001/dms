@@ -162,6 +162,8 @@ export function teileArbeit(v: Verbund, o: TeilungsDeps): { start(): Promise<voi
     v.bediene('postfach.abrufen', ([id]) => o.postfaecher.abrufen(String(id)));
     v.bediene('eingang.pruefe', ([sofort]) => o.eingangsordner.pruefe(sofort === true));
     v.bediene('eingang.stand', () => o.eingangsordner.stand());
+    // Neu planen nach dem Speichern in einem anderen Prozess (#1341): mit dem gespeicherten Abstand.
+    v.hoere('eingang.plane', () => void o.eingangsordner.einstellung().then((e) => o.eingangsordner.neuPlanen(e.abstand)).catch((e: Error) => log.warn('Eingangsordner nicht neu geplant', { fehler: e.message })));
     v.bediene('texterkennung.status', ([neu]) => te.status(neu === true));
     v.bediene('sicherung.starte', async ([art, von]) => (await si.starte(art as Parameters<Sicherung['starte']>[0], String(von))).lauf);
     v.bediene('sicherung.pruefe', ([name, von]) => si.pruefe(String(name), String(von)));
@@ -196,6 +198,8 @@ export function teileArbeit(v: Verbund, o: TeilungsDeps): { start(): Promise<voi
   o.postfaecher.abrufen = (id) => v.rufe<number>('postfach.abrufen', [id]);
   o.eingangsordner.pruefe = (sofort = false) => v.rufe<number>('eingang.pruefe', [sofort]);
   // Letzte Prüfung, wartende Dateien, Pause und Sperre kennt nur der Leiter (#1341).
+  // Gespeichert in diesem Prozess (#1341): planen nur im Leiter – hier kein eigener Zeitgeber.
+  o.eingangsordner.neuPlanen = () => v.melde('eingang.plane');
   o.eingangsordner.stand = () => v.rufe<Awaited<ReturnType<Eingangsordner['stand']>>>('eingang.stand', [], { ms: STAND_MS });
   // Laufende Aufträge der Texterkennung zählt nur der Leiter (#1341).
   te.status = (neu = false) => v.rufe<Awaited<ReturnType<Texterkennung['status']>>>('texterkennung.status', [neu], { ms: STAND_MS });

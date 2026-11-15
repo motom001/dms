@@ -82,7 +82,7 @@ export function systemRouten(k: RoutenKontext): Route[] {
       return ok(await x.einrichtung.merke(b(a).schritt, b(a).uebersprungen === true, ich(a).email));
     } },
     /* ---------- Datenbank-Anbindung (#119) ---------- */
-    { methode: 'GET', pfad: '/api/werkbank/anbindung', zugang: 'admin', handler: async () => ok(anbindung().stand()) },
+    { methode: 'GET', pfad: '/api/werkbank/anbindung', zugang: 'admin', handler: async () => ok(await anbindung().stand()) },
     { methode: 'POST', pfad: '/api/werkbank/anbindung/pruefen', zugang: 'admin', handler: async (a) => ok(await anbindung().pruefe(b(a).anbindung)) },
     { methode: 'PUT', pfad: '/api/werkbank/anbindung', zugang: 'admin', handler: async (a) => ok(await anbindung().speichere({ ...(b(a).anbindung as object ?? {}), leerBestaetigt: b(a).leerBestaetigt }, ich(a).email)) },
     { methode: 'POST', pfad: '/api/werkbank/neustart', zugang: 'admin', handler: async (a) => { anbindung().neustart(ich(a).email); return leer; } },
