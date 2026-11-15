@@ -4,7 +4,8 @@
  * Bereiche brauchen. axe und Tippflächen stehen in muster.mjs. Diese Datei legt selbst keine Tests an.
  */
 import assert from 'node:assert/strict';
-import { mkdir, readFile } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
+import { mkdir, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { test, after, before } from 'node:test';
 import { chromium } from 'playwright';
@@ -140,6 +141,33 @@ after(() => {
 });
 
 /* ---------- Rahmen für einen Rauchtest ---------- */
+
+/**
+ * Archivfassung einer Datei so ablegen, wie das Paket für PDF/A sie hinterlässt (#631) – im Rauchtest gibt es keins:
+ * erst der Stand „wartet“ (archivfassungen/<ab>/<Prüfwert>.stand), dann die Fassung (.fassung und .json, Stand weg).
+ */
+async function archivOrdner(sha) {
+  const dateien = join(process.env.DMS_DATENWURZEL ?? join(import.meta.dirname, '../data'), 'files');
+  for (const haushalt of await readdir(dateien)) {
+    const ablage = join(dateien, haushalt);
+    if (!(await stat(join(ablage, sha.slice(0, 2), sha)).then(() => true, () => false))) continue;
+    const ordner = join(ablage, 'archivfassungen', sha.slice(0, 2));
+    await mkdir(ordner, { recursive: true });
+    return ordner;
+  }
+  throw new Error(`Datei ${sha} nicht im Ordner ${dateien} gefunden.`);
+}
+const PDFA_PAKET = { id: 'pdfa', name: 'PDF/A', version: '1.0.0' };
+export async function archivfassungWartet(sha) {
+  await writeFile(join(await archivOrdner(sha), `${sha}.stand`), JSON.stringify({ stand: 'wartet', info: null, paket: PDFA_PAKET, zeit: new Date().toISOString() }));
+}
+export async function archivfassungAblegen(sha, pdf) {
+  const ordner = await archivOrdner(sha);
+  await writeFile(join(ordner, `${sha}.fassung`), pdf);
+  await writeFile(join(ordner, `${sha}.json`), JSON.stringify({ mime: 'application/pdf', groesse: pdf.length, sha256: createHash('sha256').update(pdf).digest('hex'), seiten: 1,
+    pdfa: { teil: 2, stufe: 'B' }, paket: PDFA_PAKET, erstellt: new Date().toISOString() }));
+  await rm(join(ordner, `${sha}.stand`), { force: true });
+}
 
 /**
  * Ein Rauchtest: eigener Browser-Kontext (Desktop oder Handy), auf Wunsch schon angemeldet. Sammelt Fehler der

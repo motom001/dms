@@ -4,7 +4,7 @@
  */
 import assert from 'node:assert/strict';
 import '../einrichtung.mjs';
-import { api, BASIS, beispielPdf, daten, keineWaagerechteRolle, LENA, rauchtest, sitzung, verwalten } from '../hilfen.mjs';
+import { api, archivfassungAblegen, BASIS, beispielPdf, daten, keineWaagerechteRolle, LENA, rauchtest, sitzung, verwalten } from '../hilfen.mjs';
 import { axePruefen, tippflaechenPruefen } from '../muster.mjs';
 
 /* ---------- Zum Schluss: Wege, die den gemeinsamen Zustand ändern ---------- */
@@ -175,6 +175,64 @@ rauchtest('Handy: Dokument übernehmen mit 44-px-Tippflächen in allen drei Wahl
   }
   await keineWaagerechteRolle(s);
   assert.deepEqual(funde, [], `Zu kleine Tippflächen am Handy:\n${funde.join('\n')}`);
+});
+
+/** Eine kleine E-Mail (nur Persona-Adressen) für Post mit Archivfassung (#1137). */
+const MAIL_EML = Buffer.from([
+  'From: Lena Beispiel <lena@example.org>', 'To: Jonas Beispiel <jonas@example.org>', 'Subject: Angebot Dachrinne',
+  'Date: Tue, 16 Nov 2027 08:15:00 +0100', 'MIME-Version: 1.0', 'Content-Type: text/plain; charset=utf-8', '',
+  'Hallo Jonas, anbei das Angebot für die Dachrinne.', '',
+].join('\r\n'));
+
+/** Post mit einer E-Mail, deren Archivfassung (PDF/A mit Textebene) fertig ist. */
+async function postMitMail(betreff) {
+  const cookie = await sitzung(LENA);
+  const brief = (await api('POST', '/api/post', { cookie, body: { betreff } })).daten;
+  const mail = (await api('POST', `/api/mappen/${brief.id}/dokumente?register=dokumente&name=${encodeURIComponent(`${betreff}.eml`)}&typ=message/rfc822`, { cookie, body: MAIL_EML, roh: true })).daten.dokument;
+  await archivfassungAblegen(mail.sha256, beispielPdf(`Angebot Dachrinne Beispiel 2027\nVon: Lena Beispiel`));
+  return brief;
+}
+
+rauchtest('Dokument übernehmen: E-Mail mit Archivfassung als Seitenbilder mit Text, nicht im PDF-Betrachter (#1137)', { als: LENA, timeout: 90_000 }, async (s) => {
+  const brief = await postMitMail('Angebot Dachrinne');
+  const funde = [];
+  for (const schema of ['light', 'dark']) {
+    await s.emulateMedia({ colorScheme: schema });
+    await s.goto(BASIS + `/ablage/eingang/${brief.id}`);
+    await s.waitForURL(new RegExp(`/${brief.id}/uebernehmen$`));
+    const blatt = s.getByRole('region', { name: 'Dokument' }).getByRole('article', { name: 'Angebot Dachrinne.eml' });
+    // Seitenbild der Archivfassung mit Wörtern – kein iframe mit dem Betrachter des Browsers.
+    const bild = blatt.getByRole('img', { name: 'Seite 1' });
+    await bild.waitFor();
+    await s.waitForFunction((el) => el.complete && el.naturalWidth > 0, await bild.elementHandle(), { timeout: 20_000 });
+    assert.ok(await blatt.locator('.ue-wort').count() > 0, 'Wörter der Archivfassung zum Markieren');
+    assert.equal(await blatt.locator('iframe').count(), 0, 'kein PDF-Betrachter des Browsers');
+    await s.waitForLoadState('networkidle');
+    for (const v of await axePruefen(s, ['.spalte.liste', '.spalte.mappe'])) funde.push(`PDF/A (${schema}): ${v}`);
+  }
+  const blatt = s.getByRole('region', { name: 'Dokument' }).getByRole('article', { name: 'Angebot Dachrinne.eml' });
+  // „Original“: Der Browser zeigt die Mail nicht – Satz und „Original herunterladen“ wie in der Mappe, kein Betrachter.
+  await blatt.getByRole('radio', { name: 'Original' }).click();
+  await blatt.getByText('Ein Original im Format .eml kann Ablago nicht direkt anzeigen.').waitFor();
+  await blatt.getByRole('button', { name: 'Original herunterladen' }).waitFor();
+  assert.equal(await blatt.locator('iframe, img').count(), 0);
+  await blatt.getByRole('radio', { name: 'PDF/A' }).click();
+  await blatt.getByRole('img', { name: 'Seite 1' }).waitFor();
+  assert.deepEqual(funde, [], `axe meldet Verstöße:\n${funde.join('\n')}`);
+  await api('PUT', `/api/mappen/${brief.id}`, { cookie: await sitzung(LENA), body: { werte: { stand: 'Erledigt' } } });
+});
+
+rauchtest('Handy: E-Mail mit Archivfassung beim Übernehmen – Seitenbild, 44-px-Tippflächen (#1137)', { handy: true, als: LENA }, async (s) => {
+  const brief = await postMitMail('Angebot Regenfass');
+  await s.goto(BASIS + `/ablage/eingang/${brief.id}`);
+  await s.waitForURL(new RegExp(`/${brief.id}/uebernehmen$`));
+  const blatt = s.getByRole('region', { name: 'Dokument' }).getByRole('article', { name: 'Angebot Regenfass.eml' });
+  await blatt.getByRole('img', { name: 'Seite 1' }).waitFor();
+  assert.equal(await blatt.locator('iframe').count(), 0);
+  await s.waitForLoadState('networkidle');
+  assert.deepEqual(await tippflaechenPruefen(s, ['.ue-dokkopf']), [], 'Zu kleine Tippflächen am Handy');
+  await keineWaagerechteRolle(s);
+  await api('PUT', `/api/mappen/${brief.id}`, { cookie: await sitzung(LENA), body: { werte: { stand: 'Erledigt' } } });
 });
 
 // #935: Steht am Ende – legt einen Vertragspartner an. Die Mappe dahinter (aus der Post) bleibt ungespeichert offen.

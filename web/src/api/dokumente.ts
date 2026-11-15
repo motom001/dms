@@ -53,7 +53,8 @@ export const dokumenteApi = {
   texterkennungErneut: (id: string) => anfrage<Dokument>('POST', `/api/dokumente/${id}/texterkennung`),
   /** Post (#192): anlegen (Dokumente danach mit ladeHoch) und einer Mappe zuordnen. */
   postAnlegen: (e: { betreff?: string; an?: string | null }) => anfrage<Mappe>('POST', '/api/post', e),
-  wortpositionen: (id: string) => anfrage<{ quelle: 'original' | 'lesefassung'; mime: string; vollstaendig: boolean; seiten: WortSeite[] }>('GET', `/api/dokumente/${id}/wortpositionen`),
+  /** Wörter mit Lage je Seite; `archiv` (#1137): aus der Textebene der Archivfassung (z. B. E-Mails). */
+  wortpositionen: (id: string, archiv = false) => anfrage<{ quelle: 'original' | 'lesefassung' | 'archiv'; mime: string; vollstaendig: boolean; seiten: WortSeite[] }>('GET', `/api/dokumente/${id}/wortpositionen${archiv ? '?fassung=archiv' : ''}`),
   /** Mehrere Mappen per E-Mail (#151). */
   /* Stempel beim Weitergeben (#394) */
   stempelVorlagen: () => anfrage<StempelVorlage[]>('GET', '/api/stempel/vorlagen'),

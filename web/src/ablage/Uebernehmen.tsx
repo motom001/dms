@@ -50,7 +50,8 @@ const DOKS_MAX = 10;
 const BELEGE_MAX = 3;
 
 type Laden<T> = T | null | 'fehlt';
-interface Woerter { seiten: SchwaerzSeite[]; mitText: boolean }
+/** Seiten mit Wörtern; `archiv` (#1137): Seiten der Archivfassung – das Original lässt sich nicht als Seiten zeigen (E-Mail). */
+interface Woerter { seiten: SchwaerzSeite[]; mitText: boolean; archiv?: boolean }
 
 const alsSeiten = (w: WortSeite[]): SchwaerzSeite[] => w.map((s) => ({ breite: s.breite ?? 1, hoehe: s.hoehe ?? 1, woerter: s.woerter }));
 const kurz = (s: string, n = 40) => (s.length > n ? `${s.slice(0, n - 1).trimEnd()} …` : s);
@@ -152,13 +153,15 @@ function Uebernehmen({ details, typ, sicht, links, neuLaden, dokumentWunsch }: {
 
   // Wörter mit Lage je Dokument (für Rahmen und Markieren).
   const [woerter, setWoerter] = useState<Record<string, Woerter | 'keine'>>({});
-  const dokKey = doks.map((x) => `${x.id}:${x.sha256}:${x.ocr?.stand ?? ''}`).join(',');
+  const dokKey = doks.map((x) => `${x.id}:${x.sha256}:${x.ocr?.stand ?? ''}:${x.archivfassung?.stand ?? ''}`).join(',');
   useEffect(() => {
     let aktuell = true;
     for (const x of doks) {
-      if (!kannSchwaerzen(x.mime)) { setWoerter((w) => ({ ...w, [x.id]: 'keine' })); continue; }
-      dokumenteApi.wortpositionen(x.id).then(
-        (r) => aktuell && setWoerter((w) => ({ ...w, [x.id]: { seiten: alsSeiten(r.seiten), mitText: r.seiten.some((s) => s.woerter.length > 0) } })),
+      // Lässt sich das Original nicht als Seiten zeigen (E-Mail u. a.), die Seiten der fertigen Archivfassung (#1137).
+      const archiv = !kannSchwaerzen(x.mime) && x.archivfassung?.stand === 'fertig';
+      if (!kannSchwaerzen(x.mime) && !archiv) { setWoerter((w) => ({ ...w, [x.id]: 'keine' })); continue; }
+      dokumenteApi.wortpositionen(x.id, archiv).then(
+        (r) => aktuell && setWoerter((w) => ({ ...w, [x.id]: { seiten: alsSeiten(r.seiten), mitText: r.seiten.some((s) => s.woerter.length > 0), ...(archiv ? { archiv: true } : {}) } })),
         () => aktuell && setWoerter((w) => ({ ...w, [x.id]: 'keine' })),
       );
     }
@@ -570,7 +573,7 @@ function DokumentBlatt({ x, w, marken, hervor, setHervor, insAktive, leer, setze
   const mitArchiv = x.archivfassung?.stand === 'fertig';
   const [archiv, setArchiv] = useState(mitArchiv);
   useEffect(() => { setArchiv(mitArchiv); }, [mitArchiv]);
-  const seiten = w && w !== 'keine' ? w.seiten : null;
+  const { seiten, nurArchiv } = zuZeigen(w, archiv);
   const ansicht = ansichtVon(x, !archiv);
   return (
     <article className="ue-dokument" aria-label={x.name}>
@@ -583,11 +586,20 @@ function DokumentBlatt({ x, w, marken, hervor, setHervor, insAktive, leer, setze
                 {seiten.map((s, i) => <Seite key={`${i}-${archiv}`} x={x} nr={i + 1} s={s} archiv={archiv} marken={marken} hervor={hervor} setHervor={setHervor} insAktive={insAktive} weg={weg.includes(i + 1)} />)}
               </MitLeerseiten>
             </div>
-          : ansicht
+          : ansicht && !nurArchiv
             ? <div className="ue-ansicht">{ansicht.pdf ? <iframe src={ansicht.url} title={x.name} /> : <img src={ansicht.url} alt={x.name} />}</div>
             : <NichtAnzeigbar x={x} herunterladen={herunterladen} />}
     </article>
   );
+}
+
+/**
+ * Welche Seiten das Blatt zeigt: Stammen sie nur aus der Archivfassung (#1137, z. B. E-Mail), zeigt „Original“ keine
+ * Seiten und keinen Betrachter, sondern den Satz mit „Original herunterladen“ wie in der Mappe.
+ */
+function zuZeigen(w: Woerter | 'keine' | undefined, archiv: boolean): { seiten: SchwaerzSeite[] | null; nurArchiv: boolean } {
+  if (!w || w === 'keine') return { seiten: null, nurArchiv: false };
+  return { seiten: archiv || !w.archiv ? w.seiten : null, nurArchiv: !!w.archiv };
 }
 
 /** Kopf eines Dokuments wie in der Mappe (#1211): Name, Umschalter „PDF/A · Original“ (`archiv` null: ohne Archivfassung), „In neuem Tab“. */

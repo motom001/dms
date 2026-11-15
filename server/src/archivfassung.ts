@@ -179,6 +179,13 @@ export function speicherArchiv(): ArchivAblage & { fassungen: Map<string, { info
 
 /** Nennenswerter Text auf einer Seite (wie die Texterkennung: mindestens 20 Zeichen ohne Leerraum). */
 const mitText = (s: { woerter: Wort[] } | undefined | null) => !!s && s.woerter.map((w) => w[0]).join('').replace(/\s/g, '').length >= 20;
+/** Je Seite die Wörter: aus der Textebene, sonst aus der Texterkennung, sonst keine – mit Maßen der Seite bzw. des Bilds. */
+function wortSeiten(anzahl: number, ebene: Array<{ breite: number; hoehe: number; woerter: Wort[] }> | null, erkannt: Array<Wort[] | null> | null, bild: { breite: number; hoehe: number } | null): WortSeite[] {
+  return Array.from({ length: anzahl }, (_, i) => {
+    const e = ebene?.[i], w = erkannt?.[i], masse = e ? { breite: e.breite, hoehe: e.hoehe } : bild ? { breite: bild.breite, hoehe: bild.hoehe } : {};
+    return { seite: i + 1, ...masse, ...(mitText(e) ? { quelle: 'textebene' as const, woerter: e!.woerter } : w ? { quelle: 'texterkennung' as const, woerter: w } : { quelle: 'keine' as const, woerter: [] }) };
+  });
+}
 
 /**
  * Archivfassung prüfen (Grundprüfung, keine neue Abhängigkeit): PDF am Inhalt, Größe, lesbar, nicht verschlüsselt,
@@ -505,23 +512,24 @@ export class Archivfassung {
    * Wortpositionen eines Dokuments (GET /dokumente/{id}/wortpositionen): je Seite der Quelle (Original bzw.
    * Lesefassung) die Wörter mit Lage – aus der Textebene, sonst aus der Texterkennung, sonst keine.
    */
-  async wortpositionen(d: Dokument): Promise<{ dokument: string; sha256: string; quelle: 'original' | 'lesefassung'; mime: string; vollstaendig: boolean; seiten: WortSeite[] }> {
-    const q = await this.quelle(d);
+  async wortpositionen(d: Dokument, o: { fassung?: 'archiv' } = {}): Promise<{ dokument: string; sha256: string; quelle: 'original' | 'lesefassung' | 'archiv'; mime: string; vollstaendig: boolean; seiten: WortSeite[] }> {
+    const q = o.fassung === 'archiv' ? await this.archivQuelle(d) : await this.quelle(d);
     if (!q) throw new Fachfehler(404, t('pakete.archiv.keine-quelle', { typ: dateitypName(d.mime) }));
-    const inhalt = await q.inhalt();
-    const ebene = q.mime === 'application/pdf' ? await this.o.textebene(inhalt).catch(() => null) : null;
-    const w = await this.o.ablage.woerter(d.sha256).catch(() => null);
-    const bild = q.mime !== 'application/pdf' ? bildGroesse(inhalt, q.mime) : null;
-    const anzahl = q.mime === 'application/pdf' ? ebene?.length ?? Math.max(d.ocr?.seiten ?? 0, w?.seiten.length ?? 0, 1) : 1;
-    const seiten: WortSeite[] = [];
-    for (let i = 0; i < anzahl; i++) {
-      const e = ebene?.[i];
-      const masse = e ? { breite: e.breite, hoehe: e.hoehe } : bild ? { breite: bild.breite, hoehe: bild.hoehe } : {};
-      if (mitText(e)) seiten.push({ seite: i + 1, quelle: 'textebene', ...masse, woerter: e!.woerter });
-      else if (w?.seiten[i]) seiten.push({ seite: i + 1, quelle: 'texterkennung', ...masse, woerter: w.seiten[i]! });
-      else seiten.push({ seite: i + 1, quelle: 'keine', ...masse, woerter: [] });
-    }
+    const inhalt = await q.inhalt(), pdf = q.mime === 'application/pdf';
+    const ebene = pdf ? await this.o.textebene(inhalt).catch(() => null) : null, w = q.art === 'archiv' ? null : await this.o.ablage.woerter(d.sha256).catch(() => null);
+    const anzahl = !pdf ? 1 : ebene?.length ?? (q.art === 'archiv' ? q.seiten : Math.max(d.ocr?.seiten ?? 0, w?.seiten.length ?? 0, 1));
+    const seiten = wortSeiten(anzahl, ebene, w?.seiten ?? null, pdf ? null : bildGroesse(inhalt, q.mime));
     return { dokument: d.id, sha256: d.sha256, quelle: q.art, mime: q.mime, vollstaendig: seiten.every((s) => s.quelle !== 'keine'), seiten };
+  }
+
+  /**
+   * Quelle für `?fassung=archiv` (#1137): das PDF/A selbst – für Dateien, die sich nicht als Seiten zeigen lassen
+   * (E-Mails). Ohne Wörter der Texterkennung, die gehören zu den Seiten der Quelle. 404 ohne Archivfassung.
+   */
+  private async archivQuelle(d: Dokument) {
+    const f = await this.lies(d.sha256);
+    if (!f) throw new Fachfehler(404, t('pakete.archiv.keine'));
+    return { art: 'archiv' as const, mime: 'application/pdf', inhalt: async () => f.inhalt, seiten: f.info.seiten ?? 1 };
   }
 
   /* ---------- Werkbank ---------- */

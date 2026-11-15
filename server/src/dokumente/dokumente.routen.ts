@@ -159,7 +159,8 @@ export function dokumenteRouten(k: RoutenKontext): Route[] {
     } },
     { methode: 'GET', pfad: '/api/dokumente/:id/wortpositionen', zugang: 'angemeldet', handler: async (a) => {
       await darf(a, await dienst.rechtepruefung.mappeVon('dokument', a.params.id), 'R');
-      return ok(await dienst.dokumentArchiv.wortpositionen(a.params.id));
+      // ?fassung=archiv (#1137): aus der Textebene der Archivfassung (PDF/A), z. B. für E-Mails – Rechte wie oben.
+      return ok(await dienst.dokumentArchiv.wortpositionen(a.params.id, a.query.fassung === 'archiv' ? { fassung: 'archiv' } : {}));
     } },
     // Volltext und Texterkennung (#45)
     { methode: 'GET', pfad: '/api/dokumente/:id/volltext', zugang: 'angemeldet', handler: async (a) => {

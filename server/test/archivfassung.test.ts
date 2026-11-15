@@ -631,6 +631,27 @@ describe('Archivfassung für E-Mails (#946)', () => {
     } finally { setzeZeitzone(STANDARD_ZEITZONE); }
   });
 
+  it('Wortpositionen der Archivfassung (#1137): ?fassung=archiv liest Seiten, Größe und Wörter aus dem PDF/A einer Mail; 404 ohne Archivfassung', async () => {
+    const x = await aufbau({ paket: mailPaket() });
+    const eml = await x.hoch('Auftragsbestätigung.eml', mail(), EML);
+    await warte(async () => (await x.offen()).length === 1);
+    const wpArchiv = async (id: string) => (await x.rufe('pdfa', 'GET', '/api/v1/dokumente/:id/wortpositionen', { id }, undefined, { fassung: 'archiv' })).body as { quelle: string; mime: string; vollstaendig: boolean; seiten: Array<{ quelle: string; breite?: number; hoehe?: number; woerter: Array<[string]> }> };
+    await assert.rejects(wpArchiv(eml), (f: { status?: number }) => f.status === 404, 'vor der Archivfassung: 404');
+    assert.deepEqual(await x.laeufer(async () => pdf({ pdfa: {}, text: TEXT })), ['PDF/A-2b']);
+    const wp = await wpArchiv(eml);
+    assert.equal(wp.quelle, 'archiv');
+    assert.equal(wp.mime, PDF);
+    assert.equal(wp.seiten.length, 1);
+    assert.equal(wp.seiten[0].quelle, 'textebene');
+    assert.ok((wp.seiten[0].breite ?? 0) > 1 && (wp.seiten[0].hoehe ?? 0) > 1, 'Seitengröße aus dem PDF/A');
+    assert.ok(wp.seiten[0].woerter.some((w) => w[0] === 'Stadtwerke'), 'Wörter aus der Textebene des PDF/A');
+    assert.equal(wp.vollstaendig, true);
+    // Ohne ?fassung bleibt es bei der Quelle (das Original der Mail hat keine Seiten mit Text).
+    const quelle = (await x.rufe('pdfa', 'GET', '/api/v1/dokumente/:id/wortpositionen', { id: eml }, undefined)).body as { quelle: string; seiten: Array<{ woerter: unknown[] }> };
+    assert.equal(quelle.quelle, 'original');
+    assert.ok(quelle.seiten.every((s) => s.woerter.length === 0));
+  });
+
   it('mit Office und E-Mail: die Mail wartet wie bisher auf den Volltext und wird danach gemeldet', async () => {
     const x = await aufbau({ paket: mailPaket() });
     await x.d.kern.repo.speicherePaket(officePaket());

@@ -4,11 +4,8 @@
  * Allein starten (frisch gestartetes Ablago, siehe rauchtest.mjs): node web/rauchtest/bereiche/werkbank-suche-und-archiv.mjs [fehlerordner] [musterordner]
  */
 import assert from 'node:assert/strict';
-import { createHash } from 'node:crypto';
-import { mkdir, readdir, rm, stat, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
 import '../einrichtung.mjs';
-import { api, BASIS, beispielPdf, daten, keineWaagerechteRolle, LENA, rauchtest, sitzung, verwalten } from '../hilfen.mjs';
+import { api, archivfassungAblegen, archivfassungWartet, BASIS, beispielPdf, daten, keineWaagerechteRolle, LENA, rauchtest, sitzung, verwalten } from '../hilfen.mjs';
 import { axePruefen } from '../muster.mjs';
 
 // #978: Suche über der Liste der Mappentypen wie in der Ablage – Fundstelle, Trefferzahl, Esc, keine Treffer, zurücksetzen.
@@ -233,33 +230,6 @@ const BEISPIEL_EML = Buffer.from([
   'Date: Mon, 15 Nov 2027 09:30:00 +0100', 'MIME-Version: 1.0', 'Content-Type: text/plain; charset=utf-8', '',
   'Hallo Jonas, der Termin für die Heizungswartung ist am Donnerstag um 10 Uhr.', '',
 ].join('\r\n'));
-
-/**
- * Archivfassung einer Datei so ablegen, wie das Paket für PDF/A sie hinterlässt (#631) – im Rauchtest gibt es keins:
- * erst der Stand „wartet“ (archivfassungen/<ab>/<Prüfwert>.stand), dann die Fassung (.fassung und .json, Stand weg).
- */
-async function archivOrdner(sha) {
-  const dateien = join(process.env.DMS_DATENWURZEL ?? join(import.meta.dirname, '../../data'), 'files');
-  for (const haushalt of await readdir(dateien)) {
-    const ablage = join(dateien, haushalt);
-    if (!(await stat(join(ablage, sha.slice(0, 2), sha)).then(() => true, () => false))) continue;
-    const ordner = join(ablage, 'archivfassungen', sha.slice(0, 2));
-    await mkdir(ordner, { recursive: true });
-    return ordner;
-  }
-  throw new Error(`Datei ${sha} nicht im Ordner ${dateien} gefunden.`);
-}
-const PDFA_PAKET = { id: 'pdfa', name: 'PDF/A', version: '1.0.0' };
-async function archivfassungWartet(sha) {
-  await writeFile(join(await archivOrdner(sha), `${sha}.stand`), JSON.stringify({ stand: 'wartet', info: null, paket: PDFA_PAKET, zeit: new Date().toISOString() }));
-}
-async function archivfassungAblegen(sha, pdf) {
-  const ordner = await archivOrdner(sha);
-  await writeFile(join(ordner, `${sha}.fassung`), pdf);
-  await writeFile(join(ordner, `${sha}.json`), JSON.stringify({ mime: 'application/pdf', groesse: pdf.length, sha256: createHash('sha256').update(pdf).digest('hex'), seiten: 1,
-    pdfa: { teil: 2, stufe: 'B' }, paket: PDFA_PAKET, erstellt: new Date().toISOString() }));
-  await rm(join(ordner, `${sha}.stand`), { force: true });
-}
 
 rauchtest('Dokumentliste: E-Mail mit fertiger Archivfassung zeigt ihr Vorschaubild, ohne nur „EML“ (#1216)', {
   als: LENA,
