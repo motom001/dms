@@ -9,6 +9,8 @@ import { DMS_UEBERSETZEN_AB } from './uebersetzung';
 import type { Hilfeort } from './hilfe';
 import type { PaketKatalogArt, VERALTETE_EREIGNISSE } from './ereignisse';
 import { t } from './texte';
+import type { PaketKarte } from './automatisierung';
+import { bereichName, istPaketdatenBereich, NACHWEIS_BEREICHE, PAKETDATEN_BEREICHE, type PaketdatenBereich } from './paketdaten';
 import type { Mitkommt } from './mitkommt';
 import { PAKETE_JE_NUTZUNG } from './einrichtungsplan';
 import { gebietsschema } from './sprache';
@@ -641,7 +643,12 @@ export interface PaketCode {
   sprache: string;
   ereignisse: EreignisArt[];
   /** Typverweise wie in Inhalten (eigene ohne Präfix, <paket>:<schluessel>, dms:<kennung>) oder „*“. */
-  rechte: { lesen: string[]; schreiben: string[]; dokumente: DokumentRecht; schnittstellen?: Schnittstelle[] };
+  rechte: { lesen: string[]; schreiben: string[]; dokumente: DokumentRecht; schnittstellen?: Schnittstelle[];
+    /**
+     * Einrichtung bzw. Nachweise lesen (#1053, #1054): die Bereiche, die das Paket anfragt. Nur lesend; wirksam ist nur,
+     * was der Administrator in den Paket-Einstellungen anhakt. Nie zusammen mit Netz (Ergänzung Sicherheit).
+     */
+    einrichtung?: PaketdatenBereich[]; nachweise?: PaketdatenBereich[] };
   /** Erlaubte Adressen (https://host…); alles andere ist gesperrt. */
   netz: string[];
   /**
@@ -674,6 +681,11 @@ export interface PaketCode {
   mappentypen?: string[];
   /** Anzeigen, Prüffunktion der Einstellungen und Ausprobieren (#996, #1004) – gelesen in paketreiter.ts. */
   reiter?: import('./paketreiter').PaketReiterAngaben;
+  /**
+   * Eigene Dann-Karten (#680, `code.karten`): erscheinen im Kartenvorrat der Automatisierungen als „Paket: Name“.
+   * Ausgeführt nur nach Zeitplan, als Ereignis `zeitplan.ausgefuehrt` mit `aufgabe` = Schlüssel der Karte und `werte`.
+   */
+  karten?: PaketKarte[];
   /** Das WebAssembly-Modul (code/modul.wasm) und Daten (code/daten/…), nur im installierten Paket. */
   modul?: { sha256: string; groesse: number };
   daten?: string[];
@@ -856,13 +868,60 @@ export function liesCode(c: unknown, dateien: Array<{ name: string; groesse: num
     ? ((b as Record<string, unknown>).felder as unknown[]).filter((f): f is Record<string, unknown> => !!f && typeof f === 'object' && (f as Record<string, unknown>).typ === 'adresse')
       .map((f) => ({ schluessel: String(f.schluessel ?? ''), name: String(f.name ?? '') || String(f.schluessel ?? '') }))
     : []));
+  // Eigene Dann-Karten (#680): ausgeführt über das Ereignis zeitplan.ausgefuehrt.
+  const karten = liesKarten(x.karten, ereignisse, fehler);
+  // Einrichtung und Nachweise lesen (#1054): bekannte Bereiche, Nachweise nur, wo es welche gibt, nie mit Netz.
+  const paketdaten = paketdatenRechte(r, liste, fehler, netz.length > 0 || adressen.length > 0);
   // Schreiben setzt Lesen voraus.
   const lesenAlle = [...new Set([...lesen, ...schreiben])];
   // Ereignisse zu Mappen nur zu Typen, die das Paket lesen darf (#670) – sonst wüsste es von Mappen, die es nie sehen darf.
   // „*“ nur, wenn das Paket auch alle Mappentypen lesen darf; ob es eine einzelne Mappe sehen darf, prüft Ablago bei der Zustellung (#686).
   for (const k of mappentypen) if (!lesenAlle.includes(k) && !lesenAlle.includes(ALLE_TYPEN)) fehler.push(k === ALLE_TYPEN ? t('gemeinsam.pakete.code-mappentypen-alle-mappentypen') : t('gemeinsam.pakete.code-mappentypen-das-paket', { k }));
   for (const k of mappentypen) if (k === 'dms:benutzer') fehler.push(t('gemeinsam.pakete.code-mappentypen-dms-benutzer'));
-  return { code: fehler.length ? null : { sprache, ereignisse: ereignisse as EreignisArt[], rechte: { lesen: lesenAlle, schreiben, dokumente, ...(schnittstellen.length ? { schnittstellen: schnittstellen as Schnittstelle[] } : {}) }, netz, ...(adressen.length ? { adressen } : {}), ...(umwandeln.length ? { umwandeln: [...new Set(umwandeln)] } : {}), ...(volltext.length ? { volltext: [...new Set(volltext)] } : {}), ...(archivfassung && willArchiv ? { archivfassung } : {}), ...(mappentypen.length ? { mappentypen } : {}) }, fehler };
+  return { code: fehler.length ? null : { sprache, ereignisse: ereignisse as EreignisArt[], rechte: { lesen: lesenAlle, schreiben, dokumente, ...(schnittstellen.length ? { schnittstellen: schnittstellen as Schnittstelle[] } : {}), ...paketdaten }, netz, ...(adressen.length ? { adressen } : {}), ...(umwandeln.length ? { umwandeln: [...new Set(umwandeln)] } : {}), ...(volltext.length ? { volltext: [...new Set(volltext)] } : {}), ...(archivfassung && willArchiv ? { archivfassung } : {}), ...(mappentypen.length ? { mappentypen } : {}), ...(karten.length ? { karten } : {}) }, fehler };
+}
+
+/** Höchstzahlen für `code.karten` (#680). */
+export const KARTEN_MAX = 20, KARTEN_FELDER_MAX = 10;
+const KARTE_SCHLUESSEL = /^[a-z][a-z0-9_]{0,39}$/;
+const KARTE_FELDTYPEN = ['text', 'zahl', 'janein'] as const;
+
+/** `code.karten` (#680): Schlüssel, Name, Hilfe, Felder (Text, Zahl, Ja/Nein); nur mit dem Ereignis `zeitplan.ausgefuehrt`. */
+function liesKarten(roh: unknown, ereignisse: string[], fehler: string[]): PaketKarte[] {
+  if (roh === undefined) return [];
+  if (!Array.isArray(roh)) { fehler.push(t('gemeinsam.pakete.code-karten-liste')); return []; }
+  if (roh.length > KARTEN_MAX) fehler.push(t('gemeinsam.pakete.code-karten-max', { anzahl: KARTEN_MAX }));
+  if (roh.length && !ereignisse.includes('zeitplan.ausgefuehrt')) fehler.push(t('gemeinsam.pakete.code-karten-ereignis'));
+  const text = (v: unknown, max: number) => (typeof v === 'string' && v.trim() ? v.trim().slice(0, max) : '');
+  const aus: PaketKarte[] = [];
+  for (const [i, k] of roh.slice(0, KARTEN_MAX).entries()) {
+    const x = (k && typeof k === 'object' ? k : {}) as Record<string, unknown>;
+    const schluessel = text(x.schluessel, 40), name = text(x.name, 80), hilfe = text(x.hilfe, 500);
+    if (!KARTE_SCHLUESSEL.test(schluessel) || !name) { fehler.push(t('gemeinsam.pakete.code-karten-karte', { nr: i + 1 })); continue; }
+    if (aus.some((y) => y.schluessel === schluessel)) { fehler.push(t('gemeinsam.pakete.code-karten-doppelt', { schluessel })); continue; }
+    const felder = (Array.isArray(x.felder) ? x.felder : []).slice(0, KARTEN_FELDER_MAX).flatMap((f, j) => {
+      const y = (f && typeof f === 'object' ? f : {}) as Record<string, unknown>;
+      const fs = text(y.schluessel, 40), fn = text(y.name, 80), typ = y.typ ?? 'text';
+      if (!KARTE_SCHLUESSEL.test(fs) || !fn || !(KARTE_FELDTYPEN as readonly unknown[]).includes(typ)) { fehler.push(t('gemeinsam.pakete.code-karten-feld', { schluessel, nr: j + 1 })); return []; }
+      return [{ schluessel: fs, name: fn, typ: typ as (typeof KARTE_FELDTYPEN)[number] }];
+    });
+    aus.push({ schluessel, name, ...(hilfe ? { hilfe } : {}), ...(felder.length ? { felder } : {}) });
+  }
+  return aus;
+}
+
+/**
+ * `code.rechte.einrichtung` und `code.rechte.nachweise` (#1054): Listen bekannter Bereiche. Ein Paket mit Netz (feste
+ * Adresse oder Dienst-Adresse) bekommt beides nicht – die Daten sind eine Landkarte der Sicherheit des Hauses.
+ */
+function paketdatenRechte(r: Record<string, unknown>, liste: (v: unknown, wo: string) => string[], fehler: string[], mitNetz: boolean): Pick<PaketCode['rechte'], 'einrichtung' | 'nachweise'> {
+  const einrichtung = liste(r.einrichtung, 'code.rechte.einrichtung');
+  const nachweise = liste(r.nachweise, 'code.rechte.nachweise');
+  for (const b of einrichtung) if (!istPaketdatenBereich(b)) fehler.push(t('gemeinsam.pakete.code-einrichtung-bereich', { b, bereiche: PAKETDATEN_BEREICHE.join(', ') }));
+  for (const b of nachweise) if (!istPaketdatenBereich(b) || !NACHWEIS_BEREICHE.includes(b)) fehler.push(t('gemeinsam.pakete.code-nachweise-bereich', { b, bereiche: NACHWEIS_BEREICHE.join(', ') }));
+  if (mitNetz && (einrichtung.length || nachweise.length)) fehler.push(t('gemeinsam.pakete.code-paketdaten-netz'));
+  const ord = (l: string[]) => PAKETDATEN_BEREICHE.filter((b) => l.includes(b));
+  return { ...(einrichtung.length ? { einrichtung: ord(einrichtung) } : {}), ...(nachweise.length ? { nachweise: ord(nachweise) } : {}) };
 }
 
 /** Zustand des Paket-Läufers (#403): aus (kein Paket mit Code), startet, bereit, neustart (nach Absturz), pausiert (Wartung). */
@@ -952,6 +1011,7 @@ export function rechtePunkte(c: PaketCode, typName: (verweis: string) => string,
   if (mitFeldern.length) z.push({ text: t('gemeinsam.pakete.berechnet-felder', { felder: mitFeldern.map((b) => `${b.typ}: ${b.felder.join(', ')}`).join('; ') }), hilfe: 'pakete.recht.berechnet' });
   // Ein Weg über Mappen hinweg (Ergänzung Sicherheit): Was das Paket schreibt, sieht jeder, der die Mappe lesen darf.
   if (mitFeldern.length || hatSchnittstelle(c, 'dms:hinweise')) z.push({ text: t('gemeinsam.pakete.berechnet-sichtbar'), hilfe: 'pakete.recht.berechnet' });
+  z.push(...paketdatenPunkte(c));
   z.push({ text: netzText(c.netz, (c.adressen ?? []).map((a) => a.name)), hilfe: c.adressen?.length ? 'pakete.recht.adresse' : 'pakete.recht.netz' });
   // KI-Dienst (#796): Inhalte nur aus Mappentypen, die für KI-Dienste zugelassen sind.
   if (istKiPaket(c)) z.push({ text: t('gemeinsam.pakete.ki-nur-zugelassene'), hilfe: 'pakete.ki' });
@@ -963,6 +1023,15 @@ export function rechtePunkte(c: PaketCode, typName: (verweis: string) => string,
   // Rechte; das Paket arbeitet mit den Rechten oben.
   z.push(...zeitplanPunkte(zeitplaene));
   return z;
+}
+
+/** Einrichtung und Nachweise lesen (#1054): die angefragten Bereiche – wirksam erst, wenn der Administrator sie anhakt. */
+function paketdatenPunkte(c: PaketCode): RechtePunkt[] {
+  const bereiche = (l: PaketdatenBereich[]) => l.map(bereichName).join(', ');
+  return [
+    ...(c.rechte.einrichtung?.length ? [{ text: t('gemeinsam.pakete.recht-einrichtung', { bereiche: bereiche(c.rechte.einrichtung) }), hilfe: 'pakete.recht.einrichtung' as const }] : []),
+    ...(c.rechte.nachweise?.length ? [{ text: t('gemeinsam.pakete.recht-nachweise', { bereiche: bereiche(c.rechte.nachweise) }), hilfe: 'pakete.recht.nachweise' as const }] : []),
+  ];
 }
 
 /** „Läuft nach Zeitplan: …“ (#1082) – leer ohne mitgelieferte Zeitpläne. */
@@ -978,7 +1047,7 @@ export const rechteText = (c: PaketCode, typName: (verweis: string) => string): 
 /** Gleiche Rechte und gleicher Netzwerkzugriff? (Sonst muss ein Update neu bestätigt werden.) */
 export const gleicheRechte = (a: PaketCode | undefined, b: PaketCode | undefined) =>
   JSON.stringify(rechteSchluessel(a)) === JSON.stringify(rechteSchluessel(b));
-const rechteSchluessel = (c: PaketCode | undefined) => c ? [[...c.rechte.lesen].sort(), [...c.rechte.schreiben].sort(), c.rechte.dokumente, [...c.netz].sort(), ...(c.rechte.schnittstellen?.length ? [[...c.rechte.schnittstellen].sort()] : []), ...(c.adressen?.length ? [c.adressen.map((a) => a.schluessel).sort()] : []), ...(c.volltext?.length ? [['volltext', ...[...c.volltext].sort()]] : []), ...(c.archivfassung?.typen.length ? [['archivfassung', ...[...c.archivfassung.typen].sort()]] : []), ...(c.mappentypen?.length ? [['mappentypen', ...[...c.mappentypen].sort()]] : [])] : null;
+const rechteSchluessel = (c: PaketCode | undefined) => c ? [[...c.rechte.lesen].sort(), [...c.rechte.schreiben].sort(), c.rechte.dokumente, [...c.netz].sort(), ...(c.rechte.schnittstellen?.length ? [[...c.rechte.schnittstellen].sort()] : []), ...(c.adressen?.length ? [c.adressen.map((a) => a.schluessel).sort()] : []), ...(c.volltext?.length ? [['volltext', ...[...c.volltext].sort()]] : []), ...(c.archivfassung?.typen.length ? [['archivfassung', ...[...c.archivfassung.typen].sort()]] : []), ...(c.mappentypen?.length ? [['mappentypen', ...[...c.mappentypen].sort()]] : []), ...(c.rechte.einrichtung?.length ? [['einrichtung', ...c.rechte.einrichtung]] : []), ...(c.rechte.nachweise?.length ? [['nachweise', ...c.rechte.nachweise]] : [])] : null;
 /** Ab dieser Version (#577) kennt das DMS Dateien umwandeln; siehe shared/src/dateiumwandlung.ts. */
 export { DMS_UMWANDELN_AB };
 /** Ab dieser Version (#614) kennt das DMS Volltext aus Paketen; siehe shared/src/paketvolltext.ts. */

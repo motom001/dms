@@ -50,6 +50,7 @@ import { protokoll } from './protokoll';
 import { liesSchluessel, nurTestschluessel, projektSchluessel, pruefeSignatur, SCHLUESSEL_DATEI, SIGNATUR_DATEI, SIGNATUR_MAX, WECHSEL_DATEI, zeitVon, type Schluessel } from './katalogsignatur';
 import type { Projektschluessel } from './projektschluessel';
 import { t } from './sprache';
+import { nachweis } from './nachweisjournal';
 import { crc32 } from './zip';
 import { DEUTSCH } from '../../shared/src/deutsch';
 import { abdeckung, anzahlTexte, BESCHRIFTUNGEN_ORDNER, liesSprachangabe, liesSprachBeschriftung, pruefeSprachtexte, TEXTE_ORDNER, type Abdeckung, type Sprachangabe, type SprachBeschriftung, type Sprachtexte } from '../../shared/src/sprachpaket';
@@ -2587,6 +2588,7 @@ export class Paketverwaltung {
     const datensatz = await this.lege(paket, herkunft, v, vorschau, e.beispiele === true && !alt, von, alt, einzuschalten(e.automatisierungen, paket));
     if (hoch) await this.vergissUpload(String(e.upload));
     log.info(alt ? 'Paket aktualisiert (hochgeladen)' : 'Paket installiert', { von: von.email, paket: id, version: paket.manifest.version, ...(alt ? { vorher: alt.version } : {}), herkunft: hoch ? 'hochgeladen' : quelle, pruefung: geladen.pruefung.art + (geladen.pruefung.stand ? ` (Katalog vom ${geladen.pruefung.stand})` : ''), typen: Object.keys(datensatz.typen).length, sichten: Object.keys(datensatz.sichten).length });
+    void nachweis('betrieb.paket', { aktion: alt ? 'aktualisiert' : 'installiert', paket: id, version: paket.manifest.version, vorher: alt?.version ?? null, von: von.email });
     return datensatz;
   }
 
@@ -3214,6 +3216,7 @@ export class Paketverwaltung {
     this.sichtenErsetzen.set(plan, ersetzenAus(e));
     const neu = await this.lege(paket, alt.herkunft, v, plan, false, von, alt, einzuschalten(e.automatisierungen, paket));
     log.info('Paket aktualisiert', { von: von.email, paket: id, ...(plan.umzug ? { neueId: neu.id } : {}), vorher: alt.version, version: neu.version, pruefung: pruefung.art, neueTypen: plan.typen.filter((t) => !t.vorhanden && !t.geloescht).length, neueSichten: plan.sichten.filter((s) => !s.vorhanden).length });
+    void nachweis('betrieb.paket', { aktion: 'aktualisiert', paket: neu.id, version: neu.version, vorher: alt.version, von: von.email });
     return neu;
   }
 
@@ -3444,6 +3447,7 @@ export class Paketverwaltung {
         const ds = await this.lege(x.paket, x.herkunft, x.v, vorschau, beispiele.has(p.id) && !alt, von, alt, einzuschalten(ein[p.id], x.paket));
         if (x.upload) await this.vergissUpload(x.upload);
         log.info(alt ? 'Paket aktualisiert (Ablauf)' : 'Paket installiert (Ablauf)', { von: von.email, paket: p.id, version: ds.version, ...(alt ? { vorher: alt.version } : {}), herkunft: x.herkunft.art === 'katalog' ? x.herkunft.url : 'hochgeladen', pruefung: x.pruefung.art, gebrauchtVon: p.fuer.join(', ') || '–' });
+        void nachweis('betrieb.paket', { aktion: alt ? 'aktualisiert' : 'installiert', paket: p.id, version: ds.version, vorher: alt?.version ?? null, von: von.email });
         let einst: AblaufErgebnis['installiert'][number]['einstellungen'] = p.einstellungen.length ? (spaeter.has(p.id) ? 'spaeter' : 'fertig') : 'keine';
         const w = zuSpeichern.get(p.id);
         if (w) {
@@ -3901,6 +3905,7 @@ export class Paketverwaltung {
     // Einstellungen (#197): nur auf ausdrücklichen Wunsch für eine spätere Neuinstallation behalten.
     if (!behalten) await this.d.kern.fassungen.geloescht('paketeinstellungen', id, () => setzePaketEinstellungen(this.d.kern, id, null));
     log.info('Paket entfernt', { von: von.email, paket: id, version: p.version, einstellungenBehalten: behalten, beispieleEntfernt: bsp.unveraendert.length, vorgabenEntfernt: vorgabenWeg.length });
+    void nachweis('betrieb.paket', { aktion: 'entfernt', paket: id, version: p.version, vorher: null, von: von.email });
     // Vorgaben, die bleiben, behalten ihre feste Kennung: Eine neue Installation nimmt sie wieder auf, statt sie doppelt anzulegen.
     const vorgabenBehalten = [...vg.fremdBenutzt.map((m) => ({ id: m.id, titel: m.titel || m.id })), ...(vorgabenWahl === 'entfernen' ? [] : vg.frage.map(({ id: x, titel }) => ({ id: x, titel })))];
     return { beispieleBehalten: bsp.geaendert.filter((g) => !eigeneTypen.has(g.typId)).map(({ typId: _t, ...g }) => g), vorgabenBehalten };

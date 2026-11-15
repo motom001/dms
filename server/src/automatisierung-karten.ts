@@ -1,5 +1,5 @@
 import { feldLabel } from '../../shared/src/beschriftung';
-import { istAufruf, istBetrieb, type DannKarte } from '../../shared/src/automatisierung';
+import { istAufruf, istBetrieb, type DannKarte, type PaketKarte } from '../../shared/src/automatisierung';
 import { formatiere, tagVon, type AufgabenAnlass, type Feld } from '../../shared/src/model';
 import { heuteIn, verschiebe } from '../../shared/src/sichten';
 import { uebersetzer } from '../../shared/src/sprache';
@@ -144,6 +144,25 @@ DANN_AUSFUEHRER.anmeldeschutz = async (k: DannKarte, c: KartenKontext) => {
 
 /* ---------- Paket nach Zeitplan ausführen (#1082) ---------- */
 
+/** Karte aus dem Paket (#680): Name für den Verlauf und nur Werte der Felder, die die Karte im Manifest nennt. */
+function paketKarteDaten(karten: PaketKarte[] | undefined, aufgabe: string | null, werte: Record<string, unknown> | undefined) {
+  const karte = karten?.find((x) => x.schluessel === aufgabe);
+  return { werte: karte ? kartenWerte(karte, werte) : null, name: karte?.name ?? aufgabe };
+}
+
+/** Werte einer Paket-Karte (#680): nur Felder der Karte; Zahl und Ja/Nein umgewandelt, Text höchstens 500 Zeichen. */
+function kartenWerte(karte: PaketKarte, werte: Record<string, unknown> | undefined): Record<string, string | number | boolean> {
+  const aus: Record<string, string | number | boolean> = {};
+  for (const f of karte.felder ?? []) {
+    const v = werte?.[f.schluessel];
+    if (v === undefined || v === '') continue;
+    if (f.typ === 'zahl') { const n = Number(v); if (Number.isFinite(n)) aus[f.schluessel] = n; }
+    else if (f.typ === 'janein') aus[f.schluessel] = v === true || v === 'ja' || v === 'true';
+    else aus[f.schluessel] = String(v).slice(0, 500);
+  }
+  return aus;
+}
+
 DANN_AUSFUEHRER.paket = async (k: DannKarte, c: KartenKontext) => {
   if (k.art !== 'paket') throw new Fachfehler(500, t('meldungen.automatisierungkarten.falsche-karte'));
   const a = c.automatisierung;
@@ -158,12 +177,13 @@ DANN_AUSFUEHRER.paket = async (k: DannKarte, c: KartenKontext) => {
   const datum = typeof c.daten.tag === 'string' ? c.daten.tag : heuteIn();
   const zeitpunkt = typeof c.daten.zeitpunkt === 'string' ? c.daten.zeitpunkt : zeitpunktIn(datum, a.wenn.uhrzeit);
   const aufgabe = k.aufgabe ?? null;
-  const zeile = { name: p.name, aufgabe: aufgabe ?? '–', datum: tagVon(`${datum}T12:00:00Z`) };
+  const { werte, name: aufgabeName } = paketKarteDaten(p.laeufer.karten, aufgabe, k.werte);
+  const zeile = { name: p.name, aufgabe: aufgabeName ?? '–', datum: tagVon(`${datum}T12:00:00Z`) };
   if (c.trocken) return uebersetzer2('automatisierung.karte.paket.trocken', zeile);
   // Nur Ids, Kennung und Zeit – nie Inhalte der Ablage. Feste Id je Automatisierung, Karte und Tag: Läuft der Zeitplan auf
   // zwei Servern oder wird der Lauf wiederholt, bekommt das Paket den Tag trotzdem nur einmal.
   const id = uuidAus(`zeitplan.ausgefuehrt|${a.id}|${k.id}|${typeof c.daten.tag === 'string' ? c.daten.tag : c.ereignisId}`);
-  await c.dienst.ereignisseDienst.auftrag(p.id, 'zeitplan.ausgefuehrt', { automatisierung: a.id, aufgabe, zeitpunkt, datum }, id);
+  await c.dienst.ereignisseDienst.auftrag(p.id, 'zeitplan.ausgefuehrt', { automatisierung: a.id, aufgabe, zeitpunkt, datum, ...(werte ? { werte } : {}) }, id);
   return uebersetzer2('automatisierung.karte.paket.ergebnis', zeile);
 };
 

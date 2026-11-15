@@ -99,6 +99,20 @@ export function automatisierungKlartext(a: Pick<MitkommtAutomatisierung, 'wenn' 
   return { wenn, dann: a.dann.map(dannText).join(', ') || '…', ablauf };
 }
 
+/**
+ * Was eine mitgelieferte Automatisierung über die Ablage hinaus tut (#680), für den Hinweis bei der Installation:
+ * E-Mails an Personen der Ablage (Benachrichtigung, Zusammenfassung, Meldungen) und der Aufruf des Paket-Codes – mit
+ * Netz heißt das: Daten können das Haus verlassen. Karten nach außen (URL aufrufen, #671) gibt es in Paketen nicht.
+ */
+export function automatisierungAussen(a: Pick<MitkommtAutomatisierung, 'dann'>, netz: boolean): string[] {
+  const aus = new Set<string>();
+  for (const d of a.dann) {
+    if ((d.art === 'aufgabe' && d.benachrichtigung) || d.art === 'zusammenfassung' || d.art === 'sammelmeldung' || d.art === 'kontosperre') aus.add(t('gemeinsam.mitkommt.aussen.mail'));
+    if (d.art === 'paket') aus.add(netz ? t('gemeinsam.mitkommt.aussen.paket-netz') : t('gemeinsam.mitkommt.aussen.paket'));
+  }
+  return [...aus];
+}
+
 /** Kurzfassung wie im Katalog: „3 Mappentypen · 5 Ansichten · 2 Automatisierungen“ – für den zugeklappten Bereich. */
 export function mitkommtKurz(m: Mitkommt): string {
   const teile: Array<[number, string]> = [

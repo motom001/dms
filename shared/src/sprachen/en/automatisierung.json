@@ -604,5 +604,6 @@
   "vorlage.ui.platz.mappentyp": "Folder type",
   "vorlage.ui.platz.heute": "Today",
   "vorlage.ui.platz.datum": "Date of the run",
-  "vorlage.ui.platz.nur-bei": "only for {typen}"
+  "vorlage.ui.platz.nur-bei": "only for {typen}",
+  "ui.karte.dann.paket.karte": "{paket}: {karte}"
 }

@@ -3645,5 +3645,7 @@
   "tipps.ui.loeschen.frage": "Delete this own tip?",
   "tipps.ui.lade": "Loading …",
   "paketerstellen.tipps": "Tips",
-  "paketerstellen.tipps.text": "Own tips from Workbench → Tips. If a tip starts an own tour, include the tour. Adaptations of tips from other packages are not included."
+  "paketerstellen.tipps.text": "Own tips from Workbench → Tips. If a tip starts an own tour, include the tour. Adaptations of tips from other packages are not included.",
+  "paketerstellen.automatisierungen": "Automations",
+  "paketerstellen.automatisierungen.text": "Your own automations from Workbench → Automations. Their folder types must come along or come from a package. Fixed people and roles become the creator of the folder; Workbench cards, outward cards and “Call from outside” do not come along. They are off on installation."
 }

@@ -49,7 +49,7 @@ export function routenKontext(dienst: Dienst, konten: Konten, x: RoutenExtras = 
   const designs = () => { if (!x.designs) throw new Fachfehler(404, t('meldungen.routen.designs-sind-nicht-eingerichtet')); return x.designs; };
   const log = x.log ?? ((m: string) => L.mail.warn(m));
   const pakete = x.pakete ?? new Paketverwaltung(dienst, { version: eigeneVersion, benutzer: async () => (await konten.listeBenutzer()).filter((b) => b.aktiv !== false).map((b) => ({ id: b.id, name: b.name || b.email })) });
-  const paketerstellung = new Paketerstellung(dienst, { version: eigeneVersion });
+  const paketerstellung = new Paketerstellung(dienst, { version: eigeneVersion, ...(x.automatisierungen ? { automatisierungen: async () => (await x.automatisierungen!.uebersicht()).automatisierungen } : {}) });
   // Ablago entdecken (#831, #832): Rundgänge und Tipps je Person; Funktionen, nach denen Tipps gefiltert werden.
   const entdecken = x.entdecken ?? new Entdecken({
     einstellungen: (b) => konten.einstellungen(b), setzeEinstellung: (b, k, w) => konten.setzeEinstellung(b, k, w),

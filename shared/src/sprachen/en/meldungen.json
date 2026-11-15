@@ -2073,5 +2073,16 @@
   "geheimnisse.aussen.was": "Secret of \"Call URL\" in \"{wert}\"",
   "vollexport.nicht-enthalten-ausgang": "not included: deliveries to the outside (#671, log, technical)",
   "vollexport.nicht-enthalten-aussen-geheimnisse": "not included: secrets of \"Call URL\" (#671) – create new ones after importing",
-  "pakete.automatisierung-aussen": "{wo}: \"Call URL\" and \"Send e-mail\" exist only in the Workbench, not in packages – passing data to the outside is decided by the administration itself."
+  "pakete.automatisierung-aussen": "{wo}: \"Call URL\" and \"Send e-mail\" exist only in the Workbench, not in packages – passing data to the outside is decided by the administration itself.",
+  "paketerstellung.automatisierungen_one": "One own automation comes along as inhalt/automatisierungen.yaml – off on installation; whoever installs switches it on.",
+  "paketerstellung.automatisierungen_other": "{anzahl} own automations come along as inhalt/automatisierungen.yaml – off on installation; whoever installs switches them on.",
+  "paketerstellung.automatisierungen-version": "bundled automations",
+  "paketerstellung.automatisierung-fehlt": "The automation {id} no longer exists.",
+  "paketerstellung.automatisierung-passt-nicht": "Automation “{name}” does not fit into a package: {grund}",
+  "paketerstellung.automatisierung-typ": "The folder type “{typ}” does not come along and is not from a package – select it above.",
+  "paketerstellung.automatisierung-aufruf": "“Call from outside” belongs to this library.",
+  "paketerstellung.automatisierung-karte": "The then card “{karte}” does not exist in packages (Workbench, outward, call package).",
+  "paketerstellung.automatisierung-und": "Conditions with views, favourites or fixed folders belong to this library.",
+  "paketerstellung.automatisierung-feld": "“Change field” sets a reference or a person of this library.",
+  "paketerstellung.automatisierung-personen": "“{name}”: fixed people and roles do not come along – tasks there go to the person who created the folder. Adjust after installation."
 }

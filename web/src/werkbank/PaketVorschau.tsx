@@ -12,7 +12,7 @@ import { UmbauVorschau, umbauStart, type UmbauStand } from './PaketUmbau';
 import { hatGesamt } from '../../../shared/src/verwaltungsrecht';
 import type { UmbauEntscheidungen } from '../../../shared/src/umbau';
 import { t as tx, t, tn } from '../sprache';
-import { AutomatisierungenSchalter, GeaenderteAutomatisierungen } from './PaketAutomatisierungen';
+import { automatisierungHinweis, AutomatisierungenSchalter, GeaenderteAutomatisierungen } from './PaketAutomatisierungen';
 import { istKernVorlage, kernVorlage } from '../../../shared/src/ablaufvorlagen';
 import { HerkunftZeile } from './Herkunft';
 import { MitkommtAufklappen } from './PaketMitkommt';
@@ -218,7 +218,7 @@ export function VorschauBlock({ v, warnung, los, abbrechen, melde, ohne = [], ti
         <section className="stapel" aria-label={tx('pakete.ablauf.automatisierungen')}>
           <h3>{tx('pakete.ablauf.automatisierungen')}</h3>
           <AutomatisierungenSchalter aus={ohneAuto} setAus={setOhneAuto}
-            liste={neueAutos.map((a) => ({ schluessel: a.schluessel, name: a.name, hinweis: [a.zeitplan && tx('pakete.ablauf.automatisierungen.zeitplan', { zeitplan: a.zeitplan }), a.beschreibung].filter(Boolean).join(' · ') || undefined }))} />
+            liste={neueAutos.map((a) => ({ schluessel: a.schluessel, name: a.name, hinweis: automatisierungHinweis(a, v.mitkommt) }))} />
         </section>
       )}
       {v.update && <GeaenderteAutomatisierungen liste={v.automatisierungen ?? []} />}

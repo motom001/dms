@@ -846,7 +846,7 @@ export class Automatisierungen {
     const aufgaben = (id: string) => [...new Set(liste.filter((a) => a.herkunft === 'paket' && a.paketId === id)
       .flatMap((a) => a.dann.flatMap((d) => (d.art === 'paket' && d.aufgabe ? [d.aufgabe] : []))))].sort();
     // Ziele nach außen (#671): Eine Karte „URL aufrufen“ ohne freigegebenes Ziel ist ein Problem (rot, angehalten).
-    return { ...k, pakete: pakete.map((p) => ({ id: p.id, name: p.name, zeitplan: !!p.laeufer?.ereignisse.includes('zeitplan.ausgefuehrt'), aufgaben: aufgaben(p.id) })), ziele: await this.ausleitung.ziele() };
+    return { ...k, pakete: pakete.map((p) => ({ id: p.id, name: p.name, zeitplan: !!p.laeufer?.ereignisse.includes('zeitplan.ausgefuehrt'), aufgaben: aufgaben(p.id), ...(p.laeufer?.karten?.length ? { karten: p.laeufer.karten } : {}) })), ziele: await this.ausleitung.ziele() };
   }
 
   private async ansicht(a: Automatisierung, k: Kontextdaten, letzte: Map<string, Lauf>, unlesbar: Set<string>, kontoId: string | null): Promise<AutomatisierungAnsicht> {

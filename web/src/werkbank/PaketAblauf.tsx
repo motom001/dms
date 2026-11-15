@@ -1,4 +1,4 @@
-import { AutomatisierungenSchalter } from './PaketAutomatisierungen';
+import { automatisierungHinweis, AutomatisierungenSchalter } from './PaketAutomatisierungen';
 import { createContext, useContext, useState, type ReactNode } from 'react';
 import { Feld, FeldGruppe, HakenFeld, Knopf } from '../bausteine';
 import { auswahlMitAbhaengigkeiten, dmsPasst, inMB, passt, vergleicheVersion, vorausgewaehlt, type AblaufEingabe, type AblaufErgebnis, type AblaufInstallation, type AblaufPlan, type Ergaenzung, type InstalliertesPaket, type Katalog, type KatalogPaket, type KatalogVersion } from '../../../shared/src/pakete';
@@ -499,7 +499,7 @@ export function Fragen({ plan, eingabe, zurueck, neuerPlan, fertig, sammeln, vor
           <AutomatisierungenSchalter aus={ohneAutomatisierung} setAus={setOhneAutomatisierung}
             liste={mitAutomatisierungen.flatMap((p) => (p.vorschau.automatisierungen ?? []).filter((a) => a.neu).map((a) => ({
               schluessel: `${p.id}|${a.schluessel}`, name: a.name,
-              hinweis: [t('pakete.ablauf.automatisierungen.paket', { name: p.name }), a.zeitplan && t('pakete.ablauf.automatisierungen.zeitplan', { zeitplan: a.zeitplan }), a.beschreibung].filter(Boolean).join(' · '),
+              hinweis: automatisierungHinweis(a, p.vorschau.mitkommt, [t('pakete.ablauf.automatisierungen.paket', { name: p.name })]),
             })))} />
         </section>
       )}

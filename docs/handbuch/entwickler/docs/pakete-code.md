@@ -285,6 +285,32 @@ code:
 - **Mindestens einmal:** Nach einem Fehler stellt der Paket-Läufer es wieder zu. Die Ereignis-Id ist je Automatisierung, Karte und Tag fest – kommt dieselbe noch einmal, nichts doppelt tun. War Ablago zur Uhrzeit aus, kommt der Lauf am selben Tag nach.
 - Ein Admin kann eigene Automatisierungen mit dieser Karte anlegen; zur Wahl stehen nur Pakete, die `zeitplan.ausgefuehrt` abonnieren.
 
+### Eigene Karten für Automatisierungen (`code.karten`) { #eigene-karten }
+
+Seit 0.287.0 (#680). Ein Paket mit Code kann eigene **Dann-Karten** anbieten. Sie stehen im Kartenvorrat der Automatisierungen als „*Paket*: *Name*“ – mit Hilfe und Feldern, die der Admin ausfüllt:
+
+```yaml
+code:
+  ereignisse: [zeitplan.ausgefuehrt]
+  karten:
+    - schluessel: bericht                 # a–z, 0–9, _
+      name: Monatsbericht ablegen
+      hilfe: Legt den Bericht des Vormonats als Mappe ab.
+      felder:
+        - { schluessel: tage, name: Tage zurück, typ: zahl }      # text, zahl oder janein
+        - { schluessel: leise, name: Ohne Benachrichtigung, typ: janein }
+```
+
+- Ausgeführt wird die Karte wie „Paket nach Zeitplan ausführen“: nur mit der Wenn-Karte `zeitplan`, als Ereignis `zeitplan.ausgefuehrt` mit `aufgabe` = Schlüssel der Karte und `werte` – nur Felder der Karte, Zahlen als Zahl, Ja/Nein als `true`/`false`, Text höchstens 500 Zeichen. Das Paket arbeitet mit seinen bestätigten Rechten im Paket-Läufer; die Karte gibt keine zusätzlichen.
+- Höchstens 20 Karten mit je 10 Feldern. Wenn-Karten aus Paketen gibt es (noch) nicht.
+
+### Automatisierungen im Paket { #automatisierungen-im-paket }
+
+- **Installation:** Die Vorschau zeigt jede mitgelieferte Automatisierung mit Schalter und in Klartext („Wenn … → Dann …“), dazu, was sie über die Ablage hinaus tut: E-Mails an Personen der Ablage, Aufruf des Paket-Codes (mit Netz: Daten können das Haus verlassen). Karten nach außen (URL aufrufen, E-Mail an Fremde) gibt es in Paketen nicht.
+- **Update:** Unveränderte Automatisierungen ziehen die neue Fassung nach; vom Admin geänderte bleiben, wie sie sind – die Vorschau zeigt, was die neue Fassung anders machen würde (#1174).
+- **Ausführung:** Mitgelieferte Automatisierungen laufen wie eigene unter dem Systemkonto „Automatisierung“; die Karte „Paket nach Zeitplan ausführen“ und eigene Karten rufen den Code des Pakets, der mit dem Dienstkonto des Pakets arbeitet.
+- **Paket erstellen:** Eigene Automatisierungen lassen sich ankreuzen und kommen als `inhalt/automatisierungen.yaml` mit, `eingeschaltet: false`. Mappentypen werden zu Schlüsseln im Paket (bzw. `paket:typ`, `dms:post`); feste Personen und Rollen werden zum Ersteller der Mappe. Werkbank-Karten, Karten nach außen, „Aufruf von außen“, Ansichten in Bedingungen und feste Mappen in „Feld ändern“ passen nicht in ein Paket – „Paket erstellen“ nennt sie als Problem.
+
 ## Berechnete Felder und Hinweise { #berechnet-und-hinweise }
 
 Seit Ablago 0.231 (#1034) kann ein Paket Felder seines Mappentyps **berechnen** und an Mappen **Hinweise** setzen – etwa *Verträge* (Status, Kündigen bis) und *Rechnungen* (Summenprüfung). Beides läuft über die [API v1](#nutzliche-endpunkte-der-api-v1) mit dem Dienstkonto des Pakets.
@@ -1033,6 +1059,76 @@ Ein Paket, das auf dem Gerät übersetzt (z. B. mit einem WebAssembly-Modell), b
 ### Ausprobieren { #uebersetzen-ausprobieren }
 
 Ein kleines Test-Paket steht in `server/test/uebersetzung.test.ts`: ein WebAssembly-Modul nach ABI 1, das auf `dms:uebersetzen` mit einer festen Übersetzung antwortet, samt Manifest. Der Test lädt es in den echten Paket-Läufer.
+
+## Einrichtung und Nachweise lesen { #einrichtung-und-nachweise }
+
+Ein Paket wie „Compliance“ hält eine Verfahrensdokumentation aktuell, ohne dass jemand Einstellungen abschreibt: Es liest den **Stand der Einrichtung** je Bereich und die **Nachweise eines Monats** als JSON (#1053). Was es lesen darf, hakt der Administrator je Bereich an (#1054, siehe unten); Passwörter und andere Geheimnisse sind nie enthalten (#1055).
+
+### Bereiche { #einrichtung-bereiche }
+
+| Kennung | Einrichtung | Nachweise |
+|---|---|---|
+| `allgemein` | Ablago-Version, „beruflich genutzt“, Angaben der eigenen Organisation, Verantwortlicher, Datenschutzbeauftragter | – |
+| `belegeingang` | Postfächer (aktiv, Server, „Anmeldung eingerichtet“), Eingangsordner, Volltext an/aus, Pakete für Texterkennung, PDF/A und Trennblatt | eingegangene Post je Weg |
+| `ablage` | Mappentypen mit Feldern (Art, Pflicht), Versionen je Dokumentenregister, Archivmodus, Frist, Stichtag, KI-Freigabe | – |
+| `zugang` | Zwei-Faktor und Passkey möglich/Pflicht, Anmeldeschutz, WebDAV, Anzahl API-Schlüssel, Rollen, Rechte je Mappentyp mit Regeln, Anzahl Personen je Verwaltungsrecht | Benutzer zum Stichtag (Rollen, Zwei-Faktor, Passkey, Verwaltungsrechte), Rechteänderungen, Fehlanmeldungen |
+| `betrieb` | installierte Pakete mit Version und Rechten, Automatisierungen an/aus, Assistent, Wartungsmodus | Updates von Ablago, Paket-Verlauf, Wartungszeiten |
+| `sicherung` | Zeitplan, Aufbewahrung, Verschlüsselung, Ziele außer Haus (nur Rechner), Probe-Wiederherstellung | Sicherungsläufe, Prüfungen, Probe-Wiederherstellungen mit Ergebnis |
+| `unveraenderbarkeit` | Zeitplan „Alle Dateien prüfen“ (bisher keiner), Mappentypen im Archivmodus | Läufe von „Alle Dateien prüfen“ mit Befund |
+| `datenschutz` | Löschkonzept je Mappentyp (Personenbezug, Zweck, Frist), Papierkorb, Historie, Löschprotokoll, Auskunft | Löschungen nach Fristende, endgültig Gelöschtes, geleerter Papierkorb, erzeugte Auskünfte |
+| `betriebspruefung` | Prüferzugang (gibt es noch nicht), Exportformate | – |
+
+### Format { #einrichtung-format }
+
+```json
+{ "format": 1, "art": "einrichtung", "bereich": "ablage", "version": "0.287.0",
+  "eintraege": [
+    { "kennung": "ablage.pflicht", "pfad": "ablage.pflicht:rechnung/betrag", "bezeichnung": "„Rechnung“: Feld „Betrag“ ist Pflicht", "wert": true }
+  ] }
+```
+
+- **`kennung`** ist die feste Art der Angabe (`ablage.feldtyp`, `zugang.zweifaktor`, `sicherung.ziel` …). Darauf baut die Liste „was zählt“ in den Einstellungen deines Pakets auf. Neue Kennungen kommen dazu, bestehende ändern ihre Bedeutung nicht.
+- **`pfad`** ist im Bereich eindeutig (Kennung, dahinter Mappentyp, Feld, Postfach …). Nach ihm vergleicht der Kern.
+- **`wert`** ist flach: Text, Zahl, ja/nein, `null` oder eine Liste von Texten. Zeitstempel gibt es in den Einträgen nicht – zwei Abrufe ohne Änderung sind gleich.
+- **Nachweise** haben dasselbe Gerüst mit `"art": "nachweise"`, `monat` (`JJJJ-MM`), `stichtag` und Einträgen `{ kennung, zeit?, daten }`. Aufstellungen wie die Benutzer gelten zum Stichtag (Zeitpunkt des Abrufs, höchstens Monatsende); für vergangene Monate ist das der heutige Stand. Mehr als 2000 Einträge je Monat zählt der Kern nur noch (`weitere`).
+
+### Im Manifest und Freigabe { #einrichtung-manifest }
+
+```yaml
+dms: ">=0.287.0"
+code:
+  rechte:
+    einrichtung: [ablage, sicherung, datenschutz]   # Bereiche der Einrichtung
+    nachweise: [sicherung, zugang]                   # Bereiche mit Nachweisen
+  netz: []                                           # Pflicht: ohne Netz
+```
+
+- **Nur ohne Netz:** Mit `code.netz` oder einer Dienst-Adresse lehnt die Paketprüfung beide Rechte ab – die Daten sind eine Landkarte der Sicherheit des Hauses (Ergänzung Sicherheit).
+- **Nachweise** gibt es für `belegeingang`, `zugang`, `betrieb`, `sicherung`, `unveraenderbarkeit` und `datenschutz`.
+- **Freigabe:** Die Installation gibt noch nichts frei. Der Administrator hakt in den Einstellungen des Pakets je Bereich an – Vorgabe nichts, auch für Bereiche, die ein Update neu anfragt. Anhaken darf nur, wer den Bereich verwaltet; `zugang` und alle Nachweise nur mit Gesamter Verwaltung. Wirksam ist bei **jedem** Abruf die Schnittmenge aus Haken und den Verwaltungsrechten der Person, die zuletzt gespeichert hat. Rechne also jederzeit mit 403.
+- **Nur über das Dienstkonto:** Personen und ihre API-Schlüssel bekommen 403. Schreiben in die Einrichtung geht mit diesen Rechten nie.
+
+### Endpunkte { #einrichtung-endpunkte }
+
+- `GET /api/v1/paketdaten/einrichtung/{bereich}` – Stand des Bereichs.
+- `POST /api/v1/paketdaten/einrichtung/{bereich}/vergleich` mit `{ "vorher": <früherer Stand oder seine Einträge> }` – dazu `aenderungen`: je Änderung `kennung`, `pfad`, `art` (`neu`, `geaendert`, `entfernt`), `vorher`, `nachher` und ein lesbarer `satz`, z. B. „„Rechnung“: Feld „Betrag“ ist Pflicht: ja → nein“. Merke dir den Stand im Paketspeicher und vergleiche beim nächsten Lauf.
+- `GET /api/v1/paketdaten/nachweise/{bereich}/{monat}` – Nachweise eines Monats (`JJJJ-MM`, nicht in der Zukunft).
+- Fehler: 403 mit dem Namen des Bereichs (nicht angefragt, nicht angehakt, Person ohne Verwaltungsrecht), 404 für unbekannte Bereiche, 422 für einen ungültigen Monat. Jeder Abruf steht im Protokoll.
+
+### Was nie enthalten ist { #einrichtung-nie }
+
+- Passwörter, Schlüssel, Tokens und verschlüsselte Werte – alles geht durch die zentrale Sperre (`ohneGeheimnisse`).
+- Adressen nur mit Rechner: Sicherungsziele, Postfächer und Dienste ohne Benutzer, Passwort, Pfad und Query; bei Postfächern kein Benutzername, nur „Anmeldung eingerichtet“.
+- In der Einrichtung keine Personen: Verwaltungsrechte nur als Anzahl je Bereich, API-Schlüssel nur als Anzahl, Ausnahmen des Anmeldeschutzes nur als Anzahl.
+- Fehlanmeldungen mit Konto (nur wenn es das Konto gibt), Zeit und gekürzter Adresse (IPv4 /24, IPv6 /48) samt „Heimnetz“ ja/nein. Unbekannte Konten nur als Anzahl – dort steht oft ein vertipptes Passwort.
+
+### Bestandsaufnahme { #einrichtung-bestand }
+
+Was die Schnittstelle je Bereich mit Ablago 0.287 liefert und was (noch) fehlt:
+
+- **Geliefert:** alle Einrichtungs-Angaben der Tabelle oben aus den Diensten, die auch die Werkbank zeigt. Für Nachweise, die vorher nirgends dauerhaft standen (das Protokoll hält 24 Stunden), führt der Kern seit 0.287 ein **Nachweis-Journal** je Monat (Einstellung `nachweise:JJJJ-MM`, Teil der Sicherung, 25 Monate): Fehlanmeldungen, Rechteänderungen (Verwaltungsrechte, Rollen, Regeln am Mappentyp), Updates, Paket-Verlauf, Wartungszeiten, „Alle Dateien prüfen“, geleerter Papierkorb, Auskünfte. Diese Nachweise gibt es also erst ab dem Update.
+- **Aus vorhandenen Daten:** Sicherungsläufe nur für Sicherungen, die noch da sind (Aufbewahrung); Löschungen aus dem Löschprotokoll; Post je Weg aus den Post-Mappen.
+- **Fehlt:** Trennblatt- und Barcode-Regeln stehen in den Einstellungen des jeweiligen Pakets – geliefert wird nur, welches Paket zuständig ist. „Alle Dateien prüfen“ hat keinen Zeitplan, einen Prüferzugang gibt es nicht. Fehlgeschlagene Sicherungen stehen nur als letzte Meldung, nicht als Verlauf. Die Mappentypen kommen als flache Einträge, nicht als Datei im Format von „Paket erstellen“.
 
 ## Ausprobieren
 

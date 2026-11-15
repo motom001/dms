@@ -17,6 +17,7 @@ import { buffer as alsPuffer } from 'node:stream/consumers';
 import { parse, stringify } from 'yaml';
 import { insPaket, werkbankAus, WERKBANK_EINSTELLUNG } from './entdecken-werkbank';
 import { EIGEN, type TippDaten } from '../../shared/src/entdecken-werkbank';
+import type { Automatisierung, DannKarte } from '../../shared/src/automatisierung';
 import { istLeer, standardliste, trefferlistenVon, type Feld, type Mappe, type Mappentyp, type Register } from '../../shared/src/model';
 import { kreisImStandard } from '../../shared/src/nummernkreis';
 import { ALLE_TYPEN, BEISPIEL_DOKUMENTE_AB, BEISPIEL_ENDUNGEN, BEREICH, DMS_ALIAS, DMS_WORTLISTEN_AB, inMB, PAKET_ID, VERSION, WORTLISTEN_MAX, vergleicheVersion, type InstalliertesPaket } from '../../shared/src/pakete';
@@ -77,6 +78,8 @@ export const MINDEST_FUNKTIONEN = {
   wortlisten: { ab: DMS_WORTLISTEN_AB, grund: t('meldungen.paketerstellung.wortlisten') },
   fremdeTypen: { ab: FREMDE_TYPEN_AB, grund: t('meldungen.paketerstellung.ansichten-mit-mappentypen-die') },
   beispielDokumente: { ab: BEISPIEL_DOKUMENTE_AB, grund: t('meldungen.paketerstellung.beispiel-dokumente') },
+  // Mitgelieferte Automatisierungen mit `eingeschaltet` (#1082, seit 0.233.0) – so liefert „Paket erstellen“ sie (#680).
+  automatisierungen: { ab: '0.233.0', grund: t('meldungen.paketerstellung.automatisierungen-version') },
 } as const;
 export type MindestFunktion = keyof typeof MINDEST_FUNKTIONEN;
 /** Minor-Versionen, die es nie gab (übersprungen); erscheinen nicht in der Auswahl. */
@@ -181,6 +184,8 @@ export interface ErstellenDaten {
   rundgaenge?: Array<{ schluessel: string; roh: Record<string, unknown> }>;
   /** Eigene Tipps der Werkbank (#942). */
   tipps?: Array<{ schluessel: string; daten: TippDaten }>;
+  /** Eigene Automatisierungen (#680), wie gespeichert. */
+  automatisierungen?: Automatisierung[];
   dmsVersion: string;
   /** Zuletzt exportierter Entwurf mit derselben Id. */
   entwurf: PaketEntwurf | null;
@@ -615,8 +620,11 @@ export function baue(e: PaketErstellenEingabe, d: ErstellenDaten): Bau {
   // 8. Eigene Tipps (#942): Rundgänge nur, wenn sie als eigene mitkommen; Anpassungen fremder Tipps nicht (#654).
   const tipps = tippsInsPaket(e.tipps ?? [], e.rundgaenge ?? [], d, { schluessel, typPaket, abhaengig, probleme });
   if (tipps.length) hinweis(t('meldungen.paketerstellung.tipps', { anzahl: tipps.length }));
+  // 9. Eigene Automatisierungen (#680): Typen wie bei Rundgängen; feste Personen und Rollen werden zum Ersteller der Mappe.
+  const automatisierungen = automatisierungenInsPaket(e.automatisierungen ?? [], d, { schluessel, typPaket, abhaengig, probleme }, hinweis);
+  if (automatisierungen.length) hinweis(t('meldungen.paketerstellung.automatisierungen', { anzahl: automatisierungen.length }));
 
-  if (!paketTypen.length && !paketSichten.length && !wortlisten.length && !rundgaenge.length && !tipps.length) probleme.push(t('meldungen.paketerstellung.waehle-mindestens-einen-eigenen'));
+  if (!paketTypen.length && !paketSichten.length && !wortlisten.length && !rundgaenge.length && !tipps.length && !automatisierungen.length) probleme.push(t('meldungen.paketerstellung.waehle-mindestens-einen-eigenen'));
   // Nötige Ablago-Version (#651): Mindestversion aus den benutzten Funktionen, Angabe aus der Auswahl.
   const genutzt: MindestFunktion[] = [];
   if (dmsVerweise) genutzt.push('dmsVerweise');
@@ -624,6 +632,7 @@ export function baue(e: PaketErstellenEingabe, d: ErstellenDaten): Bau {
   if (dokDateien.length) genutzt.push('beispielDokumente');
   if (fremdeTypen) genutzt.push('fremdeTypen');
   if (wortlisten.length) genutzt.push('wortlisten');
+  if (automatisierungen.length) genutzt.push('automatisierungen');
   if (paketTypen.some((t) => (t.felder as Array<Record<string, unknown>>).some((f) => 'erkennung' in f))) genutzt.push('erkennung');
   if (paketTypen.some((t) => (t.felder as Array<Record<string, unknown>>).some((f) => 'format' in f || 'landFeld' in f || (f.typ === 'datum' && ('min' in f || 'max' in f))))) genutzt.push('feldformate');
   // Zeitraum, Prozent und negative Beträge (#1035): Ältere Ablago machten aus unbekannten Feldarten Text.
@@ -661,6 +670,7 @@ export function baue(e: PaketErstellenEingabe, d: ErstellenDaten): Bau {
     ...(dokDateien.length ? { beispielDokumente: dokDateien.length } : {}),
     ...(rundgaenge.length ? { rundgaenge: rundgaenge.length } : {}),
     ...(tipps.length ? { tipps: tipps.length } : {}),
+    ...(automatisierungen.length ? { automatisierungen: automatisierungen.length } : {}),
   };
   if (probleme.length) return { probleme, fehlend, hinweise, abhaengigkeiten: abh, inhalt, schluessel, dateien: [], version: versionLage, felder: felderJetzt, lizenz };
 
@@ -668,7 +678,7 @@ export function baue(e: PaketErstellenEingabe, d: ErstellenDaten): Bau {
   const y = (v: unknown) => Buffer.from(stringify(v, { version: '1.1', lineWidth: 0 }));
   const manifest = {
     schema: 1, id, name, version, beschreibung, autor, lizenz, dms, abhaengigkeiten: abh,
-    inhalt: { mappentypen: 'inhalt/mappentypen.yaml', sichten: 'inhalt/sichten.yaml', ...(beispiele.length ? { beispiele: 'inhalt/beispiele.yaml' } : {}), ...(wortlisten.length ? { wortlisten: 'inhalt/wortlisten.yaml' } : {}), ...(rundgaenge.length ? { rundgaenge: 'inhalt/rundgaenge.yaml' } : {}), ...(tipps.length ? { tipps: 'inhalt/tipps.yaml' } : {}) },
+    inhalt: { mappentypen: 'inhalt/mappentypen.yaml', sichten: 'inhalt/sichten.yaml', ...(beispiele.length ? { beispiele: 'inhalt/beispiele.yaml' } : {}), ...(wortlisten.length ? { wortlisten: 'inhalt/wortlisten.yaml' } : {}), ...(rundgaenge.length ? { rundgaenge: 'inhalt/rundgaenge.yaml' } : {}), ...(tipps.length ? { tipps: 'inhalt/tipps.yaml' } : {}), ...(automatisierungen.length ? { automatisierungen: 'inhalt/automatisierungen.yaml' } : {}) },
   };
   const datum = d.jetzt.toISOString().slice(0, 10);
   const text = aenderungsText(e, d.entwurf);
@@ -703,6 +713,7 @@ export function baue(e: PaketErstellenEingabe, d: ErstellenDaten): Bau {
     ...(wortlisten.length ? [{ name: 'inhalt/wortlisten.yaml', daten: y(wortlisten) }] : []),
     ...(rundgaenge.length ? [{ name: 'inhalt/rundgaenge.yaml', daten: y(rundgaenge) }] : []),
     ...(tipps.length ? [{ name: 'inhalt/tipps.yaml', daten: y(tipps) }] : []),
+    ...(automatisierungen.length ? [{ name: 'inhalt/automatisierungen.yaml', daten: y(automatisierungen) }] : []),
     { name: 'README.md', daten: Buffer.from(readme) },
     { name: 'CHANGELOG.md', daten: Buffer.from(changelog) },
     { name: 'LICENSE', daten: Buffer.from(lizenzDatei) },
@@ -767,6 +778,88 @@ function tippsInsPaket(gewaehlt: string[], rundgaenge: string[], d: ErstellenDat
   return aus;
 }
 
+/** Dann-Karten, die ein Paket mitbringen darf (#680): Werkbank, nach außen und Paket-Aufrufe gehören zur eigenen Ablage. */
+const AUTO_DANN = new Set(['aufgabe', 'feld', 'zusammenfassung', 'favoriten', 'stopp']);
+const UUID_WERT = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * Gewählte eigene Automatisierungen fürs Paket (#680): Mappentyp als Schlüssel im Paket, `paket:typ` (Abhängigkeit) oder
+ * `dms:post`. Feste Personen und Rollen gibt es in Paketen nicht (#654: Benutzer nein) – sie werden zum Ersteller der
+ * Mappe, mit Hinweis. Was nicht in ein Paket passt (Werkbank, nach außen, Aufruf von außen, Ansichten, feste Mappen),
+ * ist ein Problem mit Namen. Mitgeliefert immer ausgeschaltet; der Empfänger schaltet sie beim Installieren an.
+ */
+function automatisierungenInsPaket(gewaehlt: string[], d: ErstellenDaten, k: InsPaket, hinweis: (h: string) => void): Array<Record<string, unknown>> {
+  const aus: Array<Record<string, unknown>> = [];
+  const belegt = new Set<string>();
+  for (const id of new Set(gewaehlt)) {
+    const a = (d.automatisierungen ?? []).find((x) => x.id === id);
+    if (!a) { k.probleme.push(t('meldungen.paketerstellung.automatisierung-fehlt', { id })); continue; }
+    const typ = typKennungFuer(a, d, k);
+    const grund = typ.grund ?? passtNicht(a);
+    if (grund) { k.probleme.push(t('meldungen.paketerstellung.automatisierung-passt-nicht', { name: a.name, grund })); continue; }
+    const { dann, sonst, wenn, ersetzt } = ohnePersonen(a);
+    if (ersetzt) hinweis(t('meldungen.paketerstellung.automatisierung-personen', { name: a.name }));
+    const schl = freierSchluessel(a.name, belegt);
+    aus.push({
+      schluessel: schl, name: a.name, ...(a.beschreibung ? { beschreibung: a.beschreibung } : {}),
+      wenn: { ...wenn, ...(typ.kennung ? { typ: typ.kennung } : {}) }, ...(a.und?.karten?.length ? { und: a.und } : {}),
+      dann, ...(sonst.length ? { sonst } : {}), eingeschaltet: false,
+    });
+  }
+  return aus;
+}
+
+/** Mappentyp der Wenn-Karte im Paket: eigener Schlüssel, `paket:typ` (Abhängigkeit) oder `dms:post`; sonst ein Grund. */
+function typKennungFuer(a: Automatisierung, d: ErstellenDaten, k: InsPaket): { kennung: string | null; grund?: string } {
+  const wennTyp = (a.wenn as { typ?: string | null }).typ ?? null;
+  if (!wennTyp) return { kennung: null };
+  const typ = d.typen.find((x) => x.id === wennTyp);
+  if (typ?.system === 'post') return { kennung: 'dms:post' };
+  if (typ && k.schluessel[typ.id]) return { kennung: k.schluessel[typ.id] };
+  const h = typ ? k.typPaket.get(typ.id) : undefined;
+  if (h) { k.abhaengig(h.p); return { kennung: `${h.p.id}:${h.s}` }; }
+  return { kennung: null, grund: t('meldungen.paketerstellung.automatisierung-typ', { typ: typ?.name ?? wennTyp }) };
+}
+
+/** Was nicht in ein Paket passt: Aufruf von außen, fremde Karten, Ansichten oder Favoriten in Bedingungen, feste Mappen. */
+function passtNicht(a: Automatisierung): string | null {
+  if (a.wenn.art === 'aufruf') return t('meldungen.paketerstellung.automatisierung-aufruf');
+  const karten = [...a.dann, ...(a.sonst ?? [])];
+  const fremd = karten.find((x) => !AUTO_DANN.has(x.art));
+  if (fremd) return t('meldungen.paketerstellung.automatisierung-karte', { karte: fremd.art });
+  const und = JSON.stringify(a.und ?? {});
+  if (/"art":"(ansicht|favorit)"/.test(und) || /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i.test(und)) return t('meldungen.paketerstellung.automatisierung-und');
+  if (karten.some((x) => x.art === 'feld' && Object.values(x.werte ?? {}).some((v) => typeof v === 'string' && UUID_WERT.test(v)))) return t('meldungen.paketerstellung.automatisierung-feld');
+  return null;
+}
+
+/** Feste Personen und Rollen gibt es in Paketen nicht (#654): Aufgaben gehen an den Ersteller, Rollen fallen weg. */
+function ohnePersonen(a: Automatisierung): { dann: DannKarte[]; sonst: DannKarte[]; wenn: Record<string, unknown>; ersetzt: boolean } {
+  let ersetzt = false;
+  const karte = (x: DannKarte): DannKarte => {
+    if (x.art === 'aufgabe') {
+      const bleibt = x.empfaenger.filter((e) => e.art !== 'person' && e.art !== 'rolle');
+      if (bleibt.length !== x.empfaenger.length) ersetzt = true;
+      return { ...x, empfaenger: bleibt.length ? bleibt : [{ art: 'ersteller' }] } as DannKarte;
+    }
+    if (x.art === 'favoriten' && x.rollen?.length) { ersetzt = true; return { ...x, rollen: [] }; }
+    return x;
+  };
+  const { rolle, ...wenn } = a.wenn as typeof a.wenn & { rolle?: unknown };
+  const dann = a.dann.map(karte), sonst = (a.sonst ?? []).map(karte);
+  return { dann, sonst, wenn, ersetzt: ersetzt || !!rolle };
+}
+
+/** Schlüssel im Paket aus dem Namen, eindeutig in diesem Paket. */
+function freierSchluessel(name: string, belegt: Set<string>): string {
+  let s = (name.toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '') || 'automatisierung').slice(0, 40);
+  if (!/^[a-z]/.test(s)) s = `a_${s}`.slice(0, 40);
+  const basis = s;
+  for (let n = 2; belegt.has(s); n++) s = `${basis.slice(0, 36)}_${n}`;
+  belegt.add(s);
+  return s;
+}
+
 /** Eintrag im CHANGELOG für diese Version; ohne Angabe ein Standardtext. */
 const aenderungsText = (e: PaketErstellenEingabe, entwurf: PaketEntwurf | null) => e.aenderungen.trim() || (entwurf ? t('meldungen.paketerstellung.neue-version-aus-ablago') : t('meldungen.paketerstellung.erste-fassung'));
 
@@ -780,6 +873,7 @@ export function liesEingabe(x: unknown): PaketErstellenEingabe {
     typen: ids(o.typen, 500), sichten: ids(o.sichten, 500), beispiele: ids(o.beispiele, 100), wortlisten: ids(o.wortlisten, 1000),
     ...(Array.isArray(o.rundgaenge) ? { rundgaenge: ids(o.rundgaenge, 50) } : {}),
     ...(Array.isArray(o.tipps) ? { tipps: ids(o.tipps, 20) } : {}),
+    ...(Array.isArray(o.automatisierungen) ? { automatisierungen: ids(o.automatisierungen, 100) } : {}),
     id: t(o.id, 40), name: t(o.name, 200), version: t(o.version, 40), beschreibung: t(o.beschreibung, 1000),
     autor: { name: t(a.name, 200), github: t(a.github, 100) }, lizenz: t(o.lizenz, 40), dms: t(o.dms, 60), aenderungen: t(o.aenderungen, 2000),
     lizenzArt: o.lizenzArt === 'eigen' || o.lizenzArt === 'keine' ? o.lizenzArt : 'frei',
@@ -803,7 +897,10 @@ export function aenderung(t: Mappentyp, p: InstalliertesPaket, kennungVon?: (typ
 
 /** Paket erstellen im DMS: Stand, Prüfung, Export; gemerkt werden die Angaben (Einstellung). */
 export class Paketerstellung {
-  constructor(private d: Dienst, private o: { version: () => string }) {}
+  /** automatisierungen (#680): eigene Automatisierungen zum Mitnehmen; fehlt, wenn es keine gibt (Tests). */
+  constructor(private d: Dienst, private o: { version: () => string; automatisierungen?: () => Promise<Array<Automatisierung & { kurz?: string }>> }) {}
+
+  private async eigeneAutomatisierungen() { return ((await this.o.automatisierungen?.().catch(() => [])) ?? []).filter((a) => a.herkunft === 'eigen'); }
 
   private async dmsTypen(): Promise<Map<string, string>> {
     const s = await this.d.kern.system();
@@ -832,6 +929,7 @@ export class Paketerstellung {
       wortlisten: (await this.d.suche.sucheStand()).synonyme.map((g) => ({ id: g.id, woerter: g.woerter, paket: g.quelle === 'werkbank' ? null : { id: g.quelle, name: g.paketName ?? g.quelle } })),
       rundgaenge: (await this.eigeneRundgaenge()).map((x) => ({ schluessel: x.schluessel, titel: typeof x.roh.titel === 'string' ? x.roh.titel : x.schluessel })),
       tipps: werkbankAus(await this.d.kern.einstellungen?.lies(WERKBANK_EINSTELLUNG)).tipps.map((x) => ({ schluessel: x.schluessel, text: x.daten.text })),
+      automatisierungen: (await this.eigeneAutomatisierungen()).map((a) => ({ id: a.id, name: a.name, kurz: a.kurz ?? '' })),
       entwuerfe,
       dms: this.o.version(),
       // #652: nie ungefragt vorbelegen – „Neue Version von …“ wählt man im ersten Schritt.
@@ -842,7 +940,7 @@ export class Paketerstellung {
   /** Angaben eines gemerkten Entwurfs mit höherer Version und aktueller DMS-Version. */
   ausEntwurf(e: PaketEntwurf): PaketErstellenEingabe {
     return {
-      typen: e.typen, sichten: e.sichten, beispiele: e.beispiele, wortlisten: e.wortlisten ?? [], ...(e.rundgaenge?.length ? { rundgaenge: e.rundgaenge } : {}), ...(e.tipps?.length ? { tipps: e.tipps } : {}), ...(e.beispielDokumente ? { beispielDokumente: true } : {}), id: e.id, name: e.name, version: naechsteVersion(e.version), beschreibung: e.beschreibung, autor: e.autor,
+      typen: e.typen, sichten: e.sichten, beispiele: e.beispiele, wortlisten: e.wortlisten ?? [], ...(e.rundgaenge?.length ? { rundgaenge: e.rundgaenge } : {}), ...(e.tipps?.length ? { tipps: e.tipps } : {}), ...(e.automatisierungen?.length ? { automatisierungen: e.automatisierungen } : {}), ...(e.beispielDokumente ? { beispielDokumente: true } : {}), id: e.id, name: e.name, version: naechsteVersion(e.version), beschreibung: e.beschreibung, autor: e.autor,
       lizenz: e.lizenz, lizenzArt: e.lizenzArt ?? 'frei', ...(e.lizenzName ? { lizenzName: e.lizenzName } : {}), ...(e.lizenzText ? { lizenzText: e.lizenzText } : {}), dms: '', aenderungen: '',
     };
   }
@@ -876,6 +974,7 @@ export class Paketerstellung {
       typen, sichten: await this.d.sichtenVerwaltung.listeSichten(), pakete: await this.d.kern.repo.listePakete(), dmsTypen: await this.dmsTypen(), mappen, wortlisten: (await this.d.suche.sucheStand()).synonyme,
       rundgaenge: await this.eigeneRundgaenge(),
       tipps: werkbankAus(await this.d.kern.einstellungen?.lies(WERKBANK_EINSTELLUNG)).tipps,
+      automatisierungen: await this.eigeneAutomatisierungen(),
       dmsVersion: this.o.version(), entwurf: (await paketEntwuerfe(this.d.kern)).find((x) => x.id === e.id.trim()) ?? null, entwuerfe: await paketEntwuerfe(this.d.kern), jetzt: new Date(),
     };
   }

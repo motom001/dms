@@ -57,6 +57,7 @@ import { organisationRouten } from './organisation/organisation.routen';
 import { textsatzRouten } from './textsatz/textsatz.routen';
 import { paketaktionenRouten } from './paketaktionen/paketaktionen.routen';
 import { paketeRouten, paketeEinstellungenRouten } from './pakete/pakete.routen';
+import { paketdatenRouten } from './paketdaten/paketdaten.routen';
 import { sucheRouten } from './suche/suche.routen';
 import { wartungRouten } from './wartung/wartung.routen';
 import { sicherungRouten } from './sicherung/sicherung.routen';
@@ -307,6 +308,7 @@ const BEREICHE: Array<(k: RoutenKontext) => Route[]> = [
   paketeRouten,
   sucheRouten,
   paketeEinstellungenRouten,
+  paketdatenRouten,
   wartungRouten,
   sicherungRouten,
   betriebRouten,

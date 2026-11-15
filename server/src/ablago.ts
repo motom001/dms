@@ -79,6 +79,7 @@ import { Verwaltung } from './verwaltung';
 import { arch, release, type } from 'node:os';
 import { pgDatenquelle } from './datenbankabzug';
 import { pgEinstellungen } from './einstellungen';
+import { merkeVersion, Nachweisjournal, setzeNachweisjournal } from './nachweisjournal';
 import { protokolliereKennungsUmzug } from './mappentypen/index';
 import { istUuid } from './repo';
 import { Sicherung } from './sicherung';
@@ -326,6 +327,10 @@ if (uebrig) log.info('Übrig gebliebene temporäre Uploads gelöscht', { anzahl:
 const dienst = new Dienst(messung.umhuelle(pgRepo(sql, cfg.haushalt), 'mappen'), mitPruefung(ordnerSpeicher(ordner.dateien, cfg.haushalt), hochladen), {
   tresor, einstellungen: pgBetriebSpeicher(sql, cfg.haushalt), zustand: zustandDb,
 });
+// Nachweis-Journal (#1053): Fehlanmeldungen, Rechteänderungen, Updates, Paket-Verlauf, Wartung … je Monat für Pakete.
+const nachweisEinstellungen = pgEinstellungen(sql, cfg.haushalt);
+setzeNachweisjournal(new Nachweisjournal(nachweisEinstellungen));
+void merkeVersion(nachweisEinstellungen, eigeneVersion()).catch((e) => log.warn('Version für die Nachweise nicht gemerkt', { fehler: (e as Error).message }));
 // Fehlende Dokumentdatei (#877): einmal je Datei mit Mappe ins Protokoll und als Hinweis in die Werkbank-Übersicht.
 beiFehlenderDatei((f) => { void dienst.dateienFehlen.merkeFehlendeDatei(f).catch((e) => log.warn('Fehlende Datei nicht vermerkt', { fehler: (e as Error).message })); });
 // Benutzer erscheinen als Mappen (#26); die Konten halten sie auf dem neuesten Stand.

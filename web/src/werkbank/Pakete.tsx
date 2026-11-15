@@ -11,6 +11,8 @@ import { Listenkopf } from '../Listenkopf';
 import { darfVerlassen, geheZu, Link } from '../ort';
 import { PaketEinstellungen, vergissPaketEntwurf } from './PaketEinstellungen';
 import { PaketAusprobieren } from './PaketAusprobieren';
+import { PaketDatenBlock, PaketDatenZeile } from './PaketDaten';
+import { fragtPaketdatenAn } from '../../../shared/src/paketdaten';
 import { VektorStandBlock } from '../ablage/Aehnlich';
 import { KlassifizierenBlock } from './ErkennungPaket';
 import { KiTypenZeile } from './KiTypen';
@@ -479,7 +481,7 @@ function PaketReiter({ reiter, setze, noetig, reiterListe }: { reiter: PaketReit
  */
 function reiterVon(inst: InstalliertesPaket | null): PaketReiterArt[] {
   if (!inst) return [];
-  return ['uebersicht', ...(hatEinstellungen(inst) ? ['einstellungen' as const] : []), ...(inst.laeufer?.reiter?.ausprobieren ? ['ausprobieren' as const] : []), ...(inst.laeufer ? ['verlauf' as const] : [])];
+  return ['uebersicht', ...(hatEinstellungen(inst) || (!!inst.laeufer && fragtPaketdatenAn(inst.laeufer)) ? ['einstellungen' as const] : []), ...(inst.laeufer?.reiter?.ausprobieren ? ['ausprobieren' as const] : []), ...(inst.laeufer ? ['verlauf' as const] : [])];
 }
 const REITER: readonly PaketReiterArt[] = ['uebersicht', 'einstellungen', 'ausprobieren', 'verlauf'];
 /** Zwischen Einstellungen und Ausprobieren bleibt der Entwurf (#1004) – kein „Verlassen ohne Speichern?“. */
@@ -507,7 +509,9 @@ function PaketReiterBlock({ r, inst, z }: { r: ReturnType<typeof usePaketReiter>
   return (
     <>
       <PaketReiter reiter={r.reiter} reiterListe={r.liste} noetig={!!inst.einstellungenNoetig} setze={r.wechsel} />
-      {r.reiter === 'einstellungen' && <ReiterFlaeche id="paket" wert={r.reiter}><PaketEinstellungen paket={inst} gespeichert={() => void z.laden()} /></ReiterFlaeche>}
+      {/* Einrichtung und Nachweise (#1054) mit eigener Freigabe (frische Anmeldung, hinterlegte Person) unter den Einstellungen. */}
+      {r.reiter === 'einstellungen' && <ReiterFlaeche id="paket" wert={r.reiter}>{hatEinstellungen(inst) && <PaketEinstellungen paket={inst} gespeichert={() => void z.laden()} />}
+        {inst.laeufer && fragtPaketdatenAn(inst.laeufer) && <PaketDatenBlock paket={inst.id} />}</ReiterFlaeche>}
       {r.reiter === 'verlauf' && <ReiterFlaeche id="paket" wert={r.reiter}><PaketVerlauf inst={inst} /></ReiterFlaeche>}
       {r.reiter === 'ausprobieren' && <ReiterFlaeche id="paket" wert={r.reiter}><PaketAusprobieren inst={inst} zuEinstellungen={() => r.wechsel('einstellungen')} /></ReiterFlaeche>}
     </>
@@ -623,6 +627,8 @@ function PaketDetail({ z, id, quelle }: { z: PaketeZustand; id: string; quelle?:
         {inst?.laeufer && hatSchnittstelle(inst.laeufer, 'dms:klassifizieren') && <KlassifizierenBlock netz={hatNetz(inst.laeufer)} />}
         {/* KI-Dienste (#796, #996): nur, aus wie vielen Mappentypen das Paket Inhalte bekommt – zulassen in den Einstellungen. */}
         {inst?.laeufer && istKiPaket(inst.laeufer) && <><h2 className="h3">{t('pakete.ki.titel')}</h2><KiTypenZeile paket={inst.id} aendern={() => r.zu('einstellungen', 'pakete.ki-typen')} /></>}
+        {/* Einrichtung und Nachweise (#1054): hier nur, was freigegeben ist – anhaken in den Einstellungen. */}
+        {inst?.laeufer && fragtPaketdatenAn(inst.laeufer) && <PaketDatenZeile paket={inst.id} aendern={() => r.zu('einstellungen', 'pakete.paketdaten')} />}
         {inst && (Object.keys(inst.typen).length > 0 || Object.keys(inst.sichten).length > 0) && (
           <>
             <h2 className="h3">{t('werkbank.pakete.gehoert-dazu')}</h2>

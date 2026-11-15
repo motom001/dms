@@ -285,6 +285,32 @@ code:
 - **At least once:** after an error the package runner delivers it again. The event id is fixed per automation, card and day – if the same one comes again, don't do anything twice. If Ablago was off at the time, the run follows on the same day.
 - An admin can create their own automations with this card; only packages that subscribe to `zeitplan.ausgefuehrt` can be chosen.
 
+### Own cards for automations (`code.karten`) { #eigene-karten }
+
+Since 0.287.0 (#680). A package with code can offer its own **then cards**. They appear in the card store of the automations as "*package*: *name*" – with help and fields the admin fills in:
+
+```yaml
+code:
+  ereignisse: [zeitplan.ausgefuehrt]
+  karten:
+    - schluessel: bericht                 # a–z, 0–9, _
+      name: File monthly report
+      hilfe: Files the report of the previous month as a folder.
+      felder:
+        - { schluessel: tage, name: Days back, typ: zahl }      # text, zahl or janein
+        - { schluessel: leise, name: Without notification, typ: janein }
+```
+
+- The card runs like "Run package on schedule": only with the when card `zeitplan`, as event `zeitplan.ausgefuehrt` with `aufgabe` = key of the card and `werte` – only fields of the card, numbers as numbers, yes/no as `true`/`false`, text at most 500 characters. The package works with its confirmed permissions in the package runner; the card grants none in addition.
+- At most 20 cards with 10 fields each. When cards from packages do not exist (yet).
+
+### Automations in the package { #automatisierungen-im-paket }
+
+- **Installation:** The preview shows every bundled automation with a switch and in plain language ("When … → then …"), plus what it does beyond the library: emails to people of the library, calling the package code (with network access: data may leave the house). Outward cards (call URL, email to outsiders) do not exist in packages.
+- **Update:** Unchanged automations take over the new version; ones the admin changed stay as they are – the preview shows what the new version would do differently (#1174).
+- **Execution:** Bundled automations run like your own under the system account "Automation"; the card "Run package on schedule" and own cards call the package code, which works with the package's service account.
+- **Create package:** Your own automations can be ticked and come along as `inhalt/automatisierungen.yaml`, `eingeschaltet: false`. Folder types become keys in the package (or `paket:typ`, `dms:post`); fixed people and roles become the creator of the folder. Workbench cards, outward cards, "Call from outside", views in conditions and fixed folders in "Change field" do not fit into a package – "Create package" lists them as problems.
+
 ## Calculated fields and notes { #berechnet-und-hinweise }
 
 Since Ablago 0.231 (#1034) a package can **calculate** fields of its folder type and set **notes** on folders – for example *Verträge* (status, cancel by) and *Rechnungen* (checking the sum). Both go through the [API v1](#nutzliche-endpunkte-der-api-v1) with the package's service account.
@@ -1034,6 +1060,76 @@ A package that translates on the device (e.g. with a WebAssembly model) needs no
 ### Trying it out { #uebersetzen-ausprobieren }
 
 A small test package is in `server/test/uebersetzung.test.ts`: a WebAssembly module following ABI 1 that answers `dms:uebersetzen` with a fixed translation, with its manifest. The test loads it into the real package runner.
+
+## Reading setup and evidence { #einrichtung-und-nachweise }
+
+A package such as “Compliance” keeps a process documentation up to date without anyone copying settings: it reads the **current setup** per area and the **evidence of a month** as JSON (#1053). What it may read, the administrator ticks per area (#1054, see below); passwords and other secrets are never included (#1055).
+
+### Areas { #einrichtung-bereiche }
+
+| Key | Setup | Evidence |
+|---|---|---|
+| `allgemein` | Ablago version, “used for work”, details of the own organisation, controller, data protection officer | – |
+| `belegeingang` | Mailboxes (active, server, “sign-in set up”), inbox folder, full text on/off, packages for text recognition, PDF/A and separator sheets | incoming post per channel |
+| `ablage` | Folder types with fields (kind, required), versions per document tab, archive mode, period, reference date, AI approval | – |
+| `zugang` | Two-factor and passkey possible/required, sign-in protection, WebDAV, number of API keys, roles, permissions per folder type with rules, number of people per administration right | users at the reference date (roles, two-factor, passkey, administration rights), permission changes, failed sign-ins |
+| `betrieb` | installed packages with version and permissions, automations on/off, assistant, maintenance mode | Ablago updates, package history, maintenance times |
+| `sicherung` | schedule, retention, encryption, off-site targets (host only), test restore | backup runs, checks, test restores with result |
+| `unveraenderbarkeit` | schedule of “Check all files” (none so far), folder types in archive mode | runs of “Check all files” with findings |
+| `datenschutz` | deletion concept per folder type (personal data, purpose, period), Bin, history, deletion log, subject access | deletions after the period, final deletions, emptied Bin, subject access requests |
+| `betriebspruefung` | auditor access (does not exist yet), export formats | – |
+
+### Format { #einrichtung-format }
+
+```json
+{ "format": 1, "art": "einrichtung", "bereich": "ablage", "version": "0.287.0",
+  "eintraege": [
+    { "kennung": "ablage.pflicht", "pfad": "ablage.pflicht:rechnung/betrag", "bezeichnung": "“Invoice”: field “Amount” is required", "wert": true }
+  ] }
+```
+
+- **`kennung`** is the fixed kind of entry (`ablage.feldtyp`, `zugang.zweifaktor`, `sicherung.ziel` …). The “what counts” list in your package settings builds on it. New keys may be added; existing ones keep their meaning.
+- **`pfad`** is unique within the area (key followed by folder type, field, mailbox …). The core compares by it.
+- **`wert`** is flat: text, number, yes/no, `null` or a list of texts. Entries carry no timestamps – two reads without a change are identical.
+- **Evidence** uses the same frame with `"art": "nachweise"`, `monat` (`YYYY-MM`), `stichtag` and entries `{ kennung, zeit?, daten }`. Lists such as the users apply at the reference date (time of the read, at most the end of the month); for past months this is today’s state. Beyond 2000 entries per month the core only counts (`weitere`).
+
+### Manifest and release { #einrichtung-manifest }
+
+```yaml
+dms: ">=0.287.0"
+code:
+  rechte:
+    einrichtung: [ablage, sicherung, datenschutz]   # setup areas
+    nachweise: [sicherung, zugang]                   # areas with evidence
+  netz: []                                           # required: no network
+```
+
+- **Only without network access:** with `code.netz` or a service address the package check rejects both permissions – the data is a map of the household's security.
+- **Evidence** exists for `belegeingang`, `zugang`, `betrieb`, `sicherung`, `unveraenderbarkeit` and `datenschutz`.
+- **Release:** installing releases nothing yet. The administrator ticks each area in the package settings – default nothing, also for areas an update newly requests. Only someone who manages the area may tick it; `zugang` and all evidence only with full administration. On **every** read the core uses the intersection of the ticks and the administration rights of the person who saved last. Expect 403 at any time.
+- **Only through the service account:** people and their API keys get 403. These permissions never allow writing to the setup.
+
+### Endpoints { #einrichtung-endpunkte }
+
+- `GET /api/v1/paketdaten/einrichtung/{bereich}` – state of the area.
+- `POST /api/v1/paketdaten/einrichtung/{bereich}/vergleich` with `{ "vorher": <earlier state or its entries> }` – plus `aenderungen`: per change `kennung`, `pfad`, `art` (`neu`, `geaendert`, `entfernt`), `vorher`, `nachher` and a readable `satz`. Keep the state in the package storage and compare on the next run.
+- `GET /api/v1/paketdaten/nachweise/{bereich}/{monat}` – evidence of a month (`YYYY-MM`, not in the future).
+- Errors: 403 with the name of the area (not requested, not ticked, person without administration right), 404 for unknown areas, 422 for an invalid month. Every read is logged.
+
+### Never included { #einrichtung-nie }
+
+- Passwords, keys, tokens and encrypted values – everything passes the central lock (`ohneGeheimnisse`).
+- Addresses with the host only: backup targets, mailboxes and services without user, password, path and query; for mailboxes no user name, only “sign-in set up”.
+- No people in the setup: administration rights only as a count per area, API keys and sign-in protection exceptions only as counts.
+- Failed sign-ins with account (only if the account exists), time and shortened address (IPv4 /24, IPv6 /48) plus “home network” yes/no. Unknown accounts only as a count – they often contain a mistyped password.
+
+### Inventory { #einrichtung-bestand }
+
+What the interface delivers per area with Ablago 0.287 and what is (still) missing:
+
+- **Delivered:** all setup entries from the table above, from the services the Workbench shows as well. For evidence that was not stored permanently before (the log keeps 24 hours), the core keeps an **evidence journal** per month since 0.287 (setting `nachweise:YYYY-MM`, part of the backup, 25 months): failed sign-ins, permission changes (administration rights, roles, folder type rules), updates, package history, maintenance times, “Check all files”, emptied Bin, subject access requests. This evidence therefore starts with the update.
+- **From existing data:** backup runs only for backups that still exist (retention); deletions from the deletion log; post per channel from the post folders.
+- **Missing:** separator sheet and barcode rules live in the settings of the respective package – only the responsible package is delivered. “Check all files” has no schedule, and there is no auditor access. Failed backups exist only as the last message, not as a history. Folder types come as flat entries, not as a file in the “Create package” format.
 
 ## Trying it out { #ausprobieren }
 

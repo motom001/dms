@@ -1,0 +1,7 @@
+art: minor
+
+## Neu
+
+- **Einrichtung und Nachweise als Daten für Pakete** (#1053): Ein Paket wie „Compliance“ kann den Stand der Einrichtung je Bereich (Allgemeines, Belegeingang, Ablage, Zugang, Betrieb, Sicherung, Unveränderbarkeit, Datenschutz, Betriebsprüfung) und die Nachweise eines Monats als JSON lesen und zwei Stände vergleichen lassen – nie mit Passwörtern oder anderen Geheimnissen. Fehlanmeldungen, Rechteänderungen, Updates, Paket-Verlauf, Wartungszeiten und Prüfläufe merkt sich Ablago dafür ab jetzt je Monat.
+- **Einrichtung und Nachweise bewusst freigeben** (#1054): Pakete fragen „Einrichtung lesen“ und „Nachweise lesen“ je Bereich an; die Vorschau bei Installation und Update nennt die Bereiche. Auf der Seite des Pakets hakst du an, was es lesen darf – Vorgabe: nichts. Anhaken darf nur, wer den Bereich selbst verwaltet, Zugang und Nachweise nur mit Gesamter Verwaltung. Das Paket liest in deinem Namen; verlierst du das Verwaltungsrecht, liefert der Bereich nichts mehr. Pakete mit Netz bekommen diese Rechte nie.
+- **Automatisierungen und Karten in Paketen** (#680): Beim Installieren steht jede mitgelieferte Automatisierung mit Schalter in Klartext („Wenn … → Dann …“) da, dazu, ob sie E-Mails verschickt oder den Code des Pakets aufruft. Pakete mit Code können eigene Karten für Automatisierungen anbieten – im Kartenvorrat als „Paket: Name“, mit Hilfe und Feldern. „Paket erstellen“ nimmt eigene Automatisierungen mit; feste Personen werden zum Ersteller der Mappe, beim Empfänger sind sie zuerst aus.

@@ -3645,5 +3645,7 @@
   "tipps.ui.loeschen.frage": "Diesen eigenen Tipp löschen?",
   "tipps.ui.lade": "Lade …",
   "paketerstellen.tipps": "Tipps",
-  "paketerstellen.tipps.text": "Eigene Tipps aus Werkbank → Tipps. Startet ein Tipp einen eigenen Rundgang, nimm den Rundgang mit. Anpassungen an Tipps anderer Pakete kommen nicht mit."
+  "paketerstellen.tipps.text": "Eigene Tipps aus Werkbank → Tipps. Startet ein Tipp einen eigenen Rundgang, nimm den Rundgang mit. Anpassungen an Tipps anderer Pakete kommen nicht mit.",
+  "paketerstellen.automatisierungen": "Automatisierungen",
+  "paketerstellen.automatisierungen.text": "Eigene Automatisierungen aus Werkbank → Automatisierungen. Ihre Mappentypen müssen mitkommen oder aus einem Paket stammen. Feste Personen und Rollen werden zum Ersteller der Mappe; Werkbank-Karten, Karten nach außen und „Aufruf von außen“ kommen nicht mit. Beim Installieren sind sie aus."
 }

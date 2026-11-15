@@ -17,6 +17,7 @@ import { istTeiltyp, uebergeordneteId } from '../../../shared/src/teile';
 import type { LoeschenAnschluss, LoeschenTeile } from './loeschen.dienst';
 import type { LoeschprotokollVerwaltung } from './loeschprotokoll';
 import type { MitVerknuepften } from './mit-verknuepften';
+import { nachweis } from '../nachweisjournal';
 
 /** Dokument im Papierkorb mit Mappe und Register (#344). */
 export interface DokumentImKorb extends DokumentImPapierkorb { art: 'dokument'; typId: string; mappeTitel: string; register: string; mappe: 'da' | 'papierkorb' | 'weg' }
@@ -306,6 +307,8 @@ export class Papierkorb {
     const n = await this.leere((await this.papierkorb(ich, alle)).map((e) => e.id), ich.id, false, w)
       + await this.leereDokumente((await this.repo.papierkorbDokumente(alle && ich.rolle === 'admin' ? {} : { von: ich.id })).map((d) => d.id), w);
     if (n) protokoll.modul('ablage').info(alle ? 'Papierkorb aller Benutzer geleert' : 'Papierkorb geleert', { anzahl: n });
+    // Nachweise (#1053): „Papierkorb geleert“ – wie viel, ob ganz (Werkbank) oder der eigene; ohne Titel.
+    if (n) void nachweis('datenschutz.papierkorb', { anzahl: n, ganz: alle, weg: w.weg });
     return n;
   }
 

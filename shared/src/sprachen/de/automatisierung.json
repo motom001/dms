@@ -604,5 +604,6 @@
   "vorlage.ui.platz.mappentyp": "Mappentyp",
   "vorlage.ui.platz.heute": "Heute",
   "vorlage.ui.platz.datum": "Datum des Ablaufs",
-  "vorlage.ui.platz.nur-bei": "nur bei {typen}"
+  "vorlage.ui.platz.nur-bei": "nur bei {typen}",
+  "ui.karte.dann.paket.karte": "{paket}: {karte}"
 }

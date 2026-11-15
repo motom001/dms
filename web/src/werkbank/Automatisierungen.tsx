@@ -6,6 +6,7 @@ import {
   type AutomatisierungAnsicht, type AutomatisierungDaten, type AutomatisierungOrt, type DannKarte, type Empfaenger, type Fehlschlag, type Kontextdaten,
   type Lauf, type Schritt, type UndKarte, type WennKarte,
 } from '../../../shared/src/automatisierung';
+import type { KontextPaket, PaketKarte as PaketKarteBeschreibung } from '../../../shared/src/automatisierung';
 import { EREIGNISKATALOG, ereignisSchluessel, istBetriebWenn, type Ereignisgruppe } from '../../../shared/src/ereignisse';
 import { MODULE } from '../../../shared/src/protokollmodule';
 import { VORLAUF_EINHEITEN, WIEDERHOLUNGEN, type VorlaufEinheit } from '../../../shared/src/fristen';
@@ -311,16 +312,24 @@ const VORRAT: Array<{ bereich: 'wenn' | 'und' | 'dann'; art: string }> = [
   { bereich: 'dann', art: 'url' }, { bereich: 'dann', art: 'email' },
   { bereich: 'dann', art: 'stopp' },
 ];
+type VorratKarte = { bereich: 'wenn' | 'und' | 'dann'; art: string; name?: string };
+/** Karten aus Paketen mit Code (#680, `code.karten`) im Vorrat: als „Paket: Name“, Art `paket:<paket>:<karte>`. */
+const PAKET_KARTE = /^paket:([^:]+):(.+)$/;
+const vorratMit = (k: Kontextdaten): VorratKarte[] => [...VORRAT, ...(k.pakete ?? []).filter((p) => p.zeitplan).flatMap((p) => (p.karten ?? [])
+  .map((c) => ({ bereich: 'dann' as const, art: `paket:${p.id}:${c.schluessel}`, name: t('automatisierung.ui.karte.dann.paket.karte', { paket: p.name, karte: c.name }) })))];
 type Zweig = 'dann' | 'sonst';
 /** Nach Wahl der Wenn-Karte nur passende Karten: „Feld ändern“ braucht einen Mappentyp, „in Ansicht“ eine Ansicht dafür. */
 const sichtenFuer = (k: Kontextdaten, typ: Mappentyp | null) => k.sichten.filter((s) => !typ || !s.typen?.length || s.typen.includes(typ.id) || s.typen.includes('*'));
 // Werkbank-Karten ohne Mappe (#677) und Aufruf von außen (#679): als Bedingung nur ein Merkmal der Ablage.
-const passt = (v: { art: string }, typ: Mappentyp | null, k: Kontextdaten, w?: WennKarte) => (w && ohneMappeWenn(w) && ['bedingung', 'ansicht', 'favorit', 'gruppe'].includes(v.art) ? false
+const passt = (v: { art: string }, typ: Mappentyp | null, k: Kontextdaten, w?: WennKarte) => passtArt({ art: grundArt(v.art) }, typ, k, w);
+/** Karten aus Paketen (#680) passen wie „Paket nach Zeitplan ausführen“. */
+const grundArt = (art: string) => (PAKET_KARTE.test(art) ? 'paket' : art);
+const passtArt = (v: { art: string }, typ: Mappentyp | null, k: Kontextdaten, w?: WennKarte) => (w && ohneMappeWenn(w) && ['bedingung', 'ansicht', 'favorit', 'gruppe'].includes(v.art) ? false
   : v.art === 'feld' ? !!typ : v.art === 'ansicht' ? sichtenFuer(k, typ).length > 0
   : v.art === 'zusammenfassung' ? w?.art === 'zeitplan' && w.jeBenutzer : v.art === 'favoriten' ? w?.art === 'favorit.geaendert'
     : v.art === 'anmeldeschutz' ? (w?.art === 'zeitplan' && !w.jeBenutzer) || w?.art === 'benutzer.gesperrt'
       : v.art === 'paket' ? !!w && zeitplanFuerPaket(w) && (k.pakete ?? []).some((p) => p.zeitplan) : true);
-const vorratName = (v: { bereich: string; art: string }) => (v.bereich === 'wenn' ? ereignisName(v.art) : t.frei(`automatisierung.ui.karte.${v.bereich}.${v.art}`));
+const vorratName = (v: { bereich: string; art: string; name?: string }) => (v.name ?? (v.bereich === 'wenn' ? ereignisName(v.art) : t.frei(`automatisierung.ui.karte.${v.bereich}.${grundArt(v.art)}`)));
 
 /** Bereiche einer Automatisierung (#1000): neu Grunddaten, Wenn und Dann; gespeichert dazu Ausprobieren, Verlauf, Fassungen. */
 type AutoBereich = 'grunddaten' | 'wenn' | 'dann' | 'ausprobieren' | 'verlauf' | 'zustellungen' | 'fassungen';
@@ -369,7 +378,7 @@ export function AutomatisierungEditor({ z, id }: { z: AutomatisierungenZustand; 
     if (bereich === 'wenn') setE({ ...e, wenn: neueWenn(art, e.wenn, typ, k!) });
     if (bereich === 'und') setE({ ...e, und: { ...e.und, karten: [...e.und.karten, neueUnd(art, typ)] } });
     if (bereich === 'dann' || bereich === 'sonst') { const n = neueDann(art, e.wenn, k!); setE({ ...e, [bereich]: [...e[bereich], n] }); setOffenKarte(n.id); }
-    setAnsage(t('automatisierung.ui.hinzugefuegt', { name: vorratName({ bereich: bereich === 'sonst' ? 'dann' : bereich, art }) }));
+    setAnsage(t('automatisierung.ui.hinzugefuegt', { name: vorratName(vorratMit(k!).find((v) => v.art === art) ?? { bereich: bereich === 'sonst' ? 'dann' : bereich, art }) }));
   }
 
   const speichern = async () => {
@@ -427,7 +436,7 @@ export function AutomatisierungEditor({ z, id }: { z: AutomatisierungenZustand; 
         {/* Wenn mit den Und-Bedingungen (#1000): was die Automatisierung auslöst und wann sie weitermacht. */}
         <Bereich id="wenn" titel={t('automatisierung.ui.wenn')} klappe={klappe('wenn')} kurz={kurzWenn}>
           <div className="zeile"><Knopf art="link" groesse="klein" aria-expanded={vorratOffen} onClick={() => setVorratOffen(!vorratOffen)}>{t('automatisierung.ui.vorrat')}</Knopf></div>
-          {vorratOffen && <Vorrat ablage={ablage} fuegeHinzu={fuegeHinzu} passend={(v) => passt(v, typ, k, e.wenn)} />}
+          {vorratOffen && <Vorrat vorrat={vorratMit(k)} ablage={ablage} fuegeHinzu={fuegeHinzu} passend={(v) => passt(v, typ, k, e.wenn)} />}
           <Bereichskasten hinweis={t('automatisierung.ui.wenn.hinweis')} ablage={ablage.ablage('wenn')}>
             <WennEditor w={e.wenn} k={k} setze={(w) => setE({ ...e, wenn: w })} />
           </Bereichskasten>
@@ -438,7 +447,7 @@ export function AutomatisierungEditor({ z, id }: { z: AutomatisierungenZustand; 
             kopf={e.und.karten.length > 1 && <Feld beschriftung={t('automatisierung.ui.und.modus')} beschriftungVerbergen><select value={e.und.modus} onChange={(x) => setE({ ...e, und: { ...e.und, modus: x.target.value as 'alle' | 'eine' } })}>
               <option value="alle">{t('automatisierung.ui.und.alle')}</option><option value="eine">{t('automatisierung.ui.und.eine')}</option>
             </select></Feld>}
-            fuss={<KarteHinzu bereich="und" fuegeHinzu={fuegeHinzu} passend={(v) => passt(v, typ, k, e.wenn)} />}>
+            fuss={<KarteHinzu vorrat={vorratMit(k)} bereich="und" fuegeHinzu={fuegeHinzu} passend={(v) => passt(v, typ, k, e.wenn)} />}>
             <UndListe karten={e.und.karten} typ={typ} k={k} setze={(karten) => setE({ ...e, und: { ...e.und, karten } })} />
           </Bereichskasten>
           <Probleme liste={probleme} ort="wenn" />
@@ -449,7 +458,7 @@ export function AutomatisierungEditor({ z, id }: { z: AutomatisierungenZustand; 
             ...(e.sonst.length ? [t('automatisierung.ui.sonst.kurz', { karten: e.sonst.map((x) => vorratName({ bereich: 'dann', art: x.art })).join(' · ') })] : [])].join('; ')}>
           {(['dann', 'sonst'] as const).map((zweig) => (
             <Bereichskasten key={zweig} titel={zweig === 'sonst' ? t('automatisierung.ui.sonst') : undefined} hinweis={e[zweig].length ? (zweig === 'sonst' ? t('automatisierung.ui.sonst.hinweis') : undefined) : t.frei(`automatisierung.ui.${zweig}.leer`)}
-              ablage={ablage.ablage(zweig)} fuss={<KarteHinzu bereich={zweig} fuegeHinzu={fuegeHinzu} passend={(v) => passt(v, typ, k, e.wenn)} />}>
+              ablage={ablage.ablage(zweig)} fuss={<KarteHinzu vorrat={vorratMit(k)} bereich={zweig} fuegeHinzu={fuegeHinzu} passend={(v) => passt(v, typ, k, e.wenn)} />}>
               <KartenListe zweig={zweig} karten={e[zweig]} setze={(x) => setE((alt) => ({ ...alt, [zweig]: x }))} offen={offenKarte} setOffen={setOffenKarte}
                 editor={(karte, setze) => <DannEditor karte={karte} typ={typ} wenn={e.wenn} k={k} a={a} eigenesPaket={a?.herkunft === 'paket' ? a.paketId ?? null : undefined} setze={setze} />}
                 kurz={(karte) => dannKurz(karte, typ, k)} />
@@ -543,9 +552,9 @@ function KartenListe({ zweig, karten, setze, offen, setOffen, editor, kurz }: {
   );
 }
 
-function Vorrat({ ablage, fuegeHinzu, passend }: { ablage: ReturnType<typeof useZiehen>; fuegeHinzu: (b: string, art: string) => void; passend: (v: { art: string }) => boolean }) {
+function Vorrat({ vorrat, ablage, fuegeHinzu, passend }: { vorrat: VorratKarte[]; ablage: ReturnType<typeof useZiehen>; fuegeHinzu: (b: string, art: string) => void; passend: (v: { art: string }) => boolean }) {
   const [suche, setSuche] = useState('');
-  const treffer = VORRAT.filter((v) => passend(v)).filter((v) => !suche.trim() || vorratName(v).toLowerCase().includes(suche.trim().toLowerCase()));
+  const treffer = vorrat.filter((v) => passend(v)).filter((v) => !suche.trim() || vorratName(v).toLowerCase().includes(suche.trim().toLowerCase()));
   return (
     <div className="automatisierung-vorrat">
       <Suchfeld wert={suche} setze={setSuche} beschriftung={t('automatisierung.ui.vorrat.suchen')} platzhalter={t('automatisierung.ui.vorrat.suchen')} />
@@ -570,12 +579,12 @@ function Vorrat({ ablage, fuegeHinzu, passend }: { ablage: ReturnType<typeof use
   );
 }
 
-function KarteHinzu({ bereich, fuegeHinzu, passend }: { bereich: 'und' | Zweig; fuegeHinzu: (b: string, art: string) => void; passend: (v: { art: string }) => boolean }) {
+function KarteHinzu({ vorrat, bereich, fuegeHinzu, passend }: { vorrat: VorratKarte[]; bereich: 'und' | Zweig; fuegeHinzu: (b: string, art: string) => void; passend: (v: { art: string }) => boolean }) {
   return (
     <Feld beschriftung={t('automatisierung.ui.karte.hinzu')} beschriftungVerbergen className="klein">
       <select value="" onChange={(x) => { if (x.target.value) fuegeHinzu(bereich, x.target.value); }}>
         <option value="">{t('automatisierung.ui.karte.hinzu')}</option>
-        {VORRAT.filter((v) => v.bereich === (bereich === 'sonst' ? 'dann' : bereich) && passend(v)).map((v) => <option key={v.art} value={v.art}>{vorratName(v)}</option>)}
+        {vorrat.filter((v) => v.bereich === (bereich === 'sonst' ? 'dann' : bereich) && passend(v)).map((v) => <option key={v.art} value={v.art}>{vorratName(v)}</option>)}
       </select>
     </Feld>
   );
@@ -823,8 +832,14 @@ function EmpfaengerWahl({ e, typ, k, setze, wenn, extra }: { e: Empfaenger; typ:
 
 /* ---------- Dann ---------- */
 
+/** „Paket nach Zeitplan ausführen“ – oder eine Karte aus einem Paket (#680): Paket und Aufgabe (= Schlüssel der Karte) stehen fest. */
+function neuePaketKarte(art: string, k?: Kontextdaten): DannKarte {
+  const pk = PAKET_KARTE.exec(art);
+  return pk ? { id: neueId(), art: 'paket', paket: pk[1], aufgabe: pk[2] } : { id: neueId(), art: 'paket', paket: (k?.pakete ?? []).find((p) => p.zeitplan)?.id ?? '', aufgabe: null };
+}
+
 function neueDann(art: string, w?: WennKarte, k?: Kontextdaten): DannKarte {
-  if (art === 'paket') return { id: neueId(), art: 'paket', paket: (k?.pakete ?? []).find((p) => p.zeitplan)?.id ?? '', aufgabe: null };
+  if (grundArt(art) === 'paket') return neuePaketKarte(art, k);
   if (art === 'feld') return { id: neueId(), art: 'feld', werte: {} };
   if (art === 'zusammenfassung' || art === 'favoriten' || art === 'sicherung') return { id: neueId(), art };
   // Nach außen (#671): Adresse vorbelegt mit dem ersten freigegebenen Ziel; Inhalt „nur Meldung“.
@@ -957,16 +972,32 @@ function DannEditor({ karte, typ, wenn, k, a, eigenesPaket, setze }: { karte: Da
  * annehmen; eine mitgelieferte Automatisierung ruft nur ihr eigenes Paket (fest). Aufgaben: die Kennungen, die die
  * mitgelieferten Automatisierungen des Pakets benutzen.
  */
+/** Karten aus dem Paket (#680) mit Namen; dazu die Kennungen der mitgelieferten Automatisierungen und die gewählte Karte. */
+function aufgabenWahl(p: KontextPaket | undefined, aufgabe: string | null) {
+  const karten = p?.karten ?? [];
+  const aufgaben = [...new Set([...(p?.aufgaben ?? []), ...(aufgabe ? [aufgabe] : [])])].filter((x) => !karten.some((c) => c.schluessel === x));
+  return { karten, aufgaben, pk: karten.find((c) => c.schluessel === aufgabe) };
+}
+
+/** Felder einer Karte aus dem Paket (#680): gehen mit dem Ereignis ans Paket. */
+function KartenFelder({ pk, karte, setze }: { pk: PaketKarteBeschreibung; karte: Extract<DannKarte, { art: 'paket' }>; setze: (k: DannKarte) => void }) {
+  const setzeWert = (s: string, w: string | number | boolean | null) => { const n = { ...karte.werte }; if (w === null || w === '') delete n[s]; else n[s] = w; setze({ ...karte, werte: n }); };
+  return <>{(pk.felder ?? []).map((f) => (f.typ === 'janein'
+    ? <HakenFeld key={f.schluessel} beschriftung={f.name}><input type="checkbox" checked={karte.werte?.[f.schluessel] === true} onChange={(x) => setzeWert(f.schluessel, x.target.checked)} /></HakenFeld>
+    : <Feld key={f.schluessel} beschriftung={f.name} optional><input type={f.typ === 'zahl' ? 'number' : 'text'} value={String(karte.werte?.[f.schluessel] ?? '')}
+        onChange={(x) => setzeWert(f.schluessel, f.typ === 'zahl' ? (x.target.value === '' ? null : Number(x.target.value)) : x.target.value)} /></Feld>))}</>;
+}
+
 function PaketKarte({ karte, k, eigenesPaket, setze }: { karte: Extract<DannKarte, { art: 'paket' }>; k: Kontextdaten; eigenesPaket?: string | null; setze: (k: DannKarte) => void }) {
   const pakete = k.pakete ?? [];
   const fest = eigenesPaket !== undefined;
   const ziel = fest ? eigenesPaket ?? '' : karte.paket;
   const waehlbar = pakete.filter((p) => p.zeitplan || p.id === ziel);
   const gewaehlt = pakete.find((p) => p.id === ziel);
-  const aufgaben = [...new Set([...(gewaehlt?.aufgaben ?? []), ...(karte.aufgabe ? [karte.aufgabe] : [])])];
+  const { karten, aufgaben, pk } = aufgabenWahl(gewaehlt, karte.aufgabe ?? null);
   const leer = ziel ? paketKarteLeer(ziel, pakete) : null;
   return (
-    <div className="karte offen">
+    <div className="karte offen" data-paketkarte={karte.paket}>
       <div className="raster">
         <Feld beschriftung={t('automatisierung.ui.karte.dann.paket.paket')}>
           <select value={ziel} disabled={fest} onChange={(x) => setze({ ...karte, paket: x.target.value, aufgabe: null })}>
@@ -976,12 +1007,15 @@ function PaketKarte({ karte, k, eigenesPaket, setze }: { karte: Extract<DannKart
           </select>
         </Feld>
         <Feld beschriftung={t('automatisierung.ui.karte.dann.paket.aufgabe')}>
-          <select value={karte.aufgabe ?? ''} onChange={(x) => setze({ ...karte, aufgabe: x.target.value || null })}>
+          <select value={karte.aufgabe ?? ''} onChange={(x) => setze({ ...karte, aufgabe: x.target.value || null, werte: undefined })}>
             <option value="">{t('automatisierung.ui.karte.dann.paket.ohne-aufgabe')}</option>
+            {karten.map((c) => <option key={c.schluessel} value={c.schluessel}>{c.name}</option>)}
             {aufgaben.map((x) => <option key={x} value={x}>{x}</option>)}
           </select>
         </Feld>
+        {pk && <KartenFelder pk={pk} karte={karte} setze={setze} />}
       </div>
+      {pk?.hilfe && <p className="klein">{pk.hilfe}</p>}
       {fest && <p className="leise klein">{t('automatisierung.ui.karte.dann.paket.fest')}</p>}
       {!fest && !pakete.some((p) => p.zeitplan) && <p className="leise klein">{t('automatisierung.ui.karte.dann.paket.keine')}</p>}
       {leer && <p className="fehlertext klein">{leer}</p>}

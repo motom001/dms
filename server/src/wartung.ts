@@ -4,6 +4,7 @@ import type { Einstellungen } from './einstellungen';
 import { protokoll } from './protokoll';
 import { zeitzone } from '../../shared/src/region';
 import { t } from './sprache';
+import { nachweis } from './nachweisjournal';
 import { gebietsschema } from '../../shared/src/sprache';
 
 /**
@@ -173,6 +174,7 @@ export class Wartung {
     this.s = { stufe: 'angekuendigt', text, ende, aktivAb, beginn: this.s.beginn ?? jetzt.toISOString(), von: admin.email, sitzungId, ...(sofort ? { sofort: true } : {}) };
     await this.speichere();
     log.warn(sofort ? 'Wartungsmodus sofort gesperrt' : vorlauf ? 'Wartungsmodus angekündigt' : 'Wartungsmodus eingeschaltet', { von: admin.email, text, ende, aktivAb, vorlaufMinuten: vorlauf });
+    void nachweis('betrieb.wartung', { stufe: this.s.stufe, ab: aktivAb, ende, von: admin.email });
     if (!vorlauf) await this.aktiviere(sofort ? 'sofort gesperrt' : 'sofort');
     return this.stand;
   }
@@ -187,6 +189,7 @@ export class Wartung {
     this.s = { ...AUS, stufe: 'angekuendigt', text, aktivAb: new Date(jetzt.getTime() + vorlaufMin * 60_000).toISOString(), beginn: jetzt.toISOString(), von: t('meldungen.wartung.ablago-automatisch'), ausloeser };
     await this.speichere();
     log.warn('Wartungsmodus automatisch angekündigt', { ausloeser, text, aktivAb: this.s.aktivAb, vorlaufMinuten: vorlaufMin });
+    void nachweis('betrieb.wartung', { stufe: this.s.stufe, ab: this.s.aktivAb, ende: this.s.ende, von: ausloeser });
     if (!vorlaufMin) await this.aktiviere(ausloeser);
     return true;
   }
@@ -211,6 +214,7 @@ export class Wartung {
     this.s = { ...AUS };
     await this.speichere();
     log.warn('Wartungsmodus ausgeschaltet', { von, seit: vorher.beginn });
+    void nachweis('betrieb.wartung', { stufe: 'aus', seit: vorher.beginn, von });
     for (const f of this.nachAus) { try { f(); } catch { /* weiter */ } }
     return this.stand;
   }

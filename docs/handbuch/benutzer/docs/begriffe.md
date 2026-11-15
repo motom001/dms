@@ -420,6 +420,10 @@ Siehe auch: [Teil](#teil), [Übergeordnete Mappe](#ubergeordnete-mappe), [Tabell
 Haken in den Grunddaten eines Mappentyps (#937). Nur Mappentypen damit stehen beim Übernehmen eines Dokuments aus der Post unter „Wohin gehört das?“ zur Wahl – für alle, die dort Mappen anlegen dürfen. Vorgabe an bei Mappentypen mit Dokumentenregister; Systemmappentypen nie.  
 Siehe auch: [Mappentyp](#mappentyp), [Post](#post), [Woran man ihn erkennt](#woran-man-ihn-erkennt).
 
+<a id="nachweise"></a>**Nachweise** · ~ mit Erklärung · Administratoren  
+Was in einem Monat zu Zugang, Sicherung, Betrieb und Datenschutz geschehen ist – etwa Fehlanmeldungen, Rechteänderungen, Sicherungsläufe oder Updates. Ein Paket wie „Compliance“ liest sie zusammen mit dem Stand der Einrichtung, aber nur die Bereiche, die der Administrator in den Einstellungen des Pakets anhakt; Passwörter sind nie dabei.  
+Siehe auch: [Paket](#paket), [Dienstkonto](#dienstkonto).
+
 <a id="nummernkreis"></a>**Nummernkreis** · ✗ Fachwort · Administratoren  
 Fortlaufende Nummern nach einem Muster wie {jjjj}-R{zaehler:4} (ergibt z. B. 2026-R0001), etwa für Rechnungsnummern.
 

@@ -31,6 +31,8 @@ import { einzigesZiel, jedeMappe, zieleVon } from './verweisziele';
 import { bedingungEingabeFehler, bedingungsProblem, bereinigeBedingungen, type Bedingung, type Sicht } from './sichten';
 import { t } from './texte';
 import { PAKET_ID, SCHLUESSEL } from './kennungen';
+import { aufgabeName, kartenWerteRoh, type PaketKarte } from './paketkarten';
+export type { PaketKarte };
 
 /** Grenzen (Zahl der Automatisierungen, Karten je Bereich, Länge der Texte, Laufzeit, Bremse). */
 export const AUTOMATISIERUNG_GRENZEN = {
@@ -159,7 +161,7 @@ export type DannKarte =
    * Mitgelieferte Automatisierungen rufen nur ihr eigenes Paket, selbst angelegte nur Pakete, die das Ereignis abonnieren.
    * Die Karte gibt dem Paket keine Rechte – es arbeitet mit seinen eigenen.
    */
-  | { id: string; art: 'paket'; paket: string; aufgabe?: string | null }
+  | { id: string; art: 'paket'; paket: string; aufgabe?: string | null; /** Werte einer Karte aus dem Paket (#680). */ werte?: Record<string, string | number | boolean> }
   /** „Sicherung anstoßen“ (#677): eine neue Sicherung – Ergebnis nur „angestoßen“ oder „läuft schon“. */
   | { id: string; art: 'sicherung' }
   /** Nach außen (#671): „URL aufrufen“ (freigegebenes Ziel, Inhaltsstufe, signiert) und „E-Mail senden“ – über den Ausgangskorb. */
@@ -248,7 +250,8 @@ export interface AutomatisierungAnsicht extends Automatisierung {
  * Ein installiertes Paket für die Karte „Paket nach Zeitplan ausführen“ (#1082): `zeitplan` = abonniert
  * `zeitplan.ausgefuehrt`; `aufgaben` = Kennungen, die seine mitgelieferten Automatisierungen benutzen.
  */
-export interface KontextPaket { id: string; name: string; zeitplan: boolean; aufgaben: string[] }
+/** karten: eigene Dann-Karten des Pakets (#680, `code.karten`, paketkarten.ts). */
+export interface KontextPaket { id: string; name: string; zeitplan: boolean; aufgaben: string[]; karten?: PaketKarte[] }
 
 /** Was eine Prüfung über das DMS wissen muss. */
 export interface Kontextdaten { typen: Mappentyp[]; sichten: Pick<Sicht, 'id' | 'name' | 'typen'>[]; benutzer: Array<{ id: string; name: string; aktiv?: boolean }>; rollen: Array<{ id: string; name: string }>;
@@ -413,7 +416,8 @@ function undKarteFehler(k: unknown, hier: string, tiefe: number): string | strin
 function bereinigePaketKarte(x: Record<string, unknown>, i: number): DannKarte {
   const kid = id(x.id) || `k${i + 1}`;
   const paket = id(x.paket), aufgabe = id(x.aufgabe);
-  return { id: kid, art: 'paket', paket: PAKET_ID.test(paket) ? paket : '', aufgabe: SCHLUESSEL.test(aufgabe) ? aufgabe : null };
+  const werte = kartenWerteRoh(x.werte);
+  return { id: kid, art: 'paket', paket: PAKET_ID.test(paket) ? paket : '', aufgabe: SCHLUESSEL.test(aufgabe) ? aufgabe : null, ...(Object.keys(werte).length ? { werte } : {}) };
 }
 
 /** „Favoriten-Änderungen melden“ (#1001): Rollen (ohne Dubletten, leer = alle) und Vorgabe nur, wenn aus. */
@@ -585,7 +589,7 @@ export function dannText(d: DannKarte, typ: Mappentyp | null, k: Pick<Kontextdat
     : d.art === 'anmeldeschutz' ? (d.was === 'sammel' ? t('gemeinsam.automatisierung.sammelmeldung-anmeldeschutz-senden') : t('gemeinsam.automatisierung.kontosperre-an-administratoren'))
     : d.art === 'sicherung' ? t('gemeinsam.automatisierung.sicherung-anstossen')
     : d.art === 'url' || d.art === 'email' ? aussenKurz(d, wer)
-    : d.art === 'paket' ? t('gemeinsam.automatisierung.paket-ausfuehren', { name: k.pakete?.find((x) => x.id === d.paket)?.name ?? (d.paket || '?'), wert: d.aufgabe ? ` (${d.aufgabe})` : '' })
+    : d.art === 'paket' ? t('gemeinsam.automatisierung.paket-ausfuehren', { name: k.pakete?.find((x) => x.id === d.paket)?.name ?? (d.paket || '?'), wert: d.aufgabe ? ` (${aufgabeName(d.paket, d.aufgabe, k.pakete)})` : '' })
     : d.art === 'feld' ? `${Object.keys(d.werte).map((x) => feldIn(typ, x)?.label ?? x).join(', ')} setzen`
       : `${d.als === 'aufgabe' ? 'Aufgabe' : 'Benachrichtigung'} an ${d.empfaenger.map(wer).join(', ') || '?'}`;
 }
