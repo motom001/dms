@@ -97,6 +97,7 @@ nav:
           - Tours: rundgaenge.md
           - Tips: tipps.md
           - Packages: pakete.md
+          - Example Library: beispielablage.md
           - Search: suche.md
           - Archive mode and retention: archiv.md
           - Links via field values: direktlinks.md
@@ -130,7 +131,7 @@ nav:
           - System health: speicherplatz.md
           - Log, database, technology: fehlersuche.md
           - Maintenance mode: wartungsmodus.md
-          - Demo data: demo.md
+          - Load test data: demo.md
   - Emergency:
       - "What has happened?": was-ist-passiert.md
       - "Emergency: no admin left": notfall.md

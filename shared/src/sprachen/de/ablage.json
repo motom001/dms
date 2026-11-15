@@ -892,7 +892,7 @@
   "papierkorb.gespeichert": "Gespeichert.{wert}",
   "papierkorb.aufbewahrung": "Aufbewahrung",
   "papierkorb.0-kein-papierkorb-loeschen": "0 = kein Papierkorb, Löschen ist sofort endgültig.",
-  "papierkorb.geloeschte-mappen-und-einzeln": "Gelöschte Mappen und einzeln gelöschte Dokumente kommen in den Papierkorb. Nur das Entfernen der Demo-Daten ist immer sofort endgültig.",
+  "papierkorb.geloeschte-mappen-und-einzeln": "Gelöschte Mappen und einzeln gelöschte Dokumente kommen in den Papierkorb. Nur das Entfernen der Lasttest-Daten ist immer sofort endgültig.",
   "papierkorb.tage-danach-wird-ihre": "Danach wird ihre Änderungshistorie gelöscht.",
   "pdfseiten.schliessen": "Schließen",
   "pdfseiten.lade-seiten": "Lade Seiten …",

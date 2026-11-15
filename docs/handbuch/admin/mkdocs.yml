@@ -102,6 +102,7 @@ nav:
           - Rundgänge: rundgaenge.md
           - Tipps: tipps.md
           - Pakete: pakete.md
+          - Beispiel-Ablage: beispielablage.md
           - Suche: suche.md
           - Archivmodus und Aufbewahrung: archiv.md
           - Links über Feldwerte: direktlinks.md
@@ -135,7 +136,7 @@ nav:
           - Systemzustand: speicherplatz.md
           - Protokoll, Datenbank, Technik: fehlersuche.md
           - Wartungsmodus: wartungsmodus.md
-          - Demo-Daten: demo.md
+          - Lasttest-Daten: demo.md
   - Notfall:
       - "Was ist dir passiert?": was-ist-passiert.md
       - "Notfall: kein Admin mehr": notfall.md

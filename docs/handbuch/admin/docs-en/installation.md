@@ -74,7 +74,7 @@ Name, email address and password of **your own account** – with your one email
 
 - **For my work or my business** and **Both** set the attribute [used for work](organisation.md#nutzung): folder types then show their work-related fields, and packages that keep records longer for work use set this up straight away when installed.
 - The answer **preselects packages in the next step**: for home Basis, Household, Contracts and Invoices; for work Basis, Contracts, Invoices and Compliance; for "Both" all of them. Only what exists in the catalogue is preselected – you can deselect everything.
-- The **Workbench** starts with the *Household* template for home use, with *Business* for work (see [Overview](uebersicht.md)).
+- **How much should the Workbench show?** After the answer you choose one of the five levels *Beginner*, *Household*, *Self-employed*, *Business* or *Everything*. Preselected is *Beginner* for home and *Self-employed* for work. Everyone who manages can later choose a different level for themselves (see [Customising the workbench](uebersicht.md#werkbank-anpassen)).
 
 **Your organisation:** for work use, the step asks right below for your own organisation – name, address, email and phone. Only the name is required, everything else is optional. With **Set up now**, Ablago creates an organisation with the attribute [own organisation](organisation.md) from it, so Ablago knows who "we" are, for example for GDPR access requests. This needs the **Basis** package (1.7.0 or later) – once an organisation is entered, Basis is required, and the summary tells you if it is missing. If you leave all fields empty, Ablago creates none; you can do that later in the library.
 
@@ -99,7 +99,7 @@ Five sections of the same structure, without save buttons of their own:
 
 - **Ablago's address**, suggested with the address in the browser. Clear the field if Ablago is not to have a fixed address.
 - **Region:** the state for public holidays, at first *none*. You set country and time zone under [Workbench → Settings → Region](region.md).
-- **Examples:** load sample folder types (only without packages that bring their own folder types).
+- **Examples:** without packages, load sample folder types; with packages, **Look around first: create example Library** (see [Example Library](beispielablage.md)).
 - **Email sending:** only after the tick "Set up email sending now". For [email sending](e-mail-versand.md) your address and password are usually enough; the assistant suggests server, user and sender and marks them, **Next** takes them over into the summary. Sending is only set up with **Set up now**. You can test it after setup under **Workbench → Email and address**.
 - **Emergency contacts:** people you trust for an emergency, with name, email and optionally phone and note. They get no access, only a short info email without a link once sending is set up, and appear on the emergency sheet under "Whom to ask?". They are added with **Set up now**; later you manage them under [Workbench → Encryption](verschluesselung.md#notfallkontakte). They are deliberately not in the configuration file – it's third-party data.
 
@@ -131,7 +131,7 @@ Plus links to both manuals, "Report a problem" as a prepared GitHub issue and th
 
 Afterwards: how to continue is summarised under [Setting up in five steps](fuenf-schritte.md) – switch on the schedule under **Workbench → [Backup](sicherung.md)**, create your own [folder types](mappentypen.md) and [invite more users](benutzer.md) – ideally also a second person who may manage.
 
-**For the self-employed and small businesses:** if you chose "For my work or my business" or "Both" in the [Use](#nutzung) step, the Workbench starts with the **Business** template – with number sequences, archive mode, mailboxes, data protection and the other areas a business needs. Otherwise it starts with the slim template *Household*; you can switch at any time under **Workbench → Customise workbench** (see [Overview](uebersicht.md)).
+**For the self-employed and small businesses:** if you chose "For my work or my business" or "Both" in the [Use](#nutzung) step, the level **Self-employed** is preselected – with number sequences, archive mode, data protection and everything from *Household*; **Business** suits businesses with several people. Otherwise the slim level *Beginner* is preselected; you can switch at any time under **Workbench → Customise workbench** (see [Overview](uebersicht.md)).
 
 ## Database connection {#datenbank-anbindung}
 
@@ -301,4 +301,4 @@ server {
 }
 ```
 
-Long jobs such as creating thousands of demo folders run in the background so that the proxy doesn't cancel because of a timeout. The live display of the log asks every two seconds and needs no special proxy setting.
+Long jobs such as creating thousands of load test folders run in the background so that the proxy doesn't cancel because of a timeout. The live display of the log asks every two seconds and needs no special proxy setting.

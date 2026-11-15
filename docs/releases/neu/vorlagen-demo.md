@@ -1,0 +1,10 @@
+art: minor
+
+## Neu
+
+- **Beispiel-Ablage** (#988): Unter **Werkbank → Beispiel-Ablage** – schon für Einsteiger – legst du mit einem Klick eine kleine Ablage einer erfundenen Familie an, mit Verträgen, Rechnungen, Versicherungen, Fristen und Post aus den Beispielen der installierten Pakete. Fehlt ein nötiges Paket, steht das vorher da. Die Beispiele lösen keine Automatisierungen und Benachrichtigungen aus, die Übersicht kennzeichnet sie, und mit einem Klick sind sie wieder weg – eigene Daten bleiben unberührt. Im Einrichtungsassistenten heißt das „Erst mal umsehen“.
+
+## Geändert
+
+- **Fünf Stufen für die Werkbank** (#987): Statt Haushalt, Betrieb und Alles gibt es jetzt Einsteiger, Haushalt, Selbständig, Betrieb und Alles – jede Stufe enthält die vorige. Der Einrichtungsassistent fragt im Schritt „Nutzung“ nach der Stufe (zu Hause vorgewählt: Einsteiger). Unter **Werkbank anpassen → Meine Leiste** wählt jede Person, die verwaltet, für sich eine andere Stufe. Der Expertenmodus entfällt; wer ihn eingeschaltet hatte, behält seine Bereiche. Bestehende Installationen behalten ihre Vorlage.
+- **Lasttest-Daten statt Demo-Daten** (#988): Der Bereich für viele Mappen zum Messen heißt jetzt „Lasttest-Daten“ und steht nur in der Stufe „Alles“; er arbeitet wie bisher.

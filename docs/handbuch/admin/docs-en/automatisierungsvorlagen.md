@@ -2,7 +2,7 @@
 
 An **automation template** is an automation with gaps that you apply to **one** folder. “Assign task” and “Remind” in the **Folder ▾** menu are such templates – behind them runs the same engine as for [automations](automatisierungen.md). An applied template is a **folder run**: it is listed on the folder under **Planned** until it runs, and then it disappears. What happened is kept in the folder history and in the template’s history.
 
-You find them under **Workbench → Build the library → Automation templates**, right below the automations. In a household the area appears in **expert mode** (Workbench → Customise workbench); in a business it is always there.
+You find them under **Workbench → Build the library → Automation templates**, right below the automations. The area is in the bar from the level **Household** (see [Customising the workbench](uebersicht.md#werkbank-anpassen)).
 
 ![Workbench → Automation templates: list and editor](bilder/werkbank-automatisierungsvorlagen.png)
 

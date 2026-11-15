@@ -14,7 +14,7 @@ On which devices the project tests Ablago itself – and until when it expects t
 | UGREEN DXP4800 Plus (maintainer) | Intel Pentium Gold 8505, 6 cores (x64) | 15.4 GB | SSD | dms-komplett | 0.153.0 | 76 ms | 423 ms | 225 (157/s, p95 2.6 s) | 03.11.2026 |
 | GitHub machine (ubuntu-latest) | 4 cores (x64) | 16 GB | SSD | without container, PostgreSQL 17 alongside | 0.139.0 | 95 ms | 2,384 ms | below 25 (p95 3.2 s at 25) | 02.11.2026, first run, before speeding up (#615) |
 
-**With saving and extreme** – p95 of the runs "+ saving", in brackets p95 of the writing requests only; for extreme the limit, the duration of creating the demo data and the size of the database:
+**With saving and extreme** – p95 of the runs "+ saving", in brackets p95 of the writing requests only; for extreme the limit, the duration of creating the load test data and the size of the database:
 
 | Device | Ablago | small + saving p95 | medium + saving p95 | large + saving p95 (at limit) | extreme 500,000: limit | extreme 1 million: limit | As of |
 | --- | --- | ---: | ---: | ---: | ---: | ---: | --- |

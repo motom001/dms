@@ -566,7 +566,7 @@ A catalogue **without** `katalog.schluessel` stays as before: it works, but ever
 
 ## Testing your own package { #eigenes-paket-testen }
 
-Before your package goes into the catalogue, you try it out in your own Ablago – best in a test DMS (e.g. with [demo data](https://help.ablago.app/admin/aktuell/en/demo/)):
+Before your package goes into the catalogue, you try it out in your own Ablago – best in a test DMS (e.g. with [load test data](https://help.ablago.app/admin/aktuell/en/demo/)):
 
 1. Expand **Workbench → Packages → ▸ Expert mode**.
 2. Zip the package folder, e.g. `cd pakete/mein_paket && zip -r ../../mein_paket.zip .`, and choose it under **Upload package**. A folder before `manifest.yaml` (e.g. `mein_paket/manifest.yaml`) doesn't matter. Ablago checks the package like a catalogue package and shows the preview; format errors are collected there.

@@ -171,7 +171,7 @@ async function werkbankSeiten(s) {
     seite('Protokoll', '/werkbank/protokoll'),
     seite('Fehlermeldungen', '/werkbank/fehlermeldungen', (s) => s.getByRole('searchbox').first().waitFor()),
     seite('Wartung', '/werkbank/wartung'),
-    seite('Demo-Daten', '/werkbank/demo'),
+    seite('Lasttest-Daten', '/werkbank/demo'),
   ];
 }
 

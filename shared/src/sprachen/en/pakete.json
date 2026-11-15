@@ -348,7 +348,7 @@
   "erstellen.version.unbekannt": "Did you create this package on another device? Upload the version last passed on, and Ablago counts on from there.",
   "erstellen.version.hochladen": "Upload the package’s last version",
   "erstellen.version.andereId": "The file belongs to the package “{id}”, not to “{eigene}”.",
-  "erstellen.version.vonHand": "Enter version and Ablago version by hand (expert mode)",
+  "erstellen.version.vonHand": "Enter version and Ablago version by hand (level “Everything”)",
   "erstellen.version.vonHandHinweis": "Ablago still checks: higher than the last known version, not below the minimum version.",
   "erstellen.dms.titel": "Required Ablago version",
   "erstellen.dms.mindest": "{angabe} – minimum version",

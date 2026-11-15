@@ -2,7 +2,7 @@
 
 Ein **Rundgang** zeigt Schritt für Schritt Stellen an der echten Oberfläche – Ablagos eigener bei der ersten Anmeldung, Rundgänge aus Paketen (etwa „Verträge im Überblick“) und eigene, die du hier schreibst. Alle stehen für die Personen, die sie nutzen dürfen, unter [Ablago entdecken](https://help.ablago.app/benutzer/aktuell/entdecken/).
 
-Du findest sie unter **Werkbank → Ablage aufbauen → Rundgänge**. Im Haushalt erscheint der Bereich im **Expertenmodus** (Werkbank → Werkbank anpassen), in Betrieben immer. Bearbeiten darf, wer den Bereich verwaltet.
+Du findest sie unter **Werkbank → Ablage aufbauen → Rundgänge**. Der Bereich steht ab der Stufe **Haushalt** in der Leiste (siehe [Werkbank anpassen](uebersicht.md#werkbank-anpassen)). Bearbeiten darf, wer den Bereich verwaltet.
 
 ![Werkbank → Rundgänge: Liste und Editor](bilder/werkbank-rundgaenge.png)
 

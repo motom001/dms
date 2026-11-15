@@ -1,6 +1,6 @@
 # Automations {#automatisierungen}
 
-With an **automation**, Ablago does something by itself: **if** something happens (an event or a date) **and** the conditions are right, **then** it sets fields or gives someone a task – **otherwise**, if you like, something else. You find them under **Workbench → Build the Library → Automations**. In a household the area appears in **expert mode** (Workbench → Customise workbench), in businesses always.
+With an **automation**, Ablago does something by itself: **if** something happens (an event or a date) **and** the conditions are right, **then** it sets fields or gives someone a task – **otherwise**, if you like, something else. You find them under **Workbench → Build the Library → Automations**. The area is in the bar from the level **Household** (see [Customising the workbench](uebersicht.md#werkbank-anpassen)).
 
 ![Workbench → Automations: list and editor](bilder/werkbank-automatisierungen.png)
 

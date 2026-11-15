@@ -34,7 +34,7 @@
   "warnung.schleife": "Der Server musste seit mindestens 5 Minuten oft länger als 100 ms warten, bevor er eine Anfrage bearbeiten konnte (bei 99 % der Messungen).",
   "warnung.cpu": "Die CPU ist seit mindestens 5 Minuten zu über 90 % ausgelastet.",
   "warnung.speicher": "Der Arbeitsspeicher ist seit mindestens 5 Minuten zu über 90 % belegt.",
-  "warnung.text": "Ablago reagiert dann langsam. Typische Ursachen: die Texterkennung arbeitet viele Scans ab, Demo-Daten werden angelegt, große Exporte laufen, ein Paket rechnet viel oder die Grenze des Containers ist zu knapp.",
+  "warnung.text": "Ablago reagiert dann langsam. Typische Ursachen: die Texterkennung arbeitet viele Scans ab, Lasttest-Daten werden angelegt, große Exporte laufen, ein Paket rechnet viel oder die Grenze des Containers ist zu knapp.",
   "warnung.uebersicht": "Hohe Auslastung.",
   "warnung.knopf": "Zum Systemzustand",
   "warnung.leiste": "Auslastung hoch",

@@ -1,6 +1,6 @@
 /**
  * Werkbank (#960: aus routen.ts): Protokoll und Debug-Modus, Designs, Texterkennung; Ansicht, Übersicht und
- * Systemübersicht; Region, Sprachen, Übersetzen, Aufgaben-Mail und Favoriten-Freigabe.
+ * Systemübersicht; Region, Sprachen, Übersetzen, Aufgaben-Mail und Favoriten-Freigabe; Beispiel-Ablage (#988).
  */
 import { istPerson } from '../../../shared/src/model';
 import { hatMerkmalBedingung } from '../../../shared/src/anzeige';
@@ -12,6 +12,7 @@ import { darfBereich, darfVerwalten, hatGesamt } from '../../../shared/src/verwa
 import { uebersicht } from '../system';
 import { MODULE, protokoll, STUFEN, type Stufe } from '../protokoll';
 import { werkbankZahlen } from '../werkbankzahlen';
+import { BeispielAblage } from '../beispielablage';
 import { akzeptanzAufheben, akzeptierteMeldungen, meldungAkzeptieren } from '../meldungen';
 import { ueberfluessigeVariablen } from '../../../shared/src/umgebungsvariablen';
 import { zeitzone } from '../../../shared/src/region';
@@ -22,7 +23,13 @@ import type { Route } from '../routen';
 
 export function werkbankRouten(k: RoutenKontext): Route[] {
   const { dienst, x, designs, ocr } = k;
+  const { pakete, wer } = k;
+  const beispielAblage = () => new BeispielAblage(pakete, () => dienst.kern.repo.listePakete());
   return [
+    /* ---------- Beispiel-Ablage (#988) ---------- */
+    { methode: 'GET', pfad: '/api/werkbank/beispielablage', zugang: 'admin', handler: async () => ok(await beispielAblage().stand()) },
+    { methode: 'POST', pfad: '/api/werkbank/beispielablage', zugang: 'admin', handler: async (a) => ok(await pakete.mitSperre(() => beispielAblage().anlegen(wer(a)))) },
+    { methode: 'DELETE', pfad: '/api/werkbank/beispielablage', zugang: 'admin', handler: async (a) => ok(await pakete.mitSperre(() => beispielAblage().entfernen(wer(a)))) },
     /* ---------- Protokoll und Debug-Modus ---------- */
     { methode: 'GET', pfad: '/api/werkbank/protokoll', zugang: 'admin', handler: async (a) => {
       const q = a.query;
@@ -178,6 +185,8 @@ export function werkbankUebersichtRouten(k: RoutenKontext): Route[] {
         // DATABASE_URL weicht von der Anbindung in /data/geheim ab und wird ignoriert (#119); dms-komplett ohne Volume
         // für /data/postgres (#943): Die Datenbank ginge beim nächsten Update verloren.
         anbindung: x.anbindung ? { umgebung: x.anbindung.stand().umgebung, neustartNoetig: x.anbindung.stand().neustartNoetig, ohneVolume: x.anbindung.stand().ohneVolume } : null,
+        // Beispiel-Ablage (#988): Zahl der Beispiel-Mappen aus Paketen – die Übersicht kennzeichnet sie, bis sie weg sind.
+        beispielablage: (await sicher(async () => (await dienst.kern.repo.listePakete()).reduce((n, p) => n + (p.beispielMappen?.length ?? 0), 0))) ?? 0,
         // DMS_LASTTEST in einer echten Installation (#612): nicht gestartet, das DMS läuft normal.
         lasttestAbbruch: x.lasttestAbbruch?.() ?? null,
         einrichtung: x.einrichtung ? await sicher(() => x.einrichtung!.stand()) : null,

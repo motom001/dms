@@ -807,9 +807,17 @@ begriffe:
     beschreibung: Eine Mappe mit erfundenen Daten, die ein Paket auf Wunsch beim Installieren anlegt (Haken „Beispiel-Mappen anlegen“), damit man sieht, was in eine Mappe gehört – zum Ausprobieren, nicht zum Behalten. Unveränderte Beispiele lassen sich samt Dokumenten wieder entfernen. Anders als eine Vorgabe.
     einsteiger: alltag
     begegnet: admin
-    nicht_verwenden: [Demo-Mappe]
-    verwandt: [Paket, Vorgabe, Demo-Daten]
+    nicht_verwenden: [Lasttest-Mappe]
+    verwandt: [Paket, Vorgabe, Beispiel-Ablage, Lasttest-Daten]
     code: inhalt/beispiele, beispielMappen
+  - begriff: Beispiel-Ablage
+    bereich: werkbank
+    beschreibung: Eine kleine, stimmige Ablage einer erfundenen Familie zum Umsehen – die Beispiel-Mappen der installierten Pakete auf einen Klick, ohne Automatisierungen und Benachrichtigungen. Mit einem Klick wieder weg; eigene Daten und geänderte Beispiele bleiben.
+    einsteiger: alltag
+    begegnet: admin
+    nicht_verwenden: [Demo-Daten]
+    verwandt: [Beispiel-Mappe, Lasttest-Daten]
+    code: beispielablage
   - begriff: Vorgabe
     bereich: werkbank
     beschreibung: Eine Mappe, die ein Paket zum Behalten mitbringt – etwa die Vertragsarten „Strom“ oder „Miete“ aus dem Paket Verträge, oft mit Vorlagen. Kommt immer mit, trägt die Kennzeichnung „Vorgabe aus dem Paket …“ und ist sonst eine gewöhnliche Mappe. Updates bringen neue Fassungen nur, solange niemand sie geändert hat; Gelöschtes bleibt gelöscht. Anders als ein Beispiel (erfundene Daten zum Ausprobieren, auf Wunsch, entfernbar).
@@ -897,18 +905,26 @@ begriffe:
     code: "benutzer.art = 'dienst'"
   - begriff: Werkbank anpassen
     bereich: werkbank
-    beschreibung: Legt fest, welche Bereiche links in der Werkbank stehen – nach einer Vorlage („Haushalt“, „Betrieb“ oder „Alles“) und mit Abweichungen. Ausblenden schaltet nichts ab. Neue Installationen starten mit „Haushalt“; Installationen von vor dieser Einstellung zeigen alles.
+    beschreibung: Legt fest, welche Bereiche links in der Werkbank stehen – nach einer Stufe („Einsteiger“, „Haushalt“, „Selbständig“, „Betrieb“ oder „Alles“) und mit Abweichungen. Unter „Meine Leiste“ wählt jede Person, die verwaltet, für sich eine andere Stufe. Ausblenden schaltet nichts ab. Neue Installationen starten mit der Stufe aus dem Einrichtungsassistenten; Installationen von vor dieser Einstellung zeigen alles.
     einsteiger: erklaeren
     begegnet: admin
-    verwandt: [Werkbank, Übersicht, Betrieb]
+    verwandt: [Werkbank, Übersicht, Stufe]
     code: WerkbankAnsicht, VORLAGEN
+  - begriff: Stufe
+    bereich: werkbank
+    beschreibung: Wie viel die Werkbank-Leiste zeigt – fünf Stufen, jede enthält die vorige - Einsteiger (nur das Nötigste), Haushalt, Selbständig, Betrieb und Alles. Nur Ordnung in der Leiste, kein Recht. Löst den früheren Expertenmodus der Werkbank ab.
+    einsteiger: alltag
+    begegnet: admin
+    nicht_verwenden: [Expertenmodus (für die Werkbank-Leiste)]
+    verwandt: [Werkbank anpassen, Haushalt, Betrieb]
+    code: STUFEN, Vorlage
   - begriff: Betrieb
     bereich: werkbank
-    beschreibung: Die Vorlage unter „Werkbank anpassen“ für Selbständige und kleine Betriebe – mit Nummernkreisen, Archivmodus, Postfächern und weiteren Bereichen. Gegenstück ist die Vorlage „Haushalt“.
+    beschreibung: Die Stufe unter „Werkbank anpassen“ für Betriebe mit mehreren Leuten – alles aus „Selbständig“ und dazu Designs.
     einsteiger: alltag
     begegnet: admin
     nicht_verwenden: [Organisation (für die Vorlage)]
-    verwandt: [Werkbank anpassen, Haushalt]
+    verwandt: [Werkbank anpassen, Stufe]
     code: organisation (Vorlage)
   - begriff: Übersicht
     bereich: werkbank
@@ -1022,7 +1038,7 @@ begriffe:
   # ---------- Betrieb und Sicherheit ----------
   - begriff: Haushalt
     bereich: betrieb
-    beschreibung: Die Vorlage unter „Werkbank anpassen“ für zu Hause – schlank, nur was eine Familie zum Einrichten und Sichern braucht. Für die ganze Installation heißt es seit 04.11.2026 neutral „Ablage“; „Mandant“ steht nur im Code.
+    beschreibung: Die Stufe unter „Werkbank anpassen“ für einen Haushalt, der mehr selbst einrichtet – Mappentypen, Automatisierungen, Post und Suche. Für die ganze Installation heißt es seit 04.11.2026 neutral „Ablage“; „Mandant“ steht nur im Code.
     einsteiger: alltag
     begegnet: admin
     verwandt: [Betrieb, Werkbank anpassen, Ablage]
@@ -1135,11 +1151,12 @@ begriffe:
     nicht_verwenden: [Abhängigkeit, Binary]
     verwandt: [Systemzustand]
     code: werkzeuge
-  - begriff: Demo-Daten
+  - begriff: Lasttest-Daten
     bereich: betrieb
-    beschreibung: Erzeugte Beispielmappen zum Ausprobieren und für Lasttests.
+    beschreibung: Viele erzeugte Mappen mit zufälligen Werten für Lasttests und Messungen, nur in der Stufe „Alles“. Früher „Demo-Daten“. Wer sehen will, wie eine gefüllte Ablage aussieht, nimmt die Beispiel-Ablage.
     einsteiger: alltag
     begegnet: admin
+    nicht_verwenden: [Demo-Daten]
   - begriff: API
     bereich: betrieb
     beschreibung: Die Schnittstelle, über die Programme mit Ablago arbeiten. Zugang mit einem persönlichen API-Schlüssel.
@@ -1159,7 +1176,7 @@ begriffe:
     begegnet: fortgeschritten
   - begriff: Auftrag
     bereich: betrieb
-    beschreibung: Arbeit, die Ablago im Hintergrund erledigt und deren Fortschritt man sieht, z. B. Demo-Daten erzeugen, Vollexport, Nummern nachträglich vergeben. Es läuft immer nur ein Auftrag. Arbeit für Menschen heißt Aufgabe.
+    beschreibung: Arbeit, die Ablago im Hintergrund erledigt und deren Fortschritt man sieht, z. B. Lasttest-Daten erzeugen, Vollexport, Nummern nachträglich vergeben. Es läuft immer nur ein Auftrag. Arbeit für Menschen heißt Aufgabe.
     einsteiger: fachwort
     begegnet: admin
     nicht_verwenden: [Job]

@@ -178,7 +178,8 @@ export const HILFE = {
   'werkbank.werkzeuge': admin('fehlersuche/', 'Eingebaute Werkzeuge', 'werkzeuge'),
   // Startseite „Ablago startet …“ (#802): im Fehlerfall zum Protokoll des Containers.
   'start.fehler': admin('fehlersuche/', 'Container-Logs', 'container-logs'),
-  'werkbank.demo': admin('demo/', 'Demo-Daten'),
+  'werkbank.demo': admin('demo/', 'Lasttest-Daten'),
+  'werkbank.beispielablage': admin('beispielablage/', 'Beispiel-Ablage'),
   'werkbank.sicherung': admin('sicherung/', 'Sicherung'),
   'werkbank.wiederherstellung': admin('wiederherstellen/', 'Wiederherstellen'),
   'werkbank.wartungsmodus': admin('wartungsmodus/', 'Wartungsmodus'),

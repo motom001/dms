@@ -37,6 +37,7 @@ import { SichtEditor, SichtenListe } from './Sichten';
 import { DatenbankAbschnitte, useDatenbank } from './Datenbank';
 import { ExterneDiensteAbschnitt, KiKostenAbschnitt, useExtern } from './ExterneDienste';
 import { DemoPanel } from './Demo';
+import { BeispielAblagePanel } from './BeispielAblage';
 import { DesignEditor, DesignListe } from './Designs';
 import { ProtokollDetail, ProtokollListe, useProtokoll } from './Protokoll';
 import { TechnikPanel, useTechnik } from './Technik';
@@ -79,7 +80,8 @@ import { typName } from '../../../shared/src/beschriftung';
  * /werkbank/typen[/:id|/neu]
  * /werkbank/benutzer[/:id|/neu]
  * /werkbank/sichten[/:id|/neu]       Sichten der Ablage (#38)
- * /werkbank/demo
+ * /werkbank/demo                    Lasttest-Daten (#988, früher Demo-Daten)
+ * /werkbank/beispielablage          Beispiel-Ablage (#988)
  * /werkbank/protokoll[/:nr]
  * /werkbank/designs[/:id|/neu]
  * /werkbank/betrieb                 E-Mail-Versand und Adresse des DMS (#37)
@@ -228,7 +230,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
       const eintrag = d.typ(id);
       rechts = eintrag ? <TypEditor key={eintrag.id} typ={eintrag} /> : <div className="leer"><p>{t('werkbank.werkbank.diesen-mappentyp-gibt-es')}</p></div>;
     } else if (!d.typen.length) {
-      rechts = <div className="platzhalter"><p>{tn('werkbank.werkbank.noch-keine-mappentypen-lege', { link: <Link to="/werkbank/demo" className="verweis">{t('werkbank.werkbank.demo-daten')}</Link> })}</p></div>;
+      rechts = <div className="platzhalter"><p>{tn('werkbank.werkbank.noch-keine-mappentypen-lege', { link: <Link to="/werkbank/beispielablage" className="verweis">{t('werkbank.bereich.beispielablage.name')}</Link> })}</p></div>;
     }
   } else if (bereich === 'sichten') {
     liste = <SichtenListe offen={id} pakete={pakete.stand?.installiert ?? []} />;
@@ -245,6 +247,8 @@ export function Werkbank({ teile }: { teile: string[] }) {
     }
   } else if (bereich === 'demo') {
     rechts = <DemoPanel />;
+  } else if (bereich === 'beispielablage') {
+    rechts = <BeispielAblagePanel />;
   } else if (bereich === 'designs') {
     liste = <DesignListe offen={id} />;
     rechts = id ? <DesignEditor key={id} id={id} /> : <div className="platzhalter"><p>{t('werkbank.werkbank.waehle-ein-design-zum')}</p></div>;
@@ -352,6 +356,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
     { pfad: 'uebersicht', name: n('uebersicht'), gruppe: null, warn: uebersicht.hinweise || undefined },
     // Ablage aufbauen (#717)
     { pfad: 'pakete', name: n('pakete'), gruppe: 'ablage', zahl: zahl(pakete.stand?.installiert.length, uz?.pakete) },
+    { pfad: 'beispielablage', name: n('beispielablage'), gruppe: 'ablage' },
     { pfad: 'typen', name: n('typen'), gruppe: 'ablage', zahl: d.typen.length },
     { pfad: 'sichten', name: n('sichten'), gruppe: 'ablage', zahl: d.sichten.length || undefined },
     { pfad: 'nummernkreise', name: n('nummernkreise'), gruppe: 'ablage', zahl: zahl(nummernkreise.liste?.length, uz?.nummernkreise) },

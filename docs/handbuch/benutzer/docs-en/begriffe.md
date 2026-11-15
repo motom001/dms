@@ -352,8 +352,8 @@ An automation with gaps that you apply to one folder – “Assign task”, “R
 See also: [Planned](#geplant), [Reminder](#erinnerung), [Package](#paket).
 
 <a id="betrieb"></a>**Business** (*Betrieb*) · ✓ everyday word · administrators  
-The template under "Customise the workbench" for the self-employed and small businesses – with number sequences, archive mode, mailboxes and further areas. Its counterpart is the template "Household".  
-See also: [Customise the workbench](#werkbank-anpassen), [Household](#haushalt).
+The level under "Customise the workbench" for businesses with several people – everything from "Self-employed" plus themes.  
+See also: [Customise the workbench](#werkbank-anpassen), [Level](#stufe).
 
 <a id="aufruf-von-auen"></a>**Call from outside** (*Aufruf von außen*) · ~ with explanation · administrators  
 When card of an automation with its own address and secret – another system (monitoring, home automation) triggers it by POST with a signature. The administration creates the address explicitly; the response only says "accepted". Parameters sent along are available as placeholders, only as text. The Workbench overview and the emergency sheet list all addresses that accept calls.  
@@ -372,8 +372,8 @@ Setting on a link field (#1037) – pairs "field of the referenced folder → fi
 See also: [Fill from document](#aus-dokument-fullen).
 
 <a id="werkbank-anpassen"></a>**Customise the workbench** (*Werkbank anpassen*) · ~ with explanation · administrators  
-Sets which areas are on the left of the workbench – following a template ("Household", "Business" or "Everything") and with exceptions. Hiding doesn't switch anything off. New installations start with "Household"; installations from before this setting show everything.  
-See also: [Workbench](#werkbank), [Overview](#ubersicht), [Business](#betrieb).
+Sets which areas are on the left of the workbench – following a level ("Beginner", "Household", "Self-employed", "Business" or "Everything") and with exceptions. Under "My sidebar" everyone who administers chooses a different level for themselves. Hiding doesn't switch anything off. New installations start with the level from the setup wizard; installations from before this setting show everything.  
+See also: [Workbench](#werkbank), [Overview](#ubersicht), [Level](#stufe).
 
 <a id="tagliche-zusammenfassung"></a>**Daily summary** (*Tägliche Zusammenfassung*) · ✓ everyday word · everyone  
 An email that lists a user's open tasks once a day – only if they have some and aren't absent. Administrators switch it on under Workbench → Settings → Notifications and tasks; everyone chooses the time and weekdays under My account.  
@@ -386,6 +386,10 @@ See also: [Appearance](#darstellung).
 <a id="ziel-nach-auen"></a>**Destination outside** (*Ziel nach außen*) · ~ with explanation · administrators  
 Approved beginning of an address (host and path) to which the Then card "Call URL" of an automation may report – under Workbench → Automations → Destinations outside. Only https; "On the home network" explicitly also allows http and devices on your own network. Ablago does not call other addresses and never follows redirects. The emergency sheet lists the hosts.  
 See also: [Call from outside](#aufruf-von-auen), [Emergency sheet](#notfallblatt).
+
+<a id="beispiel-ablage"></a>**Example Library** (*Beispiel-Ablage*) · ✓ everyday word · administrators  
+A small, consistent Library of an invented family to look around in – the example folders of the installed packages in one click, without automations and notifications. Gone again in one click; your own data and changed examples stay.  
+See also: [Sample folder](#beispiel-mappe), [Load test data](#lasttest-daten).
 
 <a id="expertenmodus"></a>**Expert mode** (*Expertenmodus*) · ✗ technical term · advanced users  
 An expandable section under Workbench → Packages, directly below the buttons. Expanded, it shows "Further sources" and "Upload package" – for package developers and Ablago without the internet. Collapsed at first; the browser remembers per user whether it is open.  
@@ -406,12 +410,12 @@ A folder that Ablago watches, e.g. for "Scan to Folder". Every file in it become
 Tick in the basics of a folder type with the link field through which the folder belongs ("Belongs to it through",  
 See also: [Part](#teil), [Parent folder](#ubergeordnete-mappe), [Table](#tabelle), [Folder type](#mappentyp).
 
+<a id="stufe"></a>**Level** (*Stufe*) · ✓ everyday word · administrators  
+How much the Workbench bar shows – five levels, each includes the previous one - Beginner (only the essentials), Household, Self-employed, Business and Everything. Only order in the bar, not a permission. Replaces the former expert mode of the Workbench.  
+See also: [Customise the workbench](#werkbank-anpassen), [Household](#haushalt), [Business](#betrieb).
+
 <a id="postfach"></a>**Mailbox** (*Postfach*) · ~ with explanation · administrators  
 A connected email account (IMAP) from which Ablago fetches post.
-
-<a id="nachweise"></a>**Evidence** (*Nachweise*) · ~ with explanation · administrators  
-What happened in a month regarding access, backup, operation and data protection – for example failed sign-ins, permission changes, backup runs or updates. A package such as "Compliance" reads it together with the current setup, but only the areas the administrator ticks in the package settings; passwords are never included.  
-See also: [Package](#paket), [Service account](#dienstkonto).
 
 <a id="nummernkreis"></a>**Number sequence** (*Nummernkreis*) · ✗ technical term · administrators  
 Sequential numbers following a pattern such as {jjjj}-R{zaehler:4} (giving e.g. 2026-R0001), for instance for invoice numbers.
@@ -486,7 +490,7 @@ See also: [Package](#paket), [Calculated field](#berechnetes-feld), [Switched on
 
 <a id="beispiel-mappe"></a>**Sample folder** (*Beispiel-Mappe*) · ✓ everyday word · administrators  
 A folder with invented data that a package creates on request when installing (tick "Create sample folders"), so you can see what belongs in a folder – to try out, not to keep. Unchanged examples can be removed again together with their documents. Unlike a preset.  
-See also: [Package](#paket), [Preset](#vorgabe), [Demo data](#demo-daten).
+See also: [Package](#paket), [Preset](#vorgabe), [Example Library](#beispiel-ablage), [Load test data](#lasttest-daten).
 
 <a id="suche-und-volltext"></a>**Search and full text** (*Suche und Volltext*) · ~ with explanation · administrators  
 The workbench area under Post and incoming for text recognition, archive version, typos and the way to the synonyms. "Shrink new PDFs automatically" has been under System health since
@@ -564,9 +568,6 @@ The command "dms" in the container for emergencies and operation.
 <a id="debug-modus"></a>**Debug mode** (*Debug-Modus*) · ✗ technical term · advanced users  
 A more detailed technical log for troubleshooting.
 
-<a id="demo-daten"></a>**Demo data** (*Demo-Daten*) · ✓ everyday word · administrators  
-Generated sample folders for trying out and for load tests.
-
 <a id="notfallkontakt"></a>**Emergency contact** (*Notfallkontakt*) · ✓ everyday word · administrators  
 A person you trust who should be asked in an emergency. They appear on the emergency sheet and get a short info email, but no access.  
 See also: [Emergency sheet](#notfallblatt).
@@ -584,15 +585,18 @@ A short check code by which you recognise a key.
 All data in open formats, readable even without Ablago – so that nobody is tied to Ablago.
 
 <a id="haushalt"></a>**Household** (*Haushalt*) · ✓ everyday word · administrators  
-The template under "Customise the workbench" for home – lean, only what a family needs for setting up and backing up. Since 04.11.2026 the whole installation is neutrally called "Library" (Ablage); "Mandant" only appears in the code.  
+The level under "Customise the workbench" for a household that sets up more itself – folder types, automations, post and search. Since 04.11.2026 the whole installation is neutrally called "Library" (Ablage); "Mandant" only appears in the code.  
 See also: [Business](#betrieb), [Customise the workbench](#werkbank-anpassen), [Library](#ablage).
 
 <a id="auftrag"></a>**Job** (*Auftrag*) · ✗ technical term · administrators  
-Work that Ablago does in the background and whose progress you can see, e.g. creating demo data, full export, assigning numbers retrospectively. Only one job runs at a time. Work for people is called a task.
+Work that Ablago does in the background and whose progress you can see, e.g. creating load test data, full export, assigning numbers retrospectively. Only one job runs at a time. Work for people is called a task.
 
 <a id="schlussel"></a>**Key** (*Schlüssel*) · ~ with explanation · administrators  
 The secret key with which password fields and backups are encrypted. It is never in the database. The fixed name of a field, on the other hand, is called identifier.  
 See also: [Fingerprint](#fingerabdruck), [Emergency sheet](#notfallblatt).
+
+<a id="lasttest-daten"></a>**Load test data** (*Lasttest-Daten*) · ✓ everyday word · administrators  
+Many generated folders with random values for load tests and measurements, only at the level "Everything". Formerly "demo data". To see what a filled Library looks like, use the example Library.
 
 <a id="protokoll"></a>**Log** (*Protokoll*) · ~ with explanation · advanced users  
 The server's running operating log with modules and levels (Workbench → Log). A folder's story, on the other hand, is called history.  

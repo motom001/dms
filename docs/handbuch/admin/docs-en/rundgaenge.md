@@ -2,7 +2,7 @@
 
 A **tour** shows places on the real interface step by step – Ablago's own one the first time someone signs in, tours from packages (such as “Contracts at a glance”) and your own, which you write here. Everyone finds the tours they may use under [Discover Ablago](https://help.ablago.app/benutzer/aktuell/en/entdecken/).
 
-You find them under **Workbench → Build the Library → Tours**. In a household the area appears in **expert mode** (Workbench → Customise the Workbench), in businesses always. Whoever administers the area may edit.
+You find them under **Workbench → Build the Library → Tours**. The area is in the bar from the level **Household** (see [Customising the workbench](uebersicht.md#werkbank-anpassen)). Whoever administers the area may edit.
 
 ![Workbench → Tours: list and editor](bilder/werkbank-rundgaenge.png)
 

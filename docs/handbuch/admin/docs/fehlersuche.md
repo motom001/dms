@@ -1,8 +1,8 @@
 # Fehlersuche und Support
 
-Alles dazu steht in der Werkbank unter **Wartung und Fehlersuche**. Die Gruppe enthält Systemzustand, Protokoll, Gemeldete Fehler, Wartungsmodus, Wartungsoperationen und Demo-Daten. Diese Seite beschreibt die Werkzeuge zur Fehlersuche und die *Technik* (Version und Updates), die unter **Einstellungen** steht; [Systemzustand](speicherplatz.md), [Wartungsmodus](wartungsmodus.md), [Wartungsoperationen](texterkennung.md#wartungsoperationen) und [Demo-Daten](demo.md) haben eigene Seiten. Sicherung, Wiederherstellen und Vollexport stehen unter **Daten sichern**.
+Alles dazu steht in der Werkbank unter **Wartung und Fehlersuche**. Die Gruppe enthält Systemzustand, Protokoll, Gemeldete Fehler, Wartungsmodus, Wartungsoperationen und Lasttest-Daten. Diese Seite beschreibt die Werkzeuge zur Fehlersuche und die *Technik* (Version und Updates), die unter **Einstellungen** steht; [Systemzustand](speicherplatz.md), [Wartungsmodus](wartungsmodus.md), [Wartungsoperationen](texterkennung.md#wartungsoperationen) und [Lasttest-Daten](demo.md) haben eigene Seiten. Sicherung, Wiederherstellen und Vollexport stehen unter **Daten sichern**.
 
-*Protokoll* und *Gemeldete Fehler* gehören zur Vorlage **Betrieb**. *Technik* steht in jeder Vorlage.
+*Protokoll* und *Gemeldete Fehler* stehen ab der Stufe **Haushalt** in der Leiste. *Technik* steht in jeder Stufe.
 
 --8<-- "ausgeblendet-schritt.md"
 

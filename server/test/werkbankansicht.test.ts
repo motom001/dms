@@ -1,9 +1,9 @@
-/** Ansicht der Werkbank (#281): Vorlagen, Abweichungen, eigene Ergänzungen, Speichern. */
+/** Ansicht der Werkbank (#281, #987): fünf Stufen, Abweichungen, eigene Stufe und Ergänzungen, Speichern. */
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import {
   abschnittUmleitung, inLeiste,
-  bereichPasst, ansichtAus, BEREICHE, bereichName, expertenBereiche, fuerAlle, nurImExpertenmodus, GRUPPEN, hatMitte, inVorlage, liesAnsicht, liesEigene, OHNE_EINSTELLUNG, sichtbar, wartungsPlakette,
+  anzahlInVorlage, bereichPasst, ansichtAus, BEREICHE, bereichName, FRUEHER_EXPERTE, fuerAlle, GRUPPEN, hatMitte, inVorlage, liesAnsicht, liesEigene, OHNE_EINSTELLUNG, sichtbar, STUFEN, vorlageFuer, wartungsPlakette,
   werkbankEbene, werkbankUmleitung, werkbankZurueck, einDatentraeger,
 } from '../../shared/src/werkbankansicht';
 import { speicherDateien } from '../src/dateispeicher';
@@ -16,21 +16,26 @@ const ICH = { id: 'admin-1', email: 'admin@example.org' };
 const DU = { id: 'admin-2', email: 'zweite@example.org' };
 
 describe('Werkbank-Ansicht: Regeln', () => {
-  it('Haushalt ist schlank, Organisation mehr, Alles alles', () => {
-    const h = BEREICHE.filter((b) => inVorlage('haushalt', b.pfad)).map((b) => b.pfad);
-    const o = BEREICHE.filter((b) => inVorlage('organisation', b.pfad)).map((b) => b.pfad);
-    assert.ok(h.includes('sicherung') && h.includes('benutzer') && h.includes('pakete'));
-    assert.ok(!h.includes('nummernkreise') && !h.includes('protokoll') && !h.includes('demo'));
-    assert.ok(h.every((p) => o.includes(p)), 'Organisation enthält alles aus Haushalt');
-    assert.ok(o.includes('nummernkreise') && o.includes('postfaecher'));
-    assert.equal(BEREICHE.filter((b) => inVorlage('alles', b.pfad)).length, BEREICHE.length);
+  it('fünf Stufen (#987): jede enthält die vorige, Einsteiger ist schlank, Alles alles', () => {
+    const je = STUFEN.map((v) => BEREICHE.filter((b) => inVorlage(v, b.pfad)).map((b) => b.pfad));
+    for (let i = 1; i < je.length; i++) assert.ok(je[i - 1].every((p) => je[i].includes(p)), `${STUFEN[i]} enthält ${STUFEN[i - 1]}`);
+    const [e, h, s, b] = je;
+    assert.deepEqual(e, ['pakete', 'beispielablage', 'benutzer', 'verschluesselung', 'sicherung', 'papierkorb', 'betrieb', 'region', 'systemzustand']);
+    assert.ok(h.includes('automatisierungen') && h.includes('texterkennung') && h.includes('protokoll') && h.includes('anmeldeschutz') && !h.includes('nummernkreise'));
+    assert.deepEqual(s.filter((p) => !h.includes(p)), ['nummernkreise', 'aufbewahrung', 'auskuenfte', 'loeschkonzept', 'loeschprotokoll']);
+    assert.deepEqual(b.filter((p) => !s.includes(p)), ['designs']);
+    assert.deepEqual(BEREICHE.filter((x) => !inVorlage('organisation', x.pfad)).map((x) => x.pfad), ['anbindung', 'demo']);
+    assert.equal(BEREICHE.filter((x) => inVorlage('alles', x.pfad)).length, BEREICHE.length);
+    // Anzahl der Einträge in der Leiste samt Übersicht – so im Handbuch und im Rauchtest.
+    assert.deepEqual(STUFEN.map(anzahlInVorlage), [10, 31, 36, 37, 39]);
+    assert.deepEqual(BEREICHE.find((x) => x.pfad === 'stempel')?.in, ['haushalt', 'selbstaendig', 'organisation']);
   });
 
   it('Übersicht ist immer da; Abweichungen von der Vorlage zählen', () => {
-    const a = { vorlage: 'haushalt' as const, ein: ['protokoll'], aus: ['vollexport'] };
+    const a = { vorlage: 'einsteiger' as const, ein: ['protokoll'], aus: ['papierkorb'] };
     assert.equal(fuerAlle(a, 'uebersicht'), true);
     assert.equal(fuerAlle(a, 'protokoll'), true);
-    assert.equal(fuerAlle(a, 'vollexport'), false);
+    assert.equal(fuerAlle(a, 'papierkorb'), false);
     assert.equal(fuerAlle(a, 'demo'), false);
     assert.equal(sichtbar(a, { ein: ['demo'] }, 'demo'), true, 'eigene Ergänzung');
   });
@@ -43,34 +48,39 @@ describe('Werkbank-Ansicht: Regeln', () => {
   it('liest nur bekannte Bereiche und gültige Vorlagen', () => {
     assert.equal(liesAnsicht(null), null);
     assert.deepEqual(liesAnsicht({ vorlage: 'quatsch', ein: ['demo', 'gibtsnicht', 'demo', 3], aus: 'x' }), { vorlage: 'alles', ein: ['demo'], aus: [] });
+    for (const v of STUFEN) assert.equal(liesAnsicht({ vorlage: v, ein: [], aus: [] })?.vorlage, v);
     assert.deepEqual(liesEigene({ ein: ['demo', '../x'] }), { ein: ['demo'] });
     assert.deepEqual(liesEigene(undefined), { ein: [] });
   });
+
+  it('Vorgabe zur Nutzung (#1032, #987): privat Einsteiger, beruflich Selbständig', () => {
+    assert.equal(vorlageFuer({ beruflich: false }), 'einsteiger');
+    assert.equal(vorlageFuer({ beruflich: true }), 'selbstaendig');
+  });
 });
 
-describe('Werkbank-Ansicht: Expertenmodus (#356)', () => {
-  it('Suche und Volltext (früher Suche): im Haushalt nur im Expertenmodus, für Betriebe immer', () => {
-    const haushalt = { vorlage: 'haushalt' as const, ein: [], aus: [] };
-    assert.equal(fuerAlle(haushalt, 'texterkennung'), false);
-    assert.equal(sichtbar(haushalt, { ein: [] }, 'texterkennung'), false, 'ohne Expertenmodus ausgeblendet');
-    assert.equal(sichtbar(haushalt, { ein: [], experte: true }, 'texterkennung'), true, 'im Expertenmodus sichtbar');
-    assert.equal(nurImExpertenmodus('haushalt', 'texterkennung'), true);
-    assert.equal(nurImExpertenmodus('organisation', 'texterkennung'), false);
-    assert.equal(fuerAlle({ vorlage: 'organisation', ein: [], aus: [] }, 'texterkennung'), true);
-    assert.deepEqual(expertenBereiche('haushalt').map((b) => b.pfad), ['automatisierungen', 'ablaufvorlagen', 'rundgaenge', 'tipps', 'texterkennung', 'woerter']);
-    assert.deepEqual(expertenBereiche('alles'), []);
-    // Der Expertenmodus zeigt nur, was die Vorlage dafür vorsieht – nicht alles.
-    assert.equal(sichtbar(haushalt, { ein: [], experte: true }, 'protokoll'), false);
-    // Für alle ausdrücklich ausgeblendet bleibt ausgeblendet.
-    assert.equal(sichtbar({ ...haushalt, aus: ['texterkennung'] }, { ein: [], experte: true }, 'texterkennung'), false);
+describe('Werkbank-Ansicht: eigene Stufe je Person statt Expertenmodus (#987)', () => {
+  it('die eigene Stufe ersetzt die Vorlage nur für die Person; für alle Aus- und Eingeblendetes gilt weiter', () => {
+    const a = { vorlage: 'einsteiger' as const, ein: ['webdav'], aus: ['papierkorb'] };
+    assert.equal(sichtbar(a, { ein: [] }, 'protokoll'), false);
+    assert.equal(sichtbar(a, { ein: [], vorlage: 'alles' }, 'protokoll'), true, 'Meine Leiste: Alles');
+    assert.equal(sichtbar(a, { ein: [], vorlage: 'alles' }, 'papierkorb'), false, 'für alle ausgeblendet');
+    assert.equal(sichtbar({ ...a, vorlage: 'alles' }, { ein: [], vorlage: 'einsteiger' }, 'protokoll'), false, 'auch eine kleinere Stufe');
+    assert.equal(sichtbar({ ...a, vorlage: 'alles' }, { ein: [], vorlage: 'einsteiger' }, 'webdav'), true, 'für alle eingeblendet');
+    assert.deepEqual(liesEigene({ ein: [], vorlage: 'quatsch' }), { ein: [] });
   });
 
-  it('liesEigene nimmt den Expertenmodus nur als true; der Dienst speichert ihn je Administrator', async () => {
-    assert.deepEqual(liesEigene({ ein: [], experte: true }), { ein: [], experte: true });
+  it('ein gespeicherter Expertenmodus wird zur eigenen Einblendung seiner Bereiche', () => {
+    assert.deepEqual(liesEigene({ ein: ['protokoll'], experte: true }), { ein: ['protokoll', ...FRUEHER_EXPERTE] });
     assert.deepEqual(liesEigene({ ein: [], experte: 'ja' }), { ein: [] });
+    assert.equal(sichtbar({ vorlage: 'einsteiger', ein: [], aus: [] }, liesEigene({ ein: [], experte: true }), 'texterkennung'), true);
+  });
+
+  it('der Dienst speichert die eigene Stufe je Person', async () => {
     const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-    await d.werkbank.setzeWerkbankAnsicht(ICH, { installation: { vorlage: 'haushalt', ein: [], aus: [] }, eigene: { ein: [], experte: true } });
+    await d.werkbank.setzeWerkbankAnsicht(ICH, { installation: { vorlage: 'einsteiger', ein: [], aus: [] }, eigene: { ein: [], vorlage: 'alles' } });
     const ich = await d.werkbank.werkbankAnsicht(ICH);
+    assert.deepEqual(ich.eigene, { ein: [], vorlage: 'alles' });
     assert.equal(sichtbar(ich.installation, ich.eigene, 'texterkennung'), true);
     const du = await d.werkbank.werkbankAnsicht(DU);
     assert.equal(sichtbar(du.installation, du.eigene, 'texterkennung'), false, 'gilt nur für mich');
@@ -182,15 +192,16 @@ describe('Werkbank: mittlere Spalte für Sammlungen zum Anlegen und Bearbeiten (
     assert.deepEqual(Object.values(GRUPPEN), ['Ablage aufbauen', 'Benutzer und Sicherheit', 'Datenschutz', 'Post und Eingänge', 'Daten sichern', 'Einstellungen', 'Wartung und Fehlersuche']);
     const je = (g: string) => BEREICHE.filter((x) => x.gruppe === g).map((x) => x.pfad);
     // Nutzung (#1032) steht seit #1170 auf „Eigene Organisation“ unter Einstellungen.
-    assert.deepEqual(je('ablage'), ['pakete', 'typen', 'sichten', 'nummernkreise', 'automatisierungen', 'ablaufvorlagen', 'rundgaenge', 'tipps']);
+    assert.deepEqual(je('ablage'), ['pakete', 'beispielablage', 'typen', 'sichten', 'nummernkreise', 'automatisierungen', 'ablaufvorlagen', 'rundgaenge', 'tipps']);
     assert.deepEqual(je('benutzer'), ['benutzer', 'verschluesselung', 'aufbewahrung', 'stempel']);
     assert.deepEqual(je('datenschutz'), ['auskuenfte', 'loeschkonzept', 'loeschprotokoll']);
     assert.deepEqual(je('post'), ['postfaecher', 'eingangsordner', 'webdav', 'texterkennung', 'woerter']);
     assert.deepEqual(je('sichern'), ['sicherung', 'vollexport', 'papierkorb', 'daten']);
     assert.deepEqual(je('einstellungen'), ['betrieb', 'region', 'sprachen', 'organisation', 'aufgaben', 'anmeldeschutz', 'designs', 'anbindung']);
     assert.deepEqual(je('wartung'), ['systemzustand', 'protokoll', 'fehlermeldungen', 'wartung', 'demo']);
-    // 7 ± 2: Einstellungen hat mit „Eigene Organisation“ (#1170) acht.
-    for (const g of Object.keys(GRUPPEN)) assert.ok(je(g).length <= 8, g);
+    // 7 ± 2: Einstellungen hat mit „Eigene Organisation“ (#1170) acht, „Ablage aufbauen“ mit der Beispiel-Ablage (#988)
+    // neun – Einsteiger sehen davon nur Pakete und Beispiel-Ablage.
+    for (const g of Object.keys(GRUPPEN)) assert.ok(je(g).length <= (g === 'ablage' ? 9 : 8), g);
     assert.equal(bereichName('texterkennung'), 'Suche und Volltext');
     assert.equal(bereichName('aufbewahrung'), 'Aufbewahrung abgelaufen');
     // Aufgaben und Tägliche Zusammenfassung: ein Eintrag unter Einstellungen, Kennung bleibt „aufgaben“.
@@ -202,17 +213,17 @@ describe('Werkbank: mittlere Spalte für Sammlungen zum Anlegen und Bearbeiten (
     const alt = { vorlage: 'haushalt', ein: ['nummernkreise', 'protokoll', 'anmeldeschutz'], aus: ['aufgaben', 'papierkorb'] };
     assert.deepEqual(liesAnsicht(alt), alt);
     for (const p of ['aufgaben', 'verschluesselung', 'papierkorb', 'webdav']) assert.equal(werkbankUmleitung(p), null, p);
-    // Vorlagen: Haushalt und Betrieb enthalten dieselben Bereiche wie vor der Neugliederung (dazu Region, #726, Sprachen, #729,
-    // und die Einstellungen zum Sichern, #1196).
+    // Haushalt (#987): was er vorher zeigte, dazu der frühere Expertenmodus und Post, Protokoll, Wartung.
     assert.deepEqual(BEREICHE.filter((b) => inVorlage('haushalt', b.pfad)).map((b) => b.pfad).sort(),
-      ['aufgaben', 'benutzer', 'betrieb', 'daten', 'organisation', 'pakete', 'papierkorb', 'region', 'sicherung', 'sichten', 'sprachen', 'stempel', 'systemzustand', 'typen', 'verschluesselung', 'vollexport', 'webdav']);
+      ['ablaufvorlagen', 'anmeldeschutz', 'aufgaben', 'automatisierungen', 'beispielablage', 'benutzer', 'betrieb', 'daten', 'eingangsordner', 'fehlermeldungen', 'organisation', 'pakete', 'papierkorb', 'postfaecher', 'protokoll',
+        'region', 'rundgaenge', 'sicherung', 'sichten', 'sprachen', 'stempel', 'systemzustand', 'texterkennung', 'tipps', 'typen', 'verschluesselung', 'vollexport', 'wartung', 'webdav', 'woerter']);
   });
 
   it('#1170: Nutzung und Eigene Organisation auf einer Seite unter Einstellungen, alte Adresse leitet um', () => {
     assert.equal(BEREICHE.some((x) => x.pfad === 'nutzung'), false, 'kein eigener Bereich mehr');
     const b = BEREICHE.find((x) => x.pfad === 'organisation');
     assert.equal(b?.gruppe, 'einstellungen');
-    assert.deepEqual(b?.in, ['haushalt', 'organisation'], 'der Haken „beruflich“ ist auch im Haushalt erreichbar');
+    assert.equal(b?.ab, 'haushalt', 'der Haken „beruflich“ ist auch im Haushalt erreichbar');
     assert.equal(werkbankUmleitung('nutzung'), '/werkbank/organisation#nutzung');
     assert.deepEqual(liesAnsicht({ vorlage: 'haushalt', ein: ['nutzung'], aus: [] }), { vorlage: 'haushalt', ein: ['organisation'], aus: [] });
   });
@@ -227,7 +238,7 @@ describe('Werkbank: mittlere Spalte für Sammlungen zum Anlegen und Bearbeiten (
       const b = BEREICHE.find((x) => x.pfad === pfad);
       assert.equal(b?.gruppe, 'datenschutz');
       assert.equal(GRUPPEN[b!.gruppe], 'Datenschutz');
-      assert.deepEqual(b?.in, ['organisation'], 'Vorlagen wie vorher Datenschutz');
+      assert.equal(b?.ab, 'selbstaendig', 'ab Selbständig (#987)');
     }
     assert.equal(werkbankUmleitung('datenschutz'), '/werkbank/auskuenfte', 'alte Links führen zu den Auskünften');
     assert.equal(abschnittUmleitung('loeschkonzept', 'loeschprotokoll'), '/werkbank/loeschprotokoll', 'früherer Abschnitt des Löschkonzepts');
@@ -292,11 +303,9 @@ describe('Werkbank neu geordnet (#717, #725)', () => {
   it('gespeicherte Ansichten übernehmen die neuen Kennungen, zusammengelegte erben die weiteste Sichtbarkeit', () => {
     assert.deepEqual(liesAnsicht({ vorlage: 'haushalt', ein: ['darfweg', 'wartungsmodus', 'wartung'], aus: ['technik', 'wiederherstellung'] }),
       { vorlage: 'haushalt', ein: ['aufbewahrung', 'wartung'], aus: ['systemzustand', 'sicherung'] });
-    // „Suche“ war im Haushalt Expertenmodus, Texterkennung nur im Betrieb: zusammen wie die Suche.
-    const sv = BEREICHE.find((b) => b.pfad === 'texterkennung')!;
-    assert.deepEqual([sv.in, sv.experte], [['organisation'], ['haushalt']]);
-    // Wartungsmodus war im Betrieb sichtbar, Wartungsoperationen nirgends: zusammen im Betrieb.
-    assert.deepEqual(BEREICHE.find((b) => b.pfad === 'wartung')!.in, ['organisation']);
+    // Seit #987 ab Haushalt (vorher dort Expertenmodus bzw. nur im Betrieb).
+    assert.equal(BEREICHE.find((b) => b.pfad === 'texterkennung')!.ab, 'haushalt');
+    assert.equal(BEREICHE.find((b) => b.pfad === 'wartung')!.ab, 'haushalt');
   });
 
   it('die Werkbank-Suche findet Bereiche unter neuem und altem Namen', () => {

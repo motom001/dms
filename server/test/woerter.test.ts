@@ -10,7 +10,7 @@ import { join } from 'node:path';
 import { after, describe, it } from 'node:test';
 import { gruppenMitWort, pruefeWortgruppe } from '../../shared/src/suche';
 import { liesVerwaltung } from '../../shared/src/verwaltungsrecht';
-import { BEREICHE, hatMitte, inVorlage, nurImExpertenmodus, werkbankEbene } from '../../shared/src/werkbankansicht';
+import { BEREICHE, hatMitte, inVorlage, STUFEN, werkbankEbene } from '../../shared/src/werkbankansicht';
 import { bereicheDerRoute } from '../src/verwaltungsbereiche';
 
 describe('Gleichbedeutende Wörter (#992): Prüfung einer Gruppe', () => {
@@ -42,10 +42,7 @@ describe('Gleichbedeutende Wörter (#992): Bereich und Rechte', () => {
     assert.ok(hatMitte('woerter'));
     assert.equal(werkbankEbene('woerter'), 'liste');
     assert.equal(werkbankEbene('woerter', 'neu'), 'mappe');
-    for (const v of ['haushalt', 'organisation', 'alles'] as const) {
-      assert.equal(inVorlage(v, 'woerter'), inVorlage(v, 'texterkennung'), v);
-      assert.equal(nurImExpertenmodus(v, 'woerter'), nurImExpertenmodus(v, 'texterkennung'), v);
-    }
+    for (const v of STUFEN) assert.equal(inVorlage(v, 'woerter'), inVorlage(v, 'texterkennung'), v);
     assert.deepEqual(liesVerwaltung(['woerter']), ['woerter']);
   });
   it('Schnittstellen: Gruppen gehören zum neuen Bereich, den Stand lesen beide', () => {

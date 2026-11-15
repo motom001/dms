@@ -49,8 +49,9 @@ export function PaketErstellen({ onErstellt }: { onErstellt?: () => void } = {})
       if (w) { setE(alsNeueVersion(w, s).e); setIdAuto(false); setWeg(alsNeueVersion(w, s).weg); }
       else { setE(s.vorschlag); setIdAuto(!s.vorschlag.id); setFrage(s.entwuerfe.length > 0); }
     }, (x) => setFehler((x as Error).message));
-    // Expertenmodus der Werkbank (#356): Version und Ablago-Version dann auch von Hand (#651).
-    werkbankApi.werkbankAnsicht().then((w) => setExperte(!!w.eigene.experte), () => setExperte(false));
+    // Stufe „Alles“ (#987, vorher Expertenmodus #356) – eigene oder die der Installation: Version und Ablago-Version
+    // dann auch von Hand (#651).
+    werkbankApi.werkbankAnsicht().then((w) => setExperte((w.eigene.vorlage ?? w.installation.vorlage) === 'alles'), () => setExperte(false));
   }, []);
 
   // #651: Version und nötige Ablago-Version aus der Prüfung vorbelegen, solange nichts Passendes gewählt ist.

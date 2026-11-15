@@ -6,6 +6,7 @@ import { paketeApi } from '../api/pakete';
 import { werkbankApi } from '../api/werkbank';
 import { t } from '../sprache';
 import { sprache } from '../../../shared/src/sprache';
+import { vorlageFuer } from '../../../shared/src/werkbankansicht';
 import { geheim, holeStand, planAus, setzeStand, STUFEN, type Lauf, type Stufe, type StufeStand } from './stand';
 
 /**
@@ -54,10 +55,12 @@ const AUSFUEHREN: Record<Stufe, () => Promise<string | void | 'ausgelassen'>> = 
     if (!b) return 'ausgelassen';
     await werkbankApi.regionSetzen({ bundesland: b as never });
   },
-  // Merkmal „beruflich genutzt“ (#1032) aus dem Schritt „Nutzung“ (#1045); die Werkbank-Vorlage folgt ihm.
+  // Merkmal „beruflich genutzt“ (#1032) aus dem Schritt „Nutzung“ (#1045), danach die Stufe der Werkbank (#987) – die
+  // gewählte oder die Vorgabe zur Nutzung.
   async nutzung() {
-    if (!holeStand().sammlung.optional.beruflich) return 'ausgelassen';
-    await werkbankApi.setzeMerkmale({ beruflich: true });
+    const s = holeStand().sammlung;
+    if (s.optional.beruflich) await werkbankApi.setzeMerkmale({ beruflich: true });
+    await werkbankApi.setzeWerkbankAnsicht({ installation: { vorlage: s.werkbank ?? vorlageFuer({ beruflich: !!s.optional.beruflich }), ein: [], aus: [] } });
   },
   async mail() {
     const m = holeStand().sammlung.optional.mail;
@@ -104,6 +107,19 @@ const AUSFUEHREN: Record<Stufe, () => Promise<string | void | 'ausgelassen'>> = 
     if (!st.typen.length) return t('einrichtung.lauf.organisation.ohne-basis', { name: s.organisation.name });
     await werkbankApi.organisationAnlegen(s.organisation);
   },
+  // „Erst mal umsehen“ (#988): Beispiel-Ablage nach den Paketen. Fehlt ein nötiges Paket (409), bleibt ein Hinweis statt
+  // eines Fehlers – anlegen lässt sie sich später unter Werkbank → Beispiel-Ablage.
+  async beispielablage() {
+    const s = holeStand().sammlung;
+    if (!s.optional.beispielablage || !s.pakete) return 'ausgelassen';
+    try {
+      const r = await werkbankApi.beispielAblageAnlegen();
+      if (r.fehler.length) return r.fehler.map((f) => `${f.name}: ${f.meldung}`).join(' · ');
+    } catch (e) {
+      if (!(e instanceof ApiFehler && e.status === 409)) throw e;
+      return e.message;
+    }
+  },
 };
 
 /** Was mit „Jetzt einrichten“ angelegt wird, nacheinander; bricht bei der ersten Stufe mit Fehler ab. */
@@ -133,7 +149,7 @@ export async function ausfuehren() {
     const schon = l.unterbrochen ? new Set((await einrichtungApi.einrichtungStand()).erledigt) : new Set<string>();
     await einrichtungApi.einrichtungSchritt('schluessel');
     if (!schon.has('pakete')) await einrichtungApi.einrichtungSchritt('pakete', !(l.pakete?.installiert.length));
-    if (!schon.has('optional')) await einrichtungApi.einrichtungSchritt('optional', !fertig('adresse', 'region', 'mail', 'notfallkontakte', 'beispiele'));
+    if (!schon.has('optional')) await einrichtungApi.einrichtungSchritt('optional', !fertig('adresse', 'region', 'mail', 'notfallkontakte', 'beispiele', 'beispielablage'));
   } catch { /* Der Hinweis in der Übersicht ist nicht wichtig genug, um hier aufzuhalten. */ }
   setzeLauf((x) => ({ ...x, laeuft: false, fertig: true }));
 }
@@ -145,7 +161,7 @@ export function stufenZuruecksetzen(stufen: Stufe[]) {
 
 /** Welche Stufen ein Schritt des Assistenten betrifft – und umgekehrt (für „Ändern“ nach einem Fehler). */
 export const STUFEN_JE_SCHRITT = {
-  ablage: ['ablage'], konto: ['ablage'], nutzung: ['nutzung', 'organisation'], pakete: ['pakete', 'organisation'], optional: ['adresse', 'region', 'mail', 'notfallkontakte', 'beispiele'],
+  ablage: ['ablage'], konto: ['ablage'], nutzung: ['nutzung', 'organisation'], pakete: ['pakete', 'organisation'], optional: ['adresse', 'region', 'mail', 'notfallkontakte', 'beispiele', 'beispielablage'],
 } as const satisfies Record<string, readonly Stufe[]>;
 
 /** Für die Konfigurationsdatei (#806): aktueller Plan. */

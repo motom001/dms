@@ -368,9 +368,13 @@ Siehe auch: [Geplant](#geplant), [Erinnerung](#erinnerung), [Paket](#paket).
 Einstellung an einem Verweisfeld (#1037) – Paare „Feld der verwiesenen Mappe → Feld dieser Mappe“. Wählt man eine Mappe, schlägt Ablago deren Werte in leeren Feldern vor, markiert „vorgeschlagen aus …“ (z. B. Kündigungsfrist aus der Vertragsart). Nie überschreiben, nie Passwörter, nur Werte, die man lesen darf.  
 Siehe auch: [Aus Dokument füllen](#aus-dokument-fullen).
 
+<a id="beispiel-ablage"></a>**Beispiel-Ablage** · ✓ Alltagswort · Administratoren  
+Eine kleine, stimmige Ablage einer erfundenen Familie zum Umsehen – die Beispiel-Mappen der installierten Pakete auf einen Klick, ohne Automatisierungen und Benachrichtigungen. Mit einem Klick wieder weg; eigene Daten und geänderte Beispiele bleiben.  
+Siehe auch: [Beispiel-Mappe](#beispiel-mappe), [Lasttest-Daten](#lasttest-daten).
+
 <a id="beispiel-mappe"></a>**Beispiel-Mappe** · ✓ Alltagswort · Administratoren  
 Eine Mappe mit erfundenen Daten, die ein Paket auf Wunsch beim Installieren anlegt (Haken „Beispiel-Mappen anlegen“), damit man sieht, was in eine Mappe gehört – zum Ausprobieren, nicht zum Behalten. Unveränderte Beispiele lassen sich samt Dokumenten wieder entfernen. Anders als eine Vorgabe.  
-Siehe auch: [Paket](#paket), [Vorgabe](#vorgabe), [Demo-Daten](#demo-daten).
+Siehe auch: [Paket](#paket), [Vorgabe](#vorgabe), [Beispiel-Ablage](#beispiel-ablage), [Lasttest-Daten](#lasttest-daten).
 
 <a id="benutzer"></a>**Benutzer** · ✓ Alltagswort · alle  
 Ein Konto, mit dem sich jemand anmeldet. Liegt als Systemmappe in Ablago. Personen und Firmen, mit denen man zu tun hat (Kontakte), sind keine Benutzer, sondern gewöhnliche Mappen vom Mappentyp „Person“ bzw. „Organisation“ aus dem Paket Basis.
@@ -379,8 +383,8 @@ Ein Konto, mit dem sich jemand anmeldet. Liegt als Systemmappe in Ablago. Person
 Wer was darf. Am Mappentyp – Anlegen, Lesen, Bearbeiten, Löschen, Passwörter sehen – mit einem Standard plus Regeln; an der Ansicht – Sehen, Anlegen, Exportieren – mit Vererbung an die Unteransichten. Für Administratoren gelten sie nicht.
 
 <a id="betrieb"></a>**Betrieb** · ✓ Alltagswort · Administratoren  
-Die Vorlage unter „Werkbank anpassen“ für Selbständige und kleine Betriebe – mit Nummernkreisen, Archivmodus, Postfächern und weiteren Bereichen. Gegenstück ist die Vorlage „Haushalt“.  
-Siehe auch: [Werkbank anpassen](#werkbank-anpassen), [Haushalt](#haushalt).
+Die Stufe unter „Werkbank anpassen“ für Betriebe mit mehreren Leuten – alles aus „Selbständig“ und dazu Designs.  
+Siehe auch: [Werkbank anpassen](#werkbank-anpassen), [Stufe](#stufe).
 
 <a id="design"></a>**Design** · ✓ Alltagswort · Administratoren  
 Wie die Oberfläche aussieht – Logo, Schriftzug, Farben (hell, dunkel, hoher Kontrast oder nach Gerät) und eigenes CSS. Administratoren legen Designs unter Werkbank → Designs an und bestimmen den Standard; jeder Benutzer wählt seines unter Mein Konto unter „Darstellung“.  
@@ -419,10 +423,6 @@ Siehe auch: [Teil](#teil), [Übergeordnete Mappe](#ubergeordnete-mappe), [Tabell
 <a id="kann-aus-post-angelegt-werden"></a>**Kann aus Post angelegt werden** · ~ mit Erklärung · Administratoren  
 Haken in den Grunddaten eines Mappentyps (#937). Nur Mappentypen damit stehen beim Übernehmen eines Dokuments aus der Post unter „Wohin gehört das?“ zur Wahl – für alle, die dort Mappen anlegen dürfen. Vorgabe an bei Mappentypen mit Dokumentenregister; Systemmappentypen nie.  
 Siehe auch: [Mappentyp](#mappentyp), [Post](#post), [Woran man ihn erkennt](#woran-man-ihn-erkennt).
-
-<a id="nachweise"></a>**Nachweise** · ~ mit Erklärung · Administratoren  
-Was in einem Monat zu Zugang, Sicherung, Betrieb und Datenschutz geschehen ist – etwa Fehlanmeldungen, Rechteänderungen, Sicherungsläufe oder Updates. Ein Paket wie „Compliance“ liest sie zusammen mit dem Stand der Einrichtung, aber nur die Bereiche, die der Administrator in den Einstellungen des Pakets anhakt; Passwörter sind nie dabei.  
-Siehe auch: [Paket](#paket), [Dienstkonto](#dienstkonto).
 
 <a id="nummernkreis"></a>**Nummernkreis** · ✗ Fachwort · Administratoren  
 Fortlaufende Nummern nach einem Muster wie {jjjj}-R{zaehler:4} (ergibt z. B. 2026-R0001), etwa für Rechnungsnummern.
@@ -477,6 +477,10 @@ Siehe auch: [Werkbank-Karte](#werkbank-karte), [Automatisierungsvorlage](#automa
 Das Datumsfeld, ab dem die Frist im Archivmodus läuft – bis zum 31.12. seines Jahres plus die Jahre. Ist es leer, zählt das Anlagedatum der Mappe oder, mit „läuft noch nicht ab“, die Frist beginnt erst, wenn es gefüllt ist.  
 Siehe auch: [Archivmodus](#archivmodus).
 
+<a id="stufe"></a>**Stufe** · ✓ Alltagswort · Administratoren  
+Wie viel die Werkbank-Leiste zeigt – fünf Stufen, jede enthält die vorige - Einsteiger (nur das Nötigste), Haushalt, Selbständig, Betrieb und Alles. Nur Ordnung in der Leiste, kein Recht. Löst den früheren Expertenmodus der Werkbank ab.  
+Siehe auch: [Werkbank anpassen](#werkbank-anpassen), [Haushalt](#haushalt), [Betrieb](#betrieb).
+
 <a id="storung"></a>**Störung** · ✓ Alltagswort · Administratoren  
 Ein Abruf eines Postfachs schlägt gerade fehl – rot im Bereich „Stand“ mit „Gestört seit …“ und dem Weg zur Abhilfe. Klappt der Abruf wieder, wird sie zur früheren Störung mit „behoben am …“, leise und zugeklappt.  
 Siehe auch: [Postfach](#postfach).
@@ -519,8 +523,8 @@ Alles, was ein Paket mitbringt – Mappentypen, Ansichten, mitgelieferte Mappen,
 Siehe auch: [Paket](#paket), [Paketkatalog](#paketkatalog).
 
 <a id="werkbank-anpassen"></a>**Werkbank anpassen** · ~ mit Erklärung · Administratoren  
-Legt fest, welche Bereiche links in der Werkbank stehen – nach einer Vorlage („Haushalt“, „Betrieb“ oder „Alles“) und mit Abweichungen. Ausblenden schaltet nichts ab. Neue Installationen starten mit „Haushalt“; Installationen von vor dieser Einstellung zeigen alles.  
-Siehe auch: [Werkbank](#werkbank), [Übersicht](#ubersicht), [Betrieb](#betrieb).
+Legt fest, welche Bereiche links in der Werkbank stehen – nach einer Stufe („Einsteiger“, „Haushalt“, „Selbständig“, „Betrieb“ oder „Alles“) und mit Abweichungen. Unter „Meine Leiste“ wählt jede Person, die verwaltet, für sich eine andere Stufe. Ausblenden schaltet nichts ab. Neue Installationen starten mit der Stufe aus dem Einrichtungsassistenten; Installationen von vor dieser Einstellung zeigen alles.  
+Siehe auch: [Werkbank](#werkbank), [Übersicht](#ubersicht), [Stufe](#stufe).
 
 <a id="werkbank-karte"></a>**Werkbank-Karte** · ~ mit Erklärung · Administratoren  
 Karte einer Automatisierung, die den Betrieb von Ablago betrifft statt einer Mappe – Wenn „Fehler gemeldet“, „Protokollmeldung“, „Neue Version verfügbar“ und Dann „Sicherung anstoßen“. Das Systemkonto „Automatisierung“ hat dafür genau festgelegte Werkbank-Rechte; einrichten darf sie nur, wer den Bereich selbst verwaltet.  
@@ -551,13 +555,10 @@ Siehe auch: [Werkbank](#werkbank).
 Die Schnittstelle, über die Programme mit Ablago arbeiten. Zugang mit einem persönlichen API-Schlüssel.
 
 <a id="auftrag"></a>**Auftrag** · ✗ Fachwort · Administratoren  
-Arbeit, die Ablago im Hintergrund erledigt und deren Fortschritt man sieht, z. B. Demo-Daten erzeugen, Vollexport, Nummern nachträglich vergeben. Es läuft immer nur ein Auftrag. Arbeit für Menschen heißt Aufgabe.
+Arbeit, die Ablago im Hintergrund erledigt und deren Fortschritt man sieht, z. B. Lasttest-Daten erzeugen, Vollexport, Nummern nachträglich vergeben. Es läuft immer nur ein Auftrag. Arbeit für Menschen heißt Aufgabe.
 
 <a id="debug-modus"></a>**Debug-Modus** · ✗ Fachwort · Fortgeschrittene  
 Ein ausführlicheres technisches Protokoll für die Fehlersuche.
-
-<a id="demo-daten"></a>**Demo-Daten** · ✓ Alltagswort · Administratoren  
-Erzeugte Beispielmappen zum Ausprobieren und für Lasttests.
 
 <a id="eingebautes-werkzeug"></a>**Eingebautes Werkzeug** · ~ mit Erklärung · Administratoren  
 Ein Programm, das das Ablago-Image mitbringt und das Ablago selbst aufruft – zum Lesen von PDFs (Poppler) und zum Bearbeiten von PDFs (qpdf). Die Werkbank nennt es nur, wenn eins fehlt, dann mit Folge und Abhilfe (Suche und Volltext, Systemzustand).  
@@ -577,11 +578,14 @@ Eine kurze Prüfkennung, an der man einen Schlüssel wiedererkennt.
 Fehler, die Benutzer über „Fehler melden“ eingereicht haben (Werkbank → Gemeldete Fehler).
 
 <a id="haushalt"></a>**Haushalt** · ✓ Alltagswort · Administratoren  
-Die Vorlage unter „Werkbank anpassen“ für zu Hause – schlank, nur was eine Familie zum Einrichten und Sichern braucht. Für die ganze Installation heißt es seit 04.11.2026 neutral „Ablage“; „Mandant“ steht nur im Code.  
+Die Stufe unter „Werkbank anpassen“ für einen Haushalt, der mehr selbst einrichtet – Mappentypen, Automatisierungen, Post und Suche. Für die ganze Installation heißt es seit 04.11.2026 neutral „Ablage“; „Mandant“ steht nur im Code.  
 Siehe auch: [Betrieb](#betrieb), [Werkbank anpassen](#werkbank-anpassen), [Ablage](#ablage).
 
 <a id="konsole"></a>**Konsole** · ✗ Fachwort · Fortgeschrittene  
 Der Befehl „dms“ im Container für Notfall und Betrieb.
+
+<a id="lasttest-daten"></a>**Lasttest-Daten** · ✓ Alltagswort · Administratoren  
+Viele erzeugte Mappen mit zufälligen Werten für Lasttests und Messungen, nur in der Stufe „Alles“. Früher „Demo-Daten“. Wer sehen will, wie eine gefüllte Ablage aussieht, nimmt die Beispiel-Ablage.
 
 <a id="meine-daten-exportieren"></a>**Meine Daten exportieren** · ✓ Alltagswort · alle  
 Ein Benutzer lädt unter Mein Konto seine eigenen Daten herunter.
@@ -738,7 +742,8 @@ Wer Oberfläche, Handbuch, Hilfetexte oder Release-Notizen schreibt, verwendet d
 | Automatisierungsvorlage | Makro, Workflow-Vorlage, Ablaufvorlage | `Ablaufvorlage, ablaufvorlagen, inhalt.ablaufvorlagen` |
 | Bedingung | – | `Bedingung` |
 | Beim Auswählen übernehmen | Vorbelegen (in der Oberfläche), Erben | `Feld.vorbelegen` |
-| Beispiel-Mappe | Demo-Mappe | `inhalt/beispiele, beispielMappen` |
+| Beispiel-Ablage | Demo-Daten | `beispielablage` |
+| Beispiel-Mappe | Lasttest-Mappe | `inhalt/beispiele, beispielMappen` |
 | Benutzer | User, Account | `Benutzer` |
 | Berechnetes Feld | Formelfeld, berechnete Spalte, automatisches Feld | `Feld.berechnetVon, berechnet (Paket)` |
 | Berechtigungen | Permissions | `Rechte` |
@@ -770,6 +775,7 @@ Wer Oberfläche, Handbuch, Hilfetexte oder Release-Notizen schreibt, verwendet d
 | Ist Teil einer anderen Mappe | Untertyp, Untermappentyp, Vererbung | `Mappentyp.teilVon, gehoertZu, shared/src/teile.ts` |
 | Kann aus Post angelegt werden | – | `Mappentyp.ausPost` |
 | Kennung | Schlüssel (für Felder), Key | `key, schluessel` |
+| Lasttest-Daten | Demo-Daten | – |
 | Leerseite | Blindseite, Vakatseite, leeres Blatt | `Dokument.leerseiten, dms:leerseiten` |
 | Link | Direktlink, sprechender Link | `Direktlink` |
 | Mappe | Akte, Ordner, Datensatz | `Mappe` |
@@ -800,6 +806,7 @@ Wer Oberfläche, Handbuch, Hilfetexte oder Release-Notizen schreibt, verwendet d
 | Sonst | Else-Zweig, Andernfalls | `sonst` |
 | Standardwert | Defaultwert | – |
 | Stichtag | – | `stichtag` |
+| Stufe | Expertenmodus (für die Werkbank-Leiste) | `STUFEN, Vorlage` |
 | Suchfeld oben | Schnellsuche, Schnell finden | `KopfSuche, SucheOben` |
 | Systemmappentyp | – | `Systemtyp` |
 | Systemrolle | Rolle (für Administrator/Mitglied) | `Rolle, Benutzer.rolle` |

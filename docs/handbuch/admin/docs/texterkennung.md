@@ -2,7 +2,7 @@
 
 Damit die Suche auch den Text von Dokumenten findet, erzeugt Ablago zu jedem neuen Dokument einen **Volltext** – im Hintergrund, ohne dass jemand warten muss:
 
-Die Einstellungen stehen unter **Werkbank → Post und Eingänge → Suche und Volltext** – zusammen mit der [Suche](suche.md) (Tippfehler, Wörterverzeichnis; die [gleichbedeutenden Wörter](suche.md#gleichbedeutende-worter) haben seit #992 einen eigenen Bereich direkt darunter). „Neue PDFs automatisch verkleinern“ steht seit #1190 beim Speicherplatz unter [Systemzustand](speicherplatz.md#neue-pdfs-automatisch-verkleinern). Der Bereich gehört zur Vorlage **Betrieb**, im Haushalt erscheint er im Expertenmodus. Die *Wartungsoperationen* stehen unter **Werkbank → Wartung und Fehlersuche → Wartung**.
+Die Einstellungen stehen unter **Werkbank → Post und Eingänge → Suche und Volltext** – zusammen mit der [Suche](suche.md) (Tippfehler, Wörterverzeichnis; die [gleichbedeutenden Wörter](suche.md#gleichbedeutende-worter) haben seit #992 einen eigenen Bereich direkt darunter). „Neue PDFs automatisch verkleinern“ steht seit #1190 beim Speicherplatz unter [Systemzustand](speicherplatz.md#neue-pdfs-automatisch-verkleinern). Der Bereich steht ab der Stufe **Haushalt** in der Leiste. Die *Wartungsoperationen* stehen unter **Werkbank → Wartung und Fehlersuche → Wartung**.
 
 --8<-- "ausgeblendet-schritt.md"
 
@@ -126,7 +126,7 @@ Unter **Aufträge** siehst du in einer Liste mit fester Höhe die Dokumente je S
 - **Neu starten** lässt den Volltext ausdrücklich neu erzeugen: Auch ein Paket erkennt dann Dokumente neu, die schon Text haben.
 - **Alle Fehler neu starten** reiht alle Dokumente mit Fehler wieder ein.
 
-**Wenn die Datenbank ausgelastet ist:** Speichern viele Vorgänge gleichzeitig (ein Stapel Scans, Demo-Daten, ein Import), kann die Datenbank das Speichern eines Ergebnisses ausnahmsweise abbrechen. Ablago versucht es dann von selbst noch einige Male mit kurzer Pause. Klappt es auch dann nicht, steht das Dokument auf *Fehler* mit dem Grund „Text erkannt, aber nicht gespeichert – die Datenbank war ausgelastet“ und einem Eintrag im Protokoll – nie still ohne Volltext. **Neu starten** bzw. **Alle Fehler neu starten** holt es nach. Das gilt auch, wenn ein Paket den Text schreibt: Es bekommt dann die Antwort 503 und sendet erneut.
+**Wenn die Datenbank ausgelastet ist:** Speichern viele Vorgänge gleichzeitig (ein Stapel Scans, Lasttest-Daten, ein Import), kann die Datenbank das Speichern eines Ergebnisses ausnahmsweise abbrechen. Ablago versucht es dann von selbst noch einige Male mit kurzer Pause. Klappt es auch dann nicht, steht das Dokument auf *Fehler* mit dem Grund „Text erkannt, aber nicht gespeichert – die Datenbank war ausgelastet“ und einem Eintrag im Protokoll – nie still ohne Volltext. **Neu starten** bzw. **Alle Fehler neu starten** holt es nach. Das gilt auch, wenn ein Paket den Text schreibt: Es bekommt dann die Antwort 503 und sendet erneut.
 
 **Passwortgeschützte PDFs** erkennt Ablago und lässt sie mit dem Grund „Das PDF ist mit einem Passwort geschützt“ aus, statt einen Fehler zu melden – ein neuer Versuch würde nichts ändern.
 

@@ -5,13 +5,13 @@ The **workbench** only exists in [Administration mode](verwalten.md#der-verwaltu
 <!-- bereiche:gruppen -->
 | Group | Areas |
 | --- | --- |
-| **Build the Library** | [Packages](pakete.md), [Folder types](mappentypen.md), [Views](sichten.md), [Number sequences](nummernkreise.md), [Automations](automatisierungen.md), [Automation templates](automatisierungsvorlagen.md), [Tours](rundgaenge.md), [Tips](tipps.md) |
+| **Build the Library** | [Packages](pakete.md), [Example Library](beispielablage.md), [Folder types](mappentypen.md), [Views](sichten.md), [Number sequences](nummernkreise.md), [Automations](automatisierungen.md), [Automation templates](automatisierungsvorlagen.md), [Tours](rundgaenge.md), [Tips](tipps.md) |
 | **Users and security** | [Users](benutzer.md), [Encryption](verschluesselung.md), [Retention expired](archiv.md#nach-der-frist-aufbewahrung-abgelaufen) (only with archive mode), [Stamps](stempel.md) |
 | **Data protection** | [Access requests](datenschutz.md#auskunft-erteilen) (only when used for work), [Deletion concept](loeschkonzept.md#aus-dem-dms-erzeugen) (only when used for work), [Deletion log](datenschutz.md#loschprotokoll) (only when used for work) |
 | **Post and intake** | [Mailboxes](postfaecher.md), [Intake folder](eingangsordner.md) (only if the folder is mounted), [WebDAV drive](webdav.md), [Search and full text](texterkennung.md), [Synonyms](suche.md#gleichbedeutende-worter) |
 | **Back up data** | [Backup](sicherung.md), [Full export](export.md), [Bin](papierkorb.md), [Settings](daten-einstellungen.md) |
 | **Settings** | [Email and address](installation.md#e-mail-und-adresse), [Region](region.md), [Languages](sprachen.md), [Own organisation](organisation.md), [Tasks](aufgaben.md), [Sign-in protection](anmeldeschutz.md), [Themes](designs.md), [Database connection](installation.md#datenbank-anbindung) |
-| **Maintenance and troubleshooting** | [System health](speicherplatz.md), [Log](fehlersuche.md#protokoll), [Reported errors](fehlersuche.md#gemeldete-fehler), [Maintenance](wartungsmodus.md), [Demo data](demo.md) |
+| **Maintenance and troubleshooting** | [System health](speicherplatz.md), [Log](fehlersuche.md#protokoll), [Reported errors](fehlersuche.md#gemeldete-fehler), [Maintenance](wartungsmodus.md), [Load test data](demo.md) |
 <!-- /bereiche:gruppen -->
 
 Every setting has exactly one place. The areas' addresses (`/werkbank/sicherung` …) stayed the same when they were re-sorted in version 0.116; bookmarks and a saved selection under *Customise workbench* still apply.
@@ -124,6 +124,7 @@ Two notices you close with a button of their own instead – they don't come bac
 | DATABASE_URL differs from the database connection | yellow | `anbindung.abweichend` |
 | Database connection changed, restart needed | yellow | `anbindung.neustart` |
 | DMS_LASTTEST in a real installation | yellow | `lasttest` |
+| The [Example Library](beispielablage.md) is set up (until you remove it) | notice | `beispielablage` |
 | Package still needs settings | yellow | `paket-einstellungen` |
 | New: exclude folder types from AI services (once after the update, with AI packages; “Got it”) | notice | `ki.typen` |
 | Skipped during setup | notice | `einrichtung` |
@@ -154,20 +155,69 @@ Not everyone needs every area. A household may never touch number sequences, mai
 !!! info "Hiding doesn't switch anything off"
     A hidden area keeps running. A mailbox keeps collecting post, the backup keeps running. Direct links, the help and the overview's buttons still lead there. **Notices always get through:** if a hidden area has a problem, for example "Backup too old", it is in the overview, and the area appears with its notice in the bar.
 
-**Templates** for everyone who manages:
+**Levels** for everyone who manages – five, ascending; each includes the previous one:
 
-- **Household**: slim, only what a family needs for setting up and backing up. New installations start with it. **The self-employed and small businesses** choose **Business** right after setup.
-<!-- bereiche:organisation -->
-- **Business**: additionally Number sequences, Automations, Automation templates, Tours, Tips, Retention expired, Access requests, Deletion concept, Deletion log, Mailboxes, Intake folder, Search and full text, Synonyms, Sign-in protection, Themes, Log, Reported errors, Maintenance.
-<!-- /bereiche:organisation -->
-- **Everything**: every area. It stays like this for installations set up before version 0.70 until you choose something else.
+- **Beginner**: only the essentials for setting up and backing up. Default for purely private use.
+- **Household**: adds what a household sets up itself – folder types, views, automations, post and intake, search, log and maintenance.
+- **Self-employed**: adds number sequences, retention expired and data protection – for the self-employed and landlords. Default for use at work.
+- **Business**: adds themes – for businesses with several people.
+- **Everything**: every area, including the database connection and data for measurements. It stays like this for installations set up before version 0.70 until you choose something else.
+
+You choose the level in the setup wizard in the step “Use” and later here. Existing installations keep their template (Household, Business or Everything).
+
+<!-- bereiche:stufen -->
+| Area | Beginner | Household | Self-employed | Business | Everything |
+| --- | :-: | :-: | :-: | :-: | :-: |
+| Overview | ● | ● | ● | ● | ● |
+| [Packages](pakete.md) | ● | ● | ● | ● | ● |
+| [Example Library](beispielablage.md) | ● | ● | ● | ● | ● |
+| [Folder types](mappentypen.md) |   | ● | ● | ● | ● |
+| [Views](sichten.md) |   | ● | ● | ● | ● |
+| [Number sequences](nummernkreise.md) |   |   | ● | ● | ● |
+| [Automations](automatisierungen.md) |   | ● | ● | ● | ● |
+| [Automation templates](automatisierungsvorlagen.md) |   | ● | ● | ● | ● |
+| [Tours](rundgaenge.md) |   | ● | ● | ● | ● |
+| [Tips](tipps.md) |   | ● | ● | ● | ● |
+| [Users](benutzer.md) | ● | ● | ● | ● | ● |
+| [Encryption](verschluesselung.md) | ● | ● | ● | ● | ● |
+| [Retention expired](archiv.md#nach-der-frist-aufbewahrung-abgelaufen) |   |   | ● | ● | ● |
+| [Stamps](stempel.md) |   | ● | ● | ● | ● |
+| [Access requests](datenschutz.md#auskunft-erteilen) |   |   | ● | ● | ● |
+| [Deletion concept](loeschkonzept.md#aus-dem-dms-erzeugen) |   |   | ● | ● | ● |
+| [Deletion log](datenschutz.md#loschprotokoll) |   |   | ● | ● | ● |
+| [Mailboxes](postfaecher.md) |   | ● | ● | ● | ● |
+| [Intake folder](eingangsordner.md) |   | ● | ● | ● | ● |
+| [WebDAV drive](webdav.md) |   | ● | ● | ● | ● |
+| [Search and full text](texterkennung.md) |   | ● | ● | ● | ● |
+| [Synonyms](suche.md#gleichbedeutende-worter) |   | ● | ● | ● | ● |
+| [Backup](sicherung.md) | ● | ● | ● | ● | ● |
+| [Full export](export.md) |   | ● | ● | ● | ● |
+| [Bin](papierkorb.md) | ● | ● | ● | ● | ● |
+| [Settings](daten-einstellungen.md) |   | ● | ● | ● | ● |
+| [Email and address](installation.md#e-mail-und-adresse) | ● | ● | ● | ● | ● |
+| [Region](region.md) | ● | ● | ● | ● | ● |
+| [Languages](sprachen.md) |   | ● | ● | ● | ● |
+| [Own organisation](organisation.md) |   | ● | ● | ● | ● |
+| [Tasks](aufgaben.md) |   | ● | ● | ● | ● |
+| [Sign-in protection](anmeldeschutz.md) |   | ● | ● | ● | ● |
+| [Themes](designs.md) |   |   |   | ● | ● |
+| [Database connection](installation.md#datenbank-anbindung) |   |   |   |   | ● |
+| [System health](speicherplatz.md) | ● | ● | ● | ● | ● |
+| [Log](fehlersuche.md#protokoll) |   | ● | ● | ● | ● |
+| [Reported errors](fehlersuche.md#gemeldete-fehler) |   | ● | ● | ● | ● |
+| [Maintenance](wartungsmodus.md) |   | ● | ● | ● | ● |
+| [Load test data](demo.md) |   |   |   |   | ● |
+| **Number** | **10** | **31** | **36** | **37** | **39** |
+<!-- /bereiche:stufen -->
+
+The data protection areas are also only in the bar when Ablago is used for work.
 
 Afterwards you can deviate per area:
 
 - **for everyone**: the area is in the bar for every person who may manage it.
 - **only for me**: the area is additionally only in your bar, for example *Log* if you like to check it but the others don't.
 
-**Expert mode:** a household rarely needs some areas, but they are useful if you want to dig deeper – currently the [search](suche.md) with typos and synonyms. The template **Household** hides them; with the tick **Expert mode – only for me** they appear in your bar. That only applies to you and is not a permission – the others who manage see their own bar. In the list of areas they are marked "in expert mode". With **Business** and **Everything** they are visible anyway.
+**My sidebar:** everyone who manages can choose a different level for themselves – for instance **Everything** if you want to dig deeper while the others stay with **Beginner**. Without your own choice the level for everyone applies; what is shown or hidden for everyone applies here too. The level only orders the bar and is not a permission – what someone may manage is set by the [management rights](verwalten.md#der-verwaltungsmodus). **Expert mode** no longer exists: whoever had it switched on keeps its areas as “only for me”.
 
 If a hidden area is set up, for instance a mailbox or sign-in via a provider, it says "set up, but hidden". At the bottom of the bar it says how many areas are hidden. A click on it shows them all temporarily.
 
@@ -176,43 +226,44 @@ If a hidden area is set up, for instance a mailbox or sign-in via a provider, it
 ### Which area do I need for what? {#welchen-bereich-brauche-ich-wofur}
 
 <!-- bereiche:wofuer -->
-| Area | What for | In the preset |
+| Area | What for | Level |
 | --- | --- | --- |
-| [Packages](pakete.md) | Install ready-made folder types and views | Household, Business |
-| [Folder types](mappentypen.md) | Build your own kinds of folders | Household, Business |
-| [Views](sichten.md) | Arrange the collections on the left in the library | Household, Business |
-| [Number sequences](nummernkreise.md) | Sequential numbers, e.g. for invoices | Business |
-| [Automations](automatisierungen.md) | Set up procedures following the pattern When – And – Then: on an event or date set fields or give someone a task | Business, Household in expert mode |
-| [Automation templates](automatisierungsvorlagen.md) | Templates for runs on a folder: “Assign task”, “Remind”, follow-up – when they run, who gets the task and what is asked when applying them | Business, Household in expert mode |
-| [Tours](rundgaenge.md) | When you want to see tours, switch them on or off or write your own – short guided tours of the real interface. | Business, Household in expert mode |
-| [Tips](tipps.md) | When you want to adapt tips to the way you work, write your own or switch some off. | Business, Household in expert mode |
-| [Users](benutzer.md) | Create users and roles | Household, Business |
-| [Encryption](verschluesselung.md) | The key for passwords and backups | Household, Business |
-| [Retention expired](archiv.md#nach-der-frist-aufbewahrung-abgelaufen) | Check and delete folders whose retention period has expired (only with archive mode) | Business |
-| [Stamps](stempel.md) | Templates for stamps and watermarks when passing on | Household, Business |
-| [Access requests](datenschutz.md#auskunft-erteilen) | Access requests under Art. 15 GDPR for customers, tenants and contacts: request, create, deliver, evidence | Business |
-| [Deletion concept](loeschkonzept.md#aus-dem-dms-erzeugen) | Create a deletion concept: close gaps and set which folder types contain personal data | Business |
-| [Deletion log](datenschutz.md#loschprotokoll) | Evidence of what was deleted when – view, filter, export as PDF or CSV | Business |
-| [Mailboxes](postfaecher.md) | Fetch post from an email account | Business |
-| [Intake folder](eingangsordner.md) | Take over scans from a folder | Business |
-| [WebDAV drive](webdav.md) | Connect the library in Explorer, Finder or the Files app and drop files into it | Household, Business |
-| [Search and full text](texterkennung.md) | Recognise text in scanned documents, archive version, typos and “Did you mean …?” in the search | Business, Household in expert mode |
-| [Synonyms](suche.md#gleichbedeutende-worter) | Groups of words the search treats alike (e.g. car, vehicle, auto): add your own, view those from packages | Business, Household in expert mode |
-| [Backup](sicherung.md) | Set up, check and restore backups | Household, Business |
-| [Full export](export.md) | Take all data with you in open formats | Household, Business |
-| [Bin](papierkorb.md) | Bring back deleted folders | Household, Business |
-| [Settings](daten-einstellungen.md) | How long deleted items stay in the bin and whether users may export their own data | Household, Business |
-| [Email and address](installation.md#e-mail-und-adresse) | Email sending and Ablago’s address | Household, Business |
-| [Region](region.md) | Country, federal state and time zone – for public holidays, “today” and the times of reminders and summaries | Household, Business |
-| [Languages](sprachen.md) | If English or another language is also spoken in your library. | Household, Business |
-| [Own organisation](organisation.md) | Whether the Library is also used for work, plus name, address and controllers of your own business – kept at the organisation in the Library | Household, Business |
-| [Tasks](aufgaben.md) | Keep an eye on all open tasks of all users | Household, Business |
-| [Sign-in protection](anmeldeschutz.md) | Require two-factor, sign-in through a provider, locked addresses | Business |
-| [Themes](designs.md) | Logo, colours and custom CSS | Business |
+| [Packages](pakete.md) | Install ready-made folder types and views | from Beginner |
+| [Example Library](beispielablage.md) | Create a filled Library to look around in and remove it again | from Beginner |
+| [Folder types](mappentypen.md) | Build your own kinds of folders | from Household |
+| [Views](sichten.md) | Arrange the collections on the left in the library | from Household |
+| [Number sequences](nummernkreise.md) | Sequential numbers, e.g. for invoices | from Self-employed |
+| [Automations](automatisierungen.md) | Set up procedures following the pattern When – And – Then: on an event or date set fields or give someone a task | from Household |
+| [Automation templates](automatisierungsvorlagen.md) | Templates for runs on a folder: “Assign task”, “Remind”, follow-up – when they run, who gets the task and what is asked when applying them | from Household |
+| [Tours](rundgaenge.md) | When you want to see tours, switch them on or off or write your own – short guided tours of the real interface. | from Household |
+| [Tips](tipps.md) | When you want to adapt tips to the way you work, write your own or switch some off. | from Household |
+| [Users](benutzer.md) | Create users and roles | from Beginner |
+| [Encryption](verschluesselung.md) | The key for passwords and backups | from Beginner |
+| [Retention expired](archiv.md#nach-der-frist-aufbewahrung-abgelaufen) | Check and delete folders whose retention period has expired (only with archive mode) | from Self-employed |
+| [Stamps](stempel.md) | Templates for stamps and watermarks when passing on | from Household |
+| [Access requests](datenschutz.md#auskunft-erteilen) | Access requests under Art. 15 GDPR for customers, tenants and contacts: request, create, deliver, evidence | from Self-employed |
+| [Deletion concept](loeschkonzept.md#aus-dem-dms-erzeugen) | Create a deletion concept: close gaps and set which folder types contain personal data | from Self-employed |
+| [Deletion log](datenschutz.md#loschprotokoll) | Evidence of what was deleted when – view, filter, export as PDF or CSV | from Self-employed |
+| [Mailboxes](postfaecher.md) | Fetch post from an email account | from Household |
+| [Intake folder](eingangsordner.md) | Take over scans from a folder | from Household |
+| [WebDAV drive](webdav.md) | Connect the library in Explorer, Finder or the Files app and drop files into it | from Household |
+| [Search and full text](texterkennung.md) | Recognise text in scanned documents, archive version, typos and “Did you mean …?” in the search | from Household |
+| [Synonyms](suche.md#gleichbedeutende-worter) | Groups of words the search treats alike (e.g. car, vehicle, auto): add your own, view those from packages | from Household |
+| [Backup](sicherung.md) | Set up, check and restore backups | from Beginner |
+| [Full export](export.md) | Take all data with you in open formats | from Household |
+| [Bin](papierkorb.md) | Bring back deleted folders | from Beginner |
+| [Settings](daten-einstellungen.md) | How long deleted items stay in the bin and whether users may export their own data | from Household |
+| [Email and address](installation.md#e-mail-und-adresse) | Email sending and Ablago’s address | from Beginner |
+| [Region](region.md) | Country, federal state and time zone – for public holidays, “today” and the times of reminders and summaries | from Beginner |
+| [Languages](sprachen.md) | If English or another language is also spoken in your library. | from Household |
+| [Own organisation](organisation.md) | Whether the Library is also used for work, plus name, address and controllers of your own business – kept at the organisation in the Library | from Household |
+| [Tasks](aufgaben.md) | Keep an eye on all open tasks of all users | from Household |
+| [Sign-in protection](anmeldeschutz.md) | Require two-factor, sign-in through a provider, locked addresses | from Household |
+| [Themes](designs.md) | Logo, colours and custom CSS | from Business |
 | [Database connection](installation.md#datenbank-anbindung) | The connection to the database | Everything only |
-| [System health](speicherplatz.md) | See how the server is doing: storage, shrink PDFs, load of CPU, memory, network and database, version and updates | Household, Business |
-| [Log](fehlersuche.md#protokoll) | Read the technical log | Business |
-| [Reported errors](fehlersuche.md#gemeldete-fehler) | Errors users have reported | Business |
-| [Maintenance](wartungsmodus.md) | Temporarily lock users out (maintenance mode) and one-off upkeep work | Business |
-| [Demo data](demo.md) | Example folders to try things out | Everything only |
+| [System health](speicherplatz.md) | See how the server is doing: storage, shrink PDFs, load of CPU, memory, network and database, version and updates | from Beginner |
+| [Log](fehlersuche.md#protokoll) | Read the technical log | from Household |
+| [Reported errors](fehlersuche.md#gemeldete-fehler) | Errors users have reported | from Household |
+| [Maintenance](wartungsmodus.md) | Temporarily lock users out (maintenance mode) and one-off upkeep work | from Household |
+| [Load test data](demo.md) | Many folders for load tests and measurements | Everything only |
 <!-- /bereiche:wofuer -->

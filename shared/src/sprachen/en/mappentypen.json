@@ -114,7 +114,7 @@
   "editor.auswahlwerte": "Choice values",
   "editor.mehrfachauswahl": "Multiple choice",
   "editor.mehrere-werte-gleichzeitig-waehlbar": "Several values can be chosen at once",
-  "editor.wird-verschluesselt-gespeichert-und": "Stored encrypted and never appears in the title, the result list, the search or demo data. It can only be shown individually via the eye; that is recorded in the history.",
+  "editor.wird-verschluesselt-gespeichert-und": "Stored encrypted and never appears in the title, the result list, the search or load test data. It can only be shown individually via the eye; that is recorded in the history.",
   "editor.verweist-auf-mappen-vom": "Links to folders of the folder types",
   "editor.bitte-waehlen": "– please choose –",
   "editor.dieser-mappentyp-2": "This folder type",

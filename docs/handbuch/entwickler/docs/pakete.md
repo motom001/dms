@@ -631,7 +631,7 @@ Ein Katalog **ohne** `katalog.schluessel` bleibt wie bisher: Er geht, aber jede 
 
 ## Eigenes Paket testen
 
-Bevor dein Paket in den Katalog kommt, probierst du es im eigenen Ablago aus – am besten in einem Test-DMS (z. B. mit [Demo-Daten](https://help.ablago.app/admin/aktuell/demo/)):
+Bevor dein Paket in den Katalog kommt, probierst du es im eigenen Ablago aus – am besten in einem Test-DMS (z. B. mit [Lasttest-Daten](https://help.ablago.app/admin/aktuell/demo/)):
 
 1. **Werkbank → Pakete → ▸ Expertenmodus** aufklappen.
 2. Den Paketordner als ZIP packen, z. B. `cd pakete/mein_paket && zip -r ../../mein_paket.zip .`, und unter **Paket hochladen** wählen. Ein Ordner vor `manifest.yaml` (z. B. `mein_paket/manifest.yaml`) stört nicht. Ablago prüft das Paket wie ein Katalogpaket und zeigt die Vorschau; Fehler im Format stehen dort gesammelt.

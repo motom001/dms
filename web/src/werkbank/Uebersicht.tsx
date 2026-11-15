@@ -108,6 +108,8 @@ export function hinweiseAus(u: WerkbankUebersicht, mitNotfallblatt = false): Hin
   if (u.anbindung?.neustartNoetig) h.push({ schluessel: 'anbindung.neustart', art: 'warn', text: <>{tn('werkbank.uebersicht.und-gilt-erst-nach', { b: <strong>{t('werkbank.uebersicht.die-datenbank-anbindung-ist')}</strong> })}</>, ziel: '/werkbank/anbindung', knopf: t('werkbank.uebersicht.zur-anbindung') });
   // DMS_LASTTEST in einer echten Installation (#612): Der Lasttest ist nicht gestartet, das DMS läuft normal.
   if (u.lasttestAbbruch) h.push({ schluessel: 'lasttest', art: 'warn', text: <><strong>{t('lasttest.uebersicht')}</strong> {u.lasttestAbbruch} {t('lasttest.uebersicht.text')}</>, ziel: '/werkbank/systemzustand#version', knopf: t('lasttest.uebersicht.knopf') });
+  // Beispiel-Ablage (#988): deutlich als Beispiel gekennzeichnet, bis sie wieder entfernt ist.
+  if (u.beispielablage) h.push({ schluessel: 'beispielablage', art: 'info', text: <><strong>{t('werkbank.beispielablage.uebersicht', { anzahl: u.beispielablage })}</strong> {t('werkbank.beispielablage.uebersicht.text')}</>, ziel: '/werkbank/beispielablage', knopf: t('werkbank.beispielablage.uebersicht.knopf') });
   // Pflicht-Einstellungen eines Pakets fehlen (#405, z. B. im Ablauf „später ausfüllen“): bis sie da sind, läuft das Paket nicht.
   for (const p of u.paketeEinstellungen ?? []) h.push({ schluessel: `paket-einstellungen:${p.id}`, art: 'warn', text: <><strong>{t('pakete.ablauf.aufgabe', { name: p.name })}</strong> {t('pakete.ablauf.aufgabe.text')}</>, ziel: `/werkbank/pakete/${p.id}?reiter=einstellungen`, knopf: t('pakete.ablauf.aufgabe.knopf') });
   // KI-Dienste (#796): Nach dem Update einmal – bestehende Mappentypen gehen weiter an KI-Pakete, lassen sich aber ausschließen.

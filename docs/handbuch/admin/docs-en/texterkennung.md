@@ -2,7 +2,7 @@
 
 So that the search also finds the text of documents, Ablago creates a **full text** for every new document – in the background, without anyone having to wait:
 
-The settings are under **Workbench → Post and intake → Search and full text** – together with the [search](suche.md) (typos, word index; the [synonyms](suche.md#gleichbedeutende-worter) have had an area of their own directly below since #992). "Shrink new PDFs automatically" has been next to the storage space under [System health](speicherplatz.md#neue-pdfs-automatisch-verkleinern) since #1190. The area belongs to the template **Business**; in a household it appears in expert mode. The *maintenance operations* are under **Workbench → Maintenance and troubleshooting → Maintenance**.
+The settings are under **Workbench → Post and intake → Search and full text** – together with the [search](suche.md) (typos, word index; the [synonyms](suche.md#gleichbedeutende-worter) have had an area of their own directly below since #992). "Shrink new PDFs automatically" has been next to the storage space under [System health](speicherplatz.md#neue-pdfs-automatisch-verkleinern) since #1190. The area is in the bar from the level **Household**. The *maintenance operations* are under **Workbench → Maintenance and troubleshooting → Maintenance**.
 
 --8<-- "ausgeblendet-schritt.md"
 
@@ -126,7 +126,7 @@ Under **Jobs** you see, in a list of fixed height, the documents per status (*er
 - **Restart** explicitly has the full text regenerated: a package then also re-recognises documents that already have text.
 - **Restart all errors** queues all documents with errors again.
 
-**If the database is at capacity:** if many processes save at once (a stack of scans, demo data, an import), the database may exceptionally cancel saving a result. Ablago then tries again a few more times by itself with a short pause. If that doesn't work either, the document shows *error* with the reason "Text recognised but not saved – the database was at capacity" and an entry in the log – never silently without full text. **Restart** or **Restart all errors** catches up. This also applies when a package writes the text: it then gets the answer 503 and sends again.
+**If the database is at capacity:** if many processes save at once (a stack of scans, load test data, an import), the database may exceptionally cancel saving a result. Ablago then tries again a few more times by itself with a short pause. If that doesn't work either, the document shows *error* with the reason "Text recognised but not saved – the database was at capacity" and an entry in the log – never silently without full text. **Restart** or **Restart all errors** catches up. This also applies when a package writes the text: it then gets the answer 503 and sends again.
 
 **Password-protected PDFs** are recognised by Ablago and skipped with the reason "The PDF is protected with a password" instead of reporting an error – a new attempt wouldn't change anything.
 

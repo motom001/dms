@@ -1,10 +1,10 @@
-# Demo data {#demo-daten}
+# Load test data {#demo-daten}
 
-Under **Workbench → Demo data** you fill Ablago with content for trying out or testing.
+Under **Workbench → Load test data** (formerly "demo data") you fill Ablago with many folders for load tests and measurements. If you only want to see what a filled Library looks like, use the [example Library](beispielablage.md).
 
 --8<-- "ausgeblendet-alles.md"
 
-![Demo data](bilder/werkbank-demo.png)
+![Load test data](bilder/werkbank-demo.png)
 
 ## Sample folder types {#beispiel-mappentypen}
 
@@ -12,17 +12,17 @@ Under **Workbench → Demo data** you fill Ablago with content for trying out or
 
 This only works as long as there are no folder types yet apart from the system folder types *User*, *Role* and *Post* (and an earlier [storage location](mappentypen.md#ablageort-wo-die-originale-liegen)). If there is a storage location, *Contract* and *Invoice* get the field *Whereabouts of original documents*; in addition come a few storage locations (at home › study cupboard › red binder, safe in the hallway, at the notary's, destroyed) and the view *Originals by location*. A new Library has none – the examples then come without this field.
 
-## Creating demo folders {#demo-mappen-erzeugen}
+## Creating load test folders {#demo-mappen-erzeugen}
 
 Creates up to **50,000 folders per run** for the existing folder types – with matching values per field and links to existing folders. That way you can check how lists, search, sorting, text recognition, storage space and backup behave with many folders and documents. Several runs one after another are possible; new folders also link to the existing ones.
 
 This runs in the background; you can leave the page. The progress is shown on this page – per phase with what is being counted, e.g. "Creating folders: 1,000 of 1,000 ✓ · Creating documents: 1,326 of 1,907". The number of folders matches your input. Only if no matching values can be created for a folder type are there fewer:
 
-- **Already before starting**, the estimate names folder types that can't be created, with number and reason – e.g. a required password (demo data never has passwords) or a required link for which there are no folders of the target type and the target type doesn't get any in the same run either. Ablago creates target types that get demo folders themselves first.
+- **Already before starting**, the estimate names folder types that can't be created, with number and reason – e.g. a required password (load test data never has passwords) or a required link for which there are no folders of the target type and the target type doesn't get any in the same run either. Ablago creates target types that get load test folders themselves first.
 - **As soon as the folders are created**, the progress shows instead of the tick e.g. "Creating folders: 1,415 of 1,500 – 85 skipped"; under *Why were folders skipped?* the reasons per folder type are listed. This can also be a unique field whose possible values are taken.
 - The result at the end names the reasons once more.
 
-Demo folders are marked. The system folder types *User*, *Role* and *Post* don't get demo folders.
+Load test folders are marked. The system folder types *User*, *Role* and *Post* don't get load test folders.
 
 ### Seed {#startwert}
 
@@ -62,9 +62,9 @@ So that you can keep working normally alongside, the run takes a short break aft
 
 ## Removing {#entfernen}
 
-Below the button it says per folder type how many folders there are and how many of them are demo folders, with a total.
+Below the button it says per folder type how many folders there are and how many of them are load test folders, with a total.
 
-**Remove all demo folders** deletes all demo folders including their documents – in batches of 1,000 with progress, even with many files. Real folders stay untouched. If a real folder links to a demo folder, nothing is deleted – then remove that link first.
+**Remove all load test folders** deletes all load test folders including their documents – in batches of 1,000 with progress, even with many files. Real folders stay untouched. If a real folder links to a load test folder, nothing is deleted – then remove that link first.
 
 !!! tip "Trying out without risk"
     For experiments with larger changes to folder types, a second installation with its own database is better suited than the real one.

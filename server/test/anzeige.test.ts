@@ -153,15 +153,15 @@ describe('Merkmal „beruflich genutzt“ und Anzeige-Bedingungen (#1032, #1033)
     const { d } = await aufbau();
     assert.deepEqual(await d.werkbank.merkmale(), { beruflich: false });
     await assert.rejects(d.werkbank.setzeMerkmale({ beruflich: 'ja' }, 'markus@example.org'), (e) => e instanceof Fachfehler && e.status === 422);
-    await d.kern.einstellungen!.schreibe('werkbank_ansicht', { vorlage: 'haushalt', ein: [], aus: [] });
+    await d.kern.einstellungen!.schreibe('werkbank_ansicht', { vorlage: 'einsteiger', ein: [], aus: [] });
     assert.deepEqual(await d.werkbank.setzeMerkmale({ beruflich: true, unbekannt: true }, 'markus@example.org'), { beruflich: true });
     assert.deepEqual(await d.kern.einstellungen!.lies('merkmale'), { beruflich: true });
-    assert.equal((await d.werkbank.werkbankAnsicht({ id: null, email: 'x' })).installation.vorlage, 'organisation', 'Vorgabe der Vorlage (#987): beruflich → Betrieb');
-    await d.werkbank.setzeWerkbankAnsicht({ id: null, email: 'x' }, { installation: { vorlage: 'organisation', ein: ['demo'], aus: [] } });
+    assert.equal((await d.werkbank.werkbankAnsicht({ id: null, email: 'x' })).installation.vorlage, 'selbstaendig', 'Vorgabe der Vorlage (#987): beruflich → Selbständig');
+    await d.werkbank.setzeWerkbankAnsicht({ id: null, email: 'x' }, { installation: { vorlage: 'selbstaendig', ein: ['demo'], aus: [] } });
     await d.werkbank.setzeMerkmale({ beruflich: false }, 'markus@example.org');
     assert.equal(await d.kern.einstellungen!.lies('merkmale'), null);
-    assert.equal((await d.werkbank.werkbankAnsicht({ id: null, email: 'x' })).installation.vorlage, 'organisation', 'angepasste Leiste bleibt');
-    assert.equal(vorlageFuer({ beruflich: false }), 'haushalt');
+    assert.equal((await d.werkbank.werkbankAnsicht({ id: null, email: 'x' })).installation.vorlage, 'selbstaendig', 'angepasste Leiste bleibt');
+    assert.equal(vorlageFuer({ beruflich: false }), 'einsteiger');
     assert.deepEqual((await d.sichten.zaehlerRahmen()).merkmale, { beruflich: false }, 'die Oberfläche bekommt es mit dem Rahmen der Ablage');
   });
 

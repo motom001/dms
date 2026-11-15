@@ -44,9 +44,14 @@ rauchtest('Einrichtung: Assistent im Browser', {
   await s.getByLabel('Passwort wiederholen').fill(LENA.passwort);
   await assistentAxe(s, 'Dein Konto');
   await s.getByRole('button', { name: 'Weiter' }).click();
-  // Wofür nutzt du Ablago? (#1045) – Lena: zu Hause.
+  // Wofür nutzt du Ablago? (#1045) – Lena: zu Hause. Vorgewählt ist dann die Stufe Einsteiger (#987); die Rauchtests
+  // nehmen Haushalt, damit Mappentypen, Automatisierungen & Co. in der Leiste stehen.
   await s.getByRole('heading', { name: 'Wofür nutzt du Ablago?' }).waitFor();
   await s.getByRole('radio', { name: /^Für zu Hause/ }).check();
+  const stufen = s.getByRole('group', { name: 'Wie viel soll die Werkbank zeigen?' });
+  assert.ok(await stufen.getByRole('radio', { name: /^Einsteiger/ }).isChecked(), 'Vorgabe zu Hause: Einsteiger');
+  await stufen.getByRole('radio', { name: /^Haushalt/ }).check();
+  await assistentAxe(s, 'Nutzung');
   await s.getByRole('button', { name: 'Weiter' }).click();
   // Pakete: ohne Internet nur ein Hinweis – die Rauchtests brauchen keine Pakete.
   await s.getByRole('heading', { name: 'Pakete dazuholen' }).waitFor();

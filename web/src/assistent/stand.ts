@@ -3,6 +3,7 @@ import { beruflichBei, type DateiFehler, type Einrichtungsplan, type Nutzung, ty
 import type { AblaufErgebnis } from '../../../shared/src/pakete';
 import type { NotfallkontaktEingabe } from '../../../shared/src/notfallkontakte';
 import type { PaketWahl } from '../werkbank/PaketAblauf';
+import type { Vorlage } from '../../../shared/src/werkbankansicht';
 import { t } from '../sprache';
 
 /**
@@ -21,7 +22,8 @@ export interface MailSammlung { aktiv: boolean; host: string; port: number; verb
 // „nutzung“ vor „pakete“: Pakete schlagen bei beruflicher Nutzung eine längere Aufbewahrung vor (#1051). „organisation“
 // nach „pakete“: Den Mappentyp mit dem Merkmal „eigene Organisation“ bringt das Paket Basis mit (#1045).
 // „notfallkontakte“ (#812) nach „mail“: Mit eingerichtetem Versand geht die Info-Mail gleich hinaus.
-export const STUFEN = ['ablage', 'schluessel', 'adresse', 'region', 'nutzung', 'mail', 'notfallkontakte', 'beispiele', 'pakete', 'organisation'] as const;
+// „beispielablage“ (#988) zuletzt: Sie legt die Beispiele der eben installierten Pakete an.
+export const STUFEN = ['ablage', 'schluessel', 'adresse', 'region', 'nutzung', 'mail', 'notfallkontakte', 'beispiele', 'pakete', 'organisation', 'beispielablage'] as const;
 export type Stufe = (typeof STUFEN)[number];
 export interface StufeStand { zustand: 'wartet' | 'laeuft' | 'fertig' | 'ausgelassen' | 'fehler'; meldung?: string }
 export interface Lauf {
@@ -48,11 +50,14 @@ export interface Sammlung {
   paketeVorgabe: PlanPaket[] | null;
   /** beruflich: Merkmal „beruflich genutzt“ (#1032) – seit #1045 aus dem Schritt „Nutzung“, bei älteren Dateien direkt. */
   /** notfallkontakte (#812): gesammelt, angelegt bei „Jetzt einrichten“ – nicht in der Konfigurationsdatei (Daten Dritter). */
-  optional: { adresse: string; bundesland: string; beispiele: boolean; mail: MailSammlung | null; beruflich?: boolean; notfallkontakte?: NotfallkontaktEingabe[] };
+  /** beispielablage (#988): „Erst mal umsehen“ – Beispiel-Ablage aus den Paketen; nicht in der Konfigurationsdatei. */
+  optional: { adresse: string; bundesland: string; beispiele: boolean; mail: MailSammlung | null; beruflich?: boolean; notfallkontakte?: NotfallkontaktEingabe[]; beispielablage?: boolean };
   /** „Wofür nutzt du Ablago?“ (#1045); null = noch nicht beantwortet. */
   nutzung: Nutzung | null;
   /** „Deine Organisation“ (#1045) – nur bei beruflich und beides; null = keine. */
   organisation: PlanOrganisation | null;
+  /** Stufe der Werkbank (#987); fehlt = Vorgabe zur Nutzung. Nicht in der Konfigurationsdatei. */
+  werkbank?: Vorlage;
   /** Schritte, die schon einmal mit „Weiter“ verlassen wurden. */
   besucht: Ansicht[];
   ansicht: Ansicht;

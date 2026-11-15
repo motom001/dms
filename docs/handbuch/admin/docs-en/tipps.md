@@ -2,7 +2,7 @@
 
 **Tips** show in one sentence what else you can do in Ablago – as the tip of the day in the assistant and all together under [Discover Ablago](https://help.ablago.app/benutzer/aktuell/en/entdecken/). They come from Ablago, from packages and from you: here you adapt them to the way you work, write your own and switch individual ones off.
 
-You find them under **Workbench → Build the Library → Tips**, next to the [tours](rundgaenge.md). In a household the area appears in **expert mode** (Workbench → Customise the Workbench), in businesses always.
+You find them under **Workbench → Build the Library → Tips**, next to the [tours](rundgaenge.md). The area is in the bar from the level **Household** (see [Customising the workbench](uebersicht.md#werkbank-anpassen)).
 
 ![Workbench → Tips: list and form](bilder/werkbank-tipps.png)
 

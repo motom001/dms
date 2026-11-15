@@ -14,7 +14,7 @@ Auf welchen Geräten das Projekt Ablago selbst prüft – und bis wann voraussic
 | UGREEN DXP4800 Plus (Maintainer) | Intel Pentium Gold 8505, 6 Kerne (x64) | 15,4 GB | SSD | dms-komplett | 0.153.0 | 76 ms | 423 ms | 225 (157/s, p95 2,6 s) | 03.11.2026 |
 | GitHub-Rechner (ubuntu-latest) | 4 Kerne (x64) | 16 GB | SSD | ohne Container, PostgreSQL 17 daneben | 0.139.0 | 95 ms | 2.384 ms | unter 25 (p95 3,2 s bei 25) | 02.11.2026, erster Lauf, vor dem Beschleunigen (#615) |
 
-**Mit Speichern und extrem** – p95 der Durchgänge „+ Speichern“, in Klammern p95 nur der schreibenden Anfragen; bei extrem die Grenze, die Dauer des Anlegens der Demo-Daten und die Größe der Datenbank:
+**Mit Speichern und extrem** – p95 der Durchgänge „+ Speichern“, in Klammern p95 nur der schreibenden Anfragen; bei extrem die Grenze, die Dauer des Anlegens der Lasttest-Daten und die Größe der Datenbank:
 
 | Gerät | Ablago | klein + Speichern p95 | mittel + Speichern p95 | groß + Speichern p95 (bei Grenze) | extrem 500.000: Grenze | extrem 1 Mio.: Grenze | Stand |
 | --- | --- | ---: | ---: | ---: | ---: | ---: | --- |

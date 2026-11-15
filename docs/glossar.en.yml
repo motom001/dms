@@ -375,10 +375,13 @@ begriffe:
     beschreibung: The account with which a package with code works in Ablago, e.g. "Package Text recognition". It never signs in, isn't listed under Users, never deletes and only has the permissions from the package. In the history it appears where the package changed something.
   Werkbank anpassen:
     begriff: Customise the workbench
-    beschreibung: Sets which areas are on the left of the workbench – following a template ("Household", "Business" or "Everything") and with exceptions. Hiding doesn't switch anything off. New installations start with "Household"; installations from before this setting show everything.
+    beschreibung: Sets which areas are on the left of the workbench – following a level ("Beginner", "Household", "Self-employed", "Business" or "Everything") and with exceptions. Under "My sidebar" everyone who administers chooses a different level for themselves. Hiding doesn't switch anything off. New installations start with the level from the setup wizard; installations from before this setting show everything.
+  Stufe:
+    begriff: Level
+    beschreibung: How much the Workbench bar shows – five levels, each includes the previous one - Beginner (only the essentials), Household, Self-employed, Business and Everything. Only order in the bar, not a permission. Replaces the former expert mode of the Workbench.
   Betrieb:
     begriff: Business
-    beschreibung: The template under "Customise the workbench" for the self-employed and small businesses – with number sequences, archive mode, mailboxes and further areas. Its counterpart is the template "Household".
+    beschreibung: The level under "Customise the workbench" for businesses with several people – everything from "Self-employed" plus themes.
   Übersicht:
     begriff: Overview
     beschreibung: The first page of the workbench – what needs doing in Ablago right now, with notices, status and inventory.
@@ -432,7 +435,7 @@ begriffe:
     beschreibung: A saved state of an entry in the Workbench – folder type (with its permission rules), view, number sequence, stamp template, mailbox, package settings or automation – with the time, who saved it (a person, a package with its version, an automation, an update of Ablago) and a readable list of changes. Every save creates a version; the same person within 10 minutes stays one. Two versions can be compared and an earlier one restored – which is itself a new version. When an entry is deleted, its last version stays with a deletion note as a record.
   Haushalt:
     begriff: Household
-    beschreibung: The template under "Customise the workbench" for home – lean, only what a family needs for setting up and backing up. Since 04.11.2026 the whole installation is neutrally called "Library" (Ablage); "Mandant" only appears in the code.
+    beschreibung: The level under "Customise the workbench" for a household that sets up more itself – folder types, automations, post and search. Since 04.11.2026 the whole installation is neutrally called "Library" (Ablage); "Mandant" only appears in the code.
   Einrichtungsassistent:
     begriff: Setup wizard
     beschreibung: The steps when Ablago is started for the first time.
@@ -490,9 +493,12 @@ begriffe:
   Speicherplatz:
     begriff: Storage space
     beschreibung: How full the data folders are, with thresholds for warnings (under system health).
-  Demo-Daten:
-    begriff: Demo data
-    beschreibung: Generated sample folders for trying out and for load tests.
+  Lasttest-Daten:
+    begriff: Load test data
+    beschreibung: Many generated folders with random values for load tests and measurements, only at the level "Everything". Formerly "demo data". To see what a filled Library looks like, use the example Library.
+  Beispiel-Ablage:
+    begriff: Example Library
+    beschreibung: A small, consistent Library of an invented family to look around in – the example folders of the installed packages in one click, without automations and notifications. Gone again in one click; your own data and changed examples stay.
   API:
     begriff: API
     beschreibung: The interface through which programs work with Ablago. Access with a personal API key.
@@ -504,4 +510,4 @@ begriffe:
     beschreibung: The command "dms" in the container for emergencies and operation.
   Auftrag:
     begriff: Job
-    beschreibung: Work that Ablago does in the background and whose progress you can see, e.g. creating demo data, full export, assigning numbers retrospectively. Only one job runs at a time. Work for people is called a task.
+    beschreibung: Work that Ablago does in the background and whose progress you can see, e.g. creating load test data, full export, assigning numbers retrospectively. Only one job runs at a time. Work for people is called a task.

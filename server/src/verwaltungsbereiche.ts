@@ -134,6 +134,8 @@ const REGELN: Regel[] = [
   R('*', '/api/werkbank/fehlermeldungen*', 'fehlermeldungen'),
   R('*', '/api/werkbank/wartung*', 'wartung'),
   R('*', '/api/werkbank/demo*', 'demo'),
+  // Beispiel-Ablage (#988): legt Beispiel-Mappen der installierten Pakete an und entfernt sie.
+  R('*', '/api/werkbank/beispielablage*', 'beispielablage'),
   R('*', '/api/beispiele', 'demo'),
 ];
 

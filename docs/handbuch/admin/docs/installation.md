@@ -74,7 +74,7 @@ Name, E-Mail-Adresse und Passwort **deines eigenen Kontos** – mit deiner einen
 
 - **Für meine Arbeit oder meinen Betrieb** und **Beides** setzen das Merkmal [beruflich genutzt](organisation.md#nutzung): Mappentypen zeigen dann ihre beruflichen Felder, und Pakete, die bei beruflicher Nutzung länger aufbewahren, richten das beim Installieren gleich so ein.
 - Die Antwort **wählt im nächsten Schritt Pakete vor**: zu Hause Basis, Haushalt, Verträge und Rechnungen; beruflich Basis, Verträge, Rechnungen und Compliance; bei „Beides“ alle davon. Vorgewählt wird nur, was es im Katalog gibt – abwählen kannst du alles.
-- Die **Werkbank** startet zu Hause mit der Vorlage *Haushalt*, beruflich mit *Betrieb* (siehe [Übersicht](uebersicht.md)).
+- **Wie viel soll die Werkbank zeigen?** Nach der Antwort wählst du eine der fünf Stufen *Einsteiger*, *Haushalt*, *Selbständig*, *Betrieb* oder *Alles*. Vorgewählt ist zu Hause *Einsteiger*, beruflich *Selbständig*. Jede Person, die verwaltet, kann später für sich eine andere Stufe wählen (siehe [Werkbank anpassen](uebersicht.md#werkbank-anpassen)).
 
 **Deine Organisation:** Bei beruflicher Nutzung fragt der Schritt gleich darunter nach deiner eigenen Organisation – Name, Anschrift, E-Mail und Telefon. Nur der Name ist Pflicht, alles andere ist freiwillig. Mit **Jetzt einrichten** legt Ablago daraus eine Organisation mit dem Merkmal [eigene Organisation](organisation.md) an; so weiß Ablago, wer „wir“ sind, etwa für Auskünfte nach der DSGVO. Dafür braucht es das Paket **Basis** (ab 1.7.0) – ist eine Organisation angegeben, ist Basis Pflicht, und die Zusammenfassung meldet, wenn es fehlt. Lässt du alle Felder leer, legt Ablago keine an; das geht auch später in der Ablage.
 
@@ -99,7 +99,7 @@ Fünf gleich aufgebaute Abschnitte, ohne eigene Speichern-Knöpfe:
 
 - **Adresse von Ablago**, vorgeschlagen mit der Adresse im Browser. Feld leeren, wenn Ablago keine feste Adresse haben soll.
 - **Region:** das Bundesland für die Feiertage, anfangs *keins*. Land und Zeitzone stellst du unter [Werkbank → Einstellungen → Region](region.md) ein.
-- **Beispiele:** Beispiel-Mappentypen laden (nur ohne Pakete, die eigene Mappentypen mitbringen).
+- **Beispiele:** ohne Pakete Beispiel-Mappentypen laden; mit Paketen **Erst mal umsehen: Beispiel-Ablage anlegen** (siehe [Beispiel-Ablage](beispielablage.md)).
 - **E-Mail-Versand:** erst nach dem Häkchen „E-Mail-Versand jetzt einrichten“. Für den [E-Mail-Versand](e-mail-versand.md) genügen meist deine Adresse und dein Passwort; Server, Benutzer und Absender schlägt der Assistent vor und kennzeichnet sie, **Weiter** übernimmt sie in die Zusammenfassung. Eingerichtet wird der Versand erst mit **Jetzt einrichten**. Testen kannst du ihn nach der Einrichtung unter **Werkbank → E-Mail und Adresse**.
 - **Notfallkontakte:** Vertrauenspersonen für den Ernstfall, mit Name, E-Mail und wahlweise Telefon und Notiz. Sie bekommen keinen Zugang, nur eine kurze Info-Mail ohne Link, sobald der Versand eingerichtet ist, und stehen auf dem Notfallblatt unter „Wen fragen?“. Eingetragen werden sie mit **Jetzt einrichten**, später pflegst du sie unter [Werkbank → Verschlüsselung](verschluesselung.md#notfallkontakte). In der Konfigurationsdatei stehen sie bewusst nicht – es sind Daten Dritter.
 
@@ -131,7 +131,7 @@ Dazu Links zu beiden Handbüchern, „Problem melden“ als vorbereitetes GitHub
 
 Danach: Wie es weitergeht, steht kurz unter [Einrichten in fünf Schritten](fuenf-schritte.md) – unter **Werkbank → [Sicherung](sicherung.md)** den Zeitplan einschalten, eigene [Mappentypen](mappentypen.md) anlegen und weitere [Benutzer einladen](benutzer.md) – am besten auch eine zweite Person, die verwalten darf.
 
-**Für Selbständige und kleine Betriebe:** Hast du im Schritt [Nutzung](#nutzung) „Für meine Arbeit oder meinen Betrieb“ oder „Beides“ gewählt, startet die Werkbank mit der Vorlage **Betrieb** – mit Nummernkreisen, Archivmodus, Postfächern, Datenschutz und den übrigen Bereichen, die ein Betrieb braucht. Sonst startet sie mit der schlanken Vorlage *Haushalt*; umstellen kannst du jederzeit unter **Werkbank → Werkbank anpassen** (siehe [Übersicht](uebersicht.md)).
+**Für Selbständige und kleine Betriebe:** Hast du im Schritt [Nutzung](#nutzung) „Für meine Arbeit oder meinen Betrieb“ oder „Beides“ gewählt, ist die Stufe **Selbständig** vorgewählt – mit Nummernkreisen, Archivmodus, Datenschutz und allem aus *Haushalt*; für Betriebe mit mehreren Leuten passt **Betrieb**. Sonst ist die schlanke Stufe *Einsteiger* vorgewählt; umstellen kannst du jederzeit unter **Werkbank → Werkbank anpassen** (siehe [Übersicht](uebersicht.md)).
 
 ## Datenbank-Anbindung
 
@@ -301,4 +301,4 @@ server {
 }
 ```
 
-Lange Arbeiten wie das Erzeugen tausender Demo-Mappen laufen im Hintergrund, damit der Proxy nicht wegen einer Zeitüberschreitung abbricht. Die Live-Anzeige des Protokolls fragt alle zwei Sekunden nach und braucht keine besondere Proxy-Einstellung.
+Lange Arbeiten wie das Erzeugen tausender Lasttest-Mappen laufen im Hintergrund, damit der Proxy nicht wegen einer Zeitüberschreitung abbricht. Die Live-Anzeige des Protokolls fragt alle zwei Sekunden nach und braucht keine besondere Proxy-Einstellung.
