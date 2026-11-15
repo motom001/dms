@@ -32,9 +32,9 @@ export function geschuetzteSicherung(liste: SicherungEintrag[]): { name: string;
 }
 
 /** Hinweis auf die Aufbewahrung (#1169): was Ablago von selbst wegräumt, mit Link zur Einstellung darunter. */
-function Aufbewahrung({ plan }: { plan: SicherungsPlan }) {
+function Aufbewahrung({ plan, nurNeueste }: { plan: SicherungsPlan; nurNeueste: boolean }) {
   const a = plan.aufbewahrung;
-  const text = plan.nurNeueste ? t('werkbank.sicherung.liste.aufbewahrung.neueste') : t('werkbank.sicherung.liste.aufbewahrung', { taeglich: a.taeglich, woechentlich: a.woechentlich, monatlich: a.monatlich });
+  const text = nurNeueste ? t('werkbank.sicherung.liste.aufbewahrung.neueste') : t('werkbank.sicherung.liste.aufbewahrung', { taeglich: a.taeglich, woechentlich: a.woechentlich, monatlich: a.monatlich });
   return <p className="leise klein">{text} <a href="#zeitplan" className="verweis">{t('werkbank.sicherung.liste.aufbewahrung.aendern')}</a></p>;
 }
 
@@ -181,7 +181,7 @@ export function SicherungListe({ s, laeuft, laden }: { s: SicherungStand; laeuft
   return (
     <section className="blatt" id="liste">
       <h2 className="h3">{t('werkbank.sicherung.sicherungen-2')}</h2>
-      <Aufbewahrung plan={s.plan} />
+      <Aufbewahrung plan={s.plan} nurNeueste={!!s.zustand.nurNeueste?.wirksam} />
       {alte.length > 0 && (
         <div className="hinweis info">
           <p>{tn('werkbank.sicherung.zum-wiederherstellen-brauchst-du', { b: <strong>{t('werkbank.sicherung.sicherungen-sind-mit-einem', { anzahl: alte.length })}</strong> })}</p>

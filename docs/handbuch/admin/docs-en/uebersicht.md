@@ -118,6 +118,7 @@ Two notices you close with a button of their own instead – they don't come bac
 | Backups on the same disk as the documents | notice | `sicherung.gleiche-platte` |
 | Off-site backup failed | red | `sicherung.extern-fehler` |
 | Off-site backup more than 2 days behind | yellow | `sicherung.extern-alt` |
+| “Keep only the newest locally” currently not in effect | yellow | `sicherung.nur-neueste` |
 | The [export folder](export.md#export-ordner) is inside the backup folder | red | `export.im-sicherungsordner` |
 | Exports moved out of the backup folder on the update | notice (red if something was left behind) | `export.umzug` |
 | dms-komplett: the database is only stored inside the container (`/data/postgres` without a volume) and would be lost with the next update – [rescue the data](https://help.ablago.app/installieren/aktuell/en/komplett/#datenbank-retten) | red | `datenbank.ohne-volume` |

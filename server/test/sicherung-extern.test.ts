@@ -252,29 +252,63 @@ describe('Sicherung außer Haus (#585)', () => {
 
   it('Aufbewahrung: „lokal nur die neueste“, laufende Kopien bleiben stehen (höchstens 2 Tage), Stand verschwindet mit der Sicherung', async () => {
     const { s, sichere, stelle } = await aufbau();
-    await s.speicherePlan({ nurNeueste: true }, 'test');
-    assert.equal((await s.plan()).nurNeueste, true);
+    const nm = (m: { datei: string }) => m.datei.replace('.dms-sicherung', '');
     const a = await sichere('automatisch');
     stelle(new Date('2026-11-03T03:00:00Z'));
-    await sichere('automatisch');
-    // Die erste ist noch „offen“ (keine Rückmeldung) und jünger als 2 Tage: bleibt.
-    assert.equal((await s.liste()).length, 2);
-    await s.externRueckmeldung('sicherung_webdav', a.datei.replace('.dms-sicherung', ''), { status: 'geprueft', pruefung: 'pruefsumme' });
+    const b = await sichere('automatisch');
+    // #1194: erst wählbar, wenn eine Kopie außer Haus erfolgreich war.
+    await assert.rejects(s.speicherePlan({ nurNeueste: true }, 'test'), /außer Haus/);
+    await s.externRueckmeldung('sicherung_webdav', nm(a), { status: 'geprueft', pruefung: 'pruefsumme' });
+    await s.speicherePlan({ nurNeueste: true }, 'test');
+    assert.equal((await s.plan()).nurNeueste, true);
+    assert.deepEqual((await s.zustand()).nurNeueste, { gesetzt: true, moeglich: true, wirksam: true });
     stelle(new Date('2026-11-04T03:00:00Z'));
     const c = await sichere('automatisch');
     const namen = (await s.liste()).map((x) => x.name);
     // a ist außer Haus und weg; b ist noch unterwegs (1 Tag) und bleibt; c ist die neueste.
-    assert.equal(namen.length, 2, namen.join(', '));
-    assert.equal(namen[0], c.datei.replace('.dms-sicherung', ''));
-    assert.ok(!namen.includes(a.datei.replace('.dms-sicherung', '')));
+    assert.deepEqual(namen, [nm(c), nm(b)]);
     const ext = (await s.einstellungen.lies('sicherung_extern')) as Record<string, unknown>;
-    assert.ok(!(a.datei.replace('.dms-sicherung', '') in ext), 'Stand der entfernten Sicherung ist weg');
+    assert.ok(!(nm(a) in ext), 'Stand der entfernten Sicherung ist weg');
+    stelle(new Date('2026-11-05T03:00:00Z'));
+    await s.externRueckmeldung('sicherung_webdav', nm(c), { status: 'geprueft', pruefung: 'pruefsumme' });
     stelle(new Date('2026-11-07T03:00:00Z'));
     await sichere('automatisch');
     assert.equal((await s.liste()).length, 1, 'nach 2 Tagen gilt die Aufbewahrung auch für hängende Kopien');
     assert.equal((await s.speicher()).hochrechnung.stueck, 1);
     // „lokal keine“ gibt es nicht.
     assert.equal((await s.speicherePlan({ aufbewahrung: { taeglich: 0, woechentlich: 0, monatlich: 0 }, nurNeueste: true }, 't')).nurNeueste, true);
+  });
+
+  it('#1194: ohne erfolgreiche Kopie außer Haus löscht „lokal nur die neueste“ keine älteren Sicherungen', async () => {
+    // Ohne Paket: nicht wählbar; ein schon gespeicherter Haken wirkt nicht.
+    const ohne = await aufbau({ pakete: [] });
+    await assert.rejects(ohne.s.speicherePlan({ nurNeueste: true }, 'test'), /außer Haus/);
+    await ohne.einstellungen.schreibe('sicherung_plan', { ...(await ohne.s.plan()), nurNeueste: true });
+    for (const tag of ['02', '03', '04']) { ohne.stelle(new Date(`2026-11-${tag}T03:00:00Z`)); await ohne.sichere('automatisch'); }
+    assert.equal((await ohne.s.liste()).length, 3);
+    assert.deepEqual((await ohne.s.zustand()).nurNeueste, { gesetzt: true, moeglich: false, wirksam: false });
+    assert.notEqual((await ohne.s.speicher()).hochrechnung.stueck, 1);
+    // Ziel fällt weg (Paket entfernt): Die Wirkung endet, ältere Sicherungen bleiben.
+    const mit = await aufbau();
+    const a = await mit.sichere('automatisch');
+    await mit.s.externRueckmeldung('sicherung_webdav', a.datei.replace('.dms-sicherung', ''), { status: 'geprueft', pruefung: 'pruefsumme' });
+    await mit.s.speicherePlan({ nurNeueste: true }, 'test');
+    mit.pakete.splice(0);
+    for (const tag of ['03', '04']) { mit.stelle(new Date(`2026-11-${tag}T03:00:00Z`)); await mit.sichere('automatisch'); }
+    assert.equal((await mit.s.liste()).length, 3);
+    assert.deepEqual((await mit.s.zustand()).nurNeueste, { gesetzt: true, moeglich: false, wirksam: false });
+    // Letzte Kopie fehlgeschlagen: ebenfalls die normale Aufbewahrung.
+    const fehl = await aufbau();
+    const f1 = await fehl.sichere('automatisch');
+    await fehl.s.externRueckmeldung('sicherung_webdav', f1.datei.replace('.dms-sicherung', ''), { status: 'geprueft', pruefung: 'pruefsumme' });
+    await fehl.s.speicherePlan({ nurNeueste: true }, 'test');
+    fehl.stelle(new Date('2026-11-03T03:00:00Z'));
+    await fehl.sichere('automatisch'); // f1 ist außer Haus und darf weg
+    const f2 = (await fehl.s.liste())[0].name;
+    await fehl.s.externRueckmeldung('sicherung_webdav', f2, { status: 'fehlgeschlagen', grund: 'Netz weg', endgueltig: true });
+    fehl.stelle(new Date('2026-11-04T03:00:00Z'));
+    await fehl.sichere('automatisch');
+    assert.equal((await fehl.s.liste()).length, 2, 'die fehlgeschlagene Kopie bleibt lokal');
   });
 
   it('Prüfen (Prüfsumme) geht auch mit der schlanken Metadaten-Datei vom Ziel', async () => {

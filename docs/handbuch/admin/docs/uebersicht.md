@@ -118,6 +118,7 @@ Zwei Hinweise schließt du stattdessen mit einem eigenen Knopf ab – sie kommen
 | Sicherungen auf derselben Platte wie die Dokumente | Hinweis | `sicherung.gleiche-platte` |
 | Sicherung außer Haus fehlgeschlagen | rot | `sicherung.extern-fehler` |
 | Sicherung außer Haus mehr als 2 Tage im Rückstand | gelb | `sicherung.extern-alt` |
+| „Lokal nur die neueste behalten“ wirkt gerade nicht | gelb | `sicherung.nur-neueste` |
 | Der [Export-Ordner](export.md#export-ordner) liegt im Sicherungsordner | rot | `export.im-sicherungsordner` |
 | Exporte beim Update aus dem Sicherungsordner verschoben | Hinweis (rot, wenn etwas liegen blieb) | `export.umzug` |
 | dms-komplett: Die Datenbank liegt nur im Container (`/data/postgres` ohne Volume) und ginge beim nächsten Update verloren – [Daten retten](https://help.ablago.app/installieren/aktuell/komplett/#datenbank-retten) | rot | `datenbank.ohne-volume` |

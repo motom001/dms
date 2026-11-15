@@ -56,6 +56,8 @@ export interface SicherungsZustand {
   probe?: ProbeStand;
   /** Kopie außer Haus (#585); null ohne Paket mit dms:sicherung-lesen. */
   extern?: ExternZustand | null;
+  /** „Lokal nur die neueste“ (#1194): gesetzt im Plan; wählbar nur mit erfolgreicher Kopie außer Haus; wirksam = gesetzt und wählbar. */
+  nurNeueste?: { gesetzt: boolean; moeglich: boolean; wirksam: boolean };
 }
 /** Sicherung außer Haus ohne lokale Kopie (#976); grund, wenn Ablago sie nicht selbst zurückholen kann. */
 export interface EntfernteSicherung {

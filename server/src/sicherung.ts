@@ -300,6 +300,10 @@ export class Sicherung {
     if (neu.aktiv && !alt.aktiv && !(await this.notfallblatt()).aktuell) {
       throw new Fachfehler(409, t('meldungen.sicherung.die-automatische-sicherung-laesst'));
     }
+    // #1194: „Lokal nur die neueste“ nur mit einer Kopie außer Haus, die zuletzt erfolgreich lief – sonst Datenverlust.
+    if (neu.nurNeueste && !alt.nurNeueste && !(await this.nurNeuesteMoeglich())) {
+      throw new Fachfehler(409, t('meldungen.sicherung.nur-neueste-ohne-ausser-haus'));
+    }
     await this.q.einstellungen.schreibe('sicherung_plan', neu);
     log.info('Zeitplan der Sicherung geändert', { von, ...neu });
     return neu;
@@ -477,7 +481,7 @@ export class Sicherung {
     const plan = await this.plan();
     const a = plan.aufbewahrung;
     // Jede Sicherung ist vollständig; Zahl der höchstens aufbewahrten Sicherungen.
-    const stueck = plan.nurNeueste ? 1 : (plan.haeufigkeit === 'taeglich' ? a.taeglich : 0) + a.woechentlich + a.monatlich;
+    const stueck = plan.nurNeueste && await this.nurNeuesteMoeglich(liste) ? 1 : (plan.haeufigkeit === 'taeglich' ? a.taeglich : 0) + a.woechentlich + a.monatlich;
     const letzte = liste.find((x) => x.meta)?.bytes ?? dateienBytes + datenbankBytes;
     const mindest = plan.mindestFreiGB * GB;
     return {
@@ -611,7 +615,10 @@ export class Sicherung {
     const plan = await this.plan();
     const liste = await this.liste();
     const auto = liste.filter((x) => x.meta?.art === 'automatisch').map((x) => ({ name: x.name, beginn: x.meta!.beginn }));
-    const bleibt = plan.nurNeueste ? new Set([...auto].sort((x, y) => y.beginn.localeCompare(x.beginn)).slice(0, 1).map((x) => x.name)) : behalten(auto, plan.aufbewahrung);
+    // #1194: ohne Kopie außer Haus, die zuletzt erfolgreich lief, gilt die normale Aufbewahrung.
+    const nurNeueste = plan.nurNeueste && await this.nurNeuesteMoeglich(liste);
+    if (plan.nurNeueste && !nurNeueste) log.warn('„Lokal nur die neueste“ wirkt nicht: keine erfolgreiche Kopie außer Haus – es gilt die normale Aufbewahrung');
+    const bleibt = nurNeueste ? new Set([...auto].sort((x, y) => y.beginn.localeCompare(x.beginn)).slice(0, 1).map((x) => x.name)) : behalten(auto, plan.aufbewahrung);
     const jetzt = this.jetzt().getTime();
     const unterwegs = (n: string) => Object.values(liste.find((x) => x.name === n)?.extern ?? {})
       .some((s) => (s.status === 'offen' || s.status === 'laeuft') && jetzt - Date.parse(s.seit) < ZU_ALT_TAGE * TAG_MS);
@@ -793,6 +800,17 @@ export class Sicherung {
     return { ziele, letzte, fehler, zuAlt: !!aeltesteOffen && jetzt - Date.parse(aeltesteOffen) > ZU_ALT_TAGE * TAG_MS };
   }
 
+  /**
+   * Darf „lokal nur die neueste“ wirken (#1194)? Nur mit einem Ziel außer Haus, dessen letzte Kopie erfolgreich war –
+   * ohne Fehler danach und ohne mehr als 2 Tage Rückstand. Sonst bliebe genau eine Sicherung, ohne Weg zurück.
+   */
+  async nurNeuesteMoeglich(liste?: Eintragsliste[], extern?: Awaited<ReturnType<Sicherung['externZustand']>>): Promise<boolean> {
+    const x = extern !== undefined ? extern : await this.externZustand(liste).catch(() => null);
+    if (!x?.ziele.length || x.fehler || x.zuAlt) return false;
+    // Die letzte erfolgreiche Kopie kann lokal schon weggeräumt sein – dann steht sie in der Merkliste (#976).
+    return !!x.letzte || await this.entfernt.angekommen(new Set(x.ziele.map((z) => z.id))).catch(() => false);
+  }
+
   /* ---------- Zustand und Hinweise (#105) ---------- */
 
   async zustand() {
@@ -803,6 +821,7 @@ export class Sicherung {
     const jetzt = this.jetzt().getTime();
     const plan = await this.plan();
     const grenze = ZU_ALT_TAGE * TAG_MS;
+    const moeglich = await this.nurNeuesteMoeglich(liste, extern);
     return {
       letzte: letzte ? { name: letzte.datei, ende: letzte.ende, art: letzte.art } : null,
       fehler: fehler && (!letzte || fehler.am > letzte.ende) ? fehler : null,
@@ -816,6 +835,8 @@ export class Sicherung {
       ort: this.ort(),
       probe: await this.probeAmpel(letzte !== null),
       extern,
+      /** „Lokal nur die neueste“ (#1194): wählbar, und ob es gerade wirkt. */
+      nurNeueste: { gesetzt: plan.nurNeueste, moeglich, wirksam: plan.nurNeueste && moeglich },
     };
   }
 
