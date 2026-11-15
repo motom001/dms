@@ -333,6 +333,42 @@ Einzelne Abfragen (`EXPLAIN ANALYZE`): Seite über alle Typen nach Titel 49 → 
 
 **Tabellenfeld (#1265):** Eine Seite des Tabellenfelds (#1030) holte die Zeilen über `EXISTS (… verweise …)` je Mappe des anderen Typs und zählte die verborgenen Zeilen (#1208) mit `zaehleKlauseln` über **alle** Mappen des Haushalts – je Seite fünf Abfragen, beim Blättern ebenso. Auf dem NAS bei groß: Zeilen im Mittel 599 ms, Zählung 706 ms. Jetzt geht „zeigt auf“ von den Zielen aus (`mappen.id IN (SELECT quelle_id FROM verweise WHERE ziel_id = ANY(…))`, Index `verweise_ziel_idx`), und `seite` mit `mitVerborgenen` liefert Seite, lesbare und alle Zeilen in **einer** Abfrage (Fensterfunktion, innen „lesbar“ je Mappe, nur lesbare Zeilen verlassen die Datenbank). Je Seite 3 statt 5 Abfragen (Mappe, Seite, Bezüge; Test in `tabelle.test.ts`). Gemessen im Container (50.007 Mappen, Aussteller mit 12 Rechnungen unter 20.835, mit Lesefilter): alt 170–600 ms je Seite (davon die Zählung über alle Mappen 145–570 ms), neu 1–3 ms. Lasttest klein + Pakete und Tabellen (40 s, Container mit fremder Last): Tabelle p95 566 → 268 ms, Median 189 → 128 ms; mittel (60 s): p95 2.709 → 1.612 ms, Median 1.542 → 653 ms.
 
+## Oberfläche messen (#1276) { #oberflaeche-messen }
+
+Der Lasttest misst den Server, die Rauchtests prüfen, *ob* etwas geht. Wie schnell sich die Oberfläche anfühlt, misst `web/rauchtest/messen/oberflaeche.mjs`: Es bedient die häufigsten Abläufe in Chromium wie eine Person und misst je Schritt, was man am Bildschirm spürt. Anlass war #1255 – beim Zuordnen einer langen Post stand der Tab sekundenlang bei 100 % CPU, und weder Lasttest noch Rauchtests konnten das sehen. Gemessen wird nur in diesem Lauf, nie bei echten Personen (keine Telemetrie).
+
+**Abläufe** (`ablaeufe.mjs`, abgestimmt mit Thomas): Startseite öffnen · Suche mit Treffern · Mappe öffnen (60 Dokumente) · Neue Post: Datei ablegen · **Neue Post zuordnen: 100 Seiten, Vertrag wählen, sofort tippen** · Mappe ändern und speichern (Tabelle mit 300 Zeilen) · Zu erledigen: Liste, dann Monat · Ansicht mit vielen Mappen blättern (300 Zeilen) · Dokument-Vorschau mehrseitig („Seiten …“, 60 Seiten) · Werkbank-Übersicht · Mappentyp-Editor öffnen. Jeder Ablauf hat einen ungemessenen Teil (`vorbereiten`, z. B. die Seite öffnen, von der er ausgeht) und den gemessenen `schritt`. Ein neuer Ablauf bekommt eine feste `id` – unter ihr wird verglichen.
+
+**Testdaten** (`daten.mjs`, fest erzeugt, nur Personas und `example.org`): Beispiel-Ablage, 5.000 Demo-Mappen mit festem Startwert, eine Post mit einem PDF von 100 Seiten Text (rund 40.000 Wörter, Textebene; der Betreff steht erst auf der letzten Seite), ein Vertrag mit 59 Briefen und einem PDF mit 60 Seiten, ein Tabellenfeld „Rechnungen“ am Vertrag mit einem Vertrag mit 300 Rechnungen.
+
+**Kennzahlen** je Schritt, jeweils Median und p95 aus fünf Runden (nach einer zum Aufwärmen), normal und mit **4× gedrosselter CPU** (CDP `Emulation.setCPUThrottlingRate`, wie ein schwacher Laptop oder ein Handy):
+
+| Kennzahl | Bedeutung |
+|---|---|
+| bis bedienbar | Vom ersten Klick bzw. Aufruf, bis das Ergebnis zu sehen ist, ein Bild gemalt ist und die Seite wieder Eingaben annimmt. Ziel ohne Drossel: unter 1 s. |
+| INP | Interaction to Next Paint: längste Reaktion auf eine Eingabe (Klick, Taste) bis zum nächsten Bild (Event Timing, ab 16 ms). Ziel ohne Drossel: unter 200 ms. „–“: keine Eingabe im Schritt oder alle darunter. |
+| längste Aufgabe | Längster Block des Haupt-Threads (Long Task, ab 50 ms). |
+| Blockierzeit | Summe der Anteile langer Aufgaben über 50 ms – so lange konnte die Seite nicht reagieren. |
+| Anfragen, Server ms | Anfragen an `/api/` im Schritt und die Summe ihrer Server-Zeit (Server-Timing `gesamt`) – trennt Browser- und Server-Zeit. |
+
+**Starten** – gegen ein frisches Ablago mit eigener Datenbank (nie gegen die echte Ablage: gemessen wird nur, wenn das Konto der Messung sich anmelden kann, und das legt nur `--einrichten` an):
+
+```bash
+# Ablago mit leerer Datenbank starten, z. B. DATABASE_URL=… DMS_EINRICHTUNGSCODE=aus PORT=3100 node server/dist/index.js
+cd web/rauchtest && npm install --no-save playwright@1.64.1 && npx playwright install chromium && cd ../..
+DMS_URL=http://localhost:3100 node web/rauchtest/messen/oberflaeche.mjs --einrichten
+DMS_URL=http://localhost:3100 node web/rauchtest/messen/oberflaeche.mjs --geraet "Laptop gegen NAS" \
+  --vorher docs/messungen/oberflaeche/2026-11-15-container.json --json neu.json --bericht neu.md
+```
+
+Nach einem neuen Bau der Oberfläche Ablago neu starten: Es hält die (vorkomprimierte) Startseite im Speicher, die neue verweist auf andere Dateien – sonst misst der Lauf nur 404 und Zeitüberschreitungen. Weitere Schalter: `--runden 5`, `--drossel 1,4`, `--nur post-zuordnen,suche`, `--frist 60000` (ms je Schritt; wer sie überschreitet, zählt mit der Frist und macht den Lauf rot), `--mappen 5000` (beim Einrichten), `--grenzen` (Exit-Code 1, wenn rot). Auf echter Hardware: eine eigene Test-Installation auf dem NAS (eigene Datenbank) einrichten und vom Laptop aus mit `DMS_URL` messen – Browser und Server sollen sich nicht dieselbe CPU teilen. Darum steckt die Messung auch nicht im Image und nicht im Lasttest-Modus (Thomas in #1276).
+
+**Vergleich:** Mit `--vorher` vergleicht der Lauf je Ablauf, Drossel und Kennzahl die Mediane von „bis bedienbar“, INP und Blockierzeit. Mehr als **+20 % und mindestens +100 ms** gilt als schlechter; der Ablauf wird dann einmal nachgemessen, und je Kennzahl zählt der bessere Lauf (ein kurzer Ausreißer des Rechners soll nicht rot machen, eine echte Bremse ist beide Male da). Bleibt es schlechter, wird der Lauf mit `--grenzen` **rot** – so fällt eine Bremse wie #1255 auf, bevor es feste Grenzen gibt. Zur Probe: Mit dem Stand vor PR #1257 wird „Neue Post zuordnen“ rot (siehe Basis unten). Ein Vorlauf von einem anderen Gerät ist nur bedingt vergleichbar; der Bericht sagt das dazu. Ein verfehltes Ziel steht im Bericht, macht aber nicht rot.
+
+**CI:** Workflow „Oberfläche messen“ (`.github/workflows/oberflaeche-messen.yml`), wöchentlich und von Hand, getrennt vom Lasttest. Er baut Ablago, legt die Testdaten an, misst mit `--grenzen` gegen den letzten grünen, vollständigen Lauf aus dem Cache und hängt Bericht, JSON und Protokoll als Artefakt `oberflaeche-messen` an. Feste Grenzen je Ablauf (`CI_GRENZEN` in `oberflaeche.mjs`) kommen erst nach dem ersten Lauf auf GitHub: erster Lauf + 20 %, danach nur strenger (wie beim Lasttest, #563). Ergebnisse von echter Hardware gehören in ein Sammel-Issue wie #576.
+
+**Basis vor dem großen Umbau:** `docs/messungen/oberflaeche/` hält das erste Ergebnis fest (Container, 15.11.2026, Ablago 0.290.2) – als JSON zum Vergleichen und als Bericht. Die Werte stammen aus einem Container mit 2 Kernen, auf dem Browser, Ablago, PostgreSQL und andere Bauten gleichzeitig liefen: **keine NAS-Werte**, nur als Maßstab auf demselben Gerät. Vergleichen: denselben Lauf mit `--vorher docs/messungen/oberflaeche/<datei>.json` starten; eine neue Basis als neue Datei daneben legen (Datum und Gerät im Namen), alte nicht überschreiben.
+
 ## Historie bei großen Mengen (#800) { #historie }
 
 Seit #800 kommen auch Abrufe in die Historie (Herunterladen, API, WebDAV). Damit sie bei vielen Mappen und Jahren schnell bleibt:

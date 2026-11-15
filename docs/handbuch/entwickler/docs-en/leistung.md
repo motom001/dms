@@ -333,6 +333,42 @@ Individual queries (`EXPLAIN ANALYZE`): page over all types by title 49 → 0.6 
 
 **Table field (#1265):** A page of the table field (#1030) fetched its rows via `EXISTS (… verweise …)` for every folder of the other type and counted the hidden rows (#1208) with `zaehleKlauseln` over **all** folders of the household – five queries per page, also when paging. On the NAS at gross: rows 599 ms on average, counting 706 ms. Now “points to” starts from the targets (`mappen.id IN (SELECT quelle_id FROM verweise WHERE ziel_id = ANY(…))`, index `verweise_ziel_idx`), and `seite` with `mitVerborgenen` returns the page, the readable and all rows in **one** query (window function, “readable” per folder inside, only readable rows leave the database). 3 instead of 5 queries per page (folder, page, references; test in `tabelle.test.ts`). Measured in a container (50,007 folders, issuer with 12 invoices among 20,835, with read filter): old 170–600 ms per page (of which counting over all folders 145–570 ms), new 1–3 ms. Load test klein + Pakete und Tabellen (40 s, container with other load): table p95 566 → 268 ms, median 189 → 128 ms; mittel (60 s): p95 2,709 → 1,612 ms, median 1,542 → 653 ms.
 
+## Measuring the interface (#1276) { #oberflaeche-messen }
+
+The load test measures the server, the smoke tests check *whether* something works. How fast the interface feels is measured by `web/rauchtest/messen/oberflaeche.mjs`: it operates the most common flows in Chromium like a person would and measures, per step, what you notice on screen. The trigger was #1255 – when assigning a long post the tab sat at 100 % CPU for seconds, and neither the load test nor the smoke tests could see it. Measuring only happens in this run, never with real people (no telemetry).
+
+**Flows** (`ablaeufe.mjs`, agreed with Thomas): open the start page · search with hits · open a folder (60 documents) · new post: drop a file · **assign new post: 100 pages, choose Vertrag, type straight away** · change and save a folder (table with 300 rows) · To do: list, then month · scroll a view with many folders (300 rows) · multi-page document preview (“Pages …”, 60 pages) · Workbench overview · open the folder-type editor. Each flow has an unmeasured part (`vorbereiten`, e.g. opening the page it starts from) and the measured `schritt`. A new flow gets a fixed `id` – comparisons use it.
+
+**Test data** (`daten.mjs`, generated deterministically, only personas and `example.org`): sample library, 5,000 demo folders with a fixed seed, a post with a 100-page text PDF (about 40,000 words, text layer; the subject is only on the last page), a contract with 59 letters and a 60-page PDF, a table field “Rechnungen” on the contract with one contract holding 300 invoices.
+
+**Figures** per step, each as median and p95 of five rounds (after one warm-up round), normal and with the **CPU throttled 4×** (CDP `Emulation.setCPUThrottlingRate`, like a weak laptop or a phone):
+
+| Figure | Meaning |
+|---|---|
+| bis bedienbar (until usable) | From the first click or navigation until the result is visible, a frame has been painted and the page accepts input again. Target without throttling: under 1 s. |
+| INP | Interaction to Next Paint: the longest response to an input (click, key) until the next frame (Event Timing, from 16 ms). Target without throttling: under 200 ms. “–”: no input in the step or all below that. |
+| längste Aufgabe (longest task) | Longest block of the main thread (long task, from 50 ms). |
+| Blockierzeit (blocking time) | Sum of the parts of long tasks above 50 ms – how long the page could not respond. |
+| Anfragen, Server ms | Requests to `/api/` in the step and the sum of their server time (Server-Timing `gesamt`) – separates browser and server time. |
+
+**Running it** – against a fresh Ablago with its own database (never against the real library: it only measures if the measuring account can sign in, and only `--einrichten` creates it):
+
+```bash
+# start Ablago with an empty database, e.g. DATABASE_URL=… DMS_EINRICHTUNGSCODE=aus PORT=3100 node server/dist/index.js
+cd web/rauchtest && npm install --no-save playwright@1.64.1 && npx playwright install chromium && cd ../..
+DMS_URL=http://localhost:3100 node web/rauchtest/messen/oberflaeche.mjs --einrichten
+DMS_URL=http://localhost:3100 node web/rauchtest/messen/oberflaeche.mjs --geraet "Laptop against NAS" \
+  --vorher docs/messungen/oberflaeche/2026-11-15-container.json --json neu.json --bericht neu.md
+```
+
+After a new build of the interface, restart Ablago: it keeps the (pre-compressed) start page in memory while the new build refers to other files – otherwise the run only measures 404s and timeouts. More options: `--runden 5`, `--drossel 1,4`, `--nur post-zuordnen,suche`, `--frist 60000` (ms per step; a step exceeding it counts with the deadline and makes the run red), `--mappen 5000` (when setting up), `--grenzen` (exit code 1 when red). On real hardware: set up a separate test installation on the NAS (own database) and measure from the laptop with `DMS_URL` – browser and server should not share the same CPU. That is also why the measurement is not in the image and not in the load-test mode (Thomas in #1276).
+
+**Comparison:** with `--vorher` the run compares, per flow, throttling and figure, the medians of “until usable”, INP and blocking time. More than **+20 % and at least +100 ms** counts as worse; the flow is then measured once more and, per figure, the better run counts (a brief outlier of the machine should not turn it red, a real slowdown shows up both times). If it stays worse, `--grenzen` makes the run **red** – so a slowdown like #1255 shows up before there are fixed limits. As a check: with the state before PR #1257, “assign new post” turns red (see baseline below). A previous run from another device is only partly comparable; the report says so. A missed target is listed in the report but does not make the run red.
+
+**CI:** workflow “Oberfläche messen” (`.github/workflows/oberflaeche-messen.yml`), weekly and by hand, separate from the load test. It builds Ablago, creates the test data, measures with `--grenzen` against the last green, complete run from the cache and attaches report, JSON and log as the artifact `oberflaeche-messen`. Fixed limits per flow (`CI_GRENZEN` in `oberflaeche.mjs`) only come after the first run on GitHub: first run + 20 %, after that only stricter (as for the load test, #563). Results from real hardware go into a collecting issue like #576.
+
+**Baseline before the big rework:** `docs/messungen/oberflaeche/` keeps the first result (container, 15 Nov 2026, Ablago 0.290.2) – as JSON for comparing and as a report. The values come from a container with 2 cores on which browser, Ablago, PostgreSQL and other builds ran at the same time: **no NAS values**, only a yardstick on the same device. To compare, start the same run with `--vorher docs/messungen/oberflaeche/<file>.json`; put a new baseline next to it as a new file (date and device in the name), do not overwrite old ones.
+
 ## History with large amounts (#800) { #historie }
 
 Since #800 retrievals also go into the history (download, API, WebDAV). So that it stays fast with many folders and years:
