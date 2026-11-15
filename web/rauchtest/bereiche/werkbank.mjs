@@ -1,5 +1,5 @@
 /**
- * Rauchtests: Werkbank: Mappentyp, Stempel, Sprungleiste, Notfallblatt, Sicherung; Rundgang und Abmelden.
+ * Rauchtests: Werkbank: Mappentyp, Stempel, Sprungleiste, Notfallblatt, Sicherung, Stufen der Leiste; Rundgang und Abmelden.
  * Allein starten (frisch gestartetes Ablago, siehe rauchtest.mjs): node web/rauchtest/bereiche/werkbank.mjs [fehlerordner] [musterordner]
  */
 import assert from 'node:assert/strict';
@@ -127,6 +127,60 @@ rauchtest('Werkbank: Sicherung anlegen und herunterladen (#975)', { als: LENA, e
   await bearbeitung.getByText('Zum Wiederherstellen brauchst du dein Notfallblatt (Schlüssel).').waitFor();
   await bearbeitung.getByText('Prüfsumme (SHA-256)').waitFor();
   await bearbeitung.getByRole('link', { name: '.json herunterladen' }).waitFor();
+});
+
+/* ---------- Stufen der Werkbank (#987) ---------- */
+
+// Bereiche je Stufe, aufsteigend (shared/src/werkbankansicht.ts, Feld `ab`); jede Stufe enthält die vorige.
+const STUFE_NEU = {
+  einsteiger: ['pakete', 'benutzer', 'verschluesselung', 'sicherung', 'papierkorb', 'betrieb', 'region', 'systemzustand'],
+  haushalt: ['typen', 'sichten', 'automatisierungen', 'ablaufvorlagen', 'rundgaenge', 'tipps', 'stempel', 'postfaecher', 'eingangsordner', 'webdav',
+    'texterkennung', 'woerter', 'vollexport', 'daten', 'sprachen', 'organisation', 'aufgaben', 'anmeldeschutz', 'protokoll', 'fehlermeldungen', 'wartung'],
+  selbstaendig: ['nummernkreise', 'aufbewahrung', 'auskuenfte', 'loeschkonzept', 'loeschprotokoll'],
+  organisation: ['designs'],
+  alles: ['anbindung', 'demo'],
+};
+// Stehen nur unter einer Bedingung in der Leiste (Archivmodus, eingebundener Ordner, berufliche Nutzung).
+const BEDINGT = ['aufbewahrung', 'eingangsordner', 'auskuenfte', 'loeschkonzept', 'loeschprotokoll'];
+const ansichtSetzen = (s, data) => s.request.put(BASIS + '/api/werkbank/ansicht', { headers: { 'x-dms': '1' }, data });
+
+/** Was die Leiste regulär zeigt (ohne Bereiche, die nur wegen eines Hinweises dastehen), als Pfade. */
+async function leisteRegulaer(s) {
+  const bereiche = s.getByRole('complementary', { name: 'Bereiche' });
+  await bereiche.getByRole('link').first().waitFor();
+  // Ohne Doppelte: Die Übersicht steht als eigener Eintrag und als Kopf der Leiste.
+  return [...new Set(await bereiche.evaluate((b) => [...b.querySelectorAll('a.sicht[href^="/werkbank"]:not(.ausgeblendet)')]
+    .map((a) => a.getAttribute('href').split(/[?#]/)[0].replace(/^\/werkbank\/?/, '') || 'uebersicht')))];
+}
+
+rauchtest('Werkbank: fünf Stufen – Einträge je Stufe, Meine Leiste nur für mich (#987)', { als: LENA }, async (s) => {
+  await s.goto(BASIS + '/ablage/start');
+  await verwalten(s);
+  try {
+    let bisher = ['uebersicht'];
+    let vorher = 0;
+    for (const [stufe, dazu] of Object.entries(STUFE_NEU)) {
+      bisher = [...bisher, ...dazu];
+      await ansichtSetzen(s, { installation: { vorlage: stufe, ein: [], aus: [] }, eigene: { ein: [] } });
+      await s.goto(BASIS + '/werkbank');
+      const leiste = await leisteRegulaer(s);
+      const fremd = leiste.filter((p) => !bisher.includes(p));
+      const fehlt = bisher.filter((p) => !leiste.includes(p) && !BEDINGT.includes(p));
+      assert.deepEqual([fremd, fehlt], [[], []], `Stufe ${stufe}: nicht in der Stufe ${fremd.join(', ')} | fehlt ${fehlt.join(', ')}`);
+      assert.ok(leiste.length > vorher, `Stufe ${stufe} zeigt mehr als die vorige (${leiste.length} > ${vorher})`);
+      if (stufe === 'einsteiger') assert.equal(leiste.length, 9, 'Einsteiger: Übersicht und acht Bereiche');
+      vorher = leiste.length;
+    }
+    // Meine Leiste: für alle Einsteiger, für mich Alles.
+    await ansichtSetzen(s, { installation: { vorlage: 'einsteiger', ein: [], aus: [] }, eigene: { ein: [], vorlage: 'alles' } });
+    await s.goto(BASIS + '/werkbank/ansicht');
+    await s.getByRole('heading', { name: 'Werkbank anpassen', level: 1 }).waitFor();
+    assert.ok(await s.getByRole('group', { name: 'Meine Leiste' }).getByRole('radio', { name: 'Alles' }).isChecked());
+    assert.ok((await leisteRegulaer(s)).includes('protokoll'), 'Meine Leiste zeigt Alles');
+  } finally {
+    // Zurück auf die Stufe aus der Einrichtung (einrichtung.mjs: Haushalt).
+    await ansichtSetzen(s, { installation: { vorlage: 'haushalt', ein: [], aus: [] }, eigene: { ein: [] } });
+  }
 });
 
 rauchtest('Rundgang beim ersten Anmelden und „Ablago entdecken“', {}, async (s) => {

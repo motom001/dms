@@ -2,7 +2,7 @@
 
 **Tipps** zeigen in einem Satz, was man in Ablago noch tun kann – als Tipp des Tages im Assistenten und alle zusammen unter [Ablago entdecken](https://help.ablago.app/benutzer/aktuell/entdecken/). Sie kommen von Ablago, aus Paketen und von dir: Hier passt du sie an eure Arbeitsweise an, schreibst eigene und schaltest einzelne aus.
 
-Du findest sie unter **Werkbank → Ablage aufbauen → Tipps**, neben den [Rundgängen](rundgaenge.md). Im Haushalt erscheint der Bereich im **Expertenmodus** (Werkbank → Werkbank anpassen), in Betrieben immer.
+Du findest sie unter **Werkbank → Ablage aufbauen → Tipps**, neben den [Rundgängen](rundgaenge.md). Der Bereich steht ab der Stufe **Haushalt** in der Leiste (siehe [Werkbank anpassen](uebersicht.md#werkbank-anpassen)).
 
 ![Werkbank → Tipps: Liste und Formular](bilder/werkbank-tipps.png)
 

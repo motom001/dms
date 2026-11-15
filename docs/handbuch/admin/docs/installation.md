@@ -74,7 +74,7 @@ Name, E-Mail-Adresse und Passwort **deines eigenen Kontos** – mit deiner einen
 
 - **Für meine Arbeit oder meinen Betrieb** und **Beides** setzen das Merkmal [beruflich genutzt](organisation.md#nutzung): Mappentypen zeigen dann ihre beruflichen Felder, und Pakete, die bei beruflicher Nutzung länger aufbewahren, richten das beim Installieren gleich so ein.
 - Die Antwort **wählt im nächsten Schritt Pakete vor**: zu Hause Basis, Haushalt, Verträge und Rechnungen; beruflich Basis, Verträge, Rechnungen und Compliance; bei „Beides“ alle davon. Vorgewählt wird nur, was es im Katalog gibt – abwählen kannst du alles.
-- Die **Werkbank** startet zu Hause mit der Vorlage *Haushalt*, beruflich mit *Betrieb* (siehe [Übersicht](uebersicht.md)).
+- **Wie viel soll die Werkbank zeigen?** Nach der Antwort wählst du eine der fünf Stufen *Einsteiger*, *Haushalt*, *Selbständig*, *Betrieb* oder *Alles*. Vorgewählt ist zu Hause *Einsteiger*, beruflich *Selbständig*. Jede Person, die verwaltet, kann später für sich eine andere Stufe wählen (siehe [Werkbank anpassen](uebersicht.md#werkbank-anpassen)).
 
 **Deine Organisation:** Bei beruflicher Nutzung fragt der Schritt gleich darunter nach deiner eigenen Organisation – Name, Anschrift, E-Mail und Telefon. Nur der Name ist Pflicht, alles andere ist freiwillig. Mit **Jetzt einrichten** legt Ablago daraus eine Organisation mit dem Merkmal [eigene Organisation](organisation.md) an; so weiß Ablago, wer „wir“ sind, etwa für Auskünfte nach der DSGVO. Dafür braucht es das Paket **Basis** (ab 1.7.0) – ist eine Organisation angegeben, ist Basis Pflicht, und die Zusammenfassung meldet, wenn es fehlt. Lässt du alle Felder leer, legt Ablago keine an; das geht auch später in der Ablage.
 
@@ -131,7 +131,7 @@ Dazu Links zu beiden Handbüchern, „Problem melden“ als vorbereitetes GitHub
 
 Danach: Wie es weitergeht, steht kurz unter [Einrichten in fünf Schritten](fuenf-schritte.md) – unter **Werkbank → [Sicherung](sicherung.md)** den Zeitplan einschalten, eigene [Mappentypen](mappentypen.md) anlegen und weitere [Benutzer einladen](benutzer.md) – am besten auch eine zweite Person, die verwalten darf.
 
-**Für Selbständige und kleine Betriebe:** Hast du im Schritt [Nutzung](#nutzung) „Für meine Arbeit oder meinen Betrieb“ oder „Beides“ gewählt, startet die Werkbank mit der Vorlage **Betrieb** – mit Nummernkreisen, Archivmodus, Postfächern, Datenschutz und den übrigen Bereichen, die ein Betrieb braucht. Sonst startet sie mit der schlanken Vorlage *Haushalt*; umstellen kannst du jederzeit unter **Werkbank → Werkbank anpassen** (siehe [Übersicht](uebersicht.md)).
+**Für Selbständige und kleine Betriebe:** Hast du im Schritt [Nutzung](#nutzung) „Für meine Arbeit oder meinen Betrieb“ oder „Beides“ gewählt, ist die Stufe **Selbständig** vorgewählt – mit Nummernkreisen, Archivmodus, Datenschutz und allem aus *Haushalt*; für Betriebe mit mehreren Leuten passt **Betrieb**. Sonst ist die schlanke Stufe *Einsteiger* vorgewählt; umstellen kannst du jederzeit unter **Werkbank → Werkbank anpassen** (siehe [Übersicht](uebersicht.md)).
 
 ## Datenbank-Anbindung
 

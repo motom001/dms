@@ -214,7 +214,7 @@ async function vorbereiten() {
   const adminCookie = cookie;
   // Rundgang bei der ersten Anmeldung (#831): Die Konten der Bilder kennen Ablago schon – er läge sonst über jedem Bild.
   await api('POST', '/api/entdecken/rundgaenge/ablago', { stand: 'gesehen' });
-  // Die Bilder zeigen alle Bereiche der Werkbank; der Assistent stellt sonst „Haushalt“ ein (#281).
+  // Die Bilder zeigen alle Bereiche der Werkbank; der Assistent stellt sonst eine kleinere Stufe ein (#281, #987).
   await api('PUT', '/api/werkbank/ansicht', { installation: { vorlage: 'alles', ein: [], aus: [] } });
   await api('POST', '/api/beispiele');
   await api('POST', '/api/werkbank/demo', { anzahl: 120 });
@@ -386,7 +386,7 @@ async function einrichtenImBrowser(browser, bild) {
   await bild(s, 'einrichtung-konto');
   await s.getByRole('button', { name: w('Weiter') }).click();
   // Wofür nutzt du Ablago? (#1045): fürs Bild „Beides“ mit Katrins Organisation; weiter geht es mit „Für zu Hause“,
-  // damit die übrigen Bilder die Werkbank-Vorlage Haushalt zeigen (ohne Paket Basis ginge die Organisation nicht).
+  // damit die übrigen Bilder zur privaten Nutzung passen (ohne Paket Basis ginge die Organisation nicht).
   await s.getByRole('heading', { name: w('Wofür nutzt du Ablago?') }).waitFor();
   await s.getByRole('radio', { name: w(/^Beides/) }).check();
   await s.getByLabel(w('Name'), { exact: true }).fill('Katrin Beispiel Grafikdesign');
@@ -1182,8 +1182,8 @@ async function main() {
   await geheZu(s, '/werkbank');
   await s.locator('.uebersicht .kacheln').waitFor();
   await bild(s, 'werkbank-uebersicht');
-  // Werkbank anpassen (#281) mit der Vorlage Haushalt, danach wieder alles.
-  await api('PUT', '/api/werkbank/ansicht', { installation: { vorlage: 'haushalt', ein: [], aus: [] } });
+  // Werkbank anpassen (#281) mit der Stufe Einsteiger (#987), danach wieder alles.
+  await api('PUT', '/api/werkbank/ansicht', { installation: { vorlage: 'einsteiger', ein: [], aus: [] } });
   await geheZu(s, '/werkbank/ansicht');
   await s.getByRole('heading', { name: w(/Werkbank anpassen/), level: 1 }).waitFor();
   await bild(s, 'werkbank-anpassen');

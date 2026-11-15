@@ -154,20 +154,68 @@ Nicht jeder braucht jeden Bereich. Ein Haushalt fasst Nummernkreise, Postfächer
 !!! info "Ausblenden schaltet nichts ab"
     Ein ausgeblendeter Bereich läuft weiter. Ein Postfach holt weiter Post ab, die Sicherung läuft weiter. Direkte Links, die Hilfe und die Knöpfe der Übersicht führen weiterhin hin. **Hinweise kommen immer durch:** Hat ein ausgeblendeter Bereich ein Problem, zum Beispiel „Sicherung zu alt“, steht es in der Übersicht, und der Bereich erscheint mit seinem Hinweis in der Leiste.
 
-**Vorlagen** für alle, die verwalten:
+**Stufen** für alle, die verwalten – fünf, aufsteigend; jede enthält die vorige:
 
-- **Haushalt**: schlank, nur was eine Familie zum Einrichten und Sichern braucht. Neue Installationen beginnen damit. **Selbständige und kleine Betriebe** wählen gleich nach der Einrichtung **Betrieb**.
-<!-- bereiche:organisation -->
-- **Betrieb**: zusätzlich Nummernkreise, Automatisierungen, Automatisierungsvorlagen, Rundgänge, Tipps, Aufbewahrung abgelaufen, Auskünfte, Löschkonzept, Löschprotokoll, Postfächer, Eingangsordner, Suche und Volltext, Gleichbedeutende Wörter, Anmeldeschutz, Designs, Protokoll, Gemeldete Fehler, Wartung.
-<!-- /bereiche:organisation -->
-- **Alles**: jeder Bereich. So bleibt es bei Installationen, die vor Version 0.70 eingerichtet wurden, bis du etwas anderes wählst.
+- **Einsteiger**: nur das Nötigste zum Einrichten und Sichern. Vorgabe bei rein privater Nutzung.
+- **Haushalt**: dazu, was ein Haushalt selbst einrichtet – Mappentypen, Ansichten, Automatisierungen, Post und Eingänge, Suche, Protokoll und Wartung.
+- **Selbständig**: dazu Nummernkreise, Aufbewahrung abgelaufen und Datenschutz – für Selbständige und Vermieter. Vorgabe bei beruflicher Nutzung.
+- **Betrieb**: dazu Designs – für Betriebe mit mehreren Leuten.
+- **Alles**: jeder Bereich, auch Datenbank-Anbindung und Daten für Messungen. So bleibt es bei Installationen, die vor Version 0.70 eingerichtet wurden, bis du etwas anderes wählst.
+
+Die Stufe wählst du im [Einrichtungsassistenten](einrichtungsassistent.md) im Schritt „Nutzung“ und später hier. Bestehende Installationen behalten ihre Vorlage (Haushalt, Betrieb oder Alles).
+
+<!-- bereiche:stufen -->
+| Bereich | Einsteiger | Haushalt | Selbständig | Betrieb | Alles |
+| --- | :-: | :-: | :-: | :-: | :-: |
+| Übersicht | ● | ● | ● | ● | ● |
+| [Pakete](pakete.md) | ● | ● | ● | ● | ● |
+| [Mappentypen](mappentypen.md) |   | ● | ● | ● | ● |
+| [Ansichten](sichten.md) |   | ● | ● | ● | ● |
+| [Nummernkreise](nummernkreise.md) |   |   | ● | ● | ● |
+| [Automatisierungen](automatisierungen.md) |   | ● | ● | ● | ● |
+| [Automatisierungsvorlagen](automatisierungsvorlagen.md) |   | ● | ● | ● | ● |
+| [Rundgänge](rundgaenge.md) |   | ● | ● | ● | ● |
+| [Tipps](tipps.md) |   | ● | ● | ● | ● |
+| [Benutzer](benutzer.md) | ● | ● | ● | ● | ● |
+| [Verschlüsselung](verschluesselung.md) | ● | ● | ● | ● | ● |
+| [Aufbewahrung abgelaufen](archiv.md#nach-der-frist-aufbewahrung-abgelaufen) |   |   | ● | ● | ● |
+| [Stempel](stempel.md) |   | ● | ● | ● | ● |
+| [Auskünfte](datenschutz.md#auskunft-erteilen) |   |   | ● | ● | ● |
+| [Löschkonzept](loeschkonzept.md#aus-dem-dms-erzeugen) |   |   | ● | ● | ● |
+| [Löschprotokoll](datenschutz.md#loschprotokoll) |   |   | ● | ● | ● |
+| [Postfächer](postfaecher.md) |   | ● | ● | ● | ● |
+| [Eingangsordner](eingangsordner.md) |   | ● | ● | ● | ● |
+| [WebDAV-Laufwerk](webdav.md) |   | ● | ● | ● | ● |
+| [Suche und Volltext](texterkennung.md) |   | ● | ● | ● | ● |
+| [Gleichbedeutende Wörter](suche.md#gleichbedeutende-worter) |   | ● | ● | ● | ● |
+| [Sicherung](sicherung.md) | ● | ● | ● | ● | ● |
+| [Vollexport](export.md) |   | ● | ● | ● | ● |
+| [Papierkorb](papierkorb.md) | ● | ● | ● | ● | ● |
+| [Einstellungen](daten-einstellungen.md) |   | ● | ● | ● | ● |
+| [E-Mail und Adresse](installation.md#e-mail-und-adresse) | ● | ● | ● | ● | ● |
+| [Region](region.md) | ● | ● | ● | ● | ● |
+| [Sprachen](sprachen.md) |   | ● | ● | ● | ● |
+| [Eigene Organisation](organisation.md) |   | ● | ● | ● | ● |
+| [Aufgaben](aufgaben.md) |   | ● | ● | ● | ● |
+| [Anmeldeschutz](anmeldeschutz.md) |   | ● | ● | ● | ● |
+| [Designs](designs.md) |   |   |   | ● | ● |
+| [Datenbank-Anbindung](installation.md#datenbank-anbindung) |   |   |   |   | ● |
+| [Systemzustand](speicherplatz.md) | ● | ● | ● | ● | ● |
+| [Protokoll](fehlersuche.md#protokoll) |   | ● | ● | ● | ● |
+| [Gemeldete Fehler](fehlersuche.md#gemeldete-fehler) |   | ● | ● | ● | ● |
+| [Wartung](wartungsmodus.md) |   | ● | ● | ● | ● |
+| [Demo-Daten](demo.md) |   |   |   |   | ● |
+| **Anzahl** | **9** | **30** | **35** | **36** | **38** |
+<!-- /bereiche:stufen -->
+
+Die Datenschutz-Bereiche stehen außerdem nur bei beruflicher Nutzung in der Leiste.
 
 Danach kannst du je Bereich abweichen:
 
 - **für alle**: Der Bereich steht bei jeder Person in der Leiste, die ihn verwalten darf.
 - **nur für mich**: Der Bereich steht zusätzlich nur bei dir, zum Beispiel *Protokoll*, wenn du gern nachschaust, die anderen aber nicht.
 
-**Expertenmodus:** Manche Bereiche braucht ein Haushalt selten, sie sind aber nützlich, wenn man tiefer einsteigen will – derzeit die [Suche](suche.md) mit Tippfehlern und gleichbedeutenden Wörtern. Die Vorlage **Haushalt** blendet sie aus; mit dem Haken **Expertenmodus – nur für mich** erscheinen sie in deiner Leiste. Das gilt nur für dich und ist kein Recht – die anderen, die verwalten, sehen ihre eigene Leiste. In der Liste der Bereiche stehen sie mit „im Expertenmodus“. Bei **Betrieb** und **Alles** sind sie ohnehin zu sehen.
+**Meine Leiste:** Jede Person, die verwaltet, kann für sich eine andere Stufe wählen – etwa **Alles**, wenn du tiefer einsteigen willst, während die anderen bei **Einsteiger** bleiben. Ohne eigene Wahl gilt die Stufe für alle; was für alle ein- oder ausgeblendet ist, gilt auch hier. Die Stufe ordnet nur die Leiste und ist kein Recht – was jemand verwalten darf, regeln die [Verwaltungsrechte](verwalten.md#der-verwaltungsmodus). Den früheren **Expertenmodus** gibt es nicht mehr: Wer ihn eingeschaltet hatte, behält seine Bereiche als Einblendung „nur für mich“.
 
 Ist ein ausgeblendeter Bereich eingerichtet, etwa ein Postfach oder die Anmeldung über einen Anbieter, steht dabei „eingerichtet, aber ausgeblendet“. Unten in der Leiste steht, wie viele Bereiche ausgeblendet sind. Ein Klick darauf zeigt sie vorübergehend alle.
 
@@ -176,43 +224,43 @@ Ist ein ausgeblendeter Bereich eingerichtet, etwa ein Postfach oder die Anmeldun
 ### Welchen Bereich brauche ich wofür?
 
 <!-- bereiche:wofuer -->
-| Bereich | Wofür | In der Vorlage |
+| Bereich | Wofür | Stufe |
 | --- | --- | --- |
-| [Pakete](pakete.md) | Fertige Mappentypen und Ansichten installieren | Haushalt, Betrieb |
-| [Mappentypen](mappentypen.md) | Eigene Arten von Mappen bauen | Haushalt, Betrieb |
-| [Ansichten](sichten.md) | Die Sammlungen links in der Ablage ordnen | Haushalt, Betrieb |
-| [Nummernkreise](nummernkreise.md) | Fortlaufende Nummern, z. B. für Rechnungen | Betrieb |
-| [Automatisierungen](automatisierungen.md) | Abläufe nach dem Muster Wenn – Und – Dann einrichten: bei einem Ereignis oder Datum Felder setzen oder jemandem eine Aufgabe geben | Betrieb, Haushalt im Expertenmodus |
-| [Automatisierungsvorlagen](automatisierungsvorlagen.md) | Vorlagen für Abläufe an einer Mappe: „Aufgabe vergeben“, „Erinnern“, Wiedervorlage – wann sie laufen, wer die Aufgabe bekommt und was beim Anwenden gefragt wird | Betrieb, Haushalt im Expertenmodus |
-| [Rundgänge](rundgaenge.md) | Wenn du Rundgänge sehen, ein- und ausschalten oder eigene schreiben willst – kurze Führungen an der echten Oberfläche. | Betrieb, Haushalt im Expertenmodus |
-| [Tipps](tipps.md) | Wenn du Tipps an eure Arbeitsweise anpassen, eigene schreiben oder einzelne ausschalten willst. | Betrieb, Haushalt im Expertenmodus |
-| [Benutzer](benutzer.md) | Benutzer und Rollen anlegen | Haushalt, Betrieb |
-| [Verschlüsselung](verschluesselung.md) | Den Schlüssel für Passwörter und Sicherungen | Haushalt, Betrieb |
-| [Aufbewahrung abgelaufen](archiv.md#nach-der-frist-aufbewahrung-abgelaufen) | Mappen, deren Aufbewahrungsfrist abgelaufen ist, prüfen und löschen (nur mit Archivmodus) | Betrieb |
-| [Stempel](stempel.md) | Vorlagen für Stempel und Wasserzeichen beim Weitergeben | Haushalt, Betrieb |
-| [Auskünfte](datenschutz.md#auskunft-erteilen) | Auskunft nach Art. 15 DSGVO an Kunden, Mieter und Kontakte: anfragen, erzeugen, zustellen, Nachweis | Betrieb |
-| [Löschkonzept](loeschkonzept.md#aus-dem-dms-erzeugen) | Löschkonzept erzeugen: Lücken schließen und festlegen, welche Mappentypen Personendaten enthalten | Betrieb |
-| [Löschprotokoll](datenschutz.md#loschprotokoll) | Nachweis, was wann gelöscht wurde – ansehen, filtern, als PDF oder CSV ausgeben | Betrieb |
-| [Postfächer](postfaecher.md) | Post aus einem E-Mail-Konto abholen | Betrieb |
-| [Eingangsordner](eingangsordner.md) | Scans aus einem Ordner übernehmen | Betrieb |
-| [WebDAV-Laufwerk](webdav.md) | Die Ablage im Explorer, Finder oder in der Dateien-App einbinden und Dateien hineinlegen | Haushalt, Betrieb |
-| [Suche und Volltext](texterkennung.md) | Text in gescannten Dokumenten erkennen, Archivfassung, Tippfehler und „Meintest du …?“ in der Suche | Betrieb, Haushalt im Expertenmodus |
-| [Gleichbedeutende Wörter](suche.md#gleichbedeutende-worter) | Gruppen von Wörtern, die die Suche gleich behandelt (z. B. Kfz, Auto, PKW): eigene anlegen, die aus Paketen ansehen | Betrieb, Haushalt im Expertenmodus |
-| [Sicherung](sicherung.md) | Sicherungen einrichten, prüfen und zurückspielen | Haushalt, Betrieb |
-| [Vollexport](export.md) | Alle Daten in offenen Formaten mitnehmen | Haushalt, Betrieb |
-| [Papierkorb](papierkorb.md) | Gelöschte Mappen zurückholen | Haushalt, Betrieb |
-| [Einstellungen](daten-einstellungen.md) | Wie lange Gelöschtes im Papierkorb bleibt und ob Benutzer ihre eigenen Daten exportieren dürfen | Haushalt, Betrieb |
-| [E-Mail und Adresse](installation.md#e-mail-und-adresse) | E-Mail-Versand und Adresse von Ablago | Haushalt, Betrieb |
-| [Region](region.md) | Land, Bundesland und Zeitzone – für Feiertage, „heute“ und Uhrzeiten von Erinnerungen und Zusammenfassungen | Haushalt, Betrieb |
-| [Sprachen](sprachen.md) | Wenn in deiner Ablage auch Englisch oder eine weitere Sprache gesprochen wird. | Haushalt, Betrieb |
-| [Eigene Organisation](organisation.md) | Ob die Ablage auch beruflich genutzt wird, dazu Name, Anschrift und Verantwortliche des eigenen Betriebs – gepflegt an der Organisation in der Ablage | Haushalt, Betrieb |
-| [Aufgaben](aufgaben.md) | Alle offenen Aufgaben aller Benutzer im Blick behalten | Haushalt, Betrieb |
-| [Anmeldeschutz](anmeldeschutz.md) | Zwei-Faktor vorschreiben, Anmeldung über einen Anbieter, gesperrte Adressen | Betrieb |
-| [Designs](designs.md) | Logo, Farben und eigenes CSS | Betrieb |
+| [Pakete](pakete.md) | Fertige Mappentypen und Ansichten installieren | ab Einsteiger |
+| [Mappentypen](mappentypen.md) | Eigene Arten von Mappen bauen | ab Haushalt |
+| [Ansichten](sichten.md) | Die Sammlungen links in der Ablage ordnen | ab Haushalt |
+| [Nummernkreise](nummernkreise.md) | Fortlaufende Nummern, z. B. für Rechnungen | ab Selbständig |
+| [Automatisierungen](automatisierungen.md) | Abläufe nach dem Muster Wenn – Und – Dann einrichten: bei einem Ereignis oder Datum Felder setzen oder jemandem eine Aufgabe geben | ab Haushalt |
+| [Automatisierungsvorlagen](automatisierungsvorlagen.md) | Vorlagen für Abläufe an einer Mappe: „Aufgabe vergeben“, „Erinnern“, Wiedervorlage – wann sie laufen, wer die Aufgabe bekommt und was beim Anwenden gefragt wird | ab Haushalt |
+| [Rundgänge](rundgaenge.md) | Wenn du Rundgänge sehen, ein- und ausschalten oder eigene schreiben willst – kurze Führungen an der echten Oberfläche. | ab Haushalt |
+| [Tipps](tipps.md) | Wenn du Tipps an eure Arbeitsweise anpassen, eigene schreiben oder einzelne ausschalten willst. | ab Haushalt |
+| [Benutzer](benutzer.md) | Benutzer und Rollen anlegen | ab Einsteiger |
+| [Verschlüsselung](verschluesselung.md) | Den Schlüssel für Passwörter und Sicherungen | ab Einsteiger |
+| [Aufbewahrung abgelaufen](archiv.md#nach-der-frist-aufbewahrung-abgelaufen) | Mappen, deren Aufbewahrungsfrist abgelaufen ist, prüfen und löschen (nur mit Archivmodus) | ab Selbständig |
+| [Stempel](stempel.md) | Vorlagen für Stempel und Wasserzeichen beim Weitergeben | ab Haushalt |
+| [Auskünfte](datenschutz.md#auskunft-erteilen) | Auskunft nach Art. 15 DSGVO an Kunden, Mieter und Kontakte: anfragen, erzeugen, zustellen, Nachweis | ab Selbständig |
+| [Löschkonzept](loeschkonzept.md#aus-dem-dms-erzeugen) | Löschkonzept erzeugen: Lücken schließen und festlegen, welche Mappentypen Personendaten enthalten | ab Selbständig |
+| [Löschprotokoll](datenschutz.md#loschprotokoll) | Nachweis, was wann gelöscht wurde – ansehen, filtern, als PDF oder CSV ausgeben | ab Selbständig |
+| [Postfächer](postfaecher.md) | Post aus einem E-Mail-Konto abholen | ab Haushalt |
+| [Eingangsordner](eingangsordner.md) | Scans aus einem Ordner übernehmen | ab Haushalt |
+| [WebDAV-Laufwerk](webdav.md) | Die Ablage im Explorer, Finder oder in der Dateien-App einbinden und Dateien hineinlegen | ab Haushalt |
+| [Suche und Volltext](texterkennung.md) | Text in gescannten Dokumenten erkennen, Archivfassung, Tippfehler und „Meintest du …?“ in der Suche | ab Haushalt |
+| [Gleichbedeutende Wörter](suche.md#gleichbedeutende-worter) | Gruppen von Wörtern, die die Suche gleich behandelt (z. B. Kfz, Auto, PKW): eigene anlegen, die aus Paketen ansehen | ab Haushalt |
+| [Sicherung](sicherung.md) | Sicherungen einrichten, prüfen und zurückspielen | ab Einsteiger |
+| [Vollexport](export.md) | Alle Daten in offenen Formaten mitnehmen | ab Haushalt |
+| [Papierkorb](papierkorb.md) | Gelöschte Mappen zurückholen | ab Einsteiger |
+| [Einstellungen](daten-einstellungen.md) | Wie lange Gelöschtes im Papierkorb bleibt und ob Benutzer ihre eigenen Daten exportieren dürfen | ab Haushalt |
+| [E-Mail und Adresse](installation.md#e-mail-und-adresse) | E-Mail-Versand und Adresse von Ablago | ab Einsteiger |
+| [Region](region.md) | Land, Bundesland und Zeitzone – für Feiertage, „heute“ und Uhrzeiten von Erinnerungen und Zusammenfassungen | ab Einsteiger |
+| [Sprachen](sprachen.md) | Wenn in deiner Ablage auch Englisch oder eine weitere Sprache gesprochen wird. | ab Haushalt |
+| [Eigene Organisation](organisation.md) | Ob die Ablage auch beruflich genutzt wird, dazu Name, Anschrift und Verantwortliche des eigenen Betriebs – gepflegt an der Organisation in der Ablage | ab Haushalt |
+| [Aufgaben](aufgaben.md) | Alle offenen Aufgaben aller Benutzer im Blick behalten | ab Haushalt |
+| [Anmeldeschutz](anmeldeschutz.md) | Zwei-Faktor vorschreiben, Anmeldung über einen Anbieter, gesperrte Adressen | ab Haushalt |
+| [Designs](designs.md) | Logo, Farben und eigenes CSS | ab Betrieb |
 | [Datenbank-Anbindung](installation.md#datenbank-anbindung) | Die Verbindung zur Datenbank | nur Alles |
-| [Systemzustand](speicherplatz.md) | Sehen, wie es dem Server geht: Speicherplatz, PDFs verkleinern, Auslastung von CPU, Arbeitsspeicher, Netzwerk und Datenbank, Version und Updates | Haushalt, Betrieb |
-| [Protokoll](fehlersuche.md#protokoll) | Das technische Protokoll lesen | Betrieb |
-| [Gemeldete Fehler](fehlersuche.md#gemeldete-fehler) | Fehler, die Benutzer gemeldet haben | Betrieb |
-| [Wartung](wartungsmodus.md) | Benutzer vorübergehend aussperren (Wartungsmodus) und einmalige Pflegearbeiten | Betrieb |
+| [Systemzustand](speicherplatz.md) | Sehen, wie es dem Server geht: Speicherplatz, PDFs verkleinern, Auslastung von CPU, Arbeitsspeicher, Netzwerk und Datenbank, Version und Updates | ab Einsteiger |
+| [Protokoll](fehlersuche.md#protokoll) | Das technische Protokoll lesen | ab Haushalt |
+| [Gemeldete Fehler](fehlersuche.md#gemeldete-fehler) | Fehler, die Benutzer gemeldet haben | ab Haushalt |
+| [Wartung](wartungsmodus.md) | Benutzer vorübergehend aussperren (Wartungsmodus) und einmalige Pflegearbeiten | ab Haushalt |
 | [Demo-Daten](demo.md) | Beispielmappen zum Ausprobieren | nur Alles |
 <!-- /bereiche:wofuer -->

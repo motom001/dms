@@ -3,7 +3,7 @@ import { BUNDESLAENDER } from '../../../shared/src/feiertage';
 import { handbuchUrl, HILFE, hilfeOnlineUrl, type Hilfeort } from '../../../shared/src/hilfe';
 import { PASSWORT_MINDESTLAENGE } from '../../../shared/src/model';
 import { beruflichBei, leereOrganisation, NUTZUNGEN, PAKETE_JE_NUTZUNG, type Nutzung, type Sammelschritt } from '../../../shared/src/einrichtungsplan';
-import { VORLAGEN, vorlageFuer } from '../../../shared/src/werkbankansicht';
+import { STUFEN as WERKBANK_STUFEN, VORLAGEN, vorlageFuer, type Vorlage } from '../../../shared/src/werkbankansicht';
 import { Feld, FeldGruppe, HakenFeld, Knopf } from '../bausteine';
 import { heikleDatei } from '../api/anfrage';
 import { betriebApi } from '../api/betrieb';
@@ -316,12 +316,15 @@ function KontoSchritt({ s, zurWahl, leiste }: { s: Sammlung; zurWahl: () => void
 function NutzungSchritt({ s, zurWahl, leiste }: { s: Sammlung; zurWahl: () => void; leiste: Leiste }) {
   const [wahl, setWahl] = useState<Nutzung | null>(s.nutzung ?? (s.optional.beruflich ? 'beides' : null));
   const [org, setOrg] = useState(s.organisation ?? leereOrganisation());
+  // Stufe der Werkbank (#987): ohne eigene Wahl die Vorgabe zur Nutzung – privat Einsteiger, beruflich Selbständig.
+  const [stufe, setStufe] = useState<Vorlage | null>(s.werkbank ?? null);
   const [probleme, setProbleme] = useState<string[] | undefined>(s.probleme.nutzung);
   const x = useSenden();
   const beruflich = !!wahl && beruflichBei(wahl);
   // Leer gelassen heißt: keine Organisation (später in der Ablage). Nur der Name ist Pflicht, sobald etwas dasteht.
   const mitOrg = beruflich && Object.values(org).some((v) => v.trim());
-  const merke = () => setzeSammlung((a) => ({ ...a, nutzung: wahl, organisation: mitOrg ? org : null, optional: { ...a.optional, beruflich: beruflich || undefined } }));
+  const merke = () => setzeSammlung((a) => ({ ...a, nutzung: wahl, organisation: mitOrg ? org : null, werkbank: stufe ?? undefined, optional: { ...a.optional, beruflich: beruflich || undefined } }));
+  const gewaehlt = stufe ?? vorlageFuer({ beruflich });
   const namensfehler = probleme?.find((p) => p === t('einrichtung.plan.organisation.name'));
   return (
     <Rahmen aktiv={NR.nutzung} titel={t('einrichtung.nutzung.titel')} unter={t('einrichtung.nutzung.unter')} leiste={leiste}>
@@ -345,7 +348,18 @@ function NutzungSchritt({ s, zurWahl, leiste }: { s: Sammlung; zurWahl: () => vo
             <p className="leise klein">{t('einrichtung.nutzung.organisation.basis')}</p>
           </section>
         )}
-        {wahl && <p className="leise klein">{t('einrichtung.nutzung.vorlage', { vorlage: VORLAGEN[vorlageFuer({ beruflich })].name })}</p>}
+        {wahl && (
+          <FeldGruppe beschriftung={t('einrichtung.nutzung.stufe')} hinweis={t('einrichtung.nutzung.stufe.hinweis')}>
+            <div className="wahlkarten">
+              {WERKBANK_STUFEN.map((v) => (
+                <label key={v} className={`wahlkarte${gewaehlt === v ? ' gewaehlt' : ''}`}>
+                  <input type="radio" name="stufe" value={v} checked={gewaehlt === v} onChange={() => setStufe(v)} />
+                  <span className="wahlkarte-text"><strong>{VORLAGEN[v].name}</strong><span className="leise klein">{t.frei(`einrichtung.nutzung.stufe.${v}`)}</span></span>
+                </label>
+              ))}
+            </div>
+          </FeldGruppe>
+        )}
         <Navigation sendet={x.sendet} fehler={x.fehler} kannWeiter={!!wahl} zurueck={() => { merke(); zurueckVon('nutzung', zurWahl); }}
           weiter={() => void x.los(async () => {
             merke();
@@ -534,7 +548,7 @@ function Zusammenfassung({ s, zurWahl, leiste }: { s: Sammlung; zurWahl: () => v
         <Abschnitt titel={t('einrichtung.zf.nutzung')} ziel="nutzung" probleme={p.nutzung}>
           {s.nutzung ? <>
             <p>{t(`einrichtung.nutzung.${s.nutzung}`)}</p>
-            <p className="leise klein">{t('einrichtung.nutzung.vorlage', { vorlage: VORLAGEN[vorlageFuer({ beruflich: beruflichBei(s.nutzung) })].name })}</p>
+            <p className="leise klein">{t('einrichtung.nutzung.vorlage', { vorlage: VORLAGEN[s.werkbank ?? vorlageFuer({ beruflich: beruflichBei(s.nutzung) })].name })}</p>
             {beruflichBei(s.nutzung) && <p>{t('einrichtung.zf.organisation')}: {s.organisation
               ? [s.organisation.name, [s.organisation.strasse, s.organisation.hausnummer].filter(Boolean).join(' '), [s.organisation.plz, s.organisation.ort].filter(Boolean).join(' '), s.organisation.email, s.organisation.telefon].filter(Boolean).join(' · ')
               : <span className="leise">{t('einrichtung.zf.organisation.keine')}</span>}</p>}

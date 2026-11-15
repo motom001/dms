@@ -1,6 +1,6 @@
 # Suche
 
-Die Suche der Ablage verzeiht Tippfehler und andere Schreibweisen. Was sie dabei tut, stellst du unter **Werkbank → Suche und Volltext → Suche** ein, die gleichbedeutenden Wörter unter **Werkbank → Gleichbedeutende Wörter** (beide in der Gruppe *Post und Eingänge*; in der Vorlage *Haushalt* nur im [Expertenmodus](uebersicht.md#werkbank-anpassen), in *Betrieb* und *Alles* immer). Wie Benutzer suchen, steht im [Benutzerhandbuch](https://help.ablago.app/benutzer/aktuell/ablage/#suchen).
+Die Suche der Ablage verzeiht Tippfehler und andere Schreibweisen. Was sie dabei tut, stellst du unter **Werkbank → Suche und Volltext → Suche** ein, die gleichbedeutenden Wörter unter **Werkbank → Gleichbedeutende Wörter** (beide in der Gruppe *Post und Eingänge*; ab der Stufe [*Haushalt*](uebersicht.md#werkbank-anpassen), in *Betrieb* und *Alles* immer). Wie Benutzer suchen, steht im [Benutzerhandbuch](https://help.ablago.app/benutzer/aktuell/ablage/#suchen).
 
 ## Was immer gilt
 

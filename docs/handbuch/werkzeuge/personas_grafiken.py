@@ -188,7 +188,7 @@ KARTEN_EN = {
                             ['Library on the phone', 'plain language', 'only own folders', 'completing tasks', 'filing a photo'],
                             ['Success: finds what he needs on his own', 'and doesn\'t have to ask.']),
     'persona-3-markus.svg': ('Household admin · Markus', 'Markus (45) · own home, family, vehicles · NAS with Docker', 'House › Heating › Service',
-                             ['own folder types', 'permissions', 'mailbox and scanner', 'backup 3-2-1', 'expert mode', 'API and console', 'full export'],
+                             ['own folder types', 'permissions', 'mailbox and scanner', 'backup 3-2-1', 'Workbench level Household', 'API and console', 'full export'],
                              ['Important: Markus sets up Ablago for Lena and Jonas –', 'the two must understand what he builds.']),
     'persona-4-petra.svg': ('Looking after parents · Petra', 'Petra (52), two brothers · mother (81) lives alone · three cities', None,
                             ['views for a role', 'access on the go', 'two-factor sign-in', 'tasks for people', 'absence and stand-in'],
@@ -260,7 +260,7 @@ def _alle_karten(karte):
     karte('persona-3-markus.svg', 3, 'Haushalts-Admin · Markus', 'Markus (45) · Eigenheim, Familie, Fahrzeuge · NAS mit Docker', 'kern',
           boden(24, 330, B) + haus(196, B, 110, 80) + person(110, B, 1.45, '#5c6bc0') + tisch(30, B - 70, 150)
           + nas(42, B - 126, 1.0) + laptop(120, B - 70, 1.0) + sprechblase(150, 32, 'Haus › Heizung › Wartung', 172),
-          ['eigene Mappentypen', 'Berechtigungen', 'Postfach und Scanner', 'Sicherung 3-2-1', 'Expertenmodus', 'API und Konsole', 'Vollexport'],
+          ['eigene Mappentypen', 'Berechtigungen', 'Postfach und Scanner', 'Sicherung 3-2-1', 'Werkbank-Stufe Haushalt', 'API und Konsole', 'Vollexport'],
           ['Wichtig: Markus richtet Ablago für Lena und Jonas ein –', 'die beiden müssen verstehen, was er baut.'])
     karte('persona-4-petra.svg', 4, 'Für die Eltern sorgen · Petra', 'Petra (52) und zwei Brüder · Mutter (81) lebt allein · drei Städte', 'fokus',
           boden(24, 330, B) + person(80, B, 1.25, '#8e24aa') + person(160, B, 1.2, '#78909c', alt=True)

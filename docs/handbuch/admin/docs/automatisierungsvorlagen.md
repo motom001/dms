@@ -2,7 +2,7 @@
 
 Eine **Automatisierungsvorlage** ist eine Automatisierung mit Lücken, die man an **einer** Mappe anwendet. „Aufgabe vergeben“ und „Erinnern“ im Menü **Mappe ▾** sind solche Vorlagen – dahinter läuft derselbe Motor wie bei den [Automatisierungen](automatisierungen.md). Eine angewendete Vorlage heißt **Mappen-Ablauf**: Sie steht an der Mappe unter **Geplant**, bis sie läuft, und verschwindet dann. Was passiert ist, steht in der Historie der Mappe und im Verlauf der Vorlage.
 
-Du findest sie unter **Werkbank → Ablage aufbauen → Automatisierungsvorlagen**, gleich unter den Automatisierungen. Im Haushalt erscheint der Bereich im **Expertenmodus** (Werkbank → Werkbank anpassen), in Betrieben immer.
+Du findest sie unter **Werkbank → Ablage aufbauen → Automatisierungsvorlagen**, gleich unter den Automatisierungen. Der Bereich steht ab der Stufe **Haushalt** in der Leiste (siehe [Werkbank anpassen](uebersicht.md#werkbank-anpassen)).
 
 ![Werkbank → Automatisierungsvorlagen: Liste und Editor](bilder/werkbank-automatisierungsvorlagen.png)
 

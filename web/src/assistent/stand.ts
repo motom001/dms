@@ -3,6 +3,7 @@ import { beruflichBei, type DateiFehler, type Einrichtungsplan, type Nutzung, ty
 import type { AblaufErgebnis } from '../../../shared/src/pakete';
 import type { NotfallkontaktEingabe } from '../../../shared/src/notfallkontakte';
 import type { PaketWahl } from '../werkbank/PaketAblauf';
+import type { Vorlage } from '../../../shared/src/werkbankansicht';
 import { t } from '../sprache';
 
 /**
@@ -53,6 +54,8 @@ export interface Sammlung {
   nutzung: Nutzung | null;
   /** „Deine Organisation“ (#1045) – nur bei beruflich und beides; null = keine. */
   organisation: PlanOrganisation | null;
+  /** Stufe der Werkbank (#987); fehlt = Vorgabe zur Nutzung. Nicht in der Konfigurationsdatei. */
+  werkbank?: Vorlage;
   /** Schritte, die schon einmal mit „Weiter“ verlassen wurden. */
   besucht: Ansicht[];
   ansicht: Ansicht;

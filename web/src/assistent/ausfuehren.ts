@@ -6,6 +6,7 @@ import { paketeApi } from '../api/pakete';
 import { werkbankApi } from '../api/werkbank';
 import { t } from '../sprache';
 import { sprache } from '../../../shared/src/sprache';
+import { vorlageFuer } from '../../../shared/src/werkbankansicht';
 import { geheim, holeStand, planAus, setzeStand, STUFEN, type Lauf, type Stufe, type StufeStand } from './stand';
 
 /**
@@ -54,10 +55,12 @@ const AUSFUEHREN: Record<Stufe, () => Promise<string | void | 'ausgelassen'>> = 
     if (!b) return 'ausgelassen';
     await werkbankApi.regionSetzen({ bundesland: b as never });
   },
-  // Merkmal „beruflich genutzt“ (#1032) aus dem Schritt „Nutzung“ (#1045); die Werkbank-Vorlage folgt ihm.
+  // Merkmal „beruflich genutzt“ (#1032) aus dem Schritt „Nutzung“ (#1045), danach die Stufe der Werkbank (#987) – die
+  // gewählte oder die Vorgabe zur Nutzung.
   async nutzung() {
-    if (!holeStand().sammlung.optional.beruflich) return 'ausgelassen';
-    await werkbankApi.setzeMerkmale({ beruflich: true });
+    const s = holeStand().sammlung;
+    if (s.optional.beruflich) await werkbankApi.setzeMerkmale({ beruflich: true });
+    await werkbankApi.setzeWerkbankAnsicht({ installation: { vorlage: s.werkbank ?? vorlageFuer({ beruflich: !!s.optional.beruflich }), ein: [], aus: [] } });
   },
   async mail() {
     const m = holeStand().sammlung.optional.mail;

@@ -36,9 +36,9 @@ Ablago soll Menschen helfen, die Informationen ihres Lebens zu ordnen. Damit Beg
 ## Die Entscheidungsregel
 
 !!! tip "Im Zweifel gewinnen Stufe 1–3"
-    Steht eine Funktion für größere Organisationen im Konflikt mit Einfachheit für Lena, Jonas und Markus, gewinnen Stufe 1–3. Fortgeschrittenes kommt in den **Expertenmodus** oder bleibt aus, bis man es einschaltet.
+    Steht eine Funktion für größere Organisationen im Konflikt mit Einfachheit für Lena, Jonas und Markus, gewinnen Stufe 1–3. Fortgeschrittenes kommt in eine höhere **Stufe der Werkbank** (Einsteiger, Haushalt, Selbständig, Betrieb, Alles) oder bleibt aus, bis man es einschaltet.
 
-    Ein Beispiel ist **Werkbank anpassen**: Neue Installationen starten mit der Vorlage „Haushalt“ und zeigen nur die Bereiche, die ein Haushalt zum Einrichten und Sichern braucht. Weitere Bereiche blendet man mit der Vorlage „Organisation“ oder „Alles“ ein.
+    Ein Beispiel ist **Werkbank anpassen**: Neue Installationen starten bei privater Nutzung mit der Stufe „Einsteiger“ und zeigen nur die Bereiche, die man zum Einrichten und Sichern braucht. Weitere Bereiche blendet man mit einer höheren Stufe ein – für alle oder unter „Meine Leiste“ nur für sich.
 
 Bei jeder neuen Idee, jedem Issue und jeder größeren Änderung fragen wir:
 
@@ -90,7 +90,7 @@ Lena **administriert selbst**: Sie ist Einsteigerin und Administratorin zugleich
 - **Ziele:** eigene Mappentypen bauen (Haus → Heizung → Wartungsvertrag → Rechnung), Rechte für die Familie, Zugriff von unterwegs, Postfach und Scanner anbinden, Sicherung nach 3-2-1.
 - **Typische Aufgaben:** Mappentypen und Ansichten entwerfen, Berechtigungen testen, Pakete installieren, Updates einspielen, Protokoll lesen.
 - **Stolpersteine:** versteckte Einstellungen, fehlende Technik-Doku, Updates, die etwas ändern, ohne es zu sagen.
-- **Braucht:** Expertenmodus, Administratorhandbuch, API und Konsole, Release-Notizen, Vollexport.
+- **Braucht:** Werkbank-Stufe Haushalt, Administratorhandbuch, API und Konsole, Release-Notizen, Vollexport.
 
 Markus richtet Ablago **für Lena und Jonas** ein. Was er baut, müssen die beiden verstehen.
 

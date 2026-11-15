@@ -36,9 +36,9 @@ Ablago is meant to help people organise the information of their lives. So that 
 ## The decision rule { #die-entscheidungsregel }
 
 !!! tip "When in doubt, levels 1–3 win"
-    If a function for larger organisations conflicts with simplicity for Lena, Jonas and Markus, levels 1–3 win. Advanced things go into **expert mode** or stay off until someone switches them on.
+    If a function for larger organisations conflicts with simplicity for Lena, Jonas and Markus, levels 1–3 win. Advanced things go into a higher **Workbench level** (Beginner, Household, Self-employed, Business, Everything) or stay off until someone switches them on.
 
-    One example is **Customise workbench**: new installations start with the template "Household" and only show the areas a household needs for setting up and backing up. Further areas are shown with the template "Business" or "Everything".
+    One example is **Customise workbench**: for private use new installations start with the level "Beginner" and only show the areas needed for setting up and backing up. Further areas are shown with a higher level – for everyone or only for yourself under "My sidebar".
 
 With every new idea, every issue and every bigger change we ask:
 
@@ -90,7 +90,7 @@ Lena **administers herself**: she is a beginner and administrator at the same ti
 - **Goals:** build his own folder types (house → heating → maintenance contract → invoice), permissions for the family, access on the go, connect mailbox and scanner, backup following 3-2-1.
 - **Typical tasks:** design folder types and views, test permissions, install packages, apply updates, read the log.
 - **Stumbling blocks:** hidden settings, missing technical documentation, updates that change something without saying so.
-- **Needs:** expert mode, Administrator manual, API and console, release notes, full export.
+- **Needs:** Workbench level Household, Administrator manual, API and console, release notes, full export.
 
 Markus sets up Ablago **for Lena and Jonas**. The two must understand what he builds.
 

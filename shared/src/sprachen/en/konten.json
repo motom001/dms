@@ -70,7 +70,7 @@
   "verwaltung.dialog.abbrechen": "Cancel",
   "verwaltung.dialog.anbieter": "Sign in with the provider",
   "verwaltende.wartung.beginn": "The start may be at most 24 hours in the future – from the announcement on, only people who may administer Ablago can sign in.",
-  "verwaltende.ansicht.vorlage": "Template for everyone who administers",
+  "verwaltende.ansicht.vorlage": "Level for everyone who administers",
   "verwaltende.ansicht.text": "“For everyone” applies to every person who administers – they only see their own areas. “Only for me” additionally shows an area just for you.",
   "verwaltende.ohneEmpfaenger": "without recipient",
   "verwaltende.berechtigungen.modus": "In administration mode you see everything – permissions don’t apply then.",

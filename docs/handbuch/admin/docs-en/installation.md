@@ -74,7 +74,7 @@ Name, email address and password of **your own account** – with your one email
 
 - **For my work or my business** and **Both** set the attribute [used for work](organisation.md#nutzung): folder types then show their work-related fields, and packages that keep records longer for work use set this up straight away when installed.
 - The answer **preselects packages in the next step**: for home Basis, Household, Contracts and Invoices; for work Basis, Contracts, Invoices and Compliance; for "Both" all of them. Only what exists in the catalogue is preselected – you can deselect everything.
-- The **Workbench** starts with the *Household* template for home use, with *Business* for work (see [Overview](uebersicht.md)).
+- **How much should the Workbench show?** After the answer you choose one of the five levels *Beginner*, *Household*, *Self-employed*, *Business* or *Everything*. Preselected is *Beginner* for home and *Self-employed* for work. Everyone who manages can later choose a different level for themselves (see [Customising the workbench](uebersicht.md#werkbank-anpassen)).
 
 **Your organisation:** for work use, the step asks right below for your own organisation – name, address, email and phone. Only the name is required, everything else is optional. With **Set up now**, Ablago creates an organisation with the attribute [own organisation](organisation.md) from it, so Ablago knows who "we" are, for example for GDPR access requests. This needs the **Basis** package (1.7.0 or later) – once an organisation is entered, Basis is required, and the summary tells you if it is missing. If you leave all fields empty, Ablago creates none; you can do that later in the library.
 
@@ -131,7 +131,7 @@ Plus links to both manuals, "Report a problem" as a prepared GitHub issue and th
 
 Afterwards: how to continue is summarised under [Setting up in five steps](fuenf-schritte.md) – switch on the schedule under **Workbench → [Backup](sicherung.md)**, create your own [folder types](mappentypen.md) and [invite more users](benutzer.md) – ideally also a second person who may manage.
 
-**For the self-employed and small businesses:** if you chose "For my work or my business" or "Both" in the [Use](#nutzung) step, the Workbench starts with the **Business** template – with number sequences, archive mode, mailboxes, data protection and the other areas a business needs. Otherwise it starts with the slim template *Household*; you can switch at any time under **Workbench → Customise workbench** (see [Overview](uebersicht.md)).
+**For the self-employed and small businesses:** if you chose "For my work or my business" or "Both" in the [Use](#nutzung) step, the level **Self-employed** is preselected – with number sequences, archive mode, data protection and everything from *Household*; **Business** suits businesses with several people. Otherwise the slim level *Beginner* is preselected; you can switch at any time under **Workbench → Customise workbench** (see [Overview](uebersicht.md)).
 
 ## Database connection {#datenbank-anbindung}
 

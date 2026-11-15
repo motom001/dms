@@ -12,12 +12,17 @@ import werkbank from './sprachen/de/werkbank.json';
 /** Texte der Werkbank (#473): Gruppen, Bereiche, Vorlagen stehen in `sprachen/de/werkbank.json`. */
 const t = uebersetzer({ werkbank });
 
-export type Vorlage = 'haushalt' | 'organisation' | 'alles';
+/**
+ * Stufen der Werkbank (#987) entlang der Personas, aufsteigend – jede enthält die vorige: Einsteiger (Lena), Haushalt
+ * (Markus, Petra), Selbständig (Herr Özdemir, Katrin), Betrieb (Tischlerei, Mittelstand), Alles (IT-Dienstleister,
+ * Fehlersuche). Die Kennung von Betrieb bleibt „organisation“, damit gespeicherte Ansichten weiter gelten.
+ */
+export const STUFEN = ['einsteiger', 'haushalt', 'selbstaendig', 'organisation', 'alles'] as const;
+export type Vorlage = (typeof STUFEN)[number];
+export const istVorlage = (v: unknown): v is Vorlage => (STUFEN as readonly unknown[]).includes(v);
 
 const vorlage = (v: Vorlage) => ({ name: t.frei(`werkbank.vorlage.${v}.name`), text: t.frei(`werkbank.vorlage.${v}.text`) });
-export const VORLAGEN: Record<Vorlage, { name: string; text: string }> = {
-  haushalt: vorlage('haushalt'), organisation: vorlage('organisation'), alles: vorlage('alles'),
-};
+export const VORLAGEN = Object.fromEntries(STUFEN.map((v) => [v, vorlage(v)])) as Record<Vorlage, { name: string; text: string }>;
 
 /**
  * Gruppen der Leiste (#68), nach Aufgaben statt nach Technik (#354, neu geordnet #717/#725): je etwa 7 ± 2 Bereiche.
@@ -33,20 +38,17 @@ export interface Bereich {
   pfad: string;
   gruppe: Gruppe;
   name: string;
-  /** In welchen Vorlagen der Bereich zu sehen ist („alles“ enthält jeden). */
+  /** Ab welcher Stufe der Bereich in der Leiste steht (#987); jede höhere Stufe zeigt ihn auch. */
+  ab: Vorlage;
+  /** Daraus abgeleitet: in welchen Vorlagen er zu sehen ist („alles“ enthält jeden). */
   in: Array<Exclude<Vorlage, 'alles'>>;
-  /**
-   * In welchen Vorlagen er nur im Expertenmodus erscheint (#356): Wer ihn eingeschaltet hat, sieht diese Bereiche
-   * zusätzlich – sonst bleiben sie für Einsteiger aus der Leiste.
-   */
-  experte: Array<Exclude<Vorlage, 'alles'>>;
   /** Für das Handbuch und den Dialog: wann man ihn braucht. */
   wann: string;
 }
 
-const H = ['haushalt', 'organisation'] as const;
-const O = ['organisation'] as const;
-type Eintrag = { pfad: string; gruppe: Gruppe; in: readonly Exclude<Vorlage, 'alles'>[]; experte?: readonly Exclude<Vorlage, 'alles'>[] };
+// Stufen (#987): ab Einsteiger, Haushalt, Selbständig, Betrieb bzw. nur in Alles.
+const E = 'einsteiger', H = 'haushalt', S = 'selbstaendig', B = 'organisation', A = 'alles';
+type Eintrag = { pfad: string; gruppe: Gruppe; ab: Vorlage };
 
 /**
  * Alle Bereiche außer der Übersicht (die ist immer da), in der Reihenfolge der Leiste (#354).
@@ -56,67 +58,70 @@ type Eintrag = { pfad: string; gruppe: Gruppe; in: readonly Exclude<Vorlage, 'al
 const EINTRAEGE: Eintrag[] = [
   // Ablage aufbauen (#717): erst Fertiges, dann Feinarbeit, zum Schluss, was auf allem aufbaut.
   // Die Nutzung (#1032, privat oder auch beruflich) steht seit #1170 oben auf „Eigene Organisation“ unter Einstellungen.
-  { pfad: 'pakete', gruppe: 'ablage', in: H },
-  { pfad: 'typen', gruppe: 'ablage', in: H },
-  { pfad: 'sichten', gruppe: 'ablage', in: H },
-  { pfad: 'nummernkreise', gruppe: 'ablage', in: O },
-  // Automatisierungen (#675): für Betriebe sichtbar, im Haushalt nur im Expertenmodus.
-  { pfad: 'automatisierungen', gruppe: 'ablage', in: O, experte: ['haushalt'] },
+  { pfad: 'pakete', gruppe: 'ablage', ab: E },
+  { pfad: 'typen', gruppe: 'ablage', ab: H },
+  { pfad: 'sichten', gruppe: 'ablage', ab: H },
+  { pfad: 'nummernkreise', gruppe: 'ablage', ab: S },
+  // Automatisierungen (#675): ab Haushalt (#987, vorher dort nur im Expertenmodus).
+  { pfad: 'automatisierungen', gruppe: 'ablage', ab: H },
   // Automatisierungsvorlagen (#1044): daneben, gleich sichtbar – „Aufgabe vergeben“, „Erinnern“, Wiedervorlage …
-  { pfad: 'ablaufvorlagen', gruppe: 'ablage', in: O, experte: ['haushalt'] },
+  { pfad: 'ablaufvorlagen', gruppe: 'ablage', ab: H },
   // Rundgänge (#941): alle sehen, an/aus, eigene schreiben – zum Schluss, weil sie auf allem anderen aufbauen.
-  { pfad: 'rundgaenge', gruppe: 'ablage', in: O, experte: ['haushalt'] },
+  { pfad: 'rundgaenge', gruppe: 'ablage', ab: H },
   // Tipps (#942): daneben – Tipps können Rundgänge starten.
-  { pfad: 'tipps', gruppe: 'ablage', in: O, experte: ['haushalt'] },
-  { pfad: 'benutzer', gruppe: 'benutzer', in: H },
-  { pfad: 'verschluesselung', gruppe: 'benutzer', in: H },
+  { pfad: 'tipps', gruppe: 'ablage', ab: H },
+  { pfad: 'benutzer', gruppe: 'benutzer', ab: E },
+  { pfad: 'verschluesselung', gruppe: 'benutzer', ab: E },
   // „Aufbewahrung abgelaufen“ (#725, früher „Darf weg“) und Stempel (#717) regeln, was die Ablage verlässt.
-  { pfad: 'aufbewahrung', gruppe: 'benutzer', in: O },
-  { pfad: 'stempel', gruppe: 'benutzer', in: H },
+  { pfad: 'aufbewahrung', gruppe: 'benutzer', ab: S },
+  { pfad: 'stempel', gruppe: 'benutzer', ab: H },
   // Datenschutz (#1184, vorher unter „Benutzer und Sicherheit“, #668): Auskünfte (mit Mitte, wachsende Sammlung),
   // Löschkonzept und Löschprotokoll (vorher Abschnitt des Löschkonzepts) als drei klar getrennte Einträge.
-  { pfad: 'auskuenfte', gruppe: 'datenschutz', in: O },
-  { pfad: 'loeschkonzept', gruppe: 'datenschutz', in: O },
-  { pfad: 'loeschprotokoll', gruppe: 'datenschutz', in: O },
-  { pfad: 'postfaecher', gruppe: 'post', in: O },
-  { pfad: 'eingangsordner', gruppe: 'post', in: O },
-  { pfad: 'webdav', gruppe: 'post', in: H },
-  // Suche und Volltext (#725): Texterkennung samt Unscharfer Suche und Gleichbedeutenden Wörtern (früher „Suche“,
-  // im Haushalt nur im Expertenmodus – zusammengelegt erbt der Bereich die weiteste Sichtbarkeit).
-  { pfad: 'texterkennung', gruppe: 'post', in: O, experte: ['haushalt'] },
+  { pfad: 'auskuenfte', gruppe: 'datenschutz', ab: S },
+  { pfad: 'loeschkonzept', gruppe: 'datenschutz', ab: S },
+  { pfad: 'loeschprotokoll', gruppe: 'datenschutz', ab: S },
+  { pfad: 'postfaecher', gruppe: 'post', ab: H },
+  { pfad: 'eingangsordner', gruppe: 'post', ab: H },
+  { pfad: 'webdav', gruppe: 'post', ab: H },
+  // Suche und Volltext (#725): Texterkennung samt Unscharfer Suche und Gleichbedeutenden Wörtern (früher „Suche“).
+  { pfad: 'texterkennung', gruppe: 'post', ab: H },
   // Gleichbedeutende Wörter (#992): eigener Bereich mit Mitte direkt darunter, sichtbar wie „Suche und Volltext“.
-  { pfad: 'woerter', gruppe: 'post', in: O, experte: ['haushalt'] },
+  { pfad: 'woerter', gruppe: 'post', ab: H },
   // Sicherung mit Wiederherstellen als Abschnitt (#725).
-  { pfad: 'sicherung', gruppe: 'sichern', in: H },
-  { pfad: 'vollexport', gruppe: 'sichern', in: H },
-  { pfad: 'papierkorb', gruppe: 'sichern', in: H },
+  { pfad: 'sicherung', gruppe: 'sichern', ab: E },
+  { pfad: 'vollexport', gruppe: 'sichern', ab: H },
+  { pfad: 'papierkorb', gruppe: 'sichern', ab: E },
   // Einstellungen zum Sichern (#1196, #1197): Aufbewahrung im Papierkorb und eigener Export der Benutzer – getrennt von
   // den Abläufen (Grundsatz: Einstellungen und Abläufe nicht mischen). In dieser Gruppe, weil „Einstellungen“ schon
   // sieben Bereiche hat (#354).
-  { pfad: 'daten', gruppe: 'sichern', in: H },
-  { pfad: 'betrieb', gruppe: 'einstellungen', in: H },
+  { pfad: 'daten', gruppe: 'sichern', ab: H },
+  { pfad: 'betrieb', gruppe: 'einstellungen', ab: E },
   // Region (#726): Land, Bundesland, Zeitzone an einer Stelle.
-  { pfad: 'region', gruppe: 'einstellungen', in: H },
+  { pfad: 'region', gruppe: 'einstellungen', ab: E },
   // Sprachen (#729): erlaubte Sprachen und Sprache der Installation.
-  { pfad: 'sprachen', gruppe: 'einstellungen', in: H },
+  { pfad: 'sprachen', gruppe: 'einstellungen', ab: H },
   // Eigene Organisation (#995) mit der Nutzung obenauf (#1170): einmal gesetzt, dann ist Ruhe – darum unter Einstellungen.
-  // In jeder Vorlage, weil der Haken „auch beruflich genutzt“ gerade für den Haushalt erreichbar sein muss.
-  { pfad: 'organisation', gruppe: 'einstellungen', in: H },
-  { pfad: 'aufgaben', gruppe: 'einstellungen', in: H },
-  { pfad: 'anmeldeschutz', gruppe: 'einstellungen', in: O },
-  { pfad: 'designs', gruppe: 'einstellungen', in: O },
-  { pfad: 'anbindung', gruppe: 'einstellungen', in: [] },
+  // Ab Haushalt, weil der Haken „auch beruflich genutzt“ gerade für den Haushalt erreichbar sein muss.
+  { pfad: 'organisation', gruppe: 'einstellungen', ab: H },
+  { pfad: 'aufgaben', gruppe: 'einstellungen', ab: H },
+  { pfad: 'anmeldeschutz', gruppe: 'einstellungen', ab: H },
+  { pfad: 'designs', gruppe: 'einstellungen', ab: B },
+  { pfad: 'anbindung', gruppe: 'einstellungen', ab: A },
   // Systemzustand nimmt „Technik“ (Version und Updates) und die Auslastung der Datenbank auf (#725).
-  { pfad: 'systemzustand', gruppe: 'wartung', in: H },
-  { pfad: 'protokoll', gruppe: 'wartung', in: O },
-  { pfad: 'fehlermeldungen', gruppe: 'wartung', in: O },
+  { pfad: 'systemzustand', gruppe: 'wartung', ab: E },
+  { pfad: 'protokoll', gruppe: 'wartung', ab: H },
+  { pfad: 'fehlermeldungen', gruppe: 'wartung', ab: H },
   // Wartung (#725): Wartungsmodus und Wartungsoperationen auf einer Seite.
-  { pfad: 'wartung', gruppe: 'wartung', in: O },
-  { pfad: 'demo', gruppe: 'wartung', in: [] },
+  { pfad: 'wartung', gruppe: 'wartung', ab: H },
+  { pfad: 'demo', gruppe: 'wartung', ab: A },
 ];
 
+/** Stufe als Zahl: 0 = Einsteiger … 4 = Alles. */
+export const stufeNr = (v: Vorlage) => STUFEN.indexOf(v);
+
 export const BEREICHE: Bereich[] = EINTRAEGE.map((e) => ({
-  ...e, in: [...e.in], experte: [...(e.experte ?? [])], name: t.frei(`werkbank.bereich.${e.pfad}.name`), wann: t.frei(`werkbank.bereich.${e.pfad}.wann`),
+  ...e, in: STUFEN.filter((v): v is Exclude<Vorlage, 'alles'> => v !== 'alles' && stufeNr(v) >= stufeNr(e.ab)),
+  name: t.frei(`werkbank.bereich.${e.pfad}.name`), wann: t.frei(`werkbank.bereich.${e.pfad}.wann`),
 }));
 
 /** Name eines Bereichs (auch der Übersicht) für Leiste, Überschriften und Verweise. */
@@ -161,8 +166,8 @@ export const UMGEZOGEN_ABSCHNITT: Readonly<Record<string, string>> = {
 
 /**
  * Gruppen, die nur bei beruflicher Nutzung in der Leiste stehen (#1184): Datenschutz gehört nicht zur rein privaten
- * Ablage. Hilfsweise am Merkmal „beruflich genutzt“ (#1170), bis die Werkbank-Stufe je Person (#987) es übernimmt. Die
- * Seiten bleiben über ihre Adresse erreichbar – ausgeblendet ist nicht abgeschaltet.
+ * Ablage. Am Merkmal „beruflich genutzt“ (#1170), zusätzlich zur Stufe (ab Selbständig, #987). Die Seiten bleiben über
+ * ihre Adresse erreichbar – ausgeblendet ist nicht abgeschaltet.
  */
 export const NUR_BERUFLICH: ReadonlySet<Gruppe> = new Set<Gruppe>(['datenschutz']);
 export const inLeiste = (gruppe: Gruppe | null, m: { beruflich: boolean } | null | undefined) => !gruppe || !NUR_BERUFLICH.has(gruppe) || !!m?.beruflich;
@@ -181,17 +186,22 @@ export const abschnittUmleitung = (bereich: string, marke: string): string | nul
 /** Für die ganze Installation: Vorlage plus Abweichungen. */
 export interface WerkbankAnsicht { vorlage: Vorlage; ein: string[]; aus: string[] }
 /**
- * Je Administrator: zusätzlich eingeblendete Bereiche und der Expertenmodus (#356) – er zeigt die Bereiche, die die
- * Vorlage nur für Fortgeschrittene vorsieht (`Bereich.experte`). Kein Recht, nur die Leiste.
+ * Je Person mit Verwaltungsrecht (#987): eine eigene Stufe („Meine Leiste“, ohne = die der Installation) und zusätzlich
+ * eingeblendete Bereiche. Kein Recht, nur die Leiste (#810).
  */
-export interface EigeneAnsicht { ein: string[]; experte?: boolean }
+export interface EigeneAnsicht { ein: string[]; vorlage?: Vorlage }
 
 /**
- * Vorgabe der Vorlage aus dem Merkmal „beruflich genutzt“ (#1032): beruflich → Organisation (Selbständig/Betrieb),
- * sonst Haushalt. Die Vorlage bleibt eine Einstellung der Werkbank (künftig je Person, #987); das Merkmal gilt für die
- * Ablage und gibt nur die Vorgabe.
+ * Bereiche, die der frühere Expertenmodus (#356, entfallen mit #987) im Haushalt zusätzlich zeigte. Wer ihn an hatte,
+ * bekommt sie beim Lesen als eigene Einblendung – so verschwindet nichts aus der Leiste.
  */
-export const vorlageFuer = (m: { beruflich: boolean }): Vorlage => (m.beruflich ? 'organisation' : 'haushalt');
+export const FRUEHER_EXPERTE = ['automatisierungen', 'ablaufvorlagen', 'rundgaenge', 'tipps', 'texterkennung', 'woerter'] as const;
+
+/**
+ * Vorgabe der Vorlage aus dem Merkmal „beruflich genutzt“ (#1032): beruflich → Selbständig, sonst Einsteiger (#987).
+ * Die Vorlage bleibt eine Einstellung der Werkbank; das Merkmal gilt für die Ablage und gibt nur die Vorgabe.
+ */
+export const vorlageFuer = (m: { beruflich: boolean }): Vorlage => (m.beruflich ? 'selbstaendig' : 'einsteiger');
 
 /** Ohne Einstellung bleibt alles sichtbar – so ändert sich für bestehende Installationen nichts. */
 export const OHNE_EINSTELLUNG: WerkbankAnsicht = { vorlage: 'alles', ein: [], aus: [] };
@@ -204,16 +214,23 @@ const liste = (v: unknown) => (Array.isArray(v)
 export function liesAnsicht(v: unknown): WerkbankAnsicht | null {
   if (!v || typeof v !== 'object') return null;
   const o = v as Record<string, unknown>;
-  const vorlage = (Object.keys(VORLAGEN) as Vorlage[]).includes(o.vorlage as Vorlage) ? o.vorlage as Vorlage : 'alles';
+  const vorlage = istVorlage(o.vorlage) ? o.vorlage : 'alles';
   return { vorlage, ein: liste(o.ein), aus: liste(o.aus) };
 }
+/** Eigene Ansicht; ein gespeicherter Expertenmodus (vor #987) wird zur Einblendung seiner Bereiche. */
 export function liesEigene(v: unknown): EigeneAnsicht {
   const o = v && typeof v === 'object' ? v as Record<string, unknown> : {};
-  return { ein: liste(o.ein), ...(o.experte === true ? { experte: true } : {}) };
+  const ein = liste([...(Array.isArray(o.ein) ? o.ein : []), ...(o.experte === true ? FRUEHER_EXPERTE : [])]);
+  return { ein, ...(istVorlage(o.vorlage) ? { vorlage: o.vorlage } : {}) };
 }
 
-export const inVorlage = (vorlage: Vorlage, pfad: string) =>
-  vorlage === 'alles' || !!BEREICHE.find((b) => b.pfad === pfad)?.in.includes(vorlage);
+export const inVorlage = (vorlage: Vorlage, pfad: string) => {
+  const b = BEREICHE.find((x) => x.pfad === pfad);
+  return vorlage === 'alles' || (!!b && stufeNr(vorlage) >= stufeNr(b.ab));
+};
+
+/** Anzahl der Einträge in der Leiste einer Vorlage, die Übersicht mitgezählt (#987, Handbuch und Rauchtest). */
+export const anzahlInVorlage = (vorlage: Vorlage) => 1 + BEREICHE.filter((b) => inVorlage(vorlage, b.pfad)).length;
 
 /** Für alle sichtbar (Installation). */
 export function fuerAlle(a: WerkbankAnsicht, pfad: string): boolean {
@@ -222,19 +239,12 @@ export function fuerAlle(a: WerkbankAnsicht, pfad: string): boolean {
   return a.ein.includes(pfad) || inVorlage(a.vorlage, pfad);
 }
 
-/** Erscheint der Bereich in dieser Vorlage nur im Expertenmodus? */
-export const nurImExpertenmodus = (vorlage: Vorlage, pfad: string) =>
-  vorlage !== 'alles' && !!BEREICHE.find((b) => b.pfad === pfad)?.experte.includes(vorlage);
-
-/** Bereiche, die der Expertenmodus in dieser Vorlage zusätzlich zeigt. */
-export const expertenBereiche = (vorlage: Vorlage) => BEREICHE.filter((b) => nurImExpertenmodus(vorlage, b.pfad));
-
 /**
- * Für diesen Administrator sichtbar: Installation plus eigene Ergänzungen, im Expertenmodus dazu die Bereiche, die
- * die Vorlage dafür vorsieht – außer sie sind für alle ausdrücklich ausgeblendet.
+ * Für diese Person sichtbar (#987): die Installation – mit der eigenen Stufe statt der Vorlage, wenn die Person eine
+ * gewählt hat; was für alle ein- oder ausgeblendet ist, gilt weiter – plus eigene Einblendungen.
  */
 export const sichtbar = (a: WerkbankAnsicht, eigene: EigeneAnsicht, pfad: string) =>
-  fuerAlle(a, pfad) || eigene.ein.includes(pfad) || (!!eigene.experte && !a.aus.includes(pfad) && nurImExpertenmodus(a.vorlage, pfad));
+  fuerAlle(eigene.vorlage ? { ...a, vorlage: eigene.vorlage } : a, pfad) || eigene.ein.includes(pfad);
 
 /** Speichert nur Abweichungen von der Vorlage. */
 export function ansichtAus(vorlage: Vorlage, sichtbareBereiche: Iterable<string>): WerkbankAnsicht {

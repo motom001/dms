@@ -2,7 +2,7 @@
 
 Damit die Suche auch den Text von Dokumenten findet, erzeugt Ablago zu jedem neuen Dokument einen **Volltext** – im Hintergrund, ohne dass jemand warten muss:
 
-Die Einstellungen stehen unter **Werkbank → Post und Eingänge → Suche und Volltext** – zusammen mit der [Suche](suche.md) (Tippfehler, Wörterverzeichnis; die [gleichbedeutenden Wörter](suche.md#gleichbedeutende-worter) haben seit #992 einen eigenen Bereich direkt darunter). „Neue PDFs automatisch verkleinern“ steht seit #1190 beim Speicherplatz unter [Systemzustand](speicherplatz.md#neue-pdfs-automatisch-verkleinern). Der Bereich gehört zur Vorlage **Betrieb**, im Haushalt erscheint er im Expertenmodus. Die *Wartungsoperationen* stehen unter **Werkbank → Wartung und Fehlersuche → Wartung**.
+Die Einstellungen stehen unter **Werkbank → Post und Eingänge → Suche und Volltext** – zusammen mit der [Suche](suche.md) (Tippfehler, Wörterverzeichnis; die [gleichbedeutenden Wörter](suche.md#gleichbedeutende-worter) haben seit #992 einen eigenen Bereich direkt darunter). „Neue PDFs automatisch verkleinern“ steht seit #1190 beim Speicherplatz unter [Systemzustand](speicherplatz.md#neue-pdfs-automatisch-verkleinern). Der Bereich steht ab der Stufe **Haushalt** in der Leiste. Die *Wartungsoperationen* stehen unter **Werkbank → Wartung und Fehlersuche → Wartung**.
 
 --8<-- "ausgeblendet-schritt.md"
 

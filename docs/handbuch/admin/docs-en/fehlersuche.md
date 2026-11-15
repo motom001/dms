@@ -2,7 +2,7 @@
 
 Everything about this is in the workbench under **Maintenance and troubleshooting**. The group contains system health, Log, Reported problems, Maintenance mode, Maintenance operations and Demo data. This page describes the troubleshooting tools and *Technology* (version and updates), which is under **Settings**; [System health](speicherplatz.md), [Maintenance mode](wartungsmodus.md), [Maintenance operations](texterkennung.md#wartungsoperationen) and [Demo data](demo.md) have their own pages. Backup, Restore and Full export are under **Protecting your data**.
 
-*Log* and *Reported problems* belong to the template **Business**. *Technology* is in every template.
+*Log* and *Reported problems* are in the bar from the level **Household**. *Technology* is in every level.
 
 --8<-- "ausgeblendet-schritt.md"
 

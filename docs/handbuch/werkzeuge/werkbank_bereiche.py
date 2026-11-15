@@ -12,7 +12,7 @@ bis dahin sind die englischen Tabellen von Hand übersetzt.
 
 Ersetzt in uebersicht.md die Abschnitte zwischen den Markern
   <!-- bereiche:gruppen -->        … <!-- /bereiche:gruppen -->        Gruppen und ihre Bereiche
-  <!-- bereiche:organisation -->   … <!-- /bereiche:organisation -->   was „Betrieb“ zusätzlich zeigt
+  <!-- bereiche:stufen -->         … <!-- /bereiche:stufen -->         welche Stufe welchen Bereich zeigt (#987)
   <!-- bereiche:wofuer -->         … <!-- /bereiche:wofuer -->         Wofür man welchen Bereich braucht
 So bleibt das Handbuch beim Ändern der Bereiche oder einer späteren Neugruppierung an einer Stelle aktuell.
 """
@@ -27,16 +27,14 @@ ZIEL = WURZEL / 'docs' / 'handbuch' / 'admin' / 'docs' / 'uebersicht.md'
 # „bedingt“: Bereiche, die nur unter einer Bedingung in der Leiste stehen.
 SPRACHEN = {
     'de': {'texte': TEXTE, 'ziel': ZIEL,
-           'vorlagen': {'haushalt': 'Haushalt', 'organisation': 'Betrieb'}, 'alles': 'nur Alles',
-           'experte': '{v} im Expertenmodus', 'zusaetzlich': '- **{o}**: zusätzlich {liste}.',
-           'kopf_gruppen': '| Gruppe | Bereiche |', 'kopf_wofuer': '| Bereich | Wofür | In der Vorlage |',
+           'bereich': 'Bereich', 'anzahl': 'Anzahl', 'ab': 'ab {v}', 'nur': 'nur {v}',
+           'kopf_gruppen': '| Gruppe | Bereiche |', 'kopf_wofuer': '| Bereich | Wofür | Stufe |',
            'bedingt': {'aufbewahrung': 'nur mit Archivmodus', 'eingangsordner': 'nur wenn der Ordner eingebunden ist',
                        'auskuenfte': 'nur bei beruflicher Nutzung', 'loeschkonzept': 'nur bei beruflicher Nutzung', 'loeschprotokoll': 'nur bei beruflicher Nutzung'}},
     'en': {'texte': WURZEL / 'shared' / 'src' / 'sprachen' / 'en' / 'werkbank.json',
            'ziel': WURZEL / 'docs' / 'handbuch' / 'admin' / 'docs-en' / 'uebersicht.md',
-           'vorlagen': {'haushalt': 'Household', 'organisation': 'Business'}, 'alles': 'Everything only',
-           'experte': '{v} in expert mode', 'zusaetzlich': '- **{o}**: additionally {liste}.',
-           'kopf_gruppen': '| Group | Areas |', 'kopf_wofuer': '| Area | What for | In the preset |',
+           'bereich': 'Area', 'anzahl': 'Number', 'ab': 'from {v}', 'nur': '{v} only',
+           'kopf_gruppen': '| Group | Areas |', 'kopf_wofuer': '| Area | What for | Level |',
            'bedingt': {'aufbewahrung': 'only with archive mode', 'eingangsordner': 'only if the folder is mounted',
                        'auskuenfte': 'only when used for work', 'loeschkonzept': 'only when used for work', 'loeschprotokoll': 'only when used for work'}},
 }
@@ -53,6 +51,9 @@ SEITE = {
     'systemzustand': 'speicherplatz.md', 'protokoll': 'fehlersuche.md#protokoll', 'fehlermeldungen': 'fehlersuche.md#gemeldete-fehler',
     'wartung': 'wartungsmodus.md', 'demo': 'demo.md',
 }
+# Stufen der Werkbank (#987), aufsteigend; Kürzel wie in werkbankansicht.ts.
+STUFEN = ['einsteiger', 'haushalt', 'selbstaendig', 'organisation', 'alles']
+KUERZEL = {'E': 'einsteiger', 'H': 'haushalt', 'S': 'selbstaendig', 'B': 'organisation', 'A': 'alles'}
 
 
 def lies(sp=SPRACHEN['de']):
@@ -61,13 +62,10 @@ def lies(sp=SPRACHEN['de']):
     folge = re.findall(r"'(\w+)'", re.search(r'const GRUPPENFOLGE = \[([^\]]*)\]', ts).group(1))
     gruppen = {g: texte[f'gruppe.{g}'] for g in folge}
     bereiche = []
-    namen = sp['vorlagen']
-    for pfad, gruppe, inn, experte in re.findall(r"\{ pfad: '(\w+)', gruppe: '(\w+)', in: (H|O|\[\])(?:, experte: \[([^\]]*)\])? \}", ts):
-        h, o = namen['haushalt'], namen['organisation']
-        vorlagen = [h, o] if inn == 'H' else [o] if inn == 'O' else []
-        # Expertenmodus (#356): in diesen Vorlagen nur, wenn ein Administrator ihn eingeschaltet hat.
-        nur_experte = [namen[v] for v in re.findall(r"'(\w+)'", experte)]
-        bereiche.append({'pfad': pfad, 'gruppe': gruppe, 'name': texte[f'bereich.{pfad}.name'], 'vorlagen': vorlagen, 'experte': nur_experte, 'wann': texte[f'bereich.{pfad}.wann']})
+    # Namen der Stufen und der Übersicht aus der Sprachdatei (für die Matrix).
+    sp['texte_stufen'] = {**{v: texte[f'vorlage.{v}.name'] for v in STUFEN}, 'uebersicht': texte['bereich.uebersicht.name']}
+    for pfad, gruppe, ab in re.findall(r"\{ pfad: '(\w+)', gruppe: '(\w+)', ab: ([EHSBA]) \}", ts):
+        bereiche.append({'pfad': pfad, 'gruppe': gruppe, 'name': texte[f'bereich.{pfad}.name'], 'ab': KUERZEL[ab], 'wann': texte[f'bereich.{pfad}.wann']})
     if not bereiche or any(b['pfad'] not in SEITE for b in bereiche) or any(b['gruppe'] not in gruppen for b in bereiche):
         fehlt = [b['pfad'] for b in bereiche if b['pfad'] not in SEITE or b['gruppe'] not in gruppen]
         sys.exit(f'werkbank_bereiche.py: Bereiche nicht gelesen, ohne Handbuchseite oder ohne Gruppe: {fehlt}')
@@ -84,15 +82,19 @@ def bloecke(gruppen, bereiche, sp=SPRACHEN['de']):
     for g, titel in gruppen.items():
         z.append(f'| **{titel}** | ' + ', '.join(verweis(b, sp) for b in bereiche if b['gruppe'] == g) + ' |')
     gr = '\n'.join(z)
-    o = sp['vorlagen']['organisation']
-    org = ', '.join(b['name'] for b in bereiche if b['vorlagen'] == [o])
-    org = sp['zusaetzlich'].format(o=o, liste=org)
+    namen = {v: sp['texte_stufen'][v] for v in STUFEN}
+    z = ['| ' + sp['bereich'] + ' | ' + ' | '.join(namen[v] for v in STUFEN) + ' |', '| --- |' + ' :-: |' * len(STUFEN)]
+    z.append(f'| {sp["texte_stufen"]["uebersicht"]} |' + ' ● |' * len(STUFEN))
+    for b in bereiche:
+        z.append(f'| [{b["name"]}]({SEITE[b["pfad"]]}) |' + ''.join(' ● |' if STUFEN.index(v) >= STUFEN.index(b['ab']) else '   |' for v in STUFEN))
+    z.append(f'| **{sp["anzahl"]}** |' + ''.join(f' **{1 + sum(STUFEN.index(v) >= STUFEN.index(b["ab"]) for b in bereiche)}** |' for v in STUFEN))
+    stufen = '\n'.join(z)
     z = [sp['kopf_wofuer'], '| --- | --- | --- |']
     for b in bereiche:
         wann = b['wann'][0].upper() + b['wann'][1:]
-        vorlagen = b['vorlagen'] + [sp['experte'].format(v=v) for v in b['experte']]
-        z.append(f'| [{b["name"]}]({SEITE[b["pfad"]]}) | {wann} | {", ".join(vorlagen) or sp["alles"]} |')
-    return {'gruppen': gr, 'organisation': org, 'wofuer': '\n'.join(z)}
+        stufe = (sp['nur'] if b['ab'] == 'alles' else sp['ab']).format(v=namen[b['ab']])
+        z.append(f'| [{b["name"]}]({SEITE[b["pfad"]]}) | {wann} | {stufe} |')
+    return {'gruppen': gr, 'stufen': stufen, 'wofuer': '\n'.join(z)}
 
 
 def ersetze(text, inhalt):

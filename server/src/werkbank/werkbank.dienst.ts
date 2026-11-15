@@ -34,7 +34,7 @@ export class WerkbankDienst {
     }
     if ('eigene' in body) {
       const e = liesEigene(body.eigene);
-      await this.einstellungen.schreibe(`werkbank_ansicht:${wer.id ?? wer.email}`, e.ein.length || e.experte ? e : null);
+      await this.einstellungen.schreibe(`werkbank_ansicht:${wer.id ?? wer.email}`, e.ein.length || e.vorlage ? e : null);
     }
     return this.werkbankAnsicht(wer);
   }
@@ -56,7 +56,7 @@ export class WerkbankDienst {
     await this.einstellungen.schreibe(MERKMALE_EINSTELLUNG, Object.keys(an).length ? an : null);
     if (JSON.stringify(alt) === JSON.stringify(neu)) return neu;
     protokoll.modul('werkbank').info('Merkmale der Ablage geändert', { vorher: alt, nachher: neu, von });
-    // Vorgabe der Werkbank-Vorlage (#987): Steht sie noch unverändert auf der Vorgabe des alten Merkmals, folgt sie.
+    // Vorgabe der Werkbank-Vorlage (#1032, #987): Steht sie noch unverändert auf der Vorgabe des alten Merkmals, folgt sie.
     const ansicht = liesAnsicht(await this.einstellungen.lies('werkbank_ansicht'));
     if (ansicht && ansicht.vorlage === vorlageFuer(alt) && !ansicht.ein.length && !ansicht.aus.length && vorlageFuer(alt) !== vorlageFuer(neu)) {
       await this.einstellungen.schreibe('werkbank_ansicht', { ...ansicht, vorlage: vorlageFuer(neu) });

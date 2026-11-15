@@ -124,7 +124,8 @@ export class Einrichtung {
     try { await this.d.schriftzug?.(mandant); } catch (x) { log.warn('Schriftzug nicht gesetzt', { fehler: (x as Error).message }); }
     await this.d.einstellungen.schreibe('einrichtung', { offen: true, erledigt: [], uebersprungen: [] });
     // Neue Installationen bekommen die schlanke Werkbank (#281); bestehende behalten alles. Die Vorlage folgt dem
-    // Merkmal „beruflich genutzt“ (#1032): beruflich → Organisation, sonst Haushalt.
+    // Merkmal „beruflich genutzt“ (#1032, #987): beruflich → Selbständig, sonst Einsteiger. „Jetzt einrichten“ setzt
+    // danach die im Assistenten gewählte Stufe.
     await this.d.einstellungen.schreibe('werkbank_ansicht', { vorlage: vorlageFuer(liesMerkmale(await this.d.einstellungen.lies(MERKMALE_EINSTELLUNG))), ein: [], aus: [] });
     await this.d.code?.entfernen();
     log.info('Einrichtung: Ablage und eigenes Konto mit „Gesamte Verwaltung“ angelegt', { mandant, email: r.benutzer.email });

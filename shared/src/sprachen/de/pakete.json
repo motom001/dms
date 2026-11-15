@@ -348,7 +348,7 @@
   "erstellen.version.unbekannt": "Hast du dieses Paket auf einem anderen Gerät erstellt? Lade die zuletzt weitergegebene Version hoch, dann zählt Ablago von dort weiter.",
   "erstellen.version.hochladen": "Letzte Version des Pakets hochladen",
   "erstellen.version.andereId": "Die Datei gehört zum Paket „{id}“, nicht zu „{eigene}“.",
-  "erstellen.version.vonHand": "Version und Ablago-Version von Hand eingeben (Expertenmodus)",
+  "erstellen.version.vonHand": "Version und Ablago-Version von Hand eingeben (Stufe „Alles“)",
   "erstellen.version.vonHandHinweis": "Ablago prüft trotzdem: höher als die zuletzt bekannte Version, nicht unter der Mindestversion.",
   "erstellen.dms.titel": "Nötige Ablago-Version",
   "erstellen.dms.mindest": "{angabe} – Mindestversion",
