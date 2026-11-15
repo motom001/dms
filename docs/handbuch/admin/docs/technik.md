@@ -105,7 +105,7 @@ So arbeiten die Prozesse zusammen:
 
 ### Beenden und Neustart { #beenden }
 
-Mit **SIGTERM** oder **SIGINT** (z. B. `docker stop`, Strg+C) beendet sich Ablago geordnet: offene Anfragen zu Ende, Hintergrundarbeit anhalten, Datenbank-Verbindungen schließen. Dabei enden **alle** seine Prozesse (#1203):
+Mit **SIGTERM** oder **SIGINT** (z. B. `docker stop`, Strg+C) beendet sich Ablago geordnet: offene Anfragen zu Ende, Hintergrundarbeit anhalten, Datenbank-Verbindungen schließen. Dafür nimmt sich jeder Prozess **höchstens 7 Sekunden** (#1340) – auch mit nur einem Prozess unter den 10 Sekunden von `docker stop`. Hängt ein Schritt länger (etwa eine Anfrage, die nicht fertig wird), beendet sich der Prozess selbst und schreibt ins Protokoll, wo es hing („Beenden: nach 7 s noch nicht fertig – hängt bei …“). Dabei enden **alle** seine Prozesse (#1203):
 
 - Der **Paket-Läufer** und bei `DMS_PROZESSE` die **weiteren Prozesse** enden selbst, sobald die Verbindung zu ihrem Elternprozess abreißt – auch wenn der abstürzt oder hart beendet wird.
 - **Programme**, die Ablago startet (`pdftoppm`, `qpdf`, Ghostscript, Texterkennung …), beendet Ablago mit sich, nach dem geordneten Beenden ebenso wie nach einem Absturz.

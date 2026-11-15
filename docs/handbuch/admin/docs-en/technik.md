@@ -105,7 +105,7 @@ This is how the processes work together:
 
 ### Stopping and restarting { #beenden }
 
-With **SIGTERM** or **SIGINT** (e.g. `docker stop`, Ctrl+C) Ablago shuts down in an orderly way: open requests finish, background work stops, database connections close. **All** of its processes end (#1203):
+With **SIGTERM** or **SIGINT** (e.g. `docker stop`, Ctrl+C) Ablago shuts down in an orderly way: open requests finish, background work stops, database connections close. Each process takes **at most 7 seconds** for this (#1340) – even with a single process, below the 10 seconds of `docker stop`. If a step takes longer (for example a request that does not finish), the process ends itself and logs where it hung ("Beenden: nach 7 s noch nicht fertig – hängt bei …"). **All** of its processes end (#1203):
 
 - The **package runner** and, with `DMS_PROZESSE`, the **further processes** end by themselves as soon as the connection to their parent process breaks – even if it crashes or is killed hard.
 - **Programs** Ablago starts (`pdftoppm`, `qpdf`, Ghostscript, text recognition …) are ended together with Ablago, after an orderly shutdown as well as after a crash.

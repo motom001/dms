@@ -40,6 +40,7 @@ import { pgRepo } from './repo-pg';
 import { lebenszeichen, pgKurzzustand } from './kurzzustand';
 import { eigeneSperrquelle, Sperrverbindung } from './sperrverbindung';
 import { wiederkehrend } from './streuung';
+import { beendeGeordnet } from './beenden';
 import { Betrieb, pgBetriebSpeicher } from './betrieb';
 import { Tresor } from './tresor';
 import { pruefeOrdner, SCHLUESSELDATEI } from './ordner';
@@ -917,43 +918,40 @@ if (leiter) {
 function ganzBeenden(grund: string) { if (!verbund.beendeAlle(grund)) void beenden(); }
 
 /**
- * Geordnet beenden (#1011): Jeder Schritt läuft, auch wenn ein früherer scheitert; Fehler kommen ins Protokoll.
- * Danach endet der Prozess mit 0, oder mit 1, wenn ein Schritt gescheitert ist. Ein zweites Signal während des
- * Beendens ändert nichts.
+ * Geordnet beenden (#1011, `beenden.ts`): Jeder Schritt läuft, auch wenn ein früherer scheitert; Fehler kommen ins
+ * Protokoll. Danach endet der Prozess mit 0, oder mit 1, wenn ein Schritt gescheitert ist – spätestens nach der
+ * Gesamtfrist (#1340, auch mit einem Prozess unter den 10 s von `docker stop`). Ein zweites Signal ändert nichts.
  */
 let beendetSchon = false;
 const beenden = async () => {
   if (beendetSchon) return;
   beendetSchon = true;
-  let gescheitert = 0;
-  const schritt = async (name: string, f: () => unknown) => {
-    try { await f(); } catch (e) { gescheitert++; log.error(`Beenden: ${name} fehlgeschlagen`, { fehler: (e as Error).message }); }
-  };
   log.info(leiter ? 'Ablago wird beendet' : `Prozess ${verbund.nr} wird beendet`);
-  await schritt('start.schliesse', () => start.schliesse());
-  await schritt('lasttestSeite.stop', () => lasttestSeite?.stop());
-  await schritt('interner Server', () => { if (intern) { const s = intern; return new Promise<void>((r) => { s.closeAllConnections(); s.close(() => r()); }); } });
-  await schritt('texterkennung.stop', () => texterkennung.stop());
-  await schritt('paketlaeufer.stop', () => paketlaeufer?.stop());
-  await schritt('dienst.ereignisse.stoppe', () => dienst.ereignisse.stoppe());
-  await schritt('vorschau.stop', () => vorschau.stop());
-  await schritt('wartung.stop', () => wartung.stop());
-  await schritt('sicherung.stop', () => sicherung.stop());
-  await schritt('speicherplatz.stop', () => speicherplatz.stop());
-  await schritt('Konsole', () => leiter && konsole.entferne());
-  await schritt('app.close', () => app.close());
-  // Zusammenfassungen der letzten Minute (#920) noch ins Protokoll.
-  await schritt('messung.leeren', () => messung.leeren());
-  await schritt('extern.schreibe', () => extern.schreibe());
-  await schritt('ueberlast.leeren', () => ueberlast.leeren());
-  await schritt('beendeArbeiter', () => beendeArbeiter());
-  await schritt('verbindungswarten.stop', () => verbindungswarten.stop());
-  await schritt('poolmessung.aus', () => poolmessung.aus());
-  await schritt('aufteilung.stop', () => aufteilung.stop());
-  await schritt('lebt.ende', () => lebt.ende());
-  await schritt('sperren.ende', () => sperren.ende());
-  await schritt('sql.end', () => sql.end({ timeout: 5 }));
-  process.exit(gescheitert ? 1 : 0);
+  await beendeGeordnet([
+    { name: 'start.schliesse', f: () => start.schliesse() },
+    { name: 'lasttestSeite.stop', f: () => lasttestSeite?.stop() },
+    { name: 'interner Server', f: () => { if (intern) { const s = intern; return new Promise<void>((r) => { s.closeAllConnections(); s.close(() => r()); }); } } },
+    { name: 'texterkennung.stop', f: () => texterkennung.stop() },
+    { name: 'paketlaeufer.stop', f: () => paketlaeufer?.stop() },
+    { name: 'dienst.ereignisse.stoppe', f: () => dienst.ereignisse.stoppe() },
+    { name: 'vorschau.stop', f: () => vorschau.stop() },
+    { name: 'wartung.stop', f: () => wartung.stop() },
+    { name: 'sicherung.stop', f: () => sicherung.stop() },
+    { name: 'speicherplatz.stop', f: () => speicherplatz.stop() },
+    { name: 'Konsole', f: () => leiter && konsole.entferne() },
+    { name: 'app.close', f: () => app.close() },
+    // Zusammenfassungen der letzten Minute (#920) noch ins Protokoll.
+    { name: 'messung.leeren', f: () => messung.leeren() },
+    { name: 'extern.schreibe', f: () => extern.schreibe() },
+    { name: 'ueberlast.leeren', f: () => ueberlast.leeren() },
+    { name: 'beendeArbeiter', f: () => beendeArbeiter() },
+    { name: 'verbindungswarten.stop', f: () => verbindungswarten.stop() },
+    { name: 'poolmessung.aus', f: () => poolmessung.aus() },
+    { name: 'aufteilung.stop', f: () => aufteilung.stop() },
+    { name: 'lebt.ende', f: () => lebt.ende() },
+    { name: 'sperren.ende', f: () => sperren.ende() },
+    { name: 'sql.end', f: () => sql.end({ timeout: 5 }) },
+  ], { log, ende: (code) => process.exit(code) });
 };
 const beendenSignal = () => void beenden();
 process.on('SIGTERM', beendenSignal);
