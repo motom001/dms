@@ -1,6 +1,6 @@
 import type postgres from 'postgres';
 import { AEHNLICH_AB, falte, normal, suchbegriffe, teilwoerter, TIPPFEHLER_MIN, type Varianten } from '../../shared/src/suche';
-import { alsText } from '../../shared/src/markdown';
+import { alsText, ohneTitel } from '../../shared/src/markdown';
 import { VERLAUF_FEHLER, VERLAUF_MAX, VERLAUF_TAGE, type VerlaufEintrag } from '../../shared/src/paketreiter';
 import { SPRACHE_MARKE, SPRACHE_SQL_MUSTER, spracheAusInfo, suchkonfig } from '../../shared/src/textsprache';
 import { alsSeitensprachen, teilenAb } from '../../shared/src/seitensprachen';
@@ -2615,15 +2615,16 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
       const [r] = await sql`SELECT * FROM notizen WHERE haushalt_id = ${haushaltId} AND id = ${id}`;
       return r ? alsNotiz(r) : undefined;
     },
+    // Erwähnungen nie mit Titel speichern (#1293) – auch für Wege am Dienst vorbei (z. B. Umbau eines Pakets).
     async legeNotizAn(n) {
       const [r] = await sql`
         INSERT INTO notizen (id, haushalt_id, mappe_id, text, erstellt_von, geaendert_von)
-        VALUES (${n.id}, ${haushaltId}, ${n.mappeId}, ${n.text}, ${istUuid(n.erstelltVon) ? n.erstelltVon : null}::uuid, ${istUuid(n.erstelltVon) ? n.erstelltVon : null}::uuid)
+        VALUES (${n.id}, ${haushaltId}, ${n.mappeId}, ${ohneTitel(n.text)}, ${istUuid(n.erstelltVon) ? n.erstelltVon : null}::uuid, ${istUuid(n.erstelltVon) ? n.erstelltVon : null}::uuid)
         RETURNING *`;
       return alsNotiz(r);
     },
     async aendereNotiz(id, text, von) {
-      const [r] = await sql`UPDATE notizen SET text = ${text}, geaendert = now(), geaendert_von = ${istUuid(von) ? von : null}::uuid
+      const [r] = await sql`UPDATE notizen SET text = ${ohneTitel(text)}, geaendert = now(), geaendert_von = ${istUuid(von) ? von : null}::uuid
         WHERE haushalt_id = ${haushaltId} AND id = ${id} RETURNING *`;
       return alsNotiz(r);
     },

@@ -95,6 +95,16 @@ describe('Erwähnungen ohne Titel im Text (#1293)', () => {
     assert.ok(log.length && !JSON.stringify(log).includes(GEHEIM), JSON.stringify(log));
   });
 
+  it('Auch direkt über das Repo (Wege am Dienst vorbei) wird kein Titel gespeichert', async () => {
+    const { d, vertrag, geheim, markus } = await aufbau();
+    const repo = d.kern.repo;
+    const n = await repo.legeNotizAn({ id: crypto.randomUUID(), mappeId: vertrag.id, text: `Umbau: ${erwaehnung(GEHEIM, geheim.id)}`, erstellt: '', erstelltVon: markus.id, geaendert: '', geaendertVon: markus.id });
+    assert.ok(!n.text.includes(GEHEIM));
+    const g = await repo.aendereNotiz(n.id, `neu ${erwaehnung(GEHEIM, geheim.id)}`, markus.id);
+    assert.ok(!g.text.includes(GEHEIM));
+    assert.ok(g.text.includes(`(mappe:${geheim.id})`));
+  });
+
   it('Person mit Leserecht sieht den aktuellen Titel, auch nach einer Umbenennung', async () => {
     const { d, markus, typ, geheim, vertrag, b } = await aufbau();
     await d.mappen.aendereMappe(geheim.id, { werte: { name: 'Abmahnung (erledigt)' } }, markus.id);
