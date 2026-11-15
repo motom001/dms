@@ -36,9 +36,10 @@ export const FUER = ['lesen', 'verwalten'] as const;
 export type Fuer = (typeof FUER)[number];
 /**
  * Wann ein Rundgang von selbst startet. `erste_anmeldung` gibt es nur für Ablagos eigenen Rundgang. Pakete kommen mit
- * `nach_installation` und `nach_update` (Stufe 2) – sie starten nie von selbst, sondern werden als Tipp angeboten.
+ * `nach_installation` und `nach_update` (Stufe 2) – sie starten nie von selbst, sondern Ablago bietet sie eine Zeit
+ * lang als Tipp an („Neu: … – kurzer Rundgang“, {@link ANGEBOT_TAGE}).
  */
-export const RUNDGANG_START = ['manuell', 'erste_anmeldung'] as const;
+export const RUNDGANG_START = ['manuell', 'erste_anmeldung', 'nach_installation', 'nach_update'] as const;
 export type RundgangStart = (typeof RUNDGANG_START)[number];
 /** Bereiche, nach denen „Ablago entdecken“ die Tipps gruppiert (Reihenfolge der Seite). */
 export const TIPP_BEREICHE = ['suche', 'post', 'fristen', 'mappen', 'konto', 'verwalten'] as const;
@@ -49,6 +50,31 @@ export type Funktion = (typeof FUNKTIONEN)[number];
 /** Seiten, die ein Rundgang vor dem ersten Schritt öffnen kann (`oeffne: { seite }`). */
 export const OEFFNE_SEITEN = { start: '/ablage/start' } as const;
 export type OeffneSeite = keyof typeof OEFFNE_SEITEN;
+/**
+ * Was ein Rundgang vor dem ersten Schritt öffnet: eine Seite, die erste Mappe eines Mappentyps, die die Person lesen
+ * darf (`mappe`), oder ein leeres Formular dieses Typs, ohne etwas zu speichern (`neu`). Gibt es keine solche Mappe
+ * bzw. darf die Person den Typ nicht anlegen, erscheint statt des Rundgangs der Text `ersatz`. Mappentypen stehen hier
+ * mit ihrer Kennung (`vertraege:vertrag`, eigene ohne Präfix).
+ */
+export type Oeffne = { seite: OeffneSeite } | { mappe: string } | { neu: string };
+/** Mappentyp, den ein Rundgang öffnet (`oeffne.mappe` bzw. `oeffne.neu`), sonst undefined. */
+export const oeffneTyp = (o: Oeffne | undefined) => (o && 'mappe' in o ? o.mappe : o && 'neu' in o ? o.neu : undefined);
+/**
+ * So lange (Tage nach Installation bzw. Update) bietet Ablago einen Rundgang mit `nach_installation`/`nach_update` als
+ * Tipp an und gelten Tipps eines Pakets mit `ab_version` als „Neu seit deinem letzten Besuch“. Danach stehen sie nur
+ * noch auf „Ablago entdecken“.
+ */
+export const ANGEBOT_TAGE = 30;
+/**
+ * Verweis ins mitgelieferte Handbuch an einem Schritt (`handbuch`): Handbuch und Seite, z. B. admin/pakete/#so-nutzt-du-es
+ * (Benutzer- oder Administratorhandbuch, in der Sprache der Person).
+ */
+export const HANDBUCH_VERWEIS = /^(benutzer|admin)\/([a-z0-9_-]+\/)*(#[a-z0-9_-]{1,60})?$/;
+/**
+ * Was die Prüfung über einen Mappentyp wissen muss: seine Kennung und – wenn bekannt – die Schlüssel von Feldern und
+ * Registern. Ohne Felder (z. B. Typ eines anderen Pakets beim Prüfen eines Pakets) prüft sie nur die Kennung.
+ */
+export interface TypInfo { kennung: string; felder?: readonly string[]; register?: readonly string[] }
 /** Eingebaute Grafiken für einen Schritt (`bild`). */
 export const BILDER = ['dreiteilung'] as const;
 export type Bild = (typeof BILDER)[number];
@@ -83,6 +109,10 @@ export interface RundgangSchritt {
   textVerwalten?: string;
   /** Für Screenreader: wo das hervorgehobene Element steht. */
   ort?: string;
+  /** Verweis ins Handbuch ({@link HANDBUCH_VERWEIS}), z. B. admin/pakete/#so-nutzt-du-es. */
+  handbuch?: string;
+  /** Satz für Personen, die das nicht selbst einstellen dürfen, z. B. „Frag die Person, die Ablago bei euch verwaltet.“ */
+  sonstVerwalten?: string;
 }
 
 export interface Rundgang {
@@ -90,7 +120,9 @@ export interface Rundgang {
   herkunft: Herkunft;
   start: RundgangStart;
   fuer: Fuer;
-  oeffne?: { seite: OeffneSeite };
+  oeffne?: Oeffne;
+  /** Text, wenn es nichts zu öffnen gibt (keine Mappe des Typs bzw. kein Recht zum Anlegen). */
+  ersatz?: string;
   titel: string;
   beschreibung: string;
   /** Satz nach dem letzten Schritt. */
@@ -153,14 +185,14 @@ export type Texte = (schluessel: string) => string | undefined;
 
 /** Unterstriche gibt es in Schlüsseln der Sprachdateien nicht: aus `zu_erledigen` wird `zu-erledigen`. */
 const teil = (s: string) => s.replace(/_/g, '-');
-export const textSchluesselRundgang = (r: string, feld: 'titel' | 'beschreibung' | 'ende') => `entdecken.rundgang.${teil(r)}.${feld}`;
-export const textSchluesselSchritt = (r: string, s: string, feld: 'titel' | 'text' | 'text-handy' | 'text-verwalten' | 'ort') => `entdecken.rundgang.${teil(r)}.${teil(s)}.${feld}`;
+export const textSchluesselRundgang = (r: string, feld: 'titel' | 'beschreibung' | 'ende' | 'ersatz') => `entdecken.rundgang.${teil(r)}.${feld}`;
+export const textSchluesselSchritt = (r: string, s: string, feld: 'titel' | 'text' | 'text-handy' | 'text-verwalten' | 'ort' | 'sonst-verwalten') => `entdecken.rundgang.${teil(r)}.${teil(s)}.${feld}`;
 export const textSchluesselTipp = (t: string) => `entdecken.tipp.${teil(t)}`;
 
 /* ---------- Prüfen ---------- */
 
-const FELDER_RUNDGANG = new Set(['schluessel', 'start', 'fuer', 'oeffne', 'titel', 'beschreibung', 'ende', 'schritte']);
-const FELDER_SCHRITT = new Set(['schluessel', 'ziel', 'bild', 'fuer', 'titel', 'text', 'text_handy', 'text_verwalten', 'ort']);
+const FELDER_RUNDGANG = new Set(['schluessel', 'start', 'fuer', 'oeffne', 'ersatz', 'titel', 'beschreibung', 'ende', 'schritte']);
+const FELDER_SCHRITT = new Set(['schluessel', 'ziel', 'bild', 'fuer', 'titel', 'text', 'text_handy', 'text_verwalten', 'ort', 'handbuch', 'sonst_verwalten']);
 const FELDER_TIPP = new Set(['schluessel', 'bereich', 'text', 'fuer', 'ziel', 'rundgang', 'funktion', 'ab_version']);
 const VERSION = /^\d+\.\d+\.\d+$/;
 
@@ -174,129 +206,208 @@ export function ankerBekannt(anker: string, liste: readonly Anker[]): boolean {
     : a.anker === anker));
 }
 
+/**
+ * Wo ein Fehler steht: Weg zum Eintrag in der Datei, z. B. [0, 'schritte', 2, 'ziel']. Die Werkbank macht daraus die
+ * Zeile (#941); `fehler[i]` gehört zu `orte[i]`.
+ */
+export type Pfad = Array<string | number>;
+/** Meldet einen Fehler; `feld`: am Feld des Eintrags (sonst am Eintrag selbst). */
+type Melde = (text: string, feld?: string) => void;
+/** Sammelt Fehler mit ihrem Ort. */
+function fehlerliste() {
+  const fehler: string[] = [];
+  const orte: Pfad[] = [];
+  const bei = (pfad: Pfad): Melde => (text, feld) => { fehler.push(text); orte.push(feld ? [...pfad, feld] : pfad); };
+  return { fehler, orte, bei };
+}
+
 /** Text eines Feldes: direkt in der Quelle oder aus der Sprachdatei; prüft Länge und Zeichen. */
-function textVon(roh: Record<string, unknown>, feld: string, schluessel: string, texte: Texte | undefined, max: number, ort: string, fehler: string[], pflicht = true): string | undefined {
+function textVon(roh: Record<string, unknown>, feld: string, schluessel: string, texte: Texte | undefined, max: number, ort: string, melde: Melde, pflicht = true): string | undefined {
   const direkt = roh[feld];
   const text = typeof direkt === 'string' ? direkt.trim() : texte?.(schluessel);
-  if (direkt !== undefined && typeof direkt !== 'string') { fehler.push(`${ort}: „${feld}“ ist kein Text.`); return undefined; }
-  if (text === undefined || text === '') { if (pflicht) fehler.push(`${ort}: Text „${feld}“ fehlt (weder in der Datei noch unter ${schluessel}).`); return undefined; }
-  if (text.length > max) fehler.push(`${ort}: „${feld}“ ist ${text.length} Zeichen lang, höchstens ${max}.`);
-  if (steuerzeichen(text)) fehler.push(`${ort}: „${feld}“ enthält Steuerzeichen oder spitze Klammern.`);
+  if (direkt !== undefined && typeof direkt !== 'string') { melde(`${ort}: „${feld}“ ist kein Text.`, feld); return undefined; }
+  if (text === undefined || text === '') { if (pflicht) melde(`${ort}: Text „${feld}“ fehlt (weder in der Datei noch unter ${schluessel}).`, direkt === undefined ? undefined : feld); return undefined; }
+  if (text.length > max) melde(`${ort}: „${feld}“ ist ${text.length} Zeichen lang, höchstens ${max}.`, feld);
+  if (steuerzeichen(text)) melde(`${ort}: „${feld}“ enthält Steuerzeichen oder spitze Klammern.`, feld);
   return text;
 }
 
-function unbekannte(roh: Record<string, unknown>, erlaubt: ReadonlySet<string>, ort: string, fehler: string[]) {
-  for (const k of Object.keys(roh)) if (!erlaubt.has(k)) fehler.push(`${ort}: unbekanntes Feld „${k}“.`);
+function unbekannte(roh: Record<string, unknown>, erlaubt: ReadonlySet<string>, ort: string, melde: Melde) {
+  for (const k of Object.keys(roh)) if (!erlaubt.has(k)) melde(`${ort}: unbekanntes Feld „${k}“.`, k);
 }
 
-function fuerVon(x: unknown, ort: string, fehler: string[]): Fuer {
+function fuerVon(x: unknown, ort: string, melde: Melde): Fuer {
   if (x === undefined) return 'lesen';
-  if (!FUER.includes(x as Fuer)) { fehler.push(`${ort}: „fuer“ muss ${FUER.join(' oder ')} sein.`); return 'lesen'; }
+  if (!FUER.includes(x as Fuer)) { melde(`${ort}: „fuer“ muss ${FUER.join(' oder ')} sein.`, 'fuer'); return 'lesen'; }
   return x as Fuer;
+}
+
+/** Schlüssel hinter `mappe.feld:` bzw. `mappe.register:`, sonst null. */
+const mappenTeil = (anker: string): { art: 'feld' | 'register'; key: string } | null => {
+  const m = /^mappe\.(feld|register):(.+)$/.exec(anker);
+  return m ? { art: m[1] as 'feld' | 'register', key: m[2] } : null;
+};
+
+/** Optionen der Prüfung von Rundgängen. */
+export interface RundgangPruefung {
+  herkunft: Herkunft;
+  anker: readonly Anker[];
+  texte?: Texte;
+  /**
+   * Mappentyp zu `oeffne.mappe`/`oeffne.neu` auflösen: null = gibt es nicht. Ohne diese Funktion (Ablagos eigene
+   * Rundgänge) lässt sich kein Mappentyp öffnen.
+   */
+  typ?: (roh: string) => TypInfo | null;
+}
+
+/** `oeffne` eines Rundgangs lesen; `typ`: der aufgelöste Mappentyp (für Felder und Register der Schritte). */
+function liesOeffne(x: unknown, o: RundgangPruefung, o2: string, m: Melde): { oeffne?: Oeffne; typ: TypInfo | null } {
+  const art = istObjekt(x) && Object.keys(x).length === 1 ? Object.keys(x)[0] : '';
+  if (art === 'seite' && istObjekt(x) && Object.hasOwn(OEFFNE_SEITEN, String(x.seite))) return { oeffne: { seite: x.seite as OeffneSeite }, typ: null };
+  const innen = istObjekt(x) && (art === 'mappe' || art === 'neu') ? x[art] : undefined;
+  if (!istObjekt(innen) || Object.keys(innen).join() !== 'typ' || typeof innen.typ !== 'string') {
+    m(`${o2}: „oeffne“ kennt seite: ${Object.keys(OEFFNE_SEITEN).join(', ')}, mappe: { typ: … } oder neu: { typ: … }.`, 'oeffne');
+    return { typ: null };
+  }
+  if (!o.typ) { m(`${o2}: „oeffne: ${art}“ gibt es nur für Rundgänge aus Paketen und eigene Rundgänge.`, 'oeffne'); return { typ: null }; }
+  const typ = o.typ(innen.typ);
+  if (!typ) { m(`${o2}: Den Mappentyp „${innen.typ}“ gibt es nicht.`, 'oeffne'); return { typ: null }; }
+  return { oeffne: art === 'mappe' ? { mappe: typ.kennung } : { neu: typ.kennung }, typ };
+}
+
+/** Ziele eines Schritts prüfen: bekannte Anker; Felder und Register nur, wenn der geöffnete Mappentyp sie hat. */
+function pruefeZiele(ziel: unknown[], o: RundgangPruefung, typ: TypInfo | null, os: string, ms: Melde) {
+  if (ziel.some((z) => typeof z !== 'string')) ms(`${os}: „ziel“ muss ein Anker oder eine Liste von Ankern sein.`, 'ziel');
+  for (const z of ziel.filter((y): y is string => typeof y === 'string')) {
+    if (!ankerBekannt(z, o.anker)) { ms(`${os}: unbekannter Anker „${z}“.`, 'ziel'); continue; }
+    const teil = mappenTeil(z);
+    const liste = teil && typ ? (teil.art === 'feld' ? typ.felder : typ.register) : undefined;
+    if (teil && liste && !liste.includes(teil.key)) ms(`${os}: ${teil.art === 'feld' ? 'Das Feld' : 'Das Register'} „${teil.key}“ gibt es im Mappentyp „${typ!.kennung}“ nicht.`, 'ziel');
+  }
+}
+
+/** Einen Schritt prüfen; null, wenn er sich nicht lesen lässt (Fehler sind gemeldet). */
+function pruefeSchritt(s: unknown, k: { o: RundgangPruefung; rundgang: string; typ: TypInfo | null; os: string; ms: Melde; namen: Set<string> }): RundgangSchritt | null {
+  const { o, os, ms } = k;
+  if (!istObjekt(s)) { ms(`${os}: kein Eintrag mit Feldern.`); return null; }
+  unbekannte(s, FELDER_SCHRITT, os, ms);
+  const sk = typeof s.schluessel === 'string' ? s.schluessel : '';
+  if (!SCHLUESSEL.test(sk)) { ms(`${os}: „schluessel“ fehlt oder ist ungültig.`, s.schluessel === undefined ? undefined : 'schluessel'); return null; }
+  if (k.namen.has(sk)) ms(`${os}: „${sk}“ gibt es doppelt.`, 'schluessel');
+  k.namen.add(sk);
+  const ziel = s.ziel === undefined ? [] : Array.isArray(s.ziel) ? s.ziel : [s.ziel];
+  pruefeZiele(ziel, o, k.typ, os, ms);
+  if (s.bild !== undefined && !BILDER.includes(s.bild as Bild)) ms(`${os}: unbekanntes Bild „${String(s.bild)}“.`, 'bild');
+  const t = (feld: 'titel' | 'text' | 'text-handy' | 'text-verwalten' | 'ort' | 'sonst-verwalten', pflicht: boolean, max: number) =>
+    textVon(s, feld.replace('-', '_'), textSchluesselSchritt(k.rundgang, sk, feld), o.texte, max, os, ms, pflicht);
+  const st = t('titel', true, TITEL_MAX), tx = t('text', true, RUNDGANG_TEXT_MAX);
+  const th = t('text-handy', false, RUNDGANG_TEXT_MAX), tv = t('text-verwalten', false, RUNDGANG_TEXT_MAX), ort = t('ort', false, RUNDGANG_TEXT_MAX);
+  const sv = t('sonst-verwalten', false, RUNDGANG_TEXT_MAX);
+  const hb = s.handbuch === undefined ? undefined : String(s.handbuch);
+  const hbOk = hb !== undefined && HANDBUCH_VERWEIS.test(hb);
+  if (hb !== undefined && !hbOk) ms(`${os}: „handbuch“ muss eine Seite im Handbuch sein, z. B. admin/pakete/#so-nutzt-du-es (benutzer/ oder admin/).`, 'handbuch');
+  // Ein Schritt mit Ziel braucht einen Satz für Screenreader: Die Hervorhebung sieht man nur.
+  if (ziel.length && !ort) ms(`${os}: Zu einem Ziel gehört „ort“ (wo das Element steht, für Screenreader).`);
+  const frei = { bild: s.bild as Bild | undefined, textHandy: th, textVerwalten: tv, ort, handbuch: hbOk ? hb : undefined, sonstVerwalten: sv };
+  return { schluessel: sk, ziel: ziel.filter((z): z is string => typeof z === 'string'), fuer: fuerVon(s.fuer, os, ms), titel: st ?? '', text: tx ?? '', ...ohneLeere(frei) };
+}
+
+/** Nur die Angaben, die es gibt (ohne undefined und leere Texte). */
+const ohneLeere = <T extends Record<string, unknown>>(x: T): Partial<T> => Object.fromEntries(Object.entries(x).filter(([, v]) => v !== undefined && v !== '')) as Partial<T>;
+
+/** Wann der Rundgang startet – und ob die Quelle das darf. */
+function startVon(x: unknown, o: RundgangPruefung, o2: string, m: Melde, zaehler: { nachInstallation: number }): RundgangStart {
+  const start = (x ?? 'manuell') as RundgangStart;
+  if (!RUNDGANG_START.includes(start)) m(`${o2}: „start“ muss ${RUNDGANG_START.join(', ')} sein.`, 'start');
+  else if (start === 'erste_anmeldung' && o.herkunft !== 'ablago') m(`${o2}: „erste_anmeldung“ gibt es nur für Ablagos eigenen Rundgang.`, 'start');
+  else if ((start === 'nach_installation' || start === 'nach_update') && !o.herkunft.startsWith('paket:')) m(`${o2}: „${start}“ gibt es nur für Rundgänge aus Paketen.`, 'start');
+  else if (start === 'nach_installation' && ++zaehler.nachInstallation > 1) m(`${o2}: „nach_installation“ darf es nur einmal je Paket geben.`, 'start');
+  return start;
 }
 
 /**
  * Prüft die Rundgänge einer Quelle. Fehlerhafte Rundgänge fallen ganz weg (kein halber Rundgang); die Fehler stehen
- * in `fehler` – für Tests, die Paketprüfung und das Protokoll.
+ * in `fehler` – für Tests, die Paketprüfung, die Werkbank und das Protokoll –, ihr Ort in der Datei in `orte`.
  */
-export function pruefeRundgaenge(roh: unknown, o: { herkunft: Herkunft; anker: readonly Anker[]; texte?: Texte }): { rundgaenge: Rundgang[]; fehler: string[] } {
-  const fehler: string[] = [];
+export function pruefeRundgaenge(roh: unknown, o: RundgangPruefung): { rundgaenge: Rundgang[]; fehler: string[]; orte: Pfad[] } {
+  const fl = fehlerliste();
   const rundgaenge: Rundgang[] = [];
-  if (roh === null || roh === undefined) return { rundgaenge, fehler };
-  if (!Array.isArray(roh)) return { rundgaenge, fehler: ['Rundgänge: Die Datei muss eine Liste sein.'] };
+  const ende = () => ({ rundgaenge, fehler: fl.fehler, orte: fl.orte });
+  if (roh === null || roh === undefined) return ende();
+  if (!Array.isArray(roh)) { fl.bei([])('Rundgänge: Die Datei muss eine Liste sein.'); return ende(); }
   const gesehen = new Set<string>();
+  const zaehler = { nachInstallation: 0 };
   for (const [i, r] of roh.entries()) {
-    const ort = `Rundgang ${i + 1}`;
-    if (!istObjekt(r)) { fehler.push(`${ort}: kein Eintrag mit Feldern.`); continue; }
-    const vorher = fehler.length;
-    unbekannte(r, FELDER_RUNDGANG, ort, fehler);
+    const m = fl.bei([i]);
+    if (!istObjekt(r)) { m(`Rundgang ${i + 1}: kein Eintrag mit Feldern.`); continue; }
+    const vorher = fl.fehler.length;
+    unbekannte(r, FELDER_RUNDGANG, `Rundgang ${i + 1}`, m);
     const schluessel = typeof r.schluessel === 'string' ? r.schluessel : '';
-    if (!SCHLUESSEL.test(schluessel)) fehler.push(`${ort}: „schluessel“ fehlt oder ist ungültig (klein, Ziffern, _; höchstens 40 Zeichen).`);
-    else if (gesehen.has(schluessel)) fehler.push(`${ort}: „${schluessel}“ gibt es doppelt.`);
+    if (!SCHLUESSEL.test(schluessel)) m(`Rundgang ${i + 1}: „schluessel“ fehlt oder ist ungültig (klein, Ziffern, _; höchstens 40 Zeichen).`, r.schluessel === undefined ? undefined : 'schluessel');
+    else if (gesehen.has(schluessel)) m(`Rundgang ${i + 1}: „${schluessel}“ gibt es doppelt.`, 'schluessel');
     gesehen.add(schluessel);
     const o2 = `Rundgang „${schluessel || i + 1}“`;
-    const start = (r.start ?? 'manuell') as RundgangStart;
-    if (!RUNDGANG_START.includes(start)) fehler.push(`${o2}: „start“ muss ${RUNDGANG_START.join(' oder ')} sein.`);
-    else if (start === 'erste_anmeldung' && o.herkunft !== 'ablago') fehler.push(`${o2}: „erste_anmeldung“ gibt es nur für Ablagos eigenen Rundgang.`);
-    const fuer = fuerVon(r.fuer, o2, fehler);
-    let oeffne: Rundgang['oeffne'];
-    if (r.oeffne !== undefined) {
-      if (!istObjekt(r.oeffne) || Object.keys(r.oeffne).some((k) => k !== 'seite') || !Object.hasOwn(OEFFNE_SEITEN, String(r.oeffne.seite))) fehler.push(`${o2}: „oeffne“ kennt nur seite: ${Object.keys(OEFFNE_SEITEN).join(', ')}.`);
-      else oeffne = { seite: r.oeffne.seite as OeffneSeite };
-    }
-    const titel = textVon(r, 'titel', textSchluesselRundgang(schluessel, 'titel'), o.texte, TITEL_MAX, o2, fehler);
-    const beschreibung = textVon(r, 'beschreibung', textSchluesselRundgang(schluessel, 'beschreibung'), o.texte, RUNDGANG_TEXT_MAX, o2, fehler);
-    const ende = textVon(r, 'ende', textSchluesselRundgang(schluessel, 'ende'), o.texte, RUNDGANG_TEXT_MAX, o2, fehler, false);
+    const start = startVon(r.start, o, o2, m, zaehler);
+    const fuer = fuerVon(r.fuer, o2, m);
+    const { oeffne, typ } = r.oeffne === undefined ? { typ: null } : liesOeffne(r.oeffne, o, o2, m);
+    const text = (feld: 'titel' | 'beschreibung' | 'ende' | 'ersatz', max: number, pflicht: boolean) => textVon(r, feld, textSchluesselRundgang(schluessel, feld), o.texte, max, o2, m, pflicht);
+    const titel = text('titel', TITEL_MAX, true), beschreibung = text('beschreibung', RUNDGANG_TEXT_MAX, true);
+    const schluss = text('ende', RUNDGANG_TEXT_MAX, false), ersatz = text('ersatz', RUNDGANG_TEXT_MAX, false);
+    if (r.ersatz !== undefined && !oeffneTyp(oeffne)) m(`${o2}: „ersatz“ gibt es nur mit „oeffne: mappe“ oder „oeffne: neu“.`, 'ersatz');
     const schritte: RundgangSchritt[] = [];
-    if (!Array.isArray(r.schritte) || r.schritte.length === 0) fehler.push(`${o2}: „schritte“ fehlt oder ist leer.`);
-    else if (r.schritte.length > RUNDGANG_SCHRITTE_MAX) fehler.push(`${o2}: ${r.schritte.length} Schritte, höchstens ${RUNDGANG_SCHRITTE_MAX}.`);
+    if (!Array.isArray(r.schritte) || r.schritte.length === 0) m(`${o2}: „schritte“ fehlt oder ist leer.`, r.schritte === undefined ? undefined : 'schritte');
+    else if (r.schritte.length > RUNDGANG_SCHRITTE_MAX) m(`${o2}: ${r.schritte.length} Schritte, höchstens ${RUNDGANG_SCHRITTE_MAX}.`, 'schritte');
     else {
       const namen = new Set<string>();
       for (const [j, s] of r.schritte.entries()) {
-        const os = `${o2}, Schritt ${j + 1}`;
-        if (!istObjekt(s)) { fehler.push(`${os}: kein Eintrag mit Feldern.`); continue; }
-        unbekannte(s, FELDER_SCHRITT, os, fehler);
-        const sk = typeof s.schluessel === 'string' ? s.schluessel : '';
-        if (!SCHLUESSEL.test(sk)) { fehler.push(`${os}: „schluessel“ fehlt oder ist ungültig.`); continue; }
-        if (namen.has(sk)) fehler.push(`${os}: „${sk}“ gibt es doppelt.`);
-        namen.add(sk);
-        const ziel = s.ziel === undefined ? [] : Array.isArray(s.ziel) ? s.ziel : [s.ziel];
-        if (ziel.some((z) => typeof z !== 'string')) fehler.push(`${os}: „ziel“ muss ein Anker oder eine Liste von Ankern sein.`);
-        for (const z of ziel) if (typeof z === 'string' && !ankerBekannt(z, o.anker)) fehler.push(`${os}: unbekannter Anker „${z}“.`);
-        if (s.bild !== undefined && !BILDER.includes(s.bild as Bild)) fehler.push(`${os}: unbekanntes Bild „${String(s.bild)}“.`);
-        const t = (feld: 'titel' | 'text' | 'text-handy' | 'text-verwalten' | 'ort', pflicht: boolean, max: number) =>
-          textVon(s, feld.replace('-', '_'), textSchluesselSchritt(schluessel, sk, feld), o.texte, max, os, fehler, pflicht);
-        const st = t('titel', true, TITEL_MAX), tx = t('text', true, RUNDGANG_TEXT_MAX);
-        const th = t('text-handy', false, RUNDGANG_TEXT_MAX), tv = t('text-verwalten', false, RUNDGANG_TEXT_MAX), ort2 = t('ort', false, RUNDGANG_TEXT_MAX);
-        // Ein Schritt mit Ziel braucht einen Satz für Screenreader: Die Hervorhebung sieht man nur.
-        if (ziel.length && !ort2) fehler.push(`${os}: Zu einem Ziel gehört „ort“ (wo das Element steht, für Screenreader).`);
-        schritte.push({ schluessel: sk, ziel: ziel.filter((z): z is string => typeof z === 'string'), ...(s.bild ? { bild: s.bild as Bild } : {}), fuer: fuerVon(s.fuer, os, fehler),
-          titel: st ?? '', text: tx ?? '', ...(th ? { textHandy: th } : {}), ...(tv ? { textVerwalten: tv } : {}), ...(ort2 ? { ort: ort2 } : {}) });
+        const x = pruefeSchritt(s, { o, rundgang: schluessel, typ, os: `${o2}, Schritt ${j + 1}`, ms: fl.bei([i, 'schritte', j]), namen });
+        if (x) schritte.push(x);
       }
     }
-    if (fehler.length > vorher) continue;
-    rundgaenge.push({ schluessel, herkunft: o.herkunft, start, fuer, ...(oeffne ? { oeffne } : {}), titel: titel!, beschreibung: beschreibung!, ...(ende ? { ende } : {}), schritte });
+    if (fl.fehler.length > vorher) continue;
+    rundgaenge.push({ schluessel, herkunft: o.herkunft, start, fuer, ...(oeffne ? { oeffne } : {}), ...(ersatz ? { ersatz } : {}), titel: titel!, beschreibung: beschreibung!, ...(schluss ? { ende: schluss } : {}), schritte });
   }
-  return { rundgaenge, fehler };
+  return ende();
 }
 
 /** Prüft die Tipps einer Quelle; fehlerhafte fallen weg. `rundgaenge`: Schlüssel der Rundgänge, die ein Tipp starten darf. */
-export function pruefeTipps(roh: unknown, o: { herkunft: Herkunft; anker: readonly Anker[]; rundgaenge: readonly string[]; texte?: Texte }): { tipps: Tipp[]; fehler: string[] } {
-  const fehler: string[] = [];
+export function pruefeTipps(roh: unknown, o: { herkunft: Herkunft; anker: readonly Anker[]; rundgaenge: readonly string[]; texte?: Texte }): { tipps: Tipp[]; fehler: string[]; orte: Pfad[] } {
+  const fl = fehlerliste();
   const tipps: Tipp[] = [];
-  if (roh === null || roh === undefined) return { tipps, fehler };
-  if (!Array.isArray(roh)) return { tipps, fehler: ['Tipps: Die Datei muss eine Liste sein.'] };
+  if (roh === null || roh === undefined) return { tipps, fehler: fl.fehler, orte: fl.orte };
+  if (!Array.isArray(roh)) { fl.bei([])('Tipps: Die Datei muss eine Liste sein.'); return { tipps, fehler: fl.fehler, orte: fl.orte }; }
   const max = o.herkunft === 'ablago' ? TIPPS_MAX_ABLAGO : TIPPS_MAX;
-  if (roh.length > max) fehler.push(`Tipps: ${roh.length} Tipps, höchstens ${max}.`);
+  if (roh.length > max) fl.bei([max])(`Tipps: ${roh.length} Tipps, höchstens ${max}.`);
   const gesehen = new Set<string>();
   for (const [i, x] of roh.slice(0, max).entries()) {
     const ort = `Tipp ${i + 1}`;
-    if (!istObjekt(x)) { fehler.push(`${ort}: kein Eintrag mit Feldern.`); continue; }
-    const vorher = fehler.length;
-    unbekannte(x, FELDER_TIPP, ort, fehler);
+    const m = fl.bei([i]);
+    if (!istObjekt(x)) { m(`${ort}: kein Eintrag mit Feldern.`); continue; }
+    const vorher = fl.fehler.length;
+    unbekannte(x, FELDER_TIPP, ort, m);
     const schluessel = typeof x.schluessel === 'string' ? x.schluessel : '';
-    if (!SCHLUESSEL.test(schluessel)) fehler.push(`${ort}: „schluessel“ fehlt oder ist ungültig.`);
-    else if (gesehen.has(schluessel)) fehler.push(`${ort}: „${schluessel}“ gibt es doppelt.`);
+    if (!SCHLUESSEL.test(schluessel)) m(`${ort}: „schluessel“ fehlt oder ist ungültig.`, x.schluessel === undefined ? undefined : 'schluessel');
+    else if (gesehen.has(schluessel)) m(`${ort}: „${schluessel}“ gibt es doppelt.`, 'schluessel');
     gesehen.add(schluessel);
     const o2 = `Tipp „${schluessel || i + 1}“`;
     const bereich = x.bereich as TippBereich;
-    if (!TIPP_BEREICHE.includes(bereich)) fehler.push(`${o2}: „bereich“ muss einer von ${TIPP_BEREICHE.join(', ')} sein.`);
-    const text = textVon(x, 'text', textSchluesselTipp(schluessel), o.texte, TIPP_TEXT_MAX, o2, fehler);
-    if (text && (text.match(/[.!?](\s|$)/g)?.length ?? 0) > 2) fehler.push(`${o2}: höchstens zwei Sätze.`);
-    const fuer = fuerVon(x.fuer, o2, fehler);
+    if (!TIPP_BEREICHE.includes(bereich)) m(`${o2}: „bereich“ muss einer von ${TIPP_BEREICHE.join(', ')} sein.`, x.bereich === undefined ? undefined : 'bereich');
+    const text = textVon(x, 'text', textSchluesselTipp(schluessel), o.texte, TIPP_TEXT_MAX, o2, m);
+    if (text && (text.match(/[.!?](\s|$)/g)?.length ?? 0) > 2) m(`${o2}: höchstens zwei Sätze.`, 'text');
+    const fuer = fuerVon(x.fuer, o2, m);
     const ziel = x.ziel, rundgang = x.rundgang;
-    if ((ziel === undefined) === (rundgang === undefined)) fehler.push(`${o2}: genau eines von „ziel“ (Anker) oder „rundgang“.`);
-    if (ziel !== undefined && (typeof ziel !== 'string' || !ankerBekannt(ziel, o.anker))) fehler.push(`${o2}: unbekannter Anker „${String(ziel)}“.`);
-    else if (typeof ziel === 'string' && !o.anker.find((a) => a.anker === ziel)?.seite) fehler.push(`${o2}: Der Anker „${ziel}“ hat keine feste Seite – als Ziel eines Tipps geht er nicht.`);
-    if (rundgang !== undefined && (typeof rundgang !== 'string' || !o.rundgaenge.includes(rundgang))) fehler.push(`${o2}: unbekannter Rundgang „${String(rundgang)}“.`);
-    if (x.funktion !== undefined && !FUNKTIONEN.includes(x.funktion as Funktion)) fehler.push(`${o2}: unbekannte Funktion „${String(x.funktion)}“.`);
+    if ((ziel === undefined) === (rundgang === undefined)) m(`${o2}: genau eines von „ziel“ (Anker) oder „rundgang“.`);
+    if (ziel !== undefined && (typeof ziel !== 'string' || !ankerBekannt(ziel, o.anker))) m(`${o2}: unbekannter Anker „${String(ziel)}“.`, 'ziel');
+    else if (typeof ziel === 'string' && !o.anker.find((a) => a.anker === ziel)?.seite) m(`${o2}: Der Anker „${ziel}“ hat keine feste Seite – als Ziel eines Tipps geht er nicht.`, 'ziel');
+    if (rundgang !== undefined && (typeof rundgang !== 'string' || !o.rundgaenge.includes(rundgang))) m(`${o2}: unbekannter Rundgang „${String(rundgang)}“.`, 'rundgang');
+    if (x.funktion !== undefined && !FUNKTIONEN.includes(x.funktion as Funktion)) m(`${o2}: unbekannte Funktion „${String(x.funktion)}“.`, 'funktion');
     const ab = x.ab_version === undefined ? undefined : String(x.ab_version);
-    if (ab !== undefined && !VERSION.test(ab)) fehler.push(`${o2}: „ab_version“ muss eine Version wie 1.2.0 sein.`);
-    if (fehler.length > vorher) continue;
+    if (ab !== undefined && !VERSION.test(ab)) m(`${o2}: „ab_version“ muss eine Version wie 1.2.0 sein.`, 'ab_version');
+    if (fl.fehler.length > vorher) continue;
     tipps.push({ schluessel, herkunft: o.herkunft, bereich, text: text!, fuer, ...(typeof ziel === 'string' ? { ziel } : {}), ...(typeof rundgang === 'string' ? { rundgang } : {}),
       ...(x.funktion ? { funktion: x.funktion as Funktion } : {}), ...(ab ? { abVersion: ab } : {}) });
   }
-  return { tipps, fehler };
+  return { tipps, fehler: fl.fehler, orte: fl.orte };
 }
 
 /** Prüft die Ankerliste selbst (`anker.yaml`). */
@@ -307,7 +418,7 @@ export function pruefeAnker(roh: unknown): { anker: Anker[]; fehler: string[] } 
   const erlaubt = new Set(['anker', 'seite', 'beschreibung', 'handy', 'clients']);
   for (const [i, a] of roh.entries()) {
     if (!istObjekt(a)) { fehler.push(`Anker ${i + 1}: kein Eintrag mit Feldern.`); continue; }
-    unbekannte(a, erlaubt, `Anker ${i + 1}`, fehler);
+    unbekannte(a, erlaubt, `Anker ${i + 1}`, (text) => fehler.push(text));
     const name = typeof a.anker === 'string' ? a.anker : '';
     const muster = name.includes('<');
     if (!/^[a-z][a-z0-9-]*(\.[a-z0-9-]+)*(:<[a-z]+>)?$/.test(name)) { fehler.push(`Anker ${i + 1}: ungültiger Name „${name}“.`); continue; }
@@ -321,17 +432,26 @@ export function pruefeAnker(roh: unknown): { anker: Anker[]; fehler: string[] } 
 
 /* ---------- Für die Person ---------- */
 
-/** Was über die Person feststeht: Recht zu verwalten, eingeschaltete Funktionen. */
-export interface Fuerwen { verwalten: boolean; funktionen: ReadonlySet<Funktion> }
+/**
+ * Was über die Person feststeht: Recht zu verwalten, eingeschaltete Funktionen und – wenn bekannt – die Kennungen der
+ * Mappentypen, die sie lesen darf (ohne `lesbar` gilt jeder Typ als lesbar, z. B. in Tests).
+ */
+export interface Fuerwen { verwalten: boolean; funktionen: ReadonlySet<Funktion>; lesbar?: ReadonlySet<string> }
 
 export const passtFuer = (fuer: Fuer, p: Fuerwen) => fuer === 'lesen' || p.verwalten;
+/** Darf die Person diesen Mappentyp lesen? */
+export const liestTyp = (typ: string | undefined, p: Fuerwen) => !typ || !p.lesbar || p.lesbar.has(typ);
 
-/** Rundgang für diese Person: ohne Schritte, die sie nicht betreffen (Jonas bekommt keine Werkbank-Schritte). */
+/**
+ * Rundgang für diese Person: ohne Schritte, die sie nicht betreffen (Jonas bekommt keine Werkbank-Schritte). Öffnet er
+ * einen Mappentyp, bekommt ihn nur, wer den Typ lesen darf. Wer nicht verwaltet, liest den Satz `sonst_verwalten` mit.
+ */
 export function rundgangFuer(r: Rundgang, p: Fuerwen): Rundgang | null {
-  if (!passtFuer(r.fuer, p)) return null;
+  if (!passtFuer(r.fuer, p) || !liestTyp(oeffneTyp(r.oeffne), p)) return null;
   const schritte = r.schritte.filter((s) => passtFuer(s.fuer, p)).map((s) => {
-    const { textVerwalten, ...rest } = s;
-    return p.verwalten && textVerwalten ? { ...rest, text: textVerwalten } : rest;
+    const { textVerwalten, sonstVerwalten, ...rest } = s;
+    if (p.verwalten) return textVerwalten ? { ...rest, text: textVerwalten } : rest;
+    return sonstVerwalten ? { ...rest, sonstVerwalten } : rest;
   });
   return schritte.length ? { ...r, schritte } : null;
 }

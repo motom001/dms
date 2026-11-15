@@ -1364,6 +1364,8 @@
   "mitkommt.kurz.ablaufvorlagen_other": "{anzahl} automation templates",
   "mitkommt.kurz.aktionen_one": "{anzahl} action in the “Folder” menu",
   "mitkommt.kurz.aktionen_other": "{anzahl} actions in the “Folder” menu",
+  "mitkommt.kurz.rundgaenge_one": "{anzahl} tour",
+  "mitkommt.kurz.rundgaenge_other": "{anzahl} tours",
   "mitkommt.kurz.einstellungen_one": "{anzahl} setting",
   "mitkommt.kurz.einstellungen_other": "{anzahl} settings",
   "mitkommt.kurz.nichts": "creates nothing in the library",

@@ -857,6 +857,36 @@ Texte: Titel, Beschreibung und Schlusssatz unter `rundgang.<rundgang>.titel | .b
 
 Zur Laufzeit fällt ein Schritt still weg, wenn keiner seiner Anker sichtbar ist (z. B. am Handy) – mit einem Vermerk in der Konsole (`console.debug`), ohne Meldung für die Person.
 
+#### Rundgänge aus Paketen { #paket-rundgaenge }
+
+Ein Paket nennt im Manifest `inhalt.rundgaenge: inhalt/rundgaenge.yaml`. Die Texte stehen direkt in der Datei; Rundgänge heißen in Ablago `<paket>:<schluessel>`. Rundgänge sollen durch eine Aufgabe führen und tragen einen aufgabenbezogenen Titel („Eingangsrechnung anlegen“) – er steht in „Was mitkommt“.
+
+```yaml
+# inhalt/rundgaenge.yaml
+- schluessel: vertraege_kennenlernen
+  titel: Verträge im Überblick
+  beschreibung: Wo Fristen und Unterlagen eines Vertrags stehen.
+  start: nach_installation          # manuell | nach_installation | nach_update – startet nie von selbst
+  fuer: lesen                       # lesen = wer den Mappentyp lesen darf · verwalten = mit Verwaltungsrecht
+  oeffne:
+    mappe: { typ: vertrag }         # erste Mappe des Typs, die die Person lesen darf; neu: { typ } = leeres Formular
+  ersatz: Sobald du einen Vertrag angelegt hast, zeigt dir Ablago hier, wie es geht.
+  schritte:
+    - schluessel: frist
+      ziel: mappe.feld:kuendigen_bis
+      ort: Rechts in der Mappe
+      titel: Kündigen bis
+      text: Hier steht, bis wann du kündigen musst. Ablago erinnert dich rechtzeitig.
+      handbuch: admin/pakete/#so-nutzt-du-es               # Seite im mitgelieferten Handbuch (benutzer/ oder admin/)
+      sonst_verwalten: Frag die Person, die Ablago bei euch verwaltet.   # nur für Personen ohne Verwaltungsrecht
+```
+
+- **Prüfung beim Installieren** (wie die Paketprüfung, dms-registry #132): unbekannte Felder und Anker, Felder und Register, die es im eigenen Mappentyp nicht gibt (`mappe.feld:<key>`, `mappe.register:<key>` gegen `oeffne`), Mappentypen, die weder zum Paket noch zu einer Abhängigkeit gehören, mehr als 8 Schritte, Texte über 200 (Titel 60) Zeichen, `nach_installation` mehr als einmal je Paket, `erste_anmeldung`. Ein Fehler macht das Paket ungültig.
+- **Zur Laufzeit** prüft Ablago noch einmal gegen die eigenen Anker und die installierten Mappentypen (ein Paket für eine neuere Version kann Anker nennen, die es hier noch nicht gibt): Fehlerhafte Rundgänge fallen weg, einmal im Protokoll; fehlt ein Ziel, fällt der Schritt still weg.
+- **`oeffne`:** `mappe` öffnet die zuletzt geänderte Mappe des Typs, die die Person lesen darf; `neu` ein leeres Formular, nur wenn sie den Typ anlegen darf – gespeichert wird nichts, am Ende geht es zurück. Sonst steht `ersatz` (bzw. ein allgemeiner Satz) statt der Schritte. Den Pfad liefert `GET /api/entdecken/rundgaenge/:schluessel/oeffnen`.
+- **Ruhig:** Rundgänge aus Paketen starten nie von selbst. Mit `nach_installation` bzw. `nach_update` bietet Ablago sie 30 Tage nach Installation bzw. Update als Tipp an („Verträge im Überblick – kurzer Rundgang“, `angebot:<rundgang>`, „neu“); es gilt die Regel des Tipps des Tages (höchstens einer am Tag). Alle stehen unter „Ablago entdecken“.
+- **Sprachen:** Bis Paket-Sprachdateien für Rundgänge kommen, schreibt das Paket die Texte in seiner Sprache (meist Deutsch) direkt in die Datei.
+
 ### Tipp
 
 ```yaml

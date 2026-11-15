@@ -857,6 +857,36 @@ Texts: title, description and closing sentence under `rundgang.<tour>.titel | .b
 
 At runtime a step is dropped silently if none of its anchors is visible (for example on a phone) – with a note in the console (`console.debug`), without a message for the person.
 
+#### Tours from packages { #paket-rundgaenge }
+
+A package names `inhalt.rundgaenge: inhalt/rundgaenge.yaml` in its manifest. The texts are written directly into the file; in Ablago the tours are called `<package>:<key>`. Tours should lead through a task and carry a task-based title (“Record an incoming invoice”) – it is listed under “What comes with it”.
+
+```yaml
+# inhalt/rundgaenge.yaml
+- schluessel: vertraege_kennenlernen
+  titel: Verträge im Überblick
+  beschreibung: Wo Fristen und Unterlagen eines Vertrags stehen.
+  start: nach_installation          # manuell | nach_installation | nach_update – never starts by itself
+  fuer: lesen                       # lesen = whoever may read the folder type · verwalten = with the right to administer
+  oeffne:
+    mappe: { typ: vertrag }         # first folder of the type the person may read; neu: { typ } = empty form
+  ersatz: Sobald du einen Vertrag angelegt hast, zeigt dir Ablago hier, wie es geht.
+  schritte:
+    - schluessel: frist
+      ziel: mappe.feld:kuendigen_bis
+      ort: Rechts in der Mappe
+      titel: Kündigen bis
+      text: Hier steht, bis wann du kündigen musst. Ablago erinnert dich rechtzeitig.
+      handbuch: admin/pakete/#so-nutzt-du-es               # page in the bundled manual (benutzer/ or admin/)
+      sonst_verwalten: Frag die Person, die Ablago bei euch verwaltet.   # only for people without the right to administer
+```
+
+- **Check on installation** (like the package check, dms-registry #132): unknown fields and anchors, fields and registers the package's own folder type does not have (`mappe.feld:<key>`, `mappe.register:<key>` against `oeffne`), folder types that belong neither to the package nor to a dependency, more than 8 steps, texts over 200 (titles 60) characters, `nach_installation` more than once per package, `erste_anmeldung`. An error makes the package invalid.
+- **At runtime** Ablago checks again against its own anchors and the installed folder types (a package for a newer version may name anchors that do not exist here yet): faulty tours are dropped and logged once; if a target is missing, the step is dropped silently.
+- **`oeffne`:** `mappe` opens the most recently changed folder of the type that the person may read; `neu` an empty form, only if they may create the type – nothing is saved, and at the end Ablago goes back. Otherwise `ersatz` (or a general sentence) is shown instead of the steps. `GET /api/entdecken/rundgaenge/:schluessel/oeffnen` returns the path.
+- **Quiet:** tours from packages never start by themselves. With `nach_installation` or `nach_update` Ablago offers them as a tip for 30 days after installing or updating (“Contracts at a glance – a short tour”, `angebot:<tour>`, “new”); the tip-of-the-day rule applies (at most one a day). All of them are on “Discover Ablago”.
+- **Languages:** until package language files for tours arrive, the package writes the texts in its language (usually German) directly into the file.
+
 ### Tip {#tipp}
 
 ```yaml

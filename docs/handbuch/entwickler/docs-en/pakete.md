@@ -45,6 +45,7 @@ Then fill in:
 | `inhalt/wortlisten.yaml` | optional (from Ablago 0.127.0): groups of synonyms for the search |
 | `inhalt/automatisierungen.yaml` | optional (from Ablago 0.177.0): ready-made automations, always created; off after installation – except those whose switch is on in the installation dialog (since 0.233.0 preset with `eingeschaltet: true`) |
 | `inhalt/ablaufvorlagen.yaml` | optional (from Ablago 0.256.0, `DMS_ABLAUFVORLAGEN_AB`): [automation templates](#automatisierungsvorlagen) for the “Folder” menu – only tasks and notifications |
+| `inhalt/rundgaenge.yaml` | optional (dms #831): [tours](aufbau.md#paket-rundgaenge) through a task, texts directly in the file |
 | `README.md`, `LICENSE`, `CHANGELOG.md` | description, licence text, changes per version |
 | `tests/erwartung.yaml` | what must be there after installation |
 
@@ -520,5 +521,5 @@ You can also test several packages as your own catalogue: `python3 werkzeuge/kat
 
 ## Outlook { #ausblick }
 
-- **Tours and tips from packages** (#831, #832): `inhalt.rundgaenge` and `inhalt.tipps` in the manifest, in the same format as Ablago's own – see [Tours, tips and anchor points](aufbau.md#entdecken). Ablago reads them from a later version; the check comes with [dms-registry #132](https://github.com/motom001/dms-registry/issues/132).
+- **Tours and tips from packages** (#831, #832): Ablago reads `inhalt.rundgaenge` – see [Tours from packages](aufbau.md#paket-rundgaenge); the check in the registry comes with [dms-registry #132](https://github.com/motom001/dms-registry/issues/132).
 - **Packages with code** have existed since 0.88.0: WebAssembly modules that react to events and work via the API with confirmed permissions – see [Packages with code](pakete-code.md), with the overview of the [core's interfaces](pakete-code.md#schnittstellen) (vectors, answers, recognition, text recognition, [converting files](pakete-code.md#dateien-umwandeln), [supplying full text](pakete-code.md#volltext-liefern)).

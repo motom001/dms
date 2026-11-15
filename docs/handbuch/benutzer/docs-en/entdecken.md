@@ -24,6 +24,12 @@ On a phone the tour is shorter: the three columns are stacked there, and Ablago 
 
 The tour only starts by itself the first time a **new** account signs in. Anyone who used Ablago before this update does not get it automatically – but, like everyone else, finds it at any time under **Discover Ablago → Tours**.
 
+### Tours from packages { #paket-rundgaenge }
+
+Some packages bring their own tours, for example “Contracts at a glance”. They lead you through a task and show the places on a real folder – the first folder of that kind you are allowed to see – or on an empty form, without saving anything. If there is no suitable folder yet, you only see a sentence about what to expect.
+
+Such tours **never start by themselves.** Shortly after installing or updating, Ablago offers them once as a tip (“Contracts at a glance – a short tour”); all of them are under **Discover Ablago → Tours**. You only get tours for folders you are allowed to read.
+
 The tour works with the keyboard: Tab moves between the buttons and stays inside the tour, Enter presses the button. A screen reader reads out, for each step, where the highlighted place is. If “Reduce motion” is switched on on your device, the tour jumps from step to step without a transition.
 
 ## The tip of the day { #tipps }
@@ -41,7 +47,7 @@ You can switch the dot for the tip of the day on and off at any time under [My a
 You reach it via the menu under your name → **Discover Ablago**. It begins with the sentence “What else Ablago can do, explained briefly.” and has these sections – each only with what you may use:
 
 - **New since your last visit** – only if something new has arrived with an update.
-- **Tours** – with **Start tour** you see it again.
+- **Tours** – Ablago's own and those of the installed packages; with **Start tour** you see one (again).
 - **Tips** – all tips by area (Search, Post, To do and deadlines, Folders, My account), with a small search box. A click on a tip shows the place.
 
 ![Discover Ablago](bilder/entdecken.png)

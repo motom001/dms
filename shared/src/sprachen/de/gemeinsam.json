@@ -1364,6 +1364,8 @@
   "mitkommt.kurz.ablaufvorlagen_other": "{anzahl} Automatisierungsvorlagen",
   "mitkommt.kurz.aktionen_one": "{anzahl} Aktion im Menü „Mappe“",
   "mitkommt.kurz.aktionen_other": "{anzahl} Aktionen im Menü „Mappe“",
+  "mitkommt.kurz.rundgaenge_one": "{anzahl} Rundgang",
+  "mitkommt.kurz.rundgaenge_other": "{anzahl} Rundgänge",
   "mitkommt.kurz.einstellungen_one": "{anzahl} Einstellung",
   "mitkommt.kurz.einstellungen_other": "{anzahl} Einstellungen",
   "mitkommt.kurz.nichts": "legt nichts in der Ablage an",

@@ -1010,9 +1010,6 @@
     "complexity": {
       "count": 2
     },
-    "max-depth": {
-      "count": 1
-    },
     "max-params": {
       "count": 1
     },

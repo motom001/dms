@@ -298,6 +298,11 @@ export interface InstalliertesPaket {
   mitkommt?: Mitkommt;
   /** Kurzanleitung „So nutzt du es“ (#1047) je Sprache, wenn das Paket eine mitbringt. */
   kurzanleitung?: Record<string, string[]>;
+  /**
+   * Rundgänge und Tipps (#831, #832, `inhalt.rundgaenge`/`inhalt.tipps`) roh wie im Paket – Ablago prüft sie bei jeder
+   * Anzeige gegen die Anker dieser Version. `vorher`: Version vor dem letzten Update (für „Neu seit deinem letzten Besuch“).
+   */
+  entdecken?: { rundgaenge?: unknown[]; tipps?: unknown[]; vorher?: string | null };
 }
 
 /**

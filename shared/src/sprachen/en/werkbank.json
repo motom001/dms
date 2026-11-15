@@ -1744,6 +1744,8 @@
   "pakete.mitkommt.ablaufvorlagen.text": "In the “Folder” menu: they only create to dos and notifications – with the permissions of the person applying them.",
   "pakete.mitkommt.aktionen": "Actions in the “Folder” menu",
   "pakete.mitkommt.aktionen.text": "With the permissions the action needs on the folder.",
+  "pakete.mitkommt.rundgaenge": "Tours",
+  "pakete.mitkommt.rundgaenge.text": "Short guided tours of the real interface. They never start by themselves – Ablago offers them once as a tip after installing, and all of them are under “Discover Ablago”.",
   "pakete.mitkommt.braucht": "may: {rechte}",
   "pakete.mitkommt.einstellungen": "Settings",
   "pakete.mitkommt.einstellungen.text": "After the installation under Workbench → Packages → package → Settings.",

@@ -97,6 +97,11 @@ export function MitkommtInhalt({ m, rechte }: { m: Mitkommt; rechte?: string[] }
           <Namen liste={m.aktionen} zusatz={(e) => <span className="leise"> · {t('werkbank.pakete.mitkommt.braucht', { rechte: rechteText((e as Mitkommt['aktionen'][number]).rechte as AktionRecht[]) })}</span>} />
         </Teil>
       )}
+      {!!m.rundgaenge?.length && (
+        <Teil titel={t('werkbank.pakete.mitkommt.rundgaenge')} text={t('werkbank.pakete.mitkommt.rundgaenge.text')}>
+          <Namen liste={m.rundgaenge} />
+        </Teil>
+      )}
       {m.einstellungen.length > 0 && (
         <Teil titel={t('werkbank.pakete.mitkommt.einstellungen')} text={t('werkbank.pakete.mitkommt.einstellungen.text')}>
           <ul className="klein">{m.einstellungen.map((e) => <li key={e.titel}><strong>{e.titel}</strong>{e.liste && <span className="leise"> {t('werkbank.pakete.mitkommt.liste')}</span>}<Neu e={e} /><span className="leise mitkommt-zeile">{e.felder.map((f) => f.name).join(' · ')}</span></li>)}</ul>

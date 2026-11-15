@@ -9,14 +9,18 @@
 # Je Rundgang:
 #   schluessel  Name (klein, Ziffern, _)
 #   start       manuell | erste_anmeldung (nur Ablago: bei der ersten Anmeldung neuer Konten)
+#               | nach_installation, nach_update (nur Pakete: eine Zeit lang als Tipp angeboten, nie von selbst)
 #   fuer        lesen (alle, Vorgabe) | verwalten (nur Personen mit Verwaltungsrecht)
-#   oeffne      { seite: start } – diese Seite vor dem ersten Schritt öffnen
+#   oeffne      { seite: start } – diese Seite vor dem ersten Schritt öffnen; Pakete und eigene Rundgänge auch
+#               { mappe: { typ } } (erste lesbare Mappe) oder { neu: { typ } } (leeres Formular), sonst Text „ersatz“
 #   schritte    höchstens 8; je Schritt:
 #     schluessel  Name
 #     ziel        Anker aus anker.yaml oder eine Liste davon: der erste, der sichtbar ist, gilt (sonst fällt der
 #                 Schritt weg); ohne ziel steht der Schritt in der Mitte
 #     bild        eingebaute Grafik (dreiteilung)
 #     fuer        lesen | verwalten – z. B. Werkbank-Schritte nur für Verwaltende
+#     handbuch    Seite im Handbuch, z. B. admin/pakete/#so-nutzt-du-es
+#     (Texte zusätzlich: sonst_verwalten – Satz für Personen, die es nicht selbst einstellen dürfen)
 # Grenzen: Titel 60, Texte 200 Zeichen. Zu einem ziel gehört der Text „ort“ für Screenreader.
 
 - schluessel: ablago

@@ -71,6 +71,8 @@ export function kontenRouten(k: RoutenKontext): Route[] {
       if (!a.sitzungsDaten?.vertretungId) await entdecken.rundgang(ich(a), a.params.schluessel, b(a).stand);
       return leer;
     } },
+    // Was ein Rundgang öffnet (#831, `oeffne.mappe`/`oeffne.neu`): erste lesbare Mappe bzw. leeres Formular, sonst null.
+    { methode: 'GET', pfad: '/api/entdecken/rundgaenge/:schluessel/oeffnen', zugang: 'angemeldet', handler: async (a) => ok(await entdecken.oeffnen(ich(a), a.params.schluessel)) },
 
     /* ---------- Benutzer ---------- */
     // #137: nur Benutzer, deren Benutzer-Mappe man lesen darf (Administratoren: alle).

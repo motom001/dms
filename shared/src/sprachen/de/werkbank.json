@@ -1744,6 +1744,8 @@
   "pakete.mitkommt.ablaufvorlagen.text": "Im Menü „Mappe“: Sie legen nur Aufgaben und Benachrichtigungen an – mit den Rechten der Person, die sie anwendet.",
   "pakete.mitkommt.aktionen": "Aktionen im Menü „Mappe“",
   "pakete.mitkommt.aktionen.text": "Mit den Rechten, die die Aktion an der Mappe braucht.",
+  "pakete.mitkommt.rundgaenge": "Rundgänge",
+  "pakete.mitkommt.rundgaenge.text": "Kurze Führungen an der echten Oberfläche. Sie starten nie von selbst – Ablago bietet sie nach der Installation einmal als Tipp an, alle stehen unter „Ablago entdecken“.",
   "pakete.mitkommt.braucht": "darf: {rechte}",
   "pakete.mitkommt.einstellungen": "Einstellungen",
   "pakete.mitkommt.einstellungen.text": "Nach der Installation unter Werkbank → Pakete → Paket → Einstellungen.",
