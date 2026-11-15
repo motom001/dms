@@ -19,9 +19,6 @@ export const ANLAGEN_MAX = 99;
 /** Was die Funktionen hier von einem Dokument brauchen. */
 export interface AnlageTeil { id: string; name: string; anlageZu?: string | null; anlageNr?: number | null; eingangNr?: number | null; originalEmail?: boolean }
 
-/** Ist das eine Anlage (hängt an einem Hauptdokument)? */
-export const istAnlage = (d: Pick<AnlageTeil, 'anlageZu'>): boolean => !!d.anlageZu;
-
 /** Die Anlagen eines Dokuments aus einer Liste, in ihrer Reihenfolge (Anlage 1 zuerst). */
 export function anlagenVon<T extends AnlageTeil>(alle: readonly T[], id: string): T[] {
   return alle.filter((d) => d.anlageZu === id).sort((a, b) => (a.anlageNr ?? 0) - (b.anlageNr ?? 0) || a.name.localeCompare(b.name) || a.id.localeCompare(b.id));

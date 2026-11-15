@@ -53,13 +53,6 @@ export function teiltypen(typen: Iterable<Pick<Mappentyp, 'id' | 'teilVon'>>): S
   return s;
 }
 
-/** Ohne Teiltypen: für Ansichten, „+ Neu“, „Wohin gehört das?“, Auswahl in der erweiterten Suche. */
-export const ohneTeiltypen = <T extends Pick<MappentypDaten, 'teilVon'>>(typen: T[]): T[] => typen.filter((x) => !istTeiltyp(x));
-
-/** Teiltypen, deren Mappen zu Mappen vom Typ `id` gehören (Tabelle „Positionen“ an der Rechnung, Löschen, Suche). */
-export const teiltypenVon = <T extends Pick<Mappentyp, 'id' | 'teilVon' | 'felder'>>(typen: Iterable<T>, id: string): T[] =>
-  [...typen].filter((x) => x.id !== id && uebergeordneterTyp(x) === id);
-
 /** Was der Prüfung über andere Typen bekannt ist. */
 export interface TeilKontext {
   eigeneId?: string;

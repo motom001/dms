@@ -605,8 +605,6 @@ export const kontorolleKennung = (r: Kontorolle) => `rolle:${r}`;
 /** Systemkonten des DMS (#673): Kennung → Anzeigename. */
 export const SYSTEMKONTEN = { automatisierung: 'Automatisierung' } as const;
 export type Systemkonto = keyof typeof SYSTEMKONTEN;
-/** Die Systemrolle eines Kontos, wie sie die Oberfläche zeigt. */
-export const kontorolleVon = (b: Pick<Benutzer, 'art'>): Kontorolle | null => (b.art === 'system' ? 'systemkonto' : b.art === 'dienst' ? 'paket' : null);
 
 export interface Benutzer {
   id: string;

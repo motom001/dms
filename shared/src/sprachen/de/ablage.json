@@ -1460,7 +1460,6 @@
   "anlagen.an-welches-hinweis": "Es wird die nächste Anlage. Erkennung und KI lesen danach nur das Hauptdokument.",
   "anlagen.anhaengen": "Anhängen",
   "anlagen.angehaengt": "„{name}“ hängt jetzt als Anlage an „{haupt}“.",
-  "anlagen.herunterladen": "Herunterladen",
   "anlagen.mit-anlagen": "mit Anlagen ({anzahl})",
   "anlagen.mit-anlagen-stempel": "Jede Datei bekommt den Stempel; zusammen als ZIP.",
   "anlagen.zip-name": "{name} mit Anlagen.zip",

@@ -89,11 +89,6 @@
       "AuftragPhase"
     ]
   },
-  "server/src/ausgabe.ts": {
-    "exports": [
-      "brauchtBearbeitung"
-    ]
-  },
   "server/src/ausgang/email.ts": {
     "exports": [
       "EMAIL_MAX_EMPFAENGER",
@@ -389,11 +384,6 @@
       "VOLLTEXT_KOERPER_MAX",
       "VOLLTEXT_PAKET_MAX_BYTES",
       "VORSCHAUBILD_MAX_BYTES"
-    ]
-  },
-  "server/src/hochladen.ts": {
-    "exports": [
-      "hochladeOrdner"
     ]
   },
   "server/src/katalogsignatur.ts": {
@@ -1055,7 +1045,6 @@
       "ENDUNG",
       "PROBE_STANDARD",
       "PROBE_TAGE",
-      "STANDARD_ORDNER",
       "STUECK_MAX",
       "ZU_ALT_TAGE",
       "dateienUnter",
@@ -1244,9 +1233,6 @@
     ]
   },
   "server/src/wiederherstellung.ts": {
-    "exports": [
-      "neueVerbindung"
-    ],
     "types": [
       "Abschluss",
       "Laufzeit",
@@ -1261,7 +1247,6 @@
   "server/src/zip.ts": {
     "exports": [
       "AES_ZUSATZ",
-      "ZIP_PASSWORT_MIN",
       "zipName"
     ]
   },
@@ -1277,11 +1262,6 @@
     ],
     "types": [
       "VorlagenHerkunft"
-    ]
-  },
-  "shared/src/anlagen.ts": {
-    "exports": [
-      "istAnlage"
     ]
   },
   "shared/src/anrede.ts": {
@@ -1327,7 +1307,6 @@
     ],
     "exports": [
       "AUSKUNFT_FRIST_MONATE",
-      "AUSKUNFT_ZUSTAENDE",
       "GRUND_MAX",
       "TEXT_MAX",
       "ZWECK_MAX"
@@ -1352,8 +1331,6 @@
       "bereinigeUrlKarte",
       "emailKurz",
       "emailProbleme",
-      "istEmailKarte",
-      "istUrlKarte",
       "platzhalterIn",
       "urlKurz",
       "zielNormal"
@@ -1371,7 +1348,6 @@
   "shared/src/automatisierung.ts": {
     "exports": [
       "DMS_POST_AUTOMATISIERUNG_AB",
-      "PLATZHALTER_FEST",
       "vorlaufText"
     ],
     "types": [
@@ -1415,8 +1391,7 @@
       "FASSUNG_TYPEN",
       "INFO_FASSUNG",
       "KATALOG_UMWANDLUNG",
-      "KERN_TYPEN",
-      "VORSCHAUBILD_TYPEN"
+      "KERN_TYPEN"
     ]
   },
   "shared/src/demodaten.ts": {
@@ -1465,9 +1440,7 @@
   },
   "shared/src/ereignisse.ts": {
     "exports": [
-      "MAPPENTYP_EREIGNISSE",
-      "OHNE_WENN",
-      "katalogeintrag"
+      "OHNE_WENN"
     ]
   },
   "shared/src/erkennung.ts": {
@@ -1557,8 +1530,7 @@
   "shared/src/fristen.ts": {
     "exports": [
       "FRIST_TEXT",
-      "FRIST_TEXT_MAX",
-      "wiederholungText"
+      "FRIST_TEXT_MAX"
     ],
     "types": [
       "Erinnerung",
@@ -1578,8 +1550,7 @@
   "shared/src/kalender.ts": {
     "exports": [
       "ERLEDIGEN_ANSICHTEN",
-      "ZEITRAUM_MAX_TAGE",
-      "istMonat"
+      "ZEITRAUM_MAX_TAGE"
     ]
   },
   "shared/src/kennungen.ts": {
@@ -1675,7 +1646,6 @@
       "SCHLUESSEL_MUSTER",
       "gleicheZiele",
       "istSystemrolle",
-      "kontorolleVon",
       "zeitzone"
     ],
     "types": [
@@ -1840,8 +1810,7 @@
       "DMS_SPRACHPAKETE_AB",
       "GEPRUEFT_VON_MAX",
       "SPRACHTEXT_MAX",
-      "gueltigesGebietsschema",
-      "istEingebaut"
+      "gueltigesGebietsschema"
     ]
   },
   "shared/src/sprachpruefung.ts": {
@@ -1886,15 +1855,12 @@
   },
   "shared/src/tabelle.ts": {
     "exports": [
-      "istTabelle",
       "tabellenListe"
     ]
   },
   "shared/src/teile.ts": {
     "exports": [
-      "ohneTeiltypen",
-      "teilFeld",
-      "teiltypenVon"
+      "teilFeld"
     ]
   },
   "shared/src/textsatz.ts": {
@@ -1907,11 +1873,6 @@
       "FilterName"
     ]
   },
-  "shared/src/uebersetzung.ts": {
-    "exports": [
-      "UEBERSETZEN_STANDARD"
-    ]
-  },
   "shared/src/umbau.ts": {
     "exports": [
       "DMS_UMBAU_AB",
@@ -1921,20 +1882,12 @@
   },
   "shared/src/verwaltungsrecht.ts": {
     "exports": [
-      "HEIKLE_BEREICHE",
-      "eigeneBereiche"
+      "HEIKLE_BEREICHE"
     ]
   },
   "shared/src/volltext.ts": {
     "exports": [
       "INFO_WARTET"
-    ]
-  },
-  "shared/src/vorgaben.ts": {
-    "exports": [
-      "VORGABEVERWEIS",
-      "VORLAGEN_ORDNER",
-      "VORLAGE_ENDUNG"
     ]
   },
   "shared/src/werkbankansicht.ts": {
@@ -1957,7 +1910,6 @@
     "exports": [
       "SCHLUESSEL_MAX",
       "TEIL_ARTEN",
-      "istZusammengesetzt",
       "teilKennungen"
     ]
   },
@@ -1993,11 +1945,6 @@
       "SpeicherleisteProps"
     ]
   },
-  "web/src/Symbol.tsx": {
-    "exports": [
-      "symbolNamen"
-    ]
-  },
   "web/src/UeberDms.tsx": {
     "exports": [
       "REPOSITORY",
@@ -2008,11 +1955,6 @@
   "web/src/ablage/Aehnlich.tsx": {
     "exports": [
       "AehnlichChip"
-    ]
-  },
-  "web/src/ablage/Anlagen.tsx": {
-    "exports": [
-      "HerunterladenMitAnlagen"
     ]
   },
   "web/src/ablage/Aufgaben.tsx": {
@@ -2120,11 +2062,6 @@
     "exports": [
       "NR",
       "SCHRITTE"
-    ]
-  },
-  "web/src/assistent/ausfuehren.ts": {
-    "exports": [
-      "aktuellerPlan"
     ]
   },
   "web/src/assistent/datei.ts": {
@@ -2376,11 +2313,6 @@
       "Fragen"
     ]
   },
-  "web/src/werkbank/PaketSymbol.tsx": {
-    "exports": [
-      "paketSymbolBekannt"
-    ]
-  },
   "web/src/werkbank/PaketVerlauf.tsx": {
     "exports": [
       "EreignisKatalogListe",
@@ -2437,8 +2369,7 @@
   },
   "web/src/werkbank/Verschluesselung.tsx": {
     "exports": [
-      "Notfallblatt",
-      "TresorBanner"
+      "Notfallblatt"
     ]
   },
   "web/src/werkbank/Wartungsmodus.tsx": {

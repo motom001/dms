@@ -32,8 +32,6 @@ export const SCHLUESSEL_MAX = 1000;
 /** Feldarten, die als Platzhalter taugen. */
 export const TEIL_ARTEN: readonly Feldtyp[] = ['text', 'zahl', 'betrag', 'prozent', 'datum', 'zeitraum', 'janein', 'auswahl', 'referenz'];
 
-/** Ist das ein zusammengesetztes Feld? */
-export const istZusammengesetzt = (f: Pick<Feld, 'typ'> | undefined): boolean => f?.typ === 'zusammengesetzt';
 /** Zusammengesetzte Felder eines Typs. */
 export const zusammengesetzteFelder = (typ: Pick<Mappentyp, 'felder'>): Feld[] => typ.felder.filter((f) => f.typ === 'zusammengesetzt');
 /** Kann dieses Feld Teil einer Vorlage sein? */

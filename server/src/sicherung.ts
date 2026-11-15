@@ -25,7 +25,6 @@ import { EntfernteSicherungen, type HolAufruf } from './sicherung-entfernt';
  */
 
 const log = protokoll.modul('sicherung');
-export const STANDARD_ORDNER = '/data/sicherung';
 export const ENDUNG = '.dms-sicherung';
 const TAG_MS = 24 * 60 * 60 * 1000;
 /** Ab hier gilt die letzte erfolgreiche Sicherung als zu alt (#105). */

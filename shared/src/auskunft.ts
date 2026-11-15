@@ -303,7 +303,6 @@ export const auskunftMail = {
 
 /** Zustand einer Auskunft in der Liste der Werkbank. */
 export type AuskunftZustand = 'angefragt' | 'inArbeit' | 'bereit' | 'zugestellt' | 'abgerufen' | 'geloescht';
-export const AUSKUNFT_ZUSTAENDE: AuskunftZustand[] = ['angefragt', 'inArbeit', 'bereit', 'zugestellt', 'abgerufen', 'geloescht'];
 /** Offen = noch nicht bei der Person angekommen: Antwortfrist zählt. */
 export const istOffen = (z: AuskunftZustand) => z === 'angefragt' || z === 'inArbeit' || z === 'bereit';
 

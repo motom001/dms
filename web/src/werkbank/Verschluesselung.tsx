@@ -47,24 +47,6 @@ const TEXT: Record<TresorStatus['zustand'], string> = {
   falsch: t('werkbank.verschluesselung.passt-nicht'),
 };
 
-/** Banner über der ganzen Werkbank, solange etwas mit dem Schlüssel nicht stimmt. */
-export function TresorBanner() {
-  const { stand } = useTresor();
-  if (!stand || (stand.zustand === 'vorhanden' && stand.eingebunden !== false && !stand.betroffen.length)) return null;
-  let text;
-  if (stand.zustand === 'fehlt') text = <>{tn('werkbank.verschluesselung.bis-dahin-lassen-sich', { b: <strong>{t('werkbank.verschluesselung.es-gibt-noch-keinen')}</strong> })}</>;
-  else if (stand.zustand === 'verloren') text = <>{tn('werkbank.verschluesselung.gespeicherte-passwoerter-sind-nicht', { b: <strong>{t('werkbank.verschluesselung.der-schluessel-fuer-passwoerter')}</strong> })}</>;
-  else if (stand.zustand === 'falsch') text = <>{tn('werkbank.verschluesselung.passwoerter-lassen-sich-erst', { b: <strong>{t('werkbank.verschluesselung.die-schluesseldatei-passt-nicht')}</strong> })}</>;
-  else if (stand.eingebunden === false) text = <>{tn('werkbank.verschluesselung.wird-der-container-neu', { b: <strong>{t('werkbank.verschluesselung.die-schluesseldatei-liegt-nicht')}</strong> })}</>;
-  else text = <><strong>{t('werkbank.verschluesselung.passwoerter-sind-nicht-lesbar', { anzahl: stand.betroffen.length })}</strong></>;
-  return (
-    <div className="hinweisbanner" role="alert">
-      <p>{text}</p>
-      <Link to="/werkbank/verschluesselung" className="knopf klein">{t('werkbank.verschluesselung.zur-verschluesselung')}</Link>
-    </div>
-  );
-}
-
 export function TresorPanel({ t: eintrag }: { t: TresorZustand }) {
   const { aktualisieren } = useKonto();
   const [laeuft, setLaeuft] = useState(false);

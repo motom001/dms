@@ -19,7 +19,6 @@
  * Vertragsart „Pkw-Kaufvertrag“). An eine Vorgabe eines anderen Pakets darf es nur Vorlagen anhängen
  * (`ergaenzt: vertraege:miete`) – keine Felder, keine Rechte; entfernt man es, gehen nur seine Vorlagen mit.
  */
-import { TYPVERWEIS } from './kennungen';
 
 /**
  * Ab dieser Version legt Ablago Vorgaben an und versteht die Anzeige-Bedingung „zeigt auf die Vorgabe …“ (#1038).
@@ -30,9 +29,6 @@ export const DMS_VORGABEN_AB = '0.236.0';
 export const VORGABEN_MAX = 200;
 /** Höchstens so viele Vorlagen je Vorgabe bzw. Ergänzung. */
 export const VORLAGEN_JE_VORGABE_MAX = 20;
-/** Text-Vorlagen liegen im Paket unter `inhalt/vorlagen/` und sind Markdown. */
-export const VORLAGEN_ORDNER = 'vorlagen/';
-export const VORLAGE_ENDUNG = '.md';
 /** Pfad einer Vorlage relativ zu inhalt/: vorlagen/, höchstens zwei Ordner, einfache Namen, Endung .md. */
 export const VORLAGE_DATEI = /^vorlagen\/(?:[a-z0-9][a-z0-9_-]{0,59}\/){0,2}[a-z0-9][a-z0-9_-]{0,79}\.md$/;
 /** Art der Datei in Ablago. */
@@ -47,8 +43,6 @@ export function teileVorgabe(kennung: string | null | undefined): { paket: strin
   const m = /^paket:([^:]+):([^:]+)$/.exec(kennung ?? '');
   return m ? { paket: m[1], schluessel: m[2] } : null;
 }
-/** Verweis auf eine Vorgabe in Paketinhalten: eigener Schlüssel oder `paket:schluessel` – Form wie ein Typverweis. */
-export const VORGABEVERWEIS = TYPVERWEIS;
 /** Verweis → Paket und Schlüssel (eigene ohne Doppelpunkt gehören dem Paket `eigenes`). */
 export function vorgabeVerweis(verweis: string, eigenes: string): { paket: string; schluessel: string } {
   const i = verweis.indexOf(':');

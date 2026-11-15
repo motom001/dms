@@ -7,7 +7,7 @@ import { werkbankApi } from '../api/werkbank';
 import { t } from '../sprache';
 import { sprache } from '../../../shared/src/sprache';
 import { vorlageFuer } from '../../../shared/src/werkbankansicht';
-import { geheim, holeStand, planAus, setzeStand, STUFEN, type Lauf, type Stufe, type StufeStand } from './stand';
+import { geheim, holeStand, setzeStand, STUFEN, type Lauf, type Stufe, type StufeStand } from './stand';
 
 /**
  * „Jetzt einrichten“ (#804): führt aus, was der Assistent gesammelt hat – Stufe für Stufe mit Fortschritt. Scheitert
@@ -163,6 +163,3 @@ export function stufenZuruecksetzen(stufen: Stufe[]) {
 export const STUFEN_JE_SCHRITT = {
   ablage: ['ablage'], konto: ['ablage'], nutzung: ['nutzung', 'organisation'], pakete: ['pakete', 'organisation'], optional: ['adresse', 'region', 'mail', 'notfallkontakte', 'beispiele', 'beispielablage'],
 } as const satisfies Record<string, readonly Stufe[]>;
-
-/** Für die Konfigurationsdatei (#806): aktueller Plan. */
-export const aktuellerPlan = () => planAus(holeStand().sammlung);

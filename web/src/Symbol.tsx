@@ -70,8 +70,6 @@ const SYMBOLE = {
 
 export type SymbolName = keyof typeof SYMBOLE;
 
-export const symbolNamen = Object.keys(SYMBOLE) as SymbolName[];
-
 export function Symbol({ name, className }: { name: SymbolName; className?: string }) {
   return (
     <svg className={`sym${className ? ` ${className}` : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
