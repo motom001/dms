@@ -94,6 +94,7 @@ import { erkenneSpeicherart } from './speicherart';
 import { alterExportOrdner, exportOrdnerVon, exportOrt, merkeUmzug, raeumeExporteAuf, zieheExporteUm } from './exportordner';
 import { Startmodus } from './startmodus';
 import { raeumeHochladenAuf, richteHochladenEin } from './hochladen';
+import { MB } from './grenzen';
 import { PROZESSE_MAX, prozesseAus, verbundFuerProzess } from './prozesse';
 import { setzeLasttestModus } from './protokollsammlung';
 import { teileArbeit, UPLOAD_ALTER_MS } from './aufteilung';
@@ -127,7 +128,7 @@ const verbund = await verbundFuerProzess();
 const { leiter } = verbund;
 // Zwischenspeicher (#874): mit mehreren Prozessen bekommt jeder seinen Anteil, zusammen wie mit einem.
 teileZwischenspeicher(verbund.anzahl);
-if (leiter) log.info(`Ablago startet (Version ${version})`, { node: process.version, port: cfg.port, protokoll: protokoll.stufe, proxy: cfg.proxy.text, ...(verbund.mehrere ? { prozesse: verbund.anzahl } : {}) });
+if (leiter) log.info(`Ablago startet (Version ${version})`, { node: process.version, port: cfg.port, protokoll: protokoll.stufe, proxy: cfg.proxy.text, ...(verbund.mehrere || prozessEinstellung.quelle === 'auto' ? { prozesse: verbund.anzahl } : {}), ...(prozessEinstellung.quelle === 'auto' ? { prozesseAutomatisch: { kerne: prozessEinstellung.kerne, speicherMb: prozessEinstellung.speicher === null ? null : Math.round(prozessEinstellung.speicher / MB), herkunft: prozessEinstellung.herkunft, begrenzt: prozessEinstellung.begrenzt, vorgabe: !!prozessEinstellung.autoVorgabe } } : {}) });
 else log.info(`Prozess ${verbund.nr} für Anfragen startet`, { pid: process.pid });
 if (prozessEinstellung.ungueltig && leiter) log.warn(tDe('meldungen.prozesse.ungueltig', { roh: prozessEinstellung.ungueltig, max: PROZESSE_MAX }));
 if (cfg.proxy.fehler) log.warn(cfg.proxy.fehler);

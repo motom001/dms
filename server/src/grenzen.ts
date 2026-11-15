@@ -206,10 +206,14 @@ export const STUECK_MAX = 8 * MB;
 export const SICHERUNGSKOPF_MAX = 64 * KB;
 /** Frei bleiben muss mindestens so viel über dem, was ein Export oder eine Wiederherstellung braucht. */
 export const PLATZ_RESERVE = 50 * MB;
-/** Arbeitsspeicher, mit dem ein Prozess rechnet, und Reserve fürs System (#745); Halde je weiterem Prozess mindestens (in MB). */
-export const SPEICHER_JE_PROZESS = GB;
+/** Reserve fürs System (#745, Grundlage der Halde je Prozess); Halde je weiterem Prozess mindestens (in MB). */
 export const SPEICHER_RESERVE = GB;
 export const HALDE_MIN_MB = GB / MB;
+/**
+ * Ab so viel Arbeitsspeicher (Grenze des Containers, sonst des Rechners) nimmt die Vorgabe von dms-komplett bzw. `auto`
+ * zwei Prozesse (#1259): „8 GB“ – Geräte mit 8 GB melden dem System etwas weniger (Grafik, Kernel), darum 7,5 GB.
+ */
+export const ZWEI_PROZESSE_SPEICHER_AB = 7.5 * GB;
 
 /* ---------- Stücke beim Lesen und Schreiben (keine Grenzen, aber Byte-Zahlen) ---------- */
 

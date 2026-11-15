@@ -60,11 +60,11 @@ Mehr Arbeiter helfen nur, wenn genug Kerne frei sind: Bei 2 Kernen bleibt es bei
 
 ### Einstellungen und Engpässe { #einstellungen-und-engpasse }
 
-Unter den Werten steht **Einstellungen für viele gleichzeitige Anfragen** – nur zum Ansehen, mit dem aktuellen Wert und woher er stammt (*Vorgabe* oder *aus der Umgebung*):
+Unter den Werten steht **Einstellungen für viele gleichzeitige Anfragen** – nur zum Ansehen, mit dem aktuellen Wert und woher er stammt (*Vorgabe*, *aus der Umgebung* oder *automatisch* – bei den Prozessen mit Kernen und Arbeitsspeicher, nach denen Ablago gewählt hat, und ob sie aus der Grenze des Containers stammen):
 
 | Zeile | Variable | erlaubt | Vorgabe |
 | --- | --- | --- | --- |
-| Prozesse für Anfragen | `DMS_PROZESSE` | 1–16 oder `auto` | 1 |
+| Prozesse für Anfragen | `DMS_PROZESSE` | 1–16 oder `auto` | `dms-komplett`: automatisch (2 ab 4 Kernen und 8 GB), Image `dms`: 1 |
 | Arbeiter für PDF und Exporte | `DMS_ARBEITER` | 0–16 | Hälfte der Kerne, 1 bis 4 |
 | Verbindungen zur Datenbank (alle Prozesse zusammen) | `DMS_DB_VERBINDUNGEN` | 2–100 | 10, je weiteren Prozess 4 mehr |
 | Gleichzeitige Anfragen höchstens | `DMS_MAX_ANFRAGEN` | 20–10.000 | 250 |

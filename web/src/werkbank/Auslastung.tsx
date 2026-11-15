@@ -1,5 +1,5 @@
 import { Fragment, useCallback, useEffect, useState, type ReactNode } from 'react';
-import { ENGPASS_MINUTEN, ENGPASS_VARIABLE, VERBINDUNG_WARTEN_MS, type Einstellbar, type Messpunkt, type ProzessZeile } from '../../../shared/src/systemlast';
+import { ENGPASS_MINUTEN, ENGPASS_VARIABLE, VERBINDUNG_WARTEN_MS, type Einstellbar, type Grenzwert, type Messpunkt, type ProzessZeile } from '../../../shared/src/systemlast';
 import { betriebApi, type ErweiterungStand, type Schleifenverzoegerung, type SystemlastAntwort } from '../api/betrieb';
 import { Link } from '../ort';
 import { Hilfe } from '../Hilfe';
@@ -189,6 +189,17 @@ function Belegung({ b }: { b: NonNullable<NonNullable<NonNullable<SystemlastAntw
 }
 
 /** Prozesse (#745), Arbeiter, Verbindungen, Überlastgrenze (#544): Wert und Herkunft, nur zum Ansehen. */
+/** Grundlage von „automatisch“ (#1259): „automatisch: 6 Kerne, 16 GB → 2 Prozesse“ bzw. „Grenze des Containers: …“. */
+function Automatisch({ a, anzahl }: { a: NonNullable<Grenzwert['automatisch']>; anzahl: number }) {
+  const container = (a.begrenzt === 'kerne' && a.herkunft.kerne === 'container') || (a.begrenzt === 'speicher' && a.herkunft.speicher === 'container');
+  const werte = {
+    kerne: a.kerne.toLocaleString(gebietsschema()),
+    speicher: a.speicher === null ? '–' : (a.speicher / 1024 ** 3).toLocaleString(gebietsschema(), { maximumFractionDigits: 1 }),
+    ergebnis: anzahl === 1 ? t('systemzustand.grenzen.herkunft.ein-prozess') : t('systemzustand.grenzen.herkunft.prozesse', { anzahl }),
+  };
+  return <>{t(container ? 'systemzustand.grenzen.herkunft.container' : 'systemzustand.grenzen.herkunft.automatisch', werte)}{a.begrenzt === 'verbindungen' ? <>{' '}{t('systemzustand.grenzen.herkunft.verbindungen')}</> : null}</>;
+}
+
 function Grenzen({ g }: { g: NonNullable<SystemlastAntwort['grenzen']> }) {
   const zeilen = (['prozesse', 'arbeiter', 'verbindungen', 'anfragen'] as Einstellbar[]).filter((k) => g[k]);
   if (!zeilen.length) return null;
@@ -200,7 +211,8 @@ function Grenzen({ g }: { g: NonNullable<SystemlastAntwort['grenzen']> }) {
           const w = g[k]!;
           return (<Fragment key={k}>
             <dt>{t.frei(`systemzustand.grenzen.${k}`)}</dt>
-            <dd>{k === 'arbeiter' && w.wert === 0 ? t('systemzustand.grenzen.aus') : t(w.quelle === 'umgebung' ? 'systemzustand.grenzen.umgebung' : w.quelle === 'auto' ? 'systemzustand.grenzen.auto' : 'systemzustand.grenzen.vorgabe', { wert: w.wert.toLocaleString(gebietsschema()) })}
+            <dd>{k === 'arbeiter' && w.wert === 0 ? t('systemzustand.grenzen.aus') : t(w.quelle === 'umgebung' ? 'systemzustand.grenzen.umgebung' : w.automatisch?.vorgabe ? 'systemzustand.grenzen.auto-vorgabe' : w.quelle === 'auto' ? 'systemzustand.grenzen.auto' : 'systemzustand.grenzen.vorgabe', { wert: w.wert.toLocaleString(gebietsschema()) })}
+              {w.automatisch ? <>{' '}<span className="leise">· <Automatisch a={w.automatisch} anzahl={w.wert} /></span></> : null}
               {w.prozesse && w.prozesse > 1 && w.wert > 0 ? <>{' '}{t('systemzustand.grenzen.je-prozess', { gesamt: (w.wert * w.prozesse).toLocaleString(gebietsschema()), prozesse: w.prozesse })}</> : null}
               {w.aufteilung ? <>{' '}{t('systemzustand.grenzen.aufgeteilt', { prozesse: w.aufteilung.prozesse, leiter: w.aufteilung.leiter, andere: w.aufteilung.andere })}</> : null}
               {' '}<span className="leise">· <span className="mono">{t('systemzustand.grenzen.bereich', { variable: w.variable, min: w.min.toLocaleString(gebietsschema()), max: w.max.toLocaleString(gebietsschema()) })}</span></span>

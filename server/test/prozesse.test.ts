@@ -48,34 +48,58 @@ describe('Einstellung DMS_PROZESSE (#745)', () => {
     assert.equal(prozesseAus({ DMS_PROZESSE: 'AUTO' }, ohneCgroup).quelle, 'auto');
   });
 
-  it('Empfehlung: Kerne − 1, höchstens 2 (#874); bei wenig Arbeitsspeicher (Raspberry Pi, kleines NAS) 1', () => {
+  it('Empfehlung (#1259): 2 Prozesse ab 4 Kernen und 8 GB, sonst 1 (Raspberry Pi, kleine NAS); Verbindungen müssen reichen', () => {
     const GB = 1024 ** 3;
     const n = (k: number, s: number | null, o?: Parameters<typeof empfohleneProzesse>[2]) => empfohleneProzesse(k, s, o).anzahl;
-    assert.equal(n(1, 8 * GB), 1);
-    assert.equal(n(2, 8 * GB), 1);
-    assert.equal(n(3, 8 * GB), 2);
-    assert.equal(n(6, 16 * GB), 2);
-    assert.equal(n(32, 64 * GB), 2);
+    assert.deepEqual(empfohleneProzesse(6, 16 * GB), { anzahl: 2, begrenzt: 'hoechstens' }, 'NAS aus #576');
+    assert.equal(n(4, 8 * GB), 2);
+    assert.equal(n(4, 7.6 * GB), 2, 'ein Gerät mit 8 GB meldet etwas weniger');
+    assert.equal(n(32, 64 * GB), 2, 'höchstens 2');
+    assert.deepEqual(empfohleneProzesse(3, 16 * GB), { anzahl: 1, begrenzt: 'kerne' }, 'bis #1259: Kerne − 1 = 2');
+    assert.deepEqual(empfohleneProzesse(3.5, 16 * GB), { anzahl: 1, begrenzt: 'kerne' });
+    assert.deepEqual(empfohleneProzesse(8, 4 * GB), { anzahl: 1, begrenzt: 'speicher' });
     assert.equal(n(4, 1 * GB), 1, 'Raspberry Pi mit 1 GB');
-    // Grenze des Containers (cgroup v2): 4 Kerne, 1,5 GB → auto = 1.
-    const cg = (p: string) => (p.endsWith('cpu.max') ? '400000 100000' : p.endsWith('memory.max') ? String(1.5 * GB) : p.endsWith('memory.current') ? '1000' : p.endsWith('cpu.stat') ? 'usage_usec 1' : null);
-    assert.equal(prozesseAus({ DMS_PROZESSE: 'auto' }, cg).anzahl, 1);
+    assert.deepEqual(empfohleneProzesse(8, 16 * GB, { verbindungen: 7 }), { anzahl: 1, begrenzt: 'verbindungen' }, 'DMS_DB_VERBINDUNGEN=7: Leiter braucht 6, ein weiterer 2');
+    assert.equal(n(8, 16 * GB, { verbindungen: 8 }), 2);
   });
 
-  it('auto (#874): höchstens 2, mit PostgreSQL im selben Container höchstens 2, Speicher je Prozess rund 1 GB, Verbindungen müssen reichen', () => {
+  it('Grenze des Containers (#1259): cgroup v2 und v1, höchstens der Rechner; Herkunft für den Systemzustand', () => {
     const GB = 1024 ** 3;
-    assert.deepEqual(empfohleneProzesse(6, 16 * GB, { datenbankImContainer: true }), { anzahl: 2, begrenzt: 'hoechstens' }, 'NAS mit dms-komplett');
-    assert.deepEqual(empfohleneProzesse(6, 16 * GB), { anzahl: 2, begrenzt: 'hoechstens' }, 'PostgreSQL getrennt: vorerst auch 2');
-    assert.deepEqual(empfohleneProzesse(8, 3 * GB), { anzahl: 2, begrenzt: 'hoechstens' }, '3 GB: Reserve 1 GB + 2 × 1 GB');
-    assert.deepEqual(empfohleneProzesse(8, 2.5 * GB), { anzahl: 1, begrenzt: 'speicher' }, 'unter 3 GB ein Prozess (vorher: unter 2 GB)');
-    assert.deepEqual(empfohleneProzesse(8, 16 * GB, { verbindungen: 7 }), { anzahl: 1, begrenzt: 'verbindungen' }, 'DMS_DB_VERBINDUNGEN=7: Leiter braucht 6, ein weiterer 2');
-    assert.equal(empfohleneProzesse(8, 16 * GB, { verbindungen: 8 }).anzahl, 2);
-    assert.deepEqual(empfohleneProzesse(2, 16 * GB, { datenbankImContainer: true }), { anzahl: 1, begrenzt: 'kerne' });
-    const cg = (p: string) => (p.endsWith('cpu.max') ? '600000 100000' : p.endsWith('memory.max') ? String(16 * GB) : p.endsWith('memory.current') ? '1000' : p.endsWith('cpu.stat') ? 'usage_usec 1' : null);
-    assert.equal(prozesseAus({ DMS_PROZESSE: 'auto', DMS_VARIANTE: 'komplett' }, cg).anzahl, 2);
-    assert.equal(prozesseAus({ DMS_PROZESSE: 'auto' }, cg).anzahl, 2);
-    assert.equal(prozesseAus({ DMS_PROZESSE: '4', DMS_VARIANTE: 'komplett' }, cg).anzahl, 4, 'eine feste Zahl gilt, wie sie ist');
-    assert.equal(prozesseAus({ DMS_PROZESSE: 'auto', DMS_DB_VERBINDUNGEN: '6' }, cg).anzahl, 1);
+    const nas = { kerne: 6, speicher: 16 * GB };
+    const v2 = (cpu: string, mem: string) => (p: string) => (p.endsWith('cpu.max') ? cpu : p.endsWith('memory.max') ? mem : p.endsWith('memory.current') ? '1000' : p.endsWith('cpu.stat') ? 'usage_usec 1' : null);
+    // Ohne Grenze („max“): der Rechner.
+    let e = prozesseAus({ DMS_VARIANTE: 'komplett' }, v2('max 100000', 'max'), nas);
+    assert.deepEqual([e.anzahl, e.quelle, e.autoVorgabe, e.kerne, e.speicher, e.herkunft], [2, 'auto', true, 6, 16 * GB, { kerne: 'rechner', speicher: 'rechner' }]);
+    // Container auf 2 Kerne begrenzt → 1 Prozess; auf 4 GB → 1 Prozess.
+    e = prozesseAus({ DMS_VARIANTE: 'komplett' }, v2('200000 100000', 'max'), nas);
+    assert.deepEqual([e.anzahl, e.begrenzt, e.kerne, e.herkunft?.kerne], [1, 'kerne', 2, 'container']);
+    e = prozesseAus({ DMS_VARIANTE: 'komplett' }, v2('max 100000', String(4 * GB)), nas);
+    assert.deepEqual([e.anzahl, e.begrenzt, e.speicher, e.herkunft?.speicher], [1, 'speicher', 4 * GB, 'container']);
+    // Grenze über dem Rechner zählt nicht.
+    e = prozesseAus({ DMS_VARIANTE: 'komplett' }, v2('1600000 100000', String(64 * GB)), { kerne: 2, speicher: 4 * GB });
+    assert.deepEqual([e.anzahl, e.kerne, e.speicher, e.herkunft], [1, 2, 4 * GB, { kerne: 'rechner', speicher: 'rechner' }]);
+    // cgroup v1.
+    const v1 = (p: string) => (p.endsWith('cpu.cfs_quota_us') ? '400000' : p.endsWith('cpu.cfs_period_us') ? '100000' : p.endsWith('memory.limit_in_bytes') ? String(8 * GB) : p.endsWith('memory.usage_in_bytes') ? '1000' : null);
+    e = prozesseAus({ DMS_VARIANTE: 'komplett' }, v1, { kerne: 12, speicher: 32 * GB });
+    assert.deepEqual([e.anzahl, e.kerne, e.speicher, e.herkunft], [2, 4, 8 * GB, { kerne: 'container', speicher: 'container' }]);
+    e = prozesseAus({ DMS_VARIANTE: 'komplett' }, ohneCgroup, { kerne: 4, speicher: 4 * GB });
+    assert.deepEqual([e.anzahl, e.begrenzt], [1, 'speicher'], 'Raspberry Pi 5 mit 4 GB');
+  });
+
+  it('Vorgabe (#1259): dms-komplett automatisch, Image dms weiter 1; eine gesetzte Zahl gilt; auto wie die Vorgabe', () => {
+    const GB = 1024 ** 3;
+    const nas = { kerne: 6, speicher: 16 * GB };
+    const ohne = (p: string) => (p.endsWith('memory.current') ? '1000' : p.endsWith('cpu.stat') ? 'usage_usec 1' : null);
+    assert.deepEqual([prozesseAus({}, ohne, nas).anzahl, prozesseAus({}, ohne, nas).quelle], [1, 'vorgabe'], 'Image dms mit eigener Datenbank');
+    assert.equal(prozesseAus({ DMS_PROZESSE: '1', DMS_VARIANTE: 'komplett' }, ohne, nas).anzahl, 1, 'Weg zurück');
+    assert.equal(prozesseAus({ DMS_PROZESSE: '1', DMS_VARIANTE: 'komplett' }, ohne, nas).quelle, 'umgebung');
+    assert.equal(prozesseAus({ DMS_PROZESSE: '3', DMS_VARIANTE: 'komplett' }, ohne, { kerne: 2, speicher: 2 * GB }).anzahl, 3, 'eine feste Zahl gilt, wie sie ist');
+    const a = prozesseAus({ DMS_PROZESSE: 'auto', DMS_VARIANTE: 'komplett' }, ohne, nas);
+    assert.deepEqual([a.anzahl, a.quelle, a.autoVorgabe], [2, 'auto', undefined]);
+    assert.equal(prozesseAus({ DMS_PROZESSE: 'auto' }, ohne, nas).anzahl, 2, 'auto auch mit eigener Datenbank');
+    assert.equal(prozesseAus({ DMS_PROZESSE: 'auto' }, ohne, { kerne: 3, speicher: 16 * GB }).anzahl, 1);
+    assert.equal(prozesseAus({ DMS_VARIANTE: 'komplett', DMS_DB_VERBINDUNGEN: '6' }, ohne, nas).anzahl, 1, 'zu wenige Verbindungen für zwei');
+    assert.equal(prozesseAus({ DMS_PROZESSE: 'zwei', DMS_VARIANTE: 'komplett' }, ohne, nas).anzahl, 1, 'Unsinn: 1 mit Hinweis');
   });
 
   it('Verbindungen (#874): DMS_DB_VERBINDUNGEN gilt für alle Prozesse zusammen; Leiter bekommt 4 vorab (Sperrverbindung und Hintergrund, #1198), mindestens 6, jeder weitere 2', () => {
