@@ -79,7 +79,7 @@ export function sammelText(meldungen: Meldung[]): { betreff: string; text: strin
 }
 
 /** Ein vorab gezählter Anmeldeversuch (#956), siehe `Anmeldesperre.versuch`. */
-export interface Versuch { konto: number; ip: number; ausgenommen: boolean }
+export interface Versuch { konto: number; ip: number; ausgenommen: boolean; gesamt?: number }
 
 export interface IpSperre { ip: string; seit: string; bis: string | null; grund: string }
 
@@ -87,7 +87,37 @@ const log = protokoll.modul('konto');
 const MIN = 60_000;
 
 /** IPv4 in IPv6 (::ffff:1.2.3.4) wie IPv4 behandeln. */
-const norm = (ip: string) => ip.replace(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/i, '$1').trim();
+const ohneMapping = (ip: string) => ip.replace(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/i, '$1').trim();
+
+/** Erste 64 Bit einer IPv6-Adresse als `a:b:c:d::/64` (ohne führende Nullen), sonst null. */
+export function ipv6Netz64(ip: string): string | null {
+  const a = ip.split('%')[0];
+  if (isIP(a) !== 6) return null;
+  const [links, rechts] = a.includes('::') ? a.split('::') : [a, undefined];
+  const l = links ? links.split(':') : [];
+  const r = rechts ? rechts.split(':') : [];
+  // Eingebettetes IPv4 am Ende zählt als zwei Gruppen; für die ersten 64 Bit ohne Belang.
+  const fehlt = 8 - l.length - r.length - (r.at(-1)?.includes('.') || l.at(-1)?.includes('.') ? -1 : 0);
+  const gruppen = rechts === undefined ? l : [...l, ...Array<string>(Math.max(0, fehlt)).fill('0'), ...r];
+  return `${gruppen.slice(0, 4).map((g) => (parseInt(g, 16) || 0).toString(16)).join(':')}::/64`;
+}
+
+/**
+ * Schlüssel einer Adresse für Zähler und Sperren: IPv4 wie sie ist, IPv6 je /64 (#1295). Ein Anschluss bekommt meist
+ * ein ganzes /64 und könnte sonst mit jeder Anfrage eine neue Adresse nehmen. Schon gekürzte Angaben (`…/64`, aus der
+ * Liste gesperrter Adressen) bleiben, wie sie sind.
+ */
+const norm = (ip: string) => {
+  const a = ohneMapping(ip);
+  return a.endsWith('/64') ? a : ipv6Netz64(a) ?? a;
+};
+
+/**
+ * Bremse je Konto (#1295), unabhängig von der Adresse: Kommen von vielen Adressen zusammen so viele Fehlversuche für
+ * dasselbe Konto, nimmt Ablago für dieses Konto bis zum Ende des Fensters keine Passwörter mehr an (außer aus den
+ * Ausnahmen). Gezählt je E-Mail-Adresse, ob es das Konto gibt oder nicht – die Antwort verrät also nichts.
+ */
+export const KONTO_GESAMT = { versuche: 30, minuten: 60 } as const;
 
 /** Ausnahmen prüfen: einzelne Adressen oder Netze wie 192.168.0.0/16. */
 export function pruefeAusnahmen(liste: unknown): string[] {
@@ -129,6 +159,7 @@ export function pruefeSperrEinstellung(x: unknown, alt: SperrEinstellung): Sperr
 
 /** Arten im Kurzzustand (#744). Schlüssel der Konten: „IP|E-Mail“, damit Entsperren einer IP alle ihre Konten trifft. */
 const KONTO = 'anmeldung-konto';
+const KONTO_GESAMT_ART = 'anmeldung-konto-gesamt';
 const IP_ZAEHLER = 'anmeldung-ip';
 const IP_SPERRE = 'anmeldung-ip-sperre';
 const MELDUNG = 'anmeldung-meldung';
@@ -166,7 +197,8 @@ export class Anmeldesperre {
   }
 
   private ausgenommen(ip: string) {
-    const a = norm(ip);
+    // Ausnahmen gelten für die Adresse selbst, nicht für ihr /64.
+    const a = ohneMapping(ip);
     const f = isIP(a);
     return !!f && this.ausnahmen.check(a, f === 6 ? 'ipv6' : 'ipv4');
   }
@@ -206,7 +238,7 @@ export class Anmeldesperre {
   }
 
   /** Vor der Anmeldung: wirft 429, wenn IP oder Konto gesperrt sind. */
-  async pruefe(email: string, ip: string) {
+  async pruefe(email: string, ip: string, o: { kontoBremse?: boolean } = {}) {
     await this.lade();
     const a = norm(ip);
     if (this.ausgenommen(a)) return;
@@ -218,6 +250,13 @@ export class Anmeldesperre {
       const min = Math.max(1, Math.ceil((k.bis - zahl) / MIN));
       throw new Fachfehler(429, t('meldungen.anmeldesperre.zu-viele-fehlversuche-bitte', { anzahl: min }));
     }
+    const g = email && o.kontoBremse !== false ? await this.zustand.lies(KONTO_GESAMT_ART, email) : null;
+    if (g && g.anzahl >= KONTO_GESAMT.versuche) throw this.gebremst(g.bis);
+  }
+
+  private gebremst(bis: number | null) {
+    const min = Math.max(1, Math.ceil(((bis ?? this.jetzt() + KONTO_GESAMT.minuten * MIN) - this.jetzt()) / MIN));
+    return new Fachfehler(429, t('meldungen.anmeldesperre.konto-gebremst', { anzahl: min }));
   }
 
   /**
@@ -236,7 +275,10 @@ export class Anmeldesperre {
       const min = Math.max(1, Math.ceil(((bis ?? this.jetzt()) - this.jetzt()) / MIN));
       throw new Fachfehler(429, t('meldungen.anmeldesperre.zu-viele-fehlversuche-bitte', { anzahl: n > this.e.konto.versuche ? min : this.e.ip.minuten || 60 }));
     }
-    return { konto: n, ip: m, ausgenommen: false };
+    // Je Konto über alle Adressen (#1295), festes Fenster.
+    const g = email ? await this.zustand.zaehle(KONTO_GESAMT_ART, email, KONTO_GESAMT.minuten * MIN) : { anzahl: 0, bis: null };
+    if (g.anzahl > KONTO_GESAMT.versuche) throw this.gebremst(g.bis);
+    return { konto: n, ip: m, ausgenommen: false, gesamt: g.anzahl };
   }
 
   private heute() { return heuteIn(new Date(this.jetzt())); }
@@ -291,6 +333,12 @@ export class Anmeldesperre {
       log.warn('Anmeldung gesperrt (Konto und IP)', { email, ip: a, versuche: n, minuten: this.e.konto.minuten });
       if (bekannt) await this.kontoGesperrt(email, a, n);
     }
+    // Bremse je Konto (#1295): einmal melden, wenn die Grenze erreicht ist.
+    const g = v ? v.gesamt ?? 0 : email ? (await this.zustand.zaehle(KONTO_GESAMT_ART, email, KONTO_GESAMT.minuten * MIN)).anzahl : 0;
+    if (g === KONTO_GESAMT.versuche) {
+      log.warn('Anmeldung für ein Konto gebremst (Fehlversuche von mehreren Adressen)', { email, versuche: g, minuten: KONTO_GESAMT.minuten });
+      if (bekannt) await this.kontoGesperrt(email, a, g);
+    }
     // Je IP über alle Adressen; das Zählfenster ist die Sperrdauer (bei „dauerhaft“ eine Stunde), festes Fenster.
     const fenster = (this.e.ip.minuten || 60) * MIN;
     const m = v ? v.ip : (await this.zustand.zaehle(IP_ZAEHLER, a, fenster)).anzahl;
@@ -328,9 +376,12 @@ export class Anmeldesperre {
   }
 
   /** Nach erfolgreicher Anmeldung: Zähler für Konto und IP zurücksetzen. */
-  async erfolg(email: string, ip: string) {
+  async erfolg(email: string, ip: string, v?: Versuch) {
     const a = norm(ip);
     await this.zustand.loesche(KONTO, `${a}|${email}`);
     await this.zustand.loesche(IP_ZAEHLER, a);
+    // Die Bremse je Konto bleibt (sonst setzte jede eigene Anmeldung den Zähler eines Angreifers zurück); nur der eben
+    // mit `versuch` vorab gezählte Versuch (#956) zählt nicht. Ohne `v` (z. B. WebDAV) wurde nichts vorab gezählt.
+    if (email && v?.gesamt) await this.zustand.erhoehe(KONTO_GESAMT_ART, email, -1);
   }
 }

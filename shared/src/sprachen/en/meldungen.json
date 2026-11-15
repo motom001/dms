@@ -29,6 +29,8 @@
   "anmeldesperre.je-konto-und-ip": "Per account and IP",
   "anmeldesperre.von-dieser-adresse-kamen": "Too many failed sign-ins came from this address. Locked until {wert}.",
   "anmeldesperre.von-dieser-adresse-kamen-2": "Too many failed sign-ins came from this address. It is locked until an administrator unlocks it.",
+  "anmeldesperre.konto-gebremst_one": "Too many failed attempts for this account came from different addresses. Signing in with a password is slowed down for one minute.",
+  "anmeldesperre.konto-gebremst_other": "Too many failed attempts for this account came from different addresses. Signing in with a password is slowed down for {anzahl} minutes.",
   "anmeldesperre.zu-viele-fehlversuche-bitte_one": "Too many failed attempts. Please try again in one minute.",
   "anmeldesperre.zu-viele-fehlversuche-bitte_other": "Too many failed attempts. Please try again in {anzahl} minutes.",
   "anmeldesperre.ohne-e-mail-adresse": "without email address",
