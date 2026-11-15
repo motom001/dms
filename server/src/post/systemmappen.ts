@@ -34,6 +34,8 @@ export interface SystemkontoEintrag {
    * lesen und dazu ins Netz (`systemkontoAuffaellig` in shared/src/systemkonten.ts).
    */
   fehler?: SystemkontoFehler; weitreichend?: boolean;
+  /** Paket ohne Code (#1181): Das Konto ist bewusst aus und steht nur für die Herkunft – kein Fehler. */
+  ohneCode?: boolean;
 }
 
 /** Die Teile, die die Systemmappen rufen: Rechteprüfung, Passung, Historie und Titel. */
@@ -181,13 +183,14 @@ export class PostSystemmappen {
     const eintrag = async (b: Benutzer, rolle: Kontorolle): Promise<SystemkontoEintrag> => {
       const paket = b.paketId ? pakete.get(b.paketId) ?? null : undefined;
       const automatisierungen = (await this.automatisierungenVon?.(b.id)) ?? [];
-      const a = systemkontoAuffaellig({ aktiv: b.aktiv, rolle, paket: paket === undefined ? undefined : paket ? paket.name : null, automatisierungen, rechte: paket?.laeufer });
+      const ohneCode = !!paket && !paket.code && !paket.laeufer;
+      const a = systemkontoAuffaellig({ aktiv: b.aktiv, rolle, paket: paket === undefined ? undefined : paket ? paket.name : null, ohneCode, automatisierungen, rechte: paket?.laeufer });
       return {
         id: b.id, name: b.name, rolle, aktiv: b.aktiv,
         ...(b.systemkonto ? { systemkonto: b.systemkonto } : {}),
         ...(b.paketId ? { paketId: b.paketId, paket: paket?.name ?? null } : {}),
         automatisierungen,
-        ...(a.fehler ? { fehler: a.fehler } : {}), ...(a.weitreichend ? { weitreichend: true } : {}),
+        ...(a.fehler ? { fehler: a.fehler } : {}), ...(a.weitreichend ? { weitreichend: true } : {}), ...(ohneCode ? { ohneCode: true } : {}),
       };
     };
     return [...await Promise.all(system.map((b) => eintrag(b, 'systemkonto'))), ...await Promise.all(dienst.map((b) => eintrag(b, 'paket')))];

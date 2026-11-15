@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { Link } from '../ort';
 import type { Systemkonto } from '../api/konto';
 import { Knopf } from '../bausteine';
 import { Symbol } from '../Symbol';
@@ -8,10 +9,12 @@ import { systemkontenKopf } from '../../../shared/src/systemkonten';
 /**
  * Systemkonten als eingeklappte Gruppe oben (#817): Kopfzeile mit Anzahl und Zusammensetzung, Auffälligkeiten auch
  * eingeklappt („1 mit Fehler“, „1 mit weitreichenden Rechten“). Dasselbe Muster in Werkbank → Benutzer und im
- * Testlauf (#710). Wer aufklappt, entscheidet der Aufrufer (z. B. je Person gemerkt).
+ * Testlauf (#710). Wer aufklappt, entscheidet der Aufrufer (z. B. je Person gemerkt). `zumFehler` (#1181): Link unter
+ * der Kopfzeile direkt zum ersten Konto mit Fehler, auch eingeklappt.
  */
-export function SystemkontenGruppe({ liste, auf, setzeAuf, id, kinder }: { liste: Systemkonto[]; auf: boolean; setzeAuf: (auf: boolean) => void; id: string; kinder: ReactNode }) {
+export function SystemkontenGruppe({ liste, auf, setzeAuf, id, kinder, zumFehler }: { liste: Systemkonto[]; auf: boolean; setzeAuf: (auf: boolean) => void; id: string; kinder: ReactNode; zumFehler?: (k: Systemkonto) => string }) {
   const k = systemkontenKopf(liste);
+  const mitFehler = liste.find((x) => x.fehler);
   const teile = [
     ...(k.pakete ? [t('konten.systemkonten.gruppe.pakete', { anzahl: k.pakete })] : []),
     ...(k.automatisierung ? [t('konten.systemkonten.gruppe.automatisierung', { anzahl: k.automatisierung })] : []),
@@ -26,6 +29,7 @@ export function SystemkontenGruppe({ liste, auf, setzeAuf, id, kinder }: { liste
         {k.fehler > 0 && <span className="chip schlecht klein"><Symbol name="warnung" /> {t('konten.systemkonten.gruppe.fehler', { anzahl: k.fehler })}</span>}
         {k.weitreichend > 0 && <span className="chip warn klein"><Symbol name="schloss" /> {t('konten.systemkonten.gruppe.weitreichend', { anzahl: k.weitreichend })}</span>}
       </Knopf>
+      {zumFehler && mitFehler && <p className="klein systemkonten-zumfehler"><Link to={zumFehler(mitFehler)} className="verweis">{t('konten.systemkonten.gruppe.zum-fehler', { name: mitFehler.name })}</Link></p>}
       {auf && <div id={id} className="aufklappinhalt">{kinder}</div>}
     </section>
   );

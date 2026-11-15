@@ -258,3 +258,29 @@ rauchtest('Abmelden', { als: LENA }, async (s) => {
   await s.goto(BASIS + '/ablage/start');
   await s.getByRole('heading', { name: 'Anmelden' }).waitFor();
 });
+
+// Systemkonto mit Fehler (#1181): „Zum Konto mit Fehler“ unter der eingeklappten Gruppe führt zum Konto; dort der Grund
+// und der Weg zum Paket. Der Test ergänzt die Antwort um ein Paket-Konto mit Fehler (kein echtes Paket nötig).
+rauchtest('Werkbank: Systemkonto mit Fehler – Link, Grund und Weg zum Paket, axe hell und dunkel (#1181)', { als: LENA, timeout: 90_000 }, async (s) => {
+  const konto = { id: '00000000-0000-4000-8000-0000000011a1', name: 'Paket Werkzeuge', rolle: 'paket', aktiv: false, paketId: 'werkzeuge', paket: 'Werkzeuge', automatisierungen: [], fehler: 'deaktiviert' };
+  await s.route(/\/api\/benutzer\/systemkonten$/, async (route) => {
+    const r = await route.fetch();
+    await route.fulfill({ response: r, json: [...await r.json(), konto] });
+  });
+  await s.goto(BASIS + '/ablage/start');
+  await verwalten(s);
+  await s.goto(BASIS + '/werkbank/benutzer');
+  await s.getByRole('link', { name: 'Zum Konto mit Fehler: Paket Werkzeuge' }).click();
+  await s.waitForURL(/\/werkbank\/benutzer\/konto-/);
+  const bearbeitung = s.getByRole('region', { name: 'Bearbeitung' });
+  await bearbeitung.getByText('Ablago schaltet es beim nächsten Abgleich der Pakete').waitFor();
+  assert.match(await bearbeitung.getByRole('link', { name: 'Zum Paket' }).getAttribute('href'), /\/werkbank\/pakete\/werkzeuge$/);
+  const funde = [];
+  await s.mouse.move(0, 0);
+  for (const schema of ['light', 'dark']) {
+    await s.emulateMedia({ colorScheme: schema });
+    await s.waitForFunction(() => document.getAnimations().every((a) => a.playState !== 'running'));
+    for (const v of await axePruefen(s, ['[aria-label="Bearbeitung"]', '.systemkontengruppe > .systemkonten-zumfehler'])) funde.push(`${schema}: ${v}`);
+  }
+  assert.deepEqual(funde, [], `axe meldet Verstöße:\n${funde.join('\n')}`);
+});

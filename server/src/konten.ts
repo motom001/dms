@@ -593,12 +593,20 @@ export class Konten {
     return { benutzer: b, sitzung: s };
   }
 
-  /** Dienstkonto eines Pakets mit Code (#338) anlegen bzw. wieder einschalten; meldet sich nie an. */
-  async dienstkonto(paketId: string, name: string): Promise<Benutzer> {
+  /**
+   * Dienstkonto eines Pakets mit Code (#338) anlegen bzw. wieder einschalten; meldet sich nie an. `aktiv: false` für
+   * Pakete ohne Code (#1038): Das Konto steht nur für die Herkunft und bleibt aus. Ein ausgeschaltetes Konto eines
+   * installierten Pakets mit Code wird so beim Installieren und beim Abgleich (Start) wieder eingeschaltet (#1181).
+   */
+  async dienstkonto(paketId: string, name: string, aktiv = true): Promise<Benutzer> {
     const anzeige = `Paket ${name}`.slice(0, 120);
     const da = await this.repo.dienstkonto(paketId);
-    if (!da) return this.repo.legeDienstkontoAn({ id: randomUUID(), paketId, name: anzeige });
-    if (!da.aktiv || da.name !== anzeige) return this.repo.aendereBenutzer(da.id, { aktiv: true, name: anzeige });
+    if (!da) {
+      const neu = await this.repo.legeDienstkontoAn({ id: randomUUID(), paketId, name: anzeige });
+      return aktiv ? neu : this.repo.aendereBenutzer(neu.id, { aktiv: false });
+    }
+    if (aktiv && !da.aktiv) log.info('Dienstkonto eines installierten Pakets wieder eingeschaltet', { paket: paketId, konto: da.id });
+    if (da.aktiv !== aktiv || da.name !== anzeige) return this.repo.aendereBenutzer(da.id, { aktiv, name: anzeige });
     return da;
   }
 
