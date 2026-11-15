@@ -40,7 +40,7 @@
     },
     // Eigenes Lockfile, kein npm-Workspace (#1272): Playwright für Rauchtests und Handbuchbilder.
     "web/rauchtest": {
-      "entry": ["rauchtest.mjs", "bereiche/*.mjs", "playwright.mjs"],
+      "entry": ["rauchtest.mjs", "bereiche/*.mjs", "messen/*.mjs", "playwright.mjs"],
       "project": ["**/*.mjs"]
     }
   },
