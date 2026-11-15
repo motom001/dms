@@ -10,11 +10,11 @@
  *   bekannten (oder als Systemkonto) mit dem Empfänger; am Datum entsteht dieselbe Aufgabe.
  */
 import assert from 'node:assert/strict';
-import { copyFileSync, mkdtempSync, readdirSync, rmSync } from 'node:fs';
+import { copyFileSync, mkdtempSync, readdirSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { after, describe, it } from 'node:test';
-import { bereinigeVorlage, fragtDatum, kernVorlage, laeuftAm, vorlageKurz, vorlagenEingabeFehler, vorlagenProbleme, vorschlagDatum } from '../../shared/src/ablaufvorlagen';
+import { ausprobierTypen, bereinigeVorlage, fragtDatum, kernVorlage, laeuftAm, vorlageKurz, vorlagenEingabeFehler, vorlagenProbleme, vorschlagDatum } from '../../shared/src/ablaufvorlagen';
 import { datumDe } from '../../shared/src/fristen';
 import { NICHTS, type Regelwerk } from '../../shared/src/rechte';
 import { heuteIn, verschiebe } from '../../shared/src/sichten';
@@ -29,6 +29,7 @@ import { Konten } from '../src/konten';
 import { speicherKontoRepo, type KontoRepo } from '../src/konto-repo';
 import { liesPaket } from '../src/pakete';
 import type { Repo } from '../src/repo';
+import type { Mappentyp } from '../../shared/src/model';
 import { speicherRepo } from '../src/repo-speicher';
 import { eigeneDatenbank, MIGRATIONEN } from './hilfe-db';
 
@@ -271,6 +272,19 @@ describe('Automatisierungsvorlagen: Prüfen (#1044, Sicherheit)', () => {
     assert.ok(vorlagenProbleme(d, []).length, 'am Datum ohne Frage „Datum“');
     assert.deepEqual(vorlagenProbleme(kernVorlage('erinnern'), []), []);
     assert.deepEqual(vorlagenProbleme(kernVorlage('aufgabe_vergeben'), []), []);
+  });
+
+  it('Ausprobieren (#1179): Mappenwahl über alle Typen, für die die Vorlage gilt – nicht nur den ersten', () => {
+    const typ = (id: string, system?: string) => ({ id, name: id, felder: [], ...(system ? { system } : {}) }) as unknown as Mappentyp;
+    const typen = [typ('benutzer', 'benutzer'), typ('rolle', 'rolle'), typ('post', 'post'), typ('ablageort'), typ('vertrag'), typ('auto')];
+    // Keine Typen gewählt: alle eigenen und aus Paketen, von den eingebauten nur Post.
+    assert.deepEqual(ausprobierTypen({ typen: [] }, typen).map((x) => x.id), ['post', 'ablageort', 'vertrag', 'auto']);
+    // Mehrere gewählt: genau diese.
+    assert.deepEqual(ausprobierTypen({ typen: ['vertrag', 'auto'] }, typen).map((x) => x.id), ['vertrag', 'auto']);
+    const quelle = readFileSync(new URL('../../web/src/werkbank/Ablaufvorlagen.tsx', import.meta.url), 'utf8');
+    const teil = quelle.slice(quelle.indexOf('function Ausprobieren('));
+    assert.match(teil, /const ziele = ausprobierTypen\(v, d\.typen\)/);
+    assert.match(teil, /<MappenWahl [^>]*ziele=\{ziele\}/);
   });
 
   it('Datum als Vorschlag (#1180): erlaubt bei „In …“, nicht bei „Sofort“; Vorbelegung und Lauftag', () => {

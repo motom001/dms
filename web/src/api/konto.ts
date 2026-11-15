@@ -104,7 +104,7 @@ export interface Zusammenfassung {
   standard: { uhrzeit: string; tage: number[]; bundesland: string | null }; versand: boolean;
 }
 /** Ein Konto, das kein Mensch ist (#673): Systemkonto „Automatisierung“ oder Dienstkonto eines Pakets. */
-export interface Systemkonto { id: string; name: string; rolle: 'systemkonto' | 'paket'; aktiv: boolean; systemkonto?: string; paketId?: string; paket?: string | null; automatisierungen: Array<{ id: string; name: string; angehalten?: boolean }>; /** Auffälligkeiten (#817) */ fehler?: SystemkontoFehler; weitreichend?: boolean }
+export interface Systemkonto { id: string; name: string; rolle: 'systemkonto' | 'paket'; aktiv: boolean; systemkonto?: string; paketId?: string; paket?: string | null; automatisierungen: Array<{ id: string; name: string; angehalten?: boolean }>; /** Auffälligkeiten (#817) */ fehler?: SystemkontoFehler; weitreichend?: boolean; /** Paket ohne Code (#1181): Konto bewusst aus */ ohneCode?: boolean }
 export interface LinkErgebnis { benutzer: Benutzer; mailVerschickt: boolean; link?: string; mailFehler?: string }
 export type RechtStufe = 'immer' | 'nie' | 'teils';
 /** Exporte aus dem Sicherungsordner verschoben (#797), bis ein Administrator den Hinweis gelesen hat. */

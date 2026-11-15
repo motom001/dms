@@ -103,6 +103,16 @@ This is how the processes work together:
 
 **What applies per process:** `DMS_MAX_ANFRAGEN` and `DMS_ARBEITER` apply **per process**. The default number of workers is divided among the processes (at least 1 per process) so that together no more threads compute than with one process. **Workbench → system health** shows the values with "per process, together …" or, for the connections, the division ("together for 2 processes: leader 9, each further one 5") and below them one line per process with memory, computing time, waiting time and running requests. Where things get stuck under load – waiting for connections, locks, computing time of PostgreSQL and Ablago, restarts and memory per process – is shown by the [load test](lasttest.md) for each run.
 
+### Stopping and restarting { #beenden }
+
+With **SIGTERM** or **SIGINT** (e.g. `docker stop`, Ctrl+C) Ablago shuts down in an orderly way: open requests finish, background work stops, database connections close. **All** of its processes end (#1203):
+
+- The **package runner** and, with `DMS_PROZESSE`, the **further processes** end by themselves as soon as the connection to their parent process breaks – even if it crashes or is killed hard.
+- **Programs** Ablago starts (`pdftoppm`, `qpdf`, Ghostscript, text recognition …) are ended together with Ablago, after an orderly shutdown as well as after a crash.
+- Only a **SIGKILL** (`kill -9`) gives Ablago no time for this; in a container everything ends with the container anyway.
+
+**`docker stop`:** Docker sends SIGTERM and SIGKILL after 10 seconds (default). In the image `dms`, Node.js receives the signal itself (process 1); in `dms-komplett`, `tini` passes it to the start script, which stops Ablago first and then PostgreSQL. With several processes the main process waits up to 20 seconds for them – if you want to be sure of an orderly shutdown, set `stop_grace_period: 30s` in the Compose file.
+
 ## Interface {#schnittstelle}
 
 `/api/v1` for other programs (API keys), description under `/api/openapi.json`. The user interface itself uses internal addresses under `/api/…` that may change.

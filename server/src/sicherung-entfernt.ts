@@ -171,6 +171,11 @@ export class EntfernteSicherungen {
     await this.s.einstellungen.schreibe('sicherung_entfernt', Object.fromEntries(behalten));
   }
 
+  /** Ist eine schon lokal entfernte Sicherung bei einem dieser Pakete außer Haus angekommen (#1194)? */
+  async angekommen(pakete: Set<string>): Promise<boolean> {
+    return Object.values(await this.merkliste()).some((x) => Object.keys(x).some((p) => pakete.has(p)));
+  }
+
   /** Paket entfernt oder Sicherung wieder lokal: aus der Merkliste nehmen. */
   private async vergiss(name: string) {
     const alle = await this.merkliste();

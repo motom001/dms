@@ -53,7 +53,7 @@ Der **Schalter** oben im Editor (aus) nimmt die Vorlage aus dem Menü „Mappe�
 
 Darunter:
 
-- **Ausprobieren:** wähle eine Mappe und klicke auf **Ausprobieren**. Es öffnet sich **derselbe kleine Dialog wie an der Mappe** – mit genau den Fragen der Vorlage, gleicher Vorbelegung (z. B. das vorgeschlagene Datum), gleicher Beschriftung und Reihenfolge –, oben gekennzeichnet mit **„Probe – es wird nichts angelegt.“** Nach dem Bestätigen zeigt Ablago, was die Empfänger sähen: je Empfänger die Aufgabe (fällig wann) bzw. die Benachrichtigung mit Mappe und Text, und wer die Mappe nicht oder nicht ganz sehen dürfte; unter **Zusammenfassung** dieselben Zeilen kurz. Ablago probiert mit deinen Rechten als Person. Danach **Nochmal** oder **Vorlage anpassen**. Es entsteht nichts.
+- **Ausprobieren:** wähle eine Mappe und klicke auf **Ausprobieren**. Zur Wahl stehen Mappen aller Typen, für die die Vorlage gilt – ohne gewählte Mappentypen alle eigenen Typen, die aus Paketen und Post. Es öffnet sich **derselbe kleine Dialog wie an der Mappe** – mit genau den Fragen der Vorlage, gleicher Vorbelegung (z. B. das vorgeschlagene Datum), gleicher Beschriftung und Reihenfolge –, oben gekennzeichnet mit **„Probe – es wird nichts angelegt.“** Nach dem Bestätigen zeigt Ablago, was die Empfänger sähen: je Empfänger die Aufgabe (fällig wann) bzw. die Benachrichtigung mit Mappe und Text, und wer die Mappe nicht oder nicht ganz sehen dürfte; unter **Zusammenfassung** dieselben Zeilen kurz. Ablago probiert mit deinen Rechten als Person. Danach **Nochmal** oder **Vorlage anpassen**. Es entsteht nichts.
 
   ![Ausprobieren: „Erinnere mich in 14 Tagen“ am Stromvertrag – die Aufgabe, wie der Empfänger sie sähe, fällig in 14 Tagen](bilder/werkbank-automatisierungsvorlage-probe.png)
 

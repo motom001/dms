@@ -239,6 +239,19 @@ function feldProbleme(feld: string, inFrage: Mappentyp[], typen: Mappentyp[]): s
   });
 }
 
+/** Mappentypen, die man für eine Vorlage wählen kann: eigene und aus Paketen, von den eingebauten nur Post. */
+export function vorlagenTypen(typen: Mappentyp[]): Mappentyp[] {
+  return typen.filter((x) => !x.system || x.system === 'post');
+}
+
+/**
+ * Mappentypen zum Ausprobieren (#1179): genau die gewählten, ohne Wahl alle wählbaren ({@link vorlagenTypen}) – nicht nur
+ * der erste.
+ */
+export function ausprobierTypen(d: Pick<AblaufvorlageDaten, 'typen'>, typen: Mappentyp[]): Mappentyp[] {
+  return d.typen.length ? typen.filter((x) => d.typen.includes(x.id)) : vorlagenTypen(typen);
+}
+
 /** Was nicht (mehr) passt – leer, wenn man die Vorlage anwenden kann. `typen`: alle Mappentypen der Ablage. */
 export function vorlagenProbleme(d: AblaufvorlageDaten, typen: Mappentyp[]): string[] {
   const p: string[] = [];

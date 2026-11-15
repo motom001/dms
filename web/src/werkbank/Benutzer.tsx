@@ -89,7 +89,7 @@ function SystemkontenListe({ offen }: { offen?: string }) {
   if (!liste.length) return <p className="leise klein">{t('konten.systemkonten.leer')} <Hilfe ort="werkbank.systemkonten" /></p>;
   const auf = d.einstellungen[SYSTEMKONTEN_AUF] === true || !!offen?.startsWith('konto-');
   return (
-    <SystemkontenGruppe liste={liste} auf={auf} setzeAuf={(x) => d.setzeEinstellung(SYSTEMKONTEN_AUF, x || null)} id="benutzer-systemkonten" kinder={<>
+    <SystemkontenGruppe liste={liste} auf={auf} setzeAuf={(x) => d.setzeEinstellung(SYSTEMKONTEN_AUF, x || null)} id="benutzer-systemkonten" zumFehler={(k) => `/werkbank/benutzer/konto-${k.id}`} kinder={<>
       <p className="leise klein">{t('konten.systemkonten.beschreibung')} <Hilfe ort="werkbank.systemkonten" /></p>
       <ul className="mappenliste">
         {liste.map((k) => (
@@ -118,7 +118,10 @@ export function SystemkontoDetail({ id }: { id: string }) {
       <p className="leise">{t('konten.systemkonten.beschreibung')}</p>
       {k.rolle === 'paket' && <p>{k.paket ? t('konten.systemkonten.paket', { paket: k.paket }) : t('konten.systemkonten.paketEntfernt')}</p>}
       <p>{t('konten.systemkonten.rechte', { rolle })}</p>
-      {k.fehler && <div className="hinweis schlecht"><p><strong>{t.frei(`konten.systemkonten.fehler.${k.fehler}`)}</strong>{k.fehler === 'angehalten' && <> {t('konten.systemkonten.fehler.angehalten.text')}</>}</p></div>}
+      {/* #1181: Paket ohne Code – das Konto ist bewusst aus; „deaktiviert“ heilt der Abgleich, sonst Neuinstallation mit Rechte-Rückfrage. */}
+      {k.ohneCode && <p className="leise">{t('konten.systemkonten.ohne-code')}</p>}
+      {k.fehler && <div className="hinweis schlecht"><p><strong>{t.frei(`konten.systemkonten.fehler.${k.fehler}`)}</strong> {k.fehler === 'angehalten' ? t('konten.systemkonten.fehler.angehalten.text') : t('konten.systemkonten.fehler.deaktiviert.text')}</p>
+        {k.fehler === 'deaktiviert' && k.paketId && <KnopfLink to={`/werkbank/pakete/${k.paketId}`} art="neben">{t('konten.systemkonten.zum-paket')}</KnopfLink>}</div>}
       {k.weitreichend && <div className="hinweis warn"><p><strong>{t('konten.systemkonten.weitreichend')}:</strong> {t('konten.systemkonten.weitreichend.text')}</p>{k.paketId && <Link to={`/werkbank/pakete/${k.paketId}`} className="knopf klein">{t('konten.systemkonten.zum-paket')}</Link>}</div>}
       {k.rolle === 'systemkonto' && <p>{k.automatisierungen.length ? t('konten.systemkonten.automatisierungen', { liste: k.automatisierungen.map((a) => a.name).join(', ') }) : t('konten.systemkonten.keineAutomatisierungen')}</p>}
     </div>

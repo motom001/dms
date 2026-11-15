@@ -97,6 +97,8 @@ export function sicherungsHinweise(z: SicherungsZustand, mitNotfallblatt: boolea
   else if (z.ort.gleichePlatte) h.push({ schluessel: 'sicherung.gleiche-platte', art: 'info', text: <>{tn('werkbank.sicherung.faellt-sie-aus-sind', { b: <strong>{t('werkbank.sicherung.die-sicherungen-liegen-auf')}</strong> })}</> });
   // Sicherung außer Haus (#585): fehlgeschlagen bzw. mehr als 2 Tage im Rückstand.
   const x = z.extern;
+  // #1194: „Lokal nur die neueste“ ist gesetzt, wirkt aber nicht (Ziel weg, Fehler, Rückstand) – ältere bleiben wieder lokal.
+  if (z.nurNeueste?.gesetzt && !z.nurNeueste.wirksam) h.push({ schluessel: 'sicherung.nur-neueste', art: 'warn', text: <><strong>{t('werkbank.sicherung.extern.nurneueste.hinweis')}</strong> {t('werkbank.sicherung.extern.nurneueste.wirkt-nicht')}</> });
   if (x?.fehler) h.push({ schluessel: 'sicherung.extern-fehler', datum: x.fehler.beginn, art: 'schlecht', text: <><strong>{t('werkbank.sicherung.extern.hinweis.fehler', { datum: zeit(x.fehler.beginn) })}</strong> {zielName(x, x.fehler.paket)}: {x.fehler.stand.grund ?? '–'}</> });
   else if (x?.zuAlt) h.push({ schluessel: 'sicherung.extern-alt', art: 'warn', text: <><strong>{t('werkbank.sicherung.extern.hinweis.alt')}</strong> {x.letzte ? t('werkbank.sicherung.extern.hinweis.letzte', { datum: zeit(x.letzte.beginn) }) : t('werkbank.sicherung.extern.hinweis.nie')}</> });
   return h;
@@ -192,7 +194,7 @@ export function SicherungPanel({ z }: { z: SicherungZustand }) {
 
       {s.zustand.probe && <Probe stand={s.zustand.probe} lauf={s.probe ?? null} sicherungen={s.liste.some((x) => x.meta)} gesperrt={laeuft} neuLaden={() => void z.laden()} />}
 
-      <Zeitplan key={JSON.stringify(s.plan)} plan={s.plan} notfallblatt={s.zustand.notfallblatt.aktuell} mitNotfallblatt={mitNotfallblatt} gespeichert={() => void z.laden()} />
+      <Zeitplan key={JSON.stringify(s.plan)} plan={s.plan} nurNeuesteMoeglich={!!s.zustand.nurNeueste?.moeglich} notfallblatt={s.zustand.notfallblatt.aktuell} mitNotfallblatt={mitNotfallblatt} gespeichert={() => void z.laden()} />
 
       <section className="blatt" id="speicher">
         <h2 className="h3">{t('werkbank.sicherung.speicherplatz')} <Hilfe ort="sicherung.speicher" /></h2>
@@ -221,12 +223,14 @@ export function SicherungPanel({ z }: { z: SicherungZustand }) {
   );
 }
 
-function Zeitplan({ plan, notfallblatt, mitNotfallblatt, gespeichert }: { plan: SicherungsPlan; notfallblatt: boolean; mitNotfallblatt: boolean; gespeichert(): void }) {
+function Zeitplan({ plan, notfallblatt, mitNotfallblatt, nurNeuesteMoeglich, gespeichert }: { plan: SicherungsPlan; notfallblatt: boolean; mitNotfallblatt: boolean; nurNeuesteMoeglich: boolean; gespeichert(): void }) {
   const [p, setP] = useState(plan);
   const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
   const [sendet, setSendet] = useState(false);
   const ent = useEntwurf(plan, p, { zuruecksetzen: () => { setP(plan); setMeldung(undefined); } });
   const a = p.aufbewahrung;
+  // #1194: Nur mit erfolgreicher Kopie außer Haus wählbar und wirksam; ein schon gesetzter Haken lässt sich immer abwählen.
+  const nurNeueste = !!p.nurNeueste && nurNeuesteMoeglich;
   const setA = (k: keyof typeof a, v: string) => setP({ ...p, aufbewahrung: { ...a, [k]: Math.max(0, Math.trunc(Number(v) || 0)) } });
   async function speichern() {
     setMeldung(undefined); setSendet(true);
@@ -254,18 +258,21 @@ function Zeitplan({ plan, notfallblatt, mitNotfallblatt, gespeichert }: { plan: 
         </Feld>
       </div>
       <p className="leise klein">{t('werkbank.sicherung.aufbewahrt-werden-die-neuesten')}</p>
-      <HakenFeld beschriftung={t('werkbank.sicherung.extern.nurneueste')} hinweis={t('werkbank.sicherung.extern.nurneueste.hilfe')}>
-        <input type="checkbox" checked={!!p.nurNeueste} onChange={(e) => setP({ ...p, nurNeueste: e.target.checked })} />
+      <HakenFeld beschriftung={t('werkbank.sicherung.extern.nurneueste')} hinweis={nurNeuesteMoeglich ? t('werkbank.sicherung.extern.nurneueste.hilfe')
+        : [t('werkbank.sicherung.extern.nurneueste.hilfe'), <>{t('werkbank.sicherung.extern.nurneueste.gesperrt')} <a href="#ausser-haus" className="verweis">{t('werkbank.sicherung.extern.nurneueste.dorthin')}</a></>]}>
+        <input type="checkbox" checked={!!p.nurNeueste} disabled={!nurNeuesteMoeglich && !p.nurNeueste} onChange={(e) => setP({ ...p, nurNeueste: e.target.checked })} />
       </HakenFeld>
+      {nurNeueste && <p className="leise klein">{t('werkbank.sicherung.extern.nurneueste.wirkt')}</p>}
+      {!!p.nurNeueste && !nurNeuesteMoeglich && <div className="hinweis warn"><p>{t('werkbank.sicherung.extern.nurneueste.wirkt-nicht')}</p></div>}
       <div className="raster">
         {p.haeufigkeit === 'taeglich' && <Feld beschriftung={t('werkbank.sicherung.taegliche')}>
-          <input type="number" min={0} max={366} value={a.taeglich} disabled={!!p.nurNeueste} onChange={(e) => setA('taeglich', e.target.value)} />
+          <input type="number" min={0} max={366} value={a.taeglich} disabled={nurNeueste} onChange={(e) => setA('taeglich', e.target.value)} />
         </Feld>}
         <Feld beschriftung={t('werkbank.sicherung.woechentliche')}>
-          <input type="number" min={0} max={260} value={a.woechentlich} disabled={!!p.nurNeueste} onChange={(e) => setA('woechentlich', e.target.value)} />
+          <input type="number" min={0} max={260} value={a.woechentlich} disabled={nurNeueste} onChange={(e) => setA('woechentlich', e.target.value)} />
         </Feld>
         <Feld beschriftung={t('werkbank.sicherung.monatliche')}>
-          <input type="number" min={0} max={240} value={a.monatlich} disabled={!!p.nurNeueste} onChange={(e) => setA('monatlich', e.target.value)} />
+          <input type="number" min={0} max={240} value={a.monatlich} disabled={nurNeueste} onChange={(e) => setA('monatlich', e.target.value)} />
         </Feld>
         <Feld beschriftung={t('werkbank.sicherung.mindest-speicherplatz-in-gb')} hinweis={t('werkbank.sicherung.darunter-beginnt-keine-sicherung')}>
           <input type="number" min={0} value={p.mindestFreiGB} onChange={(e) => setP({ ...p, mindestFreiGB: Math.max(0, Math.trunc(Number(e.target.value) || 0)) })} />

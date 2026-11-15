@@ -1529,6 +1529,7 @@
   "sicherung.es-laeuft-bereits-bitte": "Es läuft bereits: {titel}. Bitte warten, bis das fertig ist.",
   "sicherung.gerade-laeuft-eine-wiederherstellung": "Gerade läuft eine Wiederherstellung oder Probe. Bitte warten, bis sie fertig ist.",
   "sicherung.die-automatische-sicherung-laesst": "Die automatische Sicherung lässt sich erst einschalten, wenn du das Notfallblatt heruntergeladen hast – denn nur mit dem Schlüssel darauf lässt sich eine Sicherung öffnen.",
+  "sicherung.nur-neueste-ohne-ausser-haus": "„Lokal nur die neueste behalten“ geht erst, wenn eine Sicherung außer Haus eingerichtet ist und ihre letzte Kopie erfolgreich war – sonst gäbe es keine ältere Sicherung mehr.",
   "sicherung.die-uhrzeit-bitte-als-2": "Die Uhrzeit bitte als HH:MM angeben, z. B. 04:00.",
   "sicherung.wochentag-1-montag-bis": "Wochentag: 1 (Montag) bis 7 (Sonntag).",
   "sicherung.ungueltiger-name-einer-sicherung": "Ungültiger Name einer Sicherung.",

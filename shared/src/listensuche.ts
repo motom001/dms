@@ -160,6 +160,11 @@ export function durchsuche<T>(eintraege: readonly T[], quellen: (e: T) => Fundqu
 /** Wert des Filters „Paket“: alle, nur eigene (ohne Paket) oder die Id eines Pakets. */
 export const ALLE_HERKUENFTE = '';
 export const EIGENE = '-';
+/**
+ * Herkunft fest eingebauter Einträge (#1171), z. B. der Mappentypen Benutzer, Post und Rolle: ein eigener Wert im Filter
+ * („Ablago (eingebaut)“), damit sie nicht unter „Eigene (ohne Paket)“ stehen. Derselbe Wert wie bei Rundgängen und Tipps.
+ */
+export const EINGEBAUT = 'ablago';
 
 /** Passt die Herkunft eines Eintrags (Paket-Id oder null) zum Filter? */
 export const herkunftPasst = (filter: string, herkunft: string | null | undefined): boolean =>

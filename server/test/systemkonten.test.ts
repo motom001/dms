@@ -221,6 +221,34 @@ describe('Systemkonten (#673)', () => {
     assert.deepEqual(systemkontenKopf(liste), { anzahl: 6, pakete: 5, automatisierung: 1, fehler: 1, weitreichend: 2 });
   });
 
+  it('#1181: Konto eines Pakets ohne Code ist bewusst aus – kein Fehler; Pakete mit Code werden wieder eingeschaltet', async () => {
+    const { repo, konten, admin, rufe } = await aufbau();
+    const paket = (id: string, name: string, code: boolean) => repo.speicherePaket({
+      id, name, version: '1.0.0', beschreibung: '', lizenz: 'Apache-2.0', autor: { name: 'Lena', github: 'lena' }, herkunft: 'katalog' as never,
+      installiert: new Date().toISOString(), installiertVon: admin.id, aktualisiert: null, aktualisiertVon: null,
+      typen: {}, sichten: {}, abhaengigkeiten: {}, code,
+      ...(code ? { laeufer: { sprache: 'wasm', ereignisse: [], rechte: { lesen: [], schreiben: [], dokumente: 'keine' }, netz: [] } as never } : {}),
+    });
+    // Datenpaket wie „Fahrzeuge“: Ersteller der Vorgaben ist sein Konto, das sich nie anmeldet (#1038).
+    await paket('fahrzeuge', 'Fahrzeuge', false);
+    const f = await konten.dienstkonto('fahrzeuge', 'Fahrzeuge', false);
+    assert.equal(f.aktiv, false);
+    // Paket mit Code: entfernt (Konto aus), neu installiert bzw. nach einer Wiederherstellung abgeglichen → wieder aktiv.
+    await paket('mitcode', 'Mit Code', true);
+    await konten.dienstkonto('mitcode', 'Mit Code');
+    await konten.dienstkontoAus('mitcode');
+    assert.equal((await konten.dienstkonto('mitcode', 'Mit Code')).aktiv, true);
+    type K = { name: string; fehler?: SystemkontoFehler; ohneCode?: boolean };
+    const liste = (await rufe('GET', '/api/benutzer/systemkonten')).body as K[];
+    const je = (n: string) => liste.find((k) => k.name === `Paket ${n}`)!;
+    assert.equal(je('Fahrzeuge').fehler, undefined, 'Paket ohne Code: kein Fehler');
+    assert.equal(je('Fahrzeuge').ohneCode, true);
+    assert.equal(je('Mit Code').fehler, undefined);
+    assert.equal(systemkontenKopf(liste as never).fehler, 0);
+    assert.equal(systemkontoAuffaellig({ aktiv: false, rolle: 'paket', paket: 'Fahrzeuge', ohneCode: true, automatisierungen: [] }).fehler, null);
+    assert.equal(systemkontoAuffaellig({ aktiv: false, rolle: 'paket', paket: 'Mit Code', automatisierungen: [] }).fehler, 'deaktiviert');
+  });
+
   it('Auffälligkeiten (#817): angehaltene Automatisierung, deaktiviertes Systemkonto', () => {
     const basis = { aktiv: true, rolle: 'systemkonto' as const, automatisierungen: [{}] };
     assert.deepEqual(systemkontoAuffaellig(basis), { fehler: null, weitreichend: false });

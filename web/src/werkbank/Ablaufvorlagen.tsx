@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { feldLabel } from '../../../shared/src/beschriftung';
 import {
-  empfaengerText, FRAGEN, fragtDatum, istKernVorlage, karteText, VORLAGEN_GRENZEN, VORLAGEN_PLATZHALTER, VORLAGEN_REIHENFOLGE, vorlagenProbleme, wannText,
+  ausprobierTypen, empfaengerText, FRAGEN, fragtDatum, istKernVorlage, karteText, VORLAGEN_GRENZEN, VORLAGEN_PLATZHALTER, VORLAGEN_REIHENFOLGE, vorlagenProbleme, vorlagenTypen, wannText,
   type AblaufProbe, type AblaufVerlauf, type AblaufvorlageAnsicht, type AblaufvorlageDaten, type AblaufWann, type Frage, type MappenAblauf, type VorlagenEmpfaenger, type VorlagenKarte,
 } from '../../../shared/src/ablaufvorlagen';
 import { einzigesZiel, jedeMappe, zieleVon, type Mappentyp } from '../../../shared/src/model';
@@ -252,7 +252,7 @@ export function AblaufvorlageEditor({ z, kennung }: { z: AblaufvorlagenZustand; 
   const ent = useEntwurf(gespeichert, e, { neu, zuruecksetzen: () => setE(kopie(gespeichert)), liste: '/werkbank/ablaufvorlagen' });
   if (!z.stand) return <p className="leise">{t('automatisierung.ui.lade')}</p>;
   if (!neu && !v) return <div className="platzhalter"><p>{t('automatisierung.vorlage.fehlt')}</p></div>;
-  const typen = d.typen.filter((x) => !x.system || x.system === 'post');
+  const typen = vorlagenTypen(d.typen);
   // Fragen folgen dem Inhalt: „Datum“ immer bei „am gewählten Datum“, nie bei „sofort“, bei „In …“ nach Wahl (#1180).
   const fragen = (x: Entwurf): Frage[] => FRAGEN.filter((f) => (f === 'datum' ? fragtDatum(x) : x.fragen.includes(f)));
   const probleme = vorlagenProbleme({ ...e, fragen: fragen(e) }, d.typen);
@@ -324,7 +324,9 @@ export function AblaufvorlageEditor({ z, kennung }: { z: AblaufvorlagenZustand; 
  */
 function Ausprobieren({ v }: { v: AblaufvorlageAnsicht }) {
   const d = useDaten();
-  const typ = d.typen.find((x) => (v.typen.length ? x.id === v.typen[0] : !x.system)) ?? d.typen[0];
+  // #1179: Mappen aller Typen, für die die Vorlage gilt – nicht nur des ersten.
+  const ziele = ausprobierTypen(v, d.typen);
+  const typ = ziele[0];
   const [mappe, setMappe] = useState('');
   const [bekannt, setBekannt] = useState<Bezuege>({});
   const [schritt, setSchritt] = useState<'wahl' | 'dialog' | 'ergebnis'>('wahl');
@@ -337,7 +339,7 @@ function Ausprobieren({ v }: { v: AblaufvorlageAnsicht }) {
       <h2 className="h3">{t('automatisierung.vorlage.ui.ausprobieren')}</h2>
       <p className="leise klein">{t('automatisierung.vorlage.ui.ausprobieren.text')}</p>
       {typ && <Feld beschriftung={t('automatisierung.vorlage.ui.mappe')} id="vorlage-mappe">
-        {(x) => <MappenWahl id={x.id} ziel={typ} mehrfach={false} wert={mappe || undefined} bekannt={bekannt} ohneAnlegen merke={(id, y) => setBekannt((b) => ({ ...b, [id]: y }))}
+        {(x) => <MappenWahl id={x.id} ziel={typ} ziele={ziele} mehrfach={false} wert={mappe || undefined} bekannt={bekannt} ohneAnlegen merke={(id, y) => setBekannt((b) => ({ ...b, [id]: y }))}
           setze={(y) => { setMappe(typeof y === 'string' ? y : ''); setSchritt('wahl'); setErgebnis(null); }} />}
       </Feld>}
       {schritt === 'wahl' && <div className="knoepfe"><Knopf gesperrt={!mappe} onClick={oeffnen}>{t('automatisierung.vorlage.ui.ausprobieren.los')}</Knopf></div>}

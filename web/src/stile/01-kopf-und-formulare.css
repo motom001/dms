@@ -62,6 +62,9 @@ fieldset.mischung legend { font-weight: 600; padding: 0 4px; }
 .aufklappkopf:focus-visible { outline: 2px solid var(--akzent); outline-offset: 2px; }
 .aufklappkopf .zeichen { flex: none; width: 1em; color: var(--akzent); font-size: calc(11px * var(--skala, 1)); }
 .aufklappkopf .leise { font-weight: 400; }
+/* „Zum Konto mit Fehler“ unter der Kopfzeile der Systemkonten (#1181): eingerückt wie der Text im Kopf. */
+.systemkonten-zumfehler { margin: 0; padding: 0 10px 4px calc(10px + 1em + 8px); }
+.systemkonten-zumfehler > a { display: inline-flex; align-items: center; min-height: 24px; }
 /* Als Baustein Knopf (#1214): Kopf über die ganze Breite, links bündig, umbrechend; Schrift wie bisher, kein Unterstreichen. */
 .textknopf.aufklappkopf { display: flex; justify-content: flex-start; padding: 6px 10px; color: var(--tinte); }
 .textknopf.aufklappkopf > span, .textknopf.aufklappkopf > span > span:first-child { flex: 1 1 auto; flex-wrap: wrap; justify-content: flex-start; align-items: baseline; gap: 2px 8px; }

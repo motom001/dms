@@ -32,7 +32,7 @@ Above the lists in the middle is the same **search field as in the Library**, be
 
 Under every result it says **where** Ablago found the word – the area in bold, then the passage with the word highlighted, e.g. “Field “Cancel by” · help text: … the date by which you have to **cancel** …”. More than two places are summed up as “+ 3 more”. A match in the name is highlighted in the name itself. If the search finds nothing, **Reset search and filters** resets everything.
 
-Where entries come from [packages](pakete.md), there is the filter **Package**: *All*, *Own (no package)* or one package, e.g. only *Household*. You can choose the packages that occur in the list. Search and filter work together; the number of results shows the outcome.
+Where entries come from [packages](pakete.md), there is the filter **Package**: *All*, *Own (no package)* or one package, e.g. only *Household*. Built-in entries such as the folder types *User*, *Post* and *Role* are under *Ablago (built in)*, not among your own. You can choose the packages that occur in the list. Search and filter work together; the number of results shows the outcome.
 
 The Library's **search box at the top, in the header** does not exist in the Workbench – here you search in the lists in the middle. The **assistant** at the bottom right is here too: under **Manual** it searches the **admin manual** in the Workbench (the user manual in the Library), without the internet, in the manual your installation brings along; plus **Tips** and, with an answering package, **Ask** ([User manual: Assistant](https://help.ablago.app/benutzer/aktuell/en/assistent/)).
 
@@ -118,6 +118,7 @@ Two notices you close with a button of their own instead – they don't come bac
 | Backups on the same disk as the documents | notice | `sicherung.gleiche-platte` |
 | Off-site backup failed | red | `sicherung.extern-fehler` |
 | Off-site backup more than 2 days behind | yellow | `sicherung.extern-alt` |
+| “Keep only the newest locally” currently not in effect | yellow | `sicherung.nur-neueste` |
 | The [export folder](export.md#export-ordner) is inside the backup folder | red | `export.im-sicherungsordner` |
 | Exports moved out of the backup folder on the update | notice (red if something was left behind) | `export.umzug` |
 | dms-komplett: the database is only stored inside the container (`/data/postgres` without a volume) and would be lost with the next update – [rescue the data](https://help.ablago.app/installieren/aktuell/en/komplett/#datenbank-retten) | red | `datenbank.ohne-volume` |

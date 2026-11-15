@@ -187,3 +187,50 @@ rauchtest('Handy: Sicherungen nur außer Haus mit 44-px-Tippflächen (#976)', { 
   const funde = await tippflaechenPruefen(s, ['#liste']);
   assert.deepEqual(funde, [], `Zu kleine Tippflächen am Handy:\n${funde.join('\n')}`);
 });
+
+// „Lokal nur die neueste behalten“ (#1194): ohne erfolgreiche Kopie außer Haus gesperrt, mit Grund und Link; gesetzt,
+// aber nicht wirksam: Hinweis. Der Test ergänzt die Antwort der Werkbank um den Stand (kein echtes Ziel außer Haus).
+async function nurNeuesteStand(s, nurNeueste, plan = {}) {
+  await s.route(/\/api\/werkbank\/sicherung(\?.*)?$/, async (route) => {
+    if (route.request().method() !== 'GET') return route.continue();
+    const r = await route.fetch();
+    const j = await r.json();
+    await route.fulfill({ response: r, json: { ...j, plan: { ...j.plan, ...plan }, zustand: { ...j.zustand, nurNeueste } } });
+  });
+  await s.goto(BASIS + '/ablage/start');
+  await verwalten(s);
+  const bearbeitung = await sicherungOeffnen(s);
+  const zeitplan = bearbeitung.locator('#zeitplan');
+  await zeitplan.getByRole('checkbox', { name: 'Lokal nur die neueste behalten' }).waitFor();
+  return zeitplan;
+}
+
+rauchtest('Werkbank: „Lokal nur die neueste“ nur mit Sicherung außer Haus, axe hell und dunkel (#1194)', { als: LENA, erwartet: SICHERUNG_ERWARTET, timeout: 90_000 }, async (s) => {
+  const zeitplan = await nurNeuesteStand(s, { gesetzt: false, moeglich: false, wirksam: false });
+  assert.equal(await zeitplan.getByRole('checkbox', { name: 'Lokal nur die neueste behalten' }).isDisabled(), true);
+  await zeitplan.getByText('Erst möglich, wenn eine Sicherung außer Haus eingerichtet ist').waitFor();
+  assert.equal(await zeitplan.getByRole('link', { name: 'Zur Sicherung außer Haus' }).getAttribute('href'), '#ausser-haus');
+  assert.equal(await zeitplan.getByRole('spinbutton', { name: 'Wöchentliche' }).isDisabled(), false, 'die Aufbewahrung bleibt änderbar');
+  const funde = [];
+  await s.mouse.move(0, 0);
+  for (const schema of ['light', 'dark']) {
+    await s.emulateMedia({ colorScheme: schema });
+    await s.waitForFunction(() => document.getAnimations().every((a) => a.playState !== 'running'));
+    for (const v of await axePruefen(s, ['#zeitplan'])) funde.push(`${schema}: ${v}`);
+  }
+  assert.deepEqual(funde, [], `axe meldet Verstöße:\n${funde.join('\n')}`);
+});
+
+rauchtest('Werkbank: „Lokal nur die neueste“ gesetzt, aber ohne Wirkung – Hinweis, Aufbewahrung änderbar (#1194)', { als: LENA, erwartet: SICHERUNG_ERWARTET, timeout: 90_000 }, async (s) => {
+  const zeitplan = await nurNeuesteStand(s, { gesetzt: true, moeglich: false, wirksam: false }, { nurNeueste: true });
+  const haken = zeitplan.getByRole('checkbox', { name: 'Lokal nur die neueste behalten' });
+  assert.equal(await haken.isDisabled(), false, 'abwählen geht immer');
+  await zeitplan.getByText('Es gibt gerade keine erfolgreiche Kopie außer Haus').waitFor();
+  assert.equal(await zeitplan.getByRole('spinbutton', { name: 'Wöchentliche' }).isDisabled(), false);
+});
+
+rauchtest('Handy: Zeitplan der Sicherung mit 44-px-Tippflächen (#1194)', { handy: true, als: LENA, erwartet: SICHERUNG_ERWARTET, timeout: 90_000 }, async (s) => {
+  await nurNeuesteStand(s, { gesetzt: false, moeglich: false, wirksam: false });
+  const funde = await tippflaechenPruefen(s, ['#zeitplan']);
+  assert.deepEqual(funde, [], `Zu kleine Tippflächen am Handy:\n${funde.join('\n')}`);
+});
