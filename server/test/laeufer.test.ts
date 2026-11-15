@@ -15,7 +15,7 @@ import { speicherKontoRepo, type KontoRepo } from '../src/konto-repo';
 import type { Repo } from '../src/repo';
 import { liesWeiter, Paketlaeufer, type ApiAufruf } from '../src/laeufer/verwaltung';
 import { ladeArgumente, pruefeModul } from '../src/laeufer/modul';
-import { netzErlaubt } from '../src/laeufer/prozess';
+import { liesBegrenzt, netzErlaubt } from '../src/laeufer/prozess';
 import { liesPaket, liesZip, Paketverwaltung } from '../src/pakete';
 import { zipPuffer } from '../src/zip';
 import { speicherRepo } from '../src/repo-speicher';
@@ -127,6 +127,31 @@ describe('Paket-Läufer (#338): Modul und Manifest', () => {
     assert.equal(netzErlaubt('https://api.example.org.boese.example/v1', erlaubt), false);
     assert.equal(netzErlaubt('http://api.example.org/v1', erlaubt), false);
     assert.equal(netzErlaubt('https://user:pw@api.example.org/v1', erlaubt), false);
+    // Kodierte Schrägstriche (#613): kein Ausbruch aus dem freigegebenen Pfad über einen Dienst, der %2F entschlüsselt.
+    assert.equal(netzErlaubt('https://api.example.org/v1/..%2Fadmin', erlaubt), false);
+    assert.equal(netzErlaubt('https://api.example.org/v1/a%2fb', erlaubt), false);
+    assert.equal(netzErlaubt('https://api.example.org/v1/a%5Cb', erlaubt), false);
+    assert.equal(netzErlaubt('http://nas.local:11434/api/x%2F..', [], ['http://nas.local:11434/api']), false);
+    assert.equal(netzErlaubt('https://api.example.org/v1/rechnung?pfad=%2Fa', erlaubt), true, 'in der Abfrage stört %2F nicht');
+  });
+
+  it('Antworten aus dem Netz nur bis zur Grenze lesen (#613)', async () => {
+    let abgebrochen = 0;
+    const ab = () => { abgebrochen++; };
+    // Klein genug: ganz gelesen, Stücke gezählt.
+    let gezaehlt = 0;
+    const klein = await liesBegrenzt(new Response(new Uint8Array(100)), 1000, ab, (b) => { gezaehlt += b.length; });
+    assert.equal(klein?.length, 100);
+    assert.equal(gezaehlt, 100);
+    // Content-Length zu groß: gar nicht erst lesen.
+    assert.equal(await liesBegrenzt(new Response('x', { headers: { 'content-length': '5000' } }), 1000, ab), null);
+    assert.equal(abgebrochen, 1);
+    // Ohne Content-Length, Strom wächst über die Grenze: nach der Grenze abbrechen, nicht alles lesen.
+    let gezogen = 0;
+    const endlos = new ReadableStream<Uint8Array>({ pull(c) { gezogen++; c.enqueue(new Uint8Array(400)); } });
+    assert.equal(await liesBegrenzt(new Response(endlos), 1000, ab), null);
+    assert.equal(abgebrochen, 2);
+    assert.ok(gezogen <= 5, `nach der Grenze nicht weitergelesen (${gezogen} Stücke)`);
   });
 });
 

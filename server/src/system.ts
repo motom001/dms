@@ -1,6 +1,6 @@
-import { createHash } from 'node:crypto';
+import { createHmac, randomBytes } from 'node:crypto';
 import { proxyVertrauen } from './proxy';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { arch, release, type } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -62,13 +62,33 @@ export function eigeneVersion(): string {
   return 'unbekannt';
 }
 
+/** Zufallswert dieser Installation für {@link standKennung} (#1067); leer, solange er nicht gesetzt ist. */
+let standSalz = '';
+const STAND_SALZ = 'stand-salz';
+
+/**
+ * Zufallswert für die Kennung des Stands aus dem Geheim-Ordner lesen bzw. einmal anlegen (#1067). Alle Prozesse teilen
+ * den Ordner und damit den Wert; legen zwei gleichzeitig an, gilt der erste (`wx`), der andere liest ihn.
+ */
+export function setzeStandSalz(geheim: string): void {
+  const datei = join(geheim, STAND_SALZ);
+  const lesen = () => { try { const w = readFileSync(datei, 'utf8').trim(); return /^[0-9a-f]{32}$/.test(w) ? w : ''; } catch { return ''; } };
+  standSalz = lesen();
+  if (standSalz) return;
+  const neu = randomBytes(16).toString('hex');
+  // Lässt sich nichts anlegen (Ordner nur lesbar), lieber ohne Zufallswert als je Prozess ein anderer: verschiedene
+  // Kennungen hinter einem Port ließen die Oberfläche bei mehreren Prozessen (#1259) ständig „neu laden“.
+  try { writeFileSync(datei, neu, { flag: 'wx', mode: 0o600 }); standSalz = neu; } catch { standSalz = lesen(); }
+}
+
 /**
  * Kennung des laufenden Stands (#122): ändert sich mit Version, Commit oder Build-Zeit. Die
  * Oberfläche merkt sich die Kennung beim Laden und erkennt so nach einem Update, dass sie neu
- * geladen werden sollte. Ein Hash, damit /api/gesundheit ohne Anmeldung keine Version verrät.
+ * geladen werden sollte. Mit dem Zufallswert der Installation (#1067): Ein reiner Hash ließe sich für jedes
+ * öffentliche Image nachrechnen und verriete über /api/gesundheit (ohne Anmeldung) doch die Version.
  */
 export function standKennung(): string {
-  return createHash('sha256').update(`${eigeneVersion()}|${env.DMS_COMMIT ?? ''}|${env.DMS_GEBAUT ?? ''}`).digest('hex').slice(0, 12);
+  return createHmac('sha256', standSalz).update(`${eigeneVersion()}|${env.DMS_COMMIT ?? ''}|${env.DMS_GEBAUT ?? ''}`).digest('hex').slice(0, 12);
 }
 
 function lies(p: string) { try { return readFileSync(p, 'utf8').trim(); } catch { return null; } }
