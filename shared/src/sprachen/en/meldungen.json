@@ -817,6 +817,7 @@
   "graubild.seite-gibt-es-in": "Page {nr} doesn’t exist in this PDF.",
   "graubild.die-seite-laesst-sich": "The page can’t be rasterised: {wert}",
   "graubild.die-seite-ist-bei": "The page is too large at {dpi} dpi – please request it with fewer dpi.",
+  "graubild.schrift-fehlt": "A font in this PDF has no substitute – the page image would have no text. The previous archive version stays; the official image includes the fonts (Workbench → System health).",
   "hilfe.diese-seite-gibt-es": "This page doesn’t exist in the help.",
   "hochladen.die-datei-kam-nicht": "The file didn’t arrive completely. Please upload it again.",
   "hochladen.die-datei-ist-zu": "The file is too large (at most {round} MB).",

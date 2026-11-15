@@ -18,6 +18,7 @@ import { infoVolltextPaket, katalogVolltext, VOLLTEXT_PAKET_MAX_BYTES } from '..
 import { t } from './sprache';
 import { AUSGABE_GROSS, MB, TEXTERKENNUNG_MAX_MB as MAX_MB } from './grenzen';
 import type { Werkzeuge } from '../../shared/src/werkzeuge';
+import { pruefeSchriften, schriftfehlerGesehen } from './ersatzschriften';
 
 /**
  * Volltext (#45, #458, #459).
@@ -108,7 +109,10 @@ export type { Werkzeuge };
 export async function pruefeWerkzeuge(): Promise<Werkzeuge> {
   const da = (cmd: string, args = ['-v']) => starte(cmd, args, 10_000).then(() => true, (e: Error) => !/nicht installiert/.test(e.message));
   const [pdftotext, pdftoppm, qpdf] = await Promise.all([da('pdftotext'), da('pdftoppm'), da('qpdf', ['--version'])]);
-  return { pdftotext, pdftoppm, qpdf };
+  // Ersatzschriften (#1329): Findet poppler Ersatz für nicht eingebettete Schriften? Ohne pdftoppm nicht zu prüfen.
+  const schriften = pdftoppm ? await pruefeSchriften().catch(() => undefined) : undefined;
+  if (schriften === false) log.warn('Für nicht eingebettete Schriften in PDFs fehlt der Ersatz: Seiten- und Vorschaubilder solcher PDFs bleiben ohne Text. Das offizielle Image bringt die Schriften mit (font-liberation, font-dejavu).');
+  return { pdftotext, pdftoppm, qpdf, ...(schriften === undefined ? {} : { schriften }) };
 }
 
 /**
@@ -233,9 +237,11 @@ export class Texterkennung {
     return neu;
   }
 
-  werkzeugeLaden(neu = false) {
+  /** Eingebaute Werkzeuge (#1189); vermisste poppler beim Rendern eine Schrift (#1329), fehlen die Ersatzschriften. */
+  async werkzeugeLaden(neu = false): Promise<Werkzeuge> {
     if (neu || !this.werkzeuge) this.werkzeuge = this.pruefe();
-    return this.werkzeuge;
+    const w = await this.werkzeuge;
+    return schriftfehlerGesehen() && w.schriften !== false ? { ...w, schriften: false } : w;
   }
 
   /**

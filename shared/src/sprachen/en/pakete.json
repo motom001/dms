@@ -151,6 +151,8 @@
   "archiv.version": "The document now has a different file (new version or edited) – this archive version no longer fits.",
   "archiv.abgelehnt": "Archive version from package {paket} rejected: {grund}",
   "archiv.historie": "{typ} → {pdfa} ({paket})",
+  "archiv.historie.neu": "Archive version recreated ({grund}): {typ} → {pdfa} ({paket})",
+  "archiv.grund.schriften": "missing fonts",
   "archiv.ohne": "Archive version by package {paket}: {grund}",
   "archiv.ohne-grund": "no archive version provided",
   "archiv.fehlgeschlagen": "Archive version by package {paket} failed: {grund}",

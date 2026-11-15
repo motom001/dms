@@ -23,7 +23,8 @@ const BASIS = 'repo|db|protokoll|sprache|einstellungen|dateispeicher|zaehlerspei
  * Was Fachordner außer Kern und BASIS einbinden dürfen (#1072): Messung der Rechteprüfung, Vektoren lesen (auch der
  * Paket-Läufer braucht sie, daher nicht in suche/) und die technischen Ordner PDF-Stelle und Arbeiter-Pool. Seit #1075
  * die Technik der Dateien, die Dokumente brauchen: Hochladen, Verkleinern, Fassungen (Umwandeln, Archivfassung,
- * Entsperren) und Volltext aus Paketen – sie binden selbst nur die Basis, hintergrund.ts und die PDF-Stelle ein.
+ * Entsperren), Volltext aus Paketen und Ersatzschriften (#1329) – sie binden selbst nur die Basis, hintergrund.ts
+ * und die PDF-Stelle ein.
  * Seit #1077 die Technik, die Post, Ausgang und PDF bearbeiten brauchen: Seiten und Seitenbilder (pdfseiten,
  * graubild), Schwärzen, Stempeln beim Weitergeben (ausgabe), Export-Dateien (export, xlsx, zip) und den Mailer (mail,
  * nur sein Typ) – auch sie binden nur die Basis, hintergrund.ts, zwischenspeicher.ts, die PDF-Stelle und einander ein.
@@ -33,7 +34,7 @@ const BASIS = 'repo|db|protokoll|sprache|einstellungen|dateispeicher|zaehlerspei
  * geheimnisse.ts, die PDF-Stelle, den Arbeiter-Pool und die Werkzeuge oben ein.
  */
 const WERKZEUGE = {
-  dateien: 'messung|vektoren|hochladen|verkleinern|dateiumwandlung|archivfassung|entsperren|paketvolltext',
+  dateien: 'messung|vektoren|hochladen|verkleinern|dateiumwandlung|archivfassung|entsperren|paketvolltext|ersatzschriften',
   ausgang: 'pdfseiten|graubild|schwaerzen|ausgabe|export|xlsx|zip|mail',
   datenschutz: 'baum|schriftstueck|auskunft|vollexport|abruf|passwort|tresor',
   ordner: 'pdf|arbeit',

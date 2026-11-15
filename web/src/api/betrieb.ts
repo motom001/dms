@@ -114,6 +114,8 @@ export interface WerkbankUebersicht {
   texterkennung: Record<'keiner' | 'wartet' | 'laeuft' | 'fertig' | 'fehler' | 'ausgelassen' | 'paket', number> | null;
   /** #459: Ein Paket übernimmt die Texterkennung. */
   texterkennungPaket?: boolean;
+  /** #1329: Für nicht eingebettete Schriften in PDFs fehlt der Ersatz. */
+  schriftenFehlen?: boolean;
   aufgaben: { offen: number; ohneEmpfaenger: number };
   /** #798: offene Fälle – Aufgaben bei Personen ohne Leserecht. */
   ohneLeserecht?: number;

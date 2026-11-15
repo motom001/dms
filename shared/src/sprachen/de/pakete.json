@@ -151,6 +151,8 @@
   "archiv.version": "Das Dokument hat inzwischen eine andere Datei (neue Version oder bearbeitet) – diese Archivfassung passt nicht mehr.",
   "archiv.abgelehnt": "Archivfassung von Paket {paket} abgelehnt: {grund}",
   "archiv.historie": "{typ} → {pdfa} ({paket})",
+  "archiv.historie.neu": "Archivfassung neu erzeugt ({grund}): {typ} → {pdfa} ({paket})",
+  "archiv.grund.schriften": "fehlende Schriften",
   "archiv.ohne": "Archivfassung durch Paket {paket}: {grund}",
   "archiv.ohne-grund": "keine Archivfassung geliefert",
   "archiv.fehlgeschlagen": "Archivfassung durch Paket {paket} fehlgeschlagen: {grund}",

@@ -844,6 +844,12 @@ if (leiter) {
     if (wartung.aktiv || wiederherstellung.laeuft()) return;
     void nurEiner('vorschau-archiv', () => dienst.dokumentArchiv.vorschauNachlauf()).catch((e) => log.warn('Vorschaubilder aus Archivfassungen nicht nachgeholt', { fehler: (e as Error).message }));
   });
+  // Schriften (#1329): einmalig nach dem Update Archivfassungen und Vorschaubilder von PDFs mit nicht eingebetteten
+  // Schriften neu erzeugen – gedrosselt, je Lauf ein kleiner Stapel; danach nur noch ein Blick in die Einstellung.
+  wiederkehrend('schrift-nachlauf', 10 * 60_000, () => {
+    if (wartung.aktiv || wiederherstellung.laeuft()) return;
+    void nurEiner('schrift-nachlauf', () => dienst.dokumentArchiv.schriftNachlauf()).catch((e) => log.warn('PDFs mit nicht eingebetteten Schriften nicht neu erzeugt', { fehler: (e as Error).message }));
+  });
   // Abgelaufenes aus dem Kurzzustand (#744) wegräumen – Fehlversuche, Tickets, Merker.
   wiederkehrend('kurzzustand', 10 * 60_000, () => void nurEiner('kurzzustand', () => zustandDb.raeumeAuf()).catch((e) => log.warn('Kurzzustand nicht aufgeräumt', { fehler: (e as Error).message })));
 } else {

@@ -6,6 +6,7 @@ import type { Readable } from 'node:stream';
 import type { Dokument } from '../../shared/src/model';
 import type { Dateispeicher } from './dateispeicher';
 import { protokoll } from './protokoll';
+import { merkeSchriftfehler } from './ersatzschriften';
 import { bildSeitePdf } from './pdf';
 import { AUSGABE_MITTEL, VORSCHAU_MAX_BYTES } from './grenzen';
 
@@ -116,7 +117,8 @@ export type Erzeuger = (inhalt: Buffer, mime: string) => Promise<Buffer | null>;
 function starte(cmd: string, args: string[], ms: number): Promise<void> {
   return new Promise((ok, fehler) => {
     execFile(cmd, args, { timeout: ms, maxBuffer: AUSGABE_MITTEL }, (e, _out, err) => {
-      if (!e) { ok(); return; }
+      // Ersatzschrift fehlt (#1329): Das Bild entsteht, aber ohne den Text – in der Werkbank melden.
+      if (!e) { merkeSchriftfehler(err, 'vorschaubild'); ok(); return; }
       const f = e as NodeJS.ErrnoException & { killed?: boolean };
       fehler(new Error(f.code === 'ENOENT' ? `${cmd} ist nicht installiert.` : f.killed ? `${cmd} brauchte zu lange.` : String(err || f.message).trim().split('\n').slice(-2).join(' ')));
     });
@@ -170,6 +172,8 @@ export class Vorschaubilder {
   private warteschlange = new Map<string, Auftrag>();
   /** Nachlauf für den Bestand (#1216): erst, wenn die Warteschlange leer ist. */
   private nachrang = new Map<string, Auftrag>();
+  /** Neu erzeugen, obwohl es ein Bild gibt (#1329: ohne Schriften gerendert); das alte bleibt, bis das neue da ist. */
+  private ersetzen = new Set<string>();
   private laeuft = false;
   private aus = false;
   /** Im aktiven Wartungsmodus keine Arbeit; danach anstossen(). */
@@ -259,6 +263,22 @@ export class Vorschaubilder {
   /** Dokumente in die Warteschlange (z. B. nach dem Hochladen); Unpassendes wird übergangen. */
   einreihen(docs: Auftrag[]) {
     return this.reihe(docs, (d) => hatVorschau(d.mime) && d.groesse <= VORSCHAU_MAX_BYTES);
+  }
+
+  /**
+   * Vorhandene Bilder neu erzeugen (#1329: PDFs mit nicht eingebetteten Schriften, gerendert ohne Ersatzschriften) – mit
+   * Nachrang wie der Nachlauf. Das bisherige Bild bleibt, bis das neue geschrieben ist. Liefert, wie viele eingereiht wurden.
+   */
+  neuErzeugen(docs: Auftrag[]) {
+    let n = 0;
+    for (const d of docs) {
+      if (!hatVorschau(d.mime) || d.groesse > VORSCHAU_MAX_BYTES || this.nachrang.has(d.sha256)) continue;
+      this.ersetzen.add(d.sha256);
+      this.nachrang.set(d.sha256, { sha256: d.sha256, mime: d.mime, groesse: d.groesse, name: d.name });
+      n++;
+    }
+    if (n) this.anstossen();
+    return n;
   }
 
   /** Wie viele warten gerade (ohne den Nachlauf). */
@@ -353,6 +373,7 @@ export class Vorschaubilder {
 
   /** Datei gelöscht (kein Dokument zeigt mehr darauf): Vorschaubild mit weg. */
   async entferne(sha: string) {
+    this.ersetzen.delete(sha);
     this.warteschlange.delete(sha);
     if (this.nachrang.delete(sha) && this.nl) this.nl.offen = Math.max(0, this.nl.offen - 1);
     await this.ablage.loesche(sha).catch(() => {});
@@ -394,15 +415,17 @@ export class Vorschaubilder {
       const [sha, d] = eintrag;
       let ergebnis: 'bild' | 'ohne' | 'nichts' = 'nichts';
       try {
-        if (await this.ablage.lies(sha)) ergebnis = 'bild';
+        if (!this.ersetzen.has(sha) && (await this.ablage.lies(sha))) ergebnis = 'bild';
         else ergebnis = await this.erzeuge(sha, d);
       } catch (e) {
         await this.ablage.merkeFehler(sha).catch(() => {});
         ergebnis = 'ohne';
         log.info('Kein Vorschaubild', { dokument: d.name, fehler: (e as Error).message.slice(0, 300) });
       } finally {
+        // Neu erzeugte (#1329) zählen nicht zum Nachlauf aus der Archivfassung.
+        const ersetzt = this.ersetzen.delete(sha);
         this.warteschlange.delete(sha);
-        if (this.nachrang.delete(sha) && this.nl) {
+        if (this.nachrang.delete(sha) && this.nl && !ersetzt) {
           this.nl.offen = Math.max(0, this.nl.offen - 1);
           if (ergebnis === 'bild') this.nl.erledigt++; else this.nl.ohne++;
           await this.merkeNachlauf(!this.nachrang.size);

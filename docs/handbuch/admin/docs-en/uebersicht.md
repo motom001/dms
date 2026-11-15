@@ -141,6 +141,7 @@ Two notices you close with a button of their own instead – they don't come bac
 | Intake folder: a person’s folder could not be renamed after the e-mail address changed | yellow | `eingangsordner.umbenennen` |
 | Text recognition is now a package | notice (yellow as soon as scans are waiting) | `texterkennung.paket` |
 | Documents with an error in text recognition | yellow | `texterkennung.fehler` |
+| Fonts for PDFs are missing: PDFs without embedded fonts show no text in page images, thumbnails and the archive version ([Built-in tools](fehlersuche.md#werkzeuge)) | yellow | `schriften.fehlen` |
 | Document files are missing from the storage folder (e.g. `/data/files` without a volume) – details in the log, module *Documents* | red | `dateien.fehlen` |
 | Nobody gets the tasks without a recipient | notice | `aufgabenempfaenger` |
 | Tasks with people without read permission | yellow | `aufgaben.ohne-leserecht` |

@@ -357,6 +357,15 @@ jobs:
           docker run --rm --entrypoint node dms:probe -e "console.log('Node.js', process.version, process.arch)"
           groesse=$(docker image inspect dms:probe --format '{{.Size}}')
           echo "::notice title=Image ${{ matrix.plattform }}::$((groesse / 1048576)) MB"
+      # Schriften im Image (#1329): Ein PDF mit nicht eingebetteter Helvetica und Arial muss sichtbaren Text haben
+      # (dunkle Bildpunkte gezählt). Gegenprobe mit leerer fontconfig: Dann muss die Prüfung scheitern.
+      - name: Ersatzschriften für nicht eingebettete Schriften
+        run: |
+          docker run --rm -v "$PWD/.github/werkzeuge:/w:ro" --entrypoint node dms:probe /w/schriften-pruefen.mjs
+          printf '<?xml version="1.0"?>\n<fontconfig><dir>/tmp/leer</dir><cachedir>/tmp/fc</cachedir></fontconfig>\n' > "$RUNNER_TEMP/leer.conf"
+          if docker run --rm -v "$PWD/.github/werkzeuge:/w:ro" -v "$RUNNER_TEMP/leer.conf:/leer.conf:ro" -e FONTCONFIG_FILE=/leer.conf --entrypoint node dms:probe /w/schriften-pruefen.mjs; then
+            echo "::error::Die Prüfung der Schriften erkennt fehlende Schriften nicht"; exit 1
+          fi
       # Pakete prüfen im Image (#1124) – so, wie die CI von dms-registry es aufruft: Befehl statt CMD, Ordner schreibgeschützt.
       - name: Pakete prüfen im Image
         run: |

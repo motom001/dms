@@ -35,6 +35,8 @@ import { pruefeZugang, routen, type Anfrage, type Route } from '../src/routen';
 import { Texterkennung, type Engine } from '../src/texterkennung';
 import { vollexport } from '../src/vollexport';
 import { setzePaketEinstellungen } from '../src/pakete/index';
+import { SCHRIFT_NEU_JE_LAUF } from '../src/dokumente';
+import { probePdf } from '../src/ersatzschriften';
 
 after(() => beendeArbeiter());
 
@@ -684,5 +686,58 @@ describe('Archivfassung für E-Mails (#946)', () => {
     await setzePaketEinstellungen(x.d.kern, 'pdfa', { werte: { emails: true } });
     assert.equal(await x.d.dokumentArchiv.archivPaketDa(MANIFEST_MAIL.archivfassung.typen), 2);
     assert.deepEqual((await x.offen()).map((y) => y.daten.name).sort(), ['Auftragsbestätigung.eml', 'Kündigung.eml']);
+  });
+});
+
+describe('Archivfassung (#1329): einmalig neu erzeugen, wenn das PDF seine Schriften nicht einbettet', () => {
+  it('nur PDFs mit nicht eingebetteten Schriften, gedrosselt, Grund in der Historie; abgelehnt bleibt die alte; danach nie wieder', async (t) => {
+    try { execFileSync('pdffonts', ['-v'], { stdio: 'ignore' }); } catch (e) { if ((e as NodeJS.ErrnoException).code === 'ENOENT') { t.skip('pdffonts fehlt'); return; } }
+    const x = await aufbau();
+    // Helvetica und Arial nicht eingebettet (von Hand geschrieben) – und ein PDF ganz ohne Schrift.
+    const ohne = await x.hoch('rechnung.pdf', probePdf());
+    await x.hoch('leer.pdf', await pdf({}));
+    await warte(async () => (await x.offen()).length === 2);
+    await x.laeufer();
+    const shaOhne = (await x.dok(ohne)).sha256;
+    const alt = x.ablage.fassungen.get(shaOhne)!.info.erstellt;
+    const bilder: string[] = [];
+    x.d.dokumentArchiv.verbindeVorschau({ ausArchiv: () => 0, nachlaufArchiv: async () => 0, nachlaufStand: async () => null, neuErzeugen: (docs) => { bilder.push(...docs.map((d) => d.id)); return docs.length; } });
+    // Ohne Ersatzschriften: nichts tun (es entstünde wieder ein Bild ohne Text), nichts merken.
+    assert.equal(await x.d.dokumentArchiv.schriftNachlauf({ pruefe: async () => false, pauseMs: 0 }), null);
+    assert.equal(await x.einstellungen.lies('schrift_nachlauf'), null);
+    const s = await x.d.dokumentArchiv.schriftNachlauf({ pruefe: async () => true, pauseMs: 0 });
+    assert.equal(s?.geprueft, 2);
+    assert.equal(s?.neu, 1);
+    assert.ok(s?.fertig);
+    assert.deepEqual(bilder, [ohne]);
+    const e = await x.offen();
+    assert.deepEqual(e.map((y) => [y.daten.dokument, y.daten.neu]), [[ohne, true]]);
+    // Das Paket liefert Unbrauchbares: Die bisherige Archivfassung bleibt, der Grund steht am Dokument.
+    await x.laeufer(async () => Buffer.from('%PDF-1.4 kaputt'));
+    assert.equal(x.ablage.fassungen.get(shaOhne)!.info.erstellt, alt);
+    assert.equal((await x.a.stand(await x.dok(ohne)))?.stand, 'fertig');
+    // Zweiter Versuch (wie „Volltext neu erzeugen“) mit gültigem PDF/A: ersetzt, Historie mit Grund.
+    await x.a.anfordern(await x.dok(ohne), { neu: true, grund: 'fehlende Schriften' });
+    await x.laeufer();
+    assert.notEqual(x.ablage.fassungen.get(shaOhne)!.info.erstellt, alt);
+    const h = await x.d.mappenHistorie.historie(x.m.id);
+    assert.ok(h.some((y) => y.art === 'archivfassung' && /^Archivfassung neu erzeugt \(fehlende Schriften\)/.test(String(y.daten?.text))), JSON.stringify(h.map((y) => y.daten?.text)));
+    // Einmalig: fertig – der nächste Lauf tut nichts mehr.
+    assert.equal(await x.d.dokumentArchiv.schriftNachlauf({ pruefe: async () => true, pauseMs: 0 }), null);
+  });
+
+  it('gedrosselt: je Lauf höchstens SCHRIFT_NEU_JE_LAUF neu, der nächste Lauf macht weiter', async (t) => {
+    try { execFileSync('pdffonts', ['-v'], { stdio: 'ignore' }); } catch (e) { if ((e as NodeJS.ErrnoException).code === 'ENOENT') { t.skip('pdffonts fehlt'); return; } }
+    const x = await aufbau({ mitPaket: false });
+    for (let i = 0; i <= SCHRIFT_NEU_JE_LAUF; i++) await x.hoch(`r${i}.pdf`, probePdf(['Helvetica', `Arial ${i}`.replace(' ', '')]));
+    const bilder: string[] = [];
+    x.d.dokumentArchiv.verbindeVorschau({ ausArchiv: () => 0, nachlaufArchiv: async () => 0, nachlaufStand: async () => null, neuErzeugen: (docs) => { bilder.push(...docs.map((d) => d.id)); return docs.length; } });
+    const s1 = await x.d.dokumentArchiv.schriftNachlauf({ pruefe: async () => true, pauseMs: 0 });
+    assert.equal(s1?.neu, SCHRIFT_NEU_JE_LAUF);
+    assert.equal(s1?.fertig, undefined);
+    const s2 = await x.d.dokumentArchiv.schriftNachlauf({ pruefe: async () => true, pauseMs: 0 });
+    assert.equal(s2?.neu, SCHRIFT_NEU_JE_LAUF + 1);
+    assert.ok(s2?.fertig);
+    assert.equal(new Set(bilder).size, SCHRIFT_NEU_JE_LAUF + 1);
   });
 });

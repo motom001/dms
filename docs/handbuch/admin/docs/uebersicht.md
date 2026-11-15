@@ -141,6 +141,7 @@ Zwei Hinweise schließt du stattdessen mit einem eigenen Knopf ab – sie kommen
 | Eingangsordner: Personenordner ließ sich nach geänderter E-Mail-Adresse nicht umbenennen | gelb | `eingangsordner.umbenennen` |
 | Texterkennung ist jetzt ein Paket | Hinweis (gelb, sobald Scans warten) | `texterkennung.paket` |
 | Dokumente mit Fehler in der Texterkennung | gelb | `texterkennung.fehler` |
+| Schriften für PDFs fehlen: PDFs ohne eingebettete Schriften zeigen in Seiten-, Vorschaubildern und Archivfassung keinen Text ([Eingebaute Werkzeuge](fehlersuche.md#werkzeuge)) | gelb | `schriften.fehlen` |
 | Dateien zu Dokumenten fehlen im Ablageordner (z. B. `/data/files` ohne Volume) – Einzelheiten im Protokoll, Modul *Dokumente* | rot | `dateien.fehlen` |
 | Niemand bekommt die Aufgaben ohne Empfänger | Hinweis | `aufgabenempfaenger` |
 | Aufgaben bei Personen ohne Leserecht | gelb | `aufgaben.ohne-leserecht` |
