@@ -181,10 +181,14 @@ rauchtest('Werkbank: eingebaute Werkzeuge nur, wenn eins fehlt (#1189)', { als: 
     assert.equal(zaehler.neu, vorher + 1, '„Erneut prüfen“ prüft auf dem Server neu');
   }
   await s.locator('#installiert dt', { hasText: 'PDF lesen (Poppler)' }).locator('xpath=following-sibling::dd[1]').getByText('fehlt', { exact: true }).waitFor();
-  // Der Hinweis selbst: axe hell und dunkel.
+  // Der Hinweis selbst: axe hell und dunkel – frisch geladen und ohne Maus über „Erneut prüfen“ (Hover und
+  // Farbübergang beim Wechsel des Schemas verfälschen sonst den Kontrast).
   const funde = [];
+  await s.mouse.move(0, 0);
   for (const schema of ['light', 'dark']) {
     await s.emulateMedia({ colorScheme: schema });
+    await s.reload();
+    await s.locator('#werkzeuge').getByRole('button', { name: 'Erneut prüfen' }).waitFor();
     for (const v of await axePruefen(s, ['#werkzeuge'])) funde.push(`${schema}: ${v}`);
   }
   assert.deepEqual(funde, [], `axe meldet Verstöße:\n${funde.join('\n')}`);
