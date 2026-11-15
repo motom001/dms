@@ -79,7 +79,7 @@ import { Verwaltung } from './verwaltung';
 import { arch, release, type } from 'node:os';
 import { pgDatenquelle } from './datenbankabzug';
 import { pgEinstellungen } from './einstellungen';
-import { merkeVersion, Nachweisjournal, setzeNachweisjournal } from './nachweisjournal';
+import { merkeVersion, Nachweisjournal, pgJournal, setzeNachweisjournal } from './nachweisjournal';
 import { protokolliereKennungsUmzug } from './mappentypen/index';
 import { istUuid } from './repo';
 import { Sicherung } from './sicherung';
@@ -328,8 +328,11 @@ const dienst = new Dienst(messung.umhuelle(pgRepo(sql, cfg.haushalt), 'mappen'),
   tresor, einstellungen: pgBetriebSpeicher(sql, cfg.haushalt), zustand: zustandDb,
 });
 // Nachweis-Journal (#1053): Fehlanmeldungen, Rechteänderungen, Updates, Paket-Verlauf, Wartung … je Monat für Pakete.
+// Seit #1253 in eigenen Tabellen; das alte Format aus den Einstellungen übernimmt es gleich beim Start.
 const nachweisEinstellungen = pgEinstellungen(sql, cfg.haushalt);
-setzeNachweisjournal(new Nachweisjournal(nachweisEinstellungen));
+const nachweisSpeicher = pgJournal(sql, cfg.haushalt);
+void nachweisSpeicher.uebernimm();
+setzeNachweisjournal(new Nachweisjournal(nachweisSpeicher));
 void merkeVersion(nachweisEinstellungen, eigeneVersion()).catch((e) => log.warn('Version für die Nachweise nicht gemerkt', { fehler: (e as Error).message }));
 // Fehlende Dokumentdatei (#877): einmal je Datei mit Mappe ins Protokoll und als Hinweis in die Werkbank-Übersicht.
 beiFehlenderDatei((f) => { void dienst.dateienFehlen.merkeFehlendeDatei(f).catch((e) => log.warn('Fehlende Datei nicht vermerkt', { fehler: (e as Error).message })); });

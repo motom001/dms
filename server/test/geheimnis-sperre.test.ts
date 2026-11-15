@@ -44,7 +44,7 @@ import { Automatisierungen, speicherAutomatisierungRepo } from '../src/automatis
 import '../src/automatisierung-karten';
 import { einrichtung as paketEinrichtung, nachweise as paketNachweise, vergleiche } from '../src/paketdaten';
 import { paketdatenQuellen } from '../src/paketdaten/paketdaten.routen';
-import { fehlanmeldung, Nachweisjournal, setzeNachweisjournal } from '../src/nachweisjournal';
+import { fehlanmeldung, Nachweisjournal, setzeNachweisjournal, speicherJournal } from '../src/nachweisjournal';
 import { NACHWEIS_BEREICHE, PAKETDATEN_BEREICHE } from '../../shared/src/paketdaten';
 
 type App = { inject(o: { method: string; url: string; payload?: unknown; headers?: Record<string, string> }): Promise<{ statusCode: number; body: string; rawPayload: Buffer; headers: Record<string, string | string[]> }>; close(): Promise<void> };
@@ -223,7 +223,7 @@ describe('Geheimnisse gibt Ablago nie heraus (#1055)', () => {
           'GET /api/v1/paketdaten/einrichtung/:bereich', 'POST /api/v1/paketdaten/einrichtung/:bereich/vergleich', 'GET /api/v1/paketdaten/nachweise/:bereich/:monat'],
         erzeuge: async () => {
           const q = paketdatenQuellen(d, konten, { tresor, betrieb, apiSchluessel, einrichtung, postfaecher, postfachOAuth, automatisierungen });
-          setzeNachweisjournal(new Nachweisjournal(einstellungen));
+          setzeNachweisjournal(new Nachweisjournal(speicherJournal()));
           try {
             await fehlanmeldung(G.kontoPasswort, '203.0.113.9', false);
             await fehlanmeldung(lena.email, '203.0.113.9', true);

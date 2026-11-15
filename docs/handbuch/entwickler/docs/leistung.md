@@ -235,6 +235,17 @@ Im Lasttest „+ Speichern“ waren Aufgabe und Notiz anlegen die langsamsten Vo
 
 Auf dem Server (Handler, Median): Aufgabe anlegen 304 → 204 ms bei 31 → 22 Zugriffen vor der Antwort, Notiz 142 → 118 ms bei 12 → 11. „Mappe ändern“ bleibt der langsamste schreibende Vorgang (Transaktion); das ist ein eigenes Thema. `server/test/aufgaben-zaehler.test.ts` hält fest: gleiche Zahlen wie die bisherige Abfrage, mit und ohne Zwischenspeicher, mit Vertretung, Leserecht auf Zeit, Aufgaben ohne Empfänger und aus Automatisierungen; die eigene Aufgabe und Notiz sind in der nächsten Anfrage zu sehen; Leserecht auf Zeit endet mit dem Erledigen sofort.
 
+**Messung zu #1253** (Nachweis-Journal in eigener Tabelle; Container mit 2 Kernen, PostgreSQL 16 lokal, 50.000 Lasttest-Mappen, Journal des Monats vorher mit 1.800 Einträgen; 400 Fehlanmeldungen, 10 gleichzeitig, je Versuch eine eigene Adresse; daneben eine Person mit „Mappe öffnen“ nacheinander; **keine NAS-Werte**):
+
+| | vorher (0.288.0) bekanntes Konto | nachher bekanntes Konto | vorher unbekanntes Konto | nachher unbekanntes Konto |
+| --- | --- | --- | --- | --- |
+| Fehlanmeldungen je s | 18 | 19 | 21 | 17–22 |
+| Fehlanmeldung p50 / p95 | 544 / 730 ms | 520 / 699 ms | 478 / 686 ms | 439–541 / 730–787 ms |
+| „Mappe öffnen“ nebenher p50 / p95 | 6 / 552 ms | 13 / 54 ms | 5 / 25 ms | 6–16 / 30–54 ms |
+| verlorene Einträge | 106 von 400 | 0 | 83 von 400 | 0 |
+
+Ohne Fehlanmeldungen: „Mappe öffnen“ p95 8–13 ms. Die Fehlanmeldung selbst kostet vor allem das absichtlich langsame Prüfen des Passworts; das Journal braucht je Versuch nur noch eine Anweisung (`INSERT … SELECT` hinter dem Hochzählen in `nachweis_zaehler`) statt Lesen, Kopieren und Vergleichen-und-Tauschen von bis zu 300 KB.
+
 ## Lasttest { #lasttest }
 
 `server/test/lasttest.mjs` (#544, #563) schickt viele **gleichzeitige HTTP-Anfragen** an ein laufendes Ablago – das Gegenstück zum Mess-Skript, das einzelne Datenbankzugriffe misst. Ohne Abhängigkeiten, nur mit `fetch` von Node.js. Im Image steckt es als Befehl `dms-lasttest` (Betreiber: Administratorhandbuch → [Lasttest selbst durchführen](https://help.ablago.app/admin/aktuell/lasttest/)).

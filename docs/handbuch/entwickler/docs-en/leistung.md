@@ -235,6 +235,17 @@ In the load test "+ saving", creating a task or a note was the slowest operation
 
 On the server (handler, median): creating a task 304 → 204 ms with 31 → 22 accesses before the answer, note 142 → 118 ms with 12 → 11. "Change folder" remains the slowest writing operation (transaction); that is a topic of its own. `server/test/aufgaben-zaehler.test.ts` records: the same numbers as the previous query, with and without cache, with deputy, temporary read permission, tasks without recipient and from automations; your own task and note are visible in the next request; temporary read permission ends with completing the task straight away.
 
+**Measurement for #1253** (evidence journal in its own table; container with 2 cores, PostgreSQL 16 local, 50,000 load-test folders, the month's journal filled with 1,800 entries beforehand; 400 failed sign-ins, 10 at a time, each attempt with its own address; alongside, one person opening folders one after another; **no NAS values**):
+
+| | before (0.288.0) known account | after known account | before unknown account | after unknown account |
+| --- | --- | --- | --- | --- |
+| failed sign-ins per s | 18 | 19 | 21 | 17–22 |
+| failed sign-in p50 / p95 | 544 / 730 ms | 520 / 699 ms | 478 / 686 ms | 439–541 / 730–787 ms |
+| "open folder" alongside p50 / p95 | 6 / 552 ms | 13 / 54 ms | 5 / 25 ms | 6–16 / 30–54 ms |
+| lost entries | 106 of 400 | 0 | 83 of 400 | 0 |
+
+Without failed sign-ins: "open folder" p95 8–13 ms. The failed sign-in itself mostly costs the deliberately slow password check; the journal now needs one statement per attempt (`INSERT … SELECT` behind the increment in `nachweis_zaehler`) instead of reading, copying and compare-and-swap of up to 300 KB.
+
 ## Load test { #lasttest }
 
 `server/test/lasttest.mjs` (#544, #563) sends many **simultaneous HTTP requests** to a running Ablago – the counterpart to the measuring script, which measures individual database accesses. Without dependencies, only with Node.js's `fetch`. In the image it is the command `dms-lasttest` (operators: Administrator manual → [Running the load test yourself](https://help.ablago.app/admin/aktuell/en/lasttest/)).

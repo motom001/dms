@@ -1649,6 +1649,7 @@
   "vollexport.nicht-enthalten-code-installierter": "nicht enthalten: Code installierter Pakete (#338, steht im Paket selbst)",
   "vollexport.nicht-enthalten-ereignisse-fuer": "nicht enthalten: Ereignisse für Pakete mit Code (#338, technisch)",
   "vollexport.nicht-enthalten-verlauf-pakete": "nicht enthalten: Verlauf der Pakete mit Code (#1003, technisch, 30 Tage)",
+  "vollexport.nicht-enthalten-nachweis-journal": "nicht enthalten: Nachweis-Journal je Monat (#1053, technisch, in der Sicherung)",
   "vollexport.nicht-enthalten-notfallcode-vom": "nicht enthalten: Notfallcode vom Notfallblatt (#815, nur ein Hash)",
   "vollexport.nicht-enthalten-abruf-links": "nicht enthalten: Abruf-Links von Auskünften (#455, Hashes; der Nachweis steht in daten/historie.jsonl)",
   "vollexport.nicht-enthalten-anmeldungen": "nicht enthalten: Anmeldungen",

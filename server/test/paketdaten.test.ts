@@ -3,11 +3,12 @@
  * Test; dazu, dass keine Zugangsdaten mitkommen (Ergänzung Sicherheit) und das Journal je Monat zählt statt wächst.
  */
 import assert from 'node:assert/strict';
-import { describe, it } from 'node:test';
+import { before, describe, it } from 'node:test';
+import { eigeneDatenbank, type EigeneDatenbank } from './hilfe-db';
 import { einrichtung, nurRechner, type EinrichtungQuellen } from '../src/paketdaten';
 import { nachweise, monatsGrenzen, type NachweisQuellen } from '../src/paketdaten';
 import { liesEintraege, vergleiche } from '../src/paketdaten';
-import { fehlanmeldung, JE_MONAT, merkeVersion, Nachweisjournal, nachweis, setzeNachweisjournal } from '../src/nachweisjournal';
+import { fehlanmeldung, JE_MONAT, merkeVersion, Nachweisjournal, nachweis, pgJournal, setzeNachweisjournal, speicherJournal, type JournalSpeicher } from '../src/nachweisjournal';
 import { speicherEinstellungen } from '../src/einstellungen';
 import { findeGeheimnisse } from '../src/geheimnis-sperre';
 import { PAKETDATEN_BEREICHE, darfPaketdaten, type EinrichtungEintrag } from '../../shared/src/paketdaten';
@@ -166,7 +167,7 @@ describe('Vergleich zweier Stände (#1053)', () => {
 });
 
 describe('Nachweise je Monat (#1053)', () => {
-  const journal = new Nachweisjournal(speicherEinstellungen(), () => new Date('2026-11-10T08:00:00Z'));
+  const journal = new Nachweisjournal(speicherJournal(), () => new Date('2026-11-10T08:00:00Z'));
   const q = (mehr: Partial<NachweisQuellen> = {}): NachweisQuellen => ({
     journal: (m) => journal.monat(m), jetzt: () => new Date('2026-11-15T12:00:00Z'),
     benutzer: async () => [{ konto: 'lena@example.org', aktiv: true, rollen: ['admin'], zweifaktor: true, passkey: false, verwaltung: ['*'] }],
@@ -226,27 +227,51 @@ describe('Nachweise je Monat (#1053)', () => {
   });
 });
 
-describe('Nachweis-Journal (#1053)', () => {
+/** Gemeinsame Prüfungen für den Speicher im Arbeitsspeicher und in PostgreSQL (#1253). */
+function journalPruefungen(speicher: () => Promise<JournalSpeicher>) {
   it('zählt über die Grenze je Monat hinaus nur noch und räumt alte Monate', async () => {
-    const e = speicherEinstellungen();
-    await e.schreibe('nachweise:2024-10', { eintraege: [], weitere: 0, zaehler: {} });
-    const j = new Nachweisjournal(e, () => new Date('2026-11-01T00:00:00Z'));
+    const sp = await speicher();
+    await new Nachweisjournal(sp, () => new Date('2024-10-05T00:00:00Z')).schreibe('betrieb.wartung', { stufe: 'aus', von: 'alt' });
+    const j = new Nachweisjournal(sp, () => new Date('2026-11-01T00:00:00Z'));
     for (let i = 0; i < JE_MONAT + 3; i++) await j.schreibe('betrieb.wartung', { stufe: 'aus', von: 'x' });
     const m = await j.monat('2026-11');
     assert.equal(m.eintraege.length, JE_MONAT);
     assert.equal(m.weitere, 3);
-    assert.equal(await e.lies('nachweise:2024-10'), null);
+    assert.deepEqual(m.eintraege[0], { art: 'betrieb.wartung', zeit: '2026-11-01T00:00:00.000Z', daten: { stufe: 'aus', von: 'x' } });
+    await new Promise((r) => setTimeout(r, 50));
+    assert.deepEqual(await j.monat('2024-10'), { eintraege: [], weitere: 0, zaehler: {} }, 'der Monat vor 25 Monaten ist geräumt');
   });
 
+  it('gleichzeitige Fehlanmeldungen bei vollem Monat: Einträge + weitere + Zähler = Versuche', async () => {
+    const sp = await speicher();
+    const j = new Nachweisjournal(sp, () => new Date('2026-11-01T00:00:00Z'));
+    for (let i = 0; i < JE_MONAT - 5; i++) await sp.trageEin('2026-11', { art: 'zugang.fehlanmeldung', zeit: '2026-11-01T00:00:00.000Z', daten: { nr: i } }, JE_MONAT);
+    setzeNachweisjournal(j);
+    try {
+      await Promise.all(Array.from({ length: 10 }, (_, i) => Promise.all([
+        fehlanmeldung('lena@example.org', `203.0.113.${i}`, true),
+        fehlanmeldung(`niemand-${i}@example.org`, `198.51.100.${i}`, false),
+      ])));
+    } finally { setzeNachweisjournal(null); }
+    const m = await j.monat('2026-11');
+    assert.equal(m.eintraege.length, JE_MONAT);
+    assert.equal(m.eintraege.length + m.weitere, JE_MONAT - 5 + 10);
+    assert.equal(m.zaehler['zugang.fehlanmeldung_unbekannt'], 10);
+  });
+}
+
+describe('Nachweis-Journal (#1053, #1253)', () => {
+  journalPruefungen(async () => speicherJournal());
+
   it('gleichzeitige Einträge gehen nicht verloren', async () => {
-    const j = new Nachweisjournal(speicherEinstellungen(), () => new Date('2026-11-01T00:00:00Z'));
+    const j = new Nachweisjournal(speicherJournal(), () => new Date('2026-11-01T00:00:00Z'));
     await Promise.all(Array.from({ length: 5 }, (_, i) => j.schreibe('betrieb.wartung', { nr: i })));
     assert.equal((await j.monat('2026-11')).eintraege.length, 5);
   });
 
   it('Update-Verlauf: einmal je neuer Version, der erste Start zählt nicht', async () => {
     const e = speicherEinstellungen();
-    const j = new Nachweisjournal(e, () => new Date('2026-11-01T00:00:00Z'));
+    const j = new Nachweisjournal(speicherJournal(), () => new Date('2026-11-01T00:00:00Z'));
     setzeNachweisjournal(j);
     try {
       await merkeVersion(e, '0.284.0');
@@ -254,6 +279,37 @@ describe('Nachweis-Journal (#1053)', () => {
       await merkeVersion(e, '0.285.0');
     } finally { setzeNachweisjournal(null); }
     assert.deepEqual((await j.monat('2026-11')).eintraege.map((x) => x.daten), [{ von: '0.284.0', nach: '0.285.0' }]);
+  });
+});
+
+describe('Nachweis-Journal in PostgreSQL (#1253)', { skip: process.env.TEST_DATABASE_URL ? false : 'TEST_DATABASE_URL nicht gesetzt' }, () => {
+  let sql: EigeneDatenbank['sql'];
+  let haushalt = '';
+  before(async () => {
+    sql = (await eigeneDatenbank('nachweisjournal')).sql;
+    haushalt = '00000000-0000-4000-8000-000000001253';
+    await sql`INSERT INTO haushalte (id, name) VALUES (${haushalt}, 'Nachweis-Journal')`;
+  });
+  const leer = async () => { await sql`DELETE FROM nachweis_journal WHERE haushalt_id = ${haushalt}`; await sql`DELETE FROM nachweis_zaehler WHERE haushalt_id = ${haushalt}`; return pgJournal(sql, haushalt); };
+
+  journalPruefungen(leer);
+
+  it('übernimmt das alte Format aus den Einstellungen vollständig und genau einmal', async () => {
+    await leer();
+    const e1 = { art: 'zugang.fehlanmeldung', zeit: '2026-10-02T08:00:00.000Z', daten: { konto: 'lena@example.org', netz: '203.0.113.0', heimnetz: false } };
+    const e2 = { art: 'betrieb.paket', zeit: '2026-10-03T09:30:00.123Z', daten: { aktion: 'installiert', paket: 'compliance', version: '1.0.0', vorher: null, von: 'lena@example.org' } };
+    const alt = { eintraege: [e1, e2], weitere: 4, zaehler: { 'zugang.fehlanmeldung_unbekannt': 7 } };
+    for (const [k, w] of [['nachweise:2026-10', alt], ['nachweise:2026-09', { eintraege: [], weitere: 0, zaehler: { 'zugang.fehlanmeldung_unbekannt': 2 } }], ['nachweise_version', '0.288.0']] as const) {
+      await sql`INSERT INTO einstellungen (haushalt_id, schluessel, wert) VALUES (${haushalt}, ${k}, ${sql.json(w as never)})`;
+    }
+    const [a, b] = [pgJournal(sql, haushalt), pgJournal(sql, haushalt)];
+    await Promise.all([a.uebernimm(), b.uebernimm()]);
+    assert.deepEqual(await a.monat('2026-10'), alt);
+    assert.deepEqual(await b.monat('2026-09'), { eintraege: [], weitere: 0, zaehler: { 'zugang.fehlanmeldung_unbekannt': 2 } });
+    const rest = await sql<{ schluessel: string }[]>`SELECT schluessel FROM einstellungen WHERE haushalt_id = ${haushalt}`;
+    assert.deepEqual(rest.map((r) => r.schluessel), ['nachweise_version']);
+    await new Nachweisjournal(a, () => new Date('2026-10-20T00:00:00Z')).zaehle('zugang.fehlanmeldung_unbekannt');
+    assert.equal((await a.monat('2026-10')).zaehler['zugang.fehlanmeldung_unbekannt'], 8);
   });
 });
 
