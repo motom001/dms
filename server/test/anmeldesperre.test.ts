@@ -69,6 +69,9 @@ describe('Anmeldeschutz über viele Adressen (#1295)', () => {
     assert.equal(ipv6Netz64('2001:db8::1'), '2001:db8:0:0::/64');
     assert.equal(ipv6Netz64('::1'), '0:0:0:0::/64');
     assert.equal(ipv6Netz64('fe80::1%eth0'), 'fe80:0:0:0::/64');
+    // Eingebettetes IPv4 belegt zwei Gruppen; die ersten 64 Bit dürfen sich dadurch nicht verschieben.
+    assert.equal(ipv6Netz64('2001::5:6:7:8:1.2.3.4'), '2001:0:5:6::/64');
+    assert.equal(ipv6Netz64('::ffff:0:1.2.3.4'), '0:0:0:0::/64');
     assert.equal(ipv6Netz64('1.2.3.4'), null);
     const s = new Anmeldesperre();
     await s.speichere({ konto: { versuche: 3, minuten: 10 }, ip: { versuche: 5, minuten: 10 } }, 'test');

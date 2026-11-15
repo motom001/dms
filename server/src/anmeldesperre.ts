@@ -97,7 +97,7 @@ export function ipv6Netz64(ip: string): string | null {
   const l = links ? links.split(':') : [];
   const r = rechts ? rechts.split(':') : [];
   // Eingebettetes IPv4 am Ende zählt als zwei Gruppen; für die ersten 64 Bit ohne Belang.
-  const fehlt = 8 - l.length - r.length - (r.at(-1)?.includes('.') || l.at(-1)?.includes('.') ? -1 : 0);
+  const fehlt = 8 - l.length - r.length - (r.at(-1)?.includes('.') || l.at(-1)?.includes('.') ? 1 : 0);
   const gruppen = rechts === undefined ? l : [...l, ...Array<string>(Math.max(0, fehlt)).fill('0'), ...r];
   return `${gruppen.slice(0, 4).map((g) => (parseInt(g, 16) || 0).toString(16)).join(':')}::/64`;
 }
