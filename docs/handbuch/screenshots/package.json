@@ -1,5 +1,5 @@
 {
   "private": true,
   "type": "module",
-  "description": "Screenshots für die Handbücher (Playwright wird im Workflow installiert)"
+  "description": "Screenshots für die Handbücher – Playwright kommt aus web/rauchtest (npm ci dort, #1272)"
 }

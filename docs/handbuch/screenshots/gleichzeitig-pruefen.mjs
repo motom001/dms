@@ -13,7 +13,7 @@
  */
 import { mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
-import { chromium } from 'playwright';
+import { chromium } from '../../../web/rauchtest/playwright.mjs';
 
 const BASIS = process.env.DMS_URL ?? 'http://localhost:3000';
 const ZIEL = process.argv[2] ?? 'gleichzeitig-fehler';

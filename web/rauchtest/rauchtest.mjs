@@ -17,7 +17,7 @@
  * Weitere Variablen: DB_NAME (Vorgabe dms_rauchtest), DB_BENUTZER (Vorgabe dms), DMS_EINRICHTUNGSCODE (statt der
  * Datei unter DMS_DATENWURZEL/geheim). Bei einem Fehler liegt ein Bild der Seite im Fehlerordner.
  *
- * Braucht Playwright mit Chromium (im Workflow: npm install --no-save playwright im Ordner web/rauchtest).
+ * Braucht Playwright mit Chromium: `npm ci` im Ordner web/rauchtest (feste Version mit eigenem Lockfile, #1272).
  * Gewartet wird immer auf Elemente oder Ereignisse, nie eine feste Zeit – sonst wackeln die Tests.
  * Neue Abläufe bekommen ihren Rauchtest im selben PR: einen Block `rauchtest(…)` in der Datei ihres Bereichs unter
  * bereiche/ ergänzen (Entwicklerhandbuch, Seite „Tests“).

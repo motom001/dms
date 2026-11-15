@@ -22,6 +22,12 @@ updates:
       # 0.x: jede Minor-Version kann brechen.
       - dependency-name: "esbuild"
         update-types: ["version-update:semver-minor", "version-update:semver-major"]
+  # Playwright für Rauchtests und Handbuchbilder (#1272): eigenes Lockfile in web/rauchtest, kein Workspace.
+  # Der Zwischenspeicher der Browser in den Workflows folgt dem Lockfile, ein Update holt passende Browser.
+  - package-ecosystem: npm
+    directory: "/web/rauchtest"
+    schedule: { interval: weekly, day: monday, time: "05:00", timezone: Europe/Berlin }
+    commit-message: { prefix: "Abhängigkeiten" }
   - package-ecosystem: github-actions
     directory: "/"
     schedule: { interval: weekly, day: monday, time: "05:00", timezone: Europe/Berlin }

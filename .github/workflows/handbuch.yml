@@ -102,17 +102,20 @@ jobs:
           PORT: '3000'
           DMS_VERSION: handbuch
 
-      # Browser je Playwright-Version zwischenspeichern (#1059): spart den Download in jedem Bilder-Job.
+      # Browser je Playwright-Version zwischenspeichern (#1059): spart den Download in jedem Bilder-Job. Der Schlüssel
+      # folgt dem Lockfile in web/rauchtest (#1272), damit Paket und Browser immer zusammenpassen.
       - name: Browser aus dem Zwischenspeicher
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cache/ms-playwright
-          key: playwright-1.64.1-${{ runner.os }}-${{ runner.arch }}-${{ matrix.teil == 'mobil' && 'chromium-webkit' || 'chromium' }}
+          key: playwright-${{ hashFiles('web/rauchtest/package-lock.json') }}-${{ runner.os }}-${{ runner.arch }}-${{ matrix.teil == 'mobil' && 'chromium-webkit' || 'chromium' }}
       # Chromium für die Bilder und die Prüfungen, WebKit zusätzlich für die iPhone-Prüfung (#174, #489).
+      # Feste Version mit eigenem Lockfile in web/rauchtest (#289, #1272); die Skripte unter docs/handbuch/screenshots
+      # laden Playwright über web/rauchtest/playwright.mjs.
       - name: Playwright installieren
-        working-directory: docs/handbuch/screenshots
+        working-directory: web/rauchtest
         run: |
-          npm install --no-audit --no-fund --no-save playwright@1.64.1  # feste Version (#289)
+          npm ci --no-audit --no-fund
           browser="chromium ${{ matrix.teil == 'mobil' && 'webkit' || '' }}"
           # Erst nur die Browser (aus dem Zwischenspeicher oder Download, #1059); die Systembibliotheken nur, wenn ein
           # Browser so nicht startet – wie bei den Rauchtests. Die Rechner von GitHub bringen sie für Chromium meist mit.
@@ -361,15 +364,16 @@ jobs:
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cache/ms-playwright
-          key: playwright-1.64.1-${{ runner.os }}-${{ runner.arch }}-chromium
+          key: playwright-${{ hashFiles('web/rauchtest/package-lock.json') }}-${{ runner.os }}-${{ runner.arch }}-chromium
       - name: Startseite und Seite „nicht gefunden“ prüfen
         shell: bash
         run: |
           python3 docs/handbuch/werkzeuge/veroeffentlichen.py "$RUNNER_TEMP/seite" site docs/handbuch/start/index.html
-          cd docs/handbuch/screenshots
-          npm install --no-audit --no-fund --no-save playwright@1.64.1  # feste Version (#289)
+          cd web/rauchtest
+          npm ci --no-audit --no-fund  # feste Version mit eigenem Lockfile (#289, #1272)
           timeout 300 npx playwright install chromium || timeout 300 npx playwright install chromium
           node -e "require('playwright').chromium.launch().then((b) => b.close())" || timeout 480 npx playwright install-deps chromium
+          cd ../../docs/handbuch/screenshots
           node start-pruefen.mjs "$RUNNER_TEMP/seite" "$RUNNER_TEMP/start-bilder"
 
       # Offline-Fassung fürs Image (#219): baut wie im Dockerfile und prüft lokale Verweise und Hilfe-Ziele.

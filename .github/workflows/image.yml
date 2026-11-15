@@ -164,20 +164,21 @@ jobs:
           DMS_EINGANG: ${{ runner.temp }}/rauchtest-eingang
           PORT: '3000'
           DMS_VERSION: rauchtest
-      # Dieselbe feste Playwright-Version wie im Workflow „Handbuch“ (#289), nur Chromium. Die Rechner von GitHub
-      # bringen die Bibliotheken für Chromium mit; nur wenn der Browser so nicht startet, kommen sie per apt dazu –
-      # höchstens 5 Minuten je Versuch, dann ein zweiter (die apt-Installation hängt gelegentlich).
-      # Browser zwischenspeichern (#1059), wie im Workflow „Handbuch“.
+      # Playwright mit fester Version aus web/rauchtest/package.json und eigenem Lockfile (#289, #1272), nur Chromium.
+      # Die Rechner von GitHub bringen die Bibliotheken für Chromium mit; nur wenn der Browser so nicht startet, kommen
+      # sie per apt dazu – höchstens 5 Minuten je Versuch, dann ein zweiter (die apt-Installation hängt gelegentlich).
+      # Browser zwischenspeichern (#1059), wie im Workflow „Handbuch“; der Schlüssel folgt dem Lockfile, damit Paket
+      # und Browser immer zusammenpassen.
       - name: Browser aus dem Zwischenspeicher
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cache/ms-playwright
-          key: playwright-1.64.1-${{ runner.os }}-${{ runner.arch }}-chromium
+          key: playwright-${{ hashFiles('web/rauchtest/package-lock.json') }}-${{ runner.os }}-${{ runner.arch }}-chromium
       - name: Playwright für die Rauchtests installieren
         working-directory: web/rauchtest
         shell: bash
         run: |
-          npm install --no-audit --no-fund --no-save playwright@1.64.1
+          npm ci --no-audit --no-fund
           timeout 300 npx playwright install chromium || { echo "::warning::Download von Chromium hing oder scheiterte – zweiter Versuch"; timeout 300 npx playwright install chromium; }
           if node -e "const { chromium } = require('playwright'); chromium.launch().then((b) => b.close())"; then exit 0; fi
           echo "::notice::Chromium startet nicht – Bibliotheken per apt nachinstallieren"

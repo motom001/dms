@@ -93,9 +93,11 @@ Lokal brauchen sie ein frisch gebautes Ablago **ohne** Datenbank-Anbindung, eine
 ```bash
 npm run build
 DMS_DATENWURZEL=/tmp/rauchtest PORT=3000 node server/dist/index.js &
-cd web/rauchtest && npm install --no-save playwright@1.64.1 && npx playwright install chromium && cd ../..
+cd web/rauchtest && npm ci && npx playwright install chromium && cd ../..
 DMS_URL=http://localhost:3000 DMS_DATENWURZEL=/tmp/rauchtest DB_HOST=localhost DB_PASSWORT=dms node web/rauchtest/rauchtest.mjs
 ```
+
+Playwright steht mit fester Version in `web/rauchtest/package.json` und hat dort ein eigenes Lockfile (#1272) – `npm ci` in diesem Ordner, nicht im Wurzelordner. Es ist kein Workspace: So landet es weder im Abhängigkeitsbaum der App noch im Image. Die Werkzeuge der Handbuchbilder (`docs/handbuch/screenshots/`) nutzen dieselbe Installation über `web/rauchtest/playwright.mjs`. Neue Versionen bringt Dependabot.
 
 Für einen zweiten Lauf Ablago beenden, die Datenwurzel und die Datenbank `dms_rauchtest` löschen (oder `DB_NAME` ändern). Bei einem Fehler liegt ein Bild der Seite in `rauchtest-fehler/` (in der CI als Artefakt `rauchtest-fehler`).
 

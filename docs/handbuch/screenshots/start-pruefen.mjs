@@ -13,7 +13,7 @@ import { createServer } from 'node:http';
 import { mkdir, readFile, stat } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { extname, join, resolve } from 'node:path';
-import { chromium } from 'playwright';
+import { chromium } from '../../../web/rauchtest/playwright.mjs';
 
 const WURZEL = resolve(process.argv[2] ?? 'seite');
 const BILDER = resolve(process.argv[3] ?? 'start-bilder');

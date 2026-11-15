@@ -1,5 +1,9 @@
 {
+  "name": "dms-rauchtest",
   "private": true,
   "type": "module",
-  "description": "Rauchtests für die Oberfläche (#897) – Playwright wird im Workflow installiert"
+  "description": "Rauchtests der Oberfläche (#897) und Werkzeuge der Handbuchbilder – Playwright mit eigenem Lockfile, kein Workspace (#1272)",
+  "devDependencies": {
+    "playwright": "1.64.1"
+  }
 }

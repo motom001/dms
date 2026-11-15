@@ -31,7 +31,7 @@
  */
 import { mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
-import { chromium, devices, webkit } from 'playwright';
+import { chromium, devices, webkit } from '../../../web/rauchtest/playwright.mjs';
 
 const BASIS = process.env.DMS_URL ?? 'http://localhost:3000';
 const ZIEL = process.argv[2] ?? 'mobil-fehler';
