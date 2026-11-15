@@ -1,7 +1,8 @@
 /**
  * Gemeinsame Hilfen der Rauchtests (#897, aufgeteilt in #1234): Browser, Anmelden über die Schnittstelle, Beispiel-PDF,
  * Rahmen `rauchtest(…)` mit Fehlersammlung und Knopf-Wächter (#1210), Verwaltungsmodus und kleine Hilfen, die mehrere
- * Bereiche brauchen. axe und Tippflächen stehen in muster.mjs. Diese Datei legt selbst keine Tests an.
+ * Bereiche brauchen. axe und Tippflächen stehen in muster.mjs, ebenso das Warten auf eine ruhige Seite (#1266);
+ * `schemaWechseln` hier nutzt es. Diese Datei legt selbst keine Tests an.
  */
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
@@ -9,6 +10,7 @@ import { mkdir, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
 import { join } from 'node:path';
 import { test, after, before } from 'node:test';
 import { chromium } from 'playwright';
+import { anfragenZaehlen, seiteRuhig } from './muster.mjs';
 
 export const BASIS = (process.env.DMS_URL ?? 'http://localhost:3000').replace(/\/$/, '');
 const FEHLERORDNER = process.argv[2] ?? process.env.DMS_RAUCHTEST_BILDER ?? 'rauchtest-fehler';
@@ -211,6 +213,8 @@ export function rauchtest(name, optionen, ablauf) {
     // Kürzer als die Vorgabe von Playwright (30 s): Ein kaputter Weg soll schnell auffallen.
     k.setDefaultTimeout(15_000);
     k.setDefaultNavigationTimeout(30_000);
+    // Offene Anfragen mitzählen: axe und Tippflächen messen erst, wenn keine mehr läuft (#1266).
+    anfragenZaehlen(k);
     const erwartet = optionen.erwartet ?? [];
     const fehler = [];
     k.on('console', (m) => { if (m.type() === 'error' && !m.text().startsWith('Failed to load resource')) fehler.push(`Konsole: ${m.text()}`); });
@@ -251,6 +255,16 @@ export function rauchtest(name, optionen, ablauf) {
     }
     assert.deepEqual(fehler, [], `Fehler im Browser bei „${name}“`);
   });
+}
+
+/**
+ * Hell/dunkel umschalten und warten, bis die Seite ruhig ist (#1266): Die Farben blenden nach dem Umschalten über; axe
+ * misst sonst eine Zwischenfarbe (2,4:1 statt 4,5:1). Statt eigener Wartezeiten, Neuladen oder `mouse.move(0, 0)` in
+ * jedem Test immer diesen Helfer nehmen. `schema`: 'light' oder 'dark'.
+ */
+export async function schemaWechseln(s, schema) {
+  await s.emulateMedia({ colorScheme: schema });
+  await seiteRuhig(s);
 }
 
 /** Das Benutzermenü oben rechts öffnen (Knopf mit dem eigenen Namen); seit #1215 ein Aufklapper ohne role="menu". */

@@ -113,6 +113,13 @@ rauchtest('Favorit merken', { als: LENA }, async (s) => {
 
 The tests search for the German texts of the interface. `{ handy: true }` opens the test at phone size, `erwartet: [{ status: 404, pfad: /…/ }]` allows responses that belong to this path. Always wait for an element or event, never a fixed time – otherwise the test becomes flaky. Data that several tests need is created by `vorbereiten()` in `web/rauchtest/einrichtung.mjs` through the API.
 
+**axe and touch targets only on a settled page (#1266):** These checks measure colours and positions – anything still fading or shifting is measured wrongly. Runs used to fail without a real fault (contrast 2.4:1 of a button in the middle of the colour transition after switching to dark, a touch target “moved by 1 px” because the system status was still loading). Therefore:
+
+- `axePruefen` and `tippflaechenPruefen` (`web/rauchtest/muster.mjs`) wait themselves with `seiteRuhig`: mouse moved away (hover changes colours), no open request, fonts loaded, no finite animation or transition left (`document.getAnimations()`), layout unchanged over two animation frames. If the page still shifts while a touch target is measured, the element is measured again once the page has settled.
+- Always switch light/dark with `schemaWechseln(s, 'dark')` from `hilfen.mjs`, never `emulateMedia` directly, no fixed waiting time (`waitForTimeout`), no reload and no `mouse.move(0, 0)` just for axe.
+- `seiteRuhig` only knows about open requests for contexts watched by `anfragenZaehlen(kontext)` – `rauchtest()` and `musterAufnehmen` do this themselves; your own contexts (e.g. in screenshot scripts) call it after `newContext`.
+- A spinner (endless animation) does not hold up the wait; if a page does not settle within 10 s, it is measured anyway – the restlessness itself is then the finding.
+
 ## Manuals { #handbucher }
 
 ```sh

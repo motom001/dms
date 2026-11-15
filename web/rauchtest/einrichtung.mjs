@@ -3,7 +3,7 @@
  * Jeder Bereich bindet diese Datei zuerst ein – so läuft die Einrichtung immer als erster Test, auch allein.
  */
 import assert from 'node:assert/strict';
-import { api, BASIS, beispielPdf, bereitMelden, daten, einrichtungscode, JONAS, LENA, rauchtest, warteAufAblago } from './hilfen.mjs';
+import { api, BASIS, beispielPdf, bereitMelden, daten, einrichtungscode, JONAS, LENA, rauchtest, schemaWechseln, warteAufAblago } from './hilfen.mjs';
 import { axePruefen } from './muster.mjs';
 
 /* ---------- Einrichtung und Daten ---------- */
@@ -97,12 +97,10 @@ rauchtest('Einrichtung: Assistent im Browser', {
 const ASSISTENT_FUNDE = [];
 async function assistentAxe(s, schritt) {
   for (const schema of ['light', 'dark']) {
-    await s.emulateMedia({ colorScheme: schema });
-    // Knöpfe wechseln ihre Fläche mit einem kurzen Übergang – erst danach messen.
-    await s.waitForTimeout(400);
+    await schemaWechseln(s, schema);
     for (const v of await axePruefen(s, ['.karte.assistent'])) ASSISTENT_FUNDE.push(`${schritt} (${schema}): ${v}`);
   }
-  await s.emulateMedia({ colorScheme: 'light' });
+  await schemaWechseln(s, 'light');
 }
 
 /** Daten für die Tests über die Schnittstelle – mit der Sitzung aus dem Assistenten (im Verwaltungsmodus). */

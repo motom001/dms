@@ -4,7 +4,7 @@
  */
 import assert from 'node:assert/strict';
 import '../einrichtung.mjs';
-import { BASIS, keineWaagerechteRolle, LENA, rauchtest, verwalten, WERKBANK_BEREICHE } from '../hilfen.mjs';
+import { BASIS, keineWaagerechteRolle, LENA, rauchtest, schemaWechseln, verwalten, WERKBANK_BEREICHE } from '../hilfen.mjs';
 import { axePruefen, tippflaechenPruefen } from '../muster.mjs';
 
 const EIGENER = `schluessel: rauchtest
@@ -40,11 +40,10 @@ rauchtest('Werkbank → Rundgänge: Liste, Prüfen mit Zeile, eigenen speichern,
   await bearbeitung.getByRole('button', { name: 'Zeile 6' }).waitFor();
   await bearbeitung.getByText(/unbekannter Anker „gibt\.es\.nicht“/).waitFor();
   for (const schema of ['light', 'dark']) {
-    await s.emulateMedia({ colorScheme: schema });
-    await s.waitForTimeout(400);
+    await schemaWechseln(s, schema);
     for (const v of await axePruefen(s, WERKBANK_BEREICHE)) funde.push(`Editor mit Fehler (${schema}): ${v}`);
   }
-  await s.emulateMedia({ colorScheme: 'light' });
+  await schemaWechseln(s, 'light');
   // Ankerhilfe: ein Klick setzt den Anker an der Schreibmarke ein.
   await datei.fill(EIGENER.replace('    ziel: startseite.suche\n', '    ziel: \n'));
   await datei.evaluate((el) => { const i = el.value.indexOf('ziel: ') + 6; el.focus(); el.setSelectionRange(i, i); });
@@ -60,8 +59,7 @@ rauchtest('Werkbank → Rundgänge: Liste, Prüfen mit Zeile, eigenen speichern,
   await bearbeitung.locator('[role="switch"][aria-checked="false"]').waitFor();
   await liste.getByRole('link', { name: /Rauchtest-Rundgang.*ausgeschaltet/ }).waitFor();
   for (const schema of ['light', 'dark']) {
-    await s.emulateMedia({ colorScheme: schema });
-    await s.waitForTimeout(400);
+    await schemaWechseln(s, schema);
     for (const v of await axePruefen(s, WERKBANK_BEREICHE)) funde.push(`Eigener Rundgang (${schema}): ${v}`);
   }
   assert.deepEqual(funde, [], `axe meldet Verstöße:\n${funde.join('\n')}`);
@@ -93,11 +91,10 @@ rauchtest('Werkbank → Tipps: eigener Tipp mit Vorschau, Tipp von Ablago anpass
   const liste = s.getByRole('region', { name: 'Elemente' });
   await liste.getByRole('link', { name: /Rauchtest: Oben suchst du/ }).waitFor();
   for (const schema of ['light', 'dark']) {
-    await s.emulateMedia({ colorScheme: schema });
-    await s.waitForTimeout(400);
+    await schemaWechseln(s, schema);
     for (const v of await axePruefen(s, WERKBANK_BEREICHE)) funde.push(`Eigener Tipp (${schema}): ${v}`);
   }
-  await s.emulateMedia({ colorScheme: 'light' });
+  await schemaWechseln(s, 'light');
   // Tipp von Ablago anpassen: Original bleibt, „angepasst“ in der Liste, zurücksetzen.
   await s.goto(BASIS + '/werkbank/tipps/favoriten');
   await text.waitFor();
@@ -107,11 +104,10 @@ rauchtest('Werkbank → Tipps: eigener Tipp mit Vorschau, Tipp von Ablago anpass
   await liste.getByRole('link', { name: /Merkliste.*angepasst/ }).waitFor();
   await bearbeitung.getByText(`Original: ${original}`).waitFor();
   for (const schema of ['light', 'dark']) {
-    await s.emulateMedia({ colorScheme: schema });
-    await s.waitForTimeout(400);
+    await schemaWechseln(s, schema);
     for (const v of await axePruefen(s, WERKBANK_BEREICHE)) funde.push(`Angepasster Tipp (${schema}): ${v}`);
   }
-  await s.emulateMedia({ colorScheme: 'light' });
+  await schemaWechseln(s, 'light');
   await bearbeitung.getByRole('button', { name: 'Auf Original zurücksetzen' }).click();
   await liste.getByRole('link', { name: original.slice(0, 30) }).first().waitFor();
   assert.equal(await liste.getByRole('link', { name: /Merkliste/ }).count(), 0);

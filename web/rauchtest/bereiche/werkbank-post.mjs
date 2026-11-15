@@ -5,7 +5,7 @@
  */
 import assert from 'node:assert/strict';
 import '../einrichtung.mjs';
-import { BASIS, keineWaagerechteRolle, LENA, rauchtest, verwalten, WERKBANK_BEREICHE } from '../hilfen.mjs';
+import { BASIS, keineWaagerechteRolle, LENA, rauchtest, schemaWechseln, verwalten, WERKBANK_BEREICHE } from '../hilfen.mjs';
 import { axePruefen, tippflaechenPruefen } from '../muster.mjs';
 
 /** Farbe der Schrift als Vergleichswert und die Fehlerfarbe der Seite (--schlecht), beide aufgelöst. */
@@ -23,7 +23,7 @@ rauchtest('Stempel: Liste zweizeilig ohne rote Schrift, Farbpunkt, Vorschau offe
   await verwalten(s);
   const funde = [];
   for (const schema of ['light', 'dark']) {
-    await s.emulateMedia({ colorScheme: schema });
+    await schemaWechseln(s, schema);
     await s.goto(BASIS + '/werkbank/stempel/kopie');
     const elemente = s.getByRole('region', { name: 'Elemente' });
     const eintrag = elemente.getByRole('link', { name: /^Kopie für/ }).first();
@@ -82,7 +82,7 @@ rauchtest('Postfach → Stand: Zustandssatz, aktueller Fehler mit Weg zur Verbin
   // Läuft: nichts Rotes, frühere Störung leise und zugeklappt mit „behoben am …“.
   await mitStand(s, pf.id, { letzterAbruf: '2026-11-15T09:41:00.000Z', naechsterAbruf: '2026-11-15T09:56:00.000Z', fehlerFolge: 0, fehler: [{ ...STOERUNG, behobenAm: '2026-11-09T13:20:00.000Z' }] });
   for (const schema of ['light', 'dark']) {
-    await s.emulateMedia({ colorScheme: schema });
+    await schemaWechseln(s, schema);
     // Erst woandershin: Dieselbe Adresse mit Anker lädt sonst nicht neu.
     await s.goto(BASIS + '/werkbank/stempel');
     await s.goto(BASIS + `/werkbank/postfaecher/${pf.id}#stand`);
@@ -100,7 +100,7 @@ rauchtest('Postfach → Stand: Zustandssatz, aktueller Fehler mit Weg zur Verbin
   // Gestört: roter Satz oben mit Seit-Zeit und Zahl der Versuche; „Verbindung prüfen“ öffnet den Bereich.
   await mitStand(s, pf.id, { letzterAbruf: '2026-11-15T09:41:00.000Z', fehlerFolge: 3, fehler: [STOERUNG, STOERUNG, STOERUNG].map((f, i) => ({ ...f, zeit: `2026-11-1${5 - i}T09:00:00.000Z` })) });
   for (const schema of ['light', 'dark']) {
-    await s.emulateMedia({ colorScheme: schema });
+    await schemaWechseln(s, schema);
     // Erst woandershin: Dieselbe Adresse mit Anker lädt sonst nicht neu.
     await s.goto(BASIS + '/werkbank/stempel');
     await s.goto(BASIS + `/werkbank/postfaecher/${pf.id}#stand`);

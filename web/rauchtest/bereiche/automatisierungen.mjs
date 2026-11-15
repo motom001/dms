@@ -4,7 +4,7 @@
  */
 import assert from 'node:assert/strict';
 import '../einrichtung.mjs';
-import { BASIS, daten, inTagen, LENA, probeDialog, rauchtest, verwalten, WERKBANK_BEREICHE } from '../hilfen.mjs';
+import { BASIS, daten, inTagen, LENA, probeDialog, rauchtest, schemaWechseln, verwalten, WERKBANK_BEREICHE } from '../hilfen.mjs';
 import { axePruefen, tippflaechenPruefen } from '../muster.mjs';
 
 /* ---------- Werkbank → Automatisierungen und Ablaufvorlagen (#1172–#1177) ---------- */
@@ -25,11 +25,10 @@ rauchtest('Automatisierungen: kompakte Liste, Mehrfachauswahl, gruppieren, Schal
   const leiste = liste.getByRole('region', { name: 'Auswahl' });
   await leiste.getByText('2 ausgewählt').waitFor();
   for (const schema of ['light', 'dark']) {
-    await s.emulateMedia({ colorScheme: schema });
-    await s.waitForTimeout(400);
+    await schemaWechseln(s, schema);
     for (const v of await axePruefen(s, WERKBANK_BEREICHE)) funde.push(`Liste mit Auswahl (${schema}): ${v}`);
   }
-  await s.emulateMedia({ colorScheme: 'light' });
+  await schemaWechseln(s, 'light');
   await leiste.getByRole('button', { name: 'Ausschalten' }).click();
   await liste.getByText('2 Automatisierungen ausgeschaltet.').waitFor({ state: 'attached' });
   await leiste.waitFor({ state: 'detached' });
@@ -52,8 +51,7 @@ rauchtest('Automatisierungen: kompakte Liste, Mehrfachauswahl, gruppieren, Schal
   assert.deepEqual([nachher.x, nachher.y], [vorher.x, vorher.y], 'Schalter bleibt an seiner Stelle');
   assert.equal(await bearbeitung.getByText('Eingeschaltet.').count(), 0, 'keine zusätzliche Meldung');
   for (const schema of ['light', 'dark']) {
-    await s.emulateMedia({ colorScheme: schema });
-    await s.waitForTimeout(400);
+    await schemaWechseln(s, schema);
     for (const v of await axePruefen(s, WERKBANK_BEREICHE)) funde.push(`Editor (${schema}): ${v}`);
   }
   assert.deepEqual(funde, [], `axe meldet Verstöße:\n${funde.join('\n')}`);
@@ -94,11 +92,10 @@ rauchtest('Ablaufvorlage: Mappentypen, „In“ immer sichtbar, Platzhalter, Aus
   const probe = await probeDialog(bearbeitung, vorlage.name);
   await probe.getByLabel('Text').fill('Akku laden');
   for (const schema of ['light', 'dark']) {
-    await s.emulateMedia({ colorScheme: schema });
-    await s.waitForTimeout(400);
+    await schemaWechseln(s, schema);
     for (const v of await axePruefen(s, WERKBANK_BEREICHE)) funde.push(`Probe-Dialog (${schema}): ${v}`);
   }
-  await s.emulateMedia({ colorScheme: 'light' });
+  await schemaWechseln(s, 'light');
   await probe.getByRole('button', { name: vorlage.name }).click();
   const [j, m, t] = inTagen(14).split('-');
   const vorschau = bearbeitung.locator('.probe-vorschau');
@@ -107,11 +104,10 @@ rauchtest('Ablaufvorlage: Mappentypen, „In“ immer sichtbar, Platzhalter, Aus
   await vorschau.getByText('Akku laden', { exact: true }).waitFor();
   await bearbeitung.getByRole('button', { name: 'Nochmal' }).waitFor();
   for (const schema of ['light', 'dark']) {
-    await s.emulateMedia({ colorScheme: schema });
-    await s.waitForTimeout(400);
+    await schemaWechseln(s, schema);
     for (const v of await axePruefen(s, WERKBANK_BEREICHE)) funde.push(`Vorschau (${schema}): ${v}`);
   }
-  await s.emulateMedia({ colorScheme: 'light' });
+  await schemaWechseln(s, 'light');
   // „In“ (#1175): Felder immer da; der Umschalter behält seine Breite; ein Klick in die Zahl wählt „In“.
   const wann = bearbeitung.getByRole('radiogroup', { name: 'Wann' });
   const breite = (await wann.boundingBox()).width;

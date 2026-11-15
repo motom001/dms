@@ -113,6 +113,13 @@ rauchtest('Favorit merken', { als: LENA }, async (s) => {
 
 Die Tests suchen die deutschen Texte der Oberfläche. `{ handy: true }` öffnet den Test in Handy-Größe, `erwartet: [{ status: 404, pfad: /…/ }]` erlaubt Antworten, die zu diesem Weg gehören. Gewartet wird immer auf ein Element oder Ereignis, nie eine feste Zeit – sonst wackelt der Test. Daten, die mehrere Tests brauchen, legt `vorbereiten()` in `web/rauchtest/einrichtung.mjs` über die Schnittstelle an.
 
+**axe und Tippflächen erst auf einer ruhigen Seite (#1266):** Die Prüfungen messen Farben und Lagen – was gerade noch überblendet oder nachrückt, misst falsch. Früher scheiterten so Läufe ohne echten Fehler (Kontrast 2,4:1 eines Knopfs mitten im Farbübergang nach dem Wechsel auf dunkel, eine Tippfläche „bewegt um 1 px“, weil der Systemzustand nachlud). Darum:
+
+- `axePruefen` und `tippflaechenPruefen` (`web/rauchtest/muster.mjs`) warten selbst mit `seiteRuhig`: Maus weg (Hover ändert Farben), keine offene Anfrage, Schriften geladen, keine endliche Animation und kein Übergang mehr (`document.getAnimations()`), Layout über zwei Animationsbilder gleich. Rückt die Seite während einer Tippflächen-Messung trotzdem, wird das Element nach erneuter Ruhe noch einmal gemessen.
+- Hell/dunkel immer mit `schemaWechseln(s, 'dark')` aus `hilfen.mjs` umschalten, nie `emulateMedia` direkt, keine feste Wartezeit (`waitForTimeout`), kein Neuladen und kein `mouse.move(0, 0)` nur für axe.
+- Offene Anfragen kennt `seiteRuhig` nur für Kontexte, die `anfragenZaehlen(kontext)` beobachtet – `rauchtest()` und `musterAufnehmen` tun das selbst; eigene Kontexte (z. B. in Bildskripten) rufen es nach `newContext` auf.
+- Ein Ladekreis (Endlos-Animation) hält das Warten nicht auf; wird eine Seite in 10 s nicht ruhig, wird trotzdem gemessen – dann ist die Unruhe selbst der Befund.
+
 ## Handbücher
 
 ```sh

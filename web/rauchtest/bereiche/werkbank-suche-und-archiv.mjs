@@ -5,7 +5,7 @@
  */
 import assert from 'node:assert/strict';
 import '../einrichtung.mjs';
-import { api, archivfassungAblegen, archivfassungWartet, BASIS, beispielPdf, daten, keineWaagerechteRolle, LENA, rauchtest, sitzung, verwalten } from '../hilfen.mjs';
+import { api, archivfassungAblegen, archivfassungWartet, BASIS, beispielPdf, daten, keineWaagerechteRolle, LENA, rauchtest, schemaWechseln, sitzung, verwalten } from '../hilfen.mjs';
 import { axePruefen } from '../muster.mjs';
 
 // #978: Suche über der Liste der Mappentypen wie in der Ablage – Fundstelle, Trefferzahl, Esc, keine Treffer, zurücksetzen.
@@ -178,13 +178,11 @@ rauchtest('Werkbank: eingebaute Werkzeuge nur, wenn eins fehlt (#1189)', { als: 
     assert.equal(zaehler.neu, vorher + 1, '„Erneut prüfen“ prüft auf dem Server neu');
   }
   await s.locator('#installiert dt', { hasText: 'PDF lesen (Poppler)' }).locator('xpath=following-sibling::dd[1]').getByText('fehlt', { exact: true }).waitFor();
-  // Der Hinweis selbst: axe hell und dunkel – frisch geladen und ohne Maus über „Erneut prüfen“ (Hover und
-  // Farbübergang beim Wechsel des Schemas verfälschen sonst den Kontrast).
+  // Der Hinweis selbst: axe hell und dunkel – Maus weg und Farbübergang abwarten erledigen schemaWechseln und
+  // axePruefen (#1266; Hover über „Erneut prüfen“ verfälschte sonst den Kontrast).
   const funde = [];
-  await s.mouse.move(0, 0);
   for (const schema of ['light', 'dark']) {
-    await s.emulateMedia({ colorScheme: schema });
-    await s.reload();
+    await schemaWechseln(s, schema);
     await s.locator('#werkzeuge').getByRole('button', { name: 'Erneut prüfen' }).waitFor();
     for (const v of await axePruefen(s, ['#werkzeuge'])) funde.push(`${schema}: ${v}`);
   }

@@ -4,7 +4,7 @@
  */
 import assert from 'node:assert/strict';
 import '../einrichtung.mjs';
-import { ABLAGE_BEREICHE, BASIS, daten, inTagen, LENA, probeDialog, rauchtest, verwalten, WERKBANK_BEREICHE } from '../hilfen.mjs';
+import { ABLAGE_BEREICHE, BASIS, daten, inTagen, LENA, probeDialog, rauchtest, schemaWechseln, verwalten, WERKBANK_BEREICHE } from '../hilfen.mjs';
 import { axePruefen, tippflaechenPruefen } from '../muster.mjs';
 
 /* ---------- Ablago antwortet nicht (#1198) ---------- */
@@ -40,10 +40,10 @@ rauchtest('Handy: Startbild, „antwortet gerade nicht“ ohne React, von selbst
   // Barrierefrei hell und dunkel, Tippflächen am Handy.
   const funde = [];
   for (const schema of ['light', 'dark']) {
-    await s.emulateMedia({ colorScheme: schema });
+    await schemaWechseln(s, schema);
     for (const v of await axePruefen(s, ['#keine-antwort'])) funde.push(`${schema}: ${v}`);
   }
-  await s.emulateMedia({ colorScheme: 'light' });
+  await schemaWechseln(s, 'light');
   for (const v of await tippflaechenPruefen(s, ['#keine-antwort'])) funde.push(`Tippfläche: ${v}`);
   assert.deepEqual(funde, [], funde.join('\n'));
   await meldung.getByRole('button', { name: 'Erneut versuchen' }).click();
@@ -90,12 +90,10 @@ rauchtest('Automatisierungsvorlage: Datum „in 14 Tagen“ vorbelegt und änder
   assert.equal(await dialog.getByLabel('Am').inputValue(), inTagen(14), 'vorbelegt mit heute + 14 Tage');
   await dialog.getByText(/^Vorgeschlagen: /).waitFor();
   for (const schema of ['light', 'dark']) {
-    await s.emulateMedia({ colorScheme: schema });
-    // Knöpfe wechseln ihre Fläche mit einem kurzen Übergang – erst danach messen (wie im Assistenten).
-    await s.waitForTimeout(400);
+    await schemaWechseln(s, schema);
     for (const v of await axePruefen(s, ['.spalte.mappe'])) funde.push(`Dialog an der Mappe (${schema}): ${v}`);
   }
-  await s.emulateMedia({ colorScheme: 'light' });
+  await schemaWechseln(s, 'light');
   // Geändert: Der Ablauf steht unter „Geplant“ mit dem neuen Datum.
   await dialog.getByLabel('Am').fill(inTagen(20));
   await dialog.getByLabel('Text').fill('Akku prüfen');
@@ -116,9 +114,7 @@ rauchtest('Automatisierungsvorlage: Datum „in 14 Tagen“ vorbelegt und änder
   const probe = await probeDialog(bearbeitung, vorlage.name);
   assert.equal(await probe.getByLabel('Am').inputValue(), inTagen(14), 'Ausprobieren wie der Dialog vorbelegt');
   for (const schema of ['light', 'dark']) {
-    await s.emulateMedia({ colorScheme: schema });
-    // Knöpfe wechseln ihre Fläche mit einem kurzen Übergang – erst danach messen (wie im Assistenten).
-    await s.waitForTimeout(400);
+    await schemaWechseln(s, schema);
     for (const v of await axePruefen(s, WERKBANK_BEREICHE)) funde.push(`Vorlage in der Werkbank (${schema}): ${v}`);
   }
   // Ohne Haken: fest – die Kurzform ohne „(änderbar)“ (nicht gespeichert).
@@ -139,12 +135,10 @@ rauchtest('Suche: Vertragsart nicht in der allgemeinen Suche, mit gewähltem Typ
   await liste.getByText('Keine Treffer. Entferne eine Bedingung, um mehr zu finden.').waitFor();
   await liste.getByText('Nicht dabei: Vertragsart – wähle den Mappentyp, um darin zu suchen.').waitFor();
   for (const schema of ['light', 'dark']) {
-    await s.emulateMedia({ colorScheme: schema });
-    // Knöpfe wechseln ihre Fläche mit einem kurzen Übergang – erst danach messen (wie im Assistenten).
-    await s.waitForTimeout(400);
+    await schemaWechseln(s, schema);
     for (const v of await axePruefen(s, ABLAGE_BEREICHE)) funde.push(`Erweiterte Suche (${schema}): ${v}`);
   }
-  await s.emulateMedia({ colorScheme: 'light' });
+  await schemaWechseln(s, 'light');
   // Mit gewähltem Mappentyp: gefunden.
   await s.goto(BASIS + '/ablage/suche?typ=vertragsart&volltext=Kilometerleasing');
   await liste.getByRole('link', { name: /Kilometerleasing/ }).first().waitFor();
@@ -158,9 +152,7 @@ rauchtest('Suche: Vertragsart nicht in der allgemeinen Suche, mit gewähltem Typ
   await haken.waitFor();
   assert.equal(await haken.isChecked(), false);
   for (const schema of ['light', 'dark']) {
-    await s.emulateMedia({ colorScheme: schema });
-    // Knöpfe wechseln ihre Fläche mit einem kurzen Übergang – erst danach messen (wie im Assistenten).
-    await s.waitForTimeout(400);
+    await schemaWechseln(s, schema);
     for (const v of await axePruefen(s, WERKBANK_BEREICHE)) funde.push(`Mappentyp (${schema}): ${v}`);
   }
   assert.deepEqual(funde, [], `axe meldet Verstöße:\n${funde.join('\n')}`);

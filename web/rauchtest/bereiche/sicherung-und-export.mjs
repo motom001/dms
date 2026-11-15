@@ -4,7 +4,7 @@
  */
 import assert from 'node:assert/strict';
 import '../einrichtung.mjs';
-import { api, BASIS, daten, LENA, rauchtest, sitzung, verwalten } from '../hilfen.mjs';
+import { api, BASIS, daten, LENA, rauchtest, schemaWechseln, sitzung, verwalten } from '../hilfen.mjs';
 import { axePruefen, tippflaechenPruefen } from '../muster.mjs';
 
 // Wiederherstellen (Abschnitt der Sicherung) antwortet außerhalb des Wartungsmodus mit 409 – das ist gewollt.
@@ -173,10 +173,8 @@ rauchtest('Werkbank: Sicherungen nur außer Haus in der Liste, axe hell und dunk
   // axe hell und dunkel ohne Maus über den Knöpfen und erst nach dem Farbübergang (Hover und Übergang beim Wechsel des
   // Schemas verfälschen sonst den Kontrast, vgl. #1189).
   const funde = [];
-  await s.mouse.move(0, 0);
   for (const schema of ['light', 'dark']) {
-    await s.emulateMedia({ colorScheme: schema });
-    await s.waitForFunction(() => document.getAnimations().every((a) => a.playState !== 'running'));
+    await schemaWechseln(s, schema);
     for (const v of await axePruefen(s, ['#liste'])) funde.push(`${schema}: ${v}`);
   }
   assert.deepEqual(funde, [], `axe meldet Verstöße:\n${funde.join('\n')}`);
@@ -212,10 +210,8 @@ rauchtest('Werkbank: „Lokal nur die neueste“ nur mit Sicherung außer Haus, 
   assert.equal(await zeitplan.getByRole('link', { name: 'Zur Sicherung außer Haus' }).getAttribute('href'), '#ausser-haus');
   assert.equal(await zeitplan.getByRole('spinbutton', { name: 'Wöchentliche' }).isDisabled(), false, 'die Aufbewahrung bleibt änderbar');
   const funde = [];
-  await s.mouse.move(0, 0);
   for (const schema of ['light', 'dark']) {
-    await s.emulateMedia({ colorScheme: schema });
-    await s.waitForFunction(() => document.getAnimations().every((a) => a.playState !== 'running'));
+    await schemaWechseln(s, schema);
     for (const v of await axePruefen(s, ['#zeitplan'])) funde.push(`${schema}: ${v}`);
   }
   assert.deepEqual(funde, [], `axe meldet Verstöße:\n${funde.join('\n')}`);
