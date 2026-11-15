@@ -226,6 +226,18 @@ Je Teil entsteht eine **neue Post** mit Stand *Neu*: Betreff „Sammelscan (Teil
 
 Umgekehrt geht es auch: Gehören zwei Posts zusammen (z. B. Vorder- und Rückseite einzeln gescannt), öffne die erste, wähle ihre PDFs und **Zusammenfügen** – siehe [PDF bearbeiten](dokumente.md#pdf-bearbeiten). Über die Schnittstelle (API) fügt ein Programm auch PDFs aus mehreren Posts zusammen; eine Post, die dadurch leer ist, wird erledigt.
 
+## Anlage ab hier { #anlage-ab-hier }
+
+Steckt ein Brief samt Anlage in **einem** eingescannten PDF – etwa die Werkstattrechnung (Seite 1–2) mit dem HU-Protokoll (Seite 3–5) –, machst du die hinteren Seiten in einem Schritt zur Anlage:
+
+1. Öffne die Post und klicke neben dem PDF auf **⋯ → Seiten …**.
+2. Klicke bei der ersten Seite der Anlage auf **Anlage ab hier**. Die Seite trägt dann die Marke „Anlage 1“; bei weiteren Anlagen genauso (**Anlage 2, 3** …). **Keine Anlage** nimmt die Markierung zurück.
+3. **Übernehmen** und die Rückfrage bestätigen.
+
+![Seitenansicht einer Post: ab Seite 3 beginnt Anlage 1](bilder/post-anlage-ab-hier.png)
+
+Es gelten dieselben Regeln wie beim [Sammelscan teilen](#sammelscan-teilen): Es entsteht eine **neue Post** mit dem Dokument (Seiten vor der ersten Anlage) und seinen Anlagen „<Name des Dokuments> – Anlage 1“, „– Anlage 2“ …; der Betreff bleibt. Die Ausgangspost behält das ganze PDF als frühere Fassung, ist *Erledigt* und verweist auf die neue; in der Historie beider steht, was geschah. Setzt du zusätzlich **Teilen ab hier**, gehören die Anlagen zum Teil davor. Das geht nur in einer Post, nur mit dem Recht *Bearbeiten* und nur bei einem Dokument, das noch keine Anlagen hat. Rückgängig machst du es an der Anlage mit **Zum eigenen Dokument machen** (siehe [Anlagen](dokumente.md#anlagen)).
+
 ## Versendete E-Mails
 
 Verschickst du eine Mappe [per E-Mail](versenden.md), legt Ablago die E-Mail als Post ab: Kanal *E-Mail*, Richtung *Ausgehend*, Stand *Erledigt*, zugeordnet zur Mappe. Betreff, Empfänger (bei *An (Adresse)*), Absender (bei *Von*), Datum und Nachricht bleiben, wie sie verschickt wurden. Stand und *An* kannst du ändern.

@@ -91,6 +91,27 @@ export function beispielPdf(zeile) {
   return Buffer.from(pdf, 'latin1');
 }
 
+/** Mehrseitiges PDF (#1162): je Eintrag eine Seite mit einer Zeile Text – wie beispielPdf im Bildskript des Handbuchs. */
+export function beispielPdfSeiten(zeilen) {
+  const objekte = [
+    '<< /Type /Catalog /Pages 2 0 R >>',
+    `<< /Type /Pages /Kids [${zeilen.map((_, i) => `${4 + i * 2} 0 R`).join(' ')}] /Count ${zeilen.length} >>`,
+    '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>',
+  ];
+  zeilen.forEach((z, i) => {
+    const inhalt = `BT /F1 18 Tf 60 760 Td (${z}) Tj ET`;
+    objekte.push(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R >> >> /Contents ${5 + i * 2} 0 R >>`);
+    objekte.push(`<< /Length ${inhalt.length} >>\nstream\n${inhalt}\nendstream`);
+  });
+  let pdf = '%PDF-1.4\n';
+  const pos = [];
+  objekte.forEach((o, i) => { pos.push(pdf.length); pdf += `${i + 1} 0 obj\n${o}\nendobj\n`; });
+  const xref = pdf.length;
+  pdf += `xref\n0 ${objekte.length + 1}\n0000000000 65535 f \n${pos.map((p) => `${String(p).padStart(10, '0')} 00000 n \n`).join('')}`;
+  pdf += `trailer\n<< /Size ${objekte.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`;
+  return Buffer.from(pdf, 'latin1');
+}
+
 /* ---------- Knöpfe auf jeder besuchten Seite (#1210) ---------- */
 
 /**

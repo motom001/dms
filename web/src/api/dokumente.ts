@@ -70,7 +70,7 @@ export const dokumenteApi = {
   },
   /** PDF bearbeiten (#335). */
   pdfSeiten: (id: string) => anfrage<PdfSeiten>('GET', `/api/dokumente/${id}/seiten`),
-  bearbeitePdf: (id: string, e: { seiten: Array<{ nr: number; drehung?: number }>; teile?: number[]; bestaetigt?: boolean }) =>
+  bearbeitePdf: (id: string, e: { seiten: Array<{ nr: number; drehung?: number }>; teile?: number[]; anlagen?: number[]; bestaetigt?: boolean }) =>
     anfrage<{ dokumente: Dokument[]; posten: Mappe[] }>('POST', `/api/dokumente/${id}/seiten`, e),
   /** Schwärzen (#392). */
   schwaerzenVorschau: (id: string) => anfrage<SchwaerzenVorschau>('GET', `/api/dokumente/${id}/schwaerzen`),

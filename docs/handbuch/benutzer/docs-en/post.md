@@ -226,6 +226,18 @@ For each part, a **new post** with status *New* is created: subject "Batch scan 
 
 It also works the other way round: if two posts belong together (e.g. front and back scanned separately), open the first one, choose its PDFs and **Merge** – see [Edit PDF](dokumente.md#pdf-bearbeiten). Via the interface (API), a program can also merge PDFs from several posts; a post that becomes empty as a result is completed.
 
+## Enclosure from here { #anlage-ab-hier }
+
+If a letter and its enclosure are in **one** scanned PDF – say the garage invoice (pages 1–2) with the MOT report (pages 3–5) –, you turn the last pages into an enclosure in one step:
+
+1. Open the post and click **⋯ → Pages …** next to the PDF.
+2. At the first page of the enclosure, click **Enclosure from here**. The page then carries the mark "Enclosure 1"; the same for further enclosures (**Enclosure 2, 3** …). **No enclosure** removes the mark.
+3. **Apply** and confirm the question.
+
+![Pages of a post: enclosure 1 begins at page 3](bilder/post-anlage-ab-hier.png)
+
+The same rules apply as for [splitting a batch scan](#sammelscan-teilen): a **new post** is created with the document (the pages before the first enclosure) and its enclosures "<name of the document> – Enclosure 1", "– Enclosure 2" …; the subject stays. The original post keeps the whole PDF as the earlier version, is *Done* and links to the new one; the history of both says what happened. If you also set **Split from here**, the enclosures belong to the part before them. This only works in a post, only with the permission *Edit* and only for a document that has no enclosures yet. To undo it, use **Make it a document of its own** on the enclosure (see [Enclosures](dokumente.md#anlagen)).
+
 ## Emails sent { #versendete-e-mails }
 
 When you send a folder [by email](versenden.md), Ablago files the email as post: channel *Email*, direction *Outgoing*, status *Done*, assigned to the folder. Subject, recipients (under *To (address)*), sender (under *From*), date and message stay as they were sent. You can change status and *To*.

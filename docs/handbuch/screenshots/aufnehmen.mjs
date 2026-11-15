@@ -845,6 +845,21 @@ async function main() {
   await bild(s, 'dokumente-anlagen');
   await api('PUT', `/api/mappen/${werkstatt.id}`, { werte: { stand: 'Erledigt' } });
 
+  // „Anlage ab hier“ (#1162): eingescannte Werkstattrechnung mit HU-Protokoll in einem PDF – Seite 3 beginnt die Anlage.
+  // Nur vorgemerkt (Abbrechen), danach erledigt, damit „Neue Post“ in den folgenden Bildern gleich bleibt.
+  const hu = await api('POST', '/api/post', { betreff: 'Werkstatt Petra – HU' });
+  await api('POST', `/api/mappen/${hu.id}/dokumente?register=dokumente&name=${encodeURIComponent('Scan Werkstatt.pdf')}&typ=application/pdf`,
+    beispielPdf(['Rechnung Nr. W-2026-0912', 'Rechnung Seite 2', 'HU-Protokoll', 'HU-Protokoll Seite 2', 'HU-Protokoll Seite 3']), true);
+  await geheZu(s, `/ablage/${neuePost}/${hu.id}?als=post`);
+  await s.getByRole('tab', { name: w(/^Dokumente/) }).click();
+  await dokMenue(s.locator('.dokumentliste li', { hasText: 'Scan Werkstatt.pdf' }), 'Seiten …');
+  await s.waitForFunction(() => [...document.querySelectorAll('.seitenbild img')].length > 0 && [...document.querySelectorAll('.seitenbild img')].every((i) => i.complete && i.naturalWidth > 0), null, { timeout: 20_000 }).catch(() => {});
+  await s.locator('.seitenraster .seite').nth(2).getByRole('button', { name: w('Anlage ab hier') }).click();
+  await s.locator('.pdfseiten').scrollIntoViewIfNeeded();
+  await bild(s, 'post-anlage-ab-hier');
+  await s.locator('.pdfseiten').getByRole('button', { name: w('Abbrechen') }).click().catch(() => {});
+  await api('PUT', `/api/mappen/${hu.id}`, { werte: { stand: 'Erledigt' } });
+
   // E-Mail-Postfach (#999): eine abgeholte E-Mail mit drei Anhängen (und einem Logo in der Signatur) – drei Dokumente in
   // der Reihenfolge der E-Mail, ganz hinten die Original-E-Mail. Abgeholt über die IMAP-Attrappe; Postfach danach
   // gelöscht und Post erledigt, damit die Werkbank und „Neue Post“ in den folgenden Bildern gleich bleiben.

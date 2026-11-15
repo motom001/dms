@@ -129,6 +129,7 @@ Schief gescannt, eine leere Rückseite zu viel, drei Briefe in einem Scan? Das r
 - **Löschen** – die Seite fällt weg (**Behalten** holt sie zurück)
 - **← / →** – nach vorn oder hinten verschieben. Du kannst Seiten auch mit der Maus an eine andere Stelle **ziehen** oder per Tastatur: Seite mit Tab anwählen, dann **Alt + Pfeiltaste**.
 - **Teilen ab hier** – mit dieser Seite beginnt ein neuer Teil
+- **Anlage ab hier** – nur in einer Post: Die Seiten ab hier werden eine [Anlage](#anlagen) des Dokuments, siehe [Anlage ab hier](post.md#anlage-ab-hier)
 
 ![Seiten eines PDFs bearbeiten: Seite 2 gedreht, ab Seite 3 ein neuer Teil](bilder/pdf-bearbeiten.png)
 
