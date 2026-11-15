@@ -9,16 +9,16 @@
  * - **Übersicht einer Mappe** (auch API v1): wo sie erwähnt ist (nur Stellen in Mappen, die die Person lesen darf) und
  *   wen oder was sie selbst erwähnt.
  */
-import { Fachfehler } from '../fehler';
-import { t } from '../sprache';
-import { istUuid } from '../repo';
-import { erwaehnungen } from '../../../shared/src/markdown';
-import { SICHTBARKEIT_MAX, type Sichtbarkeit } from '../../../shared/src/sichtbarkeit';
-import type { Mappe, Mappentyp } from '../../../shared/src/model';
-import type { Kern, Zugriff } from '../kern/kern';
-import type { FavoritErwaehntMerk } from '../../../shared/src/erwaehnen';
-import type { FavoritErwaehntZeile } from '../aufgabenmail';
-import type { ZugriffDienst } from '../zugriff/zugriff.dienst';
+import { Fachfehler } from './fehler';
+import { t } from './sprache';
+import { istUuid } from './repo';
+import { erwaehnungen } from '../../shared/src/markdown';
+import { SICHTBARKEIT_MAX, type Sichtbarkeit } from '../../shared/src/sichtbarkeit';
+import type { Mappe, Mappentyp } from '../../shared/src/model';
+import type { Kern, Zugriff } from './kern';
+import type { FavoritErwaehntMerk } from '../../shared/src/erwaehnen';
+import type { FavoritErwaehntZeile } from './aufgabenmail';
+import type { ZugriffDienst } from './zugriff';
 
 /** Höchstens so viele Vorschläge nach `@` (ohne Benutzer). */
 export const VORSCHLAEGE_MAX = 8;

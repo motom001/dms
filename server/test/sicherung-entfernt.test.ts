@@ -12,7 +12,7 @@ import { after, describe, it } from 'node:test';
 import type { Datenquelle } from '../src/datenbankabzug';
 import { speicherEinstellungen } from '../src/einstellungen';
 import { Sicherung, type Lauf, type SchlankeMetadaten } from '../src/sicherung';
-import { liesZielListe, schlankGueltig } from '../src/sicherung/entfernt';
+import { liesZielListe, schlankGueltig } from '../src/sicherung-entfernt';
 import { Tresor } from '../src/tresor';
 import { heikleHandlung } from '../src/verwaltungsbereiche';
 import { liesCode } from '../../shared/src/pakete';

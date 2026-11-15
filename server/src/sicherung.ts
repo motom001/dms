@@ -16,7 +16,7 @@ import { t } from './sprache';
 import { gebietsschema } from '../../shared/src/sprache';
 import { GB, MB, STUECK_MAX } from './grenzen';
 import type { Abrufbar } from './http/teilabruf';
-import { EntfernteSicherungen, type HolAufruf } from './sicherung/entfernt';
+import { EntfernteSicherungen, type HolAufruf } from './sicherung-entfernt';
 
 /**
  * Sicherungen (#103–#105): Datenbank und Dateien zum selben Zeitpunkt, verschlüsselt mit dem

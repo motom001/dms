@@ -16,12 +16,12 @@
  */
 import { open, readFile, rename, rm, stat, statfs, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { Fachfehler } from '../fehler';
-import { protokoll } from '../protokoll';
-import { t } from '../sprache';
-import { sha256Von } from '../sicherungsformat';
-import { STUECK_MAX } from '../grenzen';
-import type { ExternStand, Lauf, SchlankeMetadaten, Sicherung } from '../sicherung';
+import { Fachfehler } from './fehler';
+import { protokoll } from './protokoll';
+import { t } from './sprache';
+import { sha256Von } from './sicherungsformat';
+import { STUECK_MAX } from './grenzen';
+import type { ExternStand, Lauf, SchlankeMetadaten, Sicherung } from './sicherung';
 
 const log = protokoll.modul('sicherung');
 const ENDUNG = '.dms-sicherung';

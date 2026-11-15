@@ -24,7 +24,7 @@ import { Systemausstattung } from './systemausstattung';
 import { KiTypen, MappentypenDienst, Nummernkreise, Passung, Systemtypen, TypPakete } from './mappentypen';
 import { paketEinstellungen } from './pakete/index';
 import { keinSchluessel, MappenArchiv, MappenDienst, MappenEingaben, MappenHinweise, MappenHistorie, MappenNotizen, MappenTitel, Passwortfelder } from './mappen';
-import { MappenErwaehnungen } from './mappen/erwaehnungen';
+import { MappenErwaehnungen } from './erwaehnungen';
 import { DokumentAnlagen, DokumentArchivfassung, DokumenteDienst, DokumentUmwandlung, DokumentVersionen, FehlendeDateien, GeschuetztePdfs } from './dokumente';
 import { SichtenDienst, SichtenVerwaltung, Systemsichten } from './sichten';
 import { BerechtigungenDienst } from './berechtigungen';
