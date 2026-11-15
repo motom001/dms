@@ -8,5 +8,5 @@ art: patch
 ## Behoben
 
 - **Erwähnen: kein Buchstabe geht mehr verloren** (#1267): Wer direkt nach „Erwähnen“ weitertippt, findet jetzt jedes Zeichen im Text.
-- **Werkzeugleiste im Notizfeld für Sprachsteuerung** (#1268): Die Knöpfe heißen so, wie sie aussehen, z. B. „1. Nummerierte Liste“ – „Klicke 1.“ trifft den richtigen Knopf.
+- **Werkzeugleiste im Notizfeld für Sprachsteuerung** (#1268): Die Knöpfe heißen so, wie sie aussehen, z. B. „1. Nummerierte Liste“ – „Klicke 1.“ trifft den richtigen Knopf. Auf Englisch zeigen die Knöpfe B, I und H statt F, K und Ü.
 - **Anmeldeseite zeigt nur eigene Texte** (#1263): Schlägt die Anmeldung über einen Anbieter fehl, zeigt die Anmeldeseite einen festen Satz von Ablago; die Einzelheiten stehen im Protokoll.

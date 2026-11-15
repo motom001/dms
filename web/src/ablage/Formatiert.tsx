@@ -75,14 +75,14 @@ export function Formatiert({ text }: { text: string }) {
 
 /**
  * Werkzeuge der Leiste. `aufschrift` (#1268, WCAG 2.5.3): Buchstaben und Ziffern, die man sieht, stehen auch im Namen
- * („1. Nummerierte Liste“), damit Sprachsteuerung sie trifft; reine Zeichen (•, „“, Link) sind für Hilfsmittel
- * verborgen, der Name steht dann allein.
+ * („1. Nummerierte Liste“, „F Fett“; die Buchstaben je Sprache aus den Sprachdateien, en „B Bold“), damit Sprachsteuerung
+ * sie trifft; reine Zeichen (•, „“, Link) sind für Hilfsmittel verborgen, der Name steht dann allein.
  */
 type Werkzeug = { titel: string; zeichen: ReactNode; aufschrift?: string; vor: string; nach?: string; zeile?: boolean; platzhalter: string };
 const WERKZEUGE: Werkzeug[] = [
-  { titel: t('ablage.formatiert.fett'), zeichen: <strong>F</strong>, aufschrift: 'F', vor: '**', nach: '**', platzhalter: 'fett' },
-  { titel: t('ablage.formatiert.kursiv'), zeichen: <em>K</em>, aufschrift: 'K', vor: '*', nach: '*', platzhalter: 'kursiv' },
-  { titel: t('ablage.formatiert.ueberschrift'), zeichen: 'Ü', aufschrift: 'Ü', vor: '## ', zeile: true, platzhalter: t('ablage.formatiert.ueberschrift') },
+  { titel: t('ablage.formatiert.fett'), zeichen: <strong>{t('ablage.formatiert.zeichen.fett')}</strong>, aufschrift: t('ablage.formatiert.zeichen.fett'), vor: '**', nach: '**', platzhalter: 'fett' },
+  { titel: t('ablage.formatiert.kursiv'), zeichen: <em>{t('ablage.formatiert.zeichen.kursiv')}</em>, aufschrift: t('ablage.formatiert.zeichen.kursiv'), vor: '*', nach: '*', platzhalter: 'kursiv' },
+  { titel: t('ablage.formatiert.ueberschrift'), zeichen: t('ablage.formatiert.zeichen.ueberschrift'), aufschrift: t('ablage.formatiert.zeichen.ueberschrift'), vor: '## ', zeile: true, platzhalter: t('ablage.formatiert.ueberschrift') },
   { titel: t('ablage.formatiert.liste'), zeichen: '•', vor: '- ', zeile: true, platzhalter: t('ablage.formatiert.punkt') },
   { titel: t('ablage.formatiert.nummerierte-liste'), zeichen: '1.', aufschrift: '1.', vor: '1. ', zeile: true, platzhalter: t('ablage.formatiert.punkt') },
   { titel: t('ablage.formatiert.zitat'), zeichen: '„“', vor: '> ', zeile: true, platzhalter: t('ablage.formatiert.zitat') },
