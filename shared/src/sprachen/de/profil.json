@@ -1,5 +1,10 @@
 {
   "favoriten.abgeschaltet": "Benachrichtigungen bei geänderten Favoriten bekommst du gerade nicht – das legt die Automatisierung „Favoriten-Änderungen melden“ fest (Werkbank → Automatisierungen). Deine Einstellung bleibt gespeichert und gilt wieder, sobald sie dich erreicht.",
+  "favoriten.erwaehnt": "Wenn ein Favorit erwähnt wird",
+  "favoriten.erwaehnt.sofort": "sofort",
+  "favoriten.erwaehnt.zusammenfassung": "in der täglichen Zusammenfassung",
+  "favoriten.erwaehnt.nie": "nie",
+  "favoriten.erwaehnt.hilfe": "Wenn ein Favorit erwähnt wird (mit @ in einer Notiz oder einem Feld), erfährst du es – als Aufgabe sofort, in der täglichen Zusammenfassung oder nie. Nur, wenn du beide Mappen lesen darfst.",
   "laufwerk.bereich": "Laufwerk",
   "laufwerk.menue": "Als Laufwerk einbinden",
   "laufwerk.lade": "Lade …",

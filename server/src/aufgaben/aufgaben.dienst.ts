@@ -15,7 +15,8 @@ import { istUuid, type Repo } from '../repo';
 import { t } from '../sprache';
 import type { Gueltigkeit } from '../zaehlerspeicher';
 import type { ZugriffDienst } from '../zugriff';
-import { erwaehnungen } from '../../../shared/src/markdown';
+import { alsText, erwaehnungen } from '../../../shared/src/markdown';
+import { FAVORIT_ERWAEHNT, FAVORIT_ERWAEHNT_OFFEN, favoritErwaehntWahl, type FavoritErwaehntMerk } from '../../../shared/src/erwaehnen';
 import { type Aufgabe, AUFGABE_MAX, type AufgabenAnlass, type Benutzer, type Mappentyp, type Werte } from '../../../shared/src/model';
 import type { AblaufPlatzhalter, MappenAblaeufe } from './ablaeufe';
 import type { Fristen } from './fristen';
@@ -39,6 +40,8 @@ export interface AufgabenKonten {
    * Personen brauchen. Ohne sie lesen beide die Liste aller Personen.
    */
   person?(id: string): Promise<Benutzer | undefined>;
+  /** Persönliche Einstellungen (#889: „Wenn ein Favorit erwähnt wird“). */
+  einstellungen?(id: string): Promise<Record<string, unknown>>;
   setzeEinstellung?(id: string, schluessel: string, wert: unknown): Promise<void>;
 }
 
@@ -97,8 +100,10 @@ export class AufgabenDienst {
   }
 
   /**
-   * Gemeinsamer Abgleich für Felder und Notizen (#81): `quelle.key` unterscheidet die Stelle
-   * (Feldschlüssel oder `notiz:<id>`), `quelle.ort` steht im Text („in „Beschreibung““, „in einer Notiz“).
+   * Gemeinsamer Abgleich für Felder und Notizen (#81): `quelle.key` unterscheidet die Stelle (Feldschlüssel oder
+   * `notiz:<id>`), `quelle.ort` steht im Text („in „Beschreibung““, „in einer Notiz“). Nur **neue** Erwähnungen lösen
+   * etwas aus, und nur solche, die der Erwähnende sehen darf (#137). Benutzer bekommen eine Aufgabe (#56); andere Mappen
+   * melden sich bei denen, die sie als Favorit haben (#889).
    */
   async erwaehnungenAbgleichen(mappeId: string, quelle: { key: string; ort: string; auszug?: string }, altText: string, neuText: string, von: string | null) {
     const vorher = new Set(erwaehnungen(altText));
@@ -106,25 +111,77 @@ export class AufgabenDienst {
     if (!vorher.size && !jetzt.size) return;
     const { benutzer } = await this.kern.system();
     const offen = (await this.repo.offeneAufgaben({ mappeIds: [mappeId] })).filter((a) => a.art === 'erwaehnung' && a.feldKey === quelle.key);
-    // #137: nur Benutzer, die der Erwähnende sehen darf.
     const sichtbar = von ? await this.sichtbarFuer(von, [...jetzt]) : new Set(jetzt);
     for (const id of jetzt) {
-      if (vorher.has(id) || id === von || offen.some((a) => a.empfaengerId === id) || !sichtbar.has(id)) continue;
+      if (vorher.has(id) || !sichtbar.has(id) || id === mappeId) continue;
       const m = await this.repo.holeMappe(id);
-      if (!m || m.typId !== benutzer.id) continue;
+      if (!m) continue;
+      if (m.typId !== benutzer.id) { await this.favoritErwaehnt(mappeId, m, quelle, von, offen); continue; }
+      if (id === von || offen.some((a) => a.empfaengerId === id && a.anlass?.art !== 'favorit')) continue;
       // Deaktivierte nur, wenn ihr Vertreter übernimmt (#78).
       if (m.werte.aktiv === false && (await this.empfaengerAufloesen(id)).ziel === id) continue;
       const a = await this.neueAufgabe({
         id: randomUUID(), mappeId, empfaengerId: id, art: 'erwaehnung', feldKey: quelle.key,
-        text: t('meldungen.dienst.erwaehnt-von', { name: await this.name(von), ort: quelle.ort, wert: quelle.auszug ? `: ${quelle.auszug}` : '' }).slice(0, AUFGABE_MAX),
+        text: await this.erwaehntText(id, von, quelle, neuText),
         erstellt: '', erstelltVon: von, erledigt: null, erledigtVon: null,
       });
       await this.notiere(mappeId, von, 'aufgabe', { text: t('meldungen.dienst.erwaehnt', { name: await this.name(id), ort: quelle.ort }), aufgabe: a.id, aufgabenart: 'erwaehnung', fuer: id, aufgabentext: a.text });
       await this.leiteUm(a);
     }
     for (const id of vorher) {
-      if (!jetzt.has(id)) await this.notiere(mappeId, von, 'aufgabe', { text: t('meldungen.dienst.erwaehnung-von-entfernt', { name: await this.name(id), ort: quelle.ort }) });
+      if (jetzt.has(id)) continue;
+      const m = await this.repo.holeMappe(id);
+      if (m?.typId === benutzer.id) await this.notiere(mappeId, von, 'aufgabe', { text: t('meldungen.dienst.erwaehnung-von-entfernt', { name: await this.name(id), ort: quelle.ort }) });
     }
+  }
+
+  /**
+   * Text der Aufgabe „Erwähnt von …“ für den Empfänger (#888, #889): Den Namen des Erwähnenden und Titel weiterer
+   * Erwähnungen im Auszug nur, wenn der Empfänger diese Mappen lesen darf – sonst neutral.
+   */
+  private async erwaehntText(empfaenger: string, von: string | null, quelle: { ort: string; auszug?: string }, text: string): Promise<string> {
+    const ids = erwaehnungen(text);
+    const sieht = await this.sichtbarFuer(empfaenger, [...ids, ...(von ? [von] : [])]);
+    const auszug = quelle.auszug === undefined ? '' : (() => {
+      const x = alsText(text, (id, name) => (sieht.has(id) ? name : t('meldungen.dienst.erwaehnung-nicht-sichtbar')));
+      return `: ${x.length > 80 ? `${x.slice(0, 77)} …` : x}`;
+    })();
+    const roh = von && !sieht.has(von)
+      ? t('meldungen.dienst.erwaehnt-ohne-name', { ort: quelle.ort, wert: auszug })
+      : t('meldungen.dienst.erwaehnt-von', { name: await this.name(von), ort: quelle.ort, wert: auszug });
+    return roh.slice(0, AUFGABE_MAX);
+  }
+
+  /**
+   * Eine andere Mappe wurde erwähnt (#889): Wer sie als Favorit hat, erfährt es – je nach Einstellung „Wenn ein Favorit
+   * erwähnt wird“ sofort (Aufgabe an der Mappe mit der Erwähnung), in der täglichen Zusammenfassung oder nie. Nur wer
+   * **beide** Mappen lesen darf; nie der Erwähnende selbst. Der Text nennt nur den Titel des Favoriten.
+   */
+  private async favoritErwaehnt(mappeId: string, ziel: { id: string; titel?: string | null }, quelle: { key: string; ort: string }, von: string | null, offen: Aufgabe[]) {
+    const fav = (await this.repo.favoritenDerMappe(ziel.id)).filter((f) => f.benutzerId !== von);
+    if (!fav.length) return;
+    const aktiv = this.konten?.benutzer ? new Set((await this.konten.benutzer()).filter((b) => b.aktiv).map((b) => b.id)) : null;
+    for (const { benutzerId } of fav) {
+      if (aktiv && !aktiv.has(benutzerId)) continue;
+      const e = (await this.konten?.einstellungen?.(benutzerId)) ?? {};
+      const wahl = favoritErwaehntWahl(e[FAVORIT_ERWAEHNT]);
+      if (wahl === 'nie') continue;
+      const sieht = await this.sichtbarFuer(benutzerId, [ziel.id, mappeId]);
+      if (!sieht.has(ziel.id) || !sieht.has(mappeId)) continue;
+      if (wahl === 'zusammenfassung') { await this.merkeFuerZusammenfassung(benutzerId, e, { quelle: mappeId, ziel: ziel.id, ort: quelle.ort, am: new Date().toISOString() }); continue; }
+      if (offen.some((a) => a.empfaengerId === benutzerId && a.anlass?.art === 'favorit' && a.anlass.mappe === ziel.id)) continue;
+      await this.neueAufgabe({
+        id: randomUUID(), mappeId, empfaengerId: benutzerId, art: 'erwaehnung', feldKey: quelle.key, anlass: { art: 'favorit', mappe: ziel.id },
+        text: t('meldungen.dienst.favorit-erwaehnt', { titel: ziel.titel || t('meldungen.dienst.ohne-titel'), ort: quelle.ort }).slice(0, AUFGABE_MAX),
+        erstellt: '', erstelltVon: von, erledigt: null, erledigtVon: null,
+      });
+    }
+  }
+
+  /** Für die tägliche Zusammenfassung merken (persönliche Einstellung, höchstens 50, neueste zuletzt). */
+  private async merkeFuerZusammenfassung(benutzerId: string, e: Record<string, unknown>, x: FavoritErwaehntMerk) {
+    const bisher = Array.isArray(e[FAVORIT_ERWAEHNT_OFFEN]) ? e[FAVORIT_ERWAEHNT_OFFEN] as FavoritErwaehntMerk[] : [];
+    await this.konten?.setzeEinstellung?.(benutzerId, FAVORIT_ERWAEHNT_OFFEN, [...bisher.filter((y) => !(y.quelle === x.quelle && y.ziel === x.ziel)), x].slice(-50));
   }
 
   /**

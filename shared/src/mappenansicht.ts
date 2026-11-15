@@ -38,7 +38,9 @@ export function startRegister(register: AnsichtsRegister[], wunsch: string | nul
  * Was im Aufgaben-Banner vorne steht (#427), passend zur Art. Für mich vollständig („Deine Aufgabe“,
  * „Post für dich“ …), für andere der Anfang, hinter den die Oberfläche den Namen setzt („Aufgabe für“).
  */
-export function aufgabenBeschriftung(art: Aufgabenart, fuerMich: boolean): string {
+export function aufgabenBeschriftung(art: Aufgabenart, fuerMich: boolean, anlass?: Aufgabe['anlass']): string {
+  // Ein Favorit wurde erwähnt (#889): nicht „Du wurdest erwähnt“.
+  if (art === 'erwaehnung' && anlass?.art === 'favorit') return fuerMich ? t('gemeinsam.mappenansicht.favorit-erwaehnt') : t('gemeinsam.mappenansicht.favorit-erwaehnt-fuer');
   switch (art) {
     case 'post': return fuerMich ? t('gemeinsam.mappenansicht.post-fuer-dich') : t('gemeinsam.mappenansicht.post-fuer');
     case 'erwaehnung': return fuerMich ? t('gemeinsam.mappenansicht.du-wurdest-erwaehnt') : t('gemeinsam.mappenansicht.erwaehnung-fuer');

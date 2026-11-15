@@ -2,7 +2,8 @@
  * Formatierter Text (#53): ein kleines, sicheres Markdown.
  *
  * - Blöcke: Überschriften (#, ##, ###), Absätze, Listen (-, *, 1.), Zitate (>).
- * - Inline: **fett**, *kursiv* bzw. _kursiv_, `Code`, [Text](https://…), Erwähnungen @[Name](benutzer:<id>) (#56).
+ * - Inline: **fett**, *kursiv* bzw. _kursiv_, `Code`, [Text](https://…), Erwähnungen @[Titel](mappe:<id>) (#889) – auch
+ *   ältere @[Name](benutzer:<id>) (#56). Ein Benutzer ist eine Mappe (Systemtyp „Benutzer“); `benutzer:` bleibt gültig.
  * - Rohes HTML gibt es nicht: Der Text wird in einen Baum zerlegt und von der Oberfläche
  *   als React-Elemente gezeichnet – nichts davon wird je als HTML ausgeführt.
  * - Links nur mit http(s) oder mailto; alles andere bleibt Text.
@@ -13,7 +14,8 @@ export type Inline =
   | { art: 'fett' | 'kursiv'; kinder: Inline[] }
   | { art: 'code'; text: string }
   | { art: 'link'; ziel: string; kinder: Inline[] }
-  | { art: 'erwaehnung'; benutzerId: string; name: string };
+  /** id: Mappe (bzw. Benutzer-Mappe); benutzer: alte Schreibweise `benutzer:` (#56). name: Titel beim Erwähnen. */
+  | { art: 'erwaehnung'; id: string; name: string; benutzer: boolean };
 
 export type Block =
   | { art: 'ueberschrift'; stufe: 1 | 2 | 3; inhalt: Inline[] }
@@ -22,7 +24,7 @@ export type Block =
   | { art: 'zitat'; bloecke: Block[] };
 
 const ERLAUBTE_LINKS = /^(https?:\/\/|mailto:)/i;
-const ERWAEHNUNG = /@\[([^\]\n]{1,80})\]\(benutzer:([0-9a-f-]{36})\)/gi;
+const ERWAEHNUNG = /@\[([^\]\n]{1,80})\]\((?:benutzer|mappe):([0-9a-f-]{36})\)/gi;
 
 /** Inline-Text in Teile zerlegen. */
 export function inline(text: string): Inline[] {
@@ -34,7 +36,7 @@ export function inline(text: string): Inline[] {
     if (letzter?.art === 'text') letzter.text += t; else out.push({ art: 'text', text: t });
   };
   const muster: Array<[RegExp, (m: RegExpExecArray) => Inline | null]> = [
-    [/^@\[([^\]\n]{1,80})\]\(benutzer:([0-9a-f-]{36})\)/i, (m) => ({ art: 'erwaehnung', name: m[1], benutzerId: m[2].toLowerCase() })],
+    [/^@\[([^\]\n]{1,80})\]\((benutzer|mappe):([0-9a-f-]{36})\)/i, (m) => ({ art: 'erwaehnung', name: m[1], id: m[3].toLowerCase(), benutzer: m[2].toLowerCase() === 'benutzer' })],
     [/^`([^`\n]+)`/, (m) => ({ art: 'code', text: m[1] })],
     [/^\*\*(?=\S)([\s\S]*?\S)\*\*/, (m) => ({ art: 'fett', kinder: inline(m[1]) })],
     [/^__(?=\S)([\s\S]*?\S)__/, (m) => ({ art: 'fett', kinder: inline(m[1]) })],
@@ -107,30 +109,36 @@ export function zerlege(md: string): Block[] {
   return bloecke;
 }
 
-const textVon = (teile: Inline[]): string => teile.map((t) => {
+/** Name einer Erwähnung im reinen Text; Vorgabe: der Titel beim Erwähnen. */
+export type ErwaehnungsName = (id: string, gespeichert: string) => string;
+
+const textVon = (teile: Inline[], name: ErwaehnungsName): string => teile.map((t) => {
   switch (t.art) {
     case 'text': case 'code': return t.text;
-    case 'erwaehnung': return `@${t.name}`;
-    default: return textVon(t.kinder);
+    case 'erwaehnung': return `@${name(t.id, t.name)}`;
+    default: return textVon(t.kinder, name);
   }
 }).join('');
 
-/** Reiner Text ohne Formatierung (Titel, Listen, Suche). */
-export function alsText(md: string): string {
+/**
+ * Reiner Text ohne Formatierung (Titel, Listen, Suche). `name` (#889): Text für Erwähnungen, z. B. der aktuelle Titel
+ * oder „Mappe (nicht sichtbar)“ für jemanden, der die erwähnte Mappe nicht lesen darf.
+ */
+export function alsText(md: string, name: ErwaehnungsName = (_id, n) => n): string {
   const gehe = (b: Block[]): string[] => b.flatMap((x) => {
     switch (x.art) {
-      case 'ueberschrift': case 'absatz': return [textVon(x.inhalt)];
-      case 'liste': return x.punkte.map((p) => textVon(p));
+      case 'ueberschrift': case 'absatz': return [textVon(x.inhalt, name)];
+      case 'liste': return x.punkte.map((p) => textVon(p, name));
       case 'zitat': return gehe(x.bloecke);
     }
   });
   return gehe(zerlege(md)).join(' ').replace(/\s+/g, ' ').trim();
 }
 
-/** Ids der erwähnten Benutzer (#56). */
+/** Ids der erwähnten Mappen und Benutzer (#56, #889) – beide Schreibweisen. */
 export function erwaehnungen(md: string): string[] {
   return [...new Set([...String(md ?? '').matchAll(ERWAEHNUNG)].map((m) => m[2].toLowerCase()))];
 }
 
-/** Markdown-Text einer Erwähnung. */
-export const erwaehnung = (name: string, id: string) => `@[${name.replace(/[[\]\n]/g, '')}](benutzer:${id})`;
+/** Markdown-Text einer Erwähnung (#889: immer `mappe:`, auch für Benutzer). */
+export const erwaehnung = (name: string, id: string) => `@[${name.replace(/[[\]\n]/g, '').slice(0, 80)}](mappe:${id})`;

@@ -13,7 +13,7 @@ In der Liste steht bei jeder Mappe, was zu tun ist. In der Mappe selbst steht ob
 | Art | Wann | Wie wird sie erledigt? |
 | --- | --- | --- |
 | **Passt nicht** | Ein Administrator hat den Mappentyp geändert – z. B. ein neues Pflichtfeld –, und deine Mappe passt nicht mehr dazu. | Ergänze oder korrigiere die markierten Angaben und speichere. Dann erledigt sie sich von selbst. |
-| **Erwähnung** | Jemand hat dich in einem formatierten Text oder einer Notiz mit **@** erwähnt. | Klicke im Hinweis auf **Erledigt**. |
+| **Erwähnung** | Jemand hat dich in einem formatierten Text oder einer Notiz mit **@** erwähnt – oder einen deiner Favoriten (*Dein Favorit wurde erwähnt*, wenn du „sofort“ gewählt hast). | Klicke im Hinweis auf **Erledigt**. |
 | **Zugewiesen** | Jemand hat dir über **Mappe ▾ → Aufgabe vergeben** etwas zu tun gegeben. | Klicke im Hinweis auf **Erledigt**. |
 | **Frist** | Ein Datum in einer Mappe rückt näher, z. B. „Kündigung bis 30.09.2027“ – wann und für wen, legt eine Automatisierung fest. Daneben steht, wie viele Tage noch bleiben. | Klicke auf **Erledigt**. Ändert sich das Datum oder wird es geleert, erledigt sie sich von selbst. Wiederholt sich der Termin (z. B. jährlich), schlägt Ablago den nächsten vor: **Datum auf … setzen**. |
 | **Erinnerung** | Du oder jemand anderes hat über **Mappe ▾ → Erinnern** an diese Mappe erinnert, und der Tag ist da. | Klicke auf **Erledigt**. |

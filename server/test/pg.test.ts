@@ -738,6 +738,13 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     assert.equal(n.status, 201);
     assert.equal((await anfrage('GET', `/api/mappen?sicht=typ:${typ.id}&suche=Zander`)).body.gesamt, 0);
     assert.equal((await anfrage('GET', `/api/mappen?sicht=typ:${typ.id}&suche=Zander&notizen=true`)).body.gesamt, 1);
+    // Erwähnen mit @ (#889): wo eine Mappe erwähnt ist – Notiz und formatiertes Feld, in PostgreSQL gesucht.
+    const m2 = (await anfrage('POST', '/api/mappen', { typId: typ.id, werte: { nr: 'V-2', text: `Siehe @[V-1](mappe:${m.id})` } })).body;
+    assert.equal((await anfrage('POST', `/api/mappen/${m2.id}/notizen`, { text: `Auch @[V-1](mappe:${m.id})` })).status, 201);
+    const erw = (await anfrage('GET', `/api/mappen/${m.id}/erwaehnungen`)).body as { erwaehntIn: Array<{ mappeId: string; stelle: string; feld?: string }> };
+    assert.deepEqual(erw.erwaehntIn.map((x) => `${x.stelle}:${x.feld ?? ''}`).sort(), ['feld:Beschreibung', 'notiz:']);
+    assert.deepEqual((await anfrage('GET', `/api/mappen/${m2.id}/erwaehnungen`)).body.erwaehnt.map((x: { id: string }) => x.id), [m.id]);
+    assert.equal((await anfrage('DELETE', `/api/mappen/${m2.id}`)).status, 204);
     // Protokoll (#57)
     const h = (await anfrage('GET', `/api/mappen/${m.id}/historie`)).body;
     assert.deepEqual([...new Set(h.map((e: { art: string }) => e.art))].sort(), ['angelegt', 'aufgabe', 'geaendert', 'notiz']);

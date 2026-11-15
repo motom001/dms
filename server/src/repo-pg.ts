@@ -2569,6 +2569,19 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
       if (!istUuid(mappeId)) return [];
       return (await sql`SELECT * FROM notizen WHERE haushalt_id = ${haushaltId} AND mappe_id = ${mappeId} ORDER BY erstellt, id`).map(alsNotiz);
     },
+    async erwaehntIn(mappeId) {
+      if (!istUuid(mappeId)) return [];
+      const muster = `%:${mappeId.toLowerCase()})%`;
+      const notiz = await sql`SELECT id, mappe_id, geaendert FROM notizen WHERE haushalt_id = ${haushaltId} AND mappe_id <> ${mappeId}
+        AND (text LIKE ${`%(mappe${muster.slice(1)}`} OR text LIKE ${`%(benutzer${muster.slice(1)}`}) ORDER BY geaendert DESC LIMIT 200`;
+      // Formatierte Felder: Werte mit der Erwähnung – den Schlüssel sucht der Dienst heraus (Feldtyp „formatiert“).
+      const felder = await sql`SELECT m.id, m.geaendert, w.key FROM mappen m, jsonb_each_text(m.werte) w WHERE m.haushalt_id = ${haushaltId} AND m.id <> ${mappeId}
+        AND m.werte::text LIKE ${muster} AND (w.value LIKE ${`%(mappe${muster.slice(1)}`} OR w.value LIKE ${`%(benutzer${muster.slice(1)}`}) ORDER BY m.geaendert DESC LIMIT 200`;
+      return [
+        ...notiz.map((x) => ({ mappeId: x.mappe_id as string, stelle: `notiz:${x.id as string}`, am: iso(x.geaendert) })),
+        ...felder.map((x) => ({ mappeId: x.id as string, stelle: x.key as string, am: iso(x.geaendert) })),
+      ].slice(0, 200);
+    },
     async notizenVon(mappeIds) {
       const gueltig = [...new Set(mappeIds.filter(istUuid))];
       if (!gueltig.length) return [];

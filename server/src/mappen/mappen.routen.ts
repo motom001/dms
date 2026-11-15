@@ -13,11 +13,15 @@ import type { RoutenKontext } from '../http/routen-kontext';
 import type { Route } from '../routen';
 
 export function mappenRouten(k: RoutenKontext): Route[] {
-  const { dienst, x, fotostapel, typName, spracheFuer, modusSpur, zg, darf } = k;
+  const { dienst, x, fotostapel, typName, spracheFuer, modusSpur, zg, darf, zuletztGeoeffnet } = k;
   return [
     // Sichtbarkeit verwiesener Mappen (#888): Erwähnungen und Namen unterscheiden „nicht sichtbar“ von „gelöscht“.
     // Nur für Ids, die die Oberfläche schon kennt; keine Titel, kein Typ (wie „nicht sichtbare Mappe“, #124).
     { methode: 'POST', pfad: '/api/mappen/sichtbarkeit', zugang: 'angemeldet', lesend: true, handler: async (a) => ok(await dienst.rechtepruefung.sichtbarkeit(await zg(a), b(a).ids)) },
+    // Erwähnen mit @ (#889): Vorschläge (nur lesbare Mappen), aktuelle Titel erwähnter Mappen, wo eine Mappe erwähnt ist.
+    { methode: 'GET', pfad: '/api/mappen/erwaehnen', zugang: 'angemeldet', handler: async (a) => ok(await dienst.erwaehnungen.vorschlaege(await zg(a), a.query.suche, await zuletztGeoeffnet(a, 20))) },
+    { methode: 'POST', pfad: '/api/mappen/verweise', zugang: 'angemeldet', lesend: true, handler: async (a) => ok(await dienst.erwaehnungen.verweise(await zg(a), b(a).ids)) },
+    { methode: 'GET', pfad: '/api/mappen/:id/erwaehnungen', zugang: 'angemeldet', handler: async (a) => ok(await dienst.erwaehnungen.uebersicht(await zg(a), a.params.id)) },
     // Notizen (#55)
     // E-Mail aus der Mappe (#58)
     { methode: 'GET', pfad: '/api/email/bereit', zugang: 'angemeldet', handler: async () => ok({ bereit: !!x.betrieb?.mailer() }) },

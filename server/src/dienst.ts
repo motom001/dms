@@ -24,6 +24,7 @@ import { Systemausstattung } from './systemausstattung';
 import { KiTypen, MappentypenDienst, Nummernkreise, Passung, Systemtypen, TypPakete } from './mappentypen';
 import { paketEinstellungen } from './pakete/index';
 import { keinSchluessel, MappenArchiv, MappenDienst, MappenEingaben, MappenHinweise, MappenHistorie, MappenNotizen, MappenTitel, Passwortfelder } from './mappen';
+import { MappenErwaehnungen } from './mappen/erwaehnungen';
 import { DokumentAnlagen, DokumentArchivfassung, DokumenteDienst, DokumentUmwandlung, DokumentVersionen, FehlendeDateien, GeschuetztePdfs } from './dokumente';
 import { SichtenDienst, SichtenVerwaltung, Systemsichten } from './sichten';
 import { BerechtigungenDienst } from './berechtigungen';
@@ -141,6 +142,9 @@ export class Dienst {
   readonly mappenArchiv: MappenArchiv;
   /** Mappen (#1074): anlegen, ändern, holen, Notizen, Favoriten. */
   readonly mappen: MappenDienst;
+  /** Erwähnen mit @ (#889): Vorschläge, aktuelle Titel, wo eine Mappe erwähnt ist – beim ersten Gebrauch angelegt. */
+  private erwaehnungenTeil?: MappenErwaehnungen;
+  get erwaehnungen(): MappenErwaehnungen { return (this.erwaehnungenTeil ??= new MappenErwaehnungen(this.kern, this.rechtepruefung)); }
   /** Dokumente (#1075): Hochladen, Löschen, Texterkennung und Vorschaubilder anbinden. */
   readonly dokumente: DokumenteDienst;
   /** Dateien umwandeln (#577, #1075). */

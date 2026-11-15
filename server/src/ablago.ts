@@ -1,3 +1,4 @@
+import { FAVORIT_ERWAEHNT_OFFEN } from '../../shared/src/erwaehnen';
 import { existsSync } from 'node:fs';
 import { liesMail, verbindeImap } from './imap';
 import { Postfaecher } from './postfach';
@@ -462,6 +463,9 @@ const aufgabenmail = new Aufgabenmail({
   // Aufgaben zu Mappen, die der Empfänger nicht lesen darf, ohne Titel (#127).
   aufgabenVon: async (b) => dienst.vertretung.meineAufgaben(b, await dienst.rechtepruefung.zugriff(b)),
   typName,
+  // Erwähnte Favoriten (#889): gemerkt bis zur nächsten Zusammenfassung, nur lesbare.
+  favoritenErwaehnt: async (b) => dienst.erwaehnungen.fuerZusammenfassung(await dienst.rechtepruefung.zugriff(b), (await konten.einstellungen(b))[FAVORIT_ERWAEHNT_OFFEN]),
+  favoritenErwaehntGesendet: (b) => konten.setzeEinstellung(b, FAVORIT_ERWAEHNT_OFFEN, null),
 }, () => betrieb.mailer(), () => betrieb.adresseFuerLinks());
 const designs = new Designs(messung.umhuelle(pgDesignRepo(sql, cfg.haushalt), 'designs'), mitPruefung(ordnerSpeicher(ordner.dateien, `${cfg.haushalt}/designs`), hochladen));
 // Einrichtungsassistent (#119): Mandant und Administrator mit Code, danach die weiteren Schritte.

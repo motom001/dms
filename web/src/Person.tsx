@@ -9,6 +9,8 @@ import { gebietsschema } from '../../shared/src/sprache';
 /** In der Druckansicht stehen Namen als reiner Text (#65). */
 const OhneLinks = createContext(false);
 export const NamenOhneLinks = ({ children }: { children: ReactNode }) => <OhneLinks.Provider value>{children}</OhneLinks.Provider>;
+/** Druckansicht (#65): Namen und Titel als Text statt Link – auch erwähnte Mappen (#889). */
+export const useOhneLinks = () => useContext(OhneLinks);
 
 /** Ein deaktivierter Mensch (#663) – Dienst- und Systemkonten zählen nicht, sie sind nie „aktiv“. */
 export const istDeaktiviert = (p: PersonDaten | undefined): boolean => !!p && p.aktiv === false && !p.art;

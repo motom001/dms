@@ -159,7 +159,7 @@ begriffe:
     beschreibung: An invoice as structured data (XML) according to EN 16931 – XRechnung (UBL or CII, as a separate XML file) or ZUGFeRD/Factur-X (the XML is inside the PDF). "Fill in from document" takes over details and items directly from the data; the original stays unchanged.
   Favoriten:
     begriff: Favourites
-    beschreibung: Folders a user has marked with the star. The view "Favourites" shows them. A favourite is also a subscription – if others change the folder, there is a bundled notification "Changed" (can be switched off per favourite).
+    beschreibung: Folders a user has marked with the star – "this interests me". The view "Favourites" shows them. A favourite is also a subscription – if others change the folder, there is a bundled notification "Changed" (can be switched off per favourite); if it is mentioned with @, you hear about it right away, in the daily summary or never, depending on your setting.
   Archivnummer:
     begriff: Archive number
     beschreibung: The number on a sticker on the paper original (e.g. A-000123); the same number is on the document in Ablago. Unique per Library; comes from the number sequence "Archive number". Connects paper and document in both directions.
@@ -204,7 +204,7 @@ begriffe:
     beschreibung: Something a person should do on a folder. Kinds are Doesn't fit, Mention, Assigned (given by hand), Post for you, Deadline, Reminder, stand-in and Access request.
   Erwähnung:
     begriff: Mention
-    beschreibung: Naming a user with @ in formatted text. It creates a task for them.
+    beschreibung: Naming a folder with @ in formatted text or a note – a user is the special case with an account. A mentioned user gets a task; for other folders, those who have it as a favourite hear about it. The current title is shown.
   Frist:
     begriff: Deadline
     beschreibung: A task that arises from a date field with a lead time, e.g. "Cancel by …".

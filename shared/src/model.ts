@@ -1250,9 +1250,10 @@ export type FallEnde = 'erledigt' | 'geloescht' | 'weitergegeben' | 'lesbar';
  *   `wiederholung` (Monate) → nach dem Erledigen den Folgetermin vorschlagen.
  * - `post`: Die Post ist neu – zugeordnet oder erledigt → erledigt.
  * - `abwesenheit`: Der Benutzer ist abwesend – Abwesenheit beendet → erledigt.
+ * - `favorit` (#889): Ein Favorit (`mappe`) wurde erwähnt – nur zur Unterscheidung, erledigt sich nicht selbst.
  * `automatisierung`: Id der Automatisierung, die die Aufgabe angelegt hat (zur Anzeige und zum Erkennen).
  */
-export type AufgabenAnlass = ({ art: 'datum'; feld: string; wiederholung?: number | null } | { art: 'post' } | { art: 'abwesenheit'; benutzer: string })
+export type AufgabenAnlass = ({ art: 'datum'; feld: string; wiederholung?: number | null } | { art: 'post' } | { art: 'abwesenheit'; benutzer: string } | { art: 'favorit'; mappe: string })
   & { automatisierung?: string };
 
 /* ---------- Notizen (#55) ---------- */

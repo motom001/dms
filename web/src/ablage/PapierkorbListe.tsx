@@ -9,6 +9,7 @@ import { Feld, Fundstellen, Hervorgehoben, KeineTreffer, Knopf, ListenSuche, use
 import { t, tn } from '../sprache';
 import { typName } from '../../../shared/src/beschriftung';
 import { AnlageMarke } from './Anlagen';
+import { Person } from '../Person';
 import { aufbewahrung, basis, datumZeit, melde, type PapierkorbZustand } from './papierkorbStand';
 
 /**
@@ -237,14 +238,15 @@ function MappenImKorb({ treffer, alleMappen, werkbank, offen, breite, a }: { tre
     return <span className="leise klein">{tn('ablage.papierkorb.aufgeloest-in', { typ: typ ? typName(typ) : '', link: ziel })}</span>;
   };
   const haken = (e: PapierkorbEintrag, k: string) => <Wahlhaken an={a.auswahl.has(k)} gesperrt={!!a.laeuft} setze={(an) => a.waehle(k, an)} beschriftung={t('ablage.papierkorb.auswahl.waehlen', { titel: titelOder(e.titel) })} />;
-  const spalten: Array<[string, (e: PapierkorbEintrag) => string]> = [
+  // Namen als Person (#888, #889): nicht lesbare Benutzer „nicht sichtbar“ statt „gelöschter Benutzer“.
+  const spalten: Array<[string, (e: PapierkorbEintrag) => ReactNode]> = [
     [t('ablage.papierkorb.mappentyp'), (e) => d.typ(e.typId)?.name ?? ''],
     [SYSTEMSPALTEN._titel, (e) => titelOder(e.titel)],
-    [SYSTEMSPALTEN._erstelltVon, (e) => d.person(e.erstelltVon)],
+    [SYSTEMSPALTEN._erstelltVon, (e) => <Person id={e.erstelltVon} />],
     [SYSTEMSPALTEN._erstellt, (e) => datumZeit(e.erstellt)],
-    [SYSTEMSPALTEN._geaendertVon, (e) => d.person(e.geaendertVon)],
+    [SYSTEMSPALTEN._geaendertVon, (e) => <Person id={e.geaendertVon} />],
     [SYSTEMSPALTEN._geaendert, (e) => datumZeit(e.geaendert)],
-    ...(werkbank ? [[t('ablage.papierkorb.geloescht-von'), (e: PapierkorbEintrag) => d.person(e.geloeschtVon)] as [string, (e: PapierkorbEintrag) => string]] : []),
+    ...(werkbank ? [[t('ablage.papierkorb.geloescht-von'), (e: PapierkorbEintrag) => <Person id={e.geloeschtVon} />] as [string, (e: PapierkorbEintrag) => ReactNode]] : []),
     [t('ablage.papierkorb.geloescht'), (e) => datumZeit(e.geloescht)],
   ];
   const tabelle = breite >= spalten.length * 110;

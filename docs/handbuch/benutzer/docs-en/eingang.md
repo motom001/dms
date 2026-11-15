@@ -13,7 +13,7 @@ In the list, each folder shows what needs to be done. In the folder itself, at t
 | Kind | When | How is it completed? |
 | --- | --- | --- |
 | **Doesn't fit** | An administrator has changed the folder type – e.g. a new required field –, and your folder no longer fits it. | Add or correct the marked details and save. Then it completes itself. |
-| **Mention** | Someone has mentioned you with **@** in a formatted text or a note. | Click **Done** in the notice. |
+| **Mention** | Someone has mentioned you with **@** in a formatted text or a note – or one of your favourites (*Your favourite was mentioned*, if you chose "right away"). | Click **Done** in the notice. |
 | **Assigned** | Someone has given you something to do via **Folder ▾ → Assign task**. | Click **Done** in the notice. |
 | **Deadline** | A date in a folder is approaching, e.g. "Notice by 30.09.2027" – when and for whom is set by an automation. Next to it, it says how many days are left. | Click **Done**. If the date changes or is cleared, it completes itself. If the date repeats (e.g. yearly), Ablago suggests the next one: **Set date to …**. |
 | **Reminder** | You or someone else has set a reminder for this folder via **Folder ▾ → Remind**, and the day has come. | Click **Done**. |

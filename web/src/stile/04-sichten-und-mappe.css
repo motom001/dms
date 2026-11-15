@@ -58,6 +58,12 @@ input.kurz { width: 7em; }
 .formatiert blockquote { border-left: 3px solid var(--linie-stark); padding: 2px 10px; color: var(--leise); }
 .formatiert code { font-family: ui-monospace, monospace; background: var(--senke); padding: 0 4px; border-radius: 4px; }
 .erwaehnung { color: var(--akzent); background: var(--akzent-zart); border-radius: 4px; padding: 0 3px; font-weight: 600; }
+/* Erwähnte Mappen (#889): Link wie eine Erwähnung; nicht sichtbar bzw. gelöscht leise. Auswahl: Typ · Titel, Zusatzzeile. */
+a.mappe-erwaehnung { text-decoration: none; }
+a.mappe-erwaehnung:hover, a.mappe-erwaehnung:focus-visible { text-decoration: underline; }
+.erwaehnung.weg { color: var(--leise); background: none; font-weight: 400; }
+.wahlliste .erwaehn-option { display: flex; flex-direction: column; gap: 1px; }
+.erwaehnt-in { list-style: none; margin: 0 0 12px; padding: 0; display: flex; flex-direction: column; gap: 4px; }
 .formateingabe { display: flex; flex-direction: column; gap: 4px; }
 .formatleiste { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
 .formatleiste .werkzeuge { display: inline-flex; gap: 2px; margin-left: auto; }

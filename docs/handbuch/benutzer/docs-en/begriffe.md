@@ -68,7 +68,7 @@ A document of its own (PDF or image) that belongs to a main document – e.g. th
 See also: [Document](#dokument), [Post](#post), [Version](#version).
 
 <a id="favoriten"></a>**Favourites** (*Favoriten*) · ✓ everyday word · everyone  
-Folders a user has marked with the star. The view "Favourites" shows them. A favourite is also a subscription – if others change the folder, there is a bundled notification "Changed" (can be switched off per favourite).
+Folders a user has marked with the star – "this interests me". The view "Favourites" shows them. A favourite is also a subscription – if others change the folder, there is a bundled notification "Changed" (can be switched off per favourite); if it is mentioned with @, you hear about it right away, in the daily summary or never, depending on your setting.
 
 <a id="feld"></a>**Field** (*Feld*) · ~ with explanation · everyone  
 A detail in a folder, e.g. the contract number. Every field has a field kind – text, long text, formatted text, number, amount, date, yes/no, choice list, link or password.  
@@ -277,7 +277,7 @@ See also: [Template](#vorlage), [Own organisation](#eigene-organisation).
 An address of a view or folder, e.g. via "Copy link" – also readable via folder type and field values. In the German interface, "Link" only stands for addresses; fields that point to folders are called Verweis.
 
 <a id="erwahnung"></a>**Mention** (*Erwähnung*) · ✓ everyday word · everyone  
-Naming a user with @ in formatted text. It creates a task for them.
+Naming a folder with @ in formatted text or a note – a user is the special case with an account. A mentioned user gets a task; for other folders, those who have it as a favourite hear about it. The current title is shown.
 
 <a id="neue-post"></a>**New post** (*Neue Post*) · ✓ everyday word · everyone  
 The view with post that has not yet been assigned or completed. Whoever is given post additionally has the task "Post for you".

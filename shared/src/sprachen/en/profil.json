@@ -1,5 +1,10 @@
 {
   "favoriten.abgeschaltet": "You don’t get notifications about changed favourites at the moment – the automation “Report favourite changes” decides this (Workbench → Automations). Your setting stays saved and applies again as soon as it reaches you.",
+  "favoriten.erwaehnt": "When a favourite is mentioned",
+  "favoriten.erwaehnt.sofort": "right away",
+  "favoriten.erwaehnt.zusammenfassung": "in the daily summary",
+  "favoriten.erwaehnt.nie": "never",
+  "favoriten.erwaehnt.hilfe": "When a favourite is mentioned (with @ in a note or a field), you hear about it – right away as a task, in the daily summary or never. Only if you may read both folders.",
   "laufwerk.bereich": "Drive",
   "laufwerk.menue": "Connect as a drive",
   "laufwerk.lade": "Loading …",

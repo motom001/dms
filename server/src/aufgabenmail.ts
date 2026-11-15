@@ -47,7 +47,13 @@ export interface AufgabenQuelle {
   einstellungenVon(b: Benutzer): Promise<Record<string, unknown>>;
   aufgabenVon(b: Benutzer): Promise<Aufgabe[]>;
   typName(id: string | undefined): Promise<string>;
+  /** Erwähnte Favoriten seit der letzten Zusammenfassung (#889), nur lesbare – mit aktuellen Titeln. */
+  favoritenErwaehnt?(b: Benutzer): Promise<FavoritErwaehntZeile[]>;
+  /** Nach dem Versand: die gemerkten Erwähnungen vergessen. */
+  favoritenErwaehntGesendet?(b: Benutzer): Promise<void>;
 }
+/** Eine Zeile „Favorit erwähnt“ in der Zusammenfassung (#889). */
+export interface FavoritErwaehntZeile { ziel: string; quelle: string; quelleId: string; typId: string; ort: string }
 
 
 export class Aufgabenmail {
@@ -69,7 +75,7 @@ export class Aufgabenmail {
     if ((await this.quelle.einstellungenVon(b)).aufgaben_mail === false) return r('abbestellt');
     if (abwesenheitWirkt(b.abwesenheit, heuteIn())) return r('abwesend');
     const anzahl = (await this.quelle.aufgabenVon(b)).length;
-    if (!anzahl) return r('nichts');
+    if (!anzahl && !(await this.quelle.favoritenErwaehnt?.(b))?.length) return r('nichts');
     const mailer = this.mailer();
     if (!mailer) return r('kein-versand');
     if (trocken) return r('trocken', false, anzahl);
@@ -83,17 +89,26 @@ export class Aufgabenmail {
       // Abwesende bekommen keine Zusammenfassung (#78); ihr Vertreter sieht die weitergegebenen Aufgaben in seiner.
       if (abwesenheitWirkt(b.abwesenheit, heuteIn())) return false;
       const liste = await this.quelle.aufgabenVon(b);
-      if (!liste.length) return false;
+      const favoriten = (await this.quelle.favoritenErwaehnt?.(b)) ?? [];
+      if (!liste.length && !favoriten.length) return false;
       const basis = this.adresse().replace(/\/+$/, '');
+      // Erwähnte Favoriten (#889): eigener Abschnitt; ohne offene Aufgaben eine Mail nur dafür.
+      const abschnitt = favoriten.length ? [t('mail.aufgabenmail.favoriten.kopf'), ...favoriten.map((f) => t('mail.aufgabenmail.favoriten.zeile', { ...f, basis }))].join('\n') : '';
+      if (!liste.length) return this.versende(b, mailer, `Ablago: ${t('mail.aufgabenmail.favoriten.betreff')}`, t('mail.aufgabenmail.favoriten.nur', { name: b.name || b.email, abschnitt }), true);
       const zeilen = await Promise.all(liste.map(async (a) => t('mail.aufgabenmail.ablage-eingang', { titel: a.mappeTitel || t('mail.aufgabenmail.ohne-titel'), typName: await this.quelle.typName(a.typId), text: a.text, basis, mappeId: a.mappeId })));
       const text = t('mail.aufgabenmail.hallo-du-hast-offene', { anzahl: liste.length, name: b.name || b.email, zeilen: zeilen.join('\n'), basis });
-      try {
-        await mailer.sende(b.email, `Ablago: ${t('mail.aufgabenmail.offene-aufgaben', { anzahl: liste.length })}`, text);
-        return true;
-      } catch (e) {
-        protokoll.modul('mail').warn('Aufgaben-Mail nicht verschickt', { an: b.email, fehler: (e as Error).message });
-        return false;
-      }
+      return this.versende(b, mailer, `Ablago: ${t('mail.aufgabenmail.offene-aufgaben', { anzahl: liste.length })}`, abschnitt ? `${text}\n${abschnitt}\n` : text, favoriten.length > 0);
     });
+  }
+
+  private async versende(b: Benutzer, mailer: Mailer, betreff: string, text: string, favoriten: boolean): Promise<boolean> {
+    try {
+      await mailer.sende(b.email, betreff, text);
+      if (favoriten) await this.quelle.favoritenErwaehntGesendet?.(b);
+      return true;
+    } catch (e) {
+      protokoll.modul('mail').warn('Aufgaben-Mail nicht verschickt', { an: b.email, fehler: (e as Error).message });
+      return false;
+    }
   }
 }
