@@ -7,7 +7,7 @@
 ## Verhalten { #verhalten }
 
 - **Neu** (`id` ist `null`): alles offen, nichts wird gemerkt.
-- **Bestehend:** wie zuletzt auf diesem Gerät (`localStorage`, je Editor die zuletzt bearbeiteten 200 Einträge); ohne Gedächtnis zugeklappt. **Editoren ohne Speichern** (nur Ansehen und Sofortaktionen, z. B. die Datenschutz-Auskunft) übergeben `{ offen: true }` und starten offen, solange das Gerät nichts gemerkt hat. Mappentypen und Ansichten behalten ihre bisherigen Speicherorte (`dms.typeditor.offen`, `dms.sichteditor.offen`), alle anderen heißen `dms.<editor>editor.offen`.
+- **Bestehend:** wie zuletzt auf diesem Gerät (`localStorage`, je Editor die zuletzt bearbeiteten 200 Einträge); ohne Gedächtnis zugeklappt. **Editoren ohne Speichern** (nur Ansehen und Sofortaktionen, z. B. die Datenschutz-Auskunft) übergeben `{ offen: true }` und starten offen, solange das Gerät nichts gemerkt hat. Bereiche in `{ immerOffen: [...] }` stehen bei jedem Anzeigen offen, zusätzlich zu den gemerkten – etwa die Vorschau des Stempels, damit jede Änderung in Grunddaten oder Aussehen sofort darunter sichtbar ist. Mappentypen und Ansichten behalten ihre bisherigen Speicherorte (`dms.typeditor.offen`, `dms.sichteditor.offen`), alle anderen heißen `dms.<editor>editor.offen`.
 - **Anker in der Adresse** (`…/werkbank/postfaecher/<id>#verbindung`) öffnet seinen Bereich und springt hin.
 - **Sprungleiste:** jeder Sprung öffnet seinen Bereich, rollt dorthin und setzt den Fokus auf den Kopf des Bereichs (`focus({ preventScroll: true })`) – mit der Tastatur geht Tab danach im Bereich weiter; ein Bereich mit Fehler ist rot und trägt „!“. Am Desktop bleibt die Leiste unter dem Seitenkopf stehen, am Handy (bis 700 px) rollt sie mit.
 - **Unter drei Bereichen** (`SPRUNGLEISTE_AB`) gibt es weder Leiste noch Klappen: Die Bereiche stehen fest offen, nur mit ihrem Titel.
@@ -40,7 +40,7 @@ const hatFehler = (k: PfBereich) => fehlerOrte.has(k);
 
 | Teil | Wofür |
 | --- | --- |
-| `useBereiche(liste, editor, id, optionen?)` | Zustand: `auf`, `klappe(k, fehler?)`, `oeffne(ks, springen?, fokus?)`, `leiste(fehler?, beschriftung?)`, `merke(neueId)`, `mitLeiste`; `optionen.offen` für Editoren ohne Speichern |
+| `useBereiche(liste, editor, id, optionen?)` | Zustand: `auf`, `klappe(k, fehler?)`, `oeffne(ks, springen?, fokus?)`, `leiste(fehler?, beschriftung?)`, `merke(neueId)`, `mitLeiste`; `optionen.offen` für Editoren ohne Speichern, `optionen.immerOffen` für Bereiche, die bei jedem Anzeigen offen stehen |
 | `Bereich` | `id` (zugleich Anker), `titel`, `klappe`; dazu `hilfe` (Hilfesymbol hinter dem Titel), `kurz` (Kurzinfo zugeklappt), `beschreibung` (Satz über dem Inhalt), `className` |
 | `fehlerBereiche(fehler, liste, ersatz)` | Bereiche eines Fehlers beim Speichern: `details.orte` der Antwort des Servers, nur bekannte; sonst `ersatz` |
 | `liesOffen`, `merkeOffen` | das Gedächtnis direkt, z. B. für Tests |

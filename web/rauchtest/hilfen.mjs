@@ -147,6 +147,7 @@ after(() => {
  *
  * optionen.erwartet: Antworten, die zu diesem Weg gehören – je { status, pfad: RegExp }.
  * optionen.neustart: Pfade, bei denen eine abgelehnte Verbindung erwartet ist, weil Ablago gerade neu startet.
+ * optionen.timeout: eigene Zeitgrenze in ms (Vorgabe und höchstens 120 s).
  * Nicht als Fehler zählen:
  *   - „Failed to load resource“ in der Konsole: Chromium meldet so jede Antwort ab 400 – die prüft der Test selbst
  *     (mit den erwarteten Ausnahmen);
@@ -154,7 +155,7 @@ after(() => {
  *     Inhalt (z. B. 204 auf einen Merker) meldet Chromium so, obwohl Ablago geantwortet hat.
  */
 export function rauchtest(name, optionen, ablauf) {
-  test(name, { timeout: 120_000 }, async (t) => {
+  test(name, { timeout: Math.min(optionen.timeout ?? 120_000, 120_000) }, async (t) => {
     if (!optionen.einrichtung && !bereit) { t.skip('Einrichtung gescheitert'); return; }
     const k = await browser.newContext({ locale: 'de-DE', timezoneId: 'Europe/Berlin', ...(optionen.handy ? HANDY : DESKTOP) });
     // Kürzer als die Vorgabe von Playwright (30 s): Ein kaputter Weg soll schnell auffallen.

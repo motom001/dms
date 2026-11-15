@@ -9,7 +9,7 @@ import { merkeStempelVorlagen } from '../ablage/Stempel';
 import { beispielWerte, PlatzhalterKnoepfe, StempelVorschau } from '../ablage/StempelVorschau';
 import { t } from '../sprache';
 import {
-  DECKKRAFT_HINWEIS_AB, einzeilig, NEUER_STEMPEL, pruefeVorlage, STEMPEL_FARBEN, STEMPEL_LAGEN, STEMPEL_MODI, STEMPEL_NAME_MAX, STEMPEL_SEITEN, STEMPEL_TEXT_MAX,
+  DECKKRAFT_HINWEIS_AB, einzeilig, farbeCss, NEUER_STEMPEL, pruefeVorlage, STEMPEL_FARBEN, STEMPEL_LAGEN, STEMPEL_MODI, STEMPEL_NAME_MAX, STEMPEL_SEITEN, STEMPEL_TEXT_MAX,
   type Stempel, type StempelFarbe, type StempelLage, type StempelSeiten, type StempelVorlage,
 } from '../../../shared/src/stempel';
 import { GeloeschteEintraege, Bereich, Fassungen, Feld, HakenFeld, Knopf, KnopfLink, useBereiche, type BereichListe, type Klappe } from '../bausteine';
@@ -38,7 +38,19 @@ export type StempelZustand = ReturnType<typeof useStempelVorlagenWerkbank>;
 const lageKurz = (lage: StempelLage) => t.frei(`werkbank.stempel.lage.${lage}`).replace(/ \(.*\)$/, '');
 export const stempelPfad = (id: string) => `/werkbank/stempel/${encodeURIComponent(id)}`;
 
-/** Mitte: alle Vorlagen mit Name, Text (Platzhalter sichtbar) und Lage, dazu die Mappentypen, die sie nutzen. */
+/**
+ * Stempelfarbe als kleiner Punkt (#1185): Rot ist in Ablago Fehlern vorbehalten – der Stempeltext steht deshalb in
+ * normaler Schrift, die Farbe zeigt nur der Punkt. Sein Name steht für Screenreader dabei.
+ */
+function Farbpunkt({ farbe }: { farbe: StempelFarbe }) {
+  const name = t.frei(`werkbank.stempel.farbe.${farbe}`);
+  return <span className="stempelpunkt" role="img" aria-label={name} title={name} style={{ background: farbeCss(farbe) }} />;
+}
+
+/**
+ * Mitte: alle Vorlagen in zwei Zeilen (#1185) – Farbpunkt und Name, darunter leise Text (Platzhalter sichtbar), Lage
+ * und die Mappentypen, die sie nutzen.
+ */
 export function StempelListe({ z, offen }: { z: StempelZustand; offen?: string }) {
   const d = useDaten();
   return (
@@ -54,9 +66,8 @@ export function StempelListe({ z, offen }: { z: StempelZustand; offen?: string }
             const genutzt = d.typen.filter((mappentyp) => mappentyp.stempel?.vorlage === v.id);
             return (
               <li key={v.id}><Link to={stempelPfad(v.id)} className={`eintrag werk ${offen === v.id ? 'an' : ''}`}>
-                <span className="titel">{v.name}</span>
-                <span className="unter stempeltext">{einzeilig(v.text)}</span>
-                <span className="leise klein">{lageKurz(v.lage)}{genutzt.length ? ` · ${genutzt.map((mappentyp) => mappentyp.name).join(', ')}` : ''}</span>
+                <span className="titel">{v.name}<Farbpunkt farbe={v.farbe} /></span>
+                <span className="unter">{[einzeilig(v.text), lageKurz(v.lage), ...genutzt.map((mappentyp) => mappentyp.name)].join(' · ')}</span>
               </Link></li>
             );
           })}
@@ -95,7 +106,8 @@ export function StempelEditor({ z, id }: { z: StempelZustand; id: string }) {
   const textfeld = useRef<HTMLTextAreaElement>(null);
   const ent = useEntwurf(gespeichert, e, { neu, liste: '/werkbank/stempel', zuruecksetzen: () => { setE(gespeichert); setMeldung(undefined); } });
   // Sprungleiste und Bereiche (#1000) wie beim Mappentyp; neu ohne „Verwendet in“.
-  const b = useBereiche(stempelBereiche(neu), 'stempel', neu ? null : id);
+  // Die Vorschau steht bei jedem Öffnen offen (#1185): Grunddaten oder Aussehen dazu aufklappen, Wirkung sofort sehen.
+  const b = useBereiche(stempelBereiche(neu), 'stempel', neu ? null : id, { immerOffen: ['vorschau'] });
   // Nach dem Wiederherstellen einer Fassung (#1006).
   useGespeichertNachziehen(gespeichert, e, setE);
   if (!neu && !v) return z.liste ? <div className="leer"><p>{t('werkbank.stempel.diese-vorlage-gibt-es')}</p></div> : <p className="leise">{t('werkbank.stempel.lade')}</p>;
@@ -126,7 +138,7 @@ export function StempelEditor({ z, id }: { z: StempelZustand; id: string }) {
       {/* Umstellung der entfallenen Haken (#799): nichts ändert sich heimlich – Hinweis, bis die Vorlage gespeichert ist. */}
       {v?.umgestellt && <div className="hinweis warn"><p>{t('werkbank.stempel.umgestellt')}</p>
         {!ent.geaendert && <p><Knopf groesse="klein" laeuft={sendet} onClick={() => speichern(gespeichert)}>{t('werkbank.stempel.umgestellt.ok')}</Knopf></p>}</div>}
-      <Bereich id="grunddaten" titel={t('werkbank.stempel.bereich.grunddaten')} klappe={b.klappe('grunddaten', hatFehler('grunddaten'))} kurz={<span className="stempeltext">{e.name} · {einzeilig(e.text)}</span>}>
+      <Bereich id="grunddaten" titel={t('werkbank.stempel.bereich.grunddaten')} klappe={b.klappe('grunddaten', hatFehler('grunddaten'))} kurz={<span className="stempeltext">{e.name}<Farbpunkt farbe={e.farbe} /> · {einzeilig(e.text)}</span>}>
         <div className="raster">
           <Feld beschriftung={t('werkbank.stempel.name')}><input id="stempel-name" value={e.name} maxLength={STEMPEL_NAME_MAX} onChange={(x) => setze({ name: x.target.value })} required /></Feld>
           <Feld beschriftung={t('werkbank.stempel.text')} hinweis={t('werkbank.stempel.text.hilfe')} className="breit" id="stempel-text">

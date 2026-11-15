@@ -49,10 +49,12 @@ td.sicherung-wahl { width: 1%; }
 .stempelfelder { margin-top: 8px; padding: 10px; border: 1px solid var(--linie); border-radius: var(--r); background: var(--senke); display: flex; flex-direction: column; gap: 10px; }
 .stempelzeile { display: flex; gap: 14px; align-items: flex-start; flex-wrap: wrap; }
 .stempelzeile > div:not(.stempelvorschau-klein) { flex: 1 1 220px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
-.stempeltext { color: var(--schlecht); overflow-wrap: anywhere; }
+.stempeltext { overflow-wrap: anywhere; }
 /* Werkbank → Stempel (#990): Vorlage rechts in der Dreiteilung, Liste in der Mitte. */
 .stempeleditor { display: flex; flex-direction: column; gap: 10px; }
-.stempelvorlagen .eintrag .stempeltext { color: var(--schlecht); }
+/* Liste der Stempel (#1185): zwei Zeilen, keine farbige Schrift; die Stempelfarbe zeigt ein Punkt hinter dem Namen. */
+.stempelvorlagen .eintrag .unter { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.stempelpunkt { display: inline-block; width: .7em; height: .7em; border-radius: 50%; margin-left: .45em; vertical-align: .05em; box-shadow: 0 0 0 1px var(--linie); flex: none; }
 .warntext { color: var(--warn); font-size: calc(12.5px * var(--skala, 1)); font-weight: 500; }
 .zeile-mit-zahl { display: flex; gap: 8px; align-items: center; }
 .zeile-mit-zahl input[type="range"] { flex: 1 1 auto; min-width: 0; }
