@@ -1066,6 +1066,29 @@ Ein Paket wie „Compliance“ hält eine Verfahrensdokumentation aktuell, ohne 
 - **`wert`** ist flach: Text, Zahl, ja/nein, `null` oder eine Liste von Texten. Zeitstempel gibt es in den Einträgen nicht – zwei Abrufe ohne Änderung sind gleich.
 - **Nachweise** haben dasselbe Gerüst mit `"art": "nachweise"`, `monat` (`JJJJ-MM`), `stichtag` und Einträgen `{ kennung, zeit?, daten }`. Aufstellungen wie die Benutzer gelten zum Stichtag (Zeitpunkt des Abrufs, höchstens Monatsende); für vergangene Monate ist das der heutige Stand. Mehr als 2000 Einträge je Monat zählt der Kern nur noch (`weitere`).
 
+### Im Manifest und Freigabe { #einrichtung-manifest }
+
+```yaml
+dms: ">=0.287.0"
+code:
+  rechte:
+    einrichtung: [ablage, sicherung, datenschutz]   # Bereiche der Einrichtung
+    nachweise: [sicherung, zugang]                   # Bereiche mit Nachweisen
+  netz: []                                           # Pflicht: ohne Netz
+```
+
+- **Nur ohne Netz:** Mit `code.netz` oder einer Dienst-Adresse lehnt die Paketprüfung beide Rechte ab – die Daten sind eine Landkarte der Sicherheit des Hauses (Ergänzung Sicherheit).
+- **Nachweise** gibt es für `belegeingang`, `zugang`, `betrieb`, `sicherung`, `unveraenderbarkeit` und `datenschutz`.
+- **Freigabe:** Die Installation gibt noch nichts frei. Der Administrator hakt in den Einstellungen des Pakets je Bereich an – Vorgabe nichts, auch für Bereiche, die ein Update neu anfragt. Anhaken darf nur, wer den Bereich verwaltet; `zugang` und alle Nachweise nur mit Gesamter Verwaltung. Wirksam ist bei **jedem** Abruf die Schnittmenge aus Haken und den Verwaltungsrechten der Person, die zuletzt gespeichert hat. Rechne also jederzeit mit 403.
+- **Nur über das Dienstkonto:** Personen und ihre API-Schlüssel bekommen 403. Schreiben in die Einrichtung geht mit diesen Rechten nie.
+
+### Endpunkte { #einrichtung-endpunkte }
+
+- `GET /api/v1/paketdaten/einrichtung/{bereich}` – Stand des Bereichs.
+- `POST /api/v1/paketdaten/einrichtung/{bereich}/vergleich` mit `{ "vorher": <früherer Stand oder seine Einträge> }` – dazu `aenderungen`: je Änderung `kennung`, `pfad`, `art` (`neu`, `geaendert`, `entfernt`), `vorher`, `nachher` und ein lesbarer `satz`, z. B. „„Rechnung“: Feld „Betrag“ ist Pflicht: ja → nein“. Merke dir den Stand im Paketspeicher und vergleiche beim nächsten Lauf.
+- `GET /api/v1/paketdaten/nachweise/{bereich}/{monat}` – Nachweise eines Monats (`JJJJ-MM`, nicht in der Zukunft).
+- Fehler: 403 mit dem Namen des Bereichs (nicht angefragt, nicht angehakt, Person ohne Verwaltungsrecht), 404 für unbekannte Bereiche, 422 für einen ungültigen Monat. Jeder Abruf steht im Protokoll.
+
 ### Was nie enthalten ist { #einrichtung-nie }
 
 - Passwörter, Schlüssel, Tokens und verschlüsselte Werte – alles geht durch die zentrale Sperre (`ohneGeheimnisse`).

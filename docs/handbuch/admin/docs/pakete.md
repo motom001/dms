@@ -490,6 +490,14 @@ Hat ein Paket berechnete Felder oder setzt es Hinweise, steht zusätzlich da: **
 
 **„Die verschlüsselte Sicherung lesen, um sie außer Haus zu kopieren – kann sie nicht öffnen (kein Schlüssel, keine Inhalte) (dms:sicherung-lesen)“** – Seit Version 0.142. Nach jeder Sicherung bekommt das Paket das Ereignis [Sicherung fertig](#ereignis-sicherung-fertig) und darf **genau diese** Sicherungsdatei in Stücken lesen – verschlüsselt, so wie sie im Sicherungsordner liegt – und ihre schlanken Metadaten (Größe, Prüfsumme, Zeitpunkt, Fingerabdruck des Schlüssels). Den Schlüssel, die Inhalte und andere Dateien des Sicherungsordners bekommt es nie. Es meldet je Sicherung zurück, ob die Kopie angekommen und geprüft ist; das zeigt **Werkbank → Sicherung**. Seit Version 0.158.1 darf sein API-Schlüssel nur lesen – den Stand meldet es in der Antwort auf das Ereignis. Mappen und Dokumente sieht es mit diesem Recht nicht. Siehe [Sicherung außer Haus](sicherung-ausser-haus.md).
 
+#### Einrichtung lesen { #recht-einrichtung }
+
+**„Einrichtung lesen, angefragt: … – nur die Bereiche, die du in den Paket-Einstellungen anhakst, nie Passwörter“** – Seit Version 0.287. Ein Paket wie **Compliance** liest den Stand der Einrichtung als Daten, um z. B. eine Verfahrensdokumentation aktuell zu halten. Die Vorschau nennt die Bereiche, die es anfragt (Allgemeines, Belegeingang und Scannen, Ablage, Zugang und Berechtigungen, Betrieb, Sicherung, Unveränderbarkeit, Datenschutz, Betriebsprüfung). **Mit der Installation bekommt es davon nichts:** Was es lesen darf, hakst du danach in den Einstellungen des Pakets an – siehe [Einrichtung und Nachweise](#einrichtung-und-nachweise). Benutzerlisten, Passwörter und Zugangsdaten sind nie dabei; Adressen nur mit dem Rechner. Pakete mit Netz bekommen dieses Recht nicht.
+
+#### Nachweise lesen { #recht-nachweise }
+
+**„Nachweise lesen (Benutzer, Fehlanmeldungen, Sicherungen …), angefragt: … – nur die Bereiche, die du anhakst“** – Seit Version 0.287. Je Monat: Benutzer mit Rollen, Zwei-Faktor, Passkey und Verwaltungsrechten, Rechteänderungen, Fehlanmeldungen (Konto, Zeit, gekürzte Adresse; unbekannte Konten nur als Anzahl), Sicherungsläufe und Probe-Wiederherstellungen, Läufe von „Alle Dateien prüfen“, Updates und Paket-Verlauf, Wartungszeiten, Löschungen nach Fristende, geleerter Papierkorb, Auskünfte und eingegangene Post je Weg. Freigeben kann das nur jemand mit **Gesamter Verwaltung** und frischer Anmeldung. Legt das Paket die Nachweise in Mappen ab, **verrechte diesen Mappentyp** – sie enthalten Personen.
+
 ### Dienst-Adresse { #dienst-adresse }
 
 Ein Paket wie **KI-Assistent** rechnet nicht selbst, sondern fragt einen Dienst, den du betreibst oder wählst – z. B. **Ollama** auf deinem Heimserver (fertiges Beispiel und Anleitung: [KI lokal betreiben](ki-lokal.md)). Die Adresse dieses Dienstes trägst du in den **Einstellungen** des Pakets ein (Werkbank → Pakete → *Paket* → Reiter „Einstellungen“):
@@ -498,6 +506,16 @@ Ein Paket wie **KI-Assistent** rechnet nicht selbst, sondern fragt einen Dienst,
 - **Bestätigen.** Beim Speichern einer neuen oder geänderten Adresse fragt Ablago **„Daten an diese Adresse schicken?“** und nennt sie. Erst mit **Adresse bestätigen und speichern** gilt sie; das Protokoll vermerkt „Dienst-Adresse von Paket … bestätigt“ mit der Adresse.
 - **Nur dorthin.** Der Paket-Läufer erlaubt Netz nur zu dieser Adresse und Pfaden darunter (gleicher Rechner, gleicher Port), ohne Weiterleitungen. Weil Dienste im Heimnetz selten HTTPS sprechen, ist hier auch `http://` erlaubt. Zugangsdaten gehören nicht in die Adresse, sondern in ein eigenes Feld (Geheimnis).
 - **Betrieb und Hosting dieses Dienstes liegen außerhalb von Ablago.** Läuft er bei dir im eigenen Netz, verlassen die Daten das Haus nicht. Gehört er einem anderen Anbieter, ist das eine **Vertrauensbeziehung zu diesem Dienstleister** – wie beim Hosten von Ablago selbst: Standort, Auftragsverarbeitung, Speicherung, Nutzung zum Training. Diese Entscheidung triffst du mit dem Eintragen und Bestätigen; Ablago hat dafür keinen weiteren Schalter. Den Hinweis zeigt es auch schon in der Vorschau vor der Installation.
+
+### Einrichtung und Nachweise { #einrichtung-und-nachweise }
+
+Fragt ein Paket [Einrichtung](#recht-einrichtung) oder [Nachweise](#recht-nachweise) an, steht im Reiter **Einstellungen** des Pakets (Werkbank → Pakete → *Paket*) der Abschnitt **Einrichtung und Nachweise** mit einem Haken je angefragtem Bereich; die Übersicht zeigt, was freigegeben ist. **Vorgabe: nichts angehakt** – auch nach einem Update, das weitere Bereiche anfragt.
+
+- **Wer anhaken darf:** nur, wer den Bereich selbst verwaltet (z. B. „Sicherung“ nur mit dem Verwaltungsrecht Sicherung, „Ablage“ mit Mappentypen). **Zugang und Berechtigungen** und alle **Nachweise** nur mit **Gesamter Verwaltung**; dafür fragt Ablago nach einer frischen Anmeldung. Abwählen geht immer.
+- **In wessen Namen:** Wer **Freigabe speichern** drückt, wird die hinterlegte Person – das Paket liest in ihrem Namen. Alle Haken müssen deshalb Bereiche sein, die du verwaltest; andere wählst du vor dem Speichern ab.
+- **Bei jedem Abruf geprüft:** Verliert die hinterlegte Person ein Verwaltungsrecht, liefert der Bereich ab dann nichts mehr (das Paket bekommt „nicht freigegeben“ mit dem Namen des Bereichs). Am Haken steht dann **„Angehakt, wirkt aber nicht“**. Hake ihn neu an, wenn du den Bereich verwaltest.
+- **Nachvollziehbar:** Jede Änderung steht im Protokoll („Paket: Einrichtung und Nachweise freigegeben“) im Reiter **Verlauf** des Pakets und darunter unter **Änderungen der Freigabe**. Jeder Abruf des Pakets steht im Protokoll. Entfernst du das Paket und installierst es neu, ist wieder nichts angehakt.
+- **Nie dabei:** Passwörter, Schlüssel und Zugangsdaten; Benutzernamen von Postfächern; volle IP-Adressen.
 
 ### KI-Dienste und Mappentypen { #ki-dienste }
 

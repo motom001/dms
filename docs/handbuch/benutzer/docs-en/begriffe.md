@@ -409,6 +409,10 @@ See also: [Part](#teil), [Parent folder](#ubergeordnete-mappe), [Table](#tabelle
 <a id="postfach"></a>**Mailbox** (*Postfach*) · ~ with explanation · administrators  
 A connected email account (IMAP) from which Ablago fetches post.
 
+<a id="nachweise"></a>**Evidence** (*Nachweise*) · ~ with explanation · administrators  
+What happened in a month regarding access, backup, operation and data protection – for example failed sign-ins, permission changes, backup runs or updates. A package such as "Compliance" reads it together with the current setup, but only the areas the administrator ticks in the package settings; passwords are never included.  
+See also: [Package](#paket), [Service account](#dienstkonto).
+
 <a id="nummernkreis"></a>**Number sequence** (*Nummernkreis*) · ✗ technical term · administrators  
 Sequential numbers following a pattern such as {jjjj}-R{zaehler:4} (giving e.g. 2026-R0001), for instance for invoice numbers.
 

@@ -1067,6 +1067,29 @@ A package such as “Compliance” keeps a process documentation up to date with
 - **`wert`** is flat: text, number, yes/no, `null` or a list of texts. Entries carry no timestamps – two reads without a change are identical.
 - **Evidence** uses the same frame with `"art": "nachweise"`, `monat` (`YYYY-MM`), `stichtag` and entries `{ kennung, zeit?, daten }`. Lists such as the users apply at the reference date (time of the read, at most the end of the month); for past months this is today’s state. Beyond 2000 entries per month the core only counts (`weitere`).
 
+### Manifest and release { #einrichtung-manifest }
+
+```yaml
+dms: ">=0.287.0"
+code:
+  rechte:
+    einrichtung: [ablage, sicherung, datenschutz]   # setup areas
+    nachweise: [sicherung, zugang]                   # areas with evidence
+  netz: []                                           # required: no network
+```
+
+- **Only without network access:** with `code.netz` or a service address the package check rejects both permissions – the data is a map of the household's security.
+- **Evidence** exists for `belegeingang`, `zugang`, `betrieb`, `sicherung`, `unveraenderbarkeit` and `datenschutz`.
+- **Release:** installing releases nothing yet. The administrator ticks each area in the package settings – default nothing, also for areas an update newly requests. Only someone who manages the area may tick it; `zugang` and all evidence only with full administration. On **every** read the core uses the intersection of the ticks and the administration rights of the person who saved last. Expect 403 at any time.
+- **Only through the service account:** people and their API keys get 403. These permissions never allow writing to the setup.
+
+### Endpoints { #einrichtung-endpunkte }
+
+- `GET /api/v1/paketdaten/einrichtung/{bereich}` – state of the area.
+- `POST /api/v1/paketdaten/einrichtung/{bereich}/vergleich` with `{ "vorher": <earlier state or its entries> }` – plus `aenderungen`: per change `kennung`, `pfad`, `art` (`neu`, `geaendert`, `entfernt`), `vorher`, `nachher` and a readable `satz`. Keep the state in the package storage and compare on the next run.
+- `GET /api/v1/paketdaten/nachweise/{bereich}/{monat}` – evidence of a month (`YYYY-MM`, not in the future).
+- Errors: 403 with the name of the area (not requested, not ticked, person without administration right), 404 for unknown areas, 422 for an invalid month. Every read is logged.
+
 ### Never included { #einrichtung-nie }
 
 - Passwords, keys, tokens and encrypted values – everything passes the central lock (`ohneGeheimnisse`).

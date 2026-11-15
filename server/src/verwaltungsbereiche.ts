@@ -10,6 +10,7 @@
  * Dazu die heikelsten Handlungen (#819, Frage 7 von Sicherheit): Sie brauchen immer eine frische Anmeldung.
  */
 import type { HeikleHandlung } from '../../shared/src/verwaltungsrecht';
+import { brauchtFrisch, istPaketdatenBereich, type PaketdatenArt } from '../../shared/src/paketdaten';
 
 /** Jeder, der verwalten darf. */
 export const JEDER = 'uebersicht';
@@ -144,6 +145,12 @@ export function bereicheDerRoute(methode: string, pfad: string): string[] | null
   return null;
 }
 
+function paketdatenHeikel(body: unknown): HeikleHandlung | null {
+  const x = (body ?? {}) as { einrichtung?: unknown; nachweise?: unknown };
+  const frisch = (art: PaketdatenArt, l: unknown) => Array.isArray(l) && l.some((b) => istPaketdatenBereich(b) && brauchtFrisch(art, b));
+  return frisch('einrichtung', x.einrichtung) || frisch('nachweise', x.nachweise) ? 'rechte' : null;
+}
+
 const UMBAU_ROUTEN = new Set(['POST /api/werkbank/pakete/installieren', 'POST /api/werkbank/pakete/:id/aktualisieren']);
 const umbauHandlung = (body: unknown): HeikleHandlung | null => ((body as { umbauBestaetigt?: unknown } | null)?.umbauBestaetigt === true ? 'rechte' : null);
 
@@ -187,6 +194,8 @@ export function heikleHandlung(methode: string, pfad: string, body: unknown): He
     case 'POST /api/werkbank/export': return (body as { passwoerter?: unknown } | null)?.passwoerter === true ? 'vollexport' : null;
     // Notfallzugang aus dem Internet erlauben (#815); zurück auf „nur Heimnetz“ geht ohne.
     case 'PUT /api/werkbank/anmeldeschutz/notfallzugang': return (body as { internet?: unknown } | null)?.internet === true ? 'notfall' : null;
+    // Einrichtung und Nachweise für Pakete (#1054): „Zugang und Berechtigungen“ und Nachweise nur mit frischer Anmeldung.
+    case 'PUT /api/werkbank/pakete/:id/paketdaten': return paketdatenHeikel(body);
     default: return null;
   }
 }

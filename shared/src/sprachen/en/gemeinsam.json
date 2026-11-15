@@ -1389,5 +1389,10 @@
   "paketdaten.bereich.sicherung": "Backup",
   "paketdaten.bereich.unveraenderbarkeit": "Immutability",
   "paketdaten.bereich.datenschutz": "Data protection",
-  "paketdaten.bereich.betriebspruefung": "Tax audit"
+  "paketdaten.bereich.betriebspruefung": "Tax audit",
+  "pakete.code-einrichtung-bereich": "code.rechte.einrichtung: the area “{b}” does not exist (allowed: {bereiche}).",
+  "pakete.code-nachweise-bereich": "code.rechte.nachweise: there is no evidence for the area “{b}” (allowed: {bereiche}).",
+  "pakete.code-paketdaten-netz": "code.rechte.einrichtung and code.rechte.nachweise are only available to packages without network access (no code.netz and no service address).",
+  "pakete.recht-einrichtung": "Read setup, requested: {bereiche} – only the areas you tick in the package settings, never passwords",
+  "pakete.recht-nachweise": "Read evidence (users, failed sign-ins, backups …), requested: {bereiche} – only the areas you tick"
 }

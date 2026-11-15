@@ -50,6 +50,10 @@ export function darfPaketdaten(b: MitRecht, art: PaketdatenArt, bereich: Paketda
 /** Braucht die Freigabe eine frische Anmeldung? Wie „Gesamte Verwaltung“: Zugang und Nachweise. */
 export const brauchtFrisch = (art: PaketdatenArt, bereich: PaketdatenBereich): boolean => art === 'nachweise' || EINRICHTUNG_VERWALTUNG[bereich].includes(GESAMT);
 
+/** Fragt das Paket Einrichtung oder Nachweise an? Nur Pakete ohne Netz (Ergänzung Sicherheit). */
+export const fragtPaketdatenAn = (c: { netz: string[]; adressen?: unknown[]; rechte: { einrichtung?: unknown[]; nachweise?: unknown[] } }): boolean =>
+  !c.netz.length && !c.adressen?.length && !!(c.rechte.einrichtung?.length || c.rechte.nachweise?.length);
+
 export const bereichName = (b: PaketdatenBereich): string => t.frei(`gemeinsam.paketdaten.bereich.${b}`);
 
 /** Ein Wert in Einrichtung und Nachweisen – flach, damit der Vergleich ohne Rauschen auskommt. */
@@ -79,7 +83,7 @@ export const MONAT = /^\d{4}-(0[1-9]|1[0-2])$/;
 export interface PaketdatenFreigabe {
   einrichtung: PaketdatenBereich[]; nachweise: PaketdatenBereich[];
   benutzer: string | null; am: string | null;
-  /** Letzte Änderungen der Auswahl (neueste zuerst), bis der Paket-Verlauf (#1003) sie aufnimmt. */
+  /** Letzte Änderungen der Auswahl (neueste zuerst); dazu je Änderung ein Eintrag im Paket-Verlauf (#1003). */
   verlauf: Array<{ am: string; von: string; einrichtung: PaketdatenBereich[]; nachweise: PaketdatenBereich[] }>;
 }
 export const LEERE_FREIGABE: PaketdatenFreigabe = { einrichtung: [], nachweise: [], benutzer: null, am: null, verlauf: [] };

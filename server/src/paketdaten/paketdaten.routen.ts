@@ -1,14 +1,28 @@
 /**
- * Quellen für Einrichtung und Nachweise (#1053) aus den Diensten der Routen. Hier wird schon schmal gemacht: Jede
- * Quelle gibt nur die Angaben weiter, die einrichtung.ts bzw. nachweise.ts ausdrücklich übernehmen.
+ * Einrichtung und Nachweise für Pakete (#1053, #1054): Quellen aus den Diensten der Routen und die Routen selbst.
+ *
+ * - Pakete lesen über ihr Dienstkonto – Personen und ihre API-Schlüssel bekommen 403 (Ergänzung Sicherheit). Je
+ *   Abruf prüft freigabe.ts, ob der Bereich angefragt, angehakt und von der hinterlegten Person verwaltet ist.
+ * - Die Werkbank liest und speichert die Auswahl auf der Seite des Pakets (Bereich „Pakete“; welche Haken jemand
+ *   setzen darf, prüft freigabe.ts, die frische Anmeldung verwaltungsbereiche.ts).
+ *
+ * Die Quellen machen schon schmal: Jede gibt nur die Angaben weiter, die einrichtung.ts bzw. nachweise.ts ausdrücklich
+ * übernehmen.
  */
 import { rechteZeilen, rechtePunkte } from '../../../shared/src/pakete';
 import { istPerson } from '../../../shared/src/model';
 import { AUSKUNFT_TAGE } from '../../../shared/src/auskunft';
 import { eigeneVersion } from '../system';
 import { nachweisjournal } from '../nachweisjournal';
-import type { EinrichtungQuellen, NachweisQuellen } from './index';
-import type { RoutenKontext } from '../http/routen-kontext';
+import { einrichtung, liesEintraege, nachweise, vergleiche, type EinrichtungQuellen, type NachweisQuellen } from './index';
+import { freigabeAnsicht, pruefeAbruf, setzeFreigabe } from './freigabe';
+import { Fachfehler } from '../fehler';
+import { t } from '../sprache';
+import { protokoll } from '../protokoll';
+import { ok, ich } from '../http/routen-hilfen';
+import { istPaketdatenBereich, MONAT, type PaketdatenArt, type PaketdatenBereich } from '../../../shared/src/paketdaten';
+import type { Anfrage, Route } from '../routen';
+import { routenKontext, type RoutenKontext } from '../http/routen-kontext';
 
 const sicher = async <T>(f: () => Promise<T>, sonst: T): Promise<T> => { try { return await f(); } catch { return sonst; } };
 
@@ -92,4 +106,58 @@ export function nachweisQuellen(k: RoutenKontext): NachweisQuellen {
       return je;
     },
   };
+}
+
+/** Beide Quellen auf einmal, z. B. für die Prüfung auf Geheimnisse (server/test/geheimnis-sperre.test.ts). */
+export function paketdatenQuellen(...a: Parameters<typeof routenKontext>): { einrichtung: EinrichtungQuellen; nachweise: NachweisQuellen } {
+  const k = routenKontext(...a);
+  return { einrichtung: einrichtungQuellen(k), nachweise: nachweisQuellen(k) };
+}
+
+const log = protokoll.modul('werkbank');
+
+export function paketdatenRouten(k: RoutenKontext): Route[] {
+  const { dienst, konten, zg } = k;
+  const einst = () => dienst.kern.einstellungen;
+  const person = async (id: string) => (await konten.benutzerMitId(id)) ?? null;
+  const paket = async (id: string) => {
+    const p = (await dienst.kern.repo.listePakete()).find((x) => x.id === id);
+    if (!p) throw new Fachfehler(404, t('pakete.daten.fehler.kein-paket'));
+    return p;
+  };
+  /** Nur das Dienstkonto eines Pakets, nur freigegebene Bereiche; jeder Abruf steht im Protokoll. */
+  const darf = async (a: Anfrage, art: PaketdatenArt): Promise<PaketdatenBereich> => {
+    const bereich = a.params.bereich;
+    if (!istPaketdatenBereich(bereich)) throw new Fachfehler(404, t('pakete.daten.fehler.bereich', { bereich: String(bereich) }));
+    const z = await zg(a);
+    if (!z.paket || a.benutzer?.art !== 'dienst') throw new Fachfehler(403, t('pakete.daten.fehler.nur-pakete'));
+    await pruefeAbruf(einst(), (await dienst.kern.repo.listePakete()).find((x) => x.id === z.paket!.id), art, bereich, person);
+    log.info(art === 'nachweise' ? 'Paket liest Nachweise' : 'Paket liest Einrichtung', { paket: z.paket.id, bereich, ...(a.params.monat ? { monat: a.params.monat } : {}) });
+    return bereich;
+  };
+  const monat = (a: Anfrage) => {
+    const m = String(a.params.monat ?? '');
+    if (!MONAT.test(m) || m > new Date().toISOString().slice(0, 7)) throw new Fachfehler(422, t('pakete.daten.fehler.monat'));
+    return m;
+  };
+  return [
+    // Werkbank → Pakete → Seite des Pakets: Auswahl lesen und speichern.
+    { methode: 'GET', pfad: '/api/werkbank/pakete/:id/paketdaten', zugang: 'admin', handler: async (a) => ok(await freigabeAnsicht(einst(), await paket(a.params.id), ich(a), person)) },
+    { methode: 'PUT', pfad: '/api/werkbank/pakete/:id/paketdaten', zugang: 'admin', handler: async (a) => {
+      const p = await paket(a.params.id);
+      await setzeFreigabe(einst(), p, ich(a), a.body, { verlauf: (e) => dienst.kern.repo.notiereVerlauf([e]) });
+      return ok(await freigabeAnsicht(einst(), p, ich(a), person));
+    } },
+    // Für Pakete (über /api/v1): Einrichtung je Bereich, Vergleich mit einem gemerkten Stand, Nachweise je Monat.
+    { methode: 'GET', pfad: '/api/paketdaten/einrichtung/:bereich', zugang: 'angemeldet', handler: async (a) => ok(await einrichtung(await darf(a, 'einrichtung'), einrichtungQuellen(k))) },
+    { methode: 'POST', pfad: '/api/paketdaten/einrichtung/:bereich/vergleich', zugang: 'angemeldet', lesend: true, handler: async (a) => {
+      const jetzt = await einrichtung(await darf(a, 'einrichtung'), einrichtungQuellen(k));
+      const vorher = liesEintraege((a.body as { vorher?: unknown } | null)?.vorher);
+      return ok({ bereich: jetzt.bereich, version: jetzt.version, aenderungen: vergleiche(vorher, jetzt.eintraege), stand: jetzt });
+    } },
+    { methode: 'GET', pfad: '/api/paketdaten/nachweise/:bereich/:monat', zugang: 'angemeldet', handler: async (a) => {
+      const m = monat(a);
+      return ok(await nachweise(await darf(a, 'nachweise'), m, nachweisQuellen(k)));
+    } },
+  ];
 }

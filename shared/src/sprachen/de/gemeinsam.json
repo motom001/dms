@@ -1389,5 +1389,10 @@
   "paketdaten.bereich.sicherung": "Sicherung",
   "paketdaten.bereich.unveraenderbarkeit": "Unveränderbarkeit",
   "paketdaten.bereich.datenschutz": "Datenschutz",
-  "paketdaten.bereich.betriebspruefung": "Betriebsprüfung"
+  "paketdaten.bereich.betriebspruefung": "Betriebsprüfung",
+  "pakete.code-einrichtung-bereich": "code.rechte.einrichtung: Den Bereich „{b}“ gibt es nicht (erlaubt: {bereiche}).",
+  "pakete.code-nachweise-bereich": "code.rechte.nachweise: Zum Bereich „{b}“ gibt es keine Nachweise (erlaubt: {bereiche}).",
+  "pakete.code-paketdaten-netz": "code.rechte.einrichtung und code.rechte.nachweise gibt es nur für Pakete ohne Netz (ohne code.netz und ohne Dienst-Adresse).",
+  "pakete.recht-einrichtung": "Einrichtung lesen, angefragt: {bereiche} – nur die Bereiche, die du in den Paket-Einstellungen anhakst, nie Passwörter",
+  "pakete.recht-nachweise": "Nachweise lesen (Benutzer, Fehlanmeldungen, Sicherungen …), angefragt: {bereiche} – nur die Bereiche, die du anhakst"
 }

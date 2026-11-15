@@ -8,6 +8,7 @@ import type { ErstellenStand, PaketErstellenEingabe, PaketPruefung, SelbstErstel
 import type { Entscheidung, UmwandlungsFeld, Umwandlungsvorgang, UmwandlungsVorschau } from '../../../shared/src/umwandlung';
 import type { ExternerDienst, ExternKennzahlen } from '../../../shared/src/extern';
 import type { Abdeckung, Sprachangabe } from '../../../shared/src/sprachpaket';
+import type { PaketdatenAnsicht } from '../../../shared/src/paketdaten';
 import { anfrage, sendeDatei, speichereDatei } from './anfrage';
 import type { ExternZeile } from './betrieb';
 
@@ -124,6 +125,9 @@ export const paketeApi = {
   /** Beispiele entfernen (#878): unveränderte Beispiel-Mappen samt Dokumenten; geänderte bleiben und stehen in `behalten`. */
   paketBeispieleEntfernen: (id: string) => anfrage<{ entfernt: number; behalten: BeispielBehalten[] }>('POST', `/api/werkbank/pakete/${encodeURIComponent(id)}/beispiele/entfernen`),
   paketEinstellungen: (id: string) => anfrage<PaketEinstellungenStand>('GET', `/api/werkbank/pakete/${encodeURIComponent(id)}/einstellungen`),
+  /** Einrichtung und Nachweise (#1054): was das Paket anfragt, was angehakt und wirksam ist. */
+  paketdaten: (id: string) => anfrage<PaketdatenAnsicht>('GET', `/api/werkbank/pakete/${encodeURIComponent(id)}/paketdaten`),
+  paketdatenSpeichern: (id: string, auswahl: { einrichtung: string[]; nachweise: string[] }) => anfrage<PaketdatenAnsicht>('PUT', `/api/werkbank/pakete/${encodeURIComponent(id)}/paketdaten`, auswahl),
   /** adresseBestaetigt (#444): Hinweis zur Dienst-Adresse bestätigt – sonst 409, wenn sich eine Adresse ändert. */
   paketEinstellungenSpeichern: (id: string, werte: Record<string, unknown>, adresseBestaetigt = false) => anfrage<PaketEinstellungenStand>('PUT', `/api/werkbank/pakete/${encodeURIComponent(id)}/einstellungen`, { werte, ...(adresseBestaetigt ? { adresseBestaetigt: true } : {}) }),
   /* Paket-Update: Text in Verweis umwandeln (#534) */

@@ -42,6 +42,10 @@ import { Passkeys } from '../src/passkeys';
 import { Authenticator } from './hilfen-authenticator';
 import { Automatisierungen, speicherAutomatisierungRepo } from '../src/automatisierung';
 import '../src/automatisierung-karten';
+import { einrichtung as paketEinrichtung, nachweise as paketNachweise, vergleiche } from '../src/paketdaten';
+import { paketdatenQuellen } from '../src/paketdaten/paketdaten.routen';
+import { fehlanmeldung, Nachweisjournal, setzeNachweisjournal } from '../src/nachweisjournal';
+import { NACHWEIS_BEREICHE, PAKETDATEN_BEREICHE } from '../../shared/src/paketdaten';
 
 type App = { inject(o: { method: string; url: string; payload?: unknown; headers?: Record<string, string> }): Promise<{ statusCode: number; body: string; rawPayload: Buffer; headers: Record<string, string | string[]> }>; close(): Promise<void> };
 
@@ -210,6 +214,30 @@ describe('Geheimnisse gibt Ablago nie heraus (#1055)', () => {
           const text = alsText(Buffer.concat(t));
           assert.match(text, /Portal/, 'Auskunft enthält die Mappe');
           return text;
+        },
+      },
+      // Einrichtung, Vergleich und Nachweise für Pakete (#1053): alle Bereiche, mit Postfächern, Versand, Konten und
+      // einer Fehlanmeldung, bei der statt der Adresse ein Passwort eingetippt wurde.
+      'einrichtung-und-nachweise': {
+        routen: ['GET /api/paketdaten/einrichtung/:bereich', 'POST /api/paketdaten/einrichtung/:bereich/vergleich', 'GET /api/paketdaten/nachweise/:bereich/:monat',
+          'GET /api/v1/paketdaten/einrichtung/:bereich', 'POST /api/v1/paketdaten/einrichtung/:bereich/vergleich', 'GET /api/v1/paketdaten/nachweise/:bereich/:monat'],
+        erzeuge: async () => {
+          const q = paketdatenQuellen(d, konten, { tresor, betrieb, apiSchluessel, einrichtung, postfaecher, postfachOAuth, automatisierungen });
+          setzeNachweisjournal(new Nachweisjournal(einstellungen));
+          try {
+            await fehlanmeldung(G.kontoPasswort, '203.0.113.9', false);
+            await fehlanmeldung(lena.email, '203.0.113.9', true);
+            const teile: string[] = [];
+            for (const b of PAKETDATEN_BEREICHE) {
+              const s = await paketEinrichtung(b, q.einrichtung);
+              teile.push(JSON.stringify(s), JSON.stringify(vergleiche([], s.eintraege)));
+            }
+            for (const b of NACHWEIS_BEREICHE) teile.push(JSON.stringify(await paketNachweise(b, new Date().toISOString().slice(0, 7), q.nachweise)));
+            const text = teile.join('\n');
+            assert.match(text, /imap\.example\.org/, 'Postfach in der Einrichtung');
+            assert.match(text, /zugang\.fehlanmeldung/, 'Fehlanmeldung in den Nachweisen');
+            return text;
+          } finally { setzeNachweisjournal(null); }
         },
       },
       'ohne-geheimnisse': {

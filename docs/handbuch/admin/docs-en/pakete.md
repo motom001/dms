@@ -490,6 +490,14 @@ If a package has calculated fields or sets notes, the confirmation also says: **
 
 **"Read the encrypted backup in order to copy it off-site – can't open it (no key, no content) (dms:sicherung-lesen)"** – since version 0.142. After every backup the package gets the event [Backup finished](#ereignis-sicherung-fertig) and may read **exactly this** backup file in pieces – encrypted, as it is in the backup folder – and its slim metadata (size, checksum, time, fingerprint of the key). It never gets the key, the content or other files of the backup folder. Per backup it reports back whether the copy has arrived and been checked; **Workbench → Backup** shows this. Since version 0.158.1 its API key may only read – it reports the state in its answer to the event. It doesn't see folders and documents with this permission. See [Off-site backup](sicherung-ausser-haus.md).
 
+#### Reading the setup { #recht-einrichtung }
+
+**"Read setup, requested: … – only the areas you tick in the package settings, never passwords"** – since version 0.287. A package such as **Compliance** reads the current setup as data, for example to keep a process documentation up to date. The preview lists the areas it requests (General, Incoming documents and scanning, Library, Access and permissions, Operation, Backup, Immutability, Data protection, Tax audit). **Installing it grants none of this:** you tick what it may read in the package settings afterwards – see [Setup and evidence](#einrichtung-und-nachweise). User lists, passwords and credentials are never included; addresses only with the host. Packages with network access don't get this permission.
+
+#### Reading evidence { #recht-nachweise }
+
+**"Read evidence (users, failed sign-ins, backups …), requested: … – only the areas you tick"** – since version 0.287. Per month: users with roles, two-factor, passkey and administration rights, permission changes, failed sign-ins (account, time, shortened address; unknown accounts only as a count), backup runs and test restores, runs of "Check all files", updates and package history, maintenance times, deletions after the period, emptied Bin, subject access requests and incoming post per channel. Only someone with **full administration** and a fresh sign-in can release it. If the package files the evidence in folders, **restrict that folder type** – it contains people.
+
 ### Service address { #dienst-adresse }
 
 A package such as **AI assistant** doesn't compute itself but asks a service that you run or choose – e.g. **Ollama** on your home server (ready-made example and guide: [Running AI locally](ki-lokal.md)). You enter this service's address in the package's **settings** (Workbench → Packages → *package* → tab "Settings"):
@@ -498,6 +506,16 @@ A package such as **AI assistant** doesn't compute itself but asks a service tha
 - **Confirm.** When saving a new or changed address, Ablago asks **"Send data to this address?"** and names it. Only with **Confirm address and save** does it apply; the log records "Service address of package … confirmed" with the address.
 - **Only there.** The package runner only allows network access to this address and paths below it (same computer, same port), without redirects. Because services in the home network rarely speak HTTPS, `http://` is also allowed here. Credentials don't belong in the address but in a field of their own (secret).
 - **Operating and hosting this service is outside Ablago.** If it runs at your place in your own network, the data doesn't leave the house. If it belongs to another provider, that is a **relationship of trust with this service provider** – as with hosting Ablago itself: location, data processing, storage, use for training. You make this decision by entering and confirming; Ablago has no further switch for it. It already shows the notice in the preview before installation.
+
+### Setup and evidence { #einrichtung-und-nachweise }
+
+If a package requests [setup](#recht-einrichtung) or [evidence](#recht-nachweise), the **Settings** tab of the package (Workbench → Packages → *package*) has the section **Setup and evidence** with one tick per requested area; the overview shows what is released. **Default: nothing ticked** – also after an update that requests more areas.
+
+- **Who may tick:** only someone who manages the area (e.g. "Backup" only with the administration right Backup, "Library" with Folder types). **Access and permissions** and all **evidence** only with **full administration**; Ablago asks for a fresh sign-in. Unticking is always possible.
+- **On whose behalf:** whoever presses **Save release** becomes the person on record – the package reads on their behalf. All ticks must therefore be areas you manage; untick the others before saving.
+- **Checked on every read:** if the person on record loses an administration right, the area delivers nothing from then on (the package gets "not released" with the name of the area). The tick then says **"Ticked but not in effect"**. Tick it again if you manage the area.
+- **Traceable:** every change is in the log ("Paket: Einrichtung und Nachweise freigegeben") in the package's **History** tab and below under **Changes to the release**. Every read by the package is in the log. If you remove the package and install it again, nothing is ticked.
+- **Never included:** passwords, keys and credentials; user names of mailboxes; full IP addresses.
 
 ### AI services and folder types { #ki-dienste }
 
