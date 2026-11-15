@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Symbol } from '../Symbol';
-import { erwaehnung, zerlege, type Block, type Inline } from '../../../shared/src/markdown';
+import { erwaehnung, erwaehnungen, mitTiteln, zerlege, type Block, type Inline } from '../../../shared/src/markdown';
 import { abwesenheitText, useDaten } from '../daten';
 import { Person, useOhneLinks } from '../Person';
 import { Link } from '../ort';
-import { useVerweis } from '../sichtbarkeit';
+import { useVerweis, useVerweise } from '../sichtbarkeit';
 import { mappenApi, type ErwaehnungsVorschlag } from '../api/mappen';
 import { t } from '../sprache';
 import { Feld, Knopf, Umschalter, type FeldProps } from '../bausteine';
@@ -105,6 +105,16 @@ function cursorPosition(el: HTMLTextAreaElement, pos: number): { top: number; le
   return r;
 }
 
+/** Titel einer Erwähnung in der Eingabe (#1293): wie in der Anzeige; solange die Antwort aussteht, leer. */
+function erwaehnungsTitel(d: ReturnType<typeof useDaten>, id: string, v: ReturnType<ReturnType<typeof useVerweise>>): string {
+  const person = d.personen.find((p) => p.id === id);
+  if (person) return person.name;
+  if (!v) return '';
+  if (v.sichtbarkeit === 'geloescht') return t('ablage.formatiert.erwaehnung.geloescht');
+  if (v.sichtbarkeit !== 'sichtbar') return t('ablage.formatiert.erwaehnung.verborgen');
+  return v.titel || t('ablage.formatiert.erwaehnung.ohne-titel');
+}
+
 type Vorschlag = { id: string; name: string; typ: string; hinweis?: string; zusatz?: string };
 
 /**
@@ -127,8 +137,12 @@ function erwaehnVorschlaege(d: ReturnType<typeof useDaten>, suche: string, mappe
  * (#1211): `rahmen` sind Beschriftung, Hinweis, Fehler des Felds (in der Mappe); ohne Angabe eine Beschriftung nur für
  * Screenreader (Notizen).
  */
-export function FormatiertEingabe({ id, wert, setze, rahmen, unter }: { id: string; wert: string; setze: (v: string) => void; rahmen?: Omit<FeldProps, 'children' | 'id'>; /** Unter der Eingabe, z. B. eine Übersetzung (#732). */ unter?: ReactNode }) {
+export function FormatiertEingabe({ id, wert: gespeichert, setze, rahmen, unter }: { id: string; wert: string; setze: (v: string) => void; rahmen?: Omit<FeldProps, 'children' | 'id'>; /** Unter der Eingabe, z. B. eine Übersetzung (#732). */ unter?: ReactNode }) {
   const d = useDaten();
+  // Erwähnungen (#1293): gespeichert ist nur die Kennung; zum Schreiben stehen die aktuellen Titel im Text (nach den
+  // Rechten der Person). Der Server nimmt sie beim Speichern wieder heraus.
+  const verweis = useVerweise(useMemo(() => erwaehnungen(gespeichert), [gespeichert]));
+  const wert = mitTiteln(gespeichert, (x, bisher) => erwaehnungsTitel(d, x, verweis(x)) || bisher);
   const feld = useRef<HTMLTextAreaElement>(null);
   const [vorschau, setVorschau] = useState(!!wert);
   const [suche, setSuche] = useState<{ start: number; text: string } | null>(null);

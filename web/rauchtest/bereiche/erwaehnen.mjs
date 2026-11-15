@@ -1,6 +1,6 @@
 /**
  * Rauchtests: Erwähnen mit @ – alle Mappen (#889). Auswahl mit Mappentyp vor dem Titel, „Erwähnen“ in der Leiste,
- * Anzeige mit aktuellem Titel, Hinweis „Erwähnt in …“ in der erwähnten Mappe; axe hell und dunkel, Tippflächen am Handy.
+ * Anzeige mit aktuellem Titel (gespeichert nur die Kennung, #1293), Hinweis „Erwähnt in …“ in der erwähnten Mappe; axe hell und dunkel, Tippflächen am Handy.
  * Allein starten (frisch gestartetes Ablago, siehe rauchtest.mjs): node web/rauchtest/bereiche/erwaehnen.mjs [fehlerordner] [musterordner]
  */
 import assert from 'node:assert/strict';
@@ -42,6 +42,9 @@ rauchtest('Erwähnen mit @: Mappe auswählen, aktueller Titel, Hinweis in der er
   const link = s.locator('.notizliste').getByRole('link', { name: '@Erwähnziel Eins neu' });
   await link.waitFor();
   assert.match(await link.getAttribute('title'), /^Kellerraum: Erwähnziel Eins neu/);
+  // Gespeichert ist nur die Kennung (#1293), der Titel kommt erst beim Anzeigen hinzu.
+  const gespeichert = (await api('GET', `/api/mappen/${quelle.id}/notizen`, { cookie })).daten.map((n) => n.text);
+  assert.deepEqual(gespeichert, [`@[](mappe:${ziel.id})`]);
   // In der erwähnten Mappe: ruhiger Hinweis oben im Register Notizen, mit Link zurück.
   await notizen(s, ziel);
   const hinweis = s.getByRole('list', { name: 'Hier erwähnt' });

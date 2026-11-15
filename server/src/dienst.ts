@@ -463,6 +463,7 @@ export class Dienst {
     });
     const exportieren = new AusgangExport(this.kern, { rechte, sichten: this.sichten, fehlend: this.dateienFehlen, ausgang, stempel: stempelvorlagen }, {
       mitnehmbar: (ich, z, ids) => this.ausgang.mitnehmbar(ich, z, ids), entsperrtZu,
+      mitErwaehnungstiteln: (z, mappen) => this.erwaehnungen.mappenMitTiteln(z, mappen, (id) => z.typen.get(id)),
     });
     return { stempelvorlagen, pdf, verkleinern, schwaerzen, systemmappen, aufloesen, leerseiten, post, eingang, fotos, ausgang, email, export: exportieren };
   }

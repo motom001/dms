@@ -41,6 +41,8 @@ export interface ExportAnschluss {
   mitnehmbar(ich: { id: string; rolle: string }, z: Zugriff, ids: string[]): Promise<Set<string>>;
   /** Inhalt der entsperrten Fassung (#827; geschützte PDFs, am Dienst). */
   entsperrtZu(inhalt: Buffer): Promise<Buffer | null>;
+  /** Erwähnungen in formatierten Feldern mit Titeln nach den Rechten der Person (#1293; erwaehnungen.ts, am Dienst). */
+  mitErwaehnungstiteln(z: Zugriff, mappen: Mappe[]): Promise<Mappe[]>;
 }
 
 export class AusgangExport {
@@ -92,7 +94,8 @@ export class AusgangExport {
     }
     // Verwaltungsmodus (#820): fremde Mappen im Export dauerhaft in ihrer Historie.
     await spur?.(ids);
-    const mappen = inReihenfolge(await this.repo.holeMappen(ids), ids);
+    // Erwähnungen in formatierten Feldern (#1293): Titel erst hier, nach den Rechten der exportierenden Person.
+    const mappen = await this.anschluss.mitErwaehnungstiteln(z, inReihenfolge(await this.repo.holeMappen(ids), ids));
     const typen = [...new Set(mappen.map((m) => m.typId))].map((t) => z.typen.get(t)).filter((t): t is Mappentyp => !!t);
     const spalten = exportSpalten(typen, x.spalten === 'alle' ? 'alle' : 'liste', sicht?.trefferliste ?? null);
     const verweise = mappen.flatMap((m) => { const t = z.typen.get(m.typId); return [...(t ? verweiseVon(t, m.werte).map((v) => v.zielId) : []), m.erstelltVon, m.geaendertVon].filter((v): v is string => !!v); });

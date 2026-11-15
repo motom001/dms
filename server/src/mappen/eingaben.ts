@@ -13,6 +13,7 @@ import { enthaeltId, ersteId, folgeReihenfolge } from '../../../shared/src/folgt
 import { passtZusammen } from '../../../shared/src/vorbelegen';
 import { setzeZusammengesetzte } from '../../../shared/src/zusammengesetzt';
 import type { Vorschlaege } from '../../../shared/src/erkennung';
+import { ohneTitel } from '../../../shared/src/markdown';
 import { einzigesZiel, type Feld, pruefeMappe, zielErlaubt, type Feldkonflikt, formatiere, gemeinsameFelder, type Historieneintrag, istLeer, istOk, type Mappe, type MappenBezug, type Mappentyp, verweiseVon, type Verweiskonflikt, type Wert, type Werte, zieleVon, zielTypenAus } from '../../../shared/src/model';
 import type { Rechte } from '../../../shared/src/rechte';
 import { type Aufloesung, auswahlKlausel, auswahlProbleme, bereinigeAuswahlfilter, erfuellt, heuteIn, setzeEigeneWerte } from '../../../shared/src/sichten';
@@ -58,6 +59,8 @@ export function bereinigeWerte(typ: Mappentyp, eingabe: unknown, bisher: Werte =
 function gleicheArtAn(f: Feld, v: Wert): Wert {
   if (f.typ === 'zeitraum') return leseZeitraum(v) ?? v;
   if (f.typ === 'prozent' && typeof v === 'string') { const n = leseProzent(v); return n != null && Number.isFinite(n) ? n : v; }
+  // Erwähnungen (#1293): nur die Kennung speichern, den Titel setzt erst die Ausgabe ein.
+  if (f.typ === 'formatiert' && typeof v === 'string') return ohneTitel(v);
   return v;
 }
 

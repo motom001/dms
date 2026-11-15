@@ -32,7 +32,8 @@ A mention is a reference to a folder; a user is just the special case with a per
 - **Display:** the text always shows the **current** title – if the folder is renamed, the mention changes with it. Hovering shows the folder type; a click opens the folder. If you may not read it, it says **@folder (not visible)** without a title; if it no longer exists, **@deleted folder**.
 - **Who hears about it:** a mentioned user gets a task as before. For any other folder, everyone who has it as a [favourite](ablage.md#favoriten-als-abo) hears about it – depending on their setting under My account → [Notifications](profil.md#benachrichtigungen) right away, in the daily summary or never. Only new mentions count, not every save, and only people who may read **both** folders. Person folders aren't users: `@Dr. Bernd Beispiel` only reaches those who have him as a favourite.
 - **In the mentioned folder:** the **Notes** tab shows a quiet notice at the top, e.g. "Mentioned in a note at Dr. Bernd Beispiel, 05/11/2026" with a link – not a real note. It disappears when the mention is removed and only shows places in folders you may read.
-- Exports and PDFs show the title as text.
+- Only **which** folder is meant is saved, not its title. Ablago fills in the title only when showing it – for each person according to their permissions. While you write, the text shows the current titles.
+- Exports, PDFs and letters from templates show the current title as text – or **@folder (not visible)** if the person exporting may not read the folder. The history, data subject access requests and the full export show only **@mention** instead of the title (the full export with the folder's ID).
 
 ## History {#historie}
 

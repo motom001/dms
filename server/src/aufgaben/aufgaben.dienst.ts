@@ -142,8 +142,10 @@ export class AufgabenDienst {
   private async erwaehntText(empfaenger: string, von: string | null, quelle: { ort: string; auszug?: string }, text: string): Promise<string> {
     const ids = erwaehnungen(text);
     const sieht = await this.sichtbarFuer(empfaenger, [...ids, ...(von ? [von] : [])]);
+    // Titel erst hier (#1293): gespeichert ist nur die Kennung.
+    const titel = quelle.auszug === undefined ? new Map<string, { titel: string }>() : await this.repo.bezuege(ids.filter((id) => sieht.has(id)));
     const auszug = quelle.auszug === undefined ? '' : (() => {
-      const x = alsText(text, (id, name) => (sieht.has(id) ? name : t('meldungen.dienst.erwaehnung-nicht-sichtbar')));
+      const x = alsText(text, (id) => (sieht.has(id) && titel.has(id) ? titel.get(id)!.titel || t('meldungen.dienst.ohne-titel') : t('meldungen.dienst.erwaehnung-nicht-sichtbar')));
       return `: ${x.length > 80 ? `${x.slice(0, 77)} …` : x}`;
     })();
     const roh = von && !sieht.has(von)

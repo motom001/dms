@@ -15,6 +15,7 @@
  *
  * Schicht 3 – bekommt Kern und Rechteprüfung; Organisation, Prüfstelle und Hochladen über den Anschluss.
  */
+import { erwaehnungen, mitTiteln } from '../../../shared/src/markdown';
 import { anschriftZeilen, anzeigename, liesAngaben, type Angaben, type EigeneOrganisation } from '../../../shared/src/organisation';
 import { formatiere, istLeer, titelAus, type Dokument, type Feld, type Mappe, type Mappentyp, type Wert } from '../../../shared/src/model';
 import { gebietsschemaVon, grundsprache, inSprache } from '../../../shared/src/sprache';
@@ -191,16 +192,35 @@ export class TextsatzDienst {
         if (ty) { mappen.set(m.id, { mappe: m, typ: ty }); stufe.push(m.id); }
       }
     }
-    return mappen;
+    return this.mitErwaehnungstiteln(s, mappen, hinaus);
+  }
+
+  /**
+   * Erwähnungen in formatierten Feldern (#1293): Titel erst hier einsetzen – lesbare (beim Herunterladen auch
+   * mitnehmbare) Mappen mit aktuellem Titel, sonst „Mappe (nicht sichtbar)“.
+   */
+  private async mitErwaehnungstiteln(s: Setzender, mappen: Mappen, hinaus: boolean): Promise<Mappen> {
+    const formatiert = (x: { mappe: Mappe; typ: Mappentyp }) => x.typ.felder.filter((f) => f.typ === 'formatiert' && typeof x.mappe.werte[f.key] === 'string').map((f) => f.key);
+    const ids = [...new Set([...mappen.values()].flatMap((x) => formatiert(x).flatMap((k) => erwaehnungen(String(x.mappe.werte[k])))))];
+    if (!ids.length) return mappen;
+    const ok = await this.lesbar(s, ids, hinaus);
+    const b = await this.repo.bezuege([...ok]);
+    const name = (id: string) => (b.has(id) ? b.get(id)!.titel || t('meldungen.dienst.ohne-titel') : t('meldungen.dienst.erwaehnung-nicht-sichtbar'));
+    return new Map([...mappen].map(([id, x]) => {
+      const keys = formatiert(x);
+      return [id, keys.length ? { ...x, mappe: { ...x.mappe, werte: { ...x.mappe.werte, ...Object.fromEntries(keys.map((k) => [k, mitTiteln(String(x.mappe.werte[k]), name)])) } } } : x];
+    }));
   }
 
   /**
    * Werte für eine Mappe: Platzhalter auflösen (nur Lesbares, nie Passwörter), Briefkopf, Anschrift und Datum. `hinaus`:
    * Herunterladen – verwiesene Mappen brauchen dann auch das Exportrecht E.
    */
-  private async kontext(s: Setzender, mappe: Mappe, typ: Mappentyp, vorlage: Dokument, hinaus: boolean) {
+  private async kontext(s: Setzender, gespeichert: Mappe, typ: Mappentyp, vorlage: Dokument, hinaus: boolean) {
     const sprache = (vorlage.sprache && SPRACHE[vorlage.sprache]) || grundsprache();
-    const mappen = await this.verwiesene(s, mappe, typ, hinaus);
+    const mappen = await this.verwiesene(s, gespeichert, typ, hinaus);
+    // Mit eingesetzten Erwähnungstiteln (#1293).
+    const mappe = mappen.get(gespeichert.id)?.mappe ?? gespeichert;
     const titelVon = (id: string) => mappen.get(id)?.mappe.titel ?? '';
     const luecken: string[] = [];
     const fest: Record<string, string> = inSprache(sprache, () => ({

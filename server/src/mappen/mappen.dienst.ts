@@ -7,7 +7,7 @@ import { istTeilVerweis } from '../../../shared/src/teile';
 import { randomUUID } from 'node:crypto';
 import { aufbewahrenBis, datumText, laeuftNochNicht, stichtagName } from '../../../shared/src/archiv';
 import type { Datenschutz } from '../../../shared/src/auskunft';
-import { alsText } from '../../../shared/src/markdown';
+import { alsText, ohneTitel } from '../../../shared/src/markdown';
 import { type Aufgabe, darfErstellen, type Dokument, geschuetzteFelder, type Mappe, type Mappenkonflikt, type Mappentyp, type Notiz, NOTIZ_MAX, verweiseVon, type Werte } from '../../../shared/src/model';
 import { kreisVon } from '../../../shared/src/nummernkreis';
 import { gebietsschema } from '../../../shared/src/sprache';
@@ -94,7 +94,8 @@ export class MappenDienst {
   /* ---------- Notizen (#55) ---------- */
 
   static notiztext(e: unknown): string {
-    const text2 = typeof e === 'string' ? e.replace(/\r\n?/g, '\n').trim() : '';
+    // Erwähnungen (#1293): nur die Kennung speichern, den Titel setzt erst die Ausgabe ein.
+    const text2 = typeof e === 'string' ? ohneTitel(e.replace(/\r\n?/g, '\n').trim()) : '';
     if (!text2) throw new Fachfehler(422, t('meldungen.dienst.die-notiz-ist-leer'));
     if (text2.length > NOTIZ_MAX) throw new Fachfehler(422, t('meldungen.dienst.eine-notiz-darf-hoechstens', { NOTIZ_MAX: NOTIZ_MAX.toLocaleString(gebietsschema()) }));
     return text2;

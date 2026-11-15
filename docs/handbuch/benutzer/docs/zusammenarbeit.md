@@ -32,7 +32,8 @@ Eine Erwähnung ist ein Verweis auf eine Mappe; ein Benutzer ist nur der Sonderf
 - **Anzeige:** Im Text steht immer der **aktuelle** Titel – wird die Mappe umbenannt, ändert sich die Erwähnung mit. Beim Darüberfahren steht der Mappentyp; ein Klick öffnet die Mappe. Darfst du sie nicht lesen, steht **@Mappe (nicht sichtbar)** ohne Titel; gibt es sie nicht mehr, **@gelöschte Mappe**.
 - **Wer erfährt es:** Ein erwähnter Benutzer bekommt wie bisher eine Aufgabe. Bei jeder anderen Mappe erfahren es alle, die sie als [Favorit](ablage.md#favoriten-als-abo) haben – je nach ihrer Einstellung unter Mein Konto → [Benachrichtigungen](profil.md#benachrichtigungen) sofort, in der täglichen Zusammenfassung oder nie. Nur neue Erwähnungen melden sich, nicht jedes Speichern, und nur bei Personen, die **beide** Mappen lesen dürfen. Personen-Mappen sind keine Benutzer: `@Dr. Bernd Beispiel` meldet sich nur bei denen, die ihn als Favorit haben.
 - **In der erwähnten Mappe:** Im Register **Notizen** steht oben ein ruhiger Hinweis, z. B. „Erwähnt in einer Notiz bei Dr. Bernd Beispiel, 05.11.2026“ mit Link – keine echte Notiz. Er verschwindet, wenn die Erwähnung entfernt wird, und zeigt nur Stellen in Mappen, die du lesen darfst.
-- Im Export und im PDF steht der Titel als Text.
+- Gespeichert wird nur, **welche** Mappe gemeint ist, nicht ihr Titel. Den Titel setzt Ablago erst beim Anzeigen ein – für jede Person nach ihren Rechten. Beim Schreiben stehen die aktuellen Titel im Text.
+- Im Export, im PDF und in Briefen aus Vorlagen steht der aktuelle Titel als Text – bzw. **@Mappe (nicht sichtbar)**, wenn die exportierende Person die Mappe nicht lesen darf. In der Historie, in der Auskunft und im Vollexport steht statt des Titels nur **@Erwähnung** (im Vollexport mit der Kennung der Mappe).
 
 ## Historie
 

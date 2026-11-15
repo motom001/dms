@@ -205,6 +205,7 @@
   "dienst.erwaehnung-von-entfernt": "Mention of {name} {ort} removed",
   "dienst.erwaehnt-ohne-name": "Mentioned {ort}{wert}",
   "dienst.erwaehnung-nicht-sichtbar": "folder (not visible)",
+  "dienst.erwaehnung-geloescht": "deleted folder",
   "dienst.favorit-erwaehnt": "Your favourite “{titel}” was mentioned {ort}",
   "dienst.weitergegeben-wegen-abwesenheit-von": "handed over because of the absence of {namen} to {name}: {text}",
   "dienst.bitte-einen-anderen-benutzer": "Please choose another user.",
