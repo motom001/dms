@@ -13,6 +13,9 @@
  *   Priorität gleich nach dem Start (die Programme laufen dann schon, starten aber noch keine eigenen Kinder).
  * - Geht es nicht (z. B. EACCES oder ENOSYS in einem eingeschränkten Container), steht es einmal im Protokoll und
  *   alles läuft mit normaler Priorität weiter.
+ * - Endet Ablago (#1203), enden auch diese Programme: Wer beim Ende noch läuft, bekommt SIGKILL (Ereignis `exit` des
+ *   Prozesses – nach dem geordneten Beenden ebenso wie nach einem Absturz). Sonst liefe z. B. Ghostscript an einer großen
+ *   PDF ohne Ablago weiter. Paket-Läufer und weitere Prozesse (`DMS_PROZESSE`) enden selbst mit der IPC-Verbindung.
  */
 import * as kp from 'node:child_process';
 import { readdirSync } from 'node:fs';
@@ -109,9 +112,26 @@ export function faedenVon(pid: number): number[] {
   return [pid];
 }
 
-/** Kindprozess gleich nach dem Start senken. */
+/** Programme, die gerade laufen (#1203): beim Ende von Ablago beenden. */
+const laufend = new Set<kp.ChildProcess>();
+let endeVerbunden = false;
+
+/** Alle noch laufenden Programme beenden (synchron, auch im Ereignis `exit`). Ergebnis: wie viele. */
+export function beendeProgramme(signal: NodeJS.Signals = 'SIGKILL'): number {
+  let n = 0;
+  for (const k of laufend) { if (k.exitCode === null && k.signalCode === null) { try { if (k.kill(signal)) n++; } catch { /* schon weg */ } } }
+  laufend.clear();
+  return n;
+}
+
+/** Kindprozess gleich nach dem Start senken und bis zu seinem Ende merken. */
 export function niedrig<T extends kp.ChildProcess>(kind: T): T {
   if (kind.pid) senkePrioritaet(kind.pid);
+  if (kind.pid) {
+    laufend.add(kind);
+    kind.once('exit', () => laufend.delete(kind));
+    if (!endeVerbunden) { endeVerbunden = true; process.once('exit', () => { beendeProgramme(); }); }
+  }
   return kind;
 }
 

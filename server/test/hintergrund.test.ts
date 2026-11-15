@@ -106,3 +106,26 @@ describe('Priorität der Arbeit im Hintergrund (#893)', () => {
     assert.equal(gesetzt, 19, 'zusätzlich zum Hauptfaden, höchstens 19');
   });
 });
+
+describe('Programme enden mit Ablago (#1203)', () => {
+  const lebt = (pid: number) => { try { process.kill(pid, 0); return true; } catch { return false; } };
+  // Ein Prozess wie Ablago startet über hintergrund.ts ein lange laufendes Programm und endet dann – geordnet
+  // (process.exit nach SIGTERM) oder durch einen Absturz. Das Programm darf nicht übrig bleiben.
+  for (const [art, ende] of [['Signal', "process.on('SIGTERM', () => process.exit(0)); process.kill(process.pid, 'SIGTERM');"], ['Absturz', "throw new Error('Absturz');"]] as const) {
+    it(`nach ${art}: kein Kindprozess bleibt übrig`, async () => {
+      const code = `const { spawn } = await import(${JSON.stringify(new URL('../src/hintergrund.ts', import.meta.url).href)});
+        const k = spawn('sleep', ['60'], { stdio: 'ignore' }); process.stdout.write(String(k.pid) + '\\n');
+        setTimeout(() => { ${ende} }, 100);`;
+      const eltern = normalSpawn(process.execPath, ['--import', 'tsx', '--input-type=module', '-e', code], { stdio: ['ignore', 'pipe', 'ignore'] });
+      let aus = '';
+      eltern.stdout.on('data', (d: Buffer) => { aus += d.toString(); });
+      await new Promise((ok) => eltern.once('exit', ok));
+      const pid = Number(aus.trim());
+      assert.ok(pid > 0, `PID des Programms: ${aus}`);
+      for (let i = 0; i < 40 && lebt(pid); i++) await new Promise((r) => setTimeout(r, 50));
+      const uebrig = lebt(pid);
+      if (uebrig) process.kill(pid, 'SIGKILL');
+      assert.equal(uebrig, false, 'das Programm endet mit dem Elternprozess');
+    });
+  }
+});

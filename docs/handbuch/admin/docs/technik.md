@@ -103,6 +103,16 @@ So arbeiten die Prozesse zusammen:
 
 **Was je Prozess gilt:** `DMS_MAX_ANFRAGEN` und `DMS_ARBEITER` gelten **je Prozess**. Die Vorgabe der Arbeiter teilt sich auf die Prozesse auf (mindestens 1 je Prozess), damit zusammen nicht mehr Fäden rechnen als mit einem Prozess. **Werkbank → Systemzustand** zeigt die Werte mit „je Prozess, zusammen …“ bzw. bei den Verbindungen die Aufteilung („zusammen für 2 Prozesse: Leiter 9, jeder weitere 5“) und darunter eine Zeile je Prozess mit Arbeitsspeicher, Rechenzeit, Wartezeit und laufenden Anfragen. Wo es unter Last hakt – Warten auf Verbindungen, Sperren, Rechenzeit von PostgreSQL und Ablago, Neustarts und Arbeitsspeicher je Prozess –, zeigt der [Lasttest](lasttest.md) je Durchgang.
 
+### Beenden und Neustart { #beenden }
+
+Mit **SIGTERM** oder **SIGINT** (z. B. `docker stop`, Strg+C) beendet sich Ablago geordnet: offene Anfragen zu Ende, Hintergrundarbeit anhalten, Datenbank-Verbindungen schließen. Dabei enden **alle** seine Prozesse (#1203):
+
+- Der **Paket-Läufer** und bei `DMS_PROZESSE` die **weiteren Prozesse** enden selbst, sobald die Verbindung zu ihrem Elternprozess abreißt – auch wenn der abstürzt oder hart beendet wird.
+- **Programme**, die Ablago startet (`pdftoppm`, `qpdf`, Ghostscript, Texterkennung …), beendet Ablago mit sich, nach dem geordneten Beenden ebenso wie nach einem Absturz.
+- Nur ein **SIGKILL** (`kill -9`) lässt Ablago keine Zeit dafür; im Container endet dann ohnehin alles mit dem Container.
+
+**`docker stop`:** Docker schickt SIGTERM und nach 10 Sekunden (Vorgabe) SIGKILL. Im Image `dms` empfängt Node.js das Signal selbst (Prozess 1); in `dms-komplett` reicht `tini` es an das Start-Skript, das erst Ablago und dann PostgreSQL beendet. Mit mehreren Prozessen wartet der Hauptprozess bis zu 20 Sekunden auf sie – wer ganz sicher geordnet beenden will, setzt in der Compose-Datei `stop_grace_period: 30s`.
+
 ## Schnittstelle
 
 `/api/v1` für andere Programme (API-Schlüssel), Beschreibung unter `/api/openapi.json`. Die Oberfläche selbst nutzt interne Adressen unter `/api/…`, die sich ändern dürfen.
