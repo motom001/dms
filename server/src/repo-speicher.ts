@@ -474,11 +474,12 @@ export function speicherRepo(): Repo {
       const inFeldern = (m: Mappe, text: string) => enthaelt(m.titel ?? '', text, vv) || Object.values(m.werte).some((v) => !(typeof v === 'string' && v.startsWith('dms1$')) && enthaelt(wertText(v), text, vv));
       // Teile (#1031): übergeordnete Mappen, in deren Teilen der Begriff steht, zählen als Treffer.
       const auch = new Set(o.auchIds ?? []);
-      const alle = [...mappen.values()]
+      const ohneLesen = [...mappen.values()]
         .filter((m) => !o.typId || m.typId === o.typId)
         .filter((m) => !o.klauseln || inSicht(m, o.klauseln, zaehl))
         .filter((m) => !o.eingang || offenFuer(m, o.eingang.benutzerId, o.eingang.admin))
-        .filter((m) => !o.favoriten || istFavorit(m.id, o.favoriten.benutzerId))
+        .filter((m) => !o.favoriten || istFavorit(m.id, o.favoriten.benutzerId));
+      const alle = ohneLesen
         .filter((m) => lesbar(o.lesen ?? null, m, zaehl))
         .filter((m) => !q || auch.has(m.id) || inFeldern(m, q)
           || (!!o.volltext && [...dokumente.values()].some((d) => d.mappeId === m.id && findet(texte.get(d.id), q, vv)))
@@ -488,6 +489,8 @@ export function speicherRepo(): Repo {
           || (tf.notizen && [...notizen.values()].some((n) => n.mappeId === m.id && enthaelt(n.text, tf.text, vv))))
         .sort((a, b) => vergleiche(a, b, o.sortierung) || (a.titel ?? '').toLowerCase().localeCompare((b.titel ?? '').toLowerCase()) || a.id.localeCompare(b.id));
       const seite = alle.slice(o.von, o.von + o.anzahl).map(kopie);
+      // Tabellenfeld (#1265): Zahl der Mappen, die ohne Lesefilter dazukämen – wie im PostgreSQL-Repo nur ohne Suche.
+      if (o.mitVerborgenen && !q && !tf && o.zahl === undefined) return { gesamt: alle.length, verborgen: ohneLesen.length - alle.length, mappen: seite };
       if (!fund) return { gesamt: o.zahl ?? alle.length, mappen: seite };
       const ausschnitte: Record<string, Ausschnitt> = {};
       const q2 = (o.suche && (o.volltext || o.notizen) ? q! : tf!.text).toLowerCase();

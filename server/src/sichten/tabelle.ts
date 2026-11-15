@@ -61,29 +61,18 @@ export async function tabellenSeite(teile: TabellenTeile, id: string, feldKey: s
   const spalten = tabellenSpalten(quelltyp, f.quelle.trefferliste, trefferlistenVon);
   const von = Math.max(0, Math.floor(Number(q.von) || 0));
   const sortierung = teile.sortierungAus(text(q.sortierung), q.absteigend === 'true' || q.absteigend === true, quelltyp);
-  const bekannt = Number(q.gesamt);
   const repo = teile.repo();
   const klauseln: Klausel[] = [{ typen: [quelltyp.id], filter: [{ art: 'feld', key: f.quelle.feldKey, feldart: 'referenz', op: 'zeigtAuf', a: [mappe.id] }] }];
-  const r = await repo.seite({
-    klauseln,
-    sortierung, lesen: z?.lesen ?? null, von, anzahl: TABELLE_SEITE,
-    // Beim Blättern die Zahl vom ersten Blatt (#740) – das Repo liefert nie weniger, als bis hier geliefert ist.
-    ...(von > 0 && Number.isInteger(bekannt) && bekannt >= 0 ? { gesamt: bekannt } : {}),
-  });
+  // Verborgene Zeilen (#1208) in derselben Abfrage wie die Seite (#1265): alle Zeilen ohne Lesefilter gezählt, die
+  // lesbaren abgezogen – nur die Zahl verlässt die Datenbank. Ohne Lesefilter (Verwaltung) gibt es keine verborgenen.
+  // Gezählt wird auf jedem Blatt in dieser einen Abfrage; ein mitgegebenes `gesamt` (#740) braucht es nicht mehr und
+  // kann die Antwort so auch nicht verfälschen.
+  const r = await repo.seite({ klauseln, sortierung, lesen: z?.lesen ?? null, von, anzahl: TABELLE_SEITE, mitVerborgenen: true });
   // Nur Werte der gezeigten Spalten verlassen den Server (keine Passwörter, nichts sonst aus der Mappe) – und nur deren Bezüge.
   // Eine zusammengesetzte Spalte (#1050) zeigt den Text aus ihren Teilen: deren Werte gehen mit (nie Passwörter).
   const teilKeys = spalten.flatMap((k) => { const g = quelltyp.felder.find((x) => x.key === k); return g?.typ === 'zusammengesetzt' ? teileVon(quelltyp.felder, g).map((x) => x.key) : []; });
   const mitWert = [...new Set([...spalten, ...teilKeys])];
   const mappen = r.mappen.map((m) => ({ ...m, werte: Object.fromEntries(mitWert.filter((k) => k in m.werte).map((k) => [k, m.werte[k]])) }));
   const ziele = mappen.flatMap((m) => verweiseVon(quelltyp, m.werte).map((v) => v.zielId));
-  // Verborgene Zeilen (#1208): alle Zeilen ohne Lesefilter zählen, die lesbaren abziehen. Ohne Lesefilter (Verwaltung) gibt
-  // es keine verborgenen. Beim Blättern steht `gesamt` vom ersten Blatt – dann zählt der Server die lesbaren selbst neu,
-  // damit eine mitgegebene Zahl die Antwort nicht verfälscht.
-  let verborgen = 0;
-  if (z?.lesen) {
-    const [alle] = await repo.zaehleKlauseln([klauseln], null);
-    const lesbar = von > 0 ? (await repo.zaehleKlauseln([klauseln], z.lesen))[0] : r.gesamt;
-    verborgen = Math.max(0, alle - lesbar);
-  }
-  return { typId: quelltyp.id, spalten, gesamt: r.gesamt, verborgen, von, mappen, bezuege: await teile.rechte.maskiereBezuege(z, await repo.bezuege(ziele)) };
+  return { typId: quelltyp.id, spalten, gesamt: r.gesamt, verborgen: r.verborgen ?? 0, von, mappen, bezuege: await teile.rechte.maskiereBezuege(z, await repo.bezuege(ziele)) };
 }

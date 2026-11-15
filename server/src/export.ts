@@ -8,7 +8,7 @@ import { spaltenDerSicht } from '../../shared/src/sichten';
 import { wertfelder } from '../../shared/src/tabelle';
 import type { Zelle } from './xlsx';
 import { mappenPdfZeichnen, type PdfMappenSeite } from './pdf';
-import { zeitzone } from '../../shared/src/region';
+import { datumsformat } from '../../shared/src/region';
 import { t } from './sprache';
 import { gebietsschema } from '../../shared/src/sprache';
 
@@ -41,7 +41,8 @@ export function spaltenKopf(k: string, typen: Mappentyp[]): string {
 }
 
 const titelOder = (eintrag: string | null | undefined) => (eintrag && eintrag.trim() ? eintrag : t('meldungen.export.ohne-titel'));
-const zeit = (iso: string) => new Date(iso).toLocaleString(gebietsschema(), { timeZone: zeitzone(), dateStyle: 'short', timeStyle: 'short' });
+// Ein gemerktes Format statt toLocaleString mit Optionen je Zelle (#970: sonst je Zeile ein neues ICU-Format außerhalb der Halde).
+const zeit = (iso: string) => { const d = new Date(iso); return Number.isNaN(d.getTime()) ? String(d) : datumsformat(gebietsschema(), { dateStyle: 'short', timeStyle: 'short' }).format(d); };
 
 export interface Quelle { typen: Map<string, Mappentyp>; titel(id: string | null | undefined): string }
 

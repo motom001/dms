@@ -12,6 +12,7 @@
  * „19,0“ ergeben dasselbe. Angezeigt wird mit schmalem geschütztem Leerzeichen (U+202F) vor dem Zeichen, wenn die
  * Sprache dort einen Abstand setzt (Deutsch „19 %“, Englisch „19%“).
  */
+import { zahlformat } from './region';
 import { gebietsschema } from './sprache';
 import { t } from './texte';
 
@@ -123,7 +124,7 @@ export const mitMinus = (s: string) => s.replace(/^-/, '\u2212').replace(/^(\D*?
 /** „19 %“ (Deutsch, mit U+202F) bzw. „19%“ (Englisch); Nachkommastellen nach dem Feld, sonst wie eingetragen. */
 export function prozentText(n: number, nachkomma?: number | null): string {
   const gebiet = gebietsschema();
-  const zahl = n.toLocaleString(gebiet, { maximumFractionDigits: nachkomma ?? 10 });
+  const zahl = zahlformat(gebiet, { maximumFractionDigits: nachkomma ?? 10 }).format(n);
   const z = zeichenart(gebiet);
   const abstand = z.abstand ? '\u202f' : '';
   return z.vorne ? `%${abstand}${zahl}` : `${zahl}${abstand}%`;

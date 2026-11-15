@@ -26,7 +26,7 @@
  * aus dem ersten Lauf auf den Rechnern von GitHub stammt (+ 20 %) und nur strenger wird. groß ist eine Messung: Die
  * Grenze steht im Bericht; mit `--vorher <json>` warnt der Test, wenn sie mehr als 20 % unter der des letzten
  * Laufs liegt. Pflichten von groß (keine Anfrage ohne Antwort, Arbeitsspeicher begrenzt, Erholung, Anmeldeschutz)
- * zählen wie bisher als Grenzen.
+ * zählen wie bisher als Grenzen; die Grenze des Arbeitsspeichers je Prozess seit #970 auch bei klein und mittel.
  *
  * Schutz der echten Ablage: Ist das DMS frisch, richtet der Test es selbst ein (Lasttest-Konten, Beispiele,
  * Demo-Mappen). Ist es schon eingerichtet, misst er nur, wenn er sich mit seinen eigenen Konten anmelden kann und
@@ -1481,6 +1481,10 @@ export function pruefeFesteStufe(name, e) {
   }
   if (e.abgewiesen) verfehlt.push(`${name}: ${e.abgewiesen} Anfragen abgewiesen (503) – bei ${s.gleichzeitig} gleichzeitig darf der Überlastschutz nicht greifen`);
   if (e.exporte.some((x) => x.status !== 200)) verfehlt.push(`${name}: Export fehlgeschlagen (${e.exporte.filter((x) => x.status !== 200).map((x) => x.status).join(', ')})`);
+  // #970: Die Speichergrenze je Prozess gilt auch hier – bei mittel treibt der große Export nebenher den Speicher (auf
+  // dem NAS bis 1.742 MB in einem Prozess), nicht erst die Last von groß.
+  const sp = speicherVerfehlt(e);
+  if (sp) verfehlt.push(sp);
   return { stufe: name, art: 'zusage', durchgang: e, verfehlt, zielVerfehlt };
 }
 

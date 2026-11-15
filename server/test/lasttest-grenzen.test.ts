@@ -54,6 +54,14 @@ describe('Lasttest: Ziel und CI-Grenze (#563)', () => {
     assert.equal(lt.pruefeFesteStufe('mittel', lauf(500, { abgewiesen: 3 })).verfehlt.length, 1);
   });
 
+  it('Arbeitsspeicher je Prozess (#970): auch klein und mittel prüfen die Grenze', () => {
+    const mit = (mb: number) => ({ ...lauf(500), speicherMbMax: mb, engpass: null } as unknown as Durchgang);
+    assert.deepEqual(lt.pruefeFesteStufe('mittel', mit(1500)).verfehlt, []);
+    const r = lt.pruefeFesteStufe('mittel', mit(1742));
+    assert.equal(r.verfehlt.length, 1);
+    assert.match(r.verfehlt[0], /1742 MB > 1536 MB \(1 Prozess\)/);
+  });
+
   it('Bericht nennt Ziel und CI-Grenze', () => {
     assert.equal(lt.zielText('mittel'), 'Ziel p95 < 1000 ms, CI-Grenze 1000 ms, Fehler < 0,10 %');
     assert.equal(lt.zielText('klein'), 'Ziel p95 < 300 ms, CI-Grenze 300 ms, keine Fehler');

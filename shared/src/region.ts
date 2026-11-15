@@ -56,11 +56,28 @@ export const zeitzone = () => aktuell;
 export function setzeZeitzone(z: unknown) { if (istZeitzone(z)) aktuell = z; }
 
 const formate = new Map<string, Intl.DateTimeFormat>();
-/** Ein Datumsformat in der eingestellten Zeitzone – zwischengespeichert, damit nicht jeder Aufruf ein neues baut. */
-export function datumsformat(sprache: string, optionen: Intl.DateTimeFormatOptions = {}): Intl.DateTimeFormat {
-  const k = `${aktuell}|${sprache}|${JSON.stringify(optionen)}`;
+/**
+ * Ein Datumsformat in der eingestellten Zeitzone – zwischengespeichert, damit nicht jeder Aufruf ein neues baut. Jedes
+ * neue Format belegt Speicher außerhalb der Halde (ICU), den erst die Speicherbereinigung wieder freigibt – bei einem
+ * Export über 20.000 Mappen je Zeile eines: über 100 MB nativer Speicher je Export (#970). `fest` statt der
+ * eingestellten Zeitzone, z. B. 'UTC' für reine Kalendertage.
+ */
+export function datumsformat(sprache: string, optionen: Intl.DateTimeFormatOptions = {}, fest?: string): Intl.DateTimeFormat {
+  const zone = fest ?? aktuell;
+  const k = `${zone}|${sprache}|${JSON.stringify(optionen)}`;
   let f = formate.get(k);
-  if (!f) { f = new Intl.DateTimeFormat(sprache, { ...optionen, timeZone: aktuell }); formate.set(k, f); }
+  if (!f) { f = new Intl.DateTimeFormat(sprache, { ...optionen, timeZone: zone }); formate.set(k, f); }
+  return f;
+}
+const zahlformate = new Map<string, Intl.NumberFormat>();
+/**
+ * Ein Zahlformat (auch Währung) – zwischengespeichert wie {@link datumsformat} (#970). Wie `n.toLocaleString(sprache,
+ * optionen)`; ungültige Optionen (unbekannte Währung) werfen wie dort und werden nicht gemerkt.
+ */
+export function zahlformat(sprache: string, optionen: Intl.NumberFormatOptions = {}): Intl.NumberFormat {
+  const k = `${sprache}|${JSON.stringify(optionen)}`;
+  let f = zahlformate.get(k);
+  if (!f) { f = new Intl.NumberFormat(sprache, optionen); zahlformate.set(k, f); }
   return f;
 }
 /** Kalendertag JJJJ-MM-TT in der eingestellten Zeitzone. */
