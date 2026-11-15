@@ -277,15 +277,33 @@ Liefert das Paket Volltext oder wandelt es Dateien um (z. B. **Office und E-Mail
 
 ## Einstellungen
 
-Manche Pakete brauchen Einstellungen – etwa Regeln, nach denen sie Post zuordnen, oder ein Zugangsschlüssel für einen Dienst. Das Paket **beschreibt** sie nur; Ablago baut daraus ein Formular, prüft die Werte und speichert sie. Du findest es unter **Werkbank → Pakete → *Paket* → Reiter „Einstellungen“** – den Reiter gibt es nur bei Paketen, die Einstellungen haben.
+Manche Pakete brauchen Einstellungen – etwa Regeln, nach denen sie Post zuordnen, oder ein Zugangsschlüssel für einen Dienst. Das Paket **beschreibt** sie nur; Ablago baut daraus ein Formular, prüft die Werte und speichert sie. Du findest es unter **Werkbank → Pakete → *Paket* → Reiter „Einstellungen“** – den Reiter gibt es nur bei Paketen, die etwas einzustellen haben.
+
+**Übersicht liest, Einstellungen ändern:** Bei jedem Paket ist die Seite gleich aufgebaut. Der Reiter **Übersicht** zeigt nur, was das Paket ist und wie es ihm geht – Version, Herkunft, Lizenz, Inhalt, Zustand, Zahlen und was es bekommt. **Alles, was du ändern kannst**, steht im Reiter **Einstellungen**, mit **einem** Knopf zum Speichern; verlässt du den Reiter mit ungespeicherten Änderungen, fragt Ablago nach. Fehlt eine nötige Einstellung (ein Pflichtfeld, bei einem KI-Paket noch kein zugelassener Mappentyp), trägt der Reiter ein Warnzeichen.
+
+Was Ablago selbst verwaltet, steht dort in eigenen Abschnitten **nach den Feldern des Pakets** – je nachdem, was das Paket kann:
+
+| Abschnitt | Bei Paketen, die … | gilt für |
+|---|---|---|
+| **Was die KI lesen darf** – Mappentypen zulassen oder sperren | KI-Dienste sind (siehe [KI-Dienste](#ki-dienste)) | sofort **alle** KI-Pakete |
+| **Frag deine Ablage: Höchstmenge je Frage** | Fragen beantworten (siehe [Frag deine Ablage](#frag-deine-ablage)) | das antwortende Paket |
+| **Aus Dokument ausfüllen** – als Standard nutzen | Felder vorschlagen (siehe [Aus Dokument ausfüllen](#erkennung-durch-ein-paket)) | alle Mappentypen |
+| **Aktionen im Menü „Mappe“** – je Aktion an oder aus | Aktionen mitbringen (siehe [Aktionen](#aktionen-im-menue-mappe)) | dieses Paket |
+
+Ein Paket kann diese Abschnitte auch selbst benennen und an seiner Stelle zeigen; Werte und Prüfung bleiben bei Ablago.
+
+Kennzahlen und Zustände, die das Paket meldet (etwa „Dokumente mit Vektor: 1.234 von 1.300“), und seinen **Status** (letzter Lauf, Meldungen) zeigt die Übersicht unter **Meldet das Paket** – nur lesen.
+
+![Übersicht eines KI-Pakets: eine Zeile „Bekommt Inhalte aus 2 Mappentypen“ mit „Ändern“ und was das Paket meldet](bilder/werkbank-paket-uebersicht.png)
+
+![Reiter „Einstellungen“ desselben Pakets: Feld des Pakets, darunter „Was die KI lesen darf“ und ein Knopf zum Speichern](bilder/werkbank-paket-einstellungen.png)
 
 - **Abschnitte** mit Feldern und **Listen** gleich aufgebauter Einträge (z. B. eine Regel je Eintrag) mit **+ Eintrag**, Löschen und – wenn das Paket es erlaubt – Sortieren mit ↑/↓.
 - **Felder** wie bei den Mappentypen: Text, mehrzeiliger Text, Zahl, Ja/Nein, Datum, Auswahl, Mehrfachauswahl und **Verweise** auf einen Mappentyp, ein Feld eines Mappentyps, einen Benutzer, eine Rolle oder eine Ansicht. Verweise wählst du aus Listen; gespeichert wird die feste Id, nicht der Name – Umbenennen schadet also nicht.
 - **Dienst-Adresse** (z. B. eines KI-Dienstes): Die einzige Adresse, zu der das Paket außer den festen Adressen aus seinem Manifest ins Netz darf – siehe [Dienst-Adresse](#dienst-adresse). Sie ist nie voreingestellt; im leeren Feld steht höchstens ein Beispiel. Beim Speichern einer neuen oder geänderten Adresse fragt Ablago nach und zeigt, wohin Daten gehen.
 - **Geheimnisse** (z. B. Zugangsdaten) verschlüsselt Ablago mit seinem Schlüssel (siehe [Verschlüsselung](verschluesselung.md)). Nach dem Speichern zeigt es sie nie wieder an, nur **gesetzt** mit **Ändern** und **Löschen**.
-- Beim **Speichern** prüft Ablago Mappentyp, Pflichtfelder, Auswahlwerte und ob Verweise existieren, und zeigt Fehler am Feld.
+- Beim **Speichern** prüft Ablago Mappentyp, Pflichtfelder, Auswahlwerte und ob Verweise existieren, dazu die **Prüfregeln**, die das Paket nennt: kleinste und größte Zahl, Länge eines Texts und eine erwartete Form (z. B. „wie AB-12“) mit eigener Meldung. Manche Pakete prüfen zusätzlich selbst (etwa, ob es ein Konto beim Dienst gibt) – ohne dabei etwas ändern zu können. Fehler stehen am Feld; gespeichert wird erst, wenn alles passt.
 - **Aktionen** des Pakets erscheinen als Knöpfe (z. B. „Regeln jetzt anwenden“), die Antwort des Pakets steht darüber. Eine Zeitgrenze verhindert, dass ein Knopf hängt.
-- Der **Status** (letzter Lauf, Meldungen) kommt vom Paket selbst und ist schreibgeschützt.
 - Darunter stehen die **[Fassungen](fassungen.md)**: wer wann welche Einstellung geändert hat – auch das Paket selbst beim Installieren oder Aktualisieren. Geheimnisse erscheinen nur als „geändert“, nie mit Wert.
 
 **Lebenszyklus:**
@@ -313,7 +331,7 @@ Pakete können Aktionen ins Menü **Mappe ▾** passender Mappen bringen, z. B. 
 - **Vor der Installation:** Die Vorschau nennt unter „Aktionen im Menü „Mappe““ jede Aktion mit Mappentypen und Rechten. Kommt mit einem Update eine Aktion dazu oder braucht sie andere Rechte, steht **neu** daran, und die Rechte des Codes sind neu zu bestätigen.
 - **Wer sie sieht:** Nur Personen, die an der Mappe genau diese Rechte haben – und nur, wenn das Paket sie auch hat (seine bestätigten Rechte, die Regeln für die Rolle „Paket“, „Pakete“ am Mappentyp). Ein Paket mit Netz (KI-Dienst) bietet an Mappentypen, die nicht für KI-Dienste zugelassen sind, keine Aktion an.
 - **Im Auftrag der Person:** Das Paket handelt nur in der Schnittmenge aus angekündigten Rechten, Rechten der Person und Rechten des Pakets; Ablago prüft sie bei jedem Schritt neu. Während einer Aktion sieht das Paket nur diese Mappe (und ihre Dokumente, wenn es Dokumente lesen darf) – nicht über sein Dienstkonto. Dialoge sind nur Daten (Text, Auswahl, Haken, Textfeld, Datum), nie mit Passwort-Eingabe; der Paketname steht immer im Kopf.
-- **Ausschalten:** **Werkbank → Pakete → *Paket*** zeigt unter „Aktionen im Menü „Mappe““ jede Aktion mit ihren Rechten; ohne Haken steht sie bei niemandem im Menü. Die **eingebauten** Aktionen (Aufgabe vergeben, Erinnern, Per E-Mail versenden, Als PDF exportieren, Link kopieren) blendest du an einer Stelle aus: **Werkbank → Pakete**, Abschnitt **Menü „Mappe“**. Ausblenden ist Ordnung, kein Recht – die Wege über die API bleiben.
+- **Ausschalten:** **Werkbank → Pakete → *Paket* → Reiter „Einstellungen“** zeigt unter „Aktionen im Menü „Mappe““ jede Aktion mit ihren Rechten; ohne Haken (und nach **Speichern**) steht sie bei niemandem im Menü. Die **eingebauten** Aktionen (Aufgabe vergeben, Erinnern, Per E-Mail versenden, Als PDF exportieren, Link kopieren) blendest du an einer Stelle aus: **Werkbank → Pakete**, Abschnitt **Menü „Mappe“**. Ausblenden ist Ordnung, kein Recht – die Wege über die API bleiben.
 - **Nachvollziehbar:** Jede Ausführung steht in der Historie der Mappe (Person und Paket, Gruppe „Aktionen von Paketen“) und im Verlauf des Paket-Läufers („Aktion „…“ für …, Schritt 1“); das Protokoll nennt Paket, Aktion und Mappe, nie Inhalte.
 
 Höchstens eine Aktion je Person und Paket läuft gleichzeitig; ein Schritt wartet höchstens 30 Sekunden auf das Paket. Die Schalter sind Teil der Sicherung (Einstellung `mappenaktionen`).
@@ -453,7 +471,7 @@ Ein **KI-Paket** – Ablago sagt auch *KI-Dienst* – ist ein Paket mit Code, da
 Ein KI-Paket bekommt **nur Inhalte aus Mappentypen, die für KI-Dienste zugelassen sind**:
 
 - **Je Mappentyp:** Werkbank → Mappentypen → *Mappentyp* → Abschnitt **KI-Dienste** → **Darf an KI-Dienste gehen**. Ohne Haken bekommt kein KI-Paket etwas aus diesem Mappentyp – keine Mappen, keine Dokumente, keine Ausschnitte, keine Ereignisse. Das gilt sofort und für alle KI-Pakete.
-- **Auf der Seite des Pakets:** Werkbank → Pakete → *KI-Paket* → **KI-Dienst: Mappentypen** zeigt, aus welchen Mappentypen das Paket Inhalte bekommt, und darunter alle Mappentypen zum Zulassen oder Sperren. Bei Paketen, die selbst Mappen lesen, zählen dafür auch ihre Rechte und [Pakete am Mappentyp](berechtigungen.md#pakete-am-mappentyp).
+- **Auf der Seite des Pakets:** Werkbank → Pakete → *KI-Paket* zeigt in der **Übersicht** nur eine Zeile „Bekommt Inhalte aus *n* Mappentypen“ mit **Ändern**. Zugelassen und gesperrt wird im Reiter **Einstellungen**, Abschnitt **Was die KI lesen darf**: welche Mappentypen das Paket bekommt, darunter alle Mappentypen mit Haken – gespeichert mit dem Knopf des Reiters. Bei Paketen, die selbst Mappen lesen, zählen dafür auch ihre Rechte und [Pakete am Mappentyp](berechtigungen.md#pakete-am-mappentyp).
 - **Neue Mappentypen sind gesperrt, bis du sie zulässt.** So gehen sensible Mappentypen wie *Gesundheit* nie ungewollt hinaus – auch nicht, wenn ein Paket sie mitbringt oder du einen Mappentyp kopierst. Eine **neue Installation** hat noch nichts zugelassen; nach dem Installieren eines KI-Pakets lässt du auf seiner Seite zu, was es bekommen soll.
 - **Nach dem Update** bleiben deine bisherigen Mappentypen wie vorher zugelassen, damit nichts unbemerkt aufhört zu funktionieren. Die [Übersicht](uebersicht.md) weist einmal darauf hin (*Neu: Mappentypen von KI-Diensten ausschließen*), solange KI-Pakete installiert sind; **Verstanden** blendet den Hinweis aus.
 - **Benutzer** gehen nie an ein Paket.
@@ -488,7 +506,7 @@ Wie **lange** die Netzaufrufe dauern, steht darunter unter **Externe Dienste** (
 
 **Aus Dokument ausfüllen** (Knopf in der Mappe) nutzt normalerweise die **eingebaute Erkennung** – Muster für E-Mail, Telefon, Datum, Betrag und Ähnliches, ohne KI. Ein Paket mit dem Recht [Felder aus Dokumenten vorschlagen](#recht-erkennen) – etwa ein KI-Assistent über Ollama – erkennt auch Freitext, Briefköpfe und schwierige Belege. Das Paket **QR-Code lesen** übernimmt bei Visitenkarten die Angaben aus dem QR-Code (vCard) und lässt ohne Code die eingebaute Erkennung arbeiten; es liest dafür die Seitenbilder der Dokumente, die schon abgelegt sind (Recht *Dokumente lesen*), und braucht kein Netz.
 
-- **Standard für alle Mappentypen:** Werkbank → Pakete → *Paket* → Abschnitt **Aus Dokument ausfüllen** → **Dieses Paket als Standard für alle Mappentypen nutzen**. Ohne Haken bleibt die eingebaute Erkennung der Standard.
+- **Standard für alle Mappentypen:** Werkbank → Pakete → *Paket* → Reiter **Einstellungen** → Abschnitt **Aus Dokument ausfüllen** → **Dieses Paket als Standard für alle Mappentypen nutzen**, dann **Speichern**. Ohne Haken bleibt die eingebaute Erkennung der Standard.
 - **Je Mappentyp:** In der [Erkennung des Mappentyps](mappentypen.md#erkennung) wählst du *Standard aus der Werkbank*, *eingebaut* oder ein bestimmtes Paket.
 - **Datenabfluss:** Darf das Paket ins Netz (feste Adresse oder [Dienst-Adresse](#dienst-adresse)), schickt es den Text der Dokumente dorthin. Diese Wahl geht nur ausdrücklich: Ablago fragt **„Text der Dokumente an einen Dienst schicken?“**, und erst mit **Bestätigen und wählen** gilt sie.
 
@@ -529,7 +547,7 @@ Ist ein Paket mit dem Recht [Fragen an die Ablage beantworten](#recht-antworten)
 4. Das Paket fragt den Dienst unter der [Dienst-Adresse](#dienst-adresse) und gibt die Antwort Stück für Stück zurück.
 5. Ablago zeigt die Antwort als **Text** (nichts davon wird ausgeführt oder gespeichert) und darunter die genannten **Quellen** – nur Mappen aus den mitgegebenen Ausschnitten, noch einmal auf Lesbarkeit geprüft. Unter jeder Antwort steht aufklappbar **„An die KI geschickt: n Ausschnitte aus m Mappen“** mit genau diesen Stellen.
 
-**Werkbank → Pakete → *Paket*** zeigt im Abschnitt **Frag deine Ablage** die **Höchstmenge je Frage**:
+**Werkbank → Pakete → *Paket* → Reiter „Einstellungen“** zeigt im Abschnitt **Frag deine Ablage: Höchstmenge je Frage**:
 
 | Einstellung | Bereich | Standard |
 |---|---|---|

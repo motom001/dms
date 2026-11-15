@@ -892,6 +892,7 @@
   "prozess.der-aufruf-endete-unerwartet": "Der Aufruf endete unerwartet (Code {c}).",
   "prozess.paket-laeufer": "Paket-Läufer: {wert}\n",
   "verwaltung.frage-beantwortet": "Frage beantwortet",
+  "verwaltung.einstellungen-geprueft": "Einstellungen geprüft",
   "verwaltung.felder-erkannt": "Felder erkannt",
   "verwaltung.typ-vorgeschlagen": "Mappentyp vorgeschlagen",
   "verwaltung.der-paket-laeufer-wurde": "Der Paket-Läufer wurde beendet.",

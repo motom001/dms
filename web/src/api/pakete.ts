@@ -3,6 +3,7 @@ import type { AktionenEinstellung, AktionRecht, AktionsSchritt, EingebauteAktion
 import type { Archiv } from '../../../shared/src/archiv';
 import type { AblaufEingabe, AblaufErgebnis, AblaufInstallation, AblaufPlan, Ergaenzung, HerkunftPruefung, InstalliertesPaket, Katalog, LaeuferZustand, RechtePunkt } from '../../../shared/src/pakete';
 import type { Einstellungsbeschreibung } from '../../../shared/src/paketeinstellungen';
+import type { AnzeigeWert, PaketAnzeige } from '../../../shared/src/paketreiter';
 import type { ErstellenStand, PaketErstellenEingabe, PaketPruefung, SelbstErstellt, SelbstErstelltDetail } from '../../../shared/src/paketerstellung';
 import type { Entscheidung, UmwandlungsFeld, Umwandlungsvorgang, UmwandlungsVorschau } from '../../../shared/src/umwandlung';
 import type { ExternerDienst, ExternKennzahlen } from '../../../shared/src/extern';
@@ -16,6 +17,11 @@ export interface PaketEinstellungenStand {
   beschreibung: Einstellungsbeschreibung; werte: Record<string, unknown>; fehlend: string[];
   status: { letzterLauf: string | null; meldungen: string[] } | null; laeufer: boolean;
   auswahl: { typen: Array<{ id: string; name: string; felder: Array<{ key: string; label: string }> }>; benutzer: Array<{ id: string; name: string }>; rollen: Array<{ id: string; name: string }>; sichten: Array<{ id: string; name: string }> };
+}
+/** Anzeigen eines Pakets (#996): Beschreibung aus dem Manifest mit dem gemeldeten Wert; dazu der Statusbereich. */
+export interface PaketAnzeigenStand {
+  anzeigen: Array<PaketAnzeige & { wert: AnzeigeWert | null }>;
+  status: { letzterLauf: string | null; meldungen: string[] } | null;
 }
 export interface PaketQuelle {
   url: string; offiziell: boolean; aktiv: boolean; von?: string | null; am?: string;
@@ -125,6 +131,8 @@ export const paketeApi = {
   paketUmwandlungVorschau: (id: string, typId: string, feldKey: string) => anfrage<UmwandlungsVorschau>('POST', `/api/werkbank/pakete/${encodeURIComponent(id)}/umwandlungen/vorschau`, { typId, feldKey }),
   paketUmwandeln: (id: string, typId: string, feldKey: string, entscheidungen: Record<string, Entscheidung>) => anfrage<{ umgewandelt: number; neuePersonen: number; ausgelassen: UmwandlungsVorschau['ausgelassen'] }>('POST', `/api/werkbank/pakete/${encodeURIComponent(id)}/umwandlungen`, { typId, feldKey, entscheidungen }),
   paketUmwandlungZurueck: (id: string, vorgang: string) => anfrage<{ zurueck: number; ausgelassen: UmwandlungsVorschau['ausgelassen']; personenBehalten: number }>('POST', `/api/werkbank/pakete/${encodeURIComponent(id)}/umwandlungen/${encodeURIComponent(vorgang)}/rueckgaengig`),
+  /** Anzeigen des Pakets (#996) und sein Statusbereich – nur lesen. */
+  paketAnzeigen: (id: string) => anfrage<PaketAnzeigenStand>('GET', `/api/werkbank/pakete/${encodeURIComponent(id)}/anzeigen`),
   paketAktion: (id: string, aktion: string) => anfrage<{ ok: boolean; text: string }>('POST', `/api/werkbank/pakete/${encodeURIComponent(id)}/aktionen/${encodeURIComponent(aktion)}`),
   /* Paket selbst erstellen (#374) */
   paketErstellenStand: () => anfrage<ErstellenStand>('GET', '/api/werkbank/pakete/erstellen'),

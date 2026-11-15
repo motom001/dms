@@ -11,11 +11,12 @@ import { Listenkopf } from '../Listenkopf';
 import { darfVerlassen, geheZu, Link } from '../ort';
 import { PaketEinstellungen } from './PaketEinstellungen';
 import { VektorStandBlock } from '../ablage/Aehnlich';
-import { FragenGrenzenBlock } from './FragenGrenzen';
 import { PaketExternBlock } from './ExterneDienste';
-import { ErkennungPaketBlock, KlassifizierenBlock } from './ErkennungPaket';
-import { KiTypenBlock } from './KiTypen';
-import { MappenMenueBlock, PaketAktionenBlock } from './PaketAktionen';
+import { KlassifizierenBlock } from './ErkennungPaket';
+import { KiTypenZeile } from './KiTypen';
+import { MappenMenueBlock } from './PaketAktionen';
+import { PaketAnzeigen } from './PaketAnzeigen';
+import { hatEinstellungen } from '../../../shared/src/paketkern';
 import { PaketErstellen, SELBST } from './PaketErstellen';
 import { SelbstErstelltAnsicht } from './SelbstErstellt';
 import { rueckfrage } from '../rueckfrage';
@@ -462,10 +463,44 @@ function UploadDetail({ z }: { z: PaketeZustand }) {
   );
 }
 
-/** Register des Pakets (#1214, Baustein Reiter): Übersicht und Einstellungen; ein Warnsymbol, wenn Einstellungen fehlen. */
-function PaketReiter({ reiter, setze, noetig }: { reiter: 'uebersicht' | 'einstellungen'; setze(r: 'uebersicht' | 'einstellungen'): void; noetig: boolean }) {
-  return <Reiter id="paket" wert={reiter} setze={setze} beschriftung={t('werkbank.pakete.paket')} wahlen={[{ wert: 'uebersicht', text: t('werkbank.pakete.uebersicht') },
-    { wert: 'einstellungen', text: <>{t('werkbank.pakete.einstellungen')}{noetig && <> <Symbol name="warnung" className="sym-warn" /><span className="sr">{t('werkbank.pakete.einstellungen-noetig-2')}</span></>}</> }]} />;
+/**
+ * Register des Pakets (#1214, Baustein Reiter): Übersicht liest, Einstellungen ändern (#996); ein Warnsymbol, wenn
+ * Einstellungen fehlen. Gleich aufgebaut bei allen Paketen – welche Reiter es gibt, ergibt sich aus dem Manifest.
+ */
+type PaketReiterArt = 'uebersicht' | 'einstellungen';
+function PaketReiter({ reiter, setze, noetig, reiterListe }: { reiter: PaketReiterArt; setze(r: PaketReiterArt): void; noetig: boolean; reiterListe: PaketReiterArt[] }) {
+  const text = (r: PaketReiterArt) => (r === 'einstellungen' ? <>{t('werkbank.pakete.einstellungen')}{noetig && <> <Symbol name="warnung" className="sym-warn" /><span className="sr">{t('werkbank.pakete.einstellungen-noetig-2')}</span></>}</> : t('werkbank.pakete.uebersicht'));
+  return <Reiter id="paket" wert={reiter} setze={setze} beschriftung={t('werkbank.pakete.paket')} wahlen={reiterListe.map((r) => ({ wert: r, text: text(r) }))} />;
+}
+/** Reiter eines installierten Pakets (#996): Übersicht immer, Einstellungen bei Feldern im Manifest oder Feldarten des Kerns. */
+function reiterVon(inst: InstalliertesPaket | null): PaketReiterArt[] {
+  if (!inst) return [];
+  return ['uebersicht', ...(hatEinstellungen(inst) ? ['einstellungen' as const] : [])];
+}
+const REITER: readonly PaketReiterArt[] = ['uebersicht', 'einstellungen'];
+
+/**
+ * Welcher Reiter offen ist (`?reiter=` beim Öffnen), welche es gibt, Wechsel mit „Verlassen ohne Speichern?“ aus den
+ * Einstellungen; `zu` springt in einen Reiter und dort zu einem Anker (z. B. „Ändern“ in der Übersicht).
+ */
+function usePaketReiter(inst: InstalliertesPaket | null) {
+  const [reiter, setReiter] = useState<PaketReiterArt>(() => REITER.find((r) => r === new URLSearchParams(location.search).get('reiter')) ?? 'uebersicht');
+  const liste = reiterVon(inst);
+  const aktiv = liste.includes(reiter) ? reiter : 'uebersicht';
+  const wechsel = (r: PaketReiterArt) => { if (aktiv !== 'einstellungen') setReiter(r); else void darfVerlassen().then((ok) => { if (ok) setReiter(r); }); };
+  const zu = (r: PaketReiterArt, anker?: string) => { setReiter(r); if (anker) setTimeout(() => document.querySelector(`[data-anker="${anker}"]`)?.scrollIntoView({ block: 'center' }), 400); };
+  return { reiter: aktiv, liste, wechsel, zu };
+}
+
+/** Reiter oben und alles außer der Übersicht (#996): die Übersicht steht in PaketDetail selbst. */
+function PaketReiterBlock({ r, inst, z }: { r: ReturnType<typeof usePaketReiter>; inst: InstalliertesPaket | null; z: PaketeZustand }) {
+  if (!inst || r.liste.length < 2) return null;
+  return (
+    <>
+      <PaketReiter reiter={r.reiter} reiterListe={r.liste} noetig={!!inst.einstellungenNoetig} setze={r.wechsel} />
+      {r.reiter === 'einstellungen' && <ReiterFlaeche id="paket" wert={r.reiter}><PaketEinstellungen paket={inst} gespeichert={() => void z.laden()} /></ReiterFlaeche>}
+    </>
+  );
 }
 /** Inhalt unter dem Register – ohne Register (Paket ohne Einstellungen) ohne Fläche. */
 function MitFlaeche({ an, wert, children }: { an: boolean; wert: string; children: ReactNode }) {
@@ -485,6 +520,7 @@ function useAnleitungNeu(): [boolean, (an: boolean) => void] {
 function PaketDetail({ z, id, quelle }: { z: PaketeZustand; id: string; quelle?: string }) {
   const d = useDaten();
   const inst = z.stand?.installiert.find((p) => p.id === id) ?? null;
+  const r = usePaketReiter(inst);
   // Installierte Pakete: Updates nur aus ihrer Quelle.
   const eigeneQuelle = inst?.herkunft.art === 'katalog' && inst.herkunft.url !== z.stand?.katalogUrl ? inst.herkunft.url : undefined;
   const aus = z.paketAus(id, quelle ?? eigeneQuelle);
@@ -494,7 +530,6 @@ function PaketDetail({ z, id, quelle }: { z: PaketeZustand; id: string; quelle?:
   const [vorschau, setVorschau] = useState<PaketVorschau | null>(null);
   const [laeuft, setLaeuft] = useState(false);
   const [meldung, setMeldung] = useState<Meldung>();
-  const [reiter, setReiter] = useState<'uebersicht' | 'einstellungen'>(() => (new URLSearchParams(location.search).get('reiter') === 'einstellungen' ? 'einstellungen' : 'uebersicht'));
   const [entfernenOffen, setEntfernenOffen] = useState(false);
   const [behalten, setBehalten] = useState(false);
   // Installieren im gemeinsamen Ablauf (#405): mit Abhängigkeiten (auch mit Code) und Ergänzungen in einem Schritt.
@@ -548,10 +583,8 @@ function PaketDetail({ z, id, quelle }: { z: PaketeZustand; id: string; quelle?:
         <p className="leise">{inst?.beschreibung ?? kp?.beschreibung}</p>
       </div>
       <MeldungBox m={meldung} />{inst && anleitungNeu && <Kurzanleitung k={inst.kurzanleitung} neu schliessen={() => setAnleitungNeu(false)} />}
-      {inst?.einstellungen && (
-        <PaketReiter reiter={reiter} noetig={!!inst.einstellungenNoetig} setze={(r) => { if (r === 'einstellungen') setReiter(r); else void darfVerlassen().then((ok) => { if (ok) setReiter(r); }); }} />
-      )}
-      {inst?.einstellungen && reiter === 'einstellungen' ? <ReiterFlaeche id="paket" wert={reiter}><PaketEinstellungen id={id} gespeichert={() => void z.laden()} /></ReiterFlaeche> : <MitFlaeche an={!!inst?.einstellungen} wert={reiter}>
+      <PaketReiterBlock r={r} inst={inst} z={z} />
+      {r.reiter === 'uebersicht' && <MitFlaeche an={r.liste.length > 1} wert={r.reiter}>
 
       <section className="blatt">
         <dl className="eigenschaften">
@@ -573,12 +606,12 @@ function PaketDetail({ z, id, quelle }: { z: PaketeZustand; id: string; quelle?:
             {imKatalog && <>{(v?.readme || inst?.links?.readme) && ' · '}<a className="verweis" href={katalogSeiteMitVersion(z.stand?.dms ?? '', id)} target="_blank" rel={KATALOG_LINK_REL} title={tx('pakete.katalog.hinweis')}>{tx('pakete.katalog.ansehen')} <Symbol name="extern" /></a></>}</dd></>}
         </dl>
         {inst?.laeufer && <LaeuferStand paket={inst.id} abonniert={inst.laeufer.ereignisse} netz={hatNetz(inst.laeufer)} />}
+        {/* Nur, wenn das Paket etwas meldet (code.anzeigen) oder einen Statusbereich hat (Einstellungen im Manifest). */}
+        {inst && (!!inst.laeufer?.reiter?.anzeigen?.length || !!inst.einstellungen) && <PaketAnzeigen paket={inst.id} />}
         {inst?.laeufer && hatSchnittstelle(inst.laeufer, 'dms:vektoren') && <VektorStandBlock />}
-        {inst?.laeufer && hatSchnittstelle(inst.laeufer, 'dms:antworten') && <FragenGrenzenBlock />}
-        {inst?.laeufer && hatSchnittstelle(inst.laeufer, 'dms:erkennen') && <ErkennungPaketBlock paket={inst.id} />}
         {inst?.laeufer && hatSchnittstelle(inst.laeufer, 'dms:klassifizieren') && <KlassifizierenBlock netz={hatNetz(inst.laeufer)} />}
-        {/* KI-Dienste (#796): welche Mappentypen das Paket bekommt; zulassen und sperren. */}
-        {inst?.laeufer && istKiPaket(inst.laeufer) && <KiTypenBlock paket={inst.id} />}{!!inst?.mappenaktionen?.length && <PaketAktionenBlock paket={inst} />}
+        {/* KI-Dienste (#796, #996): nur, aus wie vielen Mappentypen das Paket Inhalte bekommt – zulassen in den Einstellungen. */}
+        {inst?.laeufer && istKiPaket(inst.laeufer) && <><h2 className="h3">{t('pakete.ki.titel')}</h2><KiTypenZeile paket={inst.id} aendern={() => r.zu('einstellungen', 'pakete.ki-typen')} /></>}
         {inst && (Object.keys(inst.typen).length > 0 || Object.keys(inst.sichten).length > 0) && (
           <>
             <h2 className="h3">{t('werkbank.pakete.gehoert-dazu')}</h2>

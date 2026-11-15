@@ -672,6 +672,8 @@ export interface PaketCode {
    * der Paket-Benutzer gerade lesen darf (Regeln für die Rolle „Paket“, „Pakete“ am Mappentyp).
    */
   mappentypen?: string[];
+  /** Anzeigen, Prüffunktion der Einstellungen und Ausprobieren (#996, #1004) – gelesen in paketreiter.ts. */
+  reiter?: import('./paketreiter').PaketReiterAngaben;
   /** Das WebAssembly-Modul (code/modul.wasm) und Daten (code/daten/…), nur im installierten Paket. */
   modul?: { sha256: string; groesse: number };
   daten?: string[];

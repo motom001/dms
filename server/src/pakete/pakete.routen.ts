@@ -71,6 +71,7 @@ export function paketeEinstellungenRouten(k: RoutenKontext): Route[] {
     // Externe Dienste je Paket (#565): Dauer, Bytes, Fehler, Token der Netzaufrufe – nur Metadaten.
     { methode: 'GET', pfad: '/api/werkbank/pakete/:id/extern', zugang: 'admin', handler: async (a) => ok(await extern.uebersicht(Number(a.query.stunden) || 24, a.params.id)) },
     { methode: 'GET', pfad: '/api/werkbank/pakete/:id/einstellungen', zugang: 'admin', handler: async (a) => ok(await pakete.einstellungen(a.params.id)) },
+    { methode: 'GET', pfad: '/api/werkbank/pakete/:id/anzeigen', zugang: 'admin', handler: async (a) => ok(await pakete.anzeigen(a.params.id)) },
     { methode: 'PUT', pfad: '/api/werkbank/pakete/:id/einstellungen', zugang: 'admin', handler: async (a) => ok(await pakete.speichereEinstellungen(a.params.id, a.body, wer(a))) },
     { methode: 'POST', pfad: '/api/werkbank/pakete/:id/aktionen/:aktion', zugang: 'admin', handler: async (a) => ok(await pakete.aktion(a.params.id, a.params.aktion, wer(a))) },
   ];

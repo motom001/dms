@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { EINGEBAUTE_AKTIONEN, type AktionenEinstellung, type AktionRecht, type EingebauteAktion, type MappenAktion } from '../../../shared/src/paketaktionen';
+import { EINGEBAUTE_AKTIONEN, type AktionenEinstellung, type AktionRecht, type EingebauteAktion } from '../../../shared/src/paketaktionen';
 import type { InstalliertesPaket } from '../../../shared/src/pakete';
 import { paketeApi, type PaketVorschau } from '../api/pakete';
 import { HakenFeld, fehlerText } from '../bausteine';
@@ -22,27 +22,21 @@ function useEinstellung() {
   return { e, setE, fehler, setFehler };
 }
 
-/** Werkbank → Pakete → Paket: Aktionen dieses Pakets, je mit Haken „im Menü zeigen“. */
-export function PaketAktionenBlock({ paket }: { paket: Pick<InstalliertesPaket, 'id' | 'name' | 'mappenaktionen'> }) {
-  const { e, setE, fehler, setFehler } = useEinstellung();
-  const aktionen = paket.mappenaktionen ?? [];
-  if (!aktionen.length) return null;
-  const aus = new Set(e?.paketAus[paket.id] ?? []);
-  const schalte = (a: MappenAktion, an: boolean) => {
-    const neu = an ? [...aus].filter((x) => x !== a.schluessel) : [...aus, a.schluessel];
-    paketeApi.paketAktionenAusSetzen(paket.id, neu).then((x) => { setE(x); setFehler(undefined); }, (x: unknown) => setFehler(fehlerText(x)));
-  };
+/**
+ * Werkbank → Pakete → Paket → Einstellungen (#996, Feldart `mappenaktionen`): Aktionen dieses Pakets, je mit Haken
+ * „im Menü zeigen“. `wert`: die ausgeschalteten Aktionen; gespeichert wird mit dem Knopf des Reiters.
+ */
+export function PaketAktionenFeld({ paket, wert, setze }: { paket: Pick<InstalliertesPaket, 'mappenaktionen'>; wert: string[]; setze: (aus: string[]) => void }) {
+  const aus = new Set(wert);
   return (
-    <section className="stapel" aria-label={t('werkbank.paketaktionen.titel')} data-anker="paket.aktionen">
-      <h2 className="h3">{t('werkbank.paketaktionen.titel')}</h2>
+    <div className="stapel" data-anker="paket.aktionen">
       <p className="leise klein">{t('werkbank.paketaktionen.erklaerung')}</p>
-      {fehler && <p className="fehlertext" role="alert">{fehler}</p>}
-      {aktionen.map((a) => (
+      {(paket.mappenaktionen ?? []).map((a) => (
         <HakenFeld key={a.schluessel} beschriftung={a.name} hinweis={[t('werkbank.paketaktionen.braucht', { rechte: rechteText(a.rechte) }), a.dialog ? t('werkbank.paketaktionen.kern') : null, a.bedingung ? t('werkbank.paketaktionen.bedingung', { grund: a.bedingung.grund }) : null]}>
-          <input type="checkbox" checked={!aus.has(a.schluessel)} disabled={!e} onChange={(x) => schalte(a, x.target.checked)} />
+          <input type="checkbox" checked={!aus.has(a.schluessel)} onChange={(x) => setze(x.target.checked ? wert.filter((k) => k !== a.schluessel) : [...wert, a.schluessel])} />
         </HakenFeld>
       ))}
-    </section>
+    </div>
   );
 }
 

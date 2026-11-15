@@ -25,7 +25,7 @@ import { typBild, type TypBild } from '../../shared/src/typvergleich';
 import { ergaenzeBeschriftungen, type AbschnittTeile, type Beschriftungen, type NamensTeile, type TypTeile } from '../../shared/src/beschriftung';
 import type { MappenAktion } from '../../shared/src/paketaktionen';
 import { liesMappenaktionen } from './paketaktionen';
-import { ALLE_TYPEN, BEISPIEL_ENDUNGEN, BEISPIEL_ORDNER, BEREICH, CODE_MAX, PAKET_MAX, type BeispielStand, inMB, KATALOG_ALT_TAGE, type HerkunftPruefung, hatSchnittstelle, DMS_RECHTE_TYPEN, DMS_ALIAS, veralteteVerweise, WORTLISTEN_MAX, gleicheRechte, liesCode, rechtePunkte, rechteZeilen, type PaketCode, type RechtePunkt, dmsPasst, liesKatalog, nachAbhaengigkeiten, neuestePassende, OFFIZIELLER_KATALOG, PAKET_ID, passt, vergleicheVersion, VERSION, type InstalliertesPaket, type SichtZustand, type Katalog, type KatalogPaket, type KatalogVersion, auswahlMitAbhaengigkeiten, liesErgaenzt, liesErsetzt, punktIdFehler, katalogPaketZu, type Ergaenzung, type AblaufPlan, type AblaufErgebnis, type AblaufAusgelassen, haengenAn, type AblaufEingabe, type AblaufInstallation } from '../../shared/src/pakete';
+import { ALLE_TYPEN, BEISPIEL_ENDUNGEN, BEISPIEL_ORDNER, BEREICH, CODE_MAX, PAKET_MAX, type BeispielStand, inMB, KATALOG_ALT_TAGE, type HerkunftPruefung, hatSchnittstelle, istKiPaket, DMS_RECHTE_TYPEN, DMS_ALIAS, veralteteVerweise, WORTLISTEN_MAX, gleicheRechte, liesCode, rechtePunkte, rechteZeilen, type PaketCode, type RechtePunkt, dmsPasst, liesKatalog, nachAbhaengigkeiten, neuestePassende, OFFIZIELLER_KATALOG, PAKET_ID, passt, vergleicheVersion, VERSION, type InstalliertesPaket, type SichtZustand, type Katalog, type KatalogPaket, type KatalogVersion, auswahlMitAbhaengigkeiten, liesErgaenzt, liesErsetzt, punktIdFehler, katalogPaketZu, type Ergaenzung, type AblaufPlan, type AblaufErgebnis, type AblaufAusgelassen, haengenAn, type AblaufEingabe, type AblaufInstallation } from '../../shared/src/pakete';
 import { TABELLE_NEU_MAX } from '../../shared/src/tabelle';
 import { archivAusPaket, paketArchivFehler, type Archiv, type PaketArchiv } from '../../shared/src/archiv';
 import { zusammengesetztProbleme } from '../../shared/src/zusammengesetzt';
@@ -36,6 +36,9 @@ import { bereinigeVorbelegen, passtZusammen, VORBELEGEN_MAX } from '../../shared
 import { istBetriebWenn } from '../../shared/src/ereignisse';
 import { hauptpaket, istHerausgeber, istOffiziellerHerausgeber, OFFIZIELLER_HERAUSGEBER, PAKET_ID_TEIL, SCHLUESSEL, TYP_KENNUNG, TYPVERWEIS, typKennung } from '../../shared/src/kennungen';
 import { bedingungEingabeFehler, kinderVon, OPERATOREN, type Bedingung, type Operator, type Sicht } from '../../shared/src/sichten';
+import { istKernFeld } from '../../shared/src/paketeinstellungen';
+import { mitKern } from '../../shared/src/paketkern';
+import { ANZEIGE_SPEICHER, anzeigeWert, liesReiterAngaben, type AnzeigeWert, type PaketAnzeige } from '../../shared/src/paketreiter';
 import { adressfelder, EINTRAG_ID, einstellungsAenderung, fehlendePflicht, liesBeschreibung, listen, pruefeWerte, ueberfuehre, abschnittsfelder, type EinstellungFeld, type Einstellungsbeschreibung, type GeheimStand, type Verweisquelle } from '../../shared/src/paketeinstellungen';
 import type { Dienst } from './dienst';
 import type { PaketQuelleEintrag } from './pakete/index';
@@ -53,7 +56,7 @@ import { mkdir, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
 import { join } from 'node:path';
 import { ARCHIV_MAX, ENTPACKT_MAX, KB, KLEIN_MAX, MB, SAMMEL_ENTPACKT_MAX, SAMMEL_MAX, SAMMEL_VERZEICHNIS_MAX as VERZEICHNIS_MAX, UPLOADS_SPEICHER_MAX, VORLAGE_MAX } from './grenzen';
 import {
-  anzeigeMitVorgaben, anzeigeVorgaben, legeVorgaben, liesVorgaben, paketEinstellungen, paketKatalogStaende, paketQuellen, passwortFelder, planeErgaenzungen, planeVorgaben, setzePaketEinstellungen,
+  anzeigeMitVorgaben, anzeigeVorgaben, legeVorgaben, liesVorgaben, paketEinstellungen, paketKatalogStaende, paketSpeicher, paketQuellen, passwortFelder, planeErgaenzungen, planeVorgaben, setzePaketEinstellungen,
   setzePaketKatalogStand, setzePaketQuellen, setzePaketSpeicher, vorgabeMappen, vorgabenLage, vorgabeVerweisFehler, type PaketErgaenzung, type PaketVorgabe, type VorgabenErgebnis, type VorgabenLage,
 } from './pakete/index';
 import { fuehreUmbauAus, liesUmbau, nimmEinstellungenZurueck, planeUmbau, titelKennung, uebernahmeDaten, wendeEntscheidungenAn, type TitelSuche, type UmbauErgebnis, type UmbauLage } from './pakete/index';
@@ -730,6 +733,9 @@ export function liesPaket(roh: Map<string, Buffer>): Paket {
   fehler.push(...einst.fehler.map((f) => `manifest.yaml: code.${f}`));
   // Code (#338): Manifest-Angaben, gebautes Modul und Daten.
   const cl = liesCode(m.code, [...dateien].map(([name, inhalt]) => ({ name, groesse: inhalt.length })));
+  // Anzeigen, Prüffunktion und Ausprobieren (#996, #1004): beschreibt das Paket, Ablago stellt dar.
+  const rg = liesReiterAngaben(m.code, cl.code?.ereignisse ?? []);
+  fehler.push(...rg.fehler.map((f) => `manifest.yaml: ${f}`));
   fehler.push(...cl.fehler.map((f) => (f.startsWith('code/:') ? f.slice('code/: '.length) : `manifest.yaml: ${f}`)));
   // „Paket nach Zeitplan ausführen“ (#1082): Das Paket muss das Ereignis abonnieren, sonst liefe die Karte ins Leere.
   if (zeitplanKarten.length && !cl.code?.ereignisse.includes('zeitplan.ausgefuehrt')) fehler.push(t('meldungen.pakete.automatisierung-paket-ereignis', { wo: [...new Set(zeitplanKarten)].join(', ') }));
@@ -764,7 +770,7 @@ export function liesPaket(roh: Map<string, Buffer>): Paket {
     if (!modul) { /* Hinweis in der Vorschau */ }
     else if (modul.length < 8 || !modul.subarray(0, 8).equals(WASM_KOPF)) fehler.push(t('meldungen.pakete.code-modul-wasm-ist'));
     // Andere Dateien unter code/ (Quellcode) stören nicht; geladen werden nur modul.wasm und daten/….
-    if (modul) code = { info: cl.code, dateien: [...dateien].filter(([n]) => CODE_DATEI.test(n)).map(([n, inhalt]) => ({ name: n.slice('code/'.length), inhalt })) };
+    if (modul) code = { info: rg.angaben ? { ...cl.code, reiter: rg.angaben } : cl.code, dateien: [...dateien].filter(([n]) => CODE_DATEI.test(n)).map(([n, inhalt]) => ({ name: n.slice('code/'.length), inhalt })) };
   }
   if (fehler.length) throw new Fachfehler(422, t('meldungen.pakete.das-paket-ist-ungueltig'), { gruende: fehler });
   return {
@@ -1413,6 +1419,8 @@ export interface SprachpaketHaken {
 /** Schnittstelle zum Paket-Läufer (#197); kommt mit den Paketen mit Code. */
 export interface PaketLaeufer {
   aktion(paket: string, aktion: string, einstellungen: Record<string, unknown>): Promise<string>;
+  /** Prüffunktion des Pakets (#996): Meldungen je Feld; null = das Paket lief nicht (dann gilt die Prüfung von Ablago). */
+  pruefeEinstellungen?(paket: string, einstellungen: Record<string, unknown>): Promise<Record<string, string> | null>;
   ereignis?(paket: string, name: 'paket.einstellungen_geaendert', felder: string[]): void;
   /** Code eines Pakets installiert, aktualisiert oder entfernt (#338): Läufer lädt neu (fertig, wenn er die Pakete kennt). */
   codeGeaendert?(): void | Promise<void>;
@@ -1900,9 +1908,13 @@ export class Paketverwaltung {
       const a = p.sprache ? this.o.sprachen?.abdeckung?.(p.sprache.kennung) : null;
       return a == null ? p : { ...p, spracheAbdeckung: a };
     };
-    return Promise.all((await this.d.kern.repo.listePakete()).map(async (p) => (p.einstellungen
-      ? { ...p, einstellungenNoetig: fehlendePflicht(p.einstellungen, (await paketEinstellungen(this.d.kern, p.id))?.werte ?? {}).length > 0 }
-      : mitSprache(p))));
+    // KI-Pakete (#996): Warnzeichen am Reiter, solange das Paket aus keinem Mappentyp Inhalte bekommt.
+    const pakete = await this.d.kern.repo.listePakete();
+    const ki = pakete.some((p) => istKiPaket(p.laeufer)) ? await this.d.ki.kiUebersicht().catch(() => null) : null;
+    const kiOhne = (p: InstalliertesPaket) => istKiPaket(p.laeufer) && !!ki && !(ki.pakete.find((x) => x.id === p.id)?.bekommt.length);
+    return Promise.all(pakete.map(async (p) => (p.einstellungen
+      ? { ...p, einstellungenNoetig: kiOhne(p) || fehlendePflicht(p.einstellungen, (await paketEinstellungen(this.d.kern, p.id))?.werte ?? {}).length > 0 }
+      : kiOhne(p) ? { ...mitSprache(p), einstellungenNoetig: true } : mitSprache(p))));
   }
 
   /** Paket einer Version aus einem Katalog holen und gegen die Prüfsumme prüfen. */
@@ -3444,8 +3456,10 @@ export class Paketverwaltung {
   private async beschreibungVon(id: string) {
     const p = (await this.d.kern.repo.listePakete()).find((x) => x.id === id);
     if (!p) throw new Fachfehler(404, t('meldungen.pakete.ist-nicht-installiert', { id }));
-    if (!p.einstellungen) throw new Fachfehler(404, t('meldungen.pakete.hat-keine-einstellungen', { name: p.name }));
-    return { p, b: p.einstellungen };
+    // Mit den Feldarten des Kerns (#996): auch ein Paket ohne Felder im Manifest kann Einstellungen haben.
+    const b = mitKern(p.einstellungen, p);
+    if (!b) throw new Fachfehler(404, t('meldungen.pakete.hat-keine-einstellungen', { name: p.name }));
+    return { p, b };
   }
 
   /** Alles, was es zur Auswahl gibt: Mappentypen mit Feldern, Benutzer, Rollen, Sichten. */
@@ -3509,6 +3523,11 @@ export class Paketverwaltung {
       });
     }
     if (Object.keys(r.fehler).length) throw new Fachfehler(422, t('meldungen.pakete.bitte-die-markierten-einstellungen'), { felderFehler: r.fehler, gruende: Object.values(r.fehler) });
+    // Prüffunktion des Pakets (#996): nach den Regeln aus dem Manifest, mit den Werten im Klartext, ohne Schreibrechte.
+    if (p.laeufer?.reiter?.einstellungenPruefen && this.o.laeufer?.pruefeEinstellungen) {
+      const ff = await this.o.laeufer.pruefeEinstellungen(id, this.klartext(b, structuredClone(r.werte)));
+      if (ff && Object.keys(ff).length) throw new Fachfehler(422, t('meldungen.pakete.bitte-die-markierten-einstellungen'), { felderFehler: ff, gruende: Object.values(ff) });
+    }
     const geaendert = Object.keys(r.werte).filter((k) => JSON.stringify(r.werte[k]) !== JSON.stringify(alt.werte[k]));
     // Dienst-Adresse (#444): Eine neue oder geänderte Adresse gilt erst, wenn der Administrator den Hinweis bestätigt –
     // dorthin schickt das Paket Daten. Gespeichert wird nur eine bestätigte Adresse; nur zu ihr lässt der Läufer Netz zu.
@@ -3536,11 +3555,29 @@ export class Paketverwaltung {
   /** Einstellungen im Klartext – nur für das eigene Paket über den Paket-Läufer, nie über die API. */
   async einstellungenFuerPaket(id: string): Promise<Record<string, unknown>> {
     const { b } = await this.beschreibungVon(id);
-    const w = structuredClone((await paketEinstellungen(this.d.kern, id))?.werte ?? {});
+    return this.klartext(b, structuredClone((await paketEinstellungen(this.d.kern, id))?.werte ?? {}));
+  }
+
+  /** Geheimnisse der Werte entschlüsseln (für das Paket selbst). */
+  private klartext(b: Einstellungsbeschreibung, w: Record<string, unknown>): Record<string, unknown> {
     const klar = (f: EinstellungFeld, v: unknown) => (f.typ === 'geheim' && typeof v === 'string' ? this.d.entschluessele(v) : v);
-    for (const f of abschnittsfelder(b)) w[f.schluessel] = klar(f, w[f.schluessel]);
+    for (const f of abschnittsfelder(b)) if (!istKernFeld(f)) w[f.schluessel] = klar(f, w[f.schluessel]);
     for (const l of listen(b)) for (const e of (Array.isArray(w[l.schluessel]) ? w[l.schluessel] as Record<string, unknown>[] : [])) for (const f of l.felder) e[f.schluessel] = klar(f, e[f.schluessel]);
     return w;
+  }
+
+  /**
+   * Anzeigen des Pakets (#996): was es im Manifest beschreibt, mit den Werten aus seinem eigenen Speicher
+   * (`anzeige.<schluessel>`). Das Paket liefert nur Werte; Ablago stellt sie dar.
+   */
+  async anzeigen(id: string): Promise<{ anzeigen: Array<PaketAnzeige & { wert: AnzeigeWert | null }>; status: { letzterLauf: string | null; meldungen: string[] } | null }> {
+    const p = (await this.d.kern.repo.listePakete()).find((x) => x.id === id);
+    if (!p) throw new Fachfehler(404, t('meldungen.pakete.ist-nicht-installiert', { id }));
+    const l = p.laeufer?.reiter?.anzeigen ?? [];
+    const sp = l.length ? await paketSpeicher(this.d.kern, id) : {};
+    // Statusbereich (#197): schreibt nur das Paket – eine Anzeige, darum in der Übersicht (#996).
+    const status = p.einstellungen ? (await paketEinstellungen(this.d.kern, id))?.status ?? null : null;
+    return { anzeigen: l.map((a) => ({ ...a, wert: anzeigeWert(a.art, sp[`${ANZEIGE_SPEICHER}${a.schluessel}`]) })), status };
   }
 
   /** Statusbereich: schreibt nur das Paket (über den Läufer); in der Oberfläche schreibgeschützt. */

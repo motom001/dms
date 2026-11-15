@@ -25,6 +25,7 @@ import { gebietsschema } from '../../../shared/src/sprache';
 import type { Hostantwort } from './arbeiter';
 import { t, t as tx } from '../sprache';
 import { beantworteZugang, type AktionsDatei, type Zugang } from '../paketaktionen';
+import { PRUEF_AKTION } from '../../../shared/src/paketreiter';
 
 /** Eingeschränkter Zugriff eines laufenden Aufrufs einer Paket-Aktion (#1039). */
 interface AktionsZugang { paket: string; zugang: Zugang; dateien: AktionsDatei[] }
@@ -54,6 +55,8 @@ export function liesWeiter(text: string): Record<string, unknown> | null {
 }
 
 const LETZTE = 20;
+/** Zeitgrenze der Prüffunktion der Einstellungen (#996). */
+const PRUEF_MS = 10_000;
 /** Nachberechnung der Vektoren (#442): alle so viele ms höchstens so viele Dokumente – nur, wenn das Paket nichts offen hat. */
 const NACHLAUF_MS = 30_000;
 const NACHLAUF_JE_RUNDE = 50;
@@ -255,6 +258,22 @@ export class Paketlaeufer implements PaketLaeufer {
     const r = await this.rufe(paket, 'aktion', { aktion, einstellungen });
     if (!r.ok) throw new Error(r.fehler ?? 'Die Aktion ist fehlgeschlagen.');
     return r.text || 'Erledigt.';
+  }
+
+  /**
+   * Prüffunktion des Pakets (#996): Aktion `einstellungen_pruefen` mit den Werten im Klartext, kurzer Zeitgrenze und
+   * leerem Zugriff (keine Mappe, keine Dokumente, eigener Speicher nur lesen) – das Paket kann nichts schreiben. Antwort
+   * `{"fehler": {"feld": "Meldung"}}`; null, wenn das Paket nicht lief (dann gilt nur die Prüfung von Ablago).
+   */
+  async pruefeEinstellungen(paket: string, einstellungen: Record<string, unknown>): Promise<Record<string, string> | null> {
+    if (!this.aktionBereit(paket)) return null;
+    const r = await this.rufe(paket, 'aktion', { aktion: PRUEF_AKTION, einstellungen }, { ms: PRUEF_MS, vorrang: true, bezeichnung: t('meldungen.verwaltung.einstellungen-geprueft'), zugang: { zugang: { mappe: {}, dokumente: {} }, dateien: [] }, ohneInhalt: true, funktion: PRUEF_AKTION });
+    if (!r.ok) { log.warn(`Paket ${paket}: Prüffunktion der Einstellungen fehlgeschlagen`, { paket, fehler: r.fehler }); return null; }
+    try {
+      const j = JSON.parse(r.text) as { fehler?: unknown };
+      if (!j.fehler || typeof j.fehler !== 'object' || Array.isArray(j.fehler)) return {};
+      return Object.fromEntries(Object.entries(j.fehler as Record<string, unknown>).slice(0, 50).map(([k, v]) => [k.slice(0, 100), String(v).slice(0, 300)]));
+    } catch { return {}; }
   }
 
   /** Paket-Aktionen (#1039): fehlerfrei geladene Pakete (für den Schnappschuss der anderen Prozesse). */

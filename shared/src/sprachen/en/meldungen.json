@@ -892,6 +892,7 @@
   "prozess.der-aufruf-endete-unerwartet": "The call ended unexpectedly (code {c}).",
   "prozess.paket-laeufer": "Package runner: {wert}\n",
   "verwaltung.frage-beantwortet": "Question answered",
+  "verwaltung.einstellungen-geprueft": "Settings checked",
   "verwaltung.felder-erkannt": "Fields recognised",
   "verwaltung.typ-vorgeschlagen": "Folder type suggested",
   "verwaltung.der-paket-laeufer-wurde": "The package runner has been stopped.",

@@ -1,9 +1,7 @@
 {
-  "werkbank.titel": "Aus Dokument ausfüllen",
   "werkbank.text": "Dieses Paket kann statt der eingebauten Erkennung Felder aus Dokumenten vorschlagen. Es bekommt den Text des Dokuments und die Beschreibung der Felder (ohne Passwortfelder und Felder, die der Benutzer nicht bearbeiten darf); Ablago prüft jede Antwort und zeigt sie nur als Vorschlag.",
   "werkbank.standard": "Dieses Paket als Standard für alle Mappentypen nutzen",
   "werkbank.standard.hilfe": "Ohne Haken bleibt die eingebaute Erkennung der Standard. Am Mappentyp kannst du die Wahl überschreiben.",
-  "werkbank.gespeichert": "Gespeichert.",
   "werkbank.laeuft-nicht": "Das Paket läuft gerade nicht – bis dahin übernimmt die eingebaute Erkennung.",
   "klassifizieren.titel": "Wohin gehört das?",
   "klassifizieren.netz": "Dieses Paket schlägt auf der Seite „Dokument übernehmen“ auch den Mappentyp vor – nur, wenn es oben als Standard für „Aus Dokument ausfüllen“ gewählt ist. Es bekommt dann den Anfang des Dokuments und Name, Kurzbeschreibung und „Woran man ihn erkennt“ der Mappentypen, die für KI-Dienste zugelassen sind – keine Mappen.",

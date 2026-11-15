@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { abschnittsfelder, EINTRAG_ID, listen, MEHRFACH_VERWEISE, zahlFehler, type EinstellungBlock, type EinstellungFeld, type FeldVerweis, type GeheimStand } from '../../../shared/src/paketeinstellungen';
+import { abschnittsfelder, EINTRAG_ID, istKernFeld, listen, MEHRFACH_VERWEISE, textFehler, zahlFehler, type EinstellungBlock, type EinstellungFeld, type FeldVerweis, type GeheimStand } from '../../../shared/src/paketeinstellungen';
 import { Mehrfachauswahl } from '../ablage/Mehrfachauswahl';
 import { Fassungen, Feld, FeldGruppe, HakenFeld, Knopf, type FeldProps, type KnopfErgebnis } from '../bausteine';
 import { ApiFehler } from '../api/anfrage';
@@ -9,14 +9,17 @@ import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 import { Symbol } from '../Symbol';
 import { t, tn } from '../sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
+import type { InstalliertesPaket } from '../../../shared/src/pakete';
+import { kernBestaetigen, KernEingabe, kernWerte, ladeKern, speichereKern, type KernDaten } from './PaketKernfelder';
 
 /**
  * Werkbank → Pakete → Paket → Einstellungen (#197): Formular aus der Beschreibung im Manifest.
  * Höchstens zwei Ebenen (Abschnitte, Listen). Geheimnisse sieht man nach dem Speichern nie wieder.
+ * Dazu die Feldarten des Kerns (#996) – alles, was man an einem Paket einstellen kann, mit einem Speichern.
  */
 
 type Werte = Record<string, unknown>;
-const zeit = (iso: string | null) => (iso ? new Date(iso).toLocaleString(gebietsschema(), { dateStyle: 'medium', timeStyle: 'short' }) : '–');
+export const zeit = (iso: string | null) => (iso ? new Date(iso).toLocaleString(gebietsschema(), { dateStyle: 'medium', timeStyle: 'short' }) : '–');
 let zaehler = 0;
 /** Die Seite hat keine Sprungleiste: Bereiche stehen fest offen. */
 const FEST = { offen: true, umschalten: () => {}, fest: true };
@@ -33,28 +36,61 @@ function zumFormular(s: PaketEinstellungenStand): Werte {
   return w;
 }
 
-export function PaketEinstellungen({ id, gespeichert }: { id: string; gespeichert?: () => void }) {
+/** Feldarten des Kerns in der Beschreibung: Art und Schlüssel des Felds. */
+const kernArten = (s: PaketEinstellungenStand) => abschnittsfelder(s.beschreibung).filter(istKernFeld).map((f) => ({ art: f.typ, schluessel: f.schluessel }));
+/** Werte der Feldarten unter dem Schlüssel ihres Felds. */
+const kernFormular = (s: PaketEinstellungenStand, id: string, d: KernDaten): Werte => {
+  const a = kernArten(s);
+  const w = kernWerte(id, d, a.map((x) => x.art));
+  return Object.fromEntries(a.map((x) => [x.schluessel, w[x.art]]));
+};
+
+/** Formular: Felder des Manifests und Feldarten des Kerns. */
+const formularVon = (s: PaketEinstellungenStand, id: string, d: KernDaten): Werte => ({ ...zumFormular(s), ...kernFormular(s, id, d) });
+
+export function PaketEinstellungen({ paket, gespeichert }: { paket: Pick<InstalliertesPaket, 'id' | 'name' | 'mappenaktionen'>; gespeichert?: () => void }) {
+  const id = paket.id;
   const [stand, setStand] = useState<PaketEinstellungenStand | null>(null);
+  const [kern, setKern] = useState<KernDaten | null>(null);
   const [werte, setWerte] = useState<Werte>({});
   const [fehler, setFehler] = useState<Record<string, string>>({});
   const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht' | 'info'; text: string }>();
   const [laeuft, setLaeuft] = useState(false);
   // Neu aufbauen beim Verwerfen: Geheimnis-Felder merken sich „neu eingeben“ selbst.
   const [runde, setRunde] = useState(0);
-  const gespeichertWerte = stand ? zumFormular(stand) : null;
-  const ent = useEntwurf(gespeichertWerte, werte, { aus: !stand, zuruecksetzen: () => { if (stand) setWerte(zumFormular(stand)); setFehler({}); setMeldung(undefined); setRunde((r) => r + 1); } });
+  const formular = (s: PaketEinstellungenStand, d: KernDaten) => formularVon(s, id, d);
+  const gespeichertWerte = stand && kern ? formular(stand, kern) : null;
+  const ent = useEntwurf(gespeichertWerte, werte, { aus: !stand || !kern, zuruecksetzen: () => { if (stand && kern) setWerte(formular(stand, kern)); setFehler({}); setMeldung(undefined); setRunde((r) => r + 1); } });
   useEffect(() => {
     let aktuell = true;
-    paketeApi.paketEinstellungen(id).then((s) => { if (aktuell) { setStand(s); setWerte(zumFormular(s)); } }, (e) => aktuell && setMeldung({ art: 'schlecht', text: (e as Error).message }));
+    paketeApi.paketEinstellungen(id).then(async (s) => {
+      const d = await ladeKern(kernArten(s).map((x) => x.art));
+      if (aktuell) { setStand(s); setKern(d); setWerte(formularVon(s, id, d)); }
+    }).catch((e) => aktuell && setMeldung({ art: 'schlecht', text: (e as Error).message }));
     return () => { aktuell = false; };
   }, [id]);
-  if (!stand) return meldung ? <div className="hinweis schlecht"><p>{meldung.text}</p></div> : <p className="leise">{t('werkbank.paketeinstellungen.lade')}</p>;
+  if (!stand || !kern) return meldung ? <div className="hinweis schlecht"><p>{meldung.text}</p></div> : <p className="leise">{t('werkbank.paketeinstellungen.lade')}</p>;
 
   async function speichern(adresseBestaetigt = false) {
+    if (!stand || !kern) return;
+    // Feldarten des Kerns (#996): ihre Werte unter der Art statt unter dem Schlüssel des Felds.
+    const arten = kernArten(stand);
+    const nachArt = (w: Werte) => Object.fromEntries(arten.map((x) => [x.art, w[x.schluessel]]));
+    const alt = nachArt(formular(stand, kern)), neu = nachArt(werte);
+    if (!adresseBestaetigt && !(await kernBestaetigen(paket, kern, alt, neu))) return;
     setLaeuft(true); setMeldung(undefined); setFehler({});
     try {
       const s = await paketeApi.paketEinstellungenSpeichern(id, werte, adresseBestaetigt);
-      setStand(s); setWerte(zumFormular(s));
+      const k = await speichereKern(paket, arten, kern, alt, neu);
+      setStand(s); setKern(k.daten);
+      if (Object.keys(k.fehler).length) {
+        // Was gespeichert ist, übernehmen; die Werte mit Fehler bleiben im Formular.
+        setWerte({ ...formular(s, k.daten), ...Object.fromEntries(arten.filter((x) => k.fehler[x.schluessel]).map((x) => [x.schluessel, werte[x.schluessel]])) });
+        setFehler(k.fehler);
+        setMeldung({ art: 'schlecht', text: t('werkbank.paketeinstellungen.nicht-alles-gespeichert') });
+        return;
+      }
+      setWerte(formular(s, k.daten));
       setMeldung({ art: 'gut', text: t('werkbank.paketeinstellungen.gespeichert') });
       gespeichert?.();
     } catch (e) {
@@ -81,7 +117,7 @@ export function PaketEinstellungen({ id, gespeichert }: { id: string; gespeicher
     <div className="stapel paketeinstellungen" onKeyDown={ent.tasten}>
       {stand.fehlend.length > 0 && <div className="hinweis warn" role="status"><p>{tn('werkbank.paketeinstellungen.es-fehlen-erst-danach', { b: <strong>{t('werkbank.paketeinstellungen.einstellungen-noetig')}</strong>, fehlend: stand.fehlend.join(', ') })}</p></div>}
       {meldung && <div className={`hinweis ${meldung.art}`} role="status"><p>{meldung.text}</p></div>}
-      {b.bloecke.map((blk, i) => <Block key={`${runde}-${i}`} blk={blk} werte={werte} setze={setWerte} fehler={fehler} auswahl={stand.auswahl} />)}
+      {b.bloecke.map((blk, i) => <Block key={`${runde}-${i}`} blk={blk} werte={werte} setze={setWerte} fehler={fehler} auswahl={stand.auswahl} kern={{ paket, d: kern }} />)}
       <Speicherleiste ent={ent} gegenstand={t('werkbank.paketeinstellungen.einstellungen')} sendet={laeuft} speicherbar={stand.fehlend.length > 0} speichern={() => void speichern()} />
       {b.aktionen.length > 0 && (
         <section className="blatt">
@@ -92,15 +128,9 @@ export function PaketEinstellungen({ id, gespeichert }: { id: string; gespeicher
           </div>
         </section>
       )}
-      <section className="blatt" aria-label={t('werkbank.paketeinstellungen.status')}>
-        <h2 className="h3">{t('werkbank.paketeinstellungen.status')}</h2>
-        <p className="leise klein">{t('werkbank.paketeinstellungen.schreibt-nur-das-paket')}</p>
-        <dl className="eigenschaften"><dt>{t('werkbank.paketeinstellungen.letzter-lauf')}</dt><dd>{zeit(stand.status?.letzterLauf ?? null)}</dd></dl>
-        {stand.status?.meldungen.length ? <ul className="klein">{stand.status.meldungen.map((m, i) => <li key={i}>{m}</li>)}</ul> : <p className="leise klein">{t('werkbank.paketeinstellungen.noch-keine-meldungen')}</p>}
-      </section>
       {/* Fassungen (#1006): wer wann welche Einstellung geändert hat; Geheimnisse nur als „geändert“. */}
       <Fassungen art="paketeinstellungen" eintrag={id} stand={JSON.stringify(stand.werte)} klappe={FEST}
-        nachher={async () => { const s = await paketeApi.paketEinstellungen(id); setStand(s); if (!ent.geaendert) setWerte(zumFormular(s)); }} />
+        nachher={async () => { const s = await paketeApi.paketEinstellungen(id); setStand(s); if (!ent.geaendert) setWerte(formular(s, kern)); }} />
     </div>
   );
 }
@@ -131,12 +161,20 @@ function VerweisWahl({ id, name, optionen, gewaehlt, setze, ausgeschlossen = [] 
 /** Übergang (#658): Eine Liste mit genau einem Verweisfeld zeigt das DMS wie eine Mehrfachauswahl; gespeichert bleibt die Liste. */
 const alsMehrfach = (blk: EinstellungBlock) => blk.art === 'liste' && blk.felder.length === 1 && MEHRFACH_VERWEISE.includes(blk.felder[0].typ);
 
-function Block({ blk, werte, setze, fehler, auswahl }: { blk: EinstellungBlock; werte: Werte; setze: (f: (w: Werte) => Werte) => void; fehler: Record<string, string>; auswahl: Auswahl }) {
+/** Teilfehler einer Feldart (`<schlüssel>.<teil>`) ohne den Schlüssel davor. */
+const teilFehler = (fehler: Record<string, string>, k: string) => Object.fromEntries(Object.entries(fehler).filter(([x]) => x.startsWith(`${k}.`)).map(([x, v]) => [x.slice(k.length + 1), v]));
+
+function Block({ blk, werte, setze, fehler, auswahl, kern }: { blk: EinstellungBlock; werte: Werte; setze: (f: (w: Werte) => Werte) => void; fehler: Record<string, string>; auswahl: Auswahl; kern: { paket: Pick<InstalliertesPaket, 'id' | 'name' | 'mappenaktionen'>; d: KernDaten } }) {
   if (blk.art === 'abschnitt') return (
     <section className="blatt">
       {blk.titel && <h2 className="h3">{blk.titel}</h2>}
       {blk.hilfe && <p className="leise klein">{blk.hilfe}</p>}
-      {blk.felder.map((f) => <Eingabe key={f.schluessel} f={f} wert={werte[f.schluessel]} fehler={fehler[f.schluessel]} auswahl={auswahl} id={`pe-${f.schluessel}`}
+      {blk.felder.map((f) => istKernFeld(f) ? (
+        <div key={f.schluessel} className="stapel">
+          <KernEingabe art={f.typ} paket={kern.paket} d={kern.d} wert={werte[f.schluessel]} fehler={teilFehler(fehler, f.schluessel)} setze={(v) => setze((w) => ({ ...w, [f.schluessel]: v }))} />
+          {fehler[f.schluessel] && <p className="fehlertext" role="alert">{fehler[f.schluessel]}</p>}
+        </div>
+      ) : <Eingabe key={f.schluessel} f={f} wert={werte[f.schluessel]} fehler={fehler[f.schluessel]} auswahl={auswahl} id={`pe-${f.schluessel}`}
         ausgeschlossen={[...blk.felder.filter((g) => g.schliesstAus === f.schluessel).map((g) => g.schluessel), ...(f.schliesstAus ? [f.schliesstAus] : [])].flatMap((k) => { const v = werte[k]; return Array.isArray(v) ? v.map(String) : v ? [String(v)] : []; })}
         setze={(v) => setze((w) => ({ ...w, [f.schluessel]: v }))} />)}
     </section>
@@ -199,7 +237,9 @@ export function Eingabe({ f, wert, setze, fehler, auswahl, id, ausgeschlossen }:
   const hinweis = [f.typ === 'adresse' ? t('fragen.adresse.feld') : null, f.hilfe];
   // Zahl (#657): die Prüfung am Feld zeigt der Rahmen wie jeden anderen Fehler.
   const zahl = f.typ === 'zahl' && wert != null ? String(wert).replace('.', ',').trim() : '';
-  const meldung = fehler ?? (zahl ? zahlFehler(f, zahl) : null);
+  // Prüfregeln aus dem Manifest (#996): Länge und Muster – dieselbe Prüfung wie auf dem Server.
+  const text = (f.typ === 'text' || f.typ === 'mehrzeilig') && typeof wert === 'string' && wert ? textFehler(f, f.typ === 'text' ? wert.trim() : wert) : null;
+  const meldung = fehler ?? (zahl ? zahlFehler(f, zahl) : text);
   if (f.typ === 'janein') return (
     <HakenFeld beschriftung={name} hinweis={f.hilfe} fehler={meldung}>
       <input id={id} type="checkbox" checked={wert === true} onChange={(e) => setze(e.target.checked)} />

@@ -353,6 +353,63 @@ code:
 
 `werkzeuge/pruefen.py` checks keys, defaults, options, secrets and links. Expert mode with **Upload package** is suitable for trying things out.
 
+## Describing settings and displays { #einstellungen-und-anzeigen }
+
+**The package describes, Ablago presents** (#996): a package's page looks the same for every package – the **Overview** tab only reads, the **Settings** tab holds everything that can be changed. No package brings its own settings or overview page.
+
+**Checking rules** per field – checked in the form and on saving with the same message:
+
+| Entry | for | Meaning |
+|---|---|---|
+| `pflicht: true` | all except core field types | a value is required |
+| `min`, `max`, `schritt` | `zahl` | smallest and largest number, step |
+| `laenge_min`, `laenge_max` | `text`, `mehrzeilig` | length in characters (whole number from 0) |
+| `muster`, `meldung` | `text` | regular expression for the **whole** value (at most 300 characters) and the message if it does not match (at most 200 characters) |
+
+```yaml
+- { schluessel: kennung, name: Customer number, typ: text, pflicht: true, laenge_max: 12, muster: "[A-Z]{2}-\\d+", meldung: "Please use the form “AB-12”." }
+```
+
+**The package's check function:** with `code.einstellungen_pruefen: true`, Ablago calls the package's action `einstellungen_pruefen` before saving – after the rules above (`dms_aktion`, input `{ "aktion": "einstellungen_pruefen", "einstellungen": {…} }` with all values in plain text). It runs for at most 10 seconds and **without write rights**: no service account, no folder, no documents, its own storage read-only. Ablago shows the answer `{"fehler": {"kennung": "The service does not know this account."}}` at the field and does not save; `{}` or `{"fehler": {}}` means: fine. If the package is not running, only Ablago's checks apply.
+
+**Core field types:** what only Ablago knows exists as a field type of its own. A package names it in a section (without `standard`, without `pflicht`, each at most once); Ablago keeps the value, the package does not get it among its settings.
+
+| Type | Section in Ablago | Who gets it, even without naming it |
+|---|---|---|
+| `ki_mappentypen` | What the AI may read (new folder types blocked; applies to all AI packages) | AI packages (see [AI packages](pakete-code.md#ki-pakete)) |
+| `fragen_grenzen` | Ask your Library: limits per question | packages with `dms:antworten` |
+| `erkennung_standard` | Fill in from document: use as default | packages with `dms:erkennen` |
+| `mappenaktionen` | Actions in the “Folder” menu on or off | packages with `mappenaktionen` |
+
+If a package does not name one of these field types, Ablago appends it as a section of its own **after** the manifest's fields. A package without fields of its own still gets the "Settings" tab that way.
+
+```yaml
+code:
+  einstellungen:
+    - abschnitt: Data protection
+      hilfe: Only allowed folder types go to the service.
+      felder:
+        - { schluessel: typen, name: Folder types, typ: ki_mappentypen }
+```
+
+**Displays:** `code.anzeigen` describes figures and states the package reports (at most 12). Ablago shows them in the overview under **Reported by the package**, the same for every package. The package writes the values with `speicher_schreiben` into its own storage under `anzeige.<schluessel>` – values only, no interface:
+
+| `art` | Value in storage | Shown as |
+|---|---|---|
+| `zahl` | `1234` | number |
+| `anteil` | `1234/1300` | “1,234 of 1,300” with a bar |
+| `text` | anything (at most 200 characters) | text |
+| `zustand` | `ok`, `warnung` or `fehler`, optionally `: text` | chip “fine”, “Note”, “Error” with text |
+
+```yaml
+code:
+  anzeigen:
+    - { schluessel: vektoren, name: Documents with vector, art: anteil }
+    - { schluessel: modell, name: Model, art: zustand, hilfe: Loads on first start. }
+```
+
+If a value is missing or does not fit the type, “not reported yet” appears. Older Ablago versions ignore `code.anzeigen`, `code.einstellungen_pruefen` and the new field entries.
+
 What the package does with the settings and which permissions it needs is described in [Packages with code](pakete-code.md).
 
 ## Writing text templates { #text-vorlagen-schreiben }
