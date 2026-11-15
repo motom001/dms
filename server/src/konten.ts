@@ -163,7 +163,7 @@ export class Konten {
       await this.sperre.fehlschlag(email, ip, !!treffer?.benutzer.aktiv, v);
       throw new Fachfehler(401, t('anmeldung.fehler.falsch'));
     }
-    await this.sperre.erfolg(email, ip);
+    await this.sperre.erfolg(email, ip, v);
     // Anbieter (#241): Passwort nur noch für Personen, die verwalten dürfen (Notzugang, #818)?
     const a = await this.anbieter();
     if (a?.lokalNurAdmins && !darfVerwalten(treffer.benutzer)) throw new Fachfehler(403, t('anmeldung.fehler.anbieter', { knopf: a.knopf }));
@@ -288,7 +288,7 @@ export class Konten {
       if (n >= 5) await this.zustand.loesche(ZWEITER_SCHRITT, schluessel);
       throw new Fachfehler(401, t('anmeldung.fehler.code'));
     }
-    await this.sperre.erfolg(k.email, ip);
+    await this.sperre.erfolg(k.email, ip, v);
     // Einmal einlösbar: Von zwei gleichzeitigen Anfragen mit derselben Kennung bekommt nur eine die Sitzung.
     if (!(await this.zustand.nimm(ZWEITER_SCHRITT, schluessel))) throw new Fachfehler(401, t('anmeldung.fehler.abgelaufen'));
     const benutzer = await this.repo.holeBenutzer(k.benutzerId);
@@ -357,7 +357,7 @@ export class Konten {
     try {
       const treffer = await this.pk().pruefeAnmeldung(e.kennung, e.antwort, z ? { zweck: 'zweiter-schritt', benutzerId: z.k.benutzerId } : { zweck: 'anmelden' });
       if (z && treffer.bezug !== z.schluessel) throw new Fachfehler(401, t('anmeldung.passkey.fehler.falsch'));
-      await this.sperre.erfolg(s.email, s.ip);
+      await this.sperre.erfolg(s.email, s.ip, s.v);
       return treffer;
     } catch (x) {
       await this.sperre.fehlschlag(s.email, s.ip, s.bekannt, s.v);
@@ -474,7 +474,7 @@ export class Konten {
         const m = x instanceof Fachfehler ? x.message : t('anmeldung.passkey.fehler.falsch');
         throw new Fachfehler(401, m, { bestaetigen: true, passkey: true });
       }
-      await this.sperre.erfolg(email, ip);
+      await this.sperre.erfolg(email, ip, v);
       return;
     }
     if (!b.hatPasswort) throw new Fachfehler(409, t('konten.verwaltung.fehler.anbieter'), { anbieter: true, passkey: await this.passkeyNutzbar(b) });
@@ -488,7 +488,7 @@ export class Konten {
       log.warn('Erneute Anmeldung fehlgeschlagen', { person: b.email, wofuer, ip, grund: ok ? 'Code' : 'Passwort' });
       throw new Fachfehler(401, t(ok ? 'anmeldung.fehler.code' : 'konten.verwaltung.fehler.passwort'), { bestaetigen: true, code: mitCode, passkey: await this.passkeyNutzbar(b) });
     }
-    await this.sperre.erfolg(email, ip);
+    await this.sperre.erfolg(email, ip, v);
   }
 
   /**

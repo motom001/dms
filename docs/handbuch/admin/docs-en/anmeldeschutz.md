@@ -10,6 +10,11 @@ After too many wrong passwords, Ablago blocks sign-in. Under **Workbench → Set
 | --- | --- | --- |
 | **Per email address and IP** | 5 failed attempts → 1 minute | someone mistypes or tries out passwords for one account |
 | **Per IP address**, across all email addresses | 30 failed attempts → 60 minutes | someone tries out many accounts from one address |
+| **Per account**, across all IP addresses (fixed) | 30 failed attempts in 60 minutes → until the end of the hour | someone tries out passwords for one account from many addresses |
+
+For **IPv6**, Ablago counts per /64 network, not per single address: a connection usually gets a whole /64 and could otherwise use a new address for every attempt. The list of blocked addresses then shows the network, e.g. `2001:db8:1:2::/64`.
+
+The **per-account block** is a brake: once reached, Ablago accepts no password for this account until the end of the hour, from any address (except the [exceptions](#ausnahmen)). Other accounts, API keys and the [drive](webdav.md) with an API key are not affected. It applies to every email address, including ones that do not exist – so the answer reveals nothing. Since this also lets a stranger slow down an account for an hour, it is worth entering your own home network as an exception.
 
 The block duration per IP may also be **0**: then the address stays blocked until someone who manages sign-in protection releases it. Failed attempts per IP count within the block duration (with "permanent", within one hour).
 

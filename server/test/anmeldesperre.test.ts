@@ -1,7 +1,7 @@
 /** Anmeldeschutz (#240): Sperre je Konto+IP und je IP, dauerhaft, Ausnahmen, Neustart, Entsperren. */
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { Anmeldesperre, leseSperrEinstellung, pruefeSperrEinstellung, sammelText, SPERRE_STANDARD } from '../src/anmeldesperre';
+import { Anmeldesperre, ipv6Netz64, KONTO_GESAMT, leseSperrEinstellung, pruefeSperrEinstellung, sammelText, SPERRE_STANDARD } from '../src/anmeldesperre';
 import { speicherEinstellungen } from '../src/einstellungen';
 import { Fachfehler } from '../src/fehler';
 import { speicherKurzzustand } from '../src/kurzzustand';
@@ -59,6 +59,62 @@ describe('Anmeldeschutz (#240)', () => {
     await s.erfolg('a@x.example', '1.1.1.1');
     await s.fehlschlag('a@x.example', '1.1.1.1');
     await s.pruefe('a@x.example', '1.1.1.1');
+  });
+});
+
+describe('Anmeldeschutz über viele Adressen (#1295)', () => {
+  it('IPv6 zählt je /64', async () => {
+    assert.equal(ipv6Netz64('2001:db8:1:2:aaaa:bbbb:cccc:dddd'), '2001:db8:1:2::/64');
+    assert.equal(ipv6Netz64('2001:0db8:0001:0002::1'), '2001:db8:1:2::/64');
+    assert.equal(ipv6Netz64('2001:db8::1'), '2001:db8:0:0::/64');
+    assert.equal(ipv6Netz64('::1'), '0:0:0:0::/64');
+    assert.equal(ipv6Netz64('fe80::1%eth0'), 'fe80:0:0:0::/64');
+    // Eingebettetes IPv4 belegt zwei Gruppen; die ersten 64 Bit dürfen sich dadurch nicht verschieben.
+    assert.equal(ipv6Netz64('2001::5:6:7:8:1.2.3.4'), '2001:0:5:6::/64');
+    assert.equal(ipv6Netz64('::ffff:0:1.2.3.4'), '0:0:0:0::/64');
+    assert.equal(ipv6Netz64('1.2.3.4'), null);
+    const s = new Anmeldesperre();
+    await s.speichere({ konto: { versuche: 3, minuten: 10 }, ip: { versuche: 5, minuten: 10 } }, 'test');
+    // Jede Anfrage von einer anderen Adresse aus demselben /64: zählt wie eine Adresse.
+    for (let i = 1; i <= 3; i++) await s.fehlschlag('a@x.example', `2001:db8:1:2::${i}`);
+    await gesperrt(s.pruefe('a@x.example', '2001:db8:1:2::99'));
+    await s.pruefe('a@x.example', '2001:db8:1:3::1');
+    for (let i = 4; i <= 5; i++) await s.fehlschlag(`n${i}@x.example`, `2001:db8:1:2::${i}`);
+    await gesperrt(s.pruefe('neu@x.example', '2001:db8:1:2:ffff::1'));
+    assert.equal((await s.gesperrt())[0].ip, '2001:db8:1:2::/64');
+    // Entsperren mit der Angabe aus der Liste oder mit einer Adresse daraus.
+    assert.equal(await s.entsperre('2001:db8:1:2::/64', 'admin'), true);
+    await s.pruefe('neu@x.example', '2001:db8:1:2::7');
+  });
+
+  it('bremst ein Konto bei Fehlversuchen von vielen Adressen – auch für unbekannte Konten gleich', async () => {
+    let t = 0;
+    const s = new Anmeldesperre(speicherEinstellungen(), undefined, () => t);
+    const fremd = (i: number) => `198.51.${Math.floor(i / 250)}.${i % 250}`;
+    for (const email of ['lena@x.example', 'gibt-es-nicht@x.example']) {
+      for (let i = 0; i < KONTO_GESAMT.versuche; i++) { const v = await s.versuch(email, fremd(i)); await s.fehlschlag(email, fremd(i), false, v); }
+      // Auch eine neue Adresse kommt für dieses Konto nicht weiter – andere Konten schon.
+      await gesperrt(s.pruefe(email, '203.0.113.9'));
+      await gesperrt(s.versuch(email, '203.0.113.10'));
+    }
+    await s.pruefe('jonas@x.example', '203.0.113.9');
+    // Das Laufwerk (nur API-Schlüssel) bleibt frei, sonst legte ein Fremder es mit falschen Passwörtern still.
+    await s.pruefe('lena@x.example', '203.0.113.9', { kontoBremse: false });
+    // Eine erfolgreiche Anmeldung ohne vorab gezählten Versuch (z. B. WebDAV mit Schlüssel) setzt die Bremse nicht zurück.
+    for (let i = 0; i < 5; i++) await s.erfolg('lena@x.example', '203.0.113.11');
+    await gesperrt(s.pruefe('lena@x.example', '203.0.113.12'));
+    t += KONTO_GESAMT.minuten * 60_000 + 1;
+    await s.pruefe('lena@x.example', '203.0.113.12');
+  });
+
+  it('erfolgreiche Anmeldungen verbrauchen die Bremse nicht; Ausnahmen bleiben frei', async () => {
+    const s = new Anmeldesperre();
+    await s.speichere({ ausnahmen: '192.168.0.0/16' }, 'test');
+    for (let i = 0; i < KONTO_GESAMT.versuche + 5; i++) { const v = await s.versuch('lena@x.example', `203.0.113.${i}`); await s.erfolg('lena@x.example', `203.0.113.${i}`, v); }
+    await s.pruefe('lena@x.example', '203.0.113.200');
+    for (let i = 0; i < KONTO_GESAMT.versuche; i++) { const v = await s.versuch('lena@x.example', `198.51.100.${i}`); await s.fehlschlag('lena@x.example', `198.51.100.${i}`, true, v); }
+    await gesperrt(s.pruefe('lena@x.example', '198.51.100.250'));
+    await s.pruefe('lena@x.example', '192.168.1.20');
   });
 });
 

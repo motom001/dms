@@ -323,7 +323,9 @@ export class Webdav {
     // Für Protokoll, Zugriffsliste und Anmeldeschutz gekürzt – die Eingabe stammt vom Anfragenden.
     const kurz = email.slice(0, EMAIL_MAX);
     // Anmeldeschutz (#240): gesperrte Adressen und Konten kommen auch hier nicht hinein.
-    await this.d.konten.sperre.pruefe(kurz, a.ip);
+    // Die Bremse je Konto (#1295) gilt nur für Passwörter; hier zählen nur API-Schlüssel, die sich nicht erraten lassen.
+    // Sonst legte ein Fremder mit 30 falschen Passwörtern das Laufwerk einer Person für eine Stunde still.
+    await this.d.konten.sperre.pruefe(kurz, a.ip, { kontoBremse: false });
     let s: ApiSchluessel | undefined;
     let b: Benutzer | undefined;
     // Nur API-Schlüssel – ein Passwort wird hier nie geprüft (Zwei-Faktor bleibt wirksam).

@@ -29,6 +29,8 @@
   "anmeldesperre.je-konto-und-ip": "Je Konto und IP",
   "anmeldesperre.von-dieser-adresse-kamen": "Von dieser Adresse kamen zu viele fehlgeschlagene Anmeldungen. Gesperrt bis {wert}.",
   "anmeldesperre.von-dieser-adresse-kamen-2": "Von dieser Adresse kamen zu viele fehlgeschlagene Anmeldungen. Sie ist gesperrt, bis ein Administrator sie freigibt.",
+  "anmeldesperre.konto-gebremst_one": "Für dieses Konto kamen zu viele Fehlversuche von verschiedenen Adressen. Die Anmeldung mit Passwort ist für eine Minute gebremst.",
+  "anmeldesperre.konto-gebremst_other": "Für dieses Konto kamen zu viele Fehlversuche von verschiedenen Adressen. Die Anmeldung mit Passwort ist für {anzahl} Minuten gebremst.",
   "anmeldesperre.zu-viele-fehlversuche-bitte_one": "Zu viele Fehlversuche. Bitte in einer Minute erneut versuchen.",
   "anmeldesperre.zu-viele-fehlversuche-bitte_other": "Zu viele Fehlversuche. Bitte in {anzahl} Minuten erneut versuchen.",
   "anmeldesperre.ohne-e-mail-adresse": "ohne E-Mail-Adresse",

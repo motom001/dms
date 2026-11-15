@@ -10,6 +10,11 @@ Nach zu vielen falschen Passwörtern sperrt Ablago die Anmeldung. Unter **Werkba
 | --- | --- | --- |
 | **Je E-Mail-Adresse und IP** | 5 Fehlversuche → 1 Minute | jemand vertippt sich oder probiert ein Passwort für ein Konto durch |
 | **Je IP-Adresse**, über alle E-Mail-Adressen | 30 Fehlversuche → 60 Minuten | jemand probiert von einer Adresse aus viele Konten durch |
+| **Je Konto**, über alle IP-Adressen (fest) | 30 Fehlversuche in 60 Minuten → bis zum Ende der Stunde | jemand probiert von vielen Adressen aus Passwörter für ein Konto durch |
+
+Bei **IPv6** zählt Ablago je /64-Netz, nicht je einzelne Adresse: Ein Anschluss bekommt meist ein ganzes /64 und könnte sonst für jeden Versuch eine neue Adresse nehmen. In der Liste der gesperrten Adressen steht dann das Netz, z. B. `2001:db8:1:2::/64`.
+
+Die **Sperre je Konto** ist eine Bremse: Ist sie erreicht, nimmt Ablago für dieses Konto bis zum Ende der Stunde kein Passwort mehr an, von keiner Adresse (außer aus den [Ausnahmen](#ausnahmen)). Andere Konten, API-Schlüssel und das [Laufwerk](webdav.md) mit API-Schlüssel sind nicht betroffen. Sie gilt für jede E-Mail-Adresse, auch für eine, die es nicht gibt – so verrät die Antwort nichts. Weil damit auch ein Fremder ein Konto für eine Stunde bremsen kann, lohnt es sich, das eigene Heimnetz als Ausnahme einzutragen.
 
 Die Sperrdauer je IP darf auch **0** sein: Dann bleibt die Adresse gesperrt, bis jemand, der den Anmeldeschutz verwaltet, sie freigibt. Die Fehlversuche je IP zählen innerhalb der Sperrdauer (bei „dauerhaft“ innerhalb einer Stunde).
 
