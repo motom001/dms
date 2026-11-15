@@ -53,7 +53,7 @@ jobs:
       - name: Nicht mehr nötige Einträge streichen
         run: |
           npx eslint --prune-suppressions --quiet .
-          npx depcruise server/src server/test web/src shared/src --config .dependency-cruiser.cjs --output-type baseline --output-to .dependency-cruiser-known-violations.json
+          npx depcruise server/src server/test web/src web/test shared/src shared/test --config .dependency-cruiser.cjs --output-type baseline --output-to .dependency-cruiser-known-violations.json
           # Nur schrumpfen, nie wachsen – sonst stimmt auf main etwas nicht.
           node .github/werkzeuge/ausnahmen-zaehlen.mjs HEAD
       - name: Branch und Pull Request

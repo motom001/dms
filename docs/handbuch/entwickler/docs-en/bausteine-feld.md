@@ -114,5 +114,5 @@ Errors are never shown by colour alone: the message is text with a warning icon 
 
 - Building block: `web/src/bausteine/feld/Feld.tsx`, look: `Feld.module.css`
 - Pattern page: `web/src/bausteine/feld/muster.tsx`
-- Test: `server/test/baustein-feld.test.ts` (renders with react-dom/server and checks `id`, `htmlFor`, `aria-describedby`, `aria-invalid`)
+- Test: `web/test/baustein-feld.test.ts` (renders with react-dom/server and checks `id`, `htmlFor`, `aria-describedby`, `aria-invalid`)
 - First users: `Eingabe` in `web/src/werkbank/PaketEinstellungen.tsx` (Workbench → Packages → Settings and when installing)

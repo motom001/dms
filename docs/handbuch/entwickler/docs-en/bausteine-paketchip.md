@@ -36,4 +36,4 @@ import { paketHerkunft, paketVonTyp } from './listensuche';
 
 - Building block: `web/src/bausteine/paketchip/PaketChip.tsx`, look: `PaketChip.module.css`
 - Pattern page: `web/src/bausteine/paketchip/muster.tsx`
-- Test: `server/test/baustein-paketchip.test.ts`
+- Test: `web/test/baustein-paketchip.test.ts`

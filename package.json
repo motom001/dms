@@ -15,13 +15,13 @@
   "scripts": {
     "dev": "npm run dev -w server & npm run dev -w web",
     "build": "npm run build -w web && npm run build -w server",
-    "typecheck": "tsc -p shared; s=$?; npm run typecheck -w server; t=$?; npm run typecheck -w web; w=$?; exit $((s+t+w))",
-    "test": "npm run test -w server",
+    "typecheck": "tsc -p shared; s=$?; tsc -p shared/test; g=$?; npm run typecheck -w server; t=$?; npm run typecheck -w web; w=$?; exit $((s+g+t+w))",
+    "test": "npm run test -w server; s=$?; npm run test -w web; w=$?; npm test --prefix shared; g=$?; exit $((s+w+g))",
     "lint": "eslint --pass-on-unpruned-suppressions .",
-    "lint:abh": "depcruise server/src server/test web/src shared/src --config .dependency-cruiser.cjs --ignore-known",
+    "lint:abh": "depcruise server/src server/test web/src web/test shared/src shared/test --config .dependency-cruiser.cjs --ignore-known",
     "lint:zaehlen": "node .github/werkzeuge/ausnahmen-zaehlen.mjs",
     "lint:farben": "node .github/werkzeuge/farben-pruefen.mjs",
-    "lint:umtragen": "eslint --suppress-all --pass-on-unpruned-suppressions . && eslint --prune-suppressions . && depcruise server/src server/test web/src shared/src --config .dependency-cruiser.cjs --output-type baseline --output-to .dependency-cruiser-known-violations.json && node .github/werkzeuge/ausnahmen-zaehlen.mjs",
+    "lint:umtragen": "eslint --suppress-all --pass-on-unpruned-suppressions . && eslint --prune-suppressions . && depcruise server/src server/test web/src web/test shared/src shared/test --config .dependency-cruiser.cjs --output-type baseline --output-to .dependency-cruiser-known-violations.json && node .github/werkzeuge/ausnahmen-zaehlen.mjs",
     "abhaengigkeitsbild": "node .github/werkzeuge/abhaengigkeitsbild.mjs"
   },
   "devDependencies": {

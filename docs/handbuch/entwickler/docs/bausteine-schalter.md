@@ -46,4 +46,4 @@ WebDAV-Laufwerk (ohne „Zustand“ unter Stand), Eingangsordner, E-Mail-Versand
 
 - Baustein: `web/src/bausteine/schalter/Schalter.tsx`, Aussehen: `Schalter.module.css`
 - Musterseite: `web/src/bausteine/schalter/muster.tsx`
-- Test: `server/test/baustein-schalter.test.ts` (Baustein und die umgestellten Stellen)
+- Test: `web/test/baustein-schalter.test.ts` (Baustein und die umgestellten Stellen)

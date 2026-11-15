@@ -1,0 +1,10 @@
+{
+  "name": "dms-shared",
+  "private": true,
+  "type": "module",
+  "description": "Gemeinsamer Code von Server und Oberfläche; kein eigener Workspace, nur die Tests unter shared/test (#1282)",
+  "scripts": {
+    "test": "node --import tsx --test --test-reporter=tap test/*.test.ts",
+    "test:datei": "node --import tsx --test --test-reporter=spec"
+  }
+}

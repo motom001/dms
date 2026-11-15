@@ -14,8 +14,10 @@ import globals from 'globals';
 import { defineConfig } from 'eslint/config';
 import ablago from './.github/werkzeuge/eslint-ablago.mjs';
 
-const CODE = ['server/src/**/*.ts', 'server/test/**/*.ts', 'web/src/**/*.{ts,tsx}', 'shared/src/**/*.ts'];
-const WERKZEUGE = ['.github/werkzeuge/*.mjs', 'server/test/*.mjs', 'web/rauchtest/**/*.mjs', 'eslint.config.js', '.dependency-cruiser.cjs'];
+// Tests (#1282): server/test für den Server, web/test für die Oberfläche, shared/test für Sprachdateien und Gemeinsames.
+const TESTS = ['server/test/**/*.ts', 'web/test/**/*.ts', 'shared/test/**/*.ts'];
+const CODE = ['server/src/**/*.ts', 'web/src/**/*.{ts,tsx}', 'shared/src/**/*.ts', ...TESTS];
+const WERKZEUGE = ['.github/werkzeuge/*.mjs', 'server/test/*.mjs', 'web/test/*.mjs', 'web/rauchtest/**/*.mjs', 'eslint.config.js', '.dependency-cruiser.cjs'];
 // Leerzeilen und Kommentare zählen bei den Längen nicht mit: Erklärungen im Code sollen nichts kosten.
 const ZEILEN = { skipBlankLines: true, skipComments: true };
 
@@ -59,7 +61,7 @@ export default defineConfig([
       '@eslint-community/eslint-comments/no-unlimited-disable': 'error',
     },
   },
-  { files: ['server/src/**/*.ts', 'server/test/**/*.ts', 'shared/src/**/*.ts'], languageOptions: { globals: { ...globals.node } } },
+  { files: ['server/src/**/*.ts', 'shared/src/**/*.ts', ...TESTS], languageOptions: { globals: { ...globals.node } } },
   {
     files: ['web/src/**/*.{ts,tsx}'],
     languageOptions: { globals: { ...globals.browser } },
@@ -86,7 +88,7 @@ export default defineConfig([
   // Tests: keine Größenregeln (lange Testdateien und Fälle sind gewollt), sonst dieselben Regeln. test(), describe()
   // und it() aus node:test geben ein Promise zurück, auf das der Testläufer selbst wartet – kein Fehler.
   {
-    files: ['server/test/**/*.ts'],
+    files: TESTS,
     rules: {
       'max-lines': 'off',
       'max-lines-per-function': 'off',
