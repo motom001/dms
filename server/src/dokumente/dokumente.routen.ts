@@ -12,7 +12,7 @@ import { liesAnlass } from '../../../shared/src/loeschprotokoll';
 import { hatSchnittstelle } from '../../../shared/src/pakete';
 import { FASSUNG_MAX_BYTES, VORSCHAUBILD_MAX_BYTES } from '../../../shared/src/dateiumwandlung';
 import { KOERPER_SPIELRAUM } from '../grenzen';
-import { L, ok, leer, b, quelle, ich } from '../http/routen-hilfen';
+import { L, ok, leer, b, quelle, ich, privatZwischenspeichern } from '../http/routen-hilfen';
 import type { RoutenKontext } from '../http/routen-kontext';
 import type { Anfrage, Antwort, Route } from '../routen';
 
@@ -103,7 +103,7 @@ export function dokumenteRouten(k: RoutenKontext): Route[] {
       const bild = x.vorschau ? await x.vorschau.bild(d) : null;
       if (!bild) throw new Fachfehler(404, t('meldungen.routen.fuer-dieses-dokument-gibt'));
       // Die Adresse trägt den Prüfwert (?v=…): ein neues Bild hat eine neue Adresse, das Bild darf im Browser bleiben.
-      const antwort: Antwort = { datei: { inhalt: bild, name: 'vorschau.jpg', mime: 'image/jpeg', anzeigen: true, groesse: bild.length, koepfe: { 'cache-control': t('meldungen.routen.private-max-age-604800') } } };
+      const antwort: Antwort = { datei: { inhalt: bild, name: 'vorschau.jpg', mime: 'image/jpeg', anzeigen: true, groesse: bild.length, koepfe: { 'cache-control': privatZwischenspeichern(604800) } } };
       // Über einen API-Schlüssel ist auch das Vorschaubild ein Abruf (#800) – in der Oberfläche nicht.
       return herausgeben(a) ? abgerufen(a, a.params.id, { fassung: 'seiten' }, antwort) : antwort;
     } },
@@ -134,7 +134,7 @@ export function dokumenteRouten(k: RoutenKontext): Route[] {
       const endung = f.info.mime === 'application/pdf' ? 'pdf' : f.info.mime === 'image/png' ? 'png' : 'jpg';
       const name = `${punkt > 0 ? f.d.name.slice(0, punkt) : f.d.name} (${f.info.entsperrt ? 'entsperrt' : 'umgewandelt'}).${endung}`;
       const antwort = await fuerAnzeige(a, { inhalt: f.inhalt, name, mime: f.info.mime, anzeigen: a.query.herunterladen === undefined, groesse: f.inhalt.length,
-        koepfe: { 'x-dms-fassung-paket': `${f.info.paket.id} ${f.info.paket.version}`, 'cache-control': t('meldungen.routen.private-max-age-60') } });
+        koepfe: { 'x-dms-fassung-paket': `${f.info.paket.id} ${f.info.paket.version}`, 'cache-control': privatZwischenspeichern(60) } });
       return zumAbspeichern(a) ? abgerufen(a, a.params.id, { fassung: 'umgewandelt', datei: name }, antwort) : antwort;
     } },
     // Archivfassung (PDF/A, #631): ablegen nur Pakete mit dms:archivfassung, die das Dokument lesen dürfen (das Original
@@ -154,7 +154,7 @@ export function dokumenteRouten(k: RoutenKontext): Route[] {
       const f = await dienst.dokumentArchiv.archivfassungVon(a.params.id);
       const name = f.info.imOriginal ? f.d.name : archivfassungName(f.d.name);
       const antwort = await fuerAnzeige(a, { inhalt: f.inhalt, name, mime: 'application/pdf', anzeigen: a.query.herunterladen === undefined, groesse: f.inhalt.length,
-        koepfe: { 'x-dms-archivfassung': `${pdfaName(f.info.pdfa)}; ${f.info.paket.id} ${f.info.paket.version}${f.info.imOriginal ? '; original' : ''}`, 'cache-control': t('meldungen.routen.private-max-age-60') } });
+        koepfe: { 'x-dms-archivfassung': `${pdfaName(f.info.pdfa)}; ${f.info.paket.id} ${f.info.paket.version}${f.info.imOriginal ? '; original' : ''}`, 'cache-control': privatZwischenspeichern(60) } });
       return zumAbspeichern(a) ? abgerufen(a, a.params.id, { fassung: 'archiv', datei: name }, antwort) : antwort;
     } },
     { methode: 'GET', pfad: '/api/dokumente/:id/wortpositionen', zugang: 'angemeldet', handler: async (a) => {
@@ -304,7 +304,7 @@ export function dokumenteRouten(k: RoutenKontext): Route[] {
       const q = await seitenquelle(a, mappeId);
       const bild = await dienst.pdfBearbeiten.pdfSeitenbild(a.params.id, Number(a.params.nr), q);
       if (!bild) throw new Fachfehler(404, t('meldungen.routen.fuer-diese-seite-gibt'));
-      const antwort: Antwort = { datei: { inhalt: bild, name: `seite-${a.params.nr}.jpg`, mime: 'image/jpeg', anzeigen: true, groesse: bild.length, koepfe: { 'cache-control': t('meldungen.routen.private-max-age-3600') } } };
+      const antwort: Antwort = { datei: { inhalt: bild, name: `seite-${a.params.nr}.jpg`, mime: 'image/jpeg', anzeigen: true, groesse: bild.length, koepfe: { 'cache-control': privatZwischenspeichern(3600) } } };
       // Seitenbilder über einen API-Schlüssel sind ein Abruf (#799, #800); in der Oberfläche nur Anzeige.
       return herausgeben(a) ? abgerufen(a, a.params.id, { fassung: 'seiten', gestempelt: !!q }, antwort) : antwort;
     } },
@@ -325,7 +325,7 @@ export function dokumenteRouten(k: RoutenKontext): Route[] {
       // ?fassung=archiv (#934): die Seite der Archivfassung (PDF/A) – nicht mit Pflichtstempel, der gilt dem Original.
       const bild = a.query.fassung === 'archiv' && !q ? await dienst.schwaerzen.archivSeitenbild(a.params.id, Number(a.params.nr)) : await dienst.schwaerzen.schwaerzSeitenbild(a.params.id, Number(a.params.nr), q);
       if (!bild) throw new Fachfehler(404, t('meldungen.routen.fuer-diese-seite-gibt'));
-      const antwort: Antwort = { datei: { inhalt: bild, name: `seite-${a.params.nr}.jpg`, mime: 'image/jpeg', anzeigen: true, groesse: bild.length, koepfe: { 'cache-control': t('meldungen.routen.private-max-age-3600') } } };
+      const antwort: Antwort = { datei: { inhalt: bild, name: `seite-${a.params.nr}.jpg`, mime: 'image/jpeg', anzeigen: true, groesse: bild.length, koepfe: { 'cache-control': privatZwischenspeichern(3600) } } };
       return herausgeben(a) ? abgerufen(a, a.params.id, { fassung: 'seiten', gestempelt: !!q }, antwort) : antwort;
     } },
     { methode: 'POST', pfad: '/api/dokumente/:id/schwaerzen', zugang: 'angemeldet', handler: async (a) => {

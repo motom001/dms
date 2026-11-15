@@ -618,6 +618,8 @@ Texte für Benutzer stehen nicht im Code, sondern in **Sprachdateien** (#473, #7
 
 **Regel:** Ein Text, den Menschen lesen, gehört in die Sprachdatei – nie als Wort im Code. Die CI lässt neue feste Texte in der Oberfläche nicht durch (siehe unten).
 
+**Umgekehrt (#1264):** Technische Werte – Content-Security-Policy, Permissions-Policy, Cache-Control, Content-Disposition, SQL, Kopf der Sicherungsdatei – stehen als Konstanten im Code, nie in einer Sprachdatei. `t()` richtet sich nach der Sprache der Anfrage; eine Übersetzung würde sie sonst still nur für diese Sprache ändern. `server/test/sprachdateien-technik.test.ts` prüft das.
+
 ```
 shared/src/sprachen/de/<bereich>.json         Ausgangssprache Deutsch (du), immer vollständig
 shared/src/sprachen/de-formal/dritte.json     Texte für Dritte mit „Sie“ (siehe unten)
