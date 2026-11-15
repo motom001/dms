@@ -93,7 +93,7 @@ Mit Anführungszeichen suchst du nur **ganze Wörter** bzw. eine genaue Wortfolg
 
 ### Tippfehler und andere Wörter
 
-Findet die Suche **nichts**, sucht sie mit ähnlich geschriebenen Wörtern aus deiner Ablage weiter – „Waschmaschiene“ findet dann die Waschmaschine. Über den Treffern steht das als Hinweis, dazu **Meintest du „waschmaschine“?** – ein Klick sucht genau dieses Wort. Gibt es genaue Treffer, siehst du nur diese.
+Findet die Suche **nichts**, sucht sie mit ähnlich geschriebenen Wörtern aus deiner Ablage weiter – „Waschmaschiene“ findet dann die Waschmaschine. Über den Treffern steht das als Hinweis, dazu **Meintest du „waschmaschine“?** – ein Klick sucht genau dieses Wort. Gibt es genaue Treffer, siehst du nur diese. Hat die Verwaltung es eingestellt, schlägt die Suche **Meintest du …?** auch bei Treffern vor, wenn eine ähnliche Schreibweise mehr findet – mit der Zahl, z. B. „Meintest du „waschmaschine“? Das findet 12 Mappen.“; die Treffer bleiben die genauen.
 
 Hat ein Administrator **gleichbedeutende Wörter** eingerichtet (z. B. *Kfz, Auto, PKW* – manche Pakete bringen solche Listen mit), findet die Suche nach einem Wort auch die anderen. Mit Anführungszeichen oder Minus suchst du dagegen genau das Eingegebene.
 

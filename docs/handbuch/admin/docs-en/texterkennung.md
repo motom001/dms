@@ -78,6 +78,7 @@ The page is an **overview**; recognition settings are no longer here (they are a
 - **Other file types:** TIFF, WebP, Word, emails and co. – how many there are and which package converts them or supplies their full text (see [Other file types](#andere-dateitypen)).
 - **Recognised languages** with the notice if the package lacks language data (see [Further languages](#weitere-sprachen)).
 - **Queue** and **jobs** (see below).
+- Below that **Search: typos** – similar spellings and when “Did you mean …?” appears (see [Search](suche.md#tippfehler-und-meintest-du)) – and the way to the synonyms.
 
 If a [built-in tool](fehlersuche.md#werkzeuge) is missing (e.g. the one for reading PDFs), a notice at the top of the page says what follows and what helps; if all are there, the page says nothing about them.
 

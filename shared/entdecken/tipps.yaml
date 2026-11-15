@@ -80,3 +80,7 @@
   bereich: verwalten
   ziel: benutzermenue
   fuer: verwalten
+- schluessel: meintest_auch_bei_treffern
+  bereich: suche
+  ziel: werkbank.suche.meintest
+  fuer: verwalten

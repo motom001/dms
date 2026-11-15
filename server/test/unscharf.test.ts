@@ -78,7 +78,7 @@ function faelle(pg: boolean) {
       const suche = async (s: string, volltext = true, sicht = `typ:${typ.id}`) => {
         // Neue Wörter kommen über den Eingang ins Wörterverzeichnis (#575); im Betrieb alle paar Sekunden.
         await d.suche.woerterEinarbeiten();
-        const x = await d.sichten.seite(ICH, { sicht, suche: s, volltext: volltext ? 'true' : undefined }) as Awaited<ReturnType<Dienst['sichten']['seite']>> & { unscharf?: { statt: string; vorschlag: string | null } };
+        const x = await d.sichten.seite(ICH, { sicht, suche: s, volltext: volltext ? 'true' : undefined }) as Awaited<ReturnType<Dienst['sichten']['seite']>> & { unscharf?: { statt: string; vorschlag: string | null; treffer?: number } };
         return { titel: x.mappen.map((m) => m.titel).sort(), unscharf: x.unscharf ?? null };
       };
       return { d, r, sql, typ, lese, mappe, suche };
@@ -159,6 +159,40 @@ function faelle(pg: boolean) {
       await d.suche.setzeSuche({ unscharf: false }, ICH.email);
       assert.deepEqual((await suche('Waschmashine')).titel, []);
       assert.equal((await d.suche.sucheStand()).unscharf, false);
+    });
+
+    it('#1191: „Meintest du …?“ auch bei Treffern, wenn eine ähnliche Schreibweise mehr findet', async () => {
+      const { d, mappe, suche } = await aufbau();
+      await mappe('Rechnung Haushaltsgerät', 'Lieferung einer Waschmaschine mit Garantie');
+      await mappe('Garantieschein', 'Garantie für die Waschmaschine, 24 Monate');
+      await mappe('Notiz', 'Waschmaschiene (so geschrieben)');
+      // Vorgabe: nur, wenn nichts gefunden wurde.
+      assert.equal((await d.suche.sucheStand()).meintest, 'ohne-treffer');
+      assert.equal((await suche('Waschmaschiene')).unscharf, null);
+      await d.suche.setzeSuche({ meintest: 'mehr-treffer' }, ICH.email);
+      let stand = await d.suche.sucheStand();
+      assert.deepEqual([stand.unscharf, stand.meintest], [true, 'mehr-treffer'], 'nur die Wahl geändert, Tippfehler-Suche bleibt an');
+      // Genaue Treffer bleiben, dazu der Vorschlag mit seiner Trefferzahl.
+      let x = await suche('Waschmaschiene');
+      assert.deepEqual(x.titel, ['Notiz']);
+      assert.equal(x.unscharf?.statt, 'Waschmaschiene');
+      assert.equal(x.unscharf?.vorschlag, 'waschmaschine');
+      assert.equal(x.unscharf?.treffer, 2);
+      // Findet die ähnliche Schreibweise nicht mehr: kein Vorschlag.
+      x = await suche('Waschmaschine');
+      assert.deepEqual(x.titel, ['Garantieschein', 'Rechnung Haushaltsgerät']);
+      assert.equal(x.unscharf, null);
+      // Ohne Tippfehler-Suche gibt es auch diesen Vorschlag nicht; die Wahl bleibt gespeichert.
+      await d.suche.setzeSuche({ unscharf: false }, ICH.email);
+      stand = await d.suche.sucheStand();
+      assert.deepEqual([stand.unscharf, stand.meintest], [false, 'mehr-treffer']);
+      assert.equal((await suche('Waschmaschiene')).unscharf, null);
+      // Ungültige Angaben.
+      await assert.rejects(d.suche.setzeSuche({ meintest: 'immer' }, ICH.email), (e) => (e as { status: number }).status === 422);
+      await assert.rejects(d.suche.setzeSuche({}, ICH.email), (e) => (e as { status: number }).status === 422);
+      // Zurück zur Vorgabe.
+      stand = await d.suche.setzeSuche({ unscharf: true, meintest: 'ohne-treffer' }, ICH.email);
+      assert.deepEqual([stand.unscharf, stand.meintest], [true, 'ohne-treffer']);
     });
 
     it('keine Treffer und kein Vorschlag aus Mappen ohne Leserecht', async () => {

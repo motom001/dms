@@ -1,17 +1,19 @@
-import { Kopf } from './Kopf';
 import { useEffect, useState } from 'react';
 import { sucheApi, type SucheStand } from '../api/suche';
 import { Link } from '../ort';
+import { Hilfe } from '../Hilfe';
 import { t, tn } from '../sprache';
-import { Knopf, Schalter } from '../bausteine';
-import { EIGENE_WOERTER } from '../../../shared/src/suche';
+import { Feld, Knopf, Schalter } from '../bausteine';
+import { EIGENE_WOERTER, MEINTEST, type Meintest } from '../../../shared/src/suche';
 import { WOERTER_PFAD } from './Woerter';
 
 /**
- * Werkbank → Suche und Volltext → Suche (#356): unscharfe Suche an/aus und das Wörterverzeichnis für „Meintest du …?“.
+ * Werkbank → Suche und Volltext → Suche (#356): Tippfehler-Suche an/aus, wann „Meintest du …?“ kommt (#1191: nur ohne
+ * Treffer oder auch, wenn eine ähnliche Schreibweise mehr findet) und die Größe des Wörterverzeichnisses. Steht seit
+ * #1191 als gewöhnlicher Abschnitt unter der Texterkennung – ohne eigenen Seitenkopf und ohne Trennlinie.
  * Die gleichbedeutenden Wörter haben seit #992 einen eigenen Bereich (Woerter.tsx); hier steht der Weg dorthin.
  */
-export function SuchePanel({ abschnitt }: { abschnitt?: boolean } = {}) {
+export function SuchePanel() {
   const [s, setS] = useState<SucheStand | null>(null);
   const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
   const [laeuft, setLaeuft] = useState(false);
@@ -26,18 +28,24 @@ export function SuchePanel({ abschnitt }: { abschnitt?: boolean } = {}) {
   const eigene = s.synonyme.filter((g) => g.quelle === EIGENE_WOERTER).length;
 
   return (
-    <div className="einspaltig stapel">
-      <Kopf titel={t('suche.werkbank.titel')} hilfe="werkbank.suche" abschnitt={abschnitt} id="suche" ueber={t('suche.werkbank.ueber')} />
-      <p className="leise">{t('suche.werkbank.text')}</p>
-      {meldung && <div className={`hinweis ${meldung.art}`} role="status"><p>{meldung.text}</p></div>}
-
-      <section className="blatt">
-        <h2 className="h3">{t('suche.werkbank.unscharf')}</h2>
+    <div className="einspaltig">
+      <section className="blatt" id="suche">
+        <h2 className="h3">{t('suche.werkbank.titel')} <Hilfe ort="werkbank.suche" /></h2>
+        <p className="leise">{t('suche.werkbank.text')}</p>
         <Schalter an={s.unscharf} gesperrt={laeuft} beschriftung={t('suche.werkbank.unscharf.schalter')} hinweis={t('suche.werkbank.unscharf.text')}
           setze={(an) => tu(() => sucheApi.sucheSetze({ unscharf: an }), t('suche.werkbank.gespeichert'))} />
+        {/* „Meintest du …?“ auch bei Treffern (#1191): eine Auswahl, kein zweiter Haken; ohne Tippfehler-Suche gesperrt, mit Grund. */}
+        <Feld beschriftung={t('suche.werkbank.meintest')} anker="werkbank.suche.meintest"
+          hinweis={s.unscharf ? t('suche.werkbank.meintest.hinweis') : t('suche.werkbank.meintest.gesperrt')}>
+          <select value={s.meintest} disabled={laeuft || !s.unscharf}
+            onChange={(e) => void tu(() => sucheApi.sucheSetze({ meintest: e.target.value as Meintest }), t('suche.werkbank.gespeichert'))}>
+            {MEINTEST.map((m) => <option key={m} value={m}>{t.frei(`suche.werkbank.meintest.${m}`)}</option>)}
+          </select>
+        </Feld>
         <p className="leise klein">{t('suche.werkbank.woerter', { anzahl: s.woerter })}{' '}
           <Knopf art="link" groesse="klein" laeuft={laeuft} onClick={() => tu(() => sucheApi.woerterNeu(), t('suche.werkbank.woerter.fertig'))}>{t('suche.werkbank.woerter.neu')}</Knopf>
         </p>
+        {meldung && <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">{meldung.text}</p>}
       </section>
 
       {/* Gleichbedeutende Wörter (#992): eigener Bereich mit Liste und Suche. */}

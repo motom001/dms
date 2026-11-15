@@ -1470,6 +1470,11 @@ async function main() {
   await s.getByRole('heading', { name: w('Warteschlange'), exact: true }).waitFor();
   await s.getByRole('heading', { name: w('Aufträge'), exact: true }).waitFor();
   await bild(s, 'werkbank-texterkennung');
+  // Suche: Tippfehler (#1191) – Schalter, Wahl für „Meintest du …?“ und die Zahl der Wörter, unter der Texterkennung.
+  await s.locator('#suche').getByRole('combobox').waitFor();
+  await s.locator('#suche').scrollIntoViewIfNeeded();
+  await s.locator('#suche').screenshot({ path: join(ZIEL, 'werkbank-suche.png') });
+  erstellt.push('werkbank-suche');
   // Gleichbedeutende Wörter (#992): Gruppen in der Mitte mit Suche, rechts die Wörter einer Gruppe.
   const gruppen = SPRACHE === 'en' ? [['Invoice', 'Receipt', 'Bill'], ['Car', 'Vehicle', 'Auto']] : [['Rechnung', 'Beleg', 'Faktura'], ['Kfz', 'Auto', 'PKW']];
   const ids = [];

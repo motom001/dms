@@ -250,7 +250,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
   } else if (bereich === 'texterkennung') {
     // Suche und Volltext (#725): Texterkennung, Tippfehler und gleichbedeutende Wörter. „Neue PDFs automatisch
     // verkleinern“ steht seit #1190 im Systemzustand beim Speicherplatz.
-    rechts = <><TexterkennungPanel t={ocr} wartungAn={wartungAn} /><SuchePanel abschnitt /></>;
+    rechts = <><TexterkennungPanel t={ocr} wartungAn={wartungAn} /><SuchePanel /></>;
   } else if (bereich === 'woerter') {
     // Gleichbedeutende Wörter (#992): Gruppen in der Mitte, rechts die Wörter einer Gruppe.
     liste = <WoerterListe z={woerter} offen={id} />;

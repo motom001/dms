@@ -14,7 +14,14 @@ Without any setting, the search evens out:
 
 If the search finds **nothing**, it continues with similar words from your Library (similarity via letter groups, pg_trgm) and says so above the hits: "No exact hits for 'washing machien'. Similar spellings are shown." It also suggests **"Did you mean 'washing machine'?"**; a click searches for exactly this word. If there are exact hits, it stays with them – exact hits always come first.
 
-The similar words come from the **word index**: all words of four letters or more from titles, details and full texts. It grows by itself – new words are added in the background every few seconds, so that simultaneous saving doesn't block each other; words of deleted folders remain until you count afresh with **Rebuild** (that takes a few seconds for large libraries). With the tick **If there are no hits, show similar spellings …** you switch the typo search off.
+![Workbench → Search and full text → Search: typos](bilder/werkbank-suche.png)
+
+Under **Suggest “Did you mean …?”** you choose when the suggestion appears (since #1191):
+
+- **only when nothing was found** (default) – as above.
+- **also when a similar spelling finds more** – even with exact hits, the search looks for the best similar spelling and suggests it if it finds **more** folders: "Did you mean 'washing machine'? That finds 12 folders." The hits stay the exact ones; only folders the person may read are counted. This helps when some things are filed with a different spelling (e.g. from text recognition). In return, the search counts once more on the first page and can take a little longer.
+
+The similar words come from the **word index**: all words of four letters or more from titles, details and full texts. It grows by itself – new words are added in the background every few seconds, so that simultaneous saving doesn't block each other; words of deleted folders remain until you count afresh with **Rebuild** (that takes a few seconds for large libraries). How many words it knows is shown below the choice: "For suggestions, Ablago knows 12,345 words from your folders and documents." With the switch **Similar spellings (“Did you mean …?”)** you switch the typo search off; the choice for “Did you mean …?” is then locked.
 
 Similar-sounding names (Meier, Mayer, Maier) are only found if they are also spelled similarly.
 

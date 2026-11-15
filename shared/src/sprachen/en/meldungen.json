@@ -154,6 +154,7 @@
   "dienst.passwoerter-lassen-sich-erst": "Passwords can only be saved once there is a key. Whoever administers Ablago creates it in the Workbench under “Encryption”.",
   "dienst.einstellungen-sind-nicht": "Settings are not set up.",
   "dienst.unscharf-true-oder-false": "unscharf: true or false.",
+  "dienst.meintest-ungueltig": "meintest: ohne-treffer or mehr-treffer.",
   "dienst.hoechstens-eigene-gruppen": "At most {SYNONYM_GRUPPEN_MAX} groups of your own.",
   "dienst.diese-gruppe-gibt-es": "This group doesn’t exist (or belongs to a package).",
   "dienst.suche-true-oder-false": "suche: true or false.",

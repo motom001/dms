@@ -190,6 +190,37 @@ rauchtest('Werkbank: eingebaute Werkzeuge nur, wenn eins fehlt (#1189)', { als: 
   assert.deepEqual(funde, [], `axe meldet Verstöße:\n${funde.join('\n')}`);
 });
 
+// #1191: Suche als gewöhnlicher Abschnitt (keine Trennlinie, keine Überschrift mit „Wörterverzeichnis“), Wahl für
+// „Meintest du …?“ mit Hinweis auf die Dauer; ohne Tippfehler-Suche gesperrt, mit Grund.
+rauchtest('Werkbank: Suche – „Meintest du …?“ auch bei Treffern wählbar, keine Trennlinie (#1191)', { als: LENA }, async (s) => {
+  await s.goto(BASIS + '/ablage/start');
+  await verwalten(s);
+  await s.goto(BASIS + '/werkbank/texterkennung');
+  const suche = s.locator('#suche');
+  await suche.getByRole('heading', { name: 'Suche: Tippfehler' }).waitFor();
+  assert.equal(await s.getByText(/Wörterverzeichnis/).count(), 0, 'kein „Wörterverzeichnis“ mehr');
+  assert.equal(await s.locator('.teilkopf').count(), 0, 'keine Trennlinie');
+  await suche.getByText(/^Für Vorschläge kennt Ablago [\d.]+ Wörter? aus deinen Mappen und Dokumenten\./).waitFor();
+  const stand = () => s.evaluate(async () => (await fetch('/api/werkbank/suche', { headers: { 'x-dms': '1' } })).json());
+  const wahl = suche.getByLabel('„Meintest du …?“ vorschlagen');
+  assert.equal(await wahl.inputValue(), 'ohne-treffer');
+  await suche.getByText('Mit „auch, wenn …“ kann die Suche etwas länger dauern.').waitFor();
+  await wahl.selectOption('mehr-treffer');
+  await suche.getByText('Gespeichert.', { exact: true }).waitFor();
+  assert.equal((await stand()).meintest, 'mehr-treffer');
+  // Ohne Tippfehler-Suche ist die Wahl gesperrt – mit Grund darunter.
+  const schalter = suche.getByRole('switch', { name: /Ähnliche Schreibweisen/ });
+  await schalter.click();
+  await s.waitForFunction(() => document.querySelector('#suche select')?.disabled === true);
+  await suche.getByText('Nur mit eingeschalteten ähnlichen Schreibweisen.').waitFor();
+  await schalter.click();
+  await s.waitForFunction(() => document.querySelector('#suche select')?.disabled === false);
+  assert.equal(await wahl.inputValue(), 'mehr-treffer', 'die Wahl bleibt');
+  await wahl.selectOption('ohne-treffer');
+  await s.waitForFunction(async () => (await (await fetch('/api/werkbank/suche', { headers: { 'x-dms': '1' } })).json()).meintest === 'ohne-treffer');
+  assert.equal((await stand()).unscharf, true);
+});
+
 /* ---------- Vorschaubild aus der Archivfassung (#1216) ---------- */
 
 /** Eine kleine E-Mail (nur Persona-Adressen), wie sie ein Postfach oder Hochladen ablegt. */

@@ -194,7 +194,7 @@ If a hidden area is set up, for instance a mailbox or sign-in via a provider, it
 | [Mailboxes](postfaecher.md) | Fetch post from an email account | Business |
 | [Intake folder](eingangsordner.md) | Take over scans from a folder | Business |
 | [WebDAV drive](webdav.md) | Connect the library in Explorer, Finder or the Files app and drop files into it | Household, Business |
-| [Search and full text](texterkennung.md) | Recognise text in scanned documents, archive version, typos and the word index for the search | Business, Household in expert mode |
+| [Search and full text](texterkennung.md) | Recognise text in scanned documents, archive version, typos and “Did you mean …?” in the search | Business, Household in expert mode |
 | [Synonyms](suche.md#gleichbedeutende-worter) | Groups of words the search treats alike (e.g. car, vehicle, auto): add your own, view those from packages | Business, Household in expert mode |
 | [Backup](sicherung.md) | Set up, check and restore backups | Household, Business |
 | [Full export](export.md) | Take all data with you in open formats | Household, Business |

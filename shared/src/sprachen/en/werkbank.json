@@ -78,7 +78,7 @@
   "bereich.automatisierungen.name": "Automations",
   "bereich.automatisierungen.wann": "set up procedures following the pattern When – And – Then: on an event or date set fields or give someone a task",
   "bereich.texterkennung.name": "Search and full text",
-  "bereich.texterkennung.wann": "recognise text in scanned documents, archive version, typos and the word index for the search",
+  "bereich.texterkennung.wann": "recognise text in scanned documents, archive version, typos and “Did you mean …?” in the search",
   "bereich.woerter.name": "Synonyms",
   "bereich.woerter.wann": "groups of words the search treats alike (e.g. car, vehicle, auto): add your own, view those from packages",
   "bereich.sicherung.name": "Backup",

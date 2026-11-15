@@ -210,6 +210,11 @@
   beschreibung: Link von „Suche und Volltext“ auf den Bereich „Gleichbedeutende Wörter“ (#992)
   handy: true
   clients: false
+- anker: werkbank.suche.meintest
+  seite: /werkbank/texterkennung
+  beschreibung: Auswahl „„Meintest du …?“ vorschlagen“ (nur ohne Treffer oder auch bei mehr Treffern) unter Suche und Volltext (#1191)
+  handy: true
+  clients: false
 - anker: werkbank.auskuenfte.suche
   seite: /werkbank/auskuenfte
   beschreibung: Suchfeld über der Liste der Datenschutz-Auskünfte

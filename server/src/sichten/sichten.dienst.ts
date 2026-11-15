@@ -114,6 +114,7 @@ export class SichtenDienst {
   private persoenlichAn(benutzerId: string, schluessel: string) { return this.teile.mappen.persoenlichAn(benutzerId, schluessel); }
   private suchVarianten(texte: Array<string | undefined>) { return this.teile.suche.suchVarianten(texte); }
   private unscharfAn() { return this.teile.suche.unscharfAn(); }
+  private meintestBeiTreffern() { return this.teile.suche.meintestBeiTreffern(); }
   private aehnlicheZurSuche(...a: Parameters<SucheDienst['aehnlicheZurSuche']>) { return this.teile.suche.aehnlicheZurSuche(...a); }
   private verborgeneSichten(alle: Sicht[], z?: Zugriff) { return this.teile.verwalten.verborgeneSichten(alle, z); }
   private neuePostSicht() { return this.teile.systemsichten.neuePostSicht(); }
@@ -210,7 +211,7 @@ export class SichtenDienst {
     let r = gesamt !== undefined ? await this.repo.seite({ ...anfrage, varianten, gesamt }) : await this.seiteMitZahl(anfrage, varianten);
     // Ohne genauen Treffer (#356): mit ähnlichen Wörtern aus dem Wörterverzeichnis noch einmal – genaue Treffer gehen so
     // immer vor; „Meintest du …?“ schlägt die Suche mit dem besten ähnlichen Wort vor.
-    let unscharf: { statt: string; vorschlag: string | null; begriffe: Record<string, string[]> } | null = null;
+    let unscharf: { statt: string; vorschlag: string | null; begriffe: Record<string, string[]>; treffer?: number } | null = null;
     const gesucht = suche ?? textfilter?.text;
     if (r.gesamt === 0 && gesucht && await this.unscharfAn()) {
       const begriffe = suchbegriffe(gesucht);
@@ -230,6 +231,10 @@ export class SichtenDienst {
           unscharf = { statt: gesucht, vorschlag, begriffe: aehnlich };
         }
       }
+    } else if (r.gesamt > 0 && von === 0 && gesucht && await this.meintestBeiTreffern()) {
+      // „Meintest du …?“ auch bei Treffern (#1191, Werkbank → Suche): nur auf dem ersten Blatt und nur, wenn die Suche
+      // mit der ähnlichen Schreibweise mehr Mappen findet. Die Treffer bleiben die genauen.
+      unscharf = await this.besserGeschrieben(anfrage, gesucht, r.gesamt);
     }
     if (funde?.size) r = { ...r, ausschnitte: mitTeilFunden(r.mappen.map((m) => m.id), r.ausschnitte, funde) };
     if (q.sicht === 'eingang' && lesen) {
@@ -300,6 +305,21 @@ export class SichtenDienst {
    * holt jede weitere Anfrage nur die Seite. Nicht zwischengespeichert wird die Suche in Dokumenten und Notizen: Deren
    * Texte (Texterkennung, Notizen) ändern keinen Stand.
    */
+  /**
+   * „Meintest du …?“ bei Treffern (#1191): die Suche mit dem besten ähnlichen Wort je Begriff – nur, wenn sie mehr
+   * Mappen findet, die der Benutzer lesen darf (der Lesefilter der Anfrage gilt mit). Kostet eine Zählung mehr.
+   */
+  private async besserGeschrieben(anfrage: SeitenAnfrage, gesucht: string, gesamt: number): Promise<{ statt: string; vorschlag: string; begriffe: Record<string, string[]>; treffer: number } | null> {
+    const begriffe = suchbegriffe(gesucht);
+    if (!begriffe) return null;
+    const vorschlag = vorschlagAus(begriffe, await this.repo.aehnlicheWoerter(begriffe, 1));
+    if (!vorschlag) return null;
+    const ohneTeile: SeitenAnfrage = { ...anfrage, auchIds: undefined };
+    const probe: SeitenAnfrage = anfrage.suche ? { ...ohneTeile, suche: vorschlag } : { ...ohneTeile, textfilter: { ...anfrage.textfilter!, text: vorschlag } };
+    const r = await this.repo.seite({ ...probe, von: 0, anzahl: 1, varianten: await this.suchVarianten([probe.suche, probe.textfilter?.text]) });
+    return r.gesamt > gesamt ? { statt: gesucht, vorschlag, begriffe: {}, treffer: r.gesamt } : null;
+  }
+
   private async seiteMitZahl(anfrage: SeitenAnfrage, varianten: Varianten) {
     const inhalte = (!!anfrage.suche && (!!anfrage.volltext || !!anfrage.notizen)) || !!anfrage.textfilter?.text.trim();
     if (inhalte) return this.repo.seite({ ...anfrage, varianten });
