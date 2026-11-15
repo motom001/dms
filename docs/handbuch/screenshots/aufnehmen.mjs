@@ -1684,12 +1684,14 @@ main().catch((e) => { console.error(e); process.exit(1); });
  */
 /**
  * Reiter der Paketseite (#996): ein KI-Paket als Attrappe – Übersicht liest (eine Zeile zur KI, was das Paket meldet),
- * Einstellungen ändern (Feld des Pakets, „Was die KI lesen darf“, ein Speichern); Verlauf mit Auslastung (#1003).
+ * Einstellungen ändern (Feld des Pakets, „Was die KI lesen darf“, ein Speichern); Verlauf mit Auslastung (#1003);
+ * Ausprobieren mit Seitenhinweisen und erzeugter Datei (#1004).
  */
 async function paketReiterBilder(s, bild, geheZu) {
   const id = 'ki_assistent';
   const laeufer = { sprache: 'c', ereignisse: ['post.angelegt'], rechte: { lesen: [], schreiben: [], dokumente: 'lesen' }, netz: ['https://ki.example.org'],
-    reiter: { anzeigen: [{ schluessel: 'vektoren', name: 'Dokumente mit Vektor', art: 'anteil' }, { schluessel: 'modell', name: 'Modell', art: 'zustand' }] } };
+    reiter: { anzeigen: [{ schluessel: 'vektoren', name: 'Dokumente mit Vektor', art: 'anteil' }, { schluessel: 'modell', name: 'Modell', art: 'zustand' }],
+      ausprobieren: { ereignis: 'post.angelegt', dateiarten: ['application/pdf', 'image/*'] } } };
   const eigene = { art: 'abschnitt', titel: 'Dienst', felder: [{ schluessel: 'modell', name: 'Modell', typ: 'text', hilfe: 'Name des Modells beim KI-Dienst, z. B. „llama3.1“.', laengeMax: 40 }] };
   const paket = { id, name: 'KI-Assistent', version: '1.4.0', beschreibung: 'Fragen an die Ablage und Vorschläge mit einem KI-Dienst.', lizenz: 'Apache-2.0', autor: { name: 'Ablago-Projekt', github: '' },
     herausgeber: 'app.ablago', herausgeberGeprueft: true, herkunft: { art: 'hochgeladen', von: null, am: '2026-11-01T08:00:00Z' }, installiert: '2026-11-01T08:00:00Z', installiertVon: null,
@@ -1717,6 +1719,8 @@ async function paketReiterBilder(s, bild, geheZu) {
     { nr: 7, zeit: vor(2 * 1440), art: 'ereignis', was: 'post.angelegt', ergebnis: 'fehler', ms: 3100, speicherMB: 22, text: 'Der KI-Dienst antwortet nicht (503).', wer: null, bezug: null, netz: ['Netz: 1 × POST ki.example.org – 503, 4,0 KB hin, 0 B zurück'] },
     { nr: 6, zeit: vor(3 * 1440), art: 'einstellungen', was: 'Modell', ergebnis: null, ms: null, speicherMB: null, text: '', wer: 'markus@example.org', bezug: null, netz: [] },
   ] } }));
+  await s.route(`**/api/werkbank/pakete/${id}/ausprobieren`, (r) => r.fulfill({ json: { ok: true, fehler: null, ms: 2300, speicherMB: 38, zeilen: ['2 leere Seiten würden entfernt.'],
+    seiten: [{ seite: 1, text: 'Barcode ABLAGO-TRENNEN' }, { seite: 4, text: 'Barcode ABLAGO-ANLAGE' }], dateien: [{ name: 'Rechnung-archiv.pdf', typ: 'application/pdf', daten: Buffer.from('%PDF-1.7').toString('base64') }] } }));
   await geheZu(s, `/werkbank/pakete/${id}`);
   await s.getByRole('tab', { name: w('Übersicht') }).waitFor();
   await s.getByText(w('Meldet das Paket')).waitFor();
@@ -1724,6 +1728,11 @@ async function paketReiterBilder(s, bild, geheZu) {
   await s.getByRole('tab', { name: w('Einstellungen') }).click();
   await s.getByRole('heading', { name: w('Was die KI lesen darf') }).waitFor();
   await bild(s, 'werkbank-paket-einstellungen', { fullPage: true });
+  await s.getByRole('tab', { name: w('Ausprobieren') }).click();
+  await s.getByLabel(w('Datei zum Ausprobieren')).setInputFiles({ name: 'Rechnung.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.7') });
+  await s.getByRole('button', { name: w('Ausprobieren'), exact: true }).click();
+  await s.getByText('Barcode ABLAGO-TRENNEN').waitFor();
+  await bild(s, 'werkbank-paket-ausprobieren', { fullPage: true });
   await s.getByRole('tab', { name: w('Verlauf') }).click();
   await s.getByRole('list', { name: w('Verlauf') }).locator('li').first().waitFor();
   await bild(s, 'werkbank-paket-verlauf', { fullPage: true });

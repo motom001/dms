@@ -1,5 +1,5 @@
 /**
- * Rauchtests: Reiter der Paketseite (#996 Übersicht liest, Einstellungen ändern; #1003 Verlauf) mit einem KI-Paket als Attrappe –
+ * Rauchtests: Reiter der Paketseite (#996 Übersicht liest, Einstellungen ändern; #1003 Verlauf; #1004 Ausprobieren) mit einem KI-Paket als Attrappe –
  * ohne Paket-Läufer und ohne Internet.
  * Allein starten (frisch gestartetes Ablago, siehe rauchtest.mjs): node web/rauchtest/bereiche/paket-reiter.mjs [fehlerordner] [musterordner]
  */
@@ -10,7 +10,7 @@ import { axePruefen, tippflaechenPruefen } from '../muster.mjs';
 
 const ID = 'ki_probe';
 const LAEUFER = { sprache: 'c', ereignisse: ['post.angelegt'], rechte: { lesen: [], schreiben: [], dokumente: 'lesen' }, netz: ['https://ki.example.org'],
-  reiter: { anzeigen: [{ schluessel: 'stand', name: 'Dokumente mit Vektor', art: 'anteil' }] } };
+  reiter: { anzeigen: [{ schluessel: 'stand', name: 'Dokumente mit Vektor', art: 'anteil' }], ausprobieren: { ereignis: 'post.angelegt', dateiarten: ['application/pdf'] } } };
 const EIGENE = { art: 'abschnitt', titel: 'Dienst', felder: [{ schluessel: 'modell', name: 'Modell', typ: 'text', laengeMax: 20, muster: '[a-z-]+', meldung: 'Nur Kleinbuchstaben und Bindestrich.' }] };
 const PAKET = {
   id: ID, name: 'KI-Probe', version: '1.0.0', beschreibung: 'KI-Dienst für die Rauchtests.', lizenz: 'Apache-2.0', autor: { name: 'Ablago-Projekt', github: '' }, herausgeber: 'app.ablago', herausgeberGeprueft: true,
@@ -22,8 +22,8 @@ const PAKET = {
  * Attrappe: das KI-Paket in der Liste, seine Einstellungen (wie der Server sie mit der Feldart des Kerns liefert),
  * Anzeigen und die KI-Zulassung. Liefert, was gespeichert wurde.
  */
-async function attrappe(s) {
-  const z = { ki: [], verlauf: [], werte: { modell: 'klein' }, typen: [{ id: 't1', name: 'Rechnung', zugelassen: true }, { id: 't2', name: 'Gesundheit', zugelassen: false }] };
+export async function attrappe(s) {
+  const z = { ki: [], verlauf: [], probe: [], werte: { modell: 'klein' }, typen: [{ id: 't1', name: 'Rechnung', zugelassen: true }, { id: 't2', name: 'Gesundheit', zugelassen: false }] };
   await s.route('**/api/werkbank/pakete', async (r) => {
     if (r.request().method() !== 'GET') return r.fallback();
     const echt = await (await r.fetch()).json();
@@ -39,6 +39,11 @@ async function attrappe(s) {
   await s.route(`**/api/werkbank/pakete/${ID}/umwandlungen`, (r) => r.fulfill({ json: { felder: [], vorgaenge: [] } }));
   const ki = () => ({ typen: z.typen, pakete: [{ id: ID, name: 'KI-Probe', bekommt: z.typen.filter((x) => x.zugelassen).map((x) => x.id) }], hinweis: false });
   await s.route('**/api/werkbank/ki-typen', (r) => r.fulfill({ json: ki() }));
+  // Ausprobieren (#1004): merkt sich, womit ausprobiert wurde; Seitenhinweise und eine erzeugte Datei.
+  await s.route(`**/api/werkbank/pakete/${ID}/ausprobieren`, (r) => {
+    z.probe.push(r.request().postDataJSON());
+    return r.fulfill({ json: { ok: true, fehler: null, ms: 1400, speicherMB: 22, zeilen: ['2 leere Seiten'], seiten: [{ seite: 1, text: 'Barcode ABLAGO-TRENNEN' }], dateien: [{ name: 'archiv.pdf', typ: 'application/pdf', daten: Buffer.from('%PDF-1.7').toString('base64') }] } });
+  });
   // Läufer: läuft, das Paket ist geladen (Grenzen für die Ampel).
   await s.route('**/api/werkbank/pakete/laeufer', (r) => r.fulfill({ json: { laeuft: true, pausiert: false, grenzen: { speicherMB: 256, sekunden: 120, parallel: 2 }, zustand: 'bereit', absturz: null,
     pakete: [{ id: ID, name: 'KI-Probe', version: '1.0.0', dienstkonto: 'Paket KI-Probe', geladen: true, fehler: null, aufrufe: 3, fehlgeschlagen: 1, letzterAufruf: null, dauerMs: null, speicherMB: null,
@@ -68,7 +73,7 @@ async function attrappe(s) {
 }
 
 /** Zur Paketseite im Verwaltungsmodus (er gilt für die Sitzung – nur einschalten, wenn er noch aus ist). */
-async function zumPaket(s) {
+export async function zumPaket(s) {
   await s.goto(BASIS + '/ablage/start');
   await s.waitForLoadState('networkidle');
   if (!(await s.getByRole('region', { name: 'Du verwaltest gerade Ablago.' }).isVisible())) await verwalten(s);
@@ -116,14 +121,40 @@ rauchtest('Paketseite: Verlauf mit Auslastung, Ampel und „Nur Fehler zeigen“
   assert.deepEqual(z.verlauf, [false, true]);
 });
 
-/** Übersicht, Einstellungen und Verlauf für axe und Tippflächen. */
+rauchtest('Paketseite: Ausprobieren mit noch nicht gespeicherten Einstellungen, ohne „Verlassen?“ (#1004)', { als: LENA, timeout: 90_000 }, async (s) => {
+  const z = await attrappe(s);
+  await zumPaket(s);
+  await s.getByRole('tab', { name: 'Einstellungen' }).click();
+  await s.getByLabel('Modell').fill('gross-x');
+  // Zwischen Einstellungen und Ausprobieren bleibt der Entwurf – keine Rückfrage.
+  await s.getByRole('tab', { name: 'Ausprobieren' }).click();
+  await s.getByText('Ausprobiert wird mit deinen noch nicht gespeicherten Einstellungen.').waitFor();
+  await s.getByLabel('Datei zum Ausprobieren').setInputFiles({ name: 'scan.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.7 Probe') });
+  await s.getByRole('button', { name: 'Ausprobieren', exact: true }).click();
+  await s.getByText('Barcode ABLAGO-TRENNEN').waitFor();
+  await s.getByRole('link', { name: 'Herunterladen' }).waitFor();
+  assert.equal(z.probe[0].werte.modell, 'gross-x');
+  assert.equal(z.probe[0].typ, 'application/pdf');
+  assert.equal(Buffer.from(z.probe[0].daten, 'base64').toString(), '%PDF-1.7 Probe');
+  await s.getByRole('tab', { name: 'Einstellungen' }).click();
+  assert.equal(await s.getByLabel('Modell').inputValue(), 'gross-x', 'der Entwurf ist noch da');
+  assert.equal(z.werte.modell, 'klein', 'nichts gespeichert');
+});
+
+/** Übersicht, Einstellungen, Ausprobieren und Verlauf für axe und Tippflächen. */
 const SEITEN = [
   { name: 'Übersicht', weg: async (s) => { await zumPaket(s); await s.getByText('12 von 30').waitFor(); } },
   { name: 'Einstellungen', weg: async (s) => { await s.getByRole('tab', { name: 'Einstellungen' }).click(); await s.getByRole('heading', { name: 'Was die KI lesen darf' }).waitFor(); } },
+  { name: 'Ausprobieren', weg: async (s) => {
+    await s.getByRole('tab', { name: 'Ausprobieren' }).click();
+    await s.getByLabel('Datei zum Ausprobieren').setInputFiles({ name: 'scan.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.7') });
+    await s.getByRole('button', { name: 'Ausprobieren', exact: true }).click();
+    await s.getByText('Barcode ABLAGO-TRENNEN').waitFor();
+  } },
   { name: 'Verlauf', weg: async (s) => { await s.getByRole('tab', { name: 'Verlauf' }).click(); await s.getByRole('list', { name: 'Verlauf' }).locator('li').first().waitFor(); } },
 ];
 
-rauchtest('Paketseite: Reiter ohne axe-Verstoß, hell und dunkel (#996, #1003)', { als: LENA, timeout: 110_000 }, async (s) => {
+rauchtest('Paketseite: Reiter ohne axe-Verstoß, hell und dunkel (#996, #1003, #1004)', { als: LENA, timeout: 115_000 }, async (s) => {
   await attrappe(s);
   const funde = [];
   for (const schema of ['light', 'dark']) {
@@ -137,7 +168,7 @@ rauchtest('Paketseite: Reiter ohne axe-Verstoß, hell und dunkel (#996, #1003)',
   assert.deepEqual(funde, [], `axe meldet Verstöße:\n${funde.join('\n')}`);
 });
 
-rauchtest('Handy: Reiter der Paketseite mit 44-px-Tippflächen (#996, #1003)', { handy: true, als: LENA, timeout: 90_000 }, async (s) => {
+rauchtest('Handy: Reiter der Paketseite mit 44-px-Tippflächen (#996, #1003, #1004)', { handy: true, als: LENA, timeout: 100_000 }, async (s) => {
   await attrappe(s);
   const funde = [];
   for (const seite of SEITEN) {

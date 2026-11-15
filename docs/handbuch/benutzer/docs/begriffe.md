@@ -451,7 +451,7 @@ Siehe auch: [Automatisierungsvorlage](#automatisierungsvorlage).
 Ein angebundenes E-Mail-Konto (IMAP), aus dem Ablago Post abholt.
 
 <a id="probelauf"></a>**Probelauf** · ~ mit Erklärung · Administratoren  
-Eine Automatisierung mit einer gewählten Mappe ausprobieren, ohne dass etwas geändert oder jemand benachrichtigt wird – Ablago zeigt nur, was passieren würde. Bei einer Automatisierungsvorlage öffnet „Ausprobieren“ denselben Dialog wie an der Mappe, gekennzeichnet als „Probe – es wird nichts angelegt“, und zeigt danach, was die Empfänger sähen.  
+Eine Automatisierung mit einer gewählten Mappe ausprobieren, ohne dass etwas geändert oder jemand benachrichtigt wird – Ablago zeigt nur, was passieren würde. Bei einer Automatisierungsvorlage öffnet „Ausprobieren“ denselben Dialog wie an der Mappe, gekennzeichnet als „Probe – es wird nichts angelegt“, und zeigt danach, was die Empfänger sähen. Bei Paketen, die es anbieten, heißt der Reiter ebenso „Ausprobieren“ – Dokument hochladen und sehen, was das Paket damit tun würde (im Probemodus darf das Paket nichts schreiben, die Datei wird danach verworfen).  
 Siehe auch: [Testlauf](#testlauf).
 
 <a id="regel"></a>**Regel** · ~ mit Erklärung · Administratoren  
@@ -785,7 +785,7 @@ Wer Oberfläche, Handbuch, Hilfetexte oder Release-Notizen schreibt, verwendet d
 | Person | Kontakt (als Mappentyp), Benutzer (für Kontakte) | `basis:person` |
 | Platzhalter | – | `Platzhalter (Baustein), platzhalterFuer, {feld}` |
 | Post | Posteingang, Inbox | – |
-| Probelauf | Trockenlauf, trocken | `trocken` |
+| Probelauf | Trockenlauf, trocken, Testen (am Paket) | `trocken` |
 | Prozent | – | `prozent, shared/src/feldarten.ts` |
 | Regel | – | `Regel` |
 | Region | Standort, Gebietsschema, Locale | `region` |

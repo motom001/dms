@@ -144,6 +144,9 @@ export const AKTION_ANTWORT_MAX = 2000;
 export const AKTION_STAND_MAX = 16 * KB;
 export const AKTION_DATEI_MAX = 10 * MB;
 export const AKTION_DATEIEN_MAX = 3;
+/** Ausprobieren (#1004): Probedatei höchstens so groß; der Körper trägt sie als Base64 samt Einstellungen. */
+export const PROBE_DATEI_MAX = 20 * MB;
+export const PROBE_KOERPER_MAX = Math.ceil(PROBE_DATEI_MAX / 3) * 4 + MB;
 export const AKTION_ZEIT_MS = 30_000;
 export const AKTION_LAUF_MS = 30 * 60_000;
 

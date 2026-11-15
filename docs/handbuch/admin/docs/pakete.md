@@ -381,6 +381,18 @@ Im Verlauf stehen **nie Inhalte** aus Dokumenten oder Antworten des Pakets. Eint
 
 ![Reiter „Verlauf“ eines Pakets: Auslastung mit Ampel, darunter die Liste mit „Nur Fehler zeigen“](bilder/werkbank-paket-verlauf.png)
 
+### Ausprobieren { #ausprobieren }
+
+Bietet ein Paket es an, gibt es den Reiter **Ausprobieren** – bei allen Paketen gleich aufgebaut. Du lädst ein Dokument hoch und siehst, was das Paket damit tun würde, **ohne dass sich in der Ablage etwas ändert**: beim Trennblatt etwa „Seite 1: Barcode ABLAGO-TRENNEN · Seite 4: ABLAGO-ANLAGE · 2 leere Seiten“, bei PDF/A die erzeugte Archivfassung zum **Ansehen** oder **Herunterladen**.
+
+- **Welche Dateien** das Paket annimmt (z. B. PDF und Bilder), steht unter dem Feld; die Datei darf höchstens 20 MB groß sein.
+- **Mit deinen Einstellungen:** Hast du im Reiter **Einstellungen** etwas geändert und noch nicht gespeichert, probiert Ablago mit genau diesen Werten aus – „So würde es mit diesen Einstellungen aussehen“. Zwischen **Einstellungen** und **Ausprobieren** kannst du wechseln, ohne dass die Änderungen verloren gehen; gespeichert wird erst mit dem Knopf in den Einstellungen.
+- **Probemodus:** Das Paket bekommt die Datei, darf aber **nichts schreiben** – keine Post teilen, keine Archivnummer, keine Felder, keine Dokumente, nicht einmal seinen eigenen Speicher. Mappen und Dokumente aus der Ablage sieht es dabei nicht; ins Netz darf es nur wie sonst auch.
+- Das Ergebnis zeigt **Dauer** und **Speicher** des Probelaufs; die [Grenzen des Läufers](#verlauf) gelten wie immer.
+- Die Datei kommt **nie in die Ablage** und wird nach dem Ansehen verworfen. Im [Verlauf](#verlauf) steht nur „Ausprobiert“, von wem und wann – ohne Dateiname und Inhalt.
+
+![Reiter „Ausprobieren“: Datei gewählt, darunter „So würde es aussehen“ mit Hinweisen je Seite](bilder/werkbank-paket-ausprobieren.png)
+
 Schlägt ein **Update** fehl, bleibt die alte Version mit ihrem alten Code installiert. Ein Paket darf höchstens **128 MB** groß sein – das gilt für das Archiv beim Herunterladen, Hochladen und in der Sammeldatei ebenso wie für alle Dateien unter `code/` zusammen. Ist ein Paket größer, nennt Ablago Größe und Grenze und lädt es gar nicht erst herunter.
 
 **Entfernen** beendet den Code, löscht seine offenen Ereignisse und seinen Speicher und schaltet das Dienstkonto ab.

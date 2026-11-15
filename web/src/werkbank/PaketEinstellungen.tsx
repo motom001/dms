@@ -45,6 +45,14 @@ const kernFormular = (s: PaketEinstellungenStand, id: string, d: KernDaten): Wer
   return Object.fromEntries(a.map((x) => [x.schluessel, w[x.art]]));
 };
 
+/**
+ * Ungespeicherte Werte je Paket (#1004): „Ausprobieren“ nimmt sie („So würde es mit diesen Einstellungen aussehen“),
+ * und zurück im Reiter „Einstellungen“ sind sie noch da. Weg nach Speichern, Verwerfen oder Verlassen der beiden Reiter.
+ */
+const entwuerfe = new Map<string, Werte>();
+export const paketEntwurf = (id: string): Werte | null => entwuerfe.get(id) ?? null;
+export const vergissPaketEntwurf = (id: string) => { entwuerfe.delete(id); };
+
 /** Formular: Felder des Manifests und Feldarten des Kerns. */
 const formularVon = (s: PaketEinstellungenStand, id: string, d: KernDaten): Werte => ({ ...zumFormular(s), ...kernFormular(s, id, d) });
 
@@ -65,10 +73,12 @@ export function PaketEinstellungen({ paket, gespeichert }: { paket: Pick<Install
     let aktuell = true;
     paketeApi.paketEinstellungen(id).then(async (s) => {
       const d = await ladeKern(kernArten(s).map((x) => x.art));
-      if (aktuell) { setStand(s); setKern(d); setWerte(formularVon(s, id, d)); }
+      if (aktuell) { setStand(s); setKern(d); setWerte(entwuerfe.get(id) ?? formularVon(s, id, d)); }
     }).catch((e) => aktuell && setMeldung({ art: 'schlecht', text: (e as Error).message }));
     return () => { aktuell = false; };
   }, [id]);
+  // Entwurf merken (#1004), solange etwas ungespeichert ist.
+  useEffect(() => { if (!stand || !kern) return; if (ent.geaendert) entwuerfe.set(id, werte); else entwuerfe.delete(id); }, [id, werte, ent.geaendert, stand, kern]);
   if (!stand || !kern) return meldung ? <div className="hinweis schlecht"><p>{meldung.text}</p></div> : <p className="leise">{t('werkbank.paketeinstellungen.lade')}</p>;
 
   async function speichern(adresseBestaetigt = false) {

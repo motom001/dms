@@ -24,7 +24,7 @@ import type { AnLaeufer, Grenzen, NetzEintrag, NetzMessung, VomLaeufer } from '.
 import { gebietsschema } from '../../../shared/src/sprache';
 import type { Hostantwort } from './arbeiter';
 import { t, t as tx } from '../sprache';
-import { beantworteZugang, type AktionsDatei, type Zugang } from '../paketaktionen';
+import { beantworteZugang, type AktionsDatei, type Probedatei, type Zugang } from '../paketaktionen';
 import { PRUEF_AKTION } from '../../../shared/src/paketreiter';
 
 /** Eingeschränkter Zugriff eines laufenden Aufrufs einer Paket-Aktion (#1039). */
@@ -278,6 +278,19 @@ export class Paketlaeufer implements PaketLaeufer {
     } catch { return {}; }
   }
 
+  /**
+   * Ausprobieren (#1004): das Ereignis aus `code.ausprobieren` im Probemodus – vor die Warteschlange, mit leerem
+   * Zugriff außer der Probedatei (kein Dienstkonto, keine Mappen, eigener Speicher nur lesen). Erzeugte Dateien
+   * (`POST /dateien`) kommen mit dem Ergebnis zurück; in den Verlauf schreibt die Paketverwaltung („ausprobiert von …“).
+   */
+  async ausprobieren(paket: string, eingang: Record<string, unknown>, probe: Probedatei): Promise<{ ok: boolean; text: string; fehler: string | null; ms: number; speicherMB: number; dateien: AktionsDatei[] }> {
+    if (this.o.pausiert?.() || !this.aktionBereit(paket)) return { ok: false, text: '', fehler: t('meldungen.verwaltung.der-paket-laeufer-laeuft'), ms: 0, speicherMB: 0, dateien: [] };
+    try { await extern.pruefePause(paket); } catch (e) { return { ok: false, text: '', fehler: (e as Error).message, ms: 0, speicherMB: 0, dateien: [] }; }
+    const dateien: AktionsDatei[] = [];
+    const r = await this.rufe(paket, 'ereignis', eingang, { vorrang: true, bezeichnung: t('meldungen.verwaltung.ausprobiert'), zugang: { zugang: { mappe: {}, dokumente: {}, probe }, dateien }, ohneInhalt: true, funktion: 'ausprobieren', ohneVerlauf: true });
+    return { ok: r.ok, text: r.text, fehler: r.fehler, ms: r.ms, speicherMB: r.speicherMB, dateien };
+  }
+
   /** Paket-Aktionen (#1039): fehlerfrei geladene Pakete (für den Schnappschuss der anderen Prozesse). */
   aktionPakete(): string[] { return this.pakete.filter((p) => this.ladefehler.has(p.id) && !this.ladefehler.get(p.id)).map((p) => p.id); }
 
@@ -479,7 +492,9 @@ export class Paketlaeufer implements PaketLaeufer {
    * Verlauf (#1003): je Aufruf ein Eintrag – Art, Ergebnis (Grenze erreicht: zeit/speicher), Dauer, Speicher, Mappe des
    * Ereignisses und Netzaufrufe als Text; nie das Ergebnis selbst (es kann Inhalte tragen), bei Fehlern die Meldung.
    */
-  private verlauf(paket: string, art: 'ereignis' | 'aktion', eingang: Record<string, unknown>, bezeichnung: string | undefined, r: Ergebnis) {
+  private verlauf(paket: string, art: 'ereignis' | 'aktion', eingang: Record<string, unknown>, opt: { bezeichnung?: string; ohneVerlauf?: boolean }, r: Ergebnis) {
+    if (opt.ohneVerlauf) return;
+    const bezeichnung = opt.bezeichnung;
     const daten = art === 'ereignis' && eingang.daten && typeof eingang.daten === 'object' ? eingang.daten as Record<string, unknown> : {};
     const ergebnis = r.ok ? 'ok' : r.ms >= this.grenzen.sekunden * 1000 || /zeitgrenze|time limit/i.test(r.fehler ?? '') ? 'zeit' : /speichergrenze|memory limit/i.test(r.fehler ?? '') ? 'speicher' : 'fehler';
     void this.o.dienst.kern.repo.notiereVerlauf([{
@@ -632,7 +647,7 @@ export class Paketlaeufer implements PaketLaeufer {
   }
 
   /** Einen Aufruf ausführen und auf das Ergebnis warten. ms: eigene, kürzere Wartezeit; vorrang: vor die Warteschlange. */
-  private async rufe(paket: string, art: 'ereignis' | 'aktion', eingang: Record<string, unknown>, opt: { ms?: number; vorrang?: boolean; bezeichnung?: string; teil?: (text: string) => void; ohneInhalt?: boolean; zugang?: Omit<AktionsZugang, 'paket'>; funktion?: string } = {}): Promise<Ergebnis> {
+  private async rufe(paket: string, art: 'ereignis' | 'aktion', eingang: Record<string, unknown>, opt: { ms?: number; vorrang?: boolean; bezeichnung?: string; teil?: (text: string) => void; ohneInhalt?: boolean; zugang?: Omit<AktionsZugang, 'paket'>; funktion?: string; ohneVerlauf?: boolean } = {}): Promise<Ergebnis> {
     if (!this.kind || !this.bereit) return abbruch(t('meldungen.verwaltung.der-paket-laeufer-laeuft'), true);
     const p = this.pakete.find((x) => x.id === paket);
     if (!p) throw new Error('Dieses Paket hat keinen Code.');
@@ -657,7 +672,7 @@ export class Paketlaeufer implements PaketLaeufer {
     if (s.letzte.length > LETZTE) s.letzte.splice(0, s.letzte.length - LETZTE);
     if (!r.ok) log.warn(`Paket ${paket}: Aufruf fehlgeschlagen`, { paket, art, fehler: r.fehler, ms: r.ms });
     erfasseNetz(p, { ereignis: art === 'ereignis', funktion: opt.funktion, art: String(eingang.art) }, r.messung);
-    this.verlauf(paket, art, eingang, opt.bezeichnung, r);
+    this.verlauf(paket, art, eingang, opt, r);
     // Netzaufrufe (#807): ins Protokoll des Pakets und eine Zeile mit der Summe ins Systemprotokoll – Hosts und Bytes, nie Inhalte.
     if (r.netz?.length) {
       merkeNetz(s.protokoll, r.netz);

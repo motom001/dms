@@ -143,3 +143,32 @@ export function ampelVon(tage: readonly VerlaufTag[], g: LaeuferGrenzen | null):
   if (s.zeit + s.speicher >= 3 || knapp) return 'grenzen';
   return 'unauffaellig';
 }
+
+/* ---------- Ausprobieren (#1004) ---------- */
+
+/**
+ * Ergebnis eines Probelaufs zum Anzeigen. Das Paket antwortet mit
+ * `{"zeilen": ["2 leere Seiten entfernt"], "seiten": [{"seite": 1, "text": "Barcode ABLAGO-TRENNEN"}]}`
+ * (auch unter `ergebnis`); jede andere Antwort gilt als Textzeilen. Erzeugte Dateien legt es mit `POST /dateien` ab.
+ */
+export interface ProbeErgebnis { zeilen: string[]; seiten: Array<{ seite: number; text: string }> }
+export const PROBE_ZEILEN_MAX = 200;
+export function liesProbeErgebnis(text: string): ProbeErgebnis {
+  const zeile = (x: unknown) => str(x).slice(0, 500);
+  const roh = text.trim();
+  let j: unknown = null;
+  if (roh.startsWith('{')) { try { j = JSON.parse(roh); } catch { j = null; } }
+  const e = istObjekt(j) ? (istObjekt(j.ergebnis) ? j.ergebnis : j) : null;
+  if (!e || (!Array.isArray(e.zeilen) && !Array.isArray(e.seiten))) return { zeilen: roh ? roh.split(/\r?\n/).filter((x) => x.trim()).slice(0, PROBE_ZEILEN_MAX).map(zeile) : [], seiten: [] };
+  return {
+    zeilen: (Array.isArray(e.zeilen) ? e.zeilen : []).slice(0, PROBE_ZEILEN_MAX).map(zeile),
+    seiten: (Array.isArray(e.seiten) ? e.seiten : []).filter(istObjekt).filter((x) => Number.isInteger(x.seite) && (x.seite as number) > 0)
+      .slice(0, PROBE_ZEILEN_MAX).map((x) => ({ seite: x.seite as number, text: zeile(x.text) })),
+  };
+}
+/** Antwort des Servers auf „Ausprobieren“. */
+export interface ProbeAntwort extends ProbeErgebnis {
+  ok: boolean; fehler: string | null; ms: number; speicherMB: number;
+  /** Erzeugte Dateien zum Ansehen oder Herunterladen (Base64) – nie in der Ablage. */
+  dateien: Array<{ name: string; typ: string; daten: string }>;
+}

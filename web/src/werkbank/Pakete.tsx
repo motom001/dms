@@ -9,7 +9,8 @@ import { useDaten } from '../daten';
 import { Hilfe } from '../Hilfe';
 import { Listenkopf } from '../Listenkopf';
 import { darfVerlassen, geheZu, Link } from '../ort';
-import { PaketEinstellungen } from './PaketEinstellungen';
+import { PaketEinstellungen, vergissPaketEntwurf } from './PaketEinstellungen';
+import { PaketAusprobieren } from './PaketAusprobieren';
 import { VektorStandBlock } from '../ablage/Aehnlich';
 import { KlassifizierenBlock } from './ErkennungPaket';
 import { KiTypenZeile } from './KiTypen';
@@ -466,21 +467,23 @@ function UploadDetail({ z }: { z: PaketeZustand }) {
  * Register des Pakets (#1214, Baustein Reiter): Übersicht liest, Einstellungen ändern (#996); ein Warnsymbol, wenn
  * Einstellungen fehlen. Gleich aufgebaut bei allen Paketen – welche Reiter es gibt, ergibt sich aus dem Manifest.
  */
-type PaketReiterArt = 'uebersicht' | 'einstellungen' | 'verlauf';
+type PaketReiterArt = 'uebersicht' | 'einstellungen' | 'verlauf' | 'ausprobieren';
 function PaketReiter({ reiter, setze, noetig, reiterListe }: { reiter: PaketReiterArt; setze(r: PaketReiterArt): void; noetig: boolean; reiterListe: PaketReiterArt[] }) {
   const text = (r: PaketReiterArt) => (r === 'einstellungen' ? <>{t('werkbank.pakete.einstellungen')}{noetig && <> <Symbol name="warnung" className="sym-warn" /><span className="sr">{t('werkbank.pakete.einstellungen-noetig-2')}</span></>}</>
-    : r === 'verlauf' ? t('pakete.verlauf.reiter') : t('werkbank.pakete.uebersicht'));
+    : r === 'verlauf' ? t('pakete.verlauf.reiter') : r === 'ausprobieren' ? t('pakete.probe.reiter') : t('werkbank.pakete.uebersicht'));
   return <Reiter id="paket" wert={reiter} setze={setze} beschriftung={t('werkbank.pakete.paket')} wahlen={reiterListe.map((r) => ({ wert: r, text: text(r) }))} />;
 }
 /**
  * Reiter eines installierten Pakets (#996): Übersicht immer, Einstellungen bei Feldern im Manifest oder Feldarten des
- * Kerns, Verlauf bei Paketen mit Läufer (#1003).
+ * Kerns, Ausprobieren bei `code.ausprobieren` (#1004), Verlauf bei Paketen mit Läufer (#1003).
  */
 function reiterVon(inst: InstalliertesPaket | null): PaketReiterArt[] {
   if (!inst) return [];
-  return ['uebersicht', ...(hatEinstellungen(inst) ? ['einstellungen' as const] : []), ...(inst.laeufer ? ['verlauf' as const] : [])];
+  return ['uebersicht', ...(hatEinstellungen(inst) ? ['einstellungen' as const] : []), ...(inst.laeufer?.reiter?.ausprobieren ? ['ausprobieren' as const] : []), ...(inst.laeufer ? ['verlauf' as const] : [])];
 }
-const REITER: readonly PaketReiterArt[] = ['uebersicht', 'einstellungen', 'verlauf'];
+const REITER: readonly PaketReiterArt[] = ['uebersicht', 'einstellungen', 'ausprobieren', 'verlauf'];
+/** Zwischen Einstellungen und Ausprobieren bleibt der Entwurf (#1004) – kein „Verlassen ohne Speichern?“. */
+const mitEntwurf = (r: PaketReiterArt) => r === 'einstellungen' || r === 'ausprobieren';
 
 /**
  * Welcher Reiter offen ist (`?reiter=` beim Öffnen), welche es gibt, Wechsel mit „Verlassen ohne Speichern?“ aus den
@@ -490,7 +493,10 @@ function usePaketReiter(inst: InstalliertesPaket | null) {
   const [reiter, setReiter] = useState<PaketReiterArt>(() => REITER.find((r) => r === new URLSearchParams(location.search).get('reiter')) ?? 'uebersicht');
   const liste = reiterVon(inst);
   const aktiv = liste.includes(reiter) ? reiter : 'uebersicht';
-  const wechsel = (r: PaketReiterArt) => { if (aktiv !== 'einstellungen') setReiter(r); else void darfVerlassen().then((ok) => { if (ok) setReiter(r); }); };
+  const wechsel = (r: PaketReiterArt) => {
+    if (mitEntwurf(aktiv) && mitEntwurf(r)) { setReiter(r); return; }
+    void darfVerlassen().then((ok) => { if (!ok) return; if (inst) vergissPaketEntwurf(inst.id); setReiter(r); });
+  };
   const zu = (r: PaketReiterArt, anker?: string) => { setReiter(r); if (anker) setTimeout(() => document.querySelector(`[data-anker="${anker}"]`)?.scrollIntoView({ block: 'center' }), 400); };
   return { reiter: aktiv, liste, wechsel, zu };
 }
@@ -503,6 +509,7 @@ function PaketReiterBlock({ r, inst, z }: { r: ReturnType<typeof usePaketReiter>
       <PaketReiter reiter={r.reiter} reiterListe={r.liste} noetig={!!inst.einstellungenNoetig} setze={r.wechsel} />
       {r.reiter === 'einstellungen' && <ReiterFlaeche id="paket" wert={r.reiter}><PaketEinstellungen paket={inst} gespeichert={() => void z.laden()} /></ReiterFlaeche>}
       {r.reiter === 'verlauf' && <ReiterFlaeche id="paket" wert={r.reiter}><PaketVerlauf inst={inst} /></ReiterFlaeche>}
+      {r.reiter === 'ausprobieren' && <ReiterFlaeche id="paket" wert={r.reiter}><PaketAusprobieren inst={inst} zuEinstellungen={() => r.wechsel('einstellungen')} /></ReiterFlaeche>}
     </>
   );
 }

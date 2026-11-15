@@ -3,7 +3,7 @@ import type { AktionenEinstellung, AktionRecht, AktionsSchritt, EingebauteAktion
 import type { Archiv } from '../../../shared/src/archiv';
 import type { AblaufEingabe, AblaufErgebnis, AblaufInstallation, AblaufPlan, Ergaenzung, HerkunftPruefung, InstalliertesPaket, Katalog, LaeuferZustand, RechtePunkt } from '../../../shared/src/pakete';
 import type { Einstellungsbeschreibung } from '../../../shared/src/paketeinstellungen';
-import type { Auslastung, AnzeigeWert, PaketAnzeige, VerlaufEintrag } from '../../../shared/src/paketreiter';
+import type { Auslastung, AnzeigeWert, PaketAnzeige, ProbeAntwort, VerlaufEintrag } from '../../../shared/src/paketreiter';
 import type { ErstellenStand, PaketErstellenEingabe, PaketPruefung, SelbstErstellt, SelbstErstelltDetail } from '../../../shared/src/paketerstellung';
 import type { Entscheidung, UmwandlungsFeld, Umwandlungsvorgang, UmwandlungsVorschau } from '../../../shared/src/umwandlung';
 import type { ExternerDienst, ExternKennzahlen } from '../../../shared/src/extern';
@@ -136,6 +136,8 @@ export const paketeApi = {
     const q = new URLSearchParams({ ...(f.vor ? { vor: String(f.vor) } : {}), ...(f.nurFehler ? { nurFehler: '1' } : {}), ...(f.suche ? { suche: f.suche } : {}) }).toString();
     return anfrage<{ eintraege: VerlaufEintrag[]; mehr: boolean }>('GET', `/api/werkbank/pakete/${encodeURIComponent(id)}/verlauf${q ? `?${q}` : ''}`);
   },
+  /** Ausprobieren (#1004): Datei (Base64) mit den noch nicht gespeicherten Einstellungen; nichts wird gespeichert. */
+  paketAusprobieren: (id: string, e: { name: string; typ: string; daten: string; werte: Record<string, unknown> | null }) => anfrage<ProbeAntwort>('POST', `/api/werkbank/pakete/${encodeURIComponent(id)}/ausprobieren`, e),
   /** Auslastung des Pakets (#1003): je Tag der letzten 30 Tage, letzter Aufruf. */
   paketAuslastung: (id: string) => anfrage<Auslastung>('GET', `/api/werkbank/pakete/${encodeURIComponent(id)}/auslastung`),
   /** Anzeigen des Pakets (#996) und sein Statusbereich – nur lesen. */

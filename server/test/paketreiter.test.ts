@@ -6,7 +6,8 @@ import { join } from 'node:path';
 import { describe, it } from 'node:test';
 import { liesBeschreibung, pruefeWerte, textFehler } from '../../shared/src/paketeinstellungen';
 import { hatEinstellungen, kernFelderVon, mitKern } from '../../shared/src/paketkern';
-import { ampelVon, anzeigeWert, dateiartPasst, liesReiterAngaben, summeVon } from '../../shared/src/paketreiter';
+import { ampelVon, anzeigeWert, dateiartPasst, liesProbeErgebnis, liesReiterAngaben, summeVon } from '../../shared/src/paketreiter';
+import { beantworteZugang, type AktionsDatei } from '../src/paketaktionen/index';
 import type { InstalliertesPaket, PaketCode } from '../../shared/src/pakete';
 import { speicherDateien } from '../src/dateispeicher';
 import { Dienst } from '../src/dienst';
@@ -202,5 +203,64 @@ describe('Verlauf und Auslastung (#1003)', () => {
     assert.ok(v.eintraege[1].bezug?.titel);
     assert.equal((await p.verlauf('dienst', {}, keine)).eintraege[1].bezug, null, 'ohne Leserecht kein Bezug');
     assert.equal(v.mehr, false);
+  });
+});
+
+describe('Ausprobieren (#1004)', () => {
+  const PROBE = { id: '00000000-0000-4000-8000-0000000000aa', name: 'scan.pdf', typ: 'application/pdf', daten: Buffer.from('%PDF-1.7 Probe').toString('base64') };
+
+  it('Ergebnis: Zeilen und Seitenhinweise als JSON (auch unter „ergebnis“), sonst Textzeilen', () => {
+    assert.deepEqual(liesProbeErgebnis('{"zeilen":["2 leere Seiten"],"seiten":[{"seite":1,"text":"Barcode ABLAGO-TRENNEN"},{"seite":0,"text":"x"}]}'),
+      { zeilen: ['2 leere Seiten'], seiten: [{ seite: 1, text: 'Barcode ABLAGO-TRENNEN' }] });
+    assert.deepEqual(liesProbeErgebnis('{"ergebnis":{"seiten":[{"seite":4,"text":"ABLAGO-ANLAGE"}]}}').seiten, [{ seite: 4, text: 'ABLAGO-ANLAGE' }]);
+    assert.deepEqual(liesProbeErgebnis('Seite 1: Barcode\nSeite 4: Anlage\n'), { zeilen: ['Seite 1: Barcode', 'Seite 4: Anlage'], seiten: [] });
+    assert.deepEqual(liesProbeErgebnis(''), { zeilen: [], seiten: [] });
+  });
+
+  it('Probemodus: nur die Probedatei lesen und Dateien ablegen – Mappen, andere Dokumente und Schreiben sind gesperrt', async () => {
+    const dateien: AktionsDatei[] = [];
+    const z = { mappe: {}, dokumente: {}, probe: PROBE };
+    const lies = async () => { throw new Error('keine Datei aus der Ablage'); };
+    const r = await beantworteZugang(z, dateien, { methode: 'GET', pfad: `/dokumente/${PROBE.id}` }, lies);
+    assert.equal(r.status, 200);
+    assert.equal(r.body.toString(), '%PDF-1.7 Probe');
+    assert.equal((await beantworteZugang(z, dateien, { methode: 'GET', pfad: '/dokumente/00000000-0000-4000-8000-0000000000bb' }, lies)).status, 404);
+    for (const [methode, pfad] of [['POST', '/mappen'], ['PUT', '/post/x/teilen'], ['GET', '/typen'], ['PATCH', '/mappen/m1']]) {
+      assert.equal((await beantworteZugang(z, dateien, { methode, pfad, body: Buffer.from('{}') }, lies)).status, 403, `${methode} ${pfad}`);
+    }
+    assert.equal((await beantworteZugang(z, dateien, { methode: 'POST', pfad: '/dateien?name=archiv.pdf&typ=application/pdf', body: Buffer.from('%PDF-A') }, lies)).status, 201);
+    assert.equal(dateien[0].name, 'archiv.pdf');
+  });
+
+  it('Paketverwaltung: Dateiart, ungespeicherte Einstellungen (Geheimnis behalten = gespeicherter Wert), Verlauf ohne Inhalt, nichts in der Ablage', async () => {
+    const gesehen: Array<{ eingang: Record<string, unknown>; probe: { name: string } }> = [];
+    const laeufer: PaketLaeufer = { aktion: async () => '', ausprobieren: async (_p, eingang, probe) => {
+      gesehen.push({ eingang, probe });
+      return { ok: true, text: '{"seiten":[{"seite":1,"text":"Barcode ABLAGO-TRENNEN"}]}', fehler: null, ms: 420, speicherMB: 12, dateien: [{ name: 'archiv.pdf', typ: 'application/pdf', inhalt: Buffer.from('%PDF-A') }] };
+    } };
+    const { d, p, installiere } = await aufbau(laeufer);
+    const b = liesBeschreibung({ einstellungen: [{ abschnitt: 'Trennen', felder: [{ schluessel: 'code', name: 'Code', typ: 'text', standard: 'ABLAGO-TRENNEN' }, { schluessel: 'token', name: 'Token', typ: 'geheim' }] }] }).beschreibung!;
+    const c = code({ ereignisse: ['post.angelegt'], reiter: { ausprobieren: { ereignis: 'post.angelegt', dateiarten: ['application/pdf'] } } });
+    await installiere('trennblatt', { laeufer: c, einstellungen: b });
+    await p.speichereEinstellungen('trennblatt', { werte: { code: 'ABLAGO-TRENNEN', token: 'gespeichert-1' } }, ICH);
+    const vorher = await d.kern.repo.alleDateien();
+    await assert.rejects(p.ausprobieren('trennblatt', { name: 'a.png', typ: 'image/png', daten: PROBE.daten, werte: {} }, ICH), (x) => x instanceof Fachfehler && x.status === 422);
+    await assert.rejects(p.ausprobieren('trennblatt', { name: 'leer.pdf', typ: 'application/pdf', daten: '', werte: {} }, ICH), (x) => x instanceof Fachfehler && x.status === 422);
+    const r = await p.ausprobieren('trennblatt', { name: 'scan.pdf', typ: 'application/pdf', daten: PROBE.daten, werte: { code: 'TRENNER-2', token: { behalten: true } } }, ICH);
+    assert.deepEqual(r.seiten, [{ seite: 1, text: 'Barcode ABLAGO-TRENNEN' }]);
+    assert.deepEqual(r.dateien, [{ name: 'archiv.pdf', typ: 'application/pdf', daten: Buffer.from('%PDF-A').toString('base64') }]);
+    assert.equal(r.ms, 420); assert.equal(r.speicherMB, 12);
+    const e = gesehen[0].eingang;
+    assert.equal(e.art, 'post.angelegt'); assert.equal(e.probe, true);
+    assert.deepEqual(e.einstellungen, { code: 'TRENNER-2', token: 'gespeichert-1' }, 'ungespeicherte Werte, Geheimnis aus dem Speicher');
+    assert.equal((await p.einstellungen('trennblatt')).werte.code, 'ABLAGO-TRENNEN', 'gespeichert bleibt, was gespeichert war');
+    const v = await p.verlauf('trennblatt', {}, { lesen: null } as never);
+    assert.equal(v.eintraege[0].art, 'ausprobiert');
+    assert.equal(v.eintraege[0].wer, 'admin@example.org');
+    assert.ok(!JSON.stringify(v.eintraege[0]).includes('scan.pdf'), 'ohne Dateiname und Inhalt');
+    assert.deepEqual(await d.kern.repo.alleDateien(), vorher, 'nichts in der Ablage');
+    // Ohne „Ausprobieren“ im Manifest: 404.
+    await installiere('ohne', { laeufer: code() });
+    await assert.rejects(p.ausprobieren('ohne', { name: 'scan.pdf', typ: 'application/pdf', daten: PROBE.daten }, ICH), (x) => x instanceof Fachfehler && x.status === 404);
   });
 });

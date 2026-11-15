@@ -516,7 +516,7 @@ Checks which permissions a particular user ends up with.
 Recognises text in images and scanned PDFs so that it becomes searchable.
 
 <a id="probelauf"></a>**Trial run** (*Probelauf*) · ~ with explanation · administrators  
-Trying out an automation with a chosen folder without anything being changed or anyone being notified – Ablago only shows what would happen. For an automation template, “Try it out” opens the same dialog as on the folder, marked “Trial – nothing is created”, and then shows what the recipients would see.  
+Trying out an automation with a chosen folder without anything being changed or anyone being notified – Ablago only shows what would happen. For an automation template, “Try it out” opens the same dialog as on the folder, marked “Trial – nothing is created”, and then shows what the recipients would see. For packages that offer it, the tab is also called “Try out” – upload a document and see what the package would do with it (in trial mode the package may not write anything, the file is discarded afterwards).  
 See also: [Test run](#testlauf).
 
 <a id="zwei-faktor-anmeldung"></a>**Two-factor sign-in** (*Zwei-Faktor-Anmeldung*) · ~ with explanation · everyone  

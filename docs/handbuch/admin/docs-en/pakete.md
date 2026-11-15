@@ -380,6 +380,18 @@ The activity **never contains content** from documents or answers of the package
 
 ![The “Activity” tab of a package: load with traffic light, below the list with “Show errors only”](bilder/werkbank-paket-verlauf.png)
 
+### Try out { #ausprobieren }
+
+If a package offers it, there is a **Try out** tab – built the same way for every package. You upload a document and see what the package would do with it, **without anything changing in the Library**: for the separator sheet, for instance, “Page 1: barcode ABLAGO-TRENNEN · Page 4: ABLAGO-ANLAGE · 2 blank pages”, for PDF/A the archive version it creates, to **View** or **Download**.
+
+- **Which files** the package takes (e.g. PDF and images) is shown below the field; the file may be at most 20 MB.
+- **With your settings:** if you changed something in the **Settings** tab and have not saved it yet, Ablago tries out with exactly these values – “this is how it would look with these settings”. You can switch between **Settings** and **Try out** without losing the changes; they are only saved with the button in the settings.
+- **Trial mode:** the package gets the file but **may not write anything** – no splitting post, no archive number, no fields, no documents, not even its own storage. It does not see folders and documents from the Library while doing so; it may only go on the network as usual.
+- The result shows **duration** and **memory** of the trial run; the [runner's limits](#verlauf) apply as always.
+- The file **never goes into the Library** and is discarded after viewing. The [activity](#verlauf) only records “Tried out”, by whom and when – without file name and content.
+
+![The “Try out” tab: a file chosen, below “This is how it would look” with notes per page](bilder/werkbank-paket-ausprobieren.png)
+
 If an **update** fails, the old version stays installed with its old code. A package may be at most **128 MB** in size – that applies to the archive when downloading, uploading and in the bundle file as well as to all files under `code/` together. If a package is larger, Ablago names size and limit and doesn't even download it.
 
 **Removing** ends the code, deletes its open events and its storage and switches off the service account.

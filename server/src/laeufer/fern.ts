@@ -9,7 +9,7 @@ import type { Dienst } from '../dienst';
 import type { PaketLaeufer } from '../pakete';
 import type { Verbund } from '../prozesse';
 import type { Paketlaeufer } from './verwaltung';
-import type { Zugang } from '../paketaktionen';
+import type { Probedatei, Zugang } from '../paketaktionen';
 
 /** Was die anderen Prozesse vom Läufer ohne Warten wissen müssen. */
 export interface LaeuferSchnappschuss {
@@ -58,6 +58,7 @@ export function bedieneLaeufer(v: Verbund, l: Paketlaeufer, d: Dienst): void {
     return l.schnittstelle(String(paket), String(aktion), eingang as Record<string, unknown>, { bezeichnung: o.bezeichnung, ...(o.ms ? { ms: o.ms } : {}), ...(o.mitTeil ? { teil: (x: string) => teil(x) } : {}) });
   });
   // Paket-Aktionen (#1039): der Zugriff kommt als Daten mit, abgelegte Dateien gehen mit dem Ergebnis zurück.
+  v.bediene('laeufer.ausprobieren', ([paket, eingang, probe]) => l.ausprobieren(String(paket), eingang as Record<string, unknown>, probe as Probedatei));
   v.bediene('laeufer.pruefeEinstellungen', ([paket, werte]) => l.pruefeEinstellungen(String(paket), werte as Record<string, unknown>));
   v.bediene('laeufer.mappenaktion', ([paket, eingang, opt]) => l.mappenaktion(String(paket), eingang as Record<string, unknown>, opt as { ms: number; zugang: Zugang; bezeichnung: string }));
   v.bediene('laeufer.uebersicht', () => l.uebersicht());
@@ -112,6 +113,7 @@ export class Fernlaeufer implements PaketLaeufer, LaeuferSicht {
 
   get pid() { return this.z.pid; }
   aktion(paket: string, aktion: string, einstellungen: Record<string, unknown>) { return this.v.rufe<string>('laeufer.aktion', [paket, aktion, einstellungen]); }
+  ausprobieren(paket: string, eingang: Record<string, unknown>, probe: Probedatei) { return this.v.rufe<Awaited<ReturnType<Paketlaeufer['ausprobieren']>>>('laeufer.ausprobieren', [paket, eingang, probe], { ms: 180_000 }); }
   pruefeEinstellungen(paket: string, werte: Record<string, unknown>) { return this.v.rufe<Record<string, string> | null>('laeufer.pruefeEinstellungen', [paket, werte], { ms: 20_000 }); }
   async codeGeaendert() { await this.v.rufe('laeufer.codeGeaendert'); }
   ereignis(paket: string, _name: 'paket.einstellungen_geaendert', felder: string[]) { void this.v.rufe('laeufer.ereignis', [paket, felder]).catch(() => {}); }

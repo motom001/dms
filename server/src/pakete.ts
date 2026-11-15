@@ -38,11 +38,12 @@ import { hauptpaket, istHerausgeber, istOffiziellerHerausgeber, OFFIZIELLER_HERA
 import { bedingungEingabeFehler, kinderVon, OPERATOREN, type Bedingung, type Operator, type Sicht } from '../../shared/src/sichten';
 import { istKernFeld } from '../../shared/src/paketeinstellungen';
 import { mitKern } from '../../shared/src/paketkern';
-import { ANZEIGE_SPEICHER, anzeigeWert, liesReiterAngaben, VERLAUF_TAGE, type Auslastung, type AnzeigeWert, type PaketAnzeige, type VerlaufEintrag } from '../../shared/src/paketreiter';
+import { ANZEIGE_SPEICHER, anzeigeWert, dateiartPasst, liesProbeErgebnis, liesReiterAngaben, VERLAUF_TAGE, type ProbeAntwort, type Auslastung, type AnzeigeWert, type PaketAnzeige, type VerlaufEintrag } from '../../shared/src/paketreiter';
 import { adressfelder, EINTRAG_ID, einstellungsAenderung, fehlendePflicht, liesBeschreibung, listen, pruefeWerte, ueberfuehre, abschnittsfelder, type EinstellungFeld, type Einstellungsbeschreibung, type GeheimStand, type Verweisquelle } from '../../shared/src/paketeinstellungen';
 import type { Dienst } from './dienst';
 import type { PaketQuelleEintrag } from './pakete/index';
 import type { Zugriff } from './kern/index';
+import type { Probedatei } from './paketaktionen/index';
 import { Fachfehler } from './fehler';
 import { istVerschluesselt } from './tresor';
 import { protokoll } from './protokoll';
@@ -55,7 +56,7 @@ import { abdeckung, anzahlTexte, BESCHRIFTUNGEN_ORDNER, liesSprachangabe, liesSp
 import { gebietsschema } from '../../shared/src/sprache';
 import { mkdir, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { ARCHIV_MAX, ENTPACKT_MAX, KB, KLEIN_MAX, MB, SAMMEL_ENTPACKT_MAX, SAMMEL_MAX, SAMMEL_VERZEICHNIS_MAX as VERZEICHNIS_MAX, UPLOADS_SPEICHER_MAX, VORLAGE_MAX } from './grenzen';
+import { ARCHIV_MAX, ENTPACKT_MAX, KB, KLEIN_MAX, MB, PROBE_DATEI_MAX, SAMMEL_ENTPACKT_MAX, SAMMEL_MAX, SAMMEL_VERZEICHNIS_MAX as VERZEICHNIS_MAX, UPLOADS_SPEICHER_MAX, VORLAGE_MAX } from './grenzen';
 import {
   anzeigeMitVorgaben, anzeigeVorgaben, legeVorgaben, liesVorgaben, paketEinstellungen, paketKatalogStaende, paketSpeicher, paketQuellen, passwortFelder, planeErgaenzungen, planeVorgaben, setzePaketEinstellungen,
   setzePaketKatalogStand, setzePaketQuellen, setzePaketSpeicher, vorgabeMappen, vorgabenLage, vorgabeVerweisFehler, type PaketErgaenzung, type PaketVorgabe, type VorgabenErgebnis, type VorgabenLage,
@@ -1422,6 +1423,8 @@ export interface PaketLaeufer {
   aktion(paket: string, aktion: string, einstellungen: Record<string, unknown>): Promise<string>;
   /** Prüffunktion des Pakets (#996): Meldungen je Feld; null = das Paket lief nicht (dann gilt die Prüfung von Ablago). */
   pruefeEinstellungen?(paket: string, einstellungen: Record<string, unknown>): Promise<Record<string, string> | null>;
+  /** Ausprobieren (#1004): Ereignis im Probemodus mit der Probedatei; erzeugte Dateien kommen mit. */
+  ausprobieren?(paket: string, eingang: Record<string, unknown>, probe: Probedatei): Promise<{ ok: boolean; text: string; fehler: string | null; ms: number; speicherMB: number; dateien: Array<{ name: string; typ: string; inhalt: Buffer }> }>;
   ereignis?(paket: string, name: 'paket.einstellungen_geaendert', felder: string[]): void;
   /** Code eines Pakets installiert, aktualisiert oder entfernt (#338): Läufer lädt neu (fertig, wenn er die Pakete kennt). */
   codeGeaendert?(): void | Promise<void>;
@@ -3590,6 +3593,48 @@ export class Paketverwaltung {
     const titel = lesbar.size ? await this.d.kern.repo.titelVon([...lesbar]) : new Map<string, string>();
     const eintraege = l.slice(0, anzahl).map((e) => ({ ...e, bezug: e.bezug && lesbar.has(e.bezug.mappe) ? { mappe: e.bezug.mappe, titel: titel.get(e.bezug.mappe) ?? '' } : null }));
     return { eintraege, mehr: l.length > anzahl };
+  }
+
+  /**
+   * Ausprobieren (#1004): Das Paket bekommt die hochgeladene Datei zu dem Ereignis aus `code.ausprobieren` im
+   * Probemodus – mit den gerade eingetragenen, noch nicht gespeicherten Einstellungen (geprüft wie beim Speichern;
+   * Geheimnisse „behalten“ = der gespeicherte Wert). Es kann nichts schreiben; die Datei bleibt nur im Arbeitsspeicher
+   * und wird danach verworfen. Im Verlauf steht „ausprobiert von …“ ohne Inhalt und Dateiname.
+   */
+  async ausprobieren(id: string, eingabe: unknown, von: Handelnder): Promise<ProbeAntwort> {
+    const p = (await this.d.kern.repo.listePakete()).find((x) => x.id === id);
+    if (!p) throw new Fachfehler(404, t('meldungen.pakete.ist-nicht-installiert', { id }));
+    const pr = p.laeufer?.reiter?.ausprobieren;
+    if (!pr) throw new Fachfehler(404, t('meldungen.pakete.ausprobieren-nicht', { name: p.name }));
+    const e = (eingabe ?? {}) as { name?: unknown; typ?: unknown; daten?: unknown; werte?: unknown };
+    const datei = Buffer.from(typeof e.daten === 'string' ? e.daten : '', 'base64');
+    const typ = typeof e.typ === 'string' ? e.typ : '';
+    if (!datei.length) throw new Fachfehler(422, t('meldungen.pakete.ausprobieren-leer'));
+    if (datei.length > PROBE_DATEI_MAX) throw new Fachfehler(413, t('meldungen.pakete.ausprobieren-gross', { mb: PROBE_DATEI_MAX / MB }));
+    if (!dateiartPasst(pr.dateiarten, typ)) throw new Fachfehler(422, t('meldungen.pakete.ausprobieren-art', { arten: pr.dateiarten.join(', ') }));
+    const einstellungen = p.einstellungen ? await this.probeWerte(p, p.einstellungen, e.werte) : {};
+    if (!this.o.laeufer?.ausprobieren) throw new Fachfehler(409, t('meldungen.pakete.ausprobieren-laeufer'));
+    const probe = { id: randomUUID(), name: (typeof e.name === 'string' ? e.name : 'probe').slice(0, 200), typ, daten: datei.toString('base64') };
+    const r = await this.o.laeufer.ausprobieren(id, { art: pr.ereignis, id: probe.id, erstellt: new Date().toISOString(), versuch: 1, probe: true,
+      daten: { dokument: probe.id, name: probe.name, mime: typ, groesse: datei.length }, einstellungen }, probe);
+    await this.d.kern.repo.notiereVerlauf([{ paket: id, art: 'ausprobiert', ergebnis: r.ok ? 'ok' : 'fehler', ms: r.ms, speicherMB: r.speicherMB, wer: von.email }]).catch(() => {});
+    log.info(`Paket ${p.name} ausprobiert`, { von: von.email, paket: id, ok: r.ok, ms: r.ms });
+    return { ok: r.ok, fehler: r.ok ? null : r.fehler, ms: r.ms, speicherMB: r.speicherMB, ...liesProbeErgebnis(r.ok ? r.text : ''), dateien: r.dateien.map((x) => ({ name: x.name, typ: x.typ, daten: x.inhalt.toString('base64') })) };
+  }
+
+  /** Werte zum Ausprobieren: geprüft wie beim Speichern, Geheimnisse im Klartext (neu eingetragen oder gespeichert). */
+  private async probeWerte(p: InstalliertesPaket, b: Einstellungsbeschreibung, eingabe: unknown): Promise<Record<string, unknown>> {
+    const q = await this.auswahl(p);
+    const r = pruefeWerte(b, eingabe, { ...q, benutzer: q.benutzer.map((x) => x.id), rollen: q.rollen.map((x) => x.id), sichten: q.sichten.map((x) => x.id) });
+    if (Object.keys(r.fehler).length) throw new Fachfehler(422, t('meldungen.pakete.bitte-die-markierten-einstellungen'), { felderFehler: r.fehler, gruende: Object.values(r.fehler) });
+    const alt = await this.einstellungenFuerPaket(p.id).catch(() => ({} as Record<string, unknown>));
+    const geheim = (f: EinstellungFeld, v: unknown, altWert: unknown) => (f.typ !== 'geheim' ? v : v && typeof v === 'object' ? altWert ?? null : v);
+    for (const f of abschnittsfelder(b)) if (!istKernFeld(f)) r.werte[f.schluessel] = geheim(f, r.werte[f.schluessel], alt[f.schluessel]);
+    for (const l of listen(b)) {
+      const alte = Array.isArray(alt[l.schluessel]) ? alt[l.schluessel] as Record<string, unknown>[] : [];
+      for (const e of r.werte[l.schluessel] as Record<string, unknown>[]) for (const f of l.felder) e[f.schluessel] = geheim(f, e[f.schluessel], alte.find((x) => x[EINTRAG_ID] === e[EINTRAG_ID])?.[f.schluessel]);
+    }
+    return r.werte;
   }
 
   /** Auslastung des Pakets (#1003): je Tag der letzten 30 Tage und wann es zuletzt lief. */

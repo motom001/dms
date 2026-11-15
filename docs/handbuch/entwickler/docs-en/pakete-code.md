@@ -368,6 +368,26 @@ POST /dokumente/{id}/seiten   { "seiten": [{"nr":1}, …, {"nr":5}], "teile": [0
 - By hand (`POST/PUT/DELETE /dokumente/{id}/anlagen…`) a package may only change enclosures with `dms:anlagen` and only in post. Recognition, classifying and AI packages never get the text of enclosures.
 - **Never post from the email inbox** (since 0.265.0, dms #999): one email is exactly one post. The core splits post with channel *E-Mail* for no package (`teile` or `anlagen`: 409) – separator sheets do not apply to the inbox. Leave the channel out of the "Only post from these channels" choice. The fetched email itself has `originalEmail: true` (last enclosure on the last attachment, without attachments the main document), `eingangNr` the order of the attachments; recognition, classifying and AI packages never get its text.
 
+## Offering “Try out” { #ausprobieren-anbieten }
+
+With `code.ausprobieren`, Ablago shows the **Try out** tab for your package (#1004): the administrator uploads a file and your package shows what it would do with it – without changing anything.
+
+```yaml
+code:
+  ereignisse: [post.angelegt]
+  ausprobieren:
+    ereignis: post.angelegt                   # must be in code.ereignisse
+    dateiarten: [application/pdf, "image/*"]  # 1 to 20 file types
+    hilfe: Shows where separator sheets are recognised and which pages are blank.
+```
+
+- Your package gets the named event as usual (`dms_ereignis`), plus **`"probe": true`**. Under `daten` there are `dokument` (id of the trial file), `name`, `mime` and `groesse`; `einstellungen` are the values **currently entered in the form**, not yet saved.
+- It reads the file with `GET /dokumente/<id>` – as with [actions in the “Folder” menu](#aktionen-im-menue-mappe). **Nothing else:** in trial mode there is neither the service account nor folders or other documents (403 or 404), its own storage is read-only. Network as always.
+- **Result to display** via `ergebnis`: `{"zeilen": ["2 blank pages removed"], "seiten": [{"seite": 1, "text": "Barcode ABLAGO-TRENNEN"}]}` (also under `"ergebnis": {…}`); Ablago shows any other answer as lines of text. At most 200 lines or pages, 500 characters each.
+- Put a **created file** (e.g. the archive version) with `POST /dateien?name=…&typ=…` – at most 3 files of 10 MB each. Ablago offers them to view and download; nothing is stored.
+- Ablago shows duration and memory as well; the runner's limits apply as always. The activity only records “tried out by …”.
+- Older Ablago versions ignore `code.ausprobieren`.
+
 ## Actions in the “Folder” menu { #aktionen-im-menue-mappe }
 
 Since Ablago 0.245.0 (dms #1039), a package can register actions for the **Folder ▾** menu – e.g. “Add template” on a contract or “Mark as paid” on an invoice. The package brings **no user interface**: it answers with a **dialog description as data** or with a **result**; Ablago shows the dialog with its own building blocks and applies the result with the person's access. Never HTML or JavaScript from packages.

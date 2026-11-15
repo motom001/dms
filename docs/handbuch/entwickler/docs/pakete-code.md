@@ -367,6 +367,26 @@ POST /dokumente/{id}/seiten   { "seiten": [{"nr":1}, …, {"nr":5}], "teile": [0
 - Von Hand (`POST/PUT/DELETE /dokumente/{id}/anlagen…`) darf ein Paket Anlagen nur mit `dms:anlagen` und nur in Post ändern. Erkennung, Klassifizieren und KI-Pakete bekommen nie den Text von Anlagen.
 - **Nie Post aus dem E-Mail-Postfach** (seit 0.265.0, dms #999): Eine E-Mail ist genau eine Post. Post mit Kanal *E-Mail* teilt der Kern für kein Paket (`teile` oder `anlagen`: 409) – Trennblätter gelten im Postfach nicht. Lass den Kanal in der Auswahl „Nur Post aus diesen Kanälen“ weg. Die abgeholte E-Mail selbst trägt `originalEmail: true` (letzte Anlage am letzten Anhang, ohne Anhänge das Hauptdokument), `eingangNr` die Reihenfolge der Anhänge; Erkennung, Klassifizieren und KI-Pakete bekommen ihren Text nie.
 
+## Ausprobieren anbieten { #ausprobieren-anbieten }
+
+Mit `code.ausprobieren` zeigt Ablago bei deinem Paket den Reiter **Ausprobieren** (#1004): Der Administrator lädt eine Datei hoch, und dein Paket zeigt, was es damit tun würde – ohne etwas zu ändern.
+
+```yaml
+code:
+  ereignisse: [post.angelegt]
+  ausprobieren:
+    ereignis: post.angelegt                   # muss in code.ereignisse stehen
+    dateiarten: [application/pdf, "image/*"]  # 1 bis 20 Dateiarten
+    hilfe: Zeigt, wo Trennblätter erkannt werden und welche Seiten leer sind.
+```
+
+- Dein Paket bekommt das genannte Ereignis wie sonst (`dms_ereignis`), dazu **`"probe": true`**. Unter `daten` stehen `dokument` (Id der Probedatei), `name`, `mime` und `groesse`; `einstellungen` sind die **gerade im Formular eingetragenen**, noch nicht gespeicherten Werte.
+- Die Datei liest es mit `GET /dokumente/<id>` – wie bei [Aktionen im Menü „Mappe“](#aktionen-im-menue-mappe). **Sonst nichts:** Im Probemodus gibt es weder das Dienstkonto noch Mappen oder andere Dokumente (403 bzw. 404), der eigene Speicher ist nur lesbar. Netz wie immer.
+- **Ergebnis zum Anzeigen** über `ergebnis`: `{"zeilen": ["2 leere Seiten entfernt"], "seiten": [{"seite": 1, "text": "Barcode ABLAGO-TRENNEN"}]}` (auch unter `"ergebnis": {…}`); jede andere Antwort zeigt Ablago als Textzeilen. Höchstens 200 Zeilen bzw. Seiten, je 500 Zeichen.
+- **Erzeugte Datei** (z. B. die Archivfassung) mit `POST /dateien?name=…&typ=…` ablegen – höchstens 3 Dateien je 10 MB. Ablago bietet sie zum Ansehen und Herunterladen an; gespeichert wird nichts.
+- Dauer und Speicher zeigt Ablago mit; die Grenzen des Läufers gelten wie immer. Im Verlauf steht nur „ausprobiert von …“.
+- Ältere Ablago-Versionen ignorieren `code.ausprobieren`.
+
 ## Aktionen im Menü „Mappe“ { #aktionen-im-menue-mappe }
 
 Seit Ablago 0.245.0 (dms #1039) meldet ein Paket Aktionen für das Menü **Mappe ▾** an – z. B. „Vorlage hinzufügen“ am Vertrag oder „Als bezahlt markieren“ an der Rechnung. Das Paket bringt **keine Oberfläche** mit: Es antwortet mit einer **Dialog-Beschreibung als Daten** oder mit einem **Ergebnis**, Ablago zeigt den Dialog mit seinen Bausteinen und wendet das Ergebnis mit dem Zugriff der Person an. Nie HTML oder JavaScript aus Paketen.
