@@ -48,6 +48,8 @@ export function mappenRouten(k: RoutenKontext): Route[] {
       return ok(r, 201);
     } },
     { methode: 'POST', pfad: '/api/mappen/:id/fotos', zugang: 'angemeldet', handler: async (a) => {
+      // Erst das Recht an der Mappe (#1262), dann der eigene Fotostapel.
+      await darf(a, a.params.id, 'U');
       const i = ich(a);
       const ids = (b(a) as { stapel?: unknown }).stapel;
       const fotos = await fotostapel.nimm(i.id, ids);

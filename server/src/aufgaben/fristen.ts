@@ -42,6 +42,7 @@ export class Fristen {
   private gueltigkeit() { return this.anschluss.gueltigkeit(); }
   private siehtOhneEmpfaenger(ich: { id: string; rolle: string }) { return this.teile.ohneEmpfaenger.siehtOhneEmpfaenger(ich); }
   private lesbare(...a: Parameters<ZugriffDienst['lesbare']>) { return this.teile.rechte.lesbare(...a); }
+  private pruefeRecht(...a: Parameters<ZugriffDienst['pruefeRecht']>) { return this.teile.rechte.pruefeRecht(...a); }
   private aendereMappe(...a: Parameters<MappenDienst['aendereMappe']>) { return this.teile.mappen.aendereMappe(...a); }
 
   /**
@@ -240,6 +241,8 @@ export class Fristen {
   async setzeFolgetermin(aufgabeId: string, ich: { id: string; rolle: string }, z?: Zugriff) {
     const a = await this.repo.holeAufgabe(aufgabeId);
     if (!a) throw new Fachfehler(404, t('meldungen.dienst.diese-aufgabe-gibt-es'));
+    // Erst das Recht an der Mappe, dann den Folgetermin daraus (#1262): sonst verrät ein 409 Fremden etwas über die Frist.
+    await this.pruefeRecht(z, a.mappeId, 'U');
     const naechster = await this.folgeterminVon(a);
     if (!naechster) throw new Fachfehler(409, t('meldungen.dienst.das-datum-hat-sich'));
     return this.aendereMappe(a.mappeId, { werte: { [a.feldKey!]: naechster } }, ich.id, z);

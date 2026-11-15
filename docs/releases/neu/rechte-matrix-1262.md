@@ -1,0 +1,6 @@
+art: patch
+
+## Sicherheit
+
+- **Rechte-Matrix** (#1262): Ein dauerhafter Test ruft jede Route mit jeder Rolle auf. Er prüft Anfragen ohne Anmeldung, ohne Verwaltungsrecht, ohne Verwaltungsmodus, mit nur einem Verwaltungsbereich, mit API-Schlüssel und ohne Kennung `X-DMS`. Dazu prüft er auf Objektebene fremde Mappen, Dokumente, Notizen, Aufgaben, Abläufe und den Papierkorb. Neue Routen sind automatisch dabei; Ausnahmen stehen in einer festen, begründeten Liste.
+- **Rechte zuerst** (#1262): „Nächster Termin“ einer Frist, „Ähnliche Mappen“ und „Fotos an eine Mappe“ prüfen jetzt zuerst das Recht an der Mappe und erst danach alles andere. Wer keine Rechte hat, bekommt sofort eine Ablehnung statt einer anderen Meldung.

@@ -333,9 +333,10 @@ export class SucheDienst {
    * Mappen, zusammengefasst je Mappe. verfuegbar = es gibt ein Paket mit dms:vektoren.
    */
   async aehnlicheZurMappe(z: Zugriff | undefined, mappeId: string): Promise<{ verfuegbar: boolean; berechnet: boolean; mappen: Array<{ id: string; titel: string; typId: string; dokument: { id: string; name: string }; aehnlichkeit: number }> }> {
+    // Erst das Leserecht (#1262), auch wenn es ohne Paket nichts zu zeigen gibt.
+    await this.pruefeRecht(z, mappeId, 'R');
     const paket = this.vektorAnbieter?.paket() ?? null;
     if (!paket) return { verfuegbar: false, berechnet: false, mappen: [] };
-    await this.pruefeRecht(z, mappeId, 'R');
     const modell = this.aktuellesVektorModell();
     const index = modell ? await this.vektorIndex(modell) : null;
     const eigene = (await this.repo.dokumenteVon([mappeId])).map((d) => d.id);
