@@ -133,6 +133,8 @@ export function werkbankUebersichtRouten(k: RoutenKontext): Route[] {
     { methode: 'GET', pfad: '/api/werkbank/uebersicht', zugang: 'admin', handler: async (a) => {
       const sicher = async <T>(f: () => Promise<T>): Promise<T | null> => { try { return await f(); } catch { return null; } };
       const ts = x.tresor ? await sicher(() => x.tresor!.status()) : null;
+      // Anbindung (#1341): einmal lesen – „Neustart nötig“ aus der Datei, in allen Prozessen gleich.
+      const anb = x.anbindung ? await sicher(() => x.anbindung!.stand()) : null;
       const z = await dienst.sichten.zaehler(ich(a));
       const aufgaben = await dienst.ohneLeserecht.alleAufgaben(false);
       const korb = await dienst.papierkorbVerwaltung.papierkorb(ich(a), true);
@@ -183,10 +185,10 @@ export function werkbankUebersichtRouten(k: RoutenKontext): Route[] {
         // Erweiterungen der Suche (#562): fehlend oder in einem Schema, das eine Wiederherstellung löscht.
         erweiterungen: x.erweiterungen ? (await sicher(() => x.erweiterungen!()))?.filter((e) => e.zustand !== 'ok') ?? [] : [],
         // Je Variable mit Grund (#478).
-        variablen: ueberfluessigeVariablen({ ordner: x.ordner?.ueberfluessig, datenbank: x.anbindung?.stand().umgebung === 'gleich', haushalt: !!(x.mandantHinweis && process.env.HAUSHALT_ID) }),
+        variablen: ueberfluessigeVariablen({ ordner: x.ordner?.ueberfluessig, datenbank: anb?.umgebung === 'gleich', haushalt: !!(x.mandantHinweis && process.env.HAUSHALT_ID) }),
         // DATABASE_URL weicht von der Anbindung in /data/geheim ab und wird ignoriert (#119); dms-komplett ohne Volume
         // für /data/postgres (#943): Die Datenbank ginge beim nächsten Update verloren.
-        anbindung: x.anbindung ? { umgebung: x.anbindung.stand().umgebung, neustartNoetig: x.anbindung.stand().neustartNoetig, ohneVolume: x.anbindung.stand().ohneVolume } : null,
+        anbindung: anb ? { umgebung: anb.umgebung, neustartNoetig: anb.neustartNoetig, ohneVolume: anb.ohneVolume } : null,
         // Beispiel-Ablage (#988): Zahl der Beispiel-Mappen aus Paketen – die Übersicht kennzeichnet sie, bis sie weg sind.
         beispielablage: (await sicher(async () => (await dienst.kern.repo.listePakete()).reduce((n, p) => n + (p.beispielMappen?.length ?? 0), 0))) ?? 0,
         // DMS_LASTTEST in einer echten Installation (#612): nicht gestartet, das DMS läuft normal.

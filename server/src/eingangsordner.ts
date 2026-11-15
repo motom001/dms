@@ -194,7 +194,7 @@ export class Eingangsordner {
     const neu = pruefeEingangEinstellung(x, await this.einstellung());
     await this.d.einstellungen.schreibe('eingangsordner', neu);
     log.info('Eingangsordner eingestellt', { von, ...neu });
-    this.plane(neu.abstand);
+    this.neuPlanen(neu.abstand);
     return this.stand();
   }
 
@@ -259,6 +259,11 @@ export class Eingangsordner {
     log.info(`Eingangsordner ${this.pfad} gefunden${e.aktiv ? ` – wird alle ${e.abstand} Sekunden geprüft` : ' – ausgeschaltet (Werkbank → Eingangsordner)'}`);
     this.plane(e.abstand);
   }
+  /**
+   * Nach dem Speichern neu planen. Mehrere Prozesse (#1341): Prüfen und Zeitgeber gibt es nur im Leiter – in den anderen
+   * Prozessen leitet `teileArbeit` das an ihn weiter, statt dort einen eigenen Zeitgeber zu starten.
+   */
+  neuPlanen: (sekunden: number) => void = (sekunden) => this.plane(sekunden);
   private plane(sekunden: number) {
     if (this.zeitgeber) clearInterval(this.zeitgeber);
     if (!this.vorhanden) return;

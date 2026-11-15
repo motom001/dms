@@ -276,6 +276,11 @@ export class Sicherung {
   get dateiOrdner() { return join(this.dateiWurzel, this.haushaltId); }
   get einstellungen() { return this.q.einstellungen; }
   aktuellerLauf(): Lauf | null { return this.lauf ? { ...this.lauf } : null; }
+  /**
+   * Stand für die Routen (#1341): hier der eigene Lauf; in weiteren Prozessen fragt `teileArbeit` den Leiter, der den Lauf
+   * hält – der Spiegel (`aktuellerLauf()`) kann dort bis zu einer Sekunde alt sein oder nach dem Start noch fehlen.
+   */
+  laufStand: () => Promise<Lauf | null> = async () => this.aktuellerLauf();
   laeuft() { return this.lauf?.status === 'laeuft'; }
 
   /** Ein einziger Lauf zur Zeit (Sicherung, Prüfung, später Wiederherstellung). */

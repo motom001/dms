@@ -117,7 +117,7 @@ describe('Datenbank ohne Volume (#943)', () => {
       const { benutzer: markus } = await konten.einrichten({ email: 'markus@example.org', name: 'Markus', passwort: 'ein-langes-passwort' });
       await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
       const anbindung = new AnbindungVerwaltung('/gibt-es-nicht', A, null, () => {}, undefined, ohne);
-      assert.equal(anbindung.stand().ohneVolume, ohne);
+      assert.equal((await anbindung.stand()).ohneVolume, ohne);
       const tabelle = routen(d, konten, { anbindung });
       const rufe = async (methode: string, pfad: string, body: Record<string, unknown> = {}) => {
         const r = tabelle.find((x) => x.methode === methode && x.pfad === pfad);

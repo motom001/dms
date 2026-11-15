@@ -194,29 +194,33 @@ export interface AnbindungStand {
 }
 
 export class AnbindungVerwaltung {
-  private gespeichert: Anbindung;
   constructor(readonly ordner: string, private laufend: Anbindung, private umgebung: Anbindung | null, private neustartFn: () => void,
-    private pruefer: (a: Anbindung) => Promise<Pruefung> = (a) => pruefeAnbindung(a), private ohneVolume = datenbankOhneVolume(process.env)) {
-    this.gespeichert = laufend;
-  }
+    private pruefer: (a: Anbindung) => Promise<Pruefung> = (a) => pruefeAnbindung(a), private ohneVolume = datenbankOhneVolume(process.env)) {}
 
-  stand(): AnbindungStand {
+  /**
+   * Gespeicherte Anbindung (#1341): aus der Datei, nicht aus dem Speicher des Prozesses, der gespeichert hat – so zeigen
+   * alle Prozesse (und weitere Server mit demselben Ordner) dasselbe „Neustart nötig“. Ohne (lesbare) Datei: die laufende.
+   */
+  private async gespeichert(): Promise<Anbindung> { return (await liesAnbindung(this.ordner).catch(() => null)) ?? this.laufend; }
+
+  async stand(): Promise<AnbindungStand> {
+    const gespeichert = await this.gespeichert();
     return {
-      anbindung: ansicht(this.gespeichert)!, datei: join(this.ordner, ANBINDUNG_DATEI),
+      anbindung: ansicht(gespeichert)!, datei: join(this.ordner, ANBINDUNG_DATEI),
       umgebung: !this.umgebung ? 'fehlt' : gleicheVerbindung(this.umgebung, this.laufend) ? 'gleich' : 'abweichend',
-      neustartNoetig: !gleicheVerbindung(this.gespeichert, this.laufend),
+      neustartNoetig: !gleicheVerbindung(gespeichert, this.laufend),
       imContainer: process.env.DMS_VARIANTE === 'komplett',
       ohneVolume: this.ohneVolume,
     };
   }
 
-  private eingabe(x: unknown): Anbindung { return anbindungAus(x, this.gespeichert); }
+  private async eingabe(x: unknown): Promise<Anbindung> { return anbindungAus(x, await this.gespeichert()); }
 
-  async pruefe(x: unknown): Promise<Pruefung> { return this.pruefer(this.eingabe(x)); }
+  async pruefe(x: unknown): Promise<Pruefung> { return this.pruefer(await this.eingabe(x)); }
 
   /** Erst testen, dann übernehmen; eine leere Datenbank nur mit ausdrücklicher Bestätigung. */
   async speichere(x: unknown, von: string): Promise<AnbindungStand & { pruefung: Pruefung }> {
-    const a = this.eingabe(x);
+    const a = await this.eingabe(x);
     const p = await this.pruefer(a);
     if (!p.ok) throw new Fachfehler(422, p.text, { pruefung: p });
     const leer = !p.eingerichtet || p.benutzer === 0;
@@ -224,9 +228,8 @@ export class AnbindungVerwaltung {
       throw new Fachfehler(409, t('meldungen.anbindung.in-dieser-datenbank-gibt'), { pruefung: p, leer: true });
     }
     await schreibeAnbindung(this.ordner, { ...a, mandant: leer ? undefined : this.laufend.mandant });
-    this.gespeichert = a;
     protokoll.modul('system').warn('Datenbank-Anbindung geändert – gilt nach dem Neustart', { von, host: a.host, port: a.port, datenbank: a.datenbank, benutzer: a.benutzer });
-    return { ...this.stand(), pruefung: p };
+    return { ...await this.stand(), pruefung: p };
   }
 
   neustart(von: string) {

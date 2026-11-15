@@ -58,9 +58,9 @@ describe('Datenbank-Anbindung (#119)', () => {
     const o = await ordner();
     let antwort: Pruefung = { ok: false, art: 'anmeldung', text: 'Passwort falsch', technisch: '28P01' };
     const v = new AnbindungVerwaltung(o, { ...A, mandant: 'm' }, { ...A, host: 'anders' }, () => {}, async () => antwort);
-    assert.equal(v.stand().umgebung, 'abweichend');
-    assert.equal(v.stand().anbindung.passwortGesetzt, true);
-    assert.ok(!('passwort' in v.stand().anbindung));
+    assert.equal((await v.stand()).umgebung, 'abweichend');
+    assert.equal((await v.stand()).anbindung.passwortGesetzt, true);
+    assert.ok(!('passwort' in (await v.stand()).anbindung));
     await assert.rejects(v.speichere({ host: 'db2', port: 5432, datenbank: 'dms', benutzer: 'dms' }, 'admin'), /Passwort falsch/);
     antwort = { ok: true, postgres: '17', eingerichtet: false, benutzer: 0 };
     await assert.rejects(v.speichere({ host: 'db2', port: 5432, datenbank: 'dms', benutzer: 'dms' }, 'admin'), (e: unknown) => e instanceof Fachfehler && e.status === 409);
