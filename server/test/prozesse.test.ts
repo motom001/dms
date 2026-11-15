@@ -26,7 +26,7 @@ import { bedieneLaeufer, Fernlaeufer } from '../src/laeufer/fern';
 import type { Paketlaeufer } from '../src/laeufer/verwaltung';
 import { Paketverwaltung } from '../src/pakete';
 import { kontext } from '../src/protokoll';
-import { einzeln, empfohleneProzesse, haldeJeProzess, haldeLeiter, prozesseAus, type Verbund } from '../src/prozesse';
+import { BEENDEN_MS, einzeln, empfohleneProzesse, haldeJeProzess, haldeLeiter, prozesseAus, type Verbund } from '../src/prozesse';
 import { speicherRepo } from '../src/repo-speicher';
 import { Tresor } from '../src/tresor';
 import { Haushaltsstand, MINDESTENS_MS, Zaehlerspeicher } from '../src/zaehlerspeicher';
@@ -221,6 +221,43 @@ describe('Verbund mit node:cluster (#745)', () => {
       const code = await new Promise((r) => p.once('exit', (c) => r(c)));
       assert.equal(code, 0);
       assert.deepEqual(zeilen.filter((z) => z.art === 'ende').map((z) => z.nr).sort(), [1, 2, 3]);
+    } finally { if (p.exitCode === null) p.kill('SIGKILL'); }
+  });
+});
+
+describe('Beenden mit mehreren Prozessen (#1328)', () => {
+  it('die Frist des Hauptprozesses liegt unter den 10 s von docker stop', () => {
+    assert.ok(BEENDEN_MS <= 8_000, `${BEENDEN_MS} ms`);
+  });
+
+  it('zwei Prozesse, die beim Beenden hängen: Der Hauptprozess beendet sie hart und endet vor den 10 s von docker stop', { timeout: 60_000 }, async () => {
+    const env: NodeJS.ProcessEnv = { ...process.env, LOG_LEVEL: 'warn' };
+    delete env.NODE_TEST_CONTEXT;
+    const p = spawn(process.execPath, ['--import', 'tsx', 'test/hilfen-prozesse-beenden.ts'], { cwd: SERVER, env, stdio: ['ignore', 'pipe', 'pipe'] });
+    const zeilen: Array<Record<string, unknown>> = [];
+    let rest = '', fehler = '';
+    p.stdout.on('data', (d: Buffer) => {
+      rest += d.toString();
+      const teile = rest.split('\n'); rest = teile.pop()!;
+      for (const z of teile) if (z.startsWith('{')) zeilen.push(JSON.parse(z));
+    });
+    p.stderr.on('data', (d: Buffer) => { fehler += d.toString(); });
+    try {
+      for (let i = 0; i < 600 && zeilen.filter((z) => z.art === 'bereit').length < 2; i++) await new Promise((r) => setTimeout(r, 50));
+      const pids = zeilen.filter((z) => z.art === 'bereit').map((z) => Number(z.pid));
+      assert.equal(pids.length, 2, `${JSON.stringify(zeilen)}\n${fehler}`);
+      const los = Date.now();
+      p.kill('SIGTERM');
+      const code = await new Promise((r) => p.once('exit', (c) => r(c)));
+      const dauer = Date.now() - los;
+      assert.equal(code, 0);
+      assert.ok(dauer < 10_000, `Beenden dauerte ${dauer} ms`);
+      assert.ok(dauer >= BEENDEN_MS - 500, `hart erst nach der Frist (${dauer} ms)`);
+      assert.deepEqual(zeilen.filter((z) => z.art === 'haengt').map((z) => z.nr).sort(), [1, 2], 'beide bekamen SIGTERM');
+      await new Promise((r) => setTimeout(r, 200));
+      // Beendet (ein Zombie, den niemand abholt, zählt als beendet – er läuft nicht mehr).
+      const laeuft = (pid: number) => { try { return !/^\d+ \(.*\) Z/.test(readFileSync(`/proc/${pid}/stat`, 'utf8')); } catch { return false; } };
+      for (const pid of pids) assert.equal(laeuft(pid), false, `Prozess ${pid} läuft noch`);
     } finally { if (p.exitCode === null) p.kill('SIGKILL'); }
   });
 });
