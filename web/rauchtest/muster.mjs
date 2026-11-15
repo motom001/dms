@@ -64,39 +64,58 @@ export async function axePruefen(seite, bereich) {
 
 /* ---------- Ruhige Seite (#1266) ---------- */
 
-/** Offene Anfragen je Seite – nur für Kontexte, die `anfragenZaehlen` beobachtet (die Rauchtests tun das immer). */
+/** Offene Anfragen je Seite (Anfrage → Beginn) – nur für Kontexte, die `anfragenZaehlen` beobachtet (die Rauchtests tun das immer). */
 const offen = new WeakMap();
 /**
- * Anfragen eines Browser-Kontexts mitzählen, damit `seiteRuhig` auf ihr Ende warten kann. Einmal je Kontext aufrufen,
+ * Anfragen eines Browser-Kontexts mitschreiben, damit `seiteRuhig` auf ihr Ende warten kann. Einmal je Kontext aufrufen,
  * vor der ersten Seite (rauchtest() in hilfen.mjs und musterAufnehmen tun es).
  */
 export function anfragenZaehlen(kontext) {
-  const zaehle = (r, d) => {
+  const liste = (r) => {
     let seite;
-    try { seite = r.frame().page(); } catch { return; } // Anfragen von Service Workern gehören zu keiner Seite.
-    offen.set(seite, Math.max(0, (offen.get(seite) ?? 0) + d));
+    try { seite = r.frame().page(); } catch { return null; } // Anfragen von Service Workern gehören zu keiner Seite.
+    if (!offen.has(seite)) offen.set(seite, new Map());
+    return offen.get(seite);
   };
-  kontext.on('request', (r) => zaehle(r, 1));
-  kontext.on('requestfinished', (r) => zaehle(r, -1));
-  kontext.on('requestfailed', (r) => zaehle(r, -1));
+  kontext.on('request', (r) => liste(r)?.set(r, Date.now()));
+  kontext.on('requestfinished', (r) => liste(r)?.delete(r));
+  kontext.on('requestfailed', (r) => liste(r)?.delete(r));
+}
+
+/** Höchstens so lange wartet `seiteRuhig` (ms). */
+export const RUHE_GRENZE = 3000;
+/** Ältere offene Anfragen zählen nicht: Sie laufen dauerhaft oder ihr Ende kam nie an (z. B. abgebrochen beim Seitenwechsel). */
+const ANFRAGE_HOECHSTENS = 2000;
+
+/** Offene, junge Anfragen der Seite (für das Warten und das Protokoll). */
+function offeneAnfragen(seite) {
+  const jetzt = Date.now();
+  return [...(offen.get(seite)?.entries() ?? [])].filter(([, t]) => jetzt - t < ANFRAGE_HOECHSTENS).map(([r]) => r);
 }
 
 /**
  * Warten, bis die Seite ruhig ist (#1266) – vor axe und vor der Messung der Tippflächen:
  *   - die Maus steht nicht über einem Element (Hover ändert Farben; abschaltbar mit `maus: false`),
- *   - keine Anfrage läuft mehr (nur mit `anfragenZaehlen` am Kontext; z. B. der Systemzustand, der nachlädt),
+ *   - keine junge Anfrage läuft mehr (nur mit `anfragenZaehlen` am Kontext; z. B. der Systemzustand, der nachlädt) –
+ *     Anfragen, die schon 2 s offen sind, zählen nicht (dauerhafte Verbindungen, verlorene Enden),
  *   - Schriften sind geladen, keine endliche Animation und kein Übergang läuft (`document.getAnimations()`; Endlos-
  *     Animationen wie ein Ladekreis zählen nicht, sie enden nie),
  *   - das Layout ist über zwei Animationsbilder gleich (Rollstand, Seitengröße, Lage der Bedienelemente).
- * Gewartet wird auf Zustände, nie eine feste Zeit. Wird die Seite in 10 s nicht ruhig, misst der Aufrufer trotzdem –
- * eine dauernd zappelnde Seite fällt dann in der Messung selbst auf.
+ * Gewartet wird auf Zustände, nie eine feste Zeit. Wird die Seite in 3 s nicht ruhig, steht im Testprotokoll eine
+ * Zeile, welche Bedingung offen war, und der Aufrufer misst trotzdem.
  */
 export async function seiteRuhig(seite, { maus = true } = {}) {
   if (maus) await seite.mouse.move(0, 0);
-  const ende = Date.now() + 10_000;
-  for (let runde = 0; runde < 3; runde++) {
-    while ((offen.get(seite) ?? 0) > 0 && Date.now() < ende) await new Promise((r) => setTimeout(r, 25));
-    await seite.evaluate((frist) => new Promise((fertig) => {
+  const ende = Date.now() + RUHE_GRENZE;
+  let grund = '';
+  while (Date.now() < ende) {
+    const anfragen = offeneAnfragen(seite);
+    if (anfragen.length) {
+      grund = `Anfragen offen: ${anfragen.slice(0, 3).map((r) => new URL(r.url()).pathname).join(', ')}`;
+      await new Promise((r) => setTimeout(r, 25));
+      continue;
+    }
+    grund = await seite.evaluate((frist) => new Promise((fertig) => {
       const BEDIEN = 'a[href], button, input, select, textarea, summary, [role="button"]';
       const lage = () => {
         const d = document.documentElement;
@@ -105,19 +124,26 @@ export async function seiteRuhig(seite, { maus = true } = {}) {
         for (const el of [...document.querySelectorAll(BEDIEN)].slice(0, 300)) { const r = el.getBoundingClientRect(); teile.push(Math.round(r.left), Math.round(r.top), Math.round(r.width), Math.round(r.height)); }
         return teile.join(',');
       };
-      const laeuft = () => document.getAnimations().some((a) => a.playState === 'running' && a.effect?.getComputedTiming().iterations !== Infinity);
+      const laufend = () => document.getAnimations().filter((a) => a.playState === 'running' && a.effect?.getComputedTiming().iterations !== Infinity);
       let vorher = null, gleich = 0;
       const pruefe = () => {
         const jetzt = lage();
-        gleich = jetzt === vorher && !laeuft() ? gleich + 1 : 0;
+        const an = laufend();
+        gleich = jetzt === vorher && !an.length ? gleich + 1 : 0;
+        const war = vorher;
         vorher = jetzt;
-        if (gleich >= 2 || Date.now() > frist) fertig(); else requestAnimationFrame(pruefe);
+        if (gleich >= 2) fertig('');
+        else if (Date.now() > frist) {
+          const ziel = (x) => { const t = x.effect?.target; return t ? `${t.tagName.toLowerCase()}${t.className && typeof t.className === 'string' ? `.${t.className.split(' ')[0]}` : ''}` : '?'; };
+          fertig(an.length ? `Animation läuft: ${an.slice(0, 3).map((x) => `${x.animationName ?? x.transitionProperty ?? x.constructor.name} an ${ziel(x)}`).join(', ')}` : war !== jetzt ? 'Layout bewegt sich' : 'unbekannt');
+        } else requestAnimationFrame(pruefe);
       };
       void document.fonts.ready.then(() => requestAnimationFrame(pruefe));
     }), ende);
     // Hat das Warten neue Anfragen ausgelöst (z. B. ein Übergang, der nachlädt), noch eine Runde.
-    if ((offen.get(seite) ?? 0) === 0 || Date.now() > ende) return;
+    if (!grund && !offeneAnfragen(seite).length) return;
   }
+  console.log(`# seiteRuhig: nach ${RUHE_GRENZE / 1000} s nicht ruhig auf ${new URL(seite.url()).pathname} – ${grund || 'Anfragen offen'}; gemessen wird trotzdem`);
 }
 
 /** Mindestmaß einer Tippfläche am Handy (#1027, Musterkatalog D6 „Tippziele ≥ 44 pt“). */
