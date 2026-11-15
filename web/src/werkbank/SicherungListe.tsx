@@ -1,12 +1,13 @@
 import { HakenFeld, Knopf, Wahlhaken } from '../bausteine';
 import { useState, type ReactNode } from 'react';
 import { Symbol } from '../Symbol';
-import { betriebApi, type ExternZustand, type SicherungEintrag, type SicherungsPlan, type SicherungStand } from '../api/betrieb';
+import { betriebApi, type SicherungEintrag, type SicherungsPlan, type SicherungStand } from '../api/betrieb';
 import { t, tn } from '../sprache';
 import { useHandbuch } from '../Hilfe';
 import { gebietsschema } from '../../../shared/src/sprache';
 import { heikelLaden } from '../verwaltungsmodus';
 import { bytes, externStatus, zeit, zielName } from './sicherungFormat';
+import { EntfernteZeile, EntferntKopf, mitEntfernten, useHolen } from './SicherungEntfernt';
 
 /**
  * Liste der Sicherungen (#103, #975, #986) mit Mehrfachauswahl (#1169): Haken je Sicherung, „Alle auswählen“ und
@@ -37,10 +38,16 @@ function Aufbewahrung({ plan }: { plan: SicherungsPlan }) {
   return <p className="leise klein">{text} <a href="#zeitplan" className="verweis">{t('werkbank.sicherung.liste.aufbewahrung.aendern')}</a></p>;
 }
 
-/** Zelle „Wo“: „lokal ✓ · extern ✓ geprüft“ – je Paket ein Teil, Einzelheiten im Titel. */
-function OrtZelle({ e, extern }: { e: SicherungEintrag; extern: ExternZustand | null | undefined }) {
+/**
+ * Zelle „Wo“: „lokal ✓ · extern ✓ geprüft“ – je Paket ein Teil, Einzelheiten im Titel. `amZiel` (#976): Pakete, deren
+ * Ziel die Sicherung ebenfalls führt, ohne dass Ablago einen Stand dazu hat (z. B. nach dem Neuaufsetzen).
+ */
+function OrtZelle({ e, s }: { e: SicherungEintrag; s: SicherungStand }) {
+  const extern = s.zustand.extern;
+  const amZiel = s.entfernt?.auchAmZiel[e.name] ?? [];
   const staende = Object.entries(e.extern ?? {});
-  const mehrere = staende.length > 1;
+  const nurListe = amZiel.filter((id) => !e.extern?.[id]);
+  const mehrere = staende.length + nurListe.length > 1;
   return (
     <span className="ort-zelle">
       <span className="gutertext">{t('werkbank.sicherung.extern.lokal')} <Symbol name="haken" /></span>
@@ -56,6 +63,7 @@ function OrtZelle({ e, extern }: { e: SicherungEintrag; extern: ExternZustand | 
           </span>
         );
       })}
+      {nurListe.map((id) => <span key={id}>{' · '}<span className="gutertext">{mehrere ? `${extern ? zielName(extern, id) : id}: ` : ''}{t('werkbank.sicherung.entfernt.am-ziel')} <Symbol name="haken" /></span></span>)}
     </span>
   );
 }
@@ -111,7 +119,7 @@ function Zeile({ x, s, ortSpalte, an, waehle, geschuetzt, fehlschlag, aktionen }
         {x.meta && s.zustand.fingerabdruck && x.meta.verschluesselung.fingerabdruck !== s.zustand.fingerabdruck && <> <span className="chip warn" title={t('werkbank.sicherung.schluessel-braucht-das-notfallblatt', { fingerabdruck: x.meta.verschluesselung.fingerabdruck })}>{t('werkbank.sicherung.frueherer-schluessel')}</span></>}</td>
       <td className="rechts kurz">{bytes(x.bytes)}</td>
       <td>{x.meta ? t('werkbank.sicherung.mappen-dateien', { mappen: x.meta.anzahl.mappen.toLocaleString(gebietsschema()), dateien: x.meta.anzahl.dateien.toLocaleString(gebietsschema()) }) : '–'}{x.meta && <span className="leise klein"> {' '}{t('werkbank.sicherung.ablago', { dms: x.meta.umgebung.dms })}</span>}</td>
-      {ortSpalte && <td><OrtZelle e={x} extern={s.zustand.extern} /></td>}
+      {ortSpalte && <td><OrtZelle e={x} s={s} /></td>}
       <td>{x.pruefung ? <span className={`chip ${x.pruefung.ok ? 'gut' : 'schlecht'}`} title={t('werkbank.sicherung.geprueft', { zeit: zeit(x.pruefung.am) })}>{x.pruefung.ok ? t('werkbank.sicherung.unveraendert') : t('werkbank.sicherung.weicht-ab')}</span> : <span className="leise">–</span>}</td>
       <td>{x.probe ? <span className={`chip ${x.probe.ok ? 'gut' : 'schlecht'}`} title={`${zeit(x.probe.am)}: ${x.probe.info}`}>{x.probe.ok ? t('werkbank.sicherung.in-ordnung') : t('werkbank.sicherung.fehler')}</span> : <span className="leise">–</span>}</td>
       <td className="kurz"><span className="sicherung-aktionen">{aktionen}</span></td>
@@ -129,8 +137,9 @@ export function SicherungListe({ s, laeuft, laden }: { s: SicherungStand; laeuft
   const [fehlschlaege, setFehlschlaege] = useState<Fehlschlag[]>([]);
   // Sicherungen mit einem früheren Schlüssel (#47).
   const alte = s.liste.filter((x) => x.meta && s.zustand.fingerabdruck && x.meta.verschluesselung.fingerabdruck !== s.zustand.fingerabdruck);
-  // Spalte „Wo“ (#585), sobald es ein Ziel außer Haus gibt oder eine Sicherung schon einen Stand hat.
-  const ortSpalte = !!s.zustand.extern?.ziele.length || s.liste.some((x) => x.extern);
+  // Entfernte Sicherungen (#976): mit in der Liste, nach Zeitpunkt einsortiert; Spalte „Wo“ auch für sie.
+  const { zeilen, nurEntfernt, ortSpalte } = mitEntfernten(s);
+  const { holt, hole } = useHolen(s, laden, (text) => setMeldung({ art: 'schlecht', text }), setGeladen);
   const schutz = geschuetzteSicherung(s.liste);
   const waehlbar = s.liste.filter((x) => x.name !== schutz?.name).map((x) => x.name);
   const gewaehlt = s.liste.filter((x) => auswahl.has(x.name) && x.name !== schutz?.name);
@@ -182,7 +191,8 @@ export function SicherungListe({ s, laeuft, laden }: { s: SicherungStand; laeuft
             {t('werkbank.sicherung.sicherungen-mit-frueherem-schluessel-2')}</Knopf></div>
         </div>
       )}
-      {!s.liste.length ? <p className="leise">{tn('werkbank.sicherung.noch-keine-sicherung-im', { span: <span className="mono">{s.zustand.ort.ordner}</span> })}</p> : <>
+      {s.entfernt && <EntferntKopf stand={s.entfernt} laden={laden} />}
+      {!s.liste.length && !nurEntfernt.length ? <p className="leise">{tn('werkbank.sicherung.noch-keine-sicherung-im', { span: <span className="mono">{s.zustand.ort.ordner}</span> })}</p> : <>
         <div className="zeile sicherung-auswahl">
           <HakenFeld beschriftung={t('werkbank.sicherung.liste.alle')}>
             <input type="checkbox" disabled={!waehlbar.length || loescht} checked={!!waehlbar.length && gewaehlt.length === waehlbar.length} onChange={(x) => setAuswahl(x.target.checked ? new Set(waehlbar) : new Set())} />
@@ -200,7 +210,9 @@ export function SicherungListe({ s, laeuft, laden }: { s: SicherungStand; laeuft
         {fehlschlaege.length > 0 && <div className="hinweis schlecht" role="alert"><p>{t('werkbank.sicherung.liste.fehlschlaege', { anzahl: fehlschlaege.length })}</p><ul>{fehlschlaege.map((x) => <li key={x.name}>{x.wann}: {x.grund}</li>)}</ul></div>}
         <div className="trefferliste"><table>
           <thead><tr><th><span className="sr">{t('werkbank.sicherung.liste.auswahl')}</span></th><th>{t('werkbank.sicherung.zeitpunkt')}</th><th>{t('werkbank.sicherung.art')}</th><th className="rechts">{t('werkbank.sicherung.groesse')}</th><th>{t('werkbank.sicherung.inhalt')}</th>{ortSpalte && <th>{t('werkbank.sicherung.extern.spalte')}</th>}<th>{t('werkbank.sicherung.pruefsumme')}</th><th>{t('werkbank.sicherung.probe')}</th><th><span className="sr">{t('werkbank.sicherung.aktionen')}</span></th></tr></thead>
-          <tbody>{s.liste.map((x) => (
+          <tbody>{zeilen.map(({ x, e }) => e ? (
+            <EntfernteZeile key={`${e.paket}:${e.name}`} e={e} ortSpalte={ortSpalte} gesperrt={laeuft || loescht} holt={holt === e.name && laeuft} hole={(danach) => { setMeldung(undefined); void hole(e, danach); }} />
+          ) : x && (
             <Zeile key={x.name} x={x} s={s} ortSpalte={ortSpalte} an={auswahl.has(x.name) || geladen === x.name} waehle={(an) => waehle(x.name, an)} geschuetzt={x.name === schutz?.name}
               fehlschlag={fehlschlaege.find((f) => f.name === x.name)}
               aktionen={<>

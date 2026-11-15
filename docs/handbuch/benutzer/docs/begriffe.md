@@ -609,7 +609,7 @@ Der geheime Schlüssel, mit dem Passwortfelder und Sicherungen verschlüsselt si
 Siehe auch: [Fingerabdruck](#fingerabdruck), [Notfallblatt](#notfallblatt).
 
 <a id="sicherung"></a>**Sicherung** · ✓ Alltagswort · Administratoren  
-Eine verschlüsselte Gesamtsicherung, die sich in Ablago zurückspielen lässt. Kein Export – ohne Ablago nicht lesbar.  
+Eine verschlüsselte Gesamtsicherung, die sich in Ablago zurückspielen lässt. Kein Export – ohne Ablago nicht lesbar. Mit einem Ziel außer Haus gibt es sie lokal, am Ziel oder an beiden Orten; eine Sicherung „nur außer Haus“ holt Ablago zum Herunterladen, Prüfen oder Wiederherstellen erst zurück.  
 Siehe auch: [Wiederherstellen](#wiederherstellen), [Probe-Wiederherstellung](#probe-wiederherstellung), [Vollexport](#vollexport).
 
 <a id="speicherplatz"></a>**Speicherplatz** · ✓ Alltagswort · Administratoren  

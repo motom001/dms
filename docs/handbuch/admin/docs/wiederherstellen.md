@@ -31,6 +31,8 @@ Dieser Weg ist nur offen, solange es noch keinen Benutzer gibt, und nur mit dem 
 
 ### Aus einer Kopie außer Haus { #aus-einer-kopie-ausser-haus }
 
+Läuft Ablago noch (oder wieder) und kann das Paket des Ziels Sicherungen zurückholen, geht es ohne Handarbeit: In **Werkbank → Sicherung** bei der Sicherung *nur außer Haus* **Prüfen** oder **Herunterladen** wählen – danach liegt sie samt `.json` im Sicherungsordner (siehe [Sicherungen, die es nur noch außer Haus gibt](sicherung-ausser-haus.md#nur-ausser-haus)). Sonst:
+
 Ist das Gerät weg, holst du beide Dateien vom [Ziel außer Haus](sicherung-ausser-haus.md) – die `.dms-sicherung` und die `.json` daneben – und legst sie in den Ordner `sicherung`. Die `.json` dort ist die **schlanke** Fassung (ohne Versionen, Zähler und Ablage-Id). Die Liste zeigt die Sicherung als *Kopie außer Haus*; sobald du den **Schlüssel vom Notfallblatt** eingibst, liest Ablago Datenbank-Stand, Ablage-Id und Anzahl Mappen, Dokumente und Benutzer aus der Sicherung selbst. Die Ablago-Version, mit der sie entstand, steht dann als „unbekannt“ im Abgleich – maßgeblich ist der Datenbank-Stand. Beim Einspielen prüft Ablago jede Datei gegen ihren Prüfwert und am Ende die ganze Sicherung (GCM-Prüfwert); erst dann wird umgeschaltet.
 
 ## Wiederherstellen ohne Internet { #ohne-internet }

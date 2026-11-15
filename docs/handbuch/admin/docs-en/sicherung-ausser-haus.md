@@ -43,6 +43,16 @@ The email only names the target, never credentials. A single failed attempt that
 
 The [emergency sheet](verschluesselung.md#notfallblatt) names the target (package and address) **without a password**, plus the sentence: *The workbench's key is not on the target. You only open the copy with the key from this sheet.* Download it anew after setting up.
 
+## Backups that only exist off-site { #nur-ausser-haus }
+
+When Ablago removes a backup locally (retention, *Keep only the newest locally* or **Delete**) whose off-site copy has arrived, it stays in the list under **Workbench → Backup** – with **off-site only (name of the destination)** in the **Where** column. Ablago remembers size, checksum and time for this (the newest 100). If the destination's package can **list** backups (right [Fetch backups back](pakete.md#recht-sicherung-lesen)), backups Ablago no longer knows about appear too – for example after a disk failure or on a freshly set-up device. A local backup that the destination also holds shows **at destination ✓**. **Query off-site destinations again** fetches the lists right away; otherwise Ablago asks at most every 2 minutes.
+
+- **Download** on an off-site backup first fetches it back through the package – progress at the top next to *Back up now* –, checks **size and checksum (SHA-256)** against what Ablago recorded when backing up (or against the `.json` at the destination), puts it with the `.json` into the backup folder and then downloads it like any local backup. This is a [sensitive action](verwalten.md#frische-anmeldung) and is logged (module *sicherung*).
+- **Check** fetches it back the same way; the checksum then shows in the **Checksum** column. Afterwards it is local: **Restore** and **Test restore** work as with any other backup.
+- If the package can't fetch backups back (older version), the `.json` is missing at the destination or the checksum differs, Ablago shows **where the file is** (file name at the destination) instead of the buttons, with a link to the guide [From an off-site copy](wiederherstellen.md#aus-einer-kopie-ausser-haus).
+
+The package never gets the key and only delivers what Ablago requests from it. The backup folder needs as much free space as the backup is large.
+
 ## Setting up with "Backup target WebDAV" { #einrichten-mit-sicherungsziel-webdav }
 
 1. **Workbench → Packages**, install *Backup target WebDAV*. The preview shows the permissions: *Read the encrypted backup in order to copy it off site – can't open it* and *Reacts to: A backup is finished*.

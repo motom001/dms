@@ -600,6 +600,8 @@ export class Dienst {
 
   /** Sicherung außer Haus (#585): ein Paket hat das Ereignis sicherung.fertig aufgegeben (index.ts verbindet mit der Sicherung). */
   sicherungAufgegeben?: (paket: string, name: string, fehler: string | null | undefined) => Promise<void>;
+  /** Entfernte Sicherungen (#976): Aufträge „auflisten“ und „holen“ an ein Paket mit dms:sicherung-holen; setzt der Paket-Läufer. */
+  sicherungHolen?: { rufe(paket: string, eingang: Record<string, unknown>, ms?: number): Promise<string> };
   /** Sicherung außer Haus (#636): Antwort des Pakets auf einen Aufruf von sicherung.fertig (index.ts verbindet mit der Sicherung). */
   sicherungAntwort?: (paket: string, name: string, r: EreignisAufruf) => Promise<void>;
 

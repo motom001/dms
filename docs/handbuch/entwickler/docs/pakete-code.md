@@ -18,6 +18,7 @@ Neben Ereignissen und der [API v1](#nutzliche-endpunkte-der-api-v1) bietet der K
 | `dms:volltext` | 0.145.0 | Volltext für Dateien liefern, die der Kern nicht liest (Word, Excel, E-Mails …) – nur mit „Dokumente lesen“ | **[Volltext liefern](#volltext-liefern)** – Ereignis, Schreiben, Grenzen |
 | `dms:archivfassung` | 0.149.0 | Zu Dokumenten mit fertigem Volltext ein durchsuchbares PDF/A ablegen – mit Wortpositionen, nur mit „Dokumente lesen“ | **[Archivfassung ablegen](#archivfassung)** – Ereignis, Wortpositionen, Annahme, Grenzen |
 | `dms:sicherung-lesen` | 0.142.0 | Jede Sicherung verschlüsselt lesen und außer Haus kopieren, Stand in der Antwort melden (nur Leseschlüssel) | **[Sicherung außer Haus](#sicherung-ausser-haus)** – Ereignis, Lesen in Stücken, Rückmeldung |
+| `dms:sicherung-holen` | – | Sicherungen am Ziel auflisten und angeforderte zurückliefern (nur mit `dms:sicherung-lesen`) | **[Sicherungen auflisten und zurückholen](#sicherung-holen)** |
 | `dms:klassifizieren` | 0.226.0 | Mappentyp für „Wohin gehört das?“ vorschlagen – aus dem Anfang des Dokuments und der Liste der Kandidaten; ohne Netz auch aus den Typen ähnlicher Dokumente | **[Mappentyp vorschlagen](#klassifizieren)** – Aufruf, Antwort, Prüfung, Ähnlichkeit |
 | `dms:hinweise` | 0.231.0 | Hinweise an Mappen setzen und entfernen, die das Paket schreiben darf (z. B. „Die Positionen ergeben 118,40 €“) – nur Text, mit Paketnamen, Speichern hindern sie nie | **[Berechnete Felder und Hinweise](#berechnet-und-hinweise)** |
 | `dms:leerseiten` | 0.255.0 | Leere Seiten an Dokumenten in neuer Post markieren – nur markieren, nie löschen; braucht `lesen: [dms:post]` und `dokumente: lesen` | **[Leerseiten markieren](#leerseiten)** |
@@ -1003,6 +1004,25 @@ code:
     **Werkbank → Sicherung** zeigt den Stand je Sicherung („lokal ✓ · extern ✓ geprüft“), die Übersicht einen Hinweis bei Fehlern oder wenn seit mehr als 2 Tagen keine neuere Kopie ankam. Gibt der Läufer das Ereignis nach allen Wiederholungen auf, setzt der Kern selbst `fehlgeschlagen` (endgültig).
 
 Antworten der Endpunkte: 403, wenn das Paket das Recht nicht hat oder die Sicherung ihm nicht gemeldet wurde; 404, wenn sie nicht mehr da ist (Aufbewahrung); 422 bei ungültigen Angaben – alle drei nicht wiederholen. Lokal löscht der Kern nichts, weil die Kopie angekommen ist; die Aufbewahrung lässt eine Sicherung, deren Kopie noch läuft, bis zu 2 Tage stehen.
+
+### Sicherungen auflisten und zurückholen { #sicherung-holen }
+
+Mit dem zusätzlichen Recht `dms:sicherung-holen` (nur zusammen mit `dms:sicherung-lesen`, #976) zeigt **Werkbank → Sicherung** auch Sicherungen, die es nur noch an deinem Ziel gibt, und holt sie auf Wunsch zurück. Der Kern ruft dafür die Aktion `dms:sicherung-holen` auf (wie die anderen [Schnittstellen](#schnittstellen), ohne Inhalt in der Werkbank) – mit `auftrag` im Eingang:
+
+1. **`auflisten`** (Zeitgrenze 30 s, der Kern fragt höchstens alle 2 Minuten): Antworte mit JSON
+
+    ```json
+    { "ziel": "WebDAV https://cloud.example.org/Ablago",
+      "sicherungen": [ { "name": "2026-11-02_0300-automatisch", "groesse": 1834567890,
+                         "meta": { "format": 1, "schlank": true, "datei": "2026-11-02_0300-automatisch.dms-sicherung", "groesse": 1834567890, "sha256": "…", "beginn": "…", "verschluesselung": { "verfahren": "…", "fingerabdruck": "…" } } } ] }
+    ```
+
+    Nur `*.dms-sicherung` aus deinem eigenen Zielordner, `meta` ist der Inhalt der `<name>.json` daneben (fehlt sie, lass `meta` weg). Höchstens 150 Einträge – das Ergebnis eines Aufrufs hat 64 KB. Namen nur aus Buchstaben, Ziffern, `_`, `.`, `-`; `ziel` ohne Zugangsdaten.
+2. **`holen`** mit `name`, `datei`, `versatz` und `groesse`: Lies die Datei am Ziel ab `versatz` (z. B. `Range`) und liefere sie **unverändert** in Stücken von höchstens 8 MB per `PUT /sicherungen/{name}/holen?versatz=…` (Körper roh, `dms.api`). Die Antwort nennt den neuen `versatz`; 409 nennt den erwarteten. Nach etwa der halben Zeitgrenze antworte einfach (z. B. `{"versatz": …}`) – der Kern ruft dich mit dem neuen `versatz` gleich wieder auf, bis die Datei vollständig ist. Kommt dreimal hintereinander nichts an, bricht er ab.
+
+Der Kern nimmt Stücke nur für die Sicherung, die er gerade bei **deinem** Paket angefordert hat, lückenlos und nie über `groesse` hinaus, und prüft am Ende die SHA-256 gegen seinen eigenen Stand (bzw. gegen `meta`). Erst dann legt er Datei und `.json` in den Sicherungsordner. Dein API-Schlüssel bleibt ein Leseschlüssel; `PUT /sicherungen/{name}/holen` ist die einzige Ausnahme. Am Ziel brauchst du dafür nur Leserechte.
+
+Ohne `dms:sicherung-holen` zeigt die Werkbank Sicherungen, die Ablago lokal weggeräumt hat, nur mit Ziel und Dateiname und dem Hinweis auf die Anleitung.
 
 ### Löschschutz { #sicherung-loeschschutz }
 

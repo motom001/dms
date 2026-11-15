@@ -1077,7 +1077,7 @@ begriffe:
     verwandt: [Notfallblatt]
   - begriff: Sicherung
     bereich: betrieb
-    beschreibung: Eine verschlüsselte Gesamtsicherung, die sich in Ablago zurückspielen lässt. Kein Export – ohne Ablago nicht lesbar.
+    beschreibung: Eine verschlüsselte Gesamtsicherung, die sich in Ablago zurückspielen lässt. Kein Export – ohne Ablago nicht lesbar. Mit einem Ziel außer Haus gibt es sie lokal, am Ziel oder an beiden Orten; eine Sicherung „nur außer Haus“ holt Ablago zum Herunterladen, Prüfen oder Wiederherstellen erst zurück.
     einsteiger: alltag
     begegnet: admin
     nicht_verwenden: [Backup (in der Oberfläche)]

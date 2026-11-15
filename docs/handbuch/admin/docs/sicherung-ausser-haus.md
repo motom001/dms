@@ -43,6 +43,16 @@ Die E-Mail nennt nur das Ziel, nie Zugangsdaten. Ein einzelner Fehlversuch, den 
 
 Das [Notfallblatt](verschluesselung.md#notfallblatt) nennt das Ziel (Paket und Adresse) **ohne Passwort**, dazu den Satz: *Der Schlüssel der Werkbank liegt nicht auf dem Ziel. Die Kopie öffnest du nur mit dem Schlüssel von diesem Blatt.* Lade es nach dem Einrichten neu herunter.
 
+## Sicherungen, die es nur noch außer Haus gibt { #nur-ausser-haus }
+
+Räumt Ablago eine Sicherung lokal weg (Aufbewahrung, *Lokal nur die neueste behalten* oder **Löschen**), deren Kopie außer Haus angekommen ist, bleibt sie in der Liste unter **Werkbank → Sicherung** stehen – mit **nur außer Haus (Name des Ziels)** in der Spalte **Wo**. Ablago merkt sich dafür Größe, Prüfsumme und Zeitpunkt (die neuesten 100). Kann das Paket des Ziels Sicherungen **auflisten** (Recht [Sicherungen zurückholen](pakete.md#recht-sicherung-lesen)), stehen auch Sicherungen in der Liste, von denen Ablago nichts mehr weiß – etwa nach einem Plattenschaden oder auf einem neu aufgesetzten Gerät. Eine lokale Sicherung, die das Ziel ebenfalls führt, zeigt **am Ziel ✓**. **Ziele außer Haus neu abfragen** holt die Listen sofort; sonst fragt Ablago höchstens alle 2 Minuten.
+
+- **Herunterladen** bei einer entfernten Sicherung holt sie erst über das Paket zurück – Fortschritt oben bei *Jetzt sichern* –, prüft **Größe und Prüfsumme (SHA-256)** gegen das, was Ablago beim Sichern gemerkt hat (bzw. gegen die `.json` am Ziel), legt sie mit der `.json` in den Sicherungsordner und lädt sie dann wie jede lokale Sicherung herunter. Das ist eine [heikle Handlung](verwalten.md#frische-anmeldung) und steht im Protokoll (Modul *sicherung*).
+- **Prüfen** holt sie ebenso zurück; die Prüfsumme steht danach in der Spalte **Prüfsumme**. Danach liegt sie lokal: **Wiederherstellen** und **Probe** gehen wie bei jeder anderen Sicherung.
+- Kann das Paket nicht zurückholen (ältere Fassung), fehlt am Ziel die `.json` oder weicht die Prüfsumme ab, steht statt der Knöpfe, **wo die Datei liegt** (Dateiname am Ziel) mit Link zur Anleitung [Aus einer Kopie außer Haus](wiederherstellen.md#aus-einer-kopie-ausser-haus).
+
+Das Paket bekommt dabei nie den Schlüssel und liefert nur, was Ablago bei ihm anfordert. Platz brauchst du im Sicherungsordner so viel, wie die Sicherung groß ist.
+
 ## Einrichten mit „Sicherungsziel WebDAV“
 
 1. **Werkbank → Pakete**, *Sicherungsziel WebDAV* installieren. Die Vorschau zeigt die Rechte: *Die verschlüsselte Sicherung lesen, um sie außer Haus zu kopieren – kann sie nicht öffnen* und *Reagiert auf: Eine Sicherung ist fertig*.

@@ -456,7 +456,7 @@ begriffe:
     beschreibung: A person you trust who should be asked in an emergency. They appear on the emergency sheet and get a short info email, but no access.
   Sicherung:
     begriff: Backup
-    beschreibung: An encrypted complete backup that can be restored in Ablago. Not an export – not readable without Ablago.
+    beschreibung: An encrypted complete backup that can be restored in Ablago. Not an export – not readable without Ablago. With an off-site destination it exists locally, at the destination or in both places; Ablago first fetches an "off-site only" backup back before downloading, checking or restoring it.
   Probe-Wiederherstellung:
     begriff: Test restore
     beschreibung: Checks a backup without touching the real data.

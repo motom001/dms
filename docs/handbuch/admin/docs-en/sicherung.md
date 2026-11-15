@@ -60,6 +60,7 @@ Good to know:
 - The backup is downloaded **encrypted and unchanged**, exactly as it is in the backup folder. Without the key from the [emergency sheet](verschluesselung.md#notfallblatt) nobody can read it – so the emergency sheet doesn't belong on the same stick.
 - You need the **Backup** area in your [administration permission](verwalten.md). The metadata contains no key; for it, Ablago doesn't ask for the password again.
 - If the download breaks off, the browser resumes it where it stopped (HTTP range). If your sign-in is then more than 10 minutes old, choose **Download** again in the Workbench.
+- Backups that **only exist off-site** are in the list too; **Download** first fetches them back through the destination's package (see [Off-site backup](sicherung-ausser-haus.md#nur-ausser-haus)).
 - Every download is recorded in the [log](fehlersuche.md#protokoll), module *sicherung*: who, when, which backup (when resuming, with the position). Ablago doesn't create a new file for it – neither in the backup folder nor in the export folder.
 
 ### Checking the copy on your computer { #kopie-prufen }

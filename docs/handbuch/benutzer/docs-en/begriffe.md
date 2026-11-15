@@ -555,7 +555,7 @@ See also: [Otherwise](#sonst), [Backup](#sicherung).
 The interface through which programs work with Ablago. Access with a personal API key.
 
 <a id="sicherung"></a>**Backup** (*Sicherung*) · ✓ everyday word · administrators  
-An encrypted complete backup that can be restored in Ablago. Not an export – not readable without Ablago.  
+An encrypted complete backup that can be restored in Ablago. Not an export – not readable without Ablago. With an off-site destination it exists locally, at the destination or in both places; Ablago first fetches an "off-site only" backup back before downloading, checking or restoring it.  
 See also: [Restore](#wiederherstellen), [Test restore](#probe-wiederherstellung), [Full export](#vollexport).
 
 <a id="eingebautes-werkzeug"></a>**Built-in tool** (*Eingebautes Werkzeug*) · ~ with explanation · administrators  

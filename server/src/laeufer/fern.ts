@@ -99,6 +99,7 @@ export class Fernlaeufer implements PaketLaeufer, LaeuferSicht {
       pakete: () => this.z.uebersetzen ?? [],
       uebersetze: (paket, eingang, ms) => v.rufe('laeufer.schnittstelle', [paket, 'dms:uebersetzen', eingang, { bezeichnung: 'Text übersetzt', ms }], { ms: ms + 5000 }),
     };
+    dienst.sicherungHolen = { rufe: async (paket, eingang, ms) => ((await v.rufe('laeufer.schnittstelle', [paket, 'dms:sicherung-holen', eingang, { bezeichnung: 'Sicherung außer Haus', ...(ms ? { ms } : {}) }], ms ? { ms: ms + 5000 } : {})) as { text: string }).text };
     dienst.paketaktionen.laeufer = {
       geladen: (paket) => (this.z.aktionen ?? []).includes(paket),
       rufe: (paket, eingang, o) => v.rufe('laeufer.mappenaktion', [paket, eingang, o], { ms: o.ms + 5000 }),

@@ -167,6 +167,8 @@ const HEIKEL: Record<string, HeikleHandlung> = {
   'POST /api/werkbank/tresor/wechseln': 'schluessel',
   // Sicherung herunterladen (#975): die ganze Ablage, verschlüsselt – mit dem Notfallblatt lesbar.
   'GET /api/werkbank/sicherung/:name/datei': 'sicherung',
+  // Entfernte Sicherung zurückholen (#976): gleiche Handlung – danach lässt sie sich herunterladen.
+  'POST /api/werkbank/sicherung/:name/holen': 'sicherung',
   'PUT /api/werkbank/anbindung': 'anbindung',
   'PUT /api/werkbank/anbieter': 'anbieter',
   'PUT /api/werkbank/betrieb/mail': 'mailversand',

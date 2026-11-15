@@ -31,6 +31,8 @@ This way is only open as long as there is no user yet, and only with the setup c
 
 ### From an off-site copy { #aus-einer-kopie-ausser-haus }
 
+If Ablago is running (again) and the destination's package can fetch backups back, no manual work is needed: in **Workbench → Backup**, choose **Check** or **Download** on the *off-site only* backup – afterwards it is in the backup folder with its `.json` (see [Backups that only exist off-site](sicherung-ausser-haus.md#nur-ausser-haus)). Otherwise:
+
 If the device is gone, you fetch both files from the [off-site target](sicherung-ausser-haus.md) – the `.dms-sicherung` and the `.json` next to it – and put them into the `sicherung` folder. The `.json` there is the **slim** version (without versions, counters and Library id). The list shows the backup as *Off-site copy*; as soon as you enter the **key from the emergency sheet**, Ablago reads database state, Library id and the number of folders, documents and users from the backup itself. The Ablago version it was made with is then shown as "unknown" in the comparison – the database state is what counts. When restoring, Ablago checks every file against its checksum and at the end the whole backup (GCM check value); only then does it switch over.
 
 ## Restoring without internet { #ohne-internet }

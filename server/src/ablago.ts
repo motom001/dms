@@ -577,9 +577,11 @@ sicherung.extern = {
   pakete: async () => Promise.all((await dienst.kern.repo.listePakete()).filter((p) => hatSchnittstelle(p.laeufer, 'dms:sicherung-lesen')).map(async (p) => {
     const werte = p.einstellungen ? (await paketEinstellungen(dienst.kern, p.id))?.werte ?? {} : {};
     const adresse = p.einstellungen ? adressfelder(p.einstellungen).map((f) => werte[f.schluessel]).find((v): v is string => typeof v === 'string' && !!v) ?? null : null;
-    return { id: p.id, name: p.name, adresse };
+    return { id: p.id, name: p.name, adresse, holen: hatSchnittstelle(p.laeufer, 'dms:sicherung-holen') };
   })),
   melde: (daten) => dienst.kern.ereignis('sicherung.fertig', { ...daten }),
+  // Entfernte Sicherungen (#976): Aufträge an Pakete mit dms:sicherung-holen über den Paket-Läufer.
+  holen: (paket, eingang, ms) => { if (!dienst.sicherungHolen) throw new Error(tDe('meldungen.sicherung.entfernt.laeufer')); return dienst.sicherungHolen.rufe(paket, eingang, ms); },
 };
 dienst.sicherungAufgegeben = (paket, name, fehler) => sicherung.externAufgegeben(paket, name, fehler);
 dienst.sicherungAntwort = (paket, name, r) => sicherung.externAntwort(paket, name, r);

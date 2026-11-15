@@ -5,6 +5,7 @@
 import assert from 'node:assert/strict';
 import '../einrichtung.mjs';
 import { api, BASIS, daten, LENA, rauchtest, sitzung, verwalten } from '../hilfen.mjs';
+import { axePruefen, tippflaechenPruefen } from '../muster.mjs';
 
 // Wiederherstellen (Abschnitt der Sicherung) antwortet außerhalb des Wartungsmodus mit 409 – das ist gewollt.
 const SICHERUNG_ERWARTET = [{ status: 409, pfad: /^\/api\/wiederherstellung\/sicherungen$/ }];
@@ -134,4 +135,51 @@ rauchtest('Papierkorb: suchen, mehrere wiederherstellen; Aufbewahrung unter Eins
   await s.waitForURL(/\/werkbank\/daten/);
   await s.getByLabel('Tage im Papierkorb').waitFor();
   await s.getByLabel('Historie endgültig gelöschter Mappen behalten (Tage)').waitFor();
+});
+
+// Entfernte Sicherungen (#976): Ohne echtes Ziel außer Haus ergänzt der Test die Antwort der Werkbank um zwei Sicherungen,
+// die es nur noch am Ziel gibt – eine holbar, eine von einem älteren Paket (nur Ort und Dateiname mit Anleitung).
+const ENTFERNT = {
+  nur: [
+    { name: '2026-10-01_0200-automatisch', datei: '2026-10-01_0200-automatisch.dms-sicherung', paket: 'webdav', paketName: 'Sicherungsziel WebDAV', ziel: 'WebDAV https://cloud.example.org/Ablago', groesse: 52_428_800, sha256: 'a'.repeat(64), beginn: '2026-10-01T00:00:00.000Z', holbar: true },
+    { name: '2026-09-01_0200-automatisch', datei: '2026-09-01_0200-automatisch.dms-sicherung', paket: 'webdav', paketName: 'Sicherungsziel WebDAV', ziel: 'WebDAV https://cloud.example.org/Ablago', groesse: 51_380_224, sha256: 'b'.repeat(64), beginn: '2026-09-01T00:00:00.000Z', holbar: false, grund: 'kann-nicht' },
+  ],
+  auchAmZiel: {}, fehler: [],
+};
+async function mitEntfernten(s) {
+  await s.route(/\/api\/werkbank\/sicherung(\?.*)?$/, async (route) => {
+    if (route.request().method() !== 'GET') return route.continue();
+    const r = await route.fetch();
+    await route.fulfill({ response: r, json: { ...(await r.json()), entfernt: ENTFERNT } });
+  });
+  await s.goto(BASIS + '/ablage/start');
+  await verwalten(s);
+  const bearbeitung = await sicherungOeffnen(s);
+  const holbar = bearbeitung.locator('#liste tbody tr', { hasText: 'nur außer Haus' }).first();
+  await holbar.waitFor();
+  return bearbeitung;
+}
+
+rauchtest('Werkbank: Sicherungen nur außer Haus in der Liste, axe hell und dunkel (#976)', { als: LENA, erwartet: SICHERUNG_ERWARTET }, async (s) => {
+  const bearbeitung = await mitEntfernten(s);
+  const zeilen = bearbeitung.locator('#liste tbody tr', { hasText: 'nur außer Haus (Sicherungsziel WebDAV)' });
+  assert.equal(await zeilen.count(), 2);
+  await zeilen.nth(0).getByRole('button', { name: 'Herunterladen' }).waitFor();
+  await zeilen.nth(0).getByRole('button', { name: 'Prüfen' }).waitFor();
+  await zeilen.nth(1).getByText('Liegt am Ziel als 2026-09-01_0200-automatisch.dms-sicherung').waitFor();
+  assert.match(await zeilen.nth(1).getByRole('link', { name: 'Anleitung' }).getAttribute('href'), /wiederherstellen\/#aus-einer-kopie-ausser-haus$/);
+  assert.equal(await zeilen.nth(1).getByRole('button').count(), 0, 'kein toter Knopf');
+  await bearbeitung.getByRole('button', { name: 'Ziele außer Haus neu abfragen' }).waitFor();
+  const funde = [];
+  for (const schema of ['light', 'dark']) {
+    await s.emulateMedia({ colorScheme: schema });
+    for (const v of await axePruefen(s, ['#liste'])) funde.push(`${schema}: ${v}`);
+  }
+  assert.deepEqual(funde, [], `axe meldet Verstöße:\n${funde.join('\n')}`);
+});
+
+rauchtest('Handy: Sicherungen nur außer Haus mit 44-px-Tippflächen (#976)', { handy: true, als: LENA, erwartet: SICHERUNG_ERWARTET }, async (s) => {
+  await mitEntfernten(s);
+  const funde = await tippflaechenPruefen(s, ['#liste']);
+  assert.deepEqual(funde, [], `Zu kleine Tippflächen am Handy:\n${funde.join('\n')}`);
 });
