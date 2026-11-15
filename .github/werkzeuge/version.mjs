@@ -13,7 +13,7 @@
  *   einen Schnipsel mit gültiger Kopfzeile. Die alte Art (Version in package.json + docs/releases/vX.Y.Z.md) gilt
  *   im Übergang noch, mit Warnung.
  * - `node version.mjs vergeben` (Workflow „Version vergeben“ auf main): nächste Nummer aus der höchsten `art`,
- *   drei package.json, Schnipsel zusammengefasst nach docs/releases/vX.Y.Z.md, Schnipsel gelöscht. Schreibt
+ *   drei package.json und package-lock.json (#1272), Schnipsel zusammengefasst nach docs/releases/vX.Y.Z.md, Schnipsel gelöscht. Schreibt
  *   `version=` und `schnipsel=` nach $GITHUB_OUTPUT (bzw. stdout); ohne Schnipsel mit Programm-Art passiert nichts.
  *
  * Ohne Abhängigkeiten, damit es vor `npm ci` läuft.
@@ -24,6 +24,8 @@ import { join } from 'node:path';
 
 export const ORDNER = 'docs/releases/neu';
 export const PAKETE = ['package.json', 'server/package.json', 'web/package.json'];
+/** Einträge im Lockfile, die die Version der eigenen Pakete tragen (Wurzel und Arbeitsbereiche, #1272). */
+export const LOCK_EINTRAEGE = ['', 'server', 'web'];
 const ARTEN = ['keine', 'patch', 'minor'];
 /** Name eines Schnipsels: klein, ohne Pfad; README.md erklärt den Ordner und zählt nicht. */
 const NAME = /^[a-z0-9][a-z0-9._-]{0,80}\.md$/;
@@ -77,6 +79,17 @@ export function setzeVersion(text, version) {
   return neu;
 }
 
+/**
+ * Setzt die Version im Lockfile (oben, Wurzel und Arbeitsbereiche) wie npm es schreibt (#1272): Sonst ändert das
+ * nächste `npm install` die Datei, ohne dass jemand etwas getan hat.
+ */
+export function setzeLockVersion(text, version) {
+  const lock = JSON.parse(text);
+  lock.version = version;
+  for (const e of LOCK_EINTRAEGE) if (lock.packages?.[e]) lock.packages[e].version = version;
+  return `${JSON.stringify(lock, null, 2)}\n`;
+}
+
 const git = (...a) => execFileSync('git', a, { encoding: 'utf8' }).trim();
 const ausgabe = (k, v) => (process.env.GITHUB_OUTPUT ? appendFileSync(process.env.GITHUB_OUTPUT, `${k}=${v}\n`) : console.log(`${k}=${v}`));
 const fehler = (t) => { console.log(`::error title=Release-Notiz (#952)::${t}`); process.exitCode = 1; };
@@ -112,6 +125,7 @@ function vergeben() {
   const tags = new Set(git('tag', '--list', 'v*').split('\n').filter(Boolean));
   const version = naechsteVersion(jetzt, art, (v) => tags.has(`v${v}`) || existsSync(`docs/releases/v${v}.md`));
   for (const p of PAKETE) writeFileSync(p, setzeVersion(readFileSync(p, 'utf8'), version));
+  if (existsSync('package-lock.json')) writeFileSync('package-lock.json', setzeLockVersion(readFileSync('package-lock.json', 'utf8'), version));
   writeFileSync(`docs/releases/v${version}.md`, zusammenfassen(schnipsel));
   for (const n of namen) unlinkSync(join(ORDNER, n));
   console.log(`Version ${jetzt} → ${version} (${art}) aus ${namen.join(', ')}`);
