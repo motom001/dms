@@ -3,7 +3,7 @@ import { feldLabel, typName } from '../../../shared/src/beschriftung';
 import type { Abgleich, Abgleichtreffer } from '../../../shared/src/erkennung';
 import type { Klassifizierung } from '../../../shared/src/klassifizierung';
 import { auswahlText, darfErstellen, formatiere, istVersendet, kannAusPost, POST_STAND, titelAus, zielErlaubt, type Dokument, type Feld as FeldDef, type Mappentyp, type Wert, type Werte } from '../../../shared/src/model';
-import { kannSchwaerzen, type Bereich, type SchwaerzSeite } from '../../../shared/src/schwaerzen';
+import { kannSchwaerzen, seiteVorbereiten, type Bereich, type SchwaerzSeite } from '../../../shared/src/schwaerzen';
 import { istTeiltyp } from '../../../shared/src/teile';
 import { textformen, stelleVon, wertAusText } from '../../../shared/src/uebernehmen';
 import type { WortSeite } from '../../../shared/src/archivfassung';
@@ -48,6 +48,8 @@ import { NeueMappeWahl, NurErledigen, VorhandeneMappeWahl, WohinGehoert, ZielLei
 const DOKS_MAX = 10;
 /** Belege je Verweisfeld als Rahmen. */
 const BELEGE_MAX = 3;
+/** Rahmen suchen in Scheiben dieser Länge (ms), dazwischen ist der Browser frei (#1255). */
+const HAEPPCHEN_MS = 8;
 
 type Laden<T> = T | null | 'fehlt';
 /** Seiten mit Wörtern; `archiv` (#1137): Seiten der Archivfassung – das Original lässt sich nicht als Seiten zeigen (E-Mail). */
@@ -102,7 +104,8 @@ function Uebernehmen({ details, typ, sicht, links, neuLaden, dokumentWunsch }: {
   // Post: in der Reihenfolge, in der sie abgelegt wurden (Seite 1 zuerst) – „Ab hier abtrennen“ meint die folgenden.
   // Anlagen (#998) stehen eingeklappt hinter ihrem Hauptdokument; Erkennung, Klassifizieren und KI lesen sie nie.
   // Eingangsreihenfolge (#999): bei einer E-Mail so, wie die Anhänge in ihr stehen.
-  const doks = post ? gruppiere(eingangsreihenfolge(details.dokumente)).flatMap((g) => [g.haupt, ...g.anlagen]) : details.dokumente.filter((x) => x.id === dokId);
+  // Gemerkt (#1255): Ein neues Array je Darstellung ließ die Rahmen bei jedem Tastendruck neu suchen.
+  const doks = useMemo(() => (post ? gruppiere(eingangsreihenfolge(details.dokumente)).flatMap((g) => [g.haupt, ...g.anlagen]) : details.dokumente.filter((x) => x.id === dokId)), [post, details.dokumente, dokId]);
   const erkennDoks = nurHauptdokumente(doks).filter((x) => x.ocr?.stand === 'fertig').slice(0, DOKS_MAX);
   const [offeneAnlagen, setOffeneAnlagen] = useState<Set<string>>(new Set());
   // Original-E-Mail (#999): geht mit dem Dokument, an dem sie hängt (Vorgabe). Sie enthält alle Anhänge der Mail –
@@ -189,43 +192,23 @@ function Uebernehmen({ details, typ, sicht, links, neuLaden, dokumentWunsch }: {
   }, [zielTyp, erkannt, post, m.werte]);
 
   // Rahmen: je erkanntem Wert die Stelle im Dokument, bei Verweisen die Belege; nummeriert in der Reihenfolge der Felder.
-  const marken = useMemo<Marke[]>(() => {
-    if (!zielTyp || !vorschlagStart) return [];
+  // Bei langen Dokumenten in Häppchen (#1255): erst die Seitentexte bauen, dann je Feld suchen; zwischendurch kommt
+  // der Browser an die Reihe (Eingaben bleiben flüssig), die Rahmen erscheinen nach und nach.
+  const [marken, setMarken] = useState<Marke[]>([]);
+  useEffect(() => {
     const liste: Marke[] = [];
-    const stelle = (formen: string[], fundstelle: string) => {
-      for (const x of doks) {
-        const w = woerter[x.id];
-        if (!w || w === 'keine' || !w.mitText) continue;
-        const b = stelleVon(w.seiten, formen, fundstelle);
-        if (b?.length) return { dokId: x.id, bereiche: b };
-      }
-      return null;
+    const schritte = markenSchritte({ zielTyp, vorschlagStart, abgleich: erkannt?.abgleich ?? null, woerter, doks }, liste);
+    let i = 0;
+    let gezeigt = 0; // bis zum ersten neuen Rahmen bleiben die bisherigen stehen (kein Flackern beim Nachladen)
+    let zeit: ReturnType<typeof setTimeout>;
+    const haeppchen = () => {
+      const ende = performance.now() + HAEPPCHEN_MS;
+      while (i < schritte.length && performance.now() < ende) schritte[i++]();
+      if (i >= schritte.length || liste.length > gezeigt) { gezeigt = liste.length; setMarken([...liste]); }
+      if (i < schritte.length) zeit = setTimeout(haeppchen, 0);
     };
-    for (const f of zielTyp.felder) {
-      const v = vorschlagStart.vorschlaege[f.key];
-      if (f.typ === 'referenz') {
-        const kandidat = erkannt?.abgleich?.verweise[f.key]?.[0];
-        if (!kandidat) {
-          // Vorschlag der Erkennung ohne Beleg aus dem Abgleich: der Titel der Mappe, wenn er im Dokument steht.
-          const id = Array.isArray(v?.wert) ? String(v!.wert[0] ?? '') : typeof v?.wert === 'string' ? v.wert : '';
-          const b = id ? vorschlagStart.bezuege[id] : undefined;
-          const s = b?.titel ? stelle([b.titel], '') : null;
-          if (s && b) liste.push({ nr: liste.length + 1, feldKey: f.key, ...s, sicherheit: v!.sicherheit, nutzlast: { text: b.titel, mappeId: id, typId: b.typId, titel: b.titel, feldTyp: 'referenz', wert: id } });
-          continue;
-        }
-        const titel = erkannt?.abgleich?.bezuege[kandidat.mappeId]?.titel ?? '';
-        for (const [i, b] of kandidat.belege.slice(0, BELEGE_MAX).entries()) {
-          const s = stelle([b.wert], b.fundstelle);
-          if (s) liste.push({ nr: liste.length + 1, feldKey: f.key, ...s, beleg: i, sicherheit: kandidat.sicherheit, nutzlast: { text: titel, mappeId: kandidat.mappeId, typId: kandidat.typId, titel, feldTyp: 'referenz', wert: kandidat.mappeId } });
-        }
-        continue;
-      }
-      if (!v) continue;
-      // Stelle vom Server (#939: Fundstelle in der Textebene gesucht), sonst hier gesucht.
-      const s = v.stelle && doks.some((x) => x.id === v.stelle!.dokument) ? { dokId: v.stelle.dokument, bereiche: v.stelle.bereiche } : stelle(textformen(f, v.wert), v.fundstelle);
-      if (s) liste.push({ nr: liste.length + 1, feldKey: f.key, ...s, sicherheit: v.sicherheit, nutzlast: { text: formatiere(f, v.wert), wert: v.wert, feldTyp: f.typ } });
-    }
-    return liste;
+    zeit = setTimeout(haeppchen, 0);
+    return () => clearTimeout(zeit);
   }, [zielTyp, vorschlagStart, erkannt, woerter, doks]);
 
   /* ---------- Brücke zwischen Dokument und Formular ---------- */
@@ -540,6 +523,63 @@ function DoppeltWarnung({ liste, bezuege, legen }: { liste: Abgleichtreffer[]; b
 }
 
 /** Unter einem Verweisfeld: „Woran Ablago das erkennt“ und „auch gefunden … stattdessen nehmen“. */
+/* ---------- Rahmen: Stellen der Vorschläge im Dokument (#939, in Häppchen seit #1255) ---------- */
+
+interface MarkenQuelle {
+  zielTyp: Mappentyp | undefined; vorschlagStart: TypVorschlaege | undefined; abgleich: (Abgleich & { bezuege: Bezuege }) | null;
+  woerter: Record<string, Woerter | 'keine'>; doks: Dokument[];
+}
+type Stelle = { dokId: string; bereiche: Bereich[] } | null;
+
+/**
+ * Die Arbeit für die Rahmen als kleine Schritte: erst je Seite den Seitentext bauen, dann je Feld die Stelle suchen.
+ * Jeder Schritt hängt seine Marken an `liste` an – in der Reihenfolge der Felder nummeriert.
+ */
+function markenSchritte(q: MarkenQuelle, liste: Marke[]): Array<() => void> {
+  const { zielTyp, vorschlagStart: vs } = q;
+  if (!zielTyp || !vs) return [];
+  const mitText = q.doks.flatMap((x) => { const w = q.woerter[x.id]; return w && w !== 'keine' && w.mitText ? [{ id: x.id, seiten: w.seiten }] : []; });
+  const stelle = (formen: string[], fundstelle: string): Stelle => {
+    for (const x of mitText) {
+      const b = stelleVon(x.seiten, formen, fundstelle);
+      if (b?.length) return { dokId: x.id, bereiche: b };
+    }
+    return null;
+  };
+  const vorbereiten = mitText.flatMap((x) => x.seiten.map((s) => () => seiteVorbereiten(s.woerter)));
+  const felder = zielTyp.felder.map((f) => () => {
+    const v = vs.vorschlaege[f.key];
+    if (f.typ === 'referenz') { verweisMarken(f, v, { vs, abgleich: q.abgleich, stelle, liste }); return; }
+    if (!v) return;
+    // Stelle vom Server (#939: Fundstelle in der Textebene gesucht), sonst hier gesucht.
+    const s = v.stelle && q.doks.some((x) => x.id === v.stelle!.dokument) ? { dokId: v.stelle.dokument, bereiche: v.stelle.bereiche } : stelle(textformen(f, v.wert), v.fundstelle);
+    if (s) liste.push({ nr: liste.length + 1, feldKey: f.key, ...s, sicherheit: v.sicherheit, nutzlast: { text: formatiere(f, v.wert), wert: v.wert, feldTyp: f.typ } });
+  });
+  return [...vorbereiten, ...felder];
+}
+
+interface VerweisKontext { vs: TypVorschlaege; abgleich: MarkenQuelle['abgleich']; stelle(formen: string[], fundstelle: string): Stelle; liste: Marke[] }
+type Vorschlag = TypVorschlaege['vorschlaege'][string];
+
+/** Verweis: die Belege des besten Treffers aus dem Abgleich, sonst der Titel der vorgeschlagenen Mappe. */
+function verweisMarken(f: FeldDef, v: Vorschlag | undefined, { vs, abgleich, stelle, liste }: VerweisKontext) {
+  const kandidat = abgleich?.verweise[f.key]?.[0];
+  if (!kandidat) { if (v) titelMarke(f, v, { vs, abgleich, stelle, liste }); return; }
+  const titel = abgleich?.bezuege[kandidat.mappeId]?.titel ?? '';
+  for (const [i, b] of kandidat.belege.slice(0, BELEGE_MAX).entries()) {
+    const s = stelle([b.wert], b.fundstelle);
+    if (s) liste.push({ nr: liste.length + 1, feldKey: f.key, ...s, beleg: i, sicherheit: kandidat.sicherheit, nutzlast: { text: titel, mappeId: kandidat.mappeId, typId: kandidat.typId, titel, feldTyp: 'referenz', wert: kandidat.mappeId } });
+  }
+}
+
+/** Vorschlag der Erkennung ohne Beleg aus dem Abgleich: der Titel der Mappe, wenn er im Dokument steht. */
+function titelMarke(f: FeldDef, v: Vorschlag, { vs, stelle, liste }: VerweisKontext) {
+  const id = Array.isArray(v.wert) ? String(v.wert[0] ?? '') : typeof v.wert === 'string' ? v.wert : '';
+  const b = id ? vs.bezuege[id] : undefined;
+  const s = b?.titel ? stelle([b.titel], '') : null;
+  if (s && b) liste.push({ nr: liste.length + 1, feldKey: f.key, ...s, sicherheit: v.sicherheit, nutzlast: { text: b.titel, mappeId: id, typId: b.typId, titel: b.titel, feldTyp: 'referenz', wert: id } });
+}
+
 function VerweisBelege({ f, liste, bezuege, marken, nehmen }: { f: FeldDef; liste: Abgleichtreffer[]; bezuege: Bezuege; marken: Marke[]; nehmen(x: Abgleichtreffer): void }) {
   const [erster, ...weitere] = liste;
   return (

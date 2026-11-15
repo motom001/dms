@@ -99,7 +99,8 @@ export function beispielPdfSeiten(zeilen) {
     '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>',
   ];
   zeilen.forEach((z, i) => {
-    const inhalt = `BT /F1 18 Tf 60 760 Td (${z}) Tj ET`;
+    // Mehrere Zeilen je Seite mit „\n“ (lange Post, #1255), kleiner gesetzt.
+    const inhalt = z.includes('\n') ? `BT /F1 9 Tf 40 800 Td ${z.split('\n').map((y) => `(${y}) Tj`).join(' 0 -13 Td ')} ET` : `BT /F1 18 Tf 60 760 Td (${z}) Tj ET`;
     objekte.push(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R >> >> /Contents ${5 + i * 2} 0 R >>`);
     objekte.push(`<< /Length ${inhalt.length} >>\nstream\n${inhalt}\nendstream`);
   });

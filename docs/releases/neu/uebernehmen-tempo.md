@@ -1,0 +1,5 @@
+art: patch
+
+## Behoben
+
+- „Dokument übernehmen“ bleibt bei langen Dokumenten bedienbar: Die Stellen der Vorschläge werden viel schneller und nach und nach markiert, Eingaben im Formular reagieren sofort. Auch das Suchen beim Schwärzen ist bei vielen Seiten schneller. (#1255)
