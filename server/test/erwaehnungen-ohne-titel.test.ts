@@ -12,6 +12,7 @@ import { speicherEinstellungen } from '../src/einstellungen';
 import { Konten } from '../src/konten';
 import { speicherKontoRepo } from '../src/konto-repo';
 import { speicherRepo } from '../src/repo-speicher';
+import { protokoll } from '../src/protokoll';
 import { routen, type Anfrage } from '../src/routen';
 
 const GEHEIM = 'Abmahnung Jonas';
@@ -89,6 +90,9 @@ describe('Erwähnungen ohne Titel im Text (#1293)', () => {
     const hist = JSON.stringify(await d.mappenHistorie.historie(vertrag.id));
     assert.ok(!hist.includes(GEHEIM), `Historie ohne Titel: ${hist}`);
     assert.match(hist, /@Erwähnung/);
+    // Auch das Server-Protokoll bekommt keinen Aufgabentext, nur Id, Art und Mappe.
+    const log = protokoll.eintraege({}).filter((e) => e.text === 'Aufgabe erledigt');
+    assert.ok(log.length && !JSON.stringify(log).includes(GEHEIM), JSON.stringify(log));
   });
 
   it('Person mit Leserecht sieht den aktuellen Titel, auch nach einer Umbenennung', async () => {

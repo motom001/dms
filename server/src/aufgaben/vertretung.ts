@@ -190,7 +190,8 @@ export class AufgabenVertretung {
     if (a.art === 'aenderung') { await this.gesehen(ich, [a.mappeId]); return (await this.repo.holeAufgabe(id))!; }
     await this.repo.erledigeAufgabe(id, ich.id);
     await this.notiere(a.mappeId, ich.id, 'aufgabe', { text: t('meldungen.dienst.erledigt-2', { text: historienAufgabentext(a) }), aufgabe: id, aufgabenart: a.art, fuer: a.empfaengerId, aufgabentext: historienAufgabentext(a) });
-    protokoll.modul('ablage').info('Aufgabe erledigt', { mappeId: a.mappeId, aufgabe: a.text });
+    // Ohne Aufgabentext (#1293): Er ist für den Empfänger aufbereitet und gehört nicht ins Server-Protokoll.
+    protokoll.modul('ablage').info('Aufgabe erledigt', { aufgabe: a.id, art: a.art, mappeId: a.mappeId });
     await this.faelleNach([a.mappeId]);
     const folgetermin = await this.folgeterminVon(a);
     return { ...(await this.repo.holeAufgabe(id))!, ...(folgetermin ? { folgetermin } : {}) };
@@ -204,7 +205,7 @@ export class AufgabenVertretung {
     await this.repo.delegiereAufgabe(id, ziel);
     const von = await this.name(a.empfaengerId), nach = await this.name(ziel);
     await this.notiere(a.mappeId, ich.id, 'aufgabe', { text: t('meldungen.dienst.weitergegeben-von-an-2', { von, nach, text: historienAufgabentext(a) }), aufgabe: id, aufgabenart: a.art, vonId: a.empfaengerId, anId: ziel, aufgabentext: historienAufgabentext(a) });
-    protokoll.modul('ablage').info('Aufgabe weitergegeben', { mappeId: a.mappeId, von, an: nach, aufgabe: a.text });
+    protokoll.modul('ablage').info('Aufgabe weitergegeben', { aufgabe: a.id, art: a.art, mappeId: a.mappeId });
     await this.faelleNach([a.mappeId]);
     return (await this.repo.holeAufgabe(id))!;
   }
