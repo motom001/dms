@@ -3,7 +3,7 @@ import { Feld, HakenFeld, Knopf, Schalter, type KnopfErgebnis } from '../baustei
 import type { EingangWarnung } from '../api/betrieb';
 import { eingaengeApi, type EingangEinstellung, type EingangKnoten, type EingangStand, type EingangUeberblick } from '../api/eingaenge';
 import { Link } from '../ort';
-import { Hilfe } from '../Hilfe';
+import { Symbol } from '../Symbol';
 import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 import { t, tn } from '../sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
@@ -132,9 +132,19 @@ export function EingangsordnerPanel({ z }: { z: EingangZustand }) {
         <HakenFeld beschriftung={t('werkbank.eingangsordner.doppelte-dateien-ueberspringen')} hinweis={t('werkbank.eingangsordner.liegt-genau-diese-datei')}>
           <input type="checkbox" checked={e.doppelteUeberspringen === true} onChange={(x) => setE({ ...e, doppelteUeberspringen: x.target.checked })} />
         </HakenFeld>
-        <HakenFeld beschriftung={t('werkbank.eingangsordner.ordner-automatisch')} hinweis={t('werkbank.eingangsordner.ordner-automatisch.text')}>
-          <input id="eingang-automatisch" type="checkbox" checked={e.ordnerAutomatisch === true} onChange={(x) => setE({ ...e, ordnerAutomatisch: x.target.checked })} />
-        </HakenFeld>
+        {/* Ordner je Person (#1187): kein eigener Abschnitt mehr – die Erklärung steht einmal am Haken (mehr im Handbuch),
+            darunter eine kurze Zeile, nur wenn es etwas zu tun gibt. `#personen` bleibt Sprungziel der Übersicht. */}
+        <div id="personen">
+          <HakenFeld beschriftung={t('werkbank.eingangsordner.ordner-automatisch')} hinweis={t('werkbank.eingangsordner.ordner-automatisch.text')} hilfe="werkbank.eingangsordner.personen">
+            <input id="eingang-automatisch" type="checkbox" checked={e.ordnerAutomatisch === true} onChange={(x) => setE({ ...e, ordnerAutomatisch: x.target.checked })} />
+          </HakenFeld>
+          {(s.ohneOrdner ?? 0) > 0 && (
+            <div className="hakenzeile">
+              <span><Symbol name="info" /> {t('werkbank.eingangsordner.personen.ohne', { anzahl: s.ohneOrdner ?? 0 })}</span>
+              <Knopf gesperrt={sendet} onClick={() => void personen()}>{t('werkbank.eingangsordner.personen.anlegen')}</Knopf>
+            </div>
+          )}
+        </div>
         <h3 className="h4">{t('werkbank.eingangsordner.warnen')}</h3>
         <p className="leise klein">{t('werkbank.eingangsordner.warnen.text')}</p>
         <div className="raster">
@@ -153,15 +163,6 @@ export function EingangsordnerPanel({ z }: { z: EingangZustand }) {
         </div>
         <Speicherleiste ent={ent} gegenstand={t('werkbank.eingangsordner.einstellungen')} sendet={sendet} />
       </form>
-      <div className="blatt" id="personen">
-        <h2 className="h3">{t('werkbank.eingangsordner.personen')} <Hilfe ort="werkbank.eingangsordner" /></h2>
-        <p className="leise">{tn('werkbank.eingangsordner.personen.text', { code: <code>{t('werkbank.eingangsordner.eingang-lena')}</code>, code2: <code>{t('werkbank.eingangsordner.eingang-lena-erledigt')}</code> })}</p>
-        <p className="leise klein">{t('werkbank.eingangsordner.personen.leserecht')}</p>
-        <div className="knoepfe">
-          <Knopf gesperrt={sendet || s.ohneOrdner === 0} onClick={() => void personen()}>{t('werkbank.eingangsordner.personen.anlegen')}</Knopf>
-          <span className="leise klein">{s.ohneOrdner ? t('werkbank.eingangsordner.personen.ohne', { anzahl: s.ohneOrdner }) : t('werkbank.eingangsordner.personen.alle')}</span>
-        </div>
-      </div>
       <div className="blatt" id="ueberwachung">
         <h2 className="h3">{t('werkbank.eingangsordner.ueberwachung')}</h2>
         {!s.ueberblick ? <p className="leise">{t('werkbank.eingangsordner.ueberwachung.noch-nicht')}</p> : <>

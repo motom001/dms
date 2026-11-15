@@ -189,3 +189,5 @@ td.sicherung-wahl { width: 1%; }
 .fruehere-stoerungen { margin-top: 10px; }
 .fruehere-stoerungen summary { cursor: pointer; }
 .fruehere-stoerungen ul { margin: 6px 0 0; padding-left: 18px; }
+/* Eingangsordner (#1187): kurze Zeile unter dem Haken „Ordner für neue Benutzer …“, nur wenn jemandem ein Ordner fehlt. */
+.hakenzeile { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin: 2px 0 6px; font-size: calc(13px * var(--skala, 1)); }

@@ -2,5 +2,6 @@ art: minor
 
 ## Geändert
 
+- **Stempel ohne rote Schrift** (#1185): Werkbank → Stempel zeigt jede Vorlage in zwei Zeilen – Name mit einem kleinen Punkt in der Stempelfarbe, darunter leise Text, Lage und Mappentypen. Auch in den Grunddaten steht der Stempeltext in normaler Schrift; Rot bleibt Fehlern vorbehalten. Die Vorschau steht beim Öffnen einer Vorlage immer offen, so siehst du Änderungen an Grunddaten oder Aussehen sofort.
 - **Postfach → Stand in einem Satz** (#1186): Oben steht, ob der Abruf läuft („Läuft – zuletzt abgerufen …, nächster Abruf …“) oder gestört ist („Gestört seit … – 3 Versuche gescheitert: …“, rot, mit „Verbindung prüfen“). Fehler, nach denen der Abruf wieder geklappt hat, stehen nicht mehr unter „Fehler“, sondern leise und zugeklappt unter „Frühere Störungen“ mit „behoben am …“.
 - **Eingangsordner: Ordner je Person am Haken** (#1187): Der eigene Abschnitt „Ordner je Person“ entfällt. Fehlt aktiven Benutzern noch ein Ordner, steht direkt unter dem Haken „Ordner für neue Benutzer von selbst anlegen“ eine kurze Zeile mit „Jetzt anlegen“; die ausführliche Erklärung steht im Handbuch (Hilfe am Haken).

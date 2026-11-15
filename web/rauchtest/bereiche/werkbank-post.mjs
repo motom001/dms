@@ -117,6 +117,24 @@ rauchtest('Postfach → Stand: Zustandssatz, aktueller Fehler mit Weg zur Verbin
   await postfachWeg(s, pf.id);
 });
 
+rauchtest('Eingangsordner: kein Abschnitt „Ordner je Person“, Hinweis mit „Jetzt anlegen“ am Haken (#1187)', { als: LENA, timeout: 60_000 }, async (s) => {
+  await s.goto(BASIS + '/ablage/start');
+  await verwalten(s);
+  await s.goto(BASIS + '/werkbank/eingangsordner');
+  const haken = s.getByRole('checkbox', { name: 'Ordner für neue Benutzer von selbst anlegen' });
+  await haken.waitFor();
+  assert.equal(await s.getByRole('heading', { name: /^Ordner je Person/ }).count(), 0, 'kein eigener Abschnitt mehr');
+  // Die Zeile steht direkt unter dem Haken – nur, solange jemandem ein Ordner fehlt.
+  const zeile = s.locator('#personen .hakenzeile');
+  if (await zeile.count()) {
+    await zeile.getByText(/haben? noch keinen eigenen Ordner\./).waitFor();
+    await zeile.getByRole('button', { name: 'Jetzt anlegen' }).click();
+    await s.locator('.hinweis.gut').getByText(/Ordner angelegt\./).waitFor();
+    await zeile.waitFor({ state: 'detached' });
+  }
+  assert.equal(await s.locator('#personen').getByText(/Alle .* haben einen Ordner/).count(), 0, 'nichts, wenn alle einen Ordner haben');
+});
+
 rauchtest('Handy: Stempel und Postfach-Stand mit 44-px-Tippflächen (#1185, #1186)', { handy: true, als: LENA, timeout: 110_000 }, async (s) => {
   await s.goto(BASIS + '/ablage/start');
   await verwalten(s);

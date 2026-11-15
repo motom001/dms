@@ -18,7 +18,7 @@ Fehlt die Zeile, gibt es keinen Eingangsordner und die Werkbank zeigt ihn nicht 
 Den Ordner `eingang` gibst du im NAS für den Scanner frei (SMB), z. B. als Unterordner einer vorhandenen Freigabe. Im Scanner trägst du diese Freigabe als Ziel für „Scan to Folder“ ein.
 
 !!! warning "Geändert in dieser Version: nur noch die vollständige E-Mail-Adresse"
-    Bisher setzte auch ein Ordner mit dem Namen, Vornamen oder dem Teil der E-Mail-Adresse vor dem @ (z. B. `eingang/thomas/`) **An**. Das gilt nicht mehr: Nur ein Ordner, der **genau der E-Mail-Adresse** eines aktiven Benutzers entspricht, z. B. `eingang/thomas@example.org/`, setzt „An“. Post aus einem bisherigen Ordner kommt ohne „An“ an, und die Werkbank-Übersicht weist auf den Ordner hin („Ordner „thomas“ gehört zu keinem Benutzer“). Benenne solche Ordner um oder lege sie mit **Ordner für alle Benutzer anlegen** neu an und stelle den Scanner um.
+    Bisher setzte auch ein Ordner mit dem Namen, Vornamen oder dem Teil der E-Mail-Adresse vor dem @ (z. B. `eingang/thomas/`) **An**. Das gilt nicht mehr: Nur ein Ordner, der **genau der E-Mail-Adresse** eines aktiven Benutzers entspricht, z. B. `eingang/thomas@example.org/`, setzt „An“. Post aus einem bisherigen Ordner kommt ohne „An“ an, und die Werkbank-Übersicht weist auf den Ordner hin („Ordner „thomas“ gehört zu keinem Benutzer“). Benenne solche Ordner um oder lege sie mit **Jetzt anlegen** neu an und stelle den Scanner um.
 
 ## Einstellungen
 
@@ -28,17 +28,17 @@ Unter **Werkbank → Eingangsordner**:
 - **Prüfabstand** – wie oft Ablago nachsieht, 5 bis 3600 Sekunden (Standard: 30).
 - **Nach dem Übernehmen** – die Datei löschen oder nach `erledigt/` verschieben. Wer den Eingangsordner neu einrichtet, bekommt **löschen** vorgeschlagen: Die Datei steckt danach ja in der Post. Gibt es schon ein `erledigt/` und wurde nie gespeichert, bleibt es beim Verschieben wie bisher.
 - **Doppelte Dateien überspringen** – liegt genau diese Datei (gleicher Prüfwert) schon in Ablago, entsteht keine Post; die Datei wird wie eine übernommene weggeräumt und in der Liste als „doppelt – übersprungen“ geführt (Standard: aus).
-- **Ordner für neue Benutzer von selbst anlegen** – jede neue Person bekommt ihren [Ordner](#ordner-je-person) (Standard: aus).
+- **Ordner für neue Benutzer von selbst anlegen** – jede neue Person bekommt ihren [Ordner](#ordner-je-person) (Standard: aus). Fehlt aktiven Benutzern noch ein eigener Ordner, steht direkt darunter eine kurze Zeile wie „2 aktive Benutzer haben noch keinen eigenen Ordner.“ mit **Jetzt anlegen**. Haben alle einen Ordner, steht dort nichts. Das **?** am Haken führt hierher.
 - **Warnen, wenn sich etwas ansammelt** – Grenzen für die [Überwachung](#uberwachung): Dateien älter als **180** Tage, alle zusammen größer als **2** GB, mehr als **100** Dateien. 0 schaltet eine Warnung ab.
 - **Jetzt prüfen** – sofort nachsehen.
 
-Darunter stehen die Ordner je Person, die Überwachung, die letzte Prüfung, Dateien, die noch geschrieben werden, die zuletzt übernommenen Dateien mit Link zur Post und Fehler.
+Darunter stehen die Überwachung, die letzte Prüfung, Dateien, die noch geschrieben werden, die zuletzt übernommenen Dateien mit Link zur Post und Fehler.
 
 ## Ordner je Person { #ordner-je-person }
 
 Ein Ordner, der **genau der E-Mail-Adresse** eines aktiven Benutzers entspricht (ohne Unterschied der Groß-/Kleinschreibung), trägt diesen Benutzer bei **An** ein, z. B. `eingang/lena@example.org/`. Die Post erscheint bei ihm unter „Zu erledigen“. Name, Vorname oder der Teil vor dem @ zählen bewusst nicht – nur die E-Mail-Adresse ist eindeutig, und ein Dokument darf nie bei der falschen Person landen.
 
-- **Ordner für alle Benutzer anlegen** (Werkbank → Eingangsordner) legt für jede aktive Person ihren Ordner an, sofern es ihn noch nicht gibt. Mit **Ordner für neue Benutzer von selbst anlegen** geschieht das für jede neue Person.
+- **Jetzt anlegen** (Werkbank → Eingangsordner, unter dem Haken **Ordner für neue Benutzer von selbst anlegen**) legt für jede aktive Person ihren Ordner an, sofern es ihn noch nicht gibt. Mit **Ordner für neue Benutzer von selbst anlegen** geschieht das für jede neue Person.
 - **Ändert sich die E-Mail-Adresse**, benennt Ablago einen Ordner, den es selbst angelegt hat, mit um. Geht das nicht – etwa weil es den neuen Ordner schon gibt –, steht es als Warnung in der Werkbank-Übersicht. Von Hand angelegte Ordner fasst Ablago nicht an.
 - **Unterordner** unter einem Personenordner, z. B. Datumsordner, die manche Scanner anlegen (`eingang/lena@example.org/2026/11/`), gehören zur selben Person. Es zählt der nächste Personenordner über der Datei.
 - **Andere Unterordner** (z. B. `eingang/scanner/`) zählen wie der Hauptordner: Post ohne „An“. Die Werkbank-Übersicht nennt jeden solchen Ordner, aus dem Post kam („Ordner „scanner“ gehört zu keinem Benutzer“); ist das so gewollt, nimmst du die Warnung zur Kenntnis.

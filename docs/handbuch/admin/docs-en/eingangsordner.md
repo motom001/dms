@@ -18,7 +18,7 @@ If the line is missing, there is no intake folder and the workbench doesn't show
 You share the folder `eingang` on the NAS for the scanner (SMB), e.g. as a subfolder of an existing share. In the scanner you enter this share as the target for "Scan to Folder".
 
 !!! warning "Changed in this version: only the full e-mail address"
-    Until now a folder with the name, first name or the part of the e-mail address before the @ (e.g. `eingang/thomas/`) also set **To**. That no longer applies: only a folder that matches **exactly the e-mail address** of an active user, e.g. `eingang/thomas@example.org/`, sets "To". Post from a previous folder arrives without "To", and the workbench overview points the folder out ("Folder “thomas” does not belong to any user"). Rename such folders or create them anew with **Create folders for all users**, and change the scanner's target.
+    Until now a folder with the name, first name or the part of the e-mail address before the @ (e.g. `eingang/thomas/`) also set **To**. That no longer applies: only a folder that matches **exactly the e-mail address** of an active user, e.g. `eingang/thomas@example.org/`, sets "To". Post from a previous folder arrives without "To", and the workbench overview points the folder out ("Folder “thomas” does not belong to any user"). Rename such folders or create them anew with **Create now**, and change the scanner's target.
 
 ## Settings {#einstellungen}
 
@@ -28,17 +28,17 @@ Under **Workbench → intake folder**:
 - **Check interval** – how often Ablago looks, 5 to 3600 seconds (default: 30).
 - **After taking over** – delete the file or move it to `erledigt/`. Whoever sets up the intake folder anew is offered **delete**: the file is in the post afterwards anyway. If there already is an `erledigt/` and nothing was ever saved, moving stays as before.
 - **Skip duplicate files** – if exactly this file (same checksum) is already in Ablago, no post is created; the file is tidied away like one taken over and listed as "duplicate – skipped" (default: off).
-- **Create folders for new users automatically** – every new person gets their [folder](#ordner-je-person) (default: off).
+- **Create folders for new users automatically** – every new person gets their [folder](#ordner-je-person) (default: off). If active users still have no folder of their own, a short line right below says so, e.g. "2 active users have no folder of their own yet.", with **Create now**. If everyone has a folder, nothing is shown there. The **?** at the checkbox leads here.
 - **Warn when files pile up** – limits for the [monitoring](#uberwachung): files older than **180** days, all together larger than **2** GB, more than **100** files. 0 turns a warning off.
 - **Check now** – look immediately.
 
-Below that are the folders per person, the monitoring, the last check, files still being written, the files taken over most recently with a link to the post, and errors.
+Below that are the monitoring, the last check, files still being written, the files taken over most recently with a link to the post, and errors.
 
 ## One folder per person {#ordner-je-person}
 
 A folder that matches **exactly the e-mail address** of an active user (ignoring upper and lower case) enters that user under **To**, e.g. `eingang/lena@example.org/`. The post appears under "To do" for them. Name, first name or the part before the @ deliberately do not count – only the e-mail address is unique, and a document must never end up with the wrong person.
 
-- **Create folders for all users** (Workbench → intake folder) creates a folder for every active person that does not have one yet. With **Create folders for new users automatically** this happens for every new person.
+- **Create now** (Workbench → intake folder, below the checkbox **Create folders for new users automatically**) creates a folder for every active person that does not have one yet. With **Create folders for new users automatically** this happens for every new person.
 - **If the e-mail address changes**, Ablago renames a folder it created itself. If that is not possible – e.g. because the new folder already exists – it shows up as a warning in the workbench overview. Ablago does not touch folders created by hand.
 - **Subfolders** below a person's folder, e.g. date folders some scanners create (`eingang/lena@example.org/2026/11/`), belong to the same person. The nearest person's folder above the file counts.
 - **Other subfolders** (e.g. `eingang/scanner/`) count like the main folder: post without "To". The workbench overview names every such folder post came from ("Folder “scanner” does not belong to any user"); if that is intended, you acknowledge the warning.
