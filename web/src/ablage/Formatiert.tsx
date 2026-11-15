@@ -73,13 +73,18 @@ export function Formatiert({ text }: { text: string }) {
   return <div className="formatiert"><Bloecke bloecke={bloecke} /></div>;
 }
 
-type Werkzeug = { titel: string; zeichen: ReactNode; vor: string; nach?: string; zeile?: boolean; platzhalter: string };
+/**
+ * Werkzeuge der Leiste. `aufschrift` (#1268, WCAG 2.5.3): Buchstaben und Ziffern, die man sieht, stehen auch im Namen
+ * („1. Nummerierte Liste“), damit Sprachsteuerung sie trifft; reine Zeichen (•, „“, Link) sind für Hilfsmittel
+ * verborgen, der Name steht dann allein.
+ */
+type Werkzeug = { titel: string; zeichen: ReactNode; aufschrift?: string; vor: string; nach?: string; zeile?: boolean; platzhalter: string };
 const WERKZEUGE: Werkzeug[] = [
-  { titel: t('ablage.formatiert.fett'), zeichen: <strong>F</strong>, vor: '**', nach: '**', platzhalter: 'fett' },
-  { titel: t('ablage.formatiert.kursiv'), zeichen: <em>K</em>, vor: '*', nach: '*', platzhalter: 'kursiv' },
-  { titel: t('ablage.formatiert.ueberschrift'), zeichen: 'Ü', vor: '## ', zeile: true, platzhalter: t('ablage.formatiert.ueberschrift') },
+  { titel: t('ablage.formatiert.fett'), zeichen: <strong>F</strong>, aufschrift: 'F', vor: '**', nach: '**', platzhalter: 'fett' },
+  { titel: t('ablage.formatiert.kursiv'), zeichen: <em>K</em>, aufschrift: 'K', vor: '*', nach: '*', platzhalter: 'kursiv' },
+  { titel: t('ablage.formatiert.ueberschrift'), zeichen: 'Ü', aufschrift: 'Ü', vor: '## ', zeile: true, platzhalter: t('ablage.formatiert.ueberschrift') },
   { titel: t('ablage.formatiert.liste'), zeichen: '•', vor: '- ', zeile: true, platzhalter: t('ablage.formatiert.punkt') },
-  { titel: t('ablage.formatiert.nummerierte-liste'), zeichen: '1.', vor: '1. ', zeile: true, platzhalter: t('ablage.formatiert.punkt') },
+  { titel: t('ablage.formatiert.nummerierte-liste'), zeichen: '1.', aufschrift: '1.', vor: '1. ', zeile: true, platzhalter: t('ablage.formatiert.punkt') },
   { titel: t('ablage.formatiert.zitat'), zeichen: '„“', vor: '> ', zeile: true, platzhalter: t('ablage.formatiert.zitat') },
   { titel: t('ablage.formatiert.link'), zeichen: <Symbol name="link" />, vor: '[', nach: '](https://)', platzhalter: t('ablage.formatiert.linktext') },
 ];
@@ -239,10 +244,12 @@ export function FormatiertEingabe({ id, wert: gespeichert, setze, rahmen, unter 
         <Umschalter wert={vorschau ? 'vorschau' : 'schreiben'} setze={(x) => setVorschau(x === 'vorschau')} beschriftung={t('ablage.formatiert.ansicht')}
           wahlen={[{ wert: 'schreiben', text: t('ablage.formatiert.schreiben') }, { wert: 'vorschau', text: t('ablage.formatiert.vorschau') }]} />
         {!vorschau && <span className="werkzeuge" role="toolbar" aria-label={t('ablage.formatiert.formatierung')}>{WERKZEUGE.map((w) => (
-          <Knopf key={w.titel} art="link" nurSymbol={w.titel} onMouseDown={(e) => e.preventDefault()} onClick={() => einfuegen(w)}>{w.zeichen}</Knopf>
+          <Knopf key={w.titel} art="link" nurSymbol={w.aufschrift ? `${w.aufschrift} ${w.titel}` : w.titel} title={w.titel} onMouseDown={(e) => e.preventDefault()} onClick={() => einfuegen(w)}>
+            {w.aufschrift ? w.zeichen : <span aria-hidden="true">{w.zeichen}</span>}
+          </Knopf>
         ))}
-          {/* Erwähnen (#889): für alle, die @ nicht kennen – öffnet dieselbe Auswahl. */}
-          <Knopf art="link" nurSymbol={t('ablage.formatiert.erwaehnen')} onMouseDown={(e) => e.preventDefault()} onClick={erwaehnen}>@</Knopf>
+          {/* Erwähnen (#889): für alle, die @ nicht kennen – öffnet dieselbe Auswahl. Das @ ist ein Zeichen (#1268). */}
+          <Knopf art="link" nurSymbol={t('ablage.formatiert.erwaehnen')} onMouseDown={(e) => e.preventDefault()} onClick={erwaehnen}><span aria-hidden="true">@</span></Knopf>
         </span>}
       </div>
       {vorschau

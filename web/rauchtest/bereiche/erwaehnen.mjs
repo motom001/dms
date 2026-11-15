@@ -1,5 +1,5 @@
 /**
- * Rauchtests: Erwähnen mit @ – alle Mappen (#889), ohne Pause weitertippen (#1267). Auswahl mit Mappentyp vor dem Titel, „Erwähnen“ in der Leiste,
+ * Rauchtests: Erwähnen mit @ – alle Mappen (#889), ohne Pause weitertippen (#1267), Werkzeugleiste mit axe (#1268). Auswahl mit Mappentyp vor dem Titel, „Erwähnen“ in der Leiste,
  * Anzeige mit aktuellem Titel (gespeichert nur die Kennung, #1293), Hinweis „Erwähnt in …“ in der erwähnten Mappe; axe hell und dunkel, Tippflächen am Handy.
  * Allein starten (frisch gestartetes Ablago, siehe rauchtest.mjs): node web/rauchtest/bereiche/erwaehnen.mjs [fehlerordner] [musterordner]
  */
@@ -64,8 +64,8 @@ rauchtest('Erwähnen mit @: Mappe auswählen, aktueller Titel, Hinweis in der er
   await auswahl.getByRole('option').first().waitFor();
   for (const schema of ['light', 'dark']) {
     await schemaWechseln(s, schema);
-    // Nur Auswahl und erwähnte Mappe: Die übrigen Werkzeuge der Leiste gehören nicht zu #889 (siehe Bericht).
-    for (const v of await axePruefen(s, ['.wahlliste', '.notizliste .formatiert'])) funde.push(`Auswahl (${schema}): ${v}`);
+    // Auswahl, erwähnte Mappe und die ganze Werkzeugleiste (#1268: sichtbare Aufschrift im Namen der Knöpfe).
+    for (const v of await axePruefen(s, ['.wahlliste', '.notizliste .formatiert', '.neuenotiz .formatleiste'])) funde.push(`Auswahl (${schema}): ${v}`);
   }
   assert.deepEqual(funde, [], `axe meldet Verstöße:\n${funde.join('\n')}`);
 });
