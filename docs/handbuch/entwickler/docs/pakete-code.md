@@ -1034,6 +1034,53 @@ Ein Paket, das auf dem Gerät übersetzt (z. B. mit einem WebAssembly-Modell), b
 
 Ein kleines Test-Paket steht in `server/test/uebersetzung.test.ts`: ein WebAssembly-Modul nach ABI 1, das auf `dms:uebersetzen` mit einer festen Übersetzung antwortet, samt Manifest. Der Test lädt es in den echten Paket-Läufer.
 
+## Einrichtung und Nachweise lesen { #einrichtung-und-nachweise }
+
+Ein Paket wie „Compliance“ hält eine Verfahrensdokumentation aktuell, ohne dass jemand Einstellungen abschreibt: Es liest den **Stand der Einrichtung** je Bereich und die **Nachweise eines Monats** als JSON (#1053). Was es lesen darf, hakt der Administrator je Bereich an (#1054, siehe unten); Passwörter und andere Geheimnisse sind nie enthalten (#1055).
+
+### Bereiche { #einrichtung-bereiche }
+
+| Kennung | Einrichtung | Nachweise |
+|---|---|---|
+| `allgemein` | Ablago-Version, „beruflich genutzt“, Angaben der eigenen Organisation, Verantwortlicher, Datenschutzbeauftragter | – |
+| `belegeingang` | Postfächer (aktiv, Server, „Anmeldung eingerichtet“), Eingangsordner, Volltext an/aus, Pakete für Texterkennung, PDF/A und Trennblatt | eingegangene Post je Weg |
+| `ablage` | Mappentypen mit Feldern (Art, Pflicht), Versionen je Dokumentenregister, Archivmodus, Frist, Stichtag, KI-Freigabe | – |
+| `zugang` | Zwei-Faktor und Passkey möglich/Pflicht, Anmeldeschutz, WebDAV, Anzahl API-Schlüssel, Rollen, Rechte je Mappentyp mit Regeln, Anzahl Personen je Verwaltungsrecht | Benutzer zum Stichtag (Rollen, Zwei-Faktor, Passkey, Verwaltungsrechte), Rechteänderungen, Fehlanmeldungen |
+| `betrieb` | installierte Pakete mit Version und Rechten, Automatisierungen an/aus, Assistent, Wartungsmodus | Updates von Ablago, Paket-Verlauf, Wartungszeiten |
+| `sicherung` | Zeitplan, Aufbewahrung, Verschlüsselung, Ziele außer Haus (nur Rechner), Probe-Wiederherstellung | Sicherungsläufe, Prüfungen, Probe-Wiederherstellungen mit Ergebnis |
+| `unveraenderbarkeit` | Zeitplan „Alle Dateien prüfen“ (bisher keiner), Mappentypen im Archivmodus | Läufe von „Alle Dateien prüfen“ mit Befund |
+| `datenschutz` | Löschkonzept je Mappentyp (Personenbezug, Zweck, Frist), Papierkorb, Historie, Löschprotokoll, Auskunft | Löschungen nach Fristende, endgültig Gelöschtes, geleerter Papierkorb, erzeugte Auskünfte |
+| `betriebspruefung` | Prüferzugang (gibt es noch nicht), Exportformate | – |
+
+### Format { #einrichtung-format }
+
+```json
+{ "format": 1, "art": "einrichtung", "bereich": "ablage", "version": "0.287.0",
+  "eintraege": [
+    { "kennung": "ablage.pflicht", "pfad": "ablage.pflicht:rechnung/betrag", "bezeichnung": "„Rechnung“: Feld „Betrag“ ist Pflicht", "wert": true }
+  ] }
+```
+
+- **`kennung`** ist die feste Art der Angabe (`ablage.feldtyp`, `zugang.zweifaktor`, `sicherung.ziel` …). Darauf baut die Liste „was zählt“ in den Einstellungen deines Pakets auf. Neue Kennungen kommen dazu, bestehende ändern ihre Bedeutung nicht.
+- **`pfad`** ist im Bereich eindeutig (Kennung, dahinter Mappentyp, Feld, Postfach …). Nach ihm vergleicht der Kern.
+- **`wert`** ist flach: Text, Zahl, ja/nein, `null` oder eine Liste von Texten. Zeitstempel gibt es in den Einträgen nicht – zwei Abrufe ohne Änderung sind gleich.
+- **Nachweise** haben dasselbe Gerüst mit `"art": "nachweise"`, `monat` (`JJJJ-MM`), `stichtag` und Einträgen `{ kennung, zeit?, daten }`. Aufstellungen wie die Benutzer gelten zum Stichtag (Zeitpunkt des Abrufs, höchstens Monatsende); für vergangene Monate ist das der heutige Stand. Mehr als 2000 Einträge je Monat zählt der Kern nur noch (`weitere`).
+
+### Was nie enthalten ist { #einrichtung-nie }
+
+- Passwörter, Schlüssel, Tokens und verschlüsselte Werte – alles geht durch die zentrale Sperre (`ohneGeheimnisse`).
+- Adressen nur mit Rechner: Sicherungsziele, Postfächer und Dienste ohne Benutzer, Passwort, Pfad und Query; bei Postfächern kein Benutzername, nur „Anmeldung eingerichtet“.
+- In der Einrichtung keine Personen: Verwaltungsrechte nur als Anzahl je Bereich, API-Schlüssel nur als Anzahl, Ausnahmen des Anmeldeschutzes nur als Anzahl.
+- Fehlanmeldungen mit Konto (nur wenn es das Konto gibt), Zeit und gekürzter Adresse (IPv4 /24, IPv6 /48) samt „Heimnetz“ ja/nein. Unbekannte Konten nur als Anzahl – dort steht oft ein vertipptes Passwort.
+
+### Bestandsaufnahme { #einrichtung-bestand }
+
+Was die Schnittstelle je Bereich mit Ablago 0.287 liefert und was (noch) fehlt:
+
+- **Geliefert:** alle Einrichtungs-Angaben der Tabelle oben aus den Diensten, die auch die Werkbank zeigt. Für Nachweise, die vorher nirgends dauerhaft standen (das Protokoll hält 24 Stunden), führt der Kern seit 0.287 ein **Nachweis-Journal** je Monat (Einstellung `nachweise:JJJJ-MM`, Teil der Sicherung, 25 Monate): Fehlanmeldungen, Rechteänderungen (Verwaltungsrechte, Rollen, Regeln am Mappentyp), Updates, Paket-Verlauf, Wartungszeiten, „Alle Dateien prüfen“, geleerter Papierkorb, Auskünfte. Diese Nachweise gibt es also erst ab dem Update.
+- **Aus vorhandenen Daten:** Sicherungsläufe nur für Sicherungen, die noch da sind (Aufbewahrung); Löschungen aus dem Löschprotokoll; Post je Weg aus den Post-Mappen.
+- **Fehlt:** Trennblatt- und Barcode-Regeln stehen in den Einstellungen des jeweiligen Pakets – geliefert wird nur, welches Paket zuständig ist. „Alle Dateien prüfen“ hat keinen Zeitplan, einen Prüferzugang gibt es nicht. Fehlgeschlagene Sicherungen stehen nur als letzte Meldung, nicht als Verlauf. Die Mappentypen kommen als flache Einträge, nicht als Datei im Format von „Paket erstellen“.
+
 ## Ausprobieren
 
 1. Paket als ZIP im **Expertenmodus** hochladen (siehe [Eigenes Paket testen](pakete.md#eigenes-paket-testen)) und die Rechte bestätigen.

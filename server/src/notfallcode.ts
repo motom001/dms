@@ -1,10 +1,9 @@
-import { BlockList, isIP } from 'node:net';
 import { randomBytes } from 'node:crypto';
 import { NOTFALL_SPERRE_SEKUNDEN } from '../../shared/src/notfallcode';
 import { istPerson, type Benutzer } from '../../shared/src/model';
 import { darfVerwalten, hatGesamt } from '../../shared/src/verwaltungsrecht';
 import { zeitzone } from '../../shared/src/region';
-import { ipBereich, kuerzeIp } from './abruf';
+import { ipBereich, istPrivat, kuerzeIp } from './abruf';
 import type { Einstellungen } from './einstellungen';
 import { Fachfehler } from './fehler';
 import { hashe, speicherKurzzustand, type Kurzzustand } from './kurzzustand';
@@ -53,16 +52,8 @@ const BENUTZT = 'notfallcode_benutzt';
 
 /* ---------- Heimnetz ---------- */
 
-const PRIVAT = new BlockList();
-for (const [netz, maske] of [['10.0.0.0', 8], ['172.16.0.0', 12], ['192.168.0.0', 16], ['127.0.0.0', 8], ['169.254.0.0', 16]] as const) PRIVAT.addSubnet(netz, maske, 'ipv4');
-for (const [netz, maske] of [['::1', 128], ['fe80::', 10], ['fc00::', 7]] as const) PRIVAT.addSubnet(netz, maske, 'ipv6');
-
-/** Private Adresse (Heimnetz, Loopback, Link-Local, IPv6 ULA)? IPv4 in IPv6 (::ffff:…) zählt als IPv4. */
-export function istPrivat(ip: string | undefined): boolean {
-  const a = (ip ?? '').replace(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/i, '$1').replace(/%.*$/, '').trim();
-  const f = isIP(a);
-  return !!f && PRIVAT.check(a, f === 6 ? 'ipv6' : 'ipv4');
-}
+// Private Adressen (#885) stehen seit #1053 in abruf.ts (auch für die Nachweise der Fehlanmeldungen).
+export { istPrivat };
 
 /** Köpfe, mit denen ein Reverse Proxy die echte Adresse weitergibt. */
 const WEITERGELEITET = ['x-forwarded-for', 'forwarded', 'x-real-ip'];

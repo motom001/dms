@@ -7,7 +7,7 @@
  * Download (zwei Minuten gültig). In der Datenbank liegen nur Hashes (seit #744 auch vom Ticket).
  */
 import { randomBytes, randomInt } from 'node:crypto';
-import { isIP } from 'node:net';
+import { BlockList, isIP } from 'node:net';
 import { CODE_LAENGE, CODE_ZEICHEN } from '../../shared/src/auskunft';
 import { hashe, speicherKurzzustand, type Kurzzustand } from './kurzzustand';
 
@@ -31,6 +31,17 @@ export function kuerzeIp(ip: string | undefined): string {
     return `${teile.join(':')}::`;
   }
   return '–';
+}
+
+const PRIVAT = new BlockList();
+for (const [netz, maske] of [['10.0.0.0', 8], ['172.16.0.0', 12], ['192.168.0.0', 16], ['127.0.0.0', 8], ['169.254.0.0', 16]] as const) PRIVAT.addSubnet(netz, maske, 'ipv4');
+for (const [netz, maske] of [['::1', 128], ['fe80::', 10], ['fc00::', 7]] as const) PRIVAT.addSubnet(netz, maske, 'ipv6');
+
+/** Private Adresse (Heimnetz, Loopback, Link-Local, IPv6 ULA)? IPv4 in IPv6 (::ffff:…) zählt als IPv4. */
+export function istPrivat(ip: string | undefined): boolean {
+  const a = (ip ?? '').replace(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/i, '$1').replace(/%.*$/, '').trim();
+  const f = isIP(a);
+  return !!f && PRIVAT.check(a, f === 6 ? 'ipv6' : 'ipv4');
 }
 
 export const TICKET_MS = 2 * 60_000;

@@ -6,6 +6,7 @@ import { speicherEinstellungen } from './einstellungen';
 import { Fachfehler } from './fehler';
 import { speicherKurzzustand, type Kurzzustand } from './kurzzustand';
 import { protokoll } from './protokoll';
+import { fehlanmeldung } from './nachweisjournal';
 import { t } from './sprache';
 import { gebietsschema } from '../../shared/src/sprache';
 
@@ -279,6 +280,8 @@ export class Anmeldesperre {
   async fehlschlag(email: string, ip: string, bekannt = false, v?: Versuch) {
     await this.lade();
     const a = norm(ip);
+    // Nachweise (#1053): jede Fehlanmeldung, auch aus Ausnahmen – Konto nur, wenn es das Konto gibt; Adresse gekürzt.
+    void fehlanmeldung(email, a, bekannt);
     if (v?.ausgenommen || this.ausgenommen(a)) return;
     const zahl = this.jetzt();
     // Atomar gezählt (#744): Jeder Fehlversuch schiebt das Ende der Kontosperre hinaus (wie bisher). Mit `versuch`

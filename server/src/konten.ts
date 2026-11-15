@@ -2,6 +2,7 @@ import type { Zweifaktor } from './zweifaktor';
 import type { Passkeys } from './passkeys';
 import type { AnbieterIdentitaet, OidcEinstellung } from './oidc';
 import { protokoll } from './protokoll';
+import { nachweis } from './nachweisjournal';
 
 const log = protokoll.modul('konto');
 import { Anmeldesperre, type Versuch } from './anmeldesperre';
@@ -944,6 +945,7 @@ export class Konten {
     // Protokoll deutsch, die Mail in der Sprache der Person, die sie bekommt (#729).
     const daten = inSprache('de', () => ({ person: b.email, vorher: verwaltungText(vorher), nachher: verwaltungText(neu), von: ich.email, imVerwaltungsmodus: ich.rolle === 'admin' }));
     log.warn(!neu.length ? 'Verwaltungsrecht entzogen' : !vorher.length ? 'Verwaltungsrecht vergeben' : 'Verwaltungsrecht geändert', daten);
+    void nachweis('zugang.rechte', { was: 'verwaltung', konto: b.email, vorher, nachher: neu, von: ich.email });
     for (const x of await this.repo.listeBenutzer()) {
       if (!zaehltAlsGesamt(x) || x.email.endsWith('.invalid')) continue;
       const m = mitSpracheVon(x, () => mailtexte.verwaltungsrecht(b.name || b.email, verwaltungText(vorher), verwaltungText(neu), ich.name || ich.email));

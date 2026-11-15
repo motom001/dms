@@ -5,12 +5,13 @@
  */
 import { type Benutzer, type Mappe, type Mappentyp, verweiseVon } from '../../../shared/src/model';
 import type { Aufloesung } from '../../../shared/src/sichten';
-import { type Ausdruck, bereinigeRegelwerk, istOffen, kontoRegelwerk, kopiereRegel, kurz, leseAusdruck, mitSichtbarenTypen, nicht, NICHTS, oder, type Recht, rechteAn as rechteAnMappe, regelProblem, type Regelwerk, regelwerkVon, type Wer } from '../../../shared/src/rechte';
+import { type Ausdruck, bereinigeRegelwerk, istOffen, kontoRegelwerk, kopiereRegel, kurz, kurzStandard, leseAusdruck, mitSichtbarenTypen, nicht, NICHTS, oder, type Recht, rechteAn as rechteAnMappe, regelProblem, type Regelwerk, regelwerkVon, type Wer } from '../../../shared/src/rechte';
 import { Fachfehler } from '../fehler';
 import type { Kern, Zugreifender, Zugriff } from '../kern';
 import { protokoll } from '../protokoll';
 import { istUuid, type Repo } from '../repo';
 import { t } from '../sprache';
+import { nachweis } from '../nachweisjournal';
 import type { ZugriffDienst } from '../zugriff';
 
 /** Was die Berechtigungen außer Kern und Rechteprüfung brauchen – vom Dienst hereingereicht. */
@@ -72,6 +73,8 @@ export class BerechtigungenDienst {
     const { rw, niemand } = await this.pruefeBerechtigungen(typ, eingabe, bestaetigt);
     const neu = await this.repo.setzeBerechtigungen(typId, istOffen(rw) ? null : rw);
     BerechtigungenDienst.protokolliereBerechtigungen(neu, niemand);
+    // Nachweise (#1053): Rechteänderung am Mappentyp – Standard und Zahl der Regeln, keine Personen aus den Bedingungen.
+    void nachweis('zugang.rechte', { was: 'regeln', typ: neu.name, standard: kurzStandard(regelwerkVon(neu).grund), regeln: regelwerkVon(neu).regeln.map((r) => r.name) });
     return { typ: neu, niemand };
   }
 
@@ -120,6 +123,7 @@ export class BerechtigungenDienst {
       if (!k.regel.wenn.length) { ausgelassen += k.ausgelassen; continue; }
       const rw = regelwerkVon(ziel);
       await this.repo.setzeBerechtigungen(ziel.id, { grund: rw.grund, regeln: [...rw.regeln, k.regel] });
+      void nachweis('zugang.rechte', { was: 'regeln', typ: ziel.name, standard: kurzStandard(rw.grund), regeln: [...rw.regeln, k.regel].map((r) => r.name) });
       kopiert++; ausgelassen += k.ausgelassen;
     }
     return { kopiert, ausgelassen };

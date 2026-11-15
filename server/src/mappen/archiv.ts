@@ -15,6 +15,7 @@ import { istUuid, type Repo } from '../repo';
 import { t } from '../sprache';
 import type { ZugriffDienst } from '../zugriff';
 import type { MappenHistorie } from './historie';
+import { nachweis } from '../nachweisjournal';
 
 /** Barcode-Präfix der Archivnummern (#345); der Kreis: ARCHIV_KREIS (mappentypen/nummernkreise.ts). */
 export const ARCHIV_PRAEFIX = 'DMS-ASN:';
@@ -162,6 +163,8 @@ export class MappenArchiv {
       const log = protokoll.modul('werkbank');
       if (abweichungen.length) log.error('Dateien prüfen: Abweichungen gefunden', { von, dateien: shas.length, abweichungen: abweichungen.length, erste: abweichungen[0].dokumente[0]?.name });
       else log.info('Dateien prüfen: alle in Ordnung', { von, dateien: shas.length });
+      // Nachweise (#1053): Lauf mit Befund (Anzahl), ohne Dateinamen.
+      void nachweis('unveraenderbarkeit.pruefung', { dateien: shas.length, abweichungen: abweichungen.length, fehlend: fehlend.length, von });
       return { dateien: shas.length, abweichungen };
     }, [{ key: 'dateien', name: 'Dateien prüfen', einheit: 'Dateien' }]);
   }

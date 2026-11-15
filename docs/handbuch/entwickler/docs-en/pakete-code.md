@@ -1035,6 +1035,53 @@ A package that translates on the device (e.g. with a WebAssembly model) needs no
 
 A small test package is in `server/test/uebersetzung.test.ts`: a WebAssembly module following ABI 1 that answers `dms:uebersetzen` with a fixed translation, with its manifest. The test loads it into the real package runner.
 
+## Reading setup and evidence { #einrichtung-und-nachweise }
+
+A package such as “Compliance” keeps a process documentation up to date without anyone copying settings: it reads the **current setup** per area and the **evidence of a month** as JSON (#1053). What it may read, the administrator ticks per area (#1054, see below); passwords and other secrets are never included (#1055).
+
+### Areas { #einrichtung-bereiche }
+
+| Key | Setup | Evidence |
+|---|---|---|
+| `allgemein` | Ablago version, “used for work”, details of the own organisation, controller, data protection officer | – |
+| `belegeingang` | Mailboxes (active, server, “sign-in set up”), inbox folder, full text on/off, packages for text recognition, PDF/A and separator sheets | incoming post per channel |
+| `ablage` | Folder types with fields (kind, required), versions per document tab, archive mode, period, reference date, AI approval | – |
+| `zugang` | Two-factor and passkey possible/required, sign-in protection, WebDAV, number of API keys, roles, permissions per folder type with rules, number of people per administration right | users at the reference date (roles, two-factor, passkey, administration rights), permission changes, failed sign-ins |
+| `betrieb` | installed packages with version and permissions, automations on/off, assistant, maintenance mode | Ablago updates, package history, maintenance times |
+| `sicherung` | schedule, retention, encryption, off-site targets (host only), test restore | backup runs, checks, test restores with result |
+| `unveraenderbarkeit` | schedule of “Check all files” (none so far), folder types in archive mode | runs of “Check all files” with findings |
+| `datenschutz` | deletion concept per folder type (personal data, purpose, period), Bin, history, deletion log, subject access | deletions after the period, final deletions, emptied Bin, subject access requests |
+| `betriebspruefung` | auditor access (does not exist yet), export formats | – |
+
+### Format { #einrichtung-format }
+
+```json
+{ "format": 1, "art": "einrichtung", "bereich": "ablage", "version": "0.287.0",
+  "eintraege": [
+    { "kennung": "ablage.pflicht", "pfad": "ablage.pflicht:rechnung/betrag", "bezeichnung": "“Invoice”: field “Amount” is required", "wert": true }
+  ] }
+```
+
+- **`kennung`** is the fixed kind of entry (`ablage.feldtyp`, `zugang.zweifaktor`, `sicherung.ziel` …). The “what counts” list in your package settings builds on it. New keys may be added; existing ones keep their meaning.
+- **`pfad`** is unique within the area (key followed by folder type, field, mailbox …). The core compares by it.
+- **`wert`** is flat: text, number, yes/no, `null` or a list of texts. Entries carry no timestamps – two reads without a change are identical.
+- **Evidence** uses the same frame with `"art": "nachweise"`, `monat` (`YYYY-MM`), `stichtag` and entries `{ kennung, zeit?, daten }`. Lists such as the users apply at the reference date (time of the read, at most the end of the month); for past months this is today’s state. Beyond 2000 entries per month the core only counts (`weitere`).
+
+### Never included { #einrichtung-nie }
+
+- Passwords, keys, tokens and encrypted values – everything passes the central lock (`ohneGeheimnisse`).
+- Addresses with the host only: backup targets, mailboxes and services without user, password, path and query; for mailboxes no user name, only “sign-in set up”.
+- No people in the setup: administration rights only as a count per area, API keys and sign-in protection exceptions only as counts.
+- Failed sign-ins with account (only if the account exists), time and shortened address (IPv4 /24, IPv6 /48) plus “home network” yes/no. Unknown accounts only as a count – they often contain a mistyped password.
+
+### Inventory { #einrichtung-bestand }
+
+What the interface delivers per area with Ablago 0.287 and what is (still) missing:
+
+- **Delivered:** all setup entries from the table above, from the services the Workbench shows as well. For evidence that was not stored permanently before (the log keeps 24 hours), the core keeps an **evidence journal** per month since 0.287 (setting `nachweise:YYYY-MM`, part of the backup, 25 months): failed sign-ins, permission changes (administration rights, roles, folder type rules), updates, package history, maintenance times, “Check all files”, emptied Bin, subject access requests. This evidence therefore starts with the update.
+- **From existing data:** backup runs only for backups that still exist (retention); deletions from the deletion log; post per channel from the post folders.
+- **Missing:** separator sheet and barcode rules live in the settings of the respective package – only the responsible package is delivered. “Check all files” has no schedule, and there is no auditor access. Failed backups exist only as the last message, not as a history. Folder types come as flat entries, not as a file in the “Create package” format.
+
 ## Trying it out { #ausprobieren }
 
 1. Upload the package as a ZIP in **expert mode** (see [Testing your own package](pakete.md#eigenes-paket-testen)) and confirm the permissions.

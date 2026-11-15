@@ -1,0 +1,271 @@
+/**
+ * Einrichtung je Bereich, Nachweise je Monat und Vergleich zweier Stände als Daten für Pakete (#1053). Je Bereich ein
+ * Test; dazu, dass keine Zugangsdaten mitkommen (Ergänzung Sicherheit) und das Journal je Monat zählt statt wächst.
+ */
+import assert from 'node:assert/strict';
+import { describe, it } from 'node:test';
+import { einrichtung, nurRechner, type EinrichtungQuellen } from '../src/paketdaten';
+import { nachweise, monatsGrenzen, type NachweisQuellen } from '../src/paketdaten';
+import { liesEintraege, vergleiche } from '../src/paketdaten';
+import { fehlanmeldung, JE_MONAT, merkeVersion, Nachweisjournal, nachweis, setzeNachweisjournal } from '../src/nachweisjournal';
+import { speicherEinstellungen } from '../src/einstellungen';
+import { findeGeheimnisse } from '../src/geheimnis-sperre';
+import { PAKETDATEN_BEREICHE, darfPaketdaten, type EinrichtungEintrag } from '../../shared/src/paketdaten';
+import type { Mappentyp } from '../../shared/src/model';
+
+const GEHEIM = ['Postfach-Passwort-9f8e7d', 'lena.postfach', 'tok3n-im-query-55aa', 'S3cret-Benutzer-in-url'];
+
+const typ = (x: Partial<Mappentyp> & { id: string; name: string }): Mappentyp => ({
+  beschreibung: '', titelVorlage: '', felder: [], register: [], erstellt: '', geaendert: '', ...x,
+}) as Mappentyp;
+
+const RECHNUNG = typ({
+  id: 't1', name: 'Rechnung', schluessel: 'rechnung',
+  felder: [{ key: 'betrag', label: 'Betrag', typ: 'betrag', pflicht: true }, { key: 'datum', label: 'Rechnungsdatum', typ: 'datum' }],
+  register: [{ key: 'dok', name: 'Belege', art: 'dokumente', versionierung: true }],
+  archiv: { jahre: 10, stichtag: 'datum' },
+  berechtigungen: { grund: { C: true, R: true, U: true, D: false, P: false }, regeln: [{ id: 'r1', name: 'Buchhaltung', wenn: [], dann: { D: 'erteilen' }, stopp: false }] },
+});
+
+const quellen = (mehr: Partial<EinrichtungQuellen> = {}): EinrichtungQuellen => ({
+  version: '0.285.0',
+  beruflich: async () => true,
+  organisationen: async () => [{ id: 'o1', angaben: { name: 'Tischlerei Brandt', ort: 'Musterstadt' }, verantwortlicher: null, datenschutzbeauftragter: 'Petra Beispiel' }],
+  postfaecher: async () => [{ id: 'p1', name: 'Rechnungen', aktiv: true, server: `imaps://lena.postfach:${GEHEIM[0]}@mail.example.org:993/?token=${GEHEIM[2]}`, anmeldung: true }],
+  eingangsordner: async () => ({ aktiv: true, nachher: 'loeschen', doppelteUeberspringen: true }),
+  texterkennung: async () => ({ aktiv: true }),
+  typen: async () => [RECHNUNG],
+  kiTypen: async () => new Set(['t1']),
+  zweifaktor: async () => ({ admin: true, mitglied: false }),
+  passkeys: async () => ({ moeglich: true, pflicht: { admin: false, mitglied: false } }),
+  anmeldeschutz: async () => ({ konto: { versuche: 5, minuten: 1 }, ip: { versuche: 30, minuten: 60 }, ausnahmen: 2, mail: true }),
+  webdav: async () => ({ aktiv: true, nurLesend: false }),
+  apiSchluessel: async () => 3,
+  rollen: async () => [{ id: 'r-buch', name: 'Buchhaltung' }],
+  verwaltung: async () => [['*'], ['sicherung', 'pakete'], undefined],
+  pakete: async () => [{ id: 'texterkennung', name: 'Texterkennung', version: '1.2.0', rechte: ['Dokumente lesen'], schnittstellen: ['dms:texterkennung'] }],
+  automatisierungen: async () => [{ id: 'a1', name: 'Rechnung prüfen', aktiv: true, herkunft: 'eigen', paket: null }],
+  assistent: async () => ({ verfuegbar: false, paket: null }),
+  wartung: async () => ({ stufe: 'aus' }),
+  sicherung: async () => ({
+    plan: { aktiv: true, uhrzeit: '02:00', haeufigkeit: 'taeglich', wochentag: 7, aufbewahrung: { taeglich: 7, woechentlich: 4, monatlich: 12 }, nurNeueste: false },
+    probe: { aktiv: true, wochentag: 7, uhrzeit: '04:00' }, verschluesselt: true,
+    ziele: [{ paket: 'webdav_ziel', name: 'Sicherungsziel WebDAV', ziel: `https://${GEHEIM[3]}:${GEHEIM[0]}@nas.example.org/ablago?key=${GEHEIM[2]}` }],
+  }),
+  datenschutz: async () => ({ typen: { t1: { person: false, zweck: 'Buchhaltung' } }, papierkorbTage: 30, historieTage: 365, loeschprotokollJahre: 10, auskunftTage: 7 }),
+  ...mehr,
+});
+
+const wert = (l: EinrichtungEintrag[], pfad: string) => l.find((x) => x.pfad === pfad)?.wert;
+
+describe('Einrichtung je Bereich (#1053)', () => {
+  it('Allgemeines: Version, beruflich, eigene Organisation', async () => {
+    const s = await einrichtung('allgemein', quellen());
+    assert.equal(s.format, 1);
+    assert.equal(wert(s.eintraege, 'allgemein.version'), '0.285.0');
+    assert.equal(wert(s.eintraege, 'allgemein.beruflich'), true);
+    assert.equal(wert(s.eintraege, 'allgemein.organisation:o1/name'), 'Tischlerei Brandt');
+    assert.equal(wert(s.eintraege, 'allgemein.datenschutzbeauftragter:o1'), 'Petra Beispiel');
+  });
+
+  it('Belegeingang: Postfach nur mit Rechner und „Anmeldung eingerichtet“, Pakete für Texterkennung', async () => {
+    const s = await einrichtung('belegeingang', quellen());
+    assert.equal(wert(s.eintraege, 'belegeingang.postfach_server:p1'), 'mail.example.org');
+    assert.equal(wert(s.eintraege, 'belegeingang.postfach_anmeldung:p1'), true);
+    assert.deepEqual(wert(s.eintraege, 'belegeingang.texterkennung_paket'), ['Texterkennung 1.2.0']);
+    assert.equal(wert(s.eintraege, 'belegeingang.eingangsordner_nachher'), 'loeschen');
+  });
+
+  it('Ablage: Mappentypen mit Feldern, Pflicht, Versionen, Archivmodus, Frist, Stichtag, KI', async () => {
+    const s = await einrichtung('ablage', quellen());
+    assert.equal(wert(s.eintraege, 'ablage.typ:rechnung'), 'Rechnung');
+    assert.equal(wert(s.eintraege, 'ablage.feldtyp:rechnung/betrag'), 'betrag');
+    assert.equal(wert(s.eintraege, 'ablage.pflicht:rechnung/betrag'), true);
+    assert.equal(wert(s.eintraege, 'ablage.versionierung:rechnung/dok'), true);
+    assert.equal(wert(s.eintraege, 'ablage.frist:rechnung'), 10);
+    assert.equal(wert(s.eintraege, 'ablage.stichtag:rechnung'), 'Rechnungsdatum');
+    assert.equal(wert(s.eintraege, 'ablage.ki:rechnung'), true);
+    assert.match(s.eintraege.find((x) => x.pfad === 'ablage.pflicht:rechnung/betrag')!.bezeichnung, /Rechnung.*Betrag/);
+  });
+
+  it('Zugang: Zwei-Faktor, Passkeys, Anmeldeschutz ohne Ausnahmen, Rollen mit Regeln, Verwaltung nur gezählt', async () => {
+    const s = await einrichtung('zugang', quellen());
+    assert.equal(wert(s.eintraege, 'zugang.zweifaktor:admin'), true);
+    assert.equal(wert(s.eintraege, 'zugang.anmeldeschutz_ausnahmen'), 2);
+    assert.equal(wert(s.eintraege, 'zugang.schnittstelle'), 3);
+    assert.equal(wert(s.eintraege, 'zugang.grundrechte:rechnung'), 'CRU');
+    assert.equal(wert(s.eintraege, 'zugang.regel:rechnung/r1'), 'D+');
+    assert.equal(wert(s.eintraege, 'zugang.verwaltung:*'), 1);
+    assert.equal(wert(s.eintraege, 'zugang.verwaltung:sicherung'), 1);
+    assert.ok(!JSON.stringify(s).includes('@'), 'keine Adressen von Personen');
+  });
+
+  it('Betrieb: Pakete mit Version und Rechten, Automatisierungen, Assistent, Wartung', async () => {
+    const s = await einrichtung('betrieb', quellen());
+    assert.equal(wert(s.eintraege, 'betrieb.paket:texterkennung'), '1.2.0');
+    assert.deepEqual(wert(s.eintraege, 'betrieb.paket_rechte:texterkennung'), ['Dokumente lesen']);
+    assert.equal(wert(s.eintraege, 'betrieb.automatisierung:a1'), true);
+    assert.equal(wert(s.eintraege, 'betrieb.wartung'), 'aus');
+  });
+
+  it('Sicherung: Zeitplan, Aufbewahrung, Verschlüsselung, Ziel nur mit Rechner', async () => {
+    const s = await einrichtung('sicherung', quellen());
+    assert.equal(wert(s.eintraege, 'sicherung.aufbewahrung:monatlich'), 12);
+    assert.equal(wert(s.eintraege, 'sicherung.verschluesselung'), true);
+    assert.equal(wert(s.eintraege, 'sicherung.ziel:webdav_ziel'), 'nas.example.org');
+    assert.equal((await einrichtung('sicherung', quellen({ sicherung: async () => null }))).eintraege.length, 1);
+  });
+
+  it('Unveränderbarkeit, Datenschutz und Betriebsprüfung', async () => {
+    const u = await einrichtung('unveraenderbarkeit', quellen());
+    assert.equal(wert(u.eintraege, 'unveraenderbarkeit.zeitplan'), null);
+    assert.deepEqual(wert(u.eintraege, 'unveraenderbarkeit.archivmodus'), ['Rechnung']);
+    const d = await einrichtung('datenschutz', quellen());
+    assert.equal(wert(d.eintraege, 'datenschutz.papierkorb'), 30);
+    assert.equal(wert(d.eintraege, 'datenschutz.zweck:rechnung'), 'Buchhaltung');
+    const b = await einrichtung('betriebspruefung', quellen());
+    assert.equal(wert(b.eintraege, 'betriebspruefung.prueferzugang'), false);
+  });
+
+  it('kein Bereich enthält die Testgeheimnisse; zwei Abrufe ohne Änderung sind gleich', async () => {
+    for (const b of PAKETDATEN_BEREICHE) {
+      const s = await einrichtung(b, quellen());
+      assert.deepEqual(findeGeheimnisse(JSON.stringify(s), GEHEIM), [], b);
+      assert.deepEqual(s, await einrichtung(b, quellen()), b);
+      for (const x of s.eintraege) assert.match(x.kennung, /^[a-z]+\.[a-z_]+$/, x.kennung);
+    }
+  });
+
+  it('nurRechner: ohne Benutzer, Passwort, Pfad und Query', () => {
+    assert.equal(nurRechner('https://a:b@nas.example.org:8443/x?y=1'), 'nas.example.org');
+    assert.equal(nurRechner('mail.example.org'), 'mail.example.org');
+    assert.equal(nurRechner(''), null);
+  });
+});
+
+describe('Vergleich zweier Stände (#1053)', () => {
+  it('liefert neu, geändert und entfernt mit lesbarem Satz, sonst nichts', async () => {
+    const vorher = (await einrichtung('ablage', quellen())).eintraege;
+    const anders = typ({ ...RECHNUNG, felder: [{ ...RECHNUNG.felder[0], pflicht: false }, { key: 'iban', label: 'IBAN', typ: 'text' }], archiv: null });
+    const nachher = (await einrichtung('ablage', quellen({ typen: async () => [anders] }))).eintraege;
+    const v = vergleiche(vorher, nachher);
+    const p = (pfad: string) => v.find((x) => x.pfad === pfad);
+    assert.equal(p('ablage.pflicht:rechnung/betrag')?.art, 'geaendert');
+    assert.match(p('ablage.pflicht:rechnung/betrag')!.satz, /Betrag.*ja → nein/);
+    assert.equal(p('ablage.feldtyp:rechnung/iban')?.art, 'neu');
+    assert.equal(p('ablage.feldtyp:rechnung/datum')?.art, 'entfernt');
+    assert.equal(p('ablage.archivmodus:rechnung')?.kennung, 'ablage.archivmodus');
+    assert.deepEqual(vergleiche(vorher, vorher), []);
+  });
+
+  it('nimmt einen mitgeschickten Stand nur mit flachen Werten an', () => {
+    const l = liesEintraege({ eintraege: [{ kennung: 'a.b', pfad: 'a.b', wert: { tief: 1 } }, { kennung: 'a.c', pfad: 'a.c', wert: ['x'] }, 'kaputt'] });
+    assert.deepEqual(l.map((x) => x.pfad), ['a.c']);
+    assert.deepEqual(liesEintraege(null), []);
+  });
+});
+
+describe('Nachweise je Monat (#1053)', () => {
+  const journal = new Nachweisjournal(speicherEinstellungen(), () => new Date('2026-11-10T08:00:00Z'));
+  const q = (mehr: Partial<NachweisQuellen> = {}): NachweisQuellen => ({
+    journal: (m) => journal.monat(m), jetzt: () => new Date('2026-11-15T12:00:00Z'),
+    benutzer: async () => [{ konto: 'lena@example.org', aktiv: true, rollen: ['admin'], zweifaktor: true, passkey: false, verwaltung: ['*'] }],
+    sicherungen: async () => [
+      { name: 's-okt', beginn: '2026-10-31T02:00:00Z', ende: '2026-10-31T02:10:00Z', art: 'automatisch', pruefung: { am: '2026-11-01T03:00:00Z', ok: true }, probe: null },
+      { name: 's-nov', beginn: '2026-11-02T02:00:00Z', ende: '2026-11-02T02:09:00Z', art: 'automatisch', pruefung: null, probe: { am: '2026-11-08T04:00:00Z', ok: false } },
+    ],
+    loeschungen: async () => [{ zeit: '2026-11-03T10:00:00Z', schritt: 'papierkorb', grund: 'frist', typ: 'Rechnung', art: 'mappe' }, { zeit: '2026-11-04T10:00:00Z', schritt: 'endgueltig', grund: null, typ: 'Rechnung', art: 'mappe' }],
+    post: async () => ({ email: 4, scan: 2 }),
+    ...mehr,
+  });
+
+  it('Zugang: Benutzer zum Stichtag, Rechteänderungen, Fehlanmeldungen gekürzt, unbekannte nur gezählt', async () => {
+    setzeNachweisjournal(journal);
+    try {
+      await nachweis('zugang.rechte', { was: 'verwaltung', konto: 'jonas@example.org', vorher: [], nachher: ['sicherung'], von: 'lena@example.org' });
+      await fehlanmeldung('lena@example.org', '203.0.113.77', true);
+      await fehlanmeldung('lena@example.org', '192.168.1.20', true);
+      await fehlanmeldung('Passwort-statt-Name', '2001:db8:1:2::9', false);
+    } finally { setzeNachweisjournal(null); }
+    const s = await nachweise('zugang', '2026-11', q());
+    assert.equal(s.stichtag, '2026-11-15T12:00:00.000Z');
+    const f = s.eintraege.filter((x) => x.kennung === 'zugang.fehlanmeldung');
+    assert.deepEqual(f.map((x) => x.daten), [{ konto: 'lena@example.org', netz: '203.0.113.0', heimnetz: false }, { konto: 'lena@example.org', netz: '192.168.1.0', heimnetz: true }]);
+    assert.deepEqual(s.eintraege.find((x) => x.kennung === 'zugang.fehlanmeldung_unbekannt')?.daten, { anzahl: 1 });
+    assert.ok(!JSON.stringify(s).includes('Passwort-statt-Name'));
+    assert.ok(!JSON.stringify(s).includes('203.0.113.77'));
+    assert.equal(s.eintraege.filter((x) => x.kennung === 'zugang.benutzer').length, 1);
+    assert.equal(s.eintraege.filter((x) => x.kennung === 'zugang.rechte').length, 1);
+  });
+
+  it('Sicherung: Läufe, Prüfungen und Proben des Monats', async () => {
+    const s = await nachweise('sicherung', '2026-11', q());
+    assert.deepEqual(s.eintraege.map((x) => `${x.kennung}:${x.daten.name}`), ['sicherung.pruefung:s-okt', 'sicherung.lauf:s-nov', 'sicherung.probe:s-nov']);
+    assert.equal(s.eintraege.find((x) => x.kennung === 'sicherung.probe')?.daten.ok, false);
+  });
+
+  it('Datenschutz, Belegeingang, Betrieb und Unveränderbarkeit', async () => {
+    setzeNachweisjournal(journal);
+    try {
+      await nachweis('datenschutz.auskunft', { mappen: 3, dokumente: 5, von: 'lena@example.org' });
+      await nachweis('betrieb.paket', { aktion: 'installiert', paket: 'compliance', version: '1.0.0', vorher: null, von: 'lena@example.org' });
+      await nachweis('unveraenderbarkeit.pruefung', { dateien: 120, abweichungen: 0, fehlend: 0, von: 'lena@example.org' });
+    } finally { setzeNachweisjournal(null); }
+    const d = await nachweise('datenschutz', '2026-11', q());
+    assert.deepEqual(d.eintraege.filter((x) => x.kennung.startsWith('datenschutz.')).map((x) => x.kennung).sort(), ['datenschutz.auskunft', 'datenschutz.endgueltig', 'datenschutz.loeschung_frist']);
+    const b = await nachweise('belegeingang', '2026-11', q());
+    assert.deepEqual(b.eintraege.map((x) => x.daten), [{ weg: 'email', anzahl: 4 }, { weg: 'scan', anzahl: 2 }]);
+    assert.equal((await nachweise('betrieb', '2026-11', q())).eintraege[0].kennung, 'betrieb.paket');
+    assert.equal((await nachweise('unveraenderbarkeit', '2026-11', q())).eintraege[0].daten.dateien, 120);
+    assert.deepEqual((await nachweise('betrieb', '2026-10', q())).eintraege, []);
+  });
+
+  it('Monatsgrenzen und Stichtag am Monatsende für vergangene Monate', async () => {
+    assert.deepEqual(monatsGrenzen('2026-02'), { von: '2026-02-01T00:00:00.000Z', bis: '2026-02-28T23:59:59.999Z' });
+    assert.equal((await nachweise('zugang', '2026-10', q())).stichtag, '2026-10-31T23:59:59.999Z');
+  });
+});
+
+describe('Nachweis-Journal (#1053)', () => {
+  it('zählt über die Grenze je Monat hinaus nur noch und räumt alte Monate', async () => {
+    const e = speicherEinstellungen();
+    await e.schreibe('nachweise:2024-10', { eintraege: [], weitere: 0, zaehler: {} });
+    const j = new Nachweisjournal(e, () => new Date('2026-11-01T00:00:00Z'));
+    for (let i = 0; i < JE_MONAT + 3; i++) await j.schreibe('betrieb.wartung', { stufe: 'aus', von: 'x' });
+    const m = await j.monat('2026-11');
+    assert.equal(m.eintraege.length, JE_MONAT);
+    assert.equal(m.weitere, 3);
+    assert.equal(await e.lies('nachweise:2024-10'), null);
+  });
+
+  it('gleichzeitige Einträge gehen nicht verloren', async () => {
+    const j = new Nachweisjournal(speicherEinstellungen(), () => new Date('2026-11-01T00:00:00Z'));
+    await Promise.all(Array.from({ length: 5 }, (_, i) => j.schreibe('betrieb.wartung', { nr: i })));
+    assert.equal((await j.monat('2026-11')).eintraege.length, 5);
+  });
+
+  it('Update-Verlauf: einmal je neuer Version, der erste Start zählt nicht', async () => {
+    const e = speicherEinstellungen();
+    const j = new Nachweisjournal(e, () => new Date('2026-11-01T00:00:00Z'));
+    setzeNachweisjournal(j);
+    try {
+      await merkeVersion(e, '0.284.0');
+      await merkeVersion(e, '0.285.0');
+      await merkeVersion(e, '0.285.0');
+    } finally { setzeNachweisjournal(null); }
+    assert.deepEqual((await j.monat('2026-11')).eintraege.map((x) => x.daten), [{ von: '0.284.0', nach: '0.285.0' }]);
+  });
+});
+
+describe('Wer freigeben darf (#1054)', () => {
+  it('nur, wer den Bereich verwaltet; Zugang und Nachweise nur mit Gesamter Verwaltung', () => {
+    const sicherung = { verwaltung: ['sicherung'] }, gesamt = { verwaltung: ['*'] };
+    assert.ok(darfPaketdaten(sicherung, 'einrichtung', 'sicherung'));
+    assert.ok(!darfPaketdaten(sicherung, 'einrichtung', 'ablage'));
+    assert.ok(!darfPaketdaten(sicherung, 'nachweise', 'sicherung'));
+    assert.ok(!darfPaketdaten({ verwaltung: ['pakete'] }, 'einrichtung', 'betrieb'));
+    assert.ok(!darfPaketdaten({ verwaltung: ['sicherung', 'pakete', 'typen', 'organisation', 'automatisierungen', 'wartung'] }, 'einrichtung', 'zugang'));
+    for (const b of PAKETDATEN_BEREICHE) assert.ok(darfPaketdaten(gesamt, 'einrichtung', b) && darfPaketdaten(gesamt, 'nachweise', b));
+    assert.ok(!darfPaketdaten({ verwaltung: ['*'], art: 'dienst' }, 'einrichtung', 'allgemein'));
+  });
+});

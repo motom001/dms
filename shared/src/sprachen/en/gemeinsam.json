@@ -1380,5 +1380,14 @@
   "mitkommt.kurz.einstellungen_one": "{anzahl} setting",
   "mitkommt.kurz.einstellungen_other": "{anzahl} settings",
   "mitkommt.kurz.nichts": "creates nothing in the library",
-  "mitkommt.kurz.sprache": "Language package, texts only"
+  "mitkommt.kurz.sprache": "Language package, texts only",
+  "paketdaten.bereich.allgemein": "General",
+  "paketdaten.bereich.belegeingang": "Incoming documents and scanning",
+  "paketdaten.bereich.ablage": "Library",
+  "paketdaten.bereich.zugang": "Access and permissions",
+  "paketdaten.bereich.betrieb": "Operation",
+  "paketdaten.bereich.sicherung": "Backup",
+  "paketdaten.bereich.unveraenderbarkeit": "Immutability",
+  "paketdaten.bereich.datenschutz": "Data protection",
+  "paketdaten.bereich.betriebspruefung": "Tax audit"
 }

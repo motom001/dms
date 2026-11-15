@@ -14,6 +14,7 @@ import { eigeneVersion } from '../system';
 import { L, ok, leer, b, ich } from '../http/routen-hilfen';
 import type { RoutenKontext } from '../http/routen-kontext';
 import type { Route } from '../routen';
+import { nachweis } from '../nachweisjournal';
 
 export function datenschutzRouten(k: RoutenKontext): Route[] {
   const { dienst, x, zg, auskunftZiel, loeschkonzeptQuelle, adresse } = k;
@@ -66,6 +67,8 @@ export function datenschutzRouten(k: RoutenKontext): Route[] {
       return ok(await dienst.auftraege.angemeldet(dienst.auftraege.starte('auskunft', `Auskunft für ${daten.start.titel || 'Ohne Titel'}`, async (f) => {
         const r = await erzeugeAuskunft(daten, ziel, { von, mandant }, f);
         await dienst.datenschutzDienst.auskunftNachweis(daten, von, r);
+        // Nachweise (#1053): dass eine Auskunft erzeugt wurde, mit Umfang – ohne die betroffene Person.
+        void nachweis('datenschutz.auskunft', { mappen: daten.anzahl.mappen, dokumente: daten.anzahl.dokumente, von: von.email });
         return r;
       }, AUSKUNFT_PHASEN)), 202);
     } },

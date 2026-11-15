@@ -14,6 +14,7 @@ import type { ZugriffDienst } from '../zugriff';
 import { abwesenheitWirkt, type Benutzer, type Kontorolle, type Mappe, type Mappentyp, type Systemkonto, verweiseVon, type Werte } from '../../../shared/src/model';
 import { heuteIn } from '../../../shared/src/sichten';
 import { systemkontoAuffaellig, type SystemkontoFehler } from '../../../shared/src/systemkonten';
+import { nachweis } from '../nachweisjournal';
 
 /** Was mit dem Konto geschieht (Auszug aus `KontenHaken` in dienst.ts): Einstellungen und Konten der Menschen. */
 export interface KontenAnschluss {
@@ -150,7 +151,14 @@ export class PostSystemmappen {
     if (!m || m.typId !== typ.id) throw new Fachfehler(404, t('meldungen.dienst.diesen-benutzer-gibt-es'));
     const system = new Set(systemrollen.values());
     const behalten = alsListe(m.werte.rollen).filter((r) => system.has(r));
+    const vorher = alsListe(m.werte.rollen);
     await this.schreibeSystemMappe(typ, benutzerId, { rollen: [...behalten, ...ids] }, von);
+    // Nachweise (#1053): Rechteänderung mit den Namen der Rollen vorher und nachher.
+    const nachher = [...behalten, ...ids];
+    if (JSON.stringify([...vorher].sort()) !== JSON.stringify([...nachher].sort())) {
+      const namen = new Map((await this.listeRollen(true)).map((r) => [r.id, r.name] as const));
+      void nachweis('zugang.rechte', { was: 'rollen', konto: typeof m.werte.email === 'string' ? m.werte.email : benutzerId, vorher: vorher.map((r) => namen.get(r) ?? r), nachher: nachher.map((r) => namen.get(r) ?? r), von });
+    }
   }
 
   /** Alle Rollen für die Auswahl in der Benutzerverwaltung; Systemrollen zuerst. */
