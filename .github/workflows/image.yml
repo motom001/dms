@@ -74,7 +74,7 @@ jobs:
           TEST_DATABASE_URL: postgres://dms:dms@localhost:5432/dms_test
           TEST_TEIL: ${{ matrix.teil }}/3
 
-  # Alles außer den Server-Tests (#1056): Release-Notiz, Sicherheitslücken, Typen, Bau, Rauchtests – parallel zu „tests“.
+  # Alles außer den Server-Tests (#1056): Release-Notiz, Sicherheitslücken, Typen, Tests von Oberfläche und Gemeinsamem (#1282), Bau, Rauchtests – parallel zu „tests“.
   # Die Rauchtests legen ihre Datenbank im PostgreSQL dieses Jobs an.
   rauchtests:
     runs-on: ubuntu-latest
@@ -124,6 +124,11 @@ jobs:
         run: sudo apt-get install -y -qq poppler-utils qpdf >/dev/null || { sudo apt-get update -qq && sudo apt-get install -y -qq poppler-utils qpdf >/dev/null; }
       - name: Typen prüfen
         run: npm run typecheck
+      # Tests der Oberfläche und über Gemeinsames (#1282): getrennt von den Server-Tests, ohne Datenbank.
+      - name: Tests der Oberfläche (web/test)
+        run: npm test -w web
+      - name: Tests über Sprachdateien und Gemeinsames (shared/test)
+        run: npm test --prefix shared
       # Der offizielle Katalog unter seiner echten Adresse: erreichbar, nur https, Signatur gültig (#688).
       - name: Offizieller Katalog erreichbar und signiert
         run: node --import tsx server/werkzeuge/katalog-erreichbar.ts
@@ -285,7 +290,7 @@ jobs:
         run: |
           git fetch -q --depth=2 origin "$GITHUB_SHA"
           BASIS=$(git rev-parse HEAD^1)
-          mapfile -t dateien < <(git diff --name-only --diff-filter=d "$BASIS" HEAD -- 'server/src/*.ts' 'server/test/*.ts' 'web/src/*.ts' 'web/src/*.tsx' 'shared/src/*.ts')
+          mapfile -t dateien < <(git diff --name-only --diff-filter=d "$BASIS" HEAD -- 'server/src/*.ts' 'server/test/*.ts' 'web/src/*.ts' 'web/src/*.tsx' 'web/test/*.ts' 'shared/src/*.ts' 'shared/test/*.ts')
           if [ "${#dateien[@]}" -eq 0 ]; then echo "Keine geänderten Dateien mit Hinweisen."; exit 0; fi
           npx eslint --pass-on-unpruned-suppressions --format ./.github/werkzeuge/eslint-github.mjs "${dateien[@]}"
 

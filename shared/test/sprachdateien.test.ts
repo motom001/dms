@@ -11,7 +11,7 @@ import { describe, it } from 'node:test';
 import { fuelle, platzhalter, setzeSprache, uebersetzer } from '../../shared/src/sprache';
 import { pruefeSprachdateien, type Quelltext, type Sprachstand } from '../../shared/src/sprachpruefung';
 import { textDritte } from '../../shared/src/anrede';
-import { mailtexte } from '../src/mail';
+import { mailtexte } from '../../server/src/mail';
 
 const WURZEL = new URL('../..', import.meta.url).pathname;
 const SPRACHEN = join(WURZEL, 'shared/src/sprachen');

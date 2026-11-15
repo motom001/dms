@@ -2,7 +2,8 @@
  * Abhängigkeiten zwischen den Teilen von Ablago (#899), geprüft mit dependency-cruiser: `npm run lint:abh`.
  *
  * - Keine Kreisläufe (nur Importe, die zur Laufzeit zählen; reine Typ-Importe nicht).
- * - shared/ bindet weder server/ noch web/ ein; web/ nie server/, server/ nie web/. Ausnahme: server/test/.
+ * - shared/ bindet weder server/ noch web/ ein; web/ nie server/, server/ nie web/ (auch server/test/ nicht, #1282).
+ *   Ausnahme: shared/test/ prüft Sprachdateien und Gemeinsames über alle Teile hinweg.
  * - Technische Ordner mit index.ts nur über index.ts (pdf/ und arbeit/, je mit eigener Ausnahme).
  * - Hilfen der HTTP-Schicht (http/routen-hilfen.ts, http/routen-kontext.ts) nur in Routen (#961, Ergänzung von
  *   Sicherheit): Fachlogik bekommt den Benutzer übergeben und liest ihn nicht selbst aus der Anfrage.
@@ -111,14 +112,14 @@ module.exports = {
       name: 'kein-kreislauf',
       severity: 'error',
       comment: 'Kreisläufe machen die Reihenfolge beim Laden zufällig und verhindern, dass sich Teile getrennt ändern lassen.',
-      from: { pathNot: '^server/test/' },
+      from: { pathNot: '^(server|web|shared)/test/' },
       to: { circular: true, viaOnly: { dependencyTypesNot: ['type-only'] } },
     },
     {
       name: 'shared-ohne-server-und-web',
       severity: 'error',
       comment: 'Gemeinsamer Code läuft in Server und Browser – er darf von keinem der beiden abhängen.',
-      from: { path: '^shared/' },
+      from: { path: '^shared/', pathNot: '^shared/test/' },
       to: { path: '^(server|web)/' },
     },
     {
@@ -131,8 +132,8 @@ module.exports = {
     {
       name: 'server-ohne-web',
       severity: 'error',
-      comment: 'Der Server bindet keinen Code der Oberfläche ein (Tests unter server/test/ dürfen es).',
-      from: { path: '^server/', pathNot: '^server/test/' },
+      comment: 'Der Server bindet keinen Code der Oberfläche ein – auch seine Tests nicht: Tests der Oberfläche stehen unter web/test/ (#1282).',
+      from: { path: '^server/' },
       to: { path: '^web/' },
     },
     {
@@ -159,7 +160,7 @@ module.exports = {
     ...fachordner(),
   ],
   options: {
-    includeOnly: '^(server/(src|test)|web/src|shared/src)/',
+    includeOnly: '^(server|web|shared)/(src|test)/',
     exclude: { path: 'node_modules' },
     doNotFollow: { path: 'node_modules' },
     // Auch reine Typ-Importe sehen (für die Richtungsregeln); bei Kreisläufen zählen sie nicht (oben).

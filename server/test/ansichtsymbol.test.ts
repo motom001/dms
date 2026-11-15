@@ -1,9 +1,7 @@
-/** Symbol je Ansicht (#428): feste Auswahl aus Lucide, Speichern, Paketformat und Paket erstellen. */
+/** Symbol je Ansicht (#428): Speichern, Paketformat und Paket erstellen; die Auswahl prüft web/test/ansichtsymbol.test.ts. */
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { describe, it } from 'node:test';
-import { ANSICHT_SYMBOLE, ANSICHT_SYMBOL_NAMEN, ansichtSymbol } from '../../shared/src/ansichtsymbole';
-import { ANSICHT_FORMEN } from '../../web/src/ansichtsymbol-formen';
 import { speicherDateien } from '../src/dateispeicher';
 import { Dienst } from '../src/dienst';
 import { speicherEinstellungen } from '../src/einstellungen';
@@ -13,20 +11,6 @@ import { speicherRepo } from '../src/repo-speicher';
 const dienst = () => new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
 
 describe('Symbol je Ansicht (#428)', () => {
-  it('Auswahl: eindeutige Namen, zu jedem Namen eine Form, Lucide-Namen', () => {
-    const alle = ANSICHT_SYMBOLE.flatMap((g) => g.symbole.map((s) => s.name));
-    assert.equal(new Set(alle).size, alle.length, 'keine doppelten Namen');
-    assert.ok(alle.length >= 60, 'mindestens 60 Symbole');
-    for (const n of alle) {
-      assert.match(n, /^[a-z0-9]+(-[a-z0-9]+)*$/, n);
-      assert.ok(ANSICHT_FORMEN[n]?.length, `Form für ${n}`);
-    }
-    assert.deepEqual(Object.keys(ANSICHT_FORMEN).sort(), [...ANSICHT_SYMBOL_NAMEN].sort());
-    assert.equal(ansichtSymbol('house'), 'house');
-    assert.equal(ansichtSymbol(' car '), 'car');
-    for (const x of ['haus', '', null, 3, 'house-plus']) assert.equal(ansichtSymbol(x), null, String(x));
-  });
-
   it('wird gespeichert, unbekannt heißt ohne Symbol, fehlt die Angabe, bleibt es', async () => {
     const d = dienst();
     const s = await d.sichtenVerwaltung.legeSichtAn({ name: 'Auto', typen: [], bedingungen: [], symbol: 'car' });

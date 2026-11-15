@@ -114,5 +114,5 @@ Fehler stehen nie nur in Farbe: Die Meldung ist Text, davor ein Warnsymbol. Hove
 
 - Baustein: `web/src/bausteine/feld/Feld.tsx`, Aussehen: `Feld.module.css`
 - Musterseite: `web/src/bausteine/feld/muster.tsx`
-- Test: `server/test/baustein-feld.test.ts` (zeichnet mit react-dom/server und prüft `id`, `htmlFor`, `aria-describedby`, `aria-invalid`)
+- Test: `web/test/baustein-feld.test.ts` (zeichnet mit react-dom/server und prüft `id`, `htmlFor`, `aria-describedby`, `aria-invalid`)
 - Erste Nutzer: `Eingabe` in `web/src/werkbank/PaketEinstellungen.tsx` (Werkbank → Pakete → Einstellungen und beim Installieren)

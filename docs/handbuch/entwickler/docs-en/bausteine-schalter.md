@@ -46,4 +46,4 @@ WebDAV drive (without “State” under Status), intake folder, sending emails, 
 
 - Building block: `web/src/bausteine/schalter/Schalter.tsx`, look: `Schalter.module.css`
 - Pattern page: `web/src/bausteine/schalter/muster.tsx`
-- Test: `server/test/baustein-schalter.test.ts` (building block and the converted places)
+- Test: `web/test/baustein-schalter.test.ts` (building block and the converted places)

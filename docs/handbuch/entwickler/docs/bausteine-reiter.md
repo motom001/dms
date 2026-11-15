@@ -36,4 +36,4 @@ const [reiter, setReiter] = useState<'felder' | 'dokumente'>('felder');
 
 - Baustein: `web/src/bausteine/reiter/Reiter.tsx`, Aussehen: `Reiter.module.css`
 - Musterseite: `web/src/bausteine/reiter/muster.tsx`
-- Test: `server/test/baustein-reiter.test.ts`
+- Test: `web/test/baustein-reiter.test.ts`

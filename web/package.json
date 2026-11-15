@@ -7,7 +7,9 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "typecheck": "tsc -p ."
+    "typecheck": "tsc -p . && tsc -p test",
+    "test": "node --import tsx --import ./test/lader.mjs --test --test-reporter=tap test/*.test.ts",
+    "test:datei": "node --import tsx --import ./test/lader.mjs --test --test-reporter=spec"
   },
   "dependencies": {
     "qrcode": "^1.5.4",

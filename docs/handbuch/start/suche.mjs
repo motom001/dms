@@ -6,7 +6,7 @@
  *
  * Der Kern (falten, suchen, Ausschnitt) folgt shared/src/handbuchsuche.ts und listensuche.ts – dieselbe Toleranz wie
  * die Suche im Assistenten: ohne Groß-/Kleinschreibung, Akzente und ß, Umlaut-Umschreibung ae/oe/ue. Der Test
- * server/test/handbuchstart.test.ts vergleicht beide; wer dort etwas ändert, ändert es hier mit.
+ * shared/test/handbuchstart.test.ts vergleicht beide; wer dort etwas ändert, ändert es hier mit.
  */
 
 /* ---------- Kern (ohne Oberfläche) ---------- */

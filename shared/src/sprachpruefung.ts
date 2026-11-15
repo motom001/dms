@@ -1,5 +1,5 @@
 /**
- * Prüfung der Sprachdateien (#473) – läuft in der CI über `server/test/sprachdateien.test.ts`.
+ * Prüfung der Sprachdateien (#473) – läuft in der CI über `shared/test/sprachdateien.test.ts`.
  *
  * Findet: Schlüssel, die der Code benutzt, die es aber nicht gibt; Schlüssel, die niemand benutzt;
  * Sprachen, deren Datei Schlüssel auslässt oder zusätzliche hat; Platzhalter, die zwischen den

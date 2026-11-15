@@ -678,11 +678,11 @@ In addition there are domain areas from earlier issues (`anmeldung`, `automatisi
 
 **Composite keys** (`werkbank.gruppe.${g}`) go through `t.frei(…)` instead of `t(…)`. They escape the type check; the check in CI counts every key with the fixed prefix (`werkbank.gruppe.`) as used. Where you can, write keys out in full.
 
-**Checks in CI** (run with `npm test`, locally in the `server` folder with `node --import tsx --import ./test/lader.mjs --test test/<file>`, see [Getting started](loslegen.md)):
+**Checks in CI** (run with `npm test`, one by one with `npm run test:datei --prefix shared -- test/<file>` or `-w web`, see [Getting started](loslegen.md)):
 
-- `sprachdateien.test.ts`: keys the code asks for but that don't exist; keys nobody uses; languages that leave out keys or have extra ones; placeholders that differ between languages; **placeholders a call doesn't supply** (`t('…', { nam })` for `{name}`); plurals without `_other`; empty texts.
-- `sprachdateien-fest.test.ts`: **fixed texts in the interface** – text between tags, in visible attributes (`title`, `aria-label`, `placeholder`, `titel` …) and as a value in curly braces. What stays the same in every language (product names, commands in `<code>`, example addresses) is allowed; further exceptions are listed with a reason in `AUSNAHMEN` in the test file.
-- `symbole.test.ts`: no coloured emoji and no text characters used as symbols – in the language files too.
+- `shared/test/sprachdateien.test.ts`: keys the code asks for but that don't exist; keys nobody uses; languages that leave out keys or have extra ones; placeholders that differ between languages; **placeholders a call doesn't supply** (`t('…', { nam })` for `{name}`); plurals without `_other`; empty texts.
+- `shared/test/sprachdateien-fest.test.ts`: **fixed texts in the interface** – text between tags, in visible attributes (`title`, `aria-label`, `placeholder`, `titel` …) and as a value in curly braces. What stays the same in every language (product names, commands in `<code>`, example addresses) is allowed; further exceptions are listed with a reason in `AUSNAHMEN` in the test file.
+- `web/test/symbole.test.ts`: no coloured emoji and no text characters used as symbols – in the language files too.
 
 **Deliberately still in the code** (#727): log lines (`log.*`, Workbench → Log) stay German so that error messages remain comparable and searchable; the description of the interface (OpenAPI in `server/src/api-v1.ts`) is developer documentation like this handbook; licence texts; sample data and demo content; the titles of the handbook sections in `shared/src/hilfe.ts` (they follow the headings in the handbook and come with its translation, #730); the fixed values of the post choice fields (`POST_STAND`, `POST_KANAL`, `POST_RICHTUNG` in `shared/src/model.ts`) – they are stored like that in every folder; what is shown is their label (see below). Names, fields and help texts of the system folder types have come from `gemeinsam.json` since #728 (`model.systemtyp.*`, `model.systemfeld.*`, `model.systemhilfe.*`).
 
