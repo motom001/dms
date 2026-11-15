@@ -903,8 +903,7 @@
   "server/src/pdfseiten.ts": {
     "exports": [
       "SEITENBILD_PX",
-      "baue",
-      "popplerSeiten"
+      "baue"
     ]
   },
   "server/src/poolmessung.ts": {

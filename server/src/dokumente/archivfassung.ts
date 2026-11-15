@@ -39,13 +39,13 @@ export interface ArchivfassungAnschluss {
  * Schriften bekamen Seiten-, Vorschaubilder und Archivfassung ohne Text. Stand in der Einstellung `SCHRIFT_NACHLAUF`
  * (bis zu welchem Prüfwert geprüft, wie viele neu, wann fertig), damit es nach einem Neustart weitergeht.
  */
-export const SCHRIFT_NACHLAUF = 'schrift_nachlauf';
+const SCHRIFT_NACHLAUF = 'schrift_nachlauf';
 /** Je Lauf höchstens so viele PDFs prüfen (`pdffonts`) … */
-export const SCHRIFT_STAPEL = 100;
+const SCHRIFT_STAPEL = 100;
 /** … und höchstens so viele neu anstoßen – die Archivfassung rechnet jede Seite mit 300 dpi. */
 export const SCHRIFT_NEU_JE_LAUF = 10;
 /** Pause vor jedem geprüften PDF (Raspberry Pi). */
-export const SCHRIFT_PAUSE_MS = 500;
+const SCHRIFT_PAUSE_MS = 500;
 const SCHRIFT_LOG = protokoll.modul('archivfassung');
 export interface SchriftNachlaufStand { bis: string; geprueft: number; neu: number; seit: string; fertig?: string }
 

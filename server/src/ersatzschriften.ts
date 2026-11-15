@@ -21,7 +21,7 @@ import { AUSGABE_KLEIN } from './grenzen';
 const log = protokoll.modul('vorschau');
 
 /** So meldet poppler eine Schrift, für die es keinen Ersatz findet. */
-export const SCHRIFT_FEHLT = /Couldn't find a font/i;
+const SCHRIFT_FEHLT = /Couldn't find a font/i;
 
 /**
  * Kleines PDF mit nicht eingebetteten Standardschriften (eine Seite je Schrift, nur Text, erfundener Inhalt) – von Hand
