@@ -10,7 +10,7 @@
   "anbindung.der-benutzer-darf-sich": "Der Benutzer „{benutzer}“ darf sich nicht anmelden (unbekannt oder vom Server nicht zugelassen). In der Compose-Vorlage heißt er „dms“.",
   "anbindung.die-datenbank-gibt-es": "Die Datenbank „{datenbank}“ gibt es auf dem Server noch nicht.",
   "anbindung.die-verbindung-ist-fehlgeschlagen": "Die Verbindung ist fehlgeschlagen: {wert}",
-  "anbindung.in-dieser-datenbank-gibt": "In dieser Datenbank gibt es noch kein DMS. Nach dem Neustart beginnt dort die Einrichtung von vorn – bitte bestätigen.",
+  "anbindung.in-dieser-datenbank-gibt": "In dieser Datenbank gibt es noch keine Daten von Ablago. Nach dem Neustart beginnt dort die Einrichtung von vorn – bitte bestätigen.",
   "anmeldesperre.vom-bis_one": "Am {datum}",
   "anmeldesperre.vom-bis_other": "Vom {datum} bis {datum2}",
   "anmeldesperre.ip-adressen_one": "eine IP-Adresse",

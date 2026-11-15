@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="de">
+<html lang="de" data-ordner="aktuell/">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -10,6 +10,7 @@
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="alternate" hreflang="en" href="en/">
+  <link rel="stylesheet" href="suche.css">
   <style>
     /* Erscheinungsbild wie ablago.app (#699): Farben aus marke/, Schrift nur angegeben, nie geladen (#698).
        Jedes Handbuch trägt seinen Ton aus der Familie des Ablago-Blaus, wie in seiner Kopfzeile. */
@@ -84,6 +85,7 @@
     <div class="grundsatz">
       <p><strong>Du entscheidest, was deine Ablage verlässt.</strong> Kein Abo, keine Telemetrie, offene Formate. Alle sechs Grundsätze stehen auf <a href="https://ablago.app/#worum">ablago.app</a>; wie Ablago mit Daten umgeht, steht unter <a href="admin/aktuell/datenschutz/">Datenschutz in Ablago</a>.</p>
     </div>
+    <div id="suche"></div>
     <div class="karten">
       <a class="karte wofuer" href="benutzer/aktuell/wofuer/">
         <span class="symbol"><svg aria-hidden="true"><use href="#i-wofuer"/></svg></span>
@@ -121,5 +123,10 @@
       <a href="https://github.com/sponsors/motom001">Projekt unterstützen</a>
     </footer>
   </main>
+  <script type="module">
+    // Suche über alle Handbücher (#841) – derselbe Baustein wie auf der Seite „nicht gefunden“.
+    import { starteSuche } from './suche.mjs';
+    starteSuche(document.getElementById('suche'), { ordner: document.documentElement.dataset.ordner ?? '', sprache: 'de' });
+  </script>
 </body>
 </html>

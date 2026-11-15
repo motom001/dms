@@ -14,7 +14,9 @@ Online gibt es nur noch „aktuell“. Ältere Fassungen bringt jede Installatio
   /index.html                 Startseite mit Logo und Favicons
   /en/index.html              Startseite auf Englisch (#730)
   /notfall/, /emergency/      Kurzadressen vom Notfallblatt (#814) – bleiben dauerhaft gültig
-  /404.html                   leitet alte Adressen (v0.xx, entwicklung, ohne Ordner) auf „aktuell“
+  /404.html                   Seite „nicht gefunden“ (#841, aus start/404.html): leitet alte Adressen (v0.xx,
+                              entwicklung, ohne Ordner) auf „aktuell“, sonst Suche über alle Handbücher
+  /suche.mjs, /suche.css      Suche über alle Handbücher für Startseite und 404 (#841)
   /benutzer/index.html        → aktuell/
   /benutzer/aktuell/          …, ebenso admin/, installieren/, entwickler/
   /benutzer/aktuell/en/       dieselben Seiten auf Englisch (#730)
@@ -45,37 +47,6 @@ UMLEITUNG = """<!doctype html>
 </head><body><p><a href="{ziel}">Weiter zum Handbuch</a></p></body></html>
 """
 
-NICHT_GEFUNDEN = """<!doctype html>
-<html lang="de"><head><meta charset="utf-8"><title>Ablago – Handbuch</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<style>body{font:16px/1.5 system-ui,sans-serif;max-width:640px;margin:15vh auto;padding:0 16px;color:#141A22}a{color:#1F4E79}</style>
-<script>
-// Alte Adressen (#846): /admin/v0.22/sicherung/, /admin/entwicklung/sicherung/ und /admin/sicherung/
-// führen auf /admin/aktuell/sicherung/ – gibt es die Seite dort nicht, auf die Startseite des Handbuchs.
-(async () => {
-  const m = location.pathname.match(/^(.*?\\/)(benutzer|admin|installieren|entwickler)\\/(.*)$/);
-  if (!m) return;
-  const [, basis, h, rest] = m;
-  // Nur Pfade auf diesem Server: „//andere.example/…“ oder „/\\andere.example/…“ wären für den Browser eine
-  // fremde Adresse (offene Weiterleitung). Erlaubt sind nur einfache Pfadteile.
-  if (!/^\\/([\\w.-]+\\/)*$/.test(basis)) return;
-  const teile = rest.split('/');
-  if (teile[0] === 'aktuell') {
-    // Unbekannte Seite: auf die Startseite des Handbuchs in derselben Sprache (#730).
-    const sprache = teile[1] === 'en' ? 'en/' : '';
-    if (teile.slice(sprache ? 2 : 1).join('') !== '') location.replace(basis + h + '/aktuell/' + sprache);
-    return;
-  }
-  const seite = /^v\\d+\\.\\d+$/.test(teile[0]) || teile[0] === 'entwicklung' ? teile.slice(1).join('/') : rest;
-  const ziel = basis + h + '/aktuell/' + seite;
-  let da = false;
-  try { da = (await fetch(ziel, { method: 'HEAD' })).ok; } catch { /* offline: Startseite */ }
-  location.replace((da ? ziel : basis + h + '/aktuell/') + (da ? location.hash : ''));
-})();
-</script></head>
-<body><h1>Seite nicht gefunden</h1><p>Weiter zu <a href="/">allen Handbüchern</a>: <a href="/installieren/">Wie komme ich an Ablago?</a>, <a href="/benutzer/">Benutzerhandbuch</a>, <a href="/admin/">Administratorhandbuch</a>, <a href="/entwickler/">Entwicklerhandbuch</a>.</p>
-<h2 lang="en">Page not found</h2><p lang="en">Continue to <a href="/en/">all manuals in English</a>.</p></body></html>
-"""
 
 
 def main():
@@ -101,7 +72,7 @@ def main():
         weiter = f'/{ziel}'
         (ausgabe / kurz / 'index.html').write_text(UMLEITUNG.format(ziel=weiter, ziel_js=json.dumps(weiter)))
     shutil.copy(start, ausgabe / 'index.html')
-    for f in start.parent.iterdir():  # Logo und Favicons der Startseite (#689)
+    for f in start.parent.iterdir():  # Logo und Favicons der Startseite (#689), 404.html und die Suche (#841)
         if f.is_file() and f.name != 'index.html':
             shutil.copy(f, ausgabe / f.name)
     for s in SPRACHEN:  # Startseite je Sprache (#730), z. B. start/en/index.html → /en/
@@ -109,7 +80,8 @@ def main():
             sys.exit(f'Startseite {s}/index.html fehlt')
         (ausgabe / s).mkdir(exist_ok=True)
         shutil.copy(start.parent / s / 'index.html', ausgabe / s / 'index.html')
-    (ausgabe / '404.html').write_text(NICHT_GEFUNDEN)
+    if not (ausgabe / '404.html').is_file():
+        sys.exit('Seite „nicht gefunden“ (start/404.html) fehlt')
     (ausgabe / '.nojekyll').write_text('')
     groesse = sum(f.stat().st_size for f in ausgabe.rglob('*') if f.is_file())
     print(f'Handbuch „{ORDNER}“ zusammengestellt in {ausgabe}: {groesse / 2**20:.0f} MB')

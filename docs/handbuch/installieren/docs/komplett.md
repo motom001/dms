@@ -46,7 +46,7 @@ Synology (Container Manager), UGREEN (Docker), QNAP (Container Station) und Unra
 
 --8<-- "assistent-weiter.md"
 
-Hast du schon ein DMS mit zwei Containern, wähle im Assistenten **Aus einer Sicherung wiederherstellen** und spiel eine Sicherung von dort ein. So ziehst du um, ohne etwas zu verlieren.
+Läuft Ablago bei dir schon mit zwei Containern, wähle im Assistenten **Aus einer Sicherung wiederherstellen** und spiel eine Sicherung von dort ein. So ziehst du um, ohne etwas zu verlieren.
 
 ## Datenbank auf der SSD { #datenbank-auf-der-ssd }
 

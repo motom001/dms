@@ -1,6 +1,6 @@
 # Demo data {#demo-daten}
 
-Under **Workbench → Demo data** you fill a DMS with content for trying out or testing.
+Under **Workbench → Demo data** you fill Ablago with content for trying out or testing.
 
 --8<-- "ausgeblendet-alles.md"
 

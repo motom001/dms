@@ -15,7 +15,7 @@ Die Hausautomatisierung bekommt dabei **nur Zahlen**: wie viel neue Post, wie vi
 Die Apps und Anbindungen liegen im Repository [motom001/dms-clients](https://github.com/motom001/dms-clients). Du brauchst keine davon – Ablago ist vollständig im Browser bedienbar.
 
 !!! note "Nur im Heimnetz"
-    Die Hausautomatisierung fragt dein Ablago direkt im Heimnetz ab. Deshalb geht es mit **Homey Pro**, nicht mit Homey Cloud: Ein Dienst im Internet erreicht ein DMS in deinem Heimnetz nicht.
+    Die Hausautomatisierung fragt dein Ablago direkt im Heimnetz ab. Deshalb geht es mit **Homey Pro**, nicht mit Homey Cloud: Ein Dienst im Internet erreicht Ablago in deinem Heimnetz nicht.
 
 ## Schlüssel „nur Zähler“ anlegen
 

@@ -15,7 +15,7 @@ The home automation only gets **numbers**: how much new post, how much is under 
 The apps and integrations are in the repository [motom001/dms-clients](https://github.com/motom001/dms-clients). You don't need any of them – Ablago can be used entirely in the browser.
 
 !!! note "Only on the home network"
-    The home automation queries your Ablago directly on the home network. That's why it works with **Homey Pro**, not with Homey Cloud: a service on the internet can't reach a DMS on your home network.
+    The home automation queries your Ablago directly on the home network. That's why it works with **Homey Pro**, not with Homey Cloud: a service on the internet can't reach Ablago on your home network.
 
 ## Create a "counters only" key {#schlussel-nur-zahler-anlegen}
 

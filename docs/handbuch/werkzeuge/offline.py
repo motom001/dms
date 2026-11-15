@@ -52,11 +52,15 @@ def main():
             continue
         start = quelle.read_text(encoding='utf-8')
         start = re.sub(rf'href="((?:\.\./)*)({"|".join(HANDBUECHER)})/aktuell/', r'href="\1\2/', start)
+        start = start.replace('data-ordner="aktuell/"', 'data-ordner=""')
         (ziel / unter).mkdir(parents=True, exist_ok=True)
         (ziel / unter / 'index.html').write_text(start, encoding='utf-8')
-    for f in (WURZEL / 'docs/handbuch/start').iterdir():  # Logo und Favicon der Startseite (#689)
-        if f.is_file() and f.name != 'index.html':
+    for f in (WURZEL / 'docs/handbuch/start').iterdir():  # Logo und Favicon der Startseite (#689), 404 und Suche (#841)
+        if f.is_file() and f.name not in ('index.html', '404.html'):
             shutil.copy(f, ziel / f.name)
+    # Seite „nicht gefunden“ (#841): Adressen ab /hilfe/, ohne „aktuell“ und ohne Umleitung alter Adressen; die Version
+    # füllt „Kaputten Link melden“ vor. Ablago liefert sie für unbekannte Adressen unter /hilfe/ aus (server/src/hilfe.ts).
+    (ziel / '404.html').write_text(nicht_gefunden_offline((WURZEL / 'docs/handbuch/start/404.html').read_text(encoding='utf-8'), version), encoding='utf-8')
 
     fehler = pruefe(ziel)
     # Nichts von außen (#698): Die Hilfe im Programm lädt keine Schrift, kein Skript, kein Bild von fremden Diensten.
@@ -68,6 +72,15 @@ def main():
     if fehler:
         print('\n'.join(f'::error title=Offline-Hilfe::{f}' for f in fehler[:50]))
         sys.exit(1)
+
+
+def nicht_gefunden_offline(html: str, version: str) -> str:
+    """Die Seite „nicht gefunden“ für /hilfe/ (#841): andere Wurzel, kein Ordner „aktuell“, Version für die Meldung."""
+    for alt, neu in (('<base href="/">', '<base href="/hilfe/">'), ('data-ordner="aktuell/"', 'data-ordner=""'), ('data-version=""', f'data-version="{version}"')):
+        if alt not in html:
+            sys.exit(f'start/404.html: {alt} fehlt')
+        html = html.replace(alt, neu, 1)
+    return re.sub(rf'href="({"|".join(HANDBUECHER)})/aktuell/"', r'href="\1/"', html)
 
 
 def schlanker(ordner: Path):

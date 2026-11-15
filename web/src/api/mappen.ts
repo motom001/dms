@@ -82,9 +82,9 @@ export const mappenApi = {
       ...(gesamt !== undefined && von > 0 ? { gesamt: String(gesamt) } : {}),
       ...(sortierung ? { sortierung: sortierung.spalte, absteigend: String(sortierung.absteigend) } : {}),
     })}`),
-  /** Zeilen einer Tabelle an einer Mappe (#1030): je 50, nur lesbare Mappen; sortiert wie die Trefferliste des anderen Typs. */
+  /** Zeilen einer Tabelle an einer Mappe (#1030): je 50, nur lesbare Mappen; sortiert wie die Trefferliste des anderen Typs. `verborgen` (#1208): nur die Zahl der nicht lesbaren. */
   tabelle: (mappeId: string, feld: string, von = 0, sortierung?: Sortierung | null, gesamt?: number) =>
-    anfrage<{ typId: string; spalten: string[]; gesamt: number; von: number; mappen: Mappe[]; bezuege: Bezuege }>('GET', `/api/mappen/${mappeId}/tabelle/${encodeURIComponent(feld)}?${new URLSearchParams({
+    anfrage<{ typId: string; spalten: string[]; gesamt: number; verborgen: number; von: number; mappen: Mappe[]; bezuege: Bezuege }>('GET', `/api/mappen/${mappeId}/tabelle/${encodeURIComponent(feld)}?${new URLSearchParams({
       von: String(von), ...(gesamt !== undefined && von > 0 ? { gesamt: String(gesamt) } : {}),
       ...(sortierung ? { sortierung: sortierung.spalte, absteigend: String(sortierung.absteigend) } : {}),
     })}`),

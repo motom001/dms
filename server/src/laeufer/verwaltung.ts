@@ -322,7 +322,7 @@ export class Paketlaeufer implements PaketLaeufer {
       if (this.gesendet.get(p.id) === stand) { behalten.push(p.id); gesendet.set(p.id, stand); continue; }
       const code = await this.o.dienst.kern.repo.paketCode(p.id);
       const modul = code.find((d) => d.name === 'modul.wasm');
-      if (!modul) { this.ladefehler.set(p.id, 'Der Code fehlt (nach einer Wiederherstellung bitte das Paket neu installieren).'); continue; }
+      if (!modul) { this.ladefehler.set(p.id, 'Der Code des Pakets fehlt in der Datenbank – bitte das Paket neu installieren.'); continue; }
       const daten = code.filter((d) => d.name.startsWith('daten/')).map((d) => ({ name: d.name.slice('daten/'.length), inhalt: new Uint8Array(d.inhalt) }));
       for (const q of zusaetze) {
         for (const d of await this.o.dienst.kern.repo.paketCode(q.id)) if (d.name.startsWith('daten/')) daten.push({ name: `${q.id}/${d.name.slice('daten/'.length)}`, inhalt: new Uint8Array(d.inhalt) });

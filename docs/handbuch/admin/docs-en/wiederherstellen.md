@@ -33,6 +33,26 @@ This way is only open as long as there is no user yet, and only with the setup c
 
 If the device is gone, you fetch both files from the [off-site target](sicherung-ausser-haus.md) – the `.dms-sicherung` and the `.json` next to it – and put them into the `sicherung` folder. The `.json` there is the **slim** version (without versions, counters and Library id). The list shows the backup as *Off-site copy*; as soon as you enter the **key from the emergency sheet**, Ablago reads database state, Library id and the number of folders, documents and users from the backup itself. The Ablago version it was made with is then shown as "unknown" in the comparison – the database state is what counts. When restoring, Ablago checks every file against its checksum and at the end the whole backup (GCM check value); only then does it switch over.
 
+## Restoring without internet { #ohne-internet }
+
+Ablago does **not need internet access** for a restore – neither the [package catalogue](pakete.md) nor a download. Without a network, though, you cannot fetch anything you have not put aside beforehand. So keep these in a safe place:
+
+1. **the backup file** (`.dms-sicherung`) with the **`.json` next to it**,
+2. **the key**: the key file from the `geheim` folder (in the container `/data/geheim`) or the [emergency sheet](verschluesselung.md#notfallblatt) – it is never in the backup,
+3. **the Ablago image** in the same or a newer version than the backup, saved beforehand e.g. with `docker save ghcr.io/motom001/dms:stabil -o ablago.tar` and loaded on the new device with `docker load -i ablago.tar`. Without internet it cannot be pulled. With [dms-komplett](https://help.ablago.app/installieren/aktuell/komplett/) the same with `ghcr.io/motom001/dms-komplett:stabil`; with two containers also the database image (e.g. `postgres:17`),
+4. **your Compose file** and the `.env` or your environment variables.
+
+Then proceed as described under [New NAS, old backup](#neues-nas-alte-sicherung).
+
+**What happens afterwards by itself:**
+
+- **Packages do not need to be reinstalled.** The backup contains the installed packages including their code, their settings, system accounts, confirmed rights and language packs. They come back together with folder types and folders as one state; the package runner then loads the code from the database.
+- The **search index** and the **previews** are rebuilt – depending on the number of documents this takes a while; search and previews fill up gradually in the meantime.
+- **Everyone signs in anew** – with the credentials from the time of the backup.
+- **Automations are paused** until you have checked them and switched them back on under **Workbench → Automations**.
+
+Whatever a package itself fetches from the internet (such as a sync with a service) only works again once the network is back – this does not affect the restore.
+
 ## On the running system {#auf-dem-laufenden-system}
 
 ![Restoring in the workbench](bilder/werkbank-wiederherstellen.png)

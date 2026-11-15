@@ -977,9 +977,10 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
     // Ausgeblendetes Feld mit Wert (#1033): ruhige Zeile statt der Eingabe; aufgedeckt mit dem Satz „nur bei …“.
     // Tabelle (#1030): verweisende Mappen zwischen den Feldern – kein Wert, keine Eingabe; „+ Neu“ im Fenster (#935).
     // Steht die Tabelle gleich unter einer gleichlautenden Abschnittsüberschrift („Positionen“), genügt die eine.
-    const tabelle = (f: FeldDef, ueber?: string) => <Tabellenfeld key={f.key} feld={f} mappe={mappe} nurLesen={nurLesen || !!imFenster} ohneUeberschrift={!!ueber && ueber === feldLabel(f)}
+    // Überschrift der Tabelle (#1208): unter einem Abschnitt (h2) eine Ebene tiefer, sonst direkt unter dem Titel der Mappe.
+    const tabelle = (f: FeldDef, ueber?: string, ebene: 2 | 3 = 2) => <Tabellenfeld key={f.key} feld={f} mappe={mappe} nurLesen={nurLesen || !!imFenster} ohneUeberschrift={!!ueber && ueber === feldLabel(f)} ebene={ebene}
       neuesFormular={(ziel, v, fertig) => <Formular typ={ziel} start={startMitVerweis(ziel, v)} sicht={ziel.id} kopf={(w, b) => <FensterKopf typ={ziel} werte={w} bekannt={b} />} imFenster={fertig} />} />;
-    const eingabe = (f: FeldDef, ueber?: string) => (f.typ === 'tabelle' && !(anz.felder.has(f.key) && !aufgedeckt.has(`f:${f.key}`)) ? tabelle(f, ueber) : anz.felder.has(f.key) && !aufgedeckt.has(`f:${f.key}`)
+    const eingabe = (f: FeldDef, ueber?: string, ebene?: 2 | 3) => (f.typ === 'tabelle' && !(anz.felder.has(f.key) && !aufgedeckt.has(`f:${f.key}`)) ? tabelle(f, ueber, ebene) : anz.felder.has(f.key) && !aufgedeckt.has(`f:${f.key}`)
       ? <AusgeblendetZeile key={f.key} text={t('ablage.anzeige.feld', { feld: feldLabel(f) })} anzeigen={() => decke(`f:${f.key}`)} />
       : feldEingabe(f, anz.felder.has(f.key) ? <p className="anzeigehinweis leise klein"><Symbol name="auge-aus" /> {t('ablage.anzeige.gerade-aus', { bedingung: nurBei(f.anzeigen) })}</p> : undefined));
     // Zusammengesetzt (#1050): der Text aus den aktuellen Eingaben – er ändert sich sofort mit seinen Teilen.
@@ -1012,15 +1013,15 @@ function Formular({ typ, mappe, start, sicht, anhang = '', details, neuLaden, zu
           const mitFehler = g.felder.filter((f) => fehler?.felder[f.key]).length;
           return (
             <section key={a.vor} className={`feldabschnitt${offen ? ' offen' : ''}`} aria-labelledby={`${id}-kopf`}>
-              <h3 className="abschnittkopf">
+              <h2 className="abschnittkopf">
                 <Knopf art="link" id={`${id}-kopf`} aria-expanded={offen} aria-controls={id} onClick={() => umschaltenAbschnitt(r, a)}>
                   <Symbol name="pfeil-rechts" />
                   <span className="abschnitttitel">{abschnittTitel(a)}</span>
                   {!offen && mitWerten.length > 0 && <span className="leise klein"><span aria-hidden="true">· </span>{t('ablage.abschnitt.ausgefuellt', { gefuellt, anzahl: mitWerten.length })}</span>}
                   {mitFehler > 0 && <span className="fehlerpunkt" title={t('ablage.mappeformular.felder-mit-fehler', { anzahl: mitFehler })}>{mitFehler}</span>}
                 </Knopf>
-              </h3>
-              <div id={id} className="formular" hidden={!offen}>{gerade}{g.felder.map((f, i) => eingabe(f, i === 0 ? abschnittTitel(a) : undefined))}</div>
+              </h2>
+              <div id={id} className="formular" hidden={!offen}>{gerade}{g.felder.map((f, i) => eingabe(f, i === 0 ? abschnittTitel(a) : undefined, 3))}</div>
             </section>
           );
         })}</div>

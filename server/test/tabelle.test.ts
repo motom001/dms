@@ -33,7 +33,7 @@ import '../src/sprache';
 
 const status = (s: number) => (e: unknown) => e instanceof Fachfehler && e.status === s;
 const ICH = { id: '00000000-0000-4000-8000-0000000000aa', email: 'admin@example.org' };
-type Seite = { typId: string; spalten: string[]; gesamt: number; von: number; mappen: Mappe[]; bezuege: Record<string, { titel: string; verborgen?: boolean }> };
+type Seite = { typId: string; spalten: string[]; gesamt: number; verborgen: number; von: number; mappen: Mappe[]; bezuege: Record<string, { titel: string; verborgen?: boolean }> };
 
 /** Rechnung mit Tabelle „Positionen“; Rechnungsposition verweist über „rechnung“ hierher. */
 async function rechnungen(d: Dienst) {
@@ -178,6 +178,29 @@ describe('Tabelle in der Ablage (#1030)', () => {
     assert.equal((await seite(admin, r.id)).bezuege[geheim.id].titel, 'R-geheim');
     const nichtSichtbar = (await rufe(lena, 'GET', '/api/mappen/:id/tabelle/:feld', { params: { id: r.id, feld: 'gibt-es-nicht' } }).catch((e) => e)) as Fachfehler;
     assert.equal(nichtSichtbar.status, 404);
+  });
+
+  it('verborgene Zeilen (#1208): nur ihre Zahl, keine Daten; ohne Lesefilter keine; beim Blättern nicht verfälschbar', async () => {
+    const { d, admin, lena, rechnung, position, seite } = await aufbau();
+    const r = await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-1' } });
+    for (let i = 1; i <= 3; i++) await d.mappen.legeMappeAn({ typId: position.id, werte: { rechnung: r.id, nr: i, beschreibung: `Offen ${i}` } }, admin.id);
+    for (let i = 4; i <= 5; i++) await d.mappen.legeMappeAn({ typId: position.id, werte: { rechnung: r.id, nr: i, beschreibung: `Geheim ${i}`, privat: true } }, admin.id);
+    await d.berechtigungen.setzeBerechtigungen(position.id, privatNurErsteller, true);
+    // Über die Schnittstelle wie die Oberfläche: 3 Zeilen, verborgen 2 – und nichts von den beiden anderen.
+    const s = await seite(lena, r.id);
+    assert.deepEqual([s.gesamt, s.verborgen, s.mappen.length], [3, 2, 3]);
+    const text = JSON.stringify(s);
+    assert.ok(!text.includes('Geheim'));
+    const alle = await seite(admin, r.id);
+    for (const m of alle.mappen.filter((x) => String(x.werte.beschreibung).startsWith('Geheim'))) assert.ok(!text.includes(m.id));
+    // Verwaltung (ohne Lesefilter) sieht alle: kein Hinweis.
+    assert.deepEqual([alle.gesamt, alle.verborgen], [5, 0]);
+    // Beim Blättern zählt der Server selbst – eine mitgegebene Zahl verfälscht verborgen nicht.
+    assert.equal((await seite(lena, r.id, { von: '50', gesamt: '0' })).verborgen, 2);
+    // Ohne verborgene Zeilen: 0.
+    const r2 = await d.mappen.legeMappeAn({ typId: rechnung.id, werte: { nr: 'R-2' } });
+    await d.mappen.legeMappeAn({ typId: position.id, werte: { rechnung: r2.id, nr: 1, beschreibung: 'Offen' } }, admin.id);
+    assert.equal((await seite(lena, r2.id)).verborgen, 0);
   });
 
   it('„+ Neu“ per Schnittstelle: Anlegerecht am anderen Typ und Leserecht auf die Mappe prüft der Server', async () => {

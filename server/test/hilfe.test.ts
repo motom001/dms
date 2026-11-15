@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import { describe, it } from 'node:test';
 import { handbuchOnlineUrl, handbuchStartUrl, handbuchsprache, handbuchUrl, hilfeOnlineUrl, hilfeUrl, HILFE, installierenUrl } from '../../shared/src/hilfe';
 import { setzeSprache } from '../../shared/src/sprache';
-import { hilfeAntwort } from '../src/hilfe';
+import { hilfeAntwort, hilfeSenden } from '../src/hilfe';
 
 describe('Offline-Hilfe (#219)', () => {
   it('verweist aus der Oberfläche auf die lokale Fassung', () => {
@@ -33,6 +33,22 @@ describe('Offline-Hilfe (#219)', () => {
     assert.deepEqual(hilfeAntwort('/hilfe/admin/gibtsnicht/', web), { fehlt: true });
     assert.deepEqual(hilfeAntwort('/hilfe/admin/bild.png', web), { fehlt: true });
     assert.deepEqual(hilfeAntwort('/hilfe/../geheim/', web), { fehlt: true }, 'keine Pfad-Tricks');
+  });
+
+  it('Seite „nicht gefunden“ mit Suche, wenn die Offline-Hilfe sie mitbringt – nur für Seitenadressen (#841)', async () => {
+    const web = await mkdtemp(join(tmpdir(), 'dms-hilfe-'));
+    await mkdir(join(web, 'hilfe'), { recursive: true });
+    await writeFile(join(web, 'hilfe', 'index.html'), 'START');
+    await writeFile(join(web, 'hilfe', '404.html'), '<p>Diese Seite gibt es hier nicht</p>');
+    const seite = join(web, 'hilfe', '404.html');
+    assert.deepEqual(hilfeAntwort('/hilfe/admin/gibtsnicht/', web), { fehlt: true, seite });
+    assert.deepEqual(hilfeAntwort('/hilfe/admin/alt.html', web), { fehlt: true, seite });
+    assert.deepEqual(hilfeAntwort('/hilfe/admin/bild.png', web), { fehlt: true });
+    // Ausgeliefert mit Status 404 als HTML.
+    const gesendet: { code?: number; typ?: string; inhalt?: string } = {};
+    const antwort = { redirect: () => null, sendFile: () => null, code: (c: number) => { gesendet.code = c; return { type: (t: string) => { gesendet.typ = t; return { send: (b: string) => { gesendet.inhalt = b; return null; } }; } }; } };
+    hilfeSenden(antwort, { fehlt: true, seite });
+    assert.deepEqual(gesendet, { code: 404, typ: 'text/html; charset=utf-8', inhalt: '<p>Diese Seite gibt es hier nicht</p>' });
   });
 
   it('leitet ohne gebaute Handbücher auf die Online-Fassung um – immer „aktuell“ (#846)', async () => {
