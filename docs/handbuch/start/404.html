@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="de" data-ordner="aktuell/" data-version="">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <!-- Seite „nicht gefunden“ (#841): online /404.html auf help.ablago.app, in der Hilfe im Programm /hilfe/404.html.
+       Alle Adressen gelten ab <base> – offline.py setzt dort /hilfe/, data-ordner leer und data-version. -->
+  <base href="/">
+  <title>Seite nicht gefunden – Ablago</title>
+  <meta name="robots" content="noindex">
+  <meta name="color-scheme" content="light dark">
+  <link rel="icon" href="favicon.ico" sizes="48x48">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="stylesheet" href="suche.css">
+  <script>
+  // Alte Adressen (#846): /admin/v0.22/sicherung/, /admin/entwicklung/sicherung/ und /admin/sicherung/
+  // führen auf /admin/aktuell/sicherung/ – gibt es die Seite dort nicht, auf die Startseite des Handbuchs.
+  // Nur online (data-ordner „aktuell/“): In der Hilfe im Programm gibt es diese Ordner nicht.
+  (async () => {
+    if (!document.documentElement.dataset.ordner) return;
+    const m = location.pathname.match(/^(.*?\/)(benutzer|admin|installieren|entwickler)\/(.*)$/);
+    if (!m) return;
+    const [, basis, h, rest] = m;
+    // Nur Pfade auf diesem Server: „//andere.example/…“ oder „/\andere.example/…“ wären für den Browser eine
+    // fremde Adresse (offene Weiterleitung). Erlaubt sind nur einfache Pfadteile.
+    if (!/^\/([\w.-]+\/)*$/.test(basis)) return;
+    const teile = rest.split('/');
+    if (teile[0] === 'aktuell') {
+      // Unbekannte Seite: auf die Startseite des Handbuchs in derselben Sprache (#730).
+      const sprache = teile[1] === 'en' ? 'en/' : '';
+      if (teile.slice(sprache ? 2 : 1).join('') !== '') location.replace(basis + h + '/aktuell/' + sprache);
+      return;
+    }
+    const seite = /^v\d+\.\d+$/.test(teile[0]) || teile[0] === 'entwicklung' ? teile.slice(1).join('/') : rest;
+    const ziel = basis + h + '/aktuell/' + seite;
+    let da = false;
+    try { da = (await fetch(ziel, { method: 'HEAD' })).ok; } catch { /* offline: Startseite */ }
+    location.replace((da ? ziel : basis + h + '/aktuell/') + (da ? location.hash : ''));
+  })();
+  </script>
+  <style>
+    /* Erscheinungsbild wie die Startseite (#699): Farben aus marke/, Schrift nur angegeben, nie geladen (#698). */
+    :root {
+      --blau: #1F4E79; --blau-tief: #163A5B; --akzent: #E8A33D; --akzent-text: #9A5B05;
+      --grund: #F5F7FA; --flaeche: #FFFFFF; --band: #EAF0F6; --linie: #D9E1EA;
+      --text: #1A2433; --text-leise: #4A5668;
+      --benutzer: #1F4E79; --installieren: #1D6B66; --admin: #4F3F86; --entwickler: #3D4652;
+      --schrift: 'Source Sans 3', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    }
+    @media (prefers-color-scheme: dark) { :root {
+      --blau: #8DB8E0; --blau-tief: #B9D3EC; --akzent: #F0B254; --akzent-text: #F0B254;
+      --grund: #0F151D; --flaeche: #17202B; --band: #131C26; --linie: #2A3644;
+      --text: #E6ECF3; --text-leise: #A7B3C2;
+      --benutzer: #8DB8E0; --installieren: #7FC8C1; --admin: #B3A6E6; --entwickler: #AEB8C4;
+    } }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--grund); color: var(--text); font: 17px/1.55 var(--schrift); }
+    a { color: var(--blau); text-underline-offset: 3px; }
+    a:focus-visible { outline: 3px solid var(--akzent); outline-offset: 3px; border-radius: 6px; }
+    .kopf { border-bottom: 1px solid var(--linie); box-shadow: inset 0 -3px 0 var(--akzent); background: var(--flaeche); }
+    .innen { max-width: 960px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+    .kopf .innen { display: flex; align-items: center; gap: 16px; padding-block: 14px 17px; flex-wrap: wrap; }
+    .kopf img { height: 40px; width: auto; display: block; }
+    .kopf .dunkel { display: none; }
+    @media (prefers-color-scheme: dark) { .kopf .hell { display: none; } .kopf .dunkel { display: block; } }
+    .kopf .zurueck { margin-left: auto; font-size: 16px; text-decoration: none; color: var(--text-leise); }
+    .kopf .zurueck:hover { color: var(--blau); }
+    .kopf .sprache { font-size: 16px; font-weight: 600; text-decoration: none; color: var(--blau); border: 1px solid var(--linie); border-radius: 8px; padding: 2px 10px; }
+    .kopf .sprache:hover { border-color: var(--blau); }
+    main { padding-block: 44px 40px; }
+    h1 { font-size: clamp(28px, 4.5vw, 40px); line-height: 1.2; margin: 0 0 10px; color: var(--blau-tief); letter-spacing: -.5px; text-wrap: balance; }
+    h2.zwischen { font-size: 1.1rem; margin: 0 0 12px; }
+    .vorspann { font-size: 13px; font-weight: 700; letter-spacing: .9px; text-transform: uppercase; color: var(--akzent-text); margin: 0 0 8px; }
+    p.leise { color: var(--text-leise); margin: 0 0 20px; max-width: 62ch; }
+    .karten { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 16px; }
+    a.karte { --ton: var(--benutzer); display: flex; gap: 14px; align-items: flex-start; background: var(--flaeche); border: 1px solid var(--linie); border-radius: 14px; padding: 20px; color: inherit; text-decoration: none; border-top: 4px solid var(--ton); min-width: 0; }
+    a.karte:hover, a.karte:focus-visible { border-color: var(--ton); }
+    a.karte .symbol { flex: none; width: 40px; height: 40px; border-radius: 10px; background: var(--band); color: var(--ton); display: grid; place-items: center; }
+    a.karte .symbol svg { width: 22px; height: 22px; }
+    a.karte h3 { margin: 0 0 4px; font-size: 1.15rem; line-height: 1.25; }
+    a.karte p { margin: 0; color: var(--text-leise); font-size: 16px; }
+    a.karte.installieren { --ton: var(--installieren); } a.karte.admin { --ton: var(--admin); } a.karte.entwickler { --ton: var(--entwickler); }
+    .melden { background: var(--band); border-radius: 14px; padding: 18px 20px; margin: 34px 0 0; max-width: 70ch; }
+    .melden p { margin: 0 0 12px; }
+    .melden .knopf { display: inline-flex; align-items: center; min-height: 44px; padding: 8px 18px; border-radius: 10px; background: var(--blau); color: var(--flaeche); font-weight: 600; text-decoration: none; }
+    .melden .knopf:hover { background: var(--blau-tief); }
+    .melden .oder { margin: 12px 0 0; color: var(--text-leise); font-size: 16px; }
+    .melden code { display: block; margin-top: 6px; padding: 6px 10px; background: var(--flaeche); border: 1px solid var(--linie); border-radius: 8px; color: var(--text); font-size: 15px; overflow-wrap: anywhere; user-select: all; }
+    footer { border-top: 1px solid var(--linie); margin-top: 44px; padding-top: 20px; display: flex; flex-wrap: wrap; gap: 8px 20px; color: var(--text-leise); font-size: 15px; }
+    footer a { color: inherit; }
+  </style>
+</head>
+<body>
+  <header class="kopf">
+    <div class="innen">
+      <a href="https://ablago.app/"><img class="hell" src="ablago-logo-mit-schriftzug.svg" alt="Ablago"><img class="dunkel" src="ablago-logo-mit-schriftzug-dunkel.svg" alt="Ablago"></a>
+      <a class="zurueck" href="https://ablago.app/" data-t="zurueck">Zurück zu ablago.app</a>
+      <a class="sprache" href="en/" hreflang="en" lang="en" data-t="sprache">English</a>
+    </div>
+  </header>
+  <main class="innen">
+    <p class="vorspann" data-t="vorspann">Hilfe und Handbücher</p>
+    <h1 data-t="titel">Diese Seite gibt es hier nicht</h1>
+    <p class="leise" data-t="text">Die Adresse führt leider ins Leere. Das tut uns leid – vielleicht hat sich ein Link geändert, den wir nicht weitergeleitet haben, oder in der Adresse steckt ein kleiner Tippfehler. Vielleicht findest du hier, was du suchst:</p>
+    <div id="suche"></div>
+    <h2 class="zwischen" data-t="handbuecher">Oder stöbere in einem Handbuch</h2>
+    <div class="karten">
+      <!-- Symbole: Lucide (ISC-Lizenz) book-open, download, wrench, code – direkt eingesetzt, weil <base> „#id“ umlenken würde. -->
+      <a class="karte" href="benutzer/aktuell/" data-handbuch>
+        <span class="symbol"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></span>
+        <div><h3 data-t="benutzer">Benutzerhandbuch</h3><p data-t="benutzer-text">Mappen anlegen, Dokumente ablegen, suchen und finden – alles für die tägliche Arbeit in der Ablage.</p></div>
+      </a>
+      <a class="karte installieren" href="installieren/aktuell/" data-handbuch>
+        <span class="symbol"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg></span>
+        <div><h3 data-t="installieren">Installieren</h3><p data-t="installieren-text">Auf Synology, UGREEN, QNAP, TrueNAS, Unraid, umbrelOS, ZimaOS, Raspberry Pi oder jedem Server mit Docker – Schritt für Schritt.</p></div>
+      </a>
+      <a class="karte admin" href="admin/aktuell/" data-handbuch>
+        <span class="symbol"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></span>
+        <div><h3 data-t="admin">Administratorhandbuch</h3><p data-t="admin-text">Einrichten und betreiben: Mappentypen, Benutzer und Rollen, Sicherung, Fehlersuche und die Schnittstelle (API).</p></div>
+      </a>
+      <a class="karte entwickler" href="entwickler/aktuell/" data-handbuch>
+        <span class="symbol"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg></span>
+        <div><h3 data-t="entwickler">Entwicklerhandbuch</h3><p data-t="entwickler-text">Mitmachen: wie Wünsche zu Issues werden, wie du Ablago baust und testest und wie ein Release entsteht.</p></div>
+      </a>
+    </div>
+    <section class="melden" aria-labelledby="melden-titel">
+      <p id="melden-titel" data-t="melden">Kam der Link von uns? Dann sag uns bitte Bescheid – das dauert nur einen Moment.</p>
+      <a class="knopf" id="melden" href="https://github.com/motom001/dms/issues/new?template=kaputter-link.yml" target="_blank" rel="noopener" data-t="melden-knopf">Kaputten Link melden</a>
+      <p class="oder"><span data-t="oder">oder per E-Mail an</span> <a id="mail" href="mailto:contact@ablago.app">contact@ablago.app</a>. <span data-t="adresse">Die aufgerufene Adresse:</span> <code id="adresse"></code></p>
+    </section>
+    <footer>
+      <a href="./" data-t="alle">Alle Handbücher</a>
+      <a href="https://ablago.app/">ablago.app</a>
+    </footer>
+  </main>
+  <script type="module">
+    import { starteSuche } from './suche.mjs';
+    // Sprache aus der Adresse (#730): …/en/… ist Englisch.
+    const en = /\/en(\/|$)/.test(location.pathname);
+    const ordner = document.documentElement.dataset.ordner ?? '';
+    const version = document.documentElement.dataset.version ?? '';
+    const EN = {
+      zurueck: 'Back to ablago.app', sprache: 'Deutsch', vorspann: 'Help and manuals', titel: 'This page doesn’t exist here',
+      text: 'Sorry, this address leads nowhere – perhaps a link has changed that we didn’t redirect, or there is a small typo in the address. Maybe you can find what you are looking for here:',
+      handbuecher: 'Or browse a manual', benutzer: 'User manual', 'benutzer-text': 'Creating folders, filing documents, searching and finding – everything for daily work in the Library.',
+      installieren: 'Installing', 'installieren-text': 'On Synology, UGREEN, QNAP, TrueNAS, Unraid, umbrelOS, ZimaOS, Raspberry Pi or any server with Docker – step by step.',
+      admin: 'Administrator manual', 'admin-text': 'Setting up and running: folder types, users and roles, backup, troubleshooting and the interface (API).',
+      entwickler: 'Developer manual', 'entwickler-text': 'Contributing: how wishes become issues, how you build and test Ablago and how a release comes about.',
+      melden: 'Did the link come from us? Then please let us know – it only takes a moment.', 'melden-knopf': 'Report broken link',
+      oder: 'or by e-mail to', adresse: 'The address you opened:', alle: 'All manuals',
+    };
+    if (en) {
+      document.documentElement.lang = 'en';
+      document.title = 'Page not found – Ablago';
+      for (const el of document.querySelectorAll('[data-t]')) if (EN[el.dataset.t]) el.textContent = EN[el.dataset.t];
+      const sprache = document.querySelector('.sprache');
+      Object.assign(sprache, { href: './', hreflang: 'de', lang: 'de' });
+      for (const a of document.querySelectorAll('[data-handbuch]')) a.setAttribute('href', `${a.getAttribute('href')}en/`);
+      document.querySelector('footer a').setAttribute('href', 'en/');
+    }
+    starteSuche(document.getElementById('suche'), { ordner, sprache: en ? 'en' : 'de', fokus: true });
+
+    // Kaputten Link melden: Adresse, Herkunft und Version vorausgefüllt – nie die Adresse der eigenen Installation.
+    // Online (help.ablago.app) die ganze Adresse, sonst nur der Pfad (/hilfe/…). Die Herkunft nur, wenn sie von
+    // help.ablago.app oder ablago.app stammt. Gesendet wird nichts: Erst GitHub zeigt das Formular.
+    const kurz = (s, n = 300) => s.slice(0, n);
+    const online = location.hostname === 'help.ablago.app';
+    const adresse = kurz(online ? location.origin + location.pathname : location.pathname);
+    document.getElementById('adresse').textContent = adresse;
+    const p = new URLSearchParams({ template: 'kaputter-link.yml', title: kurz(`${en ? 'Broken link' : 'Kaputter Link'}: ${location.pathname}`, 200), adresse });
+    try {
+      const r = document.referrer ? new URL(document.referrer) : null;
+      if (r && (r.hostname === 'help.ablago.app' || r.hostname === 'ablago.app')) p.set('herkunft_genau', kurz(r.origin + r.pathname));
+    } catch { /* keine lesbare Herkunft */ }
+    if (version) p.set('version', kurz(version, 40));
+    document.getElementById('melden').href = `https://github.com/motom001/dms/issues/new?${p}`;
+    document.getElementById('mail').href = `mailto:contact@ablago.app?${new URLSearchParams({ subject: en ? 'Broken link' : 'Kaputter Link', body: adresse }).toString().replace(/\+/g, '%20')}`;
+  </script>
+</body>
+</html>

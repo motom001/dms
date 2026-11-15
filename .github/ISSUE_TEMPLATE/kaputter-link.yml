@@ -1,0 +1,65 @@
+# Kaputten Link melden (#841): Die Seite „nicht gefunden“ auf help.ablago.app (und in der Hilfe im Programm) öffnet
+# dieses Formular mit vorausgefüllter Adresse – GitHub füllt Felder über ihre id in der Adresse vor
+# (…/issues/new?template=kaputter-link.yml&adresse=…&herkunft_genau=…&version=…). Ids deshalb nie umbenennen.
+# Dieselbe Vorlage nutzt die Seite „nicht gefunden“ auf ablago.app (dms-website #11).
+name: Kaputter Link · Broken link
+description: Ein Link zu Ablago führt ins Leere? Sag uns, wo du ihn gefunden hast. · A link to Ablago leads nowhere? Tell us where you found it.
+title: "Kaputter Link: "
+labels: ["kaputter-link", "bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Danke, dass du uns Bescheid sagst! Die aufgerufene Adresse ist schon eingetragen, wenn du von der Seite „Diese Seite gibt es hier nicht“ kommst. Ergänze nur noch, wo du den Link gefunden hast.
+
+        > **Dieser Beitrag ist öffentlich sichtbar.** Trage **keine eigenen Adressen, Domains oder Namen** ein – also nicht die Adresse deiner eigenen Ablago-Installation, keine IP-Adressen und keine Bildschirmfotos mit echten Unterlagen.
+
+        ---
+
+        **English:** Thanks for letting us know! The address you opened is already filled in if you came from the page "This page doesn't exist here". Just add where you found the link.
+
+        > **This post is publicly visible.** Do **not enter your own addresses, domains or names** – not the address of your own Ablago installation, no IP addresses and no screenshots of real documents.
+  - type: input
+    id: adresse
+    attributes:
+      label: Aufgerufene Adresse · Address you opened
+      description: Die Adresse, die ins Leere führte, z. B. https://help.ablago.app/admin/aktuell/sicherng/ · The address that led nowhere.
+    validations:
+      required: true
+  - type: dropdown
+    id: herkunft
+    attributes:
+      label: Wo hast du den Link gefunden? · Where did you find the link?
+      options:
+        - Hilfe in Ablago · Help in Ablago
+        - Andere Handbuchseite · Another manual page
+        - Startseite ablago.app · Website ablago.app
+        - Paketkatalog · Package catalogue
+        - App/Client, z. B. Homey · App/client, e.g. Homey
+        - E-Mail von Ablago, z. B. Tägliche Zusammenfassung · E-mail from Ablago, e.g. daily summary
+        - Suchmaschine · Search engine
+        - Forum/anderswo · Forum/elsewhere
+        - Weiß ich nicht mehr · I don't remember
+    validations:
+      required: true
+  - type: input
+    id: herkunft_genau
+    attributes:
+      label: Wo genau? · Where exactly?
+      description: Optional, z. B. die Seite, auf der der Link stand. Kam er von help.ablago.app oder ablago.app, ist sie schon eingetragen. · Optional, e.g. the page the link was on. Already filled in if it came from help.ablago.app or ablago.app.
+    validations:
+      required: false
+  - type: input
+    id: version
+    attributes:
+      label: Deine Ablago-Version · Your Ablago version
+      description: Optional – schon eingetragen, wenn du aus der Hilfe in Ablago kommst. · Optional – already filled in if you came from the help in Ablago.
+    validations:
+      required: false
+  - type: input
+    id: client
+    attributes:
+      label: Womit warst du unterwegs? · What were you using?
+      description: Optional, z. B. Browser, Homey-App. · Optional, e.g. browser, Homey app.
+    validations:
+      required: false
