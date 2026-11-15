@@ -154,6 +154,7 @@
   "dienst.passwoerter-lassen-sich-erst": "Passwörter lassen sich erst speichern, wenn es einen Schlüssel gibt. Wer Ablago verwaltet, erzeugt ihn in der Werkbank unter „Verschlüsselung“.",
   "dienst.einstellungen-sind-nicht": "Einstellungen sind nicht eingerichtet.",
   "dienst.unscharf-true-oder-false": "unscharf: true oder false.",
+  "dienst.meintest-ungueltig": "meintest: ohne-treffer oder mehr-treffer.",
   "dienst.hoechstens-eigene-gruppen": "Höchstens {SYNONYM_GRUPPEN_MAX} eigene Gruppen.",
   "dienst.diese-gruppe-gibt-es": "Diese Gruppe gibt es nicht (oder sie gehört zu einem Paket).",
   "dienst.suche-true-oder-false": "suche: true oder false.",

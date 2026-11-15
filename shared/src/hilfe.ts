@@ -130,7 +130,7 @@ export const HILFE = {
   'werkbank.ablaufvorlagen': admin('automatisierungsvorlagen/', 'Automatisierungsvorlagen'),
   // #1180: Haken „Datum“ bei „In …“ – das Datum als änderbarer Vorschlag.
   'werkbank.ablaufvorlagen.datum': admin('automatisierungsvorlagen/', 'Datum vorschlagen', 'datum-vorschlagen'),
-  'werkbank.suche': admin('suche/', 'Suche: Tippfehler und Wörterverzeichnis'),
+  'werkbank.suche': admin('suche/', 'Suche: Tippfehler'),
   'werkbank.woerter': admin('suche/', 'Gleichbedeutende Wörter', 'gleichbedeutende-worter'),
   'mappentyp.stempel': admin('stempel/', 'Stempel je Mappentyp', 'stempel-je-mappentyp'),
   'werkbank.vollexport': admin('export/', 'Daten exportieren'),
@@ -170,6 +170,7 @@ export const HILFE = {
   'werkbank.fehlermeldungen': admin('fehlersuche/', 'Gemeldete Fehler', 'gemeldete-fehler'),
   'werkbank.datenbank': admin('installation/', 'Lange Datenbankzugriffe', 'lange-datenbankzugriffe'),
   'werkbank.technik': admin('fehlersuche/', 'Technik', 'technik'),
+  'werkbank.werkzeuge': admin('fehlersuche/', 'Eingebaute Werkzeuge', 'werkzeuge'),
   // Startseite „Ablago startet …“ (#802): im Fehlerfall zum Protokoll des Containers.
   'start.fehler': admin('fehlersuche/', 'Container-Logs', 'container-logs'),
   'werkbank.demo': admin('demo/', 'Demo-Daten'),

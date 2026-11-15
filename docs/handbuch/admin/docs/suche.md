@@ -10,11 +10,18 @@ Ohne Einstellung gleicht die Suche aus:
 - **Bindestriche:** „Kfzversicherung“ findet „Kfz-Versicherung“ und umgekehrt.
 - **Wortformen** im Volltext: „Rechnungen“ findet „Rechnung“ – in der Sprache des Dokuments (Deutsch, wenn keine erkannt ist). Bei Dokumenten in mehreren Sprachen (seit 0.139.0) je Seite in ihrer Sprache; gesucht wird über alle Sprachen des Dokuments (siehe [Texterkennung → Dokumente in mehreren Sprachen](texterkennung.md#mehrere-sprachen)).
 
-## Tippfehler und „Meintest du …?“
+## Tippfehler und „Meintest du …?“ { #tippfehler-und-meintest-du }
 
 Findet die Suche **nichts**, sucht sie mit ähnlichen Wörtern aus deiner Ablage weiter (Ähnlichkeit über Buchstabengruppen, pg_trgm) und sagt das über den Treffern: „Keine genauen Treffer für ‚Waschmaschiene‘. Gezeigt werden ähnliche Schreibweisen.“ Dazu schlägt sie **„Meintest du ‚waschmaschine‘?“** vor; ein Klick sucht genau dieses Wort. Gibt es genaue Treffer, bleibt es bei ihnen – genaue Treffer gehen immer vor.
 
-Die ähnlichen Wörter kommen aus dem **Wörterverzeichnis**: allen Wörtern ab vier Buchstaben aus Titeln, Angaben und Volltexten. Es wächst von selbst mit – neue Wörter kommen im Hintergrund alle paar Sekunden dazu, damit gleichzeitiges Speichern sich nicht gegenseitig blockiert; Wörter gelöschter Mappen bleiben stehen, bis du es mit **Neu aufbauen** frisch zählst (das dauert bei großen Ablagen einige Sekunden). Mit dem Haken **Bei keinem Treffer ähnliche Schreibweisen zeigen …** schaltest du die Tippfehler-Suche ab.
+![Werkbank → Suche und Volltext → Suche: Tippfehler](bilder/werkbank-suche.png)
+
+Unter **„Meintest du …?“ vorschlagen** wählst du, wann der Vorschlag kommt (seit #1191):
+
+- **nur, wenn nichts gefunden wurde** (Vorgabe) – wie oben.
+- **auch, wenn eine ähnliche Schreibweise mehr findet** – auch bei genauen Treffern schaut die Suche nach der besten ähnlichen Schreibweise und schlägt sie vor, wenn sie **mehr** Mappen findet: „Meintest du ‚waschmaschine‘? Das findet 12 Mappen.“ Die Treffer bleiben die genauen; gezählt werden nur Mappen, die die Person lesen darf. Das nützt, wenn manches mit anderer Schreibweise abgelegt ist (z. B. aus der Texterkennung). Dafür zählt die Suche auf der ersten Seite einmal mehr und kann etwas länger dauern.
+
+Die ähnlichen Wörter kommen aus dem **Wörterverzeichnis**: allen Wörtern ab vier Buchstaben aus Titeln, Angaben und Volltexten. Es wächst von selbst mit – neue Wörter kommen im Hintergrund alle paar Sekunden dazu, damit gleichzeitiges Speichern sich nicht gegenseitig blockiert; Wörter gelöschter Mappen bleiben stehen, bis du es mit **Neu aufbauen** frisch zählst (das dauert bei großen Ablagen einige Sekunden). Wie viele Wörter es kennt, steht unter der Auswahl: „Für Vorschläge kennt Ablago 12 345 Wörter aus deinen Mappen und Dokumenten.“ Mit dem Schalter **Ähnliche Schreibweisen („Meintest du …?“)** schaltest du die Tippfehler-Suche ab; die Auswahl für „Meintest du …?“ ist dann gesperrt.
 
 Ähnlich klingende Namen (Meier, Mayer, Maier) findet die Suche nur, wenn sie sich auch ähnlich schreiben.
 

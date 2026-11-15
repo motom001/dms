@@ -944,7 +944,7 @@ begriffe:
     nicht_verwenden: [Darf weg]
   - begriff: Suche und Volltext
     bereich: werkbank
-    beschreibung: Der Werkbank-Bereich unter Post und Eingänge für Texterkennung, Archivfassung, automatisches Verkleinern, Tippfehler und gleichbedeutende Wörter. Fasst die früheren Bereiche „Texterkennung“ und „Suche“ zusammen.
+    beschreibung: Der Werkbank-Bereich unter Post und Eingänge für Texterkennung, Archivfassung, Tippfehler und den Weg zu den gleichbedeutenden Wörtern. „Neue PDFs automatisch verkleinern“ steht seit #1190 im Systemzustand. Fasst die früheren Bereiche „Texterkennung“ und „Suche“ zusammen.
     einsteiger: erklaeren
     begegnet: admin
   - begriff: Postfach
@@ -1102,7 +1102,7 @@ begriffe:
     nicht_verwenden: [Fehlermeldungen]
   - begriff: Systemzustand
     bereich: betrieb
-    beschreibung: Wie es dem Server gerade geht – Speicherplatz mit Warnschwellen und die Auslastung von CPU, Arbeitsspeicher und Netzwerk (Werkbank → Wartung und Fehlersuche → Systemzustand). Gemeint ist der Zustand im Betrieb, nicht die Konfiguration.
+    beschreibung: Wie es dem Server gerade geht – Speicherplatz mit Warnschwellen, große PDFs verkleinern und die Auslastung von CPU, Arbeitsspeicher und Netzwerk (Werkbank → Wartung und Fehlersuche → Systemzustand). Gemeint ist der Zustand im Betrieb, nicht die Konfiguration.
     einsteiger: erklaeren
     begegnet: admin
     nicht_verwenden: [Systemumgebung]
@@ -1113,6 +1113,14 @@ begriffe:
     einsteiger: alltag
     begegnet: admin
     verwandt: [Systemzustand]
+  - begriff: Eingebautes Werkzeug
+    bereich: betrieb
+    beschreibung: Ein Programm, das das Ablago-Image mitbringt und das Ablago selbst aufruft – zum Lesen von PDFs (Poppler) und zum Bearbeiten von PDFs (qpdf). Die Werkbank nennt es nur, wenn eins fehlt, dann mit Folge und Abhilfe (Suche und Volltext, Systemzustand).
+    einsteiger: erklaeren
+    begegnet: admin
+    nicht_verwenden: [Abhängigkeit, Binary]
+    verwandt: [Systemzustand]
+    code: werkzeuge
   - begriff: Demo-Daten
     bereich: betrieb
     beschreibung: Erzeugte Beispielmappen zum Ausprobieren und für Lasttests.

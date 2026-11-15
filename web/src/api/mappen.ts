@@ -38,8 +38,11 @@ export const anlassQuery = (a?: LoeschAnlass) => (a?.grund ? `?${new URLSearchPa
 export interface Rueckverweis { quelleId: string; quelleTypId: string; feldKey: string; titel: string; /** Nicht lesbar (#126): ohne Link. */ verborgen?: boolean }
 export type Bezuege = Record<string, MappenBezug>;
 export interface Seite { gesamt: number; von: number; mappen: Mappe[]; bezuege: Bezuege; ausschnitte?: Record<string, Ausschnitt>; aufgaben?: Record<string, string>; /** Favoriten des Benutzers unter den Mappen dieser Seite (#62). */ favoriten?: string[]; /** Von anderen geändert seit dem letzten Sehen (#422). */ geaendert?: string[]; /** Favoriten ohne Benachrichtigung (#422, nur Favoritenliste). */ stumm?: string[]; /** Ähnliche Treffer (#442): nur in der Suche über alle Mappen mit Volltext. */ aehnlich?: AehnlicheMappe[]; /** Unscharfe Suche (#356): ohne genaue Treffer mit ähnlichen Schreibweisen gesucht. */ unscharf?: Unscharf }
-/** Unscharfe Suche (#356): statt = gesuchter Text, vorschlag = „Meintest du …?“ (null, wenn nichts Besseres da ist). */
-export interface Unscharf { statt: string; vorschlag: string | null; begriffe: Record<string, string[]> }
+/**
+ * Unscharfe Suche (#356): statt = gesuchter Text, vorschlag = „Meintest du …?“ (null, wenn nichts Besseres da ist).
+ * treffer (#1191): Es gab genaue Treffer, der Vorschlag findet aber mehr (so viele) – dann sind die Treffer die genauen.
+ */
+export interface Unscharf { statt: string; vorschlag: string | null; begriffe: Record<string, string[]>; treffer?: number }
 /** Eine Mappe mit einem ähnlichen Dokument (#442); aehnlichkeit = Kosinus (0 bis 1). */
 export interface AehnlicheMappe { id: string; titel: string; typId: string; dokument: { id: string; name: string }; aehnlichkeit: number }
 /** Eine Mappe im Papierkorb (#43). */

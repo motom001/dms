@@ -1,5 +1,6 @@
 import { Feld, Knopf } from '../bausteine';
 import { Kopf } from './Kopf';
+import { werkzeugZeilen } from './Werkzeuge';
 import { version as reactVersion } from 'react';
 import { useCallback, useEffect, useState } from 'react';
 import { geraetText } from '../../../shared/src/model';
@@ -48,6 +49,8 @@ function zeilenAus(u: Systemuebersicht): Zeilen {
       [t('werkbank.technik.dokumente'), `${db.dokumente.toLocaleString(gebietsschema())} (${groesse(db.dokumenteBytes)})`],
     ] : [[t('werkbank.technik.fehler'), (u.datenbank as { fehler: string }).fehler]]],
     [t('werkbank.technik.bibliotheken-server'), Object.entries(u.bibliotheken).map(([k, v]) => [k, v ?? t('werkbank.technik.nicht-gefunden')])],
+    // Eingebaute Werkzeuge (#1189): hier als leise Zeile, ein Hinweis oben im Systemzustand nur, wenn eins fehlt.
+    ...(u.werkzeuge ? [[t('werkbank.technik.werkzeuge'), werkzeugZeilen(u.werkzeuge)] as [string, Array<[string, string]>]] : []),
     [t('werkbank.technik.oberflaeche'), [['React', reactVersion], [t('werkbank.technik.browser'), geraetText(navigator.userAgent)]]],
     // Feste Ordner im Container (#115); wohin sie zeigen, bestimmen die Volumes der Compose-Datei.
     [t('werkbank.technik.ordner'), (u.ordner ?? []).map((o): [string, string] => [o.pfad, o.gesamt === null || o.frei === null ? t('werkbank.technik.nicht-messbar') : t('werkbank.technik.belegt-frei-von', { groesse: groesse(o.belegt ?? 0), groesse2: groesse(o.frei), groesse3: groesse(o.gesamt), wert: o.volume === false ? t('werkbank.technik.kein-eigenes-volume') : '' })])],
@@ -87,7 +90,10 @@ export function useTechnik(sichtbar: boolean) {
   const [u, setU] = useState<Systemuebersicht | null>(null);
   const [fehler, setFehler] = useState<string>();
   const [abgleich, setAbgleich] = useState<Vergleich[] | null>(null);
-  const laden = useCallback(async () => { try { setU(await betriebApi.system()); setFehler(undefined); } catch (e) { setFehler((e as Error).message); } }, []);
+  /** Rückgabe: der Fehler, falls es nicht geklappt hat (für „Erneut prüfen“ bei fehlenden Werkzeugen, #1189). */
+  const laden = useCallback(async (werkzeugeNeu = false): Promise<string | undefined> => {
+    try { setU(await betriebApi.system(werkzeugeNeu)); setFehler(undefined); return undefined; } catch (e) { setFehler((e as Error).message); return (e as Error).message; }
+  }, []);
   useEffect(() => { if (sichtbar) void laden(); }, [sichtbar, laden]);
   return { u, fehler, abgleich, setAbgleich, laden };
 }

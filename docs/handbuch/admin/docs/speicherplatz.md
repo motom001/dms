@@ -4,7 +4,7 @@ Wie geht es dem Server gerade? Das zeigt **Werkbank → Wartung und Fehlersuche 
 
 Auf derselben Seite stehen seit dem Aufräumen der Werkbank auch die **langen Datenbankzugriffe** und was gerade in der Datenbank läuft (früher unter *Datenbank-Anbindung*), die [externen Dienste](#externe-dienste) mit den [KI-Kosten](#ki-kosten) sowie **Version und Updates** (früher eigener Bereich *Technik*, siehe [Fehlersuche](fehlersuche.md#technik)).
 
-Damit beim Speichern und Hochladen nie etwas verloren geht, misst Ablago selbst, wie viel Platz frei ist, warnt rechtzeitig und hält sich an der Grenze selbst an. Oben auf der Seite stehen die **Schwellen**, darunter die [Auslastung](#auslastung), dann die **Ordner** mit ihrer Belegung, ganz unten **Große PDFs verkleinern**.
+Damit beim Speichern und Hochladen nie etwas verloren geht, misst Ablago selbst, wie viel Platz frei ist, warnt rechtzeitig und hält sich an der Grenze selbst an. Oben auf der Seite stehen die **Schwellen**, darunter die [Auslastung](#auslastung), dann die **Ordner** mit ihrer Belegung, danach **Große PDFs verkleinern** und **Neue PDFs automatisch verkleinern**.
 
 --8<-- "ausgeblendet-schritt.md"
 
@@ -146,9 +146,11 @@ Jedes Dokument wird so verkleinert wie mit [PDF verkleinern](https://help.ablago
 
 Jedes verkleinerte Dokument hat in der Historie seiner Mappe den Eintrag „PDF bearbeitet: verkleinert von … auf …“, das [Protokoll](fehlersuche.md#protokoll) (Modul *werkbank*) die Zusammenfassung.
 
-### Neue PDFs automatisch verkleinern
+### Neue PDFs automatisch verkleinern {#neue-pdfs-automatisch-verkleinern}
 
-Darunter: der Schalter **Neue PDFs automatisch verkleinern** ab einer Größe (Standard 5 MB) in einer Stufe. **Standard ist aus.** Eingeschaltet gilt es für neue PDFs von außen – Hochladen, [Eingangsordner](eingangsordner.md), [Postfächer](postfaecher.md), Schnittstelle und [WebDAV](webdav.md) –, nicht für PDFs, die in Ablago bearbeitet wurden. Gespeichert wird dann **nur das verkleinerte PDF**; das Original kommt nicht in Ablago. Bringt es weniger als 10 % oder lässt sich die Datei nicht lesen, wird sie abgelegt, wie sie kam. Der Eintrag „Dokument hochgeladen“ in der Historie nennt dann „Verkleinert: automatisch von … auf …“.
+Darunter steht – beim Speicherplatz, wo man es sucht – der Schalter **Neue PDFs automatisch verkleinern** ab einer Größe (Standard 5 MB) in einer Stufe. **Standard ist aus.** Eingeschaltet gilt es für neue PDFs von außen – Hochladen, [Eingangsordner](eingangsordner.md), [Postfächer](postfaecher.md), Schnittstelle und [WebDAV](webdav.md) –, nicht für PDFs, die in Ablago bearbeitet wurden. Gespeichert wird dann **nur das verkleinerte PDF**; das Original kommt nicht in Ablago. Bringt es weniger als 10 % oder lässt sich die Datei nicht lesen, wird sie abgelegt, wie sie kam. Der Eintrag „Dokument hochgeladen“ in der Historie nennt dann „Verkleinert: automatisch von … auf …“.
+
+Bis zur Umstellung mit #1190 stand der Schalter unter *Suche und Volltext*; alte Links dorthin führen hierher.
 
 !!! note "Technik: kein Ghostscript"
     Ablago verkleinert ohne Ghostscript (dessen Lizenz AGPL ist). Die Bilder rechnet **pdftoppm** aus poppler neu (ohnehin für Texterkennung und Vorschaubilder im Image), die Struktur des PDFs optimiert **qpdf** (Apache-2.0, seit Version 0.93.0 im Image). Wer ein eigenes Image baut, nimmt `apk add qpdf` mit auf – ohne qpdf funktioniert das Verkleinern auch, die Dateien werden nur etwas weniger klein.

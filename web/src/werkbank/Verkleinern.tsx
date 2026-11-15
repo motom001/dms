@@ -14,7 +14,7 @@ import { t } from '../sprache';
 
 /**
  * Werkbank → Systemzustand (#393, #408): große PDFs verkleinern (Liste nach Größe mit geschätzter Ersparnis,
- * Sammelaktion als Hintergrundauftrag) und neue PDFs automatisch verkleinern (Standard aus).
+ * Sammelaktion als Hintergrundauftrag) und neue PDFs automatisch verkleinern (Standard aus; seit #1190 wieder hier).
  * Die Liste steht rechts mit fester Höhe (#366): eine Arbeitsliste, keine Sammlung zum Bearbeiten.
  */
 

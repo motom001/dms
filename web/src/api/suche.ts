@@ -1,18 +1,19 @@
 /** Schnittstelle (#1234): Suche, Vektoren und Texterkennung, „Frag deine Ablage“, KI-Typen und Erkennung. */
 import { messung } from '../messung';
-import type { Wortgruppe } from '../../../shared/src/suche';
+import type { Meintest, Wortgruppe } from '../../../shared/src/suche';
 import type { Dokument, OcrStandArt } from '../../../shared/src/model';
 import type { KiUebersicht } from '../../../shared/src/pakete';
 import type { FrageZeile, FragenGrenzen, VerlaufEintrag } from '../../../shared/src/fragen';
 import { erreichbarkeit, NICHT_ERREICHBAR } from '../erreichbar';
 import { t } from '../sprache';
 import { sprache } from '../../../shared/src/sprache';
+import type { Werkzeuge } from '../../../shared/src/werkzeuge';
 import { ABGEMELDET, ApiFehler, anfrage } from './anfrage';
 
 /** Erkennung per Paket (#511): Standard in der Werkbank und Pakete mit dms:erkennen. */
 export interface ErkennungStand { standard: { paket: string | null; abfluss?: boolean }; pakete: Array<{ id: string; name: string; netz: boolean; laeuft: boolean }> }
 /** Werkbank → Suche (#356). */
-export interface SucheStand { unscharf: boolean; woerter: number; synonyme: Wortgruppe[] }
+export interface SucheStand { unscharf: boolean; /** #1191 */ meintest: Meintest; woerter: number; synonyme: Wortgruppe[] }
 /** „Frag deine Ablage“ (#444): Werkbank (Höchstmenge) und Frage stellen (Antwort als NDJSON-Strom). */
 export interface FragenStand { verfuegbar: boolean; paket: string | null; grenzen: FragenGrenzen }
 /**
@@ -58,7 +59,7 @@ export interface VektorStand { paket: string | null; modell: string | null; mitV
 export interface OcrEinstellungen { aktiv: boolean; auftraege: number }
 export interface OcrStatus {
   zaehler: Record<OcrStandArt, number>; laufend: number;
-  werkzeuge: { pdftotext: boolean; pdftoppm: boolean };
+  werkzeuge: Werkzeuge;
   einstellungen: OcrEinstellungen; dateitypen: Record<string, string>;
   /** #395: erkannte Sprachen (Kennung → Anzahl Dokumente). */
   erkannteSprachen?: Record<string, number>;
@@ -97,7 +98,7 @@ export const sucheApi = {
   vektorenNeu: () => anfrage<{ entfernt: number }>('POST', '/api/werkbank/vektoren/neu'),
   /* Suche (#356) */
   sucheStand: () => anfrage<SucheStand>('GET', '/api/werkbank/suche'),
-  sucheSetze: (e: { unscharf: boolean }) => anfrage<SucheStand>('PUT', '/api/werkbank/suche', e),
+  sucheSetze: (e: { unscharf?: boolean; meintest?: Meintest }) => anfrage<SucheStand>('PUT', '/api/werkbank/suche', e),
   // Gleichbedeutende Wörter (#356, #992): Wörter als Liste in ihrer Reihenfolge; `stand` = `geaendert` der Gruppe (#917).
   synonymNeu: (woerter: string[]) => anfrage<SucheStand & { id: string }>('POST', '/api/werkbank/suche/synonyme', { woerter }),
   synonymAendern: (id: string, woerter: string[], stand?: string) => anfrage<SucheStand>('PUT', `/api/werkbank/suche/synonyme/${encodeURIComponent(id)}`, { woerter, ...(stand ? { stand } : {}) }),

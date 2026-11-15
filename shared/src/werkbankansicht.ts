@@ -165,9 +165,13 @@ export const inLeiste = (gruppe: Gruppe | null, m: { beruflich: boolean } | null
 
 /**
  * Umgezogene Abschnitte (#1184): alte Adresse samt Sprungmarke → neue Seite. Das Löschprotokoll war ein Abschnitt des
- * Löschkonzepts und ist jetzt ein eigener Bereich.
+ * Löschkonzepts und ist jetzt ein eigener Bereich. „Neue PDFs automatisch verkleinern“ steht seit #1190 beim
+ * Speicherplatz im Systemzustand statt unter Suche und Volltext.
  */
-const ABSCHNITT_UMGEZOGEN: Readonly<Record<string, string>> = { 'loeschkonzept#loeschprotokoll': '/werkbank/loeschprotokoll' };
+const ABSCHNITT_UMGEZOGEN: Readonly<Record<string, string>> = {
+  'loeschkonzept#loeschprotokoll': '/werkbank/loeschprotokoll',
+  'texterkennung#automatisch-verkleinern': '/werkbank/systemzustand#automatisch-verkleinern',
+};
 export const abschnittUmleitung = (bereich: string, marke: string): string | null => ABSCHNITT_UMGEZOGEN[`${bereich}#${marke}`] ?? null;
 
 /** Für die ganze Installation: Vorlage plus Abweichungen. */

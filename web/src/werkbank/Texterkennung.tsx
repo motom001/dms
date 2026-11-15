@@ -1,5 +1,6 @@
-import { Knopf, KnopfLink, Reiter, ReiterFlaeche, Wahlhaken, type KnopfErgebnis } from '../bausteine';
+import { Knopf, KnopfLink, Reiter, ReiterFlaeche, Wahlhaken } from '../bausteine';
 import { Kopf } from './Kopf';
+import { WerkzeugeHinweis } from './Werkzeuge';
 import { DateienPruefen } from './Archiv';
 import { NummernNachtragen } from './Nummernkreise';
 import { FormateUnpassend } from './FormateUnpassend';
@@ -23,6 +24,7 @@ import { AnlageMarke } from '../ablage/Anlagen';
 /**
  * Werkbank → Texterkennung (#45, #459): Übersicht – welches Paket die Texterkennung übernimmt, woher der Text der
  * Dokumente kommt, erkannte Sprachen, Warteschlange und Aufträge. Einstellungen der Erkennung stehen beim Paket.
+ * Eingebaute Werkzeuge (Poppler, qpdf) erscheinen nur, wenn eins fehlt (#1189).
  * Werkbank → Wartungsoperationen: Volltext neu erzeugen (#458), alle Dateien prüfen (#212),
  * Nummern nachträglich vergeben. Sicherung, Wiederherstellung und Export sind eigene Bereiche.
  */
@@ -95,13 +97,14 @@ export function TexterkennungPanel({ t: eintrag, wartungAn }: { t: Texterkennung
   if (eintrag.fehler) return <div className="hinweis schlecht"><p>{eintrag.fehler}</p></div>;
   if (!eintrag.stand) return <p className="leise">{t('werkbank.texterkennung.lade')}</p>;
   const s = eintrag.stand;
-  const w = s.werkzeuge;
   return (
     <div className="einspaltig">
       <Kopf titel={tx('volltext.werkbank.titel')} ueber={t('werkbank.texterkennung.werkbank')} hilfe="werkbank.texterkennung">
         <p className="leise">{tx('volltext.werkbank.einleitung')}</p>
       </Kopf>
       <PauseHinweis t={eintrag} wartungAn={wartungAn} />
+      {/* Eingebaute Werkzeuge (#1189): nur, wenn eins fehlt – oben, mit Folge und Abhilfe. */}
+      <WerkzeugeHinweis werkzeuge={s.werkzeuge} pruefen={() => eintrag.laden(true)} />
 
       <PaketBlock s={s} />
 
@@ -118,17 +121,6 @@ export function TexterkennungPanel({ t: eintrag, wartungAn }: { t: Texterkennung
         <p>{tn('werkbank.texterkennung.mit-fehler', { b: <strong>{t('werkbank.texterkennung.offen', { zahl: zahl(s.zaehler.wartet + s.zaehler.laeuft) })}</strong>, zahl: zahl(s.zaehler.fehler), wert: !s.einstellungen.aktiv ? t('werkbank.texterkennung.ausgeschaltet') : wartungAn ? t('werkbank.texterkennung.pausiert-wartungsmodus') : '' })}</p>
         <Warteschlange s={s} />
         <p className="leise klein">{tx('volltext.werkbank.neu')} <Link to="/werkbank/wartung#operationen" className="verweis">{tx('volltext.werkbank.neu.link')}</Link></p>
-      </section>
-
-      <section className="blatt" id="werkzeuge">
-        <h2 className="h3">{t('werkbank.texterkennung.werkzeuge')}</h2>
-        <dl className="eigenschaften">
-          <dt>{tx('volltext.werkbank.poppler')}</dt><dd>{w.pdftotext && w.pdftoppm ? tx('volltext.werkbank.poppler.da') : <span className="fehlertext">{tx('volltext.werkbank.poppler.fehlt')}</span>}</dd>
-        </dl>
-        <div className="knoepfe"><Knopf groesse="klein" laeuftText={t('werkbank.texterkennung.prueft')} onClick={async (): Promise<KnopfErgebnis> => {
-          const f = await eintrag.laden(true);
-          return f ? { art: 'schlecht', text: f } : { art: 'gut', text: t('werkbank.texterkennung.werkzeuge-geprueft') };
-        }}>{t('werkbank.texterkennung.erneut-pruefen')}</Knopf></div>
       </section>
 
       <Auftraege t={eintrag} />

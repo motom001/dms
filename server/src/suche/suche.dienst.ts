@@ -6,7 +6,7 @@ import { randomUUID } from 'node:crypto';
 import type { Benutzer, Mappe } from '../../../shared/src/model';
 import type { Recht } from '../../../shared/src/rechte';
 import { optionsGruppen } from '../../../shared/src/beschriftung';
-import { liesWortgruppe, suchbegriffe, variantenVon, type Varianten } from '../../../shared/src/suche';
+import { istMeintest, liesWortgruppe, MEINTEST_STANDARD, suchbegriffe, variantenVon, type Meintest, type Varianten } from '../../../shared/src/suche';
 import { Fachfehler } from '../fehler';
 import { MB } from '../grenzen';
 import type { Kern, Zugreifender, Zugriff } from '../kern';
@@ -88,9 +88,19 @@ export class SucheDienst {
     // Beschriftungen der Auswahlwerte (#728) gelten wie gleichbedeutende Wörter: „Electricity“ findet den Wert „strom“.
     return variantenVon(begriffe, [...await this.synonymGruppen(), ...optionsGruppen((await this.repo.listeTypen()).flatMap((x) => x.felder))]);
   }
+  /** Einstellung „suche“: gespeichert sind nur Abweichungen von der Vorgabe (Tippfehler an, „Meintest du …?“ ohne Treffer). */
+  private async sucheEinstellung(): Promise<{ unscharf: boolean; meintest: Meintest }> {
+    const e = (await this.einstellungen?.lies('suche')) as { unscharf?: boolean; meintest?: unknown } | null;
+    return { unscharf: e?.unscharf !== false, meintest: istMeintest(e?.meintest) ? e.meintest : MEINTEST_STANDARD };
+  }
   /** Tippfehler-Suche an (Werkbank → Suche)? Standard: an. */
   async unscharfAn(): Promise<boolean> {
-    return ((await this.einstellungen?.lies('suche')) as { unscharf?: boolean } | null)?.unscharf !== false;
+    return (await this.sucheEinstellung()).unscharf;
+  }
+  /** „Meintest du …?“ auch bei Treffern (#1191)? Nur mit eingeschalteter Tippfehler-Suche; Standard: nein. */
+  async meintestBeiTreffern(): Promise<boolean> {
+    const e = await this.sucheEinstellung();
+    return e.unscharf && e.meintest === 'mehr-treffer';
   }
   /**
    * Neue Wörter ins Wörterverzeichnis übernehmen (#575): Die Trigger legen sie nur in einen Eingang (keine
@@ -110,17 +120,25 @@ export class SucheDienst {
     // Die Zahl der Wörter mit allem, was schon im Eingang steht (#575).
     await this.woerterEinarbeiten().catch(() => 0);
     const pakete = new Map((await this.repo.listePakete()).map((p) => [p.id, p.name] as const));
+    const e = await this.sucheEinstellung();
     return {
-      unscharf: await this.unscharfAn(), woerter: await this.repo.woerterAnzahl(),
+      unscharf: e.unscharf, meintest: e.meintest, woerter: await this.repo.woerterAnzahl(),
       synonyme: (await this.repo.synonyme()).map((g) => ({ ...g, ...(g.quelle !== 'werkbank' ? { paketName: pakete.get(g.quelle) ?? g.quelle } : {}) })),
     };
   }
   async setzeSuche(e: unknown, von: string) {
     if (!this.einstellungen) throw new Fachfehler(404, t('meldungen.dienst.einstellungen-sind-nicht'));
-    const x = (e ?? {}) as { unscharf?: unknown };
-    if (typeof x.unscharf !== 'boolean') throw new Fachfehler(422, t('meldungen.dienst.unscharf-true-oder-false'));
-    await this.einstellungen.schreibe('suche', x.unscharf ? null : { unscharf: false });
-    protokoll.modul('werkbank').info('Suche: Tippfehler', { von, an: x.unscharf });
+    // Einzeln änderbar (#1191): unscharf und/oder meintest; was fehlt, bleibt.
+    const x = (e ?? {}) as { unscharf?: unknown; meintest?: unknown };
+    if (x.unscharf !== undefined && typeof x.unscharf !== 'boolean') throw new Fachfehler(422, t('meldungen.dienst.unscharf-true-oder-false'));
+    if (x.meintest !== undefined && !istMeintest(x.meintest)) throw new Fachfehler(422, t('meldungen.dienst.meintest-ungueltig'));
+    if (x.unscharf === undefined && x.meintest === undefined) throw new Fachfehler(422, t('meldungen.dienst.unscharf-true-oder-false'));
+    const alt = await this.sucheEinstellung();
+    const neu = { unscharf: x.unscharf ?? alt.unscharf, meintest: x.meintest ?? alt.meintest };
+    const abweichend = { ...(neu.unscharf ? {} : { unscharf: false }), ...(neu.meintest === MEINTEST_STANDARD ? {} : { meintest: neu.meintest }) };
+    await this.einstellungen.schreibe('suche', Object.keys(abweichend).length ? abweichend : null);
+    if (neu.unscharf !== alt.unscharf) protokoll.modul('werkbank').info('Suche: Tippfehler', { von, an: neu.unscharf });
+    if (neu.meintest !== alt.meintest) protokoll.modul('werkbank').info('Suche: „Meintest du …?“', { von, wann: neu.meintest });
     return this.sucheStand();
   }
   private wortgruppe(roh: unknown): string[] {

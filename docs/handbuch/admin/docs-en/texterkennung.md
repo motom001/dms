@@ -2,7 +2,7 @@
 
 So that the search also finds the text of documents, Ablago creates a **full text** for every new document – in the background, without anyone having to wait:
 
-The settings are under **Workbench → Post and intake → Search and full text** – together with the [search](suche.md) (typos, word index; the [synonyms](suche.md#gleichbedeutende-worter) have had an area of their own directly below since #992) and "Shrink new PDFs automatically". The area belongs to the template **Business**; in a household it appears in expert mode. The *maintenance operations* are under **Workbench → Maintenance and troubleshooting → Maintenance**.
+The settings are under **Workbench → Post and intake → Search and full text** – together with the [search](suche.md) (typos, word index; the [synonyms](suche.md#gleichbedeutende-worter) have had an area of their own directly below since #992). "Shrink new PDFs automatically" has been next to the storage space under [System health](speicherplatz.md#neue-pdfs-automatisch-verkleinern) since #1190. The area belongs to the template **Business**; in a household it appears in expert mode. The *maintenance operations* are under **Workbench → Maintenance and troubleshooting → Maintenance**.
 
 --8<-- "ausgeblendet-schritt.md"
 
@@ -77,7 +77,10 @@ The page is an **overview**; recognition settings are no longer here (they are a
 - **Where the text comes from:** how many documents have their text from the PDF, from the package, from the former built-in text recognition (up to 0.133), are without text, are waiting for text recognition or had an error.
 - **Other file types:** TIFF, WebP, Word, emails and co. – how many there are and which package converts them or supplies their full text (see [Other file types](#andere-dateitypen)).
 - **Recognised languages** with the notice if the package lacks language data (see [Further languages](#weitere-sprachen)).
-- **Queue**, **tools** (poppler) and **jobs** (see below).
+- **Queue** and **jobs** (see below).
+- Below that **Search: typos** – similar spellings and when “Did you mean …?” appears (see [Search](suche.md#tippfehler-und-meintest-du)) – and the way to the synonyms.
+
+If a [built-in tool](fehlersuche.md#werkzeuge) is missing (e.g. the one for reading PDFs), a notice at the top of the page says what follows and what helps; if all are there, the page says nothing about them.
 
 Whether a documents tab creates a full text at all you set on the [Folder type](mappentypen.md#register) (*Create full text*, default: on).
 

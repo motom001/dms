@@ -4,7 +4,7 @@ import { Link } from '../ort';
 import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 import { WARTUNG_GEAENDERT } from '../wartung';
 import { einDatentraeger } from '../../../shared/src/werkbankansicht';
-import { GrossePdfsVerkleinern } from './Verkleinern';
+import { AutomatischVerkleinern, GrossePdfsVerkleinern } from './Verkleinern';
 import { t, tn } from '../sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
 import { Kopf } from './Kopf';
@@ -13,7 +13,8 @@ import { Feld, Knopf } from '../bausteine';
 /**
  * Werkbank → Wartung und Fehlersuche → Systemzustand (#408, früher Einstellungen → Speicherplatz, #116):
  * oben Warnschwelle und Grenze, darunter belegt/frei je fester Ordner (#115). An der Grenze startet
- * der Wartungsmodus von selbst; beenden muss ihn ein Administrator. Darunter die Auslastung (#409, `Auslastung.tsx`).
+ * der Wartungsmodus von selbst; beenden muss ihn ein Administrator. Darunter die Auslastung (#409, `Auslastung.tsx`),
+ * unten große PDFs verkleinern und neue PDFs automatisch verkleinern (#393, #1190).
  */
 
 const GB = 1024 ** 3;
@@ -77,7 +78,7 @@ function SchwelleFeld({ name, wert, aendern, hilfe }: { name: string; wert: Schw
   );
 }
 
-export function SpeicherplatzPanel({ z, nachAenderung, auslastung, unten }: { z: SpeicherplatzZustand; nachAenderung?: () => void; auslastung?: ReactNode; unten?: ReactNode }) {
+export function SpeicherplatzPanel({ z, nachAenderung, hinweise, auslastung, unten }: { z: SpeicherplatzZustand; nachAenderung?: () => void; hinweise?: ReactNode; auslastung?: ReactNode; unten?: ReactNode }) {
   const s = z.stand;
   const [e, setE] = useState<SpeicherplatzEinstellung | null>(null);
   const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
@@ -117,6 +118,8 @@ export function SpeicherplatzPanel({ z, nachAenderung, auslastung, unten }: { z:
         </div>
       )}
 
+      {/* Weitere Hinweise oben (#1189: fehlende eingebaute Werkzeuge). */}
+      {hinweise}
       {z.fehler && <div className="hinweis schlecht"><p>{z.fehler}</p></div>}
       <form className="blatt" id="schwellen" onSubmit={(ev) => { ev.preventDefault(); void speichern(); }} onKeyDown={ent.tasten}>
         <h2 className="h3">{t('werkbank.speicherplatz.schwellen-fuer-den-speicherplatz')}</h2>
@@ -170,8 +173,10 @@ export function SpeicherplatzPanel({ z, nachAenderung, auslastung, unten }: { z:
       </section>
 
 
-      {/* PDF verkleinern (#393): Platz schaffen bei großen Scans. „Neue PDFs automatisch verkleinern“ steht seit #725 unter Suche und Volltext. */}
+      {/* PDF verkleinern (#393): Platz schaffen bei großen Scans. „Neue PDFs automatisch verkleinern“ steht seit #1190
+          wieder hier beim Speicherplatz (von #725 bis #1190 unter Suche und Volltext). */}
       <GrossePdfsVerkleinern />
+      <AutomatischVerkleinern />
       {unten}
     </div>
   );

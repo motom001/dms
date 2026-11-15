@@ -93,7 +93,7 @@ With quotation marks you only search for **whole words** or an exact phrase, e.g
 
 ### Typos and other words {#tippfehler-und-andere-worter}
 
-If the search finds **nothing**, it continues with similarly spelled words from your Library – "washing machien" then finds the washing machine. Above the hits there is a notice about this, plus **Did you mean "washing machine"?** – a click searches for exactly this word. If there are exact hits, you only see those.
+If the search finds **nothing**, it continues with similarly spelled words from your Library – "washing machien" then finds the washing machine. Above the hits there is a notice about this, plus **Did you mean "washing machine"?** – a click searches for exactly this word. If there are exact hits, you only see those. If the administration has set it up, the search also suggests **Did you mean …?** when there are hits but a similar spelling finds more – with the number, e.g. “Did you mean “washing machine”? That finds 12 folders.”; the hits stay the exact ones.
 
 If an administrator has set up **synonyms** (e.g. *car, auto, vehicle* – some packages bring such lists), searching for one word also finds the others. With quotation marks or a minus, on the other hand, you search for exactly what you entered.
 

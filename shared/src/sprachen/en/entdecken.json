@@ -82,5 +82,6 @@
   "tipp.rundgang": "Would you like to see the short tour of Ablago again? It only takes a minute.",
   "tipp.pakete": "Ready-made folder types, for example for contracts or insurance, come as packages. You find them via “Administer Ablago” under “Packages”.",
   "tipp.benutzer-einladen": "Under “Administer Ablago” → “Users” you invite more people. Each of them gets their own account.",
-  "tipp.sicherung": "Now and then, check under “Administer Ablago” → “Backup” when Ablago last backed everything up."
+  "tipp.sicherung": "Now and then, check under “Administer Ablago” → “Backup” when Ablago last backed everything up.",
+  "tipp.meintest-auch-bei-treffern": "The search can suggest “Did you mean …?” even when it has already found something. You set this under “Search and full text”."
 }

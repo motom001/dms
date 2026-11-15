@@ -58,7 +58,7 @@ Ein Feld, dessen Wert ein Paket ausrechnet, z. B. „Kündigen bis“ oder der S
 Siehe auch: [Feld](#feld), [Paket](#paket), [Hinweis von Paketen](#hinweis-von-paketen).
 
 <a id="beruflich-genutzt"></a>**Beruflich genutzt** · ✓ Alltagswort · Administratoren  
-Das eine Merkmal der Ablage – die Ablage wird auch beruflich genutzt (Selbständige, Verein, Betrieb). Vorgabe nein. Mappentypen zeigen damit ihre beruflichen Felder und Abschnitte; Rechte, Ansichten und Automatisierungen können darauf schauen. Gilt für die ganze Ablage, nicht je Person; einstellen in Werkbank → Einstellungen → Eigene Organisation.  
+Das eine Merkmal der Ablage – die Ablage wird auch beruflich genutzt (Selbständige, Verein, Betrieb). Vorgabe nein. Mappentypen zeigen damit ihre beruflichen Felder und Abschnitte; Rechte, Ansichten und Automatisierungen können darauf schauen. Gilt für die ganze Ablage, nicht je Person; einstellen in Werkbank → Nutzung.  
 Siehe auch: [Anzeigen, wenn …](#anzeigen-wenn), [Bedingung](#bedingung).
 
 <a id="darstellung"></a>**Darstellung** · ✓ Alltagswort · alle  
@@ -474,7 +474,7 @@ Das Datumsfeld, ab dem die Frist im Archivmodus läuft – bis zum 31.12. seines
 Siehe auch: [Archivmodus](#archivmodus).
 
 <a id="suche-und-volltext"></a>**Suche und Volltext** · ~ mit Erklärung · Administratoren  
-Der Werkbank-Bereich unter Post und Eingänge für Texterkennung, Archivfassung, automatisches Verkleinern, Tippfehler und gleichbedeutende Wörter. Fasst die früheren Bereiche „Texterkennung“ und „Suche“ zusammen.
+Der Werkbank-Bereich unter Post und Eingänge für Texterkennung, Archivfassung, Tippfehler und den Weg zu den gleichbedeutenden Wörtern. „Neue PDFs automatisch verkleinern“ steht seit
 
 <a id="systemrolle"></a>**Systemrolle** · ~ mit Erklärung · Administratoren  
 Ob ein Benutzer Administrator oder Mitglied ist. Nur Administratoren kommen in die Werkbank.  
@@ -547,6 +547,10 @@ Ein ausführlicheres technisches Protokoll für die Fehlersuche.
 <a id="demo-daten"></a>**Demo-Daten** · ✓ Alltagswort · Administratoren  
 Erzeugte Beispielmappen zum Ausprobieren und für Lasttests.
 
+<a id="eingebautes-werkzeug"></a>**Eingebautes Werkzeug** · ~ mit Erklärung · Administratoren  
+Ein Programm, das das Ablago-Image mitbringt und das Ablago selbst aufruft – zum Lesen von PDFs (Poppler) und zum Bearbeiten von PDFs (qpdf). Die Werkbank nennt es nur, wenn eins fehlt, dann mit Folge und Abhilfe (Suche und Volltext, Systemzustand).  
+Siehe auch: [Systemzustand](#systemzustand).
+
 <a id="einrichtungsassistent"></a>**Einrichtungsassistent** · ✓ Alltagswort · Administratoren  
 Die Schritte beim ersten Start von Ablago.  
 Siehe auch: [Einrichtungscode](#einrichtungscode).
@@ -597,7 +601,7 @@ Wie voll die Datenordner sind, mit Schwellen für Warnungen (unter Systemzustand
 Siehe auch: [Systemzustand](#systemzustand).
 
 <a id="systemzustand"></a>**Systemzustand** · ~ mit Erklärung · Administratoren  
-Wie es dem Server gerade geht – Speicherplatz mit Warnschwellen und die Auslastung von CPU, Arbeitsspeicher und Netzwerk (Werkbank → Wartung und Fehlersuche → Systemzustand). Gemeint ist der Zustand im Betrieb, nicht die Konfiguration.  
+Wie es dem Server gerade geht – Speicherplatz mit Warnschwellen, große PDFs verkleinern und die Auslastung von CPU, Arbeitsspeicher und Netzwerk (Werkbank → Wartung und Fehlersuche → Systemzustand). Gemeint ist der Zustand im Betrieb, nicht die Konfiguration.  
 Siehe auch: [Speicherplatz](#speicherplatz).
 
 <a id="version-von-ablago"></a>**Version von Ablago** · ✓ Alltagswort · alle  
@@ -735,6 +739,7 @@ Wer Oberfläche, Handbuch, Hilfetexte oder Release-Notizen schreibt, verwendet d
 | Dokument | – | `Dokument` |
 | E-Rechnung | – | `erechnung` |
 | Eigene Organisation | Mandant, Betrieb und Verantwortliche, Impressum | `merkmal eigeneOrganisation` |
+| Eingebautes Werkzeug | Abhängigkeit, Binary | `werkzeuge` |
 | Erinnerung | – | `MappenAblauf, Vorlage erinnern` |
 | Erweiterte Suche | – | `Suchformular` |
 | Expertenmodus | Erweiterte Ansicht | `useExperteOffen` |

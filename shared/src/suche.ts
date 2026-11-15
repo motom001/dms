@@ -147,6 +147,16 @@ export const AEHNLICH_AB = 0.45;
 /** Tippfehler erst ab so vielen Zeichen – kürzere Wörter haben zu viele Nachbarn. */
 export const TIPPFEHLER_MIN = 4;
 
+/**
+ * Wann die Suche „Meintest du …?“ vorschlägt (#1191, Werkbank → Suche und Volltext): nur, wenn sie nichts gefunden hat
+ * (Vorgabe), oder auch bei Treffern, wenn die Suche mit einer ähnlichen Schreibweise mehr Mappen findet – das kostet
+ * eine Abfrage mehr.
+ */
+export const MEINTEST = ['ohne-treffer', 'mehr-treffer'] as const;
+export type Meintest = typeof MEINTEST[number];
+export const MEINTEST_STANDARD: Meintest = 'ohne-treffer';
+export const istMeintest = (x: unknown): x is Meintest => (MEINTEST as readonly unknown[]).includes(x);
+
 /** „Meintest du …?“: die Suche mit dem jeweils besten ähnlichen Wort statt des Begriffs. */
 export function vorschlagAus(begriffe: string[], aehnlich: Record<string, string[]>): string | null {
   let geaendert = false;

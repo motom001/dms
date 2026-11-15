@@ -194,7 +194,7 @@ If a hidden area is set up, for instance a mailbox or sign-in via a provider, it
 | [Mailboxes](postfaecher.md) | Fetch post from an email account | Business |
 | [Intake folder](eingangsordner.md) | Take over scans from a folder | Business |
 | [WebDAV drive](webdav.md) | Connect the library in Explorer, Finder or the Files app and drop files into it | Household, Business |
-| [Search and full text](texterkennung.md) | Recognise text in scanned documents, archive version, shrink PDFs, typos and the word index for the search | Business, Household in expert mode |
+| [Search and full text](texterkennung.md) | Recognise text in scanned documents, archive version, typos and “Did you mean …?” in the search | Business, Household in expert mode |
 | [Synonyms](suche.md#gleichbedeutende-worter) | Groups of words the search treats alike (e.g. car, vehicle, auto): add your own, view those from packages | Business, Household in expert mode |
 | [Backup](sicherung.md) | Set up, check and restore backups | Household, Business |
 | [Full export](export.md) | Take all data with you in open formats | Household, Business |
@@ -208,7 +208,7 @@ If a hidden area is set up, for instance a mailbox or sign-in via a provider, it
 | [Sign-in protection](anmeldeschutz.md) | Require two-factor, sign-in through a provider, locked addresses | Business |
 | [Themes](designs.md) | Logo, colours and custom CSS | Business |
 | [Database connection](installation.md#datenbank-anbindung) | The connection to the database | Everything only |
-| [System health](speicherplatz.md) | See how the server is doing: storage, load of CPU, memory, network and database, version and updates | Household, Business |
+| [System health](speicherplatz.md) | See how the server is doing: storage, shrink PDFs, load of CPU, memory, network and database, version and updates | Household, Business |
 | [Log](fehlersuche.md#protokoll) | Read the technical log | Business |
 | [Reported errors](fehlersuche.md#gemeldete-fehler) | Errors users have reported | Business |
 | [Maintenance](wartungsmodus.md) | Temporarily lock users out (maintenance mode) and one-off upkeep work | Business |

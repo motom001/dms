@@ -400,6 +400,9 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     assert.ok(u.datenbank.mappen >= 1);
     assert.equal(u.bibliotheken.fastify?.split('.')[0], '5');
     assert.ok(!JSON.stringify(u).includes('dms:dms'), 'keine Zugangsdaten');
+    // Eingebaute Werkzeuge (#1189) für „Installiert“ und den Hinweis im Systemzustand.
+    assert.equal(typeof u.werkzeuge?.pdftotext, 'boolean');
+    assert.equal(typeof u.werkzeuge?.qpdf, 'boolean');
     const r = (await anfrage('POST', '/api/werkbank/system/abgleich', { browser: { react: '19.0.0' } })).body;
     assert.equal(r.find((v: { komponente: string }) => v.komponente === 'fastify').status, 'neuer');
     assert.equal(r.find((v: { komponente: string }) => v.komponente === 'Node.js').status, 'unbekannt');

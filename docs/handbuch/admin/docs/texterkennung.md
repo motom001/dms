@@ -2,7 +2,7 @@
 
 Damit die Suche auch den Text von Dokumenten findet, erzeugt Ablago zu jedem neuen Dokument einen **Volltext** – im Hintergrund, ohne dass jemand warten muss:
 
-Die Einstellungen stehen unter **Werkbank → Post und Eingänge → Suche und Volltext** – zusammen mit der [Suche](suche.md) (Tippfehler, Wörterverzeichnis; die [gleichbedeutenden Wörter](suche.md#gleichbedeutende-worter) haben seit #992 einen eigenen Bereich direkt darunter) und „Neue PDFs automatisch verkleinern“. Der Bereich gehört zur Vorlage **Betrieb**, im Haushalt erscheint er im Expertenmodus. Die *Wartungsoperationen* stehen unter **Werkbank → Wartung und Fehlersuche → Wartung**.
+Die Einstellungen stehen unter **Werkbank → Post und Eingänge → Suche und Volltext** – zusammen mit der [Suche](suche.md) (Tippfehler, Wörterverzeichnis; die [gleichbedeutenden Wörter](suche.md#gleichbedeutende-worter) haben seit #992 einen eigenen Bereich direkt darunter). „Neue PDFs automatisch verkleinern“ steht seit #1190 beim Speicherplatz unter [Systemzustand](speicherplatz.md#neue-pdfs-automatisch-verkleinern). Der Bereich gehört zur Vorlage **Betrieb**, im Haushalt erscheint er im Expertenmodus. Die *Wartungsoperationen* stehen unter **Werkbank → Wartung und Fehlersuche → Wartung**.
 
 --8<-- "ausgeblendet-schritt.md"
 
@@ -77,7 +77,10 @@ Die Seite ist eine **Übersicht**; Einstellungen der Erkennung gibt es hier nich
 - **Woher der Text kommt:** wie viele Dokumente ihren Text aus dem PDF haben, vom Paket, von der früheren eingebauten Texterkennung (bis 0.133), ohne Text sind, auf die Texterkennung warten oder einen Fehler hatten.
 - **Andere Dateitypen:** TIFF, WebP, Word, E-Mails und Co. – wie viele es gibt und welches Paket sie umwandelt oder ihren Volltext liefert (siehe [Andere Dateitypen](#andere-dateitypen)).
 - **Erkannte Sprachen** mit dem Hinweis, wenn dem Paket Sprachdaten fehlen (siehe [Weitere Sprachen](#weitere-sprachen)).
-- **Warteschlange**, **Werkzeuge** (poppler) und **Aufträge** (siehe unten).
+- **Warteschlange** und **Aufträge** (siehe unten).
+- Darunter **Suche: Tippfehler** – ähnliche Schreibweisen und wann „Meintest du …?“ kommt (siehe [Suche](suche.md#tippfehler-und-meintest-du)) – und der Weg zu den gleichbedeutenden Wörtern.
+
+Fehlt ein [eingebautes Werkzeug](fehlersuche.md#werkzeuge) (z. B. das zum Lesen von PDFs), steht oben auf der Seite ein Hinweis mit Folge und Abhilfe; sind alle da, steht dazu nichts auf der Seite.
 
 Ob ein Dokumentenregister überhaupt einen Volltext erzeugt, stellst du am [Mappentyp](mappentypen.md#register) ein (*Volltext erzeugen*, Standard: an).
 

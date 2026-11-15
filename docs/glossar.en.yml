@@ -396,7 +396,7 @@ begriffe:
     beschreibung: The list of folders whose retention period has expired (Workbench → Users and security). Formerly "May go".
   Suche und Volltext:
     begriff: Search and full text
-    beschreibung: The workbench area under Post and incoming for text recognition, archive version, automatic shrinking, typos and synonyms. Combines the former areas "Text recognition" and "Search".
+    beschreibung: The workbench area under Post and incoming for text recognition, archive version, typos and the way to the synonyms. "Shrink new PDFs automatically" has been under System health since #1190. Combines the former areas "Text recognition" and "Search".
   Postfach:
     begriff: Mailbox
     beschreibung: A connected email account (IMAP) from which Ablago fetches post.
@@ -477,7 +477,10 @@ begriffe:
     beschreibung: Problems that users have submitted via "Report a problem" (Workbench → Reported problems).
   Systemzustand:
     begriff: System health
-    beschreibung: How the server is doing right now – storage space with warning thresholds and the load of CPU, memory and network (Workbench → Maintenance and troubleshooting → system health). It means the state in operation, not the configuration.
+    beschreibung: How the server is doing right now – storage space with warning thresholds, shrinking large PDFs and the load of CPU, memory and network (Workbench → Maintenance and troubleshooting → system health). It means the state in operation, not the configuration.
+  Eingebautes Werkzeug:
+    begriff: Built-in tool
+    beschreibung: A program that the Ablago image includes and that Ablago calls itself – for reading PDFs (Poppler) and for editing PDFs (qpdf). The workbench only mentions it if one is missing, then with what follows and what helps (Search and full text, System health).
   Speicherplatz:
     begriff: Storage space
     beschreibung: How full the data folders are, with thresholds for warnings (under system health).
