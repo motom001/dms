@@ -22,7 +22,7 @@
 # Neue Begriffe kommen mit dem Release hierher (Qualitätskontrolle).
 # Die Personas: docs/handbuch/entwickler/docs/personas.md
 
-stand: '2026-11-12'
+stand: '2026-11-15'
 
 begriffe:
 
@@ -494,7 +494,7 @@ begriffe:
     beschreibung: Die Geschichte einer Mappe – Änderungen vorher und nachher, Dokumente, Papierkorb, Notizen, Aufgaben. Das technische Betriebsprotokoll heißt dagegen „Protokoll“.
     einsteiger: alltag
     begegnet: alle
-    nicht_verwenden: [Protokoll (an der Mappe), Verlauf]
+    nicht_verwenden: [Protokoll (an der Mappe), Verlauf (an der Mappe)]
     code: Historieneintrag
   - begriff: Volltext
     bereich: ablage
@@ -879,6 +879,14 @@ begriffe:
     nicht_verwenden: [Code im Paket-Läufer, Plugin-Host]
     verwandt: [Paket, Dienstkonto]
     code: Paketlaeufer, PaketLaeufer
+  - begriff: Verlauf
+    bereich: werkbank
+    beschreibung: Reiter auf der Seite eines Pakets mit Code (Werkbank → Pakete → Paket → Verlauf), den Ablago selbst pflegt – was Ablago dem Paket zugestellt hat, wie es lief (ok, Fehler, Zeit- oder Speichergrenze erreicht), Dauer, Speicher, Netzaufrufe, die Protokollzeilen des Pakets sowie Installieren, Aktualisieren, geänderte Einstellungen und Ausprobieren. Oben die Auslastung der letzten 7 bzw. 30 Tage mit einer Ampel („läuft unauffällig“, „stößt oft an seine Grenzen“, „scheitert häufig“). Nie Inhalte aus Dokumenten; Einträge bleiben 30 Tage. Die Geschichte einer Mappe heißt dagegen „Historie“.
+    einsteiger: erklaeren
+    begegnet: admin
+    nicht_verwenden: [Historie (am Paket), Log]
+    verwandt: [Paket-Läufer, Historie, Protokoll]
+    code: paket_verlauf, PaketVerlauf
   - begriff: Dienstkonto
     bereich: werkbank
     beschreibung: Das Konto, mit dem ein Paket mit Code in Ablago arbeitet, z. B. „Paket Texterkennung“. Es meldet sich nie an, steht nicht unter Benutzer, löscht nie und hat nur die Rechte aus dem Paket. In der Historie steht es dort, wo das Paket etwas geändert hat.

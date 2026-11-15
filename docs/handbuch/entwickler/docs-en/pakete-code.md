@@ -226,7 +226,7 @@ All functions are synchronous; pointers and lengths refer to the imported memory
 | `speicher_lesen(schluessel, len)` | length or `-1`: a value from the **package's storage** (text per key, together at most 64 KB; stays between calls and updates). |
 | `speicher_schreiben(schluessel, len, wert, wlen)` | `0` or `-1`. |
 | `ergebnis(text, len)` | short text for the overview (for actions: the answer the administrator sees). With an error code, since 0.124.0 the text is the error message (otherwise "The package reports error n"). |
-| `log(stufe, text, len)` | line in the package's log (`0` debug, `1` info, `2` warning, `3` error). `stdout`/`stderr` land there too. |
+| `log(stufe, text, len)` | line in the package's log (`0` debug, `1` info, `2` warning, `3` error), shown in the package's activity (at most 60 lines per hour). `stdout`/`stderr` land there too. |
 
 ### Limits { #grenzen }
 
@@ -245,7 +245,7 @@ A package that breaks the limits doesn't affect Ablago; the call is cancelled an
 
 ### Network calls in the log { #netzprotokoll }
 
-The runner records every call of `netz` or `netz_strom` (#807) – in the package's log in the Workbench and as a total per call in Ablago's log (level *info*, "Paket *id*: Netzaufrufe" with `anfragen`, `abgelehnt`, `hosts`, `hin`, `zurueck`). Per entry: time, method, **host with port**, bytes sent (body) and received (for `netz_strom` all chunks read with `netz_weiter`), status or "no response". Identical requests (method, host, status) within a call and in quick succession (within one minute, also across calls) share **one** entry with a count. Blocked addresses appear as a warning, as does a method that doesn't match `^[A-Z]{1,10}$` (after upper-casing; default `GET`) – it isn't executed and appears as `?` in the log. **Never** path, query, credentials, headers or content – keys still belong in headers (`kopf`), not in the address. A package doesn't have to do anything for this.
+The runner records every call of `netz` or `netz_strom` (#807) – in the package's activity in the Workbench (#1003, with the call) and as a total per call in Ablago's log (level *info*, "Paket *id*: Netzaufrufe" with `anfragen`, `abgelehnt`, `hosts`, `hin`, `zurueck`). Per entry: time, method, **host with port**, bytes sent (body) and received (for `netz_strom` all chunks read with `netz_weiter`), status or "no response". Identical requests (method, host, status) within a call and in quick succession (within one minute, also across calls) share **one** entry with a count. Blocked addresses appear as a warning, as does a method that doesn't match `^[A-Z]{1,10}$` (after upper-casing; default `GET`) – it isn't executed and appears as `?` in the log. **Never** path, query, credentials, headers or content – keys still belong in headers (`kopf`), not in the address. A package doesn't have to do anything for this.
 
 **Measurement (#565):** In addition the runner times the network calls of each call – time to response (header) and in total, bytes, errors (no response, status 5xx), timeouts – and returns the totals to Ablago with the result (`messung` in the message `ergebnis`). Ablago shows this in the Workbench under System health → External services and with the package; an AI package (see below) counts as *AI service*, any other as *network of a package*. For responses with `content-type` JSON, NDJSON or `text/event-stream` the runner reads the **tokens** from `usage` (names as with OpenAI, Anthropic, Ollama and Gemini: `prompt_tokens`/`completion_tokens`, `input_tokens`/`output_tokens`, `prompt_eval_count`/`eval_count`, `promptTokenCount`/`candidatesTokenCount`; for streams the last value counts) – only the numbers, nothing from the response is stored. For costs and budget an AI package should therefore not switch off the counting at the service (e.g. with OpenAI in a stream `stream_options: { include_usage: true }`). If the administrator has set a budget with a hard limit and it has been reached, Ablago no longer calls packages with a price (interfaces report "AI features paused until …", events wait until the start of the month).
 
@@ -1018,7 +1018,7 @@ A small test package is in `server/test/uebersetzung.test.ts`: a WebAssembly mod
 ## Trying it out { #ausprobieren }
 
 1. Upload the package as a ZIP in **expert mode** (see [Testing your own package](pakete.md#eigenes-paket-testen)) and confirm the permissions.
-2. **Workbench → Packages → *package***: the section **Package runner** shows whether the runner is running, the latest calls with duration and memory, open and given-up events and the package's log.
+2. **Workbench → Packages → *package***: the section **Package runner** shows whether the runner is running; the **Activity** tab (#1003) the calls with result, duration, memory and network calls, open and given-up events, the package's log lines and the load of the last 7 or 30 days.
 3. Trigger an event (e.g. upload a file) or click an action.
 
 ## Recognition: field description and answer { #erkennung-feldbeschreibung-und-antwort }

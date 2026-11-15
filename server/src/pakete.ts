@@ -38,10 +38,11 @@ import { hauptpaket, istHerausgeber, istOffiziellerHerausgeber, OFFIZIELLER_HERA
 import { bedingungEingabeFehler, kinderVon, OPERATOREN, type Bedingung, type Operator, type Sicht } from '../../shared/src/sichten';
 import { istKernFeld } from '../../shared/src/paketeinstellungen';
 import { mitKern } from '../../shared/src/paketkern';
-import { ANZEIGE_SPEICHER, anzeigeWert, liesReiterAngaben, type AnzeigeWert, type PaketAnzeige } from '../../shared/src/paketreiter';
+import { ANZEIGE_SPEICHER, anzeigeWert, liesReiterAngaben, VERLAUF_TAGE, type Auslastung, type AnzeigeWert, type PaketAnzeige, type VerlaufEintrag } from '../../shared/src/paketreiter';
 import { adressfelder, EINTRAG_ID, einstellungsAenderung, fehlendePflicht, liesBeschreibung, listen, pruefeWerte, ueberfuehre, abschnittsfelder, type EinstellungFeld, type Einstellungsbeschreibung, type GeheimStand, type Verweisquelle } from '../../shared/src/paketeinstellungen';
 import type { Dienst } from './dienst';
 import type { PaketQuelleEintrag } from './pakete/index';
+import type { Zugriff } from './kern/index';
 import { Fachfehler } from './fehler';
 import { istVerschluesselt } from './tresor';
 import { protokoll } from './protokoll';
@@ -2590,17 +2591,23 @@ export class Paketverwaltung {
    * Legt Typen, Sichten und ggf. Beispiele an bzw. ergänzt sie (Update) und speichert den Eintrag.
    * Bei einem Fehler wird alles zurückgenommen.
    */
+  /** Verlauf (#1003): installiert bzw. aktualisiert, von wem und welche Version. */
+  private async mitVerlauf(neu: InstalliertesPaket, a: LegeAuftrag): Promise<InstalliertesPaket> {
+    await this.d.kern.repo.notiereVerlauf([{ paket: neu.id, art: a.alt ? 'aktualisiert' : 'installiert', was: a.alt ? `${a.alt.version} → ${neu.version}` : neu.version, wer: a.von.email }]).catch(() => {});
+    return neu;
+  }
+
   private async lege(paket: Paket, herkunft: InstalliertesPaket['herkunft'], v: KatalogVersion | undefined, plan: Vorschau, beispiele: boolean, von: Handelnder, alt: InstalliertesPaket | null, ein: string[] = []): Promise<InstalliertesPaket> {
     // Umzug (#1084): erst die Installation auf die neue Id ziehen – danach ist es ein gewöhnliches Update. Scheitert es,
     // kommt die alte Id zurück.
     const umzugVon = alt && alt.id !== paket.manifest.id ? alt.id : null;
     const auftrag: LegeAuftrag = { paket, herkunft, v, plan, beispiele, von, alt, ein };
-    if (!umzugVon) return this.legeMitUmbau(auftrag);
+    if (!umzugVon) return this.mitVerlauf(await this.legeMitUmbau(auftrag), auftrag);
     await this.zieheUm(umzugVon, paket.manifest.id);
     try {
       const neu = await this.legeMitUmbau({ ...auftrag, alt: { ...alt!, id: paket.manifest.id, ersetzt: [...new Set([...(alt!.ersetzt ?? []), umzugVon])] } });
       log.info('Paket umgezogen', { von: von.email, paket: neu.id, vorher: umzugVon });
-      return neu;
+      return this.mitVerlauf(neu, auftrag);
     } catch (f) {
       await this.zieheUm(paket.manifest.id, umzugVon).catch((e: Error) => log.error('Umzug nicht zurückgenommen', { paket: paket.manifest.id, vorher: umzugVon, fehler: e.message }));
       throw f;
@@ -3539,6 +3546,9 @@ export class Paketverwaltung {
     await this.d.kern.fassungen.halte('paketeinstellungen', id);
     if (geaendert.length) {
       log.info(`Einstellungen von Paket ${p.name} geändert (Felder ${geaendert.join(', ')})`, { von: von.email, paket: id, felder: geaendert });
+      // Verlauf (#1003): welche Einstellungen, von wem – nie Werte.
+      const namen = new Map(abschnittsfelder(b).map((f) => [f.schluessel, f.name] as const));
+      await this.d.kern.repo.notiereVerlauf([{ paket: id, art: 'einstellungen', was: geaendert.map((k) => namen.get(k) ?? listen(b).find((l) => l.schluessel === k)?.name ?? k).join(', '), wer: von.email }]).catch(() => {});
       for (const f of adressfelder(b).filter((x) => geaendert.includes(x.schluessel))) {
         log.info(`Dienst-Adresse von Paket ${p.name} ${r.werte[f.schluessel] ? 'bestätigt' : 'entfernt'}`, { von: von.email, paket: id, feld: f.schluessel, adresse: r.werte[f.schluessel] ?? null });
       }
@@ -3564,6 +3574,28 @@ export class Paketverwaltung {
     for (const f of abschnittsfelder(b)) if (!istKernFeld(f)) w[f.schluessel] = klar(f, w[f.schluessel]);
     for (const l of listen(b)) for (const e of (Array.isArray(w[l.schluessel]) ? w[l.schluessel] as Record<string, unknown>[] : [])) for (const f of l.felder) e[f.schluessel] = klar(f, e[f.schluessel]);
     return w;
+  }
+
+  /**
+   * Verlauf des Pakets (#1003), neueste zuerst: Mappen nur mit Titel, wenn die Person sie lesen darf – sonst ohne Bezug.
+   * Je Seite 50 Einträge; `mehr`: es gibt ältere.
+   */
+  async verlauf(id: string, f: { vor?: unknown; nurFehler?: unknown; suche?: unknown }, z: Zugriff): Promise<{ eintraege: VerlaufEintrag[]; mehr: boolean }> {
+    const p = (await this.d.kern.repo.listePakete()).find((x) => x.id === id);
+    if (!p) throw new Fachfehler(404, t('meldungen.pakete.ist-nicht-installiert', { id }));
+    const anzahl = 50;
+    const l = await this.d.kern.repo.paketVerlauf(id, { vor: Number(f.vor) || null, anzahl: anzahl + 1, nurFehler: f.nurFehler === true || f.nurFehler === '1', suche: typeof f.suche === 'string' ? f.suche.slice(0, 200) : '' });
+    const ids = [...new Set(l.flatMap((e) => (e.bezug ? [e.bezug.mappe] : [])))];
+    const lesbar = ids.length ? await this.d.kern.repo.lesbare(ids, z.lesen) : new Set<string>();
+    const titel = lesbar.size ? await this.d.kern.repo.titelVon([...lesbar]) : new Map<string, string>();
+    const eintraege = l.slice(0, anzahl).map((e) => ({ ...e, bezug: e.bezug && lesbar.has(e.bezug.mappe) ? { mappe: e.bezug.mappe, titel: titel.get(e.bezug.mappe) ?? '' } : null }));
+    return { eintraege, mehr: l.length > anzahl };
+  }
+
+  /** Auslastung des Pakets (#1003): je Tag der letzten 30 Tage und wann es zuletzt lief. */
+  async auslastung(id: string): Promise<Auslastung> {
+    if (!(await this.d.kern.repo.listePakete()).some((x) => x.id === id)) throw new Fachfehler(404, t('meldungen.pakete.ist-nicht-installiert', { id }));
+    return this.d.kern.repo.paketAuslastung(id, VERLAUF_TAGE);
   }
 
   /**
@@ -3817,7 +3849,7 @@ export class Paketverwaltung {
     await this.d.paketAutomatisierungen?.(p, []).catch((e: Error) => log.warn('Automatisierungen des Pakets nicht entfernt', { paket: id, fehler: e.message }));
     // #1044: Vorlagen gehen mit; überlagerte Kern-Vorgaben gelten wieder, Vorlagen mit offenen Abläufen bleiben als eigene.
     await this.d.ablaeufe.ausPaket(p, []).catch((e: Error) => log.warn('Automatisierungsvorlagen des Pakets nicht entfernt', { paket: id, fehler: e.message }));
-    if (p.laeufer) { await this.d.kern.repo.loeschePaketCode(id); await this.d.kern.repo.loescheEreignisse(id); await setzePaketSpeicher(this.d.kern, id, null).catch(() => {}); await this.o.laeufer?.codeGeaendert?.(); }
+    if (p.laeufer) { await this.d.kern.repo.loeschePaketCode(id); await this.d.kern.repo.loescheEreignisse(id); await this.d.kern.repo.loescheVerlauf(id); await setzePaketSpeicher(this.d.kern, id, null).catch(() => {}); await this.o.laeufer?.codeGeaendert?.(); }
     // Volltext und Umwandeln (Frage 51): Was noch auf dieses Paket wartete, wartet nicht mehr.
     const wartetAuf = [...(hatSchnittstelle(p.laeufer, 'dms:volltext') ? p.laeufer?.volltext ?? [] : []), ...(hatSchnittstelle(p.laeufer, 'dms:umwandeln') ? p.laeufer?.umwandeln ?? [] : [])];
     if (wartetAuf.length) await this.d.volltextAusPaketen.paketWegFuerDateien(p, wartetAuf).catch((e: Error) => log.warn('Wartende Dokumente nach dem Entfernen nicht zurückgesetzt', { paket: id, fehler: e.message }));

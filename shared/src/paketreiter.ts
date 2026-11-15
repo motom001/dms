@@ -88,3 +88,58 @@ export function anzeigeWert(art: AnzeigeArt, roh: string | undefined | null): An
   const m = /^(ok|warnung|fehler)\s*(?::\s*(.*))?$/s.exec(s);
   return m ? { art, zustand: m[1] as 'ok' | 'warnung' | 'fehler', text: (m[2] ?? '').slice(0, 200) } : null;
 }
+
+/* ---------- Verlauf und Auslastung (#1003) ---------- */
+
+/**
+ * Art eines Eintrags im Verlauf: zugestelltes Ereignis, anderer Aufruf (Aktion, Schnittstelle, Prüffunktion),
+ * Protokollzeile des Pakets, Verwaltung (installiert, aktualisiert, Einstellungen geändert) und Ausprobieren (#1004).
+ */
+export type VerlaufArt = 'ereignis' | 'aufruf' | 'protokoll' | 'installiert' | 'aktualisiert' | 'einstellungen' | 'ausprobiert';
+/** Ergebnis eines Aufrufs; „zeit“ und „speicher“: abgebrochen, weil die Grenze des Läufers erreicht war. warnung: Protokollzeile ab Stufe 2. */
+export type VerlaufErgebnis = 'ok' | 'fehler' | 'zeit' | 'speicher' | 'warnung';
+export const VERLAUF_FEHLER: readonly VerlaufErgebnis[] = ['fehler', 'zeit', 'speicher', 'warnung'];
+/** Bezug eines Eintrags: die Mappe (auch Post) des Ereignisses – nur die Id; der Titel nur, wenn die Person sie lesen darf. */
+export interface VerlaufBezug { mappe: string; titel?: string }
+export interface VerlaufEintrag {
+  nr: number; zeit: string; art: VerlaufArt; was: string; ergebnis: VerlaufErgebnis | null;
+  ms: number | null; speicherMB: number | null; text: string; wer: string | null; bezug: VerlaufBezug | null;
+  /** Netzaufrufe des Aufrufs (#807) als Text: Anzahl, Methode, Host, Status, Bytes – nie Inhalte. */
+  netz: string[];
+}
+/** Neuer Eintrag (ohne Nummer und Zeit). */
+export type VerlaufNeu = { paket: string; art: VerlaufArt; was?: string; ergebnis?: VerlaufErgebnis | null; ms?: number | null; speicherMB?: number | null; text?: string; wer?: string | null; bezug?: VerlaufBezug | null; netz?: string[] };
+/** Auslastung je Tag (UTC). */
+export interface VerlaufTag { tag: string; aufrufe: number; fehler: number; zeit: number; speicher: number; msSumme: number; msMax: number; speicherMax: number }
+export interface Auslastung { tage: VerlaufTag[]; zuletzt: string | null }
+/** So lange bleibt der Verlauf, so viele Einträge je Paket höchstens. */
+export const VERLAUF_TAGE = 30;
+export const VERLAUF_MAX = 5000;
+
+/** Grenzen des Läufers (Speicher je Aufruf, Zeit je Aufruf, gleichzeitige Aufrufe). */
+export interface LaeuferGrenzen { speicherMB: number; sekunden: number; parallel: number }
+export type Ampel = 'ruhig' | 'unauffaellig' | 'grenzen' | 'scheitert';
+
+/** Summe über Tage: Aufrufe, Fehlschläge, Grenzen erreicht, Dauer (Mittel, längster), höchster Speicher. */
+export function summeVon(tage: readonly VerlaufTag[]) {
+  const s = { aufrufe: 0, fehler: 0, zeit: 0, speicher: 0, msSumme: 0, msMax: 0, speicherMax: 0 };
+  for (const d of tage) {
+    s.aufrufe += d.aufrufe; s.fehler += d.fehler; s.zeit += d.zeit; s.speicher += d.speicher; s.msSumme += d.msSumme;
+    s.msMax = Math.max(s.msMax, d.msMax); s.speicherMax = Math.max(s.speicherMax, d.speicherMax);
+  }
+  return { ...s, msMittel: s.aufrufe ? Math.round(s.msSumme / s.aufrufe) : 0 };
+}
+
+/**
+ * Ampel für Laien (#1003): „scheitert häufig“ ab 3 Fehlschlägen und mindestens jedem fünften Aufruf; „stößt oft an
+ * seine Grenzen“ ab 3 Abbrüchen wegen Zeit oder Speicher oder wenn ein Aufruf 80 % einer Grenze brauchte; sonst
+ * „läuft unauffällig“ („ruhig“ ohne Aufrufe).
+ */
+export function ampelVon(tage: readonly VerlaufTag[], g: LaeuferGrenzen | null): Ampel {
+  const s = summeVon(tage);
+  if (!s.aufrufe) return 'ruhig';
+  if (s.fehler >= 3 && s.fehler * 5 >= s.aufrufe) return 'scheitert';
+  const knapp = !!g && (s.speicherMax >= g.speicherMB * 0.8 || s.msMax >= g.sekunden * 1000 * 0.8);
+  if (s.zeit + s.speicher >= 3 || knapp) return 'grenzen';
+  return 'unauffaellig';
+}

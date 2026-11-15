@@ -346,7 +346,7 @@ Manche Pakete bringen **Code** mit – etwa eine eigene Texterkennung oder Regel
 - **Grenzen:** Jeder Aufruf hat höchstens 256 MB Speicher und 2 Minuten Zeit; es laufen höchstens zwei Aufrufe gleichzeitig. Was die Grenzen reißt, bricht ab, ohne Ablago zu stören.
 - **Wiederholen:** Ereignisse merkt sich Ablago. Scheitert ein Aufruf, versucht es der Läufer nach 1, 5, 30, 120 und 360 Minuten erneut und gibt dann auf. Während einer Wartung (z. B. beim Wiederherstellen) ruht der Läufer.
 
-**Werkbank → Pakete → *Paket*** zeigt im Abschnitt **Paket-Läufer** den Stand, die letzten Aufrufe mit Dauer und Speicher, offene und aufgegebene Ereignisse und das Protokoll des Pakets – mit seinen [Netzaufrufen](#netzaufrufe). Meldungen stehen zusätzlich im [Protokoll](fehlersuche.md#protokoll) von Ablago. Der **Stand** ist einer von diesen:
+**Werkbank → Pakete → *Paket*** zeigt in der Übersicht im Abschnitt **Paket-Läufer** den Stand, das Dienstkonto, was das Paket abonniert, und eine Zeile **Zuletzt: vor 5 Min. · 2 Fehler in 7 Tagen** mit **Verlauf** – alles Weitere steht im Reiter [Verlauf](#verlauf). Meldungen stehen zusätzlich im [Protokoll](fehlersuche.md#protokoll) von Ablago. Der **Stand** ist einer von diesen:
 
 | Stand | Bedeutung |
 |---|---|
@@ -357,6 +357,29 @@ Manche Pakete bringen **Code** mit – etwa eine eigene Texterkennung oder Regel
 | **neu gestartet nach Absturz um …** | Der Läufer läuft wieder; die Zeit nennt den letzten Absturz. Die Ursache steht im Protokoll von Ablago. |
 | **pausiert (Wartungsmodus)** | Während einer Wartung ruht der Läufer. |
 | *Fehlermeldung in Rot* | Das Modul ließ sich nicht laden – etwa, weil es Funktionen verlangt, die diese Version von Ablago nicht kennt (das Paket ist für eine neuere Version gebaut), oder weil seine Datei beschädigt ist. Die Meldung nennt den Grund. Abhilfe: Ablago aktualisieren oder eine passende Version des Pakets installieren. Nach einer [Wiederherstellung](wiederherstellen.md#ohne-internet) musst du Pakete **nicht** neu installieren – ihr Code steckt in der Sicherung. |
+
+### Verlauf { #verlauf }
+
+Bei Paketen mit Code gibt es neben **Übersicht** und **Einstellungen** den Reiter **Verlauf**. Ablago pflegt ihn selbst – das Paket kann nichts hineinschreiben außer seinen Protokollzeilen. So erkennst du ohne Fachwissen, ob ein Paket Probleme macht. Sehen kann ihn, wer das Verwaltungsrecht **Pakete** hat.
+
+**Auslastung** (oben, wahlweise der letzten **7** oder **30 Tage**):
+
+- eine **Ampel** mit einem Satz, was du tun kannst: **läuft unauffällig** · **stößt oft an seine Grenzen** (mindestens drei Abbrüche wegen Zeit oder Speicher, oder ein Aufruf brauchte 80 % einer Grenze) · **scheitert häufig** (mindestens drei Fehlschläge und mindestens jeder fünfte Aufruf)
+- **Aufrufe** (mit Mittel je Tag), **Fehlschläge**, **Dauer** (Mittel und längster Aufruf), **höchster Speicher** je Aufruf im Verhältnis zur Grenze und wie oft die Grenze für **Zeit** oder **Speicher** erreicht wurde
+- die **Grenzen des Läufers** (Speicher und Zeit je Aufruf, gleichzeitige Aufrufe) – nur zur Ansicht; sie gelten für alle Pakete gleich
+- offene und aufgegebene Ereignisse
+
+Die Rechenzeit (CPU) je Paket zeigt Ablago nicht: Alle Pakete laufen im selben Läufer-Prozess, eine verlässliche Messung je Paket gibt es dort nicht. Dauer und Speicher je Aufruf sagen genug darüber, wie stark ein Paket den Rechner belastet.
+
+**Liste** darunter, neueste zuerst, mit Suchfeld und dem Haken **Nur Fehler zeigen**:
+
+- jedes **zugestellte Ereignis** (Art, die Mappe bzw. Post als Link – nur, wenn du sie lesen darfst) und jeder andere **Aufruf** (Aktion, Frage, Erkennung, Prüfung der Einstellungen …) mit **Ergebnis** – *ok*, *Fehler*, *Zeitgrenze* oder *Speichergrenze* –, Dauer, Speicher, Fehlermeldung und den [Netzaufrufen](#netzaufrufe) dieses Aufrufs
+- die **Protokollzeilen** des Pakets (höchstens 60 je Stunde; weitere nur im Protokoll von Ablago)
+- **Installiert**, **Aktualisiert** und **Einstellungen geändert** – wer, wann und welche Einstellungen (nie Werte)
+
+Im Verlauf stehen **nie Inhalte** aus Dokumenten oder Antworten des Pakets. Einträge bleiben **30 Tage** (höchstens 5000 je Paket), damit die Auslastung einen Monat zeigen kann – länger als das [Protokoll](fehlersuche.md#protokoll) von Ablago, das nur einen Tag zurückreicht. Entfernst du das Paket, verschwindet sein Verlauf mit.
+
+![Reiter „Verlauf“ eines Pakets: Auslastung mit Ampel, darunter die Liste mit „Nur Fehler zeigen“](bilder/werkbank-paket-verlauf.png)
 
 Schlägt ein **Update** fehl, bleibt die alte Version mit ihrem alten Code installiert. Ein Paket darf höchstens **128 MB** groß sein – das gilt für das Archiv beim Herunterladen, Hochladen und in der Sammeldatei ebenso wie für alle Dateien unter `code/` zusammen. Ist ein Paket größer, nennt Ablago Größe und Grenze und lädt es gar nicht erst herunter.
 
@@ -492,7 +515,7 @@ Nicht betroffen: Suchbegriffe, die für die Ähnlichkeitssuche an ein Vektor-Pak
 
 ### Netzaufrufe im Protokoll { #netzaufrufe }
 
-Jeden Aufruf eines Pakets ins Netz schreibt der Paket-Läufer ins **Protokoll des Pakets** (Werkbank → Pakete → *Paket* → Paket-Läufer → **Protokoll: Ausgaben und Netzaufrufe**): Zeit, Methode, **Host** (mit Port, ohne Pfad, Query und Zugangsdaten), Bytes **hin** und **zurück** und den Status, etwa „Netz: 12 × PUT cloud.example.org – 201, 3,4 MB hin, 2 KB zurück“. Gleiche Aufrufe kurz hintereinander (innerhalb einer Minute) stehen in einem Eintrag, damit z. B. Teile-Uploads der Kopie außer Haus das Protokoll nicht fluten.
+Jeden Aufruf eines Pakets ins Netz schreibt der Paket-Läufer in den **[Verlauf](#verlauf)** des Pakets (Werkbank → Pakete → *Paket* → Reiter **Verlauf**, beim Aufruf, zu dem er gehört): Zeit, Methode, **Host** (mit Port, ohne Pfad, Query und Zugangsdaten), Bytes **hin** und **zurück** und den Status, etwa „Netz: 12 × PUT cloud.example.org – 201, 3,4 MB hin, 2 KB zurück“. Gleiche Aufrufe kurz hintereinander (innerhalb einer Minute) stehen in einem Eintrag, damit z. B. Teile-Uploads der Kopie außer Haus das Protokoll nicht fluten.
 
 - **Abgelehnte** Aufrufe (Adresse weder im Paket noch als Dienst-Adresse bestätigt, oder eine Methode, die nicht nur aus Großbuchstaben besteht – im Protokoll dann „?“) stehen als **Warnung** darin – hinaus ging dabei nichts.
 - Im [Protokoll](fehlersuche.md#protokoll) von Ablago steht je Ereignis bzw. Aktion **eine Zeile** „Paket *id*: Netzaufrufe“ (Stufe *info*) mit der Summe: Anzahl, abgelehnte, Hosts, Bytes hin und zurück.

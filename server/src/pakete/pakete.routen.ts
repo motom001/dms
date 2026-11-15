@@ -72,6 +72,9 @@ export function paketeEinstellungenRouten(k: RoutenKontext): Route[] {
     { methode: 'GET', pfad: '/api/werkbank/pakete/:id/extern', zugang: 'admin', handler: async (a) => ok(await extern.uebersicht(Number(a.query.stunden) || 24, a.params.id)) },
     { methode: 'GET', pfad: '/api/werkbank/pakete/:id/einstellungen', zugang: 'admin', handler: async (a) => ok(await pakete.einstellungen(a.params.id)) },
     { methode: 'GET', pfad: '/api/werkbank/pakete/:id/anzeigen', zugang: 'admin', handler: async (a) => ok(await pakete.anzeigen(a.params.id)) },
+    // Verlauf und Auslastung (#1003): nur lesen; Mappen nur mit Titel, wenn die Person sie lesen darf.
+    { methode: 'GET', pfad: '/api/werkbank/pakete/:id/verlauf', zugang: 'admin', handler: async (a) => ok(await pakete.verlauf(a.params.id, a.query, await zg(a))) },
+    { methode: 'GET', pfad: '/api/werkbank/pakete/:id/auslastung', zugang: 'admin', handler: async (a) => ok(await pakete.auslastung(a.params.id)) },
     { methode: 'PUT', pfad: '/api/werkbank/pakete/:id/einstellungen', zugang: 'admin', handler: async (a) => ok(await pakete.speichereEinstellungen(a.params.id, a.body, wer(a))) },
     { methode: 'POST', pfad: '/api/werkbank/pakete/:id/aktionen/:aktion', zugang: 'admin', handler: async (a) => ok(await pakete.aktion(a.params.id, a.params.aktion, wer(a))) },
   ];

@@ -345,7 +345,7 @@ Some packages bring **code** – for instance their own text recognition or rule
 - **Limits:** every call has at most 256 MB of memory and 2 minutes of time; at most two calls run at the same time. Whatever breaks the limits is cancelled without disturbing Ablago.
 - **Retrying:** Ablago remembers events. If a call fails, the runner tries again after 1, 5, 30, 120 and 360 minutes and then gives up. During maintenance (e.g. when restoring) the runner rests.
 
-**Workbench → Packages → *package*** shows in the section **Package runner** the state, the latest calls with duration and memory, open and given-up events and the package's log – with its [network calls](#netzaufrufe). Messages are additionally in Ablago's [log](fehlersuche.md#protokoll). The **state** is one of these:
+**Workbench → Packages → *package*** shows in the overview, in the section **Package runner**, the state, the service account, what the package subscribes to, and one line **Last run: 5 min ago · 2 errors in 7 days** with **Activity** – everything else is in the [Activity](#verlauf) tab. Messages are additionally in Ablago's [log](fehlersuche.md#protokoll). The **state** is one of these:
 
 | State | Meaning |
 |---|---|
@@ -356,6 +356,29 @@ Some packages bring **code** – for instance their own text recognition or rule
 | **restarted after crash at …** | The runner is running again; the time names the last crash. The cause is in Ablago's log. |
 | **paused (maintenance mode)** | During maintenance the runner rests. |
 | *error message in red* | The module couldn't be loaded – for example because it requires functions this version of Ablago does not know (the package was built for a newer version), or because its file is damaged. The message names the reason. Remedy: update Ablago or install a matching version of the package. After a [restore](wiederherstellen.md#ohne-internet) you do **not** need to reinstall packages – their code is in the backup. |
+
+### Activity { #verlauf }
+
+Packages with code have an **Activity** tab next to **Overview** and **Settings**. Ablago keeps it itself – the package cannot write anything into it except its log lines. This way you can tell without expert knowledge whether a package causes problems. It is visible to anyone with the administration right **Packages**.
+
+**Load** (at the top, for the last **7** or **30 days**):
+
+- a **traffic light** with one sentence on what you can do: **running smoothly** · **often reaches its limits** (at least three aborts due to time or memory, or a call needed 80 % of a limit) · **fails often** (at least three failures and at least every fifth call)
+- **calls** (with the daily average), **failures**, **duration** (average and longest call), **highest memory** per call compared with the limit, and how often the **time** or **memory** limit was reached
+- the **runner's limits** (memory and time per call, simultaneous calls) – for information only; they are the same for all packages
+- open and given-up events
+
+Ablago does not show computing time (CPU) per package: all packages run in the same runner process, and there is no reliable per-package measurement there. Duration and memory per call say enough about how much a package loads the computer.
+
+**List** below, newest first, with a search field and the tick **Show errors only**:
+
+- every **delivered event** (type, the folder or post as a link – only if you may read it) and every other **call** (action, question, recognition, settings check …) with its **result** – *ok*, *Error*, *Time limit* or *Memory limit* –, duration, memory, error message and the [network calls](#netzaufrufe) of that call
+- the package's **log lines** (at most 60 per hour; further ones only in Ablago's log)
+- **Installed**, **Updated** and **Settings changed** – who, when and which settings (never values)
+
+The activity **never contains content** from documents or answers of the package. Entries are kept for **30 days** (at most 5000 per package) so that the load can show a month – longer than Ablago's [log](fehlersuche.md#protokoll), which only goes back one day. If you remove the package, its activity goes with it.
+
+![The “Activity” tab of a package: load with traffic light, below the list with “Show errors only”](bilder/werkbank-paket-verlauf.png)
 
 If an **update** fails, the old version stays installed with its old code. A package may be at most **128 MB** in size – that applies to the archive when downloading, uploading and in the bundle file as well as to all files under `code/` together. If a package is larger, Ablago names size and limit and doesn't even download it.
 
@@ -492,7 +515,7 @@ Not affected: search terms sent to a vector package for the similarity search do
 
 ### Network calls in the log { #netzaufrufe }
 
-The package runner writes every call a package makes to the network into the **package's log** (Workbench → Packages → *package* → Package runner → **Log: output and network calls**): time, method, **host** (with port, without path, query and credentials), bytes **sent** and **received** and the status, e.g. "Network: 12 × PUT cloud.example.org – 201, 3.4 MB sent, 2 KB received". Identical calls in quick succession (within one minute) share one entry, so that e.g. chunked uploads of the off-site copy don't flood the log.
+The package runner writes every call a package makes to the network into the package's **[activity](#verlauf)** (Workbench → Packages → *package* → tab **Activity**, with the call it belongs to): time, method, **host** (with port, without path, query and credentials), bytes **sent** and **received** and the status, e.g. "Network: 12 × PUT cloud.example.org – 201, 3.4 MB sent, 2 KB received". Identical calls in quick succession (within one minute) share one entry, so that e.g. chunked uploads of the off-site copy don't flood the log.
 
 - **Blocked** calls (address neither in the package nor confirmed as service address, or a method that isn't only capital letters – shown as “?”) appear as a **warning** – nothing went out.
 - Ablago's [log](fehlersuche.md#protokoll) gets **one line** per event or action, "Paket *id*: Netzaufrufe" (level *info*), with the totals: number, blocked, hosts, bytes sent and received.

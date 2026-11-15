@@ -15,6 +15,7 @@ import type { FassungArt, GespeicherteFassung, Loeschvermerk } from '../../share
 import type { Leerseiten } from '../../shared/src/leerseiten';
 import type { Notfallkontakt } from '../../shared/src/notfallkontakte';
 import { t } from './sprache';
+import type { Auslastung, VerlaufEintrag, VerlaufNeu } from '../../shared/src/paketreiter';
 
 /** Seitenweises Lesen der Historie (#800). */
 export interface HistorieAbfrage { arten?: readonly string[]; max?: number; vor?: number }
@@ -278,6 +279,14 @@ export interface Repo {
   ereignisStand(): Promise<Record<string, { offen: number; aufgegeben: number; zugestellt: number; zuletzt?: string | null }>>;
   /** Alle Ereignisse eines entfernten Pakets verwerfen. */
   loescheEreignisse(paketId: string): Promise<void>;
+  /** Verlauf eines Pakets (#1003): Einträge schreiben (räumt nebenbei auf: 30 Tage, höchstens 5000 je Paket). */
+  notiereVerlauf(liste: VerlaufNeu[]): Promise<void>;
+  /** Verlauf eines Pakets, neueste zuerst; vor: nur Einträge vor dieser Nummer (Blättern). */
+  paketVerlauf(paketId: string, f: { vor?: number | null; anzahl: number; nurFehler?: boolean; suche?: string }): Promise<VerlaufEintrag[]>;
+  /** Auslastung je Tag der letzten `tage` Tage und der letzte Aufruf. */
+  paketAuslastung(paketId: string, tage: number): Promise<Auslastung>;
+  /** Verlauf eines entfernten Pakets verwerfen. */
+  loescheVerlauf(paketId: string): Promise<void>;
   /** Noch nicht zugestellte Ereignisse einer Art zu diesen Dokumenten verwerfen (#458, Texterkennung abbrechen); liefert die Anzahl. */
   loescheOffeneEreignisse(art: string, dokumente: string[]): Promise<number>;
   /* ---------- Ereigniskatalog (#670) ---------- */

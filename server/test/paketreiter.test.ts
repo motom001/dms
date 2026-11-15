@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import { describe, it } from 'node:test';
 import { liesBeschreibung, pruefeWerte, textFehler } from '../../shared/src/paketeinstellungen';
 import { hatEinstellungen, kernFelderVon, mitKern } from '../../shared/src/paketkern';
-import { anzeigeWert, dateiartPasst, liesReiterAngaben } from '../../shared/src/paketreiter';
+import { ampelVon, anzeigeWert, dateiartPasst, liesReiterAngaben, summeVon } from '../../shared/src/paketreiter';
 import type { InstalliertesPaket, PaketCode } from '../../shared/src/pakete';
 import { speicherDateien } from '../src/dateispeicher';
 import { Dienst } from '../src/dienst';
@@ -15,6 +15,8 @@ import { Fachfehler } from '../src/fehler';
 import { Paketverwaltung, type PaketLaeufer } from '../src/pakete';
 import { setzePaketSpeicher } from '../src/pakete/index';
 import { speicherRepo } from '../src/repo-speicher';
+import type { Repo } from '../src/repo';
+import { eigeneDatenbank } from './hilfe-db';
 import { Tresor } from '../src/tresor';
 
 const ICH = { id: null, email: 'admin@example.org' };
@@ -133,5 +135,72 @@ describe('Anzeigen und Prüffunktion (#996)', () => {
     assert.deepEqual(r.fehler, []);
     assert.ok(dateiartPasst(r.angaben!.ausprobieren!.dateiarten, 'image/png'));
     assert.ok(!dateiartPasst(r.angaben!.ausprobieren!.dateiarten, 'text/plain'));
+  });
+});
+
+describe('Verlauf und Auslastung (#1003)', () => {
+  const tag = (aufrufe: number, fehler: number, x: Partial<{ zeit: number; speicher: number; msMax: number; speicherMax: number }> = {}) => ({ tag: '2026-11-15', aufrufe, fehler, zeit: 0, speicher: 0, msSumme: aufrufe * 1000, msMax: 1000, speicherMax: 20, ...x });
+  const G = { speicherMB: 256, sekunden: 120, parallel: 2 };
+
+  it('Ampel in einfacher Sprache: ruhig, unauffällig, Grenzen, scheitert', () => {
+    assert.equal(ampelVon([], G), 'ruhig');
+    assert.equal(ampelVon([tag(40, 2)], G), 'unauffaellig');
+    assert.equal(ampelVon([tag(40, 3, { zeit: 3 })], G), 'grenzen', 'drei Abbrüche wegen Zeit');
+    assert.equal(ampelVon([tag(40, 0, { speicherMax: 230 })], G), 'grenzen', '90 % des Speichers');
+    assert.equal(ampelVon([tag(10, 3)], G), 'scheitert');
+    assert.equal(ampelVon([tag(100, 3)], G), 'unauffaellig', 'drei von hundert sind nicht häufig');
+    assert.deepEqual(summeVon([tag(2, 1, { msMax: 5000 }), tag(4, 0)]), { aufrufe: 6, fehler: 1, zeit: 0, speicher: 0, msSumme: 6000, msMax: 5000, speicherMax: 20, msMittel: 1000 });
+  });
+
+  async function pruefeRepo(repo: Repo) {
+    await repo.notiereVerlauf([
+      { paket: 'a', art: 'installiert', was: '1.0.0', wer: 'markus@example.org' },
+      { paket: 'a', art: 'ereignis', was: 'post.angelegt', ergebnis: 'ok', ms: 900, speicherMB: 30, bezug: { mappe: 'm1' }, netz: ['Netz: 1 × GET ki.example.org – 200, 1 KB hin, 2 KB zurück'] },
+      { paket: 'a', art: 'ereignis', was: 'post.angelegt', ergebnis: 'zeit', ms: 120_000, speicherMB: 60, text: 'Zeitgrenze erreicht (120 s) – abgebrochen.' },
+      { paket: 'a', art: 'protokoll', ergebnis: 'warnung', text: 'Modell 100% geladen' },
+      { paket: 'b', art: 'aufruf', was: 'Frage beantwortet', ergebnis: 'ok', ms: 10 },
+    ]);
+    const alle = await repo.paketVerlauf('a', { anzahl: 10 });
+    assert.deepEqual(alle.map((e) => e.art), ['protokoll', 'ereignis', 'ereignis', 'installiert'], 'neueste zuerst, nur dieses Paket');
+    assert.deepEqual(alle[2].netz, ['Netz: 1 × GET ki.example.org – 200, 1 KB hin, 2 KB zurück']);
+    assert.deepEqual(alle[2].bezug, { mappe: 'm1' });
+    assert.deepEqual((await repo.paketVerlauf('a', { anzahl: 10, nurFehler: true })).map((e) => e.ergebnis), ['warnung', 'zeit']);
+    assert.deepEqual((await repo.paketVerlauf('a', { anzahl: 10, suche: '100%' })).map((e) => e.art), ['protokoll'], 'Suche wörtlich, auch mit %');
+    assert.deepEqual((await repo.paketVerlauf('a', { anzahl: 1, vor: alle[1].nr })).map((e) => e.nr), [alle[2].nr], 'blättern');
+    const a = await repo.paketAuslastung('a', 30);
+    assert.equal(a.tage.length, 1);
+    assert.deepEqual({ ...a.tage[0], tag: '' }, { tag: '', aufrufe: 2, fehler: 1, zeit: 1, speicher: 0, msSumme: 120_900, msMax: 120_000, speicherMax: 60 });
+    assert.ok(a.zuletzt);
+    await repo.loescheVerlauf('a');
+    assert.deepEqual(await repo.paketVerlauf('a', { anzahl: 10 }), []);
+    assert.equal((await repo.paketVerlauf('b', { anzahl: 10 })).length, 1);
+  }
+
+  it('Speicher-Repo: schreiben, filtern, suchen, blättern, Auslastung je Tag, löschen', async () => { await pruefeRepo(speicherRepo()); });
+  it('PostgreSQL: dasselbe', { skip: !process.env.TEST_DATABASE_URL && 'ohne TEST_DATABASE_URL' }, async () => {
+    const db = await eigeneDatenbank('verlauf');
+    const { pgRepo } = await import('../src/repo-pg');
+    try { await pruefeRepo(pgRepo(db.sql, '00000000-0000-4000-8000-000000000001') as never as Repo); } finally { await db.ende(); }
+  });
+
+  it('Paketverwaltung: Mappe nur mit Titel, wenn man sie lesen darf; Einstellungen geändert ohne Werte', async () => {
+    const { d, p, installiere } = await aufbau();
+    const b = liesBeschreibung({ einstellungen: [{ abschnitt: 'Dienst', felder: [{ schluessel: 'konto', name: 'Konto', typ: 'text' }, { schluessel: 'token', name: 'Token', typ: 'geheim' }] }] }).beschreibung!;
+    await installiere('dienst', { laeufer: code(), einstellungen: b });
+    const typ = await d.mappentypen.legeTypAn({ name: 'Brief', felder: [{ key: 'nr', label: 'Nr', typ: 'text' }] });
+    const m = await d.mappen.legeMappeAn({ typId: typ.id, werte: { nr: 'B-1' } }, null);
+    await d.kern.repo.notiereVerlauf([{ paket: 'dienst', art: 'ereignis', was: 'post.angelegt', ergebnis: 'ok', bezug: { mappe: m.id } }]);
+    await p.speichereEinstellungen('dienst', { werte: { konto: 'lena', token: 'geheim-123' } }, ICH);
+    const alle = { lesen: null } as never;
+    const keine = { lesen: { offen: [], je: [] } } as never;
+    const v = await p.verlauf('dienst', {}, alle);
+    assert.equal(v.eintraege[0].art, 'einstellungen');
+    assert.equal(v.eintraege[0].was, 'Konto, Token');
+    assert.equal(v.eintraege[0].wer, 'admin@example.org');
+    assert.ok(!JSON.stringify(v).includes('geheim-123'), 'nie Werte');
+    assert.equal(v.eintraege[1].bezug?.mappe, m.id);
+    assert.ok(v.eintraege[1].bezug?.titel);
+    assert.equal((await p.verlauf('dienst', {}, keine)).eintraege[1].bezug, null, 'ohne Leserecht kein Bezug');
+    assert.equal(v.mehr, false);
   });
 });

@@ -1,21 +1,21 @@
 import { Feld, HakenFeld, Knopf, KnopfLink, Reiter, ReiterFlaeche, Schalter, type KnopfErgebnis } from '../bausteine';
-import { Fragment, useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Symbol } from '../Symbol';
-import { ergaenzungenVon, hatNetz, hatSchnittstelle, istKiPaket, herkunftText, KATALOG_LINK_REL, katalogSeiteMitVersion, sammelSeiteMitVersion, laeuferZustandText, neueVersionen, vergleicheVersion, type AblaufErgebnis, type HerkunftPruefung, type NeueVersion, type InstalliertesPaket, type Katalog, type KatalogPaket, type KatalogVersion, rechtePunkte, rechteZeilen } from '../../../shared/src/pakete';
+import { ergaenzungenVon, hatNetz, hatSchnittstelle, istKiPaket, herkunftText, KATALOG_LINK_REL, katalogSeiteMitVersion, sammelSeiteMitVersion, neueVersionen, vergleicheVersion, type AblaufErgebnis, type HerkunftPruefung, type NeueVersion, type InstalliertesPaket, type Katalog, type KatalogPaket, type KatalogVersion, rechtePunkte, rechteZeilen } from '../../../shared/src/pakete';
 import { PAKET_ID } from '../../../shared/src/kennungen';
 import { ApiFehler } from '../api/anfrage';
-import { paketeApi, type BeispielBehalten, type PaketlaeuferStand, type PaketQuelle, type PaketVorschau, type Sammeldatei } from '../api/pakete';
+import { paketeApi, type BeispielBehalten, type PaketQuelle, type PaketVorschau, type Sammeldatei } from '../api/pakete';
 import { useDaten } from '../daten';
 import { Hilfe } from '../Hilfe';
 import { Listenkopf } from '../Listenkopf';
 import { darfVerlassen, geheZu, Link } from '../ort';
 import { PaketEinstellungen } from './PaketEinstellungen';
 import { VektorStandBlock } from '../ablage/Aehnlich';
-import { PaketExternBlock } from './ExterneDienste';
 import { KlassifizierenBlock } from './ErkennungPaket';
 import { KiTypenZeile } from './KiTypen';
 import { MappenMenueBlock } from './PaketAktionen';
 import { PaketAnzeigen } from './PaketAnzeigen';
+import { LaeuferUebersicht, PaketVerlauf } from './PaketVerlauf';
 import { hatEinstellungen } from '../../../shared/src/paketkern';
 import { PaketErstellen, SELBST } from './PaketErstellen';
 import { SelbstErstelltAnsicht } from './SelbstErstellt';
@@ -27,7 +27,6 @@ import { PaketUmwandeln } from './PaketUmwandeln';
 import { t as tx, t, tn } from '../sprache';
 import { KEINE_LIZENZ, lizenzArtVon, type SelbstErstellt } from '../../../shared/src/paketerstellung';
 import { HerkunftZeile } from './Herkunft';
-import { EREIGNISKATALOG, ereignisSchluessel, istKatalogArt, KATALOG_ARTEN } from '../../../shared/src/ereignisse';
 import { gebietsschema } from '../../../shared/src/sprache';
 import { sprachname } from '../../../shared/src/beschriftung';
 import { Kopf } from './Kopf';
@@ -467,17 +466,21 @@ function UploadDetail({ z }: { z: PaketeZustand }) {
  * Register des Pakets (#1214, Baustein Reiter): Übersicht liest, Einstellungen ändern (#996); ein Warnsymbol, wenn
  * Einstellungen fehlen. Gleich aufgebaut bei allen Paketen – welche Reiter es gibt, ergibt sich aus dem Manifest.
  */
-type PaketReiterArt = 'uebersicht' | 'einstellungen';
+type PaketReiterArt = 'uebersicht' | 'einstellungen' | 'verlauf';
 function PaketReiter({ reiter, setze, noetig, reiterListe }: { reiter: PaketReiterArt; setze(r: PaketReiterArt): void; noetig: boolean; reiterListe: PaketReiterArt[] }) {
-  const text = (r: PaketReiterArt) => (r === 'einstellungen' ? <>{t('werkbank.pakete.einstellungen')}{noetig && <> <Symbol name="warnung" className="sym-warn" /><span className="sr">{t('werkbank.pakete.einstellungen-noetig-2')}</span></>}</> : t('werkbank.pakete.uebersicht'));
+  const text = (r: PaketReiterArt) => (r === 'einstellungen' ? <>{t('werkbank.pakete.einstellungen')}{noetig && <> <Symbol name="warnung" className="sym-warn" /><span className="sr">{t('werkbank.pakete.einstellungen-noetig-2')}</span></>}</>
+    : r === 'verlauf' ? t('pakete.verlauf.reiter') : t('werkbank.pakete.uebersicht'));
   return <Reiter id="paket" wert={reiter} setze={setze} beschriftung={t('werkbank.pakete.paket')} wahlen={reiterListe.map((r) => ({ wert: r, text: text(r) }))} />;
 }
-/** Reiter eines installierten Pakets (#996): Übersicht immer, Einstellungen bei Feldern im Manifest oder Feldarten des Kerns. */
+/**
+ * Reiter eines installierten Pakets (#996): Übersicht immer, Einstellungen bei Feldern im Manifest oder Feldarten des
+ * Kerns, Verlauf bei Paketen mit Läufer (#1003).
+ */
 function reiterVon(inst: InstalliertesPaket | null): PaketReiterArt[] {
   if (!inst) return [];
-  return ['uebersicht', ...(hatEinstellungen(inst) ? ['einstellungen' as const] : [])];
+  return ['uebersicht', ...(hatEinstellungen(inst) ? ['einstellungen' as const] : []), ...(inst.laeufer ? ['verlauf' as const] : [])];
 }
-const REITER: readonly PaketReiterArt[] = ['uebersicht', 'einstellungen'];
+const REITER: readonly PaketReiterArt[] = ['uebersicht', 'einstellungen', 'verlauf'];
 
 /**
  * Welcher Reiter offen ist (`?reiter=` beim Öffnen), welche es gibt, Wechsel mit „Verlassen ohne Speichern?“ aus den
@@ -499,6 +502,7 @@ function PaketReiterBlock({ r, inst, z }: { r: ReturnType<typeof usePaketReiter>
     <>
       <PaketReiter reiter={r.reiter} reiterListe={r.liste} noetig={!!inst.einstellungenNoetig} setze={r.wechsel} />
       {r.reiter === 'einstellungen' && <ReiterFlaeche id="paket" wert={r.reiter}><PaketEinstellungen paket={inst} gespeichert={() => void z.laden()} /></ReiterFlaeche>}
+      {r.reiter === 'verlauf' && <ReiterFlaeche id="paket" wert={r.reiter}><PaketVerlauf inst={inst} /></ReiterFlaeche>}
     </>
   );
 }
@@ -605,7 +609,7 @@ function PaketDetail({ z, id, quelle }: { z: PaketeZustand; id: string; quelle?:
             {/* Paketseite im offiziellen Katalog mit der Ablago-Version nur im Fragment (#622). */}
             {imKatalog && <>{(v?.readme || inst?.links?.readme) && ' · '}<a className="verweis" href={katalogSeiteMitVersion(z.stand?.dms ?? '', id)} target="_blank" rel={KATALOG_LINK_REL} title={tx('pakete.katalog.hinweis')}>{tx('pakete.katalog.ansehen')} <Symbol name="extern" /></a></>}</dd></>}
         </dl>
-        {inst?.laeufer && <LaeuferStand paket={inst.id} abonniert={inst.laeufer.ereignisse} netz={hatNetz(inst.laeufer)} />}
+        {inst?.laeufer && <LaeuferUebersicht inst={inst} zumVerlauf={() => r.zu('verlauf')} />}
         {/* Nur, wenn das Paket etwas meldet (code.anzeigen) oder einen Statusbereich hat (Einstellungen im Manifest). */}
         {inst && (!!inst.laeufer?.reiter?.anzeigen?.length || !!inst.einstellungen) && <PaketAnzeigen paket={inst.id} />}
         {inst?.laeufer && hatSchnittstelle(inst.laeufer, 'dms:vektoren') && <VektorStandBlock />}
@@ -745,63 +749,6 @@ function ErgaenzungenBlock({ z, inst, katalog, quelle }: { z: PaketeZustand; ins
 }
 
 /** Name eines Ereignisses aus dem Katalog (#670); Pakete-eigene Arten (z. B. `volltext.fertig` alt) bleiben, wie sie sind. */
-function ereignisName(art: string) { return istKatalogArt(art) ? tx(`ereignisse.name.${ereignisSchluessel(art)}`) : art; }
-
-/** Der Ereigniskatalog (#670) zum Nachschlagen: Gruppe, Name, Beschreibung. */
-export function EreignisKatalogListe() {
-  const gruppen = [...new Set(KATALOG_ARTEN.map((a) => EREIGNISKATALOG[a].gruppe))];
-  return (
-    <details className="klein">
-      <summary><Symbol name="info" /> {tx('ereignisse.katalog.titel')}</summary>
-      {gruppen.map((g) => (
-        <div key={g}>
-          <h3 className="h4">{tx(`ereignisse.gruppe.${g}`)}</h3>
-          <dl className="eigenschaften">{KATALOG_ARTEN.filter((a) => EREIGNISKATALOG[a].gruppe === g).map((a) => <Fragment key={a}><dt>{tx(`ereignisse.name.${ereignisSchluessel(a)}`)}</dt><dd>{tx(`ereignisse.text.${ereignisSchluessel(a)}`)} <code>{a}</code></dd></Fragment>)}</dl>
-        </div>
-      ))}
-    </details>
-  );
-}
-
-/** Paket mit Code (#338): läuft es, was ist zuletzt passiert, offene und aufgegebene Ereignisse. */
-/** netz: Das Paket darf ins Netz – dann seine Messwerte als externer Dienst (#565). */
-function LaeuferStand({ paket, abonniert = [], netz = false }: { paket: string; abonniert?: readonly string[]; netz?: boolean }) {
-  const [s, setS] = useState<PaketlaeuferStand | null | undefined>(undefined);
-  const laden = useCallback(() => { paketeApi.paketLaeufer().then(setS, () => setS(null)); }, []);
-  useEffect(() => { laden(); }, [laden]);
-  const p = s?.pakete.find((x) => x.id === paket) ?? null;
-  // Zustand passend zu dem, was der Läufer tut (#403); solange er startet, von selbst nachfragen.
-  const stand = s ? laeuferZustandText({ zustand: s.zustand, absturz: s.absturz, paket: p }, datum) : null;
-  useEffect(() => {
-    if (!stand?.wartet) return;
-    const uhr = setTimeout(laden, 2000);
-    return () => clearTimeout(uhr);
-  }, [s, stand?.wartet, laden]);
-  if (s === undefined) return null;
-  return (
-    <>
-      {/* „Aktualisieren“ heißt in der Paketverwaltung nur das Update (#659); hier lädt der Knopf den Stand neu. */}
-      <div className="zeile-zwischen"><h2 className="h3">{t('werkbank.pakete.paket-laeufer')}</h2>{s && stand && p && <Knopf art="link" onClick={laden}>{tn('werkbank.pakete.stand-neu-laden', { symbol: <Symbol name="neu-laden" /> })}</Knopf>}</div>
-      {!s || !stand ? <p className="leise">{t('werkbank.pakete.der-paket-laeufer-laeuft')}</p> : !p ? <p className="leise">{stand.text}</p> : (
-        <>
-          <dl className="eigenschaften">
-            <dt>{t('werkbank.pakete.stand')}</dt><dd>{stand.fehler ? <span className="fehlertext">{stand.text}</span> : stand.text}</dd>
-            <dt>{t('werkbank.pakete.dienstkonto')}</dt><dd>{p.dienstkonto ?? '–'}</dd>
-            <dt>{t('werkbank.pakete.aufrufe')}</dt><dd>{p.aufrufe}{p.fehlgeschlagen ? t('werkbank.pakete.davon-fehlgeschlagen', { fehlgeschlagen: p.fehlgeschlagen }) : ''}{p.dauerMs !== null ? t('werkbank.pakete.zuletzt-s-mb', { wert: Math.round(p.dauerMs / 100) / 10, speicherMB: String(p.speicherMB) }) : ''}</dd>
-            <dt>{t('werkbank.pakete.ereignisse')}</dt><dd>{t('werkbank.pakete.zugestellt-offen', { zugestellt: p.ereignisse.zugestellt, offen: p.ereignisse.offen })}{p.ereignisse.aufgegeben ? <> · <strong>{t('werkbank.pakete.aufgegeben', { aufgegeben: p.ereignisse.aufgegeben })}</strong></> : ''} · {p.ereignisse.zuletzt ? tx('ereignisse.pakete.zuletzt', { zeit: datum(p.ereignisse.zuletzt) }) : tx('ereignisse.pakete.nie')}</dd>
-            {abonniert.length > 0 && <><dt>{t('werkbank.pakete.abonniert')}</dt><dd>{abonniert.map(ereignisName).join(', ')}</dd></>}
-            <dt>{t('werkbank.pakete.grenzen')}</dt><dd>{t('werkbank.pakete.mb-speicher-s-je', { speicherMB: s.grenzen.speicherMB, sekunden: s.grenzen.sekunden, parallel: s.grenzen.parallel })}</dd>
-          </dl>
-          {p.letzte.length > 0 && <ul className="klein">{p.letzte.slice(0, 10).map((x) => <li key={x.zeit + x.art}>{datum(x.zeit)} · {ereignisName(x.art)} · {x.ok ? t('werkbank.pakete.ok') : <span className="fehlertext">{x.text}</span>}{x.ok && x.text ? ` – ${x.text}` : ''}</li>)}</ul>}
-          {p.protokoll.length > 0 && <details className="klein"><summary>{t('werkbank.pakete.ausgaben-des-pakets')}</summary><ul>{p.protokoll.slice(0, 30).map((x, i) => <li key={i} className={x.stufe >= 2 ? 'fehlertext' : undefined}>{datum(x.zeit)} · {x.text}</li>)}</ul></details>}
-        </>
-      )}
-      {netz && <PaketExternBlock paket={paket} />}
-      <EreignisKatalogListe />
-    </>
-  );
-}
-
 /** Lizenz eines Pakets (#651): bei eigener oder fehlender Lizenz mit sachlichem Hinweis. */
 function LizenzAngabe({ lizenz }: { lizenz: string }) {
   const art = lizenzArtVon(lizenz);

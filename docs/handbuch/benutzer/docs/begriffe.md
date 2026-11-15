@@ -498,6 +498,10 @@ Siehe auch: [Aufgabe](#aufgabe), [Zu erledigen](#zu-erledigen).
 Ein Paket-Update, das vorhandene Mappentypen in ein anderes Paket zieht – mit allen Mappen und Werten (#1041). Ein Typ wird übernommen (gleiche Id) oder geht in einem anderen auf; was in kein Feld passt, steht in einer Notiz. Mit Vorschau und Rückfragen, nur „Gesamte Verwaltung“, ganz oder gar nicht. Rechte werden dabei nie breiter.  
 Siehe auch: [Paket](#paket), [Herausgeber](#herausgeber).
 
+<a id="verlauf"></a>**Verlauf** · ~ mit Erklärung · Administratoren  
+Reiter auf der Seite eines Pakets mit Code (Werkbank → Pakete → Paket → Verlauf), den Ablago selbst pflegt – was Ablago dem Paket zugestellt hat, wie es lief (ok, Fehler, Zeit- oder Speichergrenze erreicht), Dauer, Speicher, Netzaufrufe, die Protokollzeilen des Pakets sowie Installieren, Aktualisieren, geänderte Einstellungen und Ausprobieren. Oben die Auslastung der letzten 7 bzw. 30 Tage mit einer Ampel („läuft unauffällig“, „stößt oft an seine Grenzen“, „scheitert häufig“). Nie Inhalte aus Dokumenten; Einträge bleiben 30 Tage. Die Geschichte einer Mappe heißt dagegen „Historie“.  
+Siehe auch: [Paket-Läufer](#paket-laufer), [Historie](#historie), [Protokoll](#protokoll).
+
 <a id="vorgabe"></a>**Vorgabe** · ~ mit Erklärung · Administratoren  
 Eine Mappe, die ein Paket zum Behalten mitbringt – etwa die Vertragsarten „Strom“ oder „Miete“ aus dem Paket Verträge, oft mit Vorlagen. Kommt immer mit, trägt die Kennzeichnung „Vorgabe aus dem Paket …“ und ist sonst eine gewöhnliche Mappe. Updates bringen neue Fassungen nur, solange niemand sie geändert hat; Gelöschtes bleibt gelöscht. Anders als ein Beispiel (erfundene Daten zum Ausprobieren, auf Wunsch, entfernbar).  
 Siehe auch: [Paket](#paket), [Beispiel-Mappe](#beispiel-mappe), [Vorlage](#vorlage).
@@ -758,7 +762,7 @@ Wer Oberfläche, Handbuch, Hilfetexte oder Release-Notizen schreibt, verwendet d
 | Gutschrift | – | `Feld.negativ` |
 | Herausgeber | Anbieter (für Pakete), Autor (ist die Person, die es geschrieben hat), Publisher | `herausgeber, InstalliertesPaket.herausgeber` |
 | Hinweis von Paketen | Warnung, Fehler, Meldung von Ablago | `PaketHinweis, dms:hinweise` |
-| Historie | Protokoll (an der Mappe), Verlauf | `Historieneintrag` |
+| Historie | Protokoll (an der Mappe), Verlauf (an der Mappe) | `Historieneintrag` |
 | Ist Teil einer anderen Mappe | Untertyp, Untermappentyp, Vererbung | `Mappentyp.teilVon, gehoertZu, shared/src/teile.ts` |
 | Kann aus Post angelegt werden | – | `Mappentyp.ausPost` |
 | Kennung | Schlüssel (für Felder), Key | `key, schluessel` |
@@ -805,6 +809,7 @@ Wer Oberfläche, Handbuch, Hilfetexte oder Release-Notizen schreibt, verwendet d
 | Umbau | Migration (ist die Datenbank), Umzug (ist eine neue Paket-Id) | `umbau, shared/src/umbau.ts` |
 | Unteransicht | Untersicht | – |
 | Verbleib Originaldokumente | Lagerort, Standort (für Papier) | `verbleib_original` |
+| Verlauf | Historie (am Paket), Log | `paket_verlauf, PaketVerlauf` |
 | Version | Revision, Stand (für Dokumente) | `DokumentVersion` |
 | Version von Ablago | Release (in der Oberfläche) | – |
 | Vertretung | – | `Abwesenheit.vertreterId, vertretung (Aufgabenart)` |
@@ -827,4 +832,4 @@ Wer Oberfläche, Handbuch, Hilfetexte oder Release-Notizen schreibt, verwendet d
 | Zwei-Faktor-Anmeldung | 2FA, MFA (in der Oberfläche) | – |
 | Übergeordnete Mappe | Elternmappe, Hauptmappe | `uebergeordneteId, shared/src/teile.ts` |
 
-*Stand: 2026-11-12*
+*Stand: 2026-11-15*

@@ -3,7 +3,7 @@ import type { AktionenEinstellung, AktionRecht, AktionsSchritt, EingebauteAktion
 import type { Archiv } from '../../../shared/src/archiv';
 import type { AblaufEingabe, AblaufErgebnis, AblaufInstallation, AblaufPlan, Ergaenzung, HerkunftPruefung, InstalliertesPaket, Katalog, LaeuferZustand, RechtePunkt } from '../../../shared/src/pakete';
 import type { Einstellungsbeschreibung } from '../../../shared/src/paketeinstellungen';
-import type { AnzeigeWert, PaketAnzeige } from '../../../shared/src/paketreiter';
+import type { Auslastung, AnzeigeWert, PaketAnzeige, VerlaufEintrag } from '../../../shared/src/paketreiter';
 import type { ErstellenStand, PaketErstellenEingabe, PaketPruefung, SelbstErstellt, SelbstErstelltDetail } from '../../../shared/src/paketerstellung';
 import type { Entscheidung, UmwandlungsFeld, Umwandlungsvorgang, UmwandlungsVorschau } from '../../../shared/src/umwandlung';
 import type { ExternerDienst, ExternKennzahlen } from '../../../shared/src/extern';
@@ -131,6 +131,13 @@ export const paketeApi = {
   paketUmwandlungVorschau: (id: string, typId: string, feldKey: string) => anfrage<UmwandlungsVorschau>('POST', `/api/werkbank/pakete/${encodeURIComponent(id)}/umwandlungen/vorschau`, { typId, feldKey }),
   paketUmwandeln: (id: string, typId: string, feldKey: string, entscheidungen: Record<string, Entscheidung>) => anfrage<{ umgewandelt: number; neuePersonen: number; ausgelassen: UmwandlungsVorschau['ausgelassen'] }>('POST', `/api/werkbank/pakete/${encodeURIComponent(id)}/umwandlungen`, { typId, feldKey, entscheidungen }),
   paketUmwandlungZurueck: (id: string, vorgang: string) => anfrage<{ zurueck: number; ausgelassen: UmwandlungsVorschau['ausgelassen']; personenBehalten: number }>('POST', `/api/werkbank/pakete/${encodeURIComponent(id)}/umwandlungen/${encodeURIComponent(vorgang)}/rueckgaengig`),
+  /** Verlauf des Pakets (#1003), neueste zuerst; vor: ältere als diese Nummer. */
+  paketVerlauf: (id: string, f: { vor?: number; nurFehler?: boolean; suche?: string } = {}) => {
+    const q = new URLSearchParams({ ...(f.vor ? { vor: String(f.vor) } : {}), ...(f.nurFehler ? { nurFehler: '1' } : {}), ...(f.suche ? { suche: f.suche } : {}) }).toString();
+    return anfrage<{ eintraege: VerlaufEintrag[]; mehr: boolean }>('GET', `/api/werkbank/pakete/${encodeURIComponent(id)}/verlauf${q ? `?${q}` : ''}`);
+  },
+  /** Auslastung des Pakets (#1003): je Tag der letzten 30 Tage, letzter Aufruf. */
+  paketAuslastung: (id: string) => anfrage<Auslastung>('GET', `/api/werkbank/pakete/${encodeURIComponent(id)}/auslastung`),
   /** Anzeigen des Pakets (#996) und sein Statusbereich – nur lesen. */
   paketAnzeigen: (id: string) => anfrage<PaketAnzeigenStand>('GET', `/api/werkbank/pakete/${encodeURIComponent(id)}/anzeigen`),
   paketAktion: (id: string, aktion: string) => anfrage<{ ok: boolean; text: string }>('POST', `/api/werkbank/pakete/${encodeURIComponent(id)}/aktionen/${encodeURIComponent(aktion)}`),

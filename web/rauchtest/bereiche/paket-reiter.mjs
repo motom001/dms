@@ -1,5 +1,5 @@
 /**
- * Rauchtests: Reiter der Paketseite (#996 Übersicht liest, Einstellungen ändern) mit einem KI-Paket als Attrappe –
+ * Rauchtests: Reiter der Paketseite (#996 Übersicht liest, Einstellungen ändern; #1003 Verlauf) mit einem KI-Paket als Attrappe –
  * ohne Paket-Läufer und ohne Internet.
  * Allein starten (frisch gestartetes Ablago, siehe rauchtest.mjs): node web/rauchtest/bereiche/paket-reiter.mjs [fehlerordner] [musterordner]
  */
@@ -23,7 +23,7 @@ const PAKET = {
  * Anzeigen und die KI-Zulassung. Liefert, was gespeichert wurde.
  */
 async function attrappe(s) {
-  const z = { ki: [], werte: { modell: 'klein' }, typen: [{ id: 't1', name: 'Rechnung', zugelassen: true }, { id: 't2', name: 'Gesundheit', zugelassen: false }] };
+  const z = { ki: [], verlauf: [], werte: { modell: 'klein' }, typen: [{ id: 't1', name: 'Rechnung', zugelassen: true }, { id: 't2', name: 'Gesundheit', zugelassen: false }] };
   await s.route('**/api/werkbank/pakete', async (r) => {
     if (r.request().method() !== 'GET') return r.fallback();
     const echt = await (await r.fetch()).json();
@@ -39,6 +39,24 @@ async function attrappe(s) {
   await s.route(`**/api/werkbank/pakete/${ID}/umwandlungen`, (r) => r.fulfill({ json: { felder: [], vorgaenge: [] } }));
   const ki = () => ({ typen: z.typen, pakete: [{ id: ID, name: 'KI-Probe', bekommt: z.typen.filter((x) => x.zugelassen).map((x) => x.id) }], hinweis: false });
   await s.route('**/api/werkbank/ki-typen', (r) => r.fulfill({ json: ki() }));
+  // Läufer: läuft, das Paket ist geladen (Grenzen für die Ampel).
+  await s.route('**/api/werkbank/pakete/laeufer', (r) => r.fulfill({ json: { laeuft: true, pausiert: false, grenzen: { speicherMB: 256, sekunden: 120, parallel: 2 }, zustand: 'bereit', absturz: null,
+    pakete: [{ id: ID, name: 'KI-Probe', version: '1.0.0', dienstkonto: 'Paket KI-Probe', geladen: true, fehler: null, aufrufe: 3, fehlgeschlagen: 1, letzterAufruf: null, dauerMs: null, speicherMB: null,
+      ereignisse: { offen: 0, aufgegeben: 0, zugestellt: 3 }, letzte: [], protokoll: [] }] } }));
+  // Verlauf (#1003): heute drei Aufrufe, einer an der Zeitgrenze; die Liste mit und ohne „Nur Fehler zeigen“.
+  const heute = new Date().toISOString().slice(0, 10);
+  await s.route(`**/api/werkbank/pakete/${ID}/auslastung`, (r) => r.fulfill({ json: { zuletzt: new Date(Date.now() - 300_000).toISOString(),
+    tage: [{ tag: heute, aufrufe: 3, fehler: 1, zeit: 1, speicher: 0, msSumme: 140_000, msMax: 120_000, speicherMax: 40 }] } }));
+  const eintraege = [
+    { nr: 3, zeit: new Date(Date.now() - 300_000).toISOString(), art: 'ereignis', was: 'post.angelegt', ergebnis: 'zeit', ms: 120_000, speicherMB: 40, text: 'Zeitgrenze erreicht (120 s) – abgebrochen.', wer: null, bezug: null, netz: ['Netz: 2 × POST ki.example.org – 200, 3 KB hin, 1 KB zurück'] },
+    { nr: 2, zeit: new Date(Date.now() - 600_000).toISOString(), art: 'ereignis', was: 'post.angelegt', ergebnis: 'ok', ms: 9_000, speicherMB: 31, text: '', wer: null, bezug: null, netz: [] },
+    { nr: 1, zeit: new Date(Date.now() - 900_000).toISOString(), art: 'einstellungen', was: 'Modell', ergebnis: null, ms: null, speicherMB: null, text: '', wer: 'lena@example.org', bezug: null, netz: [] },
+  ];
+  await s.route(`**/api/werkbank/pakete/${ID}/verlauf*`, (r) => {
+    const nurFehler = new URL(r.request().url()).searchParams.get('nurFehler') === '1';
+    z.verlauf.push(nurFehler);
+    return r.fulfill({ json: { eintraege: eintraege.filter((e) => !nurFehler || (e.ergebnis && e.ergebnis !== 'ok')), mehr: false } });
+  });
   await s.route('**/api/werkbank/ki-typen/*', (r) => {
     const id = new URL(r.request().url()).pathname.split('/').at(-1);
     const { zugelassen } = r.request().postDataJSON();
@@ -80,13 +98,32 @@ rauchtest('Paketseite: Übersicht liest, Einstellungen ändern – KI-Zulassung 
   assert.equal(z.werte.modell, 'mittel');
 });
 
-/** Übersicht und Einstellungen für axe und Tippflächen. */
+rauchtest('Paketseite: Verlauf mit Auslastung, Ampel und „Nur Fehler zeigen“ (#1003)', { als: LENA, timeout: 90_000 }, async (s) => {
+  const z = await attrappe(s);
+  await zumPaket(s);
+  // Übersicht: nur eine Zeile zum Läufer, mit Link in den Verlauf.
+  await s.getByText('1 Fehler in 7 Tagen').waitFor();
+  await s.getByRole('button', { name: 'Verlauf', exact: true }).click();
+  await s.getByRole('tab', { name: 'Verlauf', selected: true }).waitFor();
+  await s.getByText('stößt oft an seine Grenzen').waitFor();
+  const liste = s.getByRole('list', { name: 'Verlauf' });
+  await liste.getByText('Einstellungen geändert: Modell').waitFor();
+  assert.equal(await liste.locator('li').count(), 3);
+  await s.getByLabel('Nur Fehler zeigen').check();
+  await liste.getByText('Einstellungen geändert: Modell').waitFor({ state: 'detached' });
+  await liste.getByText('Zeitgrenze erreicht (120 s) – abgebrochen.').waitFor();
+  assert.equal(await liste.locator('li').count(), 1);
+  assert.deepEqual(z.verlauf, [false, true]);
+});
+
+/** Übersicht, Einstellungen und Verlauf für axe und Tippflächen. */
 const SEITEN = [
   { name: 'Übersicht', weg: async (s) => { await zumPaket(s); await s.getByText('12 von 30').waitFor(); } },
   { name: 'Einstellungen', weg: async (s) => { await s.getByRole('tab', { name: 'Einstellungen' }).click(); await s.getByRole('heading', { name: 'Was die KI lesen darf' }).waitFor(); } },
+  { name: 'Verlauf', weg: async (s) => { await s.getByRole('tab', { name: 'Verlauf' }).click(); await s.getByRole('list', { name: 'Verlauf' }).locator('li').first().waitFor(); } },
 ];
 
-rauchtest('Paketseite: Reiter ohne axe-Verstoß, hell und dunkel (#996)', { als: LENA, timeout: 100_000 }, async (s) => {
+rauchtest('Paketseite: Reiter ohne axe-Verstoß, hell und dunkel (#996, #1003)', { als: LENA, timeout: 110_000 }, async (s) => {
   await attrappe(s);
   const funde = [];
   for (const schema of ['light', 'dark']) {
@@ -100,7 +137,7 @@ rauchtest('Paketseite: Reiter ohne axe-Verstoß, hell und dunkel (#996)', { als:
   assert.deepEqual(funde, [], `axe meldet Verstöße:\n${funde.join('\n')}`);
 });
 
-rauchtest('Handy: Reiter der Paketseite mit 44-px-Tippflächen (#996)', { handy: true, als: LENA, timeout: 90_000 }, async (s) => {
+rauchtest('Handy: Reiter der Paketseite mit 44-px-Tippflächen (#996, #1003)', { handy: true, als: LENA, timeout: 90_000 }, async (s) => {
   await attrappe(s);
   const funde = [];
   for (const seite of SEITEN) {

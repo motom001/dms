@@ -72,7 +72,5 @@
   "gruppe.verarbeitung": "Verarbeitung",
   "gruppe.betrieb": "Betrieb",
   "gruppe.auftrag": "Aufträge an ein Paket",
-  "pakete.zuletzt": "zuletzt zugestellt: {zeit}",
-  "pakete.nie": "noch nie zugestellt",
   "katalog.titel": "Welche Ereignisse es gibt"
 }
