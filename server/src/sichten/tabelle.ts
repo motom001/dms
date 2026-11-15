@@ -6,8 +6,12 @@
  * Rechte (Ergänzung Sicherheit): Lesen an der Mappe selbst; Zeilen nur aus Mappen, die die Person lesen darf – auch die
  * Gesamtzahl zählt nur sie (der Lesefilter steht in der Anfrage ans Repo, nicht hinterher). Verweise in den Zellen auf
  * nicht lesbare Mappen kommen als „(nicht sichtbar)“ ohne Titel (`maskiereBezuege`). Passwortfelder sind nie Spalte.
+ *
+ * Verborgene Zeilen (#1208): Damit niemand eine Summe für falsch hält, kommt dazu nur die **Anzahl** der Zeilen, die die
+ * Person nicht lesen darf (`verborgen`) – keine Titel, Werte, Ids oder Lücken. Auch sie nur mit Leserecht an der Mappe.
  */
 import { trefferlistenVon, verweiseVon, type Mappe, type MappenBezug, type Mappentyp } from '../../../shared/src/model';
+import type { Klausel } from '../../../shared/src/sichten';
 import { TABELLE_SEITE, tabellenSpalten } from '../../../shared/src/tabelle';
 import { teileVon } from '../../../shared/src/zusammengesetzt';
 import { Fachfehler } from '../fehler';
@@ -26,6 +30,8 @@ export interface Tabellenseite {
   spalten: string[];
   /** Zahl der Zeilen, die die Person lesen darf – nie mehr. */
   gesamt: number;
+  /** Zahl der Zeilen, die es gibt, die die Person aber nicht lesen darf (#1208) – nur die Zahl, nichts sonst. */
+  verborgen: number;
   von: number;
   mappen: Mappe[];
   bezuege: Record<string, MappenBezug>;
@@ -51,14 +57,15 @@ export async function tabellenSeite(teile: TabellenTeile, id: string, feldKey: s
   const quelltyp = typen.get(f.quelle.typId);
   // Den anderen Typ kennt der Zugriff nicht (Dienstkonto eines Pakets ohne Leserecht darauf) oder es gibt ihn nicht mehr:
   // dann wie eine leere Tabelle – ohne zu verraten, ob es Zeilen gäbe.
-  if (!quelltyp) return { typId: f.quelle.typId, spalten: ['_titel'], gesamt: 0, von: 0, mappen: [], bezuege: {} };
+  if (!quelltyp) return { typId: f.quelle.typId, spalten: ['_titel'], gesamt: 0, verborgen: 0, von: 0, mappen: [], bezuege: {} };
   const spalten = tabellenSpalten(quelltyp, f.quelle.trefferliste, trefferlistenVon);
   const von = Math.max(0, Math.floor(Number(q.von) || 0));
   const sortierung = teile.sortierungAus(text(q.sortierung), q.absteigend === 'true' || q.absteigend === true, quelltyp);
   const bekannt = Number(q.gesamt);
   const repo = teile.repo();
+  const klauseln: Klausel[] = [{ typen: [quelltyp.id], filter: [{ art: 'feld', key: f.quelle.feldKey, feldart: 'referenz', op: 'zeigtAuf', a: [mappe.id] }] }];
   const r = await repo.seite({
-    klauseln: [{ typen: [quelltyp.id], filter: [{ art: 'feld', key: f.quelle.feldKey, feldart: 'referenz', op: 'zeigtAuf', a: [mappe.id] }] }],
+    klauseln,
     sortierung, lesen: z?.lesen ?? null, von, anzahl: TABELLE_SEITE,
     // Beim Blättern die Zahl vom ersten Blatt (#740) – das Repo liefert nie weniger, als bis hier geliefert ist.
     ...(von > 0 && Number.isInteger(bekannt) && bekannt >= 0 ? { gesamt: bekannt } : {}),
@@ -69,5 +76,14 @@ export async function tabellenSeite(teile: TabellenTeile, id: string, feldKey: s
   const mitWert = [...new Set([...spalten, ...teilKeys])];
   const mappen = r.mappen.map((m) => ({ ...m, werte: Object.fromEntries(mitWert.filter((k) => k in m.werte).map((k) => [k, m.werte[k]])) }));
   const ziele = mappen.flatMap((m) => verweiseVon(quelltyp, m.werte).map((v) => v.zielId));
-  return { typId: quelltyp.id, spalten, gesamt: r.gesamt, von, mappen, bezuege: await teile.rechte.maskiereBezuege(z, await repo.bezuege(ziele)) };
+  // Verborgene Zeilen (#1208): alle Zeilen ohne Lesefilter zählen, die lesbaren abziehen. Ohne Lesefilter (Verwaltung) gibt
+  // es keine verborgenen. Beim Blättern steht `gesamt` vom ersten Blatt – dann zählt der Server die lesbaren selbst neu,
+  // damit eine mitgegebene Zahl die Antwort nicht verfälscht.
+  let verborgen = 0;
+  if (z?.lesen) {
+    const [alle] = await repo.zaehleKlauseln([klauseln], null);
+    const lesbar = von > 0 ? (await repo.zaehleKlauseln([klauseln], z.lesen))[0] : r.gesamt;
+    verborgen = Math.max(0, alle - lesbar);
+  }
+  return { typId: quelltyp.id, spalten, gesamt: r.gesamt, verborgen, von, mappen, bezuege: await teile.rechte.maskiereBezuege(z, await repo.bezuege(ziele)) };
 }

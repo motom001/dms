@@ -148,7 +148,16 @@ async function tabellenDaten(cookie) {
   for (const [nr, beschreibung, menge, betrag] of [[1, 'Ölfilter', 2, 12], [2, 'Inspektion', 1, 189.9]]) {
     positionen.push((await api('POST', '/api/mappen', { cookie, body: { typId: position.id, werte: { auftrag: mappe.id, nr, beschreibung, menge, preis: { betrag, waehrung: 'EUR' } } } })).daten);
   }
-  return { auftrag, position, mappe, positionen };
+  // Verborgene Zeilen (#1208): Auftrag A-2 mit drei Positionen, eine davon („Vertraulich“) darf niemand außerhalb des
+  // Verwaltungsmodus lesen – auch Lena nicht. Die Regel trifft nur diese eine Position.
+  const teils = (await api('POST', '/api/mappen', { cookie, body: { typId: auftrag.id, werte: { nr: 'A-2' } } })).daten;
+  for (const [nr, beschreibung] of [[1, 'Reifenwechsel'], [2, 'Vertraulich'], [3, 'Wuchten']]) {
+    await api('POST', '/api/mappen', { cookie, body: { typId: position.id, werte: { auftrag: teils.id, nr, beschreibung } } });
+  }
+  await api('PUT', `/api/werkbank/berechtigungen/${position.id}`, { cookie, body: { bestaetigt: true, berechtigungen: { grund: { C: true, R: true, U: true, D: true, P: true }, regeln: [
+    { id: 'vertraulich', name: 'Vertrauliche Positionen', wenn: [{ art: 'feld', bedingung: { art: 'feld', feld: 'beschreibung', op: 'gleich', wert: { art: 'fest', wert: 'Vertraulich' } } }], dann: { R: 'entziehen', U: 'entziehen', D: 'entziehen', P: 'entziehen' }, stopp: true },
+  ] } } });
+  return { auftrag, position, mappe, positionen, teils };
 }
 
 /** Typen „Tarifart“ (mit Frist und Hinweis) und „Abo“, das beides beim Auswählen übernimmt; zwei Tarifarten (#1037). */

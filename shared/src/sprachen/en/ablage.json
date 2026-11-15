@@ -1353,6 +1353,7 @@
   "tabelle.nach-dem-speichern": "You can add {name} after saving – with “{neu}” below the table.",
   "tabelle.weitere": "Show {anzahl} more (of {gesamt})",
   "tabelle.angelegt": "“{titel}” created.",
+  "tabelle.verborgen": "You can see {sichtbar} of {alle} {name}. You don’t have permission to see the rest.",
   "teile.teil-von": "Part of {mappe}",
   "teile.teil-von-verborgen": "Part of another folder you cannot see.",
   "teile.kommen-mit_one": "Its {anzahl} part goes with it. ",

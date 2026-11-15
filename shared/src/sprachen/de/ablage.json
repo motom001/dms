@@ -1353,6 +1353,7 @@
   "tabelle.nach-dem-speichern": "{name} kannst du nach dem Speichern anlegen – mit „{neu}“ unter der Tabelle.",
   "tabelle.weitere": "{anzahl} weitere anzeigen (von {gesamt})",
   "tabelle.angelegt": "„{titel}“ angelegt.",
+  "tabelle.verborgen": "Du siehst {sichtbar} von {alle} {name}. Die übrigen darfst du nicht sehen.",
   "teile.teil-von": "Teil von {mappe}",
   "teile.teil-von-verborgen": "Teil einer anderen Mappe, die du nicht sehen kannst.",
   "teile.kommen-mit_one": "Ihr {anzahl} Teil kommt mit. ",
