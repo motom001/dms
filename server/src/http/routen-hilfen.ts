@@ -21,7 +21,7 @@ import type { Prozessstand } from '../aufteilung';
 import { ARBEITER_MAX, arbeiterStand } from '../arbeit';
 import { VERBINDUNGEN_MAX, VERBINDUNGEN_MIN } from '../db';
 import { MAX_ANFRAGEN_MAX, MAX_ANFRAGEN_MIN } from '../ueberlast';
-import { engpaesseAus, VARIABLE, type Grenzwerte, type ProzessZeile } from '../../../shared/src/systemlast';
+import { engpaesseAus, VARIABLE, type Grenzwert, type Grenzwerte, type ProzessZeile } from '../../../shared/src/systemlast';
 import { MB } from '../grenzen';
 import type { Anfrage, Antwort, RoutenExtras } from '../routen';
 
@@ -70,6 +70,12 @@ function belegungVon(x: RoutenExtras) {
   return { belegung: { pool: b.max, belegt: b.belegt, reserviert: b.reserviert, wartend: b.wartend, sperren: b.sperren, ...(x.verbund?.mehrere ? { prozess: x.verbund.nr } : {}) } };
 }
 
+/** Grundlage von `auto` (#1259) für den Systemzustand: „automatisch: 6 Kerne, 16 GB → 2 Prozesse“. */
+function automatisch(pe: NonNullable<RoutenExtras['prozessEinstellung']>): Pick<Grenzwert, 'automatisch'> {
+  if (pe.quelle !== 'auto') return {};
+  return { automatisch: { kerne: pe.kerne, speicher: pe.speicher, herkunft: pe.herkunft ?? { kerne: 'rechner', speicher: 'rechner' }, begrenzt: pe.begrenzt ?? null, vorgabe: !!pe.autoVorgabe } };
+}
+
 /**
  * Systemzustand (#544): Arbeiter, Verbindungen zur Datenbank und Grenze des Überlastschutzes – nur zum Ansehen,
  * eingestellt per Umgebungsvariable – und die Engpässe, je mit der Variable, die man ändern müsste.
@@ -82,7 +88,7 @@ function grenzenUndEngpaesse(x: RoutenExtras) {
   const p = x.verbund?.mehrere ? { prozesse: x.verbund.anzahl } : {};
   const pe = x.prozessEinstellung;
   const grenzen: Grenzwerte = {
-    ...(pe ? { prozesse: { wert: x.verbund?.anzahl ?? pe.anzahl, quelle: pe.quelle, variable: VARIABLE.prozesse, min: 1, max: PROZESSE_MAX } } : {}),
+    ...(pe ? { prozesse: { wert: x.verbund?.anzahl ?? pe.anzahl, quelle: pe.quelle, variable: VARIABLE.prozesse, min: 1, max: PROZESSE_MAX, ...automatisch(pe) } } : {}),
     arbeiter: { wert: a.aus ? 0 : a.groesse, quelle: a.quelle, variable: VARIABLE.arbeiter, min: 0, max: ARBEITER_MAX, ...p },
     // #874: Verbindungen gelten für alle Prozesse zusammen – Wert ist die Summe, dazu die Anteile.
     ...(v ? { verbindungen: { wert: x.verbindungen?.aufteilung?.gesamt ?? v.max, quelle: v.quelle, variable: VARIABLE.verbindungen, min: VERBINDUNGEN_MIN, max: VERBINDUNGEN_MAX, ...(x.verbund?.mehrere && x.verbindungen?.aufteilung ? { aufteilung: { leiter: x.verbindungen.aufteilung.leiter, andere: x.verbindungen.aufteilung.andere, prozesse: x.verbund.anzahl } } : {}), ...belegungVon(x) } } : {}),

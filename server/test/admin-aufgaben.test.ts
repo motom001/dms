@@ -83,6 +83,44 @@ describe('Aufgaben ohne Empfänger an einen Alltags-Benutzer (#719, seit #818 oh
     await assert.rejects(d.ohneEmpfaenger.setzeAufgabenEmpfaenger({ benutzerId: lena.id }, A.id), status(422));
   });
 
+  it('#1256: Zahlen und Termine lesen nur die Personen der Vertretungskette, Abwesenheit wirkt sofort', async () => {
+    const repo = speicherRepo();
+    const d = new Dienst(repo, speicherDateien(), { einstellungen: speicherEinstellungen() });
+    const kr = speicherKontoRepo();
+    let liste = 0;
+    const gelesen: string[] = [];
+    const echteListe = kr.listeBenutzer.bind(kr);
+    const echteEine = kr.holeBenutzer.bind(kr);
+    kr.listeBenutzer = () => { liste++; return echteListe(); };
+    kr.holeBenutzer = (id) => { gelesen.push(id); return echteEine(id); };
+    const konten = new Konten(kr, null, 'http://nas', d.systemtypen.benutzerspiegel());
+    d.verbindeKonten(konten.papierkorbHaken());
+    const { benutzer: admin } = await konten.einrichten({ email: 'admin@example.org', name: 'Markus', passwort: 'ein-langes-passwort' });
+    const { benutzer: lena } = await konten.legeBenutzerAn({ email: 'lena@example.org', name: 'Lena' });
+    const { benutzer: jonas } = await konten.legeBenutzerAn({ email: 'jonas@example.org', name: 'Jonas' });
+    const A = { id: admin.id, rolle: 'admin' }, L = { id: lena.id, rolle: 'mitglied' }, J = { id: jonas.id, rolle: 'mitglied' };
+    await d.ohneEmpfaenger.setzeAufgabenEmpfaenger({ benutzerId: lena.id }, A.id);
+    const t = await d.mappentypen.legeTypAn({ name: 'Vorgang', felder: [{ key: 'nr', label: 'Nummer', typ: 'text', pflicht: true }] });
+    const m = await d.mappen.legeMappeAn({ typId: t.id, werte: { nr: '3' } }, A.id);
+    await repo.legeAufgabeAn({ id: randomUUID(), mappeId: m.id, empfaengerId: null, art: 'manuell', text: 'Bitte zuordnen', erstellt: new Date().toISOString(), erstelltVon: null, erledigt: null, erledigtVon: null });
+    await d.stand.erhoehe();
+    liste = 0; gelesen.length = 0;
+    assert.equal((await d.sichten.zaehler(L, await d.rechtepruefung.zugriff(L))).eingang, 1);
+    assert.equal((await d.sichten.zaehler(J, await d.rechtepruefung.zugriff(J))).eingang, 0);
+    await d.fristen.naechsterTermin(await d.rechtepruefung.zugriff(J));
+    assert.equal(liste, 0, 'keine Liste aller Personen');
+    assert.ok(gelesen.every((id) => id === lena.id), 'nur die gewählte Person');
+    // Lena geht in Abwesenheit mit Jonas als Vertreter: ab sofort zählt die Aufgabe bei Jonas – ohne Zwischenspeicher.
+    const ich = imModus((await konten.listeBenutzer()).find((b) => b.id === admin.id)!);
+    await konten.setzeAbwesenheit(ich, lena.id, { an: true, vertreterId: jonas.id });
+    gelesen.length = 0;
+    assert.equal((await d.sichten.zaehler(J, await d.rechtepruefung.zugriff(J))).eingang, 1, 'Vertreter sofort');
+    assert.equal((await d.sichten.zaehler(L, await d.rechtepruefung.zugriff(L))).eingang, 0);
+    assert.deepEqual([...new Set(gelesen)].sort(), [lena.id, jonas.id].sort(), 'nur Lena und ihr Vertreter');
+    await konten.setzeAbwesenheit(ich, lena.id, { an: false, vertreterId: jonas.id });
+    assert.equal((await d.sichten.zaehler(L, await d.rechtepruefung.zugriff(L))).eingang, 1, 'zurück: sofort wieder bei Lena');
+  });
+
   it('nach „niemand“ setzt ein neuer Benutzer keine Vorgabe mehr', async () => {
     const { d, konten, A } = await aufbau();
     await d.ohneEmpfaenger.setzeAufgabenEmpfaenger({ benutzerId: null }, A.id);

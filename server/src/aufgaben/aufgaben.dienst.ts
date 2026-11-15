@@ -34,6 +34,11 @@ export interface AufgabenTeile {
 /** Konten (#43, #78, #506), vom Start angebunden: alle Personen mit Abwesenheit, persönliche Einstellungen. */
 export interface AufgabenKonten {
   benutzer?(): Promise<Benutzer[]>;
+  /**
+   * Eine Person (#1256): nur Menschen, ohne letzte Aktivität – für Vertretung und Alltags-Empfänger, die nur wenige
+   * Personen brauchen. Ohne sie lesen beide die Liste aller Personen.
+   */
+  person?(id: string): Promise<Benutzer | undefined>;
   setzeEinstellung?(id: string, schluessel: string, wert: unknown): Promise<void>;
 }
 

@@ -215,7 +215,7 @@ export class SichtenDienst {
     const gesucht = suche ?? textfilter?.text;
     if (r.gesamt === 0 && gesucht && await this.unscharfAn()) {
       const begriffe = suchbegriffe(gesucht);
-      const aehnlich = begriffe ? await this.repo.aehnlicheWoerter(begriffe, 5) : {};
+      const aehnlich = begriffe ? await this.teile.suche.aehnlicheWoerter(begriffe, 5) : {};
       if (Object.keys(aehnlich).length) {
         const funde2 = await this.teilFunde(anfrage, typen, varianten, aehnlich);
         const r2 = await this.repo.seite({ ...anfrage, varianten, aehnlich, ...(funde2 ? { auchIds: [...funde2.keys()] } : {}) });
@@ -312,7 +312,7 @@ export class SichtenDienst {
   private async besserGeschrieben(anfrage: SeitenAnfrage, gesucht: string, gesamt: number): Promise<{ statt: string; vorschlag: string; begriffe: Record<string, string[]>; treffer: number } | null> {
     const begriffe = suchbegriffe(gesucht);
     if (!begriffe) return null;
-    const vorschlag = vorschlagAus(begriffe, await this.repo.aehnlicheWoerter(begriffe, 1));
+    const vorschlag = vorschlagAus(begriffe, await this.teile.suche.aehnlicheWoerter(begriffe, 1));
     if (!vorschlag) return null;
     const ohneTeile: SeitenAnfrage = { ...anfrage, auchIds: undefined };
     const probe: SeitenAnfrage = anfrage.suche ? { ...ohneTeile, suche: vorschlag } : { ...ohneTeile, textfilter: { ...anfrage.textfilter!, text: vorschlag } };

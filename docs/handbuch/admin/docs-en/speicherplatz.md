@@ -60,11 +60,11 @@ More workers only help if enough cores are free: with 2 cores it stays at one wo
 
 ### Settings and bottlenecks { #einstellungen-und-engpasse }
 
-Below the values is **Settings for many simultaneous requests** – only for viewing, with the current value and where it comes from (*default* or *from the environment*):
+Below the values is **Settings for many simultaneous requests** – only for viewing, with the current value and where it comes from (*default*, *from the environment* or *automatic* – for the processes with the cores and memory Ablago chose by, and whether they come from the container's limit):
 
 | Line | Variable | allowed | Default |
 | --- | --- | --- | --- |
-| Processes for requests | `DMS_PROZESSE` | 1–16 or `auto` | 1 |
+| Processes for requests | `DMS_PROZESSE` | 1–16 or `auto` | `dms-komplett`: automatic (2 from 4 cores and 8 GB), image `dms`: 1 |
 | Workers for PDF and exports | `DMS_ARBEITER` | 0–16 | half of the cores, 1 to 4 |
 | Database connections (all processes together) | `DMS_DB_VERBINDUNGEN` | 2–100 | 10, 4 more for each further process |
 | Simultaneous requests at most | `DMS_MAX_ANFRAGEN` | 20–10,000 | 250 |

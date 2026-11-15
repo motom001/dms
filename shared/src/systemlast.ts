@@ -81,6 +81,15 @@ export interface Grenzwert {
    * (Zeitpläne, Dauersperren) auf der eigenen Sperrverbindung.
    */
   belegung?: { pool: number; belegt: number; reserviert: number; wartend: number; sperren: string[]; prozess?: number };
+  /**
+   * Nur bei `prozesse` mit `quelle` 'auto' (#1259): Grundlage der Wahl – Kerne und Arbeitsspeicher (Bytes), je mit
+   * Herkunft (Grenze des Containers oder Rechner), was begrenzt hat, und ob es die Vorgabe von dms-komplett ist
+   * (DMS_PROZESSE nicht gesetzt).
+   */
+  automatisch?: {
+    kerne: number; speicher: number | null; herkunft: { kerne: 'container' | 'rechner'; speicher: 'container' | 'rechner' };
+    begrenzt: 'kerne' | 'speicher' | 'verbindungen' | 'hoechstens' | null; vorgabe: boolean;
+  };
 }
 export type Grenzwerte = Partial<Record<Einstellbar, Grenzwert>>;
 

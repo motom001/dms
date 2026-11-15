@@ -1,7 +1,8 @@
 /**
- * Mehrere Prozesse für Anfragen (#745): `DMS_PROZESSE` (Vorgabe 1 = wie bisher ein Prozess; `auto` = Kerne − 1,
- * höchstens 2 (#874), mit PostgreSQL im selben Container ebenfalls höchstens 2, und nur so viele, wie Arbeitsspeicher und Verbindungen
- * hergeben – {@link empfohleneProzesse}, #874).
+ * Mehrere Prozesse für Anfragen (#745): `DMS_PROZESSE` – eine feste Zahl gilt, wie sie ist; `auto` = 2 Prozesse, wenn
+ * der Container mindestens 4 Kerne und 8 GB Arbeitsspeicher darf, sonst 1 (#1259, {@link empfohleneProzesse}). Ohne
+ * `DMS_PROZESSE` gilt bei dms-komplett `auto` (#1259: „dann kann es über den Container beschränkt werden, wie viel man
+ * an Ressourcen freigibt“), beim Image `dms` mit eigener Datenbank weiter 1.
  *
  * Aufbau mit `node:cluster`:
  * - Der **Hauptprozess** ist schlank (lädt nur diese Datei): Er startet die Prozesse, startet einen abgestürzten neu,
@@ -24,38 +25,35 @@ import { Fachfehler } from './fehler';
 import { protokoll } from './protokoll';
 import { ausnahmeArt, Buendel, Protokollsammlung, rohAus, type Rohmeldung, type Sammelstand } from './protokollsammlung';
 import { dateiLeser, liesCgroup, type Leser } from './systemlast';
-import { HALDE_MIN_MB, MB, SPEICHER_JE_PROZESS, SPEICHER_RESERVE } from './grenzen';
+import { HALDE_MIN_MB, MB, SPEICHER_RESERVE, ZWEI_PROZESSE_SPEICHER_AB } from './grenzen';
 
 export const PROZESSE_MAX = 16;
 /**
  * Höchstens so viele nimmt `auto` (#874). Vorher 4: Auf dem NAS (#576) wurde mit 4 Prozessen nur der Median schneller –
  * mit PostgreSQL im selben Container wie in einem eigenen sank die Grenze der Stufe groß, der Arbeitsspeicher stieg auf
- * 3,5 GB (mit Speichern 5,8 GB). Bis eine Messung zeigt, dass mehr hilft, bleibt es bei 2.
+ * 3,5 GB (mit Speichern 5,8 GB). Mit 2 Prozessen (#1259, NAS mit 6 Threads und 16 GB): klein 697 statt 497 Anfragen je
+ * Sekunde, Belastungsgrenze 450 statt 250 gleichzeitig, zusammen knapp 3 GB. Ein dritter hülfe dort kaum.
  */
 export const PROZESSE_EMPFOHLEN_MAX = 2;
-/**
- * Mit PostgreSQL im selben Container (dms-komplett) nimmt `auto` höchstens so viele (#874): Auf dem NAS (Pentium Gold
- * 8505, #576) wurde mit 4 Prozessen nur der Median schneller, p95 nicht – Ablago und PostgreSQL teilen sich die Kerne.
- * Bis eine Messung zeigt, dass mehr hilft, bleibt es bei 2.
- */
-export const PROZESSE_MIT_DATENBANK_MAX = 2;
-/**
- * Richtwert Arbeitsspeicher je Prozess (#874) und Reserve für PostgreSQL, Dateizwischenspeicher und System. NAS (#576):
- * ein Prozess bis 1,3 GB, vier Prozesse bis 3,3 GB (mit Speichern 3,7 GB) – rund 1 GB je Prozess ist großzügig gerechnet.
- */
-export { SPEICHER_JE_PROZESS };
+/** Ab so vielen Kernen, die der Container darf, nimmt `auto` zwei Prozesse (#1259); Arbeitsspeicher: `ZWEI_PROZESSE_SPEICHER_AB`. */
+export const ZWEI_PROZESSE_KERNE_AB = 4;
+/** Reserve für PostgreSQL, Dateizwischenspeicher und System (#874) – Grundlage der Halde je Prozess. */
 export { SPEICHER_RESERVE };
 
 export interface ProzessEinstellung {
   anzahl: number;
+  /** `auto`: DMS_PROZESSE=auto oder – ohne DMS_PROZESSE – die Vorgabe von dms-komplett (dann `autoVorgabe`, #1259). */
   quelle: 'vorgabe' | 'umgebung' | 'auto';
+  autoVorgabe?: boolean;
   /** Nutzbare Kerne und Arbeitsspeicher (Grenze des Containers, sonst des Rechners) – Grundlage der Empfehlung. */
   kerne: number;
   speicher: number | null;
+  /** Woher Kerne und Arbeitsspeicher stammen (#1259): Grenze des Containers (cgroup) oder der ganze Rechner. */
+  herkunft?: { kerne: 'container' | 'rechner'; speicher: 'container' | 'rechner' };
   /** PostgreSQL im selben Container (dms-komplett)? */
   datenbankImContainer?: boolean;
-  /** Was `auto` begrenzt hat (für das Protokoll): Kerne, Speicher, Datenbank im Container, Verbindungen. */
-  begrenzt?: 'kerne' | 'speicher' | 'datenbank' | 'verbindungen' | 'hoechstens';
+  /** Was `auto` begrenzt hat (Protokoll, Systemzustand): Kerne, Speicher, Verbindungen oder die Höchstzahl. */
+  begrenzt?: 'kerne' | 'speicher' | 'verbindungen' | 'hoechstens';
   /** Ungültiger Wert von DMS_PROZESSE (dann gilt 1); den Hinweis schreibt der Leiter ins Protokoll. */
   ungueltig?: string;
 }
@@ -94,39 +92,57 @@ export function haldeLeiter(halde: number | null): number | null {
 export const prozesseFuerVerbindungen = (gesamt: number) => Math.max(1, 1 + Math.floor((gesamt - 6) / 2));
 
 /**
- * Empfehlung (`auto`, #874): Kerne − 1 (einer bleibt für PostgreSQL und das System), höchstens 2; mit PostgreSQL im
- * selben Container höchstens 2; nur so viele, wie Arbeitsspeicher (Reserve + je Prozess rund 1 GB) und Verbindungen
- * (wenn `DMS_DB_VERBINDUNGEN` gesetzt ist) hergeben.
+ * Empfehlung (`auto`, #874, seit #1259): 2 Prozesse, wenn mindestens 4 Kerne und 8 GB Arbeitsspeicher da sind, sonst 1
+ * (Raspberry Pi, kleine NAS) – mit oder ohne PostgreSQL im selben Container. Dazu müssen die Verbindungen reichen (wenn
+ * `DMS_DB_VERBINDUNGEN` gesetzt ist). Bis #1259: Kerne − 1 und je Prozess rund 1 GB, höchstens 2.
  */
-export function empfohleneProzesse(kerne: number, speicher: number | null, o: { datenbankImContainer?: boolean; verbindungen?: number | null } = {}): { anzahl: number; begrenzt: NonNullable<ProzessEinstellung['begrenzt']> } {
+export function empfohleneProzesse(kerne: number, speicher: number | null, o: { verbindungen?: number | null } = {}): { anzahl: number; begrenzt: NonNullable<ProzessEinstellung['begrenzt']> } {
   const grenzen: Array<[number, NonNullable<ProzessEinstellung['begrenzt']>]> = [
-    [Math.floor(kerne) - 1, 'kerne'],
     [PROZESSE_EMPFOHLEN_MAX, 'hoechstens'],
-    ...(o.datenbankImContainer ? [[PROZESSE_MIT_DATENBANK_MAX, 'datenbank'] as [number, 'datenbank']] : []),
-    ...(speicher !== null ? [[Math.floor((speicher - SPEICHER_RESERVE) / SPEICHER_JE_PROZESS), 'speicher'] as [number, 'speicher']] : []),
+    [kerne >= ZWEI_PROZESSE_KERNE_AB ? PROZESSE_EMPFOHLEN_MAX : 1, 'kerne'],
+    ...(speicher !== null ? [[speicher >= ZWEI_PROZESSE_SPEICHER_AB ? PROZESSE_EMPFOHLEN_MAX : 1, 'speicher'] as [number, 'speicher']] : []),
     ...(o.verbindungen ? [[prozesseFuerVerbindungen(o.verbindungen), 'verbindungen'] as [number, 'verbindungen']] : []),
   ];
   const [n, begrenzt] = grenzen.reduce((a, b) => (b[0] < a[0] ? b : a));
   return { anzahl: Math.max(1, n), begrenzt };
 }
 
-export function prozesseAus(env: Record<string, string | undefined>, lies: Leser = dateiLeser): ProzessEinstellung {
+/** Kerne und Arbeitsspeicher des Rechners (Tests geben sie vor). */
+export interface Rechner { kerne: number; speicher: number }
+const DIESER_RECHNER = (): Rechner => ({ kerne: availableParallelism(), speicher: totalmem() });
+
+/**
+ * Was der Container darf (#1259): cgroup v2 (`cpu.max`, `memory.max`), sonst v1 – höchstens so viel, wie der Rechner
+ * hat. `availableParallelism` kennt schon die zugeteilten Kerne (`--cpuset-cpus`), nicht aber eine Quote (`--cpus`).
+ */
+export function nutzbar(lies: Leser = dateiLeser, r: Rechner = DIESER_RECHNER()): Pick<ProzessEinstellung, 'kerne' | 'speicher'> & { herkunft: NonNullable<ProzessEinstellung['herkunft']> } {
   const c = liesCgroup(lies);
-  const kerne = Math.max(1, Math.round((c.kerne ?? availableParallelism()) * 100) / 100);
-  const speicher = c.grenze ?? totalmem();
+  const kerneC = c.kerne !== null && c.kerne < r.kerne;
+  const speicherC = c.grenze !== null && c.grenze < r.speicher;
+  return {
+    kerne: Math.max(1, Math.round((kerneC ? c.kerne! : r.kerne) * 100) / 100),
+    speicher: speicherC ? c.grenze : r.speicher,
+    herkunft: { kerne: kerneC ? 'container' : 'rechner', speicher: speicherC ? 'container' : 'rechner' },
+  };
+}
+
+export function prozesseAus(env: Record<string, string | undefined>, lies: Leser = dateiLeser, rechner?: Rechner): ProzessEinstellung {
+  const { kerne, speicher, herkunft } = nutzbar(lies, rechner);
   const datenbankImContainer = env.DMS_VARIANTE === 'komplett';
   const roh = env.DMS_PROZESSE?.trim();
-  if (!roh) return { anzahl: 1, quelle: 'vorgabe', kerne, speicher, datenbankImContainer };
-  if (roh.toLowerCase() === 'auto') {
+  const auto = (autoVorgabe: boolean): ProzessEinstellung => {
     const v = Number(env.DMS_DB_VERBINDUNGEN?.trim());
     const verbindungen = Number.isInteger(v) && v >= 2 && v <= 100 ? v : null;
-    return { ...empfohleneProzesse(kerne, speicher, { datenbankImContainer, verbindungen }), quelle: 'auto', kerne, speicher, datenbankImContainer };
-  }
+    return { ...empfohleneProzesse(kerne, speicher, { verbindungen }), quelle: 'auto', ...(autoVorgabe ? { autoVorgabe } : {}), kerne, speicher, herkunft, datenbankImContainer };
+  };
+  // Ohne DMS_PROZESSE (#1259): dms-komplett automatisch, das Image `dms` (eigene Datenbank) wie bisher mit einem.
+  if (!roh) return datenbankImContainer ? auto(true) : { anzahl: 1, quelle: 'vorgabe', kerne, speicher, herkunft, datenbankImContainer };
+  if (roh.toLowerCase() === 'auto') return auto(false);
   const n = Number(roh);
   if (!Number.isInteger(n) || n < 1 || n > PROZESSE_MAX) {
-    return { anzahl: 1, quelle: 'vorgabe', kerne, speicher, datenbankImContainer, ungueltig: roh };
+    return { anzahl: 1, quelle: 'vorgabe', kerne, speicher, herkunft, datenbankImContainer, ungueltig: roh };
   }
-  return { anzahl: n, quelle: 'umgebung', kerne, speicher, datenbankImContainer };
+  return { anzahl: n, quelle: 'umgebung', kerne, speicher, herkunft, datenbankImContainer };
 }
 
 /** Ein Prozess von Ablago, wie der Hauptprozess ihn kennt. */
@@ -531,7 +547,7 @@ export function leite(e: ProzessEinstellung): Promise<never> {
   process.on('SIGTERM', () => beendeAlle(0));
   process.on('SIGINT', () => beendeAlle(0));
 
-  log.info(`Ablago startet mit ${e.anzahl} Prozessen (DMS_PROZESSE${e.quelle === 'auto' ? '=auto' : ''}): Prozess 1 leitet und erledigt die Arbeit im Hintergrund, alle beantworten Anfragen`, { kerne: e.kerne, ...(e.quelle === 'auto' ? { begrenzt: e.begrenzt } : {}), ...(halde ? { haldeLeiterMb: leiterHalde, haldeMb: halde } : {}) });
+  log.info(`Ablago startet mit ${e.anzahl} Prozessen (${e.autoVorgabe ? 'automatisch, Vorgabe von dms-komplett' : `DMS_PROZESSE${e.quelle === 'auto' ? '=auto' : ''}`}): Prozess 1 leitet und erledigt die Arbeit im Hintergrund, alle beantworten Anfragen`, { kerne: e.kerne, speicherMb: e.speicher === null ? null : Math.round(e.speicher / MB), herkunft: e.herkunft, ...(e.quelle === 'auto' ? { begrenzt: e.begrenzt } : {}), ...(halde ? { haldeLeiterMb: leiterHalde, haldeMb: halde } : {}) });
   starte(1);
   return new Promise<never>(() => {});
 }

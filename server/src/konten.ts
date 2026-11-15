@@ -1010,6 +1010,8 @@ export class Konten {
         if (b && !b.aktiv && !b.hatPasswort && !b.letzteAnmeldung) await this.repo.loescheBenutzer(id);
       },
       benutzer: () => this.repo.listeBenutzer(),
+      // Eine Person ohne die Liste aller (#1256): Vertretung und Alltags-Empfänger je Anfrage.
+      person: (id: string) => this.person(id),
       // Testlauf der Rechte (#710): auch Systemkonten und Dienstkonten der Pakete.
       ohneMensch: async () => [...await this.repo.listeSystemkonten(), ...await this.repo.listeDienstkonten()],
       dienstkonten: () => this.repo.listeDienstkonten(),

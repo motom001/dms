@@ -35,7 +35,7 @@ export class OhneEmpfaenger {
   private get stand() { return this.kern.stand; }
   private kannLesen(benutzerId: string, mappeId: string) { return this.teile.rechte.kannLesen(benutzerId, mappeId); }
   private persoenlichAn(benutzerId: string, schluessel: string) { return this.teile.mappen.persoenlichAn(benutzerId, schluessel); }
-  private empfaengerAufloesen(id: string | null) { return this.teile.vertretung.empfaengerAufloesen(id); }
+  private empfaengerAufloesen(id: string | null, lies?: (id: string) => Promise<Benutzer | undefined>) { return this.teile.vertretung.empfaengerAufloesen(id, lies); }
   private benachrichtigeGebuendelt(...a: Parameters<AufgabenVertretung['benachrichtigeGebuendelt']>) { return this.teile.vertretung.benachrichtigeGebuendelt(...a); }
   /** Regeln aus den Automatisierungen (#1001); ohne Motor: für alle, Vorgabe an. */
   private async favoritenRegeln(): Promise<Array<{ rollen: string[]; vorgabe: boolean }>> {
@@ -64,11 +64,12 @@ export class OhneEmpfaenger {
     const e = (await this.einstellungen?.lies('aufgaben_empfaenger')) as { benutzer?: unknown } | null;
     const gespeichert = typeof e?.benutzer === 'string' ? e.benutzer : null;
     if (!gespeichert) return { benutzerId: null, wirksam: null, gesetzt: !!e, gespeichert: null };
-    const alle = (await this.konten?.benutzer?.()) ?? [];
-    const b = alle.find((x) => x.id === gespeichert);
+    // Nur die Personen der Vertretungskette (#1256), nicht die Liste aller Personen – je Anfrage einmal (siehe oben).
+    const lies = this.teile.vertretung.personenLeser();
+    const b = lies ? await lies(gespeichert) : undefined;
     // Abwesend oder deaktiviert: wie jede Aufgabe beim Vertreter (#78) – sofern er sie bekommen darf.
-    const { ziel } = b ? await this.empfaengerAufloesen(b.id) : { ziel: null };
-    const z = alle.find((x) => x.id === ziel);
+    const { ziel } = b ? await this.empfaengerAufloesen(b.id, lies) : { ziel: null };
+    const z = ziel && lies ? await lies(ziel) : undefined;
     return { benutzerId: b && taugtAlsAufgabenEmpfaenger(b) ? b.id : null, wirksam: z && taugtAlsAufgabenEmpfaenger(z) ? z.id : null, gesetzt: true, gespeichert };
   }
 
