@@ -333,12 +333,7 @@ export class Anmeldesperre {
       log.warn('Anmeldung gesperrt (Konto und IP)', { email, ip: a, versuche: n, minuten: this.e.konto.minuten });
       if (bekannt) await this.kontoGesperrt(email, a, n);
     }
-    // Bremse je Konto (#1295): einmal melden, wenn die Grenze erreicht ist.
-    const g = v ? v.gesamt ?? 0 : email ? (await this.zustand.zaehle(KONTO_GESAMT_ART, email, KONTO_GESAMT.minuten * MIN)).anzahl : 0;
-    if (g === KONTO_GESAMT.versuche) {
-      log.warn('Anmeldung für ein Konto gebremst (Fehlversuche von mehreren Adressen)', { email, versuche: g, minuten: KONTO_GESAMT.minuten });
-      if (bekannt) await this.kontoGesperrt(email, a, g);
-    }
+    await this.kontoBremse(email, a, bekannt, v);
     // Je IP über alle Adressen; das Zählfenster ist die Sperrdauer (bei „dauerhaft“ eine Stunde), festes Fenster.
     const fenster = (this.e.ip.minuten || 60) * MIN;
     const m = v ? v.ip : (await this.zustand.zaehle(IP_ZAEHLER, a, fenster)).anzahl;
@@ -349,6 +344,15 @@ export class Anmeldesperre {
     await this.zustand.loesche(IP_ZAEHLER, a);
     log.warn('IP-Adresse gesperrt', { ip: a, versuche: m, bis: this.e.ip.minuten ? new Date(zahl + this.e.ip.minuten * MIN).toISOString() : 'bis entsperrt' });
     await this.vormerken({ art: 'ip', wer: a, versuche: m });
+  }
+
+  /** Bremse je Konto (#1295): mitzählen (falls nicht schon mit `versuch`) und einmal melden, wenn die Grenze erreicht ist. */
+  private async kontoBremse(email: string, a: string, bekannt: boolean, v?: Versuch) {
+    if (!email) return;
+    const g = v ? v.gesamt ?? 0 : (await this.zustand.zaehle(KONTO_GESAMT_ART, email, KONTO_GESAMT.minuten * MIN)).anzahl;
+    if (g !== KONTO_GESAMT.versuche) return;
+    log.warn('Anmeldung für ein Konto gebremst (Fehlversuche von mehreren Adressen)', { email, versuche: g, minuten: KONTO_GESAMT.minuten });
+    if (bekannt) await this.kontoGesperrt(email, a, g);
   }
 
   /** Ein bestehendes Konto wurde gesperrt: vormerken und – falls gewünscht – sofort melden, je Konto höchstens einmal am Tag. */
