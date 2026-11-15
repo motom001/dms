@@ -127,9 +127,9 @@ class SchluesselFehlt extends Fachfehler { constructor() { super(401, t('meldung
 
 /** E-Mail, Name und Gruppen aus den Claims (Entra liefert die Adresse oft nur als preferred_username). */
 export function identitaetAus(claims: Record<string, unknown>, gruppenClaim: string): AnbieterIdentitaet {
-  if (claims.email_verified === false) throw new Fachfehler(403, t('meldungen.oidc.der-anbieter-hat-die'));
+  if (claims.email_verified === false) throw new Fachfehler(403, t('meldungen.oidc.der-anbieter-hat-die'), { anmeldefehler: 'email-fehlt' });
   const kandidat = [claims.email, claims.preferred_username, claims.upn].find((x) => typeof x === 'string' && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(x));
-  if (!kandidat) throw new Fachfehler(403, t('meldungen.oidc.der-anbieter-liefert-keine'));
+  if (!kandidat) throw new Fachfehler(403, t('meldungen.oidc.der-anbieter-liefert-keine'), { anmeldefehler: 'email-fehlt' });
   const roh = claims[gruppenClaim || 'groups'];
   const gruppen = Array.isArray(roh) ? roh.map(String) : typeof roh === 'string' ? [roh] : [];
   const name = [claims.name, [claims.given_name, claims.family_name].filter(Boolean).join(' ')].find((x) => typeof x === 'string' && x.trim()) as string | undefined;
@@ -277,10 +277,10 @@ export class Oidc {
     const x = q.state ? await this.zustand.nimm(OFFEN, hashe(q.state)) : null;
     const klar = typeof x?.wert === 'string' ? this.deps.entschluessele(x.wert) : null;
     const o = klar ? JSON.parse(klar) as Offen : null;
-    if (!o) throw new Fachfehler(400, t('meldungen.oidc.die-anmeldung-ist-abgelaufen'));
-    if (!bindung || bindung !== o.bindung) throw new Fachfehler(400, t('meldungen.oidc.die-anmeldung-wurde-in'));
-    if (q.error) throw new Fachfehler(401, t('meldungen.oidc.der-anbieter-hat-die-2', { wert: String(q.error_description || q.error).slice(0, 300) }));
-    if (!q.code) throw new Fachfehler(400, t('meldungen.oidc.der-anbieter-hat-keinen'));
+    if (!o) throw new Fachfehler(400, t('meldungen.oidc.die-anmeldung-ist-abgelaufen'), { anmeldefehler: 'abgelaufen' });
+    if (!bindung || bindung !== o.bindung) throw new Fachfehler(400, t('meldungen.oidc.die-anmeldung-wurde-in'), { anmeldefehler: 'anderer-browser' });
+    if (q.error) throw new Fachfehler(401, t('meldungen.oidc.der-anbieter-hat-die-2', { wert: String(q.error_description || q.error).slice(0, 300) }), { anmeldefehler: 'abgelehnt' });
+    if (!q.code) throw new Fachfehler(400, t('meldungen.oidc.der-anbieter-hat-keinen'), { anmeldefehler: 'abgelehnt' });
     const d = await this.discovery(e.aussteller);
     const secret = e.clientSecret ? this.deps.entschluessele(e.clientSecret) : '';
     if (e.clientSecret && secret === null) throw new Fachfehler(500, t('meldungen.oidc.das-client-secret-ist'));

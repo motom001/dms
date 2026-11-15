@@ -168,7 +168,7 @@ Dann klickst du auf **Verbindung prüfen**. Danach den Schalter **Anmeldung übe
 - **Beim Abmelden auch beim Anbieter abmelden:** Wer sich über den Anbieter angemeldet hat, wird beim Abmelden auch dort abgemeldet (wenn der Anbieter das anbietet).
 - Eine eingerichtete [Zwei-Faktor-Anmeldung](#zwei-faktor-anmeldung) von Ablago gilt auch hier. Verlangt schon der Anbieter einen zweiten Faktor, schreibe sie in Ablago für diese Rollen nicht zusätzlich vor.
 
-Jede Anmeldung, Ablehnung und angelegter Benutzer steht im [Protokoll](fehlersuche.md#protokoll). Schlägt eine Anmeldung fehl, zeigt die Anmeldeseite den Grund.
+Jede Anmeldung, Ablehnung und angelegter Benutzer steht im [Protokoll](fehlersuche.md#protokoll). Schlägt eine Anmeldung fehl, zeigt die Anmeldeseite den Grund als festen Satz von Ablago (z. B. „Der Anbieter für die Anmeldung ist gerade nicht erreichbar“ oder „Für dieses Konto beim Anbieter gibt es in Ablago keinen Zugang“); die Einzelheiten, etwa die Meldung des Anbieters, stehen nur im Protokoll. In der Adresse steht dabei nur ein kurzer Code, nie ein Text – so lässt sich kein Link bauen, der auf der echten Anmeldeseite einen fremden Satz zeigt.
 
 !!! tip "Im eigenen Netz"
     Läuft der Anbieter im Heimnetz (z. B. Keycloak auf dem NAS), geht auch `http://` – aber nur für Adressen im eigenen Netz. Ablago muss den Anbieter selbst erreichen können.

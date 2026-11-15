@@ -224,7 +224,7 @@ export class Konten {
     const gruppeAdmin = e.adminGruppe ? id.gruppen.includes(e.adminGruppe) : null;
     let b = (await this.repo.holeHash(id.email))?.benutzer;
     if (!b) {
-      if (!e.anlegen) throw new Fachfehler(403, t('anmeldung.fehler.anbieter.unbekannt', { email: id.email }));
+      if (!e.anlegen) throw new Fachfehler(403, t('anmeldung.fehler.anbieter.unbekannt', { email: id.email }), { anmeldefehler: 'kein-konto' });
       const gesamt = gruppeAdmin ?? e.standardrolle === 'admin';
       b = await this.repo.legeBenutzerAn({ id: randomUUID(), email: id.email, name: id.name || id.email, verwaltung: gesamt ? [GESAMT] : [], passwortHash: null });
       await this.spiegle(b, b.id);
@@ -239,7 +239,7 @@ export class Konten {
         b = r.benutzer;
       }
     }
-    if (!b.aktiv) throw new Fachfehler(403, t('anmeldung.fehler.deaktiviert'));
+    if (!b.aktiv) throw new Fachfehler(403, t('anmeldung.fehler.deaktiviert'), { anmeldefehler: 'deaktiviert' });
     return this.nachErstemFaktor(b, g);
   }
 

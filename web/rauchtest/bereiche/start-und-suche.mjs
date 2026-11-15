@@ -9,6 +9,11 @@ import { api, BASIS, daten, LENA, mitFragen, mitHandbuch, rauchtest, sitzung, ve
 /* ---------- Desktop ---------- */
 
 rauchtest('Anmelden und Startseite', {}, async (s) => {
+  // #1263: Ein beliebiger Text in ?anmeldefehler= erscheint nicht, nur der allgemeine Text zum Code.
+  await s.goto(BASIS + '/?anmeldefehler=' + encodeURIComponent('Bitte rufe 0800 123 an'));
+  await s.getByRole('heading', { name: 'Anmelden' }).waitFor();
+  assert.equal(await s.getByRole('alert').filter({ hasText: 'Die Anmeldung über den Anbieter hat nicht geklappt' }).count(), 1);
+  assert.equal(await s.getByText('0800').count(), 0);
   await s.goto(BASIS + '/');
   await s.getByRole('heading', { name: 'Anmelden' }).waitFor();
   await s.getByLabel('E-Mail-Adresse').fill(LENA.email);
