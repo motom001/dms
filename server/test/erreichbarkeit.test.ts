@@ -132,6 +132,27 @@ test('standKennung (#122): kurzer Hash, ändert sich mit dem Commit', async () =
   } finally { if (alt === undefined) delete process.env.DMS_COMMIT; else process.env.DMS_COMMIT = alt; }
 });
 
+test('standKennung (#1067): mit Zufallswert der Installation – von außen nicht der Version zuzuordnen, für alle Prozesse gleich', async () => {
+  const { standKennung, setzeStandSalz } = await import('../src/system');
+  const { mkdtemp, readFile, rm } = await import('node:fs/promises');
+  const { tmpdir } = await import('node:os');
+  const { join } = await import('node:path');
+  const a = await mkdtemp(join(tmpdir(), 'dms-stand-'));
+  const b = await mkdtemp(join(tmpdir(), 'dms-stand-'));
+  try {
+    setzeStandSalz(a);
+    const erste = standKennung();
+    assert.match(erste, /^[0-9a-f]{12}$/);
+    assert.match(await readFile(join(a, 'stand-salz'), 'utf8'), /^[0-9a-f]{32}$/);
+    // Zweiter Prozess mit demselben Ordner: dieselbe Kennung.
+    setzeStandSalz(a);
+    assert.equal(standKennung(), erste);
+    // Andere Installation, gleiche Version: andere Kennung.
+    setzeStandSalz(b);
+    assert.notEqual(standKennung(), erste);
+  } finally { await rm(a, { recursive: true, force: true }); await rm(b, { recursive: true, force: true }); }
+});
+
 test('Datenbank antwortet nicht (#1198): „beschäftigt“ statt „wieder erreichbar“, erst mit Datenbank zurück', async () => {
   const { e, server, warte, wieder } = aufbau();
   await e.pruefe();

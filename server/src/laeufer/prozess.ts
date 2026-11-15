@@ -175,8 +175,37 @@ export function netzErlaubt(url: string, erlaubt: string[], adressen: string[] =
   let u: URL;
   try { u = new URL(url); } catch { return false; }
   if (u.username || u.password) return false;
+  // Kodierte Schrägstriche (#613): `/v1/..%2Fadmin` läge für die Prüfung unter `/v1/`, ein Dienst, der `%2F` vor dem
+  // Auflösen der Pfadteile entschlüsselt, landet aber bei `/admin`. Solche Pfade braucht kein Paket.
+  if (/%2f|%5c/i.test(u.pathname)) return false;
   if (u.protocol === 'https:' && erlaubt.some((e) => unter(u, e))) return true;
   return (u.protocol === 'https:' || u.protocol === 'http:') && adressen.some((e) => unter(u, e));
+}
+
+/**
+ * Antwort höchstens bis `max` Bytes lesen (#613): Stück für Stück statt `arrayBuffer()`, damit eine zu große Antwort
+ * nicht erst ganz im Speicher des Läufers landet. Zu groß (laut Content-Length oder beim Lesen) → null, die Verbindung
+ * wird abgebrochen.
+ */
+export async function liesBegrenzt(r: Response, max: number, abbrechen: () => void, stueck?: (b: Uint8Array) => void): Promise<Uint8Array | null> {
+  const laenge = Number(r.headers.get('content-length'));
+  if (Number.isFinite(laenge) && laenge > max) { abbrechen(); return null; }
+  if (!r.body) return new Uint8Array(0);
+  const leser = r.body.getReader();
+  const teile: Uint8Array[] = [];
+  let gelesen = 0;
+  for (;;) {
+    const { done, value } = await leser.read();
+    if (done) break;
+    gelesen += value.length;
+    if (gelesen > max) { abbrechen(); await leser.cancel().catch(() => {}); return null; }
+    stueck?.(value);
+    teile.push(value);
+  }
+  const buf = new Uint8Array(gelesen);
+  let pos = 0;
+  for (const t of teile) { buf.set(t, pos); pos += t.length; }
+  return buf;
 }
 
 /** Eine mit netz_strom geöffnete Antwort (#444): wird Stück für Stück gelesen, je Aufruf höchstens eine. */
@@ -215,12 +244,10 @@ async function netz(g: Geladen, json: string, body: Uint8Array | undefined, stro
       strom.setze({ leser: r.body.getReader(), gelesen: 0, ende, eintrag, messung: mu });
       return { status: r.status, body: new Uint8Array(0) };
     }
-    const buf = new Uint8Array(await r.arrayBuffer());
+    const buf = await liesBegrenzt(r, NETZ_MAX, () => ende.abort(), (b) => { eintrag.zurueck += b.length; mu.stueck(b); });
     clearTimeout(uhr);
-    eintrag.zurueck += buf.length;
-    mu.stueck(buf);
+    if (!buf) { mu.ende('fehler'); return fehlerAntwort(-3, t('meldungen.prozess.antwort-zu-gross')); }
     mu.ende('ok');
-    if (buf.length > NETZ_MAX) return fehlerAntwort(-3, t('meldungen.prozess.antwort-zu-gross'));
     return { status: r.status, body: buf };
   } catch (e) { clearTimeout(uhr); mu.ende(fehlerArt(e)); return fehlerAntwort(-4, `Netzfehler: ${(e as Error).message}`); }
 }

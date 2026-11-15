@@ -84,7 +84,7 @@ import { merkeVersion, Nachweisjournal, pgJournal, setzeNachweisjournal } from '
 import { protokolliereKennungsUmzug } from './mappentypen/index';
 import { istUuid } from './repo';
 import { Sicherung } from './sicherung';
-import { eigeneVersion } from './system';
+import { eigeneVersion, setzeStandSalz } from './system';
 import { Wiederherstellung } from './wiederherstellung';
 import { heuteIn } from '../../shared/src/sichten';
 import { VARIABLEN_GRUND } from '../../shared/src/umgebungsvariablen';
@@ -122,6 +122,8 @@ const log = protokoll.modul('system');
 // Feste Ordner (#115): nur über die Volumes der Compose-Datei zugeordnet.
 const ordnerPruefung = pruefeOrdner(env, pfad('../../data'));
 const { ordner } = ordnerPruefung;
+// Kennung des Stands ohne erkennbare Version (#1067): Zufallswert der Installation, vor jedem Startmodus.
+setzeStandSalz(ordner.geheim);
 const version = env.DMS_VERSION ?? 'Entwicklung';
 // Mehrere Prozesse (#745): Rolle dieses Prozesses. Mit einem Prozess (Vorgabe) ist er Leiter und erledigt alles selbst.
 const prozessEinstellung = prozesseAus(env);
