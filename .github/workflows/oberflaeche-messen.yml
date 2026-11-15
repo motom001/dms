@@ -1,0 +1,127 @@
+name: Oberfläche messen
+
+# Oberfläche messen (#1276): die häufigsten Abläufe in Chromium bedienen und je Schritt messen, was man am Bildschirm
+# spürt – Zeit bis bedienbar, INP, lange Aufgaben; normal und mit 4× gedrosselter CPU. Vergleich mit dem letzten Lauf
+# (aus dem Cache): Verschlechterung über +20 % und mindestens +100 ms (Median) macht den Lauf rot, ebenso eine CI-Grenze
+# (erst nach dem ersten Lauf: erster Lauf + 20 %) oder ein Schritt, der nicht fertig wird. Ziele (bedienbar unter 1 s,
+# INP unter 200 ms) stehen im Bericht.
+# Getrennt vom Lasttest und nicht im Image (Thomas in #1276): Browser und Server teilen sich hier zwar den Rechner, aber
+# nicht mit dem Lasttest. Wöchentlich und von Hand. Beschreibung: Entwicklerhandbuch → Leistung → Oberfläche messen.
+
+on:
+  workflow_dispatch:
+    inputs:
+      runden:
+        description: 'Gezählte Runden je Ablauf und Drossel (dazu eine zum Aufwärmen)'
+        required: false
+        default: '5'
+        type: string
+      nur:
+        description: 'Nur diese Abläufe (Ids mit Komma, leer = alle), z. B. post-zuordnen,suche'
+        required: false
+        default: ''
+        type: string
+  schedule:
+    - cron: '17 3 * * 4'
+
+# Grundsätzlich nur lesen (#221).
+permissions:
+  contents: read
+
+concurrency:
+  group: oberflaeche-messen
+  cancel-in-progress: false
+
+jobs:
+  messen:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: dms
+          POSTGRES_PASSWORD: dms
+          POSTGRES_DB: dmsmessung
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U dms -d dmsmessung"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DMS_URL: http://127.0.0.1:3100
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+      - run: npm ci --no-audit --no-fund
+      # Dieselben Werkzeuge wie im Image (Text der PDFs, Seitenbilder). Erst ohne „apt-get update“ (#905).
+      - name: Werkzeuge installieren
+        run: sudo apt-get install -y -qq poppler-utils qpdf >/dev/null || { sudo apt-get update -qq && sudo apt-get install -y -qq poppler-utils qpdf >/dev/null; }
+      # Produktivbau (ohne Musterseite), wie im Image.
+      - name: Ablago bauen
+        run: npm run build
+      - name: Ablago starten
+        run: |
+          mkdir -p "$RUNNER_TEMP/daten"
+          cd server
+          NODE_ENV=production DMS_DATENWURZEL="$RUNNER_TEMP/daten" DMS_EINRICHTUNGSCODE=aus \
+            DATABASE_URL=postgres://dms:dms@127.0.0.1:5432/dmsmessung PORT=3100 HOST=127.0.0.1 LOG_LEVEL=warn \
+            nohup node --enable-source-maps dist/index.js > "$RUNNER_TEMP/dms.log" 2>&1 &
+          timeout 120 bash -c 'until curl -sf http://127.0.0.1:3100/api/gesundheit >/dev/null; do sleep 1; done'
+      # Dieselbe feste Playwright-Version wie die Rauchtests (#289), Browser aus dem Zwischenspeicher (#1059).
+      - name: Browser aus dem Zwischenspeicher
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-1.64.1-${{ runner.os }}-${{ runner.arch }}-chromium
+      - name: Playwright installieren
+        working-directory: web/rauchtest
+        shell: bash
+        run: |
+          npm install --no-audit --no-fund --no-save playwright@1.64.1
+          timeout 300 npx playwright install chromium || timeout 300 npx playwright install chromium
+          node -e "const { chromium } = require('playwright'); chromium.launch().then((b) => b.close())" || timeout 480 npx playwright install-deps chromium
+      - name: Testdaten anlegen
+        run: node web/rauchtest/messen/oberflaeche.mjs --einrichten --mappen 5000
+      - name: Letzten Lauf holen
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/vorher
+          key: oberflaeche-messen-${{ github.run_id }}
+          restore-keys: oberflaeche-messen-
+      - name: Messen
+        # Eingaben nur über Umgebungsvariablen und geprüft (Schutz vor Einschleusen).
+        env:
+          RUNDEN: ${{ inputs.runden || '5' }}
+          NUR: ${{ inputs.nur || '' }}
+        shell: bash
+        run: |
+          [[ "$RUNDEN" =~ ^[1-9][0-9]?$ ]] || { echo "::error::Runden: 1 bis 99"; exit 1; }
+          [[ "$NUR" =~ ^[a-z,-]*$ ]] || { echo "::error::Abläufe: nur Ids mit Komma"; exit 1; }
+          node web/rauchtest/messen/oberflaeche.mjs --runden "$RUNDEN" ${NUR:+--nur "$NUR"} --geraet "GitHub-Rechner (ubuntu-latest, $(nproc) Kerne)" \
+            --vorher "$RUNNER_TEMP/vorher/oberflaeche.json" --json "$RUNNER_TEMP/oberflaeche.json" --bericht "$RUNNER_TEMP/bericht.md" --grenzen
+      # Nur ein grüner, vollständiger Lauf wird zum Vergleich für den nächsten – ein langsamer bleibt nicht der Maßstab.
+      - name: Ergebnis für den nächsten Lauf merken
+        if: success() && inputs.nur == ''
+        run: mkdir -p "$RUNNER_TEMP/vorher" && cp "$RUNNER_TEMP/oberflaeche.json" "$RUNNER_TEMP/vorher/oberflaeche.json"
+      - name: Ergebnis speichern
+        if: success() && inputs.nur == ''
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/vorher
+          key: oberflaeche-messen-${{ github.run_id }}
+      - name: Bericht am Lauf
+        if: always()
+        run: |
+          if [ -f "$RUNNER_TEMP/bericht.md" ]; then cat "$RUNNER_TEMP/bericht.md" >> "$GITHUB_STEP_SUMMARY"; else echo "Kein Bericht – siehe Protokoll des Schritts „Messen“." >> "$GITHUB_STEP_SUMMARY"; fi
+      - name: Ergebnisse aufheben
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: oberflaeche-messen
+          path: |
+            ${{ runner.temp }}/bericht.md
+            ${{ runner.temp }}/oberflaeche.json
+            ${{ runner.temp }}/dms.log
+          retention-days: 30

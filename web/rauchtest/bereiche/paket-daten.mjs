@@ -7,7 +7,7 @@
  */
 import assert from 'node:assert/strict';
 import '../einrichtung.mjs';
-import { api, BASIS, LENA, rauchtest, sitzung, verwalten, WERKBANK_BEREICHE } from '../hilfen.mjs';
+import { api, BASIS, LENA, rauchtest, schemaWechseln, sitzung, verwalten, WERKBANK_BEREICHE } from '../hilfen.mjs';
 import { axePruefen, tippflaechenPruefen } from '../muster.mjs';
 
 const LAEUFER = { sprache: 'c', ereignisse: [], netz: [], modul: { sha256: '0'.repeat(64), groesse: 1 },
@@ -83,7 +83,7 @@ rauchtest('Paketseite mit Einrichtung und Nachweisen: axe ohne Verstoß, hell un
   await attrappe(s);
   const funde = [];
   for (const schema of ['light', 'dark']) {
-    await s.emulateMedia({ colorScheme: schema });
+    await schemaWechseln(s, schema);
     const b = schema === 'light' ? await zurPaketseite(s) : s.getByRole('region', { name: 'Einrichtung und Nachweise' });
     if (schema === 'dark') await s.reload();
     await b.getByRole('checkbox', { name: 'Betrieb' }).waitFor();
@@ -132,9 +132,7 @@ rauchtest('Automatisierung: Karte aus einem Paket im Kartenvorrat, mit Feldern u
 async function axeHellUndDunkel(s) {
   const funde = [];
   for (const schema of ['light', 'dark']) {
-    await s.emulateMedia({ colorScheme: schema });
-    // Knöpfe wechseln ihre Fläche mit einem kurzen Übergang – erst danach messen (wie einrichtung.mjs).
-    await s.waitForTimeout(400);
+    await schemaWechseln(s, schema);
     for (const v of await axePruefen(s, WERKBANK_BEREICHE)) funde.push(`${schema}: ${v}`);
   }
   assert.deepEqual(funde, [], `axe meldet Verstöße:\n${funde.join('\n')}`);

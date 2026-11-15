@@ -4,7 +4,7 @@
  */
 import assert from 'node:assert/strict';
 import '../einrichtung.mjs';
-import { api, BASIS, daten, keineWaagerechteRolle, LENA, mitFragen, rauchtest, sitzung, verwalten } from '../hilfen.mjs';
+import { api, BASIS, daten, keineWaagerechteRolle, LENA, mitFragen, rauchtest, schemaWechseln, sitzung, verwalten } from '../hilfen.mjs';
 import { axePruefen, tippflaechenPruefen } from '../muster.mjs';
 
 /* ---------- Handy ---------- */
@@ -107,9 +107,8 @@ rauchtest('Tabelle: Hinweis „Du siehst 2 von 3 Positionen“ bei verborgenen Z
   const hinweis = s.locator('[data-anker="mappe.tabelle-verborgen"]');
   // axe frisch geladen und ohne Maus über Knöpfen (Hover und Farbübergang verfälschen sonst den Kontrast).
   const funde = [];
-  await s.mouse.move(0, 0);
   for (const schema of ['light', 'dark']) {
-    await s.emulateMedia({ colorScheme: schema });
+    await schemaWechseln(s, schema);
     await s.goto(BASIS + `/ablage/${auftrag.id}/${teils.id}`);
     await hinweis.waitFor();
     for (const v of await axePruefen(s, ['.spalte.mappe'])) funde.push(`${schema}: ${v}`);

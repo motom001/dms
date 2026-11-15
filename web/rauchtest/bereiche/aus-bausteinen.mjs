@@ -4,7 +4,7 @@
  */
 import assert from 'node:assert/strict';
 import '../einrichtung.mjs';
-import { ABLAGE_BEREICHE, api, BASIS, beispielPdf, daten, LENA, mitFragen, mitHandbuch, rauchtest, sitzung, verwalten, WERKBANK_BEREICHE } from '../hilfen.mjs';
+import { ABLAGE_BEREICHE, api, BASIS, beispielPdf, daten, LENA, mitFragen, mitHandbuch, rauchtest, schemaWechseln, sitzung, verwalten, WERKBANK_BEREICHE } from '../hilfen.mjs';
 import { axePruefen, tippflaechenPruefen } from '../muster.mjs';
 
 /* ---------- Ablage aus Bausteinen: axe und Tippflächen (#1211, #1212) ---------- */
@@ -94,7 +94,7 @@ async function kopfUndAssistent(s, pruefe) {
 rauchtest('Kopfzeile und Assistent: axe ohne Verstoß, hell und dunkel (#1218, #1219)', { als: LENA }, async (s) => {
   const funde = [];
   for (const schema of ['light', 'dark']) {
-    await s.emulateMedia({ colorScheme: schema });
+    await schemaWechseln(s, schema);
     await kopfUndAssistent(s, async (name) => { for (const v of await axePruefen(s, KOPF_BEREICHE)) funde.push(`${name} (${schema}): ${v}`); });
   }
   assert.deepEqual(funde, [], `axe meldet Verstöße:\n${funde.join('\n')}`);
@@ -110,7 +110,7 @@ rauchtest('Ablage aus Bausteinen: axe ohne Verstoß, hell und dunkel (#1211, #12
   const seiten = await ablageSeiten(await sitzung(LENA));
   const funde = [];
   for (const schema of ['light', 'dark']) {
-    await s.emulateMedia({ colorScheme: schema });
+    await schemaWechseln(s, schema);
     for (const seite of seiten) {
       await seite.weg(s);
       await s.waitForLoadState('networkidle');
@@ -184,7 +184,7 @@ rauchtest('Werkbank aus Bausteinen: axe ohne Verstoß, hell und dunkel (#1214)',
   const seiten = await werkbankSeiten(s);
   const funde = [];
   for (const schema of ['light', 'dark']) {
-    await s.emulateMedia({ colorScheme: schema });
+    await schemaWechseln(s, schema);
     for (const seite of seiten) {
       await seite.weg(s);
       await s.waitForLoadState('networkidle');
@@ -224,7 +224,7 @@ rauchtest('Werkbank „Ablage aufbauen“ aus Bausteinen: axe ohne Verstoß, hel
     '/werkbank/nummernkreise/archivnummer', '/werkbank/stempel/neu', '/werkbank/designs/neu', '/werkbank/woerter/neu'];
   const funde = [];
   for (const schema of ['light', 'dark']) {
-    await s.emulateMedia({ colorScheme: schema });
+    await schemaWechseln(s, schema);
     for (const weg of seiten) {
       await s.goto(BASIS + weg);
       await s.waitForLoadState('networkidle');
@@ -261,7 +261,7 @@ function kontoSeiten() {
 rauchtest('Mein Konto und Systemseiten aus Bausteinen: axe ohne Verstoß, hell und dunkel (#1215)', { als: LENA }, async (s) => {
   const funde = [];
   for (const schema of ['light', 'dark']) {
-    await s.emulateMedia({ colorScheme: schema });
+    await schemaWechseln(s, schema);
     for (const seite of kontoSeiten()) {
       await seite.weg(s);
       await s.waitForLoadState('networkidle');

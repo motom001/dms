@@ -4,7 +4,7 @@
  */
 import assert from 'node:assert/strict';
 import '../einrichtung.mjs';
-import { BASIS, LENA, rauchtest, verwalten, WERKBANK_BEREICHE } from '../hilfen.mjs';
+import { BASIS, LENA, rauchtest, schemaWechseln, verwalten, WERKBANK_BEREICHE } from '../hilfen.mjs';
 import { axePruefen, tippflaechenPruefen } from '../muster.mjs';
 
 /* ---------- Werkbank → Pakete ohne Internet: Katalog und Pakete als Attrappe (#1167, #1168, #1047, #1048) ---------- */
@@ -263,7 +263,7 @@ rauchtest('Pakete: axe ohne Verstoß, hell und dunkel (#1168, #1047, #1048)', { 
   await paketeAttrappe(s, PAKETE_ALLES);
   const funde = [];
   for (const schema of ['light', 'dark']) {
-    await s.emulateMedia({ colorScheme: schema });
+    await schemaWechseln(s, schema);
     for (const seite of await paketSeiten(s, schema === 'dark')) {
       await seite.weg();
       await s.waitForLoadState('networkidle');

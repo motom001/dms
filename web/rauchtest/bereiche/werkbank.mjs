@@ -5,7 +5,7 @@
  */
 import assert from 'node:assert/strict';
 import '../einrichtung.mjs';
-import { BASIS, benutzermenue, JONAS, keineWaagerechteRolle, LENA, rauchtest, verwalten, WERKBANK_BEREICHE } from '../hilfen.mjs';
+import { BASIS, benutzermenue, JONAS, keineWaagerechteRolle, LENA, rauchtest, schemaWechseln, verwalten, WERKBANK_BEREICHE } from '../hilfen.mjs';
 import { axePruefen, tippflaechenPruefen } from '../muster.mjs';
 
 rauchtest('Werkbank: Mappentyp bearbeiten (Felder)', { als: LENA }, async (s) => {
@@ -210,7 +210,7 @@ rauchtest('Werkbank → Beispiel-Ablage: nötige Pakete vorher genannt, axe hell
   await leiste.getByRole('link', { name: /^Beispiel-Ablage/ }).waitFor();
   const funde = [];
   for (const schema of ['light', 'dark']) {
-    await s.emulateMedia({ colorScheme: schema });
+    await schemaWechseln(s, schema);
     for (const v of await axePruefen(s, WERKBANK_BEREICHE)) funde.push(`${schema}: ${v}`);
   }
   assert.deepEqual(funde, [], `axe meldet Verstöße:\n${funde.join('\n')}`);
@@ -276,10 +276,8 @@ rauchtest('Werkbank: Systemkonto mit Fehler – Link, Grund und Weg zum Paket, a
   await bearbeitung.getByText('Ablago schaltet es beim nächsten Abgleich der Pakete').waitFor();
   assert.match(await bearbeitung.getByRole('link', { name: 'Zum Paket' }).getAttribute('href'), /\/werkbank\/pakete\/werkzeuge$/);
   const funde = [];
-  await s.mouse.move(0, 0);
   for (const schema of ['light', 'dark']) {
-    await s.emulateMedia({ colorScheme: schema });
-    await s.waitForFunction(() => document.getAnimations().every((a) => a.playState !== 'running'));
+    await schemaWechseln(s, schema);
     for (const v of await axePruefen(s, ['[aria-label="Bearbeitung"]', '.systemkontengruppe > .systemkonten-zumfehler'])) funde.push(`${schema}: ${v}`);
   }
   assert.deepEqual(funde, [], `axe meldet Verstöße:\n${funde.join('\n')}`);

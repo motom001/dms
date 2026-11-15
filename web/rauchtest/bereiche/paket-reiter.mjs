@@ -5,7 +5,7 @@
  */
 import assert from 'node:assert/strict';
 import '../einrichtung.mjs';
-import { BASIS, LENA, rauchtest, verwalten, WERKBANK_BEREICHE } from '../hilfen.mjs';
+import { BASIS, LENA, rauchtest, schemaWechseln, verwalten, WERKBANK_BEREICHE } from '../hilfen.mjs';
 import { axePruefen, tippflaechenPruefen } from '../muster.mjs';
 
 const ID = 'ki_probe';
@@ -158,7 +158,7 @@ rauchtest('Paketseite: Reiter ohne axe-Verstoß, hell und dunkel (#996, #1003, #
   await attrappe(s);
   const funde = [];
   for (const schema of ['light', 'dark']) {
-    await s.emulateMedia({ colorScheme: schema });
+    await schemaWechseln(s, schema);
     for (const seite of SEITEN) {
       await seite.weg(s);
       await s.waitForLoadState('networkidle');

@@ -5,7 +5,7 @@
  */
 import assert from 'node:assert/strict';
 import '../einrichtung.mjs';
-import { api, BASIS, daten, LENA, rauchtest, sitzung } from '../hilfen.mjs';
+import { api, BASIS, daten, LENA, rauchtest, schemaWechseln, sitzung } from '../hilfen.mjs';
 import { axePruefen, tippflaechenPruefen } from '../muster.mjs';
 
 /** Zwei Mappen: die eine erwähnt die andere – Ziel und Quelle mit eigenem Namen je Lauf. */
@@ -49,7 +49,7 @@ rauchtest('Erwähnen mit @: Mappe auswählen, aktueller Titel, Hinweis in der er
   await hinweis.getByRole('link', { name: 'Erwähnquelle Eins' }).waitFor();
   const funde = [];
   for (const schema of ['light', 'dark']) {
-    await s.emulateMedia({ colorScheme: schema });
+    await schemaWechseln(s, schema);
     for (const v of await axePruefen(s, ['.erwaehnt-in'])) funde.push(`Hinweis (${schema}): ${v}`);
   }
   await notizen(s, quelle);
@@ -58,7 +58,7 @@ rauchtest('Erwähnen mit @: Mappe auswählen, aktueller Titel, Hinweis in der er
   await s.keyboard.type('Erwähnziel');
   await auswahl.getByRole('option').first().waitFor();
   for (const schema of ['light', 'dark']) {
-    await s.emulateMedia({ colorScheme: schema });
+    await schemaWechseln(s, schema);
     // Nur Auswahl und erwähnte Mappe: Die übrigen Werkzeuge der Leiste gehören nicht zu #889 (siehe Bericht).
     for (const v of await axePruefen(s, ['.wahlliste', '.notizliste .formatiert'])) funde.push(`Auswahl (${schema}): ${v}`);
   }

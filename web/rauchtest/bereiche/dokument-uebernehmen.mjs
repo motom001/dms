@@ -4,7 +4,7 @@
  */
 import assert from 'node:assert/strict';
 import '../einrichtung.mjs';
-import { api, archivfassungAblegen, BASIS, beispielPdf, beispielPdfSeiten, daten, keineWaagerechteRolle, LENA, rauchtest, sitzung, verwalten } from '../hilfen.mjs';
+import { api, archivfassungAblegen, BASIS, beispielPdf, beispielPdfSeiten, daten, keineWaagerechteRolle, LENA, rauchtest, schemaWechseln, sitzung, verwalten } from '../hilfen.mjs';
 import { axePruefen, tippflaechenPruefen } from '../muster.mjs';
 
 /* ---------- Zum Schluss: Wege, die den gemeinsamen Zustand ändern ---------- */
@@ -142,7 +142,7 @@ rauchtest('Dokument übernehmen aus Bausteinen: axe ohne Verstoß in allen drei 
   const brief = await eigenePost('Werbung Möbelhaus Beispiel', ['Werbung Möbelhaus Beispiel']);
   const funde = [];
   for (const schema of ['light', 'dark']) {
-    await s.emulateMedia({ colorScheme: schema });
+    await schemaWechseln(s, schema);
     await s.goto(BASIS + `/ablage/eingang/${brief.id}`);
     await s.waitForURL(new RegExp(`/${brief.id}/uebernehmen$`));
     const mappe = s.getByRole('region', { name: 'Mappe' });
@@ -197,7 +197,7 @@ rauchtest('Dokument übernehmen: E-Mail mit Archivfassung als Seitenbilder mit T
   const brief = await postMitMail('Angebot Dachrinne');
   const funde = [];
   for (const schema of ['light', 'dark']) {
-    await s.emulateMedia({ colorScheme: schema });
+    await schemaWechseln(s, schema);
     await s.goto(BASIS + `/ablage/eingang/${brief.id}`);
     await s.waitForURL(new RegExp(`/${brief.id}/uebernehmen$`));
     const blatt = s.getByRole('region', { name: 'Dokument' }).getByRole('article', { name: 'Angebot Dachrinne.eml' });
@@ -309,12 +309,10 @@ rauchtest('Post: „Anlage ab hier“ in der Seitenansicht – Seiten 3–5 werd
   // axe hell und dunkel auf der Seitenansicht mit Markierung.
   const funde = [];
   for (const schema of ['light', 'dark']) {
-    await s.emulateMedia({ colorScheme: schema });
-    // Farbwechsel ohne Neuladen: erst messen, wenn keine Überblendung mehr läuft.
-    await s.waitForFunction(() => document.getAnimations().every((a) => a.playState !== 'running'));
+    await schemaWechseln(s, schema);
     for (const v of await axePruefen(s, ['.pdfseiten'])) funde.push(`${schema}: ${v}`);
   }
-  await s.emulateMedia({ colorScheme: 'light' });
+  await schemaWechseln(s, 'light');
   assert.deepEqual(funde, [], `axe meldet Verstöße:\n${funde.join('\n')}`);
   // Übernehmen: Rückfrage, dann neue Post mit Dokument und Anlage; die Ausgangspost behält das ganze PDF und ist erledigt.
   await ansicht.getByRole('button', { name: 'Übernehmen' }).click();

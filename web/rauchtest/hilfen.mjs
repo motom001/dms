@@ -1,7 +1,8 @@
 /**
  * Gemeinsame Hilfen der Rauchtests (#897, aufgeteilt in #1234): Browser, Anmelden über die Schnittstelle, Beispiel-PDF,
  * Rahmen `rauchtest(…)` mit Fehlersammlung und Knopf-Wächter (#1210), Verwaltungsmodus und kleine Hilfen, die mehrere
- * Bereiche brauchen. axe und Tippflächen stehen in muster.mjs. Diese Datei legt selbst keine Tests an.
+ * Bereiche brauchen. axe und Tippflächen stehen in muster.mjs, ebenso das Warten auf eine ruhige Seite (#1266);
+ * `schemaWechseln` hier nutzt es. Diese Datei legt selbst keine Tests an.
  */
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
@@ -9,6 +10,7 @@ import { mkdir, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
 import { join } from 'node:path';
 import { test, after, before } from 'node:test';
 import { chromium } from 'playwright';
+import { anfragenZaehlen, seiteRuhig } from './muster.mjs';
 
 export const BASIS = (process.env.DMS_URL ?? 'http://localhost:3000').replace(/\/$/, '');
 const FEHLERORDNER = process.argv[2] ?? process.env.DMS_RAUCHTEST_BILDER ?? 'rauchtest-fehler';
@@ -72,46 +74,8 @@ export async function einrichtungscode() {
   throw new Error(`Einrichtungscode nicht gefunden (${datei}).`);
 }
 
-/** Kleines, gültiges PDF mit einer Zeile Text (mehrere Zeilen mit \n getrennt). */
-export function beispielPdf(zeile) {
-  const inhalt = `BT /F1 18 Tf 60 760 Td ${zeile.split('\n').map((z) => `(${z}) Tj`).join(' 0 -28 Td ')} ET`;
-  const objekte = [
-    '<< /Type /Catalog /Pages 2 0 R >>',
-    '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
-    '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>',
-    `<< /Length ${inhalt.length} >>\nstream\n${inhalt}\nendstream`,
-    '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>',
-  ];
-  let pdf = '%PDF-1.4\n';
-  const pos = [];
-  objekte.forEach((o, i) => { pos.push(pdf.length); pdf += `${i + 1} 0 obj\n${o}\nendobj\n`; });
-  const xref = pdf.length;
-  pdf += `xref\n0 ${objekte.length + 1}\n0000000000 65535 f \n${pos.map((p) => `${String(p).padStart(10, '0')} 00000 n \n`).join('')}`;
-  pdf += `trailer\n<< /Size ${objekte.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`;
-  return Buffer.from(pdf, 'latin1');
-}
-
-/** Mehrseitiges PDF (#1162): je Eintrag eine Seite mit einer Zeile Text – wie beispielPdf im Bildskript des Handbuchs. */
-export function beispielPdfSeiten(zeilen) {
-  const objekte = [
-    '<< /Type /Catalog /Pages 2 0 R >>',
-    `<< /Type /Pages /Kids [${zeilen.map((_, i) => `${4 + i * 2} 0 R`).join(' ')}] /Count ${zeilen.length} >>`,
-    '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>',
-  ];
-  zeilen.forEach((z, i) => {
-    // Mehrere Zeilen je Seite mit „\n“ (lange Post, #1255), kleiner gesetzt.
-    const inhalt = z.includes('\n') ? `BT /F1 9 Tf 40 800 Td ${z.split('\n').map((y) => `(${y}) Tj`).join(' 0 -13 Td ')} ET` : `BT /F1 18 Tf 60 760 Td (${z}) Tj ET`;
-    objekte.push(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R >> >> /Contents ${5 + i * 2} 0 R >>`);
-    objekte.push(`<< /Length ${inhalt.length} >>\nstream\n${inhalt}\nendstream`);
-  });
-  let pdf = '%PDF-1.4\n';
-  const pos = [];
-  objekte.forEach((o, i) => { pos.push(pdf.length); pdf += `${i + 1} 0 obj\n${o}\nendobj\n`; });
-  const xref = pdf.length;
-  pdf += `xref\n0 ${objekte.length + 1}\n0000000000 65535 f \n${pos.map((p) => `${String(p).padStart(10, '0')} 00000 n \n`).join('')}`;
-  pdf += `trailer\n<< /Size ${objekte.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`;
-  return Buffer.from(pdf, 'latin1');
-}
+// Beispiel-PDFs stehen in pdf.mjs (#1276: auch die Oberflächen-Messung braucht sie, ohne node:test).
+export { beispielPdf, beispielPdfSeiten } from './pdf.mjs';
 
 /* ---------- Knöpfe auf jeder besuchten Seite (#1210) ---------- */
 
@@ -211,6 +175,8 @@ export function rauchtest(name, optionen, ablauf) {
     // Kürzer als die Vorgabe von Playwright (30 s): Ein kaputter Weg soll schnell auffallen.
     k.setDefaultTimeout(15_000);
     k.setDefaultNavigationTimeout(30_000);
+    // Offene Anfragen mitzählen: axe und Tippflächen messen erst, wenn keine mehr läuft (#1266).
+    anfragenZaehlen(k);
     const erwartet = optionen.erwartet ?? [];
     const fehler = [];
     k.on('console', (m) => { if (m.type() === 'error' && !m.text().startsWith('Failed to load resource')) fehler.push(`Konsole: ${m.text()}`); });
@@ -251,6 +217,16 @@ export function rauchtest(name, optionen, ablauf) {
     }
     assert.deepEqual(fehler, [], `Fehler im Browser bei „${name}“`);
   });
+}
+
+/**
+ * Hell/dunkel umschalten und warten, bis die Seite ruhig ist (#1266): Die Farben blenden nach dem Umschalten über; axe
+ * misst sonst eine Zwischenfarbe (2,4:1 statt 4,5:1). Statt eigener Wartezeiten, Neuladen oder `mouse.move(0, 0)` in
+ * jedem Test immer diesen Helfer nehmen. `schema`: 'light' oder 'dark'.
+ */
+export async function schemaWechseln(s, schema) {
+  await s.emulateMedia({ colorScheme: schema });
+  await seiteRuhig(s);
 }
 
 /** Das Benutzermenü oben rechts öffnen (Knopf mit dem eigenen Namen); seit #1215 ein Aufklapper ohne role="menu". */

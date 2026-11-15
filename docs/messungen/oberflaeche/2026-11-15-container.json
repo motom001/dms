@@ -1,0 +1,549 @@
+{
+  "version": 1,
+  "ablago": "0.290.2",
+  "zeit": "2026-11-15T21:07:14.592Z",
+  "geraet": "Container (2 Kerne, Browser und Ablago auf demselben Rechner, andere Bauten parallel) – keine NAS-Werte",
+  "runden": 5,
+  "daten": "Beispiel-Ablage, 5.000 Demo-Mappen, lange Post 100 Seiten, Vertrag mit 60 Dokumenten (eins mit 60 Seiten), Vertrag mit 300 Rechnungen in der Tabelle",
+  "ergebnisse": {
+    "startseite": {
+      "name": "Startseite öffnen",
+      "drosseln": {
+        "1": {
+          "runden": 5,
+          "bedienbar": {
+            "median": 527,
+            "p95": 826
+          },
+          "inp": {
+            "median": null,
+            "p95": null
+          },
+          "laengste": {
+            "median": 100,
+            "p95": 193
+          },
+          "blockiert": {
+            "median": 50,
+            "p95": 143
+          },
+          "anfragen": 16,
+          "serverMs": 211,
+          "zeitueberschritten": 0
+        },
+        "4": {
+          "runden": 5,
+          "bedienbar": {
+            "median": 1748,
+            "p95": 1957
+          },
+          "inp": {
+            "median": null,
+            "p95": null
+          },
+          "laengste": {
+            "median": 470,
+            "p95": 524
+          },
+          "blockiert": {
+            "median": 490,
+            "p95": 562
+          },
+          "anfragen": 16,
+          "serverMs": 236,
+          "zeitueberschritten": 0
+        }
+      }
+    },
+    "suche": {
+      "name": "Suche mit Treffern",
+      "drosseln": {
+        "1": {
+          "runden": 5,
+          "bedienbar": {
+            "median": 161,
+            "p95": 181
+          },
+          "inp": {
+            "median": 56,
+            "p95": 72
+          },
+          "laengste": {
+            "median": 0,
+            "p95": 0
+          },
+          "blockiert": {
+            "median": 0,
+            "p95": 0
+          },
+          "anfragen": 1,
+          "serverMs": 5,
+          "zeitueberschritten": 0
+        },
+        "4": {
+          "runden": 5,
+          "bedienbar": {
+            "median": 884,
+            "p95": 1107
+          },
+          "inp": {
+            "median": 144,
+            "p95": 200
+          },
+          "laengste": {
+            "median": 204,
+            "p95": 215
+          },
+          "blockiert": {
+            "median": 225,
+            "p95": 259
+          },
+          "anfragen": 2,
+          "serverMs": 81,
+          "zeitueberschritten": 0
+        }
+      }
+    },
+    "mappe-oeffnen": {
+      "name": "Mappe öffnen (60 Dokumente)",
+      "drosseln": {
+        "1": {
+          "runden": 5,
+          "bedienbar": {
+            "median": 1220,
+            "p95": 1324
+          },
+          "inp": {
+            "median": 96,
+            "p95": 120
+          },
+          "laengste": {
+            "median": 108,
+            "p95": 138
+          },
+          "blockiert": {
+            "median": 88,
+            "p95": 93
+          },
+          "anfragen": 65,
+          "serverMs": 1321,
+          "zeitueberschritten": 0
+        },
+        "4": {
+          "runden": 5,
+          "bedienbar": {
+            "median": 3190,
+            "p95": 3257
+          },
+          "inp": {
+            "median": 400,
+            "p95": 552
+          },
+          "laengste": {
+            "median": 448,
+            "p95": 573
+          },
+          "blockiert": {
+            "median": 973,
+            "p95": 1309
+          },
+          "anfragen": 65,
+          "serverMs": 1437,
+          "zeitueberschritten": 0
+        }
+      }
+    },
+    "post-ablegen": {
+      "name": "Neue Post: Datei ablegen",
+      "drosseln": {
+        "1": {
+          "runden": 5,
+          "bedienbar": {
+            "median": 1082,
+            "p95": 2201
+          },
+          "inp": {
+            "median": 24,
+            "p95": 40
+          },
+          "laengste": {
+            "median": 0,
+            "p95": 0
+          },
+          "blockiert": {
+            "median": 0,
+            "p95": 0
+          },
+          "anfragen": 15,
+          "serverMs": 1479,
+          "zeitueberschritten": 0
+        },
+        "4": {
+          "runden": 5,
+          "bedienbar": {
+            "median": 1108,
+            "p95": 1572
+          },
+          "inp": {
+            "median": 48,
+            "p95": 56
+          },
+          "laengste": {
+            "median": 85,
+            "p95": 129
+          },
+          "blockiert": {
+            "median": 35,
+            "p95": 79
+          },
+          "anfragen": 17,
+          "serverMs": 667,
+          "zeitueberschritten": 0
+        }
+      }
+    },
+    "post-zuordnen": {
+      "name": "Neue Post zuordnen: 100 Seiten, Vertrag wählen, sofort tippen",
+      "drosseln": {
+        "1": {
+          "runden": 5,
+          "bedienbar": {
+            "median": 2921,
+            "p95": 3204
+          },
+          "inp": {
+            "median": 432,
+            "p95": 464
+          },
+          "laengste": {
+            "median": 384,
+            "p95": 438
+          },
+          "blockiert": {
+            "median": 1212,
+            "p95": 1495
+          },
+          "anfragen": 3,
+          "serverMs": 1060,
+          "zeitueberschritten": 0
+        },
+        "4": {
+          "runden": 5,
+          "bedienbar": {
+            "median": 12745,
+            "p95": 14854
+          },
+          "inp": {
+            "median": 1568,
+            "p95": 1752
+          },
+          "laengste": {
+            "median": 1658,
+            "p95": 2179
+          },
+          "blockiert": {
+            "median": 5926,
+            "p95": 6117
+          },
+          "anfragen": 8,
+          "serverMs": 1070,
+          "zeitueberschritten": 0
+        }
+      }
+    },
+    "mappe-speichern": {
+      "name": "Mappe ändern und speichern (Tabelle 300 Zeilen)",
+      "drosseln": {
+        "1": {
+          "runden": 5,
+          "bedienbar": {
+            "median": 358,
+            "p95": 366
+          },
+          "inp": {
+            "median": 24,
+            "p95": 48
+          },
+          "laengste": {
+            "median": 0,
+            "p95": 0
+          },
+          "blockiert": {
+            "median": 0,
+            "p95": 0
+          },
+          "anfragen": 2,
+          "serverMs": 58,
+          "zeitueberschritten": 0
+        },
+        "4": {
+          "runden": 5,
+          "bedienbar": {
+            "median": 1184,
+            "p95": 1377
+          },
+          "inp": {
+            "median": 96,
+            "p95": 120
+          },
+          "laengste": {
+            "median": 83,
+            "p95": 95
+          },
+          "blockiert": {
+            "median": 76,
+            "p95": 92
+          },
+          "anfragen": 5,
+          "serverMs": 74,
+          "zeitueberschritten": 0
+        }
+      }
+    },
+    "zu-erledigen": {
+      "name": "Zu erledigen: Liste, dann Monat",
+      "drosseln": {
+        "1": {
+          "runden": 5,
+          "bedienbar": {
+            "median": 688,
+            "p95": 1032
+          },
+          "inp": {
+            "median": 16,
+            "p95": 16
+          },
+          "laengste": {
+            "median": 102,
+            "p95": 115
+          },
+          "blockiert": {
+            "median": 52,
+            "p95": 65
+          },
+          "anfragen": 15,
+          "serverMs": 190,
+          "zeitueberschritten": 0
+        },
+        "4": {
+          "runden": 5,
+          "bedienbar": {
+            "median": 1877,
+            "p95": 2015
+          },
+          "inp": {
+            "median": 24,
+            "p95": 40
+          },
+          "laengste": {
+            "median": 501,
+            "p95": 527
+          },
+          "blockiert": {
+            "median": 617,
+            "p95": 670
+          },
+          "anfragen": 15,
+          "serverMs": 95,
+          "zeitueberschritten": 0
+        }
+      }
+    },
+    "ansicht-blaettern": {
+      "name": "Ansicht mit vielen Mappen blättern (300 Zeilen)",
+      "drosseln": {
+        "1": {
+          "runden": 5,
+          "bedienbar": {
+            "median": 371,
+            "p95": 488
+          },
+          "inp": {
+            "median": null,
+            "p95": null
+          },
+          "laengste": {
+            "median": 0,
+            "p95": 0
+          },
+          "blockiert": {
+            "median": 0,
+            "p95": 0
+          },
+          "anfragen": 2,
+          "serverMs": 35,
+          "zeitueberschritten": 0
+        },
+        "4": {
+          "runden": 5,
+          "bedienbar": {
+            "median": 845,
+            "p95": 952
+          },
+          "inp": {
+            "median": null,
+            "p95": null
+          },
+          "laengste": {
+            "median": 95,
+            "p95": 111
+          },
+          "blockiert": {
+            "median": 135,
+            "p95": 192
+          },
+          "anfragen": 2,
+          "serverMs": 29,
+          "zeitueberschritten": 0
+        }
+      }
+    },
+    "vorschau": {
+      "name": "Dokument-Vorschau mehrseitig (60 Seiten)",
+      "drosseln": {
+        "1": {
+          "runden": 5,
+          "bedienbar": {
+            "median": 432,
+            "p95": 464
+          },
+          "inp": {
+            "median": 64,
+            "p95": 72
+          },
+          "laengste": {
+            "median": 0,
+            "p95": 0
+          },
+          "blockiert": {
+            "median": 0,
+            "p95": 0
+          },
+          "anfragen": 42,
+          "serverMs": 2160,
+          "zeitueberschritten": 0
+        },
+        "4": {
+          "runden": 5,
+          "bedienbar": {
+            "median": 1184,
+            "p95": 1797
+          },
+          "inp": {
+            "median": 248,
+            "p95": 376
+          },
+          "laengste": {
+            "median": 172,
+            "p95": 435
+          },
+          "blockiert": {
+            "median": 201,
+            "p95": 736
+          },
+          "anfragen": 61,
+          "serverMs": 1347,
+          "zeitueberschritten": 0
+        }
+      }
+    },
+    "werkbank-uebersicht": {
+      "name": "Werkbank-Übersicht",
+      "drosseln": {
+        "1": {
+          "runden": 5,
+          "bedienbar": {
+            "median": 599,
+            "p95": 940
+          },
+          "inp": {
+            "median": null,
+            "p95": null
+          },
+          "laengste": {
+            "median": 104,
+            "p95": 117
+          },
+          "blockiert": {
+            "median": 54,
+            "p95": 67
+          },
+          "anfragen": 20,
+          "serverMs": 271,
+          "zeitueberschritten": 0
+        },
+        "4": {
+          "runden": 5,
+          "bedienbar": {
+            "median": 1621,
+            "p95": 1937
+          },
+          "inp": {
+            "median": null,
+            "p95": null
+          },
+          "laengste": {
+            "median": 401,
+            "p95": 523
+          },
+          "blockiert": {
+            "median": 405,
+            "p95": 581
+          },
+          "anfragen": 20,
+          "serverMs": 317,
+          "zeitueberschritten": 0
+        }
+      }
+    },
+    "mappentyp-editor": {
+      "name": "Mappentyp-Editor öffnen (Vertrag)",
+      "drosseln": {
+        "1": {
+          "runden": 5,
+          "bedienbar": {
+            "median": 714,
+            "p95": 1430
+          },
+          "inp": {
+            "median": null,
+            "p95": null
+          },
+          "laengste": {
+            "median": 109,
+            "p95": 245
+          },
+          "blockiert": {
+            "median": 70,
+            "p95": 286
+          },
+          "anfragen": 28,
+          "serverMs": 328,
+          "zeitueberschritten": 0
+        },
+        "4": {
+          "runden": 5,
+          "bedienbar": {
+            "median": 2232,
+            "p95": 2442
+          },
+          "inp": {
+            "median": null,
+            "p95": null
+          },
+          "laengste": {
+            "median": 469,
+            "p95": 551
+          },
+          "blockiert": {
+            "median": 849,
+            "p95": 967
+          },
+          "anfragen": 31,
+          "serverMs": 889,
+          "zeitueberschritten": 0
+        }
+      }
+    }
+  }
+}
