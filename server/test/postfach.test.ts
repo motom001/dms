@@ -160,6 +160,26 @@ describe('Postfächer (#196)', () => {
     assert.match((await pf.teste({}, p.id)).text, /Verbunden/);
   });
 
+  it('#1186: nach einem erfolgreichen Abruf sind die Fehler der Störung behoben – mit Zeitpunkt, ältere bleiben unverändert', async () => {
+    const { pf, p, server } = await aufbau();
+    server.fehler = Object.assign(new Error('getaddrinfo ENOTFOUND'), { code: 'ENOTFOUND' });
+    await assert.rejects(pf.abrufen(p.id));
+    server.fehler = null;
+    await pf.abrufen(p.id);
+    const [a] = await pf.ansicht();
+    assert.equal(a.stand.fehlerFolge, 0);
+    assert.equal(a.stand.fehler.length, 1);
+    assert.equal(a.stand.fehler[0].behobenAm, a.stand.letzterAbruf, 'behoben mit dem erfolgreichen Abruf');
+    const behoben = a.stand.fehler[0].behobenAm;
+    // Neue Störung: nur ihre Fehler sind aktuell (die ersten fehlerFolge), der alte behält sein „behoben am“.
+    server.fehler = Object.assign(new Error('getaddrinfo ENOTFOUND'), { code: 'ENOTFOUND' });
+    await assert.rejects(pf.abrufen(p.id));
+    const [b] = await pf.ansicht();
+    assert.equal(b.stand.fehlerFolge, 1);
+    assert.equal(b.stand.fehler[0].behobenAm, undefined);
+    assert.equal(b.stand.fehler[1].behobenAm, behoben);
+  });
+
   it('zu große Anhänge stehen mit Grund in der Historie', async () => {
     const { pf, p, server, posten, d } = await aufbau({ original: false });
     const gross = 'x'.repeat(100 * 1024 * 1024 + 1);

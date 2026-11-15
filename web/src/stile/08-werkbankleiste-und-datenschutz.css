@@ -183,3 +183,9 @@ td.sicherung-wahl { width: 1%; }
   .organisation-verwendungen > li { min-height: 48px; display: flex; align-items: center; }
   .spalte.mappe .organisation-verwendungen a.verweis { margin-block: 0; padding-block: 12px; }
 }
+/* Postfach → Stand (#1186): Zustand in einem Satz, frühere Störungen leise und zugeklappt. */
+.zustandssatz { margin: 0; }
+.hinweis[data-zustand] p { margin: 0; }
+.fruehere-stoerungen { margin-top: 10px; }
+.fruehere-stoerungen summary { cursor: pointer; }
+.fruehere-stoerungen ul { margin: 6px 0 0; padding-left: 18px; }

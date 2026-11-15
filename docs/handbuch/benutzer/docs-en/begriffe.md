@@ -443,6 +443,10 @@ See also: [Automation template](#automatisierungsvorlage).
 A folder a package brings to keep – such as the contract types "Electricity" or "Rent" from the Contracts package, often with templates. Always comes along, carries the marking "Preset from the package …" and is otherwise an ordinary folder. Updates only bring new versions as long as nobody has changed it; whatever was deleted stays deleted. Unlike an example (invented data to try out, on request, removable).  
 See also: [Package](#paket), [Sample folder](#beispiel-mappe), [Template](#vorlage).
 
+<a id="storung"></a>**Problem** (*Störung*) · ✓ everyday word · administrators  
+Fetching a mailbox is currently failing – shown in red in the area "Status" with "Failing since …" and the way to fix it. Once fetching works again, it becomes an earlier problem with "resolved on …", quiet and collapsed.  
+See also: [Mailbox](#postfach).
+
 <a id="herausgeber"></a>**Publisher** (*Herausgeber*) · ~ with explanation · administrators  
 Who publishes a package, as a reversed domain, e.g. app.ablago for the official packages (#1084). It is shown next to the name, e.g. "Contracts · app.ablago". Ablago never replaces an installed package with one of the same ID from a different publisher.  
 See also: [Package](#paket), [Package catalogue](#paketkatalog).
