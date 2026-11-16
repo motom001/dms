@@ -73,7 +73,21 @@ const alsVertretung = (r: Zeile): Vertretung => ({
   ende: iso(r.ende),
 });
 
+/** Die Ablage aus ihren Teilen (#1278, Schritt 6b-1: nach Fachgruppen zerlegt, Rümpfe unverändert). */
 export function pgKontoRepo(sql: postgres.Sql, haushaltId: string): KontoRepo {
+  return {
+    ...pgPersonen(sql, haushaltId),
+    ...pgAenderungen(sql, haushaltId),
+    ...pgKontenOhneMensch(sql, haushaltId),
+    ...pgSitzungen(sql, haushaltId),
+    ...pgVerwaltungsmodus(sql, haushaltId),
+    ...pgVertretungen(sql, haushaltId),
+    ...pgLinksUndNotfall(sql, haushaltId),
+  };
+}
+
+/** Personen: zählen, auflisten, holen, anlegen und löschen. */
+function pgPersonen(sql: postgres.Sql, haushaltId: string) {
   return {
     async anzahlBenutzer() {
       const [r] = await sql`SELECT count(*)::int AS n FROM benutzer WHERE art = 'person'`;
@@ -94,36 +108,6 @@ export function pgKontoRepo(sql: postgres.Sql, haushaltId: string): KontoRepo {
       const [r] = await sql`SELECT * FROM benutzer WHERE lower(email) = lower(${email}) AND haushalt_id = ${haushaltId} AND art = 'person'`;
       return r ? { benutzer: alsBenutzer(r), hash: (r.passwort_hash as string | null) ?? null } : undefined;
     },
-    async dienstkonto(paketId) {
-      const [r] = await sql`SELECT * FROM benutzer WHERE haushalt_id = ${haushaltId} AND art = 'dienst' AND paket_id = ${paketId}`;
-      return r ? alsBenutzer(r) : undefined;
-    },
-    async legeDienstkontoAn(d) {
-      const [r] = await sql`
-        INSERT INTO benutzer (id, haushalt_id, email, name, rolle, passwort_hash, art, paket_id)
-        VALUES (${d.id}, ${haushaltId}, ${dienstEmail(d.paketId, haushaltId)}, ${d.name}, 'mitglied', NULL, 'dienst', ${d.paketId})
-        RETURNING *`;
-      return alsBenutzer(r);
-    },
-    async listeDienstkonten() {
-      return (await sql`SELECT * FROM benutzer WHERE haushalt_id = ${haushaltId} AND art = 'dienst' ORDER BY paket_id`).map(alsBenutzer);
-    },
-    async systemkonto(kennung) {
-      const [r] = await sql`SELECT * FROM benutzer WHERE haushalt_id = ${haushaltId} AND art = 'system' AND systemkonto = ${kennung}`;
-      return r ? alsBenutzer(r) : undefined;
-    },
-    async legeSystemkontoAn(d) {
-      // Gleichzeitiger Start zweier Server: der eindeutige Index entscheidet, beide bekommen dasselbe Konto.
-      await sql`
-        INSERT INTO benutzer (id, haushalt_id, email, name, rolle, passwort_hash, art, systemkonto)
-        VALUES (${d.id}, ${haushaltId}, ${systemEmail(d.kennung, haushaltId)}, ${d.name}, 'mitglied', NULL, 'system', ${d.kennung})
-        ON CONFLICT DO NOTHING`;
-      const [r] = await sql`SELECT * FROM benutzer WHERE haushalt_id = ${haushaltId} AND art = 'system' AND systemkonto = ${d.kennung}`;
-      return alsBenutzer(r);
-    },
-    async listeSystemkonten() {
-      return (await sql`SELECT * FROM benutzer WHERE haushalt_id = ${haushaltId} AND art = 'system' ORDER BY systemkonto`).map(alsBenutzer);
-    },
     async legeBenutzerAn(n) {
       const [r] = await sql`
         INSERT INTO benutzer (id, haushalt_id, email, name, rolle, passwort_hash, verwaltung)
@@ -131,6 +115,15 @@ export function pgKontoRepo(sql: postgres.Sql, haushaltId: string): KontoRepo {
         RETURNING *`;
       return alsBenutzer(r);
     },
+    async loescheBenutzer(id) {
+      await sql`DELETE FROM benutzer WHERE id = ${id} AND haushalt_id = ${haushaltId}`;
+    },
+  } satisfies Partial<KontoRepo>;
+}
+
+/** Änderungen an Personen: Angaben, geschützte Änderungen, Abwesenheit, Passwort und Anmeldung. */
+function pgAenderungen(sql: postgres.Sql, haushaltId: string) {
+  return {
     async aendereBenutzer(id, d) {
       const [r] = await sql`
         UPDATE benutzer SET
@@ -184,10 +177,48 @@ export function pgKontoRepo(sql: postgres.Sql, haushaltId: string): KontoRepo {
     async notiereAnmeldung(id) {
       await sql`UPDATE benutzer SET letzte_anmeldung = now() WHERE id = ${id}`;
     },
-    async loescheBenutzer(id) {
-      await sql`DELETE FROM benutzer WHERE id = ${id} AND haushalt_id = ${haushaltId}`;
-    },
+  } satisfies Partial<KontoRepo>;
+}
 
+/** Dienstkonten der Pakete und Systemkonten. */
+function pgKontenOhneMensch(sql: postgres.Sql, haushaltId: string) {
+  return {
+    async dienstkonto(paketId) {
+      const [r] = await sql`SELECT * FROM benutzer WHERE haushalt_id = ${haushaltId} AND art = 'dienst' AND paket_id = ${paketId}`;
+      return r ? alsBenutzer(r) : undefined;
+    },
+    async legeDienstkontoAn(d) {
+      const [r] = await sql`
+        INSERT INTO benutzer (id, haushalt_id, email, name, rolle, passwort_hash, art, paket_id)
+        VALUES (${d.id}, ${haushaltId}, ${dienstEmail(d.paketId, haushaltId)}, ${d.name}, 'mitglied', NULL, 'dienst', ${d.paketId})
+        RETURNING *`;
+      return alsBenutzer(r);
+    },
+    async listeDienstkonten() {
+      return (await sql`SELECT * FROM benutzer WHERE haushalt_id = ${haushaltId} AND art = 'dienst' ORDER BY paket_id`).map(alsBenutzer);
+    },
+    async systemkonto(kennung) {
+      const [r] = await sql`SELECT * FROM benutzer WHERE haushalt_id = ${haushaltId} AND art = 'system' AND systemkonto = ${kennung}`;
+      return r ? alsBenutzer(r) : undefined;
+    },
+    async legeSystemkontoAn(d) {
+      // Gleichzeitiger Start zweier Server: der eindeutige Index entscheidet, beide bekommen dasselbe Konto.
+      await sql`
+        INSERT INTO benutzer (id, haushalt_id, email, name, rolle, passwort_hash, art, systemkonto)
+        VALUES (${d.id}, ${haushaltId}, ${systemEmail(d.kennung, haushaltId)}, ${d.name}, 'mitglied', NULL, 'system', ${d.kennung})
+        ON CONFLICT DO NOTHING`;
+      const [r] = await sql`SELECT * FROM benutzer WHERE haushalt_id = ${haushaltId} AND art = 'system' AND systemkonto = ${d.kennung}`;
+      return alsBenutzer(r);
+    },
+    async listeSystemkonten() {
+      return (await sql`SELECT * FROM benutzer WHERE haushalt_id = ${haushaltId} AND art = 'system' ORDER BY systemkonto`).map(alsBenutzer);
+    },
+  } satisfies Partial<KontoRepo>;
+}
+
+/** Sitzungen: anlegen, holen, berühren, auflisten und beenden. */
+function pgSitzungen(sql: postgres.Sql, haushaltId: string) {
+  return {
     async legeSitzungAn(hash, benutzerId, ablauf, info) {
       await sql`
         INSERT INTO sitzungen (schluessel_hash, benutzer_id, ablauf, geraet, ip, vertretung_id, anmeldung_voll)
@@ -222,6 +253,37 @@ export function pgKontoRepo(sql: postgres.Sql, haushaltId: string): KontoRepo {
     async beruehreSitzung(hash) {
       await sql`UPDATE sitzungen SET zuletzt_aktiv = now() WHERE schluessel_hash = ${hash}`;
     },
+    async listeSitzungen(benutzerId) {
+      if (!istUuid(benutzerId)) return [];
+      const r = await sql`SELECT * FROM sitzungen WHERE benutzer_id = ${benutzerId} AND ablauf > now() ORDER BY zuletzt_aktiv DESC`;
+      return r.map((z) => ({
+        hash: z.schluessel_hash as string,
+        id: z.id as string,
+        benutzerId,
+        erstellt: iso(z.erstellt)!,
+        zuletztAktiv: iso(z.zuletzt_aktiv)!,
+        ablauf: iso(z.ablauf)!,
+        geraet: z.geraet as string,
+        ip: z.ip as string,
+        vertretungId: (z.vertretung_id as string | null) ?? null,
+      }));
+    },
+    async loescheSitzung(hash) {
+      await sql`DELETE FROM sitzungen WHERE schluessel_hash = ${hash}`;
+    },
+    async loescheSitzungMitId(benutzerId, id) {
+      if (!istUuid(id) || !istUuid(benutzerId)) return false;
+      return (await sql`DELETE FROM sitzungen WHERE id = ${id} AND benutzer_id = ${benutzerId} RETURNING 1`).length === 1;
+    },
+    async loescheSitzungenVon(id) {
+      await sql`DELETE FROM sitzungen WHERE benutzer_id = ${id}`;
+    },
+  } satisfies Partial<KontoRepo>;
+}
+
+/** Verwaltungsmodus der Sitzungen (#818). */
+function pgVerwaltungsmodus(sql: postgres.Sql, haushaltId: string) {
+  return {
     async sitzungenImVerwaltungsmodus() {
       // Wenige Zeilen (nur Sitzungen mit Modus); keine Historie – gelesen wird nur der Zustand der Sitzungen.
       const r = await sql`
@@ -252,28 +314,12 @@ export function pgKontoRepo(sql: postgres.Sql, haushaltId: string): KontoRepo {
       if (!istUuid(id)) return;
       await sql`UPDATE sitzungen SET verwaltung_seit = NULL, verwaltung_aktiv = NULL, verwaltung_bestaetigt = NULL, frisch = NULL WHERE benutzer_id = ${id}`;
     },
-    async listeSitzungen(benutzerId) {
-      if (!istUuid(benutzerId)) return [];
-      const r = await sql`SELECT * FROM sitzungen WHERE benutzer_id = ${benutzerId} AND ablauf > now() ORDER BY zuletzt_aktiv DESC`;
-      return r.map((z) => ({
-        hash: z.schluessel_hash as string,
-        id: z.id as string,
-        benutzerId,
-        erstellt: iso(z.erstellt)!,
-        zuletztAktiv: iso(z.zuletzt_aktiv)!,
-        ablauf: iso(z.ablauf)!,
-        geraet: z.geraet as string,
-        ip: z.ip as string,
-        vertretungId: (z.vertretung_id as string | null) ?? null,
-      }));
-    },
-    async loescheSitzung(hash) {
-      await sql`DELETE FROM sitzungen WHERE schluessel_hash = ${hash}`;
-    },
-    async loescheSitzungMitId(benutzerId, id) {
-      if (!istUuid(id) || !istUuid(benutzerId)) return false;
-      return (await sql`DELETE FROM sitzungen WHERE id = ${id} AND benutzer_id = ${benutzerId} RETURNING 1`).length === 1;
-    },
+  } satisfies Partial<KontoRepo>;
+}
+
+/** Vertretungen und persönliche Einstellungen. */
+function pgVertretungen(sql: postgres.Sql, haushaltId: string) {
+  return {
     async legeVertretungAn(v) {
       await sql`INSERT INTO vertretungen (id, benutzer_id, admin_id, admin_name) VALUES (${v.id}, ${v.benutzerId}, ${v.adminId}, ${v.adminName})`;
     },
@@ -333,10 +379,12 @@ export function pgKontoRepo(sql: postgres.Sql, haushaltId: string): KontoRepo {
         WHERE NOT (jsonb_typeof(b.wert -> 0) = 'object' AND b.wert -> 0 ->> 'id' = ${mappeId}::text
           AND jsonb_typeof(b.wert -> 0 -> 'am') = 'string' AND (b.wert -> 0 ->> 'am')::timestamptz > ${am}::timestamptz - make_interval(secs => ${ZULETZT_RUHE_MS / 1000}))`;
     },
-    async loescheSitzungenVon(id) {
-      await sql`DELETE FROM sitzungen WHERE benutzer_id = ${id}`;
-    },
+  } satisfies Partial<KontoRepo>;
+}
 
+/** Links zum Setzen des Passworts und der Notfallcode. */
+function pgLinksUndNotfall(sql: postgres.Sql, haushaltId: string) {
+  return {
     async legeLinkAn(hash, benutzerId, zweck, ablauf) {
       await sql`INSERT INTO passwort_links (schluessel_hash, benutzer_id, zweck, ablauf) VALUES (${hash}, ${benutzerId}, ${zweck}, ${ablauf})`;
     },
@@ -358,7 +406,6 @@ export function pgKontoRepo(sql: postgres.Sql, haushaltId: string): KontoRepo {
     async loescheLinksVon(id) {
       await sql`DELETE FROM passwort_links WHERE benutzer_id = ${id}`;
     },
-
     async notfallcode() {
       const [r] = await sql`SELECT hash, erstellt FROM notfallcode WHERE haushalt_id = ${haushaltId} AND hash IS NOT NULL`;
       return r ? { hash: r.hash as string, erstellt: new Date(r.erstellt as string) } : null;
@@ -383,5 +430,5 @@ export function pgKontoRepo(sql: postgres.Sql, haushaltId: string): KontoRepo {
         return true;
       }) as Promise<boolean>;
     },
-  };
+  } satisfies Partial<KontoRepo>;
 }
