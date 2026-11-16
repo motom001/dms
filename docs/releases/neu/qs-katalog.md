@@ -5,3 +5,4 @@ art: patch
 - **Paketkatalog:** Der offizielle Katalog gilt nur noch mit gültiger Signatur als offiziell. Fehlt sie oder lässt sie sich nicht abrufen, bestätigst du die Herkunft wie bei anderen Quellen. (#1351)
 - **`TRUST_PROXY`:** `0`, `no`, `off` und `nein` bedeuten wie `false` „aus“. Ein ungültiger Wert gilt jetzt als „aus“ statt „auto“, die Meldung im Protokoll bleibt. (#1350)
 - **Container-Protokoll:** Mehrzeilige Fehlertexte stehen eingerückt und mit „|“ gekennzeichnet unter ihrer Zeile, Steuerzeichen erscheinen als `\uXXXX`. (#1353)
+- **Systemprotokoll:** Handelt jemand im Namen einer anderen Person, nennt das Protokoll beide, z. B. „markus@example.org (vertreten von lena@example.org)“. (#1357)

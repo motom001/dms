@@ -45,6 +45,8 @@ export interface Kontext {
   /** Methode und Routenmuster ohne Ids, z. B. „GET /api/mappen/:id“ (#909, für die Sammlung im Lasttest). */
   muster?: string;
   benutzer?: string;
+  /** Vertretung (#1357): E-Mail der vertretenen Person und wer vertritt – fachliche Zeilen mit `von` nennen beide. */
+  vertretung?: { person: string; von: string };
   db: { anzahl: number; ms: number };
   /**
    * Rechte-Auswertung (#477): Wandzeit, in der mindestens eine Auswertung lief (überlappende zählen
@@ -144,7 +146,12 @@ export class Protokoll {
     if (k?.benutzer) e.benutzer = k.benutzer;
     if (k?.anfrage) e.anfrage = k.anfrage;
     // Geheimnisse nie ins Protokoll (#1055): nur „eingerichtet: ja/nein“.
-    if (daten && Object.keys(daten).length) e.daten = ohneGeheimnisse(daten);
+    if (daten && Object.keys(daten).length)
+      e.daten = ohneGeheimnisse(
+        k?.vertretung && daten.von === k.vertretung.person
+          ? { ...daten, von: `${k.vertretung.person}${tDe('meldungen.http.vertreten-von', { wer: k.vertretung.von })}` }
+          : daten,
+      );
     this.puffer.push(e);
     this.aufraeumen();
     try {

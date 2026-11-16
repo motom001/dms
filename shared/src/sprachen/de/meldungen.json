@@ -831,6 +831,7 @@
   "http.keine-datei-erwartet": "Diese Adresse nimmt keine Datei als Körper an.",
   "http.ohne-verwaltungsrecht": "ohne Verwaltungsrecht",
   "http.im-verwaltungsmodus": " (im Verwaltungsmodus)",
+  "http.vertreten-von": " (vertreten von {wer})",
   "http.diese-schnittstelle-gibt-es": "Diese Schnittstelle gibt es nicht.",
   "http.diese-datei-gibt-es": "Diese Datei gibt es nicht. Gehört die geöffnete Seite zu einer anderen Version von Ablago, lade sie neu.",
   "imap.anhang": "Anhang {wert}{endung}",

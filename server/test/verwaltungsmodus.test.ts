@@ -25,7 +25,7 @@ import { speicherEinstellungen } from '../src/einstellungen';
 import { Fachfehler } from '../src/fehler';
 import { Konten, schutzGesamt } from '../src/konten';
 import { speicherKontoRepo } from '../src/konto-repo';
-import { protokoll } from '../src/protokoll';
+import { kontext, protokoll } from '../src/protokoll';
 import { speicherRepo } from '../src/repo-speicher';
 import { pruefeVerwaltung, routen, type Anfrage } from '../src/routen';
 import { bereicheDerRoute, heikleHandlung, JEDER, NUR_GESAMT } from '../src/verwaltungsbereiche';
@@ -442,6 +442,31 @@ describe('Verwaltungsmodus (#819)', () => {
     const st = (await x.rufe(als, 'GET', '/api/konto/status')).json();
     assert.deepEqual([st.benutzer.id, st.verwaltungsmodus.darf, st.verwaltungsmodus.aktiv], [x.jonas.id, false, false]);
     assert.equal((await x.verwalten(als)).statusCode, 403);
+  });
+
+  it('Systemprotokoll in einer Vertretung nennt beide Personen (#1357)', async () => {
+    const x = await aufbau();
+    offen.push(() => x.app.close());
+    const c = await x.anmelden('lena@example.org');
+    await x.verwalten(c);
+    const v = await x.rufe(c, 'POST', `/api/benutzer/${x.jonas.id}/vertreten`);
+    assert.equal(v.statusCode, 200, v.body);
+    const als = ([] as string[]).concat(v.headers['set-cookie'] as string | string[])[0].split(';')[0];
+    const seit = marke();
+    assert.equal((await x.rufe(als, 'POST', '/api/konto/hinweise/gesehen')).statusCode, 204);
+    const beide = 'jonas@example.org (vertreten von lena@example.org)';
+    assert.ok(
+      protokoll.eintraege({ seit }).some((e) => /POST \/api\/konto\/hinweise\/gesehen/.test(e.text) && e.benutzer === beide),
+      JSON.stringify(protokoll.eintraege({ seit }).map((e) => [e.text, e.benutzer])),
+    );
+    // Fachliche Zeilen mit `von` (die vertretene Person) nennen auch, wer vertritt; andere Angaben bleiben.
+    kontext.run({ anfrage: 't', db: { anzahl: 0, ms: 0 }, vertretung: { person: 'jonas@example.org', von: 'lena@example.org' } }, () => {
+      protokoll.modul('konto').info('Zwei-Faktor-Anmeldung eingerichtet', { von: 'jonas@example.org' });
+      protokoll.modul('konto').info('Etwas anderes', { von: 'petra@example.org' });
+    });
+    const neu = protokoll.eintraege({ seit });
+    assert.equal(neu.find((e) => e.text === 'Zwei-Faktor-Anmeldung eingerichtet')?.daten?.von, beide);
+    assert.equal(neu.find((e) => e.text === 'Etwas anderes')?.daten?.von, 'petra@example.org');
   });
 });
 

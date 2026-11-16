@@ -71,7 +71,7 @@ Diese Einträge lassen sich **nicht löschen** und nicht ausblenden; sie bleiben
 
 ## Protokoll
 
-Beginn, Ende, Ablauf und Wiedereinstieg des Modus stehen im Protokoll, ebenso fehlgeschlagene erneute Anmeldungen. Jede Anfrage im Verwaltungsmodus trägt im Protokoll die Person mit dem Zusatz **„(im Verwaltungsmodus)“**.
+Beginn, Ende, Ablauf und Wiedereinstieg des Modus stehen im Protokoll, ebenso fehlgeschlagene erneute Anmeldungen. Jede Anfrage im Verwaltungsmodus trägt im Protokoll die Person mit dem Zusatz **„(im Verwaltungsmodus)“**. Arbeitest du im Namen einer anderen Person (Vertretung), nennt das Protokoll beide, etwa `markus@example.org (vertreten von lena@example.org)` – bei jeder Anfrage und in Zeilen, die eine Person mit `von=` nennen.
 
 ## Hinweise an die Verwaltung
 

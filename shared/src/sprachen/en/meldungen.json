@@ -831,6 +831,7 @@
   "http.keine-datei-erwartet": "This address does not accept a file as the request body.",
   "http.ohne-verwaltungsrecht": "ohne Verwaltungsrecht",
   "http.im-verwaltungsmodus": " (im Verwaltungsmodus)",
+  "http.vertreten-von": " (vertreten von {wer})",
   "http.diese-schnittstelle-gibt-es": "This interface doesn’t exist.",
   "http.diese-datei-gibt-es": "This file doesn’t exist. If the open page belongs to a different version of Ablago, reload it.",
   "imap.anhang": "Attachment {wert}{endung}",

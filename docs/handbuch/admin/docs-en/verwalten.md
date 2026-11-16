@@ -71,7 +71,7 @@ These entries **can't be deleted** or hidden; they also remain when the folder h
 
 ## Log { #protokoll }
 
-Start, end, expiry and getting back into the mode are recorded in the log, as are failed renewed sign-ins. Every request in administration mode carries the person in the log with the addition **"(im Verwaltungsmodus)"**.
+Start, end, expiry and getting back into the mode are recorded in the log, as are failed renewed sign-ins. Every request in administration mode carries the person in the log with the addition **"(im Verwaltungsmodus)"**. If you work on behalf of another person (representation), the log names both, e.g. `markus@example.org (vertreten von lena@example.org)` – for every request and in lines that name a person with `von=`.
 
 ## Notices to the administration { #hinweise-an-die-verwaltung }
 
