@@ -1,0 +1,1646 @@
+{
+  "speicher": [
+    ["anzahlBenutzer", 0],
+    [
+      "legeBenutzerAn",
+      {
+        "id": "00000000-0000-4000-8000-000000000010",
+        "email": "anna@example.org",
+        "name": "Anna",
+        "rolle": "mitglied",
+        "verwaltung": ["*"],
+        "aktiv": true,
+        "hatPasswort": true,
+        "erstellt": "ZEIT",
+        "letzteAnmeldung": null,
+        "entwicklermodus": false,
+        "sprache": null,
+        "abwesenheit": {
+          "an": false,
+          "von": null,
+          "bis": null,
+          "vertreterId": null
+        },
+        "deaktiviert": null
+      }
+    ],
+    [
+      "legeBenutzerAn",
+      {
+        "id": "00000000-0000-4000-8000-000000000011",
+        "email": "ben@example.org",
+        "name": "Ben",
+        "rolle": "mitglied",
+        "verwaltung": [],
+        "aktiv": true,
+        "hatPasswort": false,
+        "erstellt": "ZEIT",
+        "letzteAnmeldung": null,
+        "entwicklermodus": false,
+        "sprache": null,
+        "abwesenheit": {
+          "an": false,
+          "von": null,
+          "bis": null,
+          "vertreterId": null
+        },
+        "deaktiviert": null
+      }
+    ],
+    [
+      "legeBenutzerAn",
+      {
+        "fehler": "23505"
+      }
+    ],
+    ["anzahlBenutzer", 2],
+    [
+      "holeBenutzer",
+      {
+        "id": "00000000-0000-4000-8000-000000000010",
+        "email": "anna@example.org",
+        "name": "Anna",
+        "rolle": "mitglied",
+        "verwaltung": ["*"],
+        "aktiv": true,
+        "hatPasswort": true,
+        "erstellt": "ZEIT",
+        "letzteAnmeldung": null,
+        "entwicklermodus": false,
+        "sprache": null,
+        "abwesenheit": {
+          "an": false,
+          "von": null,
+          "bis": null,
+          "vertreterId": null
+        },
+        "deaktiviert": null
+      }
+    ],
+    ["holeBenutzer", null],
+    [
+      "holeHash",
+      {
+        "benutzer": {
+          "id": "00000000-0000-4000-8000-000000000010",
+          "email": "anna@example.org",
+          "name": "Anna",
+          "rolle": "mitglied",
+          "verwaltung": ["*"],
+          "aktiv": true,
+          "hatPasswort": true,
+          "erstellt": "ZEIT",
+          "letzteAnmeldung": null,
+          "entwicklermodus": false,
+          "sprache": null,
+          "abwesenheit": {
+            "an": false,
+            "von": null,
+            "bis": null,
+            "vertreterId": null
+          },
+          "deaktiviert": null
+        },
+        "hash": "h1"
+      }
+    ],
+    ["holeHash", null],
+    [
+      "aendereBenutzer",
+      {
+        "id": "00000000-0000-4000-8000-000000000011",
+        "email": "ben@example.org",
+        "name": "Benjamin",
+        "rolle": "mitglied",
+        "verwaltung": [],
+        "aktiv": false,
+        "hatPasswort": false,
+        "erstellt": "ZEIT",
+        "letzteAnmeldung": null,
+        "entwicklermodus": false,
+        "sprache": null,
+        "abwesenheit": {
+          "an": false,
+          "von": null,
+          "bis": null,
+          "vertreterId": null
+        },
+        "deaktiviert": "ZEIT"
+      }
+    ],
+    [
+      "aendereBenutzer",
+      {
+        "id": "00000000-0000-4000-8000-000000000011",
+        "email": "ben@example.org",
+        "name": "Benjamin",
+        "rolle": "mitglied",
+        "verwaltung": [],
+        "aktiv": true,
+        "hatPasswort": false,
+        "erstellt": "ZEIT",
+        "letzteAnmeldung": null,
+        "entwicklermodus": true,
+        "sprache": "en",
+        "abwesenheit": {
+          "an": false,
+          "von": null,
+          "bis": null,
+          "vertreterId": null
+        },
+        "deaktiviert": null
+      }
+    ],
+    [
+      "aendereGeschuetzt",
+      {
+        "grund": "niemand mehr"
+      }
+    ],
+    [
+      "aendereGeschuetzt",
+      {
+        "benutzer": {
+          "id": "00000000-0000-4000-8000-000000000011",
+          "email": "ben@example.org",
+          "name": "Benjamin",
+          "rolle": "mitglied",
+          "verwaltung": ["sicherung"],
+          "aktiv": false,
+          "hatPasswort": false,
+          "erstellt": "ZEIT",
+          "letzteAnmeldung": null,
+          "entwicklermodus": true,
+          "sprache": "en",
+          "abwesenheit": {
+            "an": false,
+            "von": null,
+            "bis": null,
+            "vertreterId": null
+          },
+          "deaktiviert": "ZEIT"
+        }
+      }
+    ],
+    [
+      "aendereGeschuetzt",
+      {
+        "benutzer": {
+          "id": "00000000-0000-4000-8000-000000000011",
+          "email": "ben@example.org",
+          "name": "Benjamin",
+          "rolle": "mitglied",
+          "verwaltung": ["sicherung"],
+          "aktiv": true,
+          "hatPasswort": false,
+          "erstellt": "ZEIT",
+          "letzteAnmeldung": null,
+          "entwicklermodus": true,
+          "sprache": "en",
+          "abwesenheit": {
+            "an": false,
+            "von": null,
+            "bis": null,
+            "vertreterId": null
+          },
+          "deaktiviert": null
+        }
+      }
+    ],
+    [
+      "setzeAbwesenheit",
+      {
+        "id": "00000000-0000-4000-8000-000000000010",
+        "email": "anna@example.org",
+        "name": "Anna",
+        "rolle": "mitglied",
+        "verwaltung": ["*"],
+        "aktiv": true,
+        "hatPasswort": true,
+        "erstellt": "ZEIT",
+        "letzteAnmeldung": null,
+        "entwicklermodus": false,
+        "sprache": null,
+        "abwesenheit": {
+          "an": true,
+          "von": "2026-01-01",
+          "bis": "2026-01-05",
+          "vertreterId": "00000000-0000-4000-8000-000000000011"
+        },
+        "deaktiviert": null
+      }
+    ],
+    ["setzeHash", null],
+    ["notiereAnmeldung", null],
+    [
+      "holeHash",
+      {
+        "benutzer": {
+          "id": "00000000-0000-4000-8000-000000000011",
+          "email": "ben@example.org",
+          "name": "Benjamin",
+          "rolle": "mitglied",
+          "verwaltung": ["sicherung"],
+          "aktiv": true,
+          "hatPasswort": true,
+          "erstellt": "ZEIT",
+          "letzteAnmeldung": null,
+          "entwicklermodus": true,
+          "sprache": "en",
+          "abwesenheit": {
+            "an": false,
+            "von": null,
+            "bis": null,
+            "vertreterId": null
+          },
+          "deaktiviert": null
+        },
+        "hash": "h2"
+      }
+    ],
+    [
+      "legeDienstkontoAn",
+      {
+        "id": "00000000-0000-4000-8000-000000000020",
+        "email": "paket-ocr.speicher@dienst.invalid",
+        "name": "Texterkennung",
+        "rolle": "mitglied",
+        "verwaltung": [],
+        "aktiv": true,
+        "hatPasswort": false,
+        "erstellt": "ZEIT",
+        "letzteAnmeldung": null,
+        "entwicklermodus": false,
+        "abwesenheit": {
+          "an": false,
+          "von": null,
+          "bis": null,
+          "vertreterId": null
+        },
+        "deaktiviert": null,
+        "art": "dienst",
+        "paketId": "ocr"
+      }
+    ],
+    [
+      "dienstkonto",
+      {
+        "id": "00000000-0000-4000-8000-000000000020",
+        "email": "paket-ocr.speicher@dienst.invalid",
+        "name": "Texterkennung",
+        "rolle": "mitglied",
+        "verwaltung": [],
+        "aktiv": true,
+        "hatPasswort": false,
+        "erstellt": "ZEIT",
+        "letzteAnmeldung": null,
+        "entwicklermodus": false,
+        "abwesenheit": {
+          "an": false,
+          "von": null,
+          "bis": null,
+          "vertreterId": null
+        },
+        "deaktiviert": null,
+        "art": "dienst",
+        "paketId": "ocr"
+      }
+    ],
+    ["dienstkonto", null],
+    [
+      "listeDienstkonten",
+      [
+        {
+          "id": "00000000-0000-4000-8000-000000000020",
+          "email": "paket-ocr.speicher@dienst.invalid",
+          "name": "Texterkennung",
+          "rolle": "mitglied",
+          "verwaltung": [],
+          "aktiv": true,
+          "hatPasswort": false,
+          "erstellt": "ZEIT",
+          "letzteAnmeldung": null,
+          "entwicklermodus": false,
+          "abwesenheit": {
+            "an": false,
+            "von": null,
+            "bis": null,
+            "vertreterId": null
+          },
+          "deaktiviert": null,
+          "art": "dienst",
+          "paketId": "ocr"
+        }
+      ]
+    ],
+    [
+      "legeSystemkontoAn",
+      {
+        "id": "00000000-0000-4000-8000-000000000021",
+        "email": "automatik.speicher@system.invalid",
+        "name": "Automatik",
+        "rolle": "mitglied",
+        "verwaltung": [],
+        "aktiv": true,
+        "hatPasswort": false,
+        "erstellt": "ZEIT",
+        "letzteAnmeldung": null,
+        "entwicklermodus": false,
+        "abwesenheit": {
+          "an": false,
+          "von": null,
+          "bis": null,
+          "vertreterId": null
+        },
+        "deaktiviert": null,
+        "art": "system",
+        "systemkonto": "automatik"
+      }
+    ],
+    [
+      "legeSystemkontoAn",
+      {
+        "id": "00000000-0000-4000-8000-000000000021",
+        "email": "automatik.speicher@system.invalid",
+        "name": "Automatik",
+        "rolle": "mitglied",
+        "verwaltung": [],
+        "aktiv": true,
+        "hatPasswort": false,
+        "erstellt": "ZEIT",
+        "letzteAnmeldung": null,
+        "entwicklermodus": false,
+        "abwesenheit": {
+          "an": false,
+          "von": null,
+          "bis": null,
+          "vertreterId": null
+        },
+        "deaktiviert": null,
+        "art": "system",
+        "systemkonto": "automatik"
+      }
+    ],
+    [
+      "systemkonto",
+      {
+        "id": "00000000-0000-4000-8000-000000000021",
+        "email": "automatik.speicher@system.invalid",
+        "name": "Automatik",
+        "rolle": "mitglied",
+        "verwaltung": [],
+        "aktiv": true,
+        "hatPasswort": false,
+        "erstellt": "ZEIT",
+        "letzteAnmeldung": null,
+        "entwicklermodus": false,
+        "abwesenheit": {
+          "an": false,
+          "von": null,
+          "bis": null,
+          "vertreterId": null
+        },
+        "deaktiviert": null,
+        "art": "system",
+        "systemkonto": "automatik"
+      }
+    ],
+    [
+      "listeSystemkonten",
+      [
+        {
+          "id": "00000000-0000-4000-8000-000000000021",
+          "email": "automatik.speicher@system.invalid",
+          "name": "Automatik",
+          "rolle": "mitglied",
+          "verwaltung": [],
+          "aktiv": true,
+          "hatPasswort": false,
+          "erstellt": "ZEIT",
+          "letzteAnmeldung": null,
+          "entwicklermodus": false,
+          "abwesenheit": {
+            "an": false,
+            "von": null,
+            "bis": null,
+            "vertreterId": null
+          },
+          "deaktiviert": null,
+          "art": "system",
+          "systemkonto": "automatik"
+        }
+      ]
+    ],
+    ["legeSitzungAn", null],
+    ["legeSitzungAn", null],
+    ["legeSitzungAn", null],
+    ["legeSitzungAn", null],
+    ["legeSitzungAn", null],
+    [
+      "holeSitzung",
+      {
+        "id": "SITZUNG",
+        "benutzerId": "00000000-0000-4000-8000-000000000010",
+        "ablauf": "ZEIT",
+        "zuletztAktiv": "ZEIT",
+        "erstellt": "ZEIT",
+        "geraet": "Browser",
+        "ip": "127.0.0.1",
+        "vertretungId": null,
+        "anmeldungVoll": "ZEIT",
+        "verwaltungSeit": null,
+        "verwaltungAktiv": null,
+        "verwaltungBestaetigt": null,
+        "frisch": null
+      }
+    ],
+    ["holeSitzung", null],
+    [
+      "holeAnmeldung",
+      {
+        "sitzung": {
+          "id": "SITZUNG",
+          "benutzerId": "00000000-0000-4000-8000-000000000010",
+          "ablauf": "ZEIT",
+          "zuletztAktiv": "ZEIT",
+          "erstellt": "ZEIT",
+          "geraet": "Browser",
+          "ip": "127.0.0.1",
+          "vertretungId": null,
+          "anmeldungVoll": "ZEIT",
+          "verwaltungSeit": null,
+          "verwaltungAktiv": null,
+          "verwaltungBestaetigt": null,
+          "frisch": null
+        },
+        "benutzer": {
+          "id": "00000000-0000-4000-8000-000000000010",
+          "email": "anna@example.org",
+          "name": "Anna",
+          "rolle": "mitglied",
+          "verwaltung": ["*"],
+          "aktiv": true,
+          "hatPasswort": true,
+          "erstellt": "ZEIT",
+          "letzteAnmeldung": "ZEIT",
+          "entwicklermodus": false,
+          "sprache": null,
+          "abwesenheit": {
+            "an": true,
+            "von": "2026-01-01",
+            "bis": "2026-01-05",
+            "vertreterId": "00000000-0000-4000-8000-000000000011"
+          },
+          "deaktiviert": null
+        }
+      }
+    ],
+    ["holeAnmeldung", null],
+    ["holeAnmeldung", null],
+    ["beruehreSitzung", null],
+    ["setzeSitzungsVerwaltung", null],
+    [
+      "sitzungenImVerwaltungsmodus",
+      [
+        {
+          "benutzer": {
+            "id": "00000000-0000-4000-8000-000000000010",
+            "email": "anna@example.org",
+            "name": "Anna",
+            "rolle": "mitglied",
+            "verwaltung": ["*"],
+            "aktiv": true,
+            "hatPasswort": true,
+            "erstellt": "ZEIT",
+            "letzteAnmeldung": "ZEIT",
+            "entwicklermodus": false,
+            "sprache": null,
+            "abwesenheit": {
+              "an": true,
+              "von": "2026-01-01",
+              "bis": "2026-01-05",
+              "vertreterId": "00000000-0000-4000-8000-000000000011"
+            },
+            "deaktiviert": null
+          },
+          "sitzung": {
+            "id": "SITZUNG",
+            "benutzerId": "00000000-0000-4000-8000-000000000010",
+            "ablauf": "ZEIT",
+            "zuletztAktiv": "ZEIT",
+            "erstellt": "ZEIT",
+            "geraet": "Browser",
+            "ip": "127.0.0.1",
+            "vertretungId": null,
+            "anmeldungVoll": "ZEIT",
+            "verwaltungSeit": "ZEIT",
+            "verwaltungAktiv": "ZEIT",
+            "verwaltungBestaetigt": null,
+            "frisch": null
+          }
+        }
+      ]
+    ],
+    ["setzeSitzungsVerwaltung", null],
+    [
+      "holeSitzung",
+      {
+        "id": "SITZUNG",
+        "benutzerId": "00000000-0000-4000-8000-000000000010",
+        "ablauf": "ZEIT",
+        "zuletztAktiv": "ZEIT",
+        "erstellt": "ZEIT",
+        "geraet": "Browser",
+        "ip": "127.0.0.1",
+        "vertretungId": null,
+        "anmeldungVoll": "ZEIT",
+        "verwaltungSeit": "ZEIT",
+        "verwaltungAktiv": "ZEIT",
+        "verwaltungBestaetigt": null,
+        "frisch": "ZEIT"
+      }
+    ],
+    ["vergissVerwaltungVon", null],
+    ["vergissVerwaltungVon", null],
+    ["sitzungenImVerwaltungsmodus", []],
+    [
+      "listeSitzungen",
+      [
+        {
+          "hash": "s2",
+          "id": "SITZUNG",
+          "benutzerId": "00000000-0000-4000-8000-000000000010",
+          "erstellt": "ZEIT",
+          "zuletztAktiv": "ZEIT",
+          "ablauf": "ZEIT",
+          "geraet": "Handy",
+          "ip": "127.0.0.2",
+          "vertretungId": null
+        },
+        {
+          "hash": "s1",
+          "id": "SITZUNG",
+          "benutzerId": "00000000-0000-4000-8000-000000000010",
+          "erstellt": "ZEIT",
+          "zuletztAktiv": "ZEIT",
+          "ablauf": "ZEIT",
+          "geraet": "Browser",
+          "ip": "127.0.0.1",
+          "vertretungId": null
+        }
+      ]
+    ],
+    ["listeSitzungen", []],
+    [
+      "listeBenutzer",
+      [
+        {
+          "id": "00000000-0000-4000-8000-000000000010",
+          "email": "anna@example.org",
+          "name": "Anna",
+          "rolle": "mitglied",
+          "verwaltung": ["*"],
+          "aktiv": true,
+          "hatPasswort": true,
+          "erstellt": "ZEIT",
+          "letzteAnmeldung": "ZEIT",
+          "entwicklermodus": false,
+          "sprache": null,
+          "abwesenheit": {
+            "an": true,
+            "von": "2026-01-01",
+            "bis": "2026-01-05",
+            "vertreterId": "00000000-0000-4000-8000-000000000011"
+          },
+          "deaktiviert": null,
+          "zuletztAktiv": "ZEIT"
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000011",
+          "email": "ben@example.org",
+          "name": "Benjamin",
+          "rolle": "mitglied",
+          "verwaltung": ["sicherung"],
+          "aktiv": true,
+          "hatPasswort": true,
+          "erstellt": "ZEIT",
+          "letzteAnmeldung": null,
+          "entwicklermodus": true,
+          "sprache": "en",
+          "abwesenheit": {
+            "an": false,
+            "von": null,
+            "bis": null,
+            "vertreterId": null
+          },
+          "deaktiviert": null,
+          "zuletztAktiv": "ZEIT"
+        }
+      ]
+    ],
+    ["loescheSitzung", null],
+    ["loescheSitzungMitId", false],
+    ["loescheSitzungMitId", false],
+    [
+      "listeSitzungen",
+      [
+        {
+          "hash": "s1",
+          "id": "SITZUNG",
+          "benutzerId": "00000000-0000-4000-8000-000000000010",
+          "erstellt": "ZEIT",
+          "zuletztAktiv": "ZEIT",
+          "ablauf": "ZEIT",
+          "geraet": "Browser",
+          "ip": "127.0.0.1",
+          "vertretungId": null
+        }
+      ]
+    ],
+    ["legeVertretungAn", null],
+    [
+      "holeVertretung",
+      {
+        "id": "00000000-0000-4000-8000-000000000030",
+        "benutzerId": "00000000-0000-4000-8000-000000000011",
+        "adminId": "00000000-0000-4000-8000-000000000010",
+        "adminName": "Anna",
+        "beginn": "ZEIT",
+        "ende": null
+      }
+    ],
+    ["holeVertretung", null],
+    [
+      "ungeseheneVertretungen",
+      [
+        {
+          "id": "00000000-0000-4000-8000-000000000030",
+          "benutzerId": "00000000-0000-4000-8000-000000000011",
+          "adminId": "00000000-0000-4000-8000-000000000010",
+          "adminName": "Anna",
+          "beginn": "ZEIT",
+          "ende": null
+        }
+      ]
+    ],
+    ["beendeVertretung", null],
+    ["beendeVertretung", null],
+    [
+      "alleVertretungen",
+      [
+        {
+          "id": "00000000-0000-4000-8000-000000000030",
+          "benutzerId": "00000000-0000-4000-8000-000000000011",
+          "adminId": "00000000-0000-4000-8000-000000000010",
+          "adminName": "Anna",
+          "beginn": "ZEIT",
+          "ende": "ZEIT"
+        }
+      ]
+    ],
+    ["markiereGesehen", null],
+    ["ungeseheneVertretungen", []],
+    ["einstellungen", {}],
+    ["einstellungen", {}],
+    ["setzeEinstellung", null],
+    ["setzeEinstellung", null],
+    ["setzeEinstellung", null],
+    ["merkeVorn", null],
+    ["merkeVorn", null],
+    ["merkeVorn", null],
+    ["merkeVorn", null],
+    ["merkeVorn", null],
+    ["merkeVorn", null],
+    [
+      "einstellungen",
+      {
+        "farbe": {
+          "wert": "blau"
+        },
+        "zuletzt": [
+          {
+            "id": "00000000-0000-4000-8000-000000000043",
+            "am": "ZEIT"
+          },
+          {
+            "id": "00000000-0000-4000-8000-000000000042",
+            "am": "ZEIT"
+          },
+          {
+            "id": "00000000-0000-4000-8000-000000000041",
+            "am": "ZEIT"
+          }
+        ]
+      }
+    ],
+    ["legeLinkAn", null],
+    [
+      "holeLink",
+      {
+        "benutzerId": "00000000-0000-4000-8000-000000000011",
+        "zweck": "einladung",
+        "ablauf": "ZEIT",
+        "benutzt": null
+      }
+    ],
+    ["verbraucheLink", true],
+    ["verbraucheLink", false],
+    ["holeLink", null],
+    ["loescheLinksVon", null],
+    ["holeLink", null],
+    ["notfallcode", null],
+    ["setzeNotfallcode", null],
+    [
+      "notfallcode",
+      {
+        "hash": "nh",
+        "erstellt": "ZEIT"
+      }
+    ],
+    ["legeLinkAn", null],
+    ["loeseNotfallcodeEin", false],
+    ["loeseNotfallcodeEin", false],
+    ["loeseNotfallcodeEin", true],
+    ["loeseNotfallcodeEin", false],
+    ["notfallcode", null],
+    [
+      "holeHash",
+      {
+        "benutzer": {
+          "id": "00000000-0000-4000-8000-000000000010",
+          "email": "anna@example.org",
+          "name": "Anna",
+          "rolle": "mitglied",
+          "verwaltung": ["*"],
+          "aktiv": true,
+          "hatPasswort": true,
+          "erstellt": "ZEIT",
+          "letzteAnmeldung": "ZEIT",
+          "entwicklermodus": false,
+          "sprache": null,
+          "abwesenheit": {
+            "an": true,
+            "von": "2026-01-01",
+            "bis": "2026-01-05",
+            "vertreterId": "00000000-0000-4000-8000-000000000011"
+          },
+          "deaktiviert": null
+        },
+        "hash": "h3"
+      }
+    ],
+    ["listeSitzungen", []],
+    ["holeLink", null],
+    ["loescheSitzungenVon", null],
+    ["listeSitzungen", []],
+    ["loescheBenutzer", null],
+    ["holeBenutzer", null],
+    [
+      "listeBenutzer",
+      [
+        {
+          "id": "00000000-0000-4000-8000-000000000010",
+          "email": "anna@example.org",
+          "name": "Anna",
+          "rolle": "mitglied",
+          "verwaltung": ["*"],
+          "aktiv": true,
+          "hatPasswort": true,
+          "erstellt": "ZEIT",
+          "letzteAnmeldung": "ZEIT",
+          "entwicklermodus": false,
+          "sprache": null,
+          "abwesenheit": {
+            "an": true,
+            "von": "2026-01-01",
+            "bis": "2026-01-05",
+            "vertreterId": "00000000-0000-4000-8000-000000000011"
+          },
+          "deaktiviert": null,
+          "zuletztAktiv": null
+        }
+      ]
+    ]
+  ],
+  "pg": [
+    ["anzahlBenutzer", 0],
+    [
+      "legeBenutzerAn",
+      {
+        "id": "00000000-0000-4000-8000-000000000010",
+        "email": "anna@example.org",
+        "name": "Anna",
+        "rolle": "mitglied",
+        "verwaltung": ["*"],
+        "aktiv": true,
+        "hatPasswort": true,
+        "erstellt": "ZEIT",
+        "letzteAnmeldung": null,
+        "entwicklermodus": false,
+        "sprache": null,
+        "abwesenheit": {
+          "an": false,
+          "von": null,
+          "bis": null,
+          "vertreterId": null
+        },
+        "deaktiviert": null
+      }
+    ],
+    [
+      "legeBenutzerAn",
+      {
+        "id": "00000000-0000-4000-8000-000000000011",
+        "email": "ben@example.org",
+        "name": "Ben",
+        "rolle": "mitglied",
+        "verwaltung": [],
+        "aktiv": true,
+        "hatPasswort": false,
+        "erstellt": "ZEIT",
+        "letzteAnmeldung": null,
+        "entwicklermodus": false,
+        "sprache": null,
+        "abwesenheit": {
+          "an": false,
+          "von": null,
+          "bis": null,
+          "vertreterId": null
+        },
+        "deaktiviert": null
+      }
+    ],
+    [
+      "legeBenutzerAn",
+      {
+        "fehler": "23505"
+      }
+    ],
+    ["anzahlBenutzer", 2],
+    [
+      "holeBenutzer",
+      {
+        "id": "00000000-0000-4000-8000-000000000010",
+        "email": "anna@example.org",
+        "name": "Anna",
+        "rolle": "mitglied",
+        "verwaltung": ["*"],
+        "aktiv": true,
+        "hatPasswort": true,
+        "erstellt": "ZEIT",
+        "letzteAnmeldung": null,
+        "entwicklermodus": false,
+        "sprache": null,
+        "abwesenheit": {
+          "an": false,
+          "von": null,
+          "bis": null,
+          "vertreterId": null
+        },
+        "deaktiviert": null
+      }
+    ],
+    ["holeBenutzer", null],
+    [
+      "holeHash",
+      {
+        "benutzer": {
+          "id": "00000000-0000-4000-8000-000000000010",
+          "email": "anna@example.org",
+          "name": "Anna",
+          "rolle": "mitglied",
+          "verwaltung": ["*"],
+          "aktiv": true,
+          "hatPasswort": true,
+          "erstellt": "ZEIT",
+          "letzteAnmeldung": null,
+          "entwicklermodus": false,
+          "sprache": null,
+          "abwesenheit": {
+            "an": false,
+            "von": null,
+            "bis": null,
+            "vertreterId": null
+          },
+          "deaktiviert": null
+        },
+        "hash": "h1"
+      }
+    ],
+    ["holeHash", null],
+    [
+      "aendereBenutzer",
+      {
+        "id": "00000000-0000-4000-8000-000000000011",
+        "email": "ben@example.org",
+        "name": "Benjamin",
+        "rolle": "mitglied",
+        "verwaltung": [],
+        "aktiv": false,
+        "hatPasswort": false,
+        "erstellt": "ZEIT",
+        "letzteAnmeldung": null,
+        "entwicklermodus": false,
+        "sprache": null,
+        "abwesenheit": {
+          "an": false,
+          "von": null,
+          "bis": null,
+          "vertreterId": null
+        },
+        "deaktiviert": "ZEIT"
+      }
+    ],
+    [
+      "aendereBenutzer",
+      {
+        "id": "00000000-0000-4000-8000-000000000011",
+        "email": "ben@example.org",
+        "name": "Benjamin",
+        "rolle": "mitglied",
+        "verwaltung": [],
+        "aktiv": true,
+        "hatPasswort": false,
+        "erstellt": "ZEIT",
+        "letzteAnmeldung": null,
+        "entwicklermodus": true,
+        "sprache": "en",
+        "abwesenheit": {
+          "an": false,
+          "von": null,
+          "bis": null,
+          "vertreterId": null
+        },
+        "deaktiviert": null
+      }
+    ],
+    [
+      "aendereGeschuetzt",
+      {
+        "grund": "niemand mehr"
+      }
+    ],
+    [
+      "aendereGeschuetzt",
+      {
+        "benutzer": {
+          "id": "00000000-0000-4000-8000-000000000011",
+          "email": "ben@example.org",
+          "name": "Benjamin",
+          "rolle": "mitglied",
+          "verwaltung": ["sicherung"],
+          "aktiv": false,
+          "hatPasswort": false,
+          "erstellt": "ZEIT",
+          "letzteAnmeldung": null,
+          "entwicklermodus": true,
+          "sprache": "en",
+          "abwesenheit": {
+            "an": false,
+            "von": null,
+            "bis": null,
+            "vertreterId": null
+          },
+          "deaktiviert": "ZEIT"
+        }
+      }
+    ],
+    [
+      "aendereGeschuetzt",
+      {
+        "benutzer": {
+          "id": "00000000-0000-4000-8000-000000000011",
+          "email": "ben@example.org",
+          "name": "Benjamin",
+          "rolle": "mitglied",
+          "verwaltung": ["sicherung"],
+          "aktiv": true,
+          "hatPasswort": false,
+          "erstellt": "ZEIT",
+          "letzteAnmeldung": null,
+          "entwicklermodus": true,
+          "sprache": "en",
+          "abwesenheit": {
+            "an": false,
+            "von": null,
+            "bis": null,
+            "vertreterId": null
+          },
+          "deaktiviert": null
+        }
+      }
+    ],
+    [
+      "setzeAbwesenheit",
+      {
+        "id": "00000000-0000-4000-8000-000000000010",
+        "email": "anna@example.org",
+        "name": "Anna",
+        "rolle": "mitglied",
+        "verwaltung": ["*"],
+        "aktiv": true,
+        "hatPasswort": true,
+        "erstellt": "ZEIT",
+        "letzteAnmeldung": null,
+        "entwicklermodus": false,
+        "sprache": null,
+        "abwesenheit": {
+          "an": true,
+          "von": "2026-01-01",
+          "bis": "2026-01-05",
+          "vertreterId": "00000000-0000-4000-8000-000000000011"
+        },
+        "deaktiviert": null
+      }
+    ],
+    ["setzeHash", null],
+    ["notiereAnmeldung", null],
+    [
+      "holeHash",
+      {
+        "benutzer": {
+          "id": "00000000-0000-4000-8000-000000000011",
+          "email": "ben@example.org",
+          "name": "Benjamin",
+          "rolle": "mitglied",
+          "verwaltung": ["sicherung"],
+          "aktiv": true,
+          "hatPasswort": true,
+          "erstellt": "ZEIT",
+          "letzteAnmeldung": null,
+          "entwicklermodus": true,
+          "sprache": "en",
+          "abwesenheit": {
+            "an": false,
+            "von": null,
+            "bis": null,
+            "vertreterId": null
+          },
+          "deaktiviert": null
+        },
+        "hash": "h2"
+      }
+    ],
+    [
+      "legeDienstkontoAn",
+      {
+        "id": "00000000-0000-4000-8000-000000000020",
+        "email": "paket-ocr.00000000-0000-4000-8000-000000000001@dienst.invalid",
+        "name": "Texterkennung",
+        "rolle": "mitglied",
+        "verwaltung": [],
+        "aktiv": true,
+        "hatPasswort": false,
+        "erstellt": "ZEIT",
+        "letzteAnmeldung": null,
+        "entwicklermodus": false,
+        "sprache": null,
+        "abwesenheit": {
+          "an": false,
+          "von": null,
+          "bis": null,
+          "vertreterId": null
+        },
+        "deaktiviert": null,
+        "art": "dienst",
+        "paketId": "ocr"
+      }
+    ],
+    [
+      "dienstkonto",
+      {
+        "id": "00000000-0000-4000-8000-000000000020",
+        "email": "paket-ocr.00000000-0000-4000-8000-000000000001@dienst.invalid",
+        "name": "Texterkennung",
+        "rolle": "mitglied",
+        "verwaltung": [],
+        "aktiv": true,
+        "hatPasswort": false,
+        "erstellt": "ZEIT",
+        "letzteAnmeldung": null,
+        "entwicklermodus": false,
+        "sprache": null,
+        "abwesenheit": {
+          "an": false,
+          "von": null,
+          "bis": null,
+          "vertreterId": null
+        },
+        "deaktiviert": null,
+        "art": "dienst",
+        "paketId": "ocr"
+      }
+    ],
+    ["dienstkonto", null],
+    [
+      "listeDienstkonten",
+      [
+        {
+          "id": "00000000-0000-4000-8000-000000000020",
+          "email": "paket-ocr.00000000-0000-4000-8000-000000000001@dienst.invalid",
+          "name": "Texterkennung",
+          "rolle": "mitglied",
+          "verwaltung": [],
+          "aktiv": true,
+          "hatPasswort": false,
+          "erstellt": "ZEIT",
+          "letzteAnmeldung": null,
+          "entwicklermodus": false,
+          "sprache": null,
+          "abwesenheit": {
+            "an": false,
+            "von": null,
+            "bis": null,
+            "vertreterId": null
+          },
+          "deaktiviert": null,
+          "art": "dienst",
+          "paketId": "ocr"
+        }
+      ]
+    ],
+    [
+      "legeSystemkontoAn",
+      {
+        "id": "00000000-0000-4000-8000-000000000021",
+        "email": "automatik.00000000-0000-4000-8000-000000000001@system.invalid",
+        "name": "Automatik",
+        "rolle": "mitglied",
+        "verwaltung": [],
+        "aktiv": true,
+        "hatPasswort": false,
+        "erstellt": "ZEIT",
+        "letzteAnmeldung": null,
+        "entwicklermodus": false,
+        "sprache": null,
+        "abwesenheit": {
+          "an": false,
+          "von": null,
+          "bis": null,
+          "vertreterId": null
+        },
+        "deaktiviert": null,
+        "art": "system",
+        "systemkonto": "automatik"
+      }
+    ],
+    [
+      "legeSystemkontoAn",
+      {
+        "id": "00000000-0000-4000-8000-000000000021",
+        "email": "automatik.00000000-0000-4000-8000-000000000001@system.invalid",
+        "name": "Automatik",
+        "rolle": "mitglied",
+        "verwaltung": [],
+        "aktiv": true,
+        "hatPasswort": false,
+        "erstellt": "ZEIT",
+        "letzteAnmeldung": null,
+        "entwicklermodus": false,
+        "sprache": null,
+        "abwesenheit": {
+          "an": false,
+          "von": null,
+          "bis": null,
+          "vertreterId": null
+        },
+        "deaktiviert": null,
+        "art": "system",
+        "systemkonto": "automatik"
+      }
+    ],
+    [
+      "systemkonto",
+      {
+        "id": "00000000-0000-4000-8000-000000000021",
+        "email": "automatik.00000000-0000-4000-8000-000000000001@system.invalid",
+        "name": "Automatik",
+        "rolle": "mitglied",
+        "verwaltung": [],
+        "aktiv": true,
+        "hatPasswort": false,
+        "erstellt": "ZEIT",
+        "letzteAnmeldung": null,
+        "entwicklermodus": false,
+        "sprache": null,
+        "abwesenheit": {
+          "an": false,
+          "von": null,
+          "bis": null,
+          "vertreterId": null
+        },
+        "deaktiviert": null,
+        "art": "system",
+        "systemkonto": "automatik"
+      }
+    ],
+    [
+      "listeSystemkonten",
+      [
+        {
+          "id": "00000000-0000-4000-8000-000000000021",
+          "email": "automatik.00000000-0000-4000-8000-000000000001@system.invalid",
+          "name": "Automatik",
+          "rolle": "mitglied",
+          "verwaltung": [],
+          "aktiv": true,
+          "hatPasswort": false,
+          "erstellt": "ZEIT",
+          "letzteAnmeldung": null,
+          "entwicklermodus": false,
+          "sprache": null,
+          "abwesenheit": {
+            "an": false,
+            "von": null,
+            "bis": null,
+            "vertreterId": null
+          },
+          "deaktiviert": null,
+          "art": "system",
+          "systemkonto": "automatik"
+        }
+      ]
+    ],
+    ["legeSitzungAn", null],
+    ["legeSitzungAn", null],
+    ["legeSitzungAn", null],
+    ["legeSitzungAn", null],
+    ["legeSitzungAn", null],
+    [
+      "holeSitzung",
+      {
+        "id": "SITZUNG",
+        "benutzerId": "00000000-0000-4000-8000-000000000010",
+        "ablauf": "ZEIT",
+        "zuletztAktiv": "ZEIT",
+        "vertretungId": null,
+        "erstellt": "ZEIT",
+        "anmeldungVoll": "ZEIT",
+        "verwaltungSeit": null,
+        "verwaltungAktiv": null,
+        "verwaltungBestaetigt": null,
+        "frisch": null
+      }
+    ],
+    ["holeSitzung", null],
+    [
+      "holeAnmeldung",
+      {
+        "sitzung": {
+          "id": "SITZUNG",
+          "benutzerId": "00000000-0000-4000-8000-000000000010",
+          "ablauf": "ZEIT",
+          "zuletztAktiv": "ZEIT",
+          "vertretungId": null,
+          "erstellt": "ZEIT",
+          "anmeldungVoll": "ZEIT",
+          "verwaltungSeit": null,
+          "verwaltungAktiv": null,
+          "verwaltungBestaetigt": null,
+          "frisch": null
+        },
+        "benutzer": {
+          "id": "00000000-0000-4000-8000-000000000010",
+          "email": "anna@example.org",
+          "name": "Anna",
+          "rolle": "mitglied",
+          "verwaltung": ["*"],
+          "aktiv": true,
+          "hatPasswort": true,
+          "erstellt": "ZEIT",
+          "letzteAnmeldung": "ZEIT",
+          "entwicklermodus": false,
+          "sprache": null,
+          "abwesenheit": {
+            "an": true,
+            "von": "2026-01-01",
+            "bis": "2026-01-05",
+            "vertreterId": "00000000-0000-4000-8000-000000000011"
+          },
+          "deaktiviert": null
+        }
+      }
+    ],
+    ["holeAnmeldung", null],
+    ["holeAnmeldung", null],
+    ["beruehreSitzung", null],
+    ["setzeSitzungsVerwaltung", null],
+    [
+      "sitzungenImVerwaltungsmodus",
+      [
+        {
+          "benutzer": {
+            "id": "00000000-0000-4000-8000-000000000010",
+            "email": "anna@example.org",
+            "name": "Anna",
+            "rolle": "mitglied",
+            "verwaltung": ["*"],
+            "aktiv": true,
+            "hatPasswort": true,
+            "erstellt": "ZEIT",
+            "letzteAnmeldung": "ZEIT",
+            "entwicklermodus": false,
+            "sprache": null,
+            "abwesenheit": {
+              "an": true,
+              "von": "2026-01-01",
+              "bis": "2026-01-05",
+              "vertreterId": "00000000-0000-4000-8000-000000000011"
+            },
+            "deaktiviert": null
+          },
+          "sitzung": {
+            "id": "SITZUNG",
+            "benutzerId": "00000000-0000-4000-8000-000000000010",
+            "ablauf": "ZEIT",
+            "zuletztAktiv": "ZEIT",
+            "vertretungId": null,
+            "anmeldungVoll": null,
+            "verwaltungSeit": "ZEIT",
+            "verwaltungAktiv": "ZEIT",
+            "verwaltungBestaetigt": null,
+            "frisch": null
+          }
+        }
+      ]
+    ],
+    ["setzeSitzungsVerwaltung", null],
+    [
+      "holeSitzung",
+      {
+        "id": "SITZUNG",
+        "benutzerId": "00000000-0000-4000-8000-000000000010",
+        "ablauf": "ZEIT",
+        "zuletztAktiv": "ZEIT",
+        "vertretungId": null,
+        "erstellt": "ZEIT",
+        "anmeldungVoll": "ZEIT",
+        "verwaltungSeit": "ZEIT",
+        "verwaltungAktiv": "ZEIT",
+        "verwaltungBestaetigt": null,
+        "frisch": "ZEIT"
+      }
+    ],
+    ["vergissVerwaltungVon", null],
+    ["vergissVerwaltungVon", null],
+    ["sitzungenImVerwaltungsmodus", []],
+    [
+      "listeSitzungen",
+      [
+        {
+          "hash": "s2",
+          "id": "SITZUNG",
+          "benutzerId": "00000000-0000-4000-8000-000000000010",
+          "erstellt": "ZEIT",
+          "zuletztAktiv": "ZEIT",
+          "ablauf": "ZEIT",
+          "geraet": "Handy",
+          "ip": "127.0.0.2",
+          "vertretungId": null
+        },
+        {
+          "hash": "s1",
+          "id": "SITZUNG",
+          "benutzerId": "00000000-0000-4000-8000-000000000010",
+          "erstellt": "ZEIT",
+          "zuletztAktiv": "ZEIT",
+          "ablauf": "ZEIT",
+          "geraet": "Browser",
+          "ip": "127.0.0.1",
+          "vertretungId": null
+        }
+      ]
+    ],
+    ["listeSitzungen", []],
+    [
+      "listeBenutzer",
+      [
+        {
+          "id": "00000000-0000-4000-8000-000000000010",
+          "email": "anna@example.org",
+          "name": "Anna",
+          "rolle": "mitglied",
+          "verwaltung": ["*"],
+          "aktiv": true,
+          "hatPasswort": true,
+          "erstellt": "ZEIT",
+          "letzteAnmeldung": "ZEIT",
+          "entwicklermodus": false,
+          "sprache": null,
+          "abwesenheit": {
+            "an": true,
+            "von": "2026-01-01",
+            "bis": "2026-01-05",
+            "vertreterId": "00000000-0000-4000-8000-000000000011"
+          },
+          "deaktiviert": null,
+          "zuletztAktiv": "ZEIT"
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000011",
+          "email": "ben@example.org",
+          "name": "Benjamin",
+          "rolle": "mitglied",
+          "verwaltung": ["sicherung"],
+          "aktiv": true,
+          "hatPasswort": true,
+          "erstellt": "ZEIT",
+          "letzteAnmeldung": null,
+          "entwicklermodus": true,
+          "sprache": "en",
+          "abwesenheit": {
+            "an": false,
+            "von": null,
+            "bis": null,
+            "vertreterId": null
+          },
+          "deaktiviert": null,
+          "zuletztAktiv": "ZEIT"
+        }
+      ]
+    ],
+    ["loescheSitzung", null],
+    ["loescheSitzungMitId", false],
+    ["loescheSitzungMitId", false],
+    [
+      "listeSitzungen",
+      [
+        {
+          "hash": "s1",
+          "id": "SITZUNG",
+          "benutzerId": "00000000-0000-4000-8000-000000000010",
+          "erstellt": "ZEIT",
+          "zuletztAktiv": "ZEIT",
+          "ablauf": "ZEIT",
+          "geraet": "Browser",
+          "ip": "127.0.0.1",
+          "vertretungId": null
+        }
+      ]
+    ],
+    ["legeVertretungAn", null],
+    [
+      "holeVertretung",
+      {
+        "id": "00000000-0000-4000-8000-000000000030",
+        "benutzerId": "00000000-0000-4000-8000-000000000011",
+        "adminId": "00000000-0000-4000-8000-000000000010",
+        "adminName": "Anna",
+        "beginn": "ZEIT",
+        "ende": null
+      }
+    ],
+    ["holeVertretung", null],
+    [
+      "ungeseheneVertretungen",
+      [
+        {
+          "id": "00000000-0000-4000-8000-000000000030",
+          "benutzerId": "00000000-0000-4000-8000-000000000011",
+          "adminId": "00000000-0000-4000-8000-000000000010",
+          "adminName": "Anna",
+          "beginn": "ZEIT",
+          "ende": null
+        }
+      ]
+    ],
+    ["beendeVertretung", null],
+    ["beendeVertretung", null],
+    [
+      "alleVertretungen",
+      [
+        {
+          "id": "00000000-0000-4000-8000-000000000030",
+          "benutzerId": "00000000-0000-4000-8000-000000000011",
+          "adminId": "00000000-0000-4000-8000-000000000010",
+          "adminName": "Anna",
+          "beginn": "ZEIT",
+          "ende": "ZEIT"
+        }
+      ]
+    ],
+    ["markiereGesehen", null],
+    ["ungeseheneVertretungen", []],
+    ["einstellungen", {}],
+    ["einstellungen", {}],
+    ["setzeEinstellung", null],
+    ["setzeEinstellung", null],
+    ["setzeEinstellung", null],
+    ["merkeVorn", null],
+    ["merkeVorn", null],
+    ["merkeVorn", null],
+    ["merkeVorn", null],
+    ["merkeVorn", null],
+    ["merkeVorn", null],
+    [
+      "einstellungen",
+      {
+        "farbe": {
+          "wert": "blau"
+        },
+        "zuletzt": [
+          {
+            "am": "ZEIT",
+            "id": "00000000-0000-4000-8000-000000000043"
+          },
+          {
+            "am": "ZEIT",
+            "id": "00000000-0000-4000-8000-000000000042"
+          },
+          {
+            "am": "ZEIT",
+            "id": "00000000-0000-4000-8000-000000000041"
+          }
+        ]
+      }
+    ],
+    ["legeLinkAn", null],
+    [
+      "holeLink",
+      {
+        "benutzerId": "00000000-0000-4000-8000-000000000011",
+        "zweck": "einladung",
+        "ablauf": "ZEIT",
+        "benutzt": null
+      }
+    ],
+    ["verbraucheLink", true],
+    ["verbraucheLink", false],
+    ["holeLink", null],
+    ["loescheLinksVon", null],
+    ["holeLink", null],
+    ["notfallcode", null],
+    ["setzeNotfallcode", null],
+    [
+      "notfallcode",
+      {
+        "hash": "nh",
+        "erstellt": "ZEIT"
+      }
+    ],
+    ["legeLinkAn", null],
+    ["loeseNotfallcodeEin", false],
+    ["loeseNotfallcodeEin", false],
+    ["loeseNotfallcodeEin", true],
+    ["loeseNotfallcodeEin", false],
+    ["notfallcode", null],
+    [
+      "holeHash",
+      {
+        "benutzer": {
+          "id": "00000000-0000-4000-8000-000000000010",
+          "email": "anna@example.org",
+          "name": "Anna",
+          "rolle": "mitglied",
+          "verwaltung": ["*"],
+          "aktiv": true,
+          "hatPasswort": true,
+          "erstellt": "ZEIT",
+          "letzteAnmeldung": "ZEIT",
+          "entwicklermodus": false,
+          "sprache": null,
+          "abwesenheit": {
+            "an": true,
+            "von": "2026-01-01",
+            "bis": "2026-01-05",
+            "vertreterId": "00000000-0000-4000-8000-000000000011"
+          },
+          "deaktiviert": null
+        },
+        "hash": "h3"
+      }
+    ],
+    ["listeSitzungen", []],
+    ["holeLink", null],
+    ["loescheSitzungenVon", null],
+    ["listeSitzungen", []],
+    ["loescheBenutzer", null],
+    ["holeBenutzer", null],
+    [
+      "listeBenutzer",
+      [
+        {
+          "id": "00000000-0000-4000-8000-000000000010",
+          "email": "anna@example.org",
+          "name": "Anna",
+          "rolle": "mitglied",
+          "verwaltung": ["*"],
+          "aktiv": true,
+          "hatPasswort": true,
+          "erstellt": "ZEIT",
+          "letzteAnmeldung": "ZEIT",
+          "entwicklermodus": false,
+          "sprache": null,
+          "abwesenheit": {
+            "an": true,
+            "von": "2026-01-01",
+            "bis": "2026-01-05",
+            "vertreterId": null
+          },
+          "deaktiviert": null,
+          "zuletztAktiv": null
+        }
+      ]
+    ]
+  ]
+}

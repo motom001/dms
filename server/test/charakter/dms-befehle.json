@@ -1,0 +1,688 @@
+{
+  "passwort ohne E-Mail": {
+    "anfragen": [],
+    "ausgabe": [],
+    "fragen": [],
+    "fehler": {
+      "meldung": "Aufruf: dms passwort <email> [--passwort <neu>]",
+      "code": 2
+    }
+  },
+  "passwort mit --passwort": {
+    "anfragen": [
+      [
+        "POST",
+        "/api/konsole/passwort",
+        {
+          "email": "anna@example.org",
+          "passwort": "neu-und-lang"
+        }
+      ]
+    ],
+    "ausgabe": ["Passwort für anna@example.org gesetzt; alle Sitzungen dieses Benutzers sind beendet."],
+    "fragen": [],
+    "fehler": null
+  },
+  "passwort als JSON": {
+    "anfragen": [
+      [
+        "POST",
+        "/api/konsole/passwort",
+        {
+          "email": "anna@example.org",
+          "passwort": "x"
+        }
+      ]
+    ],
+    "ausgabe": [
+      {
+        "json": {
+          "email": "anna@example.org",
+          "aktiv": false,
+          "zweifaktor": true
+        }
+      }
+    ],
+    "fragen": [],
+    "fehler": null
+  },
+  "passwort inaktiv mit Zwei-Faktor": {
+    "anfragen": [
+      [
+        "POST",
+        "/api/konsole/passwort",
+        {
+          "email": "anna@example.org",
+          "passwort": "x"
+        }
+      ]
+    ],
+    "ausgabe": [
+      "Passwort für anna@example.org gesetzt; alle Sitzungen dieses Benutzers sind beendet.",
+      "Achtung: Der Benutzer ist deaktiviert und kann sich so nicht anmelden.",
+      "Die Zwei-Faktor-Anmeldung ist eingerichtet. Ohne Handy: dms zweifaktor-zuruecksetzen anna@example.org"
+    ],
+    "fragen": [],
+    "fehler": null
+  },
+  "passwort ohne Terminal": {
+    "anfragen": [],
+    "ausgabe": [],
+    "fragen": [],
+    "fehler": {
+      "meldung": "Ohne Terminal das Passwort mit --passwort angeben (oder docker exec -it verwenden).",
+      "code": 2
+    }
+  },
+  "passwort im Terminal": {
+    "anfragen": [
+      [
+        "POST",
+        "/api/konsole/passwort",
+        {
+          "email": "anna@example.org",
+          "passwort": "geheim-lang"
+        }
+      ]
+    ],
+    "ausgabe": ["Passwort für anna@example.org gesetzt; alle Sitzungen dieses Benutzers sind beendet."],
+    "fragen": [
+      ["Neues Passwort: ", true],
+      ["Wiederholen: ", true]
+    ],
+    "fehler": null
+  },
+  "passwort im Terminal verschieden": {
+    "anfragen": [],
+    "ausgabe": [],
+    "fragen": [
+      ["Neues Passwort: ", true],
+      ["Wiederholen: ", true]
+    ],
+    "fehler": {
+      "meldung": "Die beiden Passwörter stimmen nicht überein.",
+      "code": 1
+    }
+  },
+  "zweifaktor mit --ja": {
+    "anfragen": [
+      ["GET", "/api/benutzer"],
+      ["POST", "/api/benutzer/u1/zweifaktor/zuruecksetzen"]
+    ],
+    "ausgabe": ["Zwei-Faktor-Anmeldung von anna@example.org entfernt."],
+    "fragen": [],
+    "fehler": null
+  },
+  "zweifaktor bestätigt": {
+    "anfragen": [
+      ["GET", "/api/benutzer"],
+      ["POST", "/api/benutzer/u1/zweifaktor/zuruecksetzen"]
+    ],
+    "ausgabe": ["Zwei-Faktor-Anmeldung von anna@example.org entfernt."],
+    "fragen": [["Zwei-Faktor-Anmeldung von anna@example.org zurücksetzen? [j/N] ", false]],
+    "fehler": null
+  },
+  "zweifaktor abgelehnt": {
+    "anfragen": [["GET", "/api/benutzer"]],
+    "ausgabe": [],
+    "fragen": [["Zwei-Faktor-Anmeldung von anna@example.org zurücksetzen? [j/N] ", false]],
+    "fehler": {
+      "meldung": "Abgebrochen.",
+      "code": 1
+    }
+  },
+  "zweifaktor ohne Terminal": {
+    "anfragen": [["GET", "/api/benutzer"]],
+    "ausgabe": [],
+    "fragen": [],
+    "fehler": {
+      "meldung": "Zwei-Faktor-Anmeldung von anna@example.org zurücksetzen? – ohne Terminal bitte mit --ja bestätigen.",
+      "code": 2
+    }
+  },
+  "zweifaktor unbekannt": {
+    "anfragen": [["GET", "/api/benutzer"]],
+    "ausgabe": [],
+    "fragen": [],
+    "fehler": {
+      "meldung": "Unter niemand@example.org gibt es keinen Benutzer.",
+      "code": 1
+    }
+  },
+  "zweifaktor ohne E-Mail": {
+    "anfragen": [],
+    "ausgabe": [],
+    "fragen": [],
+    "fehler": {
+      "meldung": "Bitte die E-Mail-Adresse angeben.",
+      "code": 2
+    }
+  },
+  "passkeys mit --ja als JSON": {
+    "anfragen": [
+      ["GET", "/api/benutzer"],
+      ["POST", "/api/benutzer/u2/passkeys/zuruecksetzen"]
+    ],
+    "ausgabe": [
+      {
+        "json": {
+          "ok": true,
+          "email": "ben@example.org"
+        }
+      }
+    ],
+    "fragen": [],
+    "fehler": null
+  },
+  "passkeys mit yes": {
+    "anfragen": [
+      ["GET", "/api/benutzer"],
+      ["POST", "/api/benutzer/u2/passkeys/zuruecksetzen"]
+    ],
+    "ausgabe": ["Passkeys von ben@example.org entfernt."],
+    "fragen": [["Alle Passkeys von ben@example.org entfernen? [j/N] ", false]],
+    "fehler": null
+  },
+  "gesperrt": {
+    "anfragen": [["GET", "/api/werkbank/anmeldeschutz"]],
+    "ausgabe": [
+      "IP            seit             bis              Grund",
+      "203.0.113.7   02.01.26, 03:04  bis entsperrt    zu viele Versuche",
+      "198.51.100.1  02.01.26, 03:04  03.01.26, 03:04  Liste"
+    ],
+    "fragen": [],
+    "fehler": null
+  },
+  "gesperrt leer": {
+    "anfragen": [["GET", "/api/werkbank/anmeldeschutz"]],
+    "ausgabe": ["Keine Adresse gesperrt."],
+    "fragen": [],
+    "fehler": null
+  },
+  "gesperrt als JSON": {
+    "anfragen": [["GET", "/api/werkbank/anmeldeschutz"]],
+    "ausgabe": [
+      {
+        "json": [
+          {
+            "ip": "203.0.113.7",
+            "grund": "zu viele Versuche",
+            "seit": "2026-01-02T03:04:00.000Z",
+            "bis": null
+          },
+          {
+            "ip": "198.51.100.1",
+            "grund": "Liste",
+            "seit": "2026-01-02T03:04:00.000Z",
+            "bis": "2026-01-03T03:04:00.000Z"
+          }
+        ]
+      }
+    ],
+    "fragen": [],
+    "fehler": null
+  },
+  "entsperren": {
+    "anfragen": [
+      [
+        "POST",
+        "/api/werkbank/anmeldeschutz/entsperren",
+        {
+          "ip": "203.0.113.7"
+        }
+      ]
+    ],
+    "ausgabe": ["203.0.113.7 entsperrt."],
+    "fragen": [],
+    "fehler": null
+  },
+  "entsperren ohne IP": {
+    "anfragen": [],
+    "ausgabe": [],
+    "fragen": [],
+    "fehler": {
+      "meldung": "Aufruf: dms entsperren <ip>   (Liste: dms gesperrt)",
+      "code": 2
+    }
+  },
+  "wartung": {
+    "anfragen": [["GET", "/api/werkbank/wartung"]],
+    "ausgabe": ["Wartungsmodus: aktiv – Umzug (bis 02.01.26, 05:00)"],
+    "fragen": [],
+    "fehler": null
+  },
+  "wartung ohne Text": {
+    "anfragen": [["GET", "/api/werkbank/wartung"]],
+    "ausgabe": ["Wartungsmodus: aktiv"],
+    "fragen": [],
+    "fehler": null
+  },
+  "wartung aus Stand": {
+    "anfragen": [["GET", "/api/werkbank/wartung"]],
+    "ausgabe": ["Kein Wartungsmodus."],
+    "fragen": [],
+    "fehler": null
+  },
+  "wartung aus": {
+    "anfragen": [["POST", "/api/werkbank/wartung/aus"]],
+    "ausgabe": ["Wartungsmodus beendet."],
+    "fragen": [],
+    "fehler": null
+  },
+  "wartung falsch": {
+    "anfragen": [],
+    "ausgabe": [],
+    "fragen": [],
+    "fehler": {
+      "meldung": "Aufruf: dms wartung [aus]",
+      "code": 2
+    }
+  },
+  "abmelden einer": {
+    "anfragen": [
+      ["GET", "/api/benutzer"],
+      ["DELETE", "/api/benutzer/u2/sitzungen"]
+    ],
+    "ausgabe": ["ben@example.org: 2 Sitzungen beendet."],
+    "fragen": [],
+    "fehler": null
+  },
+  "abmelden alle": {
+    "anfragen": [
+      ["GET", "/api/benutzer"],
+      ["DELETE", "/api/benutzer/u1/sitzungen"],
+      ["DELETE", "/api/benutzer/u2/sitzungen"],
+      ["DELETE", "/api/benutzer/u3/sitzungen"]
+    ],
+    "ausgabe": ["6 Sitzungen beendet."],
+    "fragen": [],
+    "fehler": null
+  },
+  "abmelden alle als JSON": {
+    "anfragen": [
+      ["GET", "/api/benutzer"],
+      ["DELETE", "/api/benutzer/u1/sitzungen"],
+      ["DELETE", "/api/benutzer/u2/sitzungen"],
+      ["DELETE", "/api/benutzer/u3/sitzungen"]
+    ],
+    "ausgabe": [
+      {
+        "json": {
+          "beendet": 6
+        }
+      }
+    ],
+    "fragen": [["Alle Benutzer auf allen Geräten abmelden? [j/N] ", false]],
+    "fehler": null
+  },
+  "status": {
+    "anfragen": [["GET", "/api/werkbank/system"]],
+    "ausgabe": [
+      "Ablago 1.2.3 (voll), Commit abcdef1",
+      "Läuft seit 02.01.26, 03:04 · Node v22 · Europe/Berlin",
+      "Datenbank: version 16 · groesse 12"
+    ],
+    "fragen": [],
+    "fehler": null
+  },
+  "status ohne Commit, Datenbank-Fehler": {
+    "anfragen": [["GET", "/api/werkbank/system"]],
+    "ausgabe": ["Ablago 1.2.3 (voll)", "Läuft seit 02.01.26, 03:04 · Node v22 · Europe/Berlin", "Datenbank: Fehler – weg"],
+    "fragen": [],
+    "fehler": null
+  },
+  "sicherung jetzt": {
+    "anfragen": [["POST", "/api/werkbank/sicherung/jetzt"]],
+    "ausgabe": ["Sicherung gestartet: sicherung-1. Fortschritt: dms sicherung"],
+    "fragen": [],
+    "fehler": null
+  },
+  "sicherung jetzt ohne Name": {
+    "anfragen": [["POST", "/api/werkbank/sicherung/jetzt"]],
+    "ausgabe": ["Sicherung gestartet. Fortschritt: dms sicherung"],
+    "fragen": [],
+    "fehler": null
+  },
+  "sicherung pruefen": {
+    "anfragen": [["POST", "/api/werkbank/sicherung/sicherung%201%2F2/pruefen"]],
+    "ausgabe": ["Prüfung von sicherung 1/2 gestartet. Ergebnis: dms sicherung"],
+    "fragen": [],
+    "fehler": null
+  },
+  "sicherung pruefen ohne Name": {
+    "anfragen": [],
+    "ausgabe": [],
+    "fragen": [],
+    "fehler": {
+      "meldung": "Aufruf: dms sicherung pruefen <name>",
+      "code": 2
+    }
+  },
+  "sicherung falsch": {
+    "anfragen": [],
+    "ausgabe": [],
+    "fragen": [],
+    "fehler": {
+      "meldung": "Aufruf: dms sicherung [jetzt | pruefen <name>]",
+      "code": 2
+    }
+  },
+  "sicherung Liste": {
+    "anfragen": [["GET", "/api/werkbank/sicherung"]],
+    "ausgabe": ["Läuft gerade: sicherung-2 packt", "Name          Größe", "sicherung-1   3.0 MB", "ohne-groesse"],
+    "fragen": [],
+    "fehler": null
+  },
+  "sicherung Liste leer": {
+    "anfragen": [["GET", "/api/werkbank/sicherung"]],
+    "ausgabe": ["Noch keine Sicherung."],
+    "fragen": [],
+    "fehler": null
+  },
+  "benutzer": {
+    "anfragen": [["GET", "/api/benutzer"]],
+    "ausgabe": [
+      "E-Mail            Name  Verwaltung          Status       Letzte Anmeldung",
+      "anna@example.org  Anna  Gesamte Verwaltung  aktiv        02.01.26, 03:04",
+      "ben@example.org   Ben   sicherung           eingeladen   –",
+      "carl@example.org  Carl  –                   deaktiviert  –"
+    ],
+    "fragen": [],
+    "fehler": null
+  },
+  "benutzer als JSON": {
+    "anfragen": [["GET", "/api/benutzer"]],
+    "ausgabe": [
+      {
+        "json": [
+          {
+            "id": "u1",
+            "email": "anna@example.org",
+            "name": "Anna",
+            "verwaltung": ["*"],
+            "aktiv": true,
+            "hatPasswort": true,
+            "letzteAnmeldung": "2026-01-02T03:04:00.000Z"
+          },
+          {
+            "id": "u2",
+            "email": "ben@example.org",
+            "name": "Ben",
+            "verwaltung": ["sicherung"],
+            "aktiv": true,
+            "hatPasswort": false,
+            "letzteAnmeldung": null
+          },
+          {
+            "id": "u3",
+            "email": "carl@example.org",
+            "name": "Carl",
+            "aktiv": false,
+            "hatPasswort": true,
+            "letzteAnmeldung": null
+          }
+        ]
+      }
+    ],
+    "fragen": [],
+    "fehler": null
+  },
+  "benutzer anlegen": {
+    "anfragen": [
+      [
+        "POST",
+        "/api/benutzer",
+        {
+          "email": "ben@example.org",
+          "name": "Ben B."
+        }
+      ]
+    ],
+    "ausgabe": ["ben@example.org angelegt (–).", "Keine Einladung verschickt."],
+    "fragen": [],
+    "fehler": null
+  },
+  "benutzer anlegen Admin mit Mail": {
+    "anfragen": [
+      [
+        "POST",
+        "/api/benutzer",
+        {
+          "email": "ben@example.org",
+          "name": "Ben",
+          "verwaltung": ["*"]
+        }
+      ]
+    ],
+    "ausgabe": ["ben@example.org angelegt (Gesamte Verwaltung).", "Die Einladung ist per Mail unterwegs."],
+    "fragen": [],
+    "fehler": null
+  },
+  "benutzer anlegen mit Link": {
+    "anfragen": [
+      [
+        "POST",
+        "/api/benutzer",
+        {
+          "email": "ben@example.org",
+          "name": ""
+        }
+      ]
+    ],
+    "ausgabe": ["ben@example.org angelegt (–).", "Einladungslink: https://dms.example.org/einladung/x"],
+    "fragen": [],
+    "fehler": null
+  },
+  "benutzer anlegen ohne E-Mail": {
+    "anfragen": [],
+    "ausgabe": [],
+    "fragen": [],
+    "fehler": {
+      "meldung": "Aufruf: dms benutzer anlegen <email> <name> [--admin]",
+      "code": 2
+    }
+  },
+  "benutzer deaktivieren": {
+    "anfragen": [
+      ["GET", "/api/benutzer"],
+      [
+        "PUT",
+        "/api/benutzer/u2",
+        {
+          "aktiv": false
+        }
+      ]
+    ],
+    "ausgabe": ["ben@example.org deaktiviert."],
+    "fragen": [],
+    "fehler": null
+  },
+  "benutzer deaktivieren abgelehnt": {
+    "anfragen": [["GET", "/api/benutzer"]],
+    "ausgabe": [],
+    "fragen": [["ben@example.org deaktivieren? Alle Sitzungen enden. [j/N] ", false]],
+    "fehler": {
+      "meldung": "Abgebrochen.",
+      "code": 1
+    }
+  },
+  "benutzer aktivieren": {
+    "anfragen": [
+      ["GET", "/api/benutzer"],
+      [
+        "PUT",
+        "/api/benutzer/u3",
+        {
+          "aktiv": true
+        }
+      ]
+    ],
+    "ausgabe": ["carl@example.org aktiviert."],
+    "fragen": [],
+    "fehler": null
+  },
+  "benutzer aktivieren als JSON": {
+    "anfragen": [
+      ["GET", "/api/benutzer"],
+      [
+        "PUT",
+        "/api/benutzer/u3",
+        {
+          "aktiv": true
+        }
+      ]
+    ],
+    "ausgabe": [
+      {
+        "json": {
+          "ok": true,
+          "email": "carl@example.org",
+          "aktiv": true
+        }
+      }
+    ],
+    "fragen": [],
+    "fehler": null
+  },
+  "benutzer falsch": {
+    "anfragen": [],
+    "ausgabe": [],
+    "fragen": [],
+    "fehler": {
+      "meldung": "Aufruf: dms benutzer [anlegen | deaktivieren | aktivieren]",
+      "code": 2
+    }
+  },
+  "api GET": {
+    "anfragen": [["GET", "/api/werkbank/anmeldeschutz"]],
+    "ausgabe": [
+      {
+        "json": {
+          "gesperrt": [
+            {
+              "ip": "203.0.113.7",
+              "grund": "zu viele Versuche",
+              "seit": "2026-01-02T03:04:00.000Z",
+              "bis": null
+            },
+            {
+              "ip": "198.51.100.1",
+              "grund": "Liste",
+              "seit": "2026-01-02T03:04:00.000Z",
+              "bis": "2026-01-03T03:04:00.000Z"
+            }
+          ]
+        }
+      }
+    ],
+    "fragen": [],
+    "fehler": null
+  },
+  "api POST mit JSON": {
+    "anfragen": [
+      [
+        "POST",
+        "/api/werkbank/x",
+        {
+          "a": 1
+        }
+      ]
+    ],
+    "ausgabe": [
+      {
+        "json": {
+          "ok": true,
+          "echo": "POST /api/werkbank/x"
+        }
+      }
+    ],
+    "fragen": [],
+    "fehler": null
+  },
+  "api JSON kaputt": {
+    "anfragen": [],
+    "ausgabe": [],
+    "fragen": [],
+    "fehler": {
+      "meldung": "Der dritte Teil muss gültiges JSON sein, z. B. '{\"ip\":\"1.2.3.4\"}'.",
+      "code": 2
+    }
+  },
+  "api falsche Methode": {
+    "anfragen": [],
+    "ausgabe": [],
+    "fragen": [],
+    "fehler": {
+      "meldung": "Aufruf: dms api <GET|POST|PUT|DELETE> </api/…> [json]",
+      "code": 2
+    }
+  },
+  "api falscher Pfad": {
+    "anfragen": [],
+    "ausgabe": [],
+    "fragen": [],
+    "fehler": {
+      "meldung": "Aufruf: dms api <GET|POST|PUT|DELETE> </api/…> [json]",
+      "code": 2
+    }
+  },
+  "api ohne Pfad": {
+    "anfragen": [],
+    "ausgabe": [],
+    "fragen": [],
+    "fehler": {
+      "meldung": "Aufruf: dms api <GET|POST|PUT|DELETE> </api/…> [json]",
+      "code": 2
+    }
+  },
+  "ohne Befehl": {
+    "anfragen": [],
+    "ausgabe": [
+      "dms – Befehle für Ablago in diesem Container\n\nAufruf:  docker exec -it <container> dms <befehl> [--json] [--als <admin-email>]\n\nNotfall\n  passwort <email> [--passwort <neu>]   Passwort direkt setzen (ohne Mail), alle Sitzungen enden\n  zweifaktor-zuruecksetzen <email>       Zwei-Faktor-Anmeldung eines Benutzers entfernen\n  passkeys-zuruecksetzen <email>         alle Passkeys eines Benutzers entfernen\n  gesperrt                               gesperrte IP-Adressen anzeigen\n  entsperren <ip>                        IP-Adresse freigeben\n  wartung                                Stand des Wartungsmodus\n  wartung aus                            Wartungsmodus beenden\n  abmelden <email>                       alle Sitzungen eines Benutzers beenden\n  abmelden --alle                        alle Sitzungen aller Benutzer beenden\n\nBetrieb\n  status                                 Version, Datenbank, Laufzeit\n  sicherung                              Sicherungen auflisten\n  sicherung jetzt                        Sicherung starten\n  sicherung pruefen <name>               Sicherung prüfen\n\nVerwaltung\n  benutzer                               Benutzer auflisten\n  benutzer anlegen <email> <name> [--admin]   mit --admin: „Gesamte Verwaltung“\n  benutzer deaktivieren <email>\n  benutzer aktivieren <email>\n\nAllgemein\n  api <METHODE> <pfad> [json]            jede Funktion der Schnittstelle, z. B.\n                                         dms api GET /api/werkbank/anmeldeschutz\n  hilfe                                  diese Übersicht\n\nOptionen\n  --json        Ausgabe als JSON (für Skripte)\n  --als <email> als dieser Administrator handeln (sonst der älteste aktive)\n  --ja          Rückfragen mit Ja beantworten\n\nHandbuch: https://help.ablago.app/admin/aktuell/konsole/"
+    ],
+    "fragen": [],
+    "fehler": null
+  },
+  "hilfe": {
+    "anfragen": [],
+    "ausgabe": [
+      "dms – Befehle für Ablago in diesem Container\n\nAufruf:  docker exec -it <container> dms <befehl> [--json] [--als <admin-email>]\n\nNotfall\n  passwort <email> [--passwort <neu>]   Passwort direkt setzen (ohne Mail), alle Sitzungen enden\n  zweifaktor-zuruecksetzen <email>       Zwei-Faktor-Anmeldung eines Benutzers entfernen\n  passkeys-zuruecksetzen <email>         alle Passkeys eines Benutzers entfernen\n  gesperrt                               gesperrte IP-Adressen anzeigen\n  entsperren <ip>                        IP-Adresse freigeben\n  wartung                                Stand des Wartungsmodus\n  wartung aus                            Wartungsmodus beenden\n  abmelden <email>                       alle Sitzungen eines Benutzers beenden\n  abmelden --alle                        alle Sitzungen aller Benutzer beenden\n\nBetrieb\n  status                                 Version, Datenbank, Laufzeit\n  sicherung                              Sicherungen auflisten\n  sicherung jetzt                        Sicherung starten\n  sicherung pruefen <name>               Sicherung prüfen\n\nVerwaltung\n  benutzer                               Benutzer auflisten\n  benutzer anlegen <email> <name> [--admin]   mit --admin: „Gesamte Verwaltung“\n  benutzer deaktivieren <email>\n  benutzer aktivieren <email>\n\nAllgemein\n  api <METHODE> <pfad> [json]            jede Funktion der Schnittstelle, z. B.\n                                         dms api GET /api/werkbank/anmeldeschutz\n  hilfe                                  diese Übersicht\n\nOptionen\n  --json        Ausgabe als JSON (für Skripte)\n  --als <email> als dieser Administrator handeln (sonst der älteste aktive)\n  --ja          Rückfragen mit Ja beantworten\n\nHandbuch: https://help.ablago.app/admin/aktuell/konsole/"
+    ],
+    "fragen": [],
+    "fehler": null
+  },
+  "help": {
+    "anfragen": [],
+    "ausgabe": [
+      "dms – Befehle für Ablago in diesem Container\n\nAufruf:  docker exec -it <container> dms <befehl> [--json] [--als <admin-email>]\n\nNotfall\n  passwort <email> [--passwort <neu>]   Passwort direkt setzen (ohne Mail), alle Sitzungen enden\n  zweifaktor-zuruecksetzen <email>       Zwei-Faktor-Anmeldung eines Benutzers entfernen\n  passkeys-zuruecksetzen <email>         alle Passkeys eines Benutzers entfernen\n  gesperrt                               gesperrte IP-Adressen anzeigen\n  entsperren <ip>                        IP-Adresse freigeben\n  wartung                                Stand des Wartungsmodus\n  wartung aus                            Wartungsmodus beenden\n  abmelden <email>                       alle Sitzungen eines Benutzers beenden\n  abmelden --alle                        alle Sitzungen aller Benutzer beenden\n\nBetrieb\n  status                                 Version, Datenbank, Laufzeit\n  sicherung                              Sicherungen auflisten\n  sicherung jetzt                        Sicherung starten\n  sicherung pruefen <name>               Sicherung prüfen\n\nVerwaltung\n  benutzer                               Benutzer auflisten\n  benutzer anlegen <email> <name> [--admin]   mit --admin: „Gesamte Verwaltung“\n  benutzer deaktivieren <email>\n  benutzer aktivieren <email>\n\nAllgemein\n  api <METHODE> <pfad> [json]            jede Funktion der Schnittstelle, z. B.\n                                         dms api GET /api/werkbank/anmeldeschutz\n  hilfe                                  diese Übersicht\n\nOptionen\n  --json        Ausgabe als JSON (für Skripte)\n  --als <email> als dieser Administrator handeln (sonst der älteste aktive)\n  --ja          Rückfragen mit Ja beantworten\n\nHandbuch: https://help.ablago.app/admin/aktuell/konsole/"
+    ],
+    "fragen": [],
+    "fehler": null
+  },
+  "-h": {
+    "anfragen": [],
+    "ausgabe": [
+      "dms – Befehle für Ablago in diesem Container\n\nAufruf:  docker exec -it <container> dms <befehl> [--json] [--als <admin-email>]\n\nNotfall\n  passwort <email> [--passwort <neu>]   Passwort direkt setzen (ohne Mail), alle Sitzungen enden\n  zweifaktor-zuruecksetzen <email>       Zwei-Faktor-Anmeldung eines Benutzers entfernen\n  passkeys-zuruecksetzen <email>         alle Passkeys eines Benutzers entfernen\n  gesperrt                               gesperrte IP-Adressen anzeigen\n  entsperren <ip>                        IP-Adresse freigeben\n  wartung                                Stand des Wartungsmodus\n  wartung aus                            Wartungsmodus beenden\n  abmelden <email>                       alle Sitzungen eines Benutzers beenden\n  abmelden --alle                        alle Sitzungen aller Benutzer beenden\n\nBetrieb\n  status                                 Version, Datenbank, Laufzeit\n  sicherung                              Sicherungen auflisten\n  sicherung jetzt                        Sicherung starten\n  sicherung pruefen <name>               Sicherung prüfen\n\nVerwaltung\n  benutzer                               Benutzer auflisten\n  benutzer anlegen <email> <name> [--admin]   mit --admin: „Gesamte Verwaltung“\n  benutzer deaktivieren <email>\n  benutzer aktivieren <email>\n\nAllgemein\n  api <METHODE> <pfad> [json]            jede Funktion der Schnittstelle, z. B.\n                                         dms api GET /api/werkbank/anmeldeschutz\n  hilfe                                  diese Übersicht\n\nOptionen\n  --json        Ausgabe als JSON (für Skripte)\n  --als <email> als dieser Administrator handeln (sonst der älteste aktive)\n  --ja          Rückfragen mit Ja beantworten\n\nHandbuch: https://help.ablago.app/admin/aktuell/konsole/"
+    ],
+    "fragen": [],
+    "fehler": null
+  },
+  "unbekannt": {
+    "anfragen": [],
+    "ausgabe": [],
+    "fragen": [],
+    "fehler": {
+      "meldung": "Unbekannter Befehl „zaubern“. Übersicht: dms hilfe",
+      "code": 2
+    }
+  },
+  "unbekannt wie Objekt-Eigenschaft": {
+    "anfragen": [],
+    "ausgabe": [],
+    "fragen": [],
+    "fehler": {
+      "meldung": "Unbekannter Befehl „toString“. Übersicht: dms hilfe",
+      "code": 2
+    }
+  }
+}
