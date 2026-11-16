@@ -21,6 +21,8 @@ trap aufraeumen EXIT
 set -E
 trap 'echo "::error::dms-komplett: Zeile $LINENO: $BASH_COMMAND (Code $?)"; docker logs --tail 40 "$NAME" 2>&1 | sed "s/^/::error::/" || true' ERR
 fehler() { echo "::error::dms-komplett: $*"; docker logs --tail 60 "$NAME" 2>&1 || true; exit 1; }
+# Keine Anfrage hängt unbegrenzt (#1369): Verbindung höchstens 10 s, ganze Anfrage höchstens 60 s.
+curl() { command curl --connect-timeout 10 --max-time 60 "$@"; }
 
 starte() {
   docker run -d --name "$NAME" -p "$PORT:3000" --stop-timeout 60 \
@@ -117,7 +119,10 @@ echo "::endgroup::"; echo "::notice::dms-komplett: Schritt erledigt"
 echo "::group::5. Andere PostgreSQL-Hauptversion"
 # Das Protokoll liegt außerhalb des Ordners: den übernimmt der Container für postgres (nicht mehr lesbar).
 alt=$(mktemp -d); altlog=$(mktemp); mkdir -p "$alt/daten"; echo 15 > "$alt/daten/PG_VERSION"
-docker run --name "$NAME-alt" -v "$alt:/data/postgres" "$IMAGE" > "$altlog" 2>&1 && fehler "startet trotz anderer Hauptversion"
+# Läuft der Container wider Erwarten weiter, beendet ihn timeout (#1369); aufraeumen entfernt ihn.
+code=0; timeout 120 docker run --name "$NAME-alt" -v "$alt:/data/postgres" "$IMAGE" > "$altlog" 2>&1 || code=$?
+[ "$code" = 124 ] && fehler "läuft trotz anderer Hauptversion nach 120 s noch"
+[ "$code" = 0 ] && fehler "startet trotz anderer Hauptversion"
 grep -q "stammt von PostgreSQL 15" "$altlog" || { sed 's/^/::error::/' "$altlog"; fehler "keine klare Meldung bei anderer Hauptversion"; }
 sudo rm -rf "$alt" "$altlog"
 echo "::endgroup::"; echo "::notice::dms-komplett: Schritt erledigt"
@@ -125,12 +130,14 @@ echo "::group::5b. Rechte am Datenbank-Ordner (#943)"
 # Wie auf dem UGREEN-NAS: Der Ordner für /data/postgres hat 000. Ablago selbst startet nicht (DMS_START=true),
 # es genügt, dass initdb und PostgreSQL als Benutzer postgres durchlaufen.
 rechte=$(mktemp -d); chmod 000 "$rechte"; rechtelog=$(mktemp)
-docker run --rm --name "$NAME-rechte" -e DMS_START=true -v "$rechte:/data/postgres" "$IMAGE" > "$rechtelog" 2>&1 \
-  || { sed 's/^/::error::/' "$rechtelog"; fehler "startet nicht, wenn /data/postgres die Rechte 000 hat"; }
+timeout 180 docker run --rm --name "$NAME-rechte" -e DMS_START=true -v "$rechte:/data/postgres" "$IMAGE" > "$rechtelog" 2>&1 \
+  || { sed 's/^/::error::/' "$rechtelog"; fehler "startet nicht (oder hängt), wenn /data/postgres die Rechte 000 hat"; }
 sudo test -s "$rechte/daten/PG_VERSION" || fehler "keine Datenbank bei Rechten 000"
 # Nicht beschreibbar (hier: schreibgeschützt eingebunden) → Abbruch vor initdb mit verständlicher Meldung.
 sudo rm -rf "$rechte"; rechte=$(mktemp -d)
-docker run --rm --name "$NAME-rechte" -v "$rechte:/data/postgres:ro" "$IMAGE" > "$rechtelog" 2>&1 && fehler "startet trotz nicht beschreibbarem Ordner"
+code=0; timeout 120 docker run --rm --name "$NAME-rechte" -v "$rechte:/data/postgres:ro" "$IMAGE" > "$rechtelog" 2>&1 || code=$?
+[ "$code" = 124 ] && fehler "läuft trotz nicht beschreibbarem Ordner nach 120 s noch"
+[ "$code" = 0 ] && fehler "startet trotz nicht beschreibbarem Ordner"
 grep -q "FEHLER: PostgreSQL (Benutzer 70) kann nicht in /data/postgres/daten schreiben. Bitte die Rechte des Ordners auf dem NAS prüfen" "$rechtelog" \
   || { sed 's/^/::error::/' "$rechtelog"; fehler "keine klare Meldung bei nicht beschreibbarem Ordner"; }
 grep -q "komplett/#container-startet-nicht" "$rechtelog" || fehler "kein Link ins Handbuch bei nicht beschreibbarem Ordner"

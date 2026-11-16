@@ -19,6 +19,8 @@ jobs:
   analyze:
     name: Analyze (${{ matrix.language }})
     runs-on: ubuntu-latest
+    # Zeitgrenze (#1369): gewöhnlich 1–7 Minuten (javascript-typescript).
+    timeout-minutes: 30
     permissions:
       actions: read
       contents: read

@@ -23,6 +23,8 @@ trap aufraeumen EXIT
 set -E
 trap 'echo "::error::Update-Test: Zeile $LINENO: $BASH_COMMAND (Code $?)"; docker logs --tail 40 "$NAME" 2>&1 | sed "s/^/::error::/" || true' ERR
 fehler() { echo "::error::Update-Test: $*"; docker logs --tail 60 "$NAME" 2>&1 || true; exit 1; }
+# Keine Anfrage hängt unbegrenzt (#1369): Verbindung höchstens 10 s, ganze Anfrage höchstens 60 s.
+curl() { command curl --connect-timeout 10 --max-time 60 "$@"; }
 
 starte() {
   docker rm -f "$NAME" >/dev/null 2>&1 || true

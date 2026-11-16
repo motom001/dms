@@ -27,6 +27,8 @@ concurrency:
 jobs:
   zuruecksetzen:
     runs-on: ubuntu-latest
+    # Zeitgrenze (#1369): nur Manifeste umhängen, wenige Sekunden.
+    timeout-minutes: 10
     permissions:
       # Release auf „Latest“ setzen (#907)
       contents: write
