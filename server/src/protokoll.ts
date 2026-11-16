@@ -303,10 +303,20 @@ function serialisiere(o: Record<string, unknown>): Record<string, unknown> {
   return r;
 }
 
+// Steuerzeichen außer dem Zeilenumbruch (auch CR, Tab, Escape, U+2028/2029) – im Container-Protokoll als \uXXXX.
+// eslint-disable-next-line no-control-regex -- genau diese Zeichen sollen ersetzt werden
+const STEUERZEICHEN = /[\u0000-\u0009\u000b-\u001f\u007f-\u009f\u2028\u2029]/g;
+/**
+ * Text für das Container-Protokoll (#1353): Steuerzeichen sichtbar ersetzt, Folgezeilen eingerückt und mit „|“
+ * gekennzeichnet – so kann ein Text mit Zeilenumbrüchen aus einer Eingabe keine eigene Protokollzeile vortäuschen.
+ */
+const sicher = (s: string) =>
+  s.replace(STEUERZEICHEN, (z) => `\\u${z.charCodeAt(0).toString(16).padStart(4, '0')}`).replace(/\n/g, '\n  | ');
+
 /** Lesbare Zeile für die Container-Logs. */
 export function zeile(e: Eintrag): string {
-  const teile = [e.zeit, e.stufe.toUpperCase().padEnd(5), `[${e.modul}]`, e.text];
-  if (e.benutzer) teile.push(`benutzer=${e.benutzer}`);
+  const teile = [e.zeit, e.stufe.toUpperCase().padEnd(5), `[${e.modul}]`, sicher(e.text)];
+  if (e.benutzer) teile.push(`benutzer=${sicher(e.benutzer)}`);
   if (e.daten) {
     for (const [k, v] of Object.entries(e.daten)) {
       if (k === 'fehler') continue;
@@ -314,7 +324,7 @@ export function zeile(e: Eintrag): string {
     }
   }
   const text = teile.join(' ');
-  return e.daten?.fehler ? `${text}\n${String(e.daten.fehler)}` : text;
+  return e.daten?.fehler ? `${text}\n  | ${sicher(String(e.daten.fehler))}` : text;
 }
 
 /** Das Protokoll der laufenden Anwendung. Stufe aus LOG_LEVEL (Standard: info). */
