@@ -54,14 +54,6 @@
       "count": 1
     }
   },
-  "server/src/ausgang/export.ts": {
-    "complexity": {
-      "count": 1
-    },
-    "max-lines-per-function": {
-      "count": 1
-    }
-  },
   "server/src/automatisierung/automatisierung-karten.ts": {
     "complexity": {
       "count": 1
