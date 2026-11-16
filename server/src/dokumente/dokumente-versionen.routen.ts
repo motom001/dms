@@ -1,7 +1,7 @@
 /**
  * Dokumente (#1278, aus `dokumente.routen.ts`): Versionen (#194) und Anlagen (#998).
  */
-import type { Anfrage, Route } from '../http/routen';
+import type { Anfrage, Route } from '../http/routen-typen';
 import { Fachfehler } from '../grundlagen/fehler';
 import { t } from '../sprache/sprache';
 import { ok, ich, L } from '../http/routen-hilfen';

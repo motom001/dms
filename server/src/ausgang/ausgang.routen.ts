@@ -26,7 +26,7 @@ import { protokoll } from '../protokoll/protokoll';
 import { MB, PLATZ_RESERVE } from '../grundlagen/grenzen';
 import { L, ok, leer, ich, kontaktVorschlaege } from '../http/routen-hilfen';
 import type { RoutenKontext } from '../http/routen-kontext';
-import type { Route } from '../http/routen';
+import type { Route } from '../http/routen-typen';
 import { WERKBANK_EINSTELLUNG } from '../entdecken/entdecken-werkbank';
 
 export function exportRouten(k: RoutenKontext): Route[] {

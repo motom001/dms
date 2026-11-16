@@ -14,7 +14,7 @@ import {
 import { BEREICHE } from '../../../shared/src/werkbankansicht';
 import { L, ok, leer, b, info, ich } from '../http/routen-hilfen';
 import type { RoutenKontext } from '../http/routen-kontext';
-import type { Route } from '../http/routen';
+import type { Route } from '../http/routen-typen';
 
 export function kontenRouten(k: RoutenKontext): Route[] {
   const { dienst, konten, log, entdecken, rundgaengeWerkbank, nurSelbst, zg, empfaengerSichtbar, mitRollen, zf } = k;

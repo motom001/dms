@@ -7,8 +7,8 @@ import { Fachfehler } from '../grundlagen/fehler';
 import { L, ok, ich } from '../http/routen-hilfen';
 import { t } from '../sprache/sprache';
 import type { RoutenKontext } from '../http/routen-kontext';
-import type { Anfrage } from '../http/routen';
-import type { Route } from '../http/routen';
+import type { Anfrage } from '../http/routen-typen';
+import type { Route } from '../http/routen-typen';
 
 export function textsatzRouten(k: RoutenKontext): Route[] {
   const { dienst, zg, darf, mitnehmen } = k;

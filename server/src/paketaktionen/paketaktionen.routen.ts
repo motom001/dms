@@ -6,7 +6,7 @@
 import { Fachfehler } from '../grundlagen/fehler';
 import { L, ok, ich } from '../http/routen-hilfen';
 import type { RoutenKontext } from '../http/routen-kontext';
-import type { Anfrage, Route } from '../http/routen';
+import type { Anfrage, Route } from '../http/routen-typen';
 import { t } from '../sprache/sprache';
 
 export function paketaktionenRouten(k: RoutenKontext): Route[] {

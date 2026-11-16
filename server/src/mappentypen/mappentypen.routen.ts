@@ -8,7 +8,7 @@ import { t } from '../sprache/sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
 import { L, ok, archivProtokoll, leer, b, ich } from '../http/routen-hilfen';
 import type { RoutenKontext } from '../http/routen-kontext';
-import type { Route } from '../http/routen';
+import type { Route } from '../http/routen-typen';
 
 export function typenRouten(k: RoutenKontext): Route[] {
   const { dienst, typName, zg, demoPlatz } = k;

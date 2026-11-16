@@ -7,7 +7,7 @@ import { darfBereich } from '../../../shared/src/verwaltungsrecht';
 import { FASSUNG_ARTEN, FASSUNG_BEREICH, FASSUNG_PFAD, istFassungArt, type FassungArt } from '../../../shared/src/fassungen';
 import { ok, ich } from '../http/routen-hilfen';
 import type { RoutenKontext } from '../http/routen-kontext';
-import type { Anfrage, Route } from '../http/routen';
+import type { Anfrage, Route } from '../http/routen-typen';
 
 export function fassungenRouten(k: RoutenKontext): Route[] {
   const { dienst } = k;

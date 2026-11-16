@@ -19,7 +19,7 @@ import { zeitzone } from '../../../shared/src/region';
 import { KOERPER_SPIELRAUM, LOGO_MAX } from '../grundlagen/grenzen';
 import { L, ok, leer, b, ich, grenzenUndEngpaesse, ZWEITE_ABGELEHNT, nurEigeneBereiche } from '../http/routen-hilfen';
 import type { RoutenKontext } from '../http/routen-kontext';
-import type { Route } from '../http/routen';
+import type { Route } from '../http/routen-typen';
 
 export function werkbankRouten(k: RoutenKontext): Route[] {
   const { dienst, x, designs, ocr } = k;

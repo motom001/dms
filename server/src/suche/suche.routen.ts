@@ -6,7 +6,7 @@ import { Fachfehler } from '../grundlagen/fehler';
 import { t } from '../sprache/sprache';
 import { ok, ich } from '../http/routen-hilfen';
 import type { RoutenKontext } from '../http/routen-kontext';
-import type { Route } from '../http/routen';
+import type { Route } from '../http/routen-typen';
 
 export function sucheRouten(k: RoutenKontext): Route[] {
   const { dienst, x, zg } = k;

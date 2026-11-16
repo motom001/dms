@@ -28,7 +28,7 @@ import {
   passkeyStatus,
 } from '../http/routen-hilfen';
 import type { RoutenKontext } from '../http/routen-kontext';
-import type { Route } from '../http/routen';
+import type { Route } from '../http/routen-typen';
 
 /** Eigene Anmeldung ändern geht nicht, während jemand als diese Person agiert (#43, #811). */
 function ohneVertretung(a: { sitzungsDaten?: { vertretungId?: string | null } }) {

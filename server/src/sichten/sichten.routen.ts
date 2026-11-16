@@ -6,7 +6,7 @@ import { ZULETZT_LISTE } from '../konten';
 import { t } from '../sprache/sprache';
 import { L, ok, leer, b, ich, passtEtag } from '../http/routen-hilfen';
 import type { RoutenKontext } from '../http/routen-kontext';
-import type { Route } from '../http/routen';
+import type { Route } from '../http/routen-typen';
 
 export function ablageRouten(k: RoutenKontext): Route[] {
   const { dienst, konten, passwoerterAnzeigen, modusSpur, zg, darf, zuletztGeoeffnet, entschluessele } = k;

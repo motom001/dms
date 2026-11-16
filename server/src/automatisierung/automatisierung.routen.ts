@@ -8,7 +8,7 @@ import { AUFRUF_KOERPER_MAX } from '../grundlagen/grenzen';
 import { t } from '../sprache/sprache';
 import type { RoutenKontext } from '../http/routen-kontext';
 import { AUFRUF_SIGNATUR_KOPF, AUFRUF_ZEIT_KOPF, laufFuer } from '../../../shared/src/automatisierung';
-import type { Anfrage, Route } from '../http/routen';
+import type { Anfrage, Route } from '../http/routen-typen';
 
 export function automatisierungRouten(k: RoutenKontext): Route[] {
   const { autos } = k;

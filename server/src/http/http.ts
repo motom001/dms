@@ -35,18 +35,9 @@ import type { Sicherung } from '../sicherung/sicherung';
 import type { Wiederherstellung } from '../sicherung/wiederherstellung';
 import { MAX_DATEIGROESSE } from '../../../shared/src/model';
 import { WEBDAV_METHODEN, WEBDAV_ZUSATZMETHODEN, type Webdav } from '../webdav/webdav';
-import {
-  anfrageStufe,
-  dateiKoepfe,
-  leseCookie,
-  modulAus,
-  pruefeZugang,
-  routen,
-  SITZUNG_COOKIE,
-  sitzungsCookie,
-  type Anfrage,
-  type Route,
-} from './routen';
+import { anfrageStufe, leseCookie, modulAus, pruefeZugang, routen, SITZUNG_COOKIE, sitzungsCookie } from './routen';
+import type { Anfrage, Route } from './routen-typen';
+import { dateiKoepfe } from './datei-koepfe';
 import { istVerbindungWarten } from '../datenbank/db';
 import { mitSprache, setzeAnfrageSprache, t, tDe } from '../sprache/sprache';
 import { erlaubteSprachen } from '../../../shared/src/beschriftung';
@@ -183,7 +174,7 @@ interface Optionen {
   /** Sitzungen der Datenbank mit Sperren (#874). */
   sitzungen?: () => Promise<import('../datenbank/poolmessung').Sitzungsstand | null>;
   /** Teuerste Abfragen für den Lasttest (#894). */
-  abfragen?: import('./routen').Abfragestatistik;
+  abfragen?: import('./routen-extras').Abfragestatistik;
   /** CPU und Speicher je Prozessgruppe für den Lasttest (#895), gemessen im Leiter. */
   prozessgruppen?: () => Promise<import('../lasttest/prozessgruppen').GruppenStand | null>;
   /** Erweiterungen der Suche (#562). */

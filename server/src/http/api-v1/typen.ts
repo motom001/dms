@@ -1,4 +1,4 @@
-import type { Route, Anfrage, Antwort } from '../routen';
+import type { Route, Anfrage, Antwort } from '../routen-typen';
 
 /**
  * Öffentliche, stabile Schnittstelle /api/v1 (#20).

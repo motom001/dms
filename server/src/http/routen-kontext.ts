@@ -41,7 +41,8 @@ import { BUNDESLAENDER } from '../../../shared/src/feiertage';
 import { RegionDienst } from '../einstellungen/region';
 import { GB } from '../grundlagen/grenzen';
 import { L, ich } from './routen-hilfen';
-import type { Anfrage, Datei, Antwort, RoutenExtras } from './routen';
+import type { Anfrage, Datei, Antwort } from './routen-typen';
+import type { RoutenExtras } from './routen-extras';
 
 export function routenKontext(dienst: Dienst, konten: Konten, x: RoutenExtras = {}) {
   const fotostapel = x.fotostapel ?? new Fotostapel();

@@ -24,7 +24,7 @@ import {
   kurzCookie,
 } from '../http/routen-hilfen';
 import type { RoutenKontext } from '../http/routen-kontext';
-import type { Route } from '../http/routen';
+import type { Route } from '../http/routen-typen';
 import { extern } from './externmessung';
 import { monatAus } from '../../../shared/src/extern';
 import { istKiPaket } from '../../../shared/src/pakete';

@@ -9,7 +9,7 @@
  * Wer `Abrufbar` liefert, bekommt Range, Dateiname und Köpfe gleich.
  */
 import { Readable } from 'node:stream';
-import type { Antwort } from './routen';
+import type { Antwort } from './routen-typen';
 import { t } from '../sprache/sprache';
 
 /** Eine Datei, die sich in Teilen lesen lässt. `ende` ist wie bei createReadStream eingeschlossen. */

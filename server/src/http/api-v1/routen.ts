@@ -1,7 +1,7 @@
 /** Routen /api/v1/… aus der Tabelle, Übergang der Post-Namen und Protokoll-Name (#1278, vorher in `http/api-v1.ts`). */
 import { postWerteMitAlten } from '../../../../shared/src/postfelder';
 import type { Werte, Benutzer } from '../../../../shared/src/model';
-import type { Route, Anfrage } from '../routen';
+import type { Route, Anfrage } from '../routen-typen';
 import { V1_TABELLE } from './tabelle';
 
 /** Routen /api/v1/… aus der Tabelle; Handler und Zugang kommen von den internen Routen. */
