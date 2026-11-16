@@ -1,12 +1,16 @@
 /**
  * Abhängigkeiten zwischen den Teilen von Ablago (#899), geprüft mit dependency-cruiser: `npm run lint:abh`.
  *
- * - Keine Kreisläufe (nur Importe, die zur Laufzeit zählen; reine Typ-Importe nicht).
+ * - Keine Kreisläufe (`kein-kreislauf`). In shared/src/ und web/src/ zählen seit #1278 (Schritt 5) auch reine
+ *   Typ-Importe (`import type`): Auch ein Kreis nur über Typen verklebt die Teile – keiner lässt sich ohne den anderen
+ *   verstehen oder verschieben. In server/src/ zählen sie noch nicht, bis der große Kreis über http/routen.ts aufgelöst
+ *   ist (#1278, Schritt 5b); Kreise über Importe, die zur Laufzeit zählen, sind überall Fehler. Tests sind ausgenommen:
+ *   Sie binden ein, was sie prüfen, und werden selbst nicht eingebunden.
  * - shared/ bindet weder server/ noch web/ ein; web/ nie server/, server/ nie web/ (auch server/test/ nicht, #1282).
  *   Ausnahme: shared/test/ prüft Sprachdateien und Gemeinsames über alle Teile hinweg.
  * - Technische Ordner mit index.ts nur über index.ts (pdf/ und arbeit/, je mit eigener Ausnahme; repo/ über seine drei
  *   index.ts, #1278); die Ordner in shared/src/ (Fachmodell model/, erkennung/, pakete/, sichten/) nur über ihre
- *   index.ts (#1278, SHARED_ORDNER).
+ *   index.ts, das Fachmodell auch über model/basis.ts (#1278, SHARED_ORDNER).
  * - Teile über dem Dienst (UEBER_DEM_DIENST), Nachbarn eines Fachordners (NACHBARN, #1278) und die Dateien, die aus
  *   server/src/ in ihren Ordner gezogen sind, aber noch keine Tür haben (OHNE_TUER, #1278), sind unten beschrieben.
  * - Hilfen der HTTP-Schicht (http/routen-hilfen.ts, http/routen-kontext.ts) nur in Routen (#961, Ergänzung von
@@ -250,28 +254,31 @@ function fachordner() {
 
 /**
  * Ordner in shared/src/, die früher eine Datei waren (#1278): das Fachmodell model/ (vorher model.ts), erkennung/,
- * pakete/ und sichten/. Von außen nur über ihre index.ts – wie früher die eine Datei; die Teile darin binden einander
- * direkt ein. Je Ordner die Dateien in shared/src/, die einen Teil direkt einbinden dürfen, weil über die Tür ein Kreis
- * entstünde: Das Fachmodell nennt den Typ `Feldbedingung` (sichten/bedingungen.ts, ohne Laufzeit-Import des Modells),
- * die Feldformate prüfen die IBAN mit `istIban` (erkennung/angaben.ts).
+ * pakete/ und sichten/. Von außen nur über ihre Tür (`tueren`, sonst index.ts) – wie früher die eine Datei; die Teile
+ * darin binden einander direkt ein. Das Fachmodell hat seit #1278 (Schritt 5) eine zweite Tür, model/basis.ts: die
+ * Form von Feld, Mappentyp und Mappe ohne Prüfregeln und Werte – für die Teile, die das Modell selbst einbindet (über
+ * index.ts entstünde ein Kreis). Je Ordner die Dateien in shared/src/, die einen Teil direkt einbinden dürfen, weil
+ * über die Tür ein Kreis entstünde (`ausnahmen`): Das Fachmodell nennt den Typ `Feldbedingung` (sichten/bedingungen.ts,
+ * ohne Laufzeit-Import des Modells), und die Bedingungen nennen die Feldart (model/feldtypen.ts, ganz unten im
+ * Modell); die Feldformate prüfen die IBAN mit `istIban` (erkennung/angaben.ts).
  */
 const SHARED_ORDNER = {
-  model: [],
-  erkennung: [['^shared/src/feldformate\\.ts$', 'angaben']],
-  pakete: [],
-  sichten: [['^shared/src/model/', 'bedingungen']],
+  model: { tueren: 'index|basis', ausnahmen: [['^shared/src/sichten/bedingungen\\.ts$', 'feldtypen']] },
+  erkennung: { ausnahmen: [['^shared/src/feldformate\\.ts$', 'angaben']] },
+  pakete: { ausnahmen: [] },
+  sichten: { ausnahmen: [['^shared/src/model/', 'bedingungen']] },
 };
 
 /** Die Regel `shared-ordner-nur-ueber-index` (#1278), je Ordner in SHARED_ORDNER. */
 function sharedOrdner() {
   const regeln = [];
-  for (const [ordner, ausnahmen] of Object.entries(SHARED_ORDNER)) {
+  for (const [ordner, { tueren = 'index', ausnahmen }] of Object.entries(SHARED_ORDNER)) {
     regeln.push({
       name: 'shared-ordner-nur-ueber-index',
       severity: 'error',
-      comment: `shared/src/${ordner}/ (#1278) von außen nur über seine index.ts – wie früher die eine Datei ${ordner}.ts; die Teile darin binden einander direkt ein.`,
+      comment: `shared/src/${ordner}/ (#1278) von außen nur über seine Tür (${tueren.replaceAll('|', '.ts, ')}.ts) – wie früher die eine Datei ${ordner}.ts; die Teile darin binden einander direkt ein.`,
       from: { path: '^(server|web|shared)/', pathNot: [`^shared/src/${ordner}/`, ...ausnahmen.map(([von]) => von)] },
-      to: { path: `^shared/src/${ordner}/(?!index\\.ts$)` },
+      to: { path: `^shared/src/${ordner}/(?!(?:${tueren})\\.ts$)` },
     });
     for (const [von, teil] of ausnahmen) {
       regeln.push({
@@ -279,7 +286,7 @@ function sharedOrdner() {
         severity: 'error',
         comment: `Ausnahme für ${von} (#1278): nur der Teil ${ordner}/${teil}.ts, sonst die Tür.`,
         from: { path: von },
-        to: { path: `^shared/src/${ordner}/(?!(?:index|${teil})\\.ts$)` },
+        to: { path: `^shared/src/${ordner}/(?!(?:${tueren}|${teil})\\.ts$)` },
       });
     }
   }
@@ -295,6 +302,14 @@ module.exports = {
       comment: 'Kreisläufe machen die Reihenfolge beim Laden zufällig und verhindern, dass sich Teile getrennt ändern lassen.',
       from: { pathNot: '^(server|web|shared)/test/' },
       to: { circular: true, viaOnly: { dependencyTypesNot: ['type-only'] } },
+    },
+    {
+      name: 'kein-kreislauf',
+      severity: 'error',
+      comment:
+        'Auch kein Kreis über reine Typ-Importe (#1278, Schritt 5): Gemeinsame Typen in eine eigene Datei, die nichts zurück einbindet (z. B. shared/src/model/basis.ts), oder die Abhängigkeit umdrehen (schmaler Anschluss statt der ganzen Klasse).',
+      from: { path: '^(shared|web)/src/' },
+      to: { circular: true },
     },
     {
       name: 'shared-ohne-server-und-web',
@@ -366,7 +381,7 @@ module.exports = {
     includeOnly: '^(server|web|shared)/(src|test)/',
     exclude: { path: 'node_modules' },
     doNotFollow: { path: 'node_modules' },
-    // Auch reine Typ-Importe sehen (für die Richtungsregeln); bei Kreisläufen zählen sie nicht (oben).
+    // Auch reine Typ-Importe sehen (für die Richtungsregeln und für Kreise in shared/src/ und web/src/, oben).
     tsPreCompilationDeps: true,
     enhancedResolveOptions: {
       extensions: ['.ts', '.tsx', '.mjs', '.js', '.json'],

@@ -441,7 +441,7 @@ flowchart LR
   server_src_kern -->|1| server_src_datenbank
   server_src_kern -->|1| server_src_einstellungen
   server_src_kern -->|3| server_src_protokoll
-  server_src_kern -->|2| server_src_repo
+  server_src_kern -->|3| server_src_repo
   server_src_kern -->|1| server_src_sprache
   server_src_kern -->|1| server_src_zwischenspeicher
   server_src_kern -->|7| shared_src
@@ -871,20 +871,18 @@ flowchart LR
   server_src_zwischenspeicher -->|2| server_src_protokoll
   server_src_zwischenspeicher -->|1| shared_src_sichten
   shared_src -->|4| shared_src_erkennung
-  shared_src -->|38| shared_src_model
+  shared_src -->|39| shared_src_model
   shared_src -->|6| shared_src_pakete
   shared_src -->|13| shared_src_sichten
   shared_src -->|65| shared_src_sprachen
-  shared_src_erkennung -->|15| shared_src
+  shared_src_erkennung -->|14| shared_src
   shared_src_erkennung -->|5| shared_src_model
-  shared_src_model -->|53| shared_src
-  shared_src_model -->|2| shared_src_erkennung
-  shared_src_model -->|2| shared_src_sichten
-  shared_src_pakete -->|35| shared_src
+  shared_src_model -->|45| shared_src
+  shared_src_model -->|3| shared_src_sichten
+  shared_src_pakete -->|36| shared_src
   shared_src_sichten -->|20| shared_src
-  shared_src_sichten -->|6| shared_src_model
-  shared_src_sichten -->|2| shared_src_pakete
-  web_src -->|47| shared_src
+  shared_src_sichten -->|8| shared_src_model
+  web_src -->|48| shared_src
   web_src -->|8| shared_src_model
   web_src -->|2| shared_src_sichten
   web_src -->|25| shared_src_sprachen
@@ -949,14 +947,14 @@ flowchart LR
   web_src_profil -->|12| web_src_api
   web_src_profil -->|10| web_src_bausteine
   web_src_profil -->|1| web_src_werkbank
-  web_src_werkbank -->|203| shared_src
-  web_src_werkbank -->|17| shared_src_model
-  web_src_werkbank -->|20| shared_src_pakete
+  web_src_werkbank -->|204| shared_src
+  web_src_werkbank -->|18| shared_src_model
+  web_src_werkbank -->|21| shared_src_pakete
   web_src_werkbank -->|6| shared_src_sichten
-  web_src_werkbank -->|374| web_src
+  web_src_werkbank -->|376| web_src
   web_src_werkbank -->|15| web_src_ablage
-  web_src_werkbank -->|125| web_src_api
-  web_src_werkbank -->|84| web_src_bausteine
+  web_src_werkbank -->|127| web_src_api
+  web_src_werkbank -->|85| web_src_bausteine
   web_src_werkbank -->|2| web_src_einrichtung
   web_src_werkbank -->|2| web_src_entdecken
   web_src_werkbank -->|1| web_src_profil

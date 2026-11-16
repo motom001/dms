@@ -1266,15 +1266,14 @@
       "platzhalterIn",
       "urlKurz",
       "zielNormal"
-    ],
-    "types": [
-      "AussenMethode",
-      "AussenParameter"
     ]
   },
-  "shared/src/automatisierung-werkbank.ts": {
+  "shared/src/automatisierung-typen.ts": {
     "types": [
-      "ProtokollStufe"
+      "AussenParameter",
+      "ProtokollStufe",
+      "SchrittZustand",
+      "UndBereich"
     ]
   },
   "shared/src/automatisierung.ts": {
@@ -1283,9 +1282,7 @@
       "vorlaufText"
     ],
     "types": [
-      "Fassung",
-      "SchrittZustand",
-      "UndBereich"
+      "Fassung"
     ]
   },
   "shared/src/baum.ts": {
