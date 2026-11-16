@@ -143,12 +143,6 @@
     }
   },
   "server/src/dms.ts": {
-    "complexity": {
-      "count": 1
-    },
-    "max-lines-per-function": {
-      "count": 1
-    },
     "no-useless-assignment": {
       "count": 1
     }
