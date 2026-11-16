@@ -25,10 +25,15 @@ const SPDX = [
   'CC0-1.0',
 ];
 
-/** Ordner `server/lizenzen/`: neben dem Quelltext (src/) bzw. neben server/dist – wie `schriftOrdner()` (pdf/schrift.ts). */
+/** Ordner `server/lizenzen/`: neben dem Quelltext (src/pakete/) bzw. neben server/dist – wie `schriftOrdner()` (pdf/schrift.ts). */
 function lizenzOrdner(): string {
   const hier = dirname(fileURLToPath(import.meta.url));
-  const kandidaten = [join(hier, '..', 'lizenzen'), join(process.cwd(), 'lizenzen'), join(process.cwd(), 'server', 'lizenzen')];
+  const kandidaten = [
+    join(hier, '..', 'lizenzen'),
+    join(hier, '..', '..', 'lizenzen'),
+    join(process.cwd(), 'lizenzen'),
+    join(process.cwd(), 'server', 'lizenzen'),
+  ];
   const ordner = kandidaten.find((k) => SPDX.every((s) => existsSync(join(k, `${s}.txt`))));
   if (!ordner) throw new Error(`Lizenztexte fehlen (${SPDX.join(', ')} als .txt, gesucht in ${kandidaten.join(', ')})`);
   return ordner;

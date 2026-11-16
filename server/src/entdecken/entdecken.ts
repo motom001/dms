@@ -60,12 +60,13 @@ export const EINSTELLUNG = {
 /** So viele Tipps merkt sich Ablago je Liste (gesehen, ausgeblendet) – die Einstellung bleibt klein. */
 const MERKEN_MAX = 100;
 
-/** Ordner mit anker.yaml, rundgaenge.yaml und tipps.yaml: neben dem Quelltext bzw. neben server/dist. */
+/** Ordner mit anker.yaml, rundgaenge.yaml und tipps.yaml: vom Quelltext (src/entdecken/) bzw. von server/dist aus. */
 export function entdeckenOrdner(): string | null {
   const hier = dirname(fileURLToPath(import.meta.url));
   const kandidaten = [
     process.env.DMS_ENTDECKEN_DIR,
     join(hier, '..', '..', 'shared', 'entdecken'),
+    join(hier, '..', '..', '..', 'shared', 'entdecken'),
     join(process.cwd(), 'shared', 'entdecken'),
     join(process.cwd(), '..', 'shared', 'entdecken'),
   ];

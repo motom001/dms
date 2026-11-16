@@ -23,9 +23,9 @@ export const UEBERGAENGE: Uebergang[] = [
     seit: '#636, 0.158.1 (Rückmeldung über die Antwort auf sicherung.fertig)',
     entfaelltMit: '1.0.0',
     fundstellen: [
-      { datei: 'server/src/routen.ts', text: "const SICHERUNG_EXTERN_PFAD = '/api/v1/sicherungen/:name/extern';" },
+      { datei: 'server/src/http/routen.ts', text: "const SICHERUNG_EXTERN_PFAD = '/api/v1/sicherungen/:name/extern';" },
       { datei: 'server/src/sicherung/sicherung.routen.ts', text: "pfad: '/api/sicherungen/:name/extern'" },
-      { datei: 'server/src/api-v1.ts', text: "pfad: '/sicherungen/{name}/extern'" },
+      { datei: 'server/src/http/api-v1.ts', text: "pfad: '/sicherungen/{name}/extern'" },
     ],
   },
   {
@@ -60,7 +60,7 @@ export const UEBERGAENGE: Uebergang[] = [
     was: 'Einrichtungsdatei der Versionen 0.191 und 0.192 (administrator statt konto, erster-benutzer)',
     seit: '#821 (Abschnitt konto)',
     entfaelltMit: '1.0.0',
-    fundstellen: [{ datei: 'server/src/einrichtungsdatei.ts', text: 'function aelter(wert: unknown)' }],
+    fundstellen: [{ datei: 'server/src/einrichtung/einrichtungsdatei.ts', text: 'function aelter(wert: unknown)' }],
   },
   {
     was:
@@ -71,7 +71,7 @@ export const UEBERGAENGE: Uebergang[] = [
     fundstellen: [
       { datei: 'shared/src/postfelder.ts', text: "export const POST_ALTE_KENNUNGEN = { absender: 'von', fuer: 'an' } as const;" },
       { datei: 'server/src/mappen/eingaben.ts', text: "const roh = typ.system === 'post' ? postWerteNeu(eingang) : eingang;" },
-      { datei: 'server/src/api-v1.ts', text: 'export function mitAltenPostNamen(body: unknown, postId: string, tiefe = 0): unknown' },
+      { datei: 'server/src/http/api-v1.ts', text: 'export function mitAltenPostNamen(body: unknown, postId: string, tiefe = 0): unknown' },
       { datei: 'server/src/post/post.dienst.ts', text: 'const e = postWerteNeu((eingabe ?? {}) as Record<string, unknown>);' },
       { datei: 'server/src/post/foto.ts', text: 'const e = postWerteNeu((eingabe ?? {}) as Record<string, unknown>);' },
       {

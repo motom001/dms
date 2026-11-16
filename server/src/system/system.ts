@@ -68,7 +68,8 @@ export function installierteVersion(name: string, wurzeln = suchwurzeln()): stri
 
 function suchwurzeln(): string[] {
   const hier = dirname(fileURLToPath(import.meta.url));
-  return [...new Set([process.cwd(), join(process.cwd(), '..'), join(hier, '..'), join(hier, '..', '..')])];
+  // hier: server/dist im Bündel, server/src/system unter tsx (#1278) – daher bis zu drei Ebenen hinauf.
+  return [...new Set([process.cwd(), join(process.cwd(), '..'), join(hier, '..'), join(hier, '..', '..'), join(hier, '..', '..', '..')])];
 }
 
 export function eigeneVersion(): string {
