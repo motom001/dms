@@ -86,7 +86,7 @@ async function aufbau(
   });
   const repo = speicherAutomatisierungRepo(o.uhr);
   const motor = new Automatisierungen({ dienst: d, repo, werkbank, uhr: o.uhr });
-  // Wie in ablago.ts: Eingang einer Fehlermeldung → Ereignis „Fehler gemeldet“.
+  // Wie beim Start (start/pakete.ts): Eingang einer Fehlermeldung → Ereignis „Fehler gemeldet“.
   fehlermeldungen.beimMelden = (m) =>
     d.kern.ereignis('fehler.gemeldet', { fehlermeldung: m.id, benutzer: m.benutzerId, zeitpunkt: m.erstellt }, m.benutzerId);
   // Mit `verteiler` gibt der Verteiler den Ausgangskorb an den Motor (wie motor.start()) – und an den Test, der mitliest.

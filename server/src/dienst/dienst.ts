@@ -318,7 +318,7 @@ export class Dienst extends DienstBauteile {
       kurzzustand: () => this.kurzzustand,
     }));
   }
-  /** Mail an die Verwaltenden eines Bereichs (#995) – beim Start verbunden (ablago.ts), sonst keine. */
+  /** Mail an die Verwaltenden eines Bereichs (#995) – beim Start verbunden (start/dienst.ts), sonst keine. */
   protected verwaltungsmail?: (bereich: string) => (betreff: MailText, text: MailText) => Promise<void>;
 
   constructor(

@@ -63,7 +63,7 @@ function begrenze(v: unknown, tiefe = 0): unknown {
 }
 
 export class Fehlermeldungen {
-  /** Nach dem Eingang (#677): Ereignis „Fehler gemeldet“ für Automatisierungen (ablago.ts verbindet mit dem Kern). */
+  /** Nach dem Eingang (#677): Ereignis „Fehler gemeldet“ für Automatisierungen (start/pakete.ts verbindet mit dem Kern). */
   beimMelden?: (m: { id: string; benutzerId: string | null; erstellt: string }) => Promise<void>;
   constructor(
     private repo: FehlerRepo,

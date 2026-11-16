@@ -131,9 +131,11 @@ const SCHICHTEN = [
 /**
  * Ordner ohne Fachlogik: HTTP-Hilfen, PDF-Stelle, Arbeiter-Pool, Paket-Läufer. Für sie gilt `fachordner` nicht. Die
  * Fachlogik rund um PDFs liegt seit #1077 im Fachordner pdf-bearbeiten/ (Schicht 3) – nicht in pdf/, das so ein
- * Werkzeug ohne Kern, Mappen und Dokumente bleibt (pdf-lib nur dort, Vorgänge im Arbeiter).
+ * Werkzeug ohne Kern, Mappen und Dokumente bleibt (pdf-lib nur dort, Vorgänge im Arbeiter). Dazu der Zusammenbau beim
+ * Start (start/, #1278): die Abschnitte von ablago.ts, die alles verdrahten – sie bindet nur ablago.ts ein
+ * (`start-nur-aus-ablago`).
  */
-const TECHNIK = ['http', 'pdf', 'arbeit', 'laeufer', BASIS_ORDNER];
+const TECHNIK = ['http', 'pdf', 'arbeit', 'laeufer', BASIS_ORDNER, 'start'];
 /**
  * Teile eines Fachordners über dem Dienst (#1278): Paketverwaltung, Paketerstellung und der Motor der Automatisierungen
  * bekommen den ganzen Dienst (nur als Typ, `ueber-dem-dienst-typ`), der Dienst selbst bindet `pakete/index.ts` ein.
@@ -315,6 +317,14 @@ module.exports = {
         pathNot: ['\\.routen\\.ts$', '^server/src/http/routen\\.ts$', '^server/src/http/routen-(hilfen|kontext)\\.ts$'],
       },
       to: { path: '^server/src/http/routen-(hilfen|kontext)\\.ts$' },
+    },
+    {
+      name: 'start-nur-aus-ablago',
+      severity: 'error',
+      comment:
+        'Die Abschnitte des Starts (start/, #1278) ruft nur ablago.ts auf – sie verdrahten alles und gehören zu keinem Fachbereich.',
+      from: { path: '^(server|shared|web)/', pathNot: ['^server/src/ablago\\.ts$', '^server/src/start/'] },
+      to: { path: '^server/src/start/' },
     },
     ...fachordner(),
   ],

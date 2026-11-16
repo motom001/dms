@@ -37,8 +37,8 @@ import { gebietsschema } from '../../../shared/src/sprache';
  * Bytes, Ergebnis, Token und die daraus geschätzten Kosten. Nie Inhalte, Adressen, Betreffs oder URLs. Rohdaten
  * `ROH_TAGE` Tage, danach nur Monatssummen (`MONATE` Monate). Nichts geht nach außen.
  *
- * Eine Instanz für den Prozess (`extern`), wie das Protokoll: Anschlüsse brauchen so keine Verdrahtung. ablago.ts
- * setzt Speicher und Einstellungen; ohne sie zählt ein Speicher im Arbeitsspeicher (Tests).
+ * Eine Instanz für den Prozess (`extern`), wie das Protokoll: Anschlüsse brauchen so keine Verdrahtung. Der Start
+ * (start/betrieb.ts) setzt Speicher und Einstellungen; ohne sie zählt ein Speicher im Arbeitsspeicher (Tests).
  */
 
 /** Ein gespeicherter Aufruf. */

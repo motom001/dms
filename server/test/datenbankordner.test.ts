@@ -120,8 +120,9 @@ describe('Datenbank ohne Volume (#943)', () => {
     );
   });
 
-  it('wird beim Start geprüft und protokolliert (ablago.ts)', () => {
-    const quelle = lies('server/src/ablago.ts');
+  it('wird beim Start geprüft und protokolliert (start/startseite.ts, start/zugaenge.ts)', () => {
+    // Seit #1278 stehen die Abschnitte von ablago.ts in server/src/start/.
+    const quelle = ['server/src/start/startseite.ts', 'server/src/start/zugaenge.ts'].map(lies).join('\n');
     assert.match(quelle, /const ohneDatenbankVolume = datenbankOhneVolume\(env\);/);
     assert.match(quelle, /if \(ohneDatenbankVolume && leiter\) log\.error\(tDe\('meldungen\.index\.datenbank-ohne-volume'/);
     assert.match(quelle, /new AnbindungVerwaltung\([^;]*?,\s*ohneDatenbankVolume,?\s*\)/);

@@ -249,7 +249,7 @@ describe('Sprachpaket prüfen (#731)', () => {
   });
 });
 
-/** Aufbau mit Speicher-Repo, SprachDienst und Sprachpaketen – wie in ablago.ts verdrahtet. */
+/** Aufbau mit Speicher-Repo, SprachDienst und Sprachpaketen – wie beim Start verdrahtet (start/dienst.ts). */
 async function aufbau(o: { repo?: Repo; personen?: (k: string) => number; abruf?: (url: string) => Promise<Buffer> } = {}) {
   const d = new Dienst(o.repo ?? speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
   const einst = speicherEinstellungen();
