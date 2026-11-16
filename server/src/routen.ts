@@ -120,8 +120,8 @@ export interface Anfrage {
   peer?: string;
   /** Über den Befehl `dms` im Container (#244). */
   konsole?: boolean;
-  /** Kopf X-Einrichtungscode (#119), solange das DMS nicht eingerichtet ist. */
-  einrichtungscode?: string;
+  /** Kopf X-Einrichtungscode (#119), solange das DMS nicht eingerichtet ist; mit Herkunft aus dem Heimnetz (#1359). */
+  einrichtungscode?: string | import('./einrichtungscode').EinrichtungsAngabe;
   /** Läuft in dieser Sitzung der Verwaltungsmodus (#819)? Dann ist `benutzer.rolle` = `admin`. */
   verwaltungsmodus?: boolean;
   /** Weitere Köpfe der Anfrage (klein geschrieben), z. B. If-None-Match beim Zähler-Endpunkt (#625). */

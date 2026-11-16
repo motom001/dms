@@ -694,6 +694,7 @@
   "einrichtungscode.zu-viele-falsche-einrichtungscodes": "Zu viele falsche Einrichtungscodes. Bitte in 10 Minuten noch einmal versuchen.",
   "einrichtungscode.der-einrichtungscode-stimmt-nicht": "Der Einrichtungscode stimmt nicht.",
   "einrichtungscode.bitte-den-einrichtungscode-eingeben": "Bitte den Einrichtungscode eingeben.",
+  "einrichtungscode.nur-heimnetz": "Ohne Einrichtungscode lässt sich Ablago nur aus dem Heimnetz einrichten. Richte es im Heimnetz ein oder starte es mit Einrichtungscode (DMS_EINRICHTUNGSCODE nicht auf „aus“).",
   "einrichtungsdatei.einrichtung-von-ablago": "Einrichtung von Ablago",
   "einrichtungsdatei.was-der-einrichtungsassistent": "Was der Einrichtungsassistent gesammelt hat – ohne Passwörter und ohne Schlüssel. Formatversion 1.",
   "einrichtungsdatei.formatversion-dieser-datei": "Formatversion dieser Datei.",

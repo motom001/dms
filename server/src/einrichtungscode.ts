@@ -15,7 +15,9 @@ import { t } from './sprache';
  * App-Stores (#176): Mit DMS_EINRICHTUNGSCODE=aus entfällt der Code. Die Umbrel-Vorlage schaltet die
  * Umbrel-Anmeldung vor der App ab (PROXY_AUTH_ADD: "false"), weil Familienmitglieder sich mit eigenem
  * DMS-Konto anmelden; dort wie auf ZimaOS/CasaOS gilt das Heimnetz bis zur Einrichtung als
- * vertrauenswürdig. Der Code ließe sich dort nur über Protokoll oder Kommandozeile finden.
+ * vertrauenswürdig. Der Code ließe sich dort nur über Protokoll oder Kommandozeile finden. Durchgesetzt wird das
+ * (#1359): Ohne Code geht die Einrichtung nur aus dem Heimnetz (dieselbe Prüfung wie beim Notfallzugang, mit
+ * TRUST_PROXY); Anfragen von außen bekommen 403 mit Hinweis.
  */
 export const CODE_DATEI = 'EINRICHTUNGSCODE';
 /** Ohne leicht verwechselbare Zeichen (0/O, 1/I/L). */
@@ -25,6 +27,19 @@ const SPERRE_MS = 10 * 60_000;
 /** Art im Kurzzustand für die Fehlversuche (#956). */
 const FEHLER = 'einrichtungscode-fehler';
 const log = protokoll.modul('system');
+
+/**
+ * Was eine Anfrage zur Einrichtung mitbringt (#1359): Kopf X-Einrichtungscode und ob sie aus dem Heimnetz kommt.
+ * Ein bloßer Text (Tests, ältere Aufrufer) gilt als Code von außerhalb des Heimnetzes.
+ */
+export interface EinrichtungsAngabe {
+  code?: string;
+  heimnetz: boolean;
+}
+const angabe = (e: unknown): { eingabe: unknown; heimnetz: boolean } =>
+  e && typeof e === 'object' && 'heimnetz' in e
+    ? { eingabe: (e as EinrichtungsAngabe).code, heimnetz: (e as EinrichtungsAngabe).heimnetz === true }
+    : { eingabe: e, heimnetz: false };
 
 export function neuerCode(): string {
   const z = () => Array.from({ length: 4 }, () => ZEICHEN[randomInt(ZEICHEN.length)]).join('');
@@ -59,7 +74,9 @@ export class Einrichtungscode {
   /** Vorhandenen Code übernehmen (bleibt über Neustarts gleich) oder neu erzeugen; ins Protokoll schreiben. */
   async bereitstellen(): Promise<string> {
     if (this.abgeschaltet) {
-      log.warn('Ablago ist noch nicht eingerichtet – ohne Einrichtungscode (DMS_EINRICHTUNGSCODE=aus). Richte es gleich im Browser ein.');
+      log.warn(
+        'Ablago ist noch nicht eingerichtet – ohne Einrichtungscode – nur aus dem Heimnetz (DMS_EINRICHTUNGSCODE=aus). Richte es gleich im Browser ein.',
+      );
       return '';
     }
     if (!this.code) {
@@ -96,8 +113,9 @@ export class Einrichtungscode {
   }
 
   /** Stimmt der Code? Ohne Zählen der Fehlversuche – nur, um Angaben im Status mitzuliefern. */
-  stimmt(eingabe: unknown): boolean {
-    if (this.abgeschaltet) return true;
+  stimmt(roh: unknown): boolean {
+    const { eingabe, heimnetz } = angabe(roh);
+    if (this.abgeschaltet) return heimnetz;
     return (
       !!this.code &&
       typeof eingabe === 'string' &&
@@ -108,8 +126,9 @@ export class Einrichtungscode {
   }
 
   /** Wirft 403, wenn der Code fehlt oder falsch ist; nach 10 Fehlversuchen 10 Minuten Sperre. */
-  pruefe(eingabe: unknown) {
-    if (this.abgeschaltet) return;
+  pruefe(roh: unknown) {
+    const { eingabe, heimnetz } = angabe(roh);
+    if (this.abgeschaltet) return this.nurHeimnetz(heimnetz);
     if (!this.code) throw new Fachfehler(409, t('meldungen.einrichtungscode.die-einrichtung-ist-bereits'));
     if (this.gesperrtBis > this.jetzt()) throw new Fachfehler(429, t('meldungen.einrichtungscode.zu-viele-falsche-einrichtungscodes'));
     const ok = typeof eingabe === 'string' && norm(eingabe).length === 12 && timingSafeEqual(hash(eingabe), hash(this.code));
@@ -129,6 +148,11 @@ export class Einrichtungscode {
     this.fehlversuche = 0;
   }
 
+  /** Ohne Code (#1359): nur aus dem Heimnetz – sonst 403 mit Hinweis. */
+  private nurHeimnetz(heimnetz: boolean) {
+    if (!heimnetz) throw new Fachfehler(403, t('meldungen.einrichtungscode.nur-heimnetz'), { heimnetz: false });
+  }
+
   /** Fehlversuche ab jetzt über alle Prozesse zählen (#956) – sobald die Datenbank da ist. */
   teileZaehler(z: Kurzzustand) {
     this.zustand = z;
@@ -139,9 +163,10 @@ export class Einrichtungscode {
    * vorab gezählt, ein richtiger Code nimmt die Zähler zurück. 10 Fehlversuche in 10 Minuten sperren bis zum Ende
    * dieses Fensters. Ohne Datenbank (Einrichtungsmodus) wie `pruefe`.
    */
-  async pruefeGeteilt(eingabe: unknown) {
-    if (!this.zustand) return this.pruefe(eingabe);
-    if (this.abgeschaltet) return;
+  async pruefeGeteilt(roh: unknown) {
+    if (!this.zustand) return this.pruefe(roh);
+    const { eingabe, heimnetz } = angabe(roh);
+    if (this.abgeschaltet) return this.nurHeimnetz(heimnetz);
     if (!this.code) throw new Fachfehler(409, t('meldungen.einrichtungscode.die-einrichtung-ist-bereits'));
     const { anzahl } = await this.zustand.zaehle(FEHLER, 'code', SPERRE_MS);
     if (anzahl > MAX_FEHLVERSUCHE) {

@@ -495,4 +495,54 @@ describe('Schnittstellen des Assistenten über HTTP (#804, #806)', { skip: echte
       await app.close();
     }
   });
+
+  it('ohne Einrichtungscode (DMS_EINRICHTUNGSCODE=aus, #1359): von außen 403 mit Hinweis, aus dem Heimnetz möglich', async () => {
+    const { baueApp } = await import('../src/http');
+    const { Dienst } = await import('../src/dienst');
+    const { speicherRepo } = await import('../src/repo-speicher');
+    const { speicherDateien } = await import('../src/dateispeicher');
+    const { proxyVertrauen } = await import('../src/proxy');
+    const dienst = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
+    const code = new Einrichtungscode(await ordner(), Date.now, true);
+    const konten = new Konten(speicherKontoRepo(), null, 'http://nas', dienst.systemtypen.benutzerspiegel());
+    const einrichtung = new Einrichtung({
+      konten,
+      code,
+      einstellungen: speicherEinstellungen(),
+      mandant: { name: async () => null, umbenennen: async () => {} },
+      datenbank: () => ({ host: 'db', port: 5432, datenbank: 'dms', benutzer: 'dms' }),
+    });
+    const app = (await baueApp(dienst, konten, { einrichtung, proxy: proxyVertrauen(undefined).trust })) as unknown as {
+      inject(o: object): Promise<{ statusCode: number; body: string }>;
+      close(): Promise<void>;
+    };
+    try {
+      const post = (url: string, payload: unknown, remoteAddress: string, kopf: Record<string, string> = {}) =>
+        app.inject({ method: 'POST', url, remoteAddress, headers: { 'x-dms': '1', ...kopf }, payload });
+      const konto = { mandant: 'Familie Beispiel', name: 'Admin', email: 'admin@example.org', passwort: 'ein-langes-passwort' };
+      // Öffentliche Adresse, auch über einen Proxy im Heimnetz (X-Forwarded-For): 403 mit Hinweis, nichts angelegt.
+      for (const [ip, kopf] of [
+        ['203.0.113.7', {}],
+        ['172.18.0.2', { 'x-forwarded-for': '203.0.113.7' }],
+      ] as const) {
+        const r = await post('/api/konto/einrichten', konto, ip, kopf);
+        assert.equal(r.statusCode, 403, ip);
+        assert.match(JSON.parse(r.body).fehler, /nur aus dem Heimnetz/);
+        assert.equal((await post('/api/einrichtung/pruefen', { plan: BEISPIEL }, ip, kopf)).statusCode, 403);
+      }
+      assert.equal(await konten.einrichtungNoetig(), true);
+      // Aus dem Heimnetz (auch über den Proxy) ohne Code möglich.
+      assert.equal(
+        (
+          await post('/api/einrichtung/pruefen', { plan: BEISPIEL, passwort: 'ein-langes-passwort' }, '172.18.0.2', {
+            'x-forwarded-for': '192.168.1.20',
+          })
+        ).statusCode,
+        200,
+      );
+      assert.equal((await post('/api/konto/einrichten', konto, '192.168.1.20')).statusCode, 201);
+    } finally {
+      await app.close();
+    }
+  });
 });

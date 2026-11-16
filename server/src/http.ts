@@ -19,6 +19,7 @@ import type { ApiSchluesselDienst } from './apischluessel';
 import { wer } from './api-v1';
 import { oberflaecheSenden, statischeDateien } from './oberflaeche';
 import { einbettenAus, sicherheitsKoepfe, type Einbetten } from './koepfe';
+import { istHeimnetz } from './notfallcode';
 import { kontext, protokoll, type Kontext } from './protokoll';
 import type { Betrieb } from './betrieb';
 import type { Tresor } from './tresor';
@@ -337,7 +338,20 @@ export async function baueApp(dienst: Dienst, konten: Konten, opt: Optionen = {}
     ip: req.ip,
     peer: req.socket.remoteAddress,
     geraet: String(req.headers['user-agent'] ?? ''),
-    einrichtungscode: typeof req.headers['x-einrichtungscode'] === 'string' ? req.headers['x-einrichtungscode'] : undefined,
+    // Einrichtung ohne Code nur aus dem Heimnetz (#1359): dieselbe Prüfung wie beim Notfallzugang.
+    einrichtungscode: {
+      ...(typeof req.headers['x-einrichtungscode'] === 'string' ? { code: req.headers['x-einrichtungscode'] } : {}),
+      heimnetz: istHeimnetz(
+        {
+          ip: req.ip,
+          kopf: (n) => {
+            const v = req.headers[n];
+            return Array.isArray(v) ? v.join(', ') : v;
+          },
+        },
+        opt.proxy,
+      ),
+    },
     kopf: (n) => {
       const v = req.headers[n];
       return Array.isArray(v) ? v.join(', ') : v;

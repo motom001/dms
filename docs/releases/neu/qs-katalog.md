@@ -6,3 +6,4 @@ art: patch
 - **`TRUST_PROXY`:** `0`, `no`, `off` und `nein` bedeuten wie `false` „aus“. Ein ungültiger Wert gilt jetzt als „aus“ statt „auto“, die Meldung im Protokoll bleibt. (#1350)
 - **Container-Protokoll:** Mehrzeilige Fehlertexte stehen eingerückt und mit „|“ gekennzeichnet unter ihrer Zeile, Steuerzeichen erscheinen als `\uXXXX`. (#1353)
 - **Systemprotokoll:** Handelt jemand im Namen einer anderen Person, nennt das Protokoll beide, z. B. „markus@example.org (vertreten von lena@example.org)“. (#1357)
+- **Einrichtung ohne Einrichtungscode:** Mit `DMS_EINRICHTUNGSCODE=aus` lässt sich Ablago nur noch aus dem Heimnetz einrichten; von außen kommt ein Hinweis, im Heimnetz oder mit Einrichtungscode einzurichten. (#1359)

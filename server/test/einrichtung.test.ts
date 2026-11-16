@@ -126,15 +126,26 @@ describe('Einrichtungscode (#119)', () => {
     assert.throws(() => c.pruefe(code), /bereits abgeschlossen/);
   });
 
-  it('abgeschaltet (DMS_EINRICHTUNGSCODE=aus, #176): keine Datei, jede Eingabe gilt', async () => {
+  it('abgeschaltet (DMS_EINRICHTUNGSCODE=aus, #176): keine Datei, jede Eingabe gilt – nur aus dem Heimnetz (#1359)', async () => {
     const o = await ordner();
     const c = new Einrichtungscode(o, Date.now, true);
     assert.equal(await c.bereitstellen(), '');
     assert.ok(!existsSync(join(o, 'EINRICHTUNGSCODE')));
     assert.equal(c.noetig, false);
     assert.equal(c.aktiv, false);
-    c.pruefe(undefined);
-    assert.equal(c.stimmt(undefined), true);
+    const heim = { heimnetz: true },
+      aussen = { heimnetz: false };
+    c.pruefe(heim);
+    c.pruefe({ code: 'egal', heimnetz: true });
+    assert.equal(c.stimmt(heim), true);
+    // Von außen (oder ohne Angabe zur Herkunft): 403 mit Hinweis, auch mit irgendeinem Code.
+    for (const x of [aussen, { code: 'AAAA-AAAA-AAAA', heimnetz: false }, undefined, 'AAAA-AAAA-AAAA']) {
+      assert.throws(
+        () => c.pruefe(x),
+        (e: unknown) => e instanceof Fachfehler && e.status === 403 && /nur aus dem Heimnetz/.test(e.message),
+      );
+      assert.equal(c.stimmt(x), false);
+    }
     const konten = new Konten(speicherKontoRepo(), null, 'http://dms');
     let name: string | null = 'Mandant';
     const e = new Einrichtung({
@@ -150,17 +161,21 @@ describe('Einrichtungscode (#119)', () => {
       schriftzug: async () => {},
     });
     assert.equal(e.codeNoetig, false);
+    await assert.rejects(
+      e.einrichten({ mandant: 'Familie Ohne Code', name: 'Admin', email: 'admin@example.org', passwort: 'ein-langes-passwort' }, aussen, {
+        ip: '203.0.113.7',
+        geraet: '',
+      }),
+      /nur aus dem Heimnetz/,
+    );
     const r = await e.einrichten(
       { mandant: 'Familie Ohne Code', name: 'Admin', email: 'admin@example.org', passwort: 'ein-langes-passwort' },
-      undefined,
+      heim,
       { ip: '1', geraet: '' },
     );
     assert.deepEqual(r.benutzer.verwaltung, ['*']);
     await assert.rejects(
-      e.einrichten({ mandant: 'X', name: 'B', email: 'b@example.org', passwort: 'ein-langes-passwort' }, undefined, {
-        ip: '1',
-        geraet: '',
-      }),
+      e.einrichten({ mandant: 'X', name: 'B', email: 'b@example.org', passwort: 'ein-langes-passwort' }, heim, { ip: '1', geraet: '' }),
       /bereits abgeschlossen/,
     );
   });

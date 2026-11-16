@@ -694,6 +694,7 @@
   "einrichtungscode.zu-viele-falsche-einrichtungscodes": "Too many wrong setup codes. Please try again in 10 minutes.",
   "einrichtungscode.der-einrichtungscode-stimmt-nicht": "The setup code is wrong.",
   "einrichtungscode.bitte-den-einrichtungscode-eingeben": "Please enter the setup code.",
+  "einrichtungscode.nur-heimnetz": "Without a setup code, Ablago can only be set up from the home network. Set it up in the home network or start it with a setup code (DMS_EINRICHTUNGSCODE not set to “aus”).",
   "einrichtungsdatei.einrichtung-von-ablago": "Setup of Ablago",
   "einrichtungsdatei.was-der-einrichtungsassistent": "What the setup assistant has collected – without passwords and without the key. Format version 1.",
   "einrichtungsdatei.formatversion-dieser-datei": "Format version of this file.",
