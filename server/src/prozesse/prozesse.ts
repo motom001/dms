@@ -499,183 +499,248 @@ const STABIL_MS = 5 * 60_000;
  */
 export const BEENDEN_MS = 8_000;
 
-/**
- * Der Hauptprozess: startet den Leiter, nach dessen „bereit“ die übrigen; reicht Aufrufe und Meldungen weiter, startet
- * Abgestürzte neu (der Leiter vor seinem ersten „bereit“ nicht – dann endet Ablago wie bisher mit seinem Code, und
- * Docker startet den Container neu). Kehrt nicht zurück.
- */
-export function leite(e: ProzessEinstellung): Promise<never> {
-  const log = protokoll.modul('system');
-  const halde = haldeJeProzess(e);
-  const leiterHalde = haldeLeiter(halde);
-  cluster.setupPrimary({ serialization: 'advanced' });
-  const konsole = randomBytes(32).toString('base64url');
-  const plaetze = new Map<number, { w: Worker; bereit: boolean; seit: number }>();
-  const folgen = new Map<number, number>();
-  /** Weitergereichte Aufrufe: Nummer beim Ziel → Absender und seine Nummer. */
-  const weiter = new Map<number, { w: Worker; id: unknown }>();
-  /** Sammelfragen an alle: Nummer beim Ziel → Sammlung und Prozess. */
-  const fragen = new Map<number, { s: Sammlung; info: ProzessInfo }>();
-  interface Sammlung {
-    w: Worker;
-    id: unknown;
-    offen: Set<number>;
-    werte: Array<ProzessInfo & { wert: unknown }>;
-    uhr: NodeJS.Timeout;
-  }
-  let naechste = 1;
-  const neustarts: Neustarts = { anzahl: 0, letzte: [] };
-  let leiterWarBereit = false;
-  let ende: number | null = null;
-  // Warnungen und Fehler aller Prozesse (#895): die eigenen direkt, die der anderen gebündelt per Nachricht.
-  const sammlung = sammlungHier(0);
-  /** Art der Ausnahme, die ein Prozess vor seinem Absturz meldete (#895) – für den Eintrag unter den Neustarts. */
-  const ausnahmen = new Map<number, string | null>();
+/** Sammelfrage an alle Prozesse (`frageAlle`), im Hauptprozess. */
+interface Sammlung {
+  w: Worker;
+  id: unknown;
+  offen: Set<number>;
+  werte: Array<ProzessInfo & { wert: unknown }>;
+  uhr: NodeJS.Timeout;
+}
 
-  const sende = (w: Worker, m: Record<string, unknown>) => {
+/**
+ * Stand und Abläufe des Hauptprozesses (#1278, Schritt 6b-2; vorher Teil von `leite`): Plätze der Prozesse,
+ * weitergereichte Aufrufe, Sammelfragen, Neustarts und Beenden.
+ */
+class Leitung {
+  private readonly log = protokoll.modul('system');
+  private readonly halde: number | null;
+  private readonly leiterHalde: number | null;
+  private readonly konsole: string;
+  private readonly plaetze = new Map<number, { w: Worker; bereit: boolean; seit: number }>();
+  private readonly folgen = new Map<number, number>();
+  /** Weitergereichte Aufrufe: Nummer beim Ziel → Absender und seine Nummer. */
+  private readonly weiter = new Map<number, { w: Worker; id: unknown }>();
+  /** Sammelfragen an alle: Nummer beim Ziel → Sammlung und Prozess. */
+  private readonly fragen = new Map<number, { s: Sammlung; info: ProzessInfo }>();
+  private naechste = 1;
+  private readonly neustarts: Neustarts = { anzahl: 0, letzte: [] };
+  private leiterWarBereit = false;
+  private ende: number | null = null;
+  /** Warnungen und Fehler aller Prozesse (#895): die eigenen direkt, die der anderen gebündelt per Nachricht. */
+  private readonly sammlung: Protokollsammlung;
+  /** Art der Ausnahme, die ein Prozess vor seinem Absturz meldete (#895) – für den Eintrag unter den Neustarts. */
+  private readonly ausnahmen = new Map<number, string | null>();
+
+  constructor(private readonly e: ProzessEinstellung) {
+    this.halde = haldeJeProzess(e);
+    this.leiterHalde = haldeLeiter(this.halde);
+    cluster.setupPrimary({ serialization: 'advanced' });
+    this.konsole = randomBytes(32).toString('base64url');
+    this.sammlung = sammlungHier(0);
+  }
+
+  private sende(w: Worker, m: Record<string, unknown>) {
     if (w.isConnected()) w.send({ dms: KANAL, ...m });
-  };
-  const liste = (): ProzessInfo[] =>
-    [...plaetze].filter(([, p]) => p.w.process.pid).map(([nr, p]) => ({ nr, pid: p.w.process.pid!, leiter: nr === 1 }));
-  const verteileListe = () => {
-    const l = liste();
-    for (const p of plaetze.values()) sende(p.w, { art: 'prozesse', liste: l, neustarts });
-  };
-  const sammlungFertig = (s: Sammlung, k?: number) => {
+  }
+  private liste(): ProzessInfo[] {
+    return [...this.plaetze].filter(([, p]) => p.w.process.pid).map(([nr, p]) => ({ nr, pid: p.w.process.pid!, leiter: nr === 1 }));
+  }
+  private verteileListe() {
+    const l = this.liste();
+    for (const p of this.plaetze.values()) this.sende(p.w, { art: 'prozesse', liste: l, neustarts: this.neustarts });
+  }
+  private sammlungFertig(s: Sammlung, k?: number) {
     if (k !== undefined) s.offen.delete(k);
     if (s.offen.size) return;
     clearTimeout(s.uhr);
     s.werte.sort((a, b) => a.nr - b.nr);
-    sende(s.w, { art: 'antwort', id: s.id, ok: true, wert: s.werte });
-  };
+    this.sende(s.w, { art: 'antwort', id: s.id, ok: true, wert: s.werte });
+  }
 
-  const nachricht = (nr: number, w: Worker, m: Nachricht) => {
+  /** Nachricht eines Prozesses. */
+  private nachricht(nr: number, w: Worker, m: Nachricht) {
     if (m?.dms !== KANAL) return;
-    const p = plaetze.get(nr);
     switch (m.art) {
       case 'hallo':
-        sende(w, {
+        this.sende(w, {
           art: 'rolle',
           nr,
           leiter: nr === 1,
-          erster: nr === 1 && !leiterWarBereit,
-          konsole,
-          anzahl: e.anzahl,
+          erster: nr === 1 && !this.leiterWarBereit,
+          konsole: this.konsole,
+          anzahl: this.e.anzahl,
           primaer: process.pid,
         });
-        verteileListe();
+        this.verteileListe();
         return;
       case 'bereit':
-        if (p) p.bereit = true;
-        log.info(`Prozess ${nr}${nr === 1 ? ' (Leiter)' : ''} ist bereit`, { pid: w.process.pid });
-        if (nr === 1 && !leiterWarBereit) {
-          leiterWarBereit = true;
-          for (let i = 2; i <= e.anzahl; i++) starte(i);
-        }
-        verteileListe();
+        this.bereit(nr, w);
         return;
-      case 'rufe': {
-        const l = plaetze.get(1);
-        if (!l?.bereit) {
-          sende(w, {
-            art: 'antwort',
-            id: m.id,
-            ok: false,
-            fehler: { status: 503, message: '', schluessel: 'meldungen.prozesse.leiter-startet' },
-          });
-          return;
-        }
-        const k = naechste++;
-        weiter.set(k, { w, id: m.id });
-        sende(l.w, { art: 'rufe', id: k, name: m.name, args: m.args });
+      case 'rufe':
+        this.rufe(w, m);
         return;
-      }
       case 'antwort':
-      case 'teil': {
-        const k = Number(m.id);
-        const f = fragen.get(k);
-        if (f) {
-          if (m.art === 'teil') return;
-          fragen.delete(k);
-          f.s.werte.push({ ...f.info, wert: m.ok ? m.wert : null });
-          sammlungFertig(f.s, k);
-          return;
-        }
-        const z = weiter.get(k);
-        if (!z) return;
-        if (m.art === 'antwort') weiter.delete(k);
-        sende(z.w, { ...m, id: z.id });
+      case 'teil':
+        this.antwort(m);
         return;
-      }
       case 'melde': {
         const an = m.an === 'alle' || m.an === 'andere' ? m.an : 'leiter';
-        for (const [n, x] of plaetze) {
+        for (const [n, x] of this.plaetze) {
           if ((an === 'leiter' && n !== 1) || (an === 'andere' && x.w === w)) continue;
-          sende(x.w, { art: 'meldung', name: m.name, daten: m.daten });
+          this.sende(x.w, { art: 'meldung', name: m.name, daten: m.daten });
         }
         return;
       }
-      case 'frageAlle': {
-        const s: Sammlung = {
-          w,
-          id: m.id,
-          offen: new Set(),
-          werte: [],
-          uhr: setTimeout(
-            () => {
-              for (const k of s.offen) {
-                const f = fragen.get(k);
-                if (f) {
-                  fragen.delete(k);
-                  s.werte.push({ ...f.info, wert: null });
-                }
-              }
-              s.offen.clear();
-              sammlungFertig(s);
-            },
-            Number(m.ms) || 2000,
-          ),
-        };
-        for (const i of liste()) {
-          const x = plaetze.get(i.nr)!;
-          if (!x.bereit && x.w !== w) {
-            s.werte.push({ ...i, wert: null });
-            continue;
-          }
-          const k = naechste++;
-          fragen.set(k, { s, info: i });
-          s.offen.add(k);
-          sende(x.w, { art: 'rufe', id: k, name: m.name, args: [] });
-        }
-        sammlungFertig(s);
+      case 'frageAlle':
+        this.frageAlle(w, m);
         return;
-      }
+      default:
+        this.sonstige(nr, w, m);
+    }
+  }
+
+  /** Protokoll, Meldungen, Absturz und Beenden. */
+  private sonstige(nr: number, w: Worker, m: Nachricht) {
+    switch (m.art) {
       case 'protokoll':
-        for (const x of Array.isArray(m.eintraege) ? (m.eintraege as Rohmeldung[]) : []) sammlung.nimm(x, nr);
+        for (const x of Array.isArray(m.eintraege) ? (m.eintraege as Rohmeldung[]) : []) this.sammlung.nimm(x, nr);
         return;
       case 'meldungen':
-        sende(w, { art: 'antwort', id: m.id, ok: true, wert: sammlung.stand() });
+        this.sende(w, { art: 'antwort', id: m.id, ok: true, wert: this.sammlung.stand() });
         return;
       case 'absturz':
-        ausnahmen.set(nr, typeof m.ausnahme === 'string' ? m.ausnahme : null);
+        this.ausnahmen.set(nr, typeof m.ausnahme === 'string' ? m.ausnahme : null);
         return;
       case 'beenden':
-        log.warn(`Ablago wird ganz beendet: ${String(m.grund ?? '')}`);
-        beendeAlle(0);
+        this.log.warn(`Ablago wird ganz beendet: ${String(m.grund ?? '')}`);
+        this.beendeAlle(0);
         return;
     }
-  };
+  }
 
-  const beendet = (nr: number, w: Worker, code: number | null, signal: string | null) => {
-    const p = plaetze.get(nr);
+  /** Ein Prozess ist bereit; nach dem ersten „bereit“ des Leiters starten die übrigen. */
+  private bereit(nr: number, w: Worker) {
+    const p = this.plaetze.get(nr);
+    if (p) p.bereit = true;
+    this.log.info(`Prozess ${nr}${nr === 1 ? ' (Leiter)' : ''} ist bereit`, { pid: w.process.pid });
+    if (nr === 1 && !this.leiterWarBereit) {
+      this.leiterWarBereit = true;
+      for (let i = 2; i <= this.e.anzahl; i++) this.starte(i);
+    }
+    this.verteileListe();
+  }
+
+  /** Aufruf an den Leiter weiterreichen; startet er noch, gleich mit 503 antworten. */
+  private rufe(w: Worker, m: Nachricht) {
+    const l = this.plaetze.get(1);
+    if (!l?.bereit) {
+      this.sende(w, {
+        art: 'antwort',
+        id: m.id,
+        ok: false,
+        fehler: { status: 503, message: '', schluessel: 'meldungen.prozesse.leiter-startet' },
+      });
+      return;
+    }
+    const k = this.naechste++;
+    this.weiter.set(k, { w, id: m.id });
+    this.sende(l.w, { art: 'rufe', id: k, name: m.name, args: m.args });
+  }
+
+  /** Antwort oder Teil: zur Sammelfrage oder zurück an den Absender des Aufrufs. */
+  private antwort(m: Nachricht) {
+    const k = Number(m.id);
+    const f = this.fragen.get(k);
+    if (f) {
+      if (m.art === 'teil') return;
+      this.fragen.delete(k);
+      f.s.werte.push({ ...f.info, wert: m.ok ? m.wert : null });
+      this.sammlungFertig(f.s, k);
+      return;
+    }
+    const z = this.weiter.get(k);
+    if (!z) return;
+    if (m.art === 'antwort') this.weiter.delete(k);
+    this.sende(z.w, { ...m, id: z.id });
+  }
+
+  /** Frage an alle Prozesse; wer nicht bereit ist oder bis zur Frist nicht antwortet, zählt mit null. */
+  private frageAlle(w: Worker, m: Nachricht) {
+    const s: Sammlung = {
+      w,
+      id: m.id,
+      offen: new Set(),
+      werte: [],
+      uhr: setTimeout(
+        () => {
+          for (const k of s.offen) {
+            const f = this.fragen.get(k);
+            if (f) {
+              this.fragen.delete(k);
+              s.werte.push({ ...f.info, wert: null });
+            }
+          }
+          s.offen.clear();
+          this.sammlungFertig(s);
+        },
+        Number(m.ms) || 2000,
+      ),
+    };
+    for (const i of this.liste()) {
+      const x = this.plaetze.get(i.nr)!;
+      if (!x.bereit && x.w !== w) {
+        s.werte.push({ ...i, wert: null });
+        continue;
+      }
+      const k = this.naechste++;
+      this.fragen.set(k, { s, info: i });
+      s.offen.add(k);
+      this.sende(x.w, { art: 'rufe', id: k, name: m.name, args: [] });
+    }
+    this.sammlungFertig(s);
+  }
+
+  /** Ein Prozess ist beendet: Wartende bekommen eine Antwort, Fragen verfallen; dann neu starten oder ganz enden. */
+  private beendet(nr: number, w: Worker, code: number | null, signal: string | null) {
+    const p = this.plaetze.get(nr);
     if (p?.w !== w) return;
-    plaetze.delete(nr);
-    // Was noch auf den beendeten Prozess wartet, bekommt eine Antwort; Fragen von ihm verfallen.
-    for (const [k, z] of weiter) {
-      if (z.w === w) weiter.delete(k);
+    this.plaetze.delete(nr);
+    this.raeumeAuf(nr, w);
+    if (this.ende !== null) {
+      if (!this.plaetze.size) process.exit(this.ende);
+      return;
+    }
+    // Für Lasttest und Systemzustand (#874): Wer stürzt ab, mit welchem Code bzw. Signal?
+    this.neustarts.anzahl++;
+    this.neustarts.letzte = [
+      ...this.neustarts.letzte,
+      { nr, code, signal, zeit: new Date().toISOString(), ausnahme: this.ausnahmen.get(nr) ?? null },
+    ].slice(-10);
+    this.ausnahmen.delete(nr);
+    this.verteileListe();
+    if (nr === 1 && !this.leiterWarBereit) {
+      // Start gescheitert: wie mit einem Prozess beenden – Docker startet den Container neu.
+      this.log.error(`Ablago startet nicht (Prozess 1 beendet: ${signal ?? `Code ${code}`})`);
+      process.exit(code ?? 1);
+    }
+    const folge = Date.now() - p.seit > STABIL_MS ? 0 : (this.folgen.get(nr) ?? 0);
+    this.folgen.set(nr, folge + 1);
+    const ms = neustartWarten(folge);
+    // Nur Nummer, Code und Signal – der Grund steht im Protokoll des Prozesses selbst (ohne Geheimnisse).
+    this.log.warn(`Prozess ${nr}${nr === 1 ? ' (Leiter)' : ''} beendet (${signal ?? `Code ${code}`}) – startet in ${ms / 1000} s neu`);
+    setTimeout(() => {
+      if (this.ende === null) this.starte(nr);
+    }, ms);
+  }
+
+  /** Was noch auf den beendeten Prozess wartet, bekommt eine Antwort; Fragen von ihm verfallen. */
+  private raeumeAuf(nr: number, w: Worker) {
+    for (const [k, z] of this.weiter) {
+      if (z.w === w) this.weiter.delete(k);
       else if (nr === 1) {
-        weiter.delete(k);
-        sende(z.w, {
+        this.weiter.delete(k);
+        this.sende(z.w, {
           art: 'antwort',
           id: z.id,
           ok: false,
@@ -683,75 +748,65 @@ export function leite(e: ProzessEinstellung): Promise<never> {
         });
       }
     }
-    for (const [k, f] of fragen)
+    for (const [k, f] of this.fragen)
       if (f.info.nr === nr) {
-        fragen.delete(k);
+        this.fragen.delete(k);
         f.s.werte.push({ ...f.info, wert: null });
-        sammlungFertig(f.s, k);
+        this.sammlungFertig(f.s, k);
       }
-    if (ende !== null) {
-      if (!plaetze.size) process.exit(ende);
-      return;
-    }
-    // Für Lasttest und Systemzustand (#874): Wer stürzt ab, mit welchem Code bzw. Signal?
-    neustarts.anzahl++;
-    neustarts.letzte = [
-      ...neustarts.letzte,
-      { nr, code, signal, zeit: new Date().toISOString(), ausnahme: ausnahmen.get(nr) ?? null },
-    ].slice(-10);
-    ausnahmen.delete(nr);
-    verteileListe();
-    if (nr === 1 && !leiterWarBereit) {
-      // Start gescheitert: wie mit einem Prozess beenden – Docker startet den Container neu.
-      log.error(`Ablago startet nicht (Prozess 1 beendet: ${signal ?? `Code ${code}`})`);
-      process.exit(code ?? 1);
-    }
-    const folge = Date.now() - p.seit > STABIL_MS ? 0 : (folgen.get(nr) ?? 0);
-    folgen.set(nr, folge + 1);
-    const ms = neustartWarten(folge);
-    // Nur Nummer, Code und Signal – der Grund steht im Protokoll des Prozesses selbst (ohne Geheimnisse).
-    log.warn(`Prozess ${nr}${nr === 1 ? ' (Leiter)' : ''} beendet (${signal ?? `Code ${code}`}) – startet in ${ms / 1000} s neu`);
-    setTimeout(() => {
-      if (ende === null) starte(nr);
-    }, ms);
-  };
+  }
 
-  const starte = (nr: number) => {
+  private starte(nr: number) {
     // Halde (#874, #891): jeder Prozess begrenzt, der Leiter mit 512 MB mehr; null (ein Prozess, von Hand gesetzt): wie bisher.
-    const grenze = nr === 1 ? leiterHalde : halde;
+    const grenze = nr === 1 ? this.leiterHalde : this.halde;
     cluster.setupPrimary({ execArgv: grenze ? [...process.execArgv, `--max-old-space-size=${grenze}`] : process.execArgv });
     const w = cluster.fork();
-    plaetze.set(nr, { w, bereit: false, seit: Date.now() });
-    w.on('message', (m: Nachricht) => nachricht(nr, w, m));
-    w.on('exit', (code, signal) => beendet(nr, w, code, signal));
-  };
+    this.plaetze.set(nr, { w, bereit: false, seit: Date.now() });
+    w.on('message', (m: Nachricht) => this.nachricht(nr, w, m));
+    w.on('exit', (code, signal) => this.beendet(nr, w, code, signal));
+  }
 
-  const beendeAlle = (code: number) => {
-    if (ende !== null) return;
-    ende = code;
-    if (!plaetze.size) process.exit(code);
-    for (const p of plaetze.values()) p.w.process.kill('SIGTERM');
+  private beendeAlle(code: number) {
+    if (this.ende !== null) return;
+    this.ende = code;
+    if (!this.plaetze.size) process.exit(code);
+    for (const p of this.plaetze.values()) p.w.process.kill('SIGTERM');
     // Säumige (#1328): ins Protokoll, dann hart beenden.
     setTimeout(() => {
-      if (plaetze.size)
-        log.warn(`Beenden: Prozess ${[...plaetze.keys()].join(', ')} nach ${BEENDEN_MS / 1000} s noch nicht beendet – hart beendet`);
-      for (const p of plaetze.values()) p.w.process.kill('SIGKILL');
+      if (this.plaetze.size)
+        this.log.warn(
+          `Beenden: Prozess ${[...this.plaetze.keys()].join(', ')} nach ${BEENDEN_MS / 1000} s noch nicht beendet – hart beendet`,
+        );
+      for (const p of this.plaetze.values()) p.w.process.kill('SIGKILL');
       process.exit(code);
     }, BEENDEN_MS).unref();
-  };
-  process.on('SIGTERM', () => beendeAlle(0));
-  process.on('SIGINT', () => beendeAlle(0));
+  }
 
-  log.info(
-    `Ablago startet mit ${e.anzahl} Prozessen (${e.autoVorgabe ? 'automatisch, Vorgabe von dms-komplett' : `DMS_PROZESSE${e.quelle === 'auto' ? '=auto' : ''}`}): Prozess 1 leitet und erledigt die Arbeit im Hintergrund, alle beantworten Anfragen`,
-    {
-      kerne: e.kerne,
-      speicherMb: e.speicher === null ? null : Math.round(e.speicher / MB),
-      herkunft: e.herkunft,
-      ...(e.quelle === 'auto' ? { begrenzt: e.begrenzt } : {}),
-      ...(halde ? { haldeLeiterMb: leiterHalde, haldeMb: halde } : {}),
-    },
-  );
-  starte(1);
+  /** Signale anmelden, den Start ins Protokoll, den Leiter starten. */
+  los() {
+    const { e, halde } = this;
+    process.on('SIGTERM', () => this.beendeAlle(0));
+    process.on('SIGINT', () => this.beendeAlle(0));
+    this.log.info(
+      `Ablago startet mit ${e.anzahl} Prozessen (${e.autoVorgabe ? 'automatisch, Vorgabe von dms-komplett' : `DMS_PROZESSE${e.quelle === 'auto' ? '=auto' : ''}`}): Prozess 1 leitet und erledigt die Arbeit im Hintergrund, alle beantworten Anfragen`,
+      {
+        kerne: e.kerne,
+        speicherMb: e.speicher === null ? null : Math.round(e.speicher / MB),
+        herkunft: e.herkunft,
+        ...(e.quelle === 'auto' ? { begrenzt: e.begrenzt } : {}),
+        ...(halde ? { haldeLeiterMb: this.leiterHalde, haldeMb: halde } : {}),
+      },
+    );
+    this.starte(1);
+  }
+}
+
+/**
+ * Der Hauptprozess: startet den Leiter, nach dessen „bereit“ die übrigen; reicht Aufrufe und Meldungen weiter, startet
+ * Abgestürzte neu (der Leiter vor seinem ersten „bereit“ nicht – dann endet Ablago wie bisher mit seinem Code, und
+ * Docker startet den Container neu). Kehrt nicht zurück.
+ */
+export function leite(e: ProzessEinstellung): Promise<never> {
+  new Leitung(e).los();
   return new Promise<never>(() => {});
 }

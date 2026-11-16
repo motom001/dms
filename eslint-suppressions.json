@@ -648,14 +648,6 @@
       "count": 1
     }
   },
-  "server/src/prozesse/prozesse.ts": {
-    "complexity": {
-      "count": 1
-    },
-    "max-lines-per-function": {
-      "count": 2
-    }
-  },
   "server/src/repo/pg/historie.ts": {
     "max-params": {
       "count": 1
