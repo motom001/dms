@@ -196,11 +196,6 @@
       "count": 1
     }
   },
-  "server/src/dokumente/dokumente.routen.ts": {
-    "max-lines": {
-      "count": 1
-    }
-  },
   "server/src/dokumente/umwandeln.ts": {
     "complexity": {
       "count": 1
