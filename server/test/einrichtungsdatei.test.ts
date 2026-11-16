@@ -425,7 +425,7 @@ describe('Schnittstellen des Assistenten über HTTP (#804, #806)', { skip: echte
   it('Code nötig, nichts angelegt, Datei hin und zurück; nach der Einrichtung zu', async () => {
     const { baueApp } = await import('../src/http');
     const { Dienst } = await import('../src/dienst');
-    const { speicherRepo } = await import('../src/repo-speicher');
+    const { speicherRepo } = await import('../src/repo/speicher');
     const { speicherDateien } = await import('../src/dateispeicher');
     const dienst = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
     const code = new Einrichtungscode(await ordner());
@@ -499,7 +499,7 @@ describe('Schnittstellen des Assistenten über HTTP (#804, #806)', { skip: echte
   it('ohne Einrichtungscode (DMS_EINRICHTUNGSCODE=aus, #1359): von außen 403 mit Hinweis, aus dem Heimnetz möglich', async () => {
     const { baueApp } = await import('../src/http');
     const { Dienst } = await import('../src/dienst');
-    const { speicherRepo } = await import('../src/repo-speicher');
+    const { speicherRepo } = await import('../src/repo/speicher');
     const { speicherDateien } = await import('../src/dateispeicher');
     const { proxyVertrauen } = await import('../src/proxy');
     const dienst = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });

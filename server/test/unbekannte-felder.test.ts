@@ -15,7 +15,7 @@ import { speicherDateien } from '../src/dateispeicher';
 import { Dienst } from '../src/dienst';
 import { speicherEinstellungen } from '../src/einstellungen';
 import { liesPaket, liesSammelVerzeichnis, Paketverwaltung, type Sammeldatei } from '../src/pakete';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import { zipPuffer } from '../src/zip';
 import { signatur, TEST_PROJEKT, TEST_SEED, testSigniert } from './katalogschluessel';
 

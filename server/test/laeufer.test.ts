@@ -18,7 +18,7 @@ import { ladeArgumente, pruefeModul } from '../src/laeufer/modul';
 import { liesBegrenzt, netzErlaubt } from '../src/laeufer/prozess';
 import { liesPaket, liesZip, Paketverwaltung } from '../src/pakete';
 import { zipPuffer } from '../src/zip';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import { pruefeZugang, routen, type Anfrage, type Route } from '../src/routen';
 import { CODE_MAX, gleicheRechte, laeuferZustandText, liesCode, netzText, rechtePunkte, rechteText } from '../../shared/src/pakete';
 import { HILFE } from '../../shared/src/hilfe';
@@ -129,7 +129,7 @@ async function pdf(seiten: number): Promise<Buffer> {
 async function pgDatenbank() {
   const { ausUrl, alsUrl, legeDatenbankAn } = await import('../src/anbindung');
   const { verbinde, migriere } = await import('../src/db');
-  const { pgRepo } = await import('../src/repo-pg');
+  const { pgRepo } = await import('../src/repo/pg');
   const { pgKontoRepo } = await import('../src/konto-repo');
   const H = '00000000-0000-4000-8000-000000000001';
   const basis = ausUrl(process.env.TEST_DATABASE_URL)!;

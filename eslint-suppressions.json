@@ -594,7 +594,7 @@
       "count": 1
     }
   },
-  "server/src/repo-pg.ts": {
+  "server/src/repo/pg/index.ts": {
     "complexity": {
       "count": 3
     },
@@ -608,7 +608,7 @@
       "count": 2
     }
   },
-  "server/src/repo-speicher.ts": {
+  "server/src/repo/speicher/index.ts": {
     "@typescript-eslint/no-unused-vars": {
       "count": 2
     },

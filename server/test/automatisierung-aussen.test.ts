@@ -29,7 +29,7 @@ import { speicherKontoRepo } from '../src/konto-repo';
 import type { Mailer } from '../src/mail';
 import { notfallblattPlan, zieleZeile } from '../src/notfallblatt';
 import { liesPaket, liesZip } from '../src/pakete';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import { heikleHandlung } from '../src/verwaltungsbereiche';
 import { zipPuffer } from '../src/zip';
 
@@ -456,7 +456,7 @@ describe('Nach außen in PostgreSQL (#671)', { skip: !process.env.TEST_DATABASE_
   it('Ausgangskorb (eindeutig, holen mit Frist, Auftrag weg nach Zustellung, Bremse zählt), Geheimnisse umgeschlüsselt', async () => {
     const { eigeneDatenbank } = await import('./hilfe-db');
     const db = await eigeneDatenbank('aussen');
-    const { pgRepo } = await import('../src/repo-pg');
+    const { pgRepo } = await import('../src/repo/pg');
     const { pgAutomatisierungRepo } = await import('../src/automatisierung');
     const { pgAusgangRepo, pgAussenGeheimnisRepo } = await import('../src/automatisierung/index');
     const haushalt = (await db.sql`SELECT id FROM haushalte LIMIT 1`)[0]?.id as string ?? (await db.sql`INSERT INTO haushalte (id, name) VALUES (gen_random_uuid(), 'Test') RETURNING id`)[0].id as string;

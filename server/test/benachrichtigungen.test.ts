@@ -13,7 +13,7 @@ import { Dienst } from '../src/dienst';
 import { speicherEinstellungen } from '../src/einstellungen';
 import { Konten } from '../src/konten';
 import { speicherKontoRepo } from '../src/konto-repo';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 
 /** Mittwoch, 10.03.2027, um `uhr` in Berlin (MEZ). */
 const am = (uhr: string, tag = '2027-03-10') => Date.parse(`${tag}T${uhr}:00+01:00`);

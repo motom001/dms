@@ -25,7 +25,7 @@ import { beendeArbeiter } from '../src/arbeit';
 import { speicherDateien } from '../src/dateispeicher';
 import { Dienst } from '../src/dienst';
 import { speicherEinstellungen } from '../src/einstellungen';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import { inhaltsstrom } from './hilfen-schriften';
 
 after(() => beendeArbeiter());

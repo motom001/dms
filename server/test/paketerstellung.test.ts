@@ -28,7 +28,7 @@ import { speicherEinstellungen } from '../src/einstellungen';
 import { Fachfehler } from '../src/fehler';
 import { liesZip, Paketverwaltung } from '../src/pakete';
 import { dmsOptionen, mindestversion, Paketerstellung } from '../src/paketerstellung';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import { zipPuffer } from '../src/zip';
 import { basisMitAblageort, frueherAblageort } from './hilfen';
 

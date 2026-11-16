@@ -16,7 +16,7 @@ import { Fachfehler } from '../src/fehler';
 import { Konten } from '../src/konten';
 import { hasheSchluessel } from '../src/passwort';
 import { speicherKontoRepo } from '../src/konto-repo';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import { routen, type Anfrage } from '../src/routen';
 import { Tresor } from '../src/tresor';
 

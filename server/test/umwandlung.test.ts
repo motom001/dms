@@ -22,7 +22,7 @@ import { speicherEinstellungen } from '../src/einstellungen';
 import { Fachfehler } from '../src/fehler';
 import { liesPaket, liesZip, Paketverwaltung } from '../src/pakete';
 import type { Repo } from '../src/repo';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import { Umwandlung } from '../src/umwandlung';
 import { zipPuffer } from '../src/zip';
 import { eigeneDatenbank } from './hilfe-db';
@@ -36,7 +36,7 @@ const offen: Array<{ end(): Promise<void> }> = [];
 async function repo(pg: boolean): Promise<Repo> {
   if (!pg) return speicherRepo();
   const { migriere } = await import('../src/db');
-  const { pgRepo } = await import('../src/repo-pg');
+  const { pgRepo } = await import('../src/repo/pg');
   // Eigene Datenbank (#900), nach dem letzten Test der Datei gelöscht.
   const sql = (await eigeneDatenbank('g14_umw', { migrieren: false })).sql;
   offen.push(sql);

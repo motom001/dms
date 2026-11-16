@@ -12,7 +12,7 @@ import { speicherEinstellungen } from '../src/einstellungen';
 import { Fachfehler } from '../src/fehler';
 import { Konten } from '../src/konten';
 import { speicherKontoRepo } from '../src/konto-repo';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import { routen, type Anfrage } from '../src/routen';
 import { Tresor } from '../src/tresor';
 import { mkdtemp } from 'node:fs/promises';
@@ -567,7 +567,7 @@ describe('Berechtigungen in PostgreSQL (#124)', { skip: !process.env.TEST_DATABA
   it('Lesefilter als SQL: Listen, Zähler, Suche, Eingang wie im Arbeitsspeicher', async () => {
     const { ausUrl, alsUrl, legeDatenbankAn } = await import('../src/anbindung');
     const { verbinde, migriere } = await import('../src/db');
-    const { pgRepo } = await import('../src/repo-pg');
+    const { pgRepo } = await import('../src/repo/pg');
     const { pgKontoRepo } = await import('../src/konto-repo');
     const basis = ausUrl(process.env.TEST_DATABASE_URL)!;
     const a = { ...basis, datenbank: `dms_recht_${Date.now().toString(36)}` };

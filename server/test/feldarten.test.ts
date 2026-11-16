@@ -32,7 +32,7 @@ import { Fachfehler } from '../src/fehler';
 import { liesPaket, liesZip, Paketverwaltung } from '../src/pakete';
 import { FELDARTEN_AB, mindestversion, Paketerstellung } from '../src/paketerstellung';
 import type { Repo } from '../src/repo';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import { xlsxAus } from '../src/xlsx';
 import { eigeneDatenbank, MIGRATIONEN } from './hilfe-db';
 import '../src/sprache';
@@ -484,7 +484,7 @@ describe(
 
     it('Sortieren und Bedingungen in SQL wie im Arbeitsspeicher', async () => {
       const db = await eigeneDatenbank('feldarten');
-      const { pgRepo } = await import('../src/repo-pg');
+      const { pgRepo } = await import('../src/repo/pg');
       try {
         await sortierenUndFiltern(dienst(pgRepo(db.sql, H) as never as Repo));
       } finally {
@@ -494,7 +494,7 @@ describe(
 
     it('Migration 094: Betragsfelder mit gespeicherten negativen Beträgen erlauben sie weiter, andere bleiben', async () => {
       const db = await eigeneDatenbank('betrag_negativ');
-      const { pgRepo } = await import('../src/repo-pg');
+      const { pgRepo } = await import('../src/repo/pg');
       try {
         const d = dienst(pgRepo(db.sql, H) as never as Repo);
         const typ = await d.mappentypen.legeTypAn({

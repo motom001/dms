@@ -15,7 +15,7 @@ import { speicherKontoRepo } from '../src/konto-repo';
 import { speicherKurzzustand } from '../src/kurzzustand';
 import { Anmeldesperre } from '../src/anmeldesperre';
 import { benutzerAusAntwort, Passkeys, relyingParty } from '../src/passkeys';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import { pruefeZugang, routen, type Anfrage, type Route } from '../src/routen';
 import { ohneGeheimnisse, findeGeheimnisse } from '../src/geheimnis-sperre';
 import { totp, ausBase32, Zweifaktor } from '../src/zweifaktor';

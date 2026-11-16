@@ -16,7 +16,7 @@ import { speicherEinstellungen } from '../src/einstellungen';
 import { Fachfehler } from '../src/fehler';
 import { liesPaket, Paketverwaltung, type Sammeldatei } from '../src/pakete';
 import type { Repo } from '../src/repo';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import { zipPuffer } from '../src/zip';
 import { TEST_PROJEKT, testSigniert } from './katalogschluessel';
 
@@ -34,7 +34,7 @@ async function repo(pg: boolean): Promise<Repo> {
   if (!pg) return speicherRepo();
   const { ausUrl, alsUrl, legeDatenbankAn } = await import('../src/anbindung');
   const { verbinde, migriere } = await import('../src/db');
-  const { pgRepo } = await import('../src/repo-pg');
+  const { pgRepo } = await import('../src/repo/pg');
   const a = {
     ...ausUrl(process.env.TEST_DATABASE_URL)!,
     datenbank: `dms_pa_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,

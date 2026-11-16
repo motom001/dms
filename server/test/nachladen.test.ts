@@ -12,7 +12,7 @@ import { Konten } from '../src/konten';
 import { hasheSchluessel } from '../src/passwort';
 import { speicherKontoRepo, type KontoRepo } from '../src/konto-repo';
 import { protokoll } from '../src/protokoll';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import { pruefeVerwaltung, type Anfrage } from '../src/routen';
 import { bereicheDerRoute, JEDER } from '../src/verwaltungsbereiche';
 import { imModus } from './hilfen';

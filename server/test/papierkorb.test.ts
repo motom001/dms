@@ -10,7 +10,7 @@ import { speicherEinstellungen } from '../src/einstellungen';
 import { Fachfehler } from '../src/fehler';
 import { Konten } from '../src/konten';
 import { speicherKontoRepo } from '../src/konto-repo';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 
 const admin = { id: '00000000-0000-4000-8000-0000000000aa', rolle: 'admin' };
 const anna = { id: '00000000-0000-4000-8000-0000000000bb', rolle: 'mitglied' };

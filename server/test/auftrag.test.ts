@@ -7,7 +7,7 @@ import { ladeBeispiele } from '../src/beispiele';
 import { speicherDateien } from '../src/dateispeicher';
 import { demoPhasen, erzeugeDemo } from '../src/demo';
 import { Dienst } from '../src/dienst';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 
 describe('Auftragsstatus mit Phasen (#364)', () => {
   it('zählt je Phase, die Summe bleibt in fertig/gesamt', () => {

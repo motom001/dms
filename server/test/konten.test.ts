@@ -284,7 +284,7 @@ describe('API-Schlüssel und OpenAPI', () => {
     const { openapi, V1_TABELLE, v1Routen } = await import('../src/api-v1');
     const { routen } = await import('../src/routen');
     const { Dienst } = await import('../src/dienst');
-    const { speicherRepo } = await import('../src/repo-speicher');
+    const { speicherRepo } = await import('../src/repo/speicher');
     const { speicherDateien } = await import('../src/dateispeicher');
     const alle = routen(new Dienst(speicherRepo(), speicherDateien()), new Konten(speicherKontoRepo(), null, 'x'));
     // Die Beschreibung selbst (openapi.json) nimmt API-Schlüssel an (#1067), steht aber nicht in der Tabelle.

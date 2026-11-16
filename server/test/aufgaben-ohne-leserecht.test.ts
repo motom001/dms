@@ -22,7 +22,7 @@ import { Fachfehler } from '../src/fehler';
 import { Konten } from '../src/konten';
 import { speicherKontoRepo, type KontoRepo } from '../src/konto-repo';
 import type { Repo } from '../src/repo';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import { routen, type Anfrage } from '../src/routen';
 import { eigeneDatenbank } from './hilfe-db';
 
@@ -36,7 +36,7 @@ after(async () => {
 });
 
 async function pgRepos(): Promise<{ repo: Repo; konto: KontoRepo }> {
-  const { pgRepo } = await import('../src/repo-pg');
+  const { pgRepo } = await import('../src/repo/pg');
   const { pgKontoRepo } = await import('../src/konto-repo');
   // Je Aufruf eine frische eigene Datenbank (#900); gelöscht nach dem letzten Test.
   sql = (await eigeneDatenbank('aufgaben_ohne_leserecht')).sql;

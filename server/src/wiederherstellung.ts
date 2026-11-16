@@ -16,7 +16,7 @@ import { einstellungsMerker, laufeFaellige, wochentagVon } from './zeitplan';
 import { ortszeit, type Eintragsliste, type Metadaten, type SchlankeMetadaten, type Sicherung } from './sicherung';
 import { liesKopf, liesSicherung, sha256Von, ZWECK } from './sicherungsformat';
 import { entschluesseleMit, fingerabdruck, istPruefwort, leiteAb, schluesselAusText } from './tresor';
-import { STATISTIK_SPALTEN } from './repo-pg';
+import { STATISTIK_SPALTEN } from './repo/pg';
 import { t } from './sprache';
 import { GB, PLATZ_RESERVE } from './grenzen';
 

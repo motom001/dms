@@ -28,7 +28,7 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     const { verbinde, migriere } = await import('../src/db');
     const { baueApp } = await import('../src/http');
     const { Dienst } = await import('../src/dienst');
-    const { pgRepo } = await import('../src/repo-pg');
+    const { pgRepo } = await import('../src/repo/pg');
     const { Konten } = await import('../src/konten');
     const { pgKontoRepo } = await import('../src/konto-repo');
     const { ordnerSpeicher } = await import('../src/dateispeicher');
@@ -1379,7 +1379,7 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
 
   it('Paket-Läufer (#338): Dienstkonten, Paket-Code und Ereignisse in PostgreSQL', async () => {
     const { pgKontoRepo, dienstEmail } = await import('../src/konto-repo');
-    const { pgRepo } = await import('../src/repo-pg');
+    const { pgRepo } = await import('../src/repo/pg');
     const kr = pgKontoRepo(sql, HAUSHALT);
     const vorher = await kr.anzahlBenutzer();
     const konto = await kr.legeDienstkontoAn({ id: '00000000-0000-4000-8000-0000000003a8', paketId: 'probe', name: 'Paket Probe' });
@@ -1470,7 +1470,7 @@ describe('PostgreSQL: Ereignis in derselben Transaktion (#404)', { skip: url ? f
   it('scheitert das Ereignis, bleibt auch die Änderung aus; sonst stehen beide in der Datenbank', async () => {
     const { verbinde, migriere } = await import('../src/db');
     const { Dienst } = await import('../src/dienst');
-    const { pgRepo } = await import('../src/repo-pg');
+    const { pgRepo } = await import('../src/repo/pg');
     const { speicherDateien } = await import('../src/dateispeicher');
     const { speicherEinstellungen } = await import('../src/einstellungen');
     sql = verbinde(await dbUrl());
@@ -1562,7 +1562,7 @@ describe('PostgreSQL: Ereigniskatalog (#670)', { skip: url ? false : 'TEST_DATAB
 
   it('Bündeln, Sperre für zwei Server, Wiederholung, Aufräumen und Frist genau einmal', async () => {
     const { verbinde, migriere } = await import('../src/db');
-    const { pgRepo } = await import('../src/repo-pg');
+    const { pgRepo } = await import('../src/repo/pg');
     const { mischeFelder } = await import('../../shared/src/ereignisse');
     sql = verbinde(await dbUrl());
     await migriere(sql, fileURLToPath(new URL('../migrations', import.meta.url)), () => {});

@@ -15,7 +15,7 @@ import { speicherKontoRepo } from '../src/konto-repo';
 import type { Abruf } from '../src/oidc';
 import { Postfaecher, type ImapSitzung, type Zugang } from '../src/postfach';
 import { AnmeldungAbgelaufen, endpunkte, pkceChallenge, PostfachOAuth } from '../src/postfach-oauth';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import { POSTFACH_BINDUNG_COOKIE, pruefeZugang, routen, type Anfrage } from '../src/routen';
 import { Tresor } from '../src/tresor';
 import { mailText, type MailText } from '../src/mail';

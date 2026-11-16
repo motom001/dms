@@ -12,7 +12,7 @@ import { speicherEinstellungen } from '../src/einstellungen';
 import type { Fachfehler } from '../src/fehler';
 import { Konten } from '../src/konten';
 import { speicherKontoRepo } from '../src/konto-repo';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import { routen, type Anfrage } from '../src/routen';
 import { heikleHandlung } from '../src/verwaltungsbereiche';
 import { Nachweisjournal, setzeNachweisjournal, speicherJournal } from '../src/nachweisjournal';

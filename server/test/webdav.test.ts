@@ -8,7 +8,7 @@ import { Dienst } from '../src/dienst';
 import { speicherEinstellungen } from '../src/einstellungen';
 import { Konten } from '../src/konten';
 import { speicherKontoRepo } from '../src/konto-repo';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import type { Benutzer } from '../../shared/src/model';
 import { etagVon, MAX_UPLOADS, Webdav, type WebdavAntwort } from '../src/webdav';
 import { bereinige, eindeutig, href, istHilfsdatei, proppatchNamen, Ratenbegrenzung, xml, zerlege } from '../src/webdav-baum';

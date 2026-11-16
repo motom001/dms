@@ -22,7 +22,7 @@ import { speicherKurzzustand } from '../src/kurzzustand';
 import { AUFRUF_ANGENOMMEN_JE_ADRESSE, AUFRUF_FEHLVERSUCHE_GESAMT, AUFRUF_FEHLVERSUCHE_JE_ADRESSE, AUFRUF_JE_BEREICH } from '../src/grenzen';
 import { aufrufZeile, notfallblattPlan } from '../src/notfallblatt';
 import { liesPaket, liesZip } from '../src/pakete';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import { heikleHandlung } from '../src/verwaltungsbereiche';
 import { zipPuffer } from '../src/zip';
 
@@ -400,7 +400,7 @@ describe('Aufruf von außen in PostgreSQL (#679)', { skip: !process.env.TEST_DAT
   it('Tabelle, Umschlüsseln, Fundstellen und Löschen mit der Automatisierung', async () => {
     const { eigeneDatenbank } = await import('./hilfe-db');
     const db = await eigeneDatenbank('aufruf');
-    const { pgRepo } = await import('../src/repo-pg');
+    const { pgRepo } = await import('../src/repo/pg');
     const { pgAutomatisierungRepo } = await import('../src/automatisierung');
     const haushalt = (await db.sql`SELECT id FROM haushalte LIMIT 1`)[0]?.id as string ?? (await db.sql`INSERT INTO haushalte (id, name) VALUES (gen_random_uuid(), 'Test') RETURNING id`)[0].id as string;
     const autos = pgAutomatisierungRepo(db.sql, haushalt);

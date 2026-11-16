@@ -15,7 +15,7 @@ import { Dienst } from '../src/dienst';
 import { Fachfehler } from '../src/fehler';
 import { ladeArgumente } from '../src/laeufer/modul';
 import { Auslastung } from '../src/messung';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import { SCHLEIFE_GRENZE_MS, SCHLEIFE_MINUTEN } from '../../shared/src/systemlast';
 
 const status = (s: number, text?: RegExp) => (e: unknown) => e instanceof Fachfehler && e.status === s && (!text || text.test(e.message));

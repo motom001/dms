@@ -23,7 +23,7 @@ import { erzeugeDemo, schaetzeDemo } from '../src/demo';
 import { pruefeDokumentOptionen } from '../src/demo-dokumente';
 import { Dienst } from '../src/dienst';
 import { Fachfehler } from '../src/fehler';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 
 const summe = (m: Mischung) => DOKUMENTARTEN.reduce((a, k) => a + m[k], 0);
 const status = (s: number) => (e: unknown) => e instanceof Fachfehler && e.status === s;

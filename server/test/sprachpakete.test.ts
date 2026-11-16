@@ -21,7 +21,7 @@ import { speicherEinstellungen } from '../src/einstellungen';
 import { Fachfehler } from '../src/fehler';
 import { ARCHIV_MAX, liesPaket, Paketverwaltung, type SprachpaketHaken } from '../src/pakete';
 import type { Repo } from '../src/repo';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import { t } from '../src/sprache';
 import { Sprachpakete } from '../src/sprachpakete';
 import { SprachDienst } from '../src/sprachwahl';
@@ -480,7 +480,7 @@ describe('Sprachpakete in PostgreSQL (#731)', { skip: !process.env.TEST_DATABASE
   });
   it('Texte und Beschriftungen speichern, lesen, ersetzen, löschen (Migration 082)', async () => {
     const { migriere } = await import('../src/db');
-    const { pgRepo } = await import('../src/repo-pg');
+    const { pgRepo } = await import('../src/repo/pg');
     // Eigene Datenbank (#900), nach dem letzten Test der Datei gelöscht.
     const sql = (await eigeneDatenbank('sp', { migrieren: false })).sql;
     offen.push(sql);

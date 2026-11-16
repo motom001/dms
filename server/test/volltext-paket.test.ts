@@ -15,7 +15,7 @@ import { Auftraege } from '../src/auftrag';
 import { speicherDateien } from '../src/dateispeicher';
 import { Dienst } from '../src/dienst';
 import { speicherEinstellungen } from '../src/einstellungen';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import { Texterkennung, type Engine } from '../src/texterkennung';
 import { pdfMitText } from './hilfen';
 
@@ -479,7 +479,7 @@ describe('Volltext-Ablauf (#458) mit PostgreSQL', () => {
     async () => {
       const { ausUrl, alsUrl, legeDatenbankAn } = await import('../src/anbindung');
       const { verbinde, migriere } = await import('../src/db');
-      const { pgRepo } = await import('../src/repo-pg');
+      const { pgRepo } = await import('../src/repo/pg');
       const H = '00000000-0000-4000-8000-000000000001';
       const basis = ausUrl(process.env.TEST_DATABASE_URL)!;
       const a = { ...basis, datenbank: `dms_vt_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}` };

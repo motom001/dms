@@ -10,7 +10,7 @@ import { TREFFER_ANFANG, TREFFER_ENDE } from '../../shared/src/model';
 import { speicherDateien } from '../src/dateispeicher';
 import { Dienst } from '../src/dienst';
 import { speicherEinstellungen } from '../src/einstellungen';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import { bereinigeOcr, ocrAusGespeichert, pruefeWerkzeuge, textebeneEngine, Texterkennung, type Engine } from '../src/texterkennung';
 import { pdfMitText } from './hilfen';
 

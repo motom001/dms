@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { jeMappe, kosinus, liesModell, liesVektor, Vektorindex } from '../src/vektoren';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import type { Repo } from '../src/repo';
 
 const zufall = (d: number, saat: number) => {
@@ -99,7 +99,7 @@ describe('Vektoren (#442): Zwischenspeicher', () => {
 async function pgRepoNeu(): Promise<{ repo: Repo; ende: () => Promise<void> }> {
   const { ausUrl, alsUrl, legeDatenbankAn } = await import('../src/anbindung');
   const { verbinde, migriere } = await import('../src/db');
-  const { pgRepo } = await import('../src/repo-pg');
+  const { pgRepo } = await import('../src/repo/pg');
   const H = '00000000-0000-4000-8000-000000000001';
   const basis = ausUrl(process.env.TEST_DATABASE_URL)!;
   const a = { ...basis, datenbank: `dms_vek_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}` };

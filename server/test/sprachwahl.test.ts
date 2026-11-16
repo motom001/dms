@@ -14,7 +14,7 @@ import { speicherEinstellungen } from '../src/einstellungen';
 import { Konten } from '../src/konten';
 import { speicherKontoRepo } from '../src/konto-repo';
 import type { Mailer } from '../src/mail';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import { mitSprache, mitSpracheVon, t, tDe } from '../src/sprache';
 import { SprachDienst } from '../src/sprachwahl';
 

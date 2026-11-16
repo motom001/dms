@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import type postgres from 'postgres';
 import { KEINE_ABWESENHEIT, type Abwesenheit, type Benutzer, type Rolle, type Sitzung, type Vertretung } from '../../shared/src/model';
 import { dienstEmail, istUuid } from './repo';
-import { ohneWarten } from './repo-pg';
+import { ohneWarten } from './repo/pg';
 import { staendeAusZeile, standSpalten } from './lesespeicher';
 
 /** Adresse eines Dienstkontos: nie zustellbar (.invalid, RFC 2606). */

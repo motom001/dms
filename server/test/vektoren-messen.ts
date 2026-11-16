@@ -15,7 +15,7 @@ import { alsUrl, ausUrl, legeDatenbankAn } from '../src/anbindung';
 import { migriere, verbinde } from '../src/db';
 import { Dienst } from '../src/dienst';
 import { speicherDateien } from '../src/dateispeicher';
-import { pgRepo } from '../src/repo-pg';
+import { pgRepo } from '../src/repo/pg';
 import type { Repo } from '../src/repo';
 
 const D = 256;

@@ -95,7 +95,7 @@ describe('Pakete prüfen (#1124)', () => {
       /** Leere Ablage in PostgreSQL (zum Vergleich, ob der Arbeitsspeicher dasselbe sagt). */
       async function repo(): Promise<Repo | undefined> {
         if (!pg) return undefined;
-        const { pgRepo } = await import('../src/repo-pg');
+        const { pgRepo } = await import('../src/repo/pg');
         const db = await eigeneDatenbank('pp');
         const haushalt = '00000000-0000-4000-8000-000000000001';
         await db.sql`INSERT INTO haushalte (id, name) VALUES (${haushalt}, 'Test') ON CONFLICT DO NOTHING`;

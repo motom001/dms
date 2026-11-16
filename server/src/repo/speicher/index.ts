@@ -1,13 +1,13 @@
-import type { GespeicherteFassung } from '../../shared/src/fassungen';
-import { volltextHerkunft } from '../../shared/src/volltext';
-import { VERLAUF_FEHLER, VERLAUF_MAX, VERLAUF_TAGE, type VerlaufEintrag, type VerlaufTag } from '../../shared/src/paketreiter';
+import type { GespeicherteFassung } from '../../../../shared/src/fassungen';
+import { volltextHerkunft } from '../../../../shared/src/volltext';
+import { VERLAUF_FEHLER, VERLAUF_MAX, VERLAUF_TAGE, type VerlaufEintrag, type VerlaufTag } from '../../../../shared/src/paketreiter';
 import { randomUUID } from 'node:crypto';
-import { lesbar, werte } from '../../shared/src/rechte';
-import { kannTerminHaben } from '../../shared/src/fristen';
-import type { AblaufVerlauf, Ablaufvorlage, MappenAblauf } from '../../shared/src/ablaufvorlagen';
-import { umschluesseleTief } from './tresor';
-import { datumIn, ziehe, type Nummernkreis } from '../../shared/src/nummernkreis';
-import type { InstalliertesPaket } from '../../shared/src/pakete';
+import { lesbar, werte } from '../../../../shared/src/rechte';
+import { kannTerminHaben } from '../../../../shared/src/fristen';
+import type { AblaufVerlauf, Ablaufvorlage, MappenAblauf } from '../../../../shared/src/ablaufvorlagen';
+import { umschluesseleTief } from '../../tresor';
+import { datumIn, ziehe, type Nummernkreis } from '../../../../shared/src/nummernkreis';
+import type { InstalliertesPaket } from '../../../../shared/src/pakete';
 import {
   normalisiereZiele,
   standardliste,
@@ -25,12 +25,12 @@ import {
   type Mappentyp,
   type MappentypDaten,
   type Werte,
-} from '../../shared/src/model';
-import { alsText, ohneTitel } from '../../shared/src/markdown';
-import { teileKennung } from '../../shared/src/kennungen';
-import { SPRACHE_MARKE, spracheAusInfo } from '../../shared/src/textsprache';
-import { teilenAb, type Seitensprache } from '../../shared/src/seitensprachen';
-import { ausschnittAus } from './repo-pg';
+} from '../../../../shared/src/model';
+import { alsText, ohneTitel } from '../../../../shared/src/markdown';
+import { teileKennung } from '../../../../shared/src/kennungen';
+import { SPRACHE_MARKE, spracheAusInfo } from '../../../../shared/src/textsprache';
+import { teilenAb, type Seitensprache } from '../../../../shared/src/seitensprachen';
+import { ausschnittAus } from '../pg';
 import {
   aehnlichkeit,
   AEHNLICH_AB,
@@ -41,9 +41,9 @@ import {
   TIPPFEHLER_MIN,
   woerterIn,
   type Varianten,
-} from '../../shared/src/suche';
-import { inSicht, type Sicht, type SichtDaten, type Zaehlquelle } from '../../shared/src/sichten';
-import { istZeitraum, zeitraumTage } from '../../shared/src/feldarten';
+} from '../../../../shared/src/suche';
+import { inSicht, type Sicht, type SichtDaten, type Zaehlquelle } from '../../../../shared/src/sichten';
+import { istZeitraum, zeitraumTage } from '../../../../shared/src/feldarten';
 import {
   feldweise,
   KonfigurationVeraltet,
@@ -55,10 +55,10 @@ import {
   type SortierungIntern,
   type Synonymgruppe,
   type Verweis,
-} from './repo';
-import { passt as passtLoesch, type LoeschDokument, type LoeschEintrag } from '../../shared/src/loeschprotokoll';
-import { t } from './sprache';
-import type { Notfallkontakt } from '../../shared/src/notfallkontakte';
+} from '..';
+import { passt as passtLoesch, type LoeschDokument, type LoeschEintrag } from '../../../../shared/src/loeschprotokoll';
+import { t } from '../../sprache';
+import type { Notfallkontakt } from '../../../../shared/src/notfallkontakte';
 
 /** Trefferlisten (#75) immer in beiden Formen: Liste der Trefferlisten und Spalten der Standardliste. */
 const listen = (d: MappentypDaten) => ({
@@ -77,7 +77,7 @@ export function speicherRepo(): Repo {
   const links = new Map<string, AuskunftLinkIntern>();
   const pakete = new Map<string, InstalliertesPaket>();
   const paketCode = new Map<string, Array<{ name: string; inhalt: Buffer }>>();
-  const sprachpakete = new Map<string, import('./repo').SprachpaketDaten>();
+  const sprachpakete = new Map<string, import('..').SprachpaketDaten>();
   // Verlauf der Pakete (#1003).
   const verlauf: Array<VerlaufEintrag & { paket: string }> = [];
   let verlaufNr = 1;

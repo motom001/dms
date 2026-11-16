@@ -999,7 +999,7 @@
       "REGION_NEU_LESEN_MS"
     ]
   },
-  "server/src/repo.ts": {
+  "server/src/repo/index.ts": {
     "types": [
       "FeldweiseSchreiben",
       "HistorieAbfrage",

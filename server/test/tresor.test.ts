@@ -110,7 +110,7 @@ describe('Tresor (#39)', () => {
 describe('Schlüssel wechseln (#47)', () => {
   async function aufbau() {
     const { Dienst } = await import('../src/dienst');
-    const { speicherRepo } = await import('../src/repo-speicher');
+    const { speicherRepo } = await import('../src/repo/speicher');
     const { speicherDateien } = await import('../src/dateispeicher');
     const { Betrieb } = await import('../src/betrieb');
     const einst = speicherBetrieb();

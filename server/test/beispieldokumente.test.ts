@@ -11,7 +11,7 @@ import { Fachfehler } from '../src/fehler';
 import { beispielDateiart, beispielName, liesPaket, liesZip, Paketverwaltung } from '../src/pakete';
 import { mindestversion, Paketerstellung } from '../src/paketerstellung';
 import type { Repo } from '../src/repo';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import { zipPuffer } from '../src/zip';
 import { eigeneDatenbank } from './hilfe-db';
 
@@ -157,7 +157,7 @@ describe('Beispiel-Dokumente lesen und prüfen (#878)', () => {
 
 async function repo(pg: boolean): Promise<Repo> {
   if (!pg) return speicherRepo();
-  const { pgRepo } = await import('../src/repo-pg');
+  const { pgRepo } = await import('../src/repo/pg');
   const sql = (await eigeneDatenbank('bspdok')).sql;
   await sql`INSERT INTO haushalte (id, name) VALUES ('00000000-0000-4000-8000-000000000001', 'Test') ON CONFLICT DO NOTHING`;
   await sql`INSERT INTO benutzer (id, haushalt_id, email, name, rolle) VALUES (${ICH.id}, '00000000-0000-4000-8000-000000000001', ${ICH.email}, 'Admin', 'admin') ON CONFLICT DO NOTHING`;

@@ -12,7 +12,7 @@ import { Fachfehler } from '../src/fehler';
 import { istLoopback, konsolenBenutzer, Konsolenzugang, lokaleUrl } from '../src/konsole';
 import { Konten } from '../src/konten';
 import { speicherKontoRepo } from '../src/konto-repo';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import { pruefeZugang, type Anfrage, type Route } from '../src/routen';
 import type { Benutzer } from '../../shared/src/model';
 

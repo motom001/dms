@@ -19,7 +19,7 @@ import { Dienst } from '../src/dienst';
 import { speicherEinstellungen } from '../src/einstellungen';
 import { Konten } from '../src/konten';
 import { speicherKontoRepo } from '../src/konto-repo';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import { routen, type Anfrage } from '../src/routen';
 import { UEBERGAENGE } from '../src/uebergaenge';
 import { eigeneDatenbank, MIGRATIONEN } from './hilfe-db';
@@ -256,7 +256,7 @@ describe('Migration 099 (#1042) – PostgreSQL', () => {
     if (!process.env.TEST_DATABASE_URL) return;
     const db = await eigeneDatenbank('post_von_an');
     const { sql } = db;
-    const { pgRepo } = await import('../src/repo-pg');
+    const { pgRepo } = await import('../src/repo/pg');
     const { pgKontoRepo } = await import('../src/konto-repo');
     const { pgEinstellungen } = await import('../src/einstellungen');
     await sql`INSERT INTO haushalte (id, name) VALUES (${HAUSHALT}, 'Test') ON CONFLICT DO NOTHING`;

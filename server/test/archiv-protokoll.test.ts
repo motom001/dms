@@ -11,7 +11,7 @@ import { speicherEinstellungen } from '../src/einstellungen';
 import { Konten } from '../src/konten';
 import { speicherKontoRepo } from '../src/konto-repo';
 import { protokoll } from '../src/protokoll';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import { anfrageStufe, modulAus, routen, type Anfrage } from '../src/routen';
 
 async function aufbau() {

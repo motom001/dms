@@ -26,7 +26,7 @@ import { Fachfehler } from '../src/fehler';
 import { Konten, schutzGesamt } from '../src/konten';
 import { speicherKontoRepo } from '../src/konto-repo';
 import { kontext, protokoll } from '../src/protokoll';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import { pruefeVerwaltung, routen, type Anfrage } from '../src/routen';
 import { bereicheDerRoute, heikleHandlung, JEDER, NUR_GESAMT } from '../src/verwaltungsbereiche';
 import { speicherFassungen } from '../src/dateiumwandlung';

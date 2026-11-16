@@ -23,7 +23,7 @@ import { Fachfehler } from '../src/fehler';
 import { Konten } from '../src/konten';
 import { speicherKontoRepo } from '../src/konto-repo';
 import type { Repo } from '../src/repo';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import { routen, type Anfrage } from '../src/routen';
 import { openapi } from '../src/api-v1';
 import { eigeneDatenbank } from './hilfe-db';
@@ -38,7 +38,7 @@ after(async () => {
 
 async function repo(pg: boolean): Promise<Repo> {
   if (!pg) return speicherRepo();
-  const { pgRepo } = await import('../src/repo-pg');
+  const { pgRepo } = await import('../src/repo/pg');
   const sql = (await eigeneDatenbank('folgtaus')).sql;
   offen.push(sql);
   await sql`INSERT INTO haushalte (id, name) VALUES (${HAUSHALT}, 'Test') ON CONFLICT DO NOTHING`;

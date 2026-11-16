@@ -202,7 +202,7 @@ describe('Sicherung mit PostgreSQL', { skip: url ? false : 'TEST_DATABASE_URL ni
     const { fileURLToPath } = await import('node:url');
     const { migriere } = await import('../src/db');
     const { pgDatenquelle, tabellenIn } = await import('../src/datenbankabzug');
-    const { pgRepo } = await import('../src/repo-pg');
+    const { pgRepo } = await import('../src/repo/pg');
     const { Dienst } = await import('../src/dienst');
     const { ordnerSpeicher } = await import('../src/dateispeicher');
     const { ladeBeispiele } = await import('../src/beispiele');
@@ -253,7 +253,7 @@ describe('Notfallblatt (#106)', () => {
     const { notfallblatt, notfallblattPlan, inGruppen } = await import('../src/notfallblatt');
     const { routen } = await import('../src/routen');
     const { Dienst } = await import('../src/dienst');
-    const { speicherRepo } = await import('../src/repo-speicher');
+    const { speicherRepo } = await import('../src/repo/speicher');
     const { speicherDateien } = await import('../src/dateispeicher');
     const { Konten } = await import('../src/konten');
     const { speicherKontoRepo } = await import('../src/konto-repo');

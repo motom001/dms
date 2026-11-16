@@ -16,7 +16,7 @@ import { Dienst } from '../src/dienst';
 import { speicherEinstellungen } from '../src/einstellungen';
 import { Konten } from '../src/konten';
 import { speicherKontoRepo } from '../src/konto-repo';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import { routen, type Route } from '../src/routen';
 import { bereicheDerRoute, JEDER } from '../src/verwaltungsbereiche';
 import { NICHTS, type Regelwerk } from '../../shared/src/rechte';

@@ -17,7 +17,7 @@ import { netzHost, netzMethode, netzSammler, type NetzEintrag } from '../src/lae
 import { bytesText, merkeNetz, NETZ_ZUSAMMEN_MS, netzText, Paketlaeufer } from '../src/laeufer/verwaltung';
 import { liesPaket } from '../src/pakete';
 import { protokoll } from '../src/protokoll';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 
 describe('Netzaufrufe im Protokoll (#807): Sammeln und Zusammenfassen', () => {
   it('nur der Host – ohne Pfad, Query und Zugangsdaten', () => {

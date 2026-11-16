@@ -25,7 +25,7 @@ import { speicherEinstellungen } from '../src/einstellungen';
 import { Fachfehler } from '../src/fehler';
 import { sichererName } from '../src/export';
 import { neueKennung } from '../src/pakete';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import { eigeneDatenbank, MIGRATIONEN } from './hilfe-db';
 
 const status = (s: number) => (e: unknown) => e instanceof Fachfehler && e.status === s;
@@ -159,7 +159,7 @@ describe('Migration 094 (#1084) – PostgreSQL', () => {
     if (!process.env.TEST_DATABASE_URL) return;
     const db = await eigeneDatenbank('kennungen');
     const { sql } = db;
-    const { pgRepo } = await import('../src/repo-pg');
+    const { pgRepo } = await import('../src/repo/pg');
     await sql`INSERT INTO haushalte (id, name) VALUES (${HAUSHALT}, 'Test') ON CONFLICT DO NOTHING`;
     const d = new Dienst(pgRepo(sql, HAUSHALT), speicherDateien(), { einstellungen: speicherEinstellungen() });
     const reg = [{ key: 'felder', name: 'Felder', art: 'felder' as const }];

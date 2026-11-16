@@ -15,7 +15,7 @@ import { Fachfehler } from '../src/fehler';
 import { Konten } from '../src/konten';
 import { speicherKontoRepo } from '../src/konto-repo';
 import type { Repo } from '../src/repo';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import { routen, type Anfrage } from '../src/routen';
 
 const HAUSHALT = '00000000-0000-4000-8000-000000000001';
@@ -46,7 +46,7 @@ async function datenbank(): Promise<postgres.Sql> {
 
 async function pgAufbau() {
   const sql = await datenbank();
-  const { pgRepo } = await import('../src/repo-pg');
+  const { pgRepo } = await import('../src/repo/pg');
   const r = pgRepo(sql, HAUSHALT);
   await sql`INSERT INTO benutzer (id, haushalt_id, email, name, rolle) VALUES (${ICH.id}, ${HAUSHALT}, ${ICH.email}, 'Lena', 'admin')`;
   const d = new Dienst(r, speicherDateien(), { einstellungen: speicherEinstellungen() });

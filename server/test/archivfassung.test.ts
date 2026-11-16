@@ -30,7 +30,7 @@ import { speicherEinstellungen } from '../src/einstellungen';
 import { Konten } from '../src/konten';
 import { speicherKontoRepo } from '../src/konto-repo';
 import { schluesselRecht } from '../src/laeufer/verwaltung';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import { pruefeZugang, routen, type Anfrage, type Route } from '../src/routen';
 import { Texterkennung, type Engine } from '../src/texterkennung';
 import { vollexport } from '../src/vollexport';

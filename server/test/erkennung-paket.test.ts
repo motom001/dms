@@ -17,7 +17,7 @@ import { Konten } from '../src/konten';
 import { speicherKontoRepo } from '../src/konto-repo';
 import { Paketlaeufer } from '../src/laeufer/verwaltung';
 import { liesPaket } from '../src/pakete';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import { routen } from '../src/routen';
 
 const KARTE = `Musterbau GmbH

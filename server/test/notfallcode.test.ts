@@ -16,7 +16,7 @@ import type { Mailer } from '../src/mail';
 import { notfallblattPlan } from '../src/notfallblatt';
 import { FEHLVERSUCHE_MELDEN, heimnetzStand, istHeimnetz, istPrivat, Notfallcode, NotfallSperre } from '../src/notfallcode';
 import { protokoll } from '../src/protokoll';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import { routen, ZWEITE_ABGELEHNT, type Anfrage } from '../src/routen';
 import { heikleHandlung } from '../src/verwaltungsbereiche';
 import { Zweifaktor } from '../src/zweifaktor';

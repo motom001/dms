@@ -122,7 +122,7 @@ describe('Überlastschutz im Protokoll (#920): Hinweis statt Fehler, höchstens 
   });
 
   it('abgewiesene Anfragen: keine Zeile „… 503“ als Fehler (nur Debug), andere 5xx weiter als Fehler', async () => {
-    const { speicherRepo } = await import('../src/repo-speicher');
+    const { speicherRepo } = await import('../src/repo/speicher');
     const { speicherDateien } = await import('../src/dateispeicher');
     const { Dienst } = await import('../src/dienst');
     const { Konten } = await import('../src/konten');
@@ -189,7 +189,7 @@ describe('Systemzustand: Werte und Engpässe nennen die Variable (#544)', () => 
   });
 
   it('Werte für den Systemzustand über GET /api/werkbank/systemlast', async () => {
-    const { speicherRepo } = await import('../src/repo-speicher');
+    const { speicherRepo } = await import('../src/repo/speicher');
     const { speicherDateien } = await import('../src/dateispeicher');
     const { Dienst } = await import('../src/dienst');
     const { Konten } = await import('../src/konten');

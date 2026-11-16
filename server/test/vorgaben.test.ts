@@ -14,7 +14,7 @@ import { liesPaket, liesZip, Paketverwaltung } from '../src/pakete';
 import { pruefeVorlage, vorlagenPlatzhalter } from '../src/pakete/index';
 import { Paketerstellung } from '../src/paketerstellung';
 import type { Repo } from '../src/repo';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import { zipPuffer } from '../src/zip';
 import { fremdeVorgabe, teileVorgabe, vorgabeKennung } from '../../shared/src/vorgaben';
 import { eigeneDatenbank } from './hilfe-db';
@@ -236,7 +236,7 @@ describe('Vorgaben im Paketformat (#1038)', () => {
 
 async function repo(pg: boolean): Promise<Repo> {
   if (!pg) return speicherRepo();
-  const { pgRepo } = await import('../src/repo-pg');
+  const { pgRepo } = await import('../src/repo/pg');
   const sql = (await eigeneDatenbank('vorgaben')).sql;
   await sql`INSERT INTO haushalte (id, name) VALUES ('00000000-0000-4000-8000-000000000001', 'Test') ON CONFLICT DO NOTHING`;
   await sql`INSERT INTO benutzer (id, haushalt_id, email, name, rolle) VALUES (${ICH.id}, '00000000-0000-4000-8000-000000000001', ${ICH.email}, 'Admin', 'admin') ON CONFLICT DO NOTHING`;

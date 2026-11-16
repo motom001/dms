@@ -40,7 +40,7 @@ import { speicherKontoRepo, type KontoRepo } from '../src/konto-repo';
 import { liesPaket } from '../src/pakete';
 import type { Repo } from '../src/repo';
 import type { Mappentyp } from '../../shared/src/model';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import { eigeneDatenbank, MIGRATIONEN } from './hilfe-db';
 
 const url = process.env.TEST_DATABASE_URL;
@@ -55,7 +55,7 @@ after(async () => {
 });
 
 async function pgRepos(kurz: string): Promise<{ repo: Repo; konto: KontoRepo }> {
-  const { pgRepo } = await import('../src/repo-pg');
+  const { pgRepo } = await import('../src/repo/pg');
   const { pgKontoRepo } = await import('../src/konto-repo');
   const sql = (await eigeneDatenbank(kurz)).sql;
   return { repo: pgRepo(sql, HAUSHALT), konto: pgKontoRepo(sql, HAUSHALT) };
@@ -532,7 +532,7 @@ if (url) {
   describe('Umstellung beim Update (#1044, Migration 105)', () => {
     it('Erinnerungen werden Abläufe von „Erinnern“: heutiger Ersteller, sonst der Empfänger, nie das Systemkonto', async () => {
       const { migriere } = await import('../src/db');
-      const { pgRepo } = await import('../src/repo-pg');
+      const { pgRepo } = await import('../src/repo/pg');
       const { pgKontoRepo } = await import('../src/konto-repo');
       const db = await eigeneDatenbank('ablaufvorlagen_umstellung', { migrieren: false });
       // Stand vor 105. Die Tabelle der Fassungen (#1006) und die Spalte in_suche (#1220) kommen dazu, weil der heutige Code
@@ -604,7 +604,7 @@ if (url) {
   describe('Fassungen in die gemeinsame Tabelle (#1006, Migration 109)', () => {
     it('Änderungsverlauf aus ablaufvorlage_fassungen: Nummer, Zeit, Stand und Person bleiben; ohne Person Paket bzw. Ablago', async () => {
       const { migriere } = await import('../src/db');
-      const { pgRepo } = await import('../src/repo-pg');
+      const { pgRepo } = await import('../src/repo/pg');
       const db = await eigeneDatenbank('ablaufvorlagen_fassungen', { migrieren: false });
       const vorher = mkdtempSync(join(tmpdir(), 'migrationen-'));
       try {

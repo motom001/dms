@@ -27,7 +27,7 @@ import { speicherKontoRepo } from '../src/konto-repo';
 import { liesPaket, liesZip, Paketverwaltung } from '../src/pakete';
 import { mindestversion, Paketerstellung } from '../src/paketerstellung';
 import { protokoll } from '../src/protokoll';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import { routen, type Anfrage } from '../src/routen';
 import { zipPuffer } from '../src/zip';
 import { eigeneDatenbank } from './hilfe-db';
@@ -379,7 +379,7 @@ describe('Archivmodus aus dem Paket (#1051)', () => {
 describe('Ist der Stichtag leer – PostgreSQL (#1051)', { skip: !process.env.TEST_DATABASE_URL && 'ohne TEST_DATABASE_URL' }, () => {
   it('Einstellung bleibt gespeichert, Sperre und Frist wie im Speicher', async () => {
     const db = await eigeneDatenbank('archiv_leer');
-    const { pgRepo } = await import('../src/repo-pg');
+    const { pgRepo } = await import('../src/repo/pg');
     try {
       const { d, t, aktuell } = await aufbau(pgRepo(db.sql, '00000000-0000-4000-8000-000000000001') as never as Repo);
       assert.deepEqual((await d.mappentypen.listeTypen()).find((x) => x.id === t.id)?.archiv, LEER);

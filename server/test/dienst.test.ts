@@ -3,7 +3,7 @@ import { describe, it } from 'node:test';
 import { ladeBeispiele } from '../src/beispiele';
 import { Dienst } from '../src/dienst';
 import { Fachfehler } from '../src/fehler';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import { speicherDateien } from '../src/dateispeicher';
 
 async function wirft(p: Promise<unknown>, status: number) {

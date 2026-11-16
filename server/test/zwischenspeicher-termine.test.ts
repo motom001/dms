@@ -31,7 +31,7 @@ import { speicherKontoRepo } from '../src/konto-repo';
 import { speicherKurzzustand } from '../src/kurzzustand';
 import { kontext, type Kontext } from '../src/protokoll';
 import type { Repo, SeitenAnfrage } from '../src/repo';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import {
   EIGENE_MAPPEN,
   Haushaltsstand,
@@ -571,7 +571,7 @@ describe('PostgreSQL: Vorfilter, Pflege und Migration (#918)', { skip: url ? fal
 
   before(async () => {
     const { verbinde, migriere } = await import('../src/db');
-    mod = { ...(await import('../src/repo-pg')), ...(await import('../src/konto-repo')), ...(await import('../src/einstellungen')) };
+    mod = { ...(await import('../src/repo/pg')), ...(await import('../src/konto-repo')), ...(await import('../src/einstellungen')) };
     // Eigene Datenbank: die Testdateien laufen parallel auf derselben Test-Datenbank; das Schema dort zu leeren
     // würde anderen Dateien mitten im Lauf die Tabellen wegnehmen.
     haupt = verbinde(url!);

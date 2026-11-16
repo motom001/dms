@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { auskunftVerzeichnis, istOffen, tageBisFrist, type AuskunftStand, type VerzeichnisQuelle } from '../../shared/src/auskunft';
 import { hatMitte, werkbankUmleitung, BEREICHE } from '../../shared/src/werkbankansicht';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 
 const P = '11111111-1111-4111-8111-111111111111';
 const Q = '22222222-2222-4222-8222-222222222222';

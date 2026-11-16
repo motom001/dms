@@ -50,7 +50,7 @@ import { protokoll } from './protokoll';
 import { pgSystemQuelle } from './system';
 import { Designs, pgDesignRepo } from './designs';
 import { ApiSchluesselDienst, pgApiSchluesselRepo } from './apischluessel';
-import { pgRepo } from './repo-pg';
+import { pgRepo } from './repo/pg';
 import { lebenszeichen, pgKurzzustand } from './kurzzustand';
 import { eigeneSperrquelle, Sperrverbindung } from './sperrverbindung';
 import { wiederkehrend } from './streuung';

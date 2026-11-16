@@ -12,7 +12,7 @@ import type { Dateispeicher } from '../src/dateispeicher';
 import { erzeugeDemo } from '../src/demo';
 import { Dienst } from '../src/dienst';
 import { speicherEinstellungen } from '../src/einstellungen';
-import { pgRepo } from '../src/repo-pg';
+import { pgRepo } from '../src/repo/pg';
 import { Zufall } from '../src/zufall';
 
 export const HAUSHALT = '00000000-0000-4000-8000-000000000001';

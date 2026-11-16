@@ -18,7 +18,7 @@ import { abruf, liesBereich } from '../src/http/teilabruf';
 import { Konten } from '../src/konten';
 import { speicherKontoRepo } from '../src/konto-repo';
 import { protokoll } from '../src/protokoll';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import { routen, type Anfrage } from '../src/routen';
 import { Sicherung } from '../src/sicherung';
 import { Tresor } from '../src/tresor';

@@ -11,7 +11,7 @@ import { speicherKontoRepo } from '../src/konto-repo';
 import { bereinigePdf } from '../src/pdf/anzeige';
 import { liesPdfA } from '../src/pdf/archiv';
 import { leereAnzeigeCache } from '../src/pdfanzeige';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import { dateiKoepfe, routen, type Anfrage, type Datei } from '../src/routen';
 
 after(() => beendeArbeiter());

@@ -5,7 +5,7 @@ import { speicherDateien } from '../src/dateispeicher';
 import { Dienst } from '../src/dienst';
 import { speicherEinstellungen } from '../src/einstellungen';
 import { Fachfehler } from '../src/fehler';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 
 const anna = '00000000-0000-4000-8000-0000000000aa';
 const ben = '00000000-0000-4000-8000-0000000000bb';

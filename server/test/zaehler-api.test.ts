@@ -106,7 +106,7 @@ describe('Zähler-Endpunkt über HTTP (#625)', { skip: echtesFastify ? false : '
   before(async () => {
     const { baueApp } = await import('../src/http');
     const { Dienst } = await import('../src/dienst');
-    const { speicherRepo } = await import('../src/repo-speicher');
+    const { speicherRepo } = await import('../src/repo/speicher');
     const { speicherDateien } = await import('../src/dateispeicher');
     const { speicherEinstellungen } = await import('../src/einstellungen');
     const { Konten } = await import('../src/konten');
@@ -298,7 +298,7 @@ describe('Stand der Zahlen in PostgreSQL (#625)', { skip: url ? false : 'TEST_DA
   });
 
   it('zählt nur bei geänderten Zahlen hoch und übersteht einen Neustart', async () => {
-    const { pgRepo } = await import('../src/repo-pg');
+    const { pgRepo } = await import('../src/repo/pg');
     const repo = pgRepo(sql, HAUSHALT);
     assert.equal(await repo.zaehlerstand(BENUTZER), undefined);
     const a = await repo.setzeZaehlerstand(BENUTZER, 'abc');

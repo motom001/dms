@@ -4,7 +4,7 @@ import { describe, it } from 'node:test';
 import { speicherDateien } from '../src/dateispeicher';
 import { Dienst } from '../src/dienst';
 import { speicherEinstellungen } from '../src/einstellungen';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import { werkbankZahlen } from '../src/werkbankzahlen';
 
 describe('Werkbank-Zahlen (#375)', () => {

@@ -1,10 +1,10 @@
 import type postgres from 'postgres';
-import { AEHNLICH_AB, falte, normal, suchbegriffe, teilwoerter, TIPPFEHLER_MIN, type Varianten } from '../../shared/src/suche';
-import { alsText, ohneTitel } from '../../shared/src/markdown';
-import { VERLAUF_FEHLER, VERLAUF_MAX, VERLAUF_TAGE, type VerlaufEintrag } from '../../shared/src/paketreiter';
-import { SPRACHE_MARKE, SPRACHE_SQL_MUSTER, spracheAusInfo, suchkonfig } from '../../shared/src/textsprache';
-import { alsSeitensprachen, teilenAb } from '../../shared/src/seitensprachen';
-import { alsLeerseiten } from '../../shared/src/leerseiten';
+import { AEHNLICH_AB, falte, normal, suchbegriffe, teilwoerter, TIPPFEHLER_MIN, type Varianten } from '../../../../shared/src/suche';
+import { alsText, ohneTitel } from '../../../../shared/src/markdown';
+import { VERLAUF_FEHLER, VERLAUF_MAX, VERLAUF_TAGE, type VerlaufEintrag } from '../../../../shared/src/paketreiter';
+import { SPRACHE_MARKE, SPRACHE_SQL_MUSTER, spracheAusInfo, suchkonfig } from '../../../../shared/src/textsprache';
+import { alsSeitensprachen, teilenAb } from '../../../../shared/src/seitensprachen';
+import { alsLeerseiten } from '../../../../shared/src/leerseiten';
 import {
   normalisiereZiele,
   standardliste,
@@ -26,19 +26,19 @@ import {
   type MappentypDaten,
   type OcrStandArt,
   type Werte,
-} from '../../shared/src/model';
-import { istZahlvergleich, type Filter, type Klausel, type Sicht, type SichtDaten } from '../../shared/src/sichten';
-import { TAGE_JE_EINHEIT } from '../../shared/src/feldarten';
-import type { Ausdruck, Lesefilter } from '../../shared/src/rechte';
-import { fristMonat } from '../../shared/src/fristen';
-import type { AblaufVerlauf, Ablaufvorlage, AblaufvorlageDaten, MappenAblauf } from '../../shared/src/ablaufvorlagen';
-import { umschluesseleTief } from './tresor';
-import { datumIn, ziehe, type Nummernkreis } from '../../shared/src/nummernkreis';
-import type { Quelle } from '../../shared/src/model';
-import type { InstalliertesPaket } from '../../shared/src/pakete';
-import { beiVerklemmungWiederholen } from './db';
-import { protokoll } from './protokoll';
-import { erhoeheMappenstand, erhoeheZahlenstand, lesespeicherFuer, liesStand, merkeAenderung } from './lesespeicher';
+} from '../../../../shared/src/model';
+import { istZahlvergleich, type Filter, type Klausel, type Sicht, type SichtDaten } from '../../../../shared/src/sichten';
+import { TAGE_JE_EINHEIT } from '../../../../shared/src/feldarten';
+import type { Ausdruck, Lesefilter } from '../../../../shared/src/rechte';
+import { fristMonat } from '../../../../shared/src/fristen';
+import type { AblaufVerlauf, Ablaufvorlage, AblaufvorlageDaten, MappenAblauf } from '../../../../shared/src/ablaufvorlagen';
+import { umschluesseleTief } from '../../tresor';
+import { datumIn, ziehe, type Nummernkreis } from '../../../../shared/src/nummernkreis';
+import type { Quelle } from '../../../../shared/src/model';
+import type { InstalliertesPaket } from '../../../../shared/src/pakete';
+import { beiVerklemmungWiederholen } from '../../db';
+import { protokoll } from '../../protokoll';
+import { erhoeheMappenstand, erhoeheZahlenstand, lesespeicherFuer, liesStand, merkeAenderung } from '../../lesespeicher';
 import {
   dienstEmail,
   feldweise,
@@ -52,13 +52,13 @@ import {
   type Repo,
   type SeitenAnfrage,
   type Verweis,
-} from './repo';
-import { istSha, type LoeschDokument, type LoeschEintrag } from '../../shared/src/loeschprotokoll';
-import { zeitzone } from '../../shared/src/region';
-import { t } from './sprache';
-import { teileKennung, typKennung } from '../../shared/src/kennungen';
-import type { Notfallkontakt } from '../../shared/src/notfallkontakte';
-import type { FassungArt, GespeicherteFassung } from '../../shared/src/fassungen';
+} from '..';
+import { istSha, type LoeschDokument, type LoeschEintrag } from '../../../../shared/src/loeschprotokoll';
+import { zeitzone } from '../../../../shared/src/region';
+import { t } from '../../sprache';
+import { teileKennung, typKennung } from '../../../../shared/src/kennungen';
+import type { Notfallkontakt } from '../../../../shared/src/notfallkontakte';
+import type { FassungArt, GespeicherteFassung } from '../../../../shared/src/fassungen';
 /** Sprachmarke im Hinweis der Texterkennung (#395) samt Konfidenz, zum Ersetzen (#400). */
 const log = protokoll.modul('texterkennung');
 const SPRACHE_INFO_SQL = ' · Sprache: [a-z_]{3,10}( \\(\\d{1,3} %\\))?';
@@ -1318,8 +1318,8 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
       ).map((r) => ({
         paketId: r.paket_id as string,
         kennung: r.kennung as string,
-        texte: r.texte as import('../../shared/src/sprachpaket').Sprachtexte,
-        beschriftungen: r.paketbeschriftungen as Record<string, import('../../shared/src/sprachpaket').SprachBeschriftung>,
+        texte: r.texte as import('../../../../shared/src/sprachpaket').Sprachtexte,
+        beschriftungen: r.paketbeschriftungen as Record<string, import('../../../../shared/src/sprachpaket').SprachBeschriftung>,
       }));
     },
     async loescheSprachpaket(id) {

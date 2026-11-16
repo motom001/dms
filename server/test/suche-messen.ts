@@ -14,7 +14,7 @@ import { speicherDateien } from '../src/dateispeicher';
 import { verbinde, migriere } from '../src/db';
 import { Dienst } from '../src/dienst';
 import { speicherEinstellungen } from '../src/einstellungen';
-import { pgRepo } from '../src/repo-pg';
+import { pgRepo } from '../src/repo/pg';
 import { baueLeistungsdaten, BENUTZER, HAUSHALT } from './leistung-daten';
 
 const arg = (n: string) => {

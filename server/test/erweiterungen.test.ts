@@ -108,7 +108,7 @@ describe('Erweiterungen der Suche (#562) mit PostgreSQL', { skip: url ? false : 
     assert.equal(await schemaVon(sql, 'pg_trgm'), 'erweiterungen_dms');
     assert.deepEqual(await indizes(sql), ['dokumente_volltext_trgm_idx', 'suchwoerter_trgm']);
     assert.ok(meldungen.includes('Erweiterung pg_trgm neu angelegt'), meldungen.join('\n'));
-    const { pgRepo } = await import('../src/repo-pg');
+    const { pgRepo } = await import('../src/repo/pg');
     await sql`INSERT INTO suchwoerter (haushalt_id, wort, anzahl) VALUES (${HAUSHALT}, 'waschmaschine', 3)`;
     assert.deepEqual(await pgRepo(sql, HAUSHALT).aehnlicheWoerter(['Waschmaschiene'], 3), { waschmaschiene: ['waschmaschine'] });
 

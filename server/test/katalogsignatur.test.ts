@@ -18,7 +18,7 @@ import { Fachfehler } from '../src/fehler';
 import { liesSchluessel, nurTestschluessel, projektSchluessel, pruefeSignatur } from '../src/katalogsignatur';
 import { holeDaten, KLEIN_MAX, Paketverwaltung, type Sammeldatei } from '../src/pakete';
 import { PROJEKT_SCHLUESSEL } from '../src/projektschluessel';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import { zipPuffer } from '../src/zip';
 import { oeffentlichPem, signatur, TEST_PROJEKT, TEST_SEED } from './katalogschluessel';
 import { paketKatalogStaende, paketQuellen } from '../src/pakete/index';

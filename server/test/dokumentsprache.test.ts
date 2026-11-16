@@ -10,7 +10,7 @@ import { speicherDateien } from '../src/dateispeicher';
 import { Dienst } from '../src/dienst';
 import { speicherEinstellungen } from '../src/einstellungen';
 import type { Repo } from '../src/repo';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 
 const HAUSHALT = '00000000-0000-4000-8000-000000000001';
 const ICH = { id: '00000000-0000-4000-8000-0000000000aa', rolle: 'admin' };
@@ -20,7 +20,7 @@ async function repo(pg: boolean): Promise<{ r: Repo; sql?: import('postgres').Sq
   if (!pg) return { r: speicherRepo() };
   const { ausUrl, alsUrl, legeDatenbankAn } = await import('../src/anbindung');
   const { verbinde, migriere } = await import('../src/db');
-  const { pgRepo } = await import('../src/repo-pg');
+  const { pgRepo } = await import('../src/repo/pg');
   const a = {
     ...ausUrl(process.env.TEST_DATABASE_URL)!,
     datenbank: `dms_sprache_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
@@ -134,7 +134,7 @@ function faelle(pg: boolean) {
             'Deutsch bleibt leer',
           );
           // Das Repo merkt sich die Sprachen eine Minute – ein neues Repo sieht sie gleich.
-          const { pgRepo } = await import('../src/repo-pg');
+          const { pgRepo } = await import('../src/repo/pg');
           const d2 = new Dienst(pgRepo(sql!, HAUSHALT), speicherDateien(), { einstellungen: speicherEinstellungen() });
           const typ = (await d2.mappentypen.listeTypen()).find((t) => t.name === 'Brief')!;
           assert.deepEqual(

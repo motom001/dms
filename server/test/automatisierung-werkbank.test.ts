@@ -33,7 +33,7 @@ import { Konten } from '../src/konten';
 import { speicherKontoRepo } from '../src/konto-repo';
 import { liesPaket, liesZip } from '../src/pakete';
 import { Protokoll, type Eintrag } from '../src/protokoll';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import { neueStabileVersion } from '../src/system';
 import { zipPuffer } from '../src/zip';
 

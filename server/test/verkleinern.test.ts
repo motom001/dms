@@ -17,7 +17,7 @@ import { speicherEinstellungen } from '../src/einstellungen';
 import { Fachfehler } from '../src/fehler';
 import type { Mailer, MailOptionen } from '../src/mail';
 import type { Repo } from '../src/repo';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import { analysiere, ergebnisText, jpegMasse, mb, operatoren, stufeAus, verkleinere } from '../src/verkleinern';
 import { grossesJpeg, grossesPdf, TEXT, textPdf } from './hilfen-grossespdf';
 import { eigeneDatenbank } from './hilfe-db';
@@ -377,7 +377,7 @@ const HAUSHALT = '00000000-0000-4000-8000-000000000001';
 const offen: Array<{ end(): Promise<void> }> = [];
 async function pgRepo(): Promise<Repo> {
   const { migriere } = await import('../src/db');
-  const { pgRepo: repo } = await import('../src/repo-pg');
+  const { pgRepo: repo } = await import('../src/repo/pg');
   // Eigene Datenbank (#900), nach dem letzten Test der Datei gelöscht.
   const sql = (await eigeneDatenbank('vk', { migrieren: false })).sql;
   offen.push(sql);

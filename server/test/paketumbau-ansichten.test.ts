@@ -13,7 +13,7 @@ import { Fachfehler } from '../src/fehler';
 import { liesPaket, liesZip, Paketverwaltung } from '../src/pakete';
 import { sichtPruefwert, sichtZustand, standNachUmbau, wandle } from '../src/pakete/index';
 import type { Repo } from '../src/repo';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import { zipPuffer } from '../src/zip';
 import { eigeneDatenbank } from './hilfe-db';
 
@@ -229,7 +229,7 @@ describe('Ansichten, Zeitraum und Zuordnung im Paketformat (#1125)', () => {
 
 async function repo(pg: boolean): Promise<Repo> {
   if (!pg) return speicherRepo();
-  const { pgRepo } = await import('../src/repo-pg');
+  const { pgRepo } = await import('../src/repo/pg');
   const sql = (await eigeneDatenbank('umbauansichten')).sql;
   await sql`INSERT INTO haushalte (id, name) VALUES (${HAUSHALT_ID}, 'Test') ON CONFLICT DO NOTHING`;
   await sql`INSERT INTO benutzer (id, haushalt_id, email, name, rolle) VALUES (${ICH.id}, ${HAUSHALT_ID}, ${ICH.email}, 'Admin', 'admin') ON CONFLICT DO NOTHING`;

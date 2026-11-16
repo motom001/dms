@@ -9,7 +9,7 @@ import type { InstalliertesPaket } from '../../shared/src/pakete';
 import { Dienst } from '../src/dienst';
 import { speicherDateien } from '../src/dateispeicher';
 import { speicherEinstellungen } from '../src/einstellungen';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import { paketSpeicher, setzePaketSpeicher } from '../src/pakete/index';
 import { eigeneDatenbank } from './hilfe-db';
 
@@ -141,7 +141,7 @@ describe('Kern (#961)', () => {
     { skip: process.env.TEST_DATABASE_URL ? false : 'TEST_DATABASE_URL nicht gesetzt' },
     async () => {
       const db = await eigeneDatenbank('kern');
-      const { pgRepo } = await import('../src/repo-pg');
+      const { pgRepo } = await import('../src/repo/pg');
       const d = new Dienst(pgRepo(db.sql, HAUSHALT), speicherDateien(), { einstellungen: speicherEinstellungen() });
       const k = d.kern;
       await assert.rejects(

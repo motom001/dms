@@ -33,7 +33,7 @@ import { Protokoll } from '../src/protokoll';
 import { Postfaecher } from '../src/postfach';
 import { PostfachOAuth } from '../src/postfach-oauth';
 import { speicherKontoRepo } from '../src/konto-repo';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import { routen, type Anfrage } from '../src/routen';
 import { Tresor } from '../src/tresor';
 import { vollexport } from '../src/vollexport';

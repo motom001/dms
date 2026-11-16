@@ -15,7 +15,7 @@ import { speicherEinstellungen } from '../src/einstellungen';
 import { Fachfehler } from '../src/fehler';
 import { Paketverwaltung, type PaketLaeufer } from '../src/pakete';
 import { setzePaketSpeicher } from '../src/pakete/index';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import type { Repo } from '../src/repo';
 import { eigeneDatenbank } from './hilfe-db';
 import { Tresor } from '../src/tresor';
@@ -353,7 +353,7 @@ describe('Verlauf und Auslastung (#1003)', () => {
   });
   it('PostgreSQL: dasselbe', { skip: !process.env.TEST_DATABASE_URL && 'ohne TEST_DATABASE_URL' }, async () => {
     const db = await eigeneDatenbank('verlauf');
-    const { pgRepo } = await import('../src/repo-pg');
+    const { pgRepo } = await import('../src/repo/pg');
     try {
       await pruefeRepo(pgRepo(db.sql, '00000000-0000-4000-8000-000000000001') as never as Repo);
     } finally {
