@@ -57,7 +57,7 @@ const { MailSammeln } = await lade('werkbank/MailVersand.tsx');
 const { ZweifaktorEinrichten } = await lade('profil/Zweifaktor.tsx');
 const { Fehlergrenze, FehlerAnzeige, fehlerAngaben } = await lade('Fehlergrenze.tsx');
 
-/** Ausschnitte der Typen aus web/src/api/ bzw. shared/src/pakete.ts – nur, was die Beispiele brauchen. */
+/** Ausschnitte der Typen aus web/src/api/ bzw. shared/src/pakete/ – nur, was die Beispiele brauchen. */
 type Pruefung = import('../../shared/src/pakete').HerkunftPruefung;
 type Vorschau = Record<string, unknown>;
 

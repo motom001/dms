@@ -375,14 +375,7 @@
       "XmlFehler"
     ]
   },
-  "server/src/erkennung/erkennung.ts": {
-    "exports": [
-      "ERKENNEN_MS",
-      "PAKET_TEXT_MAX",
-      "TEXT_MAX",
-      "ausstellerAus",
-      "ohneFremdeFundstellen"
-    ],
+  "server/src/erkennung/erkennung-hilfen.ts": {
     "types": [
       "AutoZuordnung"
     ]
@@ -409,9 +402,8 @@
       "HERUNTERGELADEN"
     ]
   },
-  "server/src/export/vollexport.ts": {
+  "server/src/export/vollexport-verwaltung.ts": {
     "exports": [
-      "FORMATVERSION",
       "exportZeit"
     ]
   },
@@ -516,8 +508,6 @@
   },
   "server/src/laeufer/verwaltung.ts": {
     "exports": [
-      "STANDARD_GRENZEN",
-      "WEITER_MAX",
       "WEITER_MAX_BYTES"
     ]
   },
@@ -1014,21 +1004,6 @@
       "ProzessInfo"
     ]
   },
-  "server/src/repo/index.ts": {
-    "types": [
-      "FeldweiseSchreiben",
-      "HistorieAbfrage",
-      "KorbInhalt",
-      "NeueVersion",
-      "NeuesKatalogEreignis",
-      "NummernZiehen",
-      "OcrAuftrag",
-      "OcrZaehler",
-      "PapierkorbFilter",
-      "VolltextHerkunftZahlen",
-      "Zaehlerstand"
-    ]
-  },
   "server/src/sicherung/datenbankabzug.ts": {
     "types": [
       "Schnappschuss"
@@ -1044,21 +1019,14 @@
       "EntfernteSicherung"
     ]
   },
+  "server/src/sicherung/sicherung-hilfen.ts": {
+    "types": [
+      "Umgebung"
+    ]
+  },
   "server/src/sicherung/sicherung.ts": {
     "exports": [
-      "ENDUNG",
-      "PROBE_STANDARD",
-      "PROBE_TAGE",
-      "STUECK_MAX",
-      "ZU_ALT_TAGE",
-      "dateienUnter",
-      "istSchlank"
-    ],
-    "types": [
-      "ExternPruefung",
-      "ExternStatus",
-      "Fehlerstand",
-      "Umgebung"
+      "STUECK_MAX"
     ]
   },
   "server/src/sicherung/sicherungsformat.ts": {
@@ -1066,9 +1034,8 @@
       "Art"
     ]
   },
-  "server/src/sicherung/wiederherstellung.ts": {
+  "server/src/sicherung/wiederherstellung-hilfen.ts": {
     "types": [
-      "Abschluss",
       "Laufzeit",
       "Schritt"
     ]
@@ -1408,15 +1375,22 @@
       "OHNE_WENN"
     ]
   },
-  "shared/src/erkennung.ts": {
+  "shared/src/erkennung/abgleich.ts": {
     "exports": [
-      "ABGLEICH_JE_FELD",
-      "domainVon",
-      "musterAusHinweis"
+      "ABGLEICH_JE_FELD"
     ],
     "types": [
-      "Beleg",
+      "Beleg"
+    ]
+  },
+  "shared/src/erkennung/angaben.ts": {
+    "types": [
       "Personfund"
+    ]
+  },
+  "shared/src/erkennung/vorschlaege.ts": {
+    "exports": [
+      "musterAusHinweis"
     ]
   },
   "shared/src/erreichbarkeit.ts": {
@@ -1652,41 +1626,52 @@
       "NACHWEISE_VERWALTUNG"
     ]
   },
-  "shared/src/pakete.ts": {
+  "shared/src/pakete/ablauf.ts": {
+    "types": [
+      "AblaufPaket"
+    ]
+  },
+  "shared/src/pakete/code.ts": {
+    "exports": [
+      "KARTEN_FELDER_MAX",
+      "KARTEN_MAX"
+    ]
+  },
+  "shared/src/pakete/index.ts": {
+    "exports": [
+      "DMS_ARCHIVFASSUNG_AB",
+      "DMS_PAKET_VOLLTEXT_AB",
+      "DMS_UEBERSETZEN_AB",
+      "DMS_UMWANDELN_AB"
+    ]
+  },
+  "shared/src/pakete/katalog.ts": {
+    "exports": [
+      "DMS_ERGAENZUNG_AB",
+      "ERGAENZUNG_GRUPPE_MAX",
+      "ERSETZT_MAX",
+      "REGISTRY"
+    ]
+  },
+  "shared/src/pakete/rechtepunkte.ts": {
+    "exports": [
+      "EREIGNIS_HILFE"
+    ]
+  },
+  "shared/src/pakete/schnittstellen.ts": {
     "duplicates": [
       "PAKET_MAX = CODE_MAX"
     ],
     "exports": [
-      "ARCHIV_ARTEN",
       "BEISPIEL_ORDNER",
       "DMS_ANTWORTEN_AB",
-      "DMS_ARCHIVFASSUNG_AB",
-      "DMS_ERGAENZUNG_AB",
       "DMS_ERKENNEN_AB",
       "DMS_FREMDE_MAPPENTYPEN_AB",
       "DMS_MAPPEN_EREIGNISSE_AB",
-      "DMS_PAKET_VOLLTEXT_AB",
       "DMS_POST_RECHT_AB",
       "DMS_SICHERUNG_AB",
-      "DMS_UEBERSETZEN_AB",
-      "DMS_UMWANDELN_AB",
       "DMS_VEKTOREN_AB",
-      "DMS_VOLLTEXT_AB",
-      "DOKUMENT_RECHTE",
-      "EREIGNIS_HILFE",
-      "ERGAENZUNG_GRUPPE_MAX",
-      "ERSETZT_MAX",
-      "INHALT_SCHNITTSTELLEN",
-      "KARTEN_FELDER_MAX",
-      "KARTEN_MAX",
-      "REGISTRY",
-      "SCHNITTSTELLE_HILFE",
-      "liesKatalogSprache"
-    ],
-    "types": [
-      "AblaufPaket",
-      "DokumentRecht",
-      "KatalogSprache"
+      "INHALT_SCHNITTSTELLEN"
     ]
   },
   "shared/src/paketeinstellungen.ts": {
@@ -1761,12 +1746,6 @@
       "BEREICHE_MAX",
       "MUSTER_LISTE",
       "SCHWAERZBAR"
-    ]
-  },
-  "shared/src/sichten.ts": {
-    "exports": [
-      "FRIST_TAGE_MAX",
-      "zeitraumWert"
     ]
   },
   "shared/src/sichtrechte.ts": {

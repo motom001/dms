@@ -1,6 +1,6 @@
 /**
  * Ziele eines Verweisfelds (#1036): ein oder mehrere Mappentypen, bei Systemfeldern auch „jede Mappe“. Eigene Datei ohne
- * Abhängigkeiten, damit model/, folgtaus.ts, erkennung.ts und andere sie ohne Kreis nutzen können; model/index.ts gibt
+ * Abhängigkeiten, damit model/, folgtaus.ts, erkennung/ und andere sie ohne Kreis nutzen können; model/index.ts gibt
  * alles weiter.
  */
 import type { Feld } from './model';

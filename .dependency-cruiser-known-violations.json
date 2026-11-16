@@ -1,36 +1,6 @@
 [
   {
     "type": "cycle",
-    "from": "shared/src/erkennung.ts",
-    "to": "shared/src/feldformate.ts",
-    "unresolvedTo": "./feldformate",
-    "dependencyTypes": [
-      "local",
-      "import"
-    ],
-    "rule": {
-      "severity": "error",
-      "name": "kein-kreislauf"
-    },
-    "cycle": [
-      {
-        "name": "shared/src/feldformate.ts",
-        "dependencyTypes": [
-          "local",
-          "import"
-        ]
-      },
-      {
-        "name": "shared/src/erkennung.ts",
-        "dependencyTypes": [
-          "local",
-          "import"
-        ]
-      }
-    ]
-  },
-  {
-    "type": "cycle",
     "from": "shared/src/model/mappentyp.ts",
     "to": "shared/src/rechte.ts",
     "unresolvedTo": "../rechte",
@@ -62,43 +32,6 @@
         "dependencyTypes": [
           "local",
           "export"
-        ]
-      }
-    ]
-  },
-  {
-    "type": "cycle",
-    "from": "shared/src/sichten.ts",
-    "to": "shared/src/model/index.ts",
-    "unresolvedTo": "./model",
-    "dependencyTypes": [
-      "local",
-      "import"
-    ],
-    "rule": {
-      "severity": "error",
-      "name": "kein-kreislauf"
-    },
-    "cycle": [
-      {
-        "name": "shared/src/model/index.ts",
-        "dependencyTypes": [
-          "local",
-          "import"
-        ]
-      },
-      {
-        "name": "shared/src/model/felder.ts",
-        "dependencyTypes": [
-          "local",
-          "export"
-        ]
-      },
-      {
-        "name": "shared/src/sichten.ts",
-        "dependencyTypes": [
-          "local",
-          "type-import"
         ]
       }
     ]

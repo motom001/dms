@@ -253,7 +253,7 @@ export function neueKennung(kennung: string, installierte: Array<Pick<Installier
   return treffer.length === 1 ? treffer[0] : kennung;
 }
 
-/** Katalogeintrag zu einer Paket-Id (#1084) – jetzt in shared/src/pakete.ts, hier für bestehende Aufrufer. */
+/** Katalogeintrag zu einer Paket-Id (#1084) – jetzt in shared/src/pakete/katalog.ts, hier für bestehende Aufrufer. */
 export { katalogPaketZu };
 
 /** Mappentyp zu einer Kennung aus einem Paket (`fremde_typen`, #656) – auch in der alten Form (neueKennung). */

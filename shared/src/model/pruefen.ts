@@ -32,9 +32,9 @@ export interface TypKontext {
   /** Schlüssel der anderen Mappentypen (#145). */
   schluesselAndererTypen?: string[];
   existiertTyp: (id: string) => boolean;
-  /** Auswahlfilter prüfen (#172; aus sichten.ts, hier ohne Kreisimport). */
+  /** Auswahlfilter prüfen (#172; aus sichten/auswahlfilter.ts, hier ohne Kreisimport). */
   auswahlProbleme?: (
-    bed: import('../sichten').Feldbedingung[],
+    bed: import('../sichten/bedingungen').Feldbedingung[],
     zielFelder: Feld[],
     eigene: { felder: Feld[]; feldKey: string },
   ) => string[];
