@@ -335,6 +335,12 @@ export interface Zaehlerstand {
   geaendert: string;
 }
 
+/**
+ * Ein Teil eines Repos (#1278): Methoden eines Fachgebiets, zusammengesetzt in `pg/index.ts` bzw. `speicher/index.ts`.
+ * `this` ist dort das ganze Repo.
+ */
+export type RepoTeil = Partial<Repo> & ThisType<Repo>;
+
 /** Ein Ereignis des Katalogs (#670), wie es geschrieben wird. */
 export interface NeuesKatalogEreignis {
   id: string;

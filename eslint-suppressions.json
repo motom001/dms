@@ -594,35 +594,49 @@
       "count": 1
     }
   },
-  "server/src/repo/pg/index.ts": {
-    "complexity": {
-      "count": 3
-    },
-    "max-lines": {
-      "count": 1
-    },
-    "max-lines-per-function": {
-      "count": 1
-    },
+  "server/src/repo/pg/historie.ts": {
     "max-params": {
+      "count": 1
+    }
+  },
+  "server/src/repo/pg/mappen.ts": {
+    "max-params": {
+      "count": 1
+    }
+  },
+  "server/src/repo/pg/seite.ts": {
+    "complexity": {
       "count": 2
     }
   },
-  "server/src/repo/speicher/index.ts": {
+  "server/src/repo/pg/sql.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "server/src/repo/speicher/dokumente.ts": {
     "@typescript-eslint/no-unused-vars": {
       "count": 2
-    },
-    "complexity": {
-      "count": 2
-    },
-    "max-lines": {
-      "count": 1
-    },
-    "max-lines-per-function": {
-      "count": 1
-    },
+    }
+  },
+  "server/src/repo/speicher/historie.ts": {
     "max-params": {
-      "count": 2
+      "count": 1
+    }
+  },
+  "server/src/repo/speicher/kontext.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "server/src/repo/speicher/mappen.ts": {
+    "max-params": {
+      "count": 1
+    }
+  },
+  "server/src/repo/speicher/seite.ts": {
+    "complexity": {
+      "count": 1
     }
   },
   "server/src/routen.ts": {

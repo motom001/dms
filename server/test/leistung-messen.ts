@@ -77,7 +77,7 @@ export async function ziele(sql: postgres.Sql) {
 
 /**
  * Misst die Zugriffe aus #367. Mit `explain` zusätzlich die Pläne der zugehörigen SQL-Anweisungen
- * (so, wie sie in repo-pg.ts stehen).
+ * (so, wie sie in repo/pg/spalten.ts stehen).
  */
 export async function messeAbfragen(
   sql: postgres.Sql,
@@ -152,7 +152,7 @@ export async function messeAbfragen(
 }
 class Rollback extends Error {}
 
-/** Spalten, die `listeDokumente` liest – für den Plan (wie in repo-pg.ts; vor #367 `d.*`). */
+/** Spalten, die `listeDokumente` liest – für den Plan (wie in repo/pg/spalten.ts; vor #367 `d.*`). */
 async function dokumentSpalten(): Promise<string> {
   const m = (await import('../src/repo/pg')) as { DOKUMENT_SPALTEN?: readonly string[] };
   return m.DOKUMENT_SPALTEN ? m.DOKUMENT_SPALTEN.map((c) => `d.${c}`).join(', ') : 'd.*';

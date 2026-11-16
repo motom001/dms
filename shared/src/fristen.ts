@@ -104,7 +104,7 @@ export function fristMonat(d: string): number | null {
  * oder, wiederkehrend alle `monate` Monate, einen Folgetermin? Ein Folgetermin Datum + k · monate liegt immer im Monat
  * (Monat des Datums + k · monate) – nur der Tag wird am Monatsende gekappt (`verschiebe`). Gesucht ist also ein Monat im
  * Zeitraum, der um ein Vielfaches des Rhythmus nach dem des Datums liegt. Lieber ein Kandidat zu viel: Den Termin
- * selbst rechnet danach `folgetermine`. Dieselbe Rechnung macht PostgreSQL (repo-pg.ts `fristKandidaten`).
+ * selbst rechnet danach `folgetermine`. Dieselbe Rechnung macht PostgreSQL (repo/pg/mappen.ts `fristKandidaten`).
  */
 export function kannTerminHaben(datum: string, monate: number | null, ab: string, bis: string): boolean {
   if (datum >= ab && datum <= bis) return true;
