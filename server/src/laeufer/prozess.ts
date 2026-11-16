@@ -511,22 +511,16 @@ function weiter() {
   while (laufend < grenzen.parallel && warteschlange.length) void fuehreAus(warteschlange.shift()!);
 }
 
-async function fuehreAus(a: Extract<AnLaeufer, { art: 'aufruf' }>) {
-  const g = pakete.get(a.paket);
-  const start = Date.now();
-  const ende = (x: Omit<Extract<VomLaeufer, { art: 'ergebnis' }>, 'art' | 'nr' | 'paket' | 'ms'>) =>
-    sende({ art: 'ergebnis', nr: a.nr, paket: a.paket, ms: Date.now() - start, ...x });
-  if (!g?.modul || !g.pruefung) {
-    ende({ ok: false, rc: null, text: '', speicherMB: 0, fehler: g?.fehler ?? t('meldungen.prozess.das-paket-ist-nicht') });
-    return;
-  }
-  laufend++;
-  const kanal = new MessageChannel();
-  const signal = new SharedArrayBuffer(4);
-  const sig = new Int32Array(signal);
+type Aufrufnachricht = Extract<AnLaeufer, { art: 'aufruf' }>;
+/** Ergebnis eines Aufrufs ohne Kopf (art, nr, paket, ms). */
+type Ergebnis = Omit<Extract<VomLaeufer, { art: 'ergebnis' }>, 'art' | 'nr' | 'paket' | 'ms'>;
+const fehlschlag = (fehler: string): Ergebnis => ({ ok: false, rc: null, text: '', speicherMB: 0, fehler });
+
+/** Worker für einen Aufruf starten; null, wenn das nicht geht (dann ist das Ergebnis schon gemeldet). */
+function starteWorker(a: Aufrufnachricht, g: Geladen, kanal: MessageChannel, signal: SharedArrayBuffer, ende: (x: Ergebnis) => void) {
   const daten: ArbeiterDaten = {
-    modul: g.modul,
-    pruefung: g.pruefung,
+    modul: g.modul!,
+    pruefung: g.pruefung!,
     speicherSeiten: Math.floor((grenzen.speicherMB * MB) / SEITE),
     eingang: a.eingang,
     signal,
@@ -535,9 +529,8 @@ async function fuehreAus(a: Extract<AnLaeufer, { art: 'aufruf' }>) {
   };
   const url = new URL(import.meta.url.endsWith('.ts') ? './arbeiter.ts' : './arbeiter.mjs', import.meta.url);
   // Worker-Heap klein (die Daten liegen im WebAssembly-Speicher), Stapel groß (Tesseract rekursiert tief).
-  let w: Worker;
   try {
-    w = new Worker(url, {
+    return new Worker(url, {
       workerData: daten,
       transferList: [kanal.port2],
       resourceLimits: { maxOldGenerationSizeMb: 64, maxYoungGenerationSizeMb: 16, stackSizeMb: 32 },
@@ -546,63 +539,75 @@ async function fuehreAus(a: Extract<AnLaeufer, { art: 'aufruf' }>) {
   } catch (e) {
     laufend--;
     kanal.port1.close();
-    ende({
-      ok: false,
-      rc: null,
-      text: '',
-      speicherMB: 0,
-      fehler: t('meldungen.prozess.der-aufruf-liess-sich', { message: (e as Error).message }),
-    });
+    ende(fehlschlag(t('meldungen.prozess.der-aufruf-liess-sich', { message: (e as Error).message })));
     weiter();
-    return;
+    return null;
   }
-  let fertig = false;
-  let strom: Strom | null = null;
-  const netzLog = netzSammler();
-  const messer = netzMesser();
-  const schluss = (x: Parameters<typeof ende>[0]) => {
-    if (fertig) return;
-    fertig = true;
-    clearTimeout(uhr);
-    kanal.port1.close();
-    strom?.ende.abort();
-    strom = null;
-    void w.terminate();
-    const n = netzLog.liste();
-    const m = messer.ergebnis();
+}
+
+/** Ein laufender Aufruf (#1278, Schritt 6b-2; vorher Teil von `fuehreAus`): Meldungen und Fragen des Workers, Ende. */
+class Aufruf {
+  private fertig = false;
+  private strom: Strom | null = null;
+  private readonly netzLog = netzSammler();
+  private readonly messer = netzMesser();
+  private readonly sig: Int32Array;
+  private readonly uhr: ReturnType<typeof setTimeout>;
+
+  private readonly a: Aufrufnachricht;
+  private readonly g: Geladen;
+  private readonly kanal: MessageChannel;
+  private readonly w: Worker;
+
+  constructor(
+    x: { a: Aufrufnachricht; g: Geladen; kanal: MessageChannel; signal: SharedArrayBuffer; w: Worker },
+    private readonly ende: (x: Ergebnis) => void,
+  ) {
+    ({ a: this.a, g: this.g, kanal: this.kanal, w: this.w } = x);
+    this.sig = new Int32Array(x.signal);
+    this.uhr = setTimeout(
+      () => this.schluss(fehlschlag(t('meldungen.prozess.zeitgrenze-erreicht-s-abgebrochen', { sekunden: grenzen.sekunden }))),
+      grenzen.sekunden * 1000,
+    );
+  }
+
+  /** Genau einmal: Worker und offene Antwort beenden, Netz und Messung ans Ergebnis, den Nächsten starten. */
+  schluss(x: Ergebnis) {
+    if (this.fertig) return;
+    this.fertig = true;
+    clearTimeout(this.uhr);
+    this.kanal.port1.close();
+    this.strom?.ende.abort();
+    this.strom = null;
+    void this.w.terminate();
+    const n = this.netzLog.liste();
+    const m = this.messer.ergebnis();
     laufend--;
-    ende({ ...x, ...(n.length ? { netz: n } : {}), ...(m ? { messung: m } : {}) });
+    this.ende({ ...x, ...(n.length ? { netz: n } : {}), ...(m ? { messung: m } : {}) });
     weiter();
-  };
-  const uhr = setTimeout(
-    () =>
-      schluss({
-        ok: false,
-        rc: null,
-        text: '',
-        speicherMB: 0,
-        fehler: t('meldungen.prozess.zeitgrenze-erreicht-s-abgebrochen', { sekunden: grenzen.sekunden }),
-      }),
-    grenzen.sekunden * 1000,
-  );
-  const antworte = (r: Hostantwort) => {
-    if (fertig) return;
-    kanal.port1.postMessage(r);
-    Atomics.store(sig, 0, 1);
-    Atomics.notify(sig, 0);
-  };
-  kanal.port1.on('message', (m: ArbeiterMeldung | { art: 'frage'; anfrage: Hostanfrage }) => {
+  }
+
+  private antworte(r: Hostantwort) {
+    if (this.fertig) return;
+    this.kanal.port1.postMessage(r);
+    Atomics.store(this.sig, 0, 1);
+    Atomics.notify(this.sig, 0);
+  }
+
+  /** Meldung des Workers: Protokoll, Teil einer Antwort, Ende oder eine Frage. */
+  meldung(m: ArbeiterMeldung | { art: 'frage'; anfrage: Hostanfrage }) {
+    const { a } = this;
     if (m.art === 'log') {
       sende({ art: 'log', paket: a.paket, stufe: m.stufe, text: m.text });
       return;
     }
     if (m.art === 'teil') {
-      if (!fertig) sende({ art: 'teil', nr: a.nr, paket: a.paket, text: m.text });
+      if (!this.fertig) sende({ art: 'teil', nr: a.nr, paket: a.paket, text: m.text });
       return;
     }
     // Fehlercode mit Text in ergebnis (#444): Der Text ist die Meldung (z. B. „KI-Dienst nicht erreichbar“).
     if (m.art === 'ende') {
-      schluss({
+      this.schluss({
         ok: !m.fehler && m.rc === 0,
         rc: m.rc,
         text: m.ergebnis,
@@ -617,12 +622,17 @@ async function fuehreAus(a: Extract<AnLaeufer, { art: 'aufruf' }>) {
       });
       return;
     }
-    const q = m.anfrage;
+    this.frage(m.anfrage);
+  }
+
+  /** Frage des Workers: Netz, nächstes Stück, Datei des Pakets oder an das DMS. */
+  private frage(q: Hostanfrage) {
+    const { a, g } = this;
     if (q.art === 'netz') {
       // Eine neue Anfrage schließt eine noch offene Antwort.
       if (q.strom) {
-        strom?.ende.abort();
-        strom = null;
+        this.strom?.ende.abort();
+        this.strom = null;
       }
       void netz(
         g,
@@ -631,48 +641,58 @@ async function fuehreAus(a: Extract<AnLaeufer, { art: 'aufruf' }>) {
         q.strom
           ? {
               setze: (x) => {
-                if (fertig) x?.ende.abort();
-                else strom = x;
+                if (this.fertig) x?.ende.abort();
+                else this.strom = x;
               },
               ms: grenzen.sekunden * 1000,
             }
           : null,
-        { log: netzLog.log, messer },
-      ).then(antworte);
+        { log: this.netzLog.log, messer: this.messer },
+      ).then((r) => this.antworte(r));
       return;
     }
     if (q.art === 'netz_weiter') {
-      void netzWeiter(strom).then((r) => {
-        if (r.status !== 200) strom = null;
-        antworte(r);
+      void netzWeiter(this.strom).then((r) => {
+        if (r.status !== 200) this.strom = null;
+        this.antworte(r);
       });
       return;
     }
     if (q.art === 'datei') {
       const d = g.daten.get(q.name);
-      antworte(d ? { status: 200, body: d } : fehlerAntwort(404, t('meldungen.prozess.datei-gibt-es-nicht')));
+      this.antworte(d ? { status: 200, body: d } : fehlerAntwort(404, t('meldungen.prozess.datei-gibt-es-nicht')));
       return;
     }
-    void frageDms(a.paket, q, a.nr).then(antworte);
-  });
+    void frageDms(a.paket, q, a.nr).then((r) => this.antworte(r));
+  }
+}
+
+async function fuehreAus(a: Aufrufnachricht) {
+  const g = pakete.get(a.paket);
+  const start = Date.now();
+  const ende = (x: Ergebnis) => sende({ art: 'ergebnis', nr: a.nr, paket: a.paket, ms: Date.now() - start, ...x });
+  if (!g?.modul || !g.pruefung) {
+    ende({ ok: false, rc: null, text: '', speicherMB: 0, fehler: g?.fehler ?? t('meldungen.prozess.das-paket-ist-nicht') });
+    return;
+  }
+  laufend++;
+  const kanal = new MessageChannel();
+  const signal = new SharedArrayBuffer(4);
+  const w = starteWorker(a, g, kanal, signal, ende);
+  if (!w) return;
+  const x = new Aufruf({ a, g, kanal, signal, w }, ende);
+  kanal.port1.on('message', (m: ArbeiterMeldung | { art: 'frage'; anfrage: Hostanfrage }) => x.meldung(m));
   w.on('error', (e: Error) =>
-    schluss({
-      ok: false,
-      rc: null,
-      text: '',
-      speicherMB: 0,
-      fehler: /ERR_WORKER_OUT_OF_MEMORY|heap/i.test(`${(e as NodeJS.ErrnoException).code} ${e.message}`)
-        ? t('meldungen.prozess.speichergrenze-erreicht', { message: e.message })
-        : e.message,
-    }),
-  );
-  // Die Meldung „ende“ kommt über einen eigenen Kanal und kann nach dem Ende des Workers eintreffen: kurz warten.
-  w.on('exit', (c) =>
-    setTimeout(
-      () => schluss({ ok: false, rc: null, text: '', speicherMB: 0, fehler: t('meldungen.prozess.der-aufruf-endete-unerwartet', { c }) }),
-      250,
+    x.schluss(
+      fehlschlag(
+        /ERR_WORKER_OUT_OF_MEMORY|heap/i.test(`${(e as NodeJS.ErrnoException).code} ${e.message}`)
+          ? t('meldungen.prozess.speichergrenze-erreicht', { message: e.message })
+          : e.message,
+      ),
     ),
   );
+  // Die Meldung „ende“ kommt über einen eigenen Kanal und kann nach dem Ende des Workers eintreffen: kurz warten.
+  w.on('exit', (c) => setTimeout(() => x.schluss(fehlschlag(t('meldungen.prozess.der-aufruf-endete-unerwartet', { c }))), 250));
 }
 
 process.on('message', (m: AnLaeufer) => {

@@ -344,11 +344,6 @@
       "count": 2
     }
   },
-  "server/src/laeufer/prozess.ts": {
-    "max-lines-per-function": {
-      "count": 1
-    }
-  },
   "server/src/laeufer/webassembly.d.ts": {
     "@typescript-eslint/no-unsafe-function-type": {
       "count": 2
