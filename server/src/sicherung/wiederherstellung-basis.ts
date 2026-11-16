@@ -318,9 +318,10 @@ export abstract class WiederherstellungBasis {
     if (aktuell) this.schritt(lauf, aktuell, 'fehler', grund);
     for (const s of lauf.schritte)
       if (s.status === 'offen' || s.status === 'laeuft') s.status = s.status === 'laeuft' ? 'fehler' : 'ausgelassen';
-    lauf.status = 'fehler';
+    // Zustand als Letztes (#1381, wie #1378): Wer „fehler“ sieht, sieht auch Grund und Ende.
     lauf.fehler = grund;
     lauf.beendet = this.jetzt().toISOString();
+    lauf.status = 'fehler';
   }
 
   protected async pruefePlatz(m: Metadaten) {
