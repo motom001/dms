@@ -1,7 +1,17 @@
 import type { Feldaenderung, Historienart, Historieneintrag } from '../../../shared/src/model';
 import type { KatalogArt } from '../../../shared/src/ereignisse';
 import { protokoll } from '../protokoll/protokoll';
-import type { Kern } from './kern';
+import type { Repo } from '../repo';
+
+/**
+ * Was die Historie vom Kern braucht (#1278, Schritt 5): ein schmaler Anschluss statt der ganzen Klasse – kern.ts legt die
+ * Historie an und gibt sich selbst herein; bände historie.ts kern.ts ein, entstünde ein Kreis.
+ */
+interface HistorieAnschluss {
+  readonly repo: Pick<Repo, 'historieSchreibe' | 'favoritenDerMappe'>;
+  ereignis(art: KatalogArt, daten: Record<string, unknown>, von?: string | null): Promise<void>;
+  typVon(mappeId: string): Promise<string | null>;
+}
 
 /** Historie → Ereignis des Katalogs (#670); Löschen meldet die Stelle selbst (die Mappe ist danach weg). */
 const NOTIERT_ALS: Partial<Record<Historienart, KatalogArt>> = {
@@ -30,7 +40,7 @@ export const ABO_ARTEN = [
 /* ---------- Änderungshistorie (#57) schreiben; lesen gehört zu den Mappen ---------- */
 
 export class Historie {
-  constructor(private readonly kern: Kern) {}
+  constructor(private readonly kern: HistorieAnschluss) {}
 
   /** Ein Eintrag in die Historie einer Mappe – und bei Favoriten anderer die gebündelte Benachrichtigung (#422). */
   async schreibe(mappeId: string, benutzerId: string | null, art: Historienart, daten?: Historieneintrag['daten']) {

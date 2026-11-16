@@ -11,9 +11,17 @@ import {
   type LoeschKontext,
   type Loeschweg,
 } from '../../../shared/src/loeschprotokoll';
-import type { PapierkorbEintrag } from '../repo';
+import type { PapierkorbEintrag, Repo } from '../repo';
 import { protokoll } from '../protokoll/protokoll';
-import type { Kern } from './kern';
+
+/**
+ * Was das Löschprotokoll vom Kern braucht (#1278, Schritt 5): ein schmaler Anschluss statt der ganzen Klasse – kern.ts
+ * legt das Protokoll an und gibt sich selbst herein; bände loeschprotokoll.ts kern.ts ein, entstünde ein Kreis.
+ */
+interface LoeschprotokollAnschluss {
+  readonly repo: Pick<Repo, 'holeMappen' | 'listeTypen' | 'loeschprotokoll' | 'loeschprotokollSchreibe' | 'papierkorbInhalt'>;
+  name(benutzerId: string | null): Promise<string>;
+}
 
 /* Löschprotokoll (#470) */
 /** Grund und Auslöser einer Löschung (aus Oberfläche/Schnittstelle) und wie gelöscht wurde. */
@@ -51,7 +59,7 @@ export const versionInfo = (v: DokumentVersion): LoeschDokument => ({
 /* ---------- Löschprotokoll (#470) schreiben; lesen gehört zum Löschen ---------- */
 
 export class Loeschprotokoll {
-  constructor(private readonly kern: Kern) {}
+  constructor(private readonly kern: LoeschprotokollAnschluss) {}
 
   /** Wer und warum. Ohne Benutzer: „DMS“ (automatisch). */
   async kontext(von: string | null, anlass: Anlass = {}): Promise<LoeschKontext> {
