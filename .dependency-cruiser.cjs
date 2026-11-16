@@ -23,6 +23,7 @@
  * darf sie direkt einbinden (`fachordner` prüft für sie nicht „nur über index.ts“), sie selbst binden ein, was sie
  * brauchen (die Schichten prüfen sie nicht), und Fachordner dürfen von ihnen nur, was BASIS, WERKZEUGE, NACHBARN und
  * UEBER_DEM_DIENST nennen – wie vorher. Wer eine Datei hinter die Tür ihres Ordners bringt, nimmt sie hier heraus.
+ * Teile einer solchen Datei, die Schritt 4b aufgeteilt hat (dienst/bauteile, webdav/webdav-*), stehen mit ihr hier.
  */
 const OHNE_TUER = {
   anmeldung: 'anmeldesperre|zweifaktor|passkeys|oidc|apischluessel|passwort',
@@ -35,7 +36,7 @@ const OHNE_TUER = {
   datenbank: 'db|anbindung|mandant|erweiterungen|sperrverbindung|poolmessung|messung',
   datenschutz: 'abruf|auskunft',
   demo: 'demo|demo-dokumente|demo-text|zufall',
-  dienst: 'dienst',
+  dienst: 'dienst|bauteile',
   einrichtung: 'einrichtung|einrichtungscode|einrichtungsdatei|einrichtungsmodus|startmodus',
   einstellungen: 'einstellungen|region|betrieb',
   entdecken: 'entdecken|entdecken-werkbank',

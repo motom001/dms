@@ -56,7 +56,7 @@ Since #1278 (step 4a) every file lives in a folder; directly in `server/src/` th
 
 | Folder in `server/src/` | Contents |
 |---|---|
-| `dienst/` | the service (`dienst.ts`) that assembles the subject folders |
+| `dienst/` | the service (`dienst.ts`, building blocks per area in `bauteile.ts`) that assembles the subject folders |
 | `grundlagen/` | business errors, size limits, transitional exceptions (`uebergaenge.ts`) |
 | `datenbank/` | connection, migrations, database connection file, tenant, extensions, lock connection, access measurements |
 | `protokoll/` | log and evidence journal |

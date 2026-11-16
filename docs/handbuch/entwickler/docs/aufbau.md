@@ -56,7 +56,7 @@ Seit #1278 (Schritt 4a) liegt jede Datei in einem Ordner; direkt in `server/src/
 
 | Ordner in `server/src/` | Inhalt |
 |---|---|
-| `dienst/` | der Dienst (`dienst.ts`), der die Fachordner zusammensetzt |
+| `dienst/` | der Dienst (`dienst.ts`, Bauteile je Bereich in `bauteile.ts`), der die Fachordner zusammensetzt |
 | `grundlagen/` | Fachfehler, Größengrenzen, Übergangsausnahmen (`uebergaenge.ts`) |
 | `datenbank/` | Verbindung, Migrationen, Anbindung, Mandant, Erweiterungen, Sperrverbindung, Messungen der Zugriffe |
 | `protokoll/` | Protokoll und Nachweis-Journal |
