@@ -26,17 +26,19 @@ const gueltig = (x: string) => {
 export function proxyVertrauen(wert: string | undefined): { trust: ProxyVertrauen; text: string; fehler?: string } {
   const w = (wert ?? '').trim();
   if (!w || w.toLowerCase() === 'auto') return { trust: PRIVATE_NETZE, text: t('meldungen.proxy.automatisch-eigener-rechner-und') };
-  if (w.toLowerCase() === 'false') return { trust: false, text: t('meldungen.proxy.aus') };
+  // „aus“ in den üblichen Schreibweisen (#1350).
+  if (['false', '0', 'no', 'off', 'nein'].includes(w.toLowerCase())) return { trust: false, text: t('meldungen.proxy.aus') };
   if (w.toLowerCase() === 'true') return { trust: true, text: t('meldungen.proxy.alle-absender') };
   const liste = w
     .split(',')
     .map((x) => x.trim())
     .filter(Boolean);
   const falsch = liste.filter((x) => !gueltig(x));
+  // Ungültiger Wert (#1350): im Zweifel die strengere Einstellung – niemandem glauben, nicht „auto“.
   if (falsch.length || !liste.length) {
     return {
-      trust: PRIVATE_NETZE,
-      text: t('meldungen.proxy.automatisch-eigener-rechner-und'),
+      trust: false,
+      text: t('meldungen.proxy.aus'),
       fehler: t('meldungen.proxy.trust-proxy-ist-keine', { wert: falsch.join(', ') || w }),
     };
   }

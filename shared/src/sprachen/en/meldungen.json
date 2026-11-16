@@ -1430,7 +1430,7 @@
   "proxy.automatisch-eigener-rechner-und": "automatic (own computer and private networks)",
   "proxy.aus": "off",
   "proxy.alle-absender": "all senders",
-  "proxy.trust-proxy-ist-keine": "TRUST_PROXY: “{wert}” is neither an address nor a network – “auto” applies.",
+  "proxy.trust-proxy-ist-keine": "TRUST_PROXY: “{wert}” is neither an address nor a network – “off” applies (believe nobody).",
   "region.unbekanntes-land": "Unknown country.",
   "region.unbekanntes-bundesland": "Unknown federal state.",
   "region.unbekannte-zeitzone-bitte-eine": "Unknown time zone – please choose one from the list, e.g. Europe/Berlin.",
