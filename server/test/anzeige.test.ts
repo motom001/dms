@@ -45,6 +45,7 @@ import { speicherRepo } from '../src/repo-speicher';
 import { bereicheDerRoute, NUR_GESAMT } from '../src/verwaltungsbereiche';
 import { vollexport } from '../src/vollexport';
 import { zipPuffer } from '../src/zip';
+import { TEST_PROJEKT, testSigniert } from './katalogschluessel';
 
 /** Ein Vertrag für alle (Konzept „Verträge und Rechnungen“): Abschnitt „Miete“ nur bei Vertragsart Miete, „Abschluss“ nur beruflich. */
 const MIETE: Anzeigeregel = {
@@ -600,7 +601,7 @@ function katalog(dateien: Record<string, string>) {
     ],
   };
   const daten = new Map<string, Buffer>([
-    [KATALOG, Buffer.from(JSON.stringify({ format: 1, erstellt: '', quelle: '', pakete: [eintrag] }))],
+    [KATALOG, Buffer.from(JSON.stringify({ format: 1, erstellt: '2026-11-01T00:00:00Z', quelle: '', pakete: [eintrag] }))],
     ['https://katalog.test/archive/v.zip', zip],
   ]);
   return async (url: string) => {
@@ -615,38 +616,42 @@ describe('Paket installieren mit Anzeige-Bedingungen (#1033)', () => {
     const { d, admin } = await aufbau();
     const p = new Paketverwaltung(d, {
       version: () => '0.230.0',
-      abruf: katalog({
-        'manifest.yaml':
-          'schema: 1\nid: vertraege_test\nname: Verträge\nversion: 1.0.0\nbeschreibung: Test.\nautor: { name: Test, github: test }\nlizenz: MIT\ndms: ">=0.60.0"\ninhalt:\n  mappentypen: inhalt/mappentypen.yaml\n',
-        'inhalt/mappentypen.yaml': [
-          '- schluessel: fahrzeug',
-          '  name: Fahrzeug',
-          '  beschreibung: Auto',
-          '  felder:',
-          '    - { key: kennzeichen, label: Kennzeichen, typ: text }',
-          '  register:',
-          '    - { key: daten, name: Daten, art: felder, felder: [kennzeichen] }',
-          '- schluessel: vertrag',
-          '  name: Paketvertrag',
-          '  beschreibung: Ein Vertrag für alle',
-          '  felder:',
-          '    - { key: name, label: Name, typ: text }',
-          '    - { key: betrifft, label: betrifft, typ: referenz, ziel: fahrzeug }',
-          '    - key: kfz',
-          '      label: Kfz-Steuer',
-          '      typ: betrag',
-          '      anzeigen: { modus: alle, bedingungen: [{ art: verweistyp, feld: betrifft, typ: fahrzeug }] }',
-          '    - { key: kostenstelle, label: Kostenstelle, typ: text, pflicht: true }',
-          '  register:',
-          '    - key: vertrag',
-          '      name: Vertrag',
-          '      art: felder',
-          '      felder: [name, betrifft, kfz, kostenstelle]',
-          '      abschnitte: [{ vor: kostenstelle, titel: Abschluss, anzeigen: { modus: alle, bedingungen: [{ art: merkmal, merkmal: beruflich }] } }]',
-          '',
-        ].join('\n'),
-      }),
+      abruf: testSigniert(
+        KATALOG,
+        katalog({
+          'manifest.yaml':
+            'schema: 1\nid: vertraege_test\nname: Verträge\nversion: 1.0.0\nbeschreibung: Test.\nautor: { name: Test, github: test }\nlizenz: MIT\ndms: ">=0.60.0"\ninhalt:\n  mappentypen: inhalt/mappentypen.yaml\n',
+          'inhalt/mappentypen.yaml': [
+            '- schluessel: fahrzeug',
+            '  name: Fahrzeug',
+            '  beschreibung: Auto',
+            '  felder:',
+            '    - { key: kennzeichen, label: Kennzeichen, typ: text }',
+            '  register:',
+            '    - { key: daten, name: Daten, art: felder, felder: [kennzeichen] }',
+            '- schluessel: vertrag',
+            '  name: Paketvertrag',
+            '  beschreibung: Ein Vertrag für alle',
+            '  felder:',
+            '    - { key: name, label: Name, typ: text }',
+            '    - { key: betrifft, label: betrifft, typ: referenz, ziel: fahrzeug }',
+            '    - key: kfz',
+            '      label: Kfz-Steuer',
+            '      typ: betrag',
+            '      anzeigen: { modus: alle, bedingungen: [{ art: verweistyp, feld: betrifft, typ: fahrzeug }] }',
+            '    - { key: kostenstelle, label: Kostenstelle, typ: text, pflicht: true }',
+            '  register:',
+            '    - key: vertrag',
+            '      name: Vertrag',
+            '      art: felder',
+            '      felder: [name, betrifft, kfz, kostenstelle]',
+            '      abschnitte: [{ vor: kostenstelle, titel: Abschluss, anzeigen: { modus: alle, bedingungen: [{ art: merkmal, merkmal: beruflich }] } }]',
+            '',
+          ].join('\n'),
+        }),
+      ),
       katalogUrl: KATALOG,
+      projektSchluessel: TEST_PROJEKT,
     });
     const inst = await p.installiere({ id: 'vertraege_test', version: '1.0.0' }, { id: admin.id, email: admin.email });
     const typen = await d.mappentypen.listeTypen();

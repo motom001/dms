@@ -15,6 +15,7 @@ import type { Repo } from '../src/repo';
 import { speicherRepo } from '../src/repo-speicher';
 import { zipPuffer } from '../src/zip';
 import { eigeneDatenbank } from './hilfe-db';
+import { TEST_PROJEKT, testSigniert } from './katalogschluessel';
 
 const ICH = { id: '00000000-0000-4000-8000-0000000000aa', email: 'admin@example.org' };
 const KATALOG = 'https://katalog.test/katalog.json';
@@ -118,7 +119,7 @@ function katalog(eintraege: Array<{ dateien: Record<string, string>; herausgeber
   return {
     daten,
     setze: (liste: typeof pakete) =>
-      daten.set(KATALOG, Buffer.from(JSON.stringify({ format: 1, erstellt: '', quelle: '', pakete: liste }))),
+      daten.set(KATALOG, Buffer.from(JSON.stringify({ format: 1, erstellt: '2026-11-01T00:00:00Z', quelle: '', pakete: liste }))),
     pakete,
   };
 }
@@ -228,12 +229,13 @@ for (const pg of [false, true]) {
         const d = new Dienst(await repo(pg), speicherDateien(), { einstellungen });
         const p = new Paketverwaltung(d, {
           version: () => '0.230.0',
-          abruf: async (u) => {
+          abruf: testSigniert(KATALOG, async (u) => {
             const b = k.daten.get(u);
             if (!b) throw new Error(`404 ${u}`);
             return b;
-          },
+          }),
           katalogUrl: KATALOG,
+          projektSchluessel: TEST_PROJEKT,
         });
         return { d, p, einstellungen };
       }

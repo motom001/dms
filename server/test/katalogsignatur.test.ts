@@ -71,7 +71,12 @@ const neben = (url: string, datei: string) => new URL(datei, url).href;
 /** testschluessel: false baut die Paketverwaltung wie im Betrieb, mit den eingebauten Projektschlüsseln. */
 async function aufbau(testschluessel = true) {
   const dateien = new Map<string, Buffer>();
-  const abruf = async (url: string) => { const b = dateien.get(url); if (!b) throw new Error(`404 ${url}`); return b; };
+  // Wie holeDaten: Fehlt eine Datei, steht der Status in den Details (#1351); `gestoert`: Abruf scheitert ohne Antwort.
+  const gestoert = new Set<string>();
+  const abruf = async (url: string) => {
+    if (gestoert.has(url)) throw new Error(`${url}: fetch failed`);
+    const b = dateien.get(url); if (!b) throw new Fachfehler(502, `${url}: 404 Not Found`, { status: 404 }); return b;
+  };
   const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
   const p = new Paketverwaltung(d, { version: () => '0.141.0', abruf, katalogUrl: OFFIZIELL, ...(testschluessel ? { projektSchluessel: TEST_PROJEKT } : {}) });
   /** Offiziellen Katalog veröffentlichen; seed: signieren mit diesem Schlüssel, null: ohne Signatur. */
@@ -80,7 +85,7 @@ async function aufbau(testschluessel = true) {
     if (seed) dateien.set(neben(OFFIZIELL, 'katalog.sig'), signatur(k, seed, erstellt)); else dateien.delete(neben(OFFIZIELL, 'katalog.sig'));
     return k;
   };
-  return { d, p, dateien, offiziell };
+  return { d, p, dateien, offiziell, gestoert };
 }
 
 const warnung = (e: unknown) => e instanceof Fachfehler && (e.details as { warnung?: boolean })?.warnung === true;
@@ -172,26 +177,56 @@ describe('Offizieller Katalog mit Signatur (#594)', () => {
     assert.equal((await p.katalog()).pruefung.art, 'projekt');
   });
 
-  it('ohne Signatur: nur Warnung (Stufe 1), installieren ohne Bestätigung', async () => {
-    const { p, offiziell } = await aufbau();
+  it('ohne Signatur (404): nicht offiziell, Bestätigung nötig, Herausgeber nicht app.ablago (#1351)', async () => {
+    const { d, p, offiziell } = await aufbau();
     offiziell([basis], iso(1), null);
-    assert.deepEqual((await p.katalog()).pruefung, { art: 'unsigniert', offiziell: true, bestaetigen: false });
-    assert.equal((await p.installiere({ id: 'basis' }, ICH)).version, '1.0.0');
+    assert.deepEqual((await p.katalog()).pruefung, { art: 'unsigniert', offiziell: false, bestaetigen: true });
+    const v = await p.vorschau({ id: 'basis' });
+    assert.equal(v.pruefung?.bestaetigen, true);
+    assert.equal(v.paket.herausgeber, null);
+    await assert.rejects(p.installiere({ id: 'basis' }, ICH), warnung);
+    assert.equal((await p.installiere({ id: 'basis', bestaetigt: true }, ICH)).version, '1.0.0');
+    const inst = (await d.kern.repo.listePakete()).find((x) => x.id === 'basis')!;
+    assert.equal(inst.herausgeber, undefined);
+    assert.equal(inst.herausgeberGeprueft, false);
+    // Später gültig signiert: Der Herausgeber gilt erst nach Bestätigung, nicht still aus der Quelle.
+    offiziell([basis, basis11], iso(0));
+    await p.katalog();
+    assert.equal((await p.vorschau({ id: 'basis', version: '1.1.0' })).herausgeberBestaetigen, 'app.ablago');
+  });
+
+  it('ohne Signatur: Paket, das sich als app.ablago ausgibt, lässt sich nicht installieren (#1351)', async () => {
+    const { p, offiziell } = await aufbau();
+    offiziell([{ ...basis, 'manifest.yaml': basis['manifest.yaml'].replace('version: 1.0.0', 'version: 1.0.0\nherausgeber: app.ablago') }], iso(1), null);
+    await p.katalog();
+    const v = await p.vorschau({ id: 'basis' });
+    assert.ok(v.probleme.some((x) => /app\.ablago/.test(x)), v.probleme.join(' | '));
+  });
+
+  it('Signatur lässt sich nicht abrufen: eigener Zustand, nicht offiziell, Bestätigung nötig (#1351)', async () => {
+    const { p, offiziell, gestoert } = await aufbau();
+    offiziell([basis], iso(1));
+    gestoert.add(neben(OFFIZIELL, 'katalog.sig'));
+    assert.deepEqual((await p.katalog()).pruefung, { art: 'nichtgeprueft', offiziell: false, bestaetigen: true });
+    await assert.rejects(p.installiere({ id: 'basis' }, ICH), warnung);
+    gestoert.clear();
+    assert.equal((await p.katalog()).pruefung.art, 'projekt');
   });
 
   it('wie im Betrieb (eingebaute Schlüssel): mit Testschlüssel signiert gilt als ungültig, ohne Testhinweis', async () => {
     const { p, offiziell } = await aufbau(false);
     offiziell([basis], iso(1), TEST_SEED.signier);
-    assert.deepEqual((await p.katalog()).pruefung, { art: 'ungueltig', offiziell: true, bestaetigen: true });
+    assert.deepEqual((await p.katalog()).pruefung, { art: 'ungueltig', offiziell: false, bestaetigen: true });
     offiziell([basis], iso(1), null);
-    assert.deepEqual((await p.katalog()).pruefung, { art: 'unsigniert', offiziell: true, bestaetigen: false });
+    assert.deepEqual((await p.katalog()).pruefung, { art: 'unsigniert', offiziell: false, bestaetigen: true });
   });
 
   it('ungültige Signatur (Katalog verändert oder fremder Schlüssel): Bestätigung nötig', async () => {
     const { p, offiziell, dateien } = await aufbau();
     const k = offiziell([basis], iso(1));
     dateien.set(OFFIZIELL, Buffer.from(k.toString().replace('"lizenz": "MIT"', '"lizenz": "GPL"')));
-    assert.deepEqual((await p.katalog()).pruefung, { art: 'ungueltig', offiziell: true, bestaetigen: true });
+    assert.deepEqual((await p.katalog()).pruefung, { art: 'ungueltig', offiziell: false, bestaetigen: true });
+    assert.equal((await p.vorschau({ id: 'basis' })).paket.herausgeber, null, 'ohne gültige Signatur nie app.ablago (#1351)');
     await assert.rejects(p.installiere({ id: 'basis' }, ICH), (e) => warnung(e) && /Signatur des Katalogs ist ungültig/.test((e as Error).message));
     offiziell([basis], iso(1), TEST_SEED.fremd);
     assert.equal((await p.katalog()).pruefung.art, 'ungueltig');
@@ -208,9 +243,15 @@ describe('Offizieller Katalog mit Signatur (#594)', () => {
     await p.katalog();
     offiziell([basis], iso(2));
     await assert.rejects(p.katalog(), /älteren Stand/);
-    // Ohne Signatur gibt es keinen belegten Stand – das bleibt eine Warnung (Stufe 1).
+    // Auch ohne gültige Signatur kein älterer Stand (#1351) – ohne Signatur, mit fremder, Signatur nicht abrufbar.
     offiziell([basis], iso(3), null);
+    await assert.rejects(p.katalog(), /älteren Stand/);
+    offiziell([basis], iso(3), TEST_SEED.fremd);
+    await assert.rejects(p.katalog(), /älteren Stand/);
+    // Ein neuerer Stand ohne gültige Signatur geht (mit Bestätigung), wird aber nicht gemerkt.
+    offiziell([basis], iso(0), null);
     assert.equal((await p.katalog()).pruefung.art, 'unsigniert');
+    assert.equal((await paketKatalogStaende(d.kern))[OFFIZIELL], iso(1));
   });
 
   it('hochgeladenes Paket mit Prüfsumme aus dem offiziellen Katalog: „entspricht Katalogversion“', async () => {
@@ -222,6 +263,10 @@ describe('Offizieller Katalog mit Signatur (#594)', () => {
     const anders = await p.hochladen(archiv({ ...basis11, 'README.md': 'anders' }), ICH);
     assert.deepEqual(anders.vorschau.pruefung, { art: 'datei', offiziell: false, bestaetigen: true });
     await assert.rejects(p.installiere({ upload: gleich.upload }, ICH), warnung, 'Hochladen bleibt wie bisher mit Bestätigung');
+    // Offizieller Katalog ohne gültige Signatur (#1351): keine Katalogversion.
+    offiziell([basis, basis11], iso(0), null);
+    await p.katalog();
+    assert.deepEqual((await p.hochladen(archiv(basis11), ICH)).vorschau.pruefung, { art: 'datei', offiziell: false, bestaetigen: true });
   });
 });
 

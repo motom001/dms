@@ -11,7 +11,7 @@
  * installiert es die älteste und aktualisiert danach Version für Version (Update alt → neu); ein Paket, das eine andere
  * Id unter `ersetzt` nennt, ist das Update dieser Id (Umzug, #1084).
  */
-import { createHash } from 'node:crypto';
+import { createHash, generateKeyPairSync, sign } from 'node:crypto';
 import { existsSync, lstatSync, readdirSync, readFileSync } from 'node:fs';
 import { basename, join, resolve } from 'node:path';
 import { passt, vergleicheVersion, type Katalog } from '../../shared/src/pakete';
@@ -19,6 +19,7 @@ import { speicherDateien } from './dateispeicher';
 import { Dienst } from './dienst';
 import { speicherEinstellungen } from './einstellungen';
 import { Fachfehler } from './fehler';
+import { liesSchluessel, SIGNATUR_DATEI } from './katalogsignatur';
 import { MB } from './grenzen';
 import { ARCHIV_MAX, liesPaket, liesZip, Paketverwaltung, type Manifest } from './pakete';
 import type { Repo } from './repo';
@@ -176,13 +177,16 @@ function vorgaenger<T extends ReihenPaket>(pakete: T[]): { vor: Map<T, Set<T>>; 
   return { vor, stufe };
 }
 
-/** Katalog im Arbeitsspeicher aus den gelesenen Paketen (ohne Signatur – geprüft wird der Installer, nicht die Herkunft). */
-function pruefkatalog(pakete: PruefPaket[], versteckt: Set<string>): Katalog {
+/**
+ * Katalog im Arbeitsspeicher aus den gelesenen Paketen. Geprüft wird der Installer, nicht die Herkunft: Signiert ist er
+ * mit einem Schlüssel nur für diesen Lauf (#1351), damit die Pakete wie aus dem offiziellen Katalog laufen.
+ */
+function pruefkatalog(pakete: PruefPaket[], versteckt: Set<string>, erstellt: string): Katalog {
   const jeId = new Map<string, PruefPaket[]>();
   for (const p of pakete) if (!versteckt.has(p.manifest.id)) jeId.set(p.manifest.id, [...(jeId.get(p.manifest.id) ?? []), p]);
   return {
     format: 1,
-    erstellt: '',
+    erstellt,
     quelle: 'pakete-pruefen',
     pakete: [...jeId].map(([id, l]) => {
       const neu = [...l].sort((a, b) => vergleicheVersion(b.manifest.version, a.manifest.version));
@@ -307,15 +311,37 @@ export async function pruefePakete(ordner: string[], opt: PruefOptionen): Promis
     const archive = new Map(
       gelesen.map((p) => [new URL(`archive/${p.manifest.id}-${p.manifest.version}.zip`, PRUEFKATALOG).toString(), p.archiv]),
     );
+    // Signierschlüssel nur für diesen Lauf (#1351): entsteht im Arbeitsspeicher und verschwindet mit ihm.
+    const { privateKey, publicKey } = generateKeyPairSync('ed25519');
+    const pem = publicKey.export({ format: 'pem', type: 'spki' }).toString();
+    const kennung = liesSchluessel(pem).kennung;
+    const erstellt = new Date().toISOString();
+    const katalogDaten = () => Buffer.from(JSON.stringify(pruefkatalog(gelesen, versteckt, erstellt)));
+    const signaturUrl = new URL(SIGNATUR_DATEI, PRUEFKATALOG).toString();
     const abruf = async (url: string): Promise<Buffer> => {
-      if (url === PRUEFKATALOG) return Buffer.from(JSON.stringify(pruefkatalog(gelesen, versteckt)));
+      if (url === PRUEFKATALOG) return katalogDaten();
+      if (url === signaturUrl)
+        return Buffer.from(
+          JSON.stringify({
+            format: 1,
+            verfahren: 'ed25519',
+            schluessel: kennung,
+            signatur: sign(null, katalogDaten(), privateKey).toString('base64'),
+            erstellt,
+          }),
+        );
       const b = archive.get(url);
-      // Kein Netz: alles andere (Signatur, Schlüssel, fremde Kataloge) gibt es hier nicht.
+      // Kein Netz: alles andere (Schlüssel, fremde Kataloge) gibt es hier nicht.
       if (!b) throw new Error(t('meldungen.pakete-pruefen.ohne-netz', { url }));
       return b;
     };
     const d = new Dienst(opt.repo ?? speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-    const pv = new Paketverwaltung(d, { version: () => opt.version, abruf, katalogUrl: PRUEFKATALOG });
+    const pv = new Paketverwaltung(d, {
+      version: () => opt.version,
+      abruf,
+      katalogUrl: PRUEFKATALOG,
+      projektSchluessel: [{ rolle: 'signier', test: true, pem }],
+    });
     for (const p of reihe) ergebnisse.push(await schritt(p, d, pv, versteckt, opt.beispiele !== false));
     return ergebnisse;
   });

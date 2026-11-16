@@ -34,6 +34,7 @@ import type { Repo } from '../src/repo';
 import { speicherRepo } from '../src/repo-speicher';
 import { zipPuffer } from '../src/zip';
 import { eigeneDatenbank } from './hilfe-db';
+import { TEST_PROJEKT, testSigniert } from './katalogschluessel';
 
 const DOK = { key: 'dokumente', name: 'Dokumente', art: 'dokumente' };
 /** Person wie im Issue: Anrede, Titel, Vorname, Nachname – Geburtstag in der nächsten Zeile – Bankverbindung eingeklappt. */
@@ -443,7 +444,10 @@ function katalog(pakete: Array<Record<string, string>>) {
     e.aktuell = version;
     eintraege.set(id, e);
   }
-  daten.set(KATALOG, Buffer.from(JSON.stringify({ format: 1, erstellt: '', quelle: '', pakete: [...eintraege.values()] })));
+  daten.set(
+    KATALOG,
+    Buffer.from(JSON.stringify({ format: 1, erstellt: '2026-11-01T00:00:00Z', quelle: '', pakete: [...eintraege.values()] })),
+  );
   return async (url: string) => {
     const b = daten.get(url);
     if (!b) throw new Error(`404 ${url}`);
@@ -510,8 +514,9 @@ function paketFaelle(pg: boolean) {
         const d = neuerDienst(await repo());
         const p = new Paketverwaltung(d, {
           version: () => '0.217.0',
-          abruf: katalog([paket('1.0.0', ORGANISATION_10), paket('1.1.0', ORGANISATION_11)]),
+          abruf: testSigniert(KATALOG, katalog([paket('1.0.0', ORGANISATION_10), paket('1.1.0', ORGANISATION_11)])),
           katalogUrl: KATALOG,
+          projektSchluessel: TEST_PROJEKT,
         });
         const inst = await p.installiere({ id: 'basis_test', version: '1.0.0' }, ICH);
         const holen = async () => (await d.mappentypen.listeTypen()).find((t) => t.id === inst.typen.organisation)!;
@@ -605,8 +610,9 @@ function paketFaelle(pg: boolean) {
         const d = neuerDienst(await repo());
         const p = new Paketverwaltung(d, {
           version: () => '0.217.0',
-          abruf: katalog([paket('1.1.0', ORGANISATION_11)]),
+          abruf: testSigniert(KATALOG, katalog([paket('1.1.0', ORGANISATION_11)])),
           katalogUrl: KATALOG,
+          projektSchluessel: TEST_PROJEKT,
         });
         const inst = await p.installiere({ id: 'basis_test', version: '1.1.0' }, ICH);
         const o = (await d.mappentypen.listeTypen()).find((t) => t.id === inst.typen.organisation)!;

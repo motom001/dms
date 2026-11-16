@@ -26,6 +26,7 @@ import { speicherRepo } from '../src/repo-speicher';
 import { Umwandlung } from '../src/umwandlung';
 import { zipPuffer } from '../src/zip';
 import { eigeneDatenbank } from './hilfe-db';
+import { TEST_PROJEKT, testSigniert } from './katalogschluessel';
 
 const ICH = { id: '00000000-0000-4000-8000-0000000000aa', email: 'admin@example.org' };
 const ADMIN = { id: ICH.id, rolle: 'admin' };
@@ -158,7 +159,10 @@ function katalog(eintraege: Array<Record<string, string>>) {
     p.aktuell = version;
     pakete.set(id, p);
   }
-  daten.set(KATALOG, Buffer.from(JSON.stringify({ format: 1, erstellt: '', quelle: '', pakete: [...pakete.values()] })));
+  daten.set(
+    KATALOG,
+    Buffer.from(JSON.stringify({ format: 1, erstellt: '2026-11-01T00:00:00Z', quelle: '', pakete: [...pakete.values()] })),
+  );
   return async (url: string) => {
     const b = daten.get(url);
     if (!b) throw new Error(`404 ${url}`);
@@ -264,7 +268,12 @@ function faelle(pg: boolean) {
     () => {
       it('Update ergänzt nur; Vorschau, Umwandeln mit neuer Person, Fristsperre, Rückgängig', async () => {
         const d = new Dienst(await repo(pg), speicherDateien(), { einstellungen: speicherEinstellungen() });
-        const p = new Paketverwaltung(d, { version: () => '0.120.0', abruf: katalog([personen, autos10, autos11]), katalogUrl: KATALOG });
+        const p = new Paketverwaltung(d, {
+          version: () => '0.120.0',
+          abruf: testSigniert(KATALOG, katalog([personen, autos10, autos11])),
+          katalogUrl: KATALOG,
+          projektSchluessel: TEST_PROJEKT,
+        });
         const u = new Umwandlung(d);
         await p.installiere({ id: 'autos', version: '1.0.0', mitAbhaengigkeiten: true }, ICH);
         const pakete = await d.kern.repo.listePakete();
@@ -419,7 +428,12 @@ function faelle(pg: boolean) {
             '    - { key: ab, label: Seit, typ: datum, max: heute }',
           ),
         };
-        const p = new Paketverwaltung(d, { version: () => '0.121.0', abruf: katalog([personen, autos10, mitGrenze]), katalogUrl: KATALOG });
+        const p = new Paketverwaltung(d, {
+          version: () => '0.121.0',
+          abruf: testSigniert(KATALOG, katalog([personen, autos10, mitGrenze])),
+          katalogUrl: KATALOG,
+          projektSchluessel: TEST_PROJEKT,
+        });
         await p.installiere({ id: 'autos', version: '1.0.0', mitAbhaengigkeiten: true }, ICH);
         const auto = (await d.mappentypen.listeTypen()).find((t) => t.name === 'Auto')!;
         const m = await d.mappen.legeMappeAn({ typId: auto.id, werte: { bez: 'Familienauto', halter: 'Lena Muster', ab: '2099-01-01' } });
@@ -445,7 +459,12 @@ function faelle(pg: boolean) {
 
       it('Neue Person ohne Pflichtangabe: nichts wird geändert', async () => {
         const d = new Dienst(await repo(pg), speicherDateien(), { einstellungen: speicherEinstellungen() });
-        const p = new Paketverwaltung(d, { version: () => '0.120.0', abruf: katalog([personen, autos10, autos11]), katalogUrl: KATALOG });
+        const p = new Paketverwaltung(d, {
+          version: () => '0.120.0',
+          abruf: testSigniert(KATALOG, katalog([personen, autos10, autos11])),
+          katalogUrl: KATALOG,
+          projektSchluessel: TEST_PROJEKT,
+        });
         const u = new Umwandlung(d);
         await p.installiere({ id: 'autos', version: '1.0.0', mitAbhaengigkeiten: true }, ICH);
         const pk = (await d.kern.repo.listePakete()).find((x) => x.id === 'personen')!.typen.person;

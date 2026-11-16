@@ -22,6 +22,7 @@ import { speicherRepo } from '../src/repo-speicher';
 import { Tresor } from '../src/tresor';
 import { zipPuffer } from '../src/zip';
 import { eigeneDatenbank } from './hilfe-db';
+import { TEST_PROJEKT, testSigniert } from './katalogschluessel';
 
 const ICH = { id: null, email: 'admin@example.org' };
 const KATALOG = 'https://katalog.test/katalog.json';
@@ -110,7 +111,7 @@ function katalog(pakete: Array<Record<string, string>>) {
     Buffer.from(
       JSON.stringify({
         format: 1,
-        erstellt: '',
+        erstellt: '2026-11-01T00:00:00Z',
         quelle: '',
         pakete: [
           {
@@ -141,8 +142,9 @@ async function aufbau(laeufer?: PaketLaeufer) {
   const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: einst, tresor });
   const p = new Paketverwaltung(d, {
     version: () => '0.66.0',
-    abruf: katalog([paket('1.0.0', V1), paket('1.1.0', V2)]),
+    abruf: testSigniert(KATALOG, katalog([paket('1.0.0', V1), paket('1.1.0', V2)])),
     katalogUrl: KATALOG,
+    projektSchluessel: TEST_PROJEKT,
     benutzer: async () => [{ id: 'u1', name: 'Anna' }],
     laeufer,
   });
@@ -433,7 +435,12 @@ describe('Paket-Einstellungen (#197)', () => {
         await tresor.erzeuge();
         const repo = pgRepo(sql, h);
         const d = new Dienst(repo, speicherDateien(), { einstellungen: pgEinstellungen(sql, h), tresor });
-        const p = new Paketverwaltung(d, { version: () => '0.66.0', abruf: katalog([paket('1.0.0', V1)]), katalogUrl: KATALOG });
+        const p = new Paketverwaltung(d, {
+          version: () => '0.66.0',
+          abruf: testSigniert(KATALOG, katalog([paket('1.0.0', V1)])),
+          katalogUrl: KATALOG,
+          projektSchluessel: TEST_PROJEKT,
+        });
         await p.installiere({ id: 'zuordnung' }, ICH);
         await p.speichereEinstellungen('zuordnung', { werte: { token: 'geheim-123' } }, ICH);
         const [zeile] = await sql`SELECT wert FROM einstellungen WHERE haushalt_id = ${h} AND schluessel = 'paket:zuordnung'`;

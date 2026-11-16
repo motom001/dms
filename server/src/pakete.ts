@@ -2227,7 +2227,8 @@ export async function holeDaten(url: string, max = ARCHIV_MAX): Promise<Buffer> 
         u = ziel;
         continue;
       }
-      if (!r.ok) throw new Fachfehler(502, `${url}: ${r.status} ${r.statusText}`.trim());
+      // Status in den Details: Eine fehlende Datei (404/410) ist etwas anderes als ein gescheiterter Abruf (#1351).
+      if (!r.ok) throw new Fachfehler(502, `${url}: ${r.status} ${r.statusText}`.trim(), { status: r.status });
       const laenge = Number(r.headers.get('content-length') ?? NaN);
       const zuGross = (bytes: number) => new Fachfehler(422, t('pakete.groesse.zuGross', { groesse: inMB(bytes), max: inMB(max) }));
       if (laenge > max) {
@@ -2567,13 +2568,14 @@ export class Paketverwaltung {
   /**
    * Herausgeber eines Pakets ohne Angabe im Manifest (#1084, Bestand): Was aus dem offiziellen Katalog kommt – direkt
    * oder als Datei, deren Prüfsumme dort steht –, stammt vom Projekt (`app.ablago`); alle offiziellen Pakete gibt das
-   * Projekt heraus, und nur seine Signatur belegt das. Bei anderen Quellen ist er unbekannt (null): Dann schützt wie
-   * bisher, dass Updates nur aus derselben Quelle kommen (Katalog bzw. erneutes Hochladen), und der erste angegebene
-   * Herausgeber gilt von da an.
+   * Projekt heraus, und nur seine Signatur belegt das. Mit Prüfung zählt deshalb nur eine gültige Signatur (#1351);
+   * ohne (installierte Pakete aus der Zeit vor #1084) die Quelle. Bei anderen Quellen ist er unbekannt (null): Dann
+   * schützt wie bisher, dass Updates nur aus derselben Quelle kommen (Katalog bzw. erneutes Hochladen), und der erste
+   * angegebene Herausgeber gilt von da an.
    */
   private standardHerausgeber(herkunft?: InstalliertesPaket['herkunft'], pruefung?: HerkunftPruefung): string | null {
-    if (herkunft?.art === 'katalog' && herkunft.url === this.katalogUrl) return OFFIZIELLER_HERAUSGEBER;
-    return pruefung?.offiziell || pruefung?.katalogversion ? OFFIZIELLER_HERAUSGEBER : null;
+    if (pruefung) return pruefung.art === 'projekt' || pruefung.katalogversion ? OFFIZIELLER_HERAUSGEBER : null;
+    return herkunft?.art === 'katalog' && herkunft.url === this.katalogUrl ? OFFIZIELLER_HERAUSGEBER : null;
   }
   /** Wie vertrauenswürdig die Herkunft eines installierten Pakets war (für den Umzug, Sicherheit B). */
   private vertrauenVon(p: InstalliertesPaket): number {
@@ -2585,9 +2587,12 @@ export class Paketverwaltung {
     const h = this.herausgeberVon(da);
     return !herausgeber || h === herausgeber || istOffiziellerHerausgeber(h);
   }
-  /** Herausgeber eines installierten Pakets (#1084): gespeichert oder – bei älteren Installationen – aus der Herkunft. */
+  /**
+   * Herausgeber eines installierten Pakets (#1084): gespeichert oder – bei älteren Installationen – aus der Herkunft.
+   * `herausgeberGeprueft: false` (ohne gültige Signatur installiert, #1351): unbekannt.
+   */
   private herausgeberVon(p: InstalliertesPaket): string | null {
-    return p.herausgeber ?? this.standardHerausgeber(p.herkunft);
+    return p.herausgeber ?? (p.herausgeberGeprueft === false ? null : this.standardHerausgeber(p.herkunft));
   }
   /**
    * Stammt ein Paket mit derselben Id wie ein installiertes von einem anderen Herausgeber (#1084)? Dann der Text, warum
@@ -2814,32 +2819,13 @@ export class Paketverwaltung {
   }
 
   /**
-   * Signatur eines abgerufenen Katalogs (#594). Offizieller Katalog: mit einem der beiden Projektschlüssel;
-   * fehlt die Signatur, nur Warnung (Stufe 1), ist sie ungültig, Bestätigung wie bei fremden Quellen.
+   * Signatur eines abgerufenen Katalogs (#594). Offizieller Katalog: siehe pruefeOffiziell.
    * Eigener Katalog mit bestätigtem Schlüssel: gültige Signatur Pflicht; neuer Schlüssel nur, wenn er mit dem
    * alten signiert ist – sonst ist der Katalog gesperrt, bis ein Admin den neuen bestätigt.
    */
   private async pruefeKatalog(url: string, daten: Buffer, katalog: Katalog): Promise<HerkunftPruefung> {
+    if (url === this.katalogUrl) return this.pruefeOffiziell(url, daten, katalog);
     const sig = await this.abruf(daneben(url, SIGNATUR_DATEI), KLEIN_MAX).catch(() => null);
-    if (url === this.katalogUrl) {
-      if (!sig) {
-        log.info('Offizieller Katalog ohne Signatur', { url });
-        return { art: 'unsigniert', offiziell: true, bestaetigen: false };
-      }
-      const r = pruefeSignatur(daten, sig, projektSchluessel(this.o.projektSchluessel));
-      const stand = r.ok ? await this.stand(url, katalog, true) : null;
-      if (!r.ok || !stand) {
-        log.warn('Katalogsignatur ungültig', { url, grund: r.ok ? 'ohne Zeitpunkt (erstellt)' : r.grund });
-        return { art: 'ungueltig', offiziell: true, bestaetigen: true };
-      }
-      return {
-        art: 'projekt',
-        offiziell: true,
-        stand,
-        ...(nurTestschluessel(this.o.projektSchluessel) ? { test: true } : {}),
-        bestaetigen: false,
-      };
-    }
     const q = (await paketQuellen(this.d.kern)).find((x) => x.url === url);
     if (!q?.schluessel) return { art: 'unsigniert', offiziell: false, bestaetigen: true };
     if (q.gesperrt)
@@ -2894,10 +2880,45 @@ export class Paketverwaltung {
   }
 
   /**
-   * Stand (`erstellt`) eines gültig signierten Katalogs gegen den neuesten bisher gesehenen (#594). Online lehnt
-   * das DMS ältere ab – sie könnten untergeschoben sein; offline (Sammeldatei) zeigt es nur den Stand.
+   * Offizieller Katalog (#594, #1351): offiziell nur mit gültiger Signatur eines Projektschlüssels und mit Stand.
+   * Ohne Signatur (404/410), wenn sie sich nicht abrufen lässt, und wenn sie ungültig ist: nicht offiziell, die
+   * Herkunft muss bestätigt werden. Ältere Stände als der zuletzt signiert gesehene lehnt Ablago auch dann ab.
    */
-  private async stand(url: string, katalog: Katalog, online: boolean): Promise<string | null> {
+  private async pruefeOffiziell(url: string, daten: Buffer, katalog: Katalog): Promise<HerkunftPruefung> {
+    let sig: Buffer;
+    try {
+      sig = await this.abruf(daneben(url, SIGNATUR_DATEI), KLEIN_MAX);
+    } catch (e) {
+      const status = e instanceof Fachfehler ? (e.details as { status?: number } | undefined)?.status : undefined;
+      const fehlt = status === 404 || status === 410;
+      log.warn(fehlt ? 'Offizieller Katalog ohne Signatur' : 'Signatur des offiziellen Katalogs nicht abrufbar', {
+        url,
+        grund: (e as Error).message,
+      });
+      await this.stand(url, katalog, true, false);
+      return { art: fehlt ? 'unsigniert' : 'nichtgeprueft', offiziell: false, bestaetigen: true };
+    }
+    const r = pruefeSignatur(daten, sig, projektSchluessel(this.o.projektSchluessel));
+    const stand = await this.stand(url, katalog, true, r.ok);
+    if (!r.ok || !stand) {
+      log.warn('Katalogsignatur ungültig', { url, grund: r.ok ? 'ohne Zeitpunkt (erstellt)' : r.grund });
+      return { art: 'ungueltig', offiziell: false, bestaetigen: true };
+    }
+    return {
+      art: 'projekt',
+      offiziell: true,
+      stand,
+      ...(nurTestschluessel(this.o.projektSchluessel) ? { test: true } : {}),
+      bestaetigen: false,
+    };
+  }
+
+  /**
+   * Stand (`erstellt`) eines Katalogs gegen den neuesten bisher signiert gesehenen (#594). Online lehnt das DMS
+   * ältere ab – sie könnten untergeschoben sein; offline (Sammeldatei) zeigt es nur den Stand. Merken nur bei
+   * gültiger Signatur (`merken`), sonst wäre der Zeitpunkt nicht belegt.
+   */
+  private async stand(url: string, katalog: Katalog, online: boolean, merken = true): Promise<string | null> {
     const zeit = zeitVon(katalog.erstellt);
     if (Number.isNaN(zeit)) return null;
     const gesehen = (await paketKatalogStaende(this.d.kern))[url];
@@ -2909,7 +2930,7 @@ export class Paketverwaltung {
         t('pakete.herkunft.fehler.zurueck', { url, stand: zeitText(katalog.erstellt), gesehen: zeitText(gesehen) }),
       );
     }
-    if (!gesehen || zeit > zeitVon(gesehen)) await setzePaketKatalogStand(this.d.kern, url, katalog.erstellt);
+    if (merken && (!gesehen || zeit > zeitVon(gesehen))) await setzePaketKatalogStand(this.d.kern, url, katalog.erstellt);
     return katalog.erstellt;
   }
 
@@ -3019,10 +3040,7 @@ export class Paketverwaltung {
       throw new Fachfehler(422, t('pakete.groesse.zuGross', { groesse: inMB(daten.length), max: inMB(ARCHIV_MAX) }));
     const paket = liesPaket(liesZip(daten));
     const sha256 = createHash('sha256').update(daten).digest('hex');
-    const kv = this.kataloge
-      .get(this.katalogUrl)
-      ?.katalog.pakete.find((p) => p.id === paket.manifest.id)
-      ?.versionen.find((v) => v.sha256 === sha256);
+    const kv = (await this.offiziell())?.pakete.find((p) => p.id === paket.manifest.id)?.versionen.find((v) => v.sha256 === sha256);
     const pruefung: HerkunftPruefung = { art: 'datei', offiziell: false, ...(kv ? { katalogversion: kv.version } : {}), bestaetigen: true };
     const upload = randomUUID();
     await this.merkeUpload(upload, { paket, von, am: new Date().toISOString(), zeit: Date.now(), pruefung }, daten, 'einzeln');
@@ -3322,8 +3340,10 @@ export class Paketverwaltung {
   }
 
   /** Abhängigkeiten eines hochgeladenen Pakets kommen aus dem offiziellen Katalog (wenn schon abgerufen). */
+  /** Der zuletzt abgerufene offizielle Katalog – nur mit gültiger Signatur (#1351), sonst wie nicht abgerufen. */
   private async offiziell(): Promise<Katalog | undefined> {
-    return this.kataloge.get(this.katalogUrl)?.katalog;
+    const k = this.kataloge.get(this.katalogUrl);
+    return k?.pruefung.art === 'projekt' ? k.katalog : undefined;
   }
 
   /* ---------- Vorschau und Installation ---------- */
@@ -3423,8 +3443,7 @@ export class Paketverwaltung {
       const vonHaupt = hi
         ? this.herausgeberVon(hi)
         : hk
-          ? (hk.herausgeber ??
-            (quelle?.herkunft.art === 'katalog' && quelle.herkunft.url === this.katalogUrl ? OFFIZIELLER_HERAUSGEBER : null))
+          ? (hk.herausgeber ?? (quelle?.herkunft.art === 'katalog' ? this.standardHerausgeber(quelle.herkunft, quelle.pruefung) : null))
           : null;
       if ((hi || hk) && vonHaupt !== herausgeber)
         problem(
@@ -4945,7 +4964,12 @@ export class Paketverwaltung {
         herkunft,
         // Herausgeber (#1084): einmal gespeichert, gilt er für alle weiteren Updates.
         ...(plan.paket.herausgeber ? { herausgeber: plan.paket.herausgeber } : alt?.herausgeber ? { herausgeber: alt.herausgeber } : {}),
-        ...(plan.paket.herausgeberGeprueft ? { herausgeberGeprueft: true } : {}),
+        // Ohne Herausgeber aus dem offiziellen Katalog, aber ohne gültige Signatur (#1351): nicht später doch `app.ablago`.
+        ...(plan.paket.herausgeberGeprueft
+          ? { herausgeberGeprueft: true }
+          : !plan.paket.herausgeber && !alt?.herausgeber && herkunft.art === 'katalog' && herkunft.url === this.katalogUrl
+            ? { herausgeberGeprueft: false }
+            : {}),
         // Weiterer signierter Katalog: Herausgeber an dessen Schlüssel gebunden (Sicherheit C); bei geordnetem Wechsel der neue.
         ...(plan.herausgeberSchluessel
           ? { herausgeberSchluessel: plan.herausgeberSchluessel }
