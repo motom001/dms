@@ -407,6 +407,8 @@ jobs:
       pages: write
       id-token: write
     runs-on: ubuntu-latest
+    # Zeitgrenze (#1369): gewöhnlich unter 1 Minute (Warten auf die Gruppe „pages“ zählt nicht mit).
+    timeout-minutes: 15
     concurrency:
       group: pages
       cancel-in-progress: false

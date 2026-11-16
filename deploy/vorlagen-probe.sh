@@ -26,7 +26,8 @@ for v in "${VORLAGEN[@]}"; do
   docker compose -p "$projekt" -f "$arbeit/docker-compose.yml" up -d --quiet-pull
   ok=""
   for _ in $(seq 1 60); do
-    if s=$(curl -fsS http://127.0.0.1:18080/api/konto/status 2>/dev/null); then ok=1; break; fi
+    # Höchstens 10 s je Versuch (#1369), sonst hält eine hängende Verbindung die Schleife auf.
+    if s=$(curl -fsS --connect-timeout 5 --max-time 10 http://127.0.0.1:18080/api/konto/status 2>/dev/null); then ok=1; break; fi
     sleep 2
   done
   if [ -z "$ok" ]; then

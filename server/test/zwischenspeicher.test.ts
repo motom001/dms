@@ -294,9 +294,13 @@ describe('Zwei Prozesse auf einer Datenbank (#741, #742)', { skip: url ? false :
       // Eine Änderung, damit alle frisch zählen.
       await A.dienst.mappen.legeMappeAn({ typId: ids.rechnung, werte: { nr: 'R3' } }, ids.lena);
       // Der Stand in der Datenbank zählt kurz nach der Änderung hoch (auch nach den Anmeldungen in B). Darauf warten
-      // (#900) statt auf eine feste Zeit – danach sehen Jonas und Markus denselben Stand.
-      await A.dienst.stand.hochgezaehlt();
-      await B.dienst.stand.hochgezaehlt();
+      // (#900) statt auf eine feste Zeit – danach sehen Jonas und Markus denselben Stand. Beide Stände (#1360): Die
+      // Zahlen je Mappentyp hängen am Mappenstand (#918). Wartete der Test nur auf den Haushaltsstand, zählte der
+      // Mappenstand unter Last mitunter erst zwischen den Anfragen von Jonas und Markus hoch – dann zählte Markus neu.
+      for (const p of [A, B]) {
+        await p.dienst.stand.hochgezaehlt();
+        await p.dienst.mappenstand.hochgezaehlt();
+      }
       const a = await rechnungen(B, j),
         b = await rechnungen(B, m);
       const c = await rechnungen(B, p);
@@ -319,6 +323,10 @@ describe('Zwei Prozesse auf einer Datenbank (#741, #742)', { skip: url ? false :
     const kurz = await rechnungen(B, j);
     assert.equal(kurz.n, start, 'Jonas (anderer Prozess) sieht kurz noch den bisherigen Wert');
     B.dienst.mindestensMs = 1;
+    // Erst wenn A beide Stände in der Datenbank hochgezählt hat, kann B die Änderung sehen (#1360) – darauf warten
+    // statt auf eine feste Zeit; die 10 ms überschreiten nur die Mindestgültigkeit von 1 ms.
+    await A.dienst.stand.hochgezaehlt();
+    await A.dienst.mappenstand.hochgezaehlt();
     await new Promise((r) => setTimeout(r, 10));
     try {
       assert.equal((await rechnungen(B, j)).n, start + 1, 'danach frisch');

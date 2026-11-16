@@ -362,6 +362,8 @@ jobs:
           - plattform: linux/arm64
             rechner: ubuntu-24.04-arm
     runs-on: ${{ matrix.rechner }}
+    # Gewöhnlich 3–4 Minuten; eine hängende Probe hielt einen PR fast zwei Stunden auf (#1369).
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
@@ -419,25 +421,38 @@ jobs:
       # - Update-Test (#714): vom bisherigen :stabil (bis es das gibt: vom letzten Release) auf diesen Stand (nur amd64).
       # Jede Probe schreibt ihr eigenes Protokoll; es erscheint danach in einer eigenen Gruppe. Eine gescheiterte Probe
       # lässt den Schritt scheitern.
+      # Zeitgrenze je Probe (#1369): Gewöhnlich ist der ganze Schritt nach gut 2 Minuten fertig (109–134 s in den
+      # letzten 25 Läufen). 15 Minuten lassen das Siebenfache Luft für langsame Rechner und liegen sicher unter den
+      # 30 Minuten des Jobs – so bricht die Probe ab, solange der Job noch läuft, und ihr Protokoll erscheint noch.
+      # Nach TERM bleiben 30 s fürs Aufräumen der Container, dann KILL.
       - name: Probe-Installationen (gleichzeitig)
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
           AMD64: ${{ matrix.plattform == 'linux/amd64' }}
+          GRENZE: 15m
         run: |
           d="$RUNNER_TEMP/probe"; mkdir -p "$d"
           namen=(); pids=()
-          starte() { local n=$1; shift; "$@" > "$d/$n.log" 2>&1 & namen+=("$n"); pids+=($!); }
+          starte() { local n=$1; shift; timeout --kill-after=30s "$GRENZE" "$@" > "$d/$n.log" 2>&1 & namen+=("$n"); pids+=($!); }
           if [ "$AMD64" = true ]; then
             starte vorlagen deploy/vorlagen-probe.sh dms:probe
-            starte update .github/werkzeuge/update-test.sh "$(.github/werkzeuge/stabil-bisher.sh dms-komplett)" dms-komplett:probe
+            bisher=$(timeout 2m .github/werkzeuge/stabil-bisher.sh dms-komplett) || bisher=""
+            starte update .github/werkzeuge/update-test.sh "$bisher" dms-komplett:probe
           fi
           starte komplett deploy/komplett-probe.sh dms-komplett:probe
           fehler=0
           for i in "${!namen[@]}"; do
-            if wait "${pids[$i]}"; then zustand=ok; else zustand=FEHLER; fehler=1; fi
-            echo "::group::${namen[$i]} – $zustand"; cat "$d/${namen[$i]}.log"; echo "::endgroup::"
-            [ "$zustand" = ok ] || echo "::error title=Probe ${namen[$i]}::gescheitert, Protokoll in der Gruppe „${namen[$i]}“"
+            n=${namen[$i]}; code=0
+            wait "${pids[$i]}" || code=$?
+            # timeout meldet 124 (nach TERM beendet) bzw. 137 (nach KILL).
+            case $code in
+              0) zustand=ok ;;
+              124|137) zustand="Zeitgrenze überschritten ($GRENZE)"; fehler=1 ;;
+              *) zustand="FEHLER (Code $code)"; fehler=1 ;;
+            esac
+            echo "::group::$n – $zustand"; cat "$d/$n.log"; echo "::endgroup::"
+            [ "$code" = 0 ] || echo "::error title=Probe $n::$zustand, Protokoll in der Gruppe „$n“"
           done
           exit $fehler
       # Bekannte Sicherheitslücken in den Systempaketen (#220): kritisch mit Korrektur → Fehler.
@@ -459,6 +474,8 @@ jobs:
     needs: pruefen
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    # Zeitgrenze (#1369): gewöhnlich 5–12 s.
+    timeout-minutes: 5
     permissions:
       contents: read
       # Label „sofort-stabil“ am Pull Request (#907)
@@ -519,6 +536,8 @@ jobs:
           - variante: komplett
             image: dms-komplett
     runs-on: ${{ matrix.rechner }}
+    # Zeitgrenze (#1369): gewöhnlich 1–2 Minuten, mit kaltem Cache bis gut 5.
+    timeout-minutes: 30
     permissions:
       contents: read
       packages: write
@@ -571,6 +590,8 @@ jobs:
           - variante: komplett
             image: dms-komplett
     runs-on: ubuntu-latest
+    # Zeitgrenze (#1369): gewöhnlich etwa 1 Minute.
+    timeout-minutes: 15
     permissions:
       contents: read
       packages: write
