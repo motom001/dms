@@ -132,15 +132,15 @@ export class Wiederherstellung extends WiederherstellungAusfuehren {
     log.info('Probe-Wiederherstellung begonnen', { sicherung: ziel.name, von });
     const fertig = (async () => {
       if (!k) {
-        this.fehlschlag(
-          lauf,
-          t('meldungen.wiederherstellung.pruefsumme-der-datei'),
-          t('meldungen.wiederherstellung.die-sicherung-braucht-den', {
-            fingerabdruck: m.verschluesselung.fingerabdruck,
-            wert: this.q.tresor.fingerabdruck ?? 'keinen',
-          }),
+        const grund = t('meldungen.wiederherstellung.die-sicherung-braucht-den', {
+          fingerabdruck: m.verschluesselung.fingerabdruck,
+          wert: this.q.tresor.fingerabdruck ?? 'keinen',
+        });
+        // Erst merken, dann melden (#1381); scheitert das Merken, endet der Lauf trotzdem mit „fehler“.
+        await this.merkeProbe(ziel.name, false, grund).catch((x) =>
+          log.error('Ergebnis der Probe-Wiederherstellung nicht gemerkt', { sicherung: ziel.name, fehler: (x as Error).message }),
         );
-        await this.merkeProbe(ziel.name, false, lauf.fehler!);
+        this.fehlschlag(lauf, t('meldungen.wiederherstellung.pruefsumme-der-datei'), grund);
         return false;
       }
       const a: Abgleich = { name: ziel.name, meta: m, vergleich: [], probleme: [], hinweise: [], schluesselNoetig: false };

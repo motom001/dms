@@ -334,10 +334,12 @@ export abstract class WiederherstellungAusfuehren extends WiederherstellungBasis
         neu = null;
         await this.q.sql.unsafe(`DROP SCHEMA ${bezeichner(schema)} CASCADE`);
         ok();
-        lauf.status = 'fertig';
-        lauf.beendet = this.jetzt().toISOString();
+        // Erst merken, dann melden (#1381, wie #1378): Der Lauf wechselt genau einmal von „läuft“ auf „fertig“ oder
+        // „fehler“. Scheitert das Merken, endet er wie bisher über den catch mit „fehler“ – nie „fertig“ → „fehler“.
         await this.merkeProbe(lauf.sicherung, true, lauf.schritte.map((s) => `${s.name}: ${s.info ?? s.status}`).join('; '));
         log.info('Probe-Wiederherstellung erfolgreich', { sicherung: lauf.sicherung, mappen: ist.mappen, dateien });
+        lauf.beendet = this.jetzt().toISOString();
+        lauf.status = 'fertig';
         return true;
       }
 
@@ -451,7 +453,12 @@ export abstract class WiederherstellungAusfuehren extends WiederherstellungBasis
         .unsafe(`DROP SCHEMA IF EXISTS ${bezeichner(schema)} CASCADE`)
         .catch((x) => log.warn('Bereich der Wiederherstellung nicht entfernt', { schema, fehler: (x as Error).message }));
       await rm(staging, { recursive: true, force: true }).catch(() => {});
-      if (probe) await this.merkeProbe(lauf.sicherung, false, grund);
+      // Scheitert auch das Merken (z. B. Datenbank weg), endet der Lauf trotzdem mit „fehler“ (#1381) – sonst stünde er
+      // für immer auf „läuft“ und sperrte jede weitere Sicherung und Wiederherstellung.
+      if (probe)
+        await this.merkeProbe(lauf.sicherung, false, grund).catch((x) =>
+          log.error('Ergebnis der Probe-Wiederherstellung nicht gemerkt', { sicherung: lauf.sicherung, fehler: (x as Error).message }),
+        );
       this.fehlschlag(lauf, aktuell, grund);
       return false;
     }

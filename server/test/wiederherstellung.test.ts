@@ -310,6 +310,83 @@ describe('Wiederherstellen mit PostgreSQL', { skip: url ? false : 'TEST_DATABASE
     assert.equal(ampel.ampel, 'gruen');
   });
 
+  /**
+   * Erst merken, dann melden (#1381, wie #1378): Jeder Zustandswechsel der Probe wird im Augenblick des Setzens
+   * mitgeschnitten – synchron, ohne dass ein anderer Schritt dazwischen läuft. `merkeProbe()` scheitert auf Wunsch.
+   */
+  async function probeMitMitschnitt(mitSchluessel: boolean, scheitert: (ok: boolean) => boolean) {
+    const q = await system(dbs[0]);
+    const { mkdir, cp } = await import('node:fs/promises');
+    if (mitSchluessel) {
+      await mkdir(join(q.wurzel, 'geheim'), { recursive: true });
+      await writeFile(q.tresor.datei, `${quelle.tresor.alsText()}\n`);
+      await q.tresor.laden();
+    }
+    await cp(quelle.sicherung.ordner, q.sicherung.ordner, { recursive: true, force: true });
+    type Lauf = { status: string; beendet?: string };
+    const p = q.w as unknown as {
+      neuerLauf: (...a: unknown[]) => Lauf;
+      merkeProbe: (name: string, ok: boolean, info: string) => Promise<void>;
+    };
+    const gemerkt: boolean[] = [];
+    const merke = p.merkeProbe.bind(q.w);
+    p.merkeProbe = async (name, ok, info) => {
+      if (scheitert(ok)) throw new Error('Datenbank weg');
+      await merke(name, ok, info);
+      gemerkt.push(ok);
+    };
+    const gesehen: Array<{ status: string; gemerkt: boolean[]; beendet: boolean }> = [];
+    const neuerLauf = p.neuerLauf.bind(q.w);
+    p.neuerLauf = (...a) => {
+      const lauf = neuerLauf(...a);
+      let status = lauf.status;
+      Object.defineProperty(lauf, 'status', {
+        enumerable: true,
+        get: () => status,
+        set: (w: string) => {
+          gesehen.push({ status: w, gemerkt: [...gemerkt], beendet: !!lauf.beendet });
+          status = w;
+        },
+      });
+      return lauf;
+    };
+    const { fertig } = await q.w.starteProbe(sicherungsName, 'test');
+    const ergebnis = await fertig;
+    return { q, ergebnis, gesehen, lauf: q.w.aktuellerLauf()! };
+  }
+
+  it('Probe meldet „fertig“ erst nach dem Merken, nie „fertig“ und danach „fehler“ (#1381)', async () => {
+    for (const scheitert of ['nie', 'beim Erfolg', 'immer'] as const) {
+      const { q, ergebnis, gesehen, lauf } = await probeMitMitschnitt(
+        true,
+        (ok) => scheitert === 'immer' || (scheitert === 'beim Erfolg' && ok),
+      );
+      const erwartet = { nie: [true], 'beim Erfolg': [false], immer: [] }[scheitert];
+      assert.deepEqual(gesehen, [{ status: scheitert === 'nie' ? 'fertig' : 'fehler', gemerkt: erwartet, beendet: true }], scheitert);
+      assert.equal(ergebnis, scheitert === 'nie', scheitert);
+      assert.equal(q.w.laeuft(), false, `${scheitert}: der Lauf sperrt nichts weiter`);
+      if (scheitert === 'nie') {
+        assert.equal(lauf.fehler, undefined);
+        assert.equal((await q.sicherung.liste()).find((x) => x.name === sicherungsName)?.probe?.ok, true);
+      } else {
+        // Bisheriges Endergebnis bleibt: „fehler“ mit dem Grund, an dem das Merken scheiterte.
+        assert.equal(lauf.fehler, 'Datenbank weg', scheitert);
+      }
+      if (scheitert === 'beim Erfolg') assert.equal((await q.sicherung.liste()).find((x) => x.name === sicherungsName)?.probe?.ok, false);
+      assert.equal((await q.sql`SELECT nspname FROM pg_namespace WHERE nspname LIKE 'dms_wh_%'`).length, 0, `${scheitert}: aufgeräumt`);
+    }
+  });
+
+  it('Probe ohne passenden Schlüssel: erst merken, dann „fehler“ – auch wenn das Merken scheitert (#1381)', async () => {
+    for (const scheitert of [false, true]) {
+      const { q, ergebnis, gesehen, lauf } = await probeMitMitschnitt(false, () => scheitert);
+      assert.deepEqual(gesehen, [{ status: 'fehler', gemerkt: scheitert ? [] : [false], beendet: true }], String(scheitert));
+      assert.equal(ergebnis, false);
+      assert.equal(q.w.laeuft(), false);
+      assert.match(lauf.fehler ?? '', /Schlüssel/, String(scheitert));
+    }
+  });
+
   it('umgewandelte Fassungen (#577) und Archivfassungen (#631) kommen mit: nach der Wiederherstellung ohne Paket sind Fassung, Archivfassung, Volltext und Vorschau da', async () => {
     const { Dateiumwandlung, fassungsOrdner, ordnerFassungen } = await import('../src/dateien/dateiumwandlung');
     const { Dienst } = await import('../src/dienst/dienst');
