@@ -81,6 +81,14 @@ const UEBER_DEM_DIENST = {
   dateien: 'dienst|katalogsignatur|projektschluessel|entdecken|entdecken-werkbank|lizenztexte',
 };
 const UNTERORDNER = UEBER_DEM_DIENST.ordner.join('|');
+/**
+ * Dateien, die fachlich zu einem Fachordner gehören, aber noch direkt in server/src/ liegen (#1278): Bis sie selbst
+ * umziehen, darf der Ordner sie einbinden – sonst gilt für ihn `fachordner` wie für jeden Ordner seiner Schicht.
+ */
+const NACHBARN = {
+  konten: 'anmeldesperre|konto-repo|zweifaktor|passkeys|oidc',
+};
+const MIT_NACHBARN = Object.keys(NACHBARN).join('|');
 
 /**
  * Die Regel `fachordner` (#1072) – einmal beschrieben, für jeden Fachordner. dependency-cruiser kann Schichten nicht
@@ -126,10 +134,22 @@ function fachordner() {
         i === 0
           ? 'Der Kern ruft keinen Fachbereich auf (#961): nur sich selbst, shared/ und die Basis – nie dienst.ts, Routen oder Fachordner.'
           : `Schicht ${i} ruft nur nach unten (#1072): Fachordner bis Schicht ${i}, Kern, shared/, Basis und Werkzeuge – nie dienst.ts oder Dateien darüber. Routen (*.routen.ts) sind ausgenommen.`,
-      from: { path: hier, pathNot: ['\\.routen\\.ts$', ...(i === SCHICHTEN.length ? [`^server/src/(?:${UNTERORDNER})/`] : [])] },
+      from: {
+        path: hier,
+        pathNot: ['\\.routen\\.ts$', ...(i === SCHICHTEN.length ? [`^server/src/(?:${UNTERORDNER})/`, `^server/src/(?:${MIT_NACHBARN})/`] : [])],
+      },
       to: { path: '^server/src/', pathNot: erlaubt },
     });
     if (i === SCHICHTEN.length) {
+      for (const [ordner, dateien] of Object.entries(NACHBARN)) {
+        regeln.push({
+          name,
+          severity: 'error',
+          comment: `${ordner}/ ruft wie Schicht ${i} nur nach unten, dazu seine Nachbarn in server/src/ bis zu deren Umzug (NACHBARN, #1278).`,
+          from: { path: `^server/src/${ordner}/`, pathNot: '\\.routen\\.ts$' },
+          to: { path: '^server/src/', pathNot: [...erlaubt, `^server/src/(${dateien})\\.ts$`] },
+        });
+      }
       regeln.push({
         name,
         severity: 'error',
