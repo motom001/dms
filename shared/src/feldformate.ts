@@ -10,7 +10,7 @@
  * Die IBAN-Prüfung kommt aus der Erkennung (`istIban`), damit es sie nur einmal gibt.
  * Texte stehen in `sprachen/de/felder.json`.
  */
-import { IBAN_LAENGEN, istIban } from './erkennung';
+import { IBAN_LAENGEN, istIban } from './erkennung/angaben';
 import type { Feld, Mappentyp, Wert, Werte } from './model';
 import { sprache, uebersetzer } from './sprache';
 import felder from './sprachen/de/felder.json';

@@ -5,7 +5,8 @@
  * - shared/ bindet weder server/ noch web/ ein; web/ nie server/, server/ nie web/ (auch server/test/ nicht, #1282).
  *   Ausnahme: shared/test/ prüft Sprachdateien und Gemeinsames über alle Teile hinweg.
  * - Technische Ordner mit index.ts nur über index.ts (pdf/ und arbeit/, je mit eigener Ausnahme; repo/ über seine drei
- *   index.ts, #1278); das Fachmodell shared/src/model/ nur über seine index.ts (#1278).
+ *   index.ts, #1278); die Ordner in shared/src/ (Fachmodell model/, erkennung/, pakete/, sichten/) nur über ihre
+ *   index.ts (#1278, SHARED_ORDNER).
  * - Teile über dem Dienst (UEBER_DEM_DIENST), Nachbarn eines Fachordners (NACHBARN, #1278) und die Dateien, die aus
  *   server/src/ in ihren Ordner gezogen sind, aber noch keine Tür haben (OHNE_TUER, #1278), sind unten beschrieben.
  * - Hilfen der HTTP-Schicht (http/routen-hilfen.ts, http/routen-kontext.ts) nur in Routen (#961, Ergänzung von
@@ -23,7 +24,8 @@
  * darf sie direkt einbinden (`fachordner` prüft für sie nicht „nur über index.ts“), sie selbst binden ein, was sie
  * brauchen (die Schichten prüfen sie nicht), und Fachordner dürfen von ihnen nur, was BASIS, WERKZEUGE, NACHBARN und
  * UEBER_DEM_DIENST nennen – wie vorher. Wer eine Datei hinter die Tür ihres Ordners bringt, nimmt sie hier heraus.
- * Teile einer solchen Datei, die Schritt 4b aufgeteilt hat (dienst/bauteile, webdav/webdav-*), stehen mit ihr hier.
+ * Teile einer solchen Datei, die Schritt 4b aufgeteilt hat (dienst/bauteile, webdav/webdav-*, sicherung/sicherung-*,
+ * sicherung/wiederherstellung-*, erkennung/erkennung-*, export/vollexport-*), stehen mit ihr hier.
  */
 const OHNE_TUER = {
   anmeldung: 'anmeldesperre|zweifaktor|passkeys|oidc|apischluessel|passwort',
@@ -41,8 +43,9 @@ const OHNE_TUER = {
   einstellungen: 'einstellungen|region|betrieb',
   entdecken: 'entdecken|entdecken-werkbank',
   ereignisse: 'ereignisse',
-  erkennung: 'erkennung|klassifizierung|erechnung',
-  export: 'export|vollexport|vollexport-pruefsummen|exportordner',
+  erkennung: 'erkennung|klassifizierung|erechnung|erkennung-hilfen|erkennung-basis|erkennung-positionen|erkennung-abgleich|erkennung-post',
+  export:
+    'export|vollexport|vollexport-pruefsummen|exportordner|vollexport-quelle|vollexport-formate|vollexport-schreiben|vollexport-verwaltung',
   formate: 'xlsx|zip|xml|schriftstueck',
   geheimnisse: 'geheimnisse|geheimnis-sperre|tresor',
   grundlagen: 'fehler|grenzen|uebergaenge',
@@ -58,7 +61,8 @@ const OHNE_TUER = {
   post: 'postfach|postfach-anhaenge|postfach-oauth|imap|eingangsordner|fotostapel',
   protokoll: 'protokoll|nachweisjournal',
   prozesse: 'prozesse|aufteilung|auftrag|beenden|hintergrund',
-  sicherung: 'sicherung|sicherung-entfernt|sicherungsformat|datenbankabzug|wiederherstellung',
+  sicherung:
+    'sicherung|sicherung-entfernt|sicherungsformat|datenbankabzug|wiederherstellung|sicherung-hilfen|sicherung-basis|sicherung-anlegen|sicherung-extern|wiederherstellung-hilfen|wiederherstellung-basis|wiederherstellung-ausfuehren',
   sprache: 'sprache|sprachpakete|sprachwahl|uebersetzung',
   suche: 'fragen|vektoren',
   system: 'system|systemlast|externmessung|fehlermeldungen|konsole',
@@ -244,6 +248,44 @@ function fachordner() {
   return regeln;
 }
 
+/**
+ * Ordner in shared/src/, die früher eine Datei waren (#1278): das Fachmodell model/ (vorher model.ts), erkennung/,
+ * pakete/ und sichten/. Von außen nur über ihre index.ts – wie früher die eine Datei; die Teile darin binden einander
+ * direkt ein. Je Ordner die Dateien in shared/src/, die einen Teil direkt einbinden dürfen, weil über die Tür ein Kreis
+ * entstünde: Das Fachmodell nennt den Typ `Feldbedingung` (sichten/bedingungen.ts, ohne Laufzeit-Import des Modells),
+ * die Feldformate prüfen die IBAN mit `istIban` (erkennung/angaben.ts).
+ */
+const SHARED_ORDNER = {
+  model: [],
+  erkennung: [['^shared/src/feldformate\\.ts$', 'angaben']],
+  pakete: [],
+  sichten: [['^shared/src/model/', 'bedingungen']],
+};
+
+/** Die Regel `shared-ordner-nur-ueber-index` (#1278), je Ordner in SHARED_ORDNER. */
+function sharedOrdner() {
+  const regeln = [];
+  for (const [ordner, ausnahmen] of Object.entries(SHARED_ORDNER)) {
+    regeln.push({
+      name: 'shared-ordner-nur-ueber-index',
+      severity: 'error',
+      comment: `shared/src/${ordner}/ (#1278) von außen nur über seine index.ts – wie früher die eine Datei ${ordner}.ts; die Teile darin binden einander direkt ein.`,
+      from: { path: '^(server|web|shared)/', pathNot: [`^shared/src/${ordner}/`, ...ausnahmen.map(([von]) => von)] },
+      to: { path: `^shared/src/${ordner}/(?!index\\.ts$)` },
+    });
+    for (const [von, teil] of ausnahmen) {
+      regeln.push({
+        name: 'shared-ordner-nur-ueber-index',
+        severity: 'error',
+        comment: `Ausnahme für ${von} (#1278): nur der Teil ${ordner}/${teil}.ts, sonst die Tür.`,
+        from: { path: von },
+        to: { path: `^shared/src/${ordner}/(?!(?:index|${teil})\\.ts$)` },
+      });
+    }
+  }
+  return regeln;
+}
+
 /** @type {import('dependency-cruiser').IConfiguration} */
 module.exports = {
   forbidden: [
@@ -292,14 +334,7 @@ module.exports = {
       from: { path: '^server/', pathNot: '^server/src/repo/' },
       to: { path: '^server/src/repo/(?!(?:pg/|speicher/)?index\\.ts$)' },
     },
-    {
-      name: 'model-nur-ueber-index',
-      severity: 'error',
-      comment:
-        'Das Fachmodell (#1278) von außen nur über shared/src/model/index.ts – wie früher die eine Datei model.ts; die Teile darin binden einander direkt ein.',
-      from: { path: '^(server|web|shared)/', pathNot: '^shared/src/model/' },
-      to: { path: '^shared/src/model/(?!index\\.ts$)' },
-    },
+    ...sharedOrdner(),
     {
       name: 'arbeit-nur-ueber-index',
       severity: 'error',

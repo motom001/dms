@@ -98,7 +98,7 @@ export interface Feld {
   /** Datumsfeld (#129): Erinnerung als Aufgabe „Frist“ im Eingang; fehlt/null = keine. */
   frist?: import('../fristen').FristEinstellung | null;
   /** Referenzfeld (#172): nur Mappen des Zieltyps, die alle Bedingungen erfüllen. */
-  auswahlFilter?: import('../sichten').Feldbedingung[];
+  auswahlFilter?: import('../sichten/bedingungen').Feldbedingung[];
   /**
    * Referenzfeld (#886): „folgt aus“ einem anderen Verweisfeld dieser Mappe über ein Verweisfeld von dessen Ziel, z. B.
    * Organisation aus Niederlassung → Organisation. Füllt nur ein leeres Feld (Vorbelegung, keine Sperre).
@@ -180,7 +180,7 @@ export type Anzeigebedingung = { nicht?: boolean } &
   (
     | { art: 'merkmal'; merkmal: import('../merkmale').Merkmal }
     /** Feldwert der Mappe – wie in Ansichten, nur mit festen Vergleichswerten oder „heute“. */
-    | { art: 'feld'; bedingung: import('../sichten').Feldbedingung }
+    | { art: 'feld'; bedingung: import('../sichten/bedingungen').Feldbedingung }
     /** Ein Verweisfeld zeigt auf (mindestens) eine Mappe vom Typ `typ` (Id des Mappentyps). */
     | { art: 'verweistyp'; feld: string; typ: string }
     /** Ein Verweisfeld zeigt auf (mindestens) eine eigene Organisation (#995), z. B. „Rechnungssteller ist wir“. */

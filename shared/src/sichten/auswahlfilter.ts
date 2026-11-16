@@ -1,5 +1,5 @@
 /** Sichten (#1278 aus sichten.ts): Auswahlfilter am Referenzfeld (#172). */
-import { type Bedingung, type Operator, OPERATOREN } from './bedingungen';
+import { type Feldbedingung, type Operator, OPERATOREN } from './bedingungen';
 import { bereinigeBedingungen } from './bereinigen';
 import { type Mappentyp, type Feld, istLeer } from '../model';
 import { bedingungsfelder, bedingungsProblem } from './felder';
@@ -8,9 +8,6 @@ import { t } from '../texte';
 import { type Aufloesung, type Klausel, filterFuer } from './aufloesen';
 
 /* ---------- Auswahlfilter am Referenzfeld (#172) ---------- */
-
-/** Nur Bedingungen auf Felder und Systemwerte des Zieltyps; mehrere gelten zusammen. */
-export type Feldbedingung = Extract<Bedingung, { art: 'feld' }>;
 
 export function bereinigeAuswahlfilter(e: unknown): Feldbedingung[] {
   return bereinigeBedingungen(e)

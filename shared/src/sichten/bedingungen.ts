@@ -118,3 +118,6 @@ export type Bedingung =
 /** Datumsfelder mit Erinnerung (#129) – gleich wie fristFelder in fristen.ts, hier ohne Kreisimport. */
 export const mitFrist = (t: Pick<Mappentyp, 'felder'>) => t.felder.filter((f) => f.typ === 'datum' && f.frist);
 export const FRIST_TAGE_MAX = 3650;
+
+/** Nur Bedingungen auf Felder und Systemwerte des Zieltyps; mehrere gelten zusammen. */
+export type Feldbedingung = Extract<Bedingung, { art: 'feld' }>;
