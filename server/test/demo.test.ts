@@ -8,7 +8,7 @@ import { meldeFortschritt, neuerStand, phasenText } from '../../shared/src/auftr
 import { DOKUMENTARTEN, erzeugeDokument, kannRastern, MISCHUNGEN, png, pruefeDokumentOptionen, schaetze } from '../src/demo-dokumente';
 import { Dienst } from '../src/dienst';
 import { Fachfehler } from '../src/fehler';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import { Zufall } from '../src/zufall';
 
 const rastern = await kannRastern();

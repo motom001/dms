@@ -10,7 +10,7 @@ import { datenarten, FEHLT, loeschkonzept, luecken, personenbezug, type Loeschko
 import { speicherDateien } from '../src/dateispeicher';
 import { Dienst } from '../src/dienst';
 import { speicherEinstellungen } from '../src/einstellungen';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import { schriftstueckDocx, schriftstueckPdf } from '../src/schriftstueck';
 
 /** Einträge eines ZIP (nur „deflate“ und „stored“, wie zipPuffer schreibt). */

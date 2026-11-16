@@ -12,7 +12,7 @@ import { speicherEinstellungen } from '../src/einstellungen';
 import { Fachfehler } from '../src/fehler';
 import { fuegeZusammen, pruefeAuswahl, pruefeTeile, Seitenbilder, seitenInfo, teilName } from '../src/pdfseiten';
 import type { Repo } from '../src/repo';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 
 const ANNA = '00000000-0000-4000-8000-0000000000bb';
 const status = (s: number, text?: RegExp) => (e: unknown) => e instanceof Fachfehler && e.status === s && (!text || text.test(e.message));

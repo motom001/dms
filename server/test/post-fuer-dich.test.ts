@@ -18,7 +18,7 @@ import { speicherEinstellungen } from '../src/einstellungen';
 import { Konten } from '../src/konten';
 import { speicherKontoRepo } from '../src/konto-repo';
 import { liesPaket } from '../src/pakete';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 
 /** Die Automatisierung so, wie sie in pakete/benachrichtigungen/inhalt/automatisierungen.yaml (1.3.0) steht. */
 const AUS_DEM_PAKET = {

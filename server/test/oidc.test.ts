@@ -9,7 +9,7 @@ import { Fachfehler } from '../src/fehler';
 import { Konten } from '../src/konten';
 import { speicherKontoRepo } from '../src/konto-repo';
 import { anbieterMeldung, identitaetAus, Oidc, pruefeAussteller, pruefeIdToken, type Abruf, type JsonWebKey } from '../src/oidc';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import { anbieterFehlerCode } from '../src/anmeldung/anmeldung.routen';
 import { routen, type Anfrage } from '../src/routen';
 import { ANMELDEFEHLER, anmeldefehlerCode } from '../../shared/src/anmeldefehler';

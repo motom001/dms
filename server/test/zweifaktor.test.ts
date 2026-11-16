@@ -7,7 +7,7 @@ import { speicherEinstellungen } from '../src/einstellungen';
 import { Fachfehler } from '../src/fehler';
 import { Konten } from '../src/konten';
 import { speicherKontoRepo } from '../src/konto-repo';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import { pflichtZuruecknehmen, pruefeZugang, routen, type Anfrage, type Route } from '../src/routen';
 import { ausBase32, base32, totp, Zweifaktor } from '../src/zweifaktor';
 

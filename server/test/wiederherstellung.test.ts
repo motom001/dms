@@ -38,7 +38,7 @@ describe('Wiederherstellen mit PostgreSQL', { skip: url ? false : 'TEST_DATABASE
   /** Ein DMS wie im Betrieb: Datenbank, Dateien, Schlüssel, Sicherung, Wiederherstellung. */
   async function system(db: string, opt: { mitDaten?: boolean; mitSchluessel?: boolean; migrationen?: string } = {}) {
     const { verbinde, migriere } = await import('../src/db');
-    const { pgRepo } = await import('../src/repo-pg');
+    const { pgRepo } = await import('../src/repo/pg');
     const { Dienst } = await import('../src/dienst');
     const { ordnerSpeicher } = await import('../src/dateispeicher');
     const { ladeBeispiele } = await import('../src/beispiele');
@@ -155,7 +155,7 @@ describe('Wiederherstellen mit PostgreSQL', { skip: url ? false : 'TEST_DATABASE
     assert.deepEqual((await trigrammIndizes(neu, 'public')).sort(), ['dokumente_volltext_trgm_idx', 'suchwoerter_trgm']);
     // Die Trigger füllen beim Einspielen den Eingang des Wörterverzeichnisses (#575); im Betrieb übernimmt ihn das DMS
     // nach dem Neustart im Hintergrund.
-    const { pgRepo } = await import('../src/repo-pg');
+    const { pgRepo } = await import('../src/repo/pg');
     assert.ok(await pgRepo(neu, HAUSHALT).woerterEinarbeiten() > 0);
     const [{ wort }] = await neu`SELECT wort FROM suchwoerter WHERE length(wort) >= 8 AND wort ~ '^[a-z]+$' ORDER BY wort LIMIT 1`;
     const tippfehler = `${wort.slice(0, 3)}${wort.slice(4)}`;
@@ -313,7 +313,7 @@ describe('Wiederherstellen mit PostgreSQL', { skip: url ? false : 'TEST_DATABASE
   it('umgewandelte Fassungen (#577) und Archivfassungen (#631) kommen mit: nach der Wiederherstellung ohne Paket sind Fassung, Archivfassung, Volltext und Vorschau da', async () => {
     const { Dateiumwandlung, fassungsOrdner, ordnerFassungen } = await import('../src/dateiumwandlung');
     const { Dienst } = await import('../src/dienst');
-    const { pgRepo } = await import('../src/repo-pg');
+    const { pgRepo } = await import('../src/repo/pg');
     const { ordnerSpeicher } = await import('../src/dateispeicher');
     const { speicherAblage, Vorschaubilder } = await import('../src/vorschau');
     const { pdfMitText } = await import('./hilfen');
@@ -416,7 +416,7 @@ describe('Wiederherstellen mit PostgreSQL', { skip: url ? false : 'TEST_DATABASE
 
   it('Schlüsselwechsel (#47): ganz oder gar nicht in PostgreSQL; ältere Sicherungen brauchen den alten Schlüssel', async () => {
     const x = await system(dbs[2], { mitDaten: true, mitSchluessel: true });
-    const { pgRepo } = await import('../src/repo-pg');
+    const { pgRepo } = await import('../src/repo/pg');
     const repo = pgRepo(x.sql, HAUSHALT);
     const typ = await x.dienst.mappentypen.legeTypAn({ name: 'Zugang', felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }, { key: 'pw', label: 'Kennwort', typ: 'passwort' }] });
     const a = await x.dienst.mappen.legeMappeAn({ typId: typ.id, werte: { name: 'A', pw: { neu: 'geheim-a' } } });

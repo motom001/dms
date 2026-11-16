@@ -18,7 +18,7 @@ import { Dienst } from '../src/dienst';
 import { speicherEinstellungen } from '../src/einstellungen';
 import { Fachfehler } from '../src/fehler';
 import type { Mailer, MailOptionen } from '../src/mail';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import { crc32 } from '../src/zip';
 import { pdfMitText } from './hilfen';
 import { inhaltsstrom } from './hilfen-schriften';

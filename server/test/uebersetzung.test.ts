@@ -28,7 +28,7 @@ import { speicherKurzzustand, type Kurzzustand } from '../src/kurzzustand';
 import { Paketlaeufer } from '../src/laeufer/verwaltung';
 import { liesPaket } from '../src/pakete';
 import type { Repo } from '../src/repo';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import { routen, type Anfrage } from '../src/routen';
 import { liesAntwort, liesQuelle, ZWISCHENSPEICHER } from '../src/uebersetzung';
 import { pdfMitText } from './hilfen';
@@ -577,7 +577,7 @@ describe('Inhalte übersetzen (#732): PostgreSQL', { skip: !url }, () => {
     await sql?.end();
   });
   it('Wahl der Person bleibt gespeichert; Übersetzungen im Kurzzustand, verfallen mit dem Original', async () => {
-    const { pgRepo } = await import('../src/repo-pg');
+    const { pgRepo } = await import('../src/repo/pg');
     const { pgKontoRepo } = await import('../src/konto-repo');
     const { pgKurzzustand } = await import('../src/kurzzustand');
     const db = (await eigeneDatenbank('uebersetzung')).sql;

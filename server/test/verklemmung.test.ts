@@ -25,7 +25,7 @@ after(async () => {
 async function aufbau() {
   const { ausUrl, alsUrl, legeDatenbankAn } = await import('../src/anbindung');
   const { verbinde, migriere } = await import('../src/db');
-  const { pgRepo } = await import('../src/repo-pg');
+  const { pgRepo } = await import('../src/repo/pg');
   const a = {
     ...ausUrl(process.env.TEST_DATABASE_URL)!,
     datenbank: `dms_verklemmung_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,

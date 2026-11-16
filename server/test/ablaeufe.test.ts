@@ -37,7 +37,7 @@ async function aufbau() {
   const db = await eigeneDatenbank('ablaeufe');
   const sql: postgres.Sql = db.sql;
   const { Dienst } = await import('../src/dienst');
-  const { pgRepo } = await import('../src/repo-pg');
+  const { pgRepo } = await import('../src/repo/pg');
   const { Konten } = await import('../src/konten');
   const { pgKontoRepo } = await import('../src/konto-repo');
   const { speicherDateien } = await import('../src/dateispeicher');

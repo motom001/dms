@@ -6,7 +6,7 @@ import { Dienst } from '../src/dienst';
 import { speicherEinstellungen } from '../src/einstellungen';
 import { Fachfehler } from '../src/fehler';
 import type { Mailer, MailOptionen } from '../src/mail';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 
 const status = (s: number) => (e: unknown) => e instanceof Fachfehler && e.status === s;
 const ich = { id: '00000000-0000-4000-8000-000000000001', name: 'Anna', email: 'anna@example.org' };

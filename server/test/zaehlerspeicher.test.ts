@@ -10,7 +10,7 @@ import { Konten } from '../src/konten';
 import { speicherKontoRepo } from '../src/konto-repo';
 import { serverTiming } from '../src/messung';
 import { kontext, type Kontext } from '../src/protokoll';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import { Haushaltsstand, HOECHSTENS_MS, ZEITABHAENGIG_MS, Zaehlerspeicher, zeitabhaengig } from '../src/zaehlerspeicher';
 
 describe('Zwischenspeicher der Zahlen (#512)', () => {

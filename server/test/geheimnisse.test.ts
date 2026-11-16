@@ -155,7 +155,7 @@ describe(
     }
 
     it('zählt jede Art, schlüsselt alle Werte jeder Tabelle um und alles bleibt lesbar', async () => {
-      const { pgRepo } = await import('../src/repo-pg');
+      const { pgRepo } = await import('../src/repo/pg');
       const { pgEinstellungen } = await import('../src/einstellungen');
       const { ordnerSpeicher } = await import('../src/dateispeicher');
       const { Dienst } = await import('../src/dienst');
@@ -353,7 +353,7 @@ describe(
     });
 
     it('meldet nicht lesbare Postfach- und Zwei-Faktor-Werte mit Namen', async () => {
-      const { pgRepo } = await import('../src/repo-pg');
+      const { pgRepo } = await import('../src/repo/pg');
       const { pgEinstellungen } = await import('../src/einstellungen');
       const { ordnerSpeicher } = await import('../src/dateispeicher');
       const { Dienst } = await import('../src/dienst');

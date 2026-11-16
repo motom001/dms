@@ -10,7 +10,7 @@ import { speicherDateien } from '../src/dateispeicher';
 import { Dienst } from '../src/dienst';
 import { speicherEinstellungen } from '../src/einstellungen';
 import { speicherKontoRepo, zuletztListe, type KontoRepo } from '../src/konto-repo';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 
 const HAUSHALT = '00000000-0000-4000-8000-000000000001';
 const ICH = { id: '00000000-0000-4000-8000-0000000000aa', rolle: 'admin', email: 'lena@example.org' };
@@ -41,7 +41,7 @@ async function datenbank(): Promise<postgres.Sql> {
 describe('Suchtext der Mappen (#615) – PostgreSQL', { skip: !process.env.TEST_DATABASE_URL && 'ohne TEST_DATABASE_URL' }, () => {
   async function aufbau() {
     const sql = await datenbank();
-    const { pgRepo } = await import('../src/repo-pg');
+    const { pgRepo } = await import('../src/repo/pg');
     const r = pgRepo(sql, HAUSHALT);
     await sql`INSERT INTO benutzer (id, haushalt_id, email, name, rolle) VALUES (${ICH.id}, ${HAUSHALT}, ${ICH.email}, 'Lena', 'admin')`;
     const d = new Dienst(r, speicherDateien(), { einstellungen: speicherEinstellungen() });
@@ -103,7 +103,7 @@ describe('Suchtext der Mappen (#615) – PostgreSQL', { skip: !process.env.TEST_
 
   it('Mappen lesen den Suchtext nie mit; Sicherung und Papierkorb lassen ihn weg, Wiederherstellen füllt ihn neu', async () => {
     const { sql, d, typ, suche } = await aufbau();
-    const { MAPPEN_SPALTEN } = await import('../src/repo-pg');
+    const { MAPPEN_SPALTEN } = await import('../src/repo/pg');
     const { OHNE_SPALTEN } = await import('../src/datenbankabzug');
     const spalten = (
       await sql`SELECT column_name FROM information_schema.columns WHERE table_name = 'mappen' AND column_name <> 'suchtext'`
@@ -124,7 +124,7 @@ describe('Suchtext der Mappen (#615) – PostgreSQL', { skip: !process.env.TEST_
 
   it('ohne Warten auf die Platte nur außerhalb einer Transaktion', async () => {
     const { sql } = await aufbau();
-    const { ohneWarten } = await import('../src/repo-pg');
+    const { ohneWarten } = await import('../src/repo/pg');
     const [a] = await sql`SELECT current_setting('synchronous_commit') AS v FROM ${ohneWarten(sql)}`;
     assert.equal(a.v, 'off');
     const [b] = await sql`SELECT current_setting('synchronous_commit') AS v`;

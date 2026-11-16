@@ -28,7 +28,7 @@ import { Fachfehler } from '../src/fehler';
 import { Konten } from '../src/konten';
 import { speicherKontoRepo, type KontoRepo } from '../src/konto-repo';
 import type { Repo } from '../src/repo';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import { vollexport } from '../src/vollexport';
 
 const url = process.env.TEST_DATABASE_URL;
@@ -48,7 +48,7 @@ after(async () => {
 async function pgRepos(): Promise<{ repo: Repo; konto: KontoRepo }> {
   const { ausUrl, alsUrl, legeDatenbankAn } = await import('../src/anbindung');
   const { verbinde, migriere } = await import('../src/db');
-  const { pgRepo } = await import('../src/repo-pg');
+  const { pgRepo } = await import('../src/repo/pg');
   const { pgKontoRepo } = await import('../src/konto-repo');
   const a = { ...ausUrl(url)!, datenbank: `dms_a800_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}` };
   await legeDatenbankAn(a);

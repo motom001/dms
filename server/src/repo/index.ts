@@ -16,24 +16,24 @@ import type {
   OcrStandArt,
   Systemtyp,
   Werte,
-} from '../../shared/src/model';
-import type { Klausel, Sicht, SichtDaten } from '../../shared/src/sichten';
-import type { Ausdruck, Lesefilter, Regelwerk } from '../../shared/src/rechte';
-import type { Ablaufvorlage, AblaufAngehalten, AblaufVerlauf, MappenAblauf } from '../../shared/src/ablaufvorlagen';
-import type { Nummernkreis } from '../../shared/src/nummernkreis';
-import type { InstalliertesPaket } from '../../shared/src/pakete';
-import type { SprachBeschriftung, Sprachtexte } from '../../shared/src/sprachpaket';
-import type { AuskunftLink } from '../../shared/src/auskunft';
-import type { PaketHinweis } from '../../shared/src/berechnet';
-import type { Fundstelle } from './geheimnisse';
-import type { LoeschDokument, LoeschEintrag, LoeschFilter } from '../../shared/src/loeschprotokoll';
-import type { Varianten } from '../../shared/src/suche';
-import type { Seitensprache } from '../../shared/src/seitensprachen';
-import type { FassungArt, GespeicherteFassung, Loeschvermerk } from '../../shared/src/fassungen';
-import type { Leerseiten } from '../../shared/src/leerseiten';
-import type { Notfallkontakt } from '../../shared/src/notfallkontakte';
-import { t } from './sprache';
-import type { Auslastung, VerlaufEintrag, VerlaufNeu } from '../../shared/src/paketreiter';
+} from '../../../shared/src/model';
+import type { Klausel, Sicht, SichtDaten } from '../../../shared/src/sichten';
+import type { Ausdruck, Lesefilter, Regelwerk } from '../../../shared/src/rechte';
+import type { Ablaufvorlage, AblaufAngehalten, AblaufVerlauf, MappenAblauf } from '../../../shared/src/ablaufvorlagen';
+import type { Nummernkreis } from '../../../shared/src/nummernkreis';
+import type { InstalliertesPaket } from '../../../shared/src/pakete';
+import type { SprachBeschriftung, Sprachtexte } from '../../../shared/src/sprachpaket';
+import type { AuskunftLink } from '../../../shared/src/auskunft';
+import type { PaketHinweis } from '../../../shared/src/berechnet';
+import type { Fundstelle } from '../geheimnisse';
+import type { LoeschDokument, LoeschEintrag, LoeschFilter } from '../../../shared/src/loeschprotokoll';
+import type { Varianten } from '../../../shared/src/suche';
+import type { Seitensprache } from '../../../shared/src/seitensprachen';
+import type { FassungArt, GespeicherteFassung, Loeschvermerk } from '../../../shared/src/fassungen';
+import type { Leerseiten } from '../../../shared/src/leerseiten';
+import type { Notfallkontakt } from '../../../shared/src/notfallkontakte';
+import { t } from '../sprache';
+import type { Auslastung, VerlaufEintrag, VerlaufNeu } from '../../../shared/src/paketreiter';
 
 /** Seitenweises Lesen der Historie (#800). */
 export interface HistorieAbfrage {
@@ -334,6 +334,12 @@ export interface Zaehlerstand {
   abdruck: string;
   geaendert: string;
 }
+
+/**
+ * Ein Teil eines Repos (#1278): Methoden eines Fachgebiets, zusammengesetzt in `pg/index.ts` bzw. `speicher/index.ts`.
+ * `this` ist dort das ganze Repo.
+ */
+export type RepoTeil = Partial<Repo> & ThisType<Repo>;
 
 /** Ein Ereignis des Katalogs (#670), wie es geschrieben wird. */
 export interface NeuesKatalogEreignis {

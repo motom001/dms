@@ -15,7 +15,7 @@ import { Dienst } from '../src/dienst';
 import { speicherEinstellungen } from '../src/einstellungen';
 import { Fachfehler } from '../src/fehler';
 import type { Repo } from '../src/repo';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import { analysiere, exifAusrichtung, liesBbox, maleSchwarz, pnmKopf, schwaerze, textAus, verbleibende } from '../src/schwaerzen';
 import {
   bereicheVon,
@@ -458,7 +458,7 @@ const HAUSHALT = '00000000-0000-4000-8000-000000000001';
 const offen: Array<{ end(): Promise<void> }> = [];
 async function pgRepo(): Promise<Repo> {
   const { migriere } = await import('../src/db');
-  const { pgRepo: repo } = await import('../src/repo-pg');
+  const { pgRepo: repo } = await import('../src/repo/pg');
   // Eigene Datenbank (#900), nach dem letzten Test der Datei gelöscht.
   const sql = (await eigeneDatenbank('sw', { migrieren: false })).sql;
   offen.push(sql);

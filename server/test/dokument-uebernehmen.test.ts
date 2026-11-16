@@ -20,7 +20,7 @@ import { speicherKontoRepo } from '../src/konto-repo';
 import { liesPaket, Paketverwaltung } from '../src/pakete';
 import { baue } from '../src/paketerstellung';
 import type { Repo } from '../src/repo';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import { zipPuffer } from '../src/zip';
 import { eigeneDatenbank } from './hilfe-db';
 import { TEST_PROJEKT, testSigniert } from './katalogschluessel';
@@ -464,7 +464,7 @@ function paketFaelle(pg: boolean) {
     () => {
       async function repo(): Promise<Repo> {
         if (!pg) return speicherRepo();
-        const { pgRepo } = await import('../src/repo-pg');
+        const { pgRepo } = await import('../src/repo/pg');
         const db = await eigeneDatenbank('x937');
         await db.sql`INSERT INTO haushalte (id, name) VALUES ('00000000-0000-4000-8000-000000000001', 'Test') ON CONFLICT DO NOTHING`;
         await db.sql`INSERT INTO benutzer (id, haushalt_id, email, name, rolle) VALUES ('00000000-0000-4000-8000-0000000000aa', '00000000-0000-4000-8000-000000000001', 'lena@example.org', 'Lena', 'admin')`;

@@ -12,7 +12,7 @@ import { Dienst } from '../src/dienst';
 import { Fachfehler } from '../src/fehler';
 import { Konten } from '../src/konten';
 import { speicherKontoRepo } from '../src/konto-repo';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 
 async function wirft(p: Promise<unknown>, status: number, text?: RegExp) {
   await assert.rejects(p, (e: unknown) => e instanceof Fachfehler && e.status === status && (!text || text.test(e.message)));

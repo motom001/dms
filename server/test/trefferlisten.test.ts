@@ -6,7 +6,7 @@ import { gemeinsameTrefferlisten, spaltenDerSicht, trefferlistenProblem } from '
 import { ladeBeispiele } from '../src/beispiele';
 import { speicherDateien } from '../src/dateispeicher';
 import { Dienst } from '../src/dienst';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 
 const felder = [
   { key: 'nr', label: 'Nummer', typ: 'text' as const },

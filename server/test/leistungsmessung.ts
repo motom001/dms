@@ -21,7 +21,7 @@ import { verbinde, migriere } from '../src/db';
 import { Dienst } from '../src/dienst';
 import { speicherEinstellungen } from '../src/einstellungen';
 import { pgKontoRepo } from '../src/konto-repo';
-import { pgRepo } from '../src/repo-pg';
+import { pgRepo } from '../src/repo/pg';
 import { vollexport } from '../src/vollexport';
 import { monitorEventLoopDelay } from 'node:perf_hooks';
 import { erzeugeDemo } from '../src/demo';

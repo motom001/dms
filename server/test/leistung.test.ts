@@ -48,7 +48,7 @@ describe('Leistung mit PostgreSQL (#367)', { skip: url ? false : 'TEST_DATABASE_
   });
 
   it('Messlatte: Mappe öffnen und Dokumentliste unter 200 ms (sonst Warnung)', async (t) => {
-    const { pgRepo } = await import('../src/repo-pg');
+    const { pgRepo } = await import('../src/repo/pg');
     const { pgKontoRepo } = await import('../src/konto-repo');
     const { messeAbfragen, MESSLATTE_MS } = await import('./leistung-messen');
     const { BENUTZER, HAUSHALT } = await import('./leistung-daten');
@@ -68,7 +68,7 @@ describe('Leistung mit PostgreSQL (#367)', { skip: url ? false : 'TEST_DATABASE_
   });
 
   it('Listen lesen keinen Volltext: Dokument-Spalten ohne „volltext“', async () => {
-    const { DOKUMENT_SPALTEN } = await import('../src/repo-pg');
+    const { DOKUMENT_SPALTEN } = await import('../src/repo/pg');
     assert.ok(!(DOKUMENT_SPALTEN as readonly string[]).includes('volltext'));
     // Jede andere Spalte der Tabelle steht in der Liste – neue Spalten fallen hier auf. Auch den Suchindex (#356)
     // lesen Listen nie.
@@ -80,7 +80,7 @@ describe('Leistung mit PostgreSQL (#367)', { skip: url ? false : 'TEST_DATABASE_
   });
 
   it('Export ohne N+1: Dokumente, Volltexte und Versionen gebündelt', async () => {
-    const { pgRepo } = await import('../src/repo-pg');
+    const { pgRepo } = await import('../src/repo/pg');
     const { Dienst } = await import('../src/dienst');
     const { ordnerSpeicher } = await import('../src/dateispeicher');
     const { speicherEinstellungen } = await import('../src/einstellungen');

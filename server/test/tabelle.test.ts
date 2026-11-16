@@ -23,7 +23,7 @@ import { Konten } from '../src/konten';
 import { speicherKontoRepo } from '../src/konto-repo';
 import { liesPaket, liesZip, Paketverwaltung } from '../src/pakete';
 import { mindestversion, Paketerstellung } from '../src/paketerstellung';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import { routen, type Anfrage } from '../src/routen';
 import { Tresor } from '../src/tresor';
 import { imModus } from './hilfen';
@@ -536,7 +536,7 @@ ${quelle}
 describe('Tabelle – PostgreSQL (#1030)', { skip: !process.env.TEST_DATABASE_URL && 'ohne TEST_DATABASE_URL' }, () => {
   it('Zeilen über den Verweis, sortiert und geblättert wie im Arbeitsspeicher', async () => {
     const db = await eigeneDatenbank('tabelle');
-    const { pgRepo } = await import('../src/repo-pg');
+    const { pgRepo } = await import('../src/repo/pg');
     try {
       const d = new Dienst(pgRepo(db.sql, '00000000-0000-4000-8000-000000000001') as never as Repo, speicherDateien(), {
         einstellungen: speicherEinstellungen(),
@@ -562,7 +562,7 @@ describe('Tabelle – PostgreSQL (#1030)', { skip: !process.env.TEST_DATABASE_UR
 
   it('verborgene Zeilen (#1208, #1265): Seite und beide Zahlen in einer Abfrage, auch beim Blättern; keine Daten der anderen', async () => {
     const db = await eigeneDatenbank('tabelle_verborgen');
-    const { pgRepo } = await import('../src/repo-pg');
+    const { pgRepo } = await import('../src/repo/pg');
     let abfragen = 0;
     const postgres = (await import('postgres')).default;
     const sql = postgres(db.url, {

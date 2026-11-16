@@ -19,7 +19,7 @@ import { Fachfehler } from '../src/fehler';
 import { Konten } from '../src/konten';
 import { speicherKontoRepo } from '../src/konto-repo';
 import { Postfaecher, type GeleseneMail, type ImapSitzung } from '../src/postfach';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import { routen, type Anfrage } from '../src/routen';
 
 const sha = (b: Buffer | string) => createHash('sha256').update(b).digest('hex');

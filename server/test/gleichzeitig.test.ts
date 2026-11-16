@@ -14,7 +14,7 @@ import { Dienst } from '../src/dienst';
 import { speicherEinstellungen } from '../src/einstellungen';
 import { Fachfehler } from '../src/fehler';
 import { feldweise, StandVeraltet, type Repo } from '../src/repo';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 
 const benutzer = (id: string, name: string, rolle: 'admin' | 'mitglied'): Benutzer =>
   ({ id, email: `${name.toLowerCase()}@example.org`, name, rolle, aktiv: true }) as Benutzer;
@@ -273,7 +273,7 @@ describe('Gleichzeitig bearbeiten (#609) in PostgreSQL', { skip: url ? false : '
     u.pathname = `/${db}`;
     sql = verbinde(u.toString());
     await migriere(sql, fileURLToPath(new URL('../migrations', import.meta.url)), () => {});
-    const { pgRepo } = await import('../src/repo-pg');
+    const { pgRepo } = await import('../src/repo/pg');
     let h = '';
     neuesRepo = async () => {
       h = randomUUID();

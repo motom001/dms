@@ -9,7 +9,7 @@ import { erkenneSprache, schriftVon, spracheAusInfo, spracheZuInfo, sprachvorsch
 import { speicherDateien } from '../src/dateispeicher';
 import { Dienst } from '../src/dienst';
 import { speicherEinstellungen } from '../src/einstellungen';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import { Texterkennung, type Engine } from '../src/texterkennung';
 import { dreheGraubild, lesePgm, schreibePgm } from '../src/graubild';
 import { pdfMitText } from './hilfen';

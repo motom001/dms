@@ -52,7 +52,7 @@ import { Oidc, type Abruf } from '../src/oidc';
 import { liesPaket } from '../src/pakete';
 import type { ImapSitzung } from '../src/postfach';
 import { kontext, protokoll, type Kontext } from '../src/protokoll';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import { eigeneDatenbank } from './hilfe-db';
 
 const aufruf = (x: Partial<ExternAufruf> = {}): ExternAufruf => ({

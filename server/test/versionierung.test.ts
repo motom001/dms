@@ -5,7 +5,7 @@ import { speicherDateien } from '../src/dateispeicher';
 import { Dienst } from '../src/dienst';
 import { speicherEinstellungen } from '../src/einstellungen';
 import { Fachfehler } from '../src/fehler';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 
 const status = (s: number) => (e: unknown) => e instanceof Fachfehler && e.status === s;
 const PNG = Buffer.from('89504e470d0a1a0a0000000d49484452', 'hex');

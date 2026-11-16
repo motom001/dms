@@ -18,7 +18,7 @@ import { Konten } from '../src/konten';
 import { speicherKontoRepo } from '../src/konto-repo';
 import { liesZip, Paketverwaltung } from '../src/pakete';
 import { Paketerstellung } from '../src/paketerstellung';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import { zipPuffer } from '../src/zip';
 
 setzeZeitzone('Europe/Berlin');

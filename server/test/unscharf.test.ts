@@ -10,7 +10,7 @@ import { Dienst } from '../src/dienst';
 import { speicherEinstellungen } from '../src/einstellungen';
 import { liesPaket, liesZip, Paketverwaltung } from '../src/pakete';
 import type { Repo } from '../src/repo';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import { zipPuffer } from '../src/zip';
 
 const HAUSHALT = '00000000-0000-4000-8000-000000000001';
@@ -21,7 +21,7 @@ async function repo(pg: boolean): Promise<{ r: Repo; sql?: import('postgres').Sq
   if (!pg) return { r: speicherRepo() };
   const { ausUrl, alsUrl, legeDatenbankAn } = await import('../src/anbindung');
   const { verbinde, migriere } = await import('../src/db');
-  const { pgRepo } = await import('../src/repo-pg');
+  const { pgRepo } = await import('../src/repo/pg');
   const a = {
     ...ausUrl(process.env.TEST_DATABASE_URL)!,
     datenbank: `dms_unscharf_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,

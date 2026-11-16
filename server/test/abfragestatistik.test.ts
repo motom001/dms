@@ -125,7 +125,7 @@ describe('Teuerste Abfragen: Route und Lasttest (#894)', () => {
 
   before(async () => {
     const { Dienst } = await import('../src/dienst');
-    const { speicherRepo } = await import('../src/repo-speicher');
+    const { speicherRepo } = await import('../src/repo/speicher');
     const { speicherDateien } = await import('../src/dateispeicher');
     const { speicherEinstellungen } = await import('../src/einstellungen');
     const { Konten } = await import('../src/konten');

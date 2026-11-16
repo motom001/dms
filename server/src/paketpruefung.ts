@@ -23,7 +23,7 @@ import { liesSchluessel, SIGNATUR_DATEI } from './katalogsignatur';
 import { MB } from './grenzen';
 import { ARCHIV_MAX, liesPaket, liesZip, Paketverwaltung, type Manifest } from './pakete';
 import type { Repo } from './repo';
-import { speicherRepo } from './repo-speicher';
+import { speicherRepo } from './repo/speicher';
 import { mitSprache, t } from './sprache';
 import { zipPuffer } from './zip';
 

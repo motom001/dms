@@ -41,7 +41,7 @@ import { Konten } from '../src/konten';
 import { speicherKontoRepo } from '../src/konto-repo';
 import { liesPaket, Paketverwaltung } from '../src/pakete';
 import { baue } from '../src/paketerstellung';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import { bereicheDerRoute, NUR_GESAMT } from '../src/verwaltungsbereiche';
 import { vollexport } from '../src/vollexport';
 import { zipPuffer } from '../src/zip';

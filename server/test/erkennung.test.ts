@@ -22,7 +22,7 @@ import { bereinigeFeld } from '../src/mappentypen';
 import { speicherEinstellungen } from '../src/einstellungen';
 import { Konten } from '../src/konten';
 import { speicherKontoRepo } from '../src/konto-repo';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import { routen, type Anfrage } from '../src/routen';
 import { eigeneDatenbank } from './hilfe-db';
 
@@ -359,7 +359,7 @@ describe('Erkennung: Vorschläge beim Zuordnen (#336)', () => {
 describe('Erkennung: Ablage in PostgreSQL (#336, #337)', { skip: !process.env.TEST_DATABASE_URL && 'ohne TEST_DATABASE_URL' }, () => {
   it('speichert je Post, ersetzt, findet frühere Post des Absenders und fällt mit der Post weg', async () => {
     const { migriere } = await import('../src/db');
-    const { pgRepo } = await import('../src/repo-pg');
+    const { pgRepo } = await import('../src/repo/pg');
     // Eigene Datenbank (#900), nach dem letzten Test der Datei gelöscht.
     const sql = (await eigeneDatenbank('g11_erk', { migrieren: false })).sql;
     try {

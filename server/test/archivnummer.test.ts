@@ -12,7 +12,7 @@ import { Dienst } from '../src/dienst';
 import { speicherEinstellungen } from '../src/einstellungen';
 import { Fachfehler } from '../src/fehler';
 import type { Repo } from '../src/repo';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import { eigeneDatenbank } from './hilfe-db';
 
 const ANNA = '00000000-0000-4000-8000-0000000000bb';
@@ -23,7 +23,7 @@ const offen: Array<{ end(): Promise<void> }> = [];
 async function repo(pg: boolean): Promise<Repo> {
   if (!pg) return speicherRepo();
   const { migriere } = await import('../src/db');
-  const { pgRepo } = await import('../src/repo-pg');
+  const { pgRepo } = await import('../src/repo/pg');
   // Eigene Datenbank (#900), nach dem letzten Test der Datei gelöscht.
   const sql = (await eigeneDatenbank('asn', { migrieren: false })).sql;
   offen.push(sql);

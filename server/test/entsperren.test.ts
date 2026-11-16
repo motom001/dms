@@ -22,7 +22,7 @@ import { speicherEinstellungen } from '../src/einstellungen';
 import { entsperrePdf, FalschesPasswort, gemerktSchluessel, passwortAus, PdfEntsperren, schutzVon } from '../src/entsperren';
 import { Konten } from '../src/konten';
 import { speicherKontoRepo } from '../src/konto-repo';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import { Texterkennung, textebeneEngine } from '../src/texterkennung';
 import { entschluesseleMit, verschluesseleMit } from '../src/tresor';
 import { speicherAblage, Vorschaubilder } from '../src/vorschau';

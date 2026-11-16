@@ -30,7 +30,7 @@ import { spaltenKopf, zeile } from '../src/export';
 import { beschriftungenNeu, liesPaket, liesZip, Paketverwaltung } from '../src/pakete';
 import { Paketerstellung } from '../src/paketerstellung';
 import type { Repo } from '../src/repo';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import { zipPuffer } from '../src/zip';
 
 const HAUSHALT = '00000000-0000-4000-8000-000000000001';
@@ -239,7 +239,7 @@ function dienstFaelle(pg: boolean) {
       async function repo(): Promise<{ r: Repo; sql?: postgres.Sql }> {
         if (!pg) return { r: speicherRepo() };
         const sql = await datenbank();
-        const { pgRepo } = await import('../src/repo-pg');
+        const { pgRepo } = await import('../src/repo/pg');
         await sql`INSERT INTO benutzer (id, haushalt_id, email, name, rolle) VALUES (${ICH.id}, ${HAUSHALT}, ${ICH.email}, 'Lena', 'admin')`;
         return { r: pgRepo(sql, HAUSHALT), sql };
       }

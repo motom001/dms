@@ -9,7 +9,7 @@ import { ladeBeispiele } from '../src/beispiele';
 import { speicherDateien } from '../src/dateispeicher';
 import { Dienst } from '../src/dienst';
 import { speicherEinstellungen } from '../src/einstellungen';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import { frueherAblageort } from './hilfen';
 
 const neu = (repo = speicherRepo(), einstellungen = speicherEinstellungen()) => ({

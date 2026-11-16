@@ -15,7 +15,7 @@ import { Dienst } from '../src/dienst';
 import { speicherEinstellungen } from '../src/einstellungen';
 import { Konten } from '../src/konten';
 import { speicherKontoRepo } from '../src/konto-repo';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 
 /** Uhr vorstellen (Bündelung im Ereigniskatalog), danach zurück. */
 async function spaeter<T>(ms: number, f: () => Promise<T>): Promise<T> {

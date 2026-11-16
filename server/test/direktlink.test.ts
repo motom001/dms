@@ -10,7 +10,7 @@ import { Dienst } from '../src/dienst';
 import { speicherEinstellungen } from '../src/einstellungen';
 import { Fachfehler } from '../src/fehler';
 import type { Repo } from '../src/repo';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 
 const ICH = { id: '00000000-0000-4000-8000-0000000000aa', rolle: 'admin' };
 
@@ -176,7 +176,7 @@ describe('Sprechende Links in PostgreSQL', { skip: url ? false : 'TEST_DATABASE_
     u.pathname = `/${db}`;
     sql = verbinde(u.toString());
     await migriere(sql, fileURLToPath(new URL('../migrations', import.meta.url)), () => {});
-    const { pgRepo } = await import('../src/repo-pg');
+    const { pgRepo } = await import('../src/repo/pg');
     const { randomUUID } = await import('node:crypto');
     const h0 = randomUUID();
     await sql`INSERT INTO haushalte (id, name) VALUES (${h0}, 'Test')`;

@@ -11,7 +11,7 @@ import { Fachfehler } from '../src/fehler';
 import { Konten } from '../src/konten';
 import { RegionDienst } from '../src/region';
 import { speicherKontoRepo } from '../src/konto-repo';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 
 const status = (s: number) => (e: unknown) => e instanceof Fachfehler && e.status === s;
 /** Berliner Ortszeit im Winter (UTC+1) als Date. */

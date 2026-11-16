@@ -15,7 +15,7 @@ import { Fachfehler } from '../src/fehler';
 import { Konten } from '../src/konten';
 import { speicherKontoRepo } from '../src/konto-repo';
 import { pdfAus } from './hilfen-einfach-pdf';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import { routen, type Anfrage, type Datei } from '../src/routen';
 import { Tresor } from '../src/tresor';
 import { csvAus, seriell, spalte } from '../src/xlsx';

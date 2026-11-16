@@ -7,7 +7,7 @@ import assert from 'node:assert/strict';
 import { after, before, describe, it } from 'node:test';
 import { kontext, type Kontext } from '../src/protokoll';
 import { aufteilungText, Messung, rechteMessen, serverTiming, speicherMessSpeicher, zeitaufteilung } from '../src/messung';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import { liesServerTiming, teileAuf } from '../../shared/src/zeitmessung';
 import { eigeneDatenbank } from './hilfe-db';
 
@@ -225,7 +225,7 @@ describe('PostgreSQL: mappenMitDatum und Eingang im Zähler (#477)', { skip: url
     await sql`DELETE FROM benutzer WHERE haushalt_id = ${HAUSHALT}`;
   };
   before(async () => {
-    const { pgRepo } = await import('../src/repo-pg');
+    const { pgRepo } = await import('../src/repo/pg');
     sql = (await eigeneDatenbank('zeitmessung')).sql;
     await sql`INSERT INTO haushalte (id, name) VALUES (${HAUSHALT}, 'Zeitmessung') ON CONFLICT DO NOTHING`;
     await aufraeumen();

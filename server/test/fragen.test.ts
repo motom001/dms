@@ -33,7 +33,7 @@ import { netzErlaubt } from '../src/laeufer/prozess';
 import { Paketlaeufer } from '../src/laeufer/verwaltung';
 import { liesPaket, Paketverwaltung } from '../src/pakete';
 import type { Repo } from '../src/repo';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import { routen } from '../src/routen';
 
 describe('Frag deine Ablage (#444): Bausteine', () => {
@@ -156,7 +156,7 @@ describe('Frag deine Ablage (#444): Bausteine', () => {
 async function pgDatenbank() {
   const { ausUrl, alsUrl, legeDatenbankAn } = await import('../src/anbindung');
   const { verbinde, migriere } = await import('../src/db');
-  const { pgRepo } = await import('../src/repo-pg');
+  const { pgRepo } = await import('../src/repo/pg');
   const { pgKontoRepo } = await import('../src/konto-repo');
   const H = '00000000-0000-4000-8000-000000000001';
   const basis = ausUrl(process.env.TEST_DATABASE_URL)!;

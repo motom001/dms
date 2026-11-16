@@ -6,7 +6,7 @@ import { teilwoerter } from '../../shared/src/suche';
 import { speicherDateien } from '../src/dateispeicher';
 import { Dienst } from '../src/dienst';
 import { speicherEinstellungen } from '../src/einstellungen';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import type { Repo } from '../src/repo';
 import { eigeneDatenbank } from './hilfe-db';
 
@@ -14,7 +14,7 @@ const offen: Array<{ end(): Promise<void> }> = [];
 async function repo(pg: boolean): Promise<Repo> {
   if (!pg) return speicherRepo();
   const { migriere } = await import('../src/db');
-  const { pgRepo } = await import('../src/repo-pg');
+  const { pgRepo } = await import('../src/repo/pg');
   // Eigene Datenbank (#900), nach dem letzten Test der Datei gelöscht.
   const sql = (await eigeneDatenbank('suche', { migrieren: false })).sql;
   offen.push(sql);

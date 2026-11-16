@@ -31,7 +31,7 @@ describe('Oberfläche ausliefern (#215)', { skip: echtesFastify ? false : 'Fasti
     await writeFile(join(wurzel, 'geheim.txt'), 'GEHEIM');
     const { baueApp } = await import('../src/http');
     const { Dienst } = await import('../src/dienst');
-    const { speicherRepo } = await import('../src/repo-speicher');
+    const { speicherRepo } = await import('../src/repo/speicher');
     const { speicherDateien } = await import('../src/dateispeicher');
     const { Konten } = await import('../src/konten');
     const { speicherKontoRepo } = await import('../src/konto-repo');

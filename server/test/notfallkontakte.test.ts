@@ -17,7 +17,7 @@ import { notfallblatt, notfallblattPlan } from '../src/notfallblatt';
 import { notfallMail } from '../src/notfallkontakte';
 import { protokoll } from '../src/protokoll';
 import type { Repo } from '../src/repo';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import type { Anfrage } from '../src/routen';
 import { bereicheDerRoute } from '../src/verwaltungsbereiche';
 import { ladePdf } from '../src/pdf/laden';
@@ -401,7 +401,7 @@ describe('Notfallkontakte (#812): Grenzen', () => {
     offen.push(sql);
     await sql`INSERT INTO haushalte (id, name) VALUES (${HAUSHALT}, 'Test') ON CONFLICT DO NOTHING`;
     await sql`INSERT INTO benutzer (id, haushalt_id, email, name, rolle, verwaltung) VALUES (${LENA.id}, ${HAUSHALT}, ${LENA.email}, 'Lena', 'mitglied', '{verschluesselung}'), (${MARKUS.id}, ${HAUSHALT}, ${MARKUS.email}, 'Markus', 'mitglied', '{}')`;
-    const { pgRepo } = await import('../src/repo-pg');
+    const { pgRepo } = await import('../src/repo/pg');
     const { pgKurzzustand } = await import('../src/kurzzustand');
     let n = 0;
     await pruefeGrenzen(

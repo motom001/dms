@@ -28,8 +28,8 @@ import { Dienst } from '../src/dienst';
 import { speicherEinstellungen } from '../src/einstellungen';
 import { Konten } from '../src/konten';
 import { speicherKontoRepo } from '../src/konto-repo';
-import { pgRepo } from '../src/repo-pg';
-import { speicherRepo } from '../src/repo-speicher';
+import { pgRepo } from '../src/repo/pg';
+import { speicherRepo } from '../src/repo/speicher';
 import { migriere } from '../src/db';
 import { eigeneDatenbank, MIGRATIONEN } from './hilfe-db';
 

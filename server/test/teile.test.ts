@@ -20,7 +20,7 @@ import { Konten } from '../src/konten';
 import { speicherKontoRepo } from '../src/konto-repo';
 import { liesPaket, liesZip, Paketverwaltung } from '../src/pakete';
 import { mindestversion, Paketerstellung } from '../src/paketerstellung';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import { routen, type Anfrage } from '../src/routen';
 import { imModus } from './hilfen';
 import { eigeneDatenbank } from './hilfe-db';
@@ -651,7 +651,7 @@ ${gehoert}
 describe('Teile – PostgreSQL (#1031)', { skip: !process.env.TEST_DATABASE_URL && 'ohne TEST_DATABASE_URL' }, () => {
   it('Suche über Teile mit Lesefilter, Löschen und Wiederherstellen samt Teilen in der Datenbank', async () => {
     const db = await eigeneDatenbank('teile');
-    const { pgRepo } = await import('../src/repo-pg');
+    const { pgRepo } = await import('../src/repo/pg');
     const { pgKontoRepo } = await import('../src/konto-repo');
     const haushalt = '00000000-0000-4000-8000-000000000001';
     try {

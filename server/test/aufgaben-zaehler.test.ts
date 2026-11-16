@@ -80,7 +80,7 @@ describe('Aufgabe und Notiz speichern (#928, PostgreSQL)', { skip: url ? false :
     sql = db.sql;
     const { baueApp, Nachlauf } = await import('../src/http');
     const { Dienst } = await import('../src/dienst');
-    const { pgRepo } = await import('../src/repo-pg');
+    const { pgRepo } = await import('../src/repo/pg');
     const { Konten } = await import('../src/konten');
     const { pgKontoRepo } = await import('../src/konto-repo');
     const { ordnerSpeicher } = await import('../src/dateispeicher');

@@ -30,7 +30,7 @@ import { werteAusText } from '../src/organisation';
 import { liesPaket, liesZip, Paketverwaltung } from '../src/pakete';
 import { mindestversion } from '../src/paketerstellung';
 import type { Repo } from '../src/repo';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import { pruefeZugang, routen, type Anfrage, type Route } from '../src/routen';
 import { bereicheDerRoute } from '../src/verwaltungsbereiche';
 import { zipPuffer } from '../src/zip';
@@ -45,7 +45,7 @@ after(async () => {
 });
 
 async function pgRepos(name: string): Promise<{ repo: Repo; konto: KontoRepo }> {
-  const { pgRepo } = await import('../src/repo-pg');
+  const { pgRepo } = await import('../src/repo/pg');
   const { pgKontoRepo } = await import('../src/konto-repo');
   const { sql } = await eigeneDatenbank(name);
   offen.push(sql);

@@ -23,7 +23,7 @@ import { Fachfehler } from '../src/fehler';
 import { Konten } from '../src/konten';
 import { speicherKontoRepo } from '../src/konto-repo';
 import type { Repo } from '../src/repo';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import { routen, type Anfrage } from '../src/routen';
 import { Tresor } from '../src/tresor';
 import { zipStrom } from '../src/zip';
@@ -95,7 +95,7 @@ const offen: Array<{ end(): Promise<void> }> = [];
 async function repos(pg: boolean): Promise<{ repo: Repo; konto: ReturnType<typeof speicherKontoRepo> }> {
   if (!pg) return { repo: speicherRepo(), konto: speicherKontoRepo() };
   const { migriere } = await import('../src/db');
-  const { pgRepo } = await import('../src/repo-pg');
+  const { pgRepo } = await import('../src/repo/pg');
   const { pgKontoRepo } = await import('../src/konto-repo');
   // Eigene Datenbank (#900), nach dem letzten Test der Datei gelöscht.
   const sql = (await eigeneDatenbank('ausk', { migrieren: false })).sql;

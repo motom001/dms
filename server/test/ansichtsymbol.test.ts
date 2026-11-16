@@ -6,7 +6,7 @@ import { speicherDateien } from '../src/dateispeicher';
 import { Dienst } from '../src/dienst';
 import { speicherEinstellungen } from '../src/einstellungen';
 import { liesPaket } from '../src/pakete';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 
 const dienst = () => new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
 

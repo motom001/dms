@@ -12,7 +12,7 @@ import { speicherDateien } from '../src/dateispeicher';
 import { Dienst } from '../src/dienst';
 import { speicherEinstellungen } from '../src/einstellungen';
 import type { Repo } from '../src/repo';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import { EXPORT_TABELLEN } from '../src/vollexport';
 import { DATENSCHUTZ_STANDARD } from '../../shared/src/auskunft';
 import { loeschkonzept } from '../../shared/src/loeschkonzept';
@@ -32,7 +32,7 @@ async function repo(pg: boolean): Promise<Repo> {
   if (!pg) return speicherRepo();
   const { ausUrl, alsUrl, legeDatenbankAn } = await import('../src/anbindung');
   const { verbinde, migriere } = await import('../src/db');
-  const { pgRepo } = await import('../src/repo-pg');
+  const { pgRepo } = await import('../src/repo/pg');
   const a = {
     ...ausUrl(process.env.TEST_DATABASE_URL)!,
     datenbank: `dmstest_g7_lp_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,

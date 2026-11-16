@@ -18,7 +18,7 @@ import { Fachfehler } from '../src/fehler';
 import { Eingang, nimmAuf, raeumeHochladenAuf, richteHochladenEin, shaVon } from '../src/hochladen';
 import { Konten } from '../src/konten';
 import { speicherKontoRepo } from '../src/konto-repo';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import { vollexport } from '../src/vollexport';
 import { zipStrom } from '../src/zip';
 

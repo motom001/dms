@@ -19,7 +19,7 @@ import { ERECHNUNG_XML_MAX } from '../src/grenzen';
 import { Konten } from '../src/konten';
 import { speicherKontoRepo } from '../src/konto-repo';
 import { eingebetteteERechnung } from '../src/pdf/erechnung';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import { routen, type Anfrage } from '../src/routen';
 import { liesXml, XmlFehler } from '../src/xml';
 import { wieImModus } from './hilfen';

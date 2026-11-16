@@ -9,7 +9,7 @@ import { Fachfehler } from '../src/fehler';
 import { Konten } from '../src/konten';
 import { speicherKontoRepo } from '../src/konto-repo';
 import { absenderPasst, Postfaecher, pruefePostfach, verstaendlich, type GeleseneMail, type ImapSitzung } from '../src/postfach';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import { mailText } from '../src/mail';
 
 /** Eine Mail im Test: die „Quelle“ ist JSON, der Leser macht daraus wieder die Mail. */

@@ -26,7 +26,7 @@ import { NotfallSperre } from '../src/notfallcode';
 import { poolSperrquelle, Sperrverbindung } from '../src/sperrverbindung';
 import { Oidc, type Abruf } from '../src/oidc';
 import { PostfachOAuth, RueckrufFehler } from '../src/postfach-oauth';
-import { pgRepo } from '../src/repo-pg';
+import { pgRepo } from '../src/repo/pg';
 import { Wartung } from '../src/wartung';
 import { Ratenbegrenzung } from '../src/webdav-baum';
 import { ausBase32, totp, Zweifaktor } from '../src/zweifaktor';

@@ -12,7 +12,7 @@ import { speicherEinstellungen } from '../src/einstellungen';
 import { Fachfehler } from '../src/fehler';
 import { liesPaket, liesZip, Paketverwaltung } from '../src/pakete';
 import type { Repo } from '../src/repo';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import { zipPuffer } from '../src/zip';
 import { eigeneDatenbank } from './hilfe-db';
 import { TEST_PROJEKT, testSigniert } from './katalogschluessel';
@@ -126,7 +126,7 @@ function katalog(eintraege: Array<{ dateien: Record<string, string>; herausgeber
 
 async function repo(pg: boolean): Promise<Repo> {
   if (!pg) return speicherRepo();
-  const { pgRepo } = await import('../src/repo-pg');
+  const { pgRepo } = await import('../src/repo/pg');
   const sql = (await eigeneDatenbank('pkk')).sql;
   await sql`INSERT INTO haushalte (id, name) VALUES (${HAUSHALT}, 'Test') ON CONFLICT DO NOTHING`;
   return pgRepo(sql, HAUSHALT) as never;

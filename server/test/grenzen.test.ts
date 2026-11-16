@@ -12,7 +12,7 @@ import { KB, KOERPER_SPIELRAUM, LOGO_MAX, MB, SAMMEL_MAX, UPLOADS_SPEICHER_MAX }
 import { Konten } from '../src/konten';
 import { speicherKontoRepo } from '../src/konto-repo';
 import { Paketverwaltung } from '../src/pakete';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import { routen } from '../src/routen';
 
 const SRC = new URL('../src/', import.meta.url).pathname;

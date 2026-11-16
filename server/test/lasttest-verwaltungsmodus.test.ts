@@ -12,7 +12,7 @@ import { speicherDateien } from '../src/dateispeicher';
 import { speicherEinstellungen } from '../src/einstellungen';
 import { Konten } from '../src/konten';
 import { speicherKontoRepo } from '../src/konto-repo';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 
 const MIN = 60_000;
 type Stand = { fehler?: string; status?: number; unerreichbar?: boolean; speicherMb?: number };

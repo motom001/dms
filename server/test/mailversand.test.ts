@@ -20,7 +20,7 @@ import { speicherKontoRepo } from '../src/konto-repo';
 import { ausAutoconfig, sucheMailserver, type SucheDeps } from '../src/mailsuche';
 import type { Abruf } from '../src/oidc';
 import { endpunkte, PostfachOAuth, VERSAND_OAUTH_ID } from '../src/postfach-oauth';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import { POSTFACH_BINDUNG_COOKIE, routen, type Anfrage } from '../src/routen';
 import { Tresor } from '../src/tresor';
 import { wieImModus } from './hilfen';

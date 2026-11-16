@@ -4,7 +4,8 @@
  * - Keine Kreisläufe (nur Importe, die zur Laufzeit zählen; reine Typ-Importe nicht).
  * - shared/ bindet weder server/ noch web/ ein; web/ nie server/, server/ nie web/ (auch server/test/ nicht, #1282).
  *   Ausnahme: shared/test/ prüft Sprachdateien und Gemeinsames über alle Teile hinweg.
- * - Technische Ordner mit index.ts nur über index.ts (pdf/ und arbeit/, je mit eigener Ausnahme).
+ * - Technische Ordner mit index.ts nur über index.ts (pdf/ und arbeit/, je mit eigener Ausnahme; repo/ über seine drei
+ *   index.ts, #1278).
  * - Hilfen der HTTP-Schicht (http/routen-hilfen.ts, http/routen-kontext.ts) nur in Routen (#961, Ergänzung von
  *   Sicherheit): Fachlogik bekommt den Benutzer übergeben und liest ihn nicht selbst aus der Anfrage.
  * - Eine Regel für alle Fachordner (#1072, `fachordner`; vorher je Ordner zwei, #961/#964): von außen nur über ihre
@@ -20,7 +21,13 @@
  * hinein). Diese Module binden selbst keinen Dienst und keinen Fachbereich ein.
  */
 const BASIS =
-  'repo|db|protokoll|sprache|einstellungen|dateispeicher|zaehlerspeicher|lesespeicher|kurzzustand|fehler|grenzen|geheimnis-sperre|nachweisjournal';
+  'db|protokoll|sprache|einstellungen|dateispeicher|zaehlerspeicher|lesespeicher|kurzzustand|fehler|grenzen|geheimnis-sperre|nachweisjournal';
+/**
+ * Basis als Ordner (#1278): das Repo – Schnittstelle in repo/index.ts, PostgreSQL in repo/pg/, Arbeitsspeicher in
+ * repo/speicher/. Von außen nur über diese drei index.ts (`repo-nur-ueber-index`); wie die Basis bindet es selbst
+ * keinen Dienst und keinen Fachbereich ein.
+ */
+const BASIS_ORDNER = 'repo';
 /**
  * Was Fachordner außer Kern und BASIS einbinden dürfen (#1072): Messung der Rechteprüfung, Vektoren lesen (auch der
  * Paket-Läufer braucht sie, daher nicht in suche/) und die technischen Ordner PDF-Stelle und Arbeiter-Pool. Seit #1075
@@ -62,7 +69,7 @@ const SCHICHTEN = [
  * Fachlogik rund um PDFs liegt seit #1077 im Fachordner pdf-bearbeiten/ (Schicht 3) – nicht in pdf/, das so ein
  * Werkzeug ohne Kern, Mappen und Dokumente bleibt (pdf-lib nur dort, Vorgänge im Arbeiter).
  */
-const TECHNIK = ['http', 'pdf', 'arbeit', 'laeufer'];
+const TECHNIK = ['http', 'pdf', 'arbeit', 'laeufer', BASIS_ORDNER];
 
 /**
  * Die Regel `fachordner` (#1072) – einmal beschrieben, für jeden Fachordner. dependency-cruiser kann Schichten nicht
@@ -90,14 +97,14 @@ function fachordner() {
     const hier = i < SCHICHTEN.length ? `^server/src/(${SCHICHTEN[i].join('|')})/` : `^server/src/(?!(?:${nichtFach})/)[^/]+/`;
     const erlaubt =
       i === 0
-        ? ['^server/src/kern/', `^server/src/(${BASIS})\\.ts$`]
+        ? ['^server/src/kern/', `^server/src/(${BASIS})\\.ts$`, `^server/src/(${BASIS_ORDNER})/`]
         : [
             i < SCHICHTEN.length
               ? `^server/src/(${SCHICHTEN.slice(0, i + 1)
                   .flat()
                   .join('|')})/`
               : `^server/src/(?!(?:${TECHNIK.join('|')})/)[^/]+/`,
-            `^server/src/(${WERKZEUGE.ordner})/`,
+            `^server/src/(${WERKZEUGE.ordner}|${BASIS_ORDNER})/`,
             `^server/src/(${BASIS}|${WERKZEUGE.dateien}|${WERKZEUGE.ausgang}|${WERKZEUGE.datenschutz})\\.ts$`,
           ];
     regeln.push({
@@ -153,6 +160,14 @@ module.exports = {
         'Die PDF-Stelle (#541) nur über pdf/index.ts. Ausnahme: arbeit/vorgaenge.ts führt die Vorgänge im Arbeiter-Faden aus (#542).',
       from: { path: '^server/src/', pathNot: ['^server/src/pdf/', '^server/src/arbeit/vorgaenge\\.ts$'] },
       to: { path: '^server/src/pdf/(?!index\\.ts$)' },
+    },
+    {
+      name: 'repo-nur-ueber-index',
+      severity: 'error',
+      comment:
+        'Das Repo (#1278) von außen nur über repo/index.ts (Schnittstelle), repo/pg/index.ts und repo/speicher/index.ts – die Teile darin setzt je index.ts zusammen.',
+      from: { path: '^server/', pathNot: '^server/src/repo/' },
+      to: { path: '^server/src/repo/(?!(?:pg/|speicher/)?index\\.ts$)' },
     },
     {
       name: 'arbeit-nur-ueber-index',

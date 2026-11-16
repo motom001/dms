@@ -18,7 +18,7 @@ import { Dienst } from '../src/dienst';
 import { speicherEinstellungen } from '../src/einstellungen';
 import { Fachfehler } from '../src/fehler';
 import { Paketverwaltung, type PaketLaeufer } from '../src/pakete';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import { Tresor } from '../src/tresor';
 import { zipPuffer } from '../src/zip';
 import { eigeneDatenbank } from './hilfe-db';
@@ -422,7 +422,7 @@ describe('Paket-Einstellungen (#197)', () => {
     { skip: !process.env.TEST_DATABASE_URL && 'ohne TEST_DATABASE_URL' },
     async () => {
       const { migriere } = await import('../src/db');
-      const { pgRepo } = await import('../src/repo-pg');
+      const { pgRepo } = await import('../src/repo/pg');
       const { pgEinstellungen } = await import('../src/einstellungen');
       const { OHNE_INHALT } = await import('../src/datenbankabzug');
       // Eigene Datenbank (#900), nach dem letzten Test der Datei gelöscht.

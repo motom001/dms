@@ -22,7 +22,7 @@ import {
   schriftfehlerGesehen,
 } from '../src/ersatzschriften';
 import { speicherEinstellungen } from '../src/einstellungen';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import { Texterkennung } from '../src/texterkennung';
 import { speicherAblage, Vorschaubilder } from '../src/vorschau';
 

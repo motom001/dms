@@ -27,7 +27,7 @@ import type { Paketlaeufer } from '../src/laeufer/verwaltung';
 import { Paketverwaltung } from '../src/pakete';
 import { kontext } from '../src/protokoll';
 import { BEENDEN_MS, einzeln, empfohleneProzesse, haldeJeProzess, haldeLeiter, prozesseAus, type Verbund } from '../src/prozesse';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import { Tresor } from '../src/tresor';
 import { Haushaltsstand, MINDESTENS_MS, Zaehlerspeicher } from '../src/zaehlerspeicher';
 import { zipPuffer } from '../src/zip';

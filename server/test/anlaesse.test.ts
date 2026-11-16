@@ -9,7 +9,7 @@ import { describe, it } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { Dienst } from '../src/dienst';
 import { speicherDateien } from '../src/dateispeicher';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import { Anlaesse, Anschlusspunkt } from '../src/kern';
 
 const HANDBUCH = ['docs', 'docs-en'].map((d) => fileURLToPath(new URL(`../../docs/handbuch/entwickler/${d}/aufbau.md`, import.meta.url)));

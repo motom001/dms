@@ -9,7 +9,7 @@ import { Dienst } from '../src/dienst';
 import { speicherEinstellungen } from '../src/einstellungen';
 import { Paketverwaltung } from '../src/pakete';
 import type { Repo } from '../src/repo';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import { zipPuffer } from '../src/zip';
 import { eigeneDatenbank } from './hilfe-db';
 import {
@@ -300,7 +300,7 @@ for (const pg of [false, true]) {
       async function aufbau() {
         let r: Repo = speicherRepo();
         if (pg) {
-          const { pgRepo } = await import('../src/repo-pg');
+          const { pgRepo } = await import('../src/repo/pg');
           const { sql } = await eigeneDatenbank('mitkommt');
           offen.push(sql);
           await sql`INSERT INTO haushalte (id, name) VALUES (${HAUSHALT}, 'Test') ON CONFLICT DO NOTHING`;

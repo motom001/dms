@@ -25,7 +25,7 @@ import type { Fachfehler } from '../src/fehler';
 import { Konten } from '../src/konten';
 import { speicherKontoRepo } from '../src/konto-repo';
 import type { Repo } from '../src/repo';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import { routen } from '../src/routen';
 import { eigeneDatenbank, MIGRATIONEN } from './hilfe-db';
 
@@ -356,7 +356,7 @@ describe('KI-Dienste (#796): Sperre im Kern', () => {
 describe('KI-Dienste (#796): Migration 092 – PostgreSQL', { skip: !process.env.TEST_DATABASE_URL && 'ohne TEST_DATABASE_URL' }, () => {
   it('frische Installation: nichts zugelassen; nach dem Update bleiben bestehende Typen zugelassen, neue nicht', async () => {
     const db = await eigeneDatenbank('ki_typen');
-    const { pgRepo } = await import('../src/repo-pg');
+    const { pgRepo } = await import('../src/repo/pg');
     const H = '00000000-0000-4000-8000-000000000001';
     try {
       assert.equal(

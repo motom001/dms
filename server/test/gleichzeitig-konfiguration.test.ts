@@ -13,7 +13,7 @@ import { Dienst } from '../src/dienst';
 import { speicherEinstellungen } from '../src/einstellungen';
 import { Fachfehler } from '../src/fehler';
 import type { Repo } from '../src/repo';
-import { speicherRepo } from '../src/repo-speicher';
+import { speicherRepo } from '../src/repo/speicher';
 import { t } from '../src/sprache';
 
 let neuesRepo: () => Promise<Repo> = async () => speicherRepo();
@@ -160,7 +160,7 @@ describe('Gleichzeitig bearbeiten in der Werkbank (#917) in PostgreSQL', { skip:
     u.pathname = `/${db}`;
     sql = verbinde(u.toString());
     await migriere(sql, fileURLToPath(new URL('../migrations', import.meta.url)), () => {});
-    const { pgRepo } = await import('../src/repo-pg');
+    const { pgRepo } = await import('../src/repo/pg');
     neuesRepo = async () => {
       const h = randomUUID();
       await sql`INSERT INTO haushalte (id, name) VALUES (${h}, 'Test')`;
