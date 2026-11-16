@@ -8,7 +8,7 @@ import type { Datenquelle } from '../src/sicherung/datenbankabzug';
 import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
 import { Fachfehler } from '../src/grundlagen/fehler';
 import { protokoll } from '../src/protokoll/protokoll';
-import { behalten, bereinigePlan, isoWoche, ortszeit, PLAN_STANDARD, Sicherung, type Metadaten } from '../src/sicherung/sicherung';
+import { behalten, bereinigePlan, isoWoche, ortszeit, PLAN_STANDARD, Sicherung, type Lauf, type Metadaten } from '../src/sicherung/sicherung';
 import { liesSicherung, sammle, ZWECK } from '../src/sicherung/sicherungsformat';
 import { leiteAb, Tresor } from '../src/geheimnisse/tresor';
 import { mailText } from '../src/mail/mail';
@@ -174,6 +174,82 @@ describe('Sicherung (#103–#105)', () => {
     await s.melde(); await s.melde();
     assert.deepEqual(mails, ['Ablago: Sicherung fehlgeschlagen']);
     assert.equal((await s.zustand()).fehler?.grund, 'Datenbank weg');
+  });
+
+  /**
+   * Erst ankündigen und aufräumen, dann melden (#1378): Jeder Zustandswechsel des Laufs wird im Augenblick des
+   * Setzens mitgeschnitten – synchron, ohne dass ein anderer Schritt dazwischen läuft.
+   */
+  function schneideMit(s: Sicherung, schritte: string[]) {
+    const gesehen: Array<{ status: string; schritte: string[]; beendet: boolean }> = [];
+    const belege = s.belege.bind(s);
+    s.belege = (art, titel) => {
+      const lauf = belege(art, titel);
+      let status = lauf.status;
+      Object.defineProperty(lauf, 'status', {
+        enumerable: true,
+        get: () => status,
+        set: (w: Lauf['status']) => {
+          gesehen.push({ status: w, schritte: [...schritte], beendet: !!lauf.beendet });
+          status = w;
+        },
+      });
+      return lauf;
+    };
+    return gesehen;
+  }
+  type Nacharbeiten = { kuendigeAn: () => Promise<void>; raeumeAuf: () => Promise<string[]>; freierName: () => Promise<string> };
+
+  it('meldet „fertig“ erst nach Ankündigen und Aufräumen, nie „fertig“ und danach „fehler“ (#1378)', async () => {
+    for (const scheitert of [null, 'kuendigeAn', 'raeumeAuf'] as const) {
+      const { s, einstellungen } = await aufbau();
+      const schritte: string[] = [];
+      const n = s as unknown as Nacharbeiten;
+      const kuendigeAn = n.kuendigeAn.bind(s);
+      const raeumeAuf = n.raeumeAuf.bind(s);
+      n.kuendigeAn = async (...a: unknown[]) => {
+        await (kuendigeAn as (...x: unknown[]) => Promise<void>)(...a);
+        schritte.push('angekuendigt');
+        if (scheitert === 'kuendigeAn') throw new Error('Ankündigen gescheitert');
+      };
+      n.raeumeAuf = async () => {
+        const weg = await raeumeAuf();
+        schritte.push('aufgeraeumt');
+        if (scheitert === 'raeumeAuf') throw new Error('Aufräumen gescheitert');
+        return weg;
+      };
+      const gesehen = schneideMit(s, schritte);
+      const meta = await (await s.starte('automatisch', 'zeitplan')).fertig;
+      const lauf = s.aktuellerLauf()!;
+      const erwartet = scheitert === 'kuendigeAn' ? ['angekuendigt'] : ['angekuendigt', 'aufgeraeumt'];
+      // Bisheriges Endergebnis bleibt: Scheitert eine Nacharbeit, endet der Lauf mit „fehler“ und gemerktem Fehlerstand.
+      assert.deepEqual(gesehen, [{ status: scheitert ? 'fehler' : 'fertig', schritte: erwartet, beendet: true }], String(scheitert));
+      assert.equal(meta === null, scheitert !== null, String(scheitert));
+      assert.equal(lauf.schritt, scheitert ? 'Abgebrochen' : 'Fertig');
+      if (scheitert) {
+        assert.equal(lauf.fehler, scheitert === 'kuendigeAn' ? 'Ankündigen gescheitert' : 'Aufräumen gescheitert');
+        assert.equal(lauf.ergebnis, undefined, 'ein gescheiterter Lauf trägt kein Ergebnis');
+        assert.equal(((await einstellungen.lies('sicherung_fehler')) as { grund?: string } | null)?.grund, lauf.fehler);
+      } else {
+        assert.equal(lauf.ergebnis, meta);
+        assert.equal(await einstellungen.lies('sicherung_fehler'), null);
+      }
+      // Die neue Sicherung selbst ist vollständig und bleibt liegen.
+      assert.equal((await s.liste()).length, 1, String(scheitert));
+    }
+  });
+
+  it('beendet den Lauf auch, wenn schon die Suche nach einem freien Namen scheitert (#1378)', async () => {
+    const { s } = await aufbau();
+    (s as unknown as Nacharbeiten).freierName = async () => {
+      throw new Error('Ordner nicht lesbar');
+    };
+    const gesehen = schneideMit(s, []);
+    assert.equal(await (await s.starte('manuell', 'admin')).fertig, null);
+    assert.deepEqual(gesehen, [{ status: 'fehler', schritte: [], beendet: true }]);
+    assert.equal(s.laeuft(), false, 'der Lauf blockiert keine weitere Sicherung');
+    assert.equal(s.aktuellerLauf()?.fehler, 'Ordner nicht lesbar');
+    assert.equal((await s.zustand()).fehler?.grund, 'Ordner nicht lesbar');
   });
 });
 
