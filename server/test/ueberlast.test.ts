@@ -5,8 +5,8 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import Fastify from 'fastify';
-import { verbindungenAus, VERBINDUNGEN_VORGABE } from '../src/db';
-import { MAX_ANFRAGEN_VORGABE, maxAnfragenAus, Ueberlastschutz, WIEDER_IN_S, zaehlt } from '../src/ueberlast';
+import { verbindungenAus, VERBINDUNGEN_VORGABE } from '../src/datenbank/db';
+import { MAX_ANFRAGEN_VORGABE, maxAnfragenAus, Ueberlastschutz, WIEDER_IN_S, zaehlt } from '../src/http/ueberlast';
 
 describe('Einstellungen (#544)', () => {
   it('DMS_DB_VERBINDUNGEN: Vorgabe 10, 2–100, sonst Hinweis', () => {
@@ -84,7 +84,7 @@ describe('Überlastschutz (#544)', () => {
 
 describe('Überlastschutz im Protokoll (#920): Hinweis statt Fehler, höchstens eine Zeile je Minute', () => {
   it('erste Abweisung sofort, weitere am Ende der Minute zusammengefasst – nie als Warnung oder Fehler', async () => {
-    const { protokoll } = await import('../src/protokoll');
+    const { protokoll } = await import('../src/protokoll/protokoll');
     let uhr = Date.parse('2026-11-06T12:00:00Z');
     const u = new Ueberlastschutz(1, 'vorgabe', () => uhr);
     const zeilen: Array<{ stufe: string; text: string; daten?: Record<string, unknown> }> = [];
@@ -123,12 +123,12 @@ describe('Überlastschutz im Protokoll (#920): Hinweis statt Fehler, höchstens 
 
   it('abgewiesene Anfragen: keine Zeile „… 503“ als Fehler (nur Debug), andere 5xx weiter als Fehler', async () => {
     const { speicherRepo } = await import('../src/repo/speicher');
-    const { speicherDateien } = await import('../src/dateispeicher');
-    const { Dienst } = await import('../src/dienst');
+    const { speicherDateien } = await import('../src/dateien/dateispeicher');
+    const { Dienst } = await import('../src/dienst/dienst');
     const { Konten } = await import('../src/konten');
-    const { speicherKontoRepo } = await import('../src/konto-repo');
-    const { baueApp } = await import('../src/http');
-    const { protokoll } = await import('../src/protokoll');
+    const { speicherKontoRepo } = await import('../src/konten/konto-repo');
+    const { baueApp } = await import('../src/http/http');
+    const { protokoll } = await import('../src/protokoll/protokoll');
     const dienst = new Dienst(speicherRepo(), speicherDateien());
     const konten = new Konten(speicherKontoRepo(), null, 'http://nas', dienst.systemtypen.benutzerspiegel());
     const ueberlast = new Ueberlastschutz(20);
@@ -190,12 +190,12 @@ describe('Systemzustand: Werte und Engpässe nennen die Variable (#544)', () => 
 
   it('Werte für den Systemzustand über GET /api/werkbank/systemlast', async () => {
     const { speicherRepo } = await import('../src/repo/speicher');
-    const { speicherDateien } = await import('../src/dateispeicher');
-    const { Dienst } = await import('../src/dienst');
+    const { speicherDateien } = await import('../src/dateien/dateispeicher');
+    const { Dienst } = await import('../src/dienst/dienst');
     const { Konten } = await import('../src/konten');
-    const { speicherKontoRepo } = await import('../src/konto-repo');
-    const { Systemlast } = await import('../src/systemlast');
-    const { baueApp } = await import('../src/http');
+    const { speicherKontoRepo } = await import('../src/konten/konto-repo');
+    const { Systemlast } = await import('../src/system/systemlast');
+    const { baueApp } = await import('../src/http/http');
     const dienst = new Dienst(speicherRepo(), speicherDateien());
     const konten = new Konten(speicherKontoRepo(), null, 'http://nas', dienst.systemtypen.benutzerspiegel());
     const ueberlast = new Ueberlastschutz(300, 'umgebung');

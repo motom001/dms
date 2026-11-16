@@ -11,16 +11,16 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { after, before, describe, it } from 'node:test';
 import { setTimeout as warte } from 'node:timers/promises';
-import { beiFehlenderDatei, DateiFehlt, oeffneStrom, ordnerSpeicher, vergissFehlendeDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
-import { speicherEinstellungen } from '../src/einstellungen';
-import { Fachfehler } from '../src/fehler';
+import { beiFehlenderDatei, DateiFehlt, oeffneStrom, ordnerSpeicher, vergissFehlendeDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
+import { Fachfehler } from '../src/grundlagen/fehler';
 import { Konten } from '../src/konten';
-import { speicherKontoRepo } from '../src/konto-repo';
-import { protokoll } from '../src/protokoll';
+import { speicherKontoRepo } from '../src/konten/konto-repo';
+import { protokoll } from '../src/protokoll/protokoll';
 import { speicherRepo } from '../src/repo/speicher';
 import { pdfMitText } from './hilfen';
-import { mitSprache } from '../src/sprache';
+import { mitSprache } from '../src/sprache/sprache';
 
 const echtesFastify = await import('fastify').then(
   (m) => typeof m.default === 'function',
@@ -111,9 +111,9 @@ describe('Fehlende Datei an allen Lesestellen (#877)', { skip: echtesFastify ? f
   };
 
   before(async () => {
-    const { baueApp } = await import('../src/http');
-    const { ApiSchluesselDienst, speicherApiSchluesselRepo } = await import('../src/apischluessel');
-    const { Webdav } = await import('../src/webdav');
+    const { baueApp } = await import('../src/http/http');
+    const { ApiSchluesselDienst, speicherApiSchluesselRepo } = await import('../src/anmeldung/apischluessel');
+    const { Webdav } = await import('../src/webdav/webdav');
     d = new Dienst(speicherRepo(), speicher, { einstellungen: speicherEinstellungen() });
     beiFehlenderDatei((f) => {
       void d.dateienFehlen.merkeFehlendeDatei(f);

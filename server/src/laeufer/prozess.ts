@@ -13,8 +13,8 @@
 import { MessageChannel, Worker } from 'node:worker_threads';
 import type { ArbeiterDaten, ArbeiterMeldung, Hostanfrage, Hostantwort } from './arbeiter';
 import { ladeArgumente, pruefeModul, SEITE, type Modulpruefung } from './modul';
-import { t } from '../sprache';
-import { MB, NETZ_LANG_AB, NETZ_MAX, NETZ_TOKEN_LESEN } from '../grenzen';
+import { t } from '../sprache/sprache';
+import { MB, NETZ_LANG_AB, NETZ_MAX, NETZ_TOKEN_LESEN } from '../grundlagen/grenzen';
 import { liesToken } from '../../../shared/src/extern';
 
 export interface Grenzen {

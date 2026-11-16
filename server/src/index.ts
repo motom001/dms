@@ -4,7 +4,7 @@
  * (`ablago.ts`). Der Hauptprozess lädt Ablago nicht, damit er kaum Arbeitsspeicher braucht.
  */
 import cluster from 'node:cluster';
-import { leite, prozesseAus } from './prozesse';
+import { leite, prozesseAus } from './prozesse/prozesse';
 
 const einstellung = prozesseAus(process.env);
 if (cluster.isPrimary && einstellung.anzahl > 1) await leite(einstellung);

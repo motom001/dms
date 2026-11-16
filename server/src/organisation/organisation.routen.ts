@@ -4,7 +4,7 @@
  */
 import { L, ok, ich } from '../http/routen-hilfen';
 import type { RoutenKontext } from '../http/routen-kontext';
-import type { Route } from '../routen';
+import type { Route } from '../http/routen';
 
 export function organisationRouten(k: RoutenKontext): Route[] {
   const { dienst, zg } = k;

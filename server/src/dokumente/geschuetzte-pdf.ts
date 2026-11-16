@@ -5,12 +5,12 @@
 import type { FassungInfo } from '../../../shared/src/dateiumwandlung';
 import { createHash } from 'node:crypto';
 import type { Dokument, Mappentyp } from '../../../shared/src/model';
-import type { EntsperrenAnbindung, PdfEntsperren } from '../entsperren';
-import { Fachfehler } from '../fehler';
+import type { EntsperrenAnbindung, PdfEntsperren } from '../dateien/entsperren';
+import { Fachfehler } from '../grundlagen/fehler';
 import type { Kern } from '../kern';
-import { protokoll } from '../protokoll';
+import { protokoll } from '../protokoll/protokoll';
 import type { Repo } from '../repo';
-import { t } from '../sprache';
+import { t } from '../sprache/sprache';
 import type { DokumentArchivfassung } from './archivfassung';
 import type { TexterkennungAnbindung } from './dokumente.dienst';
 import type { DokumentUmwandlung } from './umwandeln';

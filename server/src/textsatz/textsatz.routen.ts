@@ -3,12 +3,12 @@
  * über /api/v1, für Pakete und API-Schlüssel. Ablegen braucht Bearbeiten an der Mappe; Herunterladen ist ein Weg nach
  * draußen und geht durch die gemeinsame Prüfstelle (`mitnehmen`, #723).
  */
-import { Fachfehler } from '../fehler';
+import { Fachfehler } from '../grundlagen/fehler';
 import { L, ok, ich } from '../http/routen-hilfen';
-import { t } from '../sprache';
+import { t } from '../sprache/sprache';
 import type { RoutenKontext } from '../http/routen-kontext';
-import type { Anfrage } from '../routen';
-import type { Route } from '../routen';
+import type { Anfrage } from '../http/routen';
+import type { Route } from '../http/routen';
 
 export function textsatzRouten(k: RoutenKontext): Route[] {
   const { dienst, zg, darf, mitnehmen } = k;

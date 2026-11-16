@@ -10,7 +10,7 @@ import { A4, neuesDokument, PdfSchreiber, RAND } from './schreiber';
 import { groesseText } from './text';
 import { pdfText } from './schrift';
 import { ladePdf } from './laden';
-import { t } from '../sprache';
+import { t } from '../sprache/sprache';
 
 export interface PdfMappenSeite {
   titel: string;

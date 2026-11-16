@@ -3,11 +3,11 @@
  * `ki_typen`, Teil der Sicherung), die Sperre je Paket und die Übersicht in der Werkbank. Schicht 2 – bekommt den Kern
  * und die Rechteprüfung.
  */
-import { Fachfehler } from '../fehler';
+import { Fachfehler } from '../grundlagen/fehler';
 import type { Kern } from '../kern';
-import { protokoll } from '../protokoll';
+import { protokoll } from '../protokoll/protokoll';
 import type { Repo } from '../repo';
-import { t } from '../sprache';
+import { t } from '../sprache/sprache';
 import type { ZugriffDienst } from '../zugriff';
 import { INHALT_EREIGNISSE, type InstalliertesPaket, istKiPaket, type KiUebersicht, MAPPEN_EREIGNISSE } from '../../../shared/src/pakete';
 

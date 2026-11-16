@@ -3,9 +3,9 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { standardliste, trefferlistenVon, type Mappentyp } from '../../shared/src/model';
 import { gemeinsameTrefferlisten, spaltenDerSicht, trefferlistenProblem } from '../../shared/src/sichten';
-import { ladeBeispiele } from '../src/beispiele';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
+import { ladeBeispiele } from '../src/beispiele/beispiele';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
 import { speicherRepo } from '../src/repo/speicher';
 
 const felder = [

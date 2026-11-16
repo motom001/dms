@@ -7,11 +7,11 @@ import { describe, it } from 'node:test';
 import { inflateRawSync } from 'node:zlib';
 import { DATENSCHUTZ_STANDARD } from '../../shared/src/auskunft';
 import { datenarten, FEHLT, loeschkonzept, luecken, personenbezug, type LoeschkonzeptQuelle } from '../../shared/src/loeschkonzept';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
-import { speicherEinstellungen } from '../src/einstellungen';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
 import { speicherRepo } from '../src/repo/speicher';
-import { schriftstueckDocx, schriftstueckPdf } from '../src/schriftstueck';
+import { schriftstueckDocx, schriftstueckPdf } from '../src/formate/schriftstueck';
 
 /** Einträge eines ZIP (nur „deflate“ und „stored“, wie zipPuffer schreibt). */
 function entpacke(zip: Buffer): Map<string, string> {

@@ -27,12 +27,12 @@ import {
 } from '../../../shared/src/rechte';
 import { heuteIn, type Aufloesung } from '../../../shared/src/sichten';
 import { SICHTBARKEIT_MAX, type Sichtbarkeit } from '../../../shared/src/sichtbarkeit';
-import { Fachfehler } from '../fehler';
+import { Fachfehler } from '../grundlagen/fehler';
 import type { Kern, Zugriff } from '../kern';
-import { jeAnfrage } from '../lesespeicher';
-import { rechteMessen } from '../messung';
+import { jeAnfrage } from '../zwischenspeicher/lesespeicher';
+import { rechteMessen } from '../datenbank/messung';
 import { istUuid, type Repo } from '../repo';
-import { t } from '../sprache';
+import { t } from '../sprache/sprache';
 
 const alsListe = (v: unknown): string[] => (Array.isArray(v) ? v.map(String) : typeof v === 'string' && v ? [v] : []);
 export const NICHT_SICHTBAR = t('meldungen.dienst.nicht-sichtbare-mappe');

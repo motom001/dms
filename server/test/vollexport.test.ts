@@ -7,15 +7,15 @@ import { Readable } from 'node:stream';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, it } from 'node:test';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
-import { speicherEinstellungen } from '../src/einstellungen';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
 import { Konten } from '../src/konten';
-import { speicherKontoRepo } from '../src/konto-repo';
+import { speicherKontoRepo } from '../src/konten/konto-repo';
 import { speicherRepo } from '../src/repo/speicher';
-import { csv, exportDateien, exporteIn, pruefeExport, vollexport } from '../src/vollexport';
-import { alsHeruntergeladen, mitPruefsumme, pruefsummen, pruefsummenZeile } from '../src/vollexport-pruefsummen';
-import { kontaktVorschlaege } from '../src/routen';
+import { csv, exportDateien, exporteIn, pruefeExport, vollexport } from '../src/export/vollexport';
+import { alsHeruntergeladen, mitPruefsumme, pruefsummen, pruefsummenZeile } from '../src/export/vollexport-pruefsummen';
+import { kontaktVorschlaege } from '../src/http/routen';
 
 const sha256sumDa = (() => {
   try {

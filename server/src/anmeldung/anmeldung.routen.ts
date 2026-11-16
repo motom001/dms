@@ -2,14 +2,14 @@
  * Anmeldung (#960: aus routen.ts): Gesundheit, Wartung und Sprache ohne Anmeldung, Konto-Status, Verwaltungsmodus,
  * Einrichtungsassistent, Anmelden, Anbieter (OIDC), Befehl dms, Zwei-Faktor, Passwort-Links und Notfallzugang.
  */
-import { Fachfehler } from '../fehler';
-import { pflichtRolle } from '../zweifaktor';
-import { PASSKEYS_HOECHSTENS } from '../passkeys';
-import { t } from '../sprache';
+import { Fachfehler } from '../grundlagen/fehler';
+import { pflichtRolle } from './zweifaktor';
+import { PASSKEYS_HOECHSTENS } from './passkeys';
+import { t } from '../sprache/sprache';
 import { hatGesamt } from '../../../shared/src/verwaltungsrecht';
 import { anmeldefehlerCode, type Anmeldefehler } from '../../../shared/src/anmeldefehler';
-import { eigeneVersion, standKennung } from '../system';
-import { SPRACHE_HOECHSTENS_MS } from '../sprachwahl';
+import { eigeneVersion, standKennung } from '../system/system';
+import { SPRACHE_HOECHSTENS_MS } from '../sprache/sprachwahl';
 import { zeitzone } from '../../../shared/src/region';
 import { istVerfuegbar, liesSpracheinstellung, SPRACHEN_STANDARD } from '../../../shared/src/sprachwahl';
 import {
@@ -28,7 +28,7 @@ import {
   passkeyStatus,
 } from '../http/routen-hilfen';
 import type { RoutenKontext } from '../http/routen-kontext';
-import type { Route } from '../routen';
+import type { Route } from '../http/routen';
 
 /** Eigene Anmeldung ändern geht nicht, während jemand als diese Person agiert (#43, #811). */
 function ohneVertretung(a: { sitzungsDaten?: { vertretungId?: string | null } }) {

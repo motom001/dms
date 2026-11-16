@@ -11,7 +11,7 @@ import {
   Systemlast,
   type Leser,
   type Messpunkt,
-} from '../src/systemlast';
+} from '../src/system/systemlast';
 
 const dateien =
   (d: Record<string, string>): Leser =>

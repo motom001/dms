@@ -20,11 +20,11 @@ import {
   type Nummernkreis,
 } from '../../../shared/src/nummernkreis';
 import type { Auftrag, Fortschritt, PhasenPlan } from '../../../shared/src/auftrag';
-import { Fachfehler } from '../fehler';
+import { Fachfehler } from '../grundlagen/fehler';
 import type { Kern } from '../kern';
-import { protokoll } from '../protokoll';
+import { protokoll } from '../protokoll/protokoll';
 import type { Repo } from '../repo';
-import { t } from '../sprache';
+import { t } from '../sprache/sprache';
 
 /** Kreis der Archivnummern (#345). */
 export const ARCHIV_KREIS = 'archivnummer';

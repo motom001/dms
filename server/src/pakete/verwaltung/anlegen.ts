@@ -9,11 +9,11 @@ import { type BeispielStand, hatSchnittstelle, DMS_ALIAS, type InstalliertesPake
 import { typKennung } from '../../../../shared/src/kennungen';
 import { kinderVon, type Bedingung, type Sicht } from '../../../../shared/src/sichten';
 import { ueberfuehre } from '../../../../shared/src/paketeinstellungen';
-import { Fachfehler } from '../../fehler';
-import { protokoll } from '../../protokoll';
-import { t } from '../../sprache';
+import { Fachfehler } from '../../grundlagen/fehler';
+import { protokoll } from '../../protokoll/protokoll';
+import { t } from '../../sprache/sprache';
 import { anzahlTexte } from '../../../../shared/src/sprachpaket';
-import { KB, VORLAGE_MAX } from '../../grenzen';
+import { KB, VORLAGE_MAX } from '../../grundlagen/grenzen';
 import {
   anzeigeMitVorgaben,
   anzeigeVorgaben,

@@ -15,18 +15,18 @@ import { after, describe, it } from 'node:test';
 import { auswahlProbleme, fristBis, liesAuswahl, liesDatenschutz, type AuskunftVorschau } from '../../shared/src/auskunft';
 import { bereinigeBaumOptionen, haengtAuchAnderswo, kinderVon, wirdAnderswoGebraucht, type Baum } from '../../shared/src/baum';
 import { ALLES } from '../../shared/src/rechte';
-import { auskuenfteIn, erzeugeAuskunft } from '../src/auskunft';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
-import { speicherEinstellungen } from '../src/einstellungen';
-import { Fachfehler } from '../src/fehler';
+import { auskuenfteIn, erzeugeAuskunft } from '../src/datenschutz/auskunft';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
+import { Fachfehler } from '../src/grundlagen/fehler';
 import { Konten } from '../src/konten';
-import { speicherKontoRepo } from '../src/konto-repo';
+import { speicherKontoRepo } from '../src/konten/konto-repo';
 import type { Repo } from '../src/repo';
 import { speicherRepo } from '../src/repo/speicher';
-import { routen, type Anfrage } from '../src/routen';
-import { Tresor } from '../src/tresor';
-import { zipStrom } from '../src/zip';
+import { routen, type Anfrage } from '../src/http/routen';
+import { Tresor } from '../src/geheimnisse/tresor';
+import { zipStrom } from '../src/formate/zip';
 import { pdfMitText, wieImModus } from './hilfen';
 import { eigeneDatenbank } from './hilfe-db';
 
@@ -94,9 +94,9 @@ function aesAuf(d: Buffer, passwort: string): Buffer {
 const offen: Array<{ end(): Promise<void> }> = [];
 async function repos(pg: boolean): Promise<{ repo: Repo; konto: ReturnType<typeof speicherKontoRepo> }> {
   if (!pg) return { repo: speicherRepo(), konto: speicherKontoRepo() };
-  const { migriere } = await import('../src/db');
+  const { migriere } = await import('../src/datenbank/db');
   const { pgRepo } = await import('../src/repo/pg');
-  const { pgKontoRepo } = await import('../src/konto-repo');
+  const { pgKontoRepo } = await import('../src/konten/konto-repo');
   // Eigene Datenbank (#900), nach dem letzten Test der Datei gelöscht.
   const sql = (await eigeneDatenbank('ausk', { migrieren: false })).sql;
   offen.push(sql);

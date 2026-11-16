@@ -7,13 +7,13 @@
  */
 import { createHash } from 'node:crypto';
 import type postgres from 'postgres';
-import { ladeBeispiele } from '../src/beispiele';
-import type { Dateispeicher } from '../src/dateispeicher';
-import { erzeugeDemo } from '../src/demo';
-import { Dienst } from '../src/dienst';
-import { speicherEinstellungen } from '../src/einstellungen';
+import { ladeBeispiele } from '../src/beispiele/beispiele';
+import type { Dateispeicher } from '../src/dateien/dateispeicher';
+import { erzeugeDemo } from '../src/demo/demo';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
 import { pgRepo } from '../src/repo/pg';
-import { Zufall } from '../src/zufall';
+import { Zufall } from '../src/demo/zufall';
 
 export const HAUSHALT = '00000000-0000-4000-8000-000000000001';
 export const BENUTZER = '00000000-0000-4000-8000-0000000000bb';

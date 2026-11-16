@@ -4,13 +4,13 @@
  * wiederherstellen. Schicht 3 – Teile und Anschluss wie `LoeschenDienst` (loeschen.dienst.ts).
  */
 import { randomUUID } from 'node:crypto';
-import { type BaumQuelle, sammleBaum } from '../baum';
-import { Fachfehler } from '../fehler';
+import { type BaumQuelle, sammleBaum } from './baum';
+import { Fachfehler } from '../grundlagen/fehler';
 import type { Anlass, Kern, Loeschprotokoll, ProtokollMappe, ProtokollTeil, Zugriff } from '../kern';
 import type { MappenHistorie } from '../mappen';
-import { protokoll } from '../protokoll';
+import { protokoll } from '../protokoll/protokoll';
 import { istUuid, type PapierkorbEintrag, type Repo } from '../repo';
-import { t } from '../sprache';
+import { t } from '../sprache/sprache';
 import type { ZugriffDienst } from '../zugriff';
 import { type Baum, BAUM_STANDARD, bereinigeBaumOptionen, verweisartVon } from '../../../shared/src/baum';
 import { datumDe } from '../../../shared/src/fristen';

@@ -14,18 +14,18 @@ import { after, describe, it } from 'node:test';
 import { GEMERKT_MAX, namensvorschlag, VERSUCHE_MAX } from '../../shared/src/entsperren';
 import { HISTORIENARTEN } from '../../shared/src/model';
 import { ERSATZ_STEMPEL, type Stempel } from '../../shared/src/stempel';
-import { fuerAusgabe } from '../src/ausgabe';
-import { speicherFassungen } from '../src/dateiumwandlung';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
-import { speicherEinstellungen } from '../src/einstellungen';
-import { entsperrePdf, FalschesPasswort, gemerktSchluessel, passwortAus, PdfEntsperren, schutzVon } from '../src/entsperren';
+import { fuerAusgabe } from '../src/ausgang/ausgabe';
+import { speicherFassungen } from '../src/dateien/dateiumwandlung';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
+import { entsperrePdf, FalschesPasswort, gemerktSchluessel, passwortAus, PdfEntsperren, schutzVon } from '../src/dateien/entsperren';
 import { Konten } from '../src/konten';
-import { speicherKontoRepo } from '../src/konto-repo';
+import { speicherKontoRepo } from '../src/konten/konto-repo';
 import { speicherRepo } from '../src/repo/speicher';
-import { Texterkennung, textebeneEngine } from '../src/texterkennung';
-import { entschluesseleMit, verschluesseleMit } from '../src/tresor';
-import { speicherAblage, Vorschaubilder } from '../src/vorschau';
+import { Texterkennung, textebeneEngine } from '../src/volltext/texterkennung';
+import { entschluesseleMit, verschluesseleMit } from '../src/geheimnisse/tresor';
+import { speicherAblage, Vorschaubilder } from '../src/dateien/vorschau';
 import { pdfMitText } from './hilfen';
 
 const stempelVorlage = (x: Partial<Stempel> = {}): Stempel => ({

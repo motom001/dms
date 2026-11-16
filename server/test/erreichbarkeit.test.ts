@@ -148,7 +148,7 @@ test('veraltet: nachgeladene Teile fehlen', () => {
 });
 
 test('standKennung (#122): kurzer Hash, ändert sich mit dem Commit', async () => {
-  const { standKennung } = await import('../src/system');
+  const { standKennung } = await import('../src/system/system');
   const alt = process.env.DMS_COMMIT;
   try {
     process.env.DMS_COMMIT = 'aaa';
@@ -163,7 +163,7 @@ test('standKennung (#122): kurzer Hash, ändert sich mit dem Commit', async () =
 });
 
 test('standKennung (#1067): mit Zufallswert der Installation – von außen nicht der Version zuzuordnen, für alle Prozesse gleich', async () => {
-  const { standKennung, setzeStandSalz } = await import('../src/system');
+  const { standKennung, setzeStandSalz } = await import('../src/system/system');
   const { mkdtemp, readFile, rm } = await import('node:fs/promises');
   const { tmpdir } = await import('node:os');
   const { join } = await import('node:path');

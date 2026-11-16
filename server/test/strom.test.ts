@@ -11,16 +11,16 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Readable } from 'node:stream';
 import { after, describe, it } from 'node:test';
-import { ordnerSpeicher, speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
-import { speicherEinstellungen } from '../src/einstellungen';
-import { Fachfehler } from '../src/fehler';
-import { Eingang, nimmAuf, raeumeHochladenAuf, richteHochladenEin, shaVon } from '../src/hochladen';
+import { ordnerSpeicher, speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
+import { Fachfehler } from '../src/grundlagen/fehler';
+import { Eingang, nimmAuf, raeumeHochladenAuf, richteHochladenEin, shaVon } from '../src/dateien/hochladen';
 import { Konten } from '../src/konten';
-import { speicherKontoRepo } from '../src/konto-repo';
+import { speicherKontoRepo } from '../src/konten/konto-repo';
 import { speicherRepo } from '../src/repo/speicher';
-import { vollexport } from '../src/vollexport';
-import { zipStrom } from '../src/zip';
+import { vollexport } from '../src/export/vollexport';
+import { zipStrom } from '../src/formate/zip';
 
 const tmp = mkdtempSync(join(tmpdir(), 'dms-a746-strom-'));
 const hochladen = join(tmp, 'hochladen');
@@ -150,7 +150,7 @@ describe('Hochladen als Strom (#746)', () => {
       ],
     });
     const m = await d.mappen.legeMappeAn({ typId: typ.id, werte: { name: 'Akte Jonas' } });
-    const { baueApp } = await import('../src/http');
+    const { baueApp } = await import('../src/http/http');
     const app = await baueApp(d, konten, {});
     try {
       const an = await app.inject({

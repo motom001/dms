@@ -2,13 +2,13 @@
  * Mappentypen (#960: aus routen.ts): Stempel, Mappentypen, Beispiele, Demo-Daten und Aufträge, Archivmodus und
  * Auswahlfilter, Berechtigungen je Mappentyp und KI-Typen.
  */
-import { ladeBeispiele } from '../beispiele';
-import { demoPhasen, erzeugeDemo, pruefeDemoOptionen, schaetzeDemo } from '../demo';
-import { t } from '../sprache';
+import { ladeBeispiele } from '../beispiele/beispiele';
+import { demoPhasen, erzeugeDemo, pruefeDemoOptionen, schaetzeDemo } from '../demo/demo';
+import { t } from '../sprache/sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
 import { L, ok, archivProtokoll, leer, b, ich } from '../http/routen-hilfen';
 import type { RoutenKontext } from '../http/routen-kontext';
-import type { Route } from '../routen';
+import type { Route } from '../http/routen';
 
 export function typenRouten(k: RoutenKontext): Route[] {
   const { dienst, typName, zg, demoPlatz } = k;

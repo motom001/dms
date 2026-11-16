@@ -1,7 +1,7 @@
 /** Sicherheits-Header (#239). */
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { einbettenAus, sicherheitsKoepfe } from '../src/koepfe';
+import { einbettenAus, sicherheitsKoepfe } from '../src/http/koepfe';
 
 describe('Sicherheits-Header (#239)', () => {
   const ohne = einbettenAus(undefined);

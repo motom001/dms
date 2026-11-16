@@ -3,8 +3,8 @@
  */
 import { type HerkunftPruefung, type Katalog } from '../../../../shared/src/pakete';
 import type { Probedatei } from '../../paketaktionen/index';
-import { protokoll } from '../../protokoll';
-import type { Projektschluessel } from '../../projektschluessel';
+import { protokoll } from '../../protokoll/protokoll';
+import type { Projektschluessel } from '../projektschluessel';
 
 export const log = protokoll.modul('werkbank');
 
@@ -15,7 +15,7 @@ export interface PaketOptionen {
   abruf?: (url: string) => Promise<Buffer>;
   /** Offizieller Katalog (Tests: eine andere Adresse). */
   katalogUrl?: string;
-  /** Öffentliche Schlüssel des Projekts (#594); Tests: eigene, sonst server/src/projektschluessel.ts. */
+  /** Öffentliche Schlüssel des Projekts (#594); Tests: eigene, sonst server/src/pakete/projektschluessel.ts. */
   projektSchluessel?: readonly Projektschluessel[];
   /** Benutzer zur Auswahl in Paket-Einstellungen (#197). */
   benutzer?: () => Promise<Array<{ id: string; name: string }>>;

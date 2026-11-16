@@ -4,8 +4,8 @@
  */
 import assert from 'node:assert/strict';
 import { after, before, describe, it } from 'node:test';
-import { API_VERSION_OHNE_ANMELDUNG } from '../src/api-v1';
-import { eigeneVersion } from '../src/system';
+import { API_VERSION_OHNE_ANMELDUNG } from '../src/http/api-v1';
+import { eigeneVersion } from '../src/system/system';
 
 interface App {
   inject(o: {
@@ -22,14 +22,14 @@ describe('openapi.json ohne genaue Version ohne Anmeldung (#1067)', () => {
   let cookie = '';
   let schluessel = '';
   before(async () => {
-    const { baueApp } = await import('../src/http');
-    const { Dienst } = await import('../src/dienst');
+    const { baueApp } = await import('../src/http/http');
+    const { Dienst } = await import('../src/dienst/dienst');
     const { speicherRepo } = await import('../src/repo/speicher');
-    const { speicherDateien } = await import('../src/dateispeicher');
-    const { speicherEinstellungen } = await import('../src/einstellungen');
+    const { speicherDateien } = await import('../src/dateien/dateispeicher');
+    const { speicherEinstellungen } = await import('../src/einstellungen/einstellungen');
     const { Konten } = await import('../src/konten');
-    const { speicherKontoRepo } = await import('../src/konto-repo');
-    const { ApiSchluesselDienst, speicherApiSchluesselRepo } = await import('../src/apischluessel');
+    const { speicherKontoRepo } = await import('../src/konten/konto-repo');
+    const { ApiSchluesselDienst, speicherApiSchluesselRepo } = await import('../src/anmeldung/apischluessel');
     const dienst = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
     const konten = new Konten(speicherKontoRepo(), null, 'http://nas', dienst.systemtypen.benutzerspiegel());
     const api = new ApiSchluesselDienst(speicherApiSchluesselRepo());

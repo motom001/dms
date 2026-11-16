@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { after, describe, it } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { PRUEFER, pruefePakete, reihenfolge, type PruefErgebnis } from '../src/paketpruefung';
+import { PRUEFER, pruefePakete, reihenfolge, type PruefErgebnis } from '../src/pakete/paketpruefung';
 import type { Repo } from '../src/repo';
 import { eigeneDatenbank } from './hilfe-db';
 

@@ -9,15 +9,15 @@ import { join } from 'node:path';
 import { describe, it } from 'node:test';
 import { pruefeMappentyp, titelAus, type Mappentyp } from '../../shared/src/model';
 import { bedingungsfelder } from '../../shared/src/sichten';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
-import { Fachfehler } from '../src/fehler';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
+import { Fachfehler } from '../src/grundlagen/fehler';
 import { Konten } from '../src/konten';
-import { speicherKontoRepo } from '../src/konto-repo';
-import { protokoll } from '../src/protokoll';
+import { speicherKontoRepo } from '../src/konten/konto-repo';
+import { protokoll } from '../src/protokoll/protokoll';
 import { speicherRepo } from '../src/repo/speicher';
-import { routen, type Anfrage } from '../src/routen';
-import { maskiere, Tresor } from '../src/tresor';
+import { routen, type Anfrage } from '../src/http/routen';
+import { maskiere, Tresor } from '../src/geheimnisse/tresor';
 
 function einstellungen() {
   const m = new Map<string, unknown>();

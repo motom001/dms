@@ -12,7 +12,14 @@
  */
 import { DIALOG_ARTEN, type AktionsDialog, type DialogArt, type DialogFeld } from '../../../shared/src/paketaktionen';
 import { SCHLUESSEL, TYPVERWEIS } from '../../../shared/src/kennungen';
-import { AKTION_ANTWORT_MAX, AKTION_FELDER_MAX, AKTION_KURZ_MAX, AKTION_OPTIONEN_MAX, AKTION_STAND_MAX, AKTION_TEXT_MAX } from '../grenzen';
+import {
+  AKTION_ANTWORT_MAX,
+  AKTION_FELDER_MAX,
+  AKTION_KURZ_MAX,
+  AKTION_OPTIONEN_MAX,
+  AKTION_STAND_MAX,
+  AKTION_TEXT_MAX,
+} from '../grundlagen/grenzen';
 
 const istObjekt = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v);
 /** Steuerzeichen außer Zeilenende weg (keine unsichtbaren Richtungswechsel und Ähnliches), auf die Länge gekürzt. */

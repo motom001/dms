@@ -19,11 +19,11 @@ import {
   type Werte,
 } from '../../../shared/src/model';
 import { tagIn } from '../../../shared/src/region';
-import { Fachfehler } from '../fehler';
+import { Fachfehler } from '../grundlagen/fehler';
 import type { Kern } from '../kern';
-import { protokoll } from '../protokoll';
+import { protokoll } from '../protokoll/protokoll';
 import { istUuid, type Repo } from '../repo';
-import { t } from '../sprache';
+import { t } from '../sprache/sprache';
 
 /** Höchstens so viele Einträge der Historie auf einer Seite (#800). */
 export const HISTORIE_SEITE_MAX = 1000;

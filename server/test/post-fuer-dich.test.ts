@@ -11,12 +11,12 @@ import { bereinigeAutomatisierung, kurzform, automatisierungsProbleme } from '..
 import { POST_STAND, type Aufgabe } from '../../shared/src/model';
 import type { InstalliertesPaket } from '../../shared/src/pakete';
 import { Automatisierungen, BENACHRICHTIGUNGEN_PAKET, istPostFuerDich, speicherAutomatisierungRepo } from '../src/automatisierung';
-import '../src/automatisierung-karten';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
-import { speicherEinstellungen } from '../src/einstellungen';
+import '../src/automatisierung/automatisierung-karten';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
 import { Konten } from '../src/konten';
-import { speicherKontoRepo } from '../src/konto-repo';
+import { speicherKontoRepo } from '../src/konten/konto-repo';
 import { liesPaket } from '../src/pakete/verwaltung/index';
 import { speicherRepo } from '../src/repo/speicher';
 

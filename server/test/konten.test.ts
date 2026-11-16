@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict';
 import { imModus } from './hilfen';
 import { describe, it } from 'node:test';
-import { Fachfehler } from '../src/fehler';
+import { Fachfehler } from '../src/grundlagen/fehler';
 import { Konten } from '../src/konten';
-import { speicherKontoRepo } from '../src/konto-repo';
-import type { Mailer } from '../src/mail';
+import { speicherKontoRepo } from '../src/konten/konto-repo';
+import type { Mailer } from '../src/mail/mail';
 
 const wirft = (p: Promise<unknown>, status: number) => assert.rejects(p, (e: unknown) => e instanceof Fachfehler && e.status === status);
 const linkSchluessel = (link: string) => link.split('/passwort/')[1];
@@ -239,7 +239,7 @@ describe('Persönliche Einstellungen', () => {
 
 describe('Designs', () => {
   it('legt an, prüft Farben und schützt das Standard-Design', async () => {
-    const { Designs, speicherDesignRepo } = await import('../src/designs');
+    const { Designs, speicherDesignRepo } = await import('../src/oberflaeche/designs');
     const d = new Designs(speicherDesignRepo());
     const { designs, standard } = await d.liste();
     assert.equal(designs.length, 4);
@@ -255,7 +255,7 @@ describe('Designs', () => {
 
 describe('API-Schlüssel und OpenAPI', () => {
   it('erzeugt Schlüssel, zeigt danach nur den Anfang und prüft Ablauf', async () => {
-    const { ApiSchluesselDienst, speicherApiSchluesselRepo } = await import('../src/apischluessel');
+    const { ApiSchluesselDienst, speicherApiSchluesselRepo } = await import('../src/anmeldung/apischluessel');
     const k = new Konten(speicherKontoRepo(), null, 'http://nas:3000');
     const { benutzer: admin } = await k.einrichten({ email: 'admin@example.org', passwort: 'ein-langes-passwort' });
     const { benutzer } = await k.legeBenutzerAn({ email: 'scanner@example.org', name: 'Scanner' });
@@ -281,11 +281,11 @@ describe('API-Schlüssel und OpenAPI', () => {
   });
 
   it('beschreibt jede Route von /api/v1 in OpenAPI', async () => {
-    const { openapi, V1_TABELLE, v1Routen } = await import('../src/api-v1');
-    const { routen } = await import('../src/routen');
-    const { Dienst } = await import('../src/dienst');
+    const { openapi, V1_TABELLE, v1Routen } = await import('../src/http/api-v1');
+    const { routen } = await import('../src/http/routen');
+    const { Dienst } = await import('../src/dienst/dienst');
     const { speicherRepo } = await import('../src/repo/speicher');
-    const { speicherDateien } = await import('../src/dateispeicher');
+    const { speicherDateien } = await import('../src/dateien/dateispeicher');
     const alle = routen(new Dienst(speicherRepo(), speicherDateien()), new Konten(speicherKontoRepo(), null, 'x'));
     // Die Beschreibung selbst (openapi.json) nimmt API-Schlüssel an (#1067), steht aber nicht in der Tabelle.
     const v1 = alle.filter((r) => r.pfad.startsWith('/api/v1/') && r.api && r.pfad !== '/api/v1/openapi.json');

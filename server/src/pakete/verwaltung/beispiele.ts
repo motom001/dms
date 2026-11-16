@@ -4,7 +4,7 @@
 import { MAX_DATEIGROESSE, type Feld } from '../../../../shared/src/model';
 import { BEISPIEL_ENDUNGEN, inMB } from '../../../../shared/src/pakete';
 import { SCHLUESSEL } from '../../../../shared/src/kennungen';
-import { t } from '../../sprache';
+import { t } from '../../sprache/sprache';
 import { istVorgabeWert } from '../../../../shared/src/vorgaben';
 import { istObjekt, type Paket, type PaketBeispiel, type PaketBeispielDokument, str } from './format';
 

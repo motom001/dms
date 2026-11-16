@@ -6,11 +6,11 @@ import assert from 'node:assert/strict';
 import { connect } from 'node:net';
 import { describe, it } from 'node:test';
 import { POST_KANAL } from '../../shared/src/model';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
-import { speicherEinstellungen } from '../src/einstellungen';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
 import { Konten } from '../src/konten';
-import { speicherKontoRepo } from '../src/konto-repo';
+import { speicherKontoRepo } from '../src/konten/konto-repo';
 import { speicherRepo } from '../src/repo/speicher';
 
 const HOST = process.env.IMAP_TEST_HOST;
@@ -27,8 +27,8 @@ const offen = (port: number) =>
 describe('Postfächer mit GreenMail (#196)', { skip: HOST ? false : 'IMAP_TEST_HOST nicht gesetzt' }, () => {
   it('holt Mails ab, übernimmt Anhänge, verschiebt; meldet falsches Passwort und fehlenden Server', async () => {
     for (let i = 0; i < 60 && !(await offen(3143)); i++) await new Promise((r) => setTimeout(r, 1000));
-    const { verbindeImap, liesMail } = await import('../src/imap');
-    const { Postfaecher } = await import('../src/postfach');
+    const { verbindeImap, liesMail } = await import('../src/post/imap');
+    const { Postfaecher } = await import('../src/post/postfach');
     const nodemailer = (await import('nodemailer')).default;
     const smtp = nodemailer.createTransport({ host: HOST, port: 3025, secure: false, ignoreTLS: true });
     await smtp.sendMail({

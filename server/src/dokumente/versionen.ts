@@ -4,11 +4,11 @@
  */
 import { erkenneBildtyp } from '../../../shared/src/dateiumwandlung';
 import { type Dokument, type Herkunft, MAX_DATEIGROESSE, type Mappentyp, type Register } from '../../../shared/src/model';
-import { Fachfehler } from '../fehler';
-import { Eingang } from '../hochladen';
+import { Fachfehler } from '../grundlagen/fehler';
+import { Eingang } from '../dateien/hochladen';
 import { type Kern, versionInfo } from '../kern';
 import type { Repo } from '../repo';
-import { t } from '../sprache';
+import { t } from '../sprache/sprache';
 import { dateiname, erkenneAnzeigbar, type TexterkennungAnbindung } from './dokumente.dienst';
 
 /** Was die Versionen außer dem Kern brauchen – vom Dienst hereingereicht, bis es eigene Module dafür gibt. */

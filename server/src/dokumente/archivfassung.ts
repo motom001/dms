@@ -5,14 +5,14 @@
 import { MAIL_TYPEN } from '../../../shared/src/archivfassung';
 import type { Dokument } from '../../../shared/src/model';
 import { vorgaben } from '../../../shared/src/paketeinstellungen';
-import type { ArchivAblage, ArchivAnbindung, Archivfassung } from '../archivfassung';
-import { Fachfehler } from '../fehler';
+import type { ArchivAblage, ArchivAnbindung, Archivfassung } from '../dateien/archivfassung';
+import { Fachfehler } from '../grundlagen/fehler';
 import type { Kern, Zugriff } from '../kern';
 import { liesPdfA, textebeneWoerter } from '../pdf';
-import { nichtEingebettet, pruefeSchriften } from '../ersatzschriften';
-import { protokoll } from '../protokoll';
+import { nichtEingebettet, pruefeSchriften } from '../dateien/ersatzschriften';
+import { protokoll } from '../protokoll/protokoll';
 import type { Repo } from '../repo';
-import { t } from '../sprache';
+import { t } from '../sprache/sprache';
 import type { DokumentUmwandlung } from './umwandeln';
 
 /** Vorschaubilder aus der Archivfassung (#1216) – vorschau.ts, angebunden in ablago.ts. */

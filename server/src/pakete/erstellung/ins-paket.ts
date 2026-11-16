@@ -1,11 +1,11 @@
 /**
  * Eigene Rundgänge, Tipps und Automatisierungen (#680) ins Paket: Typen über ihre Kennung, ohne Personen.
  */
-import { insPaket } from '../../entdecken-werkbank';
+import { insPaket } from '../../entdecken/entdecken-werkbank';
 import { EIGEN } from '../../../../shared/src/entdecken-werkbank';
 import type { Automatisierung, DannKarte } from '../../../../shared/src/automatisierung';
 import { type InstalliertesPaket } from '../../../../shared/src/pakete';
-import { t } from '../../sprache';
+import { t } from '../../sprache/sprache';
 import { type ErstellenDaten } from './bau-hilfen';
 
 /**

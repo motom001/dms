@@ -4,10 +4,10 @@
  * der Datenbank. Jede Aktion steht im Protokoll des DMS mit dem Vermerk „Konsole“.
  */
 import { readFile } from 'node:fs/promises';
-import { ALS_KOPF, KONSOLE_KOPF, konsolenDatei, lokaleUrl, type KonsolenDatei } from './konsole';
-import { t } from './sprache';
+import { ALS_KOPF, KONSOLE_KOPF, konsolenDatei, lokaleUrl, type KonsolenDatei } from './system/konsole';
+import { t } from './sprache/sprache';
 import { gebietsschema } from '../../shared/src/sprache';
-import { MB } from './grenzen';
+import { MB } from './grundlagen/grenzen';
 
 export class KonsolenFehler extends Error {
   constructor(

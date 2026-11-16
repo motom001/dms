@@ -2,8 +2,8 @@
  * Installieren: anlegen mit Verlauf, Umbau (#1041) und Umzug (#1084); Bestätigung des Umbaus, Sperre.
  */
 import { type InstalliertesPaket, type KatalogVersion } from '../../../../shared/src/pakete';
-import { Fachfehler } from '../../fehler';
-import { t } from '../../sprache';
+import { Fachfehler } from '../../grundlagen/fehler';
+import { t } from '../../sprache/sprache';
 import { wendeEntscheidungenAn } from '../index';
 import { type Paket } from './format';
 import { meldungen } from './hilfen';

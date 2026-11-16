@@ -2,9 +2,9 @@
  * Sammeldatei (#461): Verzeichnis lesen und prüfen; Typen der Pakete darin.
  */
 import { type HerkunftPruefung, PAKET_ID, VERSION, type Ergaenzung } from '../../../../shared/src/pakete';
-import { Fachfehler } from '../../fehler';
-import { t } from '../../sprache';
-import { ARCHIV_MAX, KLEIN_MAX, SAMMEL_MAX, SAMMEL_VERZEICHNIS_MAX as VERZEICHNIS_MAX } from '../../grenzen';
+import { Fachfehler } from '../../grundlagen/fehler';
+import { t } from '../../sprache/sprache';
+import { ARCHIV_MAX, KLEIN_MAX, SAMMEL_MAX, SAMMEL_VERZEICHNIS_MAX as VERZEICHNIS_MAX } from '../../grundlagen/grenzen';
 import { istObjekt, str } from './format';
 import { type Vorschau } from './plan';
 

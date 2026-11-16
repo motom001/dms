@@ -16,15 +16,15 @@ import {
   type Meintest,
   type Varianten,
 } from '../../../shared/src/suche';
-import { Fachfehler } from '../fehler';
-import { MB } from '../grenzen';
+import { Fachfehler } from '../grundlagen/fehler';
+import { MB } from '../grundlagen/grenzen';
 import type { Kern, Zugreifender, Zugriff } from '../kern';
 import type { ZugriffDienst } from '../zugriff';
-import { protokoll } from '../protokoll';
+import { protokoll } from '../protokoll/protokoll';
 import { KonfigurationVeraltet, WOERTER_JE_LAUF, type Repo } from '../repo';
 import { liesStand } from '../mappentypen';
-import { t } from '../sprache';
-import { jeMappe, liesModell, liesVektor, SCHWELLE_STANDARD, Vektorindex, type Treffer } from '../vektoren';
+import { t } from '../sprache/sprache';
+import { jeMappe, liesModell, liesVektor, SCHWELLE_STANDARD, Vektorindex, type Treffer } from './vektoren';
 
 /** Ähnliche Wörter je Begriff so lange gemerkt (#1256) und höchstens für so viele Begriffe. */
 const AEHNLICH_MERKEN_MS = 60_000;

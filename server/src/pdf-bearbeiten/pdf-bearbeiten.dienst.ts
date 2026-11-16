@@ -5,15 +5,24 @@
  * Anschluss: post/ hängt Fotos mit `pdfVon` an, andersherum liefe es im Kreis.
  */
 import { dateiname, type DokumentAnlagen, type DokumenteDienst, type DokumentUmwandlung, type DokumentVersionen } from '../dokumente';
-import { Fachfehler } from '../fehler';
-import { graubild } from '../graubild';
+import { Fachfehler } from '../grundlagen/fehler';
+import { graubild } from '../dateien/graubild';
 import type { Kern, Zugriff } from '../kern';
 import type { MappenArchiv, MappenHistorie, MappenTitel } from '../mappen';
 import { bildSeitePdf } from '../pdf';
-import { fuegeZusammen, pruefeAuswahl, pruefeTeile, Seitenbilder, SEITENBILDER_MAX, seitenInfo, teile, teilName } from '../pdfseiten';
-import { protokoll } from '../protokoll';
+import {
+  fuegeZusammen,
+  pruefeAuswahl,
+  pruefeTeile,
+  Seitenbilder,
+  SEITENBILDER_MAX,
+  seitenInfo,
+  teile,
+  teilName,
+} from '../dateien/pdfseiten';
+import { protokoll } from '../protokoll/protokoll';
 import { istUuid, type Repo } from '../repo';
-import { t } from '../sprache';
+import { t } from '../sprache/sprache';
 import type { ZugriffDienst } from '../zugriff';
 import { ANLAGEN_MAX, anlageName } from '../../../shared/src/anlagen';
 import { kernTyp } from '../../../shared/src/dateiumwandlung';

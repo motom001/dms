@@ -4,12 +4,12 @@
  * Dokumente und die Systemmappen dieses Ordners. Neue Post, Post-Aufgaben und das Löschen kommen über den Anschluss.
  */
 import type { DokumenteDienst, DokumentVersionen } from '../dokumente';
-import { Fachfehler } from '../fehler';
+import { Fachfehler } from '../grundlagen/fehler';
 import type { Anlass, Kern, Zugriff } from '../kern';
 import type { MappenHistorie, MappenTitel } from '../mappen';
-import { protokoll } from '../protokoll';
+import { protokoll } from '../protokoll/protokoll';
 import type { Repo, Rueckverweis } from '../repo';
-import { t } from '../sprache';
+import { t } from '../sprache/sprache';
 import { VolltextDienst } from '../volltext';
 import type { ZugriffDienst } from '../zugriff';
 import { anlagenVon, mitAnlagen, zumVerschieben } from '../../../shared/src/anlagen';

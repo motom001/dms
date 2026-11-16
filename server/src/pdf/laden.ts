@@ -10,10 +10,10 @@
  */
 import { inflateSync } from 'node:zlib';
 import { PDFDocument, type LoadOptions } from 'pdf-lib';
-import { Fachfehler } from '../fehler';
+import { Fachfehler } from '../grundlagen/fehler';
 import { eigenerPuffer } from './puffer';
-import { t } from '../sprache';
-import { OBJEKTSTROEME_MAX, OBJEKTSTROM_MAX } from '../grenzen';
+import { t } from '../sprache/sprache';
+import { OBJEKTSTROEME_MAX, OBJEKTSTROM_MAX } from '../grundlagen/grenzen';
 
 export { OBJEKTSTROM_MAX };
 export { OBJEKTSTROEME_MAX };

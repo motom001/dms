@@ -5,14 +5,14 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { bereinigeAutomatisierung, automatisierungsProbleme, kurzform } from '../../shared/src/automatisierung';
-import { Aufgabenmail } from '../src/aufgabenmail';
+import { Aufgabenmail } from '../src/aufgaben/aufgabenmail';
 import { Automatisierungen, speicherAutomatisierungRepo } from '../src/automatisierung';
-import '../src/automatisierung-karten';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
-import { speicherEinstellungen } from '../src/einstellungen';
+import '../src/automatisierung/automatisierung-karten';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
 import { Konten } from '../src/konten';
-import { speicherKontoRepo } from '../src/konto-repo';
+import { speicherKontoRepo } from '../src/konten/konto-repo';
 import { speicherRepo } from '../src/repo/speicher';
 
 /** Mittwoch, 10.03.2027, um `uhr` in Berlin (MEZ). */

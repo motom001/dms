@@ -11,14 +11,14 @@
  */
 import assert from 'node:assert/strict';
 import { after, before, describe, it } from 'node:test';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
-import { speicherEinstellungen } from '../src/einstellungen';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
 import { Konten } from '../src/konten';
-import { speicherKontoRepo } from '../src/konto-repo';
+import { speicherKontoRepo } from '../src/konten/konto-repo';
 import { speicherRepo } from '../src/repo/speicher';
-import { routen, type Route } from '../src/routen';
-import { bereicheDerRoute, JEDER } from '../src/verwaltungsbereiche';
+import { routen, type Route } from '../src/http/routen';
+import { bereicheDerRoute, JEDER } from '../src/werkbank/verwaltungsbereiche';
 import { NICHTS, type Regelwerk } from '../../shared/src/rechte';
 import { imModus } from './hilfen';
 
@@ -61,8 +61,8 @@ async function aufbau() {
   const katrin = await mitPasswort('katrin@example.org', 'Katrin');
   await konten.setzeVerwaltung(imModus(lena), jonas.id, ['benutzer']);
   await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
-  const { baueApp } = await import('../src/http');
-  const { ApiSchluesselDienst, speicherApiSchluesselRepo } = await import('../src/apischluessel');
+  const { baueApp } = await import('../src/http/http');
+  const { ApiSchluesselDienst, speicherApiSchluesselRepo } = await import('../src/anmeldung/apischluessel');
   const schluessel = new ApiSchluesselDienst(speicherApiSchluesselRepo());
   const app = await baueApp(d, konten, { apiSchluessel: schluessel });
   const anmelden = async (email: string) => {

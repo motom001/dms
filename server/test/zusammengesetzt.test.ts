@@ -26,21 +26,21 @@ import {
   zusammengesetztProbleme,
   zusammengesetztSchluessel,
 } from '../../shared/src/zusammengesetzt';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
-import { speicherEinstellungen } from '../src/einstellungen';
-import { zeile } from '../src/export';
-import { Fachfehler } from '../src/fehler';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
+import { zeile } from '../src/export/export';
+import { Fachfehler } from '../src/grundlagen/fehler';
 import { Konten } from '../src/konten';
-import { speicherKontoRepo, type KontoRepo } from '../src/konto-repo';
+import { speicherKontoRepo, type KontoRepo } from '../src/konten/konto-repo';
 import { liesPaket, liesZip } from '../src/pakete/verwaltung/index';
 import { mindestversion } from '../src/pakete/erstellung/index';
 import type { Repo } from '../src/repo';
 import { speicherRepo } from '../src/repo/speicher';
-import { zipPuffer } from '../src/zip';
+import { zipPuffer } from '../src/formate/zip';
 import { imModus } from './hilfen';
 import { eigeneDatenbank } from './hilfe-db';
-import '../src/sprache';
+import '../src/sprache/sprache';
 
 const url = process.env.TEST_DATABASE_URL;
 const HAUSHALT = '00000000-0000-4000-8000-000000000001';
@@ -189,7 +189,7 @@ describe('Zusammengesetzt (#1050): Vorlage, Schlüssel und Text', () => {
 
 async function pgRepos(name: string): Promise<{ repo: Repo; konto: KontoRepo }> {
   const { pgRepo } = await import('../src/repo/pg');
-  const { pgKontoRepo } = await import('../src/konto-repo');
+  const { pgKontoRepo } = await import('../src/konten/konto-repo');
   const { sql } = await eigeneDatenbank(name);
   offen.push(sql);
   await sql`INSERT INTO haushalte (id, name) VALUES (${HAUSHALT}, 'Test') ON CONFLICT DO NOTHING`;

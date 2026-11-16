@@ -10,9 +10,9 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, it } from 'node:test';
 import { fehlendeProgramme, fehlendeWerkzeuge } from '../../shared/src/werkzeuge';
-import { speicherDateien } from '../src/dateispeicher';
-import { graubild } from '../src/graubild';
-import { popplerSeiten } from '../src/pdfseiten';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { graubild } from '../src/dateien/graubild';
+import { popplerSeiten } from '../src/dateien/pdfseiten';
 import {
   leseFontliste,
   merkeSchriftfehler,
@@ -20,11 +20,11 @@ import {
   probePdf,
   pruefeSchriften,
   schriftfehlerGesehen,
-} from '../src/ersatzschriften';
-import { speicherEinstellungen } from '../src/einstellungen';
+} from '../src/dateien/ersatzschriften';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
 import { speicherRepo } from '../src/repo/speicher';
-import { Texterkennung } from '../src/texterkennung';
-import { speicherAblage, Vorschaubilder } from '../src/vorschau';
+import { Texterkennung } from '../src/volltext/texterkennung';
+import { speicherAblage, Vorschaubilder } from '../src/dateien/vorschau';
 
 const da = (cmd: string) => {
   try {

@@ -15,11 +15,11 @@ import {
 } from '../../../shared/src/model';
 import { setzeZusammengesetzte } from '../../../shared/src/zusammengesetzt';
 import { istOffen, kurzStandard, RECHTE_LISTE, regelwerkVon } from '../../../shared/src/rechte';
-import { Fachfehler } from '../fehler';
+import { Fachfehler } from '../grundlagen/fehler';
 import type { Kern } from '../kern';
-import { protokoll } from '../protokoll';
+import { protokoll } from '../protokoll/protokoll';
 import { istUuid, type Repo } from '../repo';
-import { t } from '../sprache';
+import { t } from '../sprache/sprache';
 import type { MappenHistorie } from './historie';
 
 export class MappenTitel {

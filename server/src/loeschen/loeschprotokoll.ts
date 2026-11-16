@@ -4,13 +4,13 @@
  * (kern/loeschprotokoll.ts, #961). Schicht 3 – bekommt den Kern und die Teile des Löschens (Dokumente je Mappe vom
  * Ausgang).
  */
-import { Fachfehler } from '../fehler';
+import { Fachfehler } from '../grundlagen/fehler';
 import { dokInfo, type Kern, type ProtokollMappe, versionInfo } from '../kern';
-import { protokoll } from '../protokoll';
+import { protokoll } from '../protokoll/protokoll';
 import type { Repo } from '../repo';
-import { schriftstueckPdf } from '../schriftstueck';
-import { t } from '../sprache';
-import { csvAus } from '../xlsx';
+import { schriftstueckPdf } from '../formate/schriftstueck';
+import { t } from '../sprache/sprache';
+import { csvAus } from '../formate/xlsx';
 import { datumText } from '../../../shared/src/archiv';
 import {
   alsZeile,

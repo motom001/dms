@@ -14,7 +14,7 @@ import { join } from 'node:path';
 import { after, before, describe, it } from 'node:test';
 import type postgres from 'postgres';
 import { NICHTS, type Regelwerk } from '../../shared/src/rechte';
-import { richteZwischenspeicherEin } from '../src/zaehlerspeicher';
+import { richteZwischenspeicherEin } from '../src/zwischenspeicher/zaehlerspeicher';
 import { eigeneDatenbank } from './hilfe-db';
 
 const url = process.env.TEST_DATABASE_URL;
@@ -78,13 +78,13 @@ describe('Aufgabe und Notiz speichern (#928, PostgreSQL)', { skip: url ? false :
   before(async () => {
     const db = await eigeneDatenbank('aufgaben_zaehler');
     sql = db.sql;
-    const { baueApp, Nachlauf } = await import('../src/http');
-    const { Dienst } = await import('../src/dienst');
+    const { baueApp, Nachlauf } = await import('../src/http/http');
+    const { Dienst } = await import('../src/dienst/dienst');
     const { pgRepo } = await import('../src/repo/pg');
     const { Konten } = await import('../src/konten');
-    const { pgKontoRepo } = await import('../src/konto-repo');
-    const { ordnerSpeicher } = await import('../src/dateispeicher');
-    const { pgEinstellungen } = await import('../src/einstellungen');
+    const { pgKontoRepo } = await import('../src/konten/konto-repo');
+    const { ordnerSpeicher } = await import('../src/dateien/dateispeicher');
+    const { pgEinstellungen } = await import('../src/einstellungen/einstellungen');
     repo = pgRepo(sql, HAUSHALT);
     dienst = new Dienst(repo, ordnerSpeicher(await mkdtemp(join(tmpdir(), 'dms-a928-')), HAUSHALT), {
       einstellungen: pgEinstellungen(sql, HAUSHALT),

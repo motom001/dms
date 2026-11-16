@@ -1,6 +1,6 @@
 /** Arbeiter nur für die Tests des Pools (#542): schlafen, Fehler werfen, abstürzen, Buffer zurückgeben. */
 import { parentPort } from 'node:worker_threads';
-import { Fachfehler } from '../src/fehler';
+import { Fachfehler } from '../src/grundlagen/fehler';
 import { alsBuffer, fehlerDaten, type Auftrag } from '../src/arbeit/nachricht';
 
 const V: Record<string, (...a: never[]) => unknown> = {

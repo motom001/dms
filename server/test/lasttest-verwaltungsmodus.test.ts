@@ -7,11 +7,11 @@
 import assert from 'node:assert/strict';
 import type { AddressInfo } from 'node:net';
 import { after, before, beforeEach, describe, it } from 'node:test';
-import { Dienst } from '../src/dienst';
-import { speicherDateien } from '../src/dateispeicher';
-import { speicherEinstellungen } from '../src/einstellungen';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
 import { Konten } from '../src/konten';
-import { speicherKontoRepo } from '../src/konto-repo';
+import { speicherKontoRepo } from '../src/konten/konto-repo';
 import { speicherRepo } from '../src/repo/speicher';
 
 const MIN = 60_000;
@@ -30,7 +30,7 @@ interface Lasttest {
 
 const jetzt = { t: Date.now() };
 const zaehler = { verwaltung: 0, abgelehnt: 0 };
-let app: Awaited<ReturnType<(typeof import('../src/http'))['baueApp']>>;
+let app: Awaited<ReturnType<(typeof import('../src/http/http'))['baueApp']>>;
 let lt: Lasttest;
 const LENA: [string, string] = ['lena@example.org', 'lasttest-passwort-1'];
 const PETRA: [string, string] = ['petra@example.org', 'lasttest-passwort-3'];
@@ -44,9 +44,9 @@ before(async () => {
   await konten.passwortSetzen({ schluessel: r.link!.split('/passwort/')[1], passwort: PETRA[1] });
   await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
   konten.uhr = () => jetzt.t;
-  const { baueApp } = await import('../src/http');
-  const { ApiSchluesselDienst, speicherApiSchluesselRepo } = await import('../src/apischluessel');
-  const { Systemlast } = await import('../src/systemlast');
+  const { baueApp } = await import('../src/http/http');
+  const { ApiSchluesselDienst, speicherApiSchluesselRepo } = await import('../src/anmeldung/apischluessel');
+  const { Systemlast } = await import('../src/system/systemlast');
   app = await baueApp(d, konten, { apiSchluessel: new ApiSchluesselDienst(speicherApiSchluesselRepo()), systemlast: new Systemlast() });
   app.addHook('onResponse', async (req, reply) => {
     if (req.method === 'POST' && req.url === '/api/konto/verwaltung') zaehler.verwaltung++;

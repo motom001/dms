@@ -20,9 +20,9 @@ import {
   VERWEISE,
   type OrganisationNotiz,
 } from '../../../shared/src/organisation';
-import { Fachfehler } from '../fehler';
+import { Fachfehler } from '../grundlagen/fehler';
 import type { Kern, Zugriff } from '../kern';
-import { t } from '../sprache';
+import { t } from '../sprache/sprache';
 
 /** Was die 403-Antwort je Feld nennt (`details.schreibschutz`). */
 export interface SchreibschutzAbgelehnt {

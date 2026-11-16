@@ -3,12 +3,12 @@
  */
 import { darfBereich } from '../../../shared/src/verwaltungsrecht';
 import { ok, leer, b, ich } from '../http/routen-hilfen';
-import { Fachfehler } from '../fehler';
-import { AUFRUF_KOERPER_MAX } from '../grenzen';
-import { t } from '../sprache';
+import { Fachfehler } from '../grundlagen/fehler';
+import { AUFRUF_KOERPER_MAX } from '../grundlagen/grenzen';
+import { t } from '../sprache/sprache';
 import type { RoutenKontext } from '../http/routen-kontext';
 import { AUFRUF_SIGNATUR_KOPF, AUFRUF_ZEIT_KOPF, laufFuer } from '../../../shared/src/automatisierung';
-import type { Anfrage, Route } from '../routen';
+import type { Anfrage, Route } from '../http/routen';
 
 export function automatisierungRouten(k: RoutenKontext): Route[] {
   const { autos } = k;

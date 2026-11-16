@@ -2,15 +2,15 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { POST_KANAL } from '../../shared/src/model';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
-import { speicherEinstellungen } from '../src/einstellungen';
-import { Fachfehler } from '../src/fehler';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
+import { Fachfehler } from '../src/grundlagen/fehler';
 import { Konten } from '../src/konten';
-import { speicherKontoRepo } from '../src/konto-repo';
-import { absenderPasst, Postfaecher, pruefePostfach, verstaendlich, type GeleseneMail, type ImapSitzung } from '../src/postfach';
+import { speicherKontoRepo } from '../src/konten/konto-repo';
+import { absenderPasst, Postfaecher, pruefePostfach, verstaendlich, type GeleseneMail, type ImapSitzung } from '../src/post/postfach';
 import { speicherRepo } from '../src/repo/speicher';
-import { mailText } from '../src/mail';
+import { mailText } from '../src/mail/mail';
 
 /** Eine Mail im Test: die „Quelle“ ist JSON, der Leser macht daraus wieder die Mail. */
 type TestMail = Omit<GeleseneMail, 'anhaenge' | 'datum'> & {

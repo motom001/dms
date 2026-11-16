@@ -3,14 +3,14 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { BEISPIEL_NOETIG, BEISPIEL_PAKETE } from '../../shared/src/beispielablage';
 import type { InstalliertesPaket } from '../../shared/src/pakete';
-import { BeispielAblage } from '../src/beispielablage';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
-import { speicherEinstellungen } from '../src/einstellungen';
-import { Fachfehler } from '../src/fehler';
+import { BeispielAblage } from '../src/beispiele/beispielablage';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
+import { Fachfehler } from '../src/grundlagen/fehler';
 import { liesPaket, liesZip, Paketverwaltung } from '../src/pakete/verwaltung/index';
 import { speicherRepo } from '../src/repo/speicher';
-import { zipPuffer } from '../src/zip';
+import { zipPuffer } from '../src/formate/zip';
 
 const ICH = { id: '00000000-0000-4000-8000-0000000000aa', email: 'markus@example.org' };
 

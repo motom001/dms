@@ -6,23 +6,23 @@
  */
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { Dienst } from '../src/dienst';
-import { speicherDateien } from '../src/dateispeicher';
-import { speicherEinstellungen } from '../src/einstellungen';
-import { Fachfehler } from '../src/fehler';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
+import { Fachfehler } from '../src/grundlagen/fehler';
 import { Konten } from '../src/konten';
-import { speicherKontoRepo } from '../src/konto-repo';
-import { speicherKurzzustand } from '../src/kurzzustand';
-import { Anmeldesperre } from '../src/anmeldesperre';
-import { benutzerAusAntwort, Passkeys, relyingParty } from '../src/passkeys';
+import { speicherKontoRepo } from '../src/konten/konto-repo';
+import { speicherKurzzustand } from '../src/zwischenspeicher/kurzzustand';
+import { Anmeldesperre } from '../src/anmeldung/anmeldesperre';
+import { benutzerAusAntwort, Passkeys, relyingParty } from '../src/anmeldung/passkeys';
 import { speicherRepo } from '../src/repo/speicher';
-import { pruefeZugang, routen, type Anfrage, type Route } from '../src/routen';
-import { ohneGeheimnisse, findeGeheimnisse } from '../src/geheimnis-sperre';
-import { totp, ausBase32, Zweifaktor } from '../src/zweifaktor';
+import { pruefeZugang, routen, type Anfrage, type Route } from '../src/http/routen';
+import { ohneGeheimnisse, findeGeheimnisse } from '../src/geheimnisse/geheimnis-sperre';
+import { totp, ausBase32, Zweifaktor } from '../src/anmeldung/zweifaktor';
 import { Authenticator, b64 } from './hilfen-authenticator';
-import { heikleHandlung } from '../src/verwaltungsbereiche';
-import { PdfEntsperren } from '../src/entsperren';
-import { speicherFassungen } from '../src/dateiumwandlung';
+import { heikleHandlung } from '../src/werkbank/verwaltungsbereiche';
+import { PdfEntsperren } from '../src/dateien/entsperren';
+import { speicherFassungen } from '../src/dateien/dateiumwandlung';
 
 const status = (s: number) => (e: unknown) => e instanceof Fachfehler && e.status === s;
 const ADRESSE = 'https://ablago.example.org';

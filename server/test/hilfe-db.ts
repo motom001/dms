@@ -13,8 +13,8 @@
 import { after } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import type postgres from 'postgres';
-import { alsUrl, ausUrl } from '../src/anbindung';
-import { migriere, verbinde } from '../src/db';
+import { alsUrl, ausUrl } from '../src/datenbank/anbindung';
+import { migriere, verbinde } from '../src/datenbank/db';
 
 export const MIGRATIONEN = fileURLToPath(new URL('../migrations', import.meta.url));
 

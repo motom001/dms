@@ -3,12 +3,12 @@
  */
 import { createHash } from 'node:crypto';
 import { KATALOG_ALT_TAGE, type HerkunftPruefung, liesKatalog, type Katalog } from '../../../../shared/src/pakete';
-import { Fachfehler } from '../../fehler';
-import { nurTestschluessel, projektSchluessel, pruefeSignatur, SIGNATUR_DATEI, zeitVon } from '../../katalogsignatur';
-import { t } from '../../sprache';
+import { Fachfehler } from '../../grundlagen/fehler';
+import { nurTestschluessel, projektSchluessel, pruefeSignatur, SIGNATUR_DATEI, zeitVon } from '../katalogsignatur';
+import { t } from '../../sprache/sprache';
 import { mkdir, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { UPLOADS_SPEICHER_MAX } from '../../grenzen';
+import { UPLOADS_SPEICHER_MAX } from '../../grundlagen/grenzen';
 import { TAG_MS } from './abruf';
 import { type Hochgeladen, UPLOAD_GUELTIG, type UploadArt } from './basis';
 import { liesPaket } from './lesen';

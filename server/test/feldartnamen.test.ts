@@ -5,7 +5,7 @@ import { FELDTYPEN, feldtypName, type Feldtyp } from '../../shared/src/model';
 import { inSprache } from '../../shared/src/sprache';
 import de from '../../shared/src/sprachen/de/gemeinsam.json';
 import en from '../../shared/src/sprachen/en/gemeinsam.json';
-import { openapi } from '../src/api-v1';
+import { openapi } from '../src/http/api-v1';
 
 const ARTEN = Object.keys(FELDTYPEN) as Feldtyp[];
 const name = (datei: Record<string, string>, typ: Feldtyp) => datei[`model.feldart.${typ}`];

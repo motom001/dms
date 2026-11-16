@@ -11,10 +11,10 @@
  *   - zum Vergleich: Kosinus in SQL (unnest) und „alle Vektoren holen, in JS vergleichen“.
  * Danach wird die Datenbank wieder gelöscht.
  */
-import { alsUrl, ausUrl, legeDatenbankAn } from '../src/anbindung';
-import { migriere, verbinde } from '../src/db';
-import { Dienst } from '../src/dienst';
-import { speicherDateien } from '../src/dateispeicher';
+import { alsUrl, ausUrl, legeDatenbankAn } from '../src/datenbank/anbindung';
+import { migriere, verbinde } from '../src/datenbank/db';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherDateien } from '../src/dateien/dateispeicher';
 import { pgRepo } from '../src/repo/pg';
 import type { Repo } from '../src/repo';
 

@@ -19,7 +19,7 @@
  * Farbschlüssel-Maske (/Mask), Sonderfarben (Separation, DeviceN) und Bilder, deren Platzierung sich nicht
  * ermitteln lässt (z. B. nur in Mustern oder Anmerkungen).
  */
-import { execFile } from '../hintergrund';
+import { execFile } from '../prozesse/hintergrund';
 import { createHash } from 'node:crypto';
 import { mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -38,12 +38,12 @@ import {
   decodePDFRawStream,
   type PDFObject,
 } from 'pdf-lib';
-import { Fachfehler } from '../fehler';
+import { Fachfehler } from '../grundlagen/fehler';
 import { MIN_ERSPARNIS, STANDARD_STUFE, STUFEN, type Stufe } from '../../../shared/src/verkleinern';
 import { jpegMasse } from './bild';
 import { ladePdf } from './laden';
-import { t } from '../sprache';
-import { AUSGABE_VERKLEINERN, MIN_BILD_BYTES } from '../grenzen';
+import { t } from '../sprache/sprache';
+import { AUSGABE_VERKLEINERN, MIN_BILD_BYTES } from '../grundlagen/grenzen';
 
 /* ---------- Inhaltsströme lesen: Bilder und ihre Größe auf der Seite ---------- */
 

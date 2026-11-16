@@ -6,15 +6,15 @@ import type { Readable } from 'node:stream';
 import { MAX_DATEIGROESSE } from '../../../shared/src/model';
 import { VOLLTEXT_KOERPER_MAX } from '../../../shared/src/paketvolltext';
 import { ARCHIVFASSUNG_MAX_BYTES, archivfassungName, pdfaName } from '../../../shared/src/archivfassung';
-import { Fachfehler } from '../fehler';
-import { t } from '../sprache';
+import { Fachfehler } from '../grundlagen/fehler';
+import { t } from '../sprache/sprache';
 import { liesAnlass } from '../../../shared/src/loeschprotokoll';
 import { hatSchnittstelle } from '../../../shared/src/pakete';
 import { FASSUNG_MAX_BYTES, VORSCHAUBILD_MAX_BYTES } from '../../../shared/src/dateiumwandlung';
-import { KOERPER_SPIELRAUM } from '../grenzen';
+import { KOERPER_SPIELRAUM } from '../grundlagen/grenzen';
 import { L, ok, leer, b, quelle, ich, privatZwischenspeichern } from '../http/routen-hilfen';
 import type { RoutenKontext } from '../http/routen-kontext';
-import type { Anfrage, Antwort, Route } from '../routen';
+import type { Anfrage, Antwort, Route } from '../http/routen';
 
 export function dokumenteRouten(k: RoutenKontext): Route[] {
   const { dienst, x, weitergabe, mitnehmen, abgerufen, herausgeben, seitenquelle, zumAbspeichern, fuerAnzeige, ausgabeDatei, zg, darf } = k;

@@ -9,22 +9,22 @@ import {
   AUFRUF_GRENZEN, aufrufParameter, automatisierungsProbleme, bereinigeAutomatisierung, kurzform, laufFuer, platzhalterFuer, type Lauf, type WennAufruf,
 } from '../../shared/src/automatisierung';
 import { Automatisierungen, speicherAutomatisierungRepo } from '../src/automatisierung';
-import '../src/automatisierung-karten';
+import '../src/automatisierung/automatisierung-karten';
 import { aufrufBereich, aufrufSignatur, pgAufrufRepo, signaturPasst, speicherAufrufRepo } from '../src/automatisierung/index';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
-import { speicherEinstellungen } from '../src/einstellungen';
-import { Fachfehler } from '../src/fehler';
-import { artVon, bestandAus } from '../src/geheimnisse';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
+import { Fachfehler } from '../src/grundlagen/fehler';
+import { artVon, bestandAus } from '../src/geheimnisse/geheimnisse';
 import { Konten } from '../src/konten';
-import { speicherKontoRepo } from '../src/konto-repo';
-import { speicherKurzzustand } from '../src/kurzzustand';
-import { AUFRUF_ANGENOMMEN_JE_ADRESSE, AUFRUF_FEHLVERSUCHE_GESAMT, AUFRUF_FEHLVERSUCHE_JE_ADRESSE, AUFRUF_JE_BEREICH } from '../src/grenzen';
-import { aufrufZeile, notfallblattPlan } from '../src/notfallblatt';
+import { speicherKontoRepo } from '../src/konten/konto-repo';
+import { speicherKurzzustand } from '../src/zwischenspeicher/kurzzustand';
+import { AUFRUF_ANGENOMMEN_JE_ADRESSE, AUFRUF_FEHLVERSUCHE_GESAMT, AUFRUF_FEHLVERSUCHE_JE_ADRESSE, AUFRUF_JE_BEREICH } from '../src/grundlagen/grenzen';
+import { aufrufZeile, notfallblattPlan } from '../src/notfall/notfallblatt';
 import { liesPaket, liesZip } from '../src/pakete/verwaltung/index';
 import { speicherRepo } from '../src/repo/speicher';
-import { heikleHandlung } from '../src/verwaltungsbereiche';
-import { zipPuffer } from '../src/zip';
+import { heikleHandlung } from '../src/werkbank/verwaltungsbereiche';
+import { zipPuffer } from '../src/formate/zip';
 
 /** Verschlüsseln wie der Tresor (Präfix „dms1$“), nur zum Lesen im Test umkehrbar. */
 const verschluessele = (k: string) => `dms1$${Buffer.from(k).toString('base64url')}`;
@@ -360,7 +360,7 @@ describe('Aufruf von außen über HTTP (#679)', () => {
     const { d, konten, motor, lege, markus } = await aufbau();
     const a = await lege();
     ({ adresse, geheimnis } = await motor.aufrufAnlegen(a.id, 'adresse', markus.id));
-    const { baueApp } = await import('../src/http');
+    const { baueApp } = await import('../src/http/http');
     app = await baueApp(d, konten, { automatisierungen: motor }) as unknown as App;
   });
   after(async () => { await app?.close(); });
@@ -423,7 +423,7 @@ describe('Aufruf von außen in PostgreSQL (#679)', { skip: !process.env.TEST_DAT
     await assert.rejects(repo.setze({ automatisierungId: crypto.randomUUID(), kennung, geheimnis: 'x', erstellt: jetzt, erstelltVon: null, geheimnisSeit: jetzt }), 'Kennung eindeutig (und Automatisierung muss es geben)');
 
     // Zwei Prozesse (zwei Dienste) an derselben Datenbank: Wiederholschutz und Bremse gelten für beide zusammen.
-    const { pgKurzzustand } = await import('../src/kurzzustand');
+    const { pgKurzzustand } = await import('../src/zwischenspeicher/kurzzustand');
     const { Aufrufe } = await import('../src/automatisierung/index');
     const zustand = pgKurzzustand(db.sql, haushalt);
     const ausgeloest: string[] = [];

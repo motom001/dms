@@ -4,11 +4,11 @@ import { after, before, describe, it } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { beschreibeDirektlink, linkZuMappe, liesDirektlink, LINK_PFAD } from '../../shared/src/direktlink';
 import { heuteIn, verschiebe } from '../../shared/src/sichten';
-import { ladeBeispiele } from '../src/beispiele';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
-import { speicherEinstellungen } from '../src/einstellungen';
-import { Fachfehler } from '../src/fehler';
+import { ladeBeispiele } from '../src/beispiele/beispiele';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
+import { Fachfehler } from '../src/grundlagen/fehler';
 import type { Repo } from '../src/repo';
 import { speicherRepo } from '../src/repo/speicher';
 
@@ -168,7 +168,7 @@ describe('Sprechende Links in PostgreSQL', { skip: url ? false : 'TEST_DATABASE_
   /* eslint-enable @typescript-eslint/no-explicit-any */
   const db = `dms_direktlink_${process.pid}`;
   before(async () => {
-    const { verbinde, migriere } = await import('../src/db');
+    const { verbinde, migriere } = await import('../src/datenbank/db');
     haupt = verbinde(url!);
     await haupt.unsafe(`DROP DATABASE IF EXISTS ${db}`);
     await haupt.unsafe(`CREATE DATABASE ${db}`);

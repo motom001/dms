@@ -13,11 +13,11 @@ import {
   type Automatisierung,
 } from '../../../../shared/src/automatisierung';
 import { log, HAENGT_MIN } from './gemeinsam';
-import { faelligeTage, type Merker, laufeFaellige, wochentagVon, zeitpunktIn } from '../../zeitplan';
-import { eigeneVersion } from '../../system';
+import { faelligeTage, type Merker, laufeFaellige, wochentagVon, zeitpunktIn } from '../../zeitplan/zeitplan';
+import { eigeneVersion } from '../../system/system';
 import { liesRegion } from '../../../../shared/src/region';
 import { istBundesland, feiertagAm } from '../../../../shared/src/feiertage';
-import { wirksameZeit } from '../../aufgabenmail';
+import { wirksameZeit } from '../../aufgaben/aufgabenmail';
 
 /** Zeitplan und Merker. */
 export abstract class AutomatisierungZeitplan extends AutomatisierungWiederholen {

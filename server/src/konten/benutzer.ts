@@ -5,13 +5,13 @@ import { randomUUID } from 'node:crypto';
 import { KontenNotfall } from './notfall';
 import { heuteIn } from '../../../shared/src/sichten';
 import { abwesenheitWirkt, type Benutzer, type Abwesenheit, KEINE_ABWESENHEIT } from '../../../shared/src/model';
-import { Fachfehler } from '../fehler';
-import { t, mitSpracheVon } from '../sprache';
+import { Fachfehler } from '../grundlagen/fehler';
+import { t, mitSpracheVon } from '../sprache/sprache';
 import { text, type Ergebnis, pruefeEmail, log, schutzGesamt, zaehltAlsGesamt } from './hilfen';
 import { liesVerwaltung, verwaltungText, hatGesamt, gleicheVerwaltung, GESAMT } from '../../../shared/src/verwaltungsrecht';
 import { inSprache } from '../../../shared/src/sprache';
-import { nachweis } from '../nachweisjournal';
-import { mailtexte } from '../mail';
+import { nachweis } from '../protokoll/nachweisjournal';
+import { mailtexte } from '../mail/mail';
 
 /** Benutzerverwaltung, Export der eigenen Daten und Abwesenheit. */
 export abstract class KontenBenutzer extends KontenNotfall {

@@ -18,7 +18,7 @@ import {
   type Werte,
 } from '../../../shared/src/model';
 import { datumAusText, UMBAU_FELD, zahlAusText, zeitraumAusText } from '../../../shared/src/umbau';
-import { t } from '../sprache';
+import { t } from '../sprache/sprache';
 
 const str = (v: unknown) => (typeof v === 'string' ? v : v == null ? '' : String(v));
 const istObjekt = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v);

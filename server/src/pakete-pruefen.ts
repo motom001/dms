@@ -5,10 +5,10 @@
  * Exit-Code 0: alles in Ordnung; 1: mindestens ein Paket mit Fehler; 2: Aufruf falsch.
  */
 import { writeFileSync } from 'node:fs';
-import { protokoll, STUFEN } from './protokoll';
-import { alsText, pruefePakete } from './paketpruefung';
-import { mitSprache, t } from './sprache';
-import { eigeneVersion } from './system';
+import { protokoll, STUFEN } from './protokoll/protokoll';
+import { alsText, pruefePakete } from './pakete/paketpruefung';
+import { mitSprache, t } from './sprache/sprache';
+import { eigeneVersion } from './system/system';
 
 interface Aufruf {
   ordner: string[];

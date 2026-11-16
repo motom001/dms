@@ -4,14 +4,14 @@ import { wieImModus } from './hilfen';
 import { after, describe, it } from 'node:test';
 import { bereinigeFrist, fristAb, fristText, naechsterTermin } from '../../shared/src/fristen';
 import { bedingungsProblem, beschreibeBedingung, erfuellt, filterFuer, heuteIn, verschiebe } from '../../shared/src/sichten';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
-import { speicherEinstellungen } from '../src/einstellungen';
-import { Fachfehler } from '../src/fehler';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
+import { Fachfehler } from '../src/grundlagen/fehler';
 import { Konten } from '../src/konten';
-import { speicherKontoRepo } from '../src/konto-repo';
+import { speicherKontoRepo } from '../src/konten/konto-repo';
 import { speicherRepo } from '../src/repo/speicher';
-import { routen, type Anfrage } from '../src/routen';
+import { routen, type Anfrage } from '../src/http/routen';
 import { eigeneDatenbank } from './hilfe-db';
 
 const status = (s: number) => (e: unknown) => e instanceof Fachfehler && e.status === s;
@@ -21,9 +21,9 @@ const in_ = (tage: number) => verschiebe(heute, tage);
 /** Je Test eine frische Datenbank, wenn pg (TEST_DATABASE_URL), sonst Arbeitsspeicher. */
 async function repos(pg: boolean) {
   if (!pg) return undefined;
-  const { migriere } = await import('../src/db');
+  const { migriere } = await import('../src/datenbank/db');
   const { pgRepo } = await import('../src/repo/pg');
-  const { pgKontoRepo } = await import('../src/konto-repo');
+  const { pgKontoRepo } = await import('../src/konten/konto-repo');
   // Eigene Datenbank (#900), nach dem letzten Test der Datei gelöscht.
   const sql = (await eigeneDatenbank('frist', { migrieren: false })).sql;
   offen.push(sql);
@@ -287,7 +287,7 @@ function faelle(pg: boolean) {
         ]) {
           await assert.rejects(rufe(anna, 'GET', '/api/termine', { query }), status(422), JSON.stringify(query));
         }
-        const { routen: r } = await import('../src/routen');
+        const { routen: r } = await import('../src/http/routen');
         const { d, konten } = await aufbauFristen(pg);
         // Feiertage aus der Region (#726; seit #1001 nicht mehr über die Tägliche Zusammenfassung).
         const region = { lies: async () => ({ land: 'DE', bundesland: 'SN' as const, zeitzone: 'Europe/Berlin' }) };

@@ -11,7 +11,7 @@ import { after, describe, it } from 'node:test';
 import { gruppenMitWort, pruefeWortgruppe } from '../../shared/src/suche';
 import { liesVerwaltung } from '../../shared/src/verwaltungsrecht';
 import { BEREICHE, hatMitte, inVorlage, STUFEN, werkbankEbene } from '../../shared/src/werkbankansicht';
-import { bereicheDerRoute } from '../src/verwaltungsbereiche';
+import { bereicheDerRoute } from '../src/werkbank/verwaltungsbereiche';
 
 describe('Gleichbedeutende Wörter (#992): Prüfung einer Gruppe', () => {
   it('mindestens zwei Wörter, leere Zeilen zählen nicht', () => {
@@ -70,8 +70,8 @@ describe('Gleichbedeutende Wörter (#992): Migration', { skip: !pg && 'ohne TEST
   });
 
   it('Stand je Gruppe; Recht und Leiste von „Suche und Volltext“ gelten auch für den neuen Bereich', async () => {
-    const { ausUrl, alsUrl, legeDatenbankAn } = await import('../src/anbindung');
-    const { verbinde, migriere } = await import('../src/db');
+    const { ausUrl, alsUrl, legeDatenbankAn } = await import('../src/datenbank/anbindung');
+    const { verbinde, migriere } = await import('../src/datenbank/db');
     const a = { ...ausUrl(pg)!, datenbank: `dms_woerter_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}` };
     await legeDatenbankAn(a);
     const sql = verbinde(alsUrl(a));

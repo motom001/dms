@@ -29,12 +29,12 @@ describe('Oberfläche ausliefern (#215)', { skip: echtesFastify ? false : 'Fasti
     await writeFile(join(web, 'hilfe', 'admin', 'sicherung', 'index.html'), 'SICHERUNG-SEITE');
     // Daneben, außerhalb von web/: darf nie ausgeliefert werden.
     await writeFile(join(wurzel, 'geheim.txt'), 'GEHEIM');
-    const { baueApp } = await import('../src/http');
-    const { Dienst } = await import('../src/dienst');
+    const { baueApp } = await import('../src/http/http');
+    const { Dienst } = await import('../src/dienst/dienst');
     const { speicherRepo } = await import('../src/repo/speicher');
-    const { speicherDateien } = await import('../src/dateispeicher');
+    const { speicherDateien } = await import('../src/dateien/dateispeicher');
     const { Konten } = await import('../src/konten');
-    const { speicherKontoRepo } = await import('../src/konto-repo');
+    const { speicherKontoRepo } = await import('../src/konten/konto-repo');
     const dienst = new Dienst(speicherRepo(), speicherDateien());
     const konten = new Konten(speicherKontoRepo(), null, 'http://nas', dienst.systemtypen.benutzerspiegel());
     app = (await baueApp(dienst, konten, { webDir: web })) as unknown as typeof app;

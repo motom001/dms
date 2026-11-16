@@ -9,16 +9,16 @@ import { hatEinstellungen, kernFelderVon, mitKern } from '../../shared/src/paket
 import { ampelVon, anzeigeWert, dateiartPasst, liesProbeErgebnis, liesReiterAngaben, summeVon } from '../../shared/src/paketreiter';
 import { beantworteZugang, type AktionsDatei } from '../src/paketaktionen/index';
 import type { InstalliertesPaket, PaketCode } from '../../shared/src/pakete';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
-import { speicherEinstellungen } from '../src/einstellungen';
-import { Fachfehler } from '../src/fehler';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
+import { Fachfehler } from '../src/grundlagen/fehler';
 import { Paketverwaltung, type PaketLaeufer } from '../src/pakete/verwaltung/index';
 import { setzePaketSpeicher } from '../src/pakete/index';
 import { speicherRepo } from '../src/repo/speicher';
 import type { Repo } from '../src/repo';
 import { eigeneDatenbank } from './hilfe-db';
-import { Tresor } from '../src/tresor';
+import { Tresor } from '../src/geheimnisse/tresor';
 
 const ICH = { id: null, email: 'admin@example.org' };
 const q = { typen: [], benutzer: [], rollen: [], sichten: [], typVon: () => null };

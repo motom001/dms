@@ -6,13 +6,13 @@
  */
 import { randomUUID } from 'node:crypto';
 import type { DokumenteDienst, DokumentVersionen } from '../dokumente';
-import { Fachfehler } from '../fehler';
+import { Fachfehler } from '../grundlagen/fehler';
 import type { Kern, Zugriff } from '../kern';
 import { bereinigeWerte, type MappenEingaben, type MappenHistorie, type MappenTitel } from '../mappen';
 import type { MappentypenDienst } from '../mappentypen';
-import { protokoll } from '../protokoll';
+import { protokoll } from '../protokoll/protokoll';
 import { istUuid, type Repo } from '../repo';
-import { t } from '../sprache';
+import { t } from '../sprache/sprache';
 import { VolltextDienst } from '../volltext';
 import type { ZugriffDienst } from '../zugriff';
 import { anlagenVon, mitAnlagen, zumVerschieben } from '../../../shared/src/anlagen';

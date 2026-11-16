@@ -45,11 +45,11 @@ import {
   heuteIn,
   setzeEigeneWerte,
 } from '../../../shared/src/sichten';
-import { Fachfehler } from '../fehler';
+import { Fachfehler } from '../grundlagen/fehler';
 import type { Kern, Zugriff } from '../kern';
 import { postWerteNeu } from '../../../shared/src/postfelder';
 import { istUuid, type Repo } from '../repo';
-import { t } from '../sprache';
+import { t } from '../sprache/sprache';
 import type { ZugriffDienst } from '../zugriff';
 import { keinSchluessel, passwortWert } from './passwortfelder';
 

@@ -26,10 +26,10 @@ import {
   werkbankZurueck,
   einDatentraeger,
 } from '../../shared/src/werkbankansicht';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
-import { speicherEinstellungen } from '../src/einstellungen';
-import { Fachfehler } from '../src/fehler';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
+import { Fachfehler } from '../src/grundlagen/fehler';
 import { speicherRepo } from '../src/repo/speicher';
 
 const ICH = { id: 'admin-1', email: 'admin@example.org' };

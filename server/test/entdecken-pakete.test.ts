@@ -6,11 +6,11 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { HANDBUCH_VERWEIS, pruefeRundgaenge, rundgangFuer } from '../../shared/src/entdecken';
 import type { InstalliertesPaket } from '../../shared/src/pakete';
-import { ankerListe, Entdecken } from '../src/entdecken';
-import { Fachfehler } from '../src/fehler';
+import { ankerListe, Entdecken } from '../src/entdecken/entdecken';
+import { Fachfehler } from '../src/grundlagen/fehler';
 import { liesPaket } from '../src/pakete/verwaltung/index';
 import { Konten } from '../src/konten';
-import { speicherKontoRepo } from '../src/konto-repo';
+import { speicherKontoRepo } from '../src/konten/konto-repo';
 
 const MANIFEST =
   'schema: 1\nid: vertraege\nname: Verträge\nversion: 2.1.0\nbeschreibung: x\nautor: { name: x, github: x }\nlizenz: Apache-2.0\ndms: ">=0.256.0"\n' +

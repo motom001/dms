@@ -9,16 +9,16 @@ import { readFileSync } from 'node:fs';
 import { kontorolleKennung } from '../../shared/src/model';
 import { SYSTEMKONTEN_AUF, systemkontenKopf, systemkontoAuffaellig, type SystemkontoFehler } from '../../shared/src/systemkonten';
 import { NICHTS } from '../../shared/src/rechte';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
-import { speicherEinstellungen } from '../src/einstellungen';
-import { Fachfehler } from '../src/fehler';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
+import { Fachfehler } from '../src/grundlagen/fehler';
 import { Konten } from '../src/konten';
-import { hasheSchluessel } from '../src/passwort';
-import { speicherKontoRepo } from '../src/konto-repo';
+import { hasheSchluessel } from '../src/anmeldung/passwort';
+import { speicherKontoRepo } from '../src/konten/konto-repo';
 import { speicherRepo } from '../src/repo/speicher';
-import { routen, type Anfrage } from '../src/routen';
-import { Tresor } from '../src/tresor';
+import { routen, type Anfrage } from '../src/http/routen';
+import { Tresor } from '../src/geheimnisse/tresor';
 
 const status = (s: number) => (e: unknown) => e instanceof Fachfehler && e.status === s;
 

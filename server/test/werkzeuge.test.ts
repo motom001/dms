@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { describe, it } from 'node:test';
 import { fehlendeProgramme, fehlendeWerkzeuge } from '../../shared/src/werkzeuge';
-import { pruefeWerkzeuge } from '../src/texterkennung';
+import { pruefeWerkzeuge } from '../src/volltext/texterkennung';
 
 const da = (cmd: string, arg: string) => {
   try {

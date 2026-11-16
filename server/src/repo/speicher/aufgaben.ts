@@ -1,6 +1,6 @@
 /** Aufgaben (Arbeitsspeicher, #54) und Aufgaben bei Personen ohne Leserecht (#798). */
 import { randomUUID } from 'node:crypto';
-import { t } from '../../sprache';
+import { t } from '../../sprache/sprache';
 import type { RepoTeil } from '..';
 import { jetzt, kopie } from './hilfen';
 import type { SpeicherKontext } from './kontext';

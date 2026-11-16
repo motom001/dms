@@ -2,11 +2,11 @@
  * Dann-Karten (#674, #1278): was eine Karte zum Ausführen bekommt und die Liste der ausführenden Karten – neue Karten
  * melden sich dort an (`automatisierung-karten.ts`, `automatisierung-aussen.ts`).
  */
-import type { Dienst } from '../../dienst';
+import type { Dienst } from '../../dienst/dienst';
 import type { Zugriff } from '../../kern';
 import type { Benutzer, Mappe, Mappentyp } from '../../../../shared/src/model';
 import type { Automatisierung, Empfaenger, DannKarte, DannArt } from '../../../../shared/src/automatisierung';
-import type { SystemWerkbank } from '../../automatisierung-werkbank';
+import type { SystemWerkbank } from '../automatisierung-werkbank';
 import { Ausleitung } from '../ausleitung';
 
 /* ---------- Dann-Karten ---------- */

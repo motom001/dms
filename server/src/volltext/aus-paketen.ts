@@ -5,12 +5,12 @@
  */
 import { INFO_VOLLTEXT_DURCH, INFO_VOLLTEXT_PAKET } from '../../../shared/src/paketvolltext';
 import type { DokumentArchivfassung, DokumenteDienst } from '../dokumente';
-import { Fachfehler } from '../fehler';
+import { Fachfehler } from '../grundlagen/fehler';
 import type { Kern, Zugriff } from '../kern';
-import type { PaketVolltext } from '../paketvolltext';
-import { protokoll } from '../protokoll';
+import type { PaketVolltext } from './paketvolltext';
+import { protokoll } from '../protokoll/protokoll';
 import type { Repo } from '../repo';
-import { t } from '../sprache';
+import { t } from '../sprache/sprache';
 import { VolltextDienst } from './volltext.dienst';
 
 /** Die Teile, die der Volltext aus Paketen ruft: Dokumente (Texterkennung) und Archivfassung. */

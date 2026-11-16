@@ -7,7 +7,7 @@ import type { Automatisierung, AutomatisierungDaten, Angehalten, Herkunft, Lauf 
 import { t } from './gemeinsam';
 import { heuteIn } from '../../../../shared/src/sichten';
 import { istUuid } from '../../repo';
-import type { Dienst } from '../../dienst';
+import type { Dienst } from '../../dienst/dienst';
 
 /* ---------- Speicher ---------- */
 

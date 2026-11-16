@@ -5,7 +5,7 @@
 import { AutomatisierungBearbeiten } from './bearbeiten';
 import { type AufrufStand, Aufrufe } from '../aufruf';
 import { oeffentlichErreichbar } from '../../../../shared/src/auskunft';
-import { Fachfehler } from '../../fehler';
+import { Fachfehler } from '../../grundlagen/fehler';
 import { t, log } from './gemeinsam';
 import { istAufruf, type Automatisierung, aussenKarten, zielFuer } from '../../../../shared/src/automatisierung';
 import type { AusgangVerlauf } from '../ausleitung';

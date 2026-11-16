@@ -8,18 +8,18 @@ import { join } from 'node:path';
 import type { Readable } from 'node:stream';
 import { describe, it } from 'node:test';
 import { PDFDocument } from 'pdf-lib';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
-import { speicherEinstellungen } from '../src/einstellungen';
-import { Fachfehler } from '../src/fehler';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
+import { Fachfehler } from '../src/grundlagen/fehler';
 import { Konten } from '../src/konten';
-import { speicherKontoRepo } from '../src/konto-repo';
+import { speicherKontoRepo } from '../src/konten/konto-repo';
 import { pdfAus } from './hilfen-einfach-pdf';
 import { speicherRepo } from '../src/repo/speicher';
-import { routen, type Anfrage, type Datei } from '../src/routen';
-import { Tresor } from '../src/tresor';
-import { csvAus, seriell, spalte } from '../src/xlsx';
-import { crc32, zipPuffer } from '../src/zip';
+import { routen, type Anfrage, type Datei } from '../src/http/routen';
+import { Tresor } from '../src/geheimnisse/tresor';
+import { csvAus, seriell, spalte } from '../src/formate/xlsx';
+import { crc32, zipPuffer } from '../src/formate/zip';
 
 const status = (s: number) => (e: unknown) => e instanceof Fachfehler && e.status === s;
 // 1×1-PNG

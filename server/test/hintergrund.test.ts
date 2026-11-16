@@ -17,8 +17,8 @@ import {
   senkeProzess,
   spawn,
   type Prioritaet,
-} from '../src/hintergrund';
-import { protokoll } from '../src/protokoll';
+} from '../src/prozesse/hintergrund';
+import { protokoll } from '../src/protokoll/protokoll';
 
 const basis = getPriority(process.pid);
 const ziel = Math.min(19, basis + HINTERGRUND_NICE_VORGABE);
@@ -191,7 +191,7 @@ describe('Programme enden mit Ablago (#1203)', () => {
     ['Absturz', "throw new Error('Absturz');"],
   ] as const) {
     it(`nach ${art}: kein Kindprozess bleibt übrig`, async () => {
-      const code = `const { spawn } = await import(${JSON.stringify(new URL('../src/hintergrund.ts', import.meta.url).href)});
+      const code = `const { spawn } = await import(${JSON.stringify(new URL('../src/prozesse/hintergrund.ts', import.meta.url).href)});
         const k = spawn('sleep', ['60'], { stdio: 'ignore' }); process.stdout.write(String(k.pid) + '\\n');
         setTimeout(() => { ${ende} }, 100);`;
       const eltern = normalSpawn(process.execPath, ['--import', 'tsx', '--input-type=module', '-e', code], {

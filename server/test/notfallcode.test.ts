@@ -6,20 +6,20 @@
 import assert from 'node:assert/strict';
 import { after, describe, it } from 'node:test';
 import { NOTFALLCODE_LAENGE, NOTFALLCODE_ZEICHEN, normiereNotfallcode, notfallcodeInGruppen } from '../../shared/src/notfallcode';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
-import { speicherEinstellungen } from '../src/einstellungen';
-import { Fachfehler } from '../src/fehler';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
+import { Fachfehler } from '../src/grundlagen/fehler';
 import { Konten } from '../src/konten';
-import { pgKontoRepo, speicherKontoRepo, type KontoRepo } from '../src/konto-repo';
-import type { Mailer } from '../src/mail';
-import { notfallblattPlan } from '../src/notfallblatt';
-import { FEHLVERSUCHE_MELDEN, heimnetzStand, istHeimnetz, istPrivat, Notfallcode, NotfallSperre } from '../src/notfallcode';
-import { protokoll } from '../src/protokoll';
+import { pgKontoRepo, speicherKontoRepo, type KontoRepo } from '../src/konten/konto-repo';
+import type { Mailer } from '../src/mail/mail';
+import { notfallblattPlan } from '../src/notfall/notfallblatt';
+import { FEHLVERSUCHE_MELDEN, heimnetzStand, istHeimnetz, istPrivat, Notfallcode, NotfallSperre } from '../src/notfall/notfallcode';
+import { protokoll } from '../src/protokoll/protokoll';
 import { speicherRepo } from '../src/repo/speicher';
-import { routen, ZWEITE_ABGELEHNT, type Anfrage } from '../src/routen';
-import { heikleHandlung } from '../src/verwaltungsbereiche';
-import { Zweifaktor } from '../src/zweifaktor';
+import { routen, ZWEITE_ABGELEHNT, type Anfrage } from '../src/http/routen';
+import { heikleHandlung } from '../src/werkbank/verwaltungsbereiche';
+import { Zweifaktor } from '../src/anmeldung/zweifaktor';
 import { imModus } from './hilfen';
 import { eigeneDatenbank } from './hilfe-db';
 
@@ -319,7 +319,7 @@ describe('Notfallzugang (#815): Konto wählen, Passwort setzen, einmal gültig',
     const { n, konten, repo, zf, lena, post, benutzt } = await aufbau();
     // Lena hat Zwei-Faktor und ist angemeldet.
     const e = await zf.beginne(lena, 'Ablago');
-    const { totp, ausBase32 } = await import('../src/zweifaktor');
+    const { totp, ausBase32 } = await import('../src/anmeldung/zweifaktor');
     await zf.bestaetige(lena.id, totp(ausBase32(e.geheimnis), Math.floor(Date.now() / 30_000)), 'test');
     const hashVorher = (await repo.holeHash(lena.email))!.hash;
     const code = await konten.neuerNotfallcode();

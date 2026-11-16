@@ -10,7 +10,7 @@
  *   Vorlage mit offenen Abläufen bleibt als eigene stehen, damit niemand etwas verliert.
  * - Die Karten hat `liesPaket` (pakete/verwaltung/lesen.ts) gegen die erlaubte Liste geprüft; hier noch einmal, bevor etwas gespeichert wird.
  */
-import { protokoll } from '../protokoll';
+import { protokoll } from '../protokoll/protokoll';
 import type { Repo } from '../repo';
 import {
   type Ablaufvorlage,

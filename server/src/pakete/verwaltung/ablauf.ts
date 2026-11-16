@@ -20,8 +20,8 @@ import {
   type AblaufEingabe,
 } from '../../../../shared/src/pakete';
 import { ueberfuehre, abschnittsfelder, type EinstellungFeld, type Verweisquelle } from '../../../../shared/src/paketeinstellungen';
-import { Fachfehler } from '../../fehler';
-import { t } from '../../sprache';
+import { Fachfehler } from '../../grundlagen/fehler';
+import { t } from '../../sprache/sprache';
 import { paketEinstellungen } from '../index';
 import { type Manifest, type Paket } from './format';
 import { meldungen, sammelKennungen } from './hilfen';

@@ -5,7 +5,7 @@
  * Aufruf: node --import tsx server/werkzeuge/katalog-erreichbar.ts
  */
 import { OFFIZIELLER_KATALOG } from '../../shared/src/pakete';
-import { projektSchluessel, pruefeSignatur } from '../src/katalogsignatur';
+import { projektSchluessel, pruefeSignatur } from '../src/pakete/katalogsignatur';
 
 async function hole(adresse: string): Promise<Buffer> {
   let u = new URL(adresse);

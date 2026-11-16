@@ -18,7 +18,7 @@
  * Bilder (JPEG, PNG) werden genauso behandelt (Ausrichtung laut EXIF beachtet) und bleiben Bilder desselben
  * Typs – ohne EXIF-Daten.
  */
-import { execFile } from '../hintergrund';
+import { execFile } from '../prozesse/hintergrund';
 import { mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -40,14 +40,14 @@ import {
   TextRenderingMode,
   type PDFFont,
 } from 'pdf-lib';
-import { Fachfehler } from '../fehler';
+import { Fachfehler } from '../grundlagen/fehler';
 import { SCHWAERZEN_MAX_SEITEN, wortIn, type Bereich, type SchwaerzSeite, type Wort } from '../../../shared/src/schwaerzen';
 import { exifAusrichtung, jpegMasse } from './bild';
 import { eigenerPuffer } from './puffer';
 import { ladePdf } from './laden';
 import { pdfText, schriften } from './schrift';
-import { t } from '../sprache';
-import { AUSGABE_GROSS } from '../grenzen';
+import { t } from '../sprache/sprache';
+import { AUSGABE_GROSS } from '../grundlagen/grenzen';
 
 /** Auflösung des Ergebnisses (PDF). */
 export const SCHWAERZEN_DPI = 150;

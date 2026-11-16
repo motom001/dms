@@ -44,8 +44,8 @@ import { PAKET_ID, SCHLUESSEL, TYP_KENNUNG } from '../../../shared/src/kennungen
 import { TABELLE_NEU_MAX, type Tabellenquelle } from '../../../shared/src/tabelle';
 import { istFeldmerkmal, istSchreibschutz } from '../../../shared/src/organisation';
 import { VORLAGE_MAX } from '../../../shared/src/zusammengesetzt';
-import { Fachfehler } from '../fehler';
-import { t } from '../sprache';
+import { Fachfehler } from '../grundlagen/fehler';
+import { t } from '../sprache/sprache';
 
 const text = (v: unknown) => (v == null ? '' : String(v)).trim();
 

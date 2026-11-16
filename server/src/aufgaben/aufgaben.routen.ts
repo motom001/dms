@@ -1,12 +1,12 @@
 /**
  * Aufgaben (#960: aus routen.ts): Aufgaben, Fristen und Termine, Erinnerungen, persönliche Zeiten der täglichen Zusammenfassung.
  */
-import { Fachfehler } from '../fehler';
-import { t } from '../sprache';
-import { pruefeZeit } from '../aufgabenmail';
+import { Fachfehler } from '../grundlagen/fehler';
+import { t } from '../sprache/sprache';
+import { pruefeZeit } from './aufgabenmail';
 import { L, ok, leer, b, ich } from '../http/routen-hilfen';
 import type { RoutenKontext } from '../http/routen-kontext';
-import type { Route } from '../routen';
+import type { Route } from '../http/routen';
 
 export function aufgabenRouten(k: RoutenKontext): Route[] {
   const { dienst, konten, x, zusammenfassung, zg, empfaengerSichtbar, leseHinweis, darf } = k;

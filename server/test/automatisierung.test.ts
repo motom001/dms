@@ -17,11 +17,11 @@ import type { KatalogEreignis } from '../../shared/src/ereignisse';
 import { heuteIn, verschiebe } from '../../shared/src/sichten';
 import { Automatisierungen, pgAutomatisierungRepo, speicherAutomatisierungRepo } from '../src/automatisierung';
 import type { Automatisierung } from '../../shared/src/automatisierung';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
-import { speicherEinstellungen } from '../src/einstellungen';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
 import { Konten } from '../src/konten';
-import { speicherKontoRepo } from '../src/konto-repo';
+import { speicherKontoRepo } from '../src/konten/konto-repo';
 import { speicherRepo } from '../src/repo/speicher';
 
 async function aufbau(uhr: () => number = Date.now) {
@@ -326,7 +326,7 @@ describe('Automatisierungen in PostgreSQL (#674)', { skip: url ? false : 'TEST_D
   const A = '00000000-0000-4000-8000-0000000000e1';
   const E = '00000000-0000-4000-8000-0000000000e2';
   before(async () => {
-    const { verbinde, migriere } = await import('../src/db');
+    const { verbinde, migriere } = await import('../src/datenbank/db');
     haupt = verbinde(url!);
     await haupt.unsafe(`DROP DATABASE IF EXISTS ${db}`);
     await haupt.unsafe(`CREATE DATABASE ${db}`);

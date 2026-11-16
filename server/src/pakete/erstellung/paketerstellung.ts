@@ -15,7 +15,7 @@
  */
 import { buffer as alsPuffer } from 'node:stream/consumers';
 import { parse } from 'yaml';
-import { werkbankAus, WERKBANK_EINSTELLUNG } from '../../entdecken-werkbank';
+import { werkbankAus, WERKBANK_EINSTELLUNG } from '../../entdecken/entdecken-werkbank';
 import type { Automatisierung } from '../../../../shared/src/automatisierung';
 import { inMB, vergleicheVersion, type InstalliertesPaket } from '../../../../shared/src/pakete';
 import {
@@ -28,16 +28,16 @@ import {
   type SelbstErstellt,
   type SelbstErstelltDetail,
 } from '../../../../shared/src/paketerstellung';
-import type { Dienst } from '../../dienst';
-import { t } from '../../sprache';
-import { Fachfehler } from '../../fehler';
+import type { Dienst } from '../../dienst/dienst';
+import { t } from '../../sprache/sprache';
+import { Fachfehler } from '../../grundlagen/fehler';
 import { ARCHIV_MAX, liesZip } from '../verwaltung/zip-lesen';
 import { beispielDateiart } from '../verwaltung/beispiele';
 import { liesPaket } from '../verwaltung/lesen';
 import { type Handelnder } from '../verwaltung/optionen';
-import { protokoll } from '../../protokoll';
-import { zipPuffer } from '../../zip';
-import { ARCHIV_MERKEN_MAX } from '../../grenzen';
+import { protokoll } from '../../protokoll/protokoll';
+import { zipPuffer } from '../../formate/zip';
+import { ARCHIV_MERKEN_MAX } from '../../grundlagen/grenzen';
 import { paketArchive, paketEntwuerfe, setzePaketArchive, setzePaketEntwuerfe } from '../index';
 import {
   aenderung,

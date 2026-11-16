@@ -3,8 +3,8 @@
  * lesbaren Satz mit Beschriftungen. Verglichen wird über den Pfad; Zeitstempel kommen in den Einträgen nicht vor,
  * also gibt es kein Rauschen. Das Paket schickt seinen gemerkten Stand, der Kern vergleicht mit dem jetzigen.
  */
-import { ohneGeheimnisse } from '../geheimnis-sperre';
-import { t } from '../sprache';
+import { ohneGeheimnisse } from '../geheimnisse/geheimnis-sperre';
+import { t } from '../sprache/sprache';
 import type { EinrichtungEintrag, PaketdatenAenderung, PaketdatenWert } from '../../../shared/src/paketdaten';
 
 /** Höchstzahl Einträge eines mitgeschickten Stands (Schutz vor sehr großen Anfragen). */

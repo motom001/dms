@@ -3,13 +3,13 @@
  * dienst.ts). Schicht 3 – Teile und Anschluss wie `AufgabenDienst` (aufgaben.dienst.ts).
  */
 import { randomUUID } from 'node:crypto';
-import { Fachfehler } from '../fehler';
+import { Fachfehler } from '../grundlagen/fehler';
 import { ABO_ARTEN, type Kern } from '../kern';
-import { jeAnfrage } from '../lesespeicher';
+import { jeAnfrage } from '../zwischenspeicher/lesespeicher';
 import type { MappenHistorie } from '../mappen';
-import { protokoll } from '../protokoll';
+import { protokoll } from '../protokoll/protokoll';
 import type { Repo } from '../repo';
-import { t } from '../sprache';
+import { t } from '../sprache/sprache';
 import type { Benutzer } from '../../../shared/src/model';
 import { zeitzone } from '../../../shared/src/region';
 import { gebietsschema } from '../../../shared/src/sprache';

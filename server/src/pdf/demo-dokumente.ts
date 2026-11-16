@@ -1,4 +1,4 @@
-import { execFile } from '../hintergrund';
+import { execFile } from '../prozesse/hintergrund';
 import { mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -17,11 +17,11 @@ import {
   type PDFPage,
 } from 'pdf-lib';
 import type { Dokumentart } from '../../../shared/src/demodaten';
-import { absatz, anschrift, euro, person, position, satz, ueberschrift } from '../demo-text';
-import type { Zufall } from '../zufall';
+import { absatz, anschrift, euro, person, position, satz, ueberschrift } from '../demo/demo-text';
+import type { Zufall } from '../demo/zufall';
 import { eigenerPuffer } from './puffer';
 import { angabe, pdfText, schriften } from './schrift';
-import { AUSGABE_MITTEL, DEMO_GROSS_MAX as MAX_GROSS, MB } from '../grenzen';
+import { AUSGABE_MITTEL, DEMO_GROSS_MAX as MAX_GROSS, MB } from '../grundlagen/grenzen';
 
 const deflateAsync = promisify(deflate);
 

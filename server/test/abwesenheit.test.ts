@@ -4,16 +4,16 @@ import { imModus } from './hilfen';
 import { describe, it } from 'node:test';
 import { erwaehnung } from '../../shared/src/markdown';
 import { heuteIn, verschiebe } from '../../shared/src/sichten';
-import { Aufgabenmail } from '../src/aufgabenmail';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
-import { speicherEinstellungen } from '../src/einstellungen';
-import { Fachfehler } from '../src/fehler';
+import { Aufgabenmail } from '../src/aufgaben/aufgabenmail';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
+import { Fachfehler } from '../src/grundlagen/fehler';
 import { Konten } from '../src/konten';
-import { speicherKontoRepo, type KontoRepo } from '../src/konto-repo';
+import { speicherKontoRepo, type KontoRepo } from '../src/konten/konto-repo';
 import { speicherRepo } from '../src/repo/speicher';
 import { Automatisierungen, speicherAutomatisierungRepo } from '../src/automatisierung';
-import '../src/automatisierung-karten';
+import '../src/automatisierung/automatisierung-karten';
 
 const status = (s: number) => (e: unknown) => e instanceof Fachfehler && e.status === s;
 

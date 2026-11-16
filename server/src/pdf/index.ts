@@ -25,7 +25,7 @@
  * - `bild.ts`, `puffer.ts`, `text.ts` kleine Helfer (Bildart, EXIF, Umgehung #456, Dateigröße)
  */
 import { arbeite, arbeiteBis } from '../arbeit';
-import type { Zufall } from '../zufall';
+import type { Zufall } from '../demo/zufall';
 import type { Dokumentart } from '../../../shared/src/demodaten';
 import type { MappenInhalt } from './demo-dokumente';
 import type * as S from './seiten';
@@ -39,7 +39,7 @@ import type * as Ar from './archiv';
 import type * as An from './anzeige';
 import type * as Nf from './notfallblatt';
 import type * as Br from './brief';
-import { TEXTSATZ_ZEIT_MS } from '../grenzen';
+import { TEXTSATZ_ZEIT_MS } from '../grundlagen/grenzen';
 import type * as Er from './erechnung';
 
 export { bildArt, exifAusrichtung, jpegMasse } from './bild';

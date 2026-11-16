@@ -18,9 +18,9 @@ import {
   setzeNachweisjournal,
   speicherJournal,
   type JournalSpeicher,
-} from '../src/nachweisjournal';
-import { speicherEinstellungen } from '../src/einstellungen';
-import { findeGeheimnisse } from '../src/geheimnis-sperre';
+} from '../src/protokoll/nachweisjournal';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
+import { findeGeheimnisse } from '../src/geheimnisse/geheimnis-sperre';
 import { PAKETDATEN_BEREICHE, darfPaketdaten, type EinrichtungEintrag } from '../../shared/src/paketdaten';
 import type { Mappentyp } from '../../shared/src/model';
 

@@ -23,7 +23,7 @@ const prozesse: ChildProcess[] = [];
 after(async () => {
   for (const p of prozesse) if (p.exitCode === null) p.kill('SIGKILL');
   if (URL_DB) {
-    const { ausUrl, alsUrl } = await import('../src/anbindung');
+    const { ausUrl, alsUrl } = await import('../src/datenbank/anbindung');
     const { default: postgres } = await import('postgres');
     const a = ausUrl(URL_DB)!;
     const sql = postgres(alsUrl({ ...a, datenbank: 'postgres' }), { onnotice: () => {} });
@@ -44,7 +44,7 @@ async function freierPort(): Promise<number> {
 }
 
 async function neueDatenbank(name: string): Promise<string> {
-  const { ausUrl, alsUrl, legeDatenbankAn } = await import('../src/anbindung');
+  const { ausUrl, alsUrl, legeDatenbankAn } = await import('../src/datenbank/anbindung');
   const a = { ...ausUrl(URL_DB)!, datenbank: `dms_lt612_${name}_${Date.now().toString(36)}` };
   await legeDatenbankAn(a);
   datenbanken.push(a.datenbank);

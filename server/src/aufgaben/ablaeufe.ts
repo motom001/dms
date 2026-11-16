@@ -19,13 +19,13 @@
  *   angewendete je Person und Minute (grenzen.ts).
  */
 import { randomUUID } from 'node:crypto';
-import { Fachfehler } from '../fehler';
-import { ABLAEUFE_JE_MINUTE, ABLAEUFE_JE_PERSON_UND_MAPPE } from '../grenzen';
+import { Fachfehler } from '../grundlagen/fehler';
+import { ABLAEUFE_JE_MINUTE, ABLAEUFE_JE_PERSON_UND_MAPPE } from '../grundlagen/grenzen';
 import type { Kern, Zugriff } from '../kern';
 import type { MappenHistorie } from '../mappen';
-import { protokoll } from '../protokoll';
+import { protokoll } from '../protokoll/protokoll';
 import { istUuid, type Repo } from '../repo';
-import { t, tAuto } from '../sprache';
+import { t, tAuto } from '../sprache/sprache';
 import type { ZugriffDienst } from '../zugriff';
 import {
   type AblaufAngehalten,

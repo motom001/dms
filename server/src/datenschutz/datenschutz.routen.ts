@@ -2,19 +2,19 @@
  * Datenschutz (#960: aus routen.ts): Baum über Verweise, Auskunft, Löschkonzept und Löschprotokoll, Auskunft zustellen
  * und die öffentliche Abrufseite.
  */
-import { Fachfehler } from '../fehler';
-import { oeffneStrom } from '../dateispeicher';
+import { Fachfehler } from '../grundlagen/fehler';
+import { oeffneStrom } from '../dateien/dateispeicher';
 import { mkdir } from 'node:fs/promises';
-import { AUSKUNFT_PHASEN, auskuenfteIn, auskunftDatei, erzeugeAuskunft, haltenBis, loescheAuskunft } from '../auskunft';
+import { AUSKUNFT_PHASEN, auskuenfteIn, auskunftDatei, erzeugeAuskunft, haltenBis, loescheAuskunft } from './auskunft';
 import { AUSKUNFT_TAGE, linkStatus, oeffentlichErreichbar } from '../../../shared/src/auskunft';
 import { loeschkonzept, luecken } from '../../../shared/src/loeschkonzept';
-import { DOCX_MIME, schriftstueckDocx, schriftstueckPdf } from '../schriftstueck';
-import { ipBereich, kuerzeIp } from '../abruf';
-import { eigeneVersion } from '../system';
+import { DOCX_MIME, schriftstueckDocx, schriftstueckPdf } from '../formate/schriftstueck';
+import { ipBereich, kuerzeIp } from './abruf';
+import { eigeneVersion } from '../system/system';
 import { L, ok, leer, b, ich } from '../http/routen-hilfen';
 import type { RoutenKontext } from '../http/routen-kontext';
-import type { Route } from '../routen';
-import { nachweis } from '../nachweisjournal';
+import type { Route } from '../http/routen';
+import { nachweis } from '../protokoll/nachweisjournal';
 
 export function datenschutzRouten(k: RoutenKontext): Route[] {
   const { dienst, x, zg, auskunftZiel, loeschkonzeptQuelle, adresse } = k;

@@ -11,7 +11,7 @@
 import { PDFArray, PDFDict, PDFDocument, PDFName, PDFObject, PDFRef, PDFStream } from 'pdf-lib';
 import { eigenerPuffer } from './puffer';
 import { ladePdf } from './laden';
-import { t } from '../sprache';
+import { t } from '../sprache/sprache';
 
 /** Aktionen, die beim Ansehen etwas ausführen, nachladen oder senden. URI, GoTo, Named u. a. bleiben. */
 const GEFAEHRLICHE_AKTIONEN = new Set([

@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import Fastify from 'fastify';
-import { PRIVATE_NETZE, proxyVertrauen } from '../src/proxy';
+import { PRIVATE_NETZE, proxyVertrauen } from '../src/http/proxy';
 
 test('TRUST_PROXY: auto als Standard, true/false, Listen, Fehler', () => {
   assert.deepEqual(proxyVertrauen(undefined).trust, PRIVATE_NETZE);

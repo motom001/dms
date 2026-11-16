@@ -5,15 +5,15 @@ import { tmpdir } from 'node:os';
 import { join, relative } from 'node:path';
 import { Readable } from 'node:stream';
 import { after, describe, it } from 'node:test';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
-import { speicherEinstellungen } from '../src/einstellungen';
-import { KB, KOERPER_SPIELRAUM, LOGO_MAX, MB, SAMMEL_MAX, UPLOADS_SPEICHER_MAX } from '../src/grenzen';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
+import { KB, KOERPER_SPIELRAUM, LOGO_MAX, MB, SAMMEL_MAX, UPLOADS_SPEICHER_MAX } from '../src/grundlagen/grenzen';
 import { Konten } from '../src/konten';
-import { speicherKontoRepo } from '../src/konto-repo';
+import { speicherKontoRepo } from '../src/konten/konto-repo';
 import { Paketverwaltung } from '../src/pakete/verwaltung/index';
 import { speicherRepo } from '../src/repo/speicher';
-import { routen } from '../src/routen';
+import { routen } from '../src/http/routen';
 
 const SRC = new URL('../src/', import.meta.url).pathname;
 
@@ -46,7 +46,7 @@ describe('Größengrenzen (#901)', () => {
           funde.push(`${relative(SRC, f)}:${i + 1}: ${z.trim().slice(0, 100)}`);
       });
     }
-    assert.deepEqual(funde, [], 'Grenzen gehören mit Namen nach server/src/grenzen.ts');
+    assert.deepEqual(funde, [], 'Grenzen gehören mit Namen nach server/src/grundlagen/grenzen.ts');
   });
 
   it('jede Route mit rohem Körper nennt eine eigene, endliche Grenze', () => {
@@ -68,7 +68,7 @@ describe('Größengrenzen (#901)', () => {
     const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
     const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
     await konten.einrichten({ email: 'admin@example.org', name: 'Lena', passwort: 'ein-langes-passwort' });
-    const { baueApp } = await import('../src/http');
+    const { baueApp } = await import('../src/http/http');
     const app = await baueApp(d, konten, {});
     schliessen = () => app.close();
     let gelesen = 0;

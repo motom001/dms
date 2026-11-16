@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { ladeBeispiele } from '../src/beispiele';
-import { Dienst } from '../src/dienst';
-import { Fachfehler } from '../src/fehler';
+import { ladeBeispiele } from '../src/beispiele/beispiele';
+import { Dienst } from '../src/dienst/dienst';
+import { Fachfehler } from '../src/grundlagen/fehler';
 import { speicherRepo } from '../src/repo/speicher';
-import { speicherDateien } from '../src/dateispeicher';
+import { speicherDateien } from '../src/dateien/dateispeicher';
 
 async function wirft(p: Promise<unknown>, status: number) {
   await assert.rejects(p, (e: unknown) => e instanceof Fachfehler && e.status === status);
@@ -234,7 +234,7 @@ describe('Register und Dokumente', () => {
 
 describe('Demo-Daten', () => {
   it('erzeugt gültige Demo-Mappen für alle Typen und entfernt sie wieder', async () => {
-    const { erzeugeDemo } = await import('../src/demo');
+    const { erzeugeDemo } = await import('../src/demo/demo');
     const d = new Dienst(speicherRepo(), speicherDateien());
     await ladeBeispiele(d);
     const vorher = (await d.mappen.listeMappen()).length;
@@ -261,7 +261,7 @@ describe('Demo-Daten', () => {
   });
 
   it('verweigert das Entfernen, solange echte Mappen auf Demo-Mappen zeigen', async () => {
-    const { erzeugeDemo } = await import('../src/demo');
+    const { erzeugeDemo } = await import('../src/demo/demo');
     const d = new Dienst(speicherRepo(), speicherDateien());
     await ladeBeispiele(d);
     await erzeugeDemo(d, 50, null);

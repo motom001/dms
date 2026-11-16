@@ -20,16 +20,16 @@ import {
   pruefeMappentyp,
   type Historienart,
 } from '../../shared/src/model';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
 import { bereinigeTyp } from '../src/mappentypen';
-import { speicherEinstellungen } from '../src/einstellungen';
-import { Fachfehler } from '../src/fehler';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
+import { Fachfehler } from '../src/grundlagen/fehler';
 import { Konten } from '../src/konten';
-import { speicherKontoRepo, type KontoRepo } from '../src/konto-repo';
+import { speicherKontoRepo, type KontoRepo } from '../src/konten/konto-repo';
 import type { Repo } from '../src/repo';
 import { speicherRepo } from '../src/repo/speicher';
-import { vollexport } from '../src/vollexport';
+import { vollexport } from '../src/export/vollexport';
 
 const url = process.env.TEST_DATABASE_URL;
 const HAUSHALT = '00000000-0000-4000-8000-000000000001';
@@ -46,10 +46,10 @@ after(async () => {
 
 /** Eigene Testdatenbank je Aufruf (andere Testdateien laufen gleichzeitig); danach wieder weg. */
 async function pgRepos(): Promise<{ repo: Repo; konto: KontoRepo }> {
-  const { ausUrl, alsUrl, legeDatenbankAn } = await import('../src/anbindung');
-  const { verbinde, migriere } = await import('../src/db');
+  const { ausUrl, alsUrl, legeDatenbankAn } = await import('../src/datenbank/anbindung');
+  const { verbinde, migriere } = await import('../src/datenbank/db');
   const { pgRepo } = await import('../src/repo/pg');
-  const { pgKontoRepo } = await import('../src/konto-repo');
+  const { pgKontoRepo } = await import('../src/konten/konto-repo');
   const a = { ...ausUrl(url)!, datenbank: `dms_a800_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}` };
   await legeDatenbankAn(a);
   const s = verbinde(alsUrl(a));
@@ -266,8 +266,8 @@ for (const pg of [false, ...(url ? [true] : [])]) {
 describe('Historie: Abrufe über HTTP (#800)', () => {
   it('Herunterladen in der Oberfläche und mit API-Schlüssel kommt in die Historie, Anzeigen nicht', async () => {
     const x = await aufbau();
-    const { baueApp } = await import('../src/http');
-    const { ApiSchluesselDienst, speicherApiSchluesselRepo } = await import('../src/apischluessel');
+    const { baueApp } = await import('../src/http/http');
+    const { ApiSchluesselDienst, speicherApiSchluesselRepo } = await import('../src/anmeldung/apischluessel');
     const app = await baueApp(x.d, x.konten, { apiSchluessel: new ApiSchluesselDienst(speicherApiSchluesselRepo()) });
     offen.push(() => app.close());
     const an = await app.inject({

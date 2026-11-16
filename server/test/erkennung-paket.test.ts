@@ -8,17 +8,17 @@ import { after, describe, it } from 'node:test';
 import { ERKENNEN_HINWEIS, liesAusDokument } from '../../shared/src/erkennung';
 import { liesCode, rechtePunkte, type InstalliertesPaket } from '../../shared/src/pakete';
 import { HILFE } from '../../shared/src/hilfe';
-import { ApiSchluesselDienst, speicherApiSchluesselRepo } from '../src/apischluessel';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
-import { speicherEinstellungen } from '../src/einstellungen';
-import type { Fachfehler } from '../src/fehler';
+import { ApiSchluesselDienst, speicherApiSchluesselRepo } from '../src/anmeldung/apischluessel';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
+import type { Fachfehler } from '../src/grundlagen/fehler';
 import { Konten } from '../src/konten';
-import { speicherKontoRepo } from '../src/konto-repo';
+import { speicherKontoRepo } from '../src/konten/konto-repo';
 import { Paketlaeufer } from '../src/laeufer/verwaltung';
 import { liesPaket } from '../src/pakete/verwaltung/index';
 import { speicherRepo } from '../src/repo/speicher';
-import { routen } from '../src/routen';
+import { routen } from '../src/http/routen';
 
 const KARTE = `Musterbau GmbH
 Jonas Beispiel

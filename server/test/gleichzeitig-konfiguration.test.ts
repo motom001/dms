@@ -7,14 +7,14 @@ import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { after, before, describe, it } from 'node:test';
-import { openapi } from '../src/api-v1';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
-import { speicherEinstellungen } from '../src/einstellungen';
-import { Fachfehler } from '../src/fehler';
+import { openapi } from '../src/http/api-v1';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
+import { Fachfehler } from '../src/grundlagen/fehler';
 import type { Repo } from '../src/repo';
 import { speicherRepo } from '../src/repo/speicher';
-import { t } from '../src/sprache';
+import { t } from '../src/sprache/sprache';
 
 let neuesRepo: () => Promise<Repo> = async () => speicherRepo();
 
@@ -152,7 +152,7 @@ describe('Gleichzeitig bearbeiten in der Werkbank (#917) in PostgreSQL', { skip:
   /* eslint-enable @typescript-eslint/no-explicit-any */
   const db = `dms_konfig_${process.pid}`;
   before(async () => {
-    const { verbinde, migriere } = await import('../src/db');
+    const { verbinde, migriere } = await import('../src/datenbank/db');
     haupt = verbinde(url!);
     await haupt.unsafe(`DROP DATABASE IF EXISTS ${db}`);
     await haupt.unsafe(`CREATE DATABASE ${db}`);

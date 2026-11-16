@@ -6,7 +6,7 @@
 import assert from 'node:assert/strict';
 import { fileURLToPath } from 'node:url';
 import { after, before, describe, it } from 'node:test';
-import { passtEtag } from '../src/routen';
+import { passtEtag } from '../src/http/routen';
 import { postFuerDich } from './hilfen';
 
 const echtesFastify = await import('fastify').then(
@@ -44,7 +44,7 @@ describe('ETag-Vergleich (#625)', () => {
 
 describe('Schlüssel-Stufe „nur Zähler“ (#625)', () => {
   it('lässt sich anlegen und ändern, nie mit „Passwörter lesen“', async () => {
-    const { ApiSchluesselDienst, speicherApiSchluesselRepo } = await import('../src/apischluessel');
+    const { ApiSchluesselDienst, speicherApiSchluesselRepo } = await import('../src/anmeldung/apischluessel');
     const d = new ApiSchluesselDienst(speicherApiSchluesselRepo());
     const ich = { id: '00000000-0000-4000-8000-0000000000aa', rolle: 'mitglied' } as never;
     const s = await d.lege(ich, { name: 'Wand-Tablet', recht: 'zaehler', passwoerter: true });
@@ -56,7 +56,7 @@ describe('Schlüssel-Stufe „nur Zähler“ (#625)', () => {
   });
 
   it('steht in der OpenAPI-Beschreibung mit ETag, If-None-Match und 304', async () => {
-    const { openapi } = await import('../src/api-v1');
+    const { openapi } = await import('../src/http/api-v1');
     const doc = openapi('0.0.0') as {
       paths: Record<
         string,
@@ -82,8 +82,8 @@ describe('Schlüssel-Stufe „nur Zähler“ (#625)', () => {
 
 describe('Zähler-Endpunkt über HTTP (#625)', { skip: echtesFastify ? false : 'Fastify nicht installiert' }, () => {
   let app: App;
-  let dienst: import('../src/dienst').Dienst;
-  let wd: import('../src/webdav').Webdav;
+  let dienst: import('../src/dienst/dienst').Dienst;
+  let wd: import('../src/webdav/webdav').Webdav;
   let cookie = '';
   let adminId = '';
   let lena = { id: '', zaehler: '', lesen: '', schreiben: '' };
@@ -104,15 +104,15 @@ describe('Zähler-Endpunkt über HTTP (#625)', { skip: echtesFastify ? false : '
   };
 
   before(async () => {
-    const { baueApp } = await import('../src/http');
-    const { Dienst } = await import('../src/dienst');
+    const { baueApp } = await import('../src/http/http');
+    const { Dienst } = await import('../src/dienst/dienst');
     const { speicherRepo } = await import('../src/repo/speicher');
-    const { speicherDateien } = await import('../src/dateispeicher');
-    const { speicherEinstellungen } = await import('../src/einstellungen');
+    const { speicherDateien } = await import('../src/dateien/dateispeicher');
+    const { speicherEinstellungen } = await import('../src/einstellungen/einstellungen');
     const { Konten } = await import('../src/konten');
-    const { speicherKontoRepo } = await import('../src/konto-repo');
-    const { ApiSchluesselDienst, speicherApiSchluesselRepo } = await import('../src/apischluessel');
-    const { Webdav } = await import('../src/webdav');
+    const { speicherKontoRepo } = await import('../src/konten/konto-repo');
+    const { ApiSchluesselDienst, speicherApiSchluesselRepo } = await import('../src/anmeldung/apischluessel');
+    const { Webdav } = await import('../src/webdav/webdav');
     dienst = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
     // Änderungen anderer sollen hier sofort zählen (die Mindestgültigkeit #742 prüft zaehlerspeicher.test.ts).
     dienst.mindestensMs = 0;
@@ -280,7 +280,7 @@ describe('Stand der Zahlen in PostgreSQL (#625)', { skip: url ? false : 'TEST_DA
   const HAUSHALT = '00000000-0000-4000-8000-000000000001';
   const BENUTZER = '00000000-0000-4000-8000-0000000000b1';
   before(async () => {
-    const { verbinde, migriere } = await import('../src/db');
+    const { verbinde, migriere } = await import('../src/datenbank/db');
     haupt = verbinde(url!);
     await haupt.unsafe(`DROP DATABASE IF EXISTS ${db}`);
     await haupt.unsafe(`CREATE DATABASE ${db}`);
@@ -316,7 +316,7 @@ describe('Stand der Zahlen in PostgreSQL (#625)', { skip: url ? false : 'TEST_DA
   });
 
   it('nimmt die Stufe „zaehler“ an, andere nicht', async () => {
-    const { pgApiSchluesselRepo } = await import('../src/apischluessel');
+    const { pgApiSchluesselRepo } = await import('../src/anmeldung/apischluessel');
     const r = pgApiSchluesselRepo(sql);
     const s = {
       id: '00000000-0000-4000-8000-0000000000c1',

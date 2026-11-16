@@ -8,7 +8,7 @@
  */
 import { type Mappe, type Mappentyp } from '../../../../shared/src/model';
 import { type HerkunftPruefung, OFFIZIELLER_KATALOG, type InstalliertesPaket, type Katalog } from '../../../../shared/src/pakete';
-import type { Dienst } from '../../dienst';
+import type { Dienst } from '../../dienst/dienst';
 import { vorgabeMappen, vorgabenLage, type VorgabenLage } from '../index';
 import { type UmbauLage } from '../index';
 import { vorgabeKennung, vorgabeVerweis } from '../../../../shared/src/vorgaben';

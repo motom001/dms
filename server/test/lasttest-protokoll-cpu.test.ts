@@ -19,12 +19,12 @@ import {
   rohAus,
   setzeLasttestModus,
   type Rohmeldung,
-} from '../src/protokollsammlung';
-import { Messung, speicherMessSpeicher } from '../src/messung';
-import { Protokoll, protokoll } from '../src/protokoll';
-import { artNachName, liesStat, Prozessgruppen } from '../src/prozessgruppen';
-import { einzeln } from '../src/prozesse';
-import { Lasttestmodus, liveAus } from '../src/lasttestmodus';
+} from '../src/lasttest/protokollsammlung';
+import { Messung, speicherMessSpeicher } from '../src/datenbank/messung';
+import { Protokoll, protokoll } from '../src/protokoll/protokoll';
+import { artNachName, liesStat, Prozessgruppen } from '../src/lasttest/prozessgruppen';
+import { einzeln } from '../src/prozesse/prozesse';
+import { Lasttestmodus, liveAus } from '../src/lasttest/lasttestmodus';
 import type { LasttestStand } from '../../shared/src/lasttest';
 
 const tmp = mkdtempSync(join(tmpdir(), 'dms-895-'));
@@ -979,24 +979,24 @@ describe('Lasttest-Seite (#895): Werte der laufenden Messung', () => {
 });
 
 describe('Lasttest (#895): Route und Durchgang', () => {
-  let app: Awaited<ReturnType<(typeof import('../src/http'))['baueApp']>>;
+  let app: Awaited<ReturnType<(typeof import('../src/http/http'))['baueApp']>>;
   const LENA: [string, string] = ['lena@example.org', 'lasttest-passwort-1'];
   let gefragt = 0;
   const messung = new Messung(speicherMessSpeicher());
   before(async () => {
-    const { Dienst } = await import('../src/dienst');
+    const { Dienst } = await import('../src/dienst/dienst');
     const { speicherRepo } = await import('../src/repo/speicher');
-    const { speicherDateien } = await import('../src/dateispeicher');
-    const { speicherEinstellungen } = await import('../src/einstellungen');
+    const { speicherDateien } = await import('../src/dateien/dateispeicher');
+    const { speicherEinstellungen } = await import('../src/einstellungen/einstellungen');
     const { Konten } = await import('../src/konten');
-    const { speicherKontoRepo } = await import('../src/konto-repo');
+    const { speicherKontoRepo } = await import('../src/konten/konto-repo');
     const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
     const konten = new Konten(speicherKontoRepo(), null, 'http://nas.example.org', d.systemtypen.benutzerspiegel());
     d.verbindeKonten(konten.papierkorbHaken());
     await konten.einrichten({ email: LENA[0], name: 'Lena (Lasttest)', passwort: LENA[1] });
     await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
-    const { baueApp } = await import('../src/http');
-    const { Systemlast } = await import('../src/systemlast');
+    const { baueApp } = await import('../src/http/http');
+    const { Systemlast } = await import('../src/system/systemlast');
     // Echte Gruppen aus /proc dieses Rechners (nur Linux) – mit diesem Prozess als Ablago-Prozess 1.
     const gruppen = new Prozessgruppen({ postgresImContainer: false });
     app = await baueApp(d, konten, {

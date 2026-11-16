@@ -13,9 +13,9 @@ import {
   zeitzone,
 } from '../../shared/src/region';
 import { heuteIn } from '../../shared/src/sichten';
-import { speicherEinstellungen } from '../src/einstellungen';
-import { Fachfehler } from '../src/fehler';
-import { RegionDienst } from '../src/region';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
+import { Fachfehler } from '../src/grundlagen/fehler';
+import { RegionDienst } from '../src/einstellungen/region';
 
 const status = (s: number) => (e: unknown) => e instanceof Fachfehler && e.status === s;
 

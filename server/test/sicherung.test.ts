@@ -4,14 +4,14 @@ import { mkdir, mkdtemp, readFile, readdir, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { after, before, describe, it } from 'node:test';
-import type { Datenquelle } from '../src/datenbankabzug';
-import { speicherEinstellungen } from '../src/einstellungen';
-import { Fachfehler } from '../src/fehler';
-import { protokoll } from '../src/protokoll';
-import { behalten, bereinigePlan, isoWoche, ortszeit, PLAN_STANDARD, Sicherung, type Metadaten } from '../src/sicherung';
-import { liesSicherung, sammle, ZWECK } from '../src/sicherungsformat';
-import { leiteAb, Tresor } from '../src/tresor';
-import { mailText } from '../src/mail';
+import type { Datenquelle } from '../src/sicherung/datenbankabzug';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
+import { Fachfehler } from '../src/grundlagen/fehler';
+import { protokoll } from '../src/protokoll/protokoll';
+import { behalten, bereinigePlan, isoWoche, ortszeit, PLAN_STANDARD, Sicherung, type Metadaten } from '../src/sicherung/sicherung';
+import { liesSicherung, sammle, ZWECK } from '../src/sicherung/sicherungsformat';
+import { leiteAb, Tresor } from '../src/geheimnisse/tresor';
+import { mailText } from '../src/mail/mail';
 
 const HAUSHALT = '00000000-0000-4000-8000-000000000001';
 
@@ -185,7 +185,7 @@ describe('Sicherung mit PostgreSQL', { skip: url ? false : 'TEST_DATABASE_URL ni
   let haupt: any; let sql: any;
   const db = `dms_sicherung_${process.pid}`;
   before(async () => {
-    const { verbinde } = await import('../src/db');
+    const { verbinde } = await import('../src/datenbank/db');
     haupt = verbinde(url!);
     await haupt.unsafe(`DROP DATABASE IF EXISTS ${db}`);
     await haupt.unsafe(`CREATE DATABASE ${db}`);
@@ -200,13 +200,13 @@ describe('Sicherung mit PostgreSQL', { skip: url ? false : 'TEST_DATABASE_URL ni
 
   it('sichert alle Tabellen in einem Schnappschuss, Eltern vor Kindern, ohne Sitzungen', async () => {
     const { fileURLToPath } = await import('node:url');
-    const { migriere } = await import('../src/db');
-    const { pgDatenquelle, tabellenIn } = await import('../src/datenbankabzug');
+    const { migriere } = await import('../src/datenbank/db');
+    const { pgDatenquelle, tabellenIn } = await import('../src/sicherung/datenbankabzug');
     const { pgRepo } = await import('../src/repo/pg');
-    const { Dienst } = await import('../src/dienst');
-    const { ordnerSpeicher } = await import('../src/dateispeicher');
-    const { ladeBeispiele } = await import('../src/beispiele');
-    const { pgEinstellungen: pgBetriebSpeicher } = await import('../src/einstellungen');
+    const { Dienst } = await import('../src/dienst/dienst');
+    const { ordnerSpeicher } = await import('../src/dateien/dateispeicher');
+    const { ladeBeispiele } = await import('../src/beispiele/beispiele');
+    const { pgEinstellungen: pgBetriebSpeicher } = await import('../src/einstellungen/einstellungen');
     await migriere(sql, fileURLToPath(new URL('../migrations', import.meta.url)), () => {});
     await sql`INSERT INTO haushalte (id, name) VALUES (${HAUSHALT}, 'Test') ON CONFLICT DO NOTHING`;
     const wurzel = await mkdtemp(join(tmpdir(), 'dms-sich-pg-'));
@@ -250,13 +250,13 @@ describe('Sicherung mit PostgreSQL', { skip: url ? false : 'TEST_DATABASE_URL ni
 
 describe('Notfallblatt (#106)', () => {
   it('liefert ein PDF mit Schlüssel und Fingerabdruck und merkt sich den Download', async () => {
-    const { notfallblatt, notfallblattPlan, inGruppen } = await import('../src/notfallblatt');
-    const { routen } = await import('../src/routen');
-    const { Dienst } = await import('../src/dienst');
+    const { notfallblatt, notfallblattPlan, inGruppen } = await import('../src/notfall/notfallblatt');
+    const { routen } = await import('../src/http/routen');
+    const { Dienst } = await import('../src/dienst/dienst');
     const { speicherRepo } = await import('../src/repo/speicher');
-    const { speicherDateien } = await import('../src/dateispeicher');
+    const { speicherDateien } = await import('../src/dateien/dateispeicher');
     const { Konten } = await import('../src/konten');
-    const { speicherKontoRepo } = await import('../src/konto-repo');
+    const { speicherKontoRepo } = await import('../src/konten/konto-repo');
     assert.equal(inGruppen('abcdefghij'), 'abcd efgh ij');
     const { s, tresor } = await aufbau();
     const daten = { name: 'Familie Muster', haushaltId: HAUSHALT, adresse: 'http://nas:8080', version: '0.20.0', erstellt: new Date(), schluessel: tresor.alsText()!, fingerabdruck: tresor.fingerabdruck! };

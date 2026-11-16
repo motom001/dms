@@ -4,11 +4,11 @@
  * das Notfallblatt. Im Einrichtungsassistenten ruft das erste Konto (Gesamte Verwaltung) dieselben Routen. Nie in einer
  * Vertretung (#43).
  */
-import { Fachfehler } from '../fehler';
+import { Fachfehler } from '../grundlagen/fehler';
 import { ok, ich } from '../http/routen-hilfen';
 import type { RoutenKontext } from '../http/routen-kontext';
-import type { Anfrage, Route } from '../routen';
-import { t } from '../sprache';
+import type { Anfrage, Route } from '../http/routen';
+import { t } from '../sprache/sprache';
 
 /** Nicht in einer Vertretung – auch wenn der Verwaltungsmodus dort ohnehin nicht geht. */
 function handelnder(a: Anfrage) {

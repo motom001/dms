@@ -11,8 +11,8 @@
  * Der Paket-Läufer (eigener Prozess, `laeufer/`) hat damit nichts zu tun.
  */
 import { Worker } from 'node:worker_threads';
-import { Fachfehler } from '../fehler';
-import { t } from '../sprache';
+import { Fachfehler } from '../grundlagen/fehler';
+import { t } from '../sprache/sprache';
 import { alsBuffer, fehlerAus, type Antwort, type Auftrag } from './nachricht';
 
 export interface PoolOptionen {

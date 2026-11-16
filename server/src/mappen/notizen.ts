@@ -4,10 +4,10 @@
  * Anschluss.
  */
 import { randomUUID } from 'node:crypto';
-import { Fachfehler } from '../fehler';
+import { Fachfehler } from '../grundlagen/fehler';
 import type { Kern } from '../kern';
 import type { Repo } from '../repo';
-import { t } from '../sprache';
+import { t } from '../sprache/sprache';
 import type { Notiz } from '../../../shared/src/model';
 import type { MappenHistorie } from './historie';
 import { MappenDienst } from './mappen.dienst';

@@ -2,11 +2,11 @@
  * Suche (#960: aus routen.ts): Vektoren, Sucheinstellungen, Erkennung und „Frag deine Ablage“.
  */
 import { PassThrough } from 'node:stream';
-import { Fachfehler } from '../fehler';
-import { t } from '../sprache';
+import { Fachfehler } from '../grundlagen/fehler';
+import { t } from '../sprache/sprache';
 import { ok, ich } from '../http/routen-hilfen';
 import type { RoutenKontext } from '../http/routen-kontext';
-import type { Route } from '../routen';
+import type { Route } from '../http/routen';
 
 export function sucheRouten(k: RoutenKontext): Route[] {
   const { dienst, x, zg } = k;

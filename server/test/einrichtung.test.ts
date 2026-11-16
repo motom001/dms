@@ -16,13 +16,13 @@ import {
   schreibeAnbindung,
   type Anbindung,
   type Pruefung,
-} from '../src/anbindung';
-import { Einrichtung } from '../src/einrichtung';
-import { Einrichtungscode, neuerCode } from '../src/einrichtungscode';
-import { speicherEinstellungen } from '../src/einstellungen';
-import { Fachfehler } from '../src/fehler';
+} from '../src/datenbank/anbindung';
+import { Einrichtung } from '../src/einrichtung/einrichtung';
+import { Einrichtungscode, neuerCode } from '../src/einrichtung/einrichtungscode';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
+import { Fachfehler } from '../src/grundlagen/fehler';
 import { Konten } from '../src/konten';
-import { speicherKontoRepo } from '../src/konto-repo';
+import { speicherKontoRepo } from '../src/konten/konto-repo';
 
 const ordner = () => mkdtemp(join(tmpdir(), 'dms-einrichtung-'));
 const A: Anbindung = { host: 'db', port: 5432, datenbank: 'dms', benutzer: 'dms', passwort: 'gä#heim/1' };
@@ -189,7 +189,7 @@ const mitFastify = await import('fastify').then(
 
 describe('Einrichtungsmodus ohne Datenbank (#119)', () => {
   it('nur mit Code; prüft, legt an, übernimmt und gibt den Port frei', { skip: !mitFastify && 'fastify nicht installiert' }, async () => {
-    const { einrichtungsmodus } = await import('../src/einrichtungsmodus');
+    const { einrichtungsmodus } = await import('../src/einrichtung/einrichtungsmodus');
     const o = await ordner();
     const code = new Einrichtungscode(o);
     const port = 4300 + Math.floor(Math.random() * 500);
@@ -288,9 +288,9 @@ describe('Mandant und „Dein Konto“ mit Code (#119, #821)', () => {
 
 describe('Anbindung und Mandant gegen PostgreSQL (#119)', { skip: !process.env.TEST_DATABASE_URL && 'ohne TEST_DATABASE_URL' }, () => {
   it('fehlende Datenbank erkennen, anlegen, migrieren; Mandant bestimmen und merken', async () => {
-    const { pruefeAnbindung, legeDatenbankAn } = await import('../src/anbindung');
-    const { verbinde, migriere } = await import('../src/db');
-    const { bestimmeMandant, STANDARD_MANDANT } = await import('../src/mandant');
+    const { pruefeAnbindung, legeDatenbankAn } = await import('../src/datenbank/anbindung');
+    const { verbinde, migriere } = await import('../src/datenbank/db');
+    const { bestimmeMandant, STANDARD_MANDANT } = await import('../src/datenbank/mandant');
     const basis = ausUrl(process.env.TEST_DATABASE_URL)!;
     const a: Anbindung = { ...basis, datenbank: `dms_einr_${Date.now().toString(36)}` };
     const fehlt = await pruefeAnbindung(a);

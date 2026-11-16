@@ -14,20 +14,20 @@ import { after, describe, it } from 'node:test';
 import { PDFArray, PDFDict, PDFDocument, PDFName, PDFString, PDFHexString, PDFRef } from 'pdf-lib';
 import { laufText, mdMaskiert, setzeVorlage, type BriefBlock, type TextGesetzt, type VorlagenListe } from '../../shared/src/textsatz';
 import { zerlege } from '../../shared/src/markdown';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
-import { speicherEinstellungen } from '../src/einstellungen';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
 import { MERKMALE_EINSTELLUNG } from '../../shared/src/merkmale';
-import { Fachfehler } from '../src/fehler';
-import { TEXTSATZ_SEITEN } from '../src/grenzen';
+import { Fachfehler } from '../src/grundlagen/fehler';
+import { TEXTSATZ_SEITEN } from '../src/grundlagen/grenzen';
 import { Konten } from '../src/konten';
-import { speicherKontoRepo, type KontoRepo } from '../src/konto-repo';
+import { speicherKontoRepo, type KontoRepo } from '../src/konten/konto-repo';
 import { Paketverwaltung } from '../src/pakete/verwaltung/index';
-import { Tresor } from '../src/tresor';
+import { Tresor } from '../src/geheimnisse/tresor';
 import type { Repo } from '../src/repo';
 import { speicherRepo } from '../src/repo/speicher';
-import { routen, type Anfrage, type Antwort } from '../src/routen';
-import { zipPuffer } from '../src/zip';
+import { routen, type Anfrage, type Antwort } from '../src/http/routen';
+import { zipPuffer } from '../src/formate/zip';
 import { eigeneDatenbank } from './hilfe-db';
 
 const HAUSHALT = '00000000-0000-4000-8000-000000000001';
@@ -39,7 +39,7 @@ after(async () => {
 
 async function pgRepos(name: string): Promise<{ repo: Repo; konto: KontoRepo }> {
   const { pgRepo } = await import('../src/repo/pg');
-  const { pgKontoRepo } = await import('../src/konto-repo');
+  const { pgKontoRepo } = await import('../src/konten/konto-repo');
   const { sql } = await eigeneDatenbank(name);
   offen.push(sql);
   await sql`INSERT INTO haushalte (id, name) VALUES (${HAUSHALT}, 'Test') ON CONFLICT DO NOTHING`;

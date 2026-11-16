@@ -22,15 +22,15 @@ import {
 import { istKiPaket, liesCode, rechtePunkte, type InstalliertesPaket, type PaketCode } from '../../shared/src/pakete';
 import { NICHTS, type Regelwerk } from '../../shared/src/rechte';
 import type { Register } from '../../shared/src/model';
-import { V1_TABELLE } from '../src/api-v1';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
-import { speicherEinstellungen } from '../src/einstellungen';
+import { V1_TABELLE } from '../src/http/api-v1';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
 import { Konten } from '../src/konten';
-import { speicherKontoRepo } from '../src/konto-repo';
+import { speicherKontoRepo } from '../src/konten/konto-repo';
 import { speicherRepo } from '../src/repo/speicher';
-import { routen } from '../src/routen';
-import { liesVektor } from '../src/vektoren';
+import { routen } from '../src/http/routen';
+import { liesVektor } from '../src/suche/vektoren';
 
 const code = (x: Record<string, unknown>): PaketCode => {
   const r = liesCode({ sprache: 'c', ...x });

@@ -4,12 +4,12 @@
  * Benachrichtigungen, „Zu erledigen“. Schicht 3 – Teile und Anschluss wie `AufgabenDienst` (aufgaben.dienst.ts).
  */
 import { randomUUID } from 'node:crypto';
-import { Fachfehler } from '../fehler';
+import { Fachfehler } from '../grundlagen/fehler';
 import type { Kern, Zugriff } from '../kern';
 import type { MappenDienst, MappenHistorie } from '../mappen';
-import { protokoll } from '../protokoll';
+import { protokoll } from '../protokoll/protokoll';
 import type { Repo } from '../repo';
-import { t } from '../sprache';
+import { t } from '../sprache/sprache';
 import { historienAufgabentext } from './historientext';
 import { NICHT_SICHTBAR, type ZugriffDienst } from '../zugriff';
 import {

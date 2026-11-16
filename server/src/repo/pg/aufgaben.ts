@@ -1,5 +1,5 @@
 /** Aufgaben (PostgreSQL, #54) und Aufgaben bei Personen ohne Leserecht (#798). */
-import { t } from '../../sprache';
+import { t } from '../../sprache/sprache';
 import { istUuid, type RepoTeil } from '..';
 import type { PgKontext } from './kontext';
 import { alsAufgabe, alsFall, iso } from './zeilen';

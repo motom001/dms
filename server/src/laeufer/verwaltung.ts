@@ -18,20 +18,20 @@ import {
   type Schnittstelle,
 } from '../../../shared/src/pakete';
 import { adressfelder, pruefeAdresse } from '../../../shared/src/paketeinstellungen';
-import { liesModell, liesVektor, SCHWELLE_STANDARD } from '../vektoren';
-import type { ApiSchluesselDienst } from '../apischluessel';
-import type { Dienst } from '../dienst';
+import { liesModell, liesVektor, SCHWELLE_STANDARD } from '../suche/vektoren';
+import type { ApiSchluesselDienst } from '../anmeldung/apischluessel';
+import type { Dienst } from '../dienst/dienst';
 import type { PaketEreignis } from '../repo';
 import type { Konten } from '../konten';
 import type { PaketLaeufer } from '../pakete/verwaltung/index';
 import { ladeArgumente } from './modul';
-import { protokoll } from '../protokoll';
-import { extern } from '../externmessung';
-import { senkePrioritaet, senkeProzess } from '../hintergrund';
+import { protokoll } from '../protokoll/protokoll';
+import { extern } from '../system/externmessung';
+import { senkePrioritaet, senkeProzess } from '../prozesse/hintergrund';
 import type { AnLaeufer, Grenzen, NetzEintrag, NetzMessung, VomLaeufer } from './prozess';
 import { gebietsschema } from '../../../shared/src/sprache';
 import type { Hostantwort } from './arbeiter';
-import { t, t as tx } from '../sprache';
+import { t, t as tx } from '../sprache/sprache';
 import { beantworteZugang, type AktionsDatei, type Probedatei, type Zugang } from '../paketaktionen';
 import { PRUEF_AKTION } from '../../../shared/src/paketreiter';
 
@@ -41,7 +41,7 @@ interface AktionsZugang {
   zugang: Zugang;
   dateien: AktionsDatei[];
 }
-import { GB, KB, MB, PAKET_SPEICHER_MAX as SPEICHER_MAX, WEITER_MAX_BYTES } from '../grenzen';
+import { GB, KB, MB, PAKET_SPEICHER_MAX as SPEICHER_MAX, WEITER_MAX_BYTES } from '../grundlagen/grenzen';
 
 const log = protokoll.modul('werkbank');
 

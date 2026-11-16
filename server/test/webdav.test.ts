@@ -2,16 +2,16 @@
 import assert from 'node:assert/strict';
 import { PassThrough } from 'node:stream';
 import { describe, it } from 'node:test';
-import { ApiSchluesselDienst, speicherApiSchluesselRepo } from '../src/apischluessel';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
-import { speicherEinstellungen } from '../src/einstellungen';
+import { ApiSchluesselDienst, speicherApiSchluesselRepo } from '../src/anmeldung/apischluessel';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
 import { Konten } from '../src/konten';
-import { speicherKontoRepo } from '../src/konto-repo';
+import { speicherKontoRepo } from '../src/konten/konto-repo';
 import { speicherRepo } from '../src/repo/speicher';
 import type { Benutzer } from '../../shared/src/model';
-import { etagVon, MAX_UPLOADS, Webdav, type WebdavAntwort } from '../src/webdav';
-import { bereinige, eindeutig, href, istHilfsdatei, proppatchNamen, Ratenbegrenzung, xml, zerlege } from '../src/webdav-baum';
+import { etagVon, MAX_UPLOADS, Webdav, type WebdavAntwort } from '../src/webdav/webdav';
+import { bereinige, eindeutig, href, istHilfsdatei, proppatchNamen, Ratenbegrenzung, xml, zerlege } from '../src/webdav/webdav-baum';
 import { pdfAus } from './hilfen-einfach-pdf';
 import { readFileSync } from 'node:fs';
 import { eigeneDatenbank } from './hilfe-db';
@@ -785,7 +785,7 @@ describe(
   { skip: process.env.TEST_DATABASE_URL ? false : 'TEST_DATABASE_URL nicht gesetzt' },
   () => {
     it('ergänzt die WebDAV-Vorlage bei gespeicherten Vorlagen, schaltet den Stempel ein und läuft doppelt ohne Doppel', async () => {
-      const { migriere } = await import('../src/db');
+      const { migriere } = await import('../src/datenbank/db');
       const db = await eigeneDatenbank('webdav', { migrieren: false });
       const sql = db.sql;
       try {

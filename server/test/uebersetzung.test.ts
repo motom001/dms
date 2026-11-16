@@ -17,20 +17,20 @@ import {
   spracheAusTesseract,
   UEBERSETZEN_TEXT_MAX,
 } from '../../shared/src/uebersetzung';
-import { ApiSchluesselDienst, speicherApiSchluesselRepo } from '../src/apischluessel';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
-import { speicherEinstellungen } from '../src/einstellungen';
-import { Fachfehler } from '../src/fehler';
+import { ApiSchluesselDienst, speicherApiSchluesselRepo } from '../src/anmeldung/apischluessel';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
+import { Fachfehler } from '../src/grundlagen/fehler';
 import { Konten } from '../src/konten';
-import { speicherKontoRepo, type KontoRepo } from '../src/konto-repo';
-import { speicherKurzzustand, type Kurzzustand } from '../src/kurzzustand';
+import { speicherKontoRepo, type KontoRepo } from '../src/konten/konto-repo';
+import { speicherKurzzustand, type Kurzzustand } from '../src/zwischenspeicher/kurzzustand';
 import { Paketlaeufer } from '../src/laeufer/verwaltung';
 import { liesPaket } from '../src/pakete/verwaltung/index';
 import type { Repo } from '../src/repo';
 import { speicherRepo } from '../src/repo/speicher';
-import { routen, type Anfrage } from '../src/routen';
-import { liesAntwort, liesQuelle, ZWISCHENSPEICHER } from '../src/uebersetzung';
+import { routen, type Anfrage } from '../src/http/routen';
+import { liesAntwort, liesQuelle, ZWISCHENSPEICHER } from '../src/sprache/uebersetzung';
 import { pdfMitText } from './hilfen';
 import { eigeneDatenbank } from './hilfe-db';
 
@@ -578,8 +578,8 @@ describe('Inhalte übersetzen (#732): PostgreSQL', { skip: !url }, () => {
   });
   it('Wahl der Person bleibt gespeichert; Übersetzungen im Kurzzustand, verfallen mit dem Original', async () => {
     const { pgRepo } = await import('../src/repo/pg');
-    const { pgKontoRepo } = await import('../src/konto-repo');
-    const { pgKurzzustand } = await import('../src/kurzzustand');
+    const { pgKontoRepo } = await import('../src/konten/konto-repo');
+    const { pgKurzzustand } = await import('../src/zwischenspeicher/kurzzustand');
     const db = (await eigeneDatenbank('uebersetzung')).sql;
     sql = db;
     const x = await aufbau({ repo: pgRepo(db, HAUSHALT), konto: pgKontoRepo(db, HAUSHALT), zustand: pgKurzzustand(db, HAUSHALT) });

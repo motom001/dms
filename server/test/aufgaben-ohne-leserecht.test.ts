@@ -14,16 +14,16 @@ import type { KatalogEreignis } from '../../shared/src/ereignisse';
 import { NICHTS, type Regelwerk } from '../../shared/src/rechte';
 import { heuteIn, verschiebe } from '../../shared/src/sichten';
 import { Automatisierungen, speicherAutomatisierungRepo } from '../src/automatisierung';
-import '../src/automatisierung-karten';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
-import { speicherEinstellungen } from '../src/einstellungen';
-import { Fachfehler } from '../src/fehler';
+import '../src/automatisierung/automatisierung-karten';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
+import { Fachfehler } from '../src/grundlagen/fehler';
 import { Konten } from '../src/konten';
-import { speicherKontoRepo, type KontoRepo } from '../src/konto-repo';
+import { speicherKontoRepo, type KontoRepo } from '../src/konten/konto-repo';
 import type { Repo } from '../src/repo';
 import { speicherRepo } from '../src/repo/speicher';
-import { routen, type Anfrage } from '../src/routen';
+import { routen, type Anfrage } from '../src/http/routen';
 import { eigeneDatenbank } from './hilfe-db';
 
 const url = process.env.TEST_DATABASE_URL;
@@ -37,7 +37,7 @@ after(async () => {
 
 async function pgRepos(): Promise<{ repo: Repo; konto: KontoRepo }> {
   const { pgRepo } = await import('../src/repo/pg');
-  const { pgKontoRepo } = await import('../src/konto-repo');
+  const { pgKontoRepo } = await import('../src/konten/konto-repo');
   // Je Aufruf eine frische eigene Datenbank (#900); gelöscht nach dem letzten Test.
   sql = (await eigeneDatenbank('aufgaben_ohne_leserecht')).sql;
   return { repo: pgRepo(sql, HAUSHALT), konto: pgKontoRepo(sql, HAUSHALT) };

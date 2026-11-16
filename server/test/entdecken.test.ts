@@ -22,9 +22,9 @@ import {
   type Texte,
   type Tipp,
 } from '../../shared/src/entdecken';
-import { Entdecken, entdeckenOrdner, ladeAblago } from '../src/entdecken';
+import { Entdecken, entdeckenOrdner, ladeAblago } from '../src/entdecken/entdecken';
 import { Konten } from '../src/konten';
-import { speicherKontoRepo } from '../src/konto-repo';
+import { speicherKontoRepo } from '../src/konten/konto-repo';
 import { eigeneDatenbank } from './hilfe-db';
 
 const WURZEL = new URL('../..', import.meta.url).pathname;

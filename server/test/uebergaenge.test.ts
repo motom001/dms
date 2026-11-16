@@ -2,8 +2,8 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { describe, it } from 'node:test';
-import { UEBERGAENGE } from '../src/uebergaenge';
-import { vergleicheVersion } from '../src/system';
+import { UEBERGAENGE } from '../src/grundlagen/uebergaenge';
+import { vergleicheVersion } from '../src/system/system';
 
 const WURZEL = new URL('../../', import.meta.url);
 

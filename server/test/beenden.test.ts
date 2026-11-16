@@ -5,7 +5,7 @@
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { describe, it } from 'node:test';
-import { BEENDEN_FRIST_MS, beendeGeordnet } from '../src/beenden';
+import { BEENDEN_FRIST_MS, beendeGeordnet } from '../src/prozesse/beenden';
 
 const SERVER = new URL('..', import.meta.url).pathname;
 
@@ -112,7 +112,7 @@ describe('Beenden mit Gesamtfrist (#1340)', () => {
   it('echter Prozess: hängt ein Schritt, endet er selbst nach der Frist (ohne SIGKILL von außen)', { timeout: 20_000 }, async () => {
     const env = { ...process.env };
     delete env.NODE_TEST_CONTEXT;
-    const code = `import { beendeGeordnet } from './src/beenden.ts';
+    const code = `import { beendeGeordnet } from './src/prozesse/beenden.ts';
       setInterval(() => {}, 1000);
       process.on('SIGTERM', () => void beendeGeordnet([{ name: 'haengt', f: () => new Promise(() => {}) }],
         { log: { error: () => {}, warn: (t) => console.log(t) }, ende: (c) => process.exit(c), frist: 300 }));

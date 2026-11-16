@@ -7,14 +7,14 @@
  */
 import { randomUUID } from 'node:crypto';
 import type { EreignisseDienst } from '../ereignisse/index';
-import { Fachfehler } from '../fehler';
+import { Fachfehler } from '../grundlagen/fehler';
 import type { Kern } from '../kern';
 import type { MappenDienst, MappenHistorie } from '../mappen';
 import type { PostSystemmappen } from '../post';
 import { istUuid, type Repo } from '../repo';
-import { t } from '../sprache';
+import { t } from '../sprache/sprache';
 import { historienAufgabentext } from './historientext';
-import type { Gueltigkeit } from '../zaehlerspeicher';
+import type { Gueltigkeit } from '../zwischenspeicher/zaehlerspeicher';
 import type { ZugriffDienst } from '../zugriff';
 import { alsText, erwaehnungen, ohneTitel } from '../../../shared/src/markdown';
 import { FAVORIT_ERWAEHNT, FAVORIT_ERWAEHNT_OFFEN, favoritErwaehntWahl, type FavoritErwaehntMerk } from '../../../shared/src/erwaehnen';

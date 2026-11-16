@@ -36,14 +36,14 @@ import {
 } from '../../../shared/src/paketaktionen';
 import type { InstalliertesPaket } from '../../../shared/src/pakete';
 import type { Rechte } from '../../../shared/src/rechte';
-import { Fachfehler } from '../fehler';
-import { AKTION_DATEI_MAX, AKTION_DATEIEN_MAX, AKTION_LAUF_MS, AKTION_ZEIT_MS, MB } from '../grenzen';
+import { Fachfehler } from '../grundlagen/fehler';
+import { AKTION_DATEI_MAX, AKTION_DATEIEN_MAX, AKTION_LAUF_MS, AKTION_ZEIT_MS, MB } from '../grundlagen/grenzen';
 import type { Kern, Zugriff } from '../kern';
 import { seitenInfo } from '../pdf';
-import { hashe, type Kurzzustand } from '../kurzzustand';
-import { protokoll } from '../protokoll';
+import { hashe, type Kurzzustand } from '../zwischenspeicher/kurzzustand';
+import { protokoll } from '../protokoll/protokoll';
 import { istUuid } from '../repo';
-import { t } from '../sprache';
+import { t } from '../sprache/sprache';
 import type { ZugriffDienst } from '../zugriff';
 import { AntwortFehler, liesAntwort, pruefeAntworten, type PaketErgebnis } from './dialog';
 

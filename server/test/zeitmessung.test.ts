@@ -5,8 +5,8 @@
  */
 import assert from 'node:assert/strict';
 import { after, before, describe, it } from 'node:test';
-import { kontext, type Kontext } from '../src/protokoll';
-import { aufteilungText, Messung, rechteMessen, serverTiming, speicherMessSpeicher, zeitaufteilung } from '../src/messung';
+import { kontext, type Kontext } from '../src/protokoll/protokoll';
+import { aufteilungText, Messung, rechteMessen, serverTiming, speicherMessSpeicher, zeitaufteilung } from '../src/datenbank/messung';
 import { speicherRepo } from '../src/repo/speicher';
 import { liesServerTiming, teileAuf } from '../../shared/src/zeitmessung';
 import { eigeneDatenbank } from './hilfe-db';
@@ -256,11 +256,11 @@ describe('HTTP: Server-Timing-Header (#477)', { skip: echtesFastify ? false : 'f
   let messung: Messung;
   let cookie = '';
   before(async () => {
-    const { baueApp } = await import('../src/http');
-    const { Dienst } = await import('../src/dienst');
-    const { speicherDateien } = await import('../src/dateispeicher');
+    const { baueApp } = await import('../src/http/http');
+    const { Dienst } = await import('../src/dienst/dienst');
+    const { speicherDateien } = await import('../src/dateien/dateispeicher');
     const { Konten } = await import('../src/konten');
-    const { speicherKontoRepo } = await import('../src/konto-repo');
+    const { speicherKontoRepo } = await import('../src/konten/konto-repo');
     messung = new Messung(speicherMessSpeicher());
     // Typen etwas langsam, damit die Anfrage sicher über der kleinsten Schwelle (1 ms) liegt.
     const repo = speicherRepo();

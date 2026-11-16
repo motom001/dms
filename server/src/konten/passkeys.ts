@@ -2,15 +2,15 @@
  * Passkeys (#811, #1278 Teil von `Konten`): Anmelden mit Passkey und Bestätigen für Dokumente.
  */
 import { KontenAnmeldung } from './anmeldung';
-import type { Passkeys } from '../passkeys';
-import { Fachfehler } from '../fehler';
-import { t } from '../sprache';
+import type { Passkeys } from '../anmeldung/passkeys';
+import { Fachfehler } from '../grundlagen/fehler';
+import { t } from '../sprache/sprache';
 import { type ZweiterSchritt, ZWEITER_SCHRITT } from './hilfen';
-import { hashe } from '../kurzzustand';
-import type { Versuch } from '../anmeldesperre';
+import { hashe } from '../zwischenspeicher/kurzzustand';
+import type { Versuch } from '../anmeldung/anmeldesperre';
 import { type Benutzer, istPerson } from '../../../shared/src/model';
 import { darfVerwalten } from '../../../shared/src/verwaltungsrecht';
-import type { SitzungIntern } from '../konto-repo';
+import type { SitzungIntern } from './konto-repo';
 
 /** Anmelden und Bestätigen mit Passkey. */
 export abstract class KontenPasskeys extends KontenAnmeldung {

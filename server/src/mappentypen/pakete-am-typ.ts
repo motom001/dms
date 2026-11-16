@@ -4,11 +4,11 @@
  */
 import type { Benutzer, Mappe } from '../../../shared/src/model';
 import { MAPPEN_EREIGNISSE, type InstalliertesPaket } from '../../../shared/src/pakete';
-import { Fachfehler } from '../fehler';
+import { Fachfehler } from '../grundlagen/fehler';
 import type { Kern, Zugreifender, Zugriff } from '../kern';
-import { protokoll } from '../protokoll';
+import { protokoll } from '../protokoll/protokoll';
 import type { Repo } from '../repo';
-import { t } from '../sprache';
+import { t } from '../sprache/sprache';
 import type { ZugriffDienst } from '../zugriff';
 
 /** Was die Pakete am Typ außer Kern und Rechteprüfung brauchen – vom Dienst hereingereicht. */

@@ -9,16 +9,16 @@ import { mkdtemp, readdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, it } from 'node:test';
-import { Archivfassung, ordnerArchiv } from '../src/archivfassung';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
-import { speicherEinstellungen } from '../src/einstellungen';
-import { Fachfehler } from '../src/fehler';
+import { Archivfassung, ordnerArchiv } from '../src/dateien/archivfassung';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
+import { Fachfehler } from '../src/grundlagen/fehler';
 import { Konten } from '../src/konten';
-import { speicherKontoRepo } from '../src/konto-repo';
+import { speicherKontoRepo } from '../src/konten/konto-repo';
 import { pdfAus } from './hilfen-einfach-pdf';
 import { speicherRepo } from '../src/repo/speicher';
-import { routen, type Anfrage, type Datei } from '../src/routen';
+import { routen, type Anfrage, type Datei } from '../src/http/routen';
 import {
   NACHLAUF_STAPEL,
   ordnerAblage,
@@ -29,7 +29,7 @@ import {
   type ArchivQuelle,
   type Erzeuger,
   type NachlaufStand,
-} from '../src/vorschau';
+} from '../src/dateien/vorschau';
 
 // 1×1-PNG und ein kleines JPEG (8×8, grau)
 const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64');

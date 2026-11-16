@@ -21,13 +21,13 @@ import {
   type KatalogArt,
   type Katalogeintrag,
 } from '../../../shared/src/ereignisse';
-import type { Dateispeicher } from '../dateispeicher';
-import type { Einstellungen } from '../einstellungen';
+import type { Dateispeicher } from '../dateien/dateispeicher';
+import type { Einstellungen } from '../einstellungen/einstellungen';
 import type { Repo } from '../repo';
-import type { Haushaltsstand } from '../zaehlerspeicher';
-import { beiVerklemmungWiederholen } from '../db';
-import { kontext, protokoll } from '../protokoll';
-import { t } from '../sprache';
+import type { Haushaltsstand } from '../zwischenspeicher/zaehlerspeicher';
+import { beiVerklemmungWiederholen } from '../datenbank/db';
+import { kontext, protokoll } from '../protokoll/protokoll';
+import { t } from '../sprache/sprache';
 import { Anlaesse } from './anlaesse';
 import { Historie } from './historie';
 import { Loeschprotokoll } from './loeschprotokoll';

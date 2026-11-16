@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { kontext, MAX_EINTRAEGE, Protokoll, zeile } from '../src/protokoll';
+import { kontext, MAX_EINTRAEGE, Protokoll, zeile } from '../src/protokoll/protokoll';
 
 describe('Protokoll', () => {
   it('schreibt Module, Stufen und Benutzer aus dem Anfragekontext', () => {
@@ -99,7 +99,7 @@ describe('Protokoll', () => {
 
 describe('Messung der Datenbankzugriffe', () => {
   it('zählt Zugriffe je Anfrage und merkt sich lange', async () => {
-    const { Messung, speicherMessSpeicher } = await import('../src/messung');
+    const { Messung, speicherMessSpeicher } = await import('../src/datenbank/messung');
     const m = new Messung(speicherMessSpeicher());
     await m.setze({ schwelleMs: 15, tage: 3 });
     const repo = m.umhuelle(
@@ -134,7 +134,7 @@ describe('Messung der Datenbankzugriffe', () => {
 
 describe('Versionsübersicht', () => {
   it('vergleicht Versionen und meldet Neueres, Veraltetes und Fehler je Komponente', async () => {
-    const { uebersicht, versionsabgleich, vergleicheVersion } = await import('../src/system');
+    const { uebersicht, versionsabgleich, vergleicheVersion } = await import('../src/system/system');
     assert.ok(vergleicheVersion('22.11.0', '22.9.1') > 0);
     assert.equal(vergleicheVersion('v17.4', '17.4.0'), 0);
     process.env.DMS_COMMIT = 'aaaaaaa1111111';

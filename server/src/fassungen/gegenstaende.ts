@@ -12,7 +12,7 @@ import { ALLE_TYPEN } from '../../../shared/src/sichten';
 import { ohne } from '../../../shared/src/fassungen';
 import type { NummernkreisStand, SichtStand, StempelStand, TypStand } from '../../../shared/src/fassungsvergleich';
 import type { Repo } from '../repo';
-import { t } from '../sprache';
+import { t } from '../sprache/sprache';
 import type { Gegenstand, Wiederherstellen } from './fassungen.dienst';
 
 /** Was die Gegenstände vom Dienst brauchen. */

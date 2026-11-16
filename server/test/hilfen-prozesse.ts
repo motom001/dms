@@ -4,8 +4,8 @@
  * neu gestartete Prozess tut das wieder (Neustart prüft der Test). Ausgabe: JSON-Zeilen.
  */
 import cluster from 'node:cluster';
-import { Fachfehler } from '../src/fehler';
-import { leite, verbundFuerProzess } from '../src/prozesse';
+import { Fachfehler } from '../src/grundlagen/fehler';
+import { leite, verbundFuerProzess } from '../src/prozesse/prozesse';
 
 const zeige = (x: unknown) => process.stdout.write(`${JSON.stringify(x)}\n`);
 

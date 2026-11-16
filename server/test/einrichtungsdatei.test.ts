@@ -10,12 +10,12 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, it } from 'node:test';
 import type { Einrichtungsplan } from '../../shared/src/einrichtungsplan';
-import { Einrichtung, planAusEingabe } from '../src/einrichtung';
-import { liesEinrichtungsdatei, schemaText, schreibeEinrichtungsdatei, SCHEMA_DATEI } from '../src/einrichtungsdatei';
-import { Einrichtungscode } from '../src/einrichtungscode';
-import { speicherEinstellungen } from '../src/einstellungen';
+import { Einrichtung, planAusEingabe } from '../src/einrichtung/einrichtung';
+import { liesEinrichtungsdatei, schemaText, schreibeEinrichtungsdatei, SCHEMA_DATEI } from '../src/einrichtung/einrichtungsdatei';
+import { Einrichtungscode } from '../src/einrichtung/einrichtungscode';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
 import { Konten } from '../src/konten';
-import { speicherKontoRepo } from '../src/konto-repo';
+import { speicherKontoRepo } from '../src/konten/konto-repo';
 
 const WURZEL = new URL('../..', import.meta.url).pathname;
 const DOKU = ['docs/handbuch/admin/docs/einrichtungsdatei', 'docs/handbuch/entwickler/docs/einrichtungsdatei'];
@@ -423,10 +423,10 @@ const echtesFastify = await import('fastify').then(
 
 describe('Schnittstellen des Assistenten über HTTP (#804, #806)', { skip: echtesFastify ? false : 'Fastify nicht installiert' }, () => {
   it('Code nötig, nichts angelegt, Datei hin und zurück; nach der Einrichtung zu', async () => {
-    const { baueApp } = await import('../src/http');
-    const { Dienst } = await import('../src/dienst');
+    const { baueApp } = await import('../src/http/http');
+    const { Dienst } = await import('../src/dienst/dienst');
     const { speicherRepo } = await import('../src/repo/speicher');
-    const { speicherDateien } = await import('../src/dateispeicher');
+    const { speicherDateien } = await import('../src/dateien/dateispeicher');
     const dienst = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
     const code = new Einrichtungscode(await ordner());
     const c = await code.bereitstellen();
@@ -497,11 +497,11 @@ describe('Schnittstellen des Assistenten über HTTP (#804, #806)', { skip: echte
   });
 
   it('ohne Einrichtungscode (DMS_EINRICHTUNGSCODE=aus, #1359): von außen 403 mit Hinweis, aus dem Heimnetz möglich', async () => {
-    const { baueApp } = await import('../src/http');
-    const { Dienst } = await import('../src/dienst');
+    const { baueApp } = await import('../src/http/http');
+    const { Dienst } = await import('../src/dienst/dienst');
     const { speicherRepo } = await import('../src/repo/speicher');
-    const { speicherDateien } = await import('../src/dateispeicher');
-    const { proxyVertrauen } = await import('../src/proxy');
+    const { speicherDateien } = await import('../src/dateien/dateispeicher');
+    const { proxyVertrauen } = await import('../src/http/proxy');
     const dienst = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
     const code = new Einrichtungscode(await ordner(), Date.now, true);
     const konten = new Konten(speicherKontoRepo(), null, 'http://nas', dienst.systemtypen.benutzerspiegel());

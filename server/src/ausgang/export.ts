@@ -5,18 +5,18 @@
  */
 import type { Readable } from 'node:stream';
 import { arbeite } from '../arbeit';
-import { type Ausgabe, fuerAusgabe, kannStempeln } from '../ausgabe';
+import { type Ausgabe, fuerAusgabe, kannStempeln } from './ausgabe';
 import type { FehlendeDateien } from '../dokumente';
-import { eindeutig, exportSpalten, mappenPdf, sichererName, spaltenKopf, zeile } from '../export';
-import { Fachfehler } from '../fehler';
+import { eindeutig, exportSpalten, mappenPdf, sichererName, spaltenKopf, zeile } from '../export/export';
+import { Fachfehler } from '../grundlagen/fehler';
 import type { Kern, Zugriff } from '../kern';
 import type { Stempelvorlagen } from '../pdf-bearbeiten';
 import type { Repo } from '../repo';
 import type { SichtenDienst } from '../sichten';
-import { t } from '../sprache';
-import { stufeAus } from '../verkleinern';
-import type { Zelle } from '../xlsx';
-import { ZIP_MAX, type ZipEintrag, zipGroesse, zipStrom } from '../zip';
+import { t } from '../sprache/sprache';
+import { stufeAus } from '../dateien/verkleinern';
+import type { Zelle } from '../formate/xlsx';
+import { ZIP_MAX, type ZipEintrag, zipGroesse, zipStrom } from '../formate/zip';
 import { NICHT_SICHTBAR, type ZugriffDienst } from '../zugriff';
 import { ABRUF_ART, type Abrufweg, type Dokument, type Mappe, type Mappentyp, verweiseVon } from '../../../shared/src/model';
 import { zeitzone } from '../../../shared/src/region';

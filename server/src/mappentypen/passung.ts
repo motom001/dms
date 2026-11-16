@@ -6,7 +6,7 @@ import { ersterGrund, istLeer, verweiseVon, type Feld, type Mappe, type Mappenty
 import { hatEigeneOrganisationBedingung, pruefeMitAnzeige } from '../../../shared/src/anzeige';
 import type { Kern } from '../kern';
 import { istUuid, type Repo } from '../repo';
-import { t } from '../sprache';
+import { t } from '../sprache/sprache';
 
 /** Felder, für die „eindeutig“ gilt: Text, Zahl und Zusammengesetzt (#1050, die Kombination). */
 const hatEindeutig = (f: Feld) => f.typ === 'text' || f.typ === 'zahl' || f.typ === 'zusammengesetzt';

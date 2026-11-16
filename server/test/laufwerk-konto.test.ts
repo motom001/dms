@@ -1,14 +1,14 @@
 /** Laufwerk unter Mein Konto (#720): nur bei eingeschaltetem Laufwerk, Adresse und Benutzername. */
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
-import { speicherEinstellungen } from '../src/einstellungen';
-import { Fachfehler } from '../src/fehler';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
+import { Fachfehler } from '../src/grundlagen/fehler';
 import { Konten } from '../src/konten';
-import { speicherKontoRepo } from '../src/konto-repo';
+import { speicherKontoRepo } from '../src/konten/konto-repo';
 import { speicherRepo } from '../src/repo/speicher';
-import { routen } from '../src/routen';
+import { routen } from '../src/http/routen';
 
 describe('Laufwerk unter Mein Konto (#720)', () => {
   it('ausgeschaltet: kein Hinweis im Status, Bereich gibt 404; eingeschaltet: Adresse und Benutzername', async () => {

@@ -13,14 +13,14 @@ import {
   zahlFehler,
   type Verweisquelle,
 } from '../../shared/src/paketeinstellungen';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
-import { speicherEinstellungen } from '../src/einstellungen';
-import { Fachfehler } from '../src/fehler';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
+import { Fachfehler } from '../src/grundlagen/fehler';
 import { Paketverwaltung, type PaketLaeufer } from '../src/pakete/verwaltung/index';
 import { speicherRepo } from '../src/repo/speicher';
-import { Tresor } from '../src/tresor';
-import { zipPuffer } from '../src/zip';
+import { Tresor } from '../src/geheimnisse/tresor';
+import { zipPuffer } from '../src/formate/zip';
 import { eigeneDatenbank } from './hilfe-db';
 import { TEST_PROJEKT, testSigniert } from './katalogschluessel';
 
@@ -421,10 +421,10 @@ describe('Paket-Einstellungen (#197)', () => {
     'Sicherung: Werte liegen in der Tabelle einstellungen (im Abzug), Geheimnisse verschlüsselt, Schlüsselwechsel inklusive',
     { skip: !process.env.TEST_DATABASE_URL && 'ohne TEST_DATABASE_URL' },
     async () => {
-      const { migriere } = await import('../src/db');
+      const { migriere } = await import('../src/datenbank/db');
       const { pgRepo } = await import('../src/repo/pg');
-      const { pgEinstellungen } = await import('../src/einstellungen');
-      const { OHNE_INHALT } = await import('../src/datenbankabzug');
+      const { pgEinstellungen } = await import('../src/einstellungen/einstellungen');
+      const { OHNE_INHALT } = await import('../src/sicherung/datenbankabzug');
       // Eigene Datenbank (#900), nach dem letzten Test der Datei gelöscht.
       const sql = (await eigeneDatenbank('pe', { migrieren: false })).sql;
       try {

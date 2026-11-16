@@ -3,13 +3,13 @@
  */
 import { ARCHIV_MAX, SAMMEL_MAX, type InstallierenEingabe, type UmbauEingabe } from './verwaltung/index';
 import type { AblaufEingabe, AblaufInstallation } from '../../../shared/src/pakete';
-import { eigeneVersion } from '../system';
-import { KOERPER_SPIELRAUM, PROBE_KOERPER_MAX } from '../grenzen';
+import { eigeneVersion } from '../system/system';
+import { KOERPER_SPIELRAUM, PROBE_KOERPER_MAX } from '../grundlagen/grenzen';
 import { ok } from '../http/routen-hilfen';
-import { extern } from '../externmessung';
+import { extern } from '../system/externmessung';
 import { hatGesamt } from '../../../shared/src/verwaltungsrecht';
 import type { RoutenKontext } from '../http/routen-kontext';
-import type { Anfrage, Route } from '../routen';
+import type { Anfrage, Route } from '../http/routen';
 
 export function paketeRouten(k: RoutenKontext): Route[] {
   const { x, pakete, paketerstellung, wer } = k;

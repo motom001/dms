@@ -23,7 +23,7 @@ const prozesse: ChildProcess[] = [];
 after(async () => {
   for (const p of prozesse) if (p.exitCode === null) p.kill('SIGKILL');
   if (URL_DB && datenbanken.length) {
-    const { ausUrl, alsUrl } = await import('../src/anbindung');
+    const { ausUrl, alsUrl } = await import('../src/datenbank/anbindung');
     const { default: postgres } = await import('postgres');
     const sql = postgres(alsUrl({ ...ausUrl(URL_DB)!, datenbank: 'postgres' }), { onnotice: () => {} });
     for (const d of datenbanken) await sql.unsafe(`DROP DATABASE IF EXISTS "${d}" WITH (FORCE)`).catch(() => {});
@@ -44,7 +44,7 @@ async function freierPort(): Promise<number> {
 
 describe('Mehrere Prozesse, ganzes Ablago (#745)', { skip: !URL_DB && 'TEST_DATABASE_URL fehlt', timeout: 300_000 }, () => {
   it('Start, Systemzustand, Konsole, Auftrag, Absturz, Beenden, Downgrade', async () => {
-    const { ausUrl, alsUrl, legeDatenbankAn } = await import('../src/anbindung');
+    const { ausUrl, alsUrl, legeDatenbankAn } = await import('../src/datenbank/anbindung');
     const a = { ...ausUrl(URL_DB)!, datenbank: `dmstest_a745_e_${Date.now().toString(36)}` };
     await legeDatenbankAn(a);
     datenbanken.push(a.datenbank);

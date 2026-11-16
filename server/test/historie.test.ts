@@ -1,9 +1,9 @@
 /** Änderungshistorie an der Mappe (#57). */
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
-import { speicherEinstellungen } from '../src/einstellungen';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
 import { speicherRepo } from '../src/repo/speicher';
 
 const ich = { id: '00000000-0000-4000-8000-0000000000aa', rolle: 'admin' };

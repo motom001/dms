@@ -9,11 +9,11 @@ import {
   pruefeSperrEinstellung,
   sammelText,
   SPERRE_STANDARD,
-} from '../src/anmeldesperre';
-import { speicherEinstellungen } from '../src/einstellungen';
-import { Fachfehler } from '../src/fehler';
-import { speicherKurzzustand } from '../src/kurzzustand';
-import { mailText } from '../src/mail';
+} from '../src/anmeldung/anmeldesperre';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
+import { Fachfehler } from '../src/grundlagen/fehler';
+import { speicherKurzzustand } from '../src/zwischenspeicher/kurzzustand';
+import { mailText } from '../src/mail/mail';
 
 const gesperrt = (p: Promise<unknown>) => assert.rejects(p, (e) => e instanceof Fachfehler && e.status === 429);
 

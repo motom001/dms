@@ -3,10 +3,10 @@
  * und das Mess-Skript `leistungsmessung.ts`.
  */
 import type postgres from 'postgres';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
-import { speicherEinstellungen } from '../src/einstellungen';
-import type { KontoRepo } from '../src/konto-repo';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
+import type { KontoRepo } from '../src/konten/konto-repo';
 import type { Repo } from '../src/repo';
 
 /** Messlatte (#367, Entwicklerhandbuch „Leistung“): bei 10.000 Mappen / 30.000 Dokumenten. */

@@ -6,20 +6,20 @@
  */
 import { createHash, randomUUID } from 'node:crypto';
 import type { Readable } from 'node:stream';
-import { type Ausgabe, fuerAusgabe, weitergabeWas } from '../ausgabe';
+import { type Ausgabe, fuerAusgabe, weitergabeWas } from './ausgabe';
 import type { DokumenteDienst } from '../dokumente';
-import { eindeutig, mappenPdf, sichererName } from '../export';
-import { Fachfehler } from '../fehler';
-import { EMAIL_MAX_ANHAENGE } from '../grenzen';
+import { eindeutig, mappenPdf, sichererName } from '../export/export';
+import { Fachfehler } from '../grundlagen/fehler';
+import { EMAIL_MAX_ANHAENGE } from '../grundlagen/grenzen';
 import type { Kern, Zugriff } from '../kern';
-import type { Mailer } from '../mail';
+import type { Mailer } from '../mail/mail';
 import type { MappenHistorie } from '../mappen';
 import type { Stempelvorlagen } from '../pdf-bearbeiten';
 import type { PostSystemmappen } from '../post';
-import { protokoll } from '../protokoll';
+import { protokoll } from '../protokoll/protokoll';
 import { istUuid, type Repo } from '../repo';
-import { t } from '../sprache';
-import { stufeAus } from '../verkleinern';
+import { t } from '../sprache/sprache';
+import { stufeAus } from '../dateien/verkleinern';
 import { NICHT_SICHTBAR, type ZugriffDienst } from '../zugriff';
 import {
   type Dokument,

@@ -8,12 +8,12 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { after, describe, it } from 'node:test';
 import { liesAnlass, liesFilter, nummerVon, passt, type LoeschEintrag } from '../../shared/src/loeschprotokoll';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
-import { speicherEinstellungen } from '../src/einstellungen';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
 import type { Repo } from '../src/repo';
 import { speicherRepo } from '../src/repo/speicher';
-import { EXPORT_TABELLEN } from '../src/vollexport';
+import { EXPORT_TABELLEN } from '../src/export/vollexport';
 import { DATENSCHUTZ_STANDARD } from '../../shared/src/auskunft';
 import { loeschkonzept } from '../../shared/src/loeschkonzept';
 
@@ -30,8 +30,8 @@ const datenbanken: string[] = [];
 let pgSql: import('postgres').Sql | null = null;
 async function repo(pg: boolean): Promise<Repo> {
   if (!pg) return speicherRepo();
-  const { ausUrl, alsUrl, legeDatenbankAn } = await import('../src/anbindung');
-  const { verbinde, migriere } = await import('../src/db');
+  const { ausUrl, alsUrl, legeDatenbankAn } = await import('../src/datenbank/anbindung');
+  const { verbinde, migriere } = await import('../src/datenbank/db');
   const { pgRepo } = await import('../src/repo/pg');
   const a = {
     ...ausUrl(process.env.TEST_DATABASE_URL)!,
@@ -157,8 +157,8 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
     after(async () => {
       for (const s of offen.splice(0)) await s.end();
       if (pg && datenbanken.length) {
-        const { ausUrl, alsUrl } = await import('../src/anbindung');
-        const { verbinde } = await import('../src/db');
+        const { ausUrl, alsUrl } = await import('../src/datenbank/anbindung');
+        const { verbinde } = await import('../src/datenbank/db');
         const s = verbinde(alsUrl({ ...ausUrl(process.env.TEST_DATABASE_URL)!, datenbank: 'postgres' }));
         for (const n of datenbanken.splice(0)) await s.unsafe(`DROP DATABASE IF EXISTS "${n}"`);
         await s.end();

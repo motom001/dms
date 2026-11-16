@@ -2,9 +2,9 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { cssOhneSpitzeKlammer, markdownZelle } from '../../shared/src/maskieren';
-import { speicherDateien } from '../src/dateispeicher';
-import { Designs, istSvg, pruefeLogo, speicherDesignRepo } from '../src/designs';
-import { Fachfehler } from '../src/fehler';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Designs, istSvg, pruefeLogo, speicherDesignRepo } from '../src/oberflaeche/designs';
+import { Fachfehler } from '../src/grundlagen/fehler';
 
 describe('CodeQL-Funde (#250)', () => {
   it('erkennt SVG nach XML-Deklaration und Kommentaren', () => {

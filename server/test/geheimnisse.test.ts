@@ -9,7 +9,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { after, before, describe, it } from 'node:test';
-import { artVon, bestandAus, GEHEIM_ARTEN, verschluesselteIn, type Fundstelle } from '../src/geheimnisse';
+import { artVon, bestandAus, GEHEIM_ARTEN, verschluesselteIn, type Fundstelle } from '../src/geheimnisse/geheimnisse';
 import { paketEinstellungen, setzePaketEinstellungen } from '../src/pakete/index';
 
 const g = (n: number | string) => `dms1$geheim-${n}`;
@@ -124,7 +124,7 @@ describe(
     };
 
     before(async () => {
-      const { verbinde, migriere } = await import('../src/db');
+      const { verbinde, migriere } = await import('../src/datenbank/db');
       haupt = verbinde(url!);
       await haupt.unsafe(`DROP DATABASE IF EXISTS ${db}`);
       await haupt.unsafe(`CREATE DATABASE ${db}`);
@@ -156,14 +156,14 @@ describe(
 
     it('zählt jede Art, schlüsselt alle Werte jeder Tabelle um und alles bleibt lesbar', async () => {
       const { pgRepo } = await import('../src/repo/pg');
-      const { pgEinstellungen } = await import('../src/einstellungen');
-      const { ordnerSpeicher } = await import('../src/dateispeicher');
-      const { Dienst } = await import('../src/dienst');
-      const { Tresor, entschluesseleMit, schluesselAusText } = await import('../src/tresor');
-      const { Betrieb } = await import('../src/betrieb');
-      const { Oidc } = await import('../src/oidc');
-      const { PostfachOAuth } = await import('../src/postfach-oauth');
-      const { pruefePostfach } = await import('../src/postfach');
+      const { pgEinstellungen } = await import('../src/einstellungen/einstellungen');
+      const { ordnerSpeicher } = await import('../src/dateien/dateispeicher');
+      const { Dienst } = await import('../src/dienst/dienst');
+      const { Tresor, entschluesseleMit, schluesselAusText } = await import('../src/geheimnisse/tresor');
+      const { Betrieb } = await import('../src/einstellungen/betrieb');
+      const { Oidc } = await import('../src/anmeldung/oidc');
+      const { PostfachOAuth } = await import('../src/post/postfach-oauth');
+      const { pruefePostfach } = await import('../src/post/postfach');
       const wurzel = await mkdtemp(join(tmpdir(), 'dms-geheim-'));
       const einst = pgEinstellungen(sql, HAUSHALT);
       const tresor = new Tresor(einst, join(wurzel, 'geheim', 'dms.schluessel'), () => null);
@@ -354,10 +354,10 @@ describe(
 
     it('meldet nicht lesbare Postfach- und Zwei-Faktor-Werte mit Namen', async () => {
       const { pgRepo } = await import('../src/repo/pg');
-      const { pgEinstellungen } = await import('../src/einstellungen');
-      const { ordnerSpeicher } = await import('../src/dateispeicher');
-      const { Dienst } = await import('../src/dienst');
-      const { Tresor } = await import('../src/tresor');
+      const { pgEinstellungen } = await import('../src/einstellungen/einstellungen');
+      const { ordnerSpeicher } = await import('../src/dateien/dateispeicher');
+      const { Dienst } = await import('../src/dienst/dienst');
+      const { Tresor } = await import('../src/geheimnisse/tresor');
       const einst = pgEinstellungen(sql, HAUSHALT);
       const wurzel = await mkdtemp(join(tmpdir(), 'dms-geheim-'));
       // Neuer Schlüssel an anderer Stelle: alles aus dem ersten Test ist damit nicht lesbar.

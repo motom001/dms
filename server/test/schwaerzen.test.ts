@@ -10,13 +10,13 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { after, describe, it } from 'node:test';
 import { PDFDocument, PDFName, PDFString } from 'pdf-lib';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
-import { speicherEinstellungen } from '../src/einstellungen';
-import { Fachfehler } from '../src/fehler';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
+import { Fachfehler } from '../src/grundlagen/fehler';
 import type { Repo } from '../src/repo';
 import { speicherRepo } from '../src/repo/speicher';
-import { analysiere, exifAusrichtung, liesBbox, maleSchwarz, pnmKopf, schwaerze, textAus, verbleibende } from '../src/schwaerzen';
+import { analysiere, exifAusrichtung, liesBbox, maleSchwarz, pnmKopf, schwaerze, textAus, verbleibende } from '../src/dateien/schwaerzen';
 import {
   bereicheVon,
   findeBegriff,
@@ -457,7 +457,7 @@ describe('Schwärzen am Dokument (#392)', () => {
 const HAUSHALT = '00000000-0000-4000-8000-000000000001';
 const offen: Array<{ end(): Promise<void> }> = [];
 async function pgRepo(): Promise<Repo> {
-  const { migriere } = await import('../src/db');
+  const { migriere } = await import('../src/datenbank/db');
   const { pgRepo: repo } = await import('../src/repo/pg');
   // Eigene Datenbank (#900), nach dem letzten Test der Datei gelöscht.
   const sql = (await eigeneDatenbank('sw', { migrieren: false })).sql;

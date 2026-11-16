@@ -21,9 +21,9 @@ describe('Leistung mit PostgreSQL (#367)', { skip: url ? false : 'TEST_DATABASE_
   let ordner = '';
 
   before(async () => {
-    const { ausUrl, alsUrl, legeDatenbankAn } = await import('../src/anbindung');
-    const { verbinde, migriere } = await import('../src/db');
-    const { ordnerSpeicher } = await import('../src/dateispeicher');
+    const { ausUrl, alsUrl, legeDatenbankAn } = await import('../src/datenbank/anbindung');
+    const { verbinde, migriere } = await import('../src/datenbank/db');
+    const { ordnerSpeicher } = await import('../src/dateien/dateispeicher');
     const { baueLeistungsdaten, HAUSHALT } = await import('./leistung-daten');
     const a = { ...ausUrl(url)!, datenbank: `dms_leistung_${Date.now().toString(36)}` };
     name = a.datenbank;
@@ -49,7 +49,7 @@ describe('Leistung mit PostgreSQL (#367)', { skip: url ? false : 'TEST_DATABASE_
 
   it('Messlatte: Mappe öffnen und Dokumentliste unter 200 ms (sonst Warnung)', async (t) => {
     const { pgRepo } = await import('../src/repo/pg');
-    const { pgKontoRepo } = await import('../src/konto-repo');
+    const { pgKontoRepo } = await import('../src/konten/konto-repo');
     const { messeAbfragen, MESSLATTE_MS } = await import('./leistung-messen');
     const { BENUTZER, HAUSHALT } = await import('./leistung-daten');
     const r = await messeAbfragen(sql, pgRepo(sql, HAUSHALT), pgKontoRepo(sql, HAUSHALT), BENUTZER, { n: 5 });
@@ -81,10 +81,10 @@ describe('Leistung mit PostgreSQL (#367)', { skip: url ? false : 'TEST_DATABASE_
 
   it('Export ohne N+1: Dokumente, Volltexte und Versionen gebündelt', async () => {
     const { pgRepo } = await import('../src/repo/pg');
-    const { Dienst } = await import('../src/dienst');
-    const { ordnerSpeicher } = await import('../src/dateispeicher');
-    const { speicherEinstellungen } = await import('../src/einstellungen');
-    const { vollexport } = await import('../src/vollexport');
+    const { Dienst } = await import('../src/dienst/dienst');
+    const { ordnerSpeicher } = await import('../src/dateien/dateispeicher');
+    const { speicherEinstellungen } = await import('../src/einstellungen/einstellungen');
+    const { vollexport } = await import('../src/export/vollexport');
     const { zaehlend } = await import('./leistung-messen');
     const { HAUSHALT } = await import('./leistung-daten');
     const z = zaehlend(pgRepo(sql, HAUSHALT));

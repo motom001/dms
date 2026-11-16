@@ -1,6 +1,6 @@
 /**
  * Notfallblatt als PDF (#814): eine Seite A4 in Ablago-Optik, gezeichnet in der PDF-Stelle (#541) im Arbeiter.
- * Die Texte kommen fertig aus `notfallblattPlan` (server/src/notfallblatt.ts); hier stehen nur Lage, Farben und Logo.
+ * Die Texte kommen fertig aus `notfallblattPlan` (server/src/notfall/notfallblatt.ts); hier stehen nur Lage, Farben und Logo.
  *
  * Marke: Ablago-Blau #1F4E79, Bernstein #E8A33D, Tinte #141A22 (docs/marke/). Auch in Schwarzweiß lesbar: Text in
  * Tinte oder Blau auf Weiß, Bernstein nur als Zierde. Schrift: Noto Sans (Überschriften, Text; eingebettet als Teilmenge,
@@ -8,7 +8,7 @@
  */
 import { PDFDocument, PDFName, PDFString, rgb, StandardFonts, type PDFFont, type PDFPage, type RGB } from 'pdf-lib';
 import { angabe, pdfText, schriften } from './schrift';
-import type { NotfallblattPlan } from '../notfallblatt';
+import type { NotfallblattPlan } from '../notfall/notfallblatt';
 import { gebietsschema } from '../../../shared/src/sprache';
 
 const BLAU = rgb(0x1f / 255, 0x4e / 255, 0x79 / 255);

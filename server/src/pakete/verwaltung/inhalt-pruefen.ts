@@ -11,8 +11,8 @@ import { bereinigeVorbelegen, passtZusammen, VORBELEGEN_MAX } from '../../../../
 import { istBetriebWenn } from '../../../../shared/src/ereignisse';
 import { PAKET_ID_TEIL, SCHLUESSEL, TYPVERWEIS } from '../../../../shared/src/kennungen';
 import { bedingungEingabeFehler, OPERATOREN, type Bedingung, type Operator } from '../../../../shared/src/sichten';
-import { Fachfehler } from '../../fehler';
-import { t } from '../../sprache';
+import { Fachfehler } from '../../grundlagen/fehler';
+import { t } from '../../sprache/sprache';
 import { DEUTSCH } from '../../../../shared/src/deutsch';
 import {
   BESCHRIFTUNGEN_ORDNER,

@@ -3,7 +3,7 @@
  * hängen beim Beenden). Der Hauptprozess muss sie innerhalb seiner Frist hart beenden und selbst enden. Ausgabe: JSON-Zeilen.
  */
 import cluster from 'node:cluster';
-import { leite, verbundFuerProzess } from '../src/prozesse';
+import { leite, verbundFuerProzess } from '../src/prozesse/prozesse';
 
 const zeige = (x: unknown) => process.stdout.write(`${JSON.stringify(x)}\n`);
 

@@ -16,7 +16,7 @@ import {
   type VersionsLage,
 } from '../../../../shared/src/paketerstellung';
 import type { Sicht } from '../../../../shared/src/sichten';
-import { t } from '../../sprache';
+import { t } from '../../sprache/sprache';
 import { typBild, typUnterschiede, type TypUnterschiede } from '../../../../shared/src/typvergleich';
 
 /**

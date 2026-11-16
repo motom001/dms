@@ -6,10 +6,10 @@
 import assert from 'node:assert/strict';
 import { after, describe, it } from 'node:test';
 import type postgres from 'postgres';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
-import { speicherEinstellungen } from '../src/einstellungen';
-import { speicherKontoRepo, zuletztListe, type KontoRepo } from '../src/konto-repo';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
+import { speicherKontoRepo, zuletztListe, type KontoRepo } from '../src/konten/konto-repo';
 import { speicherRepo } from '../src/repo/speicher';
 
 const HAUSHALT = '00000000-0000-4000-8000-000000000001';
@@ -20,8 +20,8 @@ after(async () => {
 });
 
 async function datenbank(): Promise<postgres.Sql> {
-  const { ausUrl, alsUrl, legeDatenbankAn } = await import('../src/anbindung');
-  const { verbinde, migriere } = await import('../src/db');
+  const { ausUrl, alsUrl, legeDatenbankAn } = await import('../src/datenbank/anbindung');
+  const { verbinde, migriere } = await import('../src/datenbank/db');
   const a = {
     ...ausUrl(process.env.TEST_DATABASE_URL)!,
     datenbank: `dms_suchtext_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
@@ -104,7 +104,7 @@ describe('Suchtext der Mappen (#615) – PostgreSQL', { skip: !process.env.TEST_
   it('Mappen lesen den Suchtext nie mit; Sicherung und Papierkorb lassen ihn weg, Wiederherstellen füllt ihn neu', async () => {
     const { sql, d, typ, suche } = await aufbau();
     const { MAPPEN_SPALTEN } = await import('../src/repo/pg');
-    const { OHNE_SPALTEN } = await import('../src/datenbankabzug');
+    const { OHNE_SPALTEN } = await import('../src/sicherung/datenbankabzug');
     const spalten = (
       await sql`SELECT column_name FROM information_schema.columns WHERE table_name = 'mappen' AND column_name <> 'suchtext'`
     ).map((z) => z.column_name as string);
@@ -178,7 +178,7 @@ describe('Zuletzt geöffnet in einem Zugriff (#615)', () => {
   });
   it('in PostgreSQL', { skip: !process.env.TEST_DATABASE_URL && 'ohne TEST_DATABASE_URL' }, async () => {
     const sql = await datenbank();
-    const { pgKontoRepo } = await import('../src/konto-repo');
+    const { pgKontoRepo } = await import('../src/konten/konto-repo');
     const k = pgKontoRepo(sql, HAUSHALT);
     await sql`INSERT INTO benutzer (id, haushalt_id, email, name, rolle) VALUES (${ICH.id}, ${HAUSHALT}, ${ICH.email}, 'Lena', 'admin')`;
     await pruefeMerkeVorn(k, ICH.id);

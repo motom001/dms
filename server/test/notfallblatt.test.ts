@@ -7,8 +7,16 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, it } from 'node:test';
 import { PDFArray, PDFDict, PDFName, PDFString } from 'pdf-lib';
-import { blattAdresse, inGruppen, lesehilfe, notfallblatt, notfallblattPlan, VERWECHSELBAR, type Notfalldaten } from '../src/notfallblatt';
-import { NOTFALL_HILFE, NOTFALL_HILFE_EN, NOTFALL_QR } from '../src/notfallqr';
+import {
+  blattAdresse,
+  inGruppen,
+  lesehilfe,
+  notfallblatt,
+  notfallblattPlan,
+  VERWECHSELBAR,
+  type Notfalldaten,
+} from '../src/notfall/notfallblatt';
+import { NOTFALL_HILFE, NOTFALL_HILFE_EN, NOTFALL_QR } from '../src/notfall/notfallqr';
 import { ladePdf } from '../src/pdf/laden';
 
 const WURZEL = new URL('../..', import.meta.url).pathname;

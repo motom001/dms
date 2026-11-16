@@ -8,7 +8,7 @@
  * „nie nachladen“: kein JavaScript, keine Aktionen, keine Verweise auf externe Inhalte. Die volle Konformität prüft
  * das Paket in seiner CI (veraPDF).
  */
-import { execFile } from '../hintergrund';
+import { execFile } from '../prozesse/hintergrund';
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -18,8 +18,8 @@ import { ERECHNUNG_DATEINAME } from '../../../shared/src/erechnung';
 import { liesBbox, popplerDrehungen } from './schwaerzen';
 import { eigenerPuffer } from './puffer';
 import { ladePdf } from './laden';
-import { t } from '../sprache';
-import { AUSGABE_ARCHIV } from '../grenzen';
+import { t } from '../sprache/sprache';
+import { AUSGABE_ARCHIV } from '../grundlagen/grenzen';
 
 /** Was der Kern an einem PDF findet – Bewertung und Meldungen macht archivfassung.ts. */
 export interface PdfaBefund {

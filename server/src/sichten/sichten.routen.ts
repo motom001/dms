@@ -1,12 +1,12 @@
 /**
  * Ablage (#960: aus routen.ts): Mappenliste, Favoriten, Sichten, Stand und Zähler, Mappe öffnen, Startseite.
  */
-import { Fachfehler } from '../fehler';
+import { Fachfehler } from '../grundlagen/fehler';
 import { ZULETZT_LISTE } from '../konten';
-import { t } from '../sprache';
+import { t } from '../sprache/sprache';
 import { L, ok, leer, b, ich, passtEtag } from '../http/routen-hilfen';
 import type { RoutenKontext } from '../http/routen-kontext';
-import type { Route } from '../routen';
+import type { Route } from '../http/routen';
 
 export function ablageRouten(k: RoutenKontext): Route[] {
   const { dienst, konten, passwoerterAnzeigen, modusSpur, zg, darf, zuletztGeoeffnet, entschluessele } = k;

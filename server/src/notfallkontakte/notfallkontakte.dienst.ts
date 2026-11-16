@@ -6,12 +6,12 @@
  * Regeln aus der Durchsicht Sicherheit (12.11.2026), siehe README.md in diesem Ordner.
  */
 import { randomUUID } from 'node:crypto';
-import { Fachfehler } from '../fehler';
+import { Fachfehler } from '../grundlagen/fehler';
 import type { Kern } from '../kern';
-import type { Kurzzustand } from '../kurzzustand';
-import type { Mailer } from '../mail';
-import { protokoll } from '../protokoll';
-import { mitSpracheVon, t } from '../sprache';
+import type { Kurzzustand } from '../zwischenspeicher/kurzzustand';
+import type { Mailer } from '../mail/mail';
+import { protokoll } from '../protokoll/protokoll';
+import { mitSpracheVon, t } from '../sprache/sprache';
 import { istEmail } from '../../../shared/src/model';
 import {
   blattFingerabdruck,

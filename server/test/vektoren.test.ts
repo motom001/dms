@@ -1,7 +1,7 @@
 // Vektoren zu Dokumenten (#442): Prüfen der Eingaben, Zwischenspeicher, Zusammenfassen je Mappe, Speicher im Repo.
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { jeMappe, kosinus, liesModell, liesVektor, Vektorindex } from '../src/vektoren';
+import { jeMappe, kosinus, liesModell, liesVektor, Vektorindex } from '../src/suche/vektoren';
 import { speicherRepo } from '../src/repo/speicher';
 import type { Repo } from '../src/repo';
 
@@ -97,8 +97,8 @@ describe('Vektoren (#442): Zwischenspeicher', () => {
 
 /** Repo-Funktionen – im Speicher und (mit TEST_DATABASE_URL) in PostgreSQL. */
 async function pgRepoNeu(): Promise<{ repo: Repo; ende: () => Promise<void> }> {
-  const { ausUrl, alsUrl, legeDatenbankAn } = await import('../src/anbindung');
-  const { verbinde, migriere } = await import('../src/db');
+  const { ausUrl, alsUrl, legeDatenbankAn } = await import('../src/datenbank/anbindung');
+  const { verbinde, migriere } = await import('../src/datenbank/db');
   const { pgRepo } = await import('../src/repo/pg');
   const H = '00000000-0000-4000-8000-000000000001';
   const basis = ausUrl(process.env.TEST_DATABASE_URL)!;
@@ -124,8 +124,8 @@ for (const pg of [false, true]) {
     { skip: pg && !process.env.TEST_DATABASE_URL && 'ohne TEST_DATABASE_URL' },
     () => {
       it('setzen, ersetzen, Stand, ohne Vektor (nach Id), mit dem Dokument gelöscht, je Paket löschen', async () => {
-        const { Dienst } = await import('../src/dienst');
-        const { speicherDateien } = await import('../src/dateispeicher');
+        const { Dienst } = await import('../src/dienst/dienst');
+        const { speicherDateien } = await import('../src/dateien/dateispeicher');
         const db = pg ? await pgRepoNeu() : { repo: speicherRepo(), ende: async () => {} };
         try {
           const d = new Dienst(db.repo, speicherDateien());

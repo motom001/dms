@@ -35,8 +35,8 @@ import {
 } from '../../../../shared/src/paketerstellung';
 import type { Bedingung, Sicht, WertAngabe } from '../../../../shared/src/sichten';
 import type { Anzeigeregel } from '../../../../shared/src/anzeige';
-import { t } from '../../sprache';
-import { LIZENZTEXTE } from '../../lizenztexte';
+import { t } from '../../sprache/sprache';
+import { LIZENZTEXTE } from '../lizenztexte';
 import { ARCHIV_MAX } from '../verwaltung/zip-lesen';
 import { BASIS_ABLAGEORT_AB, DMS_TYPEN, type FremderTyp } from '../verwaltung/format';
 import { beispielDateiart } from '../verwaltung/beispiele';

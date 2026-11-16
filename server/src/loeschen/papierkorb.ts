@@ -3,12 +3,12 @@
  * wiederherstellen, endgültig löschen, leeren und stündlich aufräumen – jeder Schritt im Löschprotokoll. Schicht 3 –
  * Teile und Anschluss wie `LoeschenDienst` (loeschen.dienst.ts).
  */
-import { Fachfehler } from '../fehler';
+import { Fachfehler } from '../grundlagen/fehler';
 import type { Anlass, Kern, Loeschprotokoll, ProtokollMappe, ProtokollTeil, Zugriff } from '../kern';
 import type { MappenHistorie } from '../mappen';
-import { protokoll } from '../protokoll';
+import { protokoll } from '../protokoll/protokoll';
 import type { DokumentImPapierkorb, PapierkorbEintrag, Repo } from '../repo';
-import { t } from '../sprache';
+import { t } from '../sprache/sprache';
 import type { ZugriffDienst } from '../zugriff';
 import { aufbewahrenBis, datumText, gesperrt, stichtagName } from '../../../shared/src/archiv';
 import type { Ausloeser, LoeschDokument, LoeschEintrag, LoeschKontext, Loeschweg } from '../../../shared/src/loeschprotokoll';
@@ -17,7 +17,7 @@ import { istTeiltyp, uebergeordneteId } from '../../../shared/src/teile';
 import type { LoeschenAnschluss, LoeschenTeile } from './loeschen.dienst';
 import type { LoeschprotokollVerwaltung } from './loeschprotokoll';
 import type { MitVerknuepften } from './mit-verknuepften';
-import { nachweis } from '../nachweisjournal';
+import { nachweis } from '../protokoll/nachweisjournal';
 
 /** Dokument im Papierkorb mit Mappe und Register (#344). */
 export interface DokumentImKorb extends DokumentImPapierkorb {

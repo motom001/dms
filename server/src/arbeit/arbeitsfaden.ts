@@ -5,7 +5,7 @@
 import { parentPort } from 'node:worker_threads';
 import { alsBuffer, fehlerDaten, type Antwort, type Auftrag } from './nachricht';
 import { fehlendeZeichen, VORGAENGE } from './vorgaenge';
-import { senkePrioritaet } from '../hintergrund';
+import { senkePrioritaet } from '../prozesse/hintergrund';
 
 // Niedrigere Priorität (#893): unter Linux nur dieser Faden – der Hauptfaden beantwortet die Anfragen weiter mit seiner.
 senkePrioritaet();

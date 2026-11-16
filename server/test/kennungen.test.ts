@@ -19,11 +19,11 @@ import {
   typKennung,
   TYPVERWEIS,
 } from '../../shared/src/kennungen';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
-import { speicherEinstellungen } from '../src/einstellungen';
-import { Fachfehler } from '../src/fehler';
-import { sichererName } from '../src/export';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
+import { Fachfehler } from '../src/grundlagen/fehler';
+import { sichererName } from '../src/export/export';
 import { neueKennung } from '../src/pakete/verwaltung/index';
 import { speicherRepo } from '../src/repo/speicher';
 import { eigeneDatenbank, MIGRATIONEN } from './hilfe-db';
@@ -244,7 +244,7 @@ describe('Migration 094 (#1084) – PostgreSQL', () => {
       ['haus_garten_pflanze', 'haus:garten_pflanze'],
     ]);
     const { protokolliereKennungsUmzug } = await import('../src/mappentypen/index');
-    const { pgEinstellungen } = await import('../src/einstellungen');
+    const { pgEinstellungen } = await import('../src/einstellungen/einstellungen');
     assert.equal(await protokolliereKennungsUmzug(pgEinstellungen(sql, HAUSHALT)), 3);
     assert.equal(await protokolliereKennungsUmzug(pgEinstellungen(sql, HAUSHALT)), 0, 'nur einmal');
     // Herausgeber im Bestand (Sicherheit C): offizieller Katalog → app.ablago.

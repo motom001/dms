@@ -24,9 +24,9 @@ import type { InstalliertesPaket } from '../../../shared/src/pakete';
 import { regelwerkVon, type Regelwerk } from '../../../shared/src/rechte';
 import { regelnMitnehmen, UMBAU_FELD, UMBAU_SCHREIBER } from '../../../shared/src/umbau';
 import { istVorgabeWert } from '../../../shared/src/vorgaben';
-import { Fachfehler } from '../fehler';
-import { protokoll } from '../protokoll';
-import { t } from '../sprache';
+import { Fachfehler } from '../grundlagen/fehler';
+import { protokoll } from '../protokoll/protokoll';
+import { t } from '../sprache/sprache';
 import { merkeSichtAenderung, sichtPruefwert, standNachUmbau, type SichtAenderungen } from './sichtstand';
 import {
   archivDanach,
