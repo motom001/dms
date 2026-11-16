@@ -343,8 +343,13 @@ export class EntfernteSicherungen {
     return lauf;
   }
 
+  /**
+   * Erst aufräumen, dann melden (#1373): Wer den Lauf beobachtet, sieht „fertig“ oder „fehler“ erst, wenn Teildatei
+   * und Stand (`.holen-*`) weg sind – nie einen beendeten Lauf neben einer liegengebliebenen vorläufigen Datei.
+   */
   private async holeLauf(lauf: Lauf, h: Holstand, pfade: { teil: string; stand: string }, von: string) {
     const groesse = async () => (await stat(pfade.teil)).size;
+    let fehler: string | null = null;
     try {
       const rufe = this.s.extern?.holen;
       if (!rufe) throw new Error(t('meldungen.sicherung.entfernt.laeufer'));
@@ -384,18 +389,18 @@ export class EntfernteSicherungen {
       await this.vergiss(h.name);
       this.listen.delete(h.paket);
       log.info('Sicherung zurückgeholt', { name: h.name, paket: h.paket, von, bytes: h.groesse, sha256: sha });
-      lauf.ergebnis = { name: h.name };
-      lauf.status = 'fertig';
     } catch (e) {
-      await rm(pfade.teil, { force: true });
-      lauf.status = 'fehler';
-      lauf.fehler = (e as Error).message;
-      log.warn('Sicherung nicht zurückgeholt', { name: h.name, paket: h.paket, von, fehler: lauf.fehler });
-    } finally {
-      await rm(pfade.stand, { force: true });
-      lauf.beendet = new Date().toISOString();
-      lauf.schritt = 'Fertig';
+      fehler = (e as Error).message;
+      log.warn('Sicherung nicht zurückgeholt', { name: h.name, paket: h.paket, von, fehler });
     }
+    // Nach Erfolg ist die Teildatei schon zur Sicherung umbenannt – dann bleibt nur der Stand.
+    for (const pfad of fehler === null ? [pfade.stand] : [pfade.teil, pfade.stand])
+      await rm(pfad, { force: true }).catch((x) => log.warn('Vorläufige Datei nicht weggeräumt', { pfad, fehler: (x as Error).message }));
+    lauf.beendet = new Date().toISOString();
+    lauf.schritt = 'Fertig';
+    if (fehler === null) lauf.ergebnis = { name: h.name };
+    else lauf.fehler = fehler;
+    lauf.status = fehler === null ? 'fertig' : 'fehler';
   }
 
   /**
