@@ -2,65 +2,356 @@
 flowchart LR
   subgraph server
     server_src["server/src (Wurzel)"]
+    server_src_anmeldung["server/src/anmeldung"]
     server_src_arbeit["server/src/arbeit"]
+    server_src_aufgaben["server/src/aufgaben"]
+    server_src_ausgang["server/src/ausgang"]
+    server_src_automatisierung["server/src/automatisierung"]
+    server_src_berechtigungen["server/src/berechtigungen"]
+    server_src_datenschutz["server/src/datenschutz"]
+    server_src_dokumente["server/src/dokumente"]
+    server_src_ereignisse["server/src/ereignisse"]
+    server_src_fassungen["server/src/fassungen"]
+    server_src_http["server/src/http"]
+    server_src_kern["server/src/kern"]
+    server_src_konten["server/src/konten"]
     server_src_laeufer["server/src/laeufer"]
+    server_src_loeschen["server/src/loeschen"]
+    server_src_mappen["server/src/mappen"]
+    server_src_mappentypen["server/src/mappentypen"]
+    server_src_notfallkontakte["server/src/notfallkontakte"]
+    server_src_organisation["server/src/organisation"]
+    server_src_paketaktionen["server/src/paketaktionen"]
+    server_src_paketdaten["server/src/paketdaten"]
+    server_src_pakete["server/src/pakete"]
     server_src_pdf["server/src/pdf"]
+    server_src_pdf_bearbeiten["server/src/pdf-bearbeiten"]
+    server_src_post["server/src/post"]
+    server_src_repo["server/src/repo"]
+    server_src_sicherung["server/src/sicherung"]
+    server_src_sichten["server/src/sichten"]
+    server_src_suche["server/src/suche"]
+    server_src_system["server/src/system"]
+    server_src_systemausstattung["server/src/systemausstattung"]
+    server_src_textsatz["server/src/textsatz"]
+    server_src_volltext["server/src/volltext"]
+    server_src_wartung["server/src/wartung"]
+    server_src_werkbank["server/src/werkbank"]
+    server_src_zugriff["server/src/zugriff"]
   end
   subgraph web
     web_src["web/src (Wurzel)"]
     web_src_ablage["web/src/ablage"]
+    web_src_api["web/src/api"]
     web_src_assistent["web/src/assistent"]
+    web_src_bausteine["web/src/bausteine"]
+    web_src_begleiter["web/src/begleiter"]
     web_src_einrichtung["web/src/einrichtung"]
     web_src_entdecken["web/src/entdecken"]
     web_src_profil["web/src/profil"]
+    web_src_stile["web/src/stile"]
     web_src_werkbank["web/src/werkbank"]
   end
   subgraph shared
     shared_src["shared/src (Wurzel)"]
     shared_src_sprachen["shared/src/sprachen"]
   end
-  server_src -->|4| server_src_arbeit
+  server_src -->|1| server_src_anmeldung
+  server_src -->|2| server_src_arbeit
+  server_src -->|3| server_src_aufgaben
+  server_src -->|2| server_src_ausgang
+  server_src -->|3| server_src_automatisierung
+  server_src -->|1| server_src_berechtigungen
+  server_src -->|2| server_src_datenschutz
+  server_src -->|3| server_src_dokumente
+  server_src -->|1| server_src_ereignisse
+  server_src -->|2| server_src_fassungen
+  server_src -->|3| server_src_http
+  server_src -->|10| server_src_kern
+  server_src -->|1| server_src_konten
   server_src -->|6| server_src_laeufer
+  server_src -->|1| server_src_loeschen
+  server_src -->|2| server_src_mappen
+  server_src -->|4| server_src_mappentypen
+  server_src -->|2| server_src_notfallkontakte
+  server_src -->|2| server_src_organisation
+  server_src -->|4| server_src_paketaktionen
+  server_src -->|1| server_src_paketdaten
+  server_src -->|7| server_src_pakete
   server_src -->|15| server_src_pdf
-  server_src -->|320| shared_src
+  server_src -->|1| server_src_pdf_bearbeiten
+  server_src -->|2| server_src_post
+  server_src -->|24| server_src_repo
+  server_src -->|1| server_src_sicherung
+  server_src -->|2| server_src_sichten
+  server_src -->|2| server_src_suche
+  server_src -->|1| server_src_system
+  server_src -->|1| server_src_systemausstattung
+  server_src -->|2| server_src_textsatz
+  server_src -->|2| server_src_volltext
+  server_src -->|1| server_src_wartung
+  server_src -->|2| server_src_werkbank
+  server_src -->|2| server_src_zugriff
+  server_src -->|315| shared_src
   server_src -->|19| shared_src_sprachen
-  server_src_arbeit -->|8| server_src
+  server_src_anmeldung -->|7| server_src
+  server_src_anmeldung -->|2| server_src_http
+  server_src_anmeldung -->|4| shared_src
+  server_src_arbeit -->|9| server_src
   server_src_arbeit -->|1| server_src_laeufer
-  server_src_arbeit -->|11| server_src_pdf
+  server_src_arbeit -->|14| server_src_pdf
   server_src_arbeit -->|2| shared_src
-  server_src_laeufer -->|13| server_src
-  server_src_laeufer -->|5| shared_src
-  server_src_pdf -->|23| server_src
+  server_src_aufgaben -->|28| server_src
+  server_src_aufgaben -->|1| server_src_ereignisse
+  server_src_aufgaben -->|2| server_src_http
+  server_src_aufgaben -->|6| server_src_kern
+  server_src_aufgaben -->|6| server_src_mappen
+  server_src_aufgaben -->|1| server_src_post
+  server_src_aufgaben -->|7| server_src_repo
+  server_src_aufgaben -->|5| server_src_zugriff
+  server_src_aufgaben -->|21| shared_src
+  server_src_ausgang -->|35| server_src
+  server_src_ausgang -->|1| server_src_arbeit
+  server_src_ausgang -->|3| server_src_dokumente
+  server_src_ausgang -->|2| server_src_http
+  server_src_ausgang -->|3| server_src_kern
+  server_src_ausgang -->|2| server_src_mappen
+  server_src_ausgang -->|1| server_src_mappentypen
+  server_src_ausgang -->|3| server_src_pdf_bearbeiten
+  server_src_ausgang -->|1| server_src_post
+  server_src_ausgang -->|3| server_src_repo
+  server_src_ausgang -->|2| server_src_sichten
+  server_src_ausgang -->|3| server_src_zugriff
+  server_src_ausgang -->|15| shared_src
+  server_src_automatisierung -->|16| server_src
+  server_src_automatisierung -->|2| server_src_http
+  server_src_automatisierung -->|2| server_src_repo
+  server_src_automatisierung -->|7| shared_src
+  server_src_berechtigungen -->|4| server_src
+  server_src_berechtigungen -->|1| server_src_kern
+  server_src_berechtigungen -->|1| server_src_repo
+  server_src_berechtigungen -->|1| server_src_zugriff
+  server_src_berechtigungen -->|3| shared_src
+  server_src_datenschutz -->|26| server_src
+  server_src_datenschutz -->|1| server_src_aufgaben
+  server_src_datenschutz -->|1| server_src_ausgang
+  server_src_datenschutz -->|1| server_src_dokumente
+  server_src_datenschutz -->|1| server_src_ereignisse
+  server_src_datenschutz -->|2| server_src_http
+  server_src_datenschutz -->|3| server_src_kern
+  server_src_datenschutz -->|1| server_src_loeschen
+  server_src_datenschutz -->|2| server_src_mappen
+  server_src_datenschutz -->|1| server_src_organisation
+  server_src_datenschutz -->|3| server_src_repo
+  server_src_datenschutz -->|1| server_src_sichten
+  server_src_datenschutz -->|1| server_src_volltext
+  server_src_datenschutz -->|2| server_src_zugriff
+  server_src_datenschutz -->|13| shared_src
+  server_src_dokumente -->|32| server_src
+  server_src_dokumente -->|2| server_src_http
+  server_src_dokumente -->|7| server_src_kern
+  server_src_dokumente -->|1| server_src_pdf
+  server_src_dokumente -->|7| server_src_repo
+  server_src_dokumente -->|22| shared_src
+  server_src_ereignisse -->|2| server_src
+  server_src_ereignisse -->|2| server_src_kern
+  server_src_ereignisse -->|1| server_src_mappentypen
+  server_src_ereignisse -->|2| server_src_repo
+  server_src_ereignisse -->|2| server_src_zugriff
+  server_src_ereignisse -->|5| shared_src
+  server_src_fassungen -->|5| server_src
+  server_src_fassungen -->|2| server_src_http
+  server_src_fassungen -->|1| server_src_kern
+  server_src_fassungen -->|3| server_src_repo
+  server_src_fassungen -->|13| shared_src
+  server_src_http -->|42| server_src
+  server_src_http -->|1| server_src_arbeit
+  server_src_http -->|18| shared_src
+  server_src_kern -->|8| server_src
+  server_src_kern -->|2| server_src_repo
+  server_src_kern -->|13| shared_src
+  server_src_konten -->|3| server_src
+  server_src_konten -->|2| server_src_http
+  server_src_konten -->|3| shared_src
+  server_src_laeufer -->|16| server_src
+  server_src_laeufer -->|2| server_src_paketaktionen
+  server_src_laeufer -->|1| server_src_repo
+  server_src_laeufer -->|7| shared_src
+  server_src_loeschen -->|15| server_src
+  server_src_loeschen -->|1| server_src_ausgang
+  server_src_loeschen -->|1| server_src_dokumente
+  server_src_loeschen -->|5| server_src_kern
+  server_src_loeschen -->|3| server_src_mappen
+  server_src_loeschen -->|1| server_src_mappentypen
+  server_src_loeschen -->|1| server_src_post
+  server_src_loeschen -->|5| server_src_repo
+  server_src_loeschen -->|1| server_src_sichten
+  server_src_loeschen -->|3| server_src_zugriff
+  server_src_loeschen -->|25| shared_src
+  server_src_mappen -->|32| server_src
+  server_src_mappen -->|2| server_src_http
+  server_src_mappen -->|10| server_src_kern
+  server_src_mappen -->|2| server_src_mappentypen
+  server_src_mappen -->|8| server_src_repo
+  server_src_mappen -->|4| server_src_zugriff
+  server_src_mappen -->|44| shared_src
+  server_src_mappentypen -->|25| server_src
+  server_src_mappentypen -->|2| server_src_http
+  server_src_mappentypen -->|6| server_src_kern
+  server_src_mappentypen -->|7| server_src_repo
+  server_src_mappentypen -->|3| server_src_zugriff
+  server_src_mappentypen -->|41| shared_src
+  server_src_notfallkontakte -->|8| server_src
+  server_src_notfallkontakte -->|2| server_src_http
+  server_src_notfallkontakte -->|1| server_src_kern
+  server_src_notfallkontakte -->|3| shared_src
+  server_src_organisation -->|5| server_src
+  server_src_organisation -->|2| server_src_http
+  server_src_organisation -->|1| server_src_kern
+  server_src_organisation -->|1| server_src_mappen
+  server_src_organisation -->|5| shared_src
+  server_src_paketaktionen -->|9| server_src
+  server_src_paketaktionen -->|2| server_src_http
+  server_src_paketaktionen -->|1| server_src_kern
+  server_src_paketaktionen -->|1| server_src_pdf
+  server_src_paketaktionen -->|1| server_src_repo
+  server_src_paketaktionen -->|1| server_src_zugriff
+  server_src_paketaktionen -->|11| shared_src
+  server_src_paketdaten -->|17| server_src
+  server_src_paketdaten -->|2| server_src_http
+  server_src_paketdaten -->|14| shared_src
+  server_src_pakete -->|17| server_src
+  server_src_pakete -->|2| server_src_http
+  server_src_pakete -->|2| server_src_kern
+  server_src_pakete -->|34| shared_src
+  server_src_pdf -->|30| server_src
   server_src_pdf -->|1| server_src_arbeit
-  server_src_pdf -->|7| shared_src
-  shared_src -->|68| shared_src_sprachen
-  web_src -->|88| shared_src
-  web_src -->|26| shared_src_sprachen
-  web_src -->|3| web_src_ablage
+  server_src_pdf -->|10| shared_src
+  server_src_pdf_bearbeiten -->|18| server_src
+  server_src_pdf_bearbeiten -->|3| server_src_dokumente
+  server_src_pdf_bearbeiten -->|4| server_src_kern
+  server_src_pdf_bearbeiten -->|3| server_src_mappen
+  server_src_pdf_bearbeiten -->|1| server_src_pdf
+  server_src_pdf_bearbeiten -->|4| server_src_repo
+  server_src_pdf_bearbeiten -->|1| server_src_volltext
+  server_src_pdf_bearbeiten -->|1| server_src_zugriff
+  server_src_pdf_bearbeiten -->|9| shared_src
+  server_src_post -->|21| server_src
+  server_src_post -->|5| server_src_dokumente
+  server_src_post -->|2| server_src_http
+  server_src_post -->|6| server_src_kern
+  server_src_post -->|6| server_src_mappen
+  server_src_post -->|2| server_src_mappentypen
+  server_src_post -->|1| server_src_pdf_bearbeiten
+  server_src_post -->|6| server_src_repo
+  server_src_post -->|2| server_src_volltext
+  server_src_post -->|6| server_src_zugriff
+  server_src_post -->|17| shared_src
+  server_src_repo -->|11| server_src
+  server_src_repo -->|100| shared_src
+  server_src_sicherung -->|4| server_src
+  server_src_sicherung -->|3| server_src_http
+  server_src_sichten -->|14| server_src
+  server_src_sichten -->|2| server_src_http
+  server_src_sichten -->|4| server_src_kern
+  server_src_sichten -->|1| server_src_mappen
+  server_src_sichten -->|1| server_src_mappentypen
+  server_src_sichten -->|4| server_src_repo
+  server_src_sichten -->|1| server_src_suche
+  server_src_sichten -->|3| server_src_zugriff
+  server_src_sichten -->|22| shared_src
+  server_src_suche -->|8| server_src
+  server_src_suche -->|2| server_src_http
+  server_src_suche -->|1| server_src_kern
+  server_src_suche -->|1| server_src_mappentypen
+  server_src_suche -->|1| server_src_repo
+  server_src_suche -->|1| server_src_zugriff
+  server_src_suche -->|4| shared_src
+  server_src_system -->|10| server_src
+  server_src_system -->|1| server_src_arbeit
+  server_src_system -->|2| server_src_http
+  server_src_system -->|2| shared_src
+  server_src_systemausstattung -->|1| server_src_kern
+  server_src_systemausstattung -->|1| shared_src
+  server_src_textsatz -->|7| server_src
+  server_src_textsatz -->|2| server_src_http
+  server_src_textsatz -->|1| server_src_kern
+  server_src_textsatz -->|1| server_src_pakete
+  server_src_textsatz -->|1| server_src_pdf
+  server_src_textsatz -->|1| server_src_repo
+  server_src_textsatz -->|1| server_src_zugriff
+  server_src_textsatz -->|6| shared_src
+  server_src_volltext -->|9| server_src
+  server_src_volltext -->|2| server_src_dokumente
+  server_src_volltext -->|2| server_src_kern
+  server_src_volltext -->|2| server_src_repo
+  server_src_volltext -->|10| shared_src
+  server_src_wartung -->|1| server_src
+  server_src_wartung -->|2| server_src_http
+  server_src_werkbank -->|13| server_src
+  server_src_werkbank -->|1| server_src_aufgaben
+  server_src_werkbank -->|2| server_src_http
+  server_src_werkbank -->|1| server_src_kern
+  server_src_werkbank -->|7| shared_src
+  server_src_zugriff -->|4| server_src
+  server_src_zugriff -->|1| server_src_kern
+  server_src_zugriff -->|1| server_src_repo
+  server_src_zugriff -->|6| shared_src
+  shared_src -->|65| shared_src_sprachen
+  web_src -->|57| shared_src
+  web_src -->|25| shared_src_sprachen
+  web_src -->|4| web_src_ablage
+  web_src -->|20| web_src_api
   web_src -->|3| web_src_assistent
-  web_src -->|3| web_src_entdecken
-  web_src -->|3| web_src_profil
+  web_src -->|17| web_src_bausteine
+  web_src -->|1| web_src_begleiter
+  web_src -->|4| web_src_entdecken
+  web_src -->|4| web_src_profil
+  web_src -->|1| web_src_stile
   web_src -->|4| web_src_werkbank
-  web_src_ablage -->|121| shared_src
-  web_src_ablage -->|223| web_src
-  web_src_ablage -->|1| web_src_entdecken
+  web_src_ablage -->|167| shared_src
+  web_src_ablage -->|203| web_src
+  web_src_ablage -->|64| web_src_api
+  web_src_ablage -->|43| web_src_bausteine
   web_src_ablage -->|1| web_src_profil
-  web_src_assistent -->|10| shared_src
-  web_src_assistent -->|11| web_src
-  web_src_assistent -->|1| web_src_profil
-  web_src_assistent -->|5| web_src_werkbank
-  web_src_einrichtung -->|17| shared_src
-  web_src_einrichtung -->|12| web_src
-  web_src_einrichtung -->|1| web_src_ablage
-  web_src_einrichtung -->|3| web_src_werkbank
-  web_src_entdecken -->|3| shared_src
-  web_src_entdecken -->|11| web_src
-  web_src_profil -->|20| shared_src
-  web_src_profil -->|58| web_src
+  web_src_api -->|96| shared_src
+  web_src_api -->|10| web_src
+  web_src_assistent -->|16| shared_src
+  web_src_assistent -->|10| web_src
+  web_src_assistent -->|10| web_src_api
+  web_src_assistent -->|2| web_src_bausteine
+  web_src_assistent -->|2| web_src_profil
+  web_src_assistent -->|6| web_src_werkbank
+  web_src_bausteine -->|13| shared_src
+  web_src_bausteine -->|58| web_src
+  web_src_bausteine -->|2| web_src_api
+  web_src_begleiter -->|3| shared_src
+  web_src_begleiter -->|10| web_src
+  web_src_begleiter -->|1| web_src_ablage
+  web_src_begleiter -->|1| web_src_api
+  web_src_begleiter -->|3| web_src_bausteine
+  web_src_begleiter -->|2| web_src_entdecken
+  web_src_einrichtung -->|38| shared_src
+  web_src_einrichtung -->|19| web_src
+  web_src_einrichtung -->|2| web_src_ablage
+  web_src_einrichtung -->|5| web_src_api
+  web_src_einrichtung -->|8| web_src_bausteine
+  web_src_einrichtung -->|4| web_src_werkbank
+  web_src_entdecken -->|5| shared_src
+  web_src_entdecken -->|10| web_src
+  web_src_entdecken -->|2| web_src_api
+  web_src_entdecken -->|3| web_src_bausteine
+  web_src_profil -->|21| shared_src
+  web_src_profil -->|45| web_src
   web_src_profil -->|2| web_src_ablage
+  web_src_profil -->|12| web_src_api
+  web_src_profil -->|10| web_src_bausteine
   web_src_profil -->|1| web_src_werkbank
-  web_src_werkbank -->|139| shared_src
-  web_src_werkbank -->|351| web_src
-  web_src_werkbank -->|13| web_src_ablage
-  web_src_werkbank -->|5| web_src_einrichtung
-  web_src_werkbank -->|2| web_src_profil
+  web_src_werkbank -->|246| shared_src
+  web_src_werkbank -->|374| web_src
+  web_src_werkbank -->|15| web_src_ablage
+  web_src_werkbank -->|125| web_src_api
+  web_src_werkbank -->|84| web_src_bausteine
+  web_src_werkbank -->|2| web_src_einrichtung
+  web_src_werkbank -->|2| web_src_entdecken
+  web_src_werkbank -->|1| web_src_profil
