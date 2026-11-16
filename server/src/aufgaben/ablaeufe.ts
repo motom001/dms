@@ -63,7 +63,7 @@ export type { PaketAblaufvorlage } from './ablaufvorlagen-paket';
 const log = protokoll.modul('ablage');
 
 /**
- * Platzhalter füllen (#795) – der Motor (automatisierung.ts) setzt das: mit den Rechten der Person (`z`) und, mit `empf`,
+ * Platzhalter füllen (#795) – der Motor (automatisierung/motor/) setzt das: mit den Rechten der Person (`z`) und, mit `empf`,
  * zusätzlich mit denen des Empfängers. Ohne Motor (Tests) bleiben Platzhalter der Vorlage stehen.
  */
 export type AblaufPlatzhalter = (

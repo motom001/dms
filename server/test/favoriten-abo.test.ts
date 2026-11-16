@@ -130,7 +130,7 @@ describe('Favorit = Abo (#422)', () => {
 
   it('#506/#1001: Rollen und Vorgabe stehen in der Automatisierung; ohne sie bekommt niemand etwas', async () => {
     const { d, konten, anna, ben, carl, t, B, C, geaendert } = await aufbau();
-    // Regeln wie aus den Automatisierungen „Favoriten-Änderungen melden“ (Motor: automatisierung.ts).
+    // Regeln wie aus den Automatisierungen „Favoriten-Änderungen melden“ (Motor: automatisierung/motor/).
     let regeln: Array<{ rollen: string[]; vorgabe: boolean }> = [{ rollen: [], vorgabe: true }];
     d.favoritenRegeln = async () => regeln;
     d.ereignisse.abbestellen('favoriten');

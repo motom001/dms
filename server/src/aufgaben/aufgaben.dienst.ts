@@ -62,7 +62,7 @@ export interface AufgabenAnschluss {
   konten(): AufgabenKonten | undefined;
   /** Gültigkeit der Zahlen in dieser Anfrage (#742; `mindestensMs` setzen Tests am Dienst). */
   gueltigkeit(): Gueltigkeit;
-  /** Platzhalter der Automatisierungsvorlagen füllen (#1044, #795) – setzt der Motor (automatisierung.ts). */
+  /** Platzhalter der Automatisierungsvorlagen füllen (#1044, #795) – setzt der Motor (automatisierung/motor/). */
   ablaufPlatzhalter?(): AblaufPlatzhalter | undefined;
   /** Wer Favoriten-Änderungen bekommt (#1001) – setzt der Motor; ohne ihn alle, Vorgabe an. */
   favoritenRegeln?(): Promise<Array<{ rollen: string[]; vorgabe: boolean }>> | undefined;

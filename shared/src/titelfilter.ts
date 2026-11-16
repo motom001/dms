@@ -11,7 +11,7 @@ import { gebietsschema } from './sprache';
  *   sonst:"…"            Ersatz, wenn das Feld leer ist     {nummer|sonst:"ohne Nr."}
  *
  * Bewusst klein und selbst gebaut: keine Bedingungen, Schleifen oder Rechnungen. Wer rechnen will,
- * nimmt ein berechnetes Feld (#169). Diese Datei kennt keine Mappentypen; model.ts reicht Feldart,
+ * nimmt ein berechnetes Feld (#169). Diese Datei kennt keine Mappentypen; model/ reicht Feldart,
  * Rohwert und formatierten Text herein.
  */
 

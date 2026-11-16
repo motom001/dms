@@ -78,7 +78,7 @@ export const UEBERGAENGE: Uebergang[] = [
         datei: 'shared/src/ereignisse.ts',
         text: "'post.angelegt': { gruppe: 'person', felder: ['mappe', 'kanal', 'an', 'fuer'], paket: true },",
       },
-      { datei: 'server/src/automatisierung.ts', text: "const alias = typ?.system === 'post';" },
+      { datei: 'server/src/automatisierung/motor/fuellen.ts', text: "const alias = typ?.system === 'post';" },
       { datei: 'shared/src/direktlink.ts', text: "typ.system === 'post' ? postKennung(rohKey) : rohKey" },
     ],
   },

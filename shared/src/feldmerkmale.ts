@@ -1,5 +1,5 @@
 /**
- * Merkmal und Schreibschutz an einem Feld (#995) – eigene Datei ohne Abhängigkeiten, damit model.ts sie ohne Kreis
+ * Merkmal und Schreibschutz an einem Feld (#995) – eigene Datei ohne Abhängigkeiten, damit model/ sie ohne Kreis
  * nennen kann. Was sie bedeuten, steht in organisation.ts.
  */
 

@@ -1061,10 +1061,10 @@ export class Dienst {
   ) => Promise<Record<string, { id: string; aenderungen: string[] }>>;
   /**
    * Umbau (#1041): Automatisierungen auf einen umgebauten Typ zeigen lassen – alter Typ → Zieltyp, Feldkennungen alt →
-   * neu; setzt automatisierung.ts. Ergebnis: wie viele geändert wurden.
+   * neu; setzt der Motor (automatisierung/motor/). Ergebnis: wie viele geändert wurden.
    */
   typUmgebaut?: (alt: string, neu: string, felder: Record<string, string>) => Promise<number>;
-  /** Platzhalter der Automatisierungsvorlagen (#1044, #795) – setzt der Motor (automatisierung.ts); ohne ihn bleiben sie stehen. */
+  /** Platzhalter der Automatisierungsvorlagen (#1044, #795) – setzt der Motor (automatisierung/motor/); ohne ihn bleiben sie stehen. */
   ablaufPlatzhalter?: AblaufPlatzhalter;
   /** Mitgelieferte Automatisierungsvorlagen eines Pakets anlegen bzw. aktualisieren (#1044); leere Liste beim Entfernen. */
   paketAblaufvorlagen?: (p: InstalliertesPaket, liste: PaketAblaufvorlage[]) => Promise<number>;

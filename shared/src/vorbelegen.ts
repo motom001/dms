@@ -10,7 +10,7 @@
  * passende Feldart); Typen ohne das Feld übergehen es. So bleibt ein Verweis mit optionalen Zielen gültig, wenn später
  * ein Typ ohne das Feld dazukommt.
  *
- * Reine Funktionen für Server, Oberfläche und Tests; ohne Laufzeit-Abhängigkeit auf model.ts (das diese Datei nutzt).
+ * Reine Funktionen für Server, Oberfläche und Tests; ohne Laufzeit-Abhängigkeit auf model/ (das diese Datei nutzt).
  */
 import type { Feld } from './model';
 import { jedeMappe, zieleVon, zielErlaubt } from './verweisziele';

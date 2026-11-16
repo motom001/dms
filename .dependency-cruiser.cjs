@@ -5,7 +5,7 @@
  * - shared/ bindet weder server/ noch web/ ein; web/ nie server/, server/ nie web/ (auch server/test/ nicht, #1282).
  *   Ausnahme: shared/test/ prüft Sprachdateien und Gemeinsames über alle Teile hinweg.
  * - Technische Ordner mit index.ts nur über index.ts (pdf/ und arbeit/, je mit eigener Ausnahme; repo/ über seine drei
- *   index.ts, #1278).
+ *   index.ts, #1278); das Fachmodell shared/src/model/ nur über seine index.ts (#1278).
  * - Teile über dem Dienst (UEBER_DEM_DIENST) und Nachbarn eines Fachordners, die noch in server/src/ liegen (NACHBARN,
  *   #1278), sind unten beschrieben.
  * - Hilfen der HTTP-Schicht (http/routen-hilfen.ts, http/routen-kontext.ts) nur in Routen (#961, Ergänzung von
@@ -224,6 +224,14 @@ module.exports = {
         'Das Repo (#1278) von außen nur über repo/index.ts (Schnittstelle), repo/pg/index.ts und repo/speicher/index.ts – die Teile darin setzt je index.ts zusammen.',
       from: { path: '^server/', pathNot: '^server/src/repo/' },
       to: { path: '^server/src/repo/(?!(?:pg/|speicher/)?index\\.ts$)' },
+    },
+    {
+      name: 'model-nur-ueber-index',
+      severity: 'error',
+      comment:
+        'Das Fachmodell (#1278) von außen nur über shared/src/model/index.ts – wie früher die eine Datei model.ts; die Teile darin binden einander direkt ein.',
+      from: { path: '^(server|web|shared)/', pathNot: '^shared/src/model/' },
+      to: { path: '^shared/src/model/(?!index\\.ts$)' },
     },
     {
       name: 'arbeit-nur-ueber-index',
