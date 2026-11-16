@@ -1,25 +1,21 @@
 {
-  "server/src/abfragestatistik.ts": {
-    "exports": [
-      "ANZAHL_MAX"
-    ],
-    "types": [
-      "Grund",
-      "TeureAbfrage"
-    ]
-  },
-  "server/src/anbindung.ts": {
-    "exports": [
-      "STANDARD_ANBINDUNG",
-      "gleicheVerbindung"
-    ]
-  },
-  "server/src/anmeldesperre.ts": {
+  "server/src/anmeldung/anmeldesperre.ts": {
     "exports": [
       "pruefeAusnahmen"
     ],
     "types": [
       "Grenze"
+    ]
+  },
+  "server/src/anmeldung/oidc.ts": {
+    "exports": [
+      "OIDC_STANDARD"
+    ]
+  },
+  "server/src/anmeldung/passkeys.ts": {
+    "exports": [
+      "PASSKEY_NAME_MAX",
+      "adressbereich"
     ]
   },
   "server/src/arbeit/index.ts": {
@@ -28,19 +24,6 @@
       "WARTESCHLANGE_MAX",
       "meldeFehlendeZeichen",
       "vorgabeJeProzess"
-    ]
-  },
-  "server/src/archivfassung.ts": {
-    "exports": [
-      "ARCHIV_ANGEFORDERT_MS",
-      "ARCHIV_ORDNER",
-      "WOERTER_ORDNER",
-      "bewertePdfA",
-      "pruefeArchivfassung"
-    ],
-    "types": [
-      "ArchivStandDatei",
-      "GespeicherteWoerter"
     ]
   },
   "server/src/aufgaben/aufgaben.dienst.ts": {
@@ -70,25 +53,6 @@
       "SAMMEL_MAX"
     ]
   },
-  "server/src/aufteilung.ts": {
-    "exports": [
-      "NACHLADEN_MS",
-      "SPIEGEL_MS",
-      "prozessstand"
-    ],
-    "types": [
-      "Spiegel"
-    ]
-  },
-  "server/src/auftrag.ts": {
-    "exports": [
-      "AUFTRAG_FRIST_MS",
-      "AUFTRAG_TAKT_MS"
-    ],
-    "types": [
-      "AuftragPhase"
-    ]
-  },
   "server/src/ausgang/email.ts": {
     "exports": [
       "EMAIL_MAX_EMPFAENGER",
@@ -116,14 +80,6 @@
   "server/src/ausgang/pruefstelle.ts": {
     "exports": [
       "AUSGAENGE"
-    ]
-  },
-  "server/src/auskunft.ts": {
-    "exports": [
-      "deckblatt",
-      "liesmichText",
-      "uebersichtCsv",
-      "uebersichtHtml"
     ]
   },
   "server/src/automatisierung/ausleitung.ts": {
@@ -166,12 +122,20 @@
       "BerechtigungenAnschluss"
     ]
   },
-  "server/src/betrieb.ts": {
+  "server/src/dateien/archivfassung.ts": {
+    "exports": [
+      "ARCHIV_ANGEFORDERT_MS",
+      "ARCHIV_ORDNER",
+      "WOERTER_ORDNER",
+      "bewertePdfA",
+      "pruefeArchivfassung"
+    ],
     "types": [
-      "Verbindung"
+      "ArchivStandDatei",
+      "GespeicherteWoerter"
     ]
   },
-  "server/src/dateiumwandlung.ts": {
+  "server/src/dateien/dateiumwandlung.ts": {
     "exports": [
       "ANGEFORDERT_MS",
       "FASSUNGEN_ORDNER",
@@ -179,17 +143,85 @@
       "pruefeFassung"
     ]
   },
-  "server/src/datenbankabzug.ts": {
-    "types": [
-      "Schnappschuss"
+  "server/src/dateien/entsperren.ts": {
+    "exports": [
+      "ABLAGO",
+      "GEMERKT_GESAMT_MS",
+      "GEMERKT_VERSUCH_MS",
+      "QPDF_MS"
     ]
   },
-  "server/src/datenschutz/index.ts": {
-    "types": [
-      "DatenschutzAnschluss"
+  "server/src/dateien/graubild.ts": {
+    "exports": [
+      "DPI_MAX",
+      "DPI_MIN",
+      "PUNKTE_MAX"
     ]
   },
-  "server/src/db.ts": {
+  "server/src/dateien/ordner.ts": {
+    "exports": [
+      "CONTAINER_WURZEL",
+      "ORDNER_NAMEN",
+      "ORDNER_TEXT"
+    ],
+    "types": [
+      "OrdnerArt"
+    ]
+  },
+  "server/src/dateien/pdfanzeige.ts": {
+    "exports": [
+      "CACHE_BYTES"
+    ]
+  },
+  "server/src/dateien/pdfseiten.ts": {
+    "exports": [
+      "SEITENBILD_PX",
+      "baue"
+    ]
+  },
+  "server/src/dateien/schwaerzen.ts": {
+    "exports": [
+      "ANSICHT_PX",
+      "SCHWAERZEN_DPI",
+      "arbeitsPdf"
+    ],
+    "types": [
+      "Ergebnis"
+    ]
+  },
+  "server/src/dateien/speicherplatz.ts": {
+    "exports": [
+      "SP_STANDARD",
+      "VORLAUF_MIN",
+      "gbText"
+    ],
+    "types": [
+      "Einheit",
+      "OrdnerStand",
+      "SpZustand"
+    ]
+  },
+  "server/src/dateien/verkleinern.ts": {
+    "exports": [
+      "hatQpdf"
+    ]
+  },
+  "server/src/dateien/vorschau.ts": {
+    "exports": [
+      "NACHRANG_PAUSE_MS",
+      "VORSCHAU_MAX_BYTES",
+      "VORSCHAU_TYPEN",
+      "VORSCHAU_VERSION",
+      "hatVorschau"
+    ]
+  },
+  "server/src/datenbank/anbindung.ts": {
+    "exports": [
+      "STANDARD_ANBINDUNG",
+      "gleicheVerbindung"
+    ]
+  },
+  "server/src/datenbank/db.ts": {
     "exports": [
       "DB_PRUEFUNG_GUELTIG_MS",
       "DB_PRUEFUNG_MS",
@@ -201,7 +233,46 @@
       "poolbelegung"
     ]
   },
-  "server/src/demo-dokumente.ts": {
+  "server/src/datenbank/erweiterungen.ts": {
+    "exports": [
+      "ERWEITERUNGEN"
+    ]
+  },
+  "server/src/datenbank/messung.ts": {
+    "exports": [
+      "STANDARD",
+      "ZUSAMMENFASSUNG_MS"
+    ],
+    "types": [
+      "Langlaeufer",
+      "LaufendeAbfrage"
+    ]
+  },
+  "server/src/datenbank/poolmessung.ts": {
+    "exports": [
+      "FENSTER_MS"
+    ]
+  },
+  "server/src/datenbank/sperrverbindung.ts": {
+    "exports": [
+      "SPERRABFRAGE_MS",
+      "WIEDER_MS"
+    ]
+  },
+  "server/src/datenschutz/auskunft.ts": {
+    "exports": [
+      "deckblatt",
+      "liesmichText",
+      "uebersichtCsv",
+      "uebersichtHtml"
+    ]
+  },
+  "server/src/datenschutz/index.ts": {
+    "types": [
+      "DatenschutzAnschluss"
+    ]
+  },
+  "server/src/demo/demo-dokumente.ts": {
     "exports": [
       "ERWARTUNG",
       "MAX_JE_MAPPE",
@@ -213,7 +284,7 @@
       "Stufe"
     ]
   },
-  "server/src/demo.ts": {
+  "server/src/demo/demo.ts": {
     "exports": [
       "pruefeAnzahl",
       "takt",
@@ -233,7 +304,7 @@
       "VersionenAnschluss"
     ]
   },
-  "server/src/einrichtung.ts": {
+  "server/src/einrichtung/einrichtung.ts": {
     "exports": [
       "EINRICHTUNGSDATEI_NAME",
       "MANDANT_MAX",
@@ -243,18 +314,28 @@
       "Schritt"
     ]
   },
-  "server/src/einrichtungscode.ts": {
+  "server/src/einrichtung/einrichtungscode.ts": {
     "exports": [
       "CODE_DATEI"
     ]
   },
-  "server/src/einrichtungsdatei.ts": {
+  "server/src/einrichtung/einrichtungsdatei.ts": {
     "exports": [
       "DATEI_MAX",
       "SCHEMA"
     ]
   },
-  "server/src/entdecken-werkbank.ts": {
+  "server/src/einstellungen/betrieb.ts": {
+    "types": [
+      "Verbindung"
+    ]
+  },
+  "server/src/einstellungen/region.ts": {
+    "exports": [
+      "REGION_NEU_LESEN_MS"
+    ]
+  },
+  "server/src/entdecken/entdecken-werkbank.ts": {
     "exports": [
       "EIGENE_RUNDGAENGE_MAX",
       "EIGENE_TIPPS_MAX",
@@ -268,7 +349,7 @@
       "TippAnpassung"
     ]
   },
-  "server/src/entdecken.ts": {
+  "server/src/entdecken/entdecken.ts": {
     "exports": [
       "EINSTELLUNG",
       "paketRundgaenge",
@@ -276,20 +357,7 @@
       "sprachTexte"
     ]
   },
-  "server/src/entsperren.ts": {
-    "exports": [
-      "ABLAGO",
-      "GEMERKT_GESAMT_MS",
-      "GEMERKT_VERSUCH_MS",
-      "QPDF_MS"
-    ]
-  },
-  "server/src/erechnung.ts": {
-    "exports": [
-      "XmlFehler"
-    ]
-  },
-  "server/src/ereignisse.ts": {
+  "server/src/ereignisse/ereignisse.ts": {
     "exports": [
       "SPERRE_S",
       "WIEDERHOLEN_MIN"
@@ -302,7 +370,12 @@
       "EreignisseTeile"
     ]
   },
-  "server/src/erkennung.ts": {
+  "server/src/erkennung/erechnung.ts": {
+    "exports": [
+      "XmlFehler"
+    ]
+  },
+  "server/src/erkennung/erkennung.ts": {
     "exports": [
       "ERKENNEN_MS",
       "PAKET_TEXT_MAX",
@@ -314,21 +387,32 @@
       "AutoZuordnung"
     ]
   },
-  "server/src/erwaehnungen.ts": {
+  "server/src/erkennung/klassifizierung.ts": {
     "exports": [
-      "ERWAEHNT_IN_MAX",
-      "VORSCHLAEGE_MAX"
+      "ABGLEICH_SCHWACH",
+      "ABGLEICH_STARK",
+      "AEHNLICHE_MAX",
+      "AEHNLICH_MS",
+      "KERN_SICHERHEIT",
+      "KLASSIFIZIEREN_MS",
+      "VORSCHLAG_AB"
     ]
   },
-  "server/src/erweiterungen.ts": {
-    "exports": [
-      "ERWEITERUNGEN"
-    ]
-  },
-  "server/src/exportordner.ts": {
+  "server/src/export/exportordner.ts": {
     "exports": [
       "EXPORT_NAME",
       "zaehleExporte"
+    ]
+  },
+  "server/src/export/vollexport-pruefsummen.ts": {
+    "exports": [
+      "HERUNTERGELADEN"
+    ]
+  },
+  "server/src/export/vollexport.ts": {
+    "exports": [
+      "FORMATVERSION",
+      "exportZeit"
     ]
   },
   "server/src/fassungen/index.ts": {
@@ -340,35 +424,29 @@
       "Wiederherstellen"
     ]
   },
-  "server/src/fehlermeldungen.ts": {
+  "server/src/formate/schriftstueck.ts": {
     "exports": [
-      "FEHLER_BILDER_MAX",
-      "FEHLER_BILD_BYTES",
-      "FEHLER_TEXT_MAX"
-    ],
-    "types": [
-      "FehlerBild",
-      "Fehlermeldung"
+      "schriftstueckPlan"
     ]
   },
-  "server/src/fotostapel.ts": {
+  "server/src/formate/zip.ts": {
     "exports": [
-      "FOTOS_MAX"
+      "AES_ZUSATZ",
+      "zipName"
     ]
   },
-  "server/src/geheimnis-sperre.ts": {
+  "server/src/geheimnisse/geheimnis-sperre.ts": {
     "exports": [
       "istGeheimerName"
     ]
   },
-  "server/src/graubild.ts": {
+  "server/src/geheimnisse/tresor.ts": {
     "exports": [
-      "DPI_MAX",
-      "DPI_MIN",
-      "PUNKTE_MAX"
+      "PRUEFWORTE_ALT",
+      "STANDARD_DATEI"
     ]
   },
-  "server/src/grenzen.ts": {
+  "server/src/grundlagen/grenzen.ts": {
     "duplicates": [
       "GB = SPEICHER_RESERVE",
       "KB = KOERPER_SPIELRAUM",
@@ -386,12 +464,9 @@
       "VORSCHAUBILD_MAX_BYTES"
     ]
   },
-  "server/src/katalogsignatur.ts": {
+  "server/src/http/ueberlast.ts": {
     "exports": [
-      "liesSignatur"
-    ],
-    "types": [
-      "Signatur"
+      "MELDUNG_MS"
     ]
   },
   "server/src/kern/index.ts": {
@@ -420,28 +495,9 @@
       "LeserechtAufZeit"
     ]
   },
-  "server/src/klassifizierung.ts": {
-    "exports": [
-      "ABGLEICH_SCHWACH",
-      "ABGLEICH_STARK",
-      "AEHNLICHE_MAX",
-      "AEHNLICH_MS",
-      "KERN_SICHERHEIT",
-      "KLASSIFIZIEREN_MS",
-      "VORSCHLAG_AB"
-    ]
-  },
   "server/src/konten/index.ts": {
     "exports": [
       "zaehltAlsGesamt"
-    ]
-  },
-  "server/src/kurzzustand.ts": {
-    "exports": [
-      "SPERRE_KLASSE"
-    ],
-    "types": [
-      "KurzEintrag"
     ]
   },
   "server/src/laeufer/fern.ts": {
@@ -465,11 +521,35 @@
       "WEITER_MAX_BYTES"
     ]
   },
-  "server/src/lesespeicher.ts": {
+  "server/src/lasttest/abfragestatistik.ts": {
     "exports": [
-      "IN_ANFRAGE_MS",
-      "merkeStaende",
-      "standAusAnfrage"
+      "ANZAHL_MAX"
+    ],
+    "types": [
+      "Grund",
+      "TeureAbfrage"
+    ]
+  },
+  "server/src/lasttest/protokollsammlung.ts": {
+    "exports": [
+      "ARTEN_MAX",
+      "DAUER_PLATZHALTER",
+      "SAMMEL_STUFEN",
+      "TEXT_MAX",
+      "sauber",
+      "vereineDauer"
+    ],
+    "types": [
+      "SammelStufe",
+      "Sammeldauer"
+    ]
+  },
+  "server/src/lasttest/prozessgruppen.ts": {
+    "exports": [
+      "GRUPPEN_FOLGE"
+    ],
+    "types": [
+      "GruppenWert"
     ]
   },
   "server/src/loeschen/index.ts": {
@@ -485,12 +565,12 @@
       "LoeschenKonten"
     ]
   },
-  "server/src/mail.ts": {
+  "server/src/mail/mail.ts": {
     "types": [
       "MailAnhang"
     ]
   },
-  "server/src/mailsuche.ts": {
+  "server/src/mail/mailsuche.ts": {
     "exports": [
       "SUCHE_ZEIT_MS"
     ],
@@ -510,6 +590,12 @@
     ],
     "types": [
       "BerechnetAbgelehnt"
+    ]
+  },
+  "server/src/mappen/erwaehnungen.ts": {
+    "exports": [
+      "ERWAEHNT_IN_MAX",
+      "VORSCHLAEGE_MAX"
     ]
   },
   "server/src/mappen/historie.ts": {
@@ -583,32 +669,13 @@
       "MODUSSPUR_MINUTEN"
     ]
   },
-  "server/src/messung.ts": {
-    "exports": [
-      "STANDARD",
-      "ZUSAMMENFASSUNG_MS"
-    ],
-    "types": [
-      "Langlaeufer",
-      "LaufendeAbfrage"
-    ]
-  },
-  "server/src/nachweisjournal.ts": {
-    "exports": [
-      "MONATE",
-      "monatVon"
-    ],
-    "types": [
-      "JournalEintrag"
-    ]
-  },
-  "server/src/notfall.ts": {
+  "server/src/notfall/notfall.ts": {
     "exports": [
       "GUELTIG_MIN",
       "SCHLUESSELWORT"
     ]
   },
-  "server/src/notfallcode.ts": {
+  "server/src/notfall/notfallcode.ts": {
     "exports": [
       "BLATT_MINUTEN"
     ]
@@ -621,25 +688,10 @@
       "NotfallkontakteVersand"
     ]
   },
-  "server/src/oberflaeche.ts": {
+  "server/src/oberflaeche/oberflaeche.ts": {
     "exports": [
       "ASSETS_CACHE",
       "SEITE_CACHE"
-    ]
-  },
-  "server/src/oidc.ts": {
-    "exports": [
-      "OIDC_STANDARD"
-    ]
-  },
-  "server/src/ordner.ts": {
-    "exports": [
-      "CONTAINER_WURZEL",
-      "ORDNER_NAMEN",
-      "ORDNER_TEXT"
-    ],
-    "types": [
-      "OrdnerArt"
     ]
   },
   "server/src/organisation/index.ts": {
@@ -743,9 +795,28 @@
       "optionaleInAnzeige"
     ]
   },
+  "server/src/pakete/katalogsignatur.ts": {
+    "exports": [
+      "liesSignatur"
+    ],
+    "types": [
+      "Signatur"
+    ]
+  },
   "server/src/pakete/pakete.einstellungen.ts": {
     "types": [
       "KatalogSchluessel"
+    ]
+  },
+  "server/src/pakete/paketpruefung.ts": {
+    "exports": [
+      "PRUEFKATALOG",
+      "liesOrdner",
+      "liesPaketordner",
+      "paketordner"
+    ],
+    "types": [
+      "PruefPaket"
     ]
   },
   "server/src/pakete/umbau.ts": {
@@ -782,28 +853,6 @@
   "server/src/pakete/vorlagen.ts": {
     "types": [
       "VorlagenFehler"
-    ]
-  },
-  "server/src/paketpruefung.ts": {
-    "exports": [
-      "PRUEFKATALOG",
-      "liesOrdner",
-      "liesPaketordner",
-      "paketordner"
-    ],
-    "types": [
-      "PruefPaket"
-    ]
-  },
-  "server/src/paketvolltext.ts": {
-    "exports": [
-      "VOLLTEXT_ANGEFORDERT_MS"
-    ]
-  },
-  "server/src/passkeys.ts": {
-    "exports": [
-      "PASSKEY_NAME_MAX",
-      "adressbereich"
     ]
   },
   "server/src/pdf-bearbeiten/index.ts": {
@@ -871,20 +920,9 @@
       "hatQpdf"
     ]
   },
-  "server/src/pdfanzeige.ts": {
+  "server/src/post/fotostapel.ts": {
     "exports": [
-      "CACHE_BYTES"
-    ]
-  },
-  "server/src/pdfseiten.ts": {
-    "exports": [
-      "SEITENBILD_PX",
-      "baue"
-    ]
-  },
-  "server/src/poolmessung.ts": {
-    "exports": [
-      "FENSTER_MS"
+      "FOTOS_MAX"
     ]
   },
   "server/src/post/index.ts": {
@@ -904,12 +942,12 @@
       "SystemmappenTeile"
     ]
   },
-  "server/src/postfach-oauth.ts": {
+  "server/src/post/postfach-oauth.ts": {
     "exports": [
       "rueckrufErlaubt"
     ]
   },
-  "server/src/postfach.ts": {
+  "server/src/post/postfach.ts": {
     "exports": [
       "gleicherServer",
       "postfachStand"
@@ -922,28 +960,42 @@
       "Verschluesselung"
     ]
   },
-  "server/src/protokoll.ts": {
+  "server/src/protokoll/nachweisjournal.ts": {
+    "exports": [
+      "MONATE",
+      "monatVon"
+    ],
+    "types": [
+      "JournalEintrag"
+    ]
+  },
+  "server/src/protokoll/protokoll.ts": {
     "exports": [
       "AUFBEWAHRUNG_MS",
       "DEBUG_DAUER_MS",
       "fehlerText"
     ]
   },
-  "server/src/protokollsammlung.ts": {
+  "server/src/prozesse/aufteilung.ts": {
     "exports": [
-      "ARTEN_MAX",
-      "DAUER_PLATZHALTER",
-      "SAMMEL_STUFEN",
-      "TEXT_MAX",
-      "sauber",
-      "vereineDauer"
+      "NACHLADEN_MS",
+      "SPIEGEL_MS",
+      "prozessstand"
     ],
     "types": [
-      "SammelStufe",
-      "Sammeldauer"
+      "Spiegel"
     ]
   },
-  "server/src/prozesse.ts": {
+  "server/src/prozesse/auftrag.ts": {
+    "exports": [
+      "AUFTRAG_FRIST_MS",
+      "AUFTRAG_TAKT_MS"
+    ],
+    "types": [
+      "AuftragPhase"
+    ]
+  },
+  "server/src/prozesse/prozesse.ts": {
     "exports": [
       "HALDE_LEITER_MEHR_MB",
       "HALDE_MAX_MB",
@@ -962,19 +1014,6 @@
       "ProzessInfo"
     ]
   },
-  "server/src/prozessgruppen.ts": {
-    "exports": [
-      "GRUPPEN_FOLGE"
-    ],
-    "types": [
-      "GruppenWert"
-    ]
-  },
-  "server/src/region.ts": {
-    "exports": [
-      "REGION_NEU_LESEN_MS"
-    ]
-  },
   "server/src/repo/index.ts": {
     "types": [
       "FeldweiseSchreiben",
@@ -990,22 +1029,12 @@
       "Zaehlerstand"
     ]
   },
-  "server/src/schriftstueck.ts": {
-    "exports": [
-      "schriftstueckPlan"
-    ]
-  },
-  "server/src/schwaerzen.ts": {
-    "exports": [
-      "ANSICHT_PX",
-      "SCHWAERZEN_DPI",
-      "arbeitsPdf"
-    ],
+  "server/src/sicherung/datenbankabzug.ts": {
     "types": [
-      "Ergebnis"
+      "Schnappschuss"
     ]
   },
-  "server/src/sicherung-entfernt.ts": {
+  "server/src/sicherung/sicherung-entfernt.ts": {
     "exports": [
       "ENTFERNT_MAX",
       "ZIEL_LISTE_MAX"
@@ -1015,7 +1044,7 @@
       "EntfernteSicherung"
     ]
   },
-  "server/src/sicherung.ts": {
+  "server/src/sicherung/sicherung.ts": {
     "exports": [
       "ENDUNG",
       "PROBE_STANDARD",
@@ -1032,9 +1061,16 @@
       "Umgebung"
     ]
   },
-  "server/src/sicherungsformat.ts": {
+  "server/src/sicherung/sicherungsformat.ts": {
     "types": [
       "Art"
+    ]
+  },
+  "server/src/sicherung/wiederherstellung.ts": {
+    "types": [
+      "Abschluss",
+      "Laufzeit",
+      "Schritt"
     ]
   },
   "server/src/sichten/index.ts": {
@@ -1056,25 +1092,7 @@
       "suchTypen"
     ]
   },
-  "server/src/speicherplatz.ts": {
-    "exports": [
-      "SP_STANDARD",
-      "VORLAUF_MIN",
-      "gbText"
-    ],
-    "types": [
-      "Einheit",
-      "OrdnerStand",
-      "SpZustand"
-    ]
-  },
-  "server/src/sperrverbindung.ts": {
-    "exports": [
-      "SPERRABFRAGE_MS",
-      "WIEDER_MS"
-    ]
-  },
-  "server/src/sprachwahl.ts": {
+  "server/src/sprache/sprachwahl.ts": {
     "exports": [
       "SPRACHEN_NEU_LESEN_MS",
       "uebernimm"
@@ -1093,40 +1111,7 @@
       "SUCHE_VEKTOR_MS"
     ]
   },
-  "server/src/systemausstattung/index.ts": {
-    "types": [
-      "Ausstattungsschritte"
-    ]
-  },
-  "server/src/texterkennung.ts": {
-    "exports": [
-      "DATEITYPEN",
-      "INFO_ENTSPERRT",
-      "INFO_PASSWORT",
-      "MAX_MB",
-      "MAX_SEITEN",
-      "OCR_STANDARD",
-      "hatText"
-    ]
-  },
-  "server/src/textsatz/index.ts": {
-    "types": [
-      "Setzender",
-      "TextsatzAnschluss"
-    ]
-  },
-  "server/src/tresor.ts": {
-    "exports": [
-      "PRUEFWORTE_ALT",
-      "STANDARD_DATEI"
-    ]
-  },
-  "server/src/ueberlast.ts": {
-    "exports": [
-      "MELDUNG_MS"
-    ]
-  },
-  "server/src/vektoren.ts": {
+  "server/src/suche/vektoren.ts": {
     "exports": [
       "DIMENSION_MAX",
       "DIMENSION_MIN",
@@ -1134,29 +1119,26 @@
       "norm"
     ]
   },
-  "server/src/verkleinern.ts": {
+  "server/src/system/fehlermeldungen.ts": {
     "exports": [
-      "hatQpdf"
-    ]
-  },
-  "server/src/verwaltung.ts": {
-    "exports": [
-      "UHRZEIT",
-      "fuerPerson"
+      "FEHLER_BILDER_MAX",
+      "FEHLER_BILD_BYTES",
+      "FEHLER_TEXT_MAX"
     ],
     "types": [
-      "Verwaltungsquelle"
+      "FehlerBild",
+      "Fehlermeldung"
     ]
   },
-  "server/src/vollexport-pruefsummen.ts": {
-    "exports": [
-      "HERUNTERGELADEN"
+  "server/src/systemausstattung/index.ts": {
+    "types": [
+      "Ausstattungsschritte"
     ]
   },
-  "server/src/vollexport.ts": {
-    "exports": [
-      "FORMATVERSION",
-      "exportZeit"
+  "server/src/textsatz/index.ts": {
+    "types": [
+      "Setzender",
+      "TextsatzAnschluss"
     ]
   },
   "server/src/volltext/index.ts": {
@@ -1170,21 +1152,28 @@
       "VolltextTeile"
     ]
   },
+  "server/src/volltext/paketvolltext.ts": {
+    "exports": [
+      "VOLLTEXT_ANGEFORDERT_MS"
+    ]
+  },
+  "server/src/volltext/texterkennung.ts": {
+    "exports": [
+      "DATEITYPEN",
+      "INFO_ENTSPERRT",
+      "INFO_PASSWORT",
+      "MAX_MB",
+      "MAX_SEITEN",
+      "OCR_STANDARD",
+      "hatText"
+    ]
+  },
   "server/src/volltext/volltext.dienst.ts": {
     "exports": [
       "VOLLTEXT_MAX"
     ]
   },
-  "server/src/vorschau.ts": {
-    "exports": [
-      "NACHRANG_PAUSE_MS",
-      "VORSCHAU_MAX_BYTES",
-      "VORSCHAU_TYPEN",
-      "VORSCHAU_VERSION",
-      "hatVorschau"
-    ]
-  },
-  "server/src/wartung.ts": {
+  "server/src/wartung/wartung.ts": {
     "exports": [
       "VORLAUF_STANDARD_MIN"
     ],
@@ -1192,38 +1181,49 @@
       "Stufe"
     ]
   },
-  "server/src/webdav-baum.ts": {
+  "server/src/webdav/webdav-baum.ts": {
     "exports": [
       "httpDatum"
     ]
   },
-  "server/src/webdav.ts": {
+  "server/src/webdav/webdav.ts": {
     "exports": [
       "MAX_EINTRAEGE",
       "STANDARD_GRENZE"
     ]
   },
-  "server/src/wiederherstellung.ts": {
+  "server/src/werkbank/verwaltung.ts": {
+    "exports": [
+      "UHRZEIT",
+      "fuerPerson"
+    ],
     "types": [
-      "Abschluss",
-      "Laufzeit",
-      "Schritt"
-    ]
-  },
-  "server/src/zaehlerspeicher.ts": {
-    "exports": [
-      "OHNE_FOLGEN"
-    ]
-  },
-  "server/src/zip.ts": {
-    "exports": [
-      "AES_ZUSATZ",
-      "zipName"
+      "Verwaltungsquelle"
     ]
   },
   "server/src/zugriff/index.ts": {
     "types": [
       "ZugriffAnschluss"
+    ]
+  },
+  "server/src/zwischenspeicher/kurzzustand.ts": {
+    "exports": [
+      "SPERRE_KLASSE"
+    ],
+    "types": [
+      "KurzEintrag"
+    ]
+  },
+  "server/src/zwischenspeicher/lesespeicher.ts": {
+    "exports": [
+      "IN_ANFRAGE_MS",
+      "merkeStaende",
+      "standAusAnfrage"
+    ]
+  },
+  "server/src/zwischenspeicher/zaehlerspeicher.ts": {
+    "exports": [
+      "OHNE_FOLGEN"
     ]
   },
   "shared/src/ablaufvorlagen.ts": {

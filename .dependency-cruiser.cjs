@@ -6,24 +6,83 @@
  *   Ausnahme: shared/test/ prüft Sprachdateien und Gemeinsames über alle Teile hinweg.
  * - Technische Ordner mit index.ts nur über index.ts (pdf/ und arbeit/, je mit eigener Ausnahme; repo/ über seine drei
  *   index.ts, #1278); das Fachmodell shared/src/model/ nur über seine index.ts (#1278).
- * - Teile über dem Dienst (UEBER_DEM_DIENST) und Nachbarn eines Fachordners, die noch in server/src/ liegen (NACHBARN,
- *   #1278), sind unten beschrieben.
+ * - Teile über dem Dienst (UEBER_DEM_DIENST), Nachbarn eines Fachordners (NACHBARN, #1278) und die Dateien, die aus
+ *   server/src/ in ihren Ordner gezogen sind, aber noch keine Tür haben (OHNE_TUER, #1278), sind unten beschrieben.
  * - Hilfen der HTTP-Schicht (http/routen-hilfen.ts, http/routen-kontext.ts) nur in Routen (#961, Ergänzung von
  *   Sicherheit): Fachlogik bekommt den Benutzer übergeben und liest ihn nicht selbst aus der Anfrage.
  * - Eine Regel für alle Fachordner (#1072, `fachordner`; vorher je Ordner zwei, #961/#964): von außen nur über ihre
- *   index.ts, Schichten nur abwärts (SCHICHTEN unten). Routen (*.routen.ts) gehören zur HTTP-Schicht: routen.ts holt
+ *   index.ts, Schichten nur abwärts (SCHICHTEN unten). Routen (*.routen.ts) gehören zur HTTP-Schicht: http/routen.ts holt
  *   sie direkt, und sie dürfen den Dienst und ihren eigenen Fachordner einbinden.
  *
  * Bestand: .dependency-cruiser-known-violations.json (wie eslint-suppressions.json: die Zahl darf nie steigen,
  * .github/werkzeuge/ausnahmen-zaehlen.mjs). Das Abhängigkeitsbild fürs Entwicklerhandbuch: `npm run abhaengigkeitsbild`.
  */
 /**
+ * Dateien, die bis #1278 (Schritt 4a) direkt in server/src/ lagen und jetzt in ihrem Ordner liegen, aber noch keine Tür
+ * haben: je Ordner ihre Namen (ohne .ts). Für die Regeln gelten sie wie vorher eine Datei direkt in server/src/: Jeder
+ * darf sie direkt einbinden (`fachordner` prüft für sie nicht „nur über index.ts“), sie selbst binden ein, was sie
+ * brauchen (die Schichten prüfen sie nicht), und Fachordner dürfen von ihnen nur, was BASIS, WERKZEUGE, NACHBARN und
+ * UEBER_DEM_DIENST nennen – wie vorher. Wer eine Datei hinter die Tür ihres Ordners bringt, nimmt sie hier heraus.
+ */
+const OHNE_TUER = {
+  anmeldung: 'anmeldesperre|zweifaktor|passkeys|oidc|apischluessel|passwort',
+  aufgaben: 'aufgabenmail',
+  ausgang: 'ausgabe',
+  automatisierung: 'automatisierung-aussen|automatisierung-karten|automatisierung-werkbank',
+  beispiele: 'beispiele|beispielablage',
+  dateien:
+    'dateispeicher|hochladen|verkleinern|schwaerzen|dateiumwandlung|archivfassung|entsperren|ersatzschriften|vorschau|pdfanzeige|pdfseiten|graubild|ordner|speicherplatz',
+  datenbank: 'db|anbindung|mandant|erweiterungen|sperrverbindung|poolmessung|messung',
+  datenschutz: 'abruf|auskunft',
+  demo: 'demo|demo-dokumente|demo-text|zufall',
+  dienst: 'dienst',
+  einrichtung: 'einrichtung|einrichtungscode|einrichtungsdatei|einrichtungsmodus|startmodus',
+  einstellungen: 'einstellungen|region|betrieb',
+  entdecken: 'entdecken|entdecken-werkbank',
+  ereignisse: 'ereignisse',
+  erkennung: 'erkennung|klassifizierung|erechnung',
+  export: 'export|vollexport|vollexport-pruefsummen|exportordner',
+  formate: 'xlsx|zip|xml|schriftstueck',
+  geheimnisse: 'geheimnisse|geheimnis-sperre|tresor',
+  grundlagen: 'fehler|grenzen|uebergaenge',
+  http: 'http|routen|api-v1|koepfe|proxy|ueberlast',
+  konten: 'konto-repo',
+  lasttest: 'lasttestmodus|speicherart|protokollsammlung|abfragestatistik|prozessgruppen',
+  loeschen: 'baum',
+  mail: 'mail|mailsuche',
+  mappen: 'aufkleber|erwaehnungen',
+  notfall: 'notfall|notfallcode|notfallblatt|notfallqr',
+  oberflaeche: 'oberflaeche|designs|hilfe',
+  pakete: 'katalogsignatur|projektschluessel|lizenztexte|paketpruefung|umwandlung',
+  post: 'postfach|postfach-anhaenge|postfach-oauth|imap|eingangsordner|fotostapel',
+  protokoll: 'protokoll|nachweisjournal',
+  prozesse: 'prozesse|aufteilung|auftrag|beenden|hintergrund',
+  sicherung: 'sicherung|sicherung-entfernt|sicherungsformat|datenbankabzug|wiederherstellung',
+  sprache: 'sprache|sprachpakete|sprachwahl|uebersetzung',
+  suche: 'fragen|vektoren',
+  system: 'system|systemlast|externmessung|fehlermeldungen|konsole',
+  volltext: 'paketvolltext|texterkennung',
+  wartung: 'wartung',
+  webdav: 'webdav|webdav-baum',
+  werkbank: 'verwaltung|verwaltungsbereiche|meldungen|werkbankzahlen',
+  zeitplan: 'zeitplan|streuung',
+  zwischenspeicher: 'zaehlerspeicher|lesespeicher|kurzzustand|zwischenspeicher',
+};
+/** Alle Dateien ohne Tür als ein Muster: Pfad ab server/src/ ohne .ts. */
+const LOSE = Object.entries(OHNE_TUER)
+  .map(([ordner, dateien]) => `${ordner}/(?:${dateien})`)
+  .join('|');
+/** Pfad einer Datei ohne Tür. */
+const LOSE_DATEI = `^server/src/(?:${LOSE})\\.ts$`;
+
+/**
  * Basis, auf der der Kern aufsetzt (#961): Repo, Datenbank, Protokoll, Texte, Einstellungen, Dateien, Zähler,
  * Fehler, Grenzen, Sperre für Geheimnisse (#1055), Nachweis-Journal (#1053, wie das Protokoll: viele Fachordner schreiben
- * hinein). Diese Module binden selbst keinen Dienst und keinen Fachbereich ein.
+ * hinein). Diese Module binden selbst keinen Dienst und keinen Fachbereich ein. Wie alle Dateilisten unten als Pfad ab
+ * server/src/ ohne .ts (#1278: früher direkt in server/src/).
  */
 const BASIS =
-  'db|protokoll|sprache|einstellungen|dateispeicher|zaehlerspeicher|lesespeicher|kurzzustand|fehler|grenzen|geheimnis-sperre|nachweisjournal';
+  'datenbank/db|protokoll/protokoll|sprache/sprache|einstellungen/einstellungen|dateien/dateispeicher|zwischenspeicher/zaehlerspeicher|zwischenspeicher/lesespeicher|zwischenspeicher/kurzzustand|grundlagen/fehler|grundlagen/grenzen|geheimnisse/geheimnis-sperre|protokoll/nachweisjournal';
 /**
  * Basis als Ordner (#1278): das Repo – Schnittstelle in repo/index.ts, PostgreSQL in repo/pg/, Arbeitsspeicher in
  * repo/speicher/. Von außen nur über diese drei index.ts (`repo-nur-ueber-index`); wie die Basis bindet es selbst
@@ -45,9 +104,11 @@ const BASIS_ORDNER = 'repo';
  * geheimnisse.ts, die PDF-Stelle, den Arbeiter-Pool und die Werkzeuge oben ein.
  */
 const WERKZEUGE = {
-  dateien: 'messung|vektoren|hochladen|verkleinern|dateiumwandlung|archivfassung|entsperren|paketvolltext|ersatzschriften',
-  ausgang: 'pdfseiten|graubild|schwaerzen|ausgabe|export|xlsx|zip|mail',
-  datenschutz: 'baum|schriftstueck|auskunft|vollexport|abruf|passwort|tresor',
+  dateien:
+    'datenbank/messung|suche/vektoren|dateien/hochladen|dateien/verkleinern|dateien/dateiumwandlung|dateien/archivfassung|dateien/entsperren|volltext/paketvolltext|dateien/ersatzschriften',
+  ausgang: 'dateien/pdfseiten|dateien/graubild|dateien/schwaerzen|ausgang/ausgabe|export/export|formate/xlsx|formate/zip|mail/mail',
+  datenschutz:
+    'loeschen/baum|formate/schriftstueck|datenschutz/auskunft|export/vollexport|datenschutz/abruf|anmeldung/passwort|geheimnisse/tresor',
   ordner: 'pdf|arbeit',
 };
 
@@ -75,23 +136,23 @@ const TECHNIK = ['http', 'pdf', 'arbeit', 'laeufer', BASIS_ORDNER];
 /**
  * Teile eines Fachordners über dem Dienst (#1278): Paketverwaltung, Paketerstellung und der Motor der Automatisierungen
  * bekommen den ganzen Dienst (nur als Typ, `ueber-dem-dienst-typ`), der Dienst selbst bindet `pakete/index.ts` ein.
- * Damit kein Kreis über dienst.ts entsteht, hat jeder dieser Unterordner eine eigene Tür (seine index.ts). Bis
- * Katalogsignatur, Projektschlüssel, Entdecken und Lizenztexte – für den Motor Zeitplan, Systemstand, Aufgaben-Mail
- * und die Werkbank-Rechte des Systemkontos – selbst in Fachordnern liegen, dürfen diese Teile sie direkt einbinden
- * (`dateien`).
+ * Damit kein Kreis über dienst/dienst.ts entsteht, hat jeder dieser Unterordner eine eigene Tür (seine index.ts).
+ * Solange Katalogsignatur, Projektschlüssel, Entdecken und Lizenztexte – für den Motor Zeitplan, Systemstand,
+ * Aufgaben-Mail und die Werkbank-Rechte des Systemkontos – keine Tür haben (OHNE_TUER), dürfen diese Teile sie direkt
+ * einbinden (`dateien`).
  */
 const UEBER_DEM_DIENST = {
   ordner: ['pakete/verwaltung', 'pakete/erstellung', 'automatisierung/motor'],
   dateien:
-    'dienst|katalogsignatur|projektschluessel|entdecken|entdecken-werkbank|lizenztexte|zeitplan|system|aufgabenmail|automatisierung-werkbank',
+    'dienst/dienst|pakete/katalogsignatur|pakete/projektschluessel|entdecken/entdecken|entdecken/entdecken-werkbank|pakete/lizenztexte|zeitplan/zeitplan|system/system|aufgaben/aufgabenmail|automatisierung/automatisierung-werkbank',
 };
 const UNTERORDNER = UEBER_DEM_DIENST.ordner.join('|');
 /**
- * Dateien, die fachlich zu einem Fachordner gehören, aber noch direkt in server/src/ liegen (#1278): Bis sie selbst
- * umziehen, darf der Ordner sie einbinden – sonst gilt für ihn `fachordner` wie für jeden Ordner seiner Schicht.
+ * Dateien ohne Tür (OHNE_TUER), die ein Fachordner einbinden darf (#1278) – sonst gilt für ihn `fachordner` wie für
+ * jeden Ordner seiner Schicht.
  */
 const NACHBARN = {
-  konten: 'anmeldesperre|konto-repo|zweifaktor|passkeys|oidc',
+  konten: 'anmeldung/anmeldesperre|konten/konto-repo|anmeldung/zweifaktor|anmeldung/passkeys|anmeldung/oidc',
 };
 const MIT_NACHBARN = Object.keys(NACHBARN).join('|');
 
@@ -109,26 +170,28 @@ function fachordner() {
       name,
       severity: 'error',
       comment:
-        'Einen Fachordner nur über seine index.ts einbinden (#1072) – oder einen Teil über dem Dienst über dessen index.ts (UEBER_DEM_DIENST, #1278). Ausnahme: Routen (*.routen.ts), die routen.ts sammelt.',
+        'Einen Fachordner nur über seine index.ts einbinden (#1072) – oder einen Teil über dem Dienst über dessen index.ts (UEBER_DEM_DIENST, #1278). Ausnahmen: Routen (*.routen.ts), die http/routen.ts sammelt, und Dateien ohne Tür (OHNE_TUER, #1278).',
       // $1: Ordner der importierenden Datei (für Dateien außerhalb von Ordnern ihr Name, für Tests „server“ usw.).
       from: { path: '^(?:server/src/)?([^/]+)' },
       to: {
         path: `^server/src/(?!(?:${TECHNIK.join('|')})/)(?!(?:${UNTERORDNER})/index\\.ts$)[^/]+/(?!index\\.ts$)`,
-        pathNot: ['^server/src/$1/', '\\.routen\\.ts$'],
+        pathNot: ['^server/src/$1/', '\\.routen\\.ts$', LOSE_DATEI],
       },
     },
   ];
   for (let i = 0; i <= SCHICHTEN.length; i++) {
     const hier = i < SCHICHTEN.length ? `^server/src/(${SCHICHTEN[i].join('|')})/` : `^server/src/(?!(?:${nichtFach})/)[^/]+/`;
+    // Fachordner der eigenen und der unteren Schichten – ohne die Dateien ohne Tür (die nur, wenn eine Liste sie nennt).
+    const keineLose = `(?!(?:${LOSE})\\.ts$)`;
     const erlaubt =
       i === 0
         ? ['^server/src/kern/', `^server/src/(${BASIS})\\.ts$`, `^server/src/(${BASIS_ORDNER})/`]
         : [
             i < SCHICHTEN.length
-              ? `^server/src/(${SCHICHTEN.slice(0, i + 1)
+              ? `^server/src/${keineLose}(${SCHICHTEN.slice(0, i + 1)
                   .flat()
                   .join('|')})/`
-              : `^server/src/(?!(?:${TECHNIK.join('|')})/)[^/]+/`,
+              : `^server/src/${keineLose}(?!(?:${TECHNIK.join('|')})/)[^/]+/`,
             `^server/src/(${WERKZEUGE.ordner}|${BASIS_ORDNER})/`,
             `^server/src/(${BASIS}|${WERKZEUGE.dateien}|${WERKZEUGE.ausgang}|${WERKZEUGE.datenschutz})\\.ts$`,
           ];
@@ -143,6 +206,7 @@ function fachordner() {
         path: hier,
         pathNot: [
           '\\.routen\\.ts$',
+          LOSE_DATEI,
           ...(i === SCHICHTEN.length ? [`^server/src/(?:${UNTERORDNER})/`, `^server/src/(?:${MIT_NACHBARN})/`] : []),
         ],
       },
@@ -153,8 +217,8 @@ function fachordner() {
         regeln.push({
           name,
           severity: 'error',
-          comment: `${ordner}/ ruft wie Schicht ${i} nur nach unten, dazu seine Nachbarn in server/src/ bis zu deren Umzug (NACHBARN, #1278).`,
-          from: { path: `^server/src/${ordner}/`, pathNot: '\\.routen\\.ts$' },
+          comment: `${ordner}/ ruft wie Schicht ${i} nur nach unten, dazu seine Nachbarn ohne Tür (NACHBARN, #1278).`,
+          from: { path: `^server/src/${ordner}/`, pathNot: ['\\.routen\\.ts$', LOSE_DATEI] },
           to: { path: '^server/src/', pathNot: [...erlaubt, `^server/src/(${dateien})\\.ts$`] },
         });
       }
@@ -172,7 +236,7 @@ function fachordner() {
     severity: 'error',
     comment: 'Teile über dem Dienst (#1278) bekommen den Dienst übergeben und binden dienst.ts nur als Typ ein.',
     from: { path: `^server/src/(?:${UNTERORDNER})/` },
-    to: { path: '^server/src/dienst\\.ts$', dependencyTypesNot: ['type-only'] },
+    to: { path: '^server/src/dienst/dienst\\.ts$', dependencyTypesNot: ['type-only'] },
   });
   return regeln;
 }
@@ -244,10 +308,10 @@ module.exports = {
       name: 'routen-hilfen-nur-in-routen',
       severity: 'error',
       comment:
-        'http/routen-hilfen.ts und http/routen-kontext.ts nur aus *.routen.ts und routen.ts (#961): Fachlogik nutzt keine Hilfen der HTTP-Schicht (etwa ich(a)), sondern bekommt den Benutzer übergeben.',
+        'http/routen-hilfen.ts und http/routen-kontext.ts nur aus *.routen.ts und http/routen.ts (#961): Fachlogik nutzt keine Hilfen der HTTP-Schicht (etwa ich(a)), sondern bekommt den Benutzer übergeben.',
       from: {
         path: '^(server|shared|web)/',
-        pathNot: ['\\.routen\\.ts$', '^server/src/routen\\.ts$', '^server/src/http/routen-(hilfen|kontext)\\.ts$'],
+        pathNot: ['\\.routen\\.ts$', '^server/src/http/routen\\.ts$', '^server/src/http/routen-(hilfen|kontext)\\.ts$'],
       },
       to: { path: '^server/src/http/routen-(hilfen|kontext)\\.ts$' },
     },
