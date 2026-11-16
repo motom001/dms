@@ -1460,7 +1460,6 @@
   "anlagen.an-welches-hinweis": "It becomes the next enclosure. Recognition and AI then only read the main document.",
   "anlagen.anhaengen": "Attach",
   "anlagen.angehaengt": "“{name}” is now an enclosure of “{haupt}”.",
-  "anlagen.herunterladen": "Download",
   "anlagen.mit-anlagen": "with enclosures ({anzahl})",
   "anlagen.mit-anlagen-stempel": "Each file gets the stamp; together as a ZIP.",
   "anlagen.zip-name": "{name} with enclosures.zip",

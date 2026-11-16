@@ -32,8 +32,6 @@ export const TABELLE_NEU_MAX = 40;
 /** Ab dieser Version kennt Ablago die Feldart Tabelle (#1030). Beim Einreihen auf die Version setzen, mit der sie erscheint. */
 export const DMS_TABELLE_AB = '0.232.0';
 
-/** Ist das eine Tabelle (Darstellung ohne eigenen Wert)? */
-export const istTabelle = (f: Pick<Feld, 'typ'> | undefined): boolean => f?.typ === 'tabelle';
 /**
  * Trägt das Feld einen Wert? Alles außer Tabellen. Für Auswahllisten von Spalten, Bedingungen, Platzhaltern, Export
  * und Schnittstelle – überall, wo es um Werte geht.

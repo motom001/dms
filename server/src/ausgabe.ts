@@ -52,7 +52,6 @@ export function weitergabeWas(a: Ausgabe[] | null | undefined): string {
 }
 
 export { kannStempeln };
-export const brauchtBearbeitung = (w: Ausgabewunsch | null | undefined) => !!w?.stempel || !!w?.verkleinern;
 
 /** „foto.jpg“ → „foto.pdf“ (Bilder werden beim Stempeln zum PDF). */
 export function pdfName(name: string): string {

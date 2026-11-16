@@ -45,7 +45,7 @@ export const UPLOAD_ALTER_MS = 6 * 3600_000;
 /** So oft spiegelt der Leiter laufende Sicherungen und Wiederherstellungen an die anderen. */
 export const SPIEGEL_MS = 1000;
 /** So lange wartet ein Prozess auf den Stand vom Leiter (#1341), dann gilt der Spiegel. */
-export const STAND_MS = 5000;
+const STAND_MS = 5000;
 /** So oft prüft jeder Prozess, ob sich Einstellungen geändert haben (Haushaltsstand `lesen`). */
 export const NACHLADEN_MS = 2000;
 

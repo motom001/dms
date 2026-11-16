@@ -12,6 +12,7 @@ Two tools check the code before it reaches `main` (#899): **ESLint** for typical
 | `npm run lint:zaehlen` | count the lists of existing violations against `main` – exactly the CI check |
 | `npm run lint:umtragen` | after a move: rewrite the lists, drop orphaned entries, then count |
 | `npm run lint:farben` | [no fixed colours](#farben) outside `tokens.css` |
+| `npm run lint:tot` | [dead code](#toter-code): unused files, exports and dependencies (knip, a few seconds) |
 | `node .github/werkzeuge/fachordner-pruefen.mjs` | every subject folder with a `*.dienst.ts` has `index.ts` and `README.md` (#1072) |
 | `npm run abhaengigkeitsbild` | regenerate the [dependency graph](#abhaengigkeitsbild) |
 
@@ -61,7 +62,7 @@ An exception without a reason, without a rule name (`/* eslint-disable */`) or w
 
 When the tools were introduced, the code had around 700 violations – mostly functions that are too complex, unused variables and `async` in interface events. They are listed in **`eslint-suppressions.json`** (file → rule → count, created with `eslint --suppress-all`). ESLint does not report them as long as a file has no more violations of a rule than listed there. In the same way, the cycles that already existed are listed in **`.dependency-cruiser-known-violations.json`**.
 
-For both lists: **the total must never rise.** In a pull request, CI counts them against the state of the base (`.github/werkzeuge/ausnahmen-zaehlen.mjs`) and fails if a number grows.
+For both lists – and for `knip-bestand.json` ([dead code](#toter-code)) – **the total must never rise.** In a pull request, CI counts them against the state of the base (`.github/werkzeuge/ausnahmen-zaehlen.mjs`) and fails if a number grows.
 
 - **Moving is allowed.** If a function moves to another file (for example when splitting `routen.ts`), its entry moves with it: `npm run lint:umtragen` rewrites the lists and drops what no longer occurs. The total stays the same – the check is green.
 - **Adding is not.** New or changed code that breaks a rule is fixed, not listed. `lint:umtragen` would include it, but then the number grows and CI reports for which rule.
@@ -92,6 +93,15 @@ A new token always gets a light **and** a dark value (or deliberately the same o
 **Check:** `npm run lint:farben` (`.github/werkzeuge/farben-pruefen.mjs`) looks in `web/src/**/*.css` except `tokens.css` for hex values, `rgb()`/`hsl()` and the like, and named colours such as `white`; in `*.ts(x)` for colour values in strings. CI runs it in the job **stil**; every finding is an error. Exceptions need a reason on the same line – `/* farbe-erlaubt: printing is always black on white */` – or, for whole files, an entry with a reason in `AUSNAHMEN` in the script (today: `design.ts` with the values for high contrast, the sample documents of the stamp preview).
 
 **Building blocks:** How fields, buttons and other parts of the interface look and behave is defined by the building blocks in `web/src/bausteine/` – pages put them together instead of writing spacing, colours or `aria` attributes themselves. More under [Design and building blocks](bausteine.md).
+
+## Dead code (knip) { #toter-code }
+
+**knip** (#1286) looks for files that are never included, exports and types nobody imports, and packages that are used but not listed in the `package.json` of their part (or the other way round). `npm run lint:tot` runs it via `.github/werkzeuge/knip-pruefen.mjs`; CI does the same in the **stil** job.
+
+- **Configuration** in `knip.jsonc`: the parts (root with tools, manual scripts and `shared/`, `server`, `web`, `web/rauchtest`) with their entry points. Whatever knip does not find by itself – a script loaded by an HTML page, a file only `tsc` checks – is listed there as an entry point **with a reason**. The same goes for every exception (`ignoreDependencies`, `ignoreBinaries`, such as the poppler and qpdf programs).
+- **Files and dependencies** have no list of existing findings: every finding is an error. A package a part uses belongs in its own `package.json` with an exact version – not “by chance” through another package.
+- **Exports and types** found when knip was introduced are listed in **`knip-bestand.json`** (names per file) and stay quiet. A new unused export is an error. The same rule as above applies: the count must not grow (`lint:zaehlen`); `npm run lint:tot -- --umtragen` rewrites the list after a move. Entries without a finding are reported as a notice.
+- Before deleting an export knip reports, check briefly whether the manual, a template or an anchor (`shared/entdecken/anker.yaml`) mentions it. The `DMS_…_AB` markers (from which version a manifest field applies) stay even if the code does not read them.
 
 ## Dependencies between the parts { #abhaengigkeiten-pruefen }
 

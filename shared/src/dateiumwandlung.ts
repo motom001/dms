@@ -14,8 +14,6 @@ export const kernTyp = (mime: string) => (KERN_TYPEN as readonly string[]).inclu
 
 /** Das darf ein Paket als Fassung zurückgeben – genau die Typen, die der Kern liest. */
 export const FASSUNG_TYPEN = KERN_TYPEN;
-/** Das darf ein Paket als Vorschaubild zurückgeben (der Kern verkleinert es auf seine Größe). */
-export const VORSCHAUBILD_TYPEN = ['image/jpeg', 'image/png'] as const;
 
 /** Größere Originale meldet der Kern nicht zum Umwandeln (das Paket hält die Datei im Speicher von 256 MB). */
 export const UMWANDELN_MAX_BYTES = 50 * 1024 * 1024;

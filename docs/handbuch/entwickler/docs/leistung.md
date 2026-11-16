@@ -355,7 +355,7 @@ Der Lasttest misst den Server, die Rauchtests prüfen, *ob* etwas geht. Wie schn
 
 ```bash
 # Ablago mit leerer Datenbank starten, z. B. DATABASE_URL=… DMS_EINRICHTUNGSCODE=aus PORT=3100 node server/dist/index.js
-cd web/rauchtest && npm install --no-save playwright@1.64.1 && npx playwright install chromium && cd ../..
+cd web/rauchtest && npm ci && npx playwright install chromium && cd ../..
 DMS_URL=http://localhost:3100 node web/rauchtest/messen/oberflaeche.mjs --einrichten
 DMS_URL=http://localhost:3100 node web/rauchtest/messen/oberflaeche.mjs --geraet "Laptop gegen NAS" \
   --vorher docs/messungen/oberflaeche/2026-11-15-container.json --json neu.json --bericht neu.md

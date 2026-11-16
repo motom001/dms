@@ -97,9 +97,6 @@ export const istKatalogArt = (a: string): a is KatalogArt => Object.prototype.ha
 /** Teil des Sprachschlüssels zu einer Art (`name.<teil>`, `text.<teil>`): Unterstrich ist in Schlüsseln Mehrzahlformen vorbehalten. */
 type Bindestrich<S extends string> = S extends `${infer A}_${infer B}` ? `${A}-${Bindestrich<B>}` : S;
 export const ereignisSchluessel = <A extends KatalogArt>(a: A) => a.replace(/_/g, '-') as Bindestrich<A>;
-export const katalogeintrag = (a: KatalogArt): Katalogeintrag => EREIGNISKATALOG[a];
-/** Ereignisse zu Mappen: Pakete bekommen sie nur zu Typen, die ihr Paket-Benutzer lesen darf (#686). */
-export const MAPPENTYP_EREIGNISSE = KATALOG_ARTEN.filter((a) => (EREIGNISKATALOG[a] as Katalogeintrag).mappentyp);
 /** Ereignisse, die Pakete abonnieren können (`code.ereignisse`), ohne die veralteten Namen. */
 export const PAKET_KATALOG = KATALOG_ARTEN.filter((a) => (EREIGNISKATALOG[a] as Katalogeintrag).paket);
 export type PaketKatalogArt = { [K in KatalogArt]: (typeof EREIGNISKATALOG)[K] extends { paket: true } ? K : never }[KatalogArt];

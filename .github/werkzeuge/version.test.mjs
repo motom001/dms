@@ -5,7 +5,7 @@ import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, existsSync, readdi
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { test } from 'node:test';
-import { istProgramm, liesSchnipsel, naechsteVersion, setzeVersion, zusammenfassen } from './version.mjs';
+import { istProgramm, liesSchnipsel, naechsteVersion, setzeLockVersion, setzeVersion, zusammenfassen } from './version.mjs';
 
 const SKRIPT = resolve(import.meta.dirname, 'version.mjs');
 
@@ -42,6 +42,22 @@ test('Version setzen ändert nur die Version', () => {
   assert.equal(setzeVersion(t, '0.2.0'), t.replace('"version": "0.1.0"', '"version": "0.2.0"'));
 });
 
+const LOCK = { name: 'dms', version: '0.1.0', lockfileVersion: 3, requires: true, packages: {
+  '': { name: 'dms', version: '0.1.0', workspaces: ['server', 'web'] },
+  'node_modules/a': { version: '9.9.9' },
+  server: { name: 'dms-server', version: '0.1.0' },
+  web: { name: 'dms-web', version: '0.1.0' },
+} };
+
+test('Version im Lockfile: oben, Wurzel und Arbeitsbereiche, sonst nichts; Format wie npm (#1272)', () => {
+  const t = `${JSON.stringify(LOCK, null, 2)}\n`;
+  const neu = setzeLockVersion(t, '0.2.0');
+  const j = JSON.parse(neu);
+  assert.deepEqual([j.version, j.packages[''].version, j.packages.server.version, j.packages.web.version], ['0.2.0', '0.2.0', '0.2.0', '0.2.0']);
+  assert.equal(j.packages['node_modules/a'].version, '9.9.9');
+  assert.equal(neu, t.replaceAll('"version": "0.1.0"', '"version": "0.2.0"'));
+});
+
 test('Programm oder nicht', () => {
   for (const p of ['server/src/dienst.ts', 'web/src/App.tsx', 'shared/src/sprachen/de/werkbank.json', 'Dockerfile', 'docker/start.sh']) assert.ok(istProgramm(p), p);
   for (const p of ['server/test/x.test.ts', 'docs/handbuch/admin/docs/a.md', '.github/workflows/image.yml', 'web/src/a.test.tsx', 'README.md']) assert.ok(!istProgramm(p), p);
@@ -58,6 +74,7 @@ function repo() {
   }
   mkdirSync(join(d, 'server/src'), { recursive: true }); writeFileSync(join(d, 'server/src/a.ts'), '1');
   mkdirSync(join(d, 'docs/releases/neu'), { recursive: true }); writeFileSync(join(d, 'docs/releases/neu/README.md'), 'Ordner');
+  writeFileSync(join(d, 'package-lock.json'), `${JSON.stringify(LOCK, null, 2)}\n`.replaceAll('0.1.0', '0.219.0'));
   g('add', '-A'); g('commit', '-qm', 'basis'); g('tag', 'v0.219.0');
   return { d, g, basis: g('rev-parse', 'HEAD').trim() };
 }
@@ -87,6 +104,8 @@ test('vergeben: höchste Art gewinnt, Notizen zusammen, Schnipsel weg, README bl
   writeFileSync(join(d, 'docs/releases/neu/fs-2.md'), 'art: minor\n\n## Neu\n\n- b (#2)\n');
   const r = lauf(d, 'vergeben'); assert.ok(r.ok, r.out); assert.match(r.out, /version=0\.220\.0/);
   for (const p of ['package.json', 'server/package.json', 'web/package.json']) assert.equal(JSON.parse(readFileSync(join(d, p), 'utf8')).version, '0.220.0');
+  const lock = JSON.parse(readFileSync(join(d, 'package-lock.json'), 'utf8'));
+  assert.deepEqual([lock.version, lock.packages[''].version, lock.packages.server.version, lock.packages.web.version], ['0.220.0', '0.220.0', '0.220.0', '0.220.0']);
   assert.equal(readFileSync(join(d, 'docs/releases/v0.220.0.md'), 'utf8'), '## Neu\n\n- b (#2)\n\n## Behoben\n\n- a (#1)\n');
   assert.deepEqual(readdirSync(join(d, 'docs/releases/neu')), ['README.md']);
   // Zweiter Lauf: nichts mehr zu tun.

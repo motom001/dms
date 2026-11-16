@@ -42,7 +42,6 @@ export interface UebersetzenEinstellung {
   /** Der Administrator hat bestätigt, dass Texte an den Dienst des gewählten Pakets gehen (nur bei Paketen mit Netz). */
   abfluss?: boolean;
 }
-export const UEBERSETZEN_STANDARD: UebersetzenEinstellung = { an: true, paket: null };
 
 export function liesUebersetzenEinstellung(v: unknown): UebersetzenEinstellung {
   const x = (v && typeof v === 'object' && !Array.isArray(v) ? v : {}) as Record<string, unknown>;

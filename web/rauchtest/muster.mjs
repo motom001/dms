@@ -83,7 +83,7 @@ export function anfragenZaehlen(kontext) {
 }
 
 /** Höchstens so lange wartet `seiteRuhig` (ms). */
-export const RUHE_GRENZE = 3000;
+const RUHE_GRENZE = 3000;
 /** Ältere offene Anfragen zählen nicht: Sie laufen dauerhaft oder ihr Ende kam nie an (z. B. abgebrochen beim Seitenwechsel). */
 const ANFRAGE_HOECHSTENS = 2000;
 

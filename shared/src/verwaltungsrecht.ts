@@ -76,9 +76,6 @@ export function darfBereich(b: MitRecht, pfad: string): boolean {
   return BEKANNT.has(pfad) && b!.verwaltung!.includes(pfad);
 }
 
-/** Bereiche, die die Person sieht (für Leiste und Übersicht); `null` = alle. */
-export const eigeneBereiche = (b: MitRecht): Set<string> | null => (hatGesamt(b) ? null : new Set(darfVerwalten(b) ? b!.verwaltung! : []));
-
 /** Der Baum für Werkbank → Benutzer → Person (#818): Gruppen gliedern nur, Haken gibt es je Bereich. */
 export interface Verwaltungsast { gruppe: Gruppe; name: string; bereiche: Array<{ pfad: string; heikel: boolean }> }
 export function verwaltungsbaum(): Verwaltungsast[] {

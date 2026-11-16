@@ -71,7 +71,6 @@ const AES_EXTRA = (() => {
 })();
 /** Zusätzliche Bytes je verschlüsseltem Eintrag: Salz, Prüfwert, Authentifizierung. */
 export const AES_ZUSATZ = 16 + 2 + 10;
-export const ZIP_PASSWORT_MIN = 10;
 
 /**
  * Schlüsselstrom und Prüfwert rechnet node:crypto (AES-256 auf den Zählerblöcken, HMAC-SHA1). Fertiges `aes-256-ctr`

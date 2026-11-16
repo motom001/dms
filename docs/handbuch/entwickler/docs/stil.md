@@ -12,6 +12,7 @@ Zwei Werkzeuge prüfen den Code, bevor er nach `main` kommt (#899): **ESLint** f
 | `npm run lint:zaehlen` | Bestandslisten gegen `main` zählen – genau die Prüfung der CI |
 | `npm run lint:umtragen` | nach einem Umzug: Bestand neu schreiben, Verwaistes streichen, dann zählen |
 | `npm run lint:farben` | [keine festen Farben](#farben) außerhalb von `tokens.css` |
+| `npm run lint:tot` | [toter Code](#toter-code): ungenutzte Dateien, Exporte und Abhängigkeiten (knip, wenige Sekunden) |
 | `node .github/werkzeuge/fachordner-pruefen.mjs` | jeder Fachordner mit `*.dienst.ts` hat `index.ts` und `README.md` (#1072) |
 | `npm run abhaengigkeitsbild` | [Abhängigkeitsbild](#abhaengigkeitsbild) neu erzeugen |
 
@@ -61,7 +62,7 @@ Ohne Begründung, ohne Regelname (`/* eslint-disable */`) oder ohne Wirkung ist 
 
 Beim Einführen standen rund 700 Verstöße im Code – vor allem zu komplexe Funktionen, unbenutzte Variablen und `async` in Ereignissen der Oberfläche. Sie stehen in **`eslint-suppressions.json`** (Datei → Regel → Anzahl, erzeugt mit `eslint --suppress-all`). ESLint meldet sie nicht, solange eine Datei nicht mehr Verstöße einer Regel hat als dort eingetragen. Ebenso stehen die Kreisläufe, die es schon gab, in **`.dependency-cruiser-known-violations.json`**.
 
-Für beide Listen gilt: **Die Gesamtzahl darf nie steigen.** Die CI zählt sie im Pull Request gegen den Stand der Basis (`.github/werkzeuge/ausnahmen-zaehlen.mjs`) und scheitert, wenn eine Zahl wächst.
+Für beide Listen – und für `knip-bestand.json` ([Toter Code](#toter-code)) – gilt: **Die Gesamtzahl darf nie steigen.** Die CI zählt sie im Pull Request gegen den Stand der Basis (`.github/werkzeuge/ausnahmen-zaehlen.mjs`) und scheitert, wenn eine Zahl wächst.
 
 - **Umtragen ist erlaubt.** Zieht eine Funktion in eine andere Datei um (etwa beim Teilen von `routen.ts`), wandert ihr Eintrag mit: `npm run lint:umtragen` schreibt die Listen neu und streicht, was nicht mehr vorkommt. Die Summe bleibt gleich – die Prüfung ist grün.
 - **Hinzufügen nicht.** Neuer oder geänderter Code, der eine Regel verletzt, wird korrigiert, nicht eingetragen. `lint:umtragen` würde ihn zwar aufnehmen, aber dann wächst die Zahl, und die CI meldet, bei welcher Regel.
@@ -92,6 +93,15 @@ Ein neuer Token bekommt immer einen hellen **und** einen dunklen Wert (oder bewu
 **Prüfung:** `npm run lint:farben` (`.github/werkzeuge/farben-pruefen.mjs`) sucht in `web/src/**/*.css` außer `tokens.css` nach Hex-Werten, `rgb()`/`hsl()` & Co. und benannten Farben wie `white`, in `*.ts(x)` nach Farbwerten in Zeichenketten. Die CI führt sie im Job **stil** aus; jeder Fund ist ein Fehler. Ausnahmen brauchen einen Grund in derselben Zeile – `/* farbe-erlaubt: Druck ist immer schwarz auf weiß */` – oder, für ganze Dateien, einen Eintrag mit Grund in `AUSNAHMEN` im Skript (heute: `design.ts` mit den Werten für hohen Kontrast, die Beispielbelege der Stempel-Vorschau).
 
 **Bausteine:** Wie Felder, Knöpfe und andere Teile der Oberfläche aussehen und sich verhalten, legen die Bausteine unter `web/src/bausteine/` fest – Seiten setzen sie zusammen, statt Abstände, Farben oder `aria`-Attribute selbst zu schreiben. Mehr unter [Gestaltung und Bausteine](bausteine.md).
+
+## Toter Code (knip) { #toter-code }
+
+**knip** (#1286) sucht Dateien, die nirgends eingebunden sind, Exporte und Typen, die niemand importiert, und Pakete, die genutzt werden, aber nicht in der `package.json` ihres Bereichs stehen (oder umgekehrt). `npm run lint:tot` startet es über `.github/werkzeuge/knip-pruefen.mjs`; die CI macht dasselbe im Job **stil**.
+
+- **Einstellung** in `knip.jsonc`: die Bereiche (Wurzel mit Werkzeugen, Handbuch-Skripten und `shared/`, `server`, `web`, `web/rauchtest`) mit ihren Einstiegspunkten. Was knip nicht selbst findet – ein Skript, das eine HTML-Seite lädt, eine Datei, die nur `tsc` prüft –, steht dort als Einstiegspunkt **mit Begründung**. Ebenso jede Ausnahme (`ignoreDependencies`, `ignoreBinaries`, etwa die Programme aus poppler und qpdf).
+- **Dateien und Abhängigkeiten** haben keinen Bestand: Jeder Fund ist ein Fehler. Ein Paket, das ein Bereich nutzt, gehört mit genauer Version in seine eigene `package.json` – nicht „zufällig“ über ein anderes Paket.
+- **Exporte und Typen** von heute stehen in **`knip-bestand.json`** (je Datei die Namen) und melden sich nicht. Ein neuer ungenutzter Export ist ein Fehler. Für die Liste gilt dasselbe wie oben: Die Zahl darf nicht steigen (`lint:zaehlen`); `npm run lint:tot -- --umtragen` schreibt sie nach einem Umzug neu. Einträge ohne Fund meldet der Lauf als Hinweis.
+- Bevor du einen Export löschst, den knip meldet: kurz suchen, ob ihn das Handbuch, eine Vorlage oder ein Anker (`shared/entdecken/anker.yaml`) nennt. Die Merker `DMS_…_AB` (ab welcher Version ein Manifest-Feld gilt) bleiben, auch wenn der Code sie nicht liest.
 
 ## Abhängigkeiten zwischen den Teilen { #abhaengigkeiten-pruefen }
 

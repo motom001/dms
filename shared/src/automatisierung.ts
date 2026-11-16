@@ -290,9 +290,6 @@ export function ausloeserSchluessel(w: WennKarte): string {
   return w.art === 'datum' ? `datum|${w.typ}|${w.feld}|${w.vorlauf}|${w.einheit}` : `${w.art}|${w.typ ?? ''}`;
 }
 
-/** Feste Platzhalter (außer den Feldern des Mappentyps). */
-export const PLATZHALTER_FEST = ['titel', 'mappentyp', 'heute', 'automatisierung', 'datum', 'tage'] as const;
-
 /** Platzhalter, die im Kontext der Wenn-Karte zur Verfügung stehen. */
 export function platzhalterFuer(w: WennKarte, typ: Mappentyp | null): Array<{ key: string; label: string }> {
   if (istBetrieb(w)) return betriebPlatzhalter(w);

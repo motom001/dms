@@ -19,14 +19,14 @@
  * im Workflow in einem eigenen Job neben den Bildschirmfotos laufen. Die Bilder des Assistenten landen dabei
  * trotzdem in <zielordner>; im Workflow ist das ein Wegwerf-Ordner.
  *
- * Braucht Playwright mit Chromium (npm install playwright; npx playwright install chromium).
+ * Braucht Playwright mit Chromium aus web/rauchtest (#1272: dort `npm ci` und `npx playwright install chromium`).
  * Jedes Bild hat einen festen Namen; die Handbücher binden sie über bilder/<name>.png ein.
  */
 import { execFileSync } from 'node:child_process';
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { chromium } from 'playwright';
+import { chromium } from '../../../web/rauchtest/playwright.mjs';
 import { musterAufnehmen } from '../../../web/rauchtest/muster.mjs';
 import { imapAttrappe } from './imap-attrappe.mjs';
 

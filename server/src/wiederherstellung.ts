@@ -7,7 +7,7 @@ import { dirname, join, normalize, sep } from 'node:path';
 import postgres from 'postgres';
 import { FASSUNG_PFAD } from './dateiumwandlung';
 import { ARCHIV_PFAD, WOERTER_PFAD } from './archivfassung';
-import { migriere, verbinde } from './db';
+import { migriere } from './db';
 import { bezeichner, OHNE_INHALT, type Tabelle } from './datenbankabzug';
 import { beschreibe, liesErweiterungen, problemeAus, TRIGRAMM_INDEXNAMEN, trigrammIndizes } from './erweiterungen';
 import { Fachfehler } from './fehler';
@@ -666,6 +666,3 @@ export class Wiederherstellung {
     }
   }
 }
-
-/** Neue Verbindung mit gleicher URL (für Tests). */
-export const neueVerbindung = (url: string) => verbinde(url);

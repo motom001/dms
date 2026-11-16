@@ -3,7 +3,6 @@ import { anlageText } from '../../../shared/src/anlagen';
 import type { Dokument } from '../../../shared/src/model';
 import { dokumenteApi } from '../api/dokumente';
 import { Feld, HakenFeld, Knopf } from '../bausteine';
-import { Hilfe } from '../Hilfe';
 import { t } from '../sprache';
 import s from './Anlagen.module.css';
 
@@ -120,30 +119,5 @@ export function OriginalEmailWahl({ emails, an, setze, wie = 'mit' }: {
       hinweis={t(wie === 'uebernehmen' ? 'ablage.anlagen.original-uebernehmen-hinweis' : 'ablage.anlagen.original-mit-hinweis')} hilfe="dokumente.anlagen">
       <input type="checkbox" checked={an} onChange={(e) => setze(e.target.checked)} data-original-email="" />
     </HakenFeld>
-  );
-}
-
-/**
- * „mit Anlagen?“ beim Herunterladen eines Dokuments mit Anlagen (Vorgabe ja): mit Haken ein ZIP „… mit Anlagen.zip“,
- * ohne der gewohnte Weg (`ohne`, z. B. Original oder Archivfassung). Hängt die Original-E-Mail (#999) daran, steht sie
- * darunter mit eigenem Haken.
- */
-export function HerunterladenMitAnlagen({ d, anlagen, archiv, ohne }: { d: Dokument; anlagen: Dokument[]; archiv: boolean; ohne: ReactNode }) {
-  const [mit, setMit] = useState(true);
-  const [eml, setEml] = useState(true);
-  const emails = anlagen.filter((a) => a.originalEmail);
-  // Nur die Original-E-Mail als Anlage und abgewählt: dann ist es das Dokument allein, kein ZIP.
-  const zip = mit && (eml || anlagen.length > emails.length);
-  return (
-    <span className={s.mitAnlagen}>
-      {zip
-        ? <Knopf art="link" onClick={() => dokumenteApi.herunterladenMitAnlagen(d.id, t('ablage.anlagen.zip-name', { name: d.name.replace(/\.[^.]{1,5}$/, '') }), archiv ? 'archiv' : undefined, eml)}>{t('ablage.anlagen.herunterladen')}</Knopf>
-        : ohne}
-      <HakenFeld beschriftung={t('ablage.anlagen.mit-anlagen', { anzahl: anlagen.length })}>
-        <input type="checkbox" checked={mit} onChange={(e) => setMit(e.target.checked)} />
-      </HakenFeld>
-      {mit && <OriginalEmailWahl emails={emails} an={eml} setze={setEml} />}
-      <Hilfe ort="dokumente.anlagen" />
-    </span>
   );
 }

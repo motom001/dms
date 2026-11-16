@@ -71,8 +71,6 @@ export interface AussenZiel { adresse: string; heimnetz: boolean; notiz?: string
 /** Name eines Parameters: klein, wie ein Platzhalter. */
 export const AUSSEN_PARAMETER_NAME = /^[a-z][a-z0-9_]*$/;
 
-export const istUrlKarte = (k: { art: string }): k is DannUrl => k.art === 'url';
-export const istEmailKarte = (k: { art: string }): k is DannEmail => k.art === 'email';
 /** Karten, mit denen Daten Ablago verlassen – Pakete bringen sie nie mit (#671). */
 export const AUSSEN_ARTEN: readonly string[] = ['url', 'email'];
 export const istAussenKarte = (k: { art: string }) => AUSSEN_ARTEN.includes(k.art);

@@ -26,7 +26,6 @@ let einstellung: { ordner: string; vorher?: () => Promise<void> } = { ordner: jo
 
 /** Ordner für temporäre Uploads und Prüfung vor dem Schreiben (Speicherplatz, #116). */
 export function richteHochladenEin(o: { ordner: string; vorher?: () => Promise<void> }) { einstellung = o; }
-export const hochladeOrdner = () => einstellung.ordner;
 
 /**
  * Übrig gebliebene temporäre Uploads (Absturz) löschen; liefert die Anzahl. `aelterAlsMs` (#745): Laufen noch andere

@@ -7,11 +7,10 @@
  *   # messen (Median aus N Ladevorgängen je Seite und Benutzer)
  *   DMS_URL=http://localhost:3100 N=5 node server/test/ladezeiten.mjs
  *
- * Braucht Playwright mit Chromium. Die Regeln sind wie in einem Haushalt: Grundeinstellung ohne
- * Löschen und Passwörter, die Rolle „Steuern und Finanzen“ darf alles, Aufgaben erlauben Bearbeiten,
+ * Braucht Playwright mit Chromium (aus web/rauchtest, dort `npm ci`, #1272).
+ * Die Regeln sind wie in einem Haushalt: Grundeinstellung ohne Löschen und Passwörter, die Rolle „Steuern und Finanzen“ darf alles, Aufgaben erlauben Bearbeiten,
  * Zahlungen und große Beträge (Vertrag, Rechnung) nur für die Rolle. Ben hat die Rolle, Clara nicht.
  */
-import { createRequire } from 'node:module';
 
 const BASIS = process.env.DMS_URL ?? 'http://localhost:3000';
 const N = Number(process.env.N ?? 5);
@@ -69,7 +68,7 @@ async function einrichten() {
 const median = (a) => { const s = [...a].sort((x, y) => x - y); return s[Math.floor(s.length / 2)]; };
 
 async function messen() {
-  const { chromium } = createRequire(import.meta.url)('playwright');
+  const { chromium } = await import('../../web/rauchtest/playwright.mjs');
   const browser = await chromium.launch();
   const erg = [];
   for (const [wer, [email, passwort]] of Object.entries(BENUTZER)) {

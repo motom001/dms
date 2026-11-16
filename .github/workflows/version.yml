@@ -1,6 +1,6 @@
 # Versionsnummer erst beim Merge (#952): Pull Requests bringen einen Notizschnipsel docs/releases/neu/<name>.md
 # mit („art: patch|minor|keine“). Nach dem Merge vergibt dieser Workflow die nächste Nummer, setzt die drei
-# package.json, fasst die Schnipsel zu docs/releases/vX.Y.Z.md zusammen und schreibt das als eigenen Commit auf
+# package.json und package-lock.json (#1272), fasst die Schnipsel zu docs/releases/vX.Y.Z.md zusammen und schreibt das als eigenen Commit auf
 # main. Dieser Push startet „Prüfen und Image bauen“ – dort entstehen wie bisher Images, Tag und Release.
 #
 # Schreibrecht: nur dieser Job, nur über die GitHub-App „Ablago Version“ (Repository-Rechte: nur Contents
@@ -38,7 +38,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: 24
+          node-version-file: package.json
       - name: Werkzeug prüfen
         run: node --test .github/werkzeuge/version.test.mjs
       # Erst nachsehen, ob es etwas zu vergeben gibt – das Token der App gibt es nur dann.

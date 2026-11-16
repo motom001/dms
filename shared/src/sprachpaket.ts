@@ -20,7 +20,7 @@
  * andere Platzhalter), wird übergangen statt abgelehnt – so bleibt ein Paket für eine ältere Version installierbar, und
  * die fehlenden Texte erscheinen auf Englisch.
  */
-import { AUSGANGSSPRACHE, EINGEBAUTE_SPRACHEN, ohneMehrzahl, platzhalter, type Sprachdatei } from './sprache';
+import { EINGEBAUTE_SPRACHEN, ohneMehrzahl, platzhalter, type Sprachdatei } from './sprache';
 import { BESCHRIFTUNG_MAX, SPRACHKENNUNG } from './beschriftung';
 import { t } from './texte';
 import { SCHLUESSEL } from './kennungen';
@@ -222,6 +222,3 @@ export function liesSprachBeschriftung(roh: unknown, wo: string): { beschriftung
 
 /** Anzahl der Texte eines Sprachpakets. */
 export const anzahlTexte = (texte: Readonly<Sprachtexte>) => Object.values(texte).reduce((n, d) => n + Object.keys(d).length, 0);
-
-/** Ist das eine eingebaute Sprache (Deutsch, Englisch)? */
-export const istEingebaut = (spr: string) => spr === AUSGANGSSPRACHE || (EINGEBAUTE_SPRACHEN as readonly string[]).includes(spr);

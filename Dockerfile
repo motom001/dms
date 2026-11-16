@@ -4,7 +4,12 @@
 
 # Basis-Images mit festem Digest (Scorecard „Pinned-Dependencies“): Ein ausgetauschtes Tag bei Docker Hub käme so nicht
 # unbemerkt ins Image. Dependabot (Ökosystem docker) hebt Tag und Digest jede Woche per Pull Request.
-FROM node:24-alpine@sha256:116b800c3754b440ee0aa3ed2f20f5bf3d99a554bfd9adeea09ea8017f6e85f5 AS bau
+# Node steht genau einmal hier (#1272): Bau und Laufzeit bauen auf node-basis auf. Als Stufe statt als ARG, weil
+# Dependabot und Scorecard nur FROM-Zeilen lesen. Die Hauptversion passt zu `engines` in package.json (die Workflows
+# lesen sie mit node-version-file); ein Wechsel ändert beide Stellen.
+FROM node:24-alpine@sha256:116b800c3754b440ee0aa3ed2f20f5bf3d99a554bfd9adeea09ea8017f6e85f5 AS node-basis
+
+FROM node-basis AS bau
 WORKDIR /app
 # package-lock.json (#215): genau diese Versionen, reproduzierbar mit npm ci.
 COPY package.json package-lock.json ./
@@ -29,7 +34,7 @@ COPY docs/releases docs/releases
 COPY docs/handbuch docs/handbuch
 RUN python3 docs/handbuch/werkzeuge/offline.py /hilfe
 
-FROM node:24-alpine@sha256:116b800c3754b440ee0aa3ed2f20f5bf3d99a554bfd9adeea09ea8017f6e85f5 AS laufzeit
+FROM node-basis AS laufzeit
 # Name und Beschreibung (#687); die Image-Namen ghcr.io/motom001/dms und dms-komplett bleiben, damit Updates weiterlaufen.
 LABEL org.opencontainers.image.title="Ablago" \
       org.opencontainers.image.description="Ablago – Dokumentenablage für zu Hause und kleine Betriebe" \

@@ -33,7 +33,6 @@ export const montag = (iso: string) => verschiebe(iso, 1 - wochentag(iso));
 
 /** Monat als JJJJ-MM. */
 export const monatVon = (iso: string) => iso.slice(0, 7);
-export const istMonat = (v: unknown): v is string => typeof v === 'string' && /^\d{4}-(0[1-9]|1[0-2])$/.test(v);
 /** Monat ± n. */
 export const blaettere = (monat: string, n: number) => verschiebe(`${monat}-01`, n, 'monate').slice(0, 7);
 /** Letzter Tag des Monats. */

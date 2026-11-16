@@ -41,7 +41,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: 24
+          node-version-file: package.json
       - run: npm ci --no-audit --no-fund
       # poppler und qpdf (#45, #459): dieselben Werkzeuge wie im Image – ohne Texterkennung (die ist ein Paket).
       # Erst ohne „apt-get update“ (#905), nur wenn das scheitert mit – das Update dauert mal 10 s, mal über 3 Minuten.
@@ -94,7 +94,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: 24
+          node-version-file: package.json
       # Genau die Versionen aus package-lock.json (#215).
       # Versionsnummer erst beim Merge (#952): Wer das Programm ändert, bringt genau einen Schnipsel
       # docs/releases/neu/<name>.md mit („art: patch|minor|keine“). Dependabot ist ausgenommen.
@@ -164,20 +164,21 @@ jobs:
           DMS_EINGANG: ${{ runner.temp }}/rauchtest-eingang
           PORT: '3000'
           DMS_VERSION: rauchtest
-      # Dieselbe feste Playwright-Version wie im Workflow „Handbuch“ (#289), nur Chromium. Die Rechner von GitHub
-      # bringen die Bibliotheken für Chromium mit; nur wenn der Browser so nicht startet, kommen sie per apt dazu –
-      # höchstens 5 Minuten je Versuch, dann ein zweiter (die apt-Installation hängt gelegentlich).
-      # Browser zwischenspeichern (#1059), wie im Workflow „Handbuch“.
+      # Playwright mit fester Version aus web/rauchtest/package.json und eigenem Lockfile (#289, #1272), nur Chromium.
+      # Die Rechner von GitHub bringen die Bibliotheken für Chromium mit; nur wenn der Browser so nicht startet, kommen
+      # sie per apt dazu – höchstens 5 Minuten je Versuch, dann ein zweiter (die apt-Installation hängt gelegentlich).
+      # Browser zwischenspeichern (#1059), wie im Workflow „Handbuch“; der Schlüssel folgt dem Lockfile, damit Paket
+      # und Browser immer zusammenpassen.
       - name: Browser aus dem Zwischenspeicher
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cache/ms-playwright
-          key: playwright-1.64.1-${{ runner.os }}-${{ runner.arch }}-chromium
+          key: playwright-${{ hashFiles('web/rauchtest/package-lock.json') }}-${{ runner.os }}-${{ runner.arch }}-chromium
       - name: Playwright für die Rauchtests installieren
         working-directory: web/rauchtest
         shell: bash
         run: |
-          npm install --no-audit --no-fund --no-save playwright@1.64.1
+          npm ci --no-audit --no-fund
           timeout 300 npx playwright install chromium || { echo "::warning::Download von Chromium hing oder scheiterte – zweiter Versuch"; timeout 300 npx playwright install chromium; }
           if node -e "const { chromium } = require('playwright'); chromium.launch().then((b) => b.close())"; then exit 0; fi
           echo "::notice::Chromium startet nicht – Bibliotheken per apt nachinstallieren"
@@ -254,7 +255,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: 24
+          node-version-file: package.json
       - name: Bestandslisten wachsen nicht
         if: github.event_name == 'pull_request'
         # Gegen das aktuelle main (erster Elternteil des Merge-Refs), wie bei der Release-Notiz (#952).
@@ -282,6 +283,12 @@ jobs:
         run: |
           node --test .github/werkzeuge/eslint-ablago.test.mjs
           npx eslint --pass-on-unpruned-suppressions --quiet --format ./.github/werkzeuge/eslint-github.mjs .
+      # Toter Code (#1286): knip meldet ungenutzte Dateien, Exporte und Abhängigkeiten. Bestand in knip-bestand.json
+      # (wächst nie, siehe „Bestandslisten wachsen nicht“), begründete Ausnahmen in knip.jsonc. Rot bei neuen Funden.
+      - name: Toter Code (knip)
+        run: |
+          node --test .github/werkzeuge/knip-pruefen.test.mjs
+          node .github/werkzeuge/knip-pruefen.mjs
       # Warnungen (z. B. Komplexität über 15) nur für die geänderten Dateien – als Hinweis, sie brechen nichts.
       - name: Hinweise zu geänderten Dateien
         if: github.event_name == 'pull_request'
@@ -305,7 +312,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: 24
+          node-version-file: package.json
       - run: npm ci --no-audit --no-fund
       - name: dms-registry main holen
         run: git clone --quiet --depth 1 https://github.com/motom001/dms-registry "$RUNNER_TEMP/registry"
