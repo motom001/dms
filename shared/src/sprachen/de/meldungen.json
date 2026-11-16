@@ -1540,6 +1540,7 @@
   "sicherung.entfernt.titel": "Zurückholen von {name}",
   "sicherung.entfernt.schritt-holen": "Vom Ziel holen",
   "sicherung.entfernt.stillstand": "Das Paket hat die Sicherung nicht vollständig geliefert.",
+  "sicherung.entfernt.vorbereiten": "Ablago konnte die vorläufigen Dateien im Sicherungsordner nicht anlegen ({grund}). Prüfe freien Platz und Schreibrechte und versuche es dann erneut.",
   "sicherung.entfernt.pruefsumme": "Die Prüfsumme der zurückgeholten Datei weicht ab – Ablago hat sie verworfen.",
   "sicherung.entfernt.nicht-angefordert": "Diese Sicherung hat Ablago bei diesem Paket nicht angefordert.",
   "sicherung.entfernt.versatz": "Erwartet wird das Stück ab Byte {versatz}.",

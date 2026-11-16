@@ -336,11 +336,26 @@ export class EntfernteSicherungen {
     lauf.gesamt = meta.groesse;
     const pfade = this.holPfade(name);
     const h: Holstand = { paket: e.paket, name, groesse: meta.groesse, sha256: meta.sha256, meta, seit: new Date().toISOString() };
-    await writeFile(pfade.teil, Buffer.alloc(0));
-    await writeFile(pfade.stand, JSON.stringify(h));
-    log.info('Sicherung wird zurückgeholt', { name, paket: e.paket, von, bytes: meta.groesse });
-    void this.holeLauf(lauf, h, pfade, von);
+    await this.starteLauf(lauf, h, pfade, von);
     return lauf;
+  }
+
+  /**
+   * Vorläufige Dateien anlegen und den Lauf anstoßen. Ab `belege()` steht er auf „läuft“: Scheitert schon das Anlegen
+   * (Platte voll, keine Schreibrechte), muss er trotzdem enden – sonst blockiert er jede weitere Abholung bis zum
+   * Neustart (#1375).
+   */
+  private async starteLauf(lauf: Lauf, h: Holstand, pfade: { teil: string; stand: string }, von: string) {
+    try {
+      await writeFile(pfade.teil, Buffer.alloc(0));
+      await writeFile(pfade.stand, JSON.stringify(h));
+    } catch (x) {
+      const grund = (x as NodeJS.ErrnoException).code ?? (x as Error).message;
+      log.warn('Sicherung nicht zurückgeholt', { name: h.name, paket: h.paket, von, fehler: (x as Error).message });
+      return this.beende(lauf, [pfade.teil, pfade.stand], { fehler: t('meldungen.sicherung.entfernt.vorbereiten', { grund }) });
+    }
+    log.info('Sicherung wird zurückgeholt', { name: h.name, paket: h.paket, von, bytes: h.groesse });
+    void this.holeLauf(lauf, h, pfade, von);
   }
 
   /**
@@ -394,13 +409,18 @@ export class EntfernteSicherungen {
       log.warn('Sicherung nicht zurückgeholt', { name: h.name, paket: h.paket, von, fehler });
     }
     // Nach Erfolg ist die Teildatei schon zur Sicherung umbenannt – dann bleibt nur der Stand.
-    for (const pfad of fehler === null ? [pfade.stand] : [pfade.teil, pfade.stand])
+    await this.beende(lauf, fehler === null ? [pfade.stand] : [pfade.teil, pfade.stand], fehler === null ? { name: h.name } : { fehler });
+  }
+
+  /** Lauf beenden – erst die vorläufigen Dateien wegräumen, dann den Zustand setzen (#1373). */
+  private async beende(lauf: Lauf, wegraeumen: string[], ende: { name: string } | { fehler: string }) {
+    for (const pfad of wegraeumen)
       await rm(pfad, { force: true }).catch((x) => log.warn('Vorläufige Datei nicht weggeräumt', { pfad, fehler: (x as Error).message }));
     lauf.beendet = new Date().toISOString();
     lauf.schritt = 'Fertig';
-    if (fehler === null) lauf.ergebnis = { name: h.name };
-    else lauf.fehler = fehler;
-    lauf.status = fehler === null ? 'fertig' : 'fehler';
+    if ('fehler' in ende) lauf.fehler = ende.fehler;
+    else lauf.ergebnis = { name: ende.name };
+    lauf.status = 'fehler' in ende ? 'fehler' : 'fertig';
   }
 
   /**

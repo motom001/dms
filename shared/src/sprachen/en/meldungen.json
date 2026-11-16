@@ -1540,6 +1540,7 @@
   "sicherung.entfernt.titel": "Fetching {name}",
   "sicherung.entfernt.schritt-holen": "Fetching from the destination",
   "sicherung.entfernt.stillstand": "The package didn’t deliver the whole backup.",
+  "sicherung.entfernt.vorbereiten": "Ablago couldn’t create the temporary files in the backup folder ({grund}). Check free space and write permissions, then try again.",
   "sicherung.entfernt.pruefsumme": "The checksum of the fetched file differs – Ablago discarded it.",
   "sicherung.entfernt.nicht-angefordert": "Ablago didn’t request this backup from this package.",
   "sicherung.entfernt.versatz": "Expected the piece starting at byte {versatz}.",

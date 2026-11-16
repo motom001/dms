@@ -178,6 +178,29 @@ describe('Entfernte Sicherungen (#976)', () => {
     }
   });
 
+  it('Vorbereiten scheitert (#1375): Lauf endet mit „fehler“ und Grund, nichts Vorläufiges bleibt, neue Abholung startet sofort', async () => {
+    // Schreiben scheitern lassen, auch als root: ein Ordner dort, wo die Teildatei bzw. der Stand hin soll.
+    for (const hindernis of ['teil', 'json']) {
+      const ziel: Ziel = { dateien: new Map(), meta: new Map(), holen: true };
+      const { s, name } = await aufbau(ziel);
+      await s.loesche(name, 'markus@example.org');
+      const weg = join(s.ordner, `.holen-${name}.${hindernis}`);
+      await mkdir(weg);
+      const l = await s.entfernt.hole(name, 'webdav', 'markus@example.org');
+      assert.equal(l.status, 'fehler', hindernis);
+      assert.match(l.fehler ?? '', /vorläufigen Dateien im Sicherungsordner nicht anlegen \(EISDIR\)/);
+      assert.ok(l.beendet);
+      assert.equal(s.laeuft(), false, 'blockiert nichts');
+      const liegt = (await readdir(s.ordner)).filter((n) => n.startsWith('.holen-'));
+      assert.deepEqual(liegt, [`.holen-${name}.${hindernis}`], 'nur das Hindernis des Tests, keine vorläufige Datei');
+      await rm(weg, { recursive: true });
+      const zweite = await warte(await s.entfernt.hole(name, 'webdav', 'markus@example.org'), s);
+      assert.equal(zweite.status, 'fertig', zweite.fehler);
+      assert.deepEqual(await readFile(join(s.ordner, `${name}.dms-sicherung`)), ziel.dateien.get(name));
+      assert.deepEqual((await readdir(s.ordner)).filter((n) => n.startsWith('.')), [], 'keine Teildatei');
+    }
+  });
+
   it('Ziel meldet andere Prüfsumme als Ablago gemerkt hat: nicht holbar', async () => {
     const ziel: Ziel = { dateien: new Map(), meta: new Map(), holen: true };
     const { s, name } = await aufbau(ziel);
