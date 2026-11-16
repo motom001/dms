@@ -431,7 +431,7 @@
       "VORSCHLAG_AB"
     ]
   },
-  "server/src/konten.ts": {
+  "server/src/konten/index.ts": {
     "exports": [
       "zaehltAlsGesamt"
     ]
@@ -1612,15 +1612,23 @@
       "KURZANLEITUNG_ZEICHEN"
     ]
   },
-  "shared/src/model.ts": {
+  "shared/src/model/index.ts": {
     "exports": [
-      "SCHLUESSEL_MUSTER",
       "gleicheZiele",
-      "istSystemrolle",
       "zeitzone"
     ],
     "types": [
       "Zeitraum"
+    ]
+  },
+  "shared/src/model/pruefen.ts": {
+    "exports": [
+      "SCHLUESSEL_MUSTER"
+    ]
+  },
+  "shared/src/model/systemtypen.ts": {
+    "exports": [
+      "istSystemrolle"
     ]
   },
   "shared/src/notfallcode.ts": {

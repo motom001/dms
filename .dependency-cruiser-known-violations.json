@@ -31,9 +31,9 @@
   },
   {
     "type": "cycle",
-    "from": "shared/src/model.ts",
+    "from": "shared/src/model/mappentyp.ts",
     "to": "shared/src/rechte.ts",
-    "unresolvedTo": "./rechte",
+    "unresolvedTo": "../rechte",
     "dependencyTypes": [
       "local",
       "type-import"
@@ -51,22 +51,29 @@
         ]
       },
       {
-        "name": "shared/src/model.ts",
+        "name": "shared/src/model/index.ts",
         "dependencyTypes": [
           "local",
           "import"
+        ]
+      },
+      {
+        "name": "shared/src/model/mappentyp.ts",
+        "dependencyTypes": [
+          "local",
+          "export"
         ]
       }
     ]
   },
   {
     "type": "cycle",
-    "from": "shared/src/model.ts",
-    "to": "shared/src/sichten.ts",
-    "unresolvedTo": "./sichten",
+    "from": "shared/src/sichten.ts",
+    "to": "shared/src/model/index.ts",
+    "unresolvedTo": "./model",
     "dependencyTypes": [
       "local",
-      "type-import"
+      "import"
     ],
     "rule": {
       "severity": "error",
@@ -74,17 +81,24 @@
     },
     "cycle": [
       {
+        "name": "shared/src/model/index.ts",
+        "dependencyTypes": [
+          "local",
+          "import"
+        ]
+      },
+      {
+        "name": "shared/src/model/felder.ts",
+        "dependencyTypes": [
+          "local",
+          "export"
+        ]
+      },
+      {
         "name": "shared/src/sichten.ts",
         "dependencyTypes": [
           "local",
           "type-import"
-        ]
-      },
-      {
-        "name": "shared/src/model.ts",
-        "dependencyTypes": [
-          "local",
-          "import"
         ]
       }
     ]

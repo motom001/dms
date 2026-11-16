@@ -4,14 +4,4 @@
  * (basis.ts → … → konten.ts), Regeln und Konstanten stehen in hilfen.ts. Die Routen holt routen.ts direkt.
  */
 export { Konten } from './konten';
-export {
-  pruefeEmail,
-  pruefePasswortRegeln,
-  schutzGesamt,
-  SITZUNG_TAGE,
-  zaehltAlsGesamt,
-  ZULETZT_LISTE,
-  type Bestaetigung,
-  type Ergebnis,
-  type Geraet,
-} from './hilfen';
+export { pruefeEmail, pruefePasswortRegeln, schutzGesamt, SITZUNG_TAGE, zaehltAlsGesamt, ZULETZT_LISTE } from './hilfen';
