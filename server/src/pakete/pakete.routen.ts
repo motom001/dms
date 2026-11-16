@@ -1,7 +1,7 @@
 /**
  * Pakete (#960: aus routen.ts): Paketverwaltung, Paket erstellen, Läufer, Paket-Einstellungen und Umwandlungen.
  */
-import { ARCHIV_MAX, SAMMEL_MAX, type InstallierenEingabe, type UmbauEingabe } from '../pakete';
+import { ARCHIV_MAX, SAMMEL_MAX, type InstallierenEingabe, type UmbauEingabe } from './verwaltung/index';
 import type { AblaufEingabe, AblaufInstallation } from '../../../shared/src/pakete';
 import { eigeneVersion } from '../system';
 import { KOERPER_SPIELRAUM, PROBE_KOERPER_MAX } from '../grenzen';

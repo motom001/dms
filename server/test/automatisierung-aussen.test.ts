@@ -28,7 +28,7 @@ import { Konten } from '../src/konten';
 import { speicherKontoRepo } from '../src/konto-repo';
 import type { Mailer } from '../src/mail';
 import { notfallblattPlan, zieleZeile } from '../src/notfallblatt';
-import { liesPaket, liesZip } from '../src/pakete';
+import { liesPaket, liesZip } from '../src/pakete/verwaltung/index';
 import { speicherRepo } from '../src/repo/speicher';
 import { heikleHandlung } from '../src/verwaltungsbereiche';
 import { zipPuffer } from '../src/zip';

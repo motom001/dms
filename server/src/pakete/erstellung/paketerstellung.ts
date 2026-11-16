@@ -15,11 +15,19 @@
  */
 import { buffer as alsPuffer } from 'node:stream/consumers';
 import { parse, stringify } from 'yaml';
-import { insPaket, werkbankAus, WERKBANK_EINSTELLUNG } from './entdecken-werkbank';
-import { EIGEN, type TippDaten } from '../../shared/src/entdecken-werkbank';
-import type { Automatisierung, DannKarte } from '../../shared/src/automatisierung';
-import { istLeer, standardliste, trefferlistenVon, type Feld, type Mappe, type Mappentyp, type Register } from '../../shared/src/model';
-import { kreisImStandard } from '../../shared/src/nummernkreis';
+import { insPaket, werkbankAus, WERKBANK_EINSTELLUNG } from '../../entdecken-werkbank';
+import { EIGEN, type TippDaten } from '../../../../shared/src/entdecken-werkbank';
+import type { Automatisierung, DannKarte } from '../../../../shared/src/automatisierung';
+import {
+  istLeer,
+  standardliste,
+  trefferlistenVon,
+  type Feld,
+  type Mappe,
+  type Mappentyp,
+  type Register,
+} from '../../../../shared/src/model';
+import { kreisImStandard } from '../../../../shared/src/nummernkreis';
 import {
   ALLE_TYPEN,
   BEISPIEL_DOKUMENTE_AB,
@@ -33,10 +41,10 @@ import {
   WORTLISTEN_MAX,
   vergleicheVersion,
   type InstalliertesPaket,
-} from '../../shared/src/pakete';
-import { liesWortgruppe } from '../../shared/src/suche';
-import { SCHLUESSEL, SCHLUESSEL_MAX, typKennung } from '../../shared/src/kennungen';
-import type { Synonymgruppe } from './repo';
+} from '../../../../shared/src/pakete';
+import { liesWortgruppe } from '../../../../shared/src/suche';
+import { SCHLUESSEL, SCHLUESSEL_MAX, typKennung } from '../../../../shared/src/kennungen';
+import type { Synonymgruppe } from '../../repo';
 import {
   BESCHREIBUNG_LAENGE,
   EIGENE_LIZENZ,
@@ -60,13 +68,13 @@ import {
   type SelbstErstelltDetail,
   type VersionsArt,
   type VersionsLage,
-} from '../../shared/src/paketerstellung';
-import type { Bedingung, Sicht, WertAngabe } from '../../shared/src/sichten';
-import type { Anzeigeregel } from '../../shared/src/anzeige';
-import type { Dienst } from './dienst';
-import { t } from './sprache';
-import { Fachfehler } from './fehler';
-import { LIZENZTEXTE } from './lizenztexte';
+} from '../../../../shared/src/paketerstellung';
+import type { Bedingung, Sicht, WertAngabe } from '../../../../shared/src/sichten';
+import type { Anzeigeregel } from '../../../../shared/src/anzeige';
+import type { Dienst } from '../../dienst';
+import { t } from '../../sprache';
+import { Fachfehler } from '../../fehler';
+import { LIZENZTEXTE } from '../../lizenztexte';
 import {
   ARCHIV_MAX,
   BASIS_ABLAGEORT_AB,
@@ -78,22 +86,22 @@ import {
   liesZip,
   type FremderTyp,
   type Handelnder,
-} from './pakete';
-import { protokoll } from './protokoll';
-import { typBild, typUnterschiede, type TypUnterschiede } from '../../shared/src/typvergleich';
-import { wiederfindenVorgabe } from '../../shared/src/erkennung';
-import { DMS_TABELLE_AB } from '../../shared/src/tabelle';
-import { DMS_VORBELEGEN_AB } from '../../shared/src/vorbelegen';
-import { DMS_TEILE_AB } from '../../shared/src/teile';
-import { archivInsPaket, DMS_ARCHIV_PAKET_AB } from '../../shared/src/archiv';
-import { DMS_ZUSAMMENGESETZT_AB } from '../../shared/src/zusammengesetzt';
-import { DMS_VORGABEN_AB, teileVorgabe } from '../../shared/src/vorgaben';
-import { UMBAU_FELD } from '../../shared/src/umbau';
-import { DMS_ORGANISATION_AB } from '../../shared/src/organisation';
-import { zipPuffer } from './zip';
-import { gebietsschema } from '../../shared/src/sprache';
-import { ARCHIV_MERKEN_MAX } from './grenzen';
-import { paketArchive, paketEntwuerfe, setzePaketArchive, setzePaketEntwuerfe } from './pakete/index';
+} from '../verwaltung/paketverwaltung';
+import { protokoll } from '../../protokoll';
+import { typBild, typUnterschiede, type TypUnterschiede } from '../../../../shared/src/typvergleich';
+import { wiederfindenVorgabe } from '../../../../shared/src/erkennung';
+import { DMS_TABELLE_AB } from '../../../../shared/src/tabelle';
+import { DMS_VORBELEGEN_AB } from '../../../../shared/src/vorbelegen';
+import { DMS_TEILE_AB } from '../../../../shared/src/teile';
+import { archivInsPaket, DMS_ARCHIV_PAKET_AB } from '../../../../shared/src/archiv';
+import { DMS_ZUSAMMENGESETZT_AB } from '../../../../shared/src/zusammengesetzt';
+import { DMS_VORGABEN_AB, teileVorgabe } from '../../../../shared/src/vorgaben';
+import { UMBAU_FELD } from '../../../../shared/src/umbau';
+import { DMS_ORGANISATION_AB } from '../../../../shared/src/organisation';
+import { zipPuffer } from '../../zip';
+import { gebietsschema } from '../../../../shared/src/sprache';
+import { ARCHIV_MERKEN_MAX } from '../../grenzen';
+import { paketArchive, paketEntwuerfe, setzePaketArchive, setzePaketEntwuerfe } from '../index';
 
 const log = protokoll.modul('werkbank');
 

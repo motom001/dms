@@ -21,7 +21,7 @@ import { speicherKontoRepo } from '../src/konto-repo';
 import { speicherKurzzustand } from '../src/kurzzustand';
 import { AUFRUF_ANGENOMMEN_JE_ADRESSE, AUFRUF_FEHLVERSUCHE_GESAMT, AUFRUF_FEHLVERSUCHE_JE_ADRESSE, AUFRUF_JE_BEREICH } from '../src/grenzen';
 import { aufrufZeile, notfallblattPlan } from '../src/notfallblatt';
-import { liesPaket, liesZip } from '../src/pakete';
+import { liesPaket, liesZip } from '../src/pakete/verwaltung/index';
 import { speicherRepo } from '../src/repo/speicher';
 import { heikleHandlung } from '../src/verwaltungsbereiche';
 import { zipPuffer } from '../src/zip';

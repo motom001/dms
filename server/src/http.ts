@@ -104,7 +104,7 @@ export class Nachlauf {
 
 interface Optionen {
   /** Paketverwaltung mit Paket-Läufer (#338); ohne: Paketverwaltung ohne Läufer. */
-  pakete?: import('./pakete').Paketverwaltung;
+  pakete?: import('./pakete/verwaltung/index').Paketverwaltung;
   paketlaeufer?: import('./laeufer/fern').LaeuferSicht;
   /** Verzeichnis der gebauten Weboberfläche; fehlt es, gibt es nur die API. */
   webDir?: string;

@@ -10,11 +10,11 @@
  * - Ein Update ergänzt nur (neue Typen, Felder, Register, Sichten); es löscht und überschreibt nichts – außer Ansichten
  *   des Pakets, die noch so sind, wie das Paket sie geschrieben hat (Prüfwert, #1125, pakete/sichtstand.ts).
  */
-import { ansichtSymbol } from '../../shared/src/ansichtsymbole';
-import { liesFeldErkennung, liesWiederfinden, wiederfindenVorgabe, type FeldErkennung } from '../../shared/src/erkennung';
-import { istDatumsgrenze, istFeldformat } from '../../shared/src/feldformate';
+import { ansichtSymbol } from '../../../../shared/src/ansichtsymbole';
+import { liesFeldErkennung, liesWiederfinden, wiederfindenVorgabe, type FeldErkennung } from '../../../../shared/src/erkennung';
+import { istDatumsgrenze, istFeldformat } from '../../../../shared/src/feldformate';
 import { createHash, randomUUID } from 'node:crypto';
-import { liesWortgruppe } from '../../shared/src/suche';
+import { liesWortgruppe } from '../../../../shared/src/suche';
 import { inflateRawSync } from 'node:zlib';
 import { parse as yamlLesen } from 'yaml';
 import {
@@ -28,20 +28,20 @@ import {
   type Mappe,
   type Mappentyp,
   type Register,
-} from '../../shared/src/model';
-import { FELDMERKMALE, istFeldmerkmal, istSchreibschutz, SCHREIBSCHUTZ } from '../../shared/src/organisation';
-import { bereinigeAbschnitte } from '../../shared/src/darstellung';
-import { anzeigeEingabeFehler, type Anzeigeregel } from '../../shared/src/anzeige';
-import { typBild, type TypBild } from '../../shared/src/typvergleich';
+} from '../../../../shared/src/model';
+import { FELDMERKMALE, istFeldmerkmal, istSchreibschutz, SCHREIBSCHUTZ } from '../../../../shared/src/organisation';
+import { bereinigeAbschnitte } from '../../../../shared/src/darstellung';
+import { anzeigeEingabeFehler, type Anzeigeregel } from '../../../../shared/src/anzeige';
+import { typBild, type TypBild } from '../../../../shared/src/typvergleich';
 import {
   ergaenzeBeschriftungen,
   type AbschnittTeile,
   type Beschriftungen,
   type NamensTeile,
   type TypTeile,
-} from '../../shared/src/beschriftung';
-import type { MappenAktion } from '../../shared/src/paketaktionen';
-import { liesMappenaktionen } from './paketaktionen';
+} from '../../../../shared/src/beschriftung';
+import type { MappenAktion } from '../../../../shared/src/paketaktionen';
+import { liesMappenaktionen } from '../../paketaktionen';
 import {
   ALLE_TYPEN,
   BEISPIEL_ENDUNGEN,
@@ -91,11 +91,11 @@ import {
   haengenAn,
   type AblaufEingabe,
   type AblaufInstallation,
-} from '../../shared/src/pakete';
-import { TABELLE_NEU_MAX } from '../../shared/src/tabelle';
-import { archivAusPaket, paketArchivFehler, type Archiv, type PaketArchiv } from '../../shared/src/archiv';
-import { zusammengesetztProbleme } from '../../shared/src/zusammengesetzt';
-import { bereinigeAutomatisierung, DMS_POST, istAussenKarte, undEingabeFehler, zeitplanText } from '../../shared/src/automatisierung';
+} from '../../../../shared/src/pakete';
+import { TABELLE_NEU_MAX } from '../../../../shared/src/tabelle';
+import { archivAusPaket, paketArchivFehler, type Archiv, type PaketArchiv } from '../../../../shared/src/archiv';
+import { zusammengesetztProbleme } from '../../../../shared/src/zusammengesetzt';
+import { bereinigeAutomatisierung, DMS_POST, istAussenKarte, undEingabeFehler, zeitplanText } from '../../../../shared/src/automatisierung';
 import {
   bereinigeVorlage,
   istKernVorlage,
@@ -103,10 +103,10 @@ import {
   karteText,
   vorlagenEingabeFehler,
   vorlagenProbleme,
-} from '../../shared/src/ablaufvorlagen';
-import type { PaketAblaufvorlage } from './aufgaben';
-import { bereinigeVorbelegen, passtZusammen, VORBELEGEN_MAX } from '../../shared/src/vorbelegen';
-import { istBetriebWenn } from '../../shared/src/ereignisse';
+} from '../../../../shared/src/ablaufvorlagen';
+import type { PaketAblaufvorlage } from '../../aufgaben';
+import { bereinigeVorbelegen, passtZusammen, VORBELEGEN_MAX } from '../../../../shared/src/vorbelegen';
+import { istBetriebWenn } from '../../../../shared/src/ereignisse';
 import {
   hauptpaket,
   istHerausgeber,
@@ -117,10 +117,10 @@ import {
   TYP_KENNUNG,
   TYPVERWEIS,
   typKennung,
-} from '../../shared/src/kennungen';
-import { bedingungEingabeFehler, kinderVon, OPERATOREN, type Bedingung, type Operator, type Sicht } from '../../shared/src/sichten';
-import { istKernFeld } from '../../shared/src/paketeinstellungen';
-import { mitKern } from '../../shared/src/paketkern';
+} from '../../../../shared/src/kennungen';
+import { bedingungEingabeFehler, kinderVon, OPERATOREN, type Bedingung, type Operator, type Sicht } from '../../../../shared/src/sichten';
+import { istKernFeld } from '../../../../shared/src/paketeinstellungen';
+import { mitKern } from '../../../../shared/src/paketkern';
 import {
   ANZEIGE_SPEICHER,
   anzeigeWert,
@@ -133,7 +133,7 @@ import {
   type AnzeigeWert,
   type PaketAnzeige,
   type VerlaufEintrag,
-} from '../../shared/src/paketreiter';
+} from '../../../../shared/src/paketreiter';
 import {
   adressfelder,
   EINTRAG_ID,
@@ -148,14 +148,14 @@ import {
   type Einstellungsbeschreibung,
   type GeheimStand,
   type Verweisquelle,
-} from '../../shared/src/paketeinstellungen';
-import type { Dienst } from './dienst';
-import type { PaketQuelleEintrag } from './pakete/index';
-import type { Zugriff } from './kern/index';
-import type { Probedatei } from './paketaktionen/index';
-import { Fachfehler } from './fehler';
-import { istVerschluesselt } from './tresor';
-import { protokoll } from './protokoll';
+} from '../../../../shared/src/paketeinstellungen';
+import type { Dienst } from '../../dienst';
+import type { PaketQuelleEintrag } from '../index';
+import type { Zugriff } from '../../kern/index';
+import type { Probedatei } from '../../paketaktionen/index';
+import { Fachfehler } from '../../fehler';
+import { istVerschluesselt } from '../../tresor';
+import { protokoll } from '../../protokoll';
 import {
   liesSchluessel,
   nurTestschluessel,
@@ -167,12 +167,12 @@ import {
   WECHSEL_DATEI,
   zeitVon,
   type Schluessel,
-} from './katalogsignatur';
-import type { Projektschluessel } from './projektschluessel';
-import { t } from './sprache';
-import { nachweis } from './nachweisjournal';
-import { crc32 } from './zip';
-import { DEUTSCH } from '../../shared/src/deutsch';
+} from '../../katalogsignatur';
+import type { Projektschluessel } from '../../projektschluessel';
+import { t } from '../../sprache';
+import { nachweis } from '../../nachweisjournal';
+import { crc32 } from '../../zip';
+import { DEUTSCH } from '../../../../shared/src/deutsch';
 import {
   abdeckung,
   anzahlTexte,
@@ -185,8 +185,8 @@ import {
   type Sprachangabe,
   type SprachBeschriftung,
   type Sprachtexte,
-} from '../../shared/src/sprachpaket';
-import { gebietsschema } from '../../shared/src/sprache';
+} from '../../../../shared/src/sprachpaket';
+import { gebietsschema } from '../../../../shared/src/sprache';
 import { mkdir, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import {
@@ -201,7 +201,7 @@ import {
   SAMMEL_VERZEICHNIS_MAX as VERZEICHNIS_MAX,
   UPLOADS_SPEICHER_MAX,
   VORLAGE_MAX,
-} from './grenzen';
+} from '../../grenzen';
 import {
   anzeigeMitVorgaben,
   anzeigeVorgaben,
@@ -225,7 +225,7 @@ import {
   type PaketVorgabe,
   type VorgabenErgebnis,
   type VorgabenLage,
-} from './pakete/index';
+} from '../index';
 import {
   fuehreUmbauAus,
   liesUmbau,
@@ -237,10 +237,10 @@ import {
   type TitelSuche,
   type UmbauErgebnis,
   type UmbauLage,
-} from './pakete/index';
-import { sichtFassung, sichtStandNach, sichtZustand } from './pakete/index';
-import { mitkommtVon, type MitkommtNamen } from './pakete/index';
-import { liesKurzanleitung, type Mitkommt } from '../../shared/src/mitkommt';
+} from '../index';
+import { sichtFassung, sichtStandNach, sichtZustand } from '../index';
+import { mitkommtVon, type MitkommtNamen } from '../index';
+import { liesKurzanleitung, type Mitkommt } from '../../../../shared/src/mitkommt';
 import {
   abhaengigeTypen,
   abhaengigkeitsKonflikte,
@@ -252,10 +252,10 @@ import {
   quelleAnlegbar,
   quellenNachtragen,
   type SollQuelle,
-} from './pakete/index';
-import type { UmbauEntscheidungen, UmbauPlan, UmbauSchritt } from '../../shared/src/umbau';
-import { pruefeRundgaenge, pruefeTipps } from '../../shared/src/entdecken';
-import { ankerListe, paketTyp } from './entdecken';
+} from '../index';
+import type { UmbauEntscheidungen, UmbauPlan, UmbauSchritt } from '../../../../shared/src/umbau';
+import { pruefeRundgaenge, pruefeTipps } from '../../../../shared/src/entdecken';
+import { ankerListe, paketTyp } from '../../entdecken';
 import {
   istVorgabeWert,
   vorgabeKennung,
@@ -264,7 +264,7 @@ import {
   type ErgaenzungPlan,
   type VorgabeFrage,
   type VorgabePlan,
-} from '../../shared/src/vorgaben';
+} from '../../../../shared/src/vorgaben';
 
 const log = protokoll.modul('werkbank');
 

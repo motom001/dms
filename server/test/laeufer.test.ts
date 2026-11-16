@@ -16,7 +16,7 @@ import type { Repo } from '../src/repo';
 import { liesWeiter, Paketlaeufer, type ApiAufruf } from '../src/laeufer/verwaltung';
 import { ladeArgumente, pruefeModul } from '../src/laeufer/modul';
 import { liesBegrenzt, netzErlaubt } from '../src/laeufer/prozess';
-import { liesPaket, liesZip, Paketverwaltung } from '../src/pakete';
+import { liesPaket, liesZip, Paketverwaltung } from '../src/pakete/verwaltung/index';
 import { zipPuffer } from '../src/zip';
 import { speicherRepo } from '../src/repo/speicher';
 import { pruefeZugang, routen, type Anfrage, type Route } from '../src/routen';

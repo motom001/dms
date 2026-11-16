@@ -26,7 +26,7 @@ import { Konten } from '../src/konten';
 import { speicherKontoRepo, type KontoRepo } from '../src/konto-repo';
 import { speicherKurzzustand, type Kurzzustand } from '../src/kurzzustand';
 import { Paketlaeufer } from '../src/laeufer/verwaltung';
-import { liesPaket } from '../src/pakete';
+import { liesPaket } from '../src/pakete/verwaltung/index';
 import type { Repo } from '../src/repo';
 import { speicherRepo } from '../src/repo/speicher';
 import { routen, type Anfrage } from '../src/routen';

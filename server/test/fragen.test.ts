@@ -31,7 +31,7 @@ import { Konten } from '../src/konten';
 import { speicherKontoRepo, type KontoRepo } from '../src/konto-repo';
 import { netzErlaubt } from '../src/laeufer/prozess';
 import { Paketlaeufer } from '../src/laeufer/verwaltung';
-import { liesPaket, Paketverwaltung } from '../src/pakete';
+import { liesPaket, Paketverwaltung } from '../src/pakete/verwaltung/index';
 import type { Repo } from '../src/repo';
 import { speicherRepo } from '../src/repo/speicher';
 import { routen } from '../src/routen';

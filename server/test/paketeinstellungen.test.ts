@@ -17,7 +17,7 @@ import { speicherDateien } from '../src/dateispeicher';
 import { Dienst } from '../src/dienst';
 import { speicherEinstellungen } from '../src/einstellungen';
 import { Fachfehler } from '../src/fehler';
-import { Paketverwaltung, type PaketLaeufer } from '../src/pakete';
+import { Paketverwaltung, type PaketLaeufer } from '../src/pakete/verwaltung/index';
 import { speicherRepo } from '../src/repo/speicher';
 import { Tresor } from '../src/tresor';
 import { zipPuffer } from '../src/zip';

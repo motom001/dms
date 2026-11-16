@@ -91,7 +91,7 @@ import { richteHintergrundEin } from './hintergrund';
 import { maxAnfragenAus, Ueberlastschutz } from './ueberlast';
 import { Systemlast } from './systemlast';
 import { liesErweiterungen, sichereErweiterungen } from './erweiterungen';
-import { Paketverwaltung } from './pakete';
+import { Paketverwaltung } from './pakete/verwaltung/index';
 import { Aufgabenmail } from './aufgabenmail';
 import { RegionDienst } from './region';
 import { SprachDienst } from './sprachwahl';
@@ -129,7 +129,7 @@ import { PROZESSE_MAX, prozesseAus, verbundFuerProzess } from './prozesse';
 import { setzeLasttestModus } from './protokollsammlung';
 import { teileArbeit, UPLOAD_ALTER_MS } from './aufteilung';
 import { Fernlaeufer } from './laeufer/fern';
-import type { PaketLaeufer } from './pakete';
+import type { PaketLaeufer } from './pakete/verwaltung/index';
 import { paketEinstellungen, paketSpeicher, setzePaketSpeicher } from './pakete/index';
 
 const pfad = (rel: string) => fileURLToPath(new URL(rel, import.meta.url));

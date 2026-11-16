@@ -19,7 +19,7 @@ import { Fachfehler } from '../src/fehler';
 import { Konten } from '../src/konten';
 import { speicherKontoRepo, type KontoRepo } from '../src/konto-repo';
 import { Paketlaeufer } from '../src/laeufer/verwaltung';
-import { liesPaket, liesZip, Paketverwaltung } from '../src/pakete';
+import { liesPaket, liesZip, Paketverwaltung } from '../src/pakete/verwaltung/index';
 import { beantworteZugang, type AktionsDatei, type Zugangsanfrage } from '../src/paketaktionen';
 import { liesAntwort, liesMappenaktionen, pruefeAntworten } from '../src/paketaktionen';
 import type { Repo } from '../src/repo';

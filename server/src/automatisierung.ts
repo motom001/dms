@@ -68,7 +68,7 @@ import ereignisTexte from '../../shared/src/sprachen/de/ereignisse.json';
 import werkbankTexte from '../../shared/src/sprachen/de/werkbank.json';
 import type { Dienst } from './dienst';
 import type { Zugriff } from './kern';
-import type { PaketAutomatisierung } from './pakete';
+import type { PaketAutomatisierung } from './pakete/verwaltung/index';
 import type { InstalliertesPaket } from '../../shared/src/pakete';
 import { Fachfehler } from './fehler';
 import { protokoll } from './protokoll';

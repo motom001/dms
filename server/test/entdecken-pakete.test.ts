@@ -8,7 +8,7 @@ import { HANDBUCH_VERWEIS, pruefeRundgaenge, rundgangFuer } from '../../shared/s
 import type { InstalliertesPaket } from '../../shared/src/pakete';
 import { ankerListe, Entdecken } from '../src/entdecken';
 import { Fachfehler } from '../src/fehler';
-import { liesPaket } from '../src/pakete';
+import { liesPaket } from '../src/pakete/verwaltung/index';
 import { Konten } from '../src/konten';
 import { speicherKontoRepo } from '../src/konto-repo';
 

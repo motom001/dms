@@ -14,7 +14,7 @@ import { speicherDateien } from '../src/dateispeicher';
 import { Dienst } from '../src/dienst';
 import { speicherEinstellungen } from '../src/einstellungen';
 import { Fachfehler } from '../src/fehler';
-import { liesPaket, Paketverwaltung, type Sammeldatei } from '../src/pakete';
+import { liesPaket, Paketverwaltung, type Sammeldatei } from '../src/pakete/verwaltung/index';
 import type { Repo } from '../src/repo';
 import { speicherRepo } from '../src/repo/speicher';
 import { zipPuffer } from '../src/zip';

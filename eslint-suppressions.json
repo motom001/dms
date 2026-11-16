@@ -412,7 +412,21 @@
       "count": 3
     }
   },
-  "server/src/pakete.ts": {
+  "server/src/pakete/erstellung/paketerstellung.ts": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 4
+    },
+    "complexity": {
+      "count": 1
+    },
+    "max-lines": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 2
+    }
+  },
+  "server/src/pakete/verwaltung/paketverwaltung.ts": {
     "@typescript-eslint/no-unused-vars": {
       "count": 6
     },
@@ -436,20 +450,6 @@
     },
     "no-useless-assignment": {
       "count": 1
-    }
-  },
-  "server/src/paketerstellung.ts": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 4
-    },
-    "complexity": {
-      "count": 1
-    },
-    "max-lines": {
-      "count": 1
-    },
-    "max-lines-per-function": {
-      "count": 2
     }
   },
   "server/src/pdf-bearbeiten/pdf-bearbeiten.dienst.ts": {

@@ -15,7 +15,7 @@ import { Konten } from '../src/konten';
 import { speicherKontoRepo } from '../src/konto-repo';
 import { netzHost, netzMethode, netzSammler, type NetzEintrag } from '../src/laeufer/prozess';
 import { bytesText, merkeNetz, NETZ_ZUSAMMEN_MS, netzText, Paketlaeufer } from '../src/laeufer/verwaltung';
-import { liesPaket } from '../src/pakete';
+import { liesPaket } from '../src/pakete/verwaltung/index';
 import { protokoll } from '../src/protokoll';
 import { speicherRepo } from '../src/repo/speicher';
 

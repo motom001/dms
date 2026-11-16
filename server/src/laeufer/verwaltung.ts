@@ -23,7 +23,7 @@ import type { ApiSchluesselDienst } from '../apischluessel';
 import type { Dienst } from '../dienst';
 import type { PaketEreignis } from '../repo';
 import type { Konten } from '../konten';
-import type { PaketLaeufer } from '../pakete';
+import type { PaketLaeufer } from '../pakete/verwaltung/index';
 import { ladeArgumente } from './modul';
 import { protokoll } from '../protokoll';
 import { extern } from '../externmessung';

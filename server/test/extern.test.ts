@@ -49,7 +49,7 @@ import { netzMesser } from '../src/laeufer/prozess';
 import { Paketlaeufer } from '../src/laeufer/verwaltung';
 import { serverTiming, zeitaufteilung } from '../src/messung';
 import { Oidc, type Abruf } from '../src/oidc';
-import { liesPaket } from '../src/pakete';
+import { liesPaket } from '../src/pakete/verwaltung/index';
 import type { ImapSitzung } from '../src/postfach';
 import { kontext, protokoll, type Kontext } from '../src/protokoll';
 import { speicherRepo } from '../src/repo/speicher';

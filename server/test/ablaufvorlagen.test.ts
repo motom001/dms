@@ -37,7 +37,7 @@ import { Fachfehler } from '../src/fehler';
 import { ABLAEUFE_JE_PERSON_UND_MAPPE } from '../src/grenzen';
 import { Konten } from '../src/konten';
 import { speicherKontoRepo, type KontoRepo } from '../src/konto-repo';
-import { liesPaket } from '../src/pakete';
+import { liesPaket } from '../src/pakete/verwaltung/index';
 import type { Repo } from '../src/repo';
 import type { Mappentyp } from '../../shared/src/model';
 import { speicherRepo } from '../src/repo/speicher';

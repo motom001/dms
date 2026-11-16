@@ -13,7 +13,7 @@ import {
 import type { InstalliertesPaket } from '../../shared/src/pakete';
 import { Fachfehler } from './fehler';
 import { protokoll } from './protokoll';
-import type { Handelnder, Paketverwaltung } from './pakete';
+import type { Handelnder, Paketverwaltung } from './pakete/verwaltung/index';
 import { t } from './sprache';
 
 const log = protokoll.modul('werkbank');

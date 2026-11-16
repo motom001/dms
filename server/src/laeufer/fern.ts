@@ -6,7 +6,7 @@
  * Pakete), schickt der Leiter bei jeder Änderung an alle ({@link LaeuferSchnappschuss}).
  */
 import type { Dienst } from '../dienst';
-import type { PaketLaeufer } from '../pakete';
+import type { PaketLaeufer } from '../pakete/verwaltung/index';
 import type { Verbund } from '../prozesse';
 import type { Paketlaeufer } from './verwaltung';
 import type { Probedatei, Zugang } from '../paketaktionen';

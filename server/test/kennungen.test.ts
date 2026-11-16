@@ -24,7 +24,7 @@ import { Dienst } from '../src/dienst';
 import { speicherEinstellungen } from '../src/einstellungen';
 import { Fachfehler } from '../src/fehler';
 import { sichererName } from '../src/export';
-import { neueKennung } from '../src/pakete';
+import { neueKennung } from '../src/pakete/verwaltung/index';
 import { speicherRepo } from '../src/repo/speicher';
 import { eigeneDatenbank, MIGRATIONEN } from './hilfe-db';
 

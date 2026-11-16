@@ -28,7 +28,7 @@ import { liesMail } from '../src/imap';
 import { Konten } from '../src/konten';
 import { speicherKontoRepo, type KontoRepo } from '../src/konto-repo';
 import { schluesselRecht } from '../src/laeufer/verwaltung';
-import { Paketverwaltung } from '../src/pakete';
+import { Paketverwaltung } from '../src/pakete/verwaltung/index';
 import { Postfaecher, type GeleseneMail, type ImapSitzung } from '../src/postfach';
 import { anhaengeInReihenfolge, emlName } from '../src/postfach-anhaenge';
 import type { Repo } from '../src/repo';

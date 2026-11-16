@@ -11,7 +11,7 @@ import { speicherEinstellungen } from '../src/einstellungen';
 import { KB, KOERPER_SPIELRAUM, LOGO_MAX, MB, SAMMEL_MAX, UPLOADS_SPEICHER_MAX } from '../src/grenzen';
 import { Konten } from '../src/konten';
 import { speicherKontoRepo } from '../src/konto-repo';
-import { Paketverwaltung } from '../src/pakete';
+import { Paketverwaltung } from '../src/pakete/verwaltung/index';
 import { speicherRepo } from '../src/repo/speicher';
 import { routen } from '../src/routen';
 

@@ -28,7 +28,7 @@ import { speicherEinstellungen } from '../src/einstellungen';
 import { findeGeheimnisse, GEHEIM_MUSTER, ohneGeheimnisse } from '../src/geheimnis-sperre';
 import { GB } from '../src/grenzen';
 import { Konten } from '../src/konten';
-import { liesZip } from '../src/pakete';
+import { liesZip } from '../src/pakete/verwaltung/index';
 import { Protokoll } from '../src/protokoll';
 import { Postfaecher } from '../src/postfach';
 import { PostfachOAuth } from '../src/postfach-oauth';

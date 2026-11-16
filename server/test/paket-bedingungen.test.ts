@@ -8,7 +8,7 @@ import { anzeigeEingabeFehler, bereinigeAnzeige } from '../../shared/src/anzeige
 import { undEingabeFehler } from '../../shared/src/automatisierung';
 import { bedingungEingabeFehler } from '../../shared/src/sichten';
 import { Fachfehler } from '../src/fehler';
-import { liesPaket } from '../src/pakete';
+import { liesPaket } from '../src/pakete/verwaltung/index';
 
 const MANIFEST =
   'schema: 1\nid: vertraege_test\nname: Verträge\nversion: 1.0.0\nbeschreibung: Test.\nautor: { name: Markus, github: markus }\nlizenz: MIT\ndms: ">=0.228.0"\n' +

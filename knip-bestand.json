@@ -710,33 +710,13 @@
       "wertText"
     ]
   },
-  "server/src/pakete.ts": {
+  "server/src/pakete/erstellung/paketerstellung.ts": {
     "exports": [
-      "AKTION_MS",
-      "SAMMEL_PAKETE_MAX",
-      "SAMMEL_VERZEICHNIS",
-      "beispielDokumenteVon",
-      "beispielVerweise",
-      "einzuschalten",
-      "katalogPaketZu",
-      "ordneBeispiele",
-      "paketZeitplaene",
-      "paketZeitplan",
-      "paketZiele",
-      "zipNamen"
-    ],
-    "types": [
-      "AbhaengigkeitPlan",
-      "PaketCodeTeil",
-      "PaketFeld",
-      "PaketRegister",
-      "PaketSicht",
-      "PaketSprache",
-      "PaketTabellenquelle",
-      "SammelEintrag",
-      "SammelPaket",
-      "SichtPlan",
-      "TypPlan"
+      "MINDEST_FUNKTIONEN",
+      "MINDEST_GRUNDLAGE",
+      "bekannteVersion",
+      "erkenneArt",
+      "liesEingabe"
     ]
   },
   "server/src/pakete/index.ts": {
@@ -780,6 +760,35 @@
       "FeldPlan"
     ]
   },
+  "server/src/pakete/verwaltung/paketverwaltung.ts": {
+    "exports": [
+      "AKTION_MS",
+      "SAMMEL_PAKETE_MAX",
+      "SAMMEL_VERZEICHNIS",
+      "beispielDokumenteVon",
+      "beispielVerweise",
+      "einzuschalten",
+      "katalogPaketZu",
+      "ordneBeispiele",
+      "paketZeitplaene",
+      "paketZeitplan",
+      "paketZiele",
+      "zipNamen"
+    ],
+    "types": [
+      "AbhaengigkeitPlan",
+      "PaketCodeTeil",
+      "PaketFeld",
+      "PaketRegister",
+      "PaketSicht",
+      "PaketSprache",
+      "PaketTabellenquelle",
+      "SammelEintrag",
+      "SammelPaket",
+      "SichtPlan",
+      "TypPlan"
+    ]
+  },
   "server/src/pakete/vorgaben.ts": {
     "exports": [
       "bedingungsVorgaben",
@@ -797,15 +806,6 @@
   "server/src/pakete/vorlagen.ts": {
     "types": [
       "VorlagenFehler"
-    ]
-  },
-  "server/src/paketerstellung.ts": {
-    "exports": [
-      "MINDEST_FUNKTIONEN",
-      "MINDEST_GRUNDLAGE",
-      "bekannteVersion",
-      "erkenneArt",
-      "liesEingabe"
     ]
   },
   "server/src/paketpruefung.ts": {
