@@ -80,13 +80,22 @@ export abstract class SicherungAnlegen extends SicherungBasis {
     }
   }
 
+  /**
+   * Erst ankündigen und aufräumen, dann melden (#1378, wie #1373): Der Lauf wechselt genau einmal von „läuft“ auf
+   * „fertig“ oder „fehler“ – erst, wenn Ankündigung außer Haus und Aufbewahrung durch sind. Scheitert eine dieser
+   * Nacharbeiten, endet er wie bisher mit „fehler“ (Mail, Hinweis), obwohl die neue Sicherung selbst vollständig ist.
+   * Ab `belege()` steht er auf „läuft“ – darum liegt alles danach im `try`, auch die Suche nach dem freien Namen.
+   */
   private async fuehreAus(lauf: Lauf, art: Sicherungsart, von: string, schluessel: Buffer): Promise<Metadaten | null> {
     const beginn = this.jetzt();
-    const name = await this.freierName(art);
-    const teil = join(this.ordner, `.${name}${ENDUNG}.teil`);
-    const fingerabdruck = this.q.tresor.fingerabdruck!;
-    log.info('Sicherung begonnen', { name, art, von });
+    const vorlaeufig: string[] = [];
+    let fertig: Metadaten | null = null;
     try {
+      const name = await this.freierName(art);
+      const teil = join(this.ordner, `.${name}${ENDUNG}.teil`);
+      vorlaeufig.push(teil, join(this.ordner, `.${name}.json.teil`));
+      const fingerabdruck = this.q.tresor.fingerabdruck!;
+      log.info('Sicherung begonnen', { name, art, von });
       const umgebung = await this.q.umgebung();
       let dateienBytes = 0;
       let dateien = 0;
@@ -162,9 +171,10 @@ export abstract class SicherungAnlegen extends SicherungBasis {
       await writeFile(join(this.ordner, `.${name}.json.teil`), `${JSON.stringify(meta, null, 2)}\n`, { mode: 0o600 });
       await rename(teil, join(this.ordner, `${name}${ENDUNG}`));
       await rename(join(this.ordner, `.${name}.json.teil`), join(this.ordner, `${name}.json`));
-      lauf.status = 'fertig';
-      lauf.ergebnis = meta;
-      lauf.schritt = 'Fertig';
+      // Danach im Hintergrund außer Haus (#585): Die lokale Sicherung ist fertig, egal was dort geschieht.
+      await this.kuendigeAn(name, meta);
+      if (art === 'automatisch') await this.raeumeAuf();
+      fertig = meta;
       log.info('Sicherung fertig', {
         name,
         art,
@@ -174,21 +184,16 @@ export abstract class SicherungAnlegen extends SicherungBasis {
         mb: Math.round(ergebnis.g.bytes / MB),
         sekunden: meta.dauerSekunden,
       });
-      // Danach im Hintergrund außer Haus (#585): Die lokale Sicherung ist fertig, egal was dort geschieht.
-      await this.kuendigeAn(name, meta);
-      if (art === 'automatisch') await this.raeumeAuf();
-      return meta;
     } catch (e) {
-      await rm(teil, { force: true }).catch(() => {});
-      await rm(join(this.ordner, `.${name}.json.teil`), { force: true }).catch(() => {});
-      lauf.status = 'fehler';
+      for (const pfad of vorlaeufig) await rm(pfad, { force: true }).catch(() => {});
       lauf.fehler = (e as Error).message;
-      lauf.schritt = 'Abgebrochen';
       await this.merkeFehler(art, (e as Error).message).catch(() => {});
-      return null;
-    } finally {
-      lauf.beendet = this.jetzt().toISOString();
     }
+    lauf.beendet = this.jetzt().toISOString();
+    lauf.schritt = fertig ? 'Fertig' : 'Abgebrochen';
+    if (fertig) lauf.ergebnis = fertig;
+    lauf.status = fertig ? 'fertig' : 'fehler';
+    return fertig;
   }
 
   /**
