@@ -1,0 +1,3 @@
+art: patch
+
+Eine fehlgeschlagene Abholung einer entfernten Sicherung räumt ihre vorläufige Datei jetzt weg, bevor sie den Fehler meldet.

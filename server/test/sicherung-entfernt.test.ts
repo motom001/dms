@@ -5,6 +5,7 @@
  */
 import assert from 'node:assert/strict';
 import { randomBytes } from 'node:crypto';
+import { readdirSync } from 'node:fs';
 import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -148,6 +149,33 @@ describe('Entfernte Sicherungen (#976)', () => {
     assert.equal(l.status, 'fehler');
     assert.match(l.fehler ?? '', /Prüfsumme/);
     assert.deepEqual((await readdir(s.ordner)).filter((n) => n.startsWith(name) || n.startsWith('.')), []);
+  });
+
+  it('erst aufräumen, dann melden (#1373): beim Wechsel auf „fehler“ oder „fertig“ liegt keine .holen-Datei mehr', async () => {
+    for (const verfaelschen of [true, false]) {
+      const ziel: Ziel = { dateien: new Map(), meta: new Map(), holen: true, verfaelschen };
+      const { s, name } = await aufbau(ziel);
+      await s.loesche(name, 'markus@example.org');
+      // Im Augenblick des Zustandswechsels nachsehen – synchron, ohne dass ein anderer Schritt dazwischen läuft.
+      const gesehen: Array<{ status: string; liegt: string[] }> = [];
+      const belege = s.belege.bind(s);
+      s.belege = (art, titel) => {
+        const lauf = belege(art, titel);
+        let status = lauf.status;
+        Object.defineProperty(lauf, 'status', {
+          enumerable: true,
+          get: () => status,
+          set: (w: Lauf['status']) => {
+            gesehen.push({ status: w, liegt: readdirSync(s.ordner).filter((n) => n.startsWith('.holen-')) });
+            status = w;
+          },
+        });
+        return lauf;
+      };
+      const l = await warte(await s.entfernt.hole(name, 'webdav', 'markus@example.org'), s);
+      assert.equal(l.status, verfaelschen ? 'fehler' : 'fertig', l.fehler);
+      assert.deepEqual(gesehen, [{ status: l.status, liegt: [] }], 'ein Wechsel, danach nichts Vorläufiges mehr');
+    }
   });
 
   it('Ziel meldet andere Prüfsumme als Ablago gemerkt hat: nicht holbar', async () => {
