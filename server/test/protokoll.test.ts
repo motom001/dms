@@ -77,6 +77,24 @@ describe('Protokoll', () => {
     // eslint-disable-next-line no-control-regex -- geprüft wird gerade, dass keine Steuerzeichen bleiben
     assert.ok(!/[\u0000-\u0009\u000b-\u001f]/.test(z), 'keine Steuerzeichen außer dem Zeilenumbruch');
   });
+
+  it('Container-Protokoll: Datenwerte ohne Leerraum mit Steuerzeichen werden ersetzt (#1353)', () => {
+    const z = zeile({
+      nr: 1,
+      zeit: '2026-11-16T08:00:00.000Z',
+      stufe: 'info' as const,
+      modul: 'ablage',
+      text: 'Hochgeladen',
+      daten: { datei: 'a\u001b[31mb\u0005.pdf', name: 'x\u0085y\u2028z', liste: ['q\u009br'], einfach: 'rechnung.pdf' },
+    });
+    assert.ok(!z.includes('\n'), z);
+    // eslint-disable-next-line no-control-regex -- geprüft wird gerade, dass keine Steuerzeichen bleiben
+    assert.ok(!/[\u0000-\u001f\u007f-\u009f\u2028\u2029]/.test(z), 'keine Steuerzeichen im Datenwert');
+    assert.ok(z.includes('datei="a\\u001b[31mb\\u0005.pdf"'), z);
+    assert.ok(z.includes('name="x\\u0085y\\u2028z"'), z);
+    assert.ok(z.includes('liste=["q\\u009br"]'), z);
+    assert.ok(z.includes('einfach=rechnung.pdf'), z);
+  });
 });
 
 describe('Messung der Datenbankzugriffe', () => {

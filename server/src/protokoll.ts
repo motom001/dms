@@ -313,6 +313,9 @@ function serialisiere(o: Record<string, unknown>): Record<string, unknown> {
 // Steuerzeichen außer dem Zeilenumbruch (auch CR, Tab, Escape, U+2028/2029) – im Container-Protokoll als \uXXXX.
 // eslint-disable-next-line no-control-regex -- genau diese Zeichen sollen ersetzt werden
 const STEUERZEICHEN = /[\u0000-\u0009\u000b-\u001f\u007f-\u009f\u2028\u2029]/g;
+// Datenwerte, die in Anführungszeichen und durch sicher() müssen: Leerraum oder irgendein Steuerzeichen (ohne g: kein lastIndex).
+// eslint-disable-next-line no-control-regex -- genau diese Zeichen sollen erkannt werden
+const UNRUHIG = /[\s\u0000-\u001f\u007f-\u009f\u2028\u2029]/;
 /**
  * Text für das Container-Protokoll (#1353): Steuerzeichen sichtbar ersetzt, Folgezeilen eingerückt und mit „|“
  * gekennzeichnet – so kann ein Text mit Zeilenumbrüchen aus einer Eingabe keine eigene Protokollzeile vortäuschen.
@@ -327,7 +330,8 @@ export function zeile(e: Eintrag): string {
   if (e.daten) {
     for (const [k, v] of Object.entries(e.daten)) {
       if (k === 'fehler') continue;
-      teile.push(`${k}=${typeof v === 'string' ? (/\s/.test(v) ? JSON.stringify(v) : v) : JSON.stringify(v)}`);
+      const roh = typeof v === 'string' && !UNRUHIG.test(v);
+      teile.push(`${k}=${roh ? v : sicher(String(JSON.stringify(v)))}`);
     }
   }
   const text = teile.join(' ');
