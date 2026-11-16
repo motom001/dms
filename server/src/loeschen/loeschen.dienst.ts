@@ -24,6 +24,7 @@ import { fremdeVorgabe } from '../../../shared/src/vorgaben';
 import type { LoeschprotokollVerwaltung } from './loeschprotokoll';
 import type { MitVerknuepften } from './mit-verknuepften';
 import type { Papierkorb } from './papierkorb';
+import type { LoeschenAnschluss } from './anschluss';
 
 /** Wert eines Mehrfachverweises als Liste. */
 const alsListe = (v: unknown): string[] => (Array.isArray(v) ? v.map(String) : typeof v === 'string' && v ? [v] : []);
@@ -42,22 +43,6 @@ export interface LoeschenTeile {
   papierkorb: Papierkorb;
   protokoll: LoeschprotokollVerwaltung;
   verknuepft: MitVerknuepften;
-}
-
-/** Was mit dem Konto geschieht, wenn eine Benutzer-Mappe den Papierkorb verlässt (#43; `KontenHaken` am Dienst). */
-export interface LoeschenKonten {
-  endgueltig(id: string): Promise<void>;
-  wiederda(id: string, von: string | null): Promise<void>;
-}
-
-/** Was das Löschen außer dem Kern braucht – vom Dienst hereingereicht. */
-export interface LoeschenAnschluss {
-  /** Ereignis auslösen – über den Anschluss (`kern.ereignis`; Tests ersetzen `dienst.kern.ereignis`). */
-  ereignis(...a: Parameters<Kern['ereignis']>): Promise<void>;
-  /** Titel neu berechnen – über den Anschluss (Tests ersetzen `dienst.mappenTitel.aktualisiereTitel`). */
-  aktualisiereTitel(ids: string[]): Promise<Map<string, string>>;
-  /** Konten (#43), vom Start angebunden. */
-  konten(): LoeschenKonten | undefined;
 }
 
 export class LoeschenDienst {

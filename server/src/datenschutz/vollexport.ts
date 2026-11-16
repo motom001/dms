@@ -1,6 +1,6 @@
 /**
  * Datenquellen für Vollexport (#254) und persönlichen Export (#255, #683; #1078 aus dienst.ts). Das Format schreibt
- * vollexport.ts. Schicht 3 – Teile und Anschluss wie `DatenschutzDienst` (datenschutz.dienst.ts).
+ * vollexport.ts. Schicht 3 – Anschluss wie `DatenschutzDienst` (anschluss.ts), von den Teilen nur, was es braucht.
  */
 import { exportSpalten, mappenPdf } from '../export/export';
 import type { Kern, Zugriff } from '../kern';
@@ -9,12 +9,22 @@ import { istVerschluesselt } from '../geheimnisse/tresor';
 import type { ExportQuelle } from '../export/vollexport';
 import type { ZugriffDienst } from '../zugriff';
 import { type Mappe, type MappenBezug, type Vertretung, verweiseVon } from '../../../shared/src/model';
-import type { DatenschutzAnschluss, DatenschutzTeile } from './datenschutz.dienst';
+import type { DatenschutzAnschluss } from './anschluss';
+import type { DokumentArchivfassung, DokumentUmwandlung } from '../dokumente';
+import type { LoeschprotokollVerwaltung } from '../loeschen';
+
+/** Die Teile, die die Quellen des Vollexports rufen (#1278, Schritt 5b: Auszug aus `DatenschutzTeile`). */
+interface VollexportTeile {
+  rechte: Pick<ZugriffDienst, 'lesbare' | 'rechteAnVielen' | 'maskiereBezuege'>;
+  umwandlung: Pick<DokumentUmwandlung, 'umwandlung'>;
+  archiv: Pick<DokumentArchivfassung, 'archiv'>;
+  loeschprotokoll: Pick<LoeschprotokollVerwaltung, 'loeschprotokollAlle'>;
+}
 
 export class VollexportQuellen {
   constructor(
     private readonly kern: Kern,
-    private readonly teile: DatenschutzTeile,
+    private readonly teile: VollexportTeile,
     private readonly anschluss: DatenschutzAnschluss,
   ) {}
 

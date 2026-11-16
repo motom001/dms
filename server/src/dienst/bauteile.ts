@@ -30,7 +30,6 @@ import { EreignisseDienst, Automatisierungshilfen } from '../ereignisse/index';
 import { MappenErwaehnungen } from '../mappen/erwaehnungen';
 import { type Gueltigkeit, Haushaltsstand } from '../zwischenspeicher/zaehlerspeicher';
 import { Kern } from '../kern';
-import type { KontenHaken } from './dienst';
 import type { Kurzzustand } from '../zwischenspeicher/kurzzustand';
 import { LoeschenDienst, type LoeschenTeile, Papierkorb, LoeschprotokollVerwaltung, MitVerknuepften, BeispielMappen } from '../loeschen';
 import { MappenDienst, MappenArchiv, MappenEingaben, MappenHistorie, MappenTitel, MappenNotizen } from '../mappen';
@@ -57,6 +56,27 @@ import { OrganisationDienst } from '../organisation';
 import { ORGANISATION_BEREICH } from '../../../shared/src/organisation';
 import { type DatenschutzTeile, DatenschutzDienst, VollexportQuellen, AuskunftZustellen } from '../datenschutz';
 import { fristFelder } from '../../../shared/src/fristen';
+
+/**
+ * Was mit dem Konto geschieht, wenn eine Benutzer-Mappe den Papierkorb verlässt (#43; #1278, Schritt 5b: hier statt in
+ * dienst.ts, das diese Klasse erweitert).
+ */
+export interface KontenHaken {
+  /** Endgültig gelöscht: Konto löschen. */
+  endgueltig(id: string): Promise<void>;
+  /** Wiederhergestellt: Konto wieder aktivieren. */
+  wiederda(id: string, von: string | null): Promise<void>;
+  /** Alle Konten mit Abwesenheit und Vertreter – für die Umleitung von Aufgaben (#78). */
+  benutzer?(): Promise<Benutzer[]>;
+  /** Konten, die kein Mensch sind (#673): Systemkonten und Dienstkonten der Pakete – nur für den Testlauf der Rechte (#710). */
+  ohneMensch?(): Promise<Benutzer[]>;
+  /** Dienstkonten der Pakete (#686: Rechte des Paket-Benutzers bei der Zustellung von Ereignissen). */
+  dienstkonten?(): Promise<Benutzer[]>;
+  /** Persönliche Einstellungen eines Benutzers (#422: Favoriten benachrichtigen, Geänderte hervorheben). */
+  einstellungen?(id: string): Promise<Record<string, unknown>>;
+  /** Persönliche Einstellung setzen (#506: Vorgabe für neue Benutzer, „auf alle anwenden“); `null` löscht. */
+  setzeEinstellung?(id: string, schluessel: string, wert: unknown): Promise<void>;
+}
 
 /** Bauteile, die der Konstruktor von `Dienst` aufruft. */
 export abstract class DienstBauteile {

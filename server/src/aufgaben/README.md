@@ -6,7 +6,10 @@ Aufgaben ohne Empfänger. Schicht 3 der Zielaufteilung – über Mappen, Ereigni
 
 - `aufgaben.dienst.ts` – `AufgabenDienst`: `pruefeEmpfaenger`, Erwähnungen (#56, #81), `aufgabenEmpfaenger` und
   `aufgabeAusAutomatisierung` (#676, #724; „Post für dich“ #1001), `erledigeNachAnlass`.
-  Dazu die gemeinsamen Typen `AufgabenTeile` und `AufgabenAnschluss`.
+- `anschluss.ts` – `AufgabenAnschluss`, `AufgabenKonten` und `AblaufPlatzhalter` (#1278, Schritt 5b).
+- `aufgaben-teile.ts` – `AufgabenTeile`: alle Teile, wie der Dienst sie zusammensetzt; ganz oben, keine Klasse hier
+  bindet die Datei ein (#1278, Schritt 5b).
+- `vertretung-teil.ts` – `VertretungTeil`: was die übrigen Klassen von der Vertretung rufen, und `SAMMEL_WEITERGABE`.
 - `vertretung.ts` – `AufgabenVertretung` (#77, #78, #415): Empfänger auflösen, umleiten, übergeben,
   `abwesenheitGeaendert`, vergeben, erledigen, weitergeben (auch gesammelt), gebündelt benachrichtigen, „Zu erledigen“.
 - `ohne-leserecht.ts` – `OhneLeserecht` (#798, #958): Hinweis statt Text, Fälle abgleichen, Leserecht auf Zeit.
@@ -15,7 +18,8 @@ Aufgaben ohne Empfänger. Schicht 3 der Zielaufteilung – über Mappen, Ereigni
 - `ohne-empfaenger.ts` – `OhneEmpfaenger` (#719, #422): Alltags-Benutzer, Favoriten benachrichtigen (wer, seit #1001
   aus der Automatisierung „Favoriten-Änderungen melden“).
 - `ablaeufe.ts` – `MappenAblaeufe` (#1044): Automatisierungsvorlagen („Aufgabe vergeben“, „Erinnern“, aus Paketen,
-  eigene) und Mappen-Abläufe – anwenden, laufen lassen mit den Rechten der Person zur Laufzeit, Werkbank.
+  eigene) und Mappen-Abläufe – anwenden, laufen lassen mit den Rechten der Person zur Laufzeit, Werkbank. Die Teile,
+  die sie ruft, in `ablaeufe-teile.ts`.
 - `index.ts` – die einzige Tür. `aufgaben.routen.ts` (Routen, #960) holt `routen.ts` direkt.
 
 **Abhängigkeiten**
@@ -23,6 +27,9 @@ Aufgaben ohne Empfänger. Schicht 3 der Zielaufteilung – über Mappen, Ereigni
 - Alle Klassen bekommen den **Kern** und dieselben `AufgabenTeile`: Rechteprüfung, Historie und `MappenDienst`
   (`mappen/`), `EreignisseDienst` (`ereignisse/`, neue Aufgabe melden), die Rollen (`post/`) – und einander. Der
   Dienst setzt die Teile in `baueAufgaben()` zusammen, so kennen sich die Klassen ohne Kreis beim Bauen.
+- Jede Klasse nennt nur die Teile, die sie ruft (#1278, Schritt 5b), so entsteht auch über Typen kein Kreis: Klassen
+  weiter unten über `Pick<…>` (von unten: ohne Leserecht, ohne Empfänger, Aufgaben, Abläufe, Fristen), die Vertretung
+  ganz oben – die anderen kennen sie nur als `VertretungTeil`.
 - Über den Anschluss: Ereignis auslösen (`kern.ereignis`), Konten (vom Start angebunden), die Gültigkeit der Zahlen
   (`mindestensMs` am Dienst).
 - Importiert nur sich selbst, Kern, tiefere Fachordner, `post/` (nur Typ) und die Basis (je über `index.ts`).

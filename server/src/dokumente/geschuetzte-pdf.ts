@@ -12,7 +12,7 @@ import { protokoll } from '../protokoll/protokoll';
 import type { Repo } from '../repo';
 import { t } from '../sprache/sprache';
 import type { DokumentArchivfassung } from './archivfassung';
-import type { TexterkennungAnbindung } from './dokumente.dienst';
+import type { TexterkennungAnbindung } from './gemeinsam';
 import type { DokumentUmwandlung } from './umwandeln';
 
 /** Wert eines Mehrfachverweises als Liste (wie in dienst.ts). */

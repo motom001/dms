@@ -12,13 +12,19 @@ import { istUuid, type Repo } from '../repo';
 import { t } from '../sprache/sprache';
 import type { ZugriffDienst } from '../zugriff';
 import type { Aufgabe, FallEnde, FallOhneLeserecht } from '../../../shared/src/model';
-import type { AufgabenAnschluss, AufgabenTeile } from './aufgaben.dienst';
-import { SAMMEL_WEITERGABE } from './vertretung';
+import type { AufgabenAnschluss } from './anschluss';
+import { SAMMEL_WEITERGABE } from './vertretung-teil';
+
+/** Die Teile, die „ohne Leserecht“ ruft (#1278, Schritt 5b: Auszug aus `AufgabenTeile`, aufgaben-teile.ts). */
+interface OhneLeserechtTeile {
+  rechte: ZugriffDienst;
+  historie: MappenHistorie;
+}
 
 export class OhneLeserecht {
   constructor(
     private readonly kern: Kern,
-    private readonly teile: AufgabenTeile,
+    private readonly teile: OhneLeserechtTeile,
     private readonly anschluss: AufgabenAnschluss,
   ) {}
 

@@ -1,15 +1,19 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { NOTIZ_MAX, POST_KANAL } from '../../../shared/src/model';
-import type { Dienst } from '../dienst/dienst';
+import type { Kern } from '../kern';
+import type { Fassungen } from '../fassungen';
+import type { Eingangskanaele } from './eingangskanaele';
+import type { PostDienst } from './post.dienst';
 import type { Einstellungen } from '../einstellungen/einstellungen';
 import { Fachfehler } from '../grundlagen/fehler';
 import { ohne } from '../../../shared/src/fassungen';
-import { legeAnhaengeAb } from './postfach-anhaenge';
+import { legeAnhaengeAb, type AnhaengeDienst } from './postfach-anhaenge';
 import { protokoll } from '../protokoll/protokoll';
 import { imapGemessen } from '../system/externmessung';
 import { AnmeldungAbgelaufen, OAUTH_ANBIETER, type OAuthAnbieter, type OAuthStatus, type PostfachOAuth } from './postfach-oauth';
 import { t } from '../sprache/sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
+import type { Verschluesselung, Zugang, ImapSitzung, ImapVerbinder, GeleseneMail, MailLeser } from './postfach-typen';
 
 /**
  * Postfächer (#196): Das DMS holt Mails per IMAP ab und macht aus jeder genau eine neue Post
@@ -28,7 +32,8 @@ import { gebietsschema } from '../../../shared/src/sprache';
  * zwischen „Post gespeichert“ und „Mail verschoben“ nichts doppelt entsteht.
  */
 
-export type Verschluesselung = 'ssl' | 'starttls' | 'keine';
+/** Form der Verbindung und der gelesenen Mail (#1278, Schritt 5b: nach postfach-typen.ts verschoben), weiter auch von hier. */
+export type { Zugang, ImapSitzung, GeleseneMail } from './postfach-typen';
 export type Nachher = 'verschieben' | 'gelesen' | 'loeschen';
 /** #358: Anmeldung mit Passwort (Standard, auch für alle älteren Postfächer) oder OAuth 2.0. */
 export type Anmeldeart = 'passwort' | 'oauth';
@@ -81,46 +86,16 @@ export interface PostfachStand {
   fehler: PostfachEreignis[];
 }
 
-/** Zugangsdaten mit Klartext-Passwort bzw. Zugriffstoken (OAuth, #358), nur für die Verbindung. */
-export interface Zugang {
-  server: string;
-  port: number;
-  verschluesselung: Verschluesselung;
-  benutzer: string;
-  passwort: string;
-  zugriffstoken?: string;
+/** Was die Postfächer vom Dienst brauchen (#1278, Schritt 5b: schmaler Anschluss statt der ganzen Klasse `Dienst`). */
+interface PostfachDienst extends AnhaengeDienst {
+  readonly kern: Pick<Kern, 'fassungen'>;
+  readonly fassungen: Pick<Fassungen, 'registriere'>;
+  readonly eingangskanaele: Pick<Eingangskanaele, 'postTyp' | 'notiereSystem' | 'gibtMappe' | 'anzahlDokumente'>;
+  readonly post: Pick<PostDienst, 'legePostAn'>;
 }
-
-export interface ImapSitzung {
-  uidValidity: string;
-  /** Anzahl Mails im Ordner. */
-  anzahl: number;
-  /** UIDs (und Message-IDs) ab dieser UID. */
-  neue(abUid: number): Promise<Array<{ uid: number; messageId?: string }>>;
-  quelle(uid: number): Promise<Buffer>;
-  verschiebe(uid: number, ordner: string): Promise<void>;
-  gelesen(uid: number): Promise<void>;
-  loesche(uid: number): Promise<void>;
-  ordnerListe(): Promise<string[]>;
-  schliessen(): Promise<void>;
-  /** Bytes hin und zurück in dieser Sitzung (#565, Messung externer Dienste), soweit bekannt. */
-  bytes?(): { hin: number; zurueck: number };
-}
-export type ImapVerbinder = (z: Zugang, ordner: string) => Promise<ImapSitzung>;
-
-export interface GeleseneMail {
-  messageId?: string;
-  betreff: string;
-  datum: Date | null;
-  absenderName: string;
-  absenderAdresse: string;
-  text: string;
-  anhaenge: Array<{ name: string; mime: string; inhalt: Buffer; eingebettet: boolean }>;
-}
-export type MailLeser = (quelle: Buffer) => Promise<GeleseneMail>;
 
 export interface PostfachDeps {
-  dienst: Dienst;
+  dienst: PostfachDienst;
   einstellungen: Einstellungen;
   verbinde: ImapVerbinder;
   lies: MailLeser;

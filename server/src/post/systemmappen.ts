@@ -25,7 +25,7 @@ import { heuteIn } from '../../../shared/src/sichten';
 import { systemkontoAuffaellig, type SystemkontoFehler } from '../../../shared/src/systemkonten';
 import { nachweis } from '../protokoll/nachweisjournal';
 
-/** Was mit dem Konto geschieht (Auszug aus `KontenHaken` in dienst.ts): Einstellungen und Konten der Menschen. */
+/** Was mit dem Konto geschieht (Auszug aus `KontenHaken` in dienst/bauteile.ts): Einstellungen und Konten der Menschen. */
 export interface KontenAnschluss {
   benutzer?(): Promise<Benutzer[]>;
   setzeEinstellung?(id: string, schluessel: string, wert: unknown): Promise<void>;

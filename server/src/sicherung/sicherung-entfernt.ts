@@ -21,7 +21,8 @@ import { protokoll } from '../protokoll/protokoll';
 import { t } from '../sprache/sprache';
 import { sha256Von } from './sicherungsformat';
 import { STUECK_MAX } from '../grundlagen/grenzen';
-import type { ExternStand, Lauf, SchlankeMetadaten, Sicherung } from './sicherung';
+import type { ExternAnbindung, ExternStand, Lauf, SchlankeMetadaten } from './sicherung-hilfen';
+import type { Einstellungen } from '../einstellungen/einstellungen';
 
 const log = protokoll.modul('sicherung');
 const ENDUNG = '.dms-sicherung';
@@ -72,8 +73,6 @@ export interface ZielPaket {
   adresse?: string | null;
   holen?: boolean;
 }
-/** Aufruf eines Pakets mit dms:sicherung-holen (Läufer); Ergebnis als Text. */
-export type HolAufruf = (paket: string, eingang: Record<string, unknown>, ms?: number) => Promise<string>;
 
 /** `status`/`pruefung` seit #1327 (ältere Einträge ohne: hochgeladen). */
 type Merkeintrag = {
@@ -193,10 +192,23 @@ function entfernteZeile(
   };
 }
 
+/**
+ * Was die entfernten Sicherungen von der Sicherung brauchen (#1278, Schritt 5b: schmaler Anschluss statt der ganzen
+ * Klasse `Sicherung`, die diese Datei einbindet).
+ */
+interface SicherungFuerEntfernte {
+  readonly ordner: string;
+  readonly extern: ExternAnbindung | null;
+  readonly einstellungen: Pick<Einstellungen, 'lies' | 'schreibe'>;
+  belege(art: Lauf['art'], titel: string): Lauf;
+  pfad(name: string): string;
+  merkePruefung(name: string, ok: boolean): Promise<void>;
+}
+
 export class EntfernteSicherungen {
   private listen = new Map<string, { am: number; ziel: string | null; eintraege: ZielEintrag[] }>();
 
-  constructor(private s: Sicherung) {}
+  constructor(private s: SicherungFuerEntfernte) {}
 
   private async merkliste(): Promise<Merkliste> {
     const v = await this.s.einstellungen.lies('sicherung_entfernt');

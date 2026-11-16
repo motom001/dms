@@ -30,9 +30,9 @@ import {
   type Wegstand,
 } from '../../../shared/src/klassifizierung';
 import { zieleVon, type MappenBezug, type Mappentyp } from '../../../shared/src/model';
-import type { Dienst } from '../dienst/dienst';
+import type { ErkennungDienst } from './erkennung-basis';
 import type { Zugriff } from '../kern';
-import type { Erkennung } from './erkennung';
+import type { ErkennungPositionen } from './erkennung-positionen';
 import { Fachfehler } from '../grundlagen/fehler';
 import { protokoll } from '../protokoll/protokoll';
 import type { Repo } from '../repo';
@@ -65,8 +65,9 @@ const DOKS_MAX = 10;
 
 export class Klassifizierung {
   constructor(
-    private d: Dienst,
-    private erkennung: Erkennung,
+    private d: ErkennungDienst,
+    /** Nur Standard-Weg und Abgleich (#1278, Schritt 5b: statt der ganzen Klasse `Erkennung`). */
+    private erkennung: Pick<ErkennungPositionen, 'standard' | 'abgleich'>,
     private repo: () => Repo,
   ) {}
 

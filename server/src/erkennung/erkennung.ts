@@ -11,7 +11,7 @@
  * (erkennung-post.ts) → Erkennung; Typen und Hilfen in erkennung-hilfen.ts.
  */
 import { ErkennungPost } from './erkennung-post';
-import type { Dienst } from '../dienst/dienst';
+import type { ErkennungDienst } from './erkennung-basis';
 import type { Repo } from '../repo';
 import type { Einstellungen } from '../einstellungen/einstellungen';
 import { Klassifizierung } from './klassifizierung';
@@ -48,7 +48,7 @@ export { sichereZuordnung, type PostErkennung } from './erkennung-hilfen';
 
 export class Erkennung extends ErkennungPost {
   constructor(
-    protected d: Dienst,
+    protected d: ErkennungDienst,
     protected repo: () => Repo,
     protected einst: () => Einstellungen | undefined = () => undefined,
   ) {

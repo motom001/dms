@@ -9,64 +9,17 @@ import { randomUUID } from 'node:crypto';
 import type { EreignisseDienst } from '../ereignisse/index';
 import { Fachfehler } from '../grundlagen/fehler';
 import type { Kern } from '../kern';
-import type { MappenDienst, MappenHistorie } from '../mappen';
-import type { PostSystemmappen } from '../post';
+import type { MappenHistorie } from '../mappen';
 import { istUuid, type Repo } from '../repo';
 import { t } from '../sprache/sprache';
 import { historienAufgabentext } from './historientext';
-import type { Gueltigkeit } from '../zwischenspeicher/zaehlerspeicher';
 import type { ZugriffDienst } from '../zugriff';
 import { alsText, erwaehnungen, ohneTitel } from '../../../shared/src/markdown';
 import { FAVORIT_ERWAEHNT, FAVORIT_ERWAEHNT_OFFEN, favoritErwaehntWahl, type FavoritErwaehntMerk } from '../../../shared/src/erwaehnen';
-import { type Aufgabe, AUFGABE_MAX, type AufgabenAnlass, type Benutzer, type Mappentyp, type Werte } from '../../../shared/src/model';
-import type { AblaufPlatzhalter, MappenAblaeufe } from './ablaeufe';
-import type { Fristen } from './fristen';
-import type { OhneEmpfaenger } from './ohne-empfaenger';
+import { type Aufgabe, AUFGABE_MAX, type AufgabenAnlass, type Mappentyp, type Werte } from '../../../shared/src/model';
 import type { OhneLeserecht } from './ohne-leserecht';
-import type { AufgabenVertretung } from './vertretung';
-
-/** Die Teile, die die Aufgaben rufen – dazu alle Klassen dieses Ordners (zusammengesetzt im Dienst). */
-export interface AufgabenTeile {
-  rechte: ZugriffDienst;
-  historie: MappenHistorie;
-  mappen: MappenDienst;
-  ereignisse: EreignisseDienst;
-  systemmappen: PostSystemmappen;
-  aufgaben: AufgabenDienst;
-  vertretung: AufgabenVertretung;
-  ohneLeserecht: OhneLeserecht;
-  fristen: Fristen;
-  ohneEmpfaenger: OhneEmpfaenger;
-  /** Mappen-Abläufe aus Automatisierungsvorlagen (#1044). */
-  ablaeufe: MappenAblaeufe;
-}
-
-/** Konten (#43, #78, #506), vom Start angebunden: alle Personen mit Abwesenheit, persönliche Einstellungen. */
-export interface AufgabenKonten {
-  benutzer?(): Promise<Benutzer[]>;
-  /**
-   * Eine Person (#1256): nur Menschen, ohne letzte Aktivität – für Vertretung und Alltags-Empfänger, die nur wenige
-   * Personen brauchen. Ohne sie lesen beide die Liste aller Personen.
-   */
-  person?(id: string): Promise<Benutzer | undefined>;
-  /** Persönliche Einstellungen (#889: „Wenn ein Favorit erwähnt wird“). */
-  einstellungen?(id: string): Promise<Record<string, unknown>>;
-  setzeEinstellung?(id: string, schluessel: string, wert: unknown): Promise<void>;
-}
-
-/** Was die Aufgaben außer dem Kern brauchen – vom Dienst hereingereicht. */
-export interface AufgabenAnschluss {
-  /** Ereignis auslösen – über den Anschluss (`kern.ereignis`; Tests ersetzen `dienst.kern.ereignis`). */
-  ereignis(...a: Parameters<Kern['ereignis']>): Promise<void>;
-  /** Konten (#43), vom Start angebunden. */
-  konten(): AufgabenKonten | undefined;
-  /** Gültigkeit der Zahlen in dieser Anfrage (#742; `mindestensMs` setzen Tests am Dienst). */
-  gueltigkeit(): Gueltigkeit;
-  /** Platzhalter der Automatisierungsvorlagen füllen (#1044, #795) – setzt der Motor (automatisierung/motor/). */
-  ablaufPlatzhalter?(): AblaufPlatzhalter | undefined;
-  /** Wer Favoriten-Änderungen bekommt (#1001) – setzt der Motor; ohne ihn alle, Vorgabe an. */
-  favoritenRegeln?(): Promise<Array<{ rollen: string[]; vorgabe: boolean }>> | undefined;
-}
+import type { AufgabenAnschluss } from './anschluss';
+import type { VertretungTeil } from './vertretung-teil';
 
 /** Art, Feld und Datum einer Aufgabe aus einer Automatisierung: Frist (#724), „Post für dich“ (#1001) oder Zugewiesen. */
 function artUndSchluessel(
@@ -79,10 +32,19 @@ function artUndSchluessel(
   return { art: 'manuell', datum };
 }
 
+/** Die Teile, die die Aufgaben rufen (#1278, Schritt 5b: Auszug aus `AufgabenTeile`, aufgaben-teile.ts). */
+interface DienstTeile {
+  rechte: ZugriffDienst;
+  historie: MappenHistorie;
+  ereignisse: EreignisseDienst;
+  ohneLeserecht: Pick<OhneLeserecht, 'faelleNach'>;
+  vertretung: VertretungTeil;
+}
+
 export class AufgabenDienst {
   constructor(
     private readonly kern: Kern,
-    private readonly teile: AufgabenTeile,
+    private readonly teile: DienstTeile,
     private readonly anschluss: AufgabenAnschluss,
   ) {}
 
@@ -110,7 +72,7 @@ export class AufgabenDienst {
   private empfaengerAufloesen(id: string | null) {
     return this.teile.vertretung.empfaengerAufloesen(id);
   }
-  private benachrichtigeGebuendelt(...a: Parameters<AufgabenVertretung['benachrichtigeGebuendelt']>) {
+  private benachrichtigeGebuendelt(...a: Parameters<VertretungTeil['benachrichtigeGebuendelt']>) {
     return this.teile.vertretung.benachrichtigeGebuendelt(...a);
   }
   private faelleNach(mappeIds: string[]) {

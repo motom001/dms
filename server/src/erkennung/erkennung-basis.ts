@@ -1,5 +1,11 @@
 /** Erkennung (#1278 aus erkennung.ts): Grundklasse – Erkennung per Paket (#511), Text der Post, eigene Organisation und Haushalt. */
-import type { Dienst } from '../dienst/dienst';
+import type { Kern } from '../kern';
+import type { ZugriffDienst } from '../zugriff';
+import type { MappentypenDienst, KiTypen } from '../mappentypen';
+import type { MappenEingaben } from '../mappen';
+import type { PostDienst } from '../post';
+import type { DokumenteDienst, DokumentArchivfassung } from '../dokumente';
+import type { SucheDienst } from '../suche';
 import type { Repo } from '../repo';
 import type { Einstellungen } from '../einstellungen/einstellungen';
 import {
@@ -31,9 +37,25 @@ import { liesMerkmale, MERKMALE_EINSTELLUNG } from '../../../shared/src/merkmale
 import { merkmalFeld, istEigeneOrganisation } from '../../../shared/src/organisation';
 import { ohneErkennung } from '../../../shared/src/anlagen';
 
+/**
+ * Was Erkennung und Klassifizierung vom Dienst brauchen (#1278, Schritt 5b: schmaler Anschluss statt der ganzen Klasse `Dienst`): der Dienst bindet die Erkennung ein, sie
+ * bekommt ihn herein.
+ */
+export interface ErkennungDienst {
+  readonly kern: Pick<Kern, 'liesGanz' | 'ereignis'>;
+  readonly rechtepruefung: Pick<ZugriffDienst, 'pruefeRecht' | 'rechteAn' | 'lesbare'>;
+  readonly mappentypen: Pick<MappentypenDienst, 'ausDokumentVon' | 'ausPostZiele'>;
+  readonly mappenEingaben: Pick<MappenEingaben, 'vorbelegenVorschlaege' | 'folgeVorschlaege'>;
+  readonly post: Pick<PostDienst, 'automatischZuordnen'>;
+  readonly ki: Pick<KiTypen, 'kiSperreFuer' | 'kiTypen'>;
+  readonly dokumente: Pick<DokumenteDienst, 'textAusDatei'>;
+  readonly dokumentArchiv: Pick<DokumentArchivfassung, 'wortpositionen'>;
+  readonly suche: Pick<SucheDienst, 'aehnlicheTypen'>;
+}
+
 export abstract class ErkennungBasis {
   /** Was die Klasse Erkennung setzt (Konstruktor und Felder, erkennung.ts). */
-  protected abstract d: Dienst;
+  protected abstract d: ErkennungDienst;
   protected abstract repo: () => Repo;
   protected abstract einst: () => Einstellungen | undefined;
   abstract anbieter?: ErkennAnbieter;

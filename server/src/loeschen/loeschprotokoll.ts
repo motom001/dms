@@ -28,12 +28,17 @@ import {
 import type { Mappe } from '../../../shared/src/model';
 import { zeitzone } from '../../../shared/src/region';
 import { gebietsschema } from '../../../shared/src/sprache';
-import type { LoeschenTeile } from './loeschen.dienst';
+import type { AusgangDienst } from '../ausgang';
+
+/** Die Teile, die das Löschprotokoll ruft (#1278, Schritt 5b: Auszug aus `LoeschenTeile`). */
+interface LoeschprotokollTeile {
+  ausgang: Pick<AusgangDienst, 'dokumenteJeMappe'>;
+}
 
 export class LoeschprotokollVerwaltung {
   constructor(
     private readonly kern: Kern,
-    private readonly teile: LoeschenTeile,
+    private readonly teile: LoeschprotokollTeile,
   ) {}
 
   private get repo(): Repo {

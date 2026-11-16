@@ -22,16 +22,35 @@ import {
   VERTRETER_SCHRITTE,
 } from '../../../shared/src/model';
 import { heuteIn } from '../../../shared/src/sichten';
-import type { AufgabenAnschluss, AufgabenDienst, AufgabenTeile } from './aufgaben.dienst';
+import type { AufgabenAnschluss } from './anschluss';
+import type { AufgabenDienst } from './aufgaben.dienst';
+import type { EreignisseDienst } from '../ereignisse/index';
+import type { MappenAblaeufe } from './ablaeufe';
+import type { Fristen } from './fristen';
+import type { OhneEmpfaenger } from './ohne-empfaenger';
+import type { OhneLeserecht } from './ohne-leserecht';
+import { SAMMEL_WEITERGABE, type VertretungTeil } from './vertretung-teil';
 
-/** Sammel-Weitergabe (#415): höchstens so viele Aufgaben auf einmal; Schlüssel der Sammelbenachrichtigung. */
+/** Sammel-Weitergabe (#415): höchstens so viele Aufgaben auf einmal; Schlüssel der Sammelbenachrichtigung in vertretung-teil.ts. */
 export const SAMMEL_MAX = 1000;
-export const SAMMEL_WEITERGABE = 'weitergabe';
 
-export class AufgabenVertretung {
+/** Die Teile, die die Vertretung ruft (#1278, Schritt 5b: Auszug aus `AufgabenTeile`, aufgaben-teile.ts). */
+interface VertretungTeile {
+  rechte: ZugriffDienst;
+  historie: MappenHistorie;
+  mappen: MappenDienst;
+  ereignisse: EreignisseDienst;
+  ablaeufe: Pick<MappenAblaeufe, 'anwenden'>;
+  aufgaben: Pick<AufgabenDienst, 'erledigeNachAnlass' | 'pruefeEmpfaenger'>;
+  fristen: Pick<Fristen, 'folgeterminVon'>;
+  ohneEmpfaenger: Pick<OhneEmpfaenger, 'siehtOhneEmpfaenger'>;
+  ohneLeserecht: Pick<OhneLeserecht, 'faelleNach' | 'ohneLeserechtText'>;
+}
+
+export class AufgabenVertretung implements VertretungTeil {
   constructor(
     private readonly kern: Kern,
-    private readonly teile: AufgabenTeile,
+    private readonly teile: VertretungTeile,
     private readonly anschluss: AufgabenAnschluss,
   ) {}
 

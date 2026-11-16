@@ -27,7 +27,9 @@ import {
 import { zeitraumProblem } from '../../../shared/src/kalender';
 import type { Aufgabe, Feld, Mappe } from '../../../shared/src/model';
 import { heuteIn, verschiebe } from '../../../shared/src/sichten';
-import type { AufgabenAnschluss, AufgabenTeile } from './aufgaben.dienst';
+import type { AufgabenAnschluss } from './anschluss';
+import type { MappenAblaeufe } from './ablaeufe';
+import type { OhneEmpfaenger } from './ohne-empfaenger';
 
 /** Startseite (#918): der nächste Termin erst in so vielen Tagen gesucht, nur ohne Treffer im ganzen Jahr. */
 export const NAECHSTER_TERMIN_ERST_TAGE = 31;
@@ -38,6 +40,15 @@ export interface FristenStaende {
   mappenstand: Haushaltsstand;
 }
 
+/** Die Teile, die die Fristen rufen (#1278, Schritt 5b: Auszug aus `AufgabenTeile`, aufgaben-teile.ts). */
+interface FristenTeile {
+  rechte: ZugriffDienst;
+  historie: MappenHistorie;
+  mappen: MappenDienst;
+  ablaeufe: Pick<MappenAblaeufe, 'faellige' | 'raeumeAuf'>;
+  ohneEmpfaenger: Pick<OhneEmpfaenger, 'siehtOhneEmpfaenger'>;
+}
+
 export class Fristen {
   /** Termine (#528, #725): Zwischenspeicher je Benutzer, Rechte und Zeitraum. */
   private readonly termineSpeicher: Zaehlerspeicher<Termin[]>;
@@ -46,7 +57,7 @@ export class Fristen {
 
   constructor(
     private readonly kern: Kern,
-    private readonly teile: AufgabenTeile,
+    private readonly teile: FristenTeile,
     private readonly anschluss: AufgabenAnschluss,
     staende: FristenStaende,
   ) {

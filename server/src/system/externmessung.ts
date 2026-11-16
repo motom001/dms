@@ -21,7 +21,7 @@ import {
   type KostenEinstellung,
 } from '../../../shared/src/extern';
 import type { Einstellungen } from '../einstellungen/einstellungen';
-import type { ImapSitzung, ImapVerbinder } from '../post/postfach';
+import type { ImapSitzung, ImapVerbinder } from '../post/postfach-typen';
 import { Fachfehler } from '../grundlagen/fehler';
 import { kontext, protokoll } from '../protokoll/protokoll';
 import { t } from '../sprache/sprache';

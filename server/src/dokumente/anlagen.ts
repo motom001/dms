@@ -20,7 +20,7 @@ import type { Kern } from '../kern';
 import { protokoll } from '../protokoll/protokoll';
 import { istUuid, type Repo } from '../repo';
 import { t } from '../sprache/sprache';
-import { dateiname } from './dokumente.dienst';
+import { dateiname } from './gemeinsam';
 import type { DokumentVersionen } from './versionen';
 
 const log = protokoll.modul('dokumente');

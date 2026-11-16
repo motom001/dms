@@ -47,6 +47,7 @@ export { eigenerPuffer } from './puffer';
 export { groesseText } from './text';
 export type { SeitenWahl } from './seiten';
 export type { StempelAuftrag } from './stempel';
+export type { NotfallblattPlan } from './notfallblatt';
 export { hatQpdf, operatoren, type Analyse as VerkleinerAnalyse, type Ergebnis as VerkleinerErgebnis } from './verkleinern';
 export {
   ANSICHT_PX,

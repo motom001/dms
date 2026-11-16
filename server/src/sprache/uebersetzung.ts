@@ -31,7 +31,9 @@ import {
 } from '../../../shared/src/uebersetzung';
 import { ohneTitel } from '../../../shared/src/markdown';
 import type { Benutzer } from '../../../shared/src/model';
-import type { Dienst } from '../dienst/dienst';
+import type { ZugriffDienst } from '../zugriff';
+import type { VolltextDienst } from '../volltext';
+import type { KiTypen } from '../mappentypen';
 import type { Zugriff } from '../kern';
 import type { Einstellungen } from '../einstellungen/einstellungen';
 import { Fachfehler } from '../grundlagen/fehler';
@@ -88,12 +90,19 @@ function netzZiele(p: InstalliertesPaket): string[] | null {
   ];
 }
 
+/** Was die Übersetzung vom Dienst braucht (#1278, Schritt 5b: schmaler Anschluss statt der ganzen Klasse `Dienst`). */
+interface UebersetzungDienst {
+  readonly rechtepruefung: Pick<ZugriffDienst, 'pruefeRecht' | 'mappeVon'>;
+  readonly volltexte: Pick<VolltextDienst, 'volltext'>;
+  readonly ki: Pick<KiTypen, 'kiSperreFuer'>;
+}
+
 export class Uebersetzung {
   /** Wird gesetzt, sobald der Paket-Läufer läuft (verwaltung.ts bzw. fern.ts). */
   anbieter?: UebersetzAnbieter;
 
   constructor(
-    private d: Dienst,
+    private d: UebersetzungDienst,
     private repo: () => Repo,
     private einst: () => Einstellungen | undefined,
     private zustand: () => Kurzzustand,

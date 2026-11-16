@@ -29,7 +29,8 @@ import {
   normiereCode,
 } from '../../../shared/src/auskunft';
 import { type Aufgabe, AUFGABE_MAX, istEmail } from '../../../shared/src/model';
-import type { DatenschutzAnschluss, DatenschutzTeile } from './datenschutz.dienst';
+import type { DatenschutzTeile } from './datenschutz.dienst';
+import type { DatenschutzAnschluss } from './anschluss';
 
 const ABRUF_PRUEFUNG = 'abruf-pruefung';
 /** Belegung einer Code-Prüfung am Abruf-Link: endet spätestens nach dieser Zeit (scrypt dauert Bruchteile davon). */

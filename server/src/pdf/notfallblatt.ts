@@ -8,7 +8,6 @@
  */
 import { PDFDocument, PDFName, PDFString, rgb, StandardFonts, type PDFFont, type PDFPage, type RGB } from 'pdf-lib';
 import { angabe, pdfText, schriften } from './schrift';
-import type { NotfallblattPlan } from '../notfall/notfallblatt';
 import { gebietsschema } from '../../../shared/src/sprache';
 
 const BLAU = rgb(0x1f / 255, 0x4e / 255, 0x79 / 255);
@@ -77,6 +76,43 @@ function logo(seite: PDFPage, s: Schriften, x: number, oben: number, groesse: nu
   seite.drawSvgPath(`M${ecke(33, 12)}L${ecke(63, 12)}L${ecke(63, 52)}L${ecke(33, 52)}Z`, { x, y: oben, scale: k, color: BERNSTEIN });
   seite.drawSvgPath('M12 60H28c4 8 11 12 20 12s16-4 20-12H84v16a6 6 0 0 1-6 6H18a6 6 0 0 1-6-6Z', { x, y: oben, scale: k, color: WEISS });
   seite.drawText('Ablago', { x: x + groesse * 1.2, y: oben - groesse * 0.69, size: groesse * 0.58, font: s.fett, color: BLAU });
+}
+
+/**
+ * Texte des Blatts, fertig aus `notfallblattPlan` (notfall/notfallblatt.ts; #1278, Schritt 5b: die Form hier, damit die
+ * PDF-Stelle den Notfall-Ordner nicht einbindet).
+ */
+export interface NotfallblattPlan {
+  dokumenttitel: string;
+  kopf: { titel: string; name: string; unter: string };
+  einleitung: string;
+  schluessel: {
+    titel: string;
+    gruppen: Array<Array<{ zeichen: string; hilfe: string | null }>>;
+    hinweis: string;
+    fingerabdruckTitel: string;
+    fingerabdruck: string;
+    fingerabdruckHinweis: string;
+  };
+  /** `kurz` (#671): knappere Fassung der Zeile, wenn das Blatt sonst nicht auf eine Seite passt (Aufrufe und Ziele nur gezählt). */
+  ablage: {
+    titel: string;
+    zeilen: Array<{ marke: string; text: string; link?: string; mono?: boolean; kurz?: string }>;
+    warnung: string | null;
+  };
+  /** `seite2`: Verweis, wenn die Kontakte auf eine zweite Seite ausweichen (#812). */
+  fragen: { titel: string; kontakte: Array<{ name: string; erreichbar: string; notiz?: string }>; leer: string | null; seite2: string };
+  hilfe: {
+    titel: string;
+    text: string;
+    links: Array<{ marke: string; url: string }>;
+    qr: readonly string[];
+    qrText: string;
+    handbuch: string;
+  };
+  /** Ausgesperrt? Notfallcode und wo man ihn eingibt (#815); null ohne Code. */
+  notfall: { titel: string; code: string; text: string; adresse: { text: string; link?: string } | null; hinweis: string } | null;
+  fuss: string;
 }
 
 /**
