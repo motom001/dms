@@ -1,0 +1,6782 @@
+{
+  "vorher": {
+    "typen": [
+      {
+        "id": "T(basis:organisation)",
+        "name": "Organisation",
+        "schluessel": "basis:organisation",
+        "beschreibung": "Firma, Behörde, Arztpraxis, Versicherung, Bank, Verein oder andere Stelle, mit der du zu tun hast.",
+        "ausPost": null,
+        "erkennbarAn": "",
+        "titelVorlage": "{name}",
+        "felder": [
+          {
+            "key": "name",
+            "label": "Name",
+            "typ": "text",
+            "pflicht": true,
+            "eindeutig": true,
+            "hilfe": "",
+            "standard": null,
+            "minLen": null,
+            "maxLen": 120,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug"
+          },
+          {
+            "key": "kuerzel",
+            "label": "Kürzel",
+            "typ": "text",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "Kurzname, z. B. „SWM“ für Stadtwerke Musterstadt",
+            "standard": null,
+            "minLen": null,
+            "maxLen": 20,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug"
+          },
+          {
+            "key": "art",
+            "label": "Art",
+            "typ": "auswahl",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "",
+            "standard": null,
+            "minLen": null,
+            "maxLen": null,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [
+              "Lieferant",
+              "Kunde",
+              "Bank",
+              "Versicherung",
+              "Behörde",
+              "Arbeitgeber",
+              "Arzt/Praxis",
+              "Handwerker",
+              "Vermieter",
+              "Verein",
+              "Versorger",
+              "Sonstige"
+            ],
+            "mehrfach": true,
+            "verweisart": "bezug"
+          },
+          {
+            "key": "kundennummer",
+            "label": "Kundennummer",
+            "typ": "text",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "Deine eigene Nummer bei dieser Organisation (Kunden-, Mitglieds-, Versicherten- oder Patientennummer)",
+            "standard": null,
+            "minLen": null,
+            "maxLen": 60,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug"
+          },
+          {
+            "key": "beschreibung",
+            "label": "Beschreibung",
+            "typ": "langtext",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "",
+            "standard": null,
+            "minLen": null,
+            "maxLen": null,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug"
+          },
+          {
+            "key": "telefon",
+            "label": "Telefon",
+            "typ": "text",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "",
+            "standard": null,
+            "minLen": null,
+            "maxLen": 40,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug"
+          },
+          {
+            "key": "fax",
+            "label": "Fax",
+            "typ": "text",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "",
+            "standard": null,
+            "minLen": null,
+            "maxLen": 40,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug"
+          },
+          {
+            "key": "email",
+            "label": "E-Mail",
+            "typ": "text",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "z. B. kontakt@example.org",
+            "standard": null,
+            "minLen": null,
+            "maxLen": 200,
+            "muster": "[^@\\s]+@[^@\\s]+\\.[^@\\s]+",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug"
+          },
+          {
+            "key": "internet",
+            "label": "Internetseite",
+            "typ": "text",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "z. B. https://www.example.org",
+            "standard": null,
+            "minLen": null,
+            "maxLen": 200,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug"
+          },
+          {
+            "key": "strasse",
+            "label": "Straße",
+            "typ": "text",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "",
+            "standard": null,
+            "minLen": null,
+            "maxLen": 120,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug"
+          },
+          {
+            "key": "hausnummer",
+            "label": "Hausnummer",
+            "typ": "text",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "",
+            "standard": null,
+            "minLen": null,
+            "maxLen": 10,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug"
+          },
+          {
+            "key": "plz",
+            "label": "PLZ",
+            "typ": "text",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "In Deutschland fünfstellig",
+            "standard": null,
+            "minLen": null,
+            "maxLen": 10,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug"
+          },
+          {
+            "key": "ort",
+            "label": "Ort",
+            "typ": "text",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "",
+            "standard": null,
+            "minLen": null,
+            "maxLen": 80,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug"
+          },
+          {
+            "key": "land",
+            "label": "Land",
+            "typ": "text",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "",
+            "standard": "Deutschland",
+            "minLen": null,
+            "maxLen": 60,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug"
+          }
+        ],
+        "register": [
+          {
+            "key": "stammdaten",
+            "name": "Stammdaten",
+            "art": "felder",
+            "felder": ["name", "kuerzel", "art", "kundennummer", "beschreibung"]
+          },
+          {
+            "key": "kontakt",
+            "name": "Kontakt",
+            "art": "felder",
+            "felder": ["telefon", "fax", "email", "internet"]
+          },
+          {
+            "key": "anschrift",
+            "name": "Anschrift",
+            "art": "felder",
+            "felder": ["strasse", "hausnummer", "plz", "ort", "land"]
+          },
+          {
+            "key": "dokumente",
+            "name": "Dokumente",
+            "art": "dokumente"
+          },
+          {
+            "key": "protokoll",
+            "name": "Protokoll",
+            "art": "protokoll"
+          }
+        ],
+        "trefferlisten": [
+          {
+            "key": "standard",
+            "name": "Standard",
+            "spalten": ["name", "art", "ort", "telefon"],
+            "standard": true
+          }
+        ],
+        "trefferliste": ["name", "art", "ort", "telefon"],
+        "archiv": null,
+        "erstellenErlaubt": true,
+        "loeschenErlaubt": true,
+        "system": null,
+        "erstellt": "ZEIT",
+        "geaendert": "ZEIT",
+        "paket": "basis"
+      }
+    ],
+    "sichten": [
+      {
+        "id": "S(Versicherungen)",
+        "name": "Versicherungen",
+        "beschreibung": "",
+        "elternId": "S(Organisationen)",
+        "position": 10,
+        "typen": ["T(basis:organisation)"],
+        "bedingungen": [
+          {
+            "art": "feld",
+            "feld": "art",
+            "op": "einerVon",
+            "wert": {
+              "art": "fest",
+              "wert": ["Versicherung"]
+            }
+          }
+        ],
+        "trefferliste": null,
+        "berechtigungen": null,
+        "symbol": null,
+        "erstellt": "ZEIT",
+        "geaendert": "ZEIT"
+      },
+      {
+        "id": "S(Banken)",
+        "name": "Banken",
+        "beschreibung": "",
+        "elternId": "S(Organisationen)",
+        "position": 20,
+        "typen": ["T(basis:organisation)"],
+        "bedingungen": [
+          {
+            "art": "feld",
+            "feld": "art",
+            "op": "einerVon",
+            "wert": {
+              "art": "fest",
+              "wert": ["Bank"]
+            }
+          }
+        ],
+        "trefferliste": null,
+        "berechtigungen": null,
+        "symbol": null,
+        "erstellt": "ZEIT",
+        "geaendert": "ZEIT"
+      },
+      {
+        "id": "S(Behörden)",
+        "name": "Behörden",
+        "beschreibung": "",
+        "elternId": "S(Organisationen)",
+        "position": 30,
+        "typen": ["T(basis:organisation)"],
+        "bedingungen": [
+          {
+            "art": "feld",
+            "feld": "art",
+            "op": "einerVon",
+            "wert": {
+              "art": "fest",
+              "wert": ["Behörde"]
+            }
+          }
+        ],
+        "trefferliste": null,
+        "berechtigungen": null,
+        "symbol": null,
+        "erstellt": "ZEIT",
+        "geaendert": "ZEIT"
+      },
+      {
+        "id": "S(Ärzte und Praxen)",
+        "name": "Ärzte und Praxen",
+        "beschreibung": "",
+        "elternId": "S(Organisationen)",
+        "position": 40,
+        "typen": ["T(basis:organisation)"],
+        "bedingungen": [
+          {
+            "art": "feld",
+            "feld": "art",
+            "op": "einerVon",
+            "wert": {
+              "art": "fest",
+              "wert": ["Arzt/Praxis"]
+            }
+          }
+        ],
+        "trefferliste": null,
+        "berechtigungen": null,
+        "symbol": null,
+        "erstellt": "ZEIT",
+        "geaendert": "ZEIT"
+      },
+      {
+        "id": "S(Organisationen)",
+        "name": "Organisationen",
+        "beschreibung": "Alle Organisationen",
+        "elternId": null,
+        "position": 100040,
+        "typen": ["T(basis:organisation)"],
+        "bedingungen": [],
+        "trefferliste": null,
+        "berechtigungen": null,
+        "symbol": null,
+        "erstellt": "ZEIT",
+        "geaendert": "ZEIT"
+      }
+    ],
+    "pakete": [
+      {
+        "id": "basis",
+        "name": "Basis",
+        "version": "1.0.0",
+        "beschreibung": "Mappentyp Organisation für Firmen, Behörden, Ärzte, Versicherungen und andere Stellen – mit Kontakt, Anschrift und Sichten nach Art.",
+        "lizenz": "MIT",
+        "autor": {
+          "name": "Thomas Meissner",
+          "github": "motom001"
+        },
+        "herkunft": {
+          "art": "hochgeladen",
+          "von": "admin@example.org",
+          "am": "ZEIT"
+        },
+        "dms": ">=0.63.0",
+        "installiert": "ZEIT",
+        "installiertVon": "admin@example.org",
+        "aktualisiert": null,
+        "aktualisiertVon": null,
+        "typen": {
+          "organisation": "T(basis:organisation)"
+        },
+        "sichten": {
+          "organisationen": "S(Organisationen)",
+          "versicherungen": "S(Versicherungen)",
+          "banken": "S(Banken)",
+          "behoerden": "S(Behörden)",
+          "aerzte": "S(Ärzte und Praxen)"
+        },
+        "abhaengigkeiten": {},
+        "sichtStand": {
+          "organisationen": {
+            "stand": "PRUEFWERT",
+            "fassung": "PRUEFWERT"
+          },
+          "versicherungen": {
+            "stand": "PRUEFWERT",
+            "fassung": "PRUEFWERT"
+          },
+          "banken": {
+            "stand": "PRUEFWERT",
+            "fassung": "PRUEFWERT"
+          },
+          "behoerden": {
+            "stand": "PRUEFWERT",
+            "fassung": "PRUEFWERT"
+          },
+          "aerzte": {
+            "stand": "PRUEFWERT",
+            "fassung": "PRUEFWERT"
+          }
+        },
+        "einstellungen": null,
+        "code": false,
+        "mitkommt": {
+          "mappentypen": [
+            {
+              "schluessel": "organisation",
+              "name": "Organisation",
+              "beschreibung": "Firma, Behörde, Arztpraxis, Versicherung, Bank, Verein oder andere Stelle, mit der du zu tun hast.",
+              "felder": 14
+            }
+          ],
+          "sichten": [
+            {
+              "schluessel": "organisationen",
+              "name": "Organisationen",
+              "beschreibung": "Alle Organisationen"
+            },
+            {
+              "schluessel": "versicherungen",
+              "name": "Versicherungen"
+            },
+            {
+              "schluessel": "banken",
+              "name": "Banken"
+            },
+            {
+              "schluessel": "behoerden",
+              "name": "Behörden"
+            },
+            {
+              "schluessel": "aerzte",
+              "name": "Ärzte und Praxen"
+            }
+          ],
+          "vorgaben": [],
+          "vorlagen": 0,
+          "beispiele": 2,
+          "beispielDokumente": 0,
+          "wortlisten": [],
+          "automatisierungen": [],
+          "ablaufvorlagen": [],
+          "aktionen": [],
+          "rundgaenge": [],
+          "tipps": 0,
+          "einstellungen": [],
+          "code": false,
+          "netz": false,
+          "sprache": false
+        },
+        "typStand": {
+          "T(basis:organisation)": {
+            "name": "Organisation",
+            "beschreibung": "Firma, Behörde, Arztpraxis, Versicherung, Bank, Verein oder andere Stelle, mit der du zu tun hast.",
+            "titelVorlage": "{name}",
+            "felder": [
+              {
+                "key": "name",
+                "label": "Name",
+                "werte": {
+                  "eindeutig": true,
+                  "maxLen": 120,
+                  "pflicht": true,
+                  "typ": "text",
+                  "verweisart": "bezug"
+                }
+              },
+              {
+                "key": "kuerzel",
+                "label": "Kürzel",
+                "werte": {
+                  "hilfe": "Kurzname, z. B. „SWM“ für Stadtwerke Musterstadt",
+                  "maxLen": 20,
+                  "typ": "text",
+                  "verweisart": "bezug"
+                }
+              },
+              {
+                "key": "art",
+                "label": "Art",
+                "werte": {
+                  "mehrfach": true,
+                  "optionen": [
+                    "Lieferant",
+                    "Kunde",
+                    "Bank",
+                    "Versicherung",
+                    "Behörde",
+                    "Arbeitgeber",
+                    "Arzt/Praxis",
+                    "Handwerker",
+                    "Vermieter",
+                    "Verein",
+                    "Versorger",
+                    "Sonstige"
+                  ],
+                  "typ": "auswahl",
+                  "verweisart": "bezug"
+                }
+              },
+              {
+                "key": "kundennummer",
+                "label": "Kundennummer",
+                "werte": {
+                  "hilfe": "Deine eigene Nummer bei dieser Organisation (Kunden-, Mitglieds-, Versicherten- oder Patientennummer)",
+                  "maxLen": 60,
+                  "typ": "text",
+                  "verweisart": "bezug"
+                }
+              },
+              {
+                "key": "beschreibung",
+                "label": "Beschreibung",
+                "werte": {
+                  "typ": "langtext",
+                  "verweisart": "bezug"
+                }
+              },
+              {
+                "key": "telefon",
+                "label": "Telefon",
+                "werte": {
+                  "maxLen": 40,
+                  "typ": "text",
+                  "verweisart": "bezug"
+                }
+              },
+              {
+                "key": "fax",
+                "label": "Fax",
+                "werte": {
+                  "maxLen": 40,
+                  "typ": "text",
+                  "verweisart": "bezug"
+                }
+              },
+              {
+                "key": "email",
+                "label": "E-Mail",
+                "werte": {
+                  "hilfe": "z. B. kontakt@example.org",
+                  "maxLen": 200,
+                  "muster": "[^@\\s]+@[^@\\s]+\\.[^@\\s]+",
+                  "typ": "text",
+                  "verweisart": "bezug"
+                }
+              },
+              {
+                "key": "internet",
+                "label": "Internetseite",
+                "werte": {
+                  "hilfe": "z. B. https://www.example.org",
+                  "maxLen": 200,
+                  "typ": "text",
+                  "verweisart": "bezug"
+                }
+              },
+              {
+                "key": "strasse",
+                "label": "Straße",
+                "werte": {
+                  "maxLen": 120,
+                  "typ": "text",
+                  "verweisart": "bezug"
+                }
+              },
+              {
+                "key": "hausnummer",
+                "label": "Hausnummer",
+                "werte": {
+                  "maxLen": 10,
+                  "typ": "text",
+                  "verweisart": "bezug"
+                }
+              },
+              {
+                "key": "plz",
+                "label": "PLZ",
+                "werte": {
+                  "hilfe": "In Deutschland fünfstellig",
+                  "maxLen": 10,
+                  "typ": "text",
+                  "verweisart": "bezug"
+                }
+              },
+              {
+                "key": "ort",
+                "label": "Ort",
+                "werte": {
+                  "maxLen": 80,
+                  "typ": "text",
+                  "verweisart": "bezug"
+                }
+              },
+              {
+                "key": "land",
+                "label": "Land",
+                "werte": {
+                  "maxLen": 60,
+                  "standard": "Deutschland",
+                  "typ": "text",
+                  "verweisart": "bezug"
+                }
+              }
+            ],
+            "register": [
+              {
+                "key": "stammdaten",
+                "name": "Stammdaten",
+                "werte": {
+                  "art": "felder",
+                  "felder": ["name", "kuerzel", "art", "kundennummer", "beschreibung"]
+                }
+              },
+              {
+                "key": "kontakt",
+                "name": "Kontakt",
+                "werte": {
+                  "art": "felder",
+                  "felder": ["telefon", "fax", "email", "internet"]
+                }
+              },
+              {
+                "key": "anschrift",
+                "name": "Anschrift",
+                "werte": {
+                  "art": "felder",
+                  "felder": ["strasse", "hausnummer", "plz", "ort", "land"]
+                }
+              },
+              {
+                "key": "dokumente",
+                "name": "Dokumente",
+                "werte": {
+                  "art": "dokumente"
+                }
+              },
+              {
+                "key": "protokoll",
+                "name": "Protokoll",
+                "werte": {
+                  "art": "protokoll"
+                }
+              }
+            ]
+          }
+        }
+      }
+    ],
+    "mappen": {
+      "basis:organisation": []
+    },
+    "synonyme": {
+      "basis": []
+    }
+  },
+  "fehlerSpeichern": "Probefehler",
+  "nachFehlerSpeichern": {
+    "typen": [
+      {
+        "id": "T(probe:akte)",
+        "name": "Akte",
+        "schluessel": "probe:akte",
+        "beschreibung": "Eine Akte",
+        "beschriftungen": {
+          "en": {
+            "name": "File"
+          }
+        },
+        "ausPost": null,
+        "erkennbarAn": "",
+        "titelVorlage": "{name}",
+        "felder": [
+          {
+            "key": "name",
+            "label": "Name",
+            "typ": "text",
+            "pflicht": true,
+            "eindeutig": false,
+            "hilfe": "",
+            "standard": null,
+            "minLen": null,
+            "maxLen": null,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug"
+          },
+          {
+            "key": "vorgang",
+            "label": "Letzter Vorgang",
+            "typ": "referenz",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "",
+            "standard": null,
+            "minLen": null,
+            "maxLen": null,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "zielTypen": ["T(probe:vorgang)"],
+            "verweisart": "bezug"
+          },
+          {
+            "key": "stelle",
+            "label": "Stelle",
+            "typ": "referenz",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "",
+            "standard": null,
+            "minLen": null,
+            "maxLen": null,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "zielTypen": ["T(basis:organisation)"],
+            "verweisart": "bezug"
+          },
+          {
+            "key": "wer",
+            "label": "Wer",
+            "typ": "referenz",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "",
+            "standard": null,
+            "minLen": null,
+            "maxLen": null,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "zielTypen": ["T(benutzer)"],
+            "verweisart": "bezug"
+          },
+          {
+            "key": "posten",
+            "label": "Posten",
+            "typ": "tabelle",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "",
+            "standard": null,
+            "minLen": null,
+            "maxLen": null,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug",
+            "quelle": {
+              "typId": "T(probe:vorgang)",
+              "feldKey": "akte"
+            }
+          },
+          {
+            "key": "hinweis",
+            "label": "Hinweis",
+            "typ": "text",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "",
+            "standard": null,
+            "minLen": null,
+            "maxLen": null,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug",
+            "anzeigen": {
+              "modus": "alle",
+              "bedingungen": [
+                {
+                  "art": "verweistyp",
+                  "feld": "stelle",
+                  "typ": "T(basis:organisation)"
+                }
+              ]
+            }
+          }
+        ],
+        "register": [
+          {
+            "key": "daten",
+            "name": "Daten",
+            "art": "felder",
+            "felder": ["name", "vorgang", "stelle", "wer", "posten", "hinweis"]
+          },
+          {
+            "key": "vorgaenge",
+            "name": "Vorgänge",
+            "art": "verknuepfungen",
+            "quellen": [
+              {
+                "typId": "T(probe:vorgang)",
+                "feldKey": "akte"
+              }
+            ]
+          }
+        ],
+        "trefferlisten": [
+          {
+            "key": "standard",
+            "name": "Standard",
+            "spalten": ["name", "stelle"],
+            "standard": true
+          }
+        ],
+        "trefferliste": ["name", "stelle"],
+        "archiv": null,
+        "erstellenErlaubt": true,
+        "loeschenErlaubt": true,
+        "system": null,
+        "erstellt": "ZEIT",
+        "geaendert": "ZEIT",
+        "paket": "probe"
+      },
+      {
+        "id": "T(basis:organisation)",
+        "name": "Organisation",
+        "schluessel": "basis:organisation",
+        "beschreibung": "Firma, Behörde, Arztpraxis, Versicherung, Bank, Verein oder andere Stelle, mit der du zu tun hast.",
+        "ausPost": null,
+        "erkennbarAn": "",
+        "titelVorlage": "{name}",
+        "felder": [
+          {
+            "key": "name",
+            "label": "Name",
+            "typ": "text",
+            "pflicht": true,
+            "eindeutig": true,
+            "hilfe": "",
+            "standard": null,
+            "minLen": null,
+            "maxLen": 120,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug"
+          },
+          {
+            "key": "kuerzel",
+            "label": "Kürzel",
+            "typ": "text",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "Kurzname, z. B. „SWM“ für Stadtwerke Musterstadt",
+            "standard": null,
+            "minLen": null,
+            "maxLen": 20,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug"
+          },
+          {
+            "key": "art",
+            "label": "Art",
+            "typ": "auswahl",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "",
+            "standard": null,
+            "minLen": null,
+            "maxLen": null,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [
+              "Lieferant",
+              "Kunde",
+              "Bank",
+              "Versicherung",
+              "Behörde",
+              "Arbeitgeber",
+              "Arzt/Praxis",
+              "Handwerker",
+              "Vermieter",
+              "Verein",
+              "Versorger",
+              "Sonstige"
+            ],
+            "mehrfach": true,
+            "verweisart": "bezug"
+          },
+          {
+            "key": "kundennummer",
+            "label": "Kundennummer",
+            "typ": "text",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "Deine eigene Nummer bei dieser Organisation (Kunden-, Mitglieds-, Versicherten- oder Patientennummer)",
+            "standard": null,
+            "minLen": null,
+            "maxLen": 60,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug"
+          },
+          {
+            "key": "beschreibung",
+            "label": "Beschreibung",
+            "typ": "langtext",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "",
+            "standard": null,
+            "minLen": null,
+            "maxLen": null,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug"
+          },
+          {
+            "key": "telefon",
+            "label": "Telefon",
+            "typ": "text",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "",
+            "standard": null,
+            "minLen": null,
+            "maxLen": 40,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug"
+          },
+          {
+            "key": "fax",
+            "label": "Fax",
+            "typ": "text",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "",
+            "standard": null,
+            "minLen": null,
+            "maxLen": 40,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug"
+          },
+          {
+            "key": "email",
+            "label": "E-Mail",
+            "typ": "text",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "z. B. kontakt@example.org",
+            "standard": null,
+            "minLen": null,
+            "maxLen": 200,
+            "muster": "[^@\\s]+@[^@\\s]+\\.[^@\\s]+",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug"
+          },
+          {
+            "key": "internet",
+            "label": "Internetseite",
+            "typ": "text",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "z. B. https://www.example.org",
+            "standard": null,
+            "minLen": null,
+            "maxLen": 200,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug"
+          },
+          {
+            "key": "strasse",
+            "label": "Straße",
+            "typ": "text",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "",
+            "standard": null,
+            "minLen": null,
+            "maxLen": 120,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug"
+          },
+          {
+            "key": "hausnummer",
+            "label": "Hausnummer",
+            "typ": "text",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "",
+            "standard": null,
+            "minLen": null,
+            "maxLen": 10,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug"
+          },
+          {
+            "key": "plz",
+            "label": "PLZ",
+            "typ": "text",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "In Deutschland fünfstellig",
+            "standard": null,
+            "minLen": null,
+            "maxLen": 10,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug"
+          },
+          {
+            "key": "ort",
+            "label": "Ort",
+            "typ": "text",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "",
+            "standard": null,
+            "minLen": null,
+            "maxLen": 80,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug"
+          },
+          {
+            "key": "land",
+            "label": "Land",
+            "typ": "text",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "",
+            "standard": "Deutschland",
+            "minLen": null,
+            "maxLen": 60,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug"
+          }
+        ],
+        "register": [
+          {
+            "key": "stammdaten",
+            "name": "Stammdaten",
+            "art": "felder",
+            "felder": ["name", "kuerzel", "art", "kundennummer", "beschreibung"]
+          },
+          {
+            "key": "kontakt",
+            "name": "Kontakt",
+            "art": "felder",
+            "felder": ["telefon", "fax", "email", "internet"]
+          },
+          {
+            "key": "anschrift",
+            "name": "Anschrift",
+            "art": "felder",
+            "felder": ["strasse", "hausnummer", "plz", "ort", "land"]
+          },
+          {
+            "key": "dokumente",
+            "name": "Dokumente",
+            "art": "dokumente"
+          },
+          {
+            "key": "protokoll",
+            "name": "Protokoll",
+            "art": "protokoll"
+          }
+        ],
+        "trefferlisten": [
+          {
+            "key": "standard",
+            "name": "Standard",
+            "spalten": ["name", "art", "ort", "telefon"],
+            "standard": true
+          }
+        ],
+        "trefferliste": ["name", "art", "ort", "telefon"],
+        "archiv": null,
+        "erstellenErlaubt": true,
+        "loeschenErlaubt": true,
+        "system": null,
+        "erstellt": "ZEIT",
+        "geaendert": "ZEIT",
+        "paket": "basis"
+      },
+      {
+        "id": "T(probe:vorgang)",
+        "name": "Vorgang",
+        "schluessel": "probe:vorgang",
+        "beschreibung": "Ein Vorgang einer Akte",
+        "ausPost": null,
+        "erkennbarAn": "",
+        "titelVorlage": "{titel}",
+        "felder": [
+          {
+            "key": "titel",
+            "label": "Titel",
+            "typ": "text",
+            "pflicht": true,
+            "eindeutig": false,
+            "hilfe": "",
+            "standard": null,
+            "minLen": null,
+            "maxLen": null,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug"
+          },
+          {
+            "key": "akte",
+            "label": "Akte",
+            "typ": "referenz",
+            "pflicht": true,
+            "eindeutig": false,
+            "hilfe": "",
+            "standard": null,
+            "minLen": null,
+            "maxLen": null,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "zielTypen": ["T(probe:akte)"],
+            "verweisart": "zugehoerigkeit"
+          },
+          {
+            "key": "betrag",
+            "label": "Betrag",
+            "typ": "betrag",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "",
+            "standard": null,
+            "minLen": null,
+            "maxLen": null,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "waehrung": "EUR",
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug"
+          }
+        ],
+        "register": [
+          {
+            "key": "daten",
+            "name": "Daten",
+            "art": "felder",
+            "felder": ["titel", "akte", "betrag"]
+          },
+          {
+            "key": "dok",
+            "name": "Dokumente",
+            "art": "dokumente",
+            "versionierung": true
+          }
+        ],
+        "trefferlisten": [
+          {
+            "key": "standard",
+            "name": "Standard",
+            "spalten": [],
+            "standard": true
+          }
+        ],
+        "trefferliste": [],
+        "archiv": {
+          "jahre": 6,
+          "stichtag": null
+        },
+        "erstellenErlaubt": true,
+        "loeschenErlaubt": true,
+        "teilVon": "akte",
+        "system": null,
+        "erstellt": "ZEIT",
+        "geaendert": "ZEIT",
+        "paket": "probe"
+      }
+    ],
+    "sichten": [
+      {
+        "id": "S(Versicherungen)",
+        "name": "Versicherungen",
+        "beschreibung": "",
+        "elternId": "S(Organisationen)",
+        "position": 10,
+        "typen": ["T(basis:organisation)"],
+        "bedingungen": [
+          {
+            "art": "feld",
+            "feld": "art",
+            "op": "einerVon",
+            "wert": {
+              "art": "fest",
+              "wert": ["Versicherung"]
+            }
+          }
+        ],
+        "trefferliste": null,
+        "berechtigungen": null,
+        "symbol": null,
+        "erstellt": "ZEIT",
+        "geaendert": "ZEIT"
+      },
+      {
+        "id": "S(Banken)",
+        "name": "Banken",
+        "beschreibung": "",
+        "elternId": "S(Organisationen)",
+        "position": 20,
+        "typen": ["T(basis:organisation)"],
+        "bedingungen": [
+          {
+            "art": "feld",
+            "feld": "art",
+            "op": "einerVon",
+            "wert": {
+              "art": "fest",
+              "wert": ["Bank"]
+            }
+          }
+        ],
+        "trefferliste": null,
+        "berechtigungen": null,
+        "symbol": null,
+        "erstellt": "ZEIT",
+        "geaendert": "ZEIT"
+      },
+      {
+        "id": "S(Behörden)",
+        "name": "Behörden",
+        "beschreibung": "",
+        "elternId": "S(Organisationen)",
+        "position": 30,
+        "typen": ["T(basis:organisation)"],
+        "bedingungen": [
+          {
+            "art": "feld",
+            "feld": "art",
+            "op": "einerVon",
+            "wert": {
+              "art": "fest",
+              "wert": ["Behörde"]
+            }
+          }
+        ],
+        "trefferliste": null,
+        "berechtigungen": null,
+        "symbol": null,
+        "erstellt": "ZEIT",
+        "geaendert": "ZEIT"
+      },
+      {
+        "id": "S(Ärzte und Praxen)",
+        "name": "Ärzte und Praxen",
+        "beschreibung": "",
+        "elternId": "S(Organisationen)",
+        "position": 40,
+        "typen": ["T(basis:organisation)"],
+        "bedingungen": [
+          {
+            "art": "feld",
+            "feld": "art",
+            "op": "einerVon",
+            "wert": {
+              "art": "fest",
+              "wert": ["Arzt/Praxis"]
+            }
+          }
+        ],
+        "trefferliste": null,
+        "berechtigungen": null,
+        "symbol": null,
+        "erstellt": "ZEIT",
+        "geaendert": "ZEIT"
+      },
+      {
+        "id": "S(Organisationen)",
+        "name": "Organisationen",
+        "beschreibung": "Alle Organisationen",
+        "elternId": null,
+        "position": 60,
+        "typen": ["T(basis:organisation)"],
+        "bedingungen": [],
+        "trefferliste": null,
+        "berechtigungen": null,
+        "symbol": null,
+        "erstellt": "ZEIT",
+        "geaendert": "ZEIT"
+      }
+    ],
+    "pakete": [
+      {
+        "id": "basis",
+        "name": "Basis",
+        "version": "1.0.0",
+        "beschreibung": "Mappentyp Organisation für Firmen, Behörden, Ärzte, Versicherungen und andere Stellen – mit Kontakt, Anschrift und Sichten nach Art.",
+        "lizenz": "MIT",
+        "autor": {
+          "name": "Thomas Meissner",
+          "github": "motom001"
+        },
+        "herkunft": {
+          "art": "hochgeladen",
+          "von": "admin@example.org",
+          "am": "ZEIT"
+        },
+        "dms": ">=0.63.0",
+        "installiert": "ZEIT",
+        "installiertVon": "admin@example.org",
+        "aktualisiert": null,
+        "aktualisiertVon": null,
+        "typen": {
+          "organisation": "T(basis:organisation)"
+        },
+        "sichten": {
+          "organisationen": "S(Organisationen)",
+          "versicherungen": "S(Versicherungen)",
+          "banken": "S(Banken)",
+          "behoerden": "S(Behörden)",
+          "aerzte": "S(Ärzte und Praxen)"
+        },
+        "abhaengigkeiten": {},
+        "sichtStand": {
+          "organisationen": {
+            "stand": "PRUEFWERT",
+            "fassung": "PRUEFWERT"
+          },
+          "versicherungen": {
+            "stand": "PRUEFWERT",
+            "fassung": "PRUEFWERT"
+          },
+          "banken": {
+            "stand": "PRUEFWERT",
+            "fassung": "PRUEFWERT"
+          },
+          "behoerden": {
+            "stand": "PRUEFWERT",
+            "fassung": "PRUEFWERT"
+          },
+          "aerzte": {
+            "stand": "PRUEFWERT",
+            "fassung": "PRUEFWERT"
+          }
+        },
+        "einstellungen": null,
+        "code": false,
+        "mitkommt": {
+          "mappentypen": [
+            {
+              "schluessel": "organisation",
+              "name": "Organisation",
+              "beschreibung": "Firma, Behörde, Arztpraxis, Versicherung, Bank, Verein oder andere Stelle, mit der du zu tun hast.",
+              "felder": 14
+            }
+          ],
+          "sichten": [
+            {
+              "schluessel": "organisationen",
+              "name": "Organisationen",
+              "beschreibung": "Alle Organisationen"
+            },
+            {
+              "schluessel": "versicherungen",
+              "name": "Versicherungen"
+            },
+            {
+              "schluessel": "banken",
+              "name": "Banken"
+            },
+            {
+              "schluessel": "behoerden",
+              "name": "Behörden"
+            },
+            {
+              "schluessel": "aerzte",
+              "name": "Ärzte und Praxen"
+            }
+          ],
+          "vorgaben": [],
+          "vorlagen": 0,
+          "beispiele": 2,
+          "beispielDokumente": 0,
+          "wortlisten": [],
+          "automatisierungen": [],
+          "ablaufvorlagen": [],
+          "aktionen": [],
+          "rundgaenge": [],
+          "tipps": 0,
+          "einstellungen": [],
+          "code": false,
+          "netz": false,
+          "sprache": false
+        },
+        "typStand": {
+          "T(basis:organisation)": {
+            "name": "Organisation",
+            "beschreibung": "Firma, Behörde, Arztpraxis, Versicherung, Bank, Verein oder andere Stelle, mit der du zu tun hast.",
+            "titelVorlage": "{name}",
+            "felder": [
+              {
+                "key": "name",
+                "label": "Name",
+                "werte": {
+                  "eindeutig": true,
+                  "maxLen": 120,
+                  "pflicht": true,
+                  "typ": "text",
+                  "verweisart": "bezug"
+                }
+              },
+              {
+                "key": "kuerzel",
+                "label": "Kürzel",
+                "werte": {
+                  "hilfe": "Kurzname, z. B. „SWM“ für Stadtwerke Musterstadt",
+                  "maxLen": 20,
+                  "typ": "text",
+                  "verweisart": "bezug"
+                }
+              },
+              {
+                "key": "art",
+                "label": "Art",
+                "werte": {
+                  "mehrfach": true,
+                  "optionen": [
+                    "Lieferant",
+                    "Kunde",
+                    "Bank",
+                    "Versicherung",
+                    "Behörde",
+                    "Arbeitgeber",
+                    "Arzt/Praxis",
+                    "Handwerker",
+                    "Vermieter",
+                    "Verein",
+                    "Versorger",
+                    "Sonstige"
+                  ],
+                  "typ": "auswahl",
+                  "verweisart": "bezug"
+                }
+              },
+              {
+                "key": "kundennummer",
+                "label": "Kundennummer",
+                "werte": {
+                  "hilfe": "Deine eigene Nummer bei dieser Organisation (Kunden-, Mitglieds-, Versicherten- oder Patientennummer)",
+                  "maxLen": 60,
+                  "typ": "text",
+                  "verweisart": "bezug"
+                }
+              },
+              {
+                "key": "beschreibung",
+                "label": "Beschreibung",
+                "werte": {
+                  "typ": "langtext",
+                  "verweisart": "bezug"
+                }
+              },
+              {
+                "key": "telefon",
+                "label": "Telefon",
+                "werte": {
+                  "maxLen": 40,
+                  "typ": "text",
+                  "verweisart": "bezug"
+                }
+              },
+              {
+                "key": "fax",
+                "label": "Fax",
+                "werte": {
+                  "maxLen": 40,
+                  "typ": "text",
+                  "verweisart": "bezug"
+                }
+              },
+              {
+                "key": "email",
+                "label": "E-Mail",
+                "werte": {
+                  "hilfe": "z. B. kontakt@example.org",
+                  "maxLen": 200,
+                  "muster": "[^@\\s]+@[^@\\s]+\\.[^@\\s]+",
+                  "typ": "text",
+                  "verweisart": "bezug"
+                }
+              },
+              {
+                "key": "internet",
+                "label": "Internetseite",
+                "werte": {
+                  "hilfe": "z. B. https://www.example.org",
+                  "maxLen": 200,
+                  "typ": "text",
+                  "verweisart": "bezug"
+                }
+              },
+              {
+                "key": "strasse",
+                "label": "Straße",
+                "werte": {
+                  "maxLen": 120,
+                  "typ": "text",
+                  "verweisart": "bezug"
+                }
+              },
+              {
+                "key": "hausnummer",
+                "label": "Hausnummer",
+                "werte": {
+                  "maxLen": 10,
+                  "typ": "text",
+                  "verweisart": "bezug"
+                }
+              },
+              {
+                "key": "plz",
+                "label": "PLZ",
+                "werte": {
+                  "hilfe": "In Deutschland fünfstellig",
+                  "maxLen": 10,
+                  "typ": "text",
+                  "verweisart": "bezug"
+                }
+              },
+              {
+                "key": "ort",
+                "label": "Ort",
+                "werte": {
+                  "maxLen": 80,
+                  "typ": "text",
+                  "verweisart": "bezug"
+                }
+              },
+              {
+                "key": "land",
+                "label": "Land",
+                "werte": {
+                  "maxLen": 60,
+                  "standard": "Deutschland",
+                  "typ": "text",
+                  "verweisart": "bezug"
+                }
+              }
+            ],
+            "register": [
+              {
+                "key": "stammdaten",
+                "name": "Stammdaten",
+                "werte": {
+                  "art": "felder",
+                  "felder": ["name", "kuerzel", "art", "kundennummer", "beschreibung"]
+                }
+              },
+              {
+                "key": "kontakt",
+                "name": "Kontakt",
+                "werte": {
+                  "art": "felder",
+                  "felder": ["telefon", "fax", "email", "internet"]
+                }
+              },
+              {
+                "key": "anschrift",
+                "name": "Anschrift",
+                "werte": {
+                  "art": "felder",
+                  "felder": ["strasse", "hausnummer", "plz", "ort", "land"]
+                }
+              },
+              {
+                "key": "dokumente",
+                "name": "Dokumente",
+                "werte": {
+                  "art": "dokumente"
+                }
+              },
+              {
+                "key": "protokoll",
+                "name": "Protokoll",
+                "werte": {
+                  "art": "protokoll"
+                }
+              }
+            ]
+          }
+        }
+      }
+    ],
+    "mappen": {
+      "probe:akte": [],
+      "basis:organisation": [],
+      "probe:vorgang": []
+    },
+    "synonyme": {
+      "basis": []
+    }
+  },
+  "fehlerZweiterDurchgang": "Mappentyp „Akte“: Probefehler",
+  "nachFehlerZweiterDurchgang": {
+    "typen": [
+      {
+        "id": "T(basis:organisation)",
+        "name": "Organisation",
+        "schluessel": "basis:organisation",
+        "beschreibung": "Firma, Behörde, Arztpraxis, Versicherung, Bank, Verein oder andere Stelle, mit der du zu tun hast.",
+        "ausPost": null,
+        "erkennbarAn": "",
+        "titelVorlage": "{name}",
+        "felder": [
+          {
+            "key": "name",
+            "label": "Name",
+            "typ": "text",
+            "pflicht": true,
+            "eindeutig": true,
+            "hilfe": "",
+            "standard": null,
+            "minLen": null,
+            "maxLen": 120,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug"
+          },
+          {
+            "key": "kuerzel",
+            "label": "Kürzel",
+            "typ": "text",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "Kurzname, z. B. „SWM“ für Stadtwerke Musterstadt",
+            "standard": null,
+            "minLen": null,
+            "maxLen": 20,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug"
+          },
+          {
+            "key": "art",
+            "label": "Art",
+            "typ": "auswahl",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "",
+            "standard": null,
+            "minLen": null,
+            "maxLen": null,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [
+              "Lieferant",
+              "Kunde",
+              "Bank",
+              "Versicherung",
+              "Behörde",
+              "Arbeitgeber",
+              "Arzt/Praxis",
+              "Handwerker",
+              "Vermieter",
+              "Verein",
+              "Versorger",
+              "Sonstige"
+            ],
+            "mehrfach": true,
+            "verweisart": "bezug"
+          },
+          {
+            "key": "kundennummer",
+            "label": "Kundennummer",
+            "typ": "text",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "Deine eigene Nummer bei dieser Organisation (Kunden-, Mitglieds-, Versicherten- oder Patientennummer)",
+            "standard": null,
+            "minLen": null,
+            "maxLen": 60,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug"
+          },
+          {
+            "key": "beschreibung",
+            "label": "Beschreibung",
+            "typ": "langtext",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "",
+            "standard": null,
+            "minLen": null,
+            "maxLen": null,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug"
+          },
+          {
+            "key": "telefon",
+            "label": "Telefon",
+            "typ": "text",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "",
+            "standard": null,
+            "minLen": null,
+            "maxLen": 40,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug"
+          },
+          {
+            "key": "fax",
+            "label": "Fax",
+            "typ": "text",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "",
+            "standard": null,
+            "minLen": null,
+            "maxLen": 40,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug"
+          },
+          {
+            "key": "email",
+            "label": "E-Mail",
+            "typ": "text",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "z. B. kontakt@example.org",
+            "standard": null,
+            "minLen": null,
+            "maxLen": 200,
+            "muster": "[^@\\s]+@[^@\\s]+\\.[^@\\s]+",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug"
+          },
+          {
+            "key": "internet",
+            "label": "Internetseite",
+            "typ": "text",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "z. B. https://www.example.org",
+            "standard": null,
+            "minLen": null,
+            "maxLen": 200,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug"
+          },
+          {
+            "key": "strasse",
+            "label": "Straße",
+            "typ": "text",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "",
+            "standard": null,
+            "minLen": null,
+            "maxLen": 120,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug"
+          },
+          {
+            "key": "hausnummer",
+            "label": "Hausnummer",
+            "typ": "text",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "",
+            "standard": null,
+            "minLen": null,
+            "maxLen": 10,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug"
+          },
+          {
+            "key": "plz",
+            "label": "PLZ",
+            "typ": "text",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "In Deutschland fünfstellig",
+            "standard": null,
+            "minLen": null,
+            "maxLen": 10,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug"
+          },
+          {
+            "key": "ort",
+            "label": "Ort",
+            "typ": "text",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "",
+            "standard": null,
+            "minLen": null,
+            "maxLen": 80,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug"
+          },
+          {
+            "key": "land",
+            "label": "Land",
+            "typ": "text",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "",
+            "standard": "Deutschland",
+            "minLen": null,
+            "maxLen": 60,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug"
+          }
+        ],
+        "register": [
+          {
+            "key": "stammdaten",
+            "name": "Stammdaten",
+            "art": "felder",
+            "felder": ["name", "kuerzel", "art", "kundennummer", "beschreibung"]
+          },
+          {
+            "key": "kontakt",
+            "name": "Kontakt",
+            "art": "felder",
+            "felder": ["telefon", "fax", "email", "internet"]
+          },
+          {
+            "key": "anschrift",
+            "name": "Anschrift",
+            "art": "felder",
+            "felder": ["strasse", "hausnummer", "plz", "ort", "land"]
+          },
+          {
+            "key": "dokumente",
+            "name": "Dokumente",
+            "art": "dokumente"
+          },
+          {
+            "key": "protokoll",
+            "name": "Protokoll",
+            "art": "protokoll"
+          }
+        ],
+        "trefferlisten": [
+          {
+            "key": "standard",
+            "name": "Standard",
+            "spalten": ["name", "art", "ort", "telefon"],
+            "standard": true
+          }
+        ],
+        "trefferliste": ["name", "art", "ort", "telefon"],
+        "archiv": null,
+        "erstellenErlaubt": true,
+        "loeschenErlaubt": true,
+        "system": null,
+        "erstellt": "ZEIT",
+        "geaendert": "ZEIT",
+        "paket": "basis"
+      }
+    ],
+    "sichten": [
+      {
+        "id": "S(Versicherungen)",
+        "name": "Versicherungen",
+        "beschreibung": "",
+        "elternId": "S(Organisationen)",
+        "position": 10,
+        "typen": ["T(basis:organisation)"],
+        "bedingungen": [
+          {
+            "art": "feld",
+            "feld": "art",
+            "op": "einerVon",
+            "wert": {
+              "art": "fest",
+              "wert": ["Versicherung"]
+            }
+          }
+        ],
+        "trefferliste": null,
+        "berechtigungen": null,
+        "symbol": null,
+        "erstellt": "ZEIT",
+        "geaendert": "ZEIT"
+      },
+      {
+        "id": "S(Banken)",
+        "name": "Banken",
+        "beschreibung": "",
+        "elternId": "S(Organisationen)",
+        "position": 20,
+        "typen": ["T(basis:organisation)"],
+        "bedingungen": [
+          {
+            "art": "feld",
+            "feld": "art",
+            "op": "einerVon",
+            "wert": {
+              "art": "fest",
+              "wert": ["Bank"]
+            }
+          }
+        ],
+        "trefferliste": null,
+        "berechtigungen": null,
+        "symbol": null,
+        "erstellt": "ZEIT",
+        "geaendert": "ZEIT"
+      },
+      {
+        "id": "S(Behörden)",
+        "name": "Behörden",
+        "beschreibung": "",
+        "elternId": "S(Organisationen)",
+        "position": 30,
+        "typen": ["T(basis:organisation)"],
+        "bedingungen": [
+          {
+            "art": "feld",
+            "feld": "art",
+            "op": "einerVon",
+            "wert": {
+              "art": "fest",
+              "wert": ["Behörde"]
+            }
+          }
+        ],
+        "trefferliste": null,
+        "berechtigungen": null,
+        "symbol": null,
+        "erstellt": "ZEIT",
+        "geaendert": "ZEIT"
+      },
+      {
+        "id": "S(Ärzte und Praxen)",
+        "name": "Ärzte und Praxen",
+        "beschreibung": "",
+        "elternId": "S(Organisationen)",
+        "position": 40,
+        "typen": ["T(basis:organisation)"],
+        "bedingungen": [
+          {
+            "art": "feld",
+            "feld": "art",
+            "op": "einerVon",
+            "wert": {
+              "art": "fest",
+              "wert": ["Arzt/Praxis"]
+            }
+          }
+        ],
+        "trefferliste": null,
+        "berechtigungen": null,
+        "symbol": null,
+        "erstellt": "ZEIT",
+        "geaendert": "ZEIT"
+      },
+      {
+        "id": "S(Organisationen)",
+        "name": "Organisationen",
+        "beschreibung": "Alle Organisationen",
+        "elternId": null,
+        "position": 100040,
+        "typen": ["T(basis:organisation)"],
+        "bedingungen": [],
+        "trefferliste": null,
+        "berechtigungen": null,
+        "symbol": null,
+        "erstellt": "ZEIT",
+        "geaendert": "ZEIT"
+      }
+    ],
+    "pakete": [
+      {
+        "id": "basis",
+        "name": "Basis",
+        "version": "1.0.0",
+        "beschreibung": "Mappentyp Organisation für Firmen, Behörden, Ärzte, Versicherungen und andere Stellen – mit Kontakt, Anschrift und Sichten nach Art.",
+        "lizenz": "MIT",
+        "autor": {
+          "name": "Thomas Meissner",
+          "github": "motom001"
+        },
+        "herkunft": {
+          "art": "hochgeladen",
+          "von": "admin@example.org",
+          "am": "ZEIT"
+        },
+        "dms": ">=0.63.0",
+        "installiert": "ZEIT",
+        "installiertVon": "admin@example.org",
+        "aktualisiert": null,
+        "aktualisiertVon": null,
+        "typen": {
+          "organisation": "T(basis:organisation)"
+        },
+        "sichten": {
+          "organisationen": "S(Organisationen)",
+          "versicherungen": "S(Versicherungen)",
+          "banken": "S(Banken)",
+          "behoerden": "S(Behörden)",
+          "aerzte": "S(Ärzte und Praxen)"
+        },
+        "abhaengigkeiten": {},
+        "sichtStand": {
+          "organisationen": {
+            "stand": "PRUEFWERT",
+            "fassung": "PRUEFWERT"
+          },
+          "versicherungen": {
+            "stand": "PRUEFWERT",
+            "fassung": "PRUEFWERT"
+          },
+          "banken": {
+            "stand": "PRUEFWERT",
+            "fassung": "PRUEFWERT"
+          },
+          "behoerden": {
+            "stand": "PRUEFWERT",
+            "fassung": "PRUEFWERT"
+          },
+          "aerzte": {
+            "stand": "PRUEFWERT",
+            "fassung": "PRUEFWERT"
+          }
+        },
+        "einstellungen": null,
+        "code": false,
+        "mitkommt": {
+          "mappentypen": [
+            {
+              "schluessel": "organisation",
+              "name": "Organisation",
+              "beschreibung": "Firma, Behörde, Arztpraxis, Versicherung, Bank, Verein oder andere Stelle, mit der du zu tun hast.",
+              "felder": 14
+            }
+          ],
+          "sichten": [
+            {
+              "schluessel": "organisationen",
+              "name": "Organisationen",
+              "beschreibung": "Alle Organisationen"
+            },
+            {
+              "schluessel": "versicherungen",
+              "name": "Versicherungen"
+            },
+            {
+              "schluessel": "banken",
+              "name": "Banken"
+            },
+            {
+              "schluessel": "behoerden",
+              "name": "Behörden"
+            },
+            {
+              "schluessel": "aerzte",
+              "name": "Ärzte und Praxen"
+            }
+          ],
+          "vorgaben": [],
+          "vorlagen": 0,
+          "beispiele": 2,
+          "beispielDokumente": 0,
+          "wortlisten": [],
+          "automatisierungen": [],
+          "ablaufvorlagen": [],
+          "aktionen": [],
+          "rundgaenge": [],
+          "tipps": 0,
+          "einstellungen": [],
+          "code": false,
+          "netz": false,
+          "sprache": false
+        },
+        "typStand": {
+          "T(basis:organisation)": {
+            "name": "Organisation",
+            "beschreibung": "Firma, Behörde, Arztpraxis, Versicherung, Bank, Verein oder andere Stelle, mit der du zu tun hast.",
+            "titelVorlage": "{name}",
+            "felder": [
+              {
+                "key": "name",
+                "label": "Name",
+                "werte": {
+                  "eindeutig": true,
+                  "maxLen": 120,
+                  "pflicht": true,
+                  "typ": "text",
+                  "verweisart": "bezug"
+                }
+              },
+              {
+                "key": "kuerzel",
+                "label": "Kürzel",
+                "werte": {
+                  "hilfe": "Kurzname, z. B. „SWM“ für Stadtwerke Musterstadt",
+                  "maxLen": 20,
+                  "typ": "text",
+                  "verweisart": "bezug"
+                }
+              },
+              {
+                "key": "art",
+                "label": "Art",
+                "werte": {
+                  "mehrfach": true,
+                  "optionen": [
+                    "Lieferant",
+                    "Kunde",
+                    "Bank",
+                    "Versicherung",
+                    "Behörde",
+                    "Arbeitgeber",
+                    "Arzt/Praxis",
+                    "Handwerker",
+                    "Vermieter",
+                    "Verein",
+                    "Versorger",
+                    "Sonstige"
+                  ],
+                  "typ": "auswahl",
+                  "verweisart": "bezug"
+                }
+              },
+              {
+                "key": "kundennummer",
+                "label": "Kundennummer",
+                "werte": {
+                  "hilfe": "Deine eigene Nummer bei dieser Organisation (Kunden-, Mitglieds-, Versicherten- oder Patientennummer)",
+                  "maxLen": 60,
+                  "typ": "text",
+                  "verweisart": "bezug"
+                }
+              },
+              {
+                "key": "beschreibung",
+                "label": "Beschreibung",
+                "werte": {
+                  "typ": "langtext",
+                  "verweisart": "bezug"
+                }
+              },
+              {
+                "key": "telefon",
+                "label": "Telefon",
+                "werte": {
+                  "maxLen": 40,
+                  "typ": "text",
+                  "verweisart": "bezug"
+                }
+              },
+              {
+                "key": "fax",
+                "label": "Fax",
+                "werte": {
+                  "maxLen": 40,
+                  "typ": "text",
+                  "verweisart": "bezug"
+                }
+              },
+              {
+                "key": "email",
+                "label": "E-Mail",
+                "werte": {
+                  "hilfe": "z. B. kontakt@example.org",
+                  "maxLen": 200,
+                  "muster": "[^@\\s]+@[^@\\s]+\\.[^@\\s]+",
+                  "typ": "text",
+                  "verweisart": "bezug"
+                }
+              },
+              {
+                "key": "internet",
+                "label": "Internetseite",
+                "werte": {
+                  "hilfe": "z. B. https://www.example.org",
+                  "maxLen": 200,
+                  "typ": "text",
+                  "verweisart": "bezug"
+                }
+              },
+              {
+                "key": "strasse",
+                "label": "Straße",
+                "werte": {
+                  "maxLen": 120,
+                  "typ": "text",
+                  "verweisart": "bezug"
+                }
+              },
+              {
+                "key": "hausnummer",
+                "label": "Hausnummer",
+                "werte": {
+                  "maxLen": 10,
+                  "typ": "text",
+                  "verweisart": "bezug"
+                }
+              },
+              {
+                "key": "plz",
+                "label": "PLZ",
+                "werte": {
+                  "hilfe": "In Deutschland fünfstellig",
+                  "maxLen": 10,
+                  "typ": "text",
+                  "verweisart": "bezug"
+                }
+              },
+              {
+                "key": "ort",
+                "label": "Ort",
+                "werte": {
+                  "maxLen": 80,
+                  "typ": "text",
+                  "verweisart": "bezug"
+                }
+              },
+              {
+                "key": "land",
+                "label": "Land",
+                "werte": {
+                  "maxLen": 60,
+                  "standard": "Deutschland",
+                  "typ": "text",
+                  "verweisart": "bezug"
+                }
+              }
+            ],
+            "register": [
+              {
+                "key": "stammdaten",
+                "name": "Stammdaten",
+                "werte": {
+                  "art": "felder",
+                  "felder": ["name", "kuerzel", "art", "kundennummer", "beschreibung"]
+                }
+              },
+              {
+                "key": "kontakt",
+                "name": "Kontakt",
+                "werte": {
+                  "art": "felder",
+                  "felder": ["telefon", "fax", "email", "internet"]
+                }
+              },
+              {
+                "key": "anschrift",
+                "name": "Anschrift",
+                "werte": {
+                  "art": "felder",
+                  "felder": ["strasse", "hausnummer", "plz", "ort", "land"]
+                }
+              },
+              {
+                "key": "dokumente",
+                "name": "Dokumente",
+                "werte": {
+                  "art": "dokumente"
+                }
+              },
+              {
+                "key": "protokoll",
+                "name": "Protokoll",
+                "werte": {
+                  "art": "protokoll"
+                }
+              }
+            ]
+          }
+        }
+      }
+    ],
+    "mappen": {
+      "basis:organisation": []
+    },
+    "synonyme": {
+      "basis": []
+    }
+  },
+  "installiert": {
+    "typen": [
+      {
+        "id": "T(probe:akte)",
+        "name": "Akte",
+        "schluessel": "probe:akte",
+        "beschreibung": "Eine Akte",
+        "beschriftungen": {
+          "en": {
+            "name": "File"
+          }
+        },
+        "ausPost": null,
+        "erkennbarAn": "",
+        "titelVorlage": "{name}",
+        "felder": [
+          {
+            "key": "name",
+            "label": "Name",
+            "typ": "text",
+            "pflicht": true,
+            "eindeutig": false,
+            "hilfe": "",
+            "standard": null,
+            "minLen": null,
+            "maxLen": null,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug"
+          },
+          {
+            "key": "vorgang",
+            "label": "Letzter Vorgang",
+            "typ": "referenz",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "",
+            "standard": null,
+            "minLen": null,
+            "maxLen": null,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "zielTypen": ["T(probe:vorgang)"],
+            "verweisart": "bezug"
+          },
+          {
+            "key": "stelle",
+            "label": "Stelle",
+            "typ": "referenz",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "",
+            "standard": null,
+            "minLen": null,
+            "maxLen": null,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "zielTypen": ["T(basis:organisation)"],
+            "verweisart": "bezug"
+          },
+          {
+            "key": "wer",
+            "label": "Wer",
+            "typ": "referenz",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "",
+            "standard": null,
+            "minLen": null,
+            "maxLen": null,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "zielTypen": ["T(benutzer)"],
+            "verweisart": "bezug"
+          },
+          {
+            "key": "posten",
+            "label": "Posten",
+            "typ": "tabelle",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "",
+            "standard": null,
+            "minLen": null,
+            "maxLen": null,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug",
+            "quelle": {
+              "typId": "T(probe:vorgang)",
+              "feldKey": "akte"
+            }
+          },
+          {
+            "key": "hinweis",
+            "label": "Hinweis",
+            "typ": "text",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "",
+            "standard": null,
+            "minLen": null,
+            "maxLen": null,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug",
+            "anzeigen": {
+              "modus": "alle",
+              "bedingungen": [
+                {
+                  "art": "verweistyp",
+                  "feld": "stelle",
+                  "typ": "T(basis:organisation)"
+                }
+              ]
+            }
+          }
+        ],
+        "register": [
+          {
+            "key": "daten",
+            "name": "Daten",
+            "art": "felder",
+            "felder": ["name", "vorgang", "stelle", "wer", "posten", "hinweis"]
+          },
+          {
+            "key": "vorgaenge",
+            "name": "Vorgänge",
+            "art": "verknuepfungen",
+            "quellen": [
+              {
+                "typId": "T(probe:vorgang)",
+                "feldKey": "akte"
+              }
+            ]
+          }
+        ],
+        "trefferlisten": [
+          {
+            "key": "standard",
+            "name": "Standard",
+            "spalten": ["name", "stelle"],
+            "standard": true
+          }
+        ],
+        "trefferliste": ["name", "stelle"],
+        "archiv": null,
+        "erstellenErlaubt": true,
+        "loeschenErlaubt": true,
+        "system": null,
+        "erstellt": "ZEIT",
+        "geaendert": "ZEIT",
+        "paket": "probe"
+      },
+      {
+        "id": "T(basis:organisation)",
+        "name": "Organisation",
+        "schluessel": "basis:organisation",
+        "beschreibung": "Firma, Behörde, Arztpraxis, Versicherung, Bank, Verein oder andere Stelle, mit der du zu tun hast.",
+        "ausPost": null,
+        "erkennbarAn": "",
+        "titelVorlage": "{name}",
+        "felder": [
+          {
+            "key": "name",
+            "label": "Name",
+            "typ": "text",
+            "pflicht": true,
+            "eindeutig": true,
+            "hilfe": "",
+            "standard": null,
+            "minLen": null,
+            "maxLen": 120,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug"
+          },
+          {
+            "key": "kuerzel",
+            "label": "Kürzel",
+            "typ": "text",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "Kurzname, z. B. „SWM“ für Stadtwerke Musterstadt",
+            "standard": null,
+            "minLen": null,
+            "maxLen": 20,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug"
+          },
+          {
+            "key": "art",
+            "label": "Art",
+            "typ": "auswahl",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "",
+            "standard": null,
+            "minLen": null,
+            "maxLen": null,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [
+              "Lieferant",
+              "Kunde",
+              "Bank",
+              "Versicherung",
+              "Behörde",
+              "Arbeitgeber",
+              "Arzt/Praxis",
+              "Handwerker",
+              "Vermieter",
+              "Verein",
+              "Versorger",
+              "Sonstige"
+            ],
+            "mehrfach": true,
+            "verweisart": "bezug"
+          },
+          {
+            "key": "kundennummer",
+            "label": "Kundennummer",
+            "typ": "text",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "Deine eigene Nummer bei dieser Organisation (Kunden-, Mitglieds-, Versicherten- oder Patientennummer)",
+            "standard": null,
+            "minLen": null,
+            "maxLen": 60,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug"
+          },
+          {
+            "key": "beschreibung",
+            "label": "Beschreibung",
+            "typ": "langtext",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "",
+            "standard": null,
+            "minLen": null,
+            "maxLen": null,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug"
+          },
+          {
+            "key": "telefon",
+            "label": "Telefon",
+            "typ": "text",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "",
+            "standard": null,
+            "minLen": null,
+            "maxLen": 40,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug"
+          },
+          {
+            "key": "fax",
+            "label": "Fax",
+            "typ": "text",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "",
+            "standard": null,
+            "minLen": null,
+            "maxLen": 40,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug"
+          },
+          {
+            "key": "email",
+            "label": "E-Mail",
+            "typ": "text",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "z. B. kontakt@example.org",
+            "standard": null,
+            "minLen": null,
+            "maxLen": 200,
+            "muster": "[^@\\s]+@[^@\\s]+\\.[^@\\s]+",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug"
+          },
+          {
+            "key": "internet",
+            "label": "Internetseite",
+            "typ": "text",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "z. B. https://www.example.org",
+            "standard": null,
+            "minLen": null,
+            "maxLen": 200,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug"
+          },
+          {
+            "key": "strasse",
+            "label": "Straße",
+            "typ": "text",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "",
+            "standard": null,
+            "minLen": null,
+            "maxLen": 120,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug"
+          },
+          {
+            "key": "hausnummer",
+            "label": "Hausnummer",
+            "typ": "text",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "",
+            "standard": null,
+            "minLen": null,
+            "maxLen": 10,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug"
+          },
+          {
+            "key": "plz",
+            "label": "PLZ",
+            "typ": "text",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "In Deutschland fünfstellig",
+            "standard": null,
+            "minLen": null,
+            "maxLen": 10,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug"
+          },
+          {
+            "key": "ort",
+            "label": "Ort",
+            "typ": "text",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "",
+            "standard": null,
+            "minLen": null,
+            "maxLen": 80,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug"
+          },
+          {
+            "key": "land",
+            "label": "Land",
+            "typ": "text",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "",
+            "standard": "Deutschland",
+            "minLen": null,
+            "maxLen": 60,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug"
+          }
+        ],
+        "register": [
+          {
+            "key": "stammdaten",
+            "name": "Stammdaten",
+            "art": "felder",
+            "felder": ["name", "kuerzel", "art", "kundennummer", "beschreibung"]
+          },
+          {
+            "key": "kontakt",
+            "name": "Kontakt",
+            "art": "felder",
+            "felder": ["telefon", "fax", "email", "internet"]
+          },
+          {
+            "key": "anschrift",
+            "name": "Anschrift",
+            "art": "felder",
+            "felder": ["strasse", "hausnummer", "plz", "ort", "land"]
+          },
+          {
+            "key": "dokumente",
+            "name": "Dokumente",
+            "art": "dokumente"
+          },
+          {
+            "key": "protokoll",
+            "name": "Protokoll",
+            "art": "protokoll"
+          }
+        ],
+        "trefferlisten": [
+          {
+            "key": "standard",
+            "name": "Standard",
+            "spalten": ["name", "art", "ort", "telefon"],
+            "standard": true
+          }
+        ],
+        "trefferliste": ["name", "art", "ort", "telefon"],
+        "archiv": null,
+        "erstellenErlaubt": true,
+        "loeschenErlaubt": true,
+        "system": null,
+        "erstellt": "ZEIT",
+        "geaendert": "ZEIT",
+        "paket": "basis"
+      },
+      {
+        "id": "T(probe:vorgang)",
+        "name": "Vorgang",
+        "schluessel": "probe:vorgang",
+        "beschreibung": "Ein Vorgang einer Akte",
+        "ausPost": null,
+        "erkennbarAn": "",
+        "titelVorlage": "{titel}",
+        "felder": [
+          {
+            "key": "titel",
+            "label": "Titel",
+            "typ": "text",
+            "pflicht": true,
+            "eindeutig": false,
+            "hilfe": "",
+            "standard": null,
+            "minLen": null,
+            "maxLen": null,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug"
+          },
+          {
+            "key": "akte",
+            "label": "Akte",
+            "typ": "referenz",
+            "pflicht": true,
+            "eindeutig": false,
+            "hilfe": "",
+            "standard": null,
+            "minLen": null,
+            "maxLen": null,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "zielTypen": ["T(probe:akte)"],
+            "verweisart": "zugehoerigkeit"
+          },
+          {
+            "key": "betrag",
+            "label": "Betrag",
+            "typ": "betrag",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "",
+            "standard": null,
+            "minLen": null,
+            "maxLen": null,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "waehrung": "EUR",
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug"
+          }
+        ],
+        "register": [
+          {
+            "key": "daten",
+            "name": "Daten",
+            "art": "felder",
+            "felder": ["titel", "akte", "betrag"]
+          },
+          {
+            "key": "dok",
+            "name": "Dokumente",
+            "art": "dokumente",
+            "versionierung": true
+          }
+        ],
+        "trefferlisten": [
+          {
+            "key": "standard",
+            "name": "Standard",
+            "spalten": [],
+            "standard": true
+          }
+        ],
+        "trefferliste": [],
+        "archiv": {
+          "jahre": 6,
+          "stichtag": null
+        },
+        "erstellenErlaubt": true,
+        "loeschenErlaubt": true,
+        "teilVon": "akte",
+        "system": null,
+        "erstellt": "ZEIT",
+        "geaendert": "ZEIT",
+        "paket": "probe"
+      }
+    ],
+    "sichten": [
+      {
+        "id": "S(Offene Vorgänge)",
+        "name": "Offene Vorgänge",
+        "beschreibung": "",
+        "elternId": "S(Akten)",
+        "position": 10,
+        "typen": ["T(probe:vorgang)"],
+        "bedingungen": [
+          {
+            "art": "feld",
+            "feld": "betrag",
+            "op": "leer"
+          }
+        ],
+        "trefferliste": null,
+        "berechtigungen": null,
+        "symbol": null,
+        "erstellt": "ZEIT",
+        "geaendert": "ZEIT"
+      },
+      {
+        "id": "S(Versicherungen)",
+        "name": "Versicherungen",
+        "beschreibung": "",
+        "elternId": "S(Organisationen)",
+        "position": 10,
+        "typen": ["T(basis:organisation)"],
+        "bedingungen": [
+          {
+            "art": "feld",
+            "feld": "art",
+            "op": "einerVon",
+            "wert": {
+              "art": "fest",
+              "wert": ["Versicherung"]
+            }
+          }
+        ],
+        "trefferliste": null,
+        "berechtigungen": null,
+        "symbol": null,
+        "erstellt": "ZEIT",
+        "geaendert": "ZEIT"
+      },
+      {
+        "id": "S(Banken)",
+        "name": "Banken",
+        "beschreibung": "",
+        "elternId": "S(Organisationen)",
+        "position": 20,
+        "typen": ["T(basis:organisation)"],
+        "bedingungen": [
+          {
+            "art": "feld",
+            "feld": "art",
+            "op": "einerVon",
+            "wert": {
+              "art": "fest",
+              "wert": ["Bank"]
+            }
+          }
+        ],
+        "trefferliste": null,
+        "berechtigungen": null,
+        "symbol": null,
+        "erstellt": "ZEIT",
+        "geaendert": "ZEIT"
+      },
+      {
+        "id": "S(Mit Stelle)",
+        "name": "Mit Stelle",
+        "beschreibung": "",
+        "elternId": "S(Akten)",
+        "position": 20,
+        "typen": ["T(probe:akte)", "T(basis:organisation)"],
+        "bedingungen": [],
+        "trefferliste": null,
+        "berechtigungen": null,
+        "symbol": null,
+        "erstellt": "ZEIT",
+        "geaendert": "ZEIT"
+      },
+      {
+        "id": "S(Behörden)",
+        "name": "Behörden",
+        "beschreibung": "",
+        "elternId": "S(Organisationen)",
+        "position": 30,
+        "typen": ["T(basis:organisation)"],
+        "bedingungen": [
+          {
+            "art": "feld",
+            "feld": "art",
+            "op": "einerVon",
+            "wert": {
+              "art": "fest",
+              "wert": ["Behörde"]
+            }
+          }
+        ],
+        "trefferliste": null,
+        "berechtigungen": null,
+        "symbol": null,
+        "erstellt": "ZEIT",
+        "geaendert": "ZEIT"
+      },
+      {
+        "id": "S(Ärzte und Praxen)",
+        "name": "Ärzte und Praxen",
+        "beschreibung": "",
+        "elternId": "S(Organisationen)",
+        "position": 40,
+        "typen": ["T(basis:organisation)"],
+        "bedingungen": [
+          {
+            "art": "feld",
+            "feld": "art",
+            "op": "einerVon",
+            "wert": {
+              "art": "fest",
+              "wert": ["Arzt/Praxis"]
+            }
+          }
+        ],
+        "trefferliste": null,
+        "berechtigungen": null,
+        "symbol": null,
+        "erstellt": "ZEIT",
+        "geaendert": "ZEIT"
+      },
+      {
+        "id": "S(Organisationen)",
+        "name": "Organisationen",
+        "beschreibung": "Alle Organisationen",
+        "elternId": null,
+        "position": 100040,
+        "typen": ["T(basis:organisation)"],
+        "bedingungen": [],
+        "trefferliste": null,
+        "berechtigungen": null,
+        "symbol": null,
+        "erstellt": "ZEIT",
+        "geaendert": "ZEIT"
+      },
+      {
+        "id": "S(Akten)",
+        "name": "Akten",
+        "beschreibung": "",
+        "elternId": null,
+        "position": 100050,
+        "typen": ["T(probe:akte)"],
+        "bedingungen": [],
+        "trefferliste": null,
+        "berechtigungen": null,
+        "symbol": "folder",
+        "erstellt": "ZEIT",
+        "geaendert": "ZEIT"
+      }
+    ],
+    "pakete": [
+      {
+        "id": "basis",
+        "name": "Basis",
+        "version": "1.0.0",
+        "beschreibung": "Mappentyp Organisation für Firmen, Behörden, Ärzte, Versicherungen und andere Stellen – mit Kontakt, Anschrift und Sichten nach Art.",
+        "lizenz": "MIT",
+        "autor": {
+          "name": "Thomas Meissner",
+          "github": "motom001"
+        },
+        "herkunft": {
+          "art": "hochgeladen",
+          "von": "admin@example.org",
+          "am": "ZEIT"
+        },
+        "dms": ">=0.63.0",
+        "installiert": "ZEIT",
+        "installiertVon": "admin@example.org",
+        "aktualisiert": null,
+        "aktualisiertVon": null,
+        "typen": {
+          "organisation": "T(basis:organisation)"
+        },
+        "sichten": {
+          "organisationen": "S(Organisationen)",
+          "versicherungen": "S(Versicherungen)",
+          "banken": "S(Banken)",
+          "behoerden": "S(Behörden)",
+          "aerzte": "S(Ärzte und Praxen)"
+        },
+        "abhaengigkeiten": {},
+        "sichtStand": {
+          "organisationen": {
+            "stand": "PRUEFWERT",
+            "fassung": "PRUEFWERT"
+          },
+          "versicherungen": {
+            "stand": "PRUEFWERT",
+            "fassung": "PRUEFWERT"
+          },
+          "banken": {
+            "stand": "PRUEFWERT",
+            "fassung": "PRUEFWERT"
+          },
+          "behoerden": {
+            "stand": "PRUEFWERT",
+            "fassung": "PRUEFWERT"
+          },
+          "aerzte": {
+            "stand": "PRUEFWERT",
+            "fassung": "PRUEFWERT"
+          }
+        },
+        "einstellungen": null,
+        "code": false,
+        "mitkommt": {
+          "mappentypen": [
+            {
+              "schluessel": "organisation",
+              "name": "Organisation",
+              "beschreibung": "Firma, Behörde, Arztpraxis, Versicherung, Bank, Verein oder andere Stelle, mit der du zu tun hast.",
+              "felder": 14
+            }
+          ],
+          "sichten": [
+            {
+              "schluessel": "organisationen",
+              "name": "Organisationen",
+              "beschreibung": "Alle Organisationen"
+            },
+            {
+              "schluessel": "versicherungen",
+              "name": "Versicherungen"
+            },
+            {
+              "schluessel": "banken",
+              "name": "Banken"
+            },
+            {
+              "schluessel": "behoerden",
+              "name": "Behörden"
+            },
+            {
+              "schluessel": "aerzte",
+              "name": "Ärzte und Praxen"
+            }
+          ],
+          "vorgaben": [],
+          "vorlagen": 0,
+          "beispiele": 2,
+          "beispielDokumente": 0,
+          "wortlisten": [],
+          "automatisierungen": [],
+          "ablaufvorlagen": [],
+          "aktionen": [],
+          "rundgaenge": [],
+          "tipps": 0,
+          "einstellungen": [],
+          "code": false,
+          "netz": false,
+          "sprache": false
+        },
+        "typStand": {
+          "T(basis:organisation)": {
+            "name": "Organisation",
+            "beschreibung": "Firma, Behörde, Arztpraxis, Versicherung, Bank, Verein oder andere Stelle, mit der du zu tun hast.",
+            "titelVorlage": "{name}",
+            "felder": [
+              {
+                "key": "name",
+                "label": "Name",
+                "werte": {
+                  "eindeutig": true,
+                  "maxLen": 120,
+                  "pflicht": true,
+                  "typ": "text",
+                  "verweisart": "bezug"
+                }
+              },
+              {
+                "key": "kuerzel",
+                "label": "Kürzel",
+                "werte": {
+                  "hilfe": "Kurzname, z. B. „SWM“ für Stadtwerke Musterstadt",
+                  "maxLen": 20,
+                  "typ": "text",
+                  "verweisart": "bezug"
+                }
+              },
+              {
+                "key": "art",
+                "label": "Art",
+                "werte": {
+                  "mehrfach": true,
+                  "optionen": [
+                    "Lieferant",
+                    "Kunde",
+                    "Bank",
+                    "Versicherung",
+                    "Behörde",
+                    "Arbeitgeber",
+                    "Arzt/Praxis",
+                    "Handwerker",
+                    "Vermieter",
+                    "Verein",
+                    "Versorger",
+                    "Sonstige"
+                  ],
+                  "typ": "auswahl",
+                  "verweisart": "bezug"
+                }
+              },
+              {
+                "key": "kundennummer",
+                "label": "Kundennummer",
+                "werte": {
+                  "hilfe": "Deine eigene Nummer bei dieser Organisation (Kunden-, Mitglieds-, Versicherten- oder Patientennummer)",
+                  "maxLen": 60,
+                  "typ": "text",
+                  "verweisart": "bezug"
+                }
+              },
+              {
+                "key": "beschreibung",
+                "label": "Beschreibung",
+                "werte": {
+                  "typ": "langtext",
+                  "verweisart": "bezug"
+                }
+              },
+              {
+                "key": "telefon",
+                "label": "Telefon",
+                "werte": {
+                  "maxLen": 40,
+                  "typ": "text",
+                  "verweisart": "bezug"
+                }
+              },
+              {
+                "key": "fax",
+                "label": "Fax",
+                "werte": {
+                  "maxLen": 40,
+                  "typ": "text",
+                  "verweisart": "bezug"
+                }
+              },
+              {
+                "key": "email",
+                "label": "E-Mail",
+                "werte": {
+                  "hilfe": "z. B. kontakt@example.org",
+                  "maxLen": 200,
+                  "muster": "[^@\\s]+@[^@\\s]+\\.[^@\\s]+",
+                  "typ": "text",
+                  "verweisart": "bezug"
+                }
+              },
+              {
+                "key": "internet",
+                "label": "Internetseite",
+                "werte": {
+                  "hilfe": "z. B. https://www.example.org",
+                  "maxLen": 200,
+                  "typ": "text",
+                  "verweisart": "bezug"
+                }
+              },
+              {
+                "key": "strasse",
+                "label": "Straße",
+                "werte": {
+                  "maxLen": 120,
+                  "typ": "text",
+                  "verweisart": "bezug"
+                }
+              },
+              {
+                "key": "hausnummer",
+                "label": "Hausnummer",
+                "werte": {
+                  "maxLen": 10,
+                  "typ": "text",
+                  "verweisart": "bezug"
+                }
+              },
+              {
+                "key": "plz",
+                "label": "PLZ",
+                "werte": {
+                  "hilfe": "In Deutschland fünfstellig",
+                  "maxLen": 10,
+                  "typ": "text",
+                  "verweisart": "bezug"
+                }
+              },
+              {
+                "key": "ort",
+                "label": "Ort",
+                "werte": {
+                  "maxLen": 80,
+                  "typ": "text",
+                  "verweisart": "bezug"
+                }
+              },
+              {
+                "key": "land",
+                "label": "Land",
+                "werte": {
+                  "maxLen": 60,
+                  "standard": "Deutschland",
+                  "typ": "text",
+                  "verweisart": "bezug"
+                }
+              }
+            ],
+            "register": [
+              {
+                "key": "stammdaten",
+                "name": "Stammdaten",
+                "werte": {
+                  "art": "felder",
+                  "felder": ["name", "kuerzel", "art", "kundennummer", "beschreibung"]
+                }
+              },
+              {
+                "key": "kontakt",
+                "name": "Kontakt",
+                "werte": {
+                  "art": "felder",
+                  "felder": ["telefon", "fax", "email", "internet"]
+                }
+              },
+              {
+                "key": "anschrift",
+                "name": "Anschrift",
+                "werte": {
+                  "art": "felder",
+                  "felder": ["strasse", "hausnummer", "plz", "ort", "land"]
+                }
+              },
+              {
+                "key": "dokumente",
+                "name": "Dokumente",
+                "werte": {
+                  "art": "dokumente"
+                }
+              },
+              {
+                "key": "protokoll",
+                "name": "Protokoll",
+                "werte": {
+                  "art": "protokoll"
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "probe",
+        "name": "Probe",
+        "version": "1.0.0",
+        "beschreibung": "Probepaket für die Charakterisierung des Installers.",
+        "lizenz": "MIT",
+        "autor": {
+          "name": "Test",
+          "github": "test"
+        },
+        "herkunft": {
+          "art": "hochgeladen",
+          "von": "admin@example.org",
+          "am": "ZEIT"
+        },
+        "dms": ">=0.248.0",
+        "installiert": "ZEIT",
+        "installiertVon": "admin@example.org",
+        "aktualisiert": null,
+        "aktualisiertVon": null,
+        "typen": {
+          "akte": "T(probe:akte)",
+          "vorgang": "T(probe:vorgang)"
+        },
+        "sichten": {
+          "akten": "S(Akten)",
+          "offene": "S(Offene Vorgänge)",
+          "mit_stelle": "S(Mit Stelle)"
+        },
+        "abhaengigkeiten": {
+          "basis": ">=1.0.0"
+        },
+        "sichtStand": {
+          "akten": {
+            "stand": "PRUEFWERT",
+            "fassung": "PRUEFWERT"
+          },
+          "offene": {
+            "stand": "PRUEFWERT",
+            "fassung": "PRUEFWERT"
+          },
+          "mit_stelle": {
+            "stand": "PRUEFWERT",
+            "fassung": "PRUEFWERT"
+          }
+        },
+        "beispiele": {
+          "a1": "M(probe:akte#0)",
+          "v1": "M(probe:vorgang#0)"
+        },
+        "beispielMappen": [
+          {
+            "id": "M(probe:akte#0)",
+            "werte": "PRUEFWERT",
+            "dokumente": []
+          },
+          {
+            "id": "M(probe:vorgang#0)",
+            "werte": "PRUEFWERT",
+            "dokumente": []
+          }
+        ],
+        "einstellungen": null,
+        "code": false,
+        "mitkommt": {
+          "mappentypen": [
+            {
+              "schluessel": "akte",
+              "name": "Akte",
+              "beschreibung": "Eine Akte",
+              "felder": 6
+            },
+            {
+              "schluessel": "vorgang",
+              "name": "Vorgang",
+              "beschreibung": "Ein Vorgang einer Akte",
+              "felder": 3
+            }
+          ],
+          "sichten": [
+            {
+              "schluessel": "akten",
+              "name": "Akten"
+            },
+            {
+              "schluessel": "offene",
+              "name": "Offene Vorgänge"
+            },
+            {
+              "schluessel": "mit_stelle",
+              "name": "Mit Stelle"
+            }
+          ],
+          "vorgaben": [],
+          "vorlagen": 0,
+          "beispiele": 2,
+          "beispielDokumente": 0,
+          "wortlisten": [["Akte", "Ordner"]],
+          "automatisierungen": [],
+          "ablaufvorlagen": [],
+          "aktionen": [],
+          "rundgaenge": [],
+          "tipps": 0,
+          "einstellungen": [],
+          "code": false,
+          "netz": false,
+          "sprache": false
+        },
+        "kurzanleitung": {
+          "de": ["Erst eine Akte anlegen."]
+        },
+        "typStand": {
+          "T(probe:akte)": {
+            "name": "Akte",
+            "beschreibung": "Eine Akte",
+            "titelVorlage": "{name}",
+            "beschriftungen": {
+              "en": {
+                "name": "File"
+              }
+            },
+            "felder": [
+              {
+                "key": "name",
+                "label": "Name",
+                "werte": {
+                  "pflicht": true,
+                  "typ": "text",
+                  "verweisart": "bezug"
+                }
+              },
+              {
+                "key": "vorgang",
+                "label": "Letzter Vorgang",
+                "werte": {
+                  "typ": "referenz",
+                  "verweisart": "bezug",
+                  "zielTyp": "T(probe:vorgang)"
+                }
+              },
+              {
+                "key": "stelle",
+                "label": "Stelle",
+                "werte": {
+                  "typ": "referenz",
+                  "verweisart": "bezug",
+                  "zielTyp": "T(basis:organisation)"
+                }
+              },
+              {
+                "key": "wer",
+                "label": "Wer",
+                "werte": {
+                  "typ": "referenz",
+                  "verweisart": "bezug",
+                  "zielTyp": "T(benutzer)"
+                }
+              },
+              {
+                "key": "posten",
+                "label": "Posten",
+                "werte": {
+                  "quelle": {
+                    "typId": "T(probe:vorgang)",
+                    "feldKey": "akte"
+                  },
+                  "typ": "tabelle",
+                  "verweisart": "bezug"
+                }
+              },
+              {
+                "key": "hinweis",
+                "label": "Hinweis",
+                "werte": {
+                  "typ": "text",
+                  "verweisart": "bezug"
+                }
+              }
+            ],
+            "register": [
+              {
+                "key": "daten",
+                "name": "Daten",
+                "werte": {
+                  "art": "felder",
+                  "felder": ["name", "vorgang", "stelle", "wer", "posten", "hinweis"]
+                }
+              },
+              {
+                "key": "vorgaenge",
+                "name": "Vorgänge",
+                "werte": {
+                  "art": "verknuepfungen",
+                  "quellen": [
+                    {
+                      "typId": "T(probe:vorgang)",
+                      "feldKey": "akte"
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          "T(probe:vorgang)": {
+            "name": "Vorgang",
+            "beschreibung": "Ein Vorgang einer Akte",
+            "titelVorlage": "{titel}",
+            "felder": [
+              {
+                "key": "titel",
+                "label": "Titel",
+                "werte": {
+                  "pflicht": true,
+                  "typ": "text",
+                  "verweisart": "bezug"
+                }
+              },
+              {
+                "key": "akte",
+                "label": "Akte",
+                "werte": {
+                  "pflicht": true,
+                  "typ": "referenz",
+                  "verweisart": "zugehoerigkeit",
+                  "zielTyp": "T(probe:akte)"
+                }
+              },
+              {
+                "key": "betrag",
+                "label": "Betrag",
+                "werte": {
+                  "typ": "betrag",
+                  "verweisart": "bezug",
+                  "waehrung": "EUR"
+                }
+              }
+            ],
+            "register": [
+              {
+                "key": "daten",
+                "name": "Daten",
+                "werte": {
+                  "art": "felder",
+                  "felder": ["titel", "akte", "betrag"]
+                }
+              },
+              {
+                "key": "dok",
+                "name": "Dokumente",
+                "werte": {
+                  "art": "dokumente"
+                }
+              }
+            ]
+          }
+        }
+      }
+    ],
+    "mappen": {
+      "probe:akte": [
+        {
+          "id": "M(probe:akte#0)",
+          "typId": "T(probe:akte)",
+          "werte": {
+            "name": "Musterakte",
+            "vorgang": null,
+            "stelle": null,
+            "wer": null,
+            "hinweis": "Probe"
+          },
+          "erstellt": "ZEIT",
+          "erstelltVon": "ICH",
+          "geaendert": "ZEIT",
+          "geaendertVon": "ICH",
+          "demo": false,
+          "passt": true,
+          "problem": null,
+          "systemKennung": null,
+          "titel": "Musterakte"
+        }
+      ],
+      "basis:organisation": [],
+      "probe:vorgang": [
+        {
+          "id": "M(probe:vorgang#0)",
+          "typId": "T(probe:vorgang)",
+          "werte": {
+            "titel": "Erster",
+            "akte": "M(probe:akte#0)",
+            "betrag": {
+              "betrag": 12.5,
+              "waehrung": "EUR"
+            }
+          },
+          "erstellt": "ZEIT",
+          "erstelltVon": "ICH",
+          "geaendert": "ZEIT",
+          "geaendertVon": "ICH",
+          "demo": false,
+          "passt": true,
+          "problem": null,
+          "systemKennung": null,
+          "titel": "Erster"
+        }
+      ]
+    },
+    "synonyme": {
+      "basis": [],
+      "probe": [["Akte", "Ordner"]]
+    }
+  },
+  "fehlerUpdate": "Ansicht „Neue Akten“: Probefehler",
+  "nachFehlerUpdate": {
+    "typen": [
+      {
+        "id": "T(probe:akte)",
+        "name": "Akte",
+        "schluessel": "probe:akte",
+        "beschreibung": "Eine Akte",
+        "beschriftungen": {
+          "en": {
+            "name": "File"
+          }
+        },
+        "ausPost": null,
+        "erkennbarAn": "",
+        "titelVorlage": "{name}",
+        "felder": [
+          {
+            "key": "name",
+            "label": "Name",
+            "typ": "text",
+            "pflicht": true,
+            "eindeutig": false,
+            "hilfe": "",
+            "standard": null,
+            "minLen": null,
+            "maxLen": null,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug"
+          },
+          {
+            "key": "vorgang",
+            "label": "Letzter Vorgang",
+            "typ": "referenz",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "",
+            "standard": null,
+            "minLen": null,
+            "maxLen": null,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "zielTypen": ["T(probe:vorgang)"],
+            "verweisart": "bezug"
+          },
+          {
+            "key": "stelle",
+            "label": "Stelle",
+            "typ": "referenz",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "",
+            "standard": null,
+            "minLen": null,
+            "maxLen": null,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "zielTypen": ["T(basis:organisation)"],
+            "verweisart": "bezug"
+          },
+          {
+            "key": "wer",
+            "label": "Wer",
+            "typ": "referenz",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "",
+            "standard": null,
+            "minLen": null,
+            "maxLen": null,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "zielTypen": ["T(benutzer)"],
+            "verweisart": "bezug"
+          },
+          {
+            "key": "posten",
+            "label": "Posten",
+            "typ": "tabelle",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "",
+            "standard": null,
+            "minLen": null,
+            "maxLen": null,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug",
+            "quelle": {
+              "typId": "T(probe:vorgang)",
+              "feldKey": "akte"
+            }
+          },
+          {
+            "key": "hinweis",
+            "label": "Hinweis",
+            "typ": "text",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "",
+            "standard": null,
+            "minLen": null,
+            "maxLen": null,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug",
+            "anzeigen": {
+              "modus": "alle",
+              "bedingungen": [
+                {
+                  "art": "verweistyp",
+                  "feld": "stelle",
+                  "typ": "T(basis:organisation)"
+                }
+              ]
+            }
+          }
+        ],
+        "register": [
+          {
+            "key": "daten",
+            "name": "Daten",
+            "art": "felder",
+            "felder": ["name", "vorgang", "stelle", "wer", "posten", "hinweis"],
+            "abschnitte": [
+              {
+                "vor": "stelle",
+                "titel": "Beteiligte"
+              }
+            ]
+          },
+          {
+            "key": "vorgaenge",
+            "name": "Vorgänge",
+            "art": "verknuepfungen",
+            "quellen": [
+              {
+                "typId": "T(probe:vorgang)",
+                "feldKey": "akte"
+              }
+            ]
+          }
+        ],
+        "trefferlisten": [
+          {
+            "key": "standard",
+            "name": "Standard",
+            "spalten": ["name", "stelle"],
+            "standard": true
+          }
+        ],
+        "trefferliste": ["name", "stelle"],
+        "archiv": null,
+        "erstellenErlaubt": true,
+        "loeschenErlaubt": true,
+        "system": null,
+        "erstellt": "ZEIT",
+        "geaendert": "ZEIT",
+        "paket": "probe"
+      },
+      {
+        "id": "T(basis:organisation)",
+        "name": "Organisation",
+        "schluessel": "basis:organisation",
+        "beschreibung": "Firma, Behörde, Arztpraxis, Versicherung, Bank, Verein oder andere Stelle, mit der du zu tun hast.",
+        "ausPost": null,
+        "erkennbarAn": "",
+        "titelVorlage": "{name}",
+        "felder": [
+          {
+            "key": "name",
+            "label": "Name",
+            "typ": "text",
+            "pflicht": true,
+            "eindeutig": true,
+            "hilfe": "",
+            "standard": null,
+            "minLen": null,
+            "maxLen": 120,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug"
+          },
+          {
+            "key": "kuerzel",
+            "label": "Kürzel",
+            "typ": "text",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "Kurzname, z. B. „SWM“ für Stadtwerke Musterstadt",
+            "standard": null,
+            "minLen": null,
+            "maxLen": 20,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug"
+          },
+          {
+            "key": "art",
+            "label": "Art",
+            "typ": "auswahl",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "",
+            "standard": null,
+            "minLen": null,
+            "maxLen": null,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [
+              "Lieferant",
+              "Kunde",
+              "Bank",
+              "Versicherung",
+              "Behörde",
+              "Arbeitgeber",
+              "Arzt/Praxis",
+              "Handwerker",
+              "Vermieter",
+              "Verein",
+              "Versorger",
+              "Sonstige"
+            ],
+            "mehrfach": true,
+            "verweisart": "bezug"
+          },
+          {
+            "key": "kundennummer",
+            "label": "Kundennummer",
+            "typ": "text",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "Deine eigene Nummer bei dieser Organisation (Kunden-, Mitglieds-, Versicherten- oder Patientennummer)",
+            "standard": null,
+            "minLen": null,
+            "maxLen": 60,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug"
+          },
+          {
+            "key": "beschreibung",
+            "label": "Beschreibung",
+            "typ": "langtext",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "",
+            "standard": null,
+            "minLen": null,
+            "maxLen": null,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug"
+          },
+          {
+            "key": "telefon",
+            "label": "Telefon",
+            "typ": "text",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "",
+            "standard": null,
+            "minLen": null,
+            "maxLen": 40,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug"
+          },
+          {
+            "key": "fax",
+            "label": "Fax",
+            "typ": "text",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "",
+            "standard": null,
+            "minLen": null,
+            "maxLen": 40,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug"
+          },
+          {
+            "key": "email",
+            "label": "E-Mail",
+            "typ": "text",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "z. B. kontakt@example.org",
+            "standard": null,
+            "minLen": null,
+            "maxLen": 200,
+            "muster": "[^@\\s]+@[^@\\s]+\\.[^@\\s]+",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug"
+          },
+          {
+            "key": "internet",
+            "label": "Internetseite",
+            "typ": "text",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "z. B. https://www.example.org",
+            "standard": null,
+            "minLen": null,
+            "maxLen": 200,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug"
+          },
+          {
+            "key": "strasse",
+            "label": "Straße",
+            "typ": "text",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "",
+            "standard": null,
+            "minLen": null,
+            "maxLen": 120,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug"
+          },
+          {
+            "key": "hausnummer",
+            "label": "Hausnummer",
+            "typ": "text",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "",
+            "standard": null,
+            "minLen": null,
+            "maxLen": 10,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug"
+          },
+          {
+            "key": "plz",
+            "label": "PLZ",
+            "typ": "text",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "In Deutschland fünfstellig",
+            "standard": null,
+            "minLen": null,
+            "maxLen": 10,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug"
+          },
+          {
+            "key": "ort",
+            "label": "Ort",
+            "typ": "text",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "",
+            "standard": null,
+            "minLen": null,
+            "maxLen": 80,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug"
+          },
+          {
+            "key": "land",
+            "label": "Land",
+            "typ": "text",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "",
+            "standard": "Deutschland",
+            "minLen": null,
+            "maxLen": 60,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug"
+          }
+        ],
+        "register": [
+          {
+            "key": "stammdaten",
+            "name": "Stammdaten",
+            "art": "felder",
+            "felder": ["name", "kuerzel", "art", "kundennummer", "beschreibung"]
+          },
+          {
+            "key": "kontakt",
+            "name": "Kontakt",
+            "art": "felder",
+            "felder": ["telefon", "fax", "email", "internet"]
+          },
+          {
+            "key": "anschrift",
+            "name": "Anschrift",
+            "art": "felder",
+            "felder": ["strasse", "hausnummer", "plz", "ort", "land"]
+          },
+          {
+            "key": "dokumente",
+            "name": "Dokumente",
+            "art": "dokumente"
+          },
+          {
+            "key": "protokoll",
+            "name": "Protokoll",
+            "art": "protokoll"
+          }
+        ],
+        "trefferlisten": [
+          {
+            "key": "standard",
+            "name": "Standard",
+            "spalten": ["name", "art", "ort", "telefon"],
+            "standard": true
+          }
+        ],
+        "trefferliste": ["name", "art", "ort", "telefon"],
+        "archiv": null,
+        "erstellenErlaubt": true,
+        "loeschenErlaubt": true,
+        "system": null,
+        "erstellt": "ZEIT",
+        "geaendert": "ZEIT",
+        "paket": "basis"
+      },
+      {
+        "id": "T(probe:vorgang)",
+        "name": "Vorgang",
+        "schluessel": "probe:vorgang",
+        "beschreibung": "Ein Vorgang einer Akte",
+        "ausPost": null,
+        "erkennbarAn": "",
+        "titelVorlage": "{titel}",
+        "felder": [
+          {
+            "key": "titel",
+            "label": "Titel",
+            "typ": "text",
+            "pflicht": true,
+            "eindeutig": false,
+            "hilfe": "",
+            "standard": null,
+            "minLen": null,
+            "maxLen": null,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug"
+          },
+          {
+            "key": "akte",
+            "label": "Akte",
+            "typ": "referenz",
+            "pflicht": true,
+            "eindeutig": false,
+            "hilfe": "",
+            "standard": null,
+            "minLen": null,
+            "maxLen": null,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "zielTypen": ["T(probe:akte)"],
+            "verweisart": "zugehoerigkeit"
+          },
+          {
+            "key": "betrag",
+            "label": "Betrag",
+            "typ": "betrag",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "",
+            "standard": null,
+            "minLen": null,
+            "maxLen": null,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "waehrung": "EUR",
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug"
+          }
+        ],
+        "register": [
+          {
+            "key": "daten",
+            "name": "Daten",
+            "art": "felder",
+            "felder": ["titel", "akte", "betrag"]
+          },
+          {
+            "key": "dok",
+            "name": "Dokumente",
+            "art": "dokumente",
+            "versionierung": true
+          }
+        ],
+        "trefferlisten": [
+          {
+            "key": "standard",
+            "name": "Standard",
+            "spalten": [],
+            "standard": true
+          }
+        ],
+        "trefferliste": [],
+        "archiv": {
+          "jahre": 6,
+          "stichtag": null
+        },
+        "erstellenErlaubt": true,
+        "loeschenErlaubt": true,
+        "teilVon": "akte",
+        "system": null,
+        "erstellt": "ZEIT",
+        "geaendert": "ZEIT",
+        "paket": "probe"
+      }
+    ],
+    "sichten": [
+      {
+        "id": "S(Offene Vorgänge)",
+        "name": "Offene Vorgänge",
+        "beschreibung": "",
+        "elternId": "S(Akten)",
+        "position": 10,
+        "typen": ["T(probe:vorgang)"],
+        "bedingungen": [
+          {
+            "art": "feld",
+            "feld": "betrag",
+            "op": "leer"
+          }
+        ],
+        "trefferliste": null,
+        "berechtigungen": null,
+        "symbol": null,
+        "erstellt": "ZEIT",
+        "geaendert": "ZEIT"
+      },
+      {
+        "id": "S(Versicherungen)",
+        "name": "Versicherungen",
+        "beschreibung": "",
+        "elternId": "S(Organisationen)",
+        "position": 10,
+        "typen": ["T(basis:organisation)"],
+        "bedingungen": [
+          {
+            "art": "feld",
+            "feld": "art",
+            "op": "einerVon",
+            "wert": {
+              "art": "fest",
+              "wert": ["Versicherung"]
+            }
+          }
+        ],
+        "trefferliste": null,
+        "berechtigungen": null,
+        "symbol": null,
+        "erstellt": "ZEIT",
+        "geaendert": "ZEIT"
+      },
+      {
+        "id": "S(Banken)",
+        "name": "Banken",
+        "beschreibung": "",
+        "elternId": "S(Organisationen)",
+        "position": 20,
+        "typen": ["T(basis:organisation)"],
+        "bedingungen": [
+          {
+            "art": "feld",
+            "feld": "art",
+            "op": "einerVon",
+            "wert": {
+              "art": "fest",
+              "wert": ["Bank"]
+            }
+          }
+        ],
+        "trefferliste": null,
+        "berechtigungen": null,
+        "symbol": null,
+        "erstellt": "ZEIT",
+        "geaendert": "ZEIT"
+      },
+      {
+        "id": "S(Mit Stelle)",
+        "name": "Mit Stelle",
+        "beschreibung": "",
+        "elternId": "S(Akten)",
+        "position": 20,
+        "typen": ["T(probe:akte)", "T(basis:organisation)"],
+        "bedingungen": [],
+        "trefferliste": null,
+        "berechtigungen": null,
+        "symbol": null,
+        "erstellt": "ZEIT",
+        "geaendert": "ZEIT"
+      },
+      {
+        "id": "S(Behörden)",
+        "name": "Behörden",
+        "beschreibung": "",
+        "elternId": "S(Organisationen)",
+        "position": 30,
+        "typen": ["T(basis:organisation)"],
+        "bedingungen": [
+          {
+            "art": "feld",
+            "feld": "art",
+            "op": "einerVon",
+            "wert": {
+              "art": "fest",
+              "wert": ["Behörde"]
+            }
+          }
+        ],
+        "trefferliste": null,
+        "berechtigungen": null,
+        "symbol": null,
+        "erstellt": "ZEIT",
+        "geaendert": "ZEIT"
+      },
+      {
+        "id": "S(Ärzte und Praxen)",
+        "name": "Ärzte und Praxen",
+        "beschreibung": "",
+        "elternId": "S(Organisationen)",
+        "position": 40,
+        "typen": ["T(basis:organisation)"],
+        "bedingungen": [
+          {
+            "art": "feld",
+            "feld": "art",
+            "op": "einerVon",
+            "wert": {
+              "art": "fest",
+              "wert": ["Arzt/Praxis"]
+            }
+          }
+        ],
+        "trefferliste": null,
+        "berechtigungen": null,
+        "symbol": null,
+        "erstellt": "ZEIT",
+        "geaendert": "ZEIT"
+      },
+      {
+        "id": "S(Organisationen)",
+        "name": "Organisationen",
+        "beschreibung": "Alle Organisationen",
+        "elternId": null,
+        "position": 100040,
+        "typen": ["T(basis:organisation)"],
+        "bedingungen": [],
+        "trefferliste": null,
+        "berechtigungen": null,
+        "symbol": null,
+        "erstellt": "ZEIT",
+        "geaendert": "ZEIT"
+      },
+      {
+        "id": "S(Akten)",
+        "name": "Akten",
+        "beschreibung": "",
+        "elternId": null,
+        "position": 100050,
+        "typen": ["T(probe:akte)"],
+        "bedingungen": [],
+        "trefferliste": null,
+        "berechtigungen": null,
+        "symbol": "folder",
+        "erstellt": "ZEIT",
+        "geaendert": "ZEIT"
+      }
+    ],
+    "pakete": [
+      {
+        "id": "basis",
+        "name": "Basis",
+        "version": "1.0.0",
+        "beschreibung": "Mappentyp Organisation für Firmen, Behörden, Ärzte, Versicherungen und andere Stellen – mit Kontakt, Anschrift und Sichten nach Art.",
+        "lizenz": "MIT",
+        "autor": {
+          "name": "Thomas Meissner",
+          "github": "motom001"
+        },
+        "herkunft": {
+          "art": "hochgeladen",
+          "von": "admin@example.org",
+          "am": "ZEIT"
+        },
+        "dms": ">=0.63.0",
+        "installiert": "ZEIT",
+        "installiertVon": "admin@example.org",
+        "aktualisiert": null,
+        "aktualisiertVon": null,
+        "typen": {
+          "organisation": "T(basis:organisation)"
+        },
+        "sichten": {
+          "organisationen": "S(Organisationen)",
+          "versicherungen": "S(Versicherungen)",
+          "banken": "S(Banken)",
+          "behoerden": "S(Behörden)",
+          "aerzte": "S(Ärzte und Praxen)"
+        },
+        "abhaengigkeiten": {},
+        "sichtStand": {
+          "organisationen": {
+            "stand": "PRUEFWERT",
+            "fassung": "PRUEFWERT"
+          },
+          "versicherungen": {
+            "stand": "PRUEFWERT",
+            "fassung": "PRUEFWERT"
+          },
+          "banken": {
+            "stand": "PRUEFWERT",
+            "fassung": "PRUEFWERT"
+          },
+          "behoerden": {
+            "stand": "PRUEFWERT",
+            "fassung": "PRUEFWERT"
+          },
+          "aerzte": {
+            "stand": "PRUEFWERT",
+            "fassung": "PRUEFWERT"
+          }
+        },
+        "einstellungen": null,
+        "code": false,
+        "mitkommt": {
+          "mappentypen": [
+            {
+              "schluessel": "organisation",
+              "name": "Organisation",
+              "beschreibung": "Firma, Behörde, Arztpraxis, Versicherung, Bank, Verein oder andere Stelle, mit der du zu tun hast.",
+              "felder": 14
+            }
+          ],
+          "sichten": [
+            {
+              "schluessel": "organisationen",
+              "name": "Organisationen",
+              "beschreibung": "Alle Organisationen"
+            },
+            {
+              "schluessel": "versicherungen",
+              "name": "Versicherungen"
+            },
+            {
+              "schluessel": "banken",
+              "name": "Banken"
+            },
+            {
+              "schluessel": "behoerden",
+              "name": "Behörden"
+            },
+            {
+              "schluessel": "aerzte",
+              "name": "Ärzte und Praxen"
+            }
+          ],
+          "vorgaben": [],
+          "vorlagen": 0,
+          "beispiele": 2,
+          "beispielDokumente": 0,
+          "wortlisten": [],
+          "automatisierungen": [],
+          "ablaufvorlagen": [],
+          "aktionen": [],
+          "rundgaenge": [],
+          "tipps": 0,
+          "einstellungen": [],
+          "code": false,
+          "netz": false,
+          "sprache": false
+        },
+        "typStand": {
+          "T(basis:organisation)": {
+            "name": "Organisation",
+            "beschreibung": "Firma, Behörde, Arztpraxis, Versicherung, Bank, Verein oder andere Stelle, mit der du zu tun hast.",
+            "titelVorlage": "{name}",
+            "felder": [
+              {
+                "key": "name",
+                "label": "Name",
+                "werte": {
+                  "eindeutig": true,
+                  "maxLen": 120,
+                  "pflicht": true,
+                  "typ": "text",
+                  "verweisart": "bezug"
+                }
+              },
+              {
+                "key": "kuerzel",
+                "label": "Kürzel",
+                "werte": {
+                  "hilfe": "Kurzname, z. B. „SWM“ für Stadtwerke Musterstadt",
+                  "maxLen": 20,
+                  "typ": "text",
+                  "verweisart": "bezug"
+                }
+              },
+              {
+                "key": "art",
+                "label": "Art",
+                "werte": {
+                  "mehrfach": true,
+                  "optionen": [
+                    "Lieferant",
+                    "Kunde",
+                    "Bank",
+                    "Versicherung",
+                    "Behörde",
+                    "Arbeitgeber",
+                    "Arzt/Praxis",
+                    "Handwerker",
+                    "Vermieter",
+                    "Verein",
+                    "Versorger",
+                    "Sonstige"
+                  ],
+                  "typ": "auswahl",
+                  "verweisart": "bezug"
+                }
+              },
+              {
+                "key": "kundennummer",
+                "label": "Kundennummer",
+                "werte": {
+                  "hilfe": "Deine eigene Nummer bei dieser Organisation (Kunden-, Mitglieds-, Versicherten- oder Patientennummer)",
+                  "maxLen": 60,
+                  "typ": "text",
+                  "verweisart": "bezug"
+                }
+              },
+              {
+                "key": "beschreibung",
+                "label": "Beschreibung",
+                "werte": {
+                  "typ": "langtext",
+                  "verweisart": "bezug"
+                }
+              },
+              {
+                "key": "telefon",
+                "label": "Telefon",
+                "werte": {
+                  "maxLen": 40,
+                  "typ": "text",
+                  "verweisart": "bezug"
+                }
+              },
+              {
+                "key": "fax",
+                "label": "Fax",
+                "werte": {
+                  "maxLen": 40,
+                  "typ": "text",
+                  "verweisart": "bezug"
+                }
+              },
+              {
+                "key": "email",
+                "label": "E-Mail",
+                "werte": {
+                  "hilfe": "z. B. kontakt@example.org",
+                  "maxLen": 200,
+                  "muster": "[^@\\s]+@[^@\\s]+\\.[^@\\s]+",
+                  "typ": "text",
+                  "verweisart": "bezug"
+                }
+              },
+              {
+                "key": "internet",
+                "label": "Internetseite",
+                "werte": {
+                  "hilfe": "z. B. https://www.example.org",
+                  "maxLen": 200,
+                  "typ": "text",
+                  "verweisart": "bezug"
+                }
+              },
+              {
+                "key": "strasse",
+                "label": "Straße",
+                "werte": {
+                  "maxLen": 120,
+                  "typ": "text",
+                  "verweisart": "bezug"
+                }
+              },
+              {
+                "key": "hausnummer",
+                "label": "Hausnummer",
+                "werte": {
+                  "maxLen": 10,
+                  "typ": "text",
+                  "verweisart": "bezug"
+                }
+              },
+              {
+                "key": "plz",
+                "label": "PLZ",
+                "werte": {
+                  "hilfe": "In Deutschland fünfstellig",
+                  "maxLen": 10,
+                  "typ": "text",
+                  "verweisart": "bezug"
+                }
+              },
+              {
+                "key": "ort",
+                "label": "Ort",
+                "werte": {
+                  "maxLen": 80,
+                  "typ": "text",
+                  "verweisart": "bezug"
+                }
+              },
+              {
+                "key": "land",
+                "label": "Land",
+                "werte": {
+                  "maxLen": 60,
+                  "standard": "Deutschland",
+                  "typ": "text",
+                  "verweisart": "bezug"
+                }
+              }
+            ],
+            "register": [
+              {
+                "key": "stammdaten",
+                "name": "Stammdaten",
+                "werte": {
+                  "art": "felder",
+                  "felder": ["name", "kuerzel", "art", "kundennummer", "beschreibung"]
+                }
+              },
+              {
+                "key": "kontakt",
+                "name": "Kontakt",
+                "werte": {
+                  "art": "felder",
+                  "felder": ["telefon", "fax", "email", "internet"]
+                }
+              },
+              {
+                "key": "anschrift",
+                "name": "Anschrift",
+                "werte": {
+                  "art": "felder",
+                  "felder": ["strasse", "hausnummer", "plz", "ort", "land"]
+                }
+              },
+              {
+                "key": "dokumente",
+                "name": "Dokumente",
+                "werte": {
+                  "art": "dokumente"
+                }
+              },
+              {
+                "key": "protokoll",
+                "name": "Protokoll",
+                "werte": {
+                  "art": "protokoll"
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "probe",
+        "name": "Probe",
+        "version": "1.0.0",
+        "beschreibung": "Probepaket für die Charakterisierung des Installers.",
+        "lizenz": "MIT",
+        "autor": {
+          "name": "Test",
+          "github": "test"
+        },
+        "herkunft": {
+          "art": "hochgeladen",
+          "von": "admin@example.org",
+          "am": "ZEIT"
+        },
+        "dms": ">=0.248.0",
+        "installiert": "ZEIT",
+        "installiertVon": "admin@example.org",
+        "aktualisiert": null,
+        "aktualisiertVon": null,
+        "typen": {
+          "akte": "T(probe:akte)",
+          "vorgang": "T(probe:vorgang)"
+        },
+        "sichten": {
+          "akten": "S(Akten)",
+          "offene": "S(Offene Vorgänge)",
+          "mit_stelle": "S(Mit Stelle)"
+        },
+        "abhaengigkeiten": {
+          "basis": ">=1.0.0"
+        },
+        "sichtStand": {
+          "akten": {
+            "stand": "PRUEFWERT",
+            "fassung": "PRUEFWERT"
+          },
+          "offene": {
+            "stand": "PRUEFWERT",
+            "fassung": "PRUEFWERT"
+          },
+          "mit_stelle": {
+            "stand": "PRUEFWERT",
+            "fassung": "PRUEFWERT"
+          }
+        },
+        "beispiele": {
+          "a1": "M(probe:akte#0)",
+          "v1": "M(probe:vorgang#0)"
+        },
+        "beispielMappen": [
+          {
+            "id": "M(probe:akte#0)",
+            "werte": "PRUEFWERT",
+            "dokumente": []
+          },
+          {
+            "id": "M(probe:vorgang#0)",
+            "werte": "PRUEFWERT",
+            "dokumente": []
+          }
+        ],
+        "einstellungen": null,
+        "code": false,
+        "mitkommt": {
+          "mappentypen": [
+            {
+              "schluessel": "akte",
+              "name": "Akte",
+              "beschreibung": "Eine Akte",
+              "felder": 6
+            },
+            {
+              "schluessel": "vorgang",
+              "name": "Vorgang",
+              "beschreibung": "Ein Vorgang einer Akte",
+              "felder": 3
+            }
+          ],
+          "sichten": [
+            {
+              "schluessel": "akten",
+              "name": "Akten"
+            },
+            {
+              "schluessel": "offene",
+              "name": "Offene Vorgänge"
+            },
+            {
+              "schluessel": "mit_stelle",
+              "name": "Mit Stelle"
+            }
+          ],
+          "vorgaben": [],
+          "vorlagen": 0,
+          "beispiele": 2,
+          "beispielDokumente": 0,
+          "wortlisten": [["Akte", "Ordner"]],
+          "automatisierungen": [],
+          "ablaufvorlagen": [],
+          "aktionen": [],
+          "rundgaenge": [],
+          "tipps": 0,
+          "einstellungen": [],
+          "code": false,
+          "netz": false,
+          "sprache": false
+        },
+        "kurzanleitung": {
+          "de": ["Erst eine Akte anlegen."]
+        },
+        "typStand": {
+          "T(probe:akte)": {
+            "name": "Akte",
+            "beschreibung": "Eine Akte",
+            "titelVorlage": "{name}",
+            "beschriftungen": {
+              "en": {
+                "name": "File"
+              }
+            },
+            "felder": [
+              {
+                "key": "name",
+                "label": "Name",
+                "werte": {
+                  "pflicht": true,
+                  "typ": "text",
+                  "verweisart": "bezug"
+                }
+              },
+              {
+                "key": "vorgang",
+                "label": "Letzter Vorgang",
+                "werte": {
+                  "typ": "referenz",
+                  "verweisart": "bezug",
+                  "zielTyp": "T(probe:vorgang)"
+                }
+              },
+              {
+                "key": "stelle",
+                "label": "Stelle",
+                "werte": {
+                  "typ": "referenz",
+                  "verweisart": "bezug",
+                  "zielTyp": "T(basis:organisation)"
+                }
+              },
+              {
+                "key": "wer",
+                "label": "Wer",
+                "werte": {
+                  "typ": "referenz",
+                  "verweisart": "bezug",
+                  "zielTyp": "T(benutzer)"
+                }
+              },
+              {
+                "key": "posten",
+                "label": "Posten",
+                "werte": {
+                  "quelle": {
+                    "typId": "T(probe:vorgang)",
+                    "feldKey": "akte"
+                  },
+                  "typ": "tabelle",
+                  "verweisart": "bezug"
+                }
+              },
+              {
+                "key": "hinweis",
+                "label": "Hinweis",
+                "werte": {
+                  "typ": "text",
+                  "verweisart": "bezug"
+                }
+              }
+            ],
+            "register": [
+              {
+                "key": "daten",
+                "name": "Daten",
+                "werte": {
+                  "art": "felder",
+                  "felder": ["name", "vorgang", "stelle", "wer", "posten", "hinweis"]
+                }
+              },
+              {
+                "key": "vorgaenge",
+                "name": "Vorgänge",
+                "werte": {
+                  "art": "verknuepfungen",
+                  "quellen": [
+                    {
+                      "typId": "T(probe:vorgang)",
+                      "feldKey": "akte"
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          "T(probe:vorgang)": {
+            "name": "Vorgang",
+            "beschreibung": "Ein Vorgang einer Akte",
+            "titelVorlage": "{titel}",
+            "felder": [
+              {
+                "key": "titel",
+                "label": "Titel",
+                "werte": {
+                  "pflicht": true,
+                  "typ": "text",
+                  "verweisart": "bezug"
+                }
+              },
+              {
+                "key": "akte",
+                "label": "Akte",
+                "werte": {
+                  "pflicht": true,
+                  "typ": "referenz",
+                  "verweisart": "zugehoerigkeit",
+                  "zielTyp": "T(probe:akte)"
+                }
+              },
+              {
+                "key": "betrag",
+                "label": "Betrag",
+                "werte": {
+                  "typ": "betrag",
+                  "verweisart": "bezug",
+                  "waehrung": "EUR"
+                }
+              }
+            ],
+            "register": [
+              {
+                "key": "daten",
+                "name": "Daten",
+                "werte": {
+                  "art": "felder",
+                  "felder": ["titel", "akte", "betrag"]
+                }
+              },
+              {
+                "key": "dok",
+                "name": "Dokumente",
+                "werte": {
+                  "art": "dokumente"
+                }
+              }
+            ]
+          }
+        }
+      }
+    ],
+    "mappen": {
+      "probe:akte": [
+        {
+          "id": "M(probe:akte#0)",
+          "typId": "T(probe:akte)",
+          "werte": {
+            "name": "Musterakte",
+            "vorgang": null,
+            "stelle": null,
+            "wer": null,
+            "hinweis": "Probe"
+          },
+          "erstellt": "ZEIT",
+          "erstelltVon": "ICH",
+          "geaendert": "ZEIT",
+          "geaendertVon": "ICH",
+          "demo": false,
+          "passt": true,
+          "problem": null,
+          "systemKennung": null,
+          "titel": "Musterakte"
+        }
+      ],
+      "basis:organisation": [],
+      "probe:vorgang": [
+        {
+          "id": "M(probe:vorgang#0)",
+          "typId": "T(probe:vorgang)",
+          "werte": {
+            "titel": "Erster",
+            "akte": "M(probe:akte#0)",
+            "betrag": {
+              "betrag": 12.5,
+              "waehrung": "EUR"
+            }
+          },
+          "erstellt": "ZEIT",
+          "erstelltVon": "ICH",
+          "geaendert": "ZEIT",
+          "geaendertVon": "ICH",
+          "demo": false,
+          "passt": true,
+          "problem": null,
+          "systemKennung": null,
+          "titel": "Erster"
+        }
+      ]
+    },
+    "synonyme": {
+      "basis": [],
+      "probe": [["Akte", "Ordner"]]
+    }
+  },
+  "aktualisiert": {
+    "typen": [
+      {
+        "id": "T(probe:akte)",
+        "name": "Akte",
+        "schluessel": "probe:akte",
+        "beschreibung": "Eine Akte",
+        "beschriftungen": {
+          "en": {
+            "name": "File"
+          }
+        },
+        "ausPost": null,
+        "erkennbarAn": "",
+        "titelVorlage": "{name}",
+        "felder": [
+          {
+            "key": "name",
+            "label": "Name",
+            "typ": "text",
+            "pflicht": true,
+            "eindeutig": false,
+            "hilfe": "",
+            "standard": null,
+            "minLen": null,
+            "maxLen": null,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug"
+          },
+          {
+            "key": "vorgang",
+            "label": "Letzter Vorgang",
+            "typ": "referenz",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "",
+            "standard": null,
+            "minLen": null,
+            "maxLen": null,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "zielTypen": ["T(probe:vorgang)"],
+            "verweisart": "bezug"
+          },
+          {
+            "key": "stelle",
+            "label": "Stelle",
+            "typ": "referenz",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "",
+            "standard": null,
+            "minLen": null,
+            "maxLen": null,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "zielTypen": ["T(basis:organisation)"],
+            "verweisart": "bezug"
+          },
+          {
+            "key": "wer",
+            "label": "Wer",
+            "typ": "referenz",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "",
+            "standard": null,
+            "minLen": null,
+            "maxLen": null,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "zielTypen": ["T(benutzer)"],
+            "verweisart": "bezug"
+          },
+          {
+            "key": "posten",
+            "label": "Posten",
+            "typ": "tabelle",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "",
+            "standard": null,
+            "minLen": null,
+            "maxLen": null,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug",
+            "quelle": {
+              "typId": "T(probe:vorgang)",
+              "feldKey": "akte"
+            }
+          },
+          {
+            "key": "hinweis",
+            "label": "Hinweis",
+            "typ": "text",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "",
+            "standard": null,
+            "minLen": null,
+            "maxLen": null,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug",
+            "anzeigen": {
+              "modus": "alle",
+              "bedingungen": [
+                {
+                  "art": "verweistyp",
+                  "feld": "stelle",
+                  "typ": "T(basis:organisation)"
+                }
+              ]
+            }
+          },
+          {
+            "key": "notiz",
+            "label": "Notiz",
+            "typ": "langtext",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "",
+            "standard": null,
+            "minLen": null,
+            "maxLen": null,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug"
+          },
+          {
+            "key": "kennung",
+            "label": "Kennung",
+            "typ": "text",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "",
+            "standard": null,
+            "minLen": null,
+            "maxLen": null,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug",
+            "erkennung": {
+              "art": "iban"
+            },
+            "wiederfinden": true
+          }
+        ],
+        "register": [
+          {
+            "key": "daten",
+            "name": "Daten",
+            "art": "felder",
+            "felder": ["name", "vorgang", "stelle", "wer", "posten", "hinweis", "notiz", "kennung"],
+            "abschnitte": [
+              {
+                "vor": "stelle",
+                "titel": "Beteiligte"
+              }
+            ]
+          },
+          {
+            "key": "vorgaenge",
+            "name": "Vorgänge",
+            "art": "verknuepfungen",
+            "quellen": [
+              {
+                "typId": "T(probe:vorgang)",
+                "feldKey": "akte"
+              }
+            ]
+          },
+          {
+            "key": "protokoll",
+            "name": "Verlauf",
+            "art": "protokoll"
+          }
+        ],
+        "trefferlisten": [
+          {
+            "key": "standard",
+            "name": "Standard",
+            "spalten": ["name", "stelle"],
+            "standard": true
+          }
+        ],
+        "trefferliste": ["name", "stelle"],
+        "archiv": null,
+        "erstellenErlaubt": true,
+        "loeschenErlaubt": true,
+        "system": null,
+        "erstellt": "ZEIT",
+        "geaendert": "ZEIT",
+        "paket": "probe"
+      },
+      {
+        "id": "T(basis:organisation)",
+        "name": "Organisation",
+        "schluessel": "basis:organisation",
+        "beschreibung": "Firma, Behörde, Arztpraxis, Versicherung, Bank, Verein oder andere Stelle, mit der du zu tun hast.",
+        "ausPost": null,
+        "erkennbarAn": "",
+        "titelVorlage": "{name}",
+        "felder": [
+          {
+            "key": "name",
+            "label": "Name",
+            "typ": "text",
+            "pflicht": true,
+            "eindeutig": true,
+            "hilfe": "",
+            "standard": null,
+            "minLen": null,
+            "maxLen": 120,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug"
+          },
+          {
+            "key": "kuerzel",
+            "label": "Kürzel",
+            "typ": "text",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "Kurzname, z. B. „SWM“ für Stadtwerke Musterstadt",
+            "standard": null,
+            "minLen": null,
+            "maxLen": 20,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug"
+          },
+          {
+            "key": "art",
+            "label": "Art",
+            "typ": "auswahl",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "",
+            "standard": null,
+            "minLen": null,
+            "maxLen": null,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [
+              "Lieferant",
+              "Kunde",
+              "Bank",
+              "Versicherung",
+              "Behörde",
+              "Arbeitgeber",
+              "Arzt/Praxis",
+              "Handwerker",
+              "Vermieter",
+              "Verein",
+              "Versorger",
+              "Sonstige"
+            ],
+            "mehrfach": true,
+            "verweisart": "bezug"
+          },
+          {
+            "key": "kundennummer",
+            "label": "Kundennummer",
+            "typ": "text",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "Deine eigene Nummer bei dieser Organisation (Kunden-, Mitglieds-, Versicherten- oder Patientennummer)",
+            "standard": null,
+            "minLen": null,
+            "maxLen": 60,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug"
+          },
+          {
+            "key": "beschreibung",
+            "label": "Beschreibung",
+            "typ": "langtext",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "",
+            "standard": null,
+            "minLen": null,
+            "maxLen": null,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug"
+          },
+          {
+            "key": "telefon",
+            "label": "Telefon",
+            "typ": "text",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "",
+            "standard": null,
+            "minLen": null,
+            "maxLen": 40,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug"
+          },
+          {
+            "key": "fax",
+            "label": "Fax",
+            "typ": "text",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "",
+            "standard": null,
+            "minLen": null,
+            "maxLen": 40,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug"
+          },
+          {
+            "key": "email",
+            "label": "E-Mail",
+            "typ": "text",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "z. B. kontakt@example.org",
+            "standard": null,
+            "minLen": null,
+            "maxLen": 200,
+            "muster": "[^@\\s]+@[^@\\s]+\\.[^@\\s]+",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug"
+          },
+          {
+            "key": "internet",
+            "label": "Internetseite",
+            "typ": "text",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "z. B. https://www.example.org",
+            "standard": null,
+            "minLen": null,
+            "maxLen": 200,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug"
+          },
+          {
+            "key": "strasse",
+            "label": "Straße",
+            "typ": "text",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "",
+            "standard": null,
+            "minLen": null,
+            "maxLen": 120,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug"
+          },
+          {
+            "key": "hausnummer",
+            "label": "Hausnummer",
+            "typ": "text",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "",
+            "standard": null,
+            "minLen": null,
+            "maxLen": 10,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug"
+          },
+          {
+            "key": "plz",
+            "label": "PLZ",
+            "typ": "text",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "In Deutschland fünfstellig",
+            "standard": null,
+            "minLen": null,
+            "maxLen": 10,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug"
+          },
+          {
+            "key": "ort",
+            "label": "Ort",
+            "typ": "text",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "",
+            "standard": null,
+            "minLen": null,
+            "maxLen": 80,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug"
+          },
+          {
+            "key": "land",
+            "label": "Land",
+            "typ": "text",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "",
+            "standard": "Deutschland",
+            "minLen": null,
+            "maxLen": 60,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug"
+          }
+        ],
+        "register": [
+          {
+            "key": "stammdaten",
+            "name": "Stammdaten",
+            "art": "felder",
+            "felder": ["name", "kuerzel", "art", "kundennummer", "beschreibung"]
+          },
+          {
+            "key": "kontakt",
+            "name": "Kontakt",
+            "art": "felder",
+            "felder": ["telefon", "fax", "email", "internet"]
+          },
+          {
+            "key": "anschrift",
+            "name": "Anschrift",
+            "art": "felder",
+            "felder": ["strasse", "hausnummer", "plz", "ort", "land"]
+          },
+          {
+            "key": "dokumente",
+            "name": "Dokumente",
+            "art": "dokumente"
+          },
+          {
+            "key": "protokoll",
+            "name": "Protokoll",
+            "art": "protokoll"
+          }
+        ],
+        "trefferlisten": [
+          {
+            "key": "standard",
+            "name": "Standard",
+            "spalten": ["name", "art", "ort", "telefon"],
+            "standard": true
+          }
+        ],
+        "trefferliste": ["name", "art", "ort", "telefon"],
+        "archiv": null,
+        "erstellenErlaubt": true,
+        "loeschenErlaubt": true,
+        "system": null,
+        "erstellt": "ZEIT",
+        "geaendert": "ZEIT",
+        "paket": "basis"
+      },
+      {
+        "id": "T(probe:vorgang)",
+        "name": "Vorgang",
+        "schluessel": "probe:vorgang",
+        "beschreibung": "Ein Vorgang einer Akte",
+        "ausPost": null,
+        "erkennbarAn": "",
+        "titelVorlage": "{titel}",
+        "felder": [
+          {
+            "key": "titel",
+            "label": "Titel",
+            "typ": "text",
+            "pflicht": true,
+            "eindeutig": false,
+            "hilfe": "",
+            "standard": null,
+            "minLen": null,
+            "maxLen": null,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug"
+          },
+          {
+            "key": "akte",
+            "label": "Akte",
+            "typ": "referenz",
+            "pflicht": true,
+            "eindeutig": false,
+            "hilfe": "",
+            "standard": null,
+            "minLen": null,
+            "maxLen": null,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "zielTypen": ["T(probe:akte)"],
+            "verweisart": "zugehoerigkeit"
+          },
+          {
+            "key": "betrag",
+            "label": "Betrag",
+            "typ": "betrag",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "",
+            "standard": null,
+            "minLen": null,
+            "maxLen": null,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "waehrung": "EUR",
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug"
+          },
+          {
+            "key": "datum",
+            "label": "Datum",
+            "typ": "datum",
+            "pflicht": false,
+            "eindeutig": false,
+            "hilfe": "",
+            "standard": null,
+            "minLen": null,
+            "maxLen": null,
+            "muster": "",
+            "min": null,
+            "max": null,
+            "nachkomma": null,
+            "optionen": [],
+            "mehrfach": false,
+            "verweisart": "bezug"
+          }
+        ],
+        "register": [
+          {
+            "key": "daten",
+            "name": "Daten",
+            "art": "felder",
+            "felder": ["titel", "akte", "betrag", "datum"]
+          },
+          {
+            "key": "dok",
+            "name": "Dokumente",
+            "art": "dokumente",
+            "versionierung": true
+          }
+        ],
+        "trefferlisten": [
+          {
+            "key": "standard",
+            "name": "Standard",
+            "spalten": [],
+            "standard": true
+          }
+        ],
+        "trefferliste": [],
+        "archiv": {
+          "jahre": 6,
+          "stichtag": null
+        },
+        "erstellenErlaubt": true,
+        "loeschenErlaubt": true,
+        "teilVon": "akte",
+        "system": null,
+        "erstellt": "ZEIT",
+        "geaendert": "ZEIT",
+        "paket": "probe"
+      }
+    ],
+    "sichten": [
+      {
+        "id": "S(Offene Vorgänge)",
+        "name": "Offene Vorgänge",
+        "beschreibung": "",
+        "elternId": "S(Akten)",
+        "position": 10,
+        "typen": ["T(probe:vorgang)"],
+        "bedingungen": [
+          {
+            "art": "feld",
+            "feld": "betrag",
+            "op": "leer"
+          }
+        ],
+        "trefferliste": null,
+        "berechtigungen": null,
+        "symbol": null,
+        "erstellt": "ZEIT",
+        "geaendert": "ZEIT"
+      },
+      {
+        "id": "S(Versicherungen)",
+        "name": "Versicherungen",
+        "beschreibung": "",
+        "elternId": "S(Organisationen)",
+        "position": 10,
+        "typen": ["T(basis:organisation)"],
+        "bedingungen": [
+          {
+            "art": "feld",
+            "feld": "art",
+            "op": "einerVon",
+            "wert": {
+              "art": "fest",
+              "wert": ["Versicherung"]
+            }
+          }
+        ],
+        "trefferliste": null,
+        "berechtigungen": null,
+        "symbol": null,
+        "erstellt": "ZEIT",
+        "geaendert": "ZEIT"
+      },
+      {
+        "id": "S(Banken)",
+        "name": "Banken",
+        "beschreibung": "",
+        "elternId": "S(Organisationen)",
+        "position": 20,
+        "typen": ["T(basis:organisation)"],
+        "bedingungen": [
+          {
+            "art": "feld",
+            "feld": "art",
+            "op": "einerVon",
+            "wert": {
+              "art": "fest",
+              "wert": ["Bank"]
+            }
+          }
+        ],
+        "trefferliste": null,
+        "berechtigungen": null,
+        "symbol": null,
+        "erstellt": "ZEIT",
+        "geaendert": "ZEIT"
+      },
+      {
+        "id": "S(Mit Stelle)",
+        "name": "Mit Stelle",
+        "beschreibung": "",
+        "elternId": "S(Akten)",
+        "position": 20,
+        "typen": ["T(probe:akte)", "T(basis:organisation)"],
+        "bedingungen": [],
+        "trefferliste": null,
+        "berechtigungen": null,
+        "symbol": null,
+        "erstellt": "ZEIT",
+        "geaendert": "ZEIT"
+      },
+      {
+        "id": "S(Behörden)",
+        "name": "Behörden",
+        "beschreibung": "",
+        "elternId": "S(Organisationen)",
+        "position": 30,
+        "typen": ["T(basis:organisation)"],
+        "bedingungen": [
+          {
+            "art": "feld",
+            "feld": "art",
+            "op": "einerVon",
+            "wert": {
+              "art": "fest",
+              "wert": ["Behörde"]
+            }
+          }
+        ],
+        "trefferliste": null,
+        "berechtigungen": null,
+        "symbol": null,
+        "erstellt": "ZEIT",
+        "geaendert": "ZEIT"
+      },
+      {
+        "id": "S(Neue Akten)",
+        "name": "Neue Akten",
+        "beschreibung": "",
+        "elternId": "S(Akten)",
+        "position": 30,
+        "typen": ["T(probe:akte)"],
+        "bedingungen": [
+          {
+            "art": "feld",
+            "feld": "notiz",
+            "op": "leer"
+          }
+        ],
+        "trefferliste": null,
+        "berechtigungen": null,
+        "symbol": null,
+        "erstellt": "ZEIT",
+        "geaendert": "ZEIT"
+      },
+      {
+        "id": "S(Ärzte und Praxen)",
+        "name": "Ärzte und Praxen",
+        "beschreibung": "",
+        "elternId": "S(Organisationen)",
+        "position": 40,
+        "typen": ["T(basis:organisation)"],
+        "bedingungen": [
+          {
+            "art": "feld",
+            "feld": "art",
+            "op": "einerVon",
+            "wert": {
+              "art": "fest",
+              "wert": ["Arzt/Praxis"]
+            }
+          }
+        ],
+        "trefferliste": null,
+        "berechtigungen": null,
+        "symbol": null,
+        "erstellt": "ZEIT",
+        "geaendert": "ZEIT"
+      },
+      {
+        "id": "S(Organisationen)",
+        "name": "Organisationen",
+        "beschreibung": "Alle Organisationen",
+        "elternId": null,
+        "position": 100040,
+        "typen": ["T(basis:organisation)"],
+        "bedingungen": [],
+        "trefferliste": null,
+        "berechtigungen": null,
+        "symbol": null,
+        "erstellt": "ZEIT",
+        "geaendert": "ZEIT"
+      },
+      {
+        "id": "S(Akten)",
+        "name": "Akten",
+        "beschreibung": "",
+        "elternId": null,
+        "position": 100050,
+        "typen": ["T(probe:akte)"],
+        "bedingungen": [],
+        "trefferliste": null,
+        "berechtigungen": null,
+        "symbol": "folder",
+        "erstellt": "ZEIT",
+        "geaendert": "ZEIT"
+      }
+    ],
+    "pakete": [
+      {
+        "id": "basis",
+        "name": "Basis",
+        "version": "1.0.0",
+        "beschreibung": "Mappentyp Organisation für Firmen, Behörden, Ärzte, Versicherungen und andere Stellen – mit Kontakt, Anschrift und Sichten nach Art.",
+        "lizenz": "MIT",
+        "autor": {
+          "name": "Thomas Meissner",
+          "github": "motom001"
+        },
+        "herkunft": {
+          "art": "hochgeladen",
+          "von": "admin@example.org",
+          "am": "ZEIT"
+        },
+        "dms": ">=0.63.0",
+        "installiert": "ZEIT",
+        "installiertVon": "admin@example.org",
+        "aktualisiert": null,
+        "aktualisiertVon": null,
+        "typen": {
+          "organisation": "T(basis:organisation)"
+        },
+        "sichten": {
+          "organisationen": "S(Organisationen)",
+          "versicherungen": "S(Versicherungen)",
+          "banken": "S(Banken)",
+          "behoerden": "S(Behörden)",
+          "aerzte": "S(Ärzte und Praxen)"
+        },
+        "abhaengigkeiten": {},
+        "sichtStand": {
+          "organisationen": {
+            "stand": "PRUEFWERT",
+            "fassung": "PRUEFWERT"
+          },
+          "versicherungen": {
+            "stand": "PRUEFWERT",
+            "fassung": "PRUEFWERT"
+          },
+          "banken": {
+            "stand": "PRUEFWERT",
+            "fassung": "PRUEFWERT"
+          },
+          "behoerden": {
+            "stand": "PRUEFWERT",
+            "fassung": "PRUEFWERT"
+          },
+          "aerzte": {
+            "stand": "PRUEFWERT",
+            "fassung": "PRUEFWERT"
+          }
+        },
+        "einstellungen": null,
+        "code": false,
+        "mitkommt": {
+          "mappentypen": [
+            {
+              "schluessel": "organisation",
+              "name": "Organisation",
+              "beschreibung": "Firma, Behörde, Arztpraxis, Versicherung, Bank, Verein oder andere Stelle, mit der du zu tun hast.",
+              "felder": 14
+            }
+          ],
+          "sichten": [
+            {
+              "schluessel": "organisationen",
+              "name": "Organisationen",
+              "beschreibung": "Alle Organisationen"
+            },
+            {
+              "schluessel": "versicherungen",
+              "name": "Versicherungen"
+            },
+            {
+              "schluessel": "banken",
+              "name": "Banken"
+            },
+            {
+              "schluessel": "behoerden",
+              "name": "Behörden"
+            },
+            {
+              "schluessel": "aerzte",
+              "name": "Ärzte und Praxen"
+            }
+          ],
+          "vorgaben": [],
+          "vorlagen": 0,
+          "beispiele": 2,
+          "beispielDokumente": 0,
+          "wortlisten": [],
+          "automatisierungen": [],
+          "ablaufvorlagen": [],
+          "aktionen": [],
+          "rundgaenge": [],
+          "tipps": 0,
+          "einstellungen": [],
+          "code": false,
+          "netz": false,
+          "sprache": false
+        },
+        "typStand": {
+          "T(basis:organisation)": {
+            "name": "Organisation",
+            "beschreibung": "Firma, Behörde, Arztpraxis, Versicherung, Bank, Verein oder andere Stelle, mit der du zu tun hast.",
+            "titelVorlage": "{name}",
+            "felder": [
+              {
+                "key": "name",
+                "label": "Name",
+                "werte": {
+                  "eindeutig": true,
+                  "maxLen": 120,
+                  "pflicht": true,
+                  "typ": "text",
+                  "verweisart": "bezug"
+                }
+              },
+              {
+                "key": "kuerzel",
+                "label": "Kürzel",
+                "werte": {
+                  "hilfe": "Kurzname, z. B. „SWM“ für Stadtwerke Musterstadt",
+                  "maxLen": 20,
+                  "typ": "text",
+                  "verweisart": "bezug"
+                }
+              },
+              {
+                "key": "art",
+                "label": "Art",
+                "werte": {
+                  "mehrfach": true,
+                  "optionen": [
+                    "Lieferant",
+                    "Kunde",
+                    "Bank",
+                    "Versicherung",
+                    "Behörde",
+                    "Arbeitgeber",
+                    "Arzt/Praxis",
+                    "Handwerker",
+                    "Vermieter",
+                    "Verein",
+                    "Versorger",
+                    "Sonstige"
+                  ],
+                  "typ": "auswahl",
+                  "verweisart": "bezug"
+                }
+              },
+              {
+                "key": "kundennummer",
+                "label": "Kundennummer",
+                "werte": {
+                  "hilfe": "Deine eigene Nummer bei dieser Organisation (Kunden-, Mitglieds-, Versicherten- oder Patientennummer)",
+                  "maxLen": 60,
+                  "typ": "text",
+                  "verweisart": "bezug"
+                }
+              },
+              {
+                "key": "beschreibung",
+                "label": "Beschreibung",
+                "werte": {
+                  "typ": "langtext",
+                  "verweisart": "bezug"
+                }
+              },
+              {
+                "key": "telefon",
+                "label": "Telefon",
+                "werte": {
+                  "maxLen": 40,
+                  "typ": "text",
+                  "verweisart": "bezug"
+                }
+              },
+              {
+                "key": "fax",
+                "label": "Fax",
+                "werte": {
+                  "maxLen": 40,
+                  "typ": "text",
+                  "verweisart": "bezug"
+                }
+              },
+              {
+                "key": "email",
+                "label": "E-Mail",
+                "werte": {
+                  "hilfe": "z. B. kontakt@example.org",
+                  "maxLen": 200,
+                  "muster": "[^@\\s]+@[^@\\s]+\\.[^@\\s]+",
+                  "typ": "text",
+                  "verweisart": "bezug"
+                }
+              },
+              {
+                "key": "internet",
+                "label": "Internetseite",
+                "werte": {
+                  "hilfe": "z. B. https://www.example.org",
+                  "maxLen": 200,
+                  "typ": "text",
+                  "verweisart": "bezug"
+                }
+              },
+              {
+                "key": "strasse",
+                "label": "Straße",
+                "werte": {
+                  "maxLen": 120,
+                  "typ": "text",
+                  "verweisart": "bezug"
+                }
+              },
+              {
+                "key": "hausnummer",
+                "label": "Hausnummer",
+                "werte": {
+                  "maxLen": 10,
+                  "typ": "text",
+                  "verweisart": "bezug"
+                }
+              },
+              {
+                "key": "plz",
+                "label": "PLZ",
+                "werte": {
+                  "hilfe": "In Deutschland fünfstellig",
+                  "maxLen": 10,
+                  "typ": "text",
+                  "verweisart": "bezug"
+                }
+              },
+              {
+                "key": "ort",
+                "label": "Ort",
+                "werte": {
+                  "maxLen": 80,
+                  "typ": "text",
+                  "verweisart": "bezug"
+                }
+              },
+              {
+                "key": "land",
+                "label": "Land",
+                "werte": {
+                  "maxLen": 60,
+                  "standard": "Deutschland",
+                  "typ": "text",
+                  "verweisart": "bezug"
+                }
+              }
+            ],
+            "register": [
+              {
+                "key": "stammdaten",
+                "name": "Stammdaten",
+                "werte": {
+                  "art": "felder",
+                  "felder": ["name", "kuerzel", "art", "kundennummer", "beschreibung"]
+                }
+              },
+              {
+                "key": "kontakt",
+                "name": "Kontakt",
+                "werte": {
+                  "art": "felder",
+                  "felder": ["telefon", "fax", "email", "internet"]
+                }
+              },
+              {
+                "key": "anschrift",
+                "name": "Anschrift",
+                "werte": {
+                  "art": "felder",
+                  "felder": ["strasse", "hausnummer", "plz", "ort", "land"]
+                }
+              },
+              {
+                "key": "dokumente",
+                "name": "Dokumente",
+                "werte": {
+                  "art": "dokumente"
+                }
+              },
+              {
+                "key": "protokoll",
+                "name": "Protokoll",
+                "werte": {
+                  "art": "protokoll"
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "probe",
+        "name": "Probe",
+        "version": "1.1.0",
+        "beschreibung": "Probepaket für die Charakterisierung des Installers.",
+        "lizenz": "MIT",
+        "autor": {
+          "name": "Test",
+          "github": "test"
+        },
+        "herkunft": {
+          "art": "hochgeladen",
+          "von": "admin@example.org",
+          "am": "ZEIT"
+        },
+        "dms": ">=0.248.0",
+        "installiert": "ZEIT",
+        "installiertVon": "admin@example.org",
+        "aktualisiert": "ZEIT",
+        "aktualisiertVon": "admin@example.org",
+        "typen": {
+          "akte": "T(probe:akte)",
+          "vorgang": "T(probe:vorgang)"
+        },
+        "sichten": {
+          "akten": "S(Akten)",
+          "offene": "S(Offene Vorgänge)",
+          "mit_stelle": "S(Mit Stelle)",
+          "neu": "S(Neue Akten)"
+        },
+        "abhaengigkeiten": {
+          "basis": ">=1.0.0"
+        },
+        "sichtStand": {
+          "akten": {
+            "stand": "PRUEFWERT",
+            "fassung": "PRUEFWERT"
+          },
+          "offene": {
+            "stand": "PRUEFWERT",
+            "fassung": "PRUEFWERT"
+          },
+          "mit_stelle": {
+            "stand": "PRUEFWERT",
+            "fassung": "PRUEFWERT"
+          },
+          "neu": {
+            "stand": "PRUEFWERT",
+            "fassung": "PRUEFWERT"
+          }
+        },
+        "beispiele": {
+          "a1": "M(probe:akte#0)",
+          "v1": "M(probe:vorgang#0)"
+        },
+        "beispielMappen": [
+          {
+            "id": "M(probe:akte#0)",
+            "werte": "PRUEFWERT",
+            "dokumente": []
+          },
+          {
+            "id": "M(probe:vorgang#0)",
+            "werte": "PRUEFWERT",
+            "dokumente": []
+          }
+        ],
+        "einstellungen": null,
+        "code": false,
+        "mitkommt": {
+          "mappentypen": [
+            {
+              "schluessel": "akte",
+              "name": "Akte",
+              "beschreibung": "Eine Akte",
+              "felder": 8
+            },
+            {
+              "schluessel": "vorgang",
+              "name": "Vorgang",
+              "beschreibung": "Ein Vorgang einer Akte",
+              "felder": 4
+            }
+          ],
+          "sichten": [
+            {
+              "schluessel": "akten",
+              "name": "Akten"
+            },
+            {
+              "schluessel": "offene",
+              "name": "Offene Vorgänge"
+            },
+            {
+              "schluessel": "mit_stelle",
+              "name": "Mit Stelle"
+            },
+            {
+              "schluessel": "neu",
+              "name": "Neue Akten"
+            }
+          ],
+          "vorgaben": [],
+          "vorlagen": 0,
+          "beispiele": 2,
+          "beispielDokumente": 0,
+          "wortlisten": [["Akte", "Ordner", "Mappe"]],
+          "automatisierungen": [],
+          "ablaufvorlagen": [],
+          "aktionen": [],
+          "rundgaenge": [],
+          "tipps": 0,
+          "einstellungen": [],
+          "code": false,
+          "netz": false,
+          "sprache": false
+        },
+        "kurzanleitung": {
+          "de": ["Erst eine Akte anlegen."]
+        },
+        "typStand": {
+          "T(probe:akte)": {
+            "name": "Akte",
+            "beschreibung": "Eine Akte",
+            "titelVorlage": "{name}",
+            "beschriftungen": {
+              "en": {
+                "name": "File"
+              }
+            },
+            "felder": [
+              {
+                "key": "name",
+                "label": "Name",
+                "werte": {
+                  "pflicht": true,
+                  "typ": "text",
+                  "verweisart": "bezug"
+                }
+              },
+              {
+                "key": "vorgang",
+                "label": "Letzter Vorgang",
+                "werte": {
+                  "typ": "referenz",
+                  "verweisart": "bezug",
+                  "zielTyp": "T(probe:vorgang)"
+                }
+              },
+              {
+                "key": "stelle",
+                "label": "Stelle",
+                "werte": {
+                  "typ": "referenz",
+                  "verweisart": "bezug",
+                  "zielTyp": "T(basis:organisation)"
+                }
+              },
+              {
+                "key": "wer",
+                "label": "Wer",
+                "werte": {
+                  "typ": "referenz",
+                  "verweisart": "bezug",
+                  "zielTyp": "T(benutzer)"
+                }
+              },
+              {
+                "key": "posten",
+                "label": "Posten",
+                "werte": {
+                  "quelle": {
+                    "typId": "T(probe:vorgang)",
+                    "feldKey": "akte"
+                  },
+                  "typ": "tabelle",
+                  "verweisart": "bezug"
+                }
+              },
+              {
+                "key": "hinweis",
+                "label": "Hinweis",
+                "werte": {
+                  "typ": "text",
+                  "verweisart": "bezug"
+                }
+              },
+              {
+                "key": "notiz",
+                "label": "Notiz",
+                "werte": {
+                  "typ": "langtext",
+                  "verweisart": "bezug"
+                }
+              },
+              {
+                "key": "kennung",
+                "label": "Kennung",
+                "werte": {
+                  "erkennung": {
+                    "art": "iban"
+                  },
+                  "typ": "text",
+                  "verweisart": "bezug"
+                }
+              }
+            ],
+            "register": [
+              {
+                "key": "daten",
+                "name": "Daten",
+                "werte": {
+                  "art": "felder",
+                  "felder": ["name", "vorgang", "stelle", "wer", "posten", "hinweis"]
+                }
+              },
+              {
+                "key": "vorgaenge",
+                "name": "Vorgänge",
+                "werte": {
+                  "art": "verknuepfungen",
+                  "quellen": [
+                    {
+                      "typId": "T(probe:vorgang)",
+                      "feldKey": "akte"
+                    }
+                  ]
+                }
+              },
+              {
+                "key": "protokoll",
+                "name": "Verlauf",
+                "werte": {
+                  "art": "protokoll"
+                }
+              }
+            ]
+          },
+          "T(probe:vorgang)": {
+            "name": "Vorgang",
+            "beschreibung": "Ein Vorgang einer Akte",
+            "titelVorlage": "{titel}",
+            "felder": [
+              {
+                "key": "titel",
+                "label": "Titel",
+                "werte": {
+                  "pflicht": true,
+                  "typ": "text",
+                  "verweisart": "bezug"
+                }
+              },
+              {
+                "key": "akte",
+                "label": "Akte",
+                "werte": {
+                  "pflicht": true,
+                  "typ": "referenz",
+                  "verweisart": "zugehoerigkeit",
+                  "zielTyp": "T(probe:akte)"
+                }
+              },
+              {
+                "key": "betrag",
+                "label": "Betrag",
+                "werte": {
+                  "typ": "betrag",
+                  "verweisart": "bezug",
+                  "waehrung": "EUR"
+                }
+              },
+              {
+                "key": "datum",
+                "label": "Datum",
+                "werte": {
+                  "typ": "datum",
+                  "verweisart": "bezug"
+                }
+              }
+            ],
+            "register": [
+              {
+                "key": "daten",
+                "name": "Daten",
+                "werte": {
+                  "art": "felder",
+                  "felder": ["titel", "akte", "betrag"]
+                }
+              },
+              {
+                "key": "dok",
+                "name": "Dokumente",
+                "werte": {
+                  "art": "dokumente"
+                }
+              }
+            ]
+          }
+        }
+      }
+    ],
+    "mappen": {
+      "probe:akte": [
+        {
+          "id": "M(probe:akte#0)",
+          "typId": "T(probe:akte)",
+          "werte": {
+            "name": "Musterakte",
+            "vorgang": null,
+            "stelle": null,
+            "wer": null,
+            "hinweis": "Probe"
+          },
+          "erstellt": "ZEIT",
+          "erstelltVon": "ICH",
+          "geaendert": "ZEIT",
+          "geaendertVon": "ICH",
+          "demo": false,
+          "passt": true,
+          "problem": null,
+          "systemKennung": null,
+          "titel": "Musterakte"
+        }
+      ],
+      "basis:organisation": [],
+      "probe:vorgang": [
+        {
+          "id": "M(probe:vorgang#0)",
+          "typId": "T(probe:vorgang)",
+          "werte": {
+            "titel": "Erster",
+            "akte": "M(probe:akte#0)",
+            "betrag": {
+              "betrag": 12.5,
+              "waehrung": "EUR"
+            }
+          },
+          "erstellt": "ZEIT",
+          "erstelltVon": "ICH",
+          "geaendert": "ZEIT",
+          "geaendertVon": "ICH",
+          "demo": false,
+          "passt": true,
+          "problem": null,
+          "systemKennung": null,
+          "titel": "Erster"
+        }
+      ]
+    },
+    "synonyme": {
+      "basis": [],
+      "probe": [["Akte", "Ordner", "Mappe"]]
+    }
+  }
+}

@@ -1,0 +1,4076 @@
+{
+  "alles gewählt, Dateien": {
+    "probleme": [
+      "„Vertrag“ → Feld „Ohne Quelle“: verweist auf „Systemtyp“. Darauf kann ein Paket nicht verweisen (erlaubt: Ablageort, Benutzer, Rolle).",
+      "Ansicht „Teure“: Den Ziel-Mappentyp gibt es nicht mehr.",
+      "Es wird auf Mappentypen verwiesen, die nicht gewählt sind: „Notiz“. Nimm sie mit auf oder entferne den Verweis."
+    ],
+    "fehlend": [
+      {
+        "art": "typ",
+        "id": "00000000-0000-4000-8000-000000000012",
+        "name": "Notiz",
+        "grund": "„Vertrag“ → Feld „Kündigung“",
+        "noetig": true
+      },
+      {
+        "art": "sicht",
+        "id": "00000000-0000-4000-8000-000000000024",
+        "name": "Nicht gewählt",
+        "grund": "Elternansicht von „Unter Fremd“",
+        "noetig": false
+      },
+      {
+        "art": "typ",
+        "id": "00000000-0000-4000-8000-000000000013",
+        "name": "Sammlung",
+        "grund": "Vorsicht: steckt in der Ansicht „Alles“ – muss beim Empfänger vorhanden sein",
+        "noetig": false
+      }
+    ],
+    "hinweise": [
+      "„Vertrag“ → Feld „Text“: Das Feld berechnet ein anderes Paket. Im eigenen Paket kommt es als gewöhnliches Feld mit – ein Paket ohne Code rechnet nichts.",
+      "„Vertrag“ → Feld „Nummer“: Der Nummernkreis gehört nicht zum Paketformat. Das Feld kommt ohne Nummernkreis ins Paket; richte ihn beim Empfänger unter Werkbank → Nummernkreise ein und trage ihn am Feld ein.",
+      "Der Mappentyp „Organisation“ kommt aus dem Paket „Basis“ – wird als Abhängigkeit eingetragen (basis >=1.6.0), nicht kopiert.",
+      "Änderungen an „Organisation“ (Basis) gehören nicht zu deinem Paket – beim Empfänger gilt der Typ, wie das Paket „Basis“ ihn bringt. Brauchst du die Änderungen, lege dafür einen eigenen Typ an.",
+      "„Vertrag“ → Feld „Wer“: Der Auswahlfilter nennt Mappen dieser Installation und kommt nicht ins Paket.",
+      "„Ablageort“ kommt mit dem Paket Basis: Das Paket verweist auf basis:ablageort und trägt Basis ab 1.6.0 als Abhängigkeit ein.",
+      "„Vertrag“ → Feld „Ort“: Der Standardwert zeigt auf eine Mappe dieser Installation und kommt nicht ins Paket.",
+      "„Vertrag“ → Feld „Kündigung“: Eine Anzeige-Bedingung nennt eine Mappe dieser Installation und kommt nicht ins Paket.",
+      "„Vertrag“ → Feld „Posten“: Die Tabelle zeigt eine andere Trefferliste von „Zahlung“ – ins Paket kommt nur die Standard-Trefferliste, die Tabelle zeigt dort deren Spalten.",
+      "„Vertrag“: Nur die Standard-Trefferliste „Standard“ kommt ins Paket; weitere Trefferlisten kennt das Paketformat nicht.",
+      "„Vertrag“: Berechtigungen, Anlegen/Löschen gesperrt gehören nicht zum Paketformat und kommen nicht mit.",
+      "„Vertrag“: Das Stichtag-Feld des Archivmodus kommt nicht mit – im Paket zählt das Anlagedatum.",
+      "Die Ansicht „Organisationen“ kommt aus dem Paket „Basis“ – wird als Abhängigkeit eingetragen (basis >=1.6.0), nicht kopiert.",
+      "Ansicht „Teure“: Bedingungen auf das Merkmal der Ablage kennt das Paketformat der Ansichten nicht; sie fehlen im Paket.",
+      "Ansicht „Teure“: Bedingungen auf Anzahlen, Favoriten oder Fristen kennt das Paketformat nicht; sie fehlen im Paket.",
+      "Ansicht „Teure“: Eine Bedingung nennt Mappen oder Benutzer dieser Installation und kommt nicht ins Paket.",
+      "Ansicht „Teure“: zeigt im Paket die Standard-Trefferliste.",
+      "Ansicht „Teure“: Berechtigungen an der Ansicht kommen nicht ins Paket.",
+      "Ansicht „Unter Paket“ steht unter „Organisationen“ aus einem Paket – im Paket steht sie auf der obersten Ebene.",
+      "Ansicht „Unter Fremd“ steht unter „Nicht gewählt“, die nicht gewählt ist – im Paket steht sie auf der obersten Ebene.",
+      "Ansicht „Alles“ zeigt Mappen vom Typ „Notiz“. „Notiz“ kommt nicht ins Paket – beim Empfänger muss es „Notiz“ schon geben, sonst bleibt die Ansicht leer oder wird nicht installiert.",
+      "Ansicht „Alles“ zeigt Mappen vom Typ „Sammlung“. „Sammlung“ kommt nicht ins Paket – beim Empfänger muss es „Sammlung“ schon geben, sonst bleibt die Ansicht leer oder wird nicht installiert.",
+      "Beispiel-Mappen gehen nur aus gewählten eigenen Mappentypen; die übrigen sind weggelassen.",
+      "Beispiel-Mappen: 2 Verweise zeigen auf Mappen, die keine gewählten Beispiele sind, und bleiben leer.",
+      "3 Beispiel-Mappen aus deiner Auswahl kommen ins Paket – nimm nur Mappen mit erfundenen Daten. Dokumente, Notizen und Aufgaben kommen nicht mit.",
+      "Die Wortliste „Firma, Unternehmen“ kommt über das Paket „Basis“ als Abhängigkeit mit, nicht kopiert.",
+      "Die Wortliste „a, b“ gehört zum Paket „fremd“ und kommt nicht ins Paket.",
+      "Eine Gruppe gleichbedeutender Wörter kommen ins Paket – beim Empfänger stehen sie unter Werkbank → Suche bei „aus Paketen“."
+    ],
+    "abhaengigkeiten": {
+      "basis": ">=1.6.0"
+    },
+    "inhalt": {
+      "typen": [
+        {
+          "schluessel": "vertrag",
+          "name": "Vertrag"
+        },
+        {
+          "schluessel": "zahlung",
+          "name": "Zahlung"
+        }
+      ],
+      "sichten": [
+        {
+          "schluessel": "vertraege",
+          "name": "Verträge",
+          "eltern": null
+        },
+        {
+          "schluessel": "teure",
+          "name": "Teure",
+          "eltern": "vertraege"
+        },
+        {
+          "schluessel": "unter_paket",
+          "name": "Unter Paket",
+          "eltern": null
+        },
+        {
+          "schluessel": "unter_fremd",
+          "name": "Unter Fremd",
+          "eltern": null
+        },
+        {
+          "schluessel": "alles",
+          "name": "Alles",
+          "eltern": null
+        }
+      ],
+      "beispiele": 3,
+      "wortlisten": 1
+    },
+    "schluessel": {
+      "00000000-0000-4000-8000-000000000010": "vertrag",
+      "00000000-0000-4000-8000-000000000011": "zahlung",
+      "00000000-0000-4000-8000-000000000020": "vertraege",
+      "00000000-0000-4000-8000-000000000021": "teure",
+      "00000000-0000-4000-8000-000000000022": "unter_paket",
+      "00000000-0000-4000-8000-000000000023": "unter_fremd",
+      "00000000-0000-4000-8000-000000000025": "alles"
+    },
+    "dateien": [],
+    "version": {
+      "bekannt": null,
+      "art": null,
+      "artGrund": null,
+      "mindest": "0.239.0",
+      "gruende": [
+        "Feldart Zusammengesetzt (ab 0.239.0)",
+        "Eigene Organisation (Merkmal, Schreibschutz, Anzeige-Bedingung) (ab 0.238.0)",
+        "Archivmodus am Mappentyp (ab 0.237.0)",
+        "„Anzeigen, wenn … zeigt auf die Vorgabe …“ (ab 0.236.0)",
+        "Ist Teil einer anderen Mappe (ab 0.235.0)",
+        "„Beim Auswählen übernehmen“ an Verweisfeldern (ab 0.234.0)",
+        "Feldart Tabelle (ab 0.232.0)",
+        "Feldarten Zeitraum und Prozent, negative Beträge (ab 0.227.0)",
+        "Ansichten mit Mappentypen, die nicht im Paket sind (ab 0.178.0)",
+        "Wortlisten (ab 0.127.0)",
+        "Feldformate und Datumsgrenzen (ab 0.121.0)",
+        "Erkennung an Feldern („Aus Dokument ausfüllen“) (ab 0.113.0)"
+      ],
+      "dmsOptionen": [
+        ">=0.239.0",
+        ">=0.240.0",
+        ">=0.241.0",
+        ">=0.242.0",
+        ">=0.243.0",
+        ">=0.244.0",
+        ">=0.245.0",
+        ">=0.246.0",
+        ">=0.247.0",
+        ">=0.248.0",
+        ">=0.249.0",
+        ">=0.250.0",
+        ">=0.251.0",
+        ">=0.252.0",
+        ">=0.253.0",
+        ">=0.254.0",
+        ">=0.255.0",
+        ">=0.256.0",
+        ">=0.257.0",
+        ">=0.258.0",
+        ">=0.259.0",
+        ">=0.260.0",
+        ">=0.261.0",
+        ">=0.262.0",
+        ">=0.263.0",
+        ">=0.264.0",
+        ">=0.265.0",
+        ">=0.266.0",
+        ">=0.267.0",
+        ">=0.268.0",
+        ">=0.269.0",
+        ">=0.270.0",
+        ">=0.271.0",
+        ">=0.272.0",
+        ">=0.273.0",
+        ">=0.274.0",
+        ">=0.275.0",
+        ">=0.276.0",
+        ">=0.277.0",
+        ">=0.278.0",
+        ">=0.279.0",
+        ">=0.280.0",
+        ">=0.281.0",
+        ">=0.282.0",
+        ">=0.283.0",
+        ">=0.284.0",
+        ">=0.285.0",
+        ">=0.286.0",
+        ">=0.287.0",
+        ">=0.288.0",
+        ">=0.289.0",
+        ">=0.290.0"
+      ]
+    },
+    "felder": {
+      "00000000-0000-4000-8000-000000000010": [
+        "nr",
+        "kennung",
+        "partner",
+        "wer",
+        "ort",
+        "zahlung",
+        "gehoert",
+        "text",
+        "uebernommen",
+        "kuendigung",
+        "kennwort",
+        "betrag",
+        "zeit",
+        "anteil",
+        "teile",
+        "posten",
+        "nichts",
+        "land"
+      ],
+      "00000000-0000-4000-8000-000000000011": ["datum", "vertrag", "betrag"]
+    },
+    "lizenz": "MIT"
+  },
+  "mit Beispielen und Dokumenten": {
+    "probleme": [
+      "„Vertrag“ → Feld „Ohne Quelle“: verweist auf „Systemtyp“. Darauf kann ein Paket nicht verweisen (erlaubt: Ablageort, Benutzer, Rolle).",
+      "Ansicht „Teure“: Den Ziel-Mappentyp gibt es nicht mehr.",
+      "Es wird auf Mappentypen verwiesen, die nicht gewählt sind: „Notiz“. Nimm sie mit auf oder entferne den Verweis."
+    ],
+    "fehlend": [
+      {
+        "art": "typ",
+        "id": "00000000-0000-4000-8000-000000000012",
+        "name": "Notiz",
+        "grund": "„Vertrag“ → Feld „Kündigung“",
+        "noetig": true
+      },
+      {
+        "art": "sicht",
+        "id": "00000000-0000-4000-8000-000000000024",
+        "name": "Nicht gewählt",
+        "grund": "Elternansicht von „Unter Fremd“",
+        "noetig": false
+      },
+      {
+        "art": "typ",
+        "id": "00000000-0000-4000-8000-000000000013",
+        "name": "Sammlung",
+        "grund": "Vorsicht: steckt in der Ansicht „Alles“ – muss beim Empfänger vorhanden sein",
+        "noetig": false
+      }
+    ],
+    "hinweise": [
+      "„Vertrag“ → Feld „Text“: Das Feld berechnet ein anderes Paket. Im eigenen Paket kommt es als gewöhnliches Feld mit – ein Paket ohne Code rechnet nichts.",
+      "„Vertrag“ → Feld „Nummer“: Der Nummernkreis gehört nicht zum Paketformat. Das Feld kommt ohne Nummernkreis ins Paket; richte ihn beim Empfänger unter Werkbank → Nummernkreise ein und trage ihn am Feld ein.",
+      "Der Mappentyp „Organisation“ kommt aus dem Paket „Basis“ – wird als Abhängigkeit eingetragen (basis >=1.6.0), nicht kopiert.",
+      "Änderungen an „Organisation“ (Basis) gehören nicht zu deinem Paket – beim Empfänger gilt der Typ, wie das Paket „Basis“ ihn bringt. Brauchst du die Änderungen, lege dafür einen eigenen Typ an.",
+      "„Vertrag“ → Feld „Wer“: Der Auswahlfilter nennt Mappen dieser Installation und kommt nicht ins Paket.",
+      "„Ablageort“ kommt mit dem Paket Basis: Das Paket verweist auf basis:ablageort und trägt Basis ab 1.6.0 als Abhängigkeit ein.",
+      "„Vertrag“ → Feld „Ort“: Der Standardwert zeigt auf eine Mappe dieser Installation und kommt nicht ins Paket.",
+      "„Vertrag“ → Feld „Kündigung“: Eine Anzeige-Bedingung nennt eine Mappe dieser Installation und kommt nicht ins Paket.",
+      "„Vertrag“ → Feld „Posten“: Die Tabelle zeigt eine andere Trefferliste von „Zahlung“ – ins Paket kommt nur die Standard-Trefferliste, die Tabelle zeigt dort deren Spalten.",
+      "„Vertrag“: Nur die Standard-Trefferliste „Standard“ kommt ins Paket; weitere Trefferlisten kennt das Paketformat nicht.",
+      "„Vertrag“: Berechtigungen, Anlegen/Löschen gesperrt gehören nicht zum Paketformat und kommen nicht mit.",
+      "„Vertrag“: Das Stichtag-Feld des Archivmodus kommt nicht mit – im Paket zählt das Anlagedatum.",
+      "Die Ansicht „Organisationen“ kommt aus dem Paket „Basis“ – wird als Abhängigkeit eingetragen (basis >=1.6.0), nicht kopiert.",
+      "Ansicht „Teure“: Bedingungen auf das Merkmal der Ablage kennt das Paketformat der Ansichten nicht; sie fehlen im Paket.",
+      "Ansicht „Teure“: Bedingungen auf Anzahlen, Favoriten oder Fristen kennt das Paketformat nicht; sie fehlen im Paket.",
+      "Ansicht „Teure“: Eine Bedingung nennt Mappen oder Benutzer dieser Installation und kommt nicht ins Paket.",
+      "Ansicht „Teure“: zeigt im Paket die Standard-Trefferliste.",
+      "Ansicht „Teure“: Berechtigungen an der Ansicht kommen nicht ins Paket.",
+      "Ansicht „Unter Paket“ steht unter „Organisationen“ aus einem Paket – im Paket steht sie auf der obersten Ebene.",
+      "Ansicht „Unter Fremd“ steht unter „Nicht gewählt“, die nicht gewählt ist – im Paket steht sie auf der obersten Ebene.",
+      "Ansicht „Alles“ zeigt Mappen vom Typ „Notiz“. „Notiz“ kommt nicht ins Paket – beim Empfänger muss es „Notiz“ schon geben, sonst bleibt die Ansicht leer oder wird nicht installiert.",
+      "Ansicht „Alles“ zeigt Mappen vom Typ „Sammlung“. „Sammlung“ kommt nicht ins Paket – beim Empfänger muss es „Sammlung“ schon geben, sonst bleibt die Ansicht leer oder wird nicht installiert.",
+      "Beispiel-Mappen gehen nur aus gewählten eigenen Mappentypen; die übrigen sind weggelassen.",
+      "4 Beispiel-Dokumente kommen mit (unter inhalt/beispiele/).",
+      "2 Dokumente der Beispiel-Mappen sind kein PDF, PNG oder JPEG und bleiben draußen.",
+      "Beispiel-Mappen: 2 Verweise zeigen auf Mappen, die keine gewählten Beispiele sind, und bleiben leer.",
+      "3 Beispiel-Mappen aus deiner Auswahl kommen samt ihren Dokumenten ins Paket – nimm nur Mappen und Dokumente mit erfundenen Daten. Notizen und Aufgaben kommen nicht mit.",
+      "Die Wortliste „Firma, Unternehmen“ kommt über das Paket „Basis“ als Abhängigkeit mit, nicht kopiert.",
+      "Die Wortliste „a, b“ gehört zum Paket „fremd“ und kommt nicht ins Paket.",
+      "Eine Gruppe gleichbedeutender Wörter kommen ins Paket – beim Empfänger stehen sie unter Werkbank → Suche bei „aus Paketen“."
+    ],
+    "abhaengigkeiten": {
+      "basis": ">=1.6.0"
+    },
+    "inhalt": {
+      "typen": [
+        {
+          "schluessel": "vertrag",
+          "name": "Vertrag"
+        },
+        {
+          "schluessel": "zahlung",
+          "name": "Zahlung"
+        }
+      ],
+      "sichten": [
+        {
+          "schluessel": "vertraege",
+          "name": "Verträge",
+          "eltern": null
+        },
+        {
+          "schluessel": "teure",
+          "name": "Teure",
+          "eltern": "vertraege"
+        },
+        {
+          "schluessel": "unter_paket",
+          "name": "Unter Paket",
+          "eltern": null
+        },
+        {
+          "schluessel": "unter_fremd",
+          "name": "Unter Fremd",
+          "eltern": null
+        },
+        {
+          "schluessel": "alles",
+          "name": "Alles",
+          "eltern": null
+        }
+      ],
+      "beispiele": 3,
+      "wortlisten": 1,
+      "beispielDokumente": 4
+    },
+    "schluessel": {
+      "00000000-0000-4000-8000-000000000010": "vertrag",
+      "00000000-0000-4000-8000-000000000011": "zahlung",
+      "00000000-0000-4000-8000-000000000020": "vertraege",
+      "00000000-0000-4000-8000-000000000021": "teure",
+      "00000000-0000-4000-8000-000000000022": "unter_paket",
+      "00000000-0000-4000-8000-000000000023": "unter_fremd",
+      "00000000-0000-4000-8000-000000000025": "alles"
+    },
+    "dateien": [],
+    "version": {
+      "bekannt": null,
+      "art": null,
+      "artGrund": null,
+      "mindest": "0.239.0",
+      "gruende": [
+        "Feldart Zusammengesetzt (ab 0.239.0)",
+        "Eigene Organisation (Merkmal, Schreibschutz, Anzeige-Bedingung) (ab 0.238.0)",
+        "Archivmodus am Mappentyp (ab 0.237.0)",
+        "„Anzeigen, wenn … zeigt auf die Vorgabe …“ (ab 0.236.0)",
+        "Ist Teil einer anderen Mappe (ab 0.235.0)",
+        "„Beim Auswählen übernehmen“ an Verweisfeldern (ab 0.234.0)",
+        "Feldart Tabelle (ab 0.232.0)",
+        "Feldarten Zeitraum und Prozent, negative Beträge (ab 0.227.0)",
+        "Beispiel-Dokumente (ab 0.223.0)",
+        "Ansichten mit Mappentypen, die nicht im Paket sind (ab 0.178.0)",
+        "Wortlisten (ab 0.127.0)",
+        "Feldformate und Datumsgrenzen (ab 0.121.0)",
+        "Erkennung an Feldern („Aus Dokument ausfüllen“) (ab 0.113.0)"
+      ],
+      "dmsOptionen": [
+        ">=0.239.0",
+        ">=0.240.0",
+        ">=0.241.0",
+        ">=0.242.0",
+        ">=0.243.0",
+        ">=0.244.0",
+        ">=0.245.0",
+        ">=0.246.0",
+        ">=0.247.0",
+        ">=0.248.0",
+        ">=0.249.0",
+        ">=0.250.0",
+        ">=0.251.0",
+        ">=0.252.0",
+        ">=0.253.0",
+        ">=0.254.0",
+        ">=0.255.0",
+        ">=0.256.0",
+        ">=0.257.0",
+        ">=0.258.0",
+        ">=0.259.0",
+        ">=0.260.0",
+        ">=0.261.0",
+        ">=0.262.0",
+        ">=0.263.0",
+        ">=0.264.0",
+        ">=0.265.0",
+        ">=0.266.0",
+        ">=0.267.0",
+        ">=0.268.0",
+        ">=0.269.0",
+        ">=0.270.0",
+        ">=0.271.0",
+        ">=0.272.0",
+        ">=0.273.0",
+        ">=0.274.0",
+        ">=0.275.0",
+        ">=0.276.0",
+        ">=0.277.0",
+        ">=0.278.0",
+        ">=0.279.0",
+        ">=0.280.0",
+        ">=0.281.0",
+        ">=0.282.0",
+        ">=0.283.0",
+        ">=0.284.0",
+        ">=0.285.0",
+        ">=0.286.0",
+        ">=0.287.0",
+        ">=0.288.0",
+        ">=0.289.0",
+        ">=0.290.0"
+      ]
+    },
+    "felder": {
+      "00000000-0000-4000-8000-000000000010": [
+        "nr",
+        "kennung",
+        "partner",
+        "wer",
+        "ort",
+        "zahlung",
+        "gehoert",
+        "text",
+        "uebernommen",
+        "kuendigung",
+        "kennwort",
+        "betrag",
+        "zeit",
+        "anteil",
+        "teile",
+        "posten",
+        "nichts",
+        "land"
+      ],
+      "00000000-0000-4000-8000-000000000011": ["datum", "vertrag", "betrag"]
+    },
+    "lizenz": "MIT"
+  },
+  "Beispiele ohne Dokumente": {
+    "probleme": [
+      "„Vertrag“ → Feld „Ohne Quelle“: verweist auf „Systemtyp“. Darauf kann ein Paket nicht verweisen (erlaubt: Ablageort, Benutzer, Rolle).",
+      "Ansicht „Teure“: Den Ziel-Mappentyp gibt es nicht mehr.",
+      "Es wird auf Mappentypen verwiesen, die nicht gewählt sind: „Notiz“. Nimm sie mit auf oder entferne den Verweis."
+    ],
+    "fehlend": [
+      {
+        "art": "typ",
+        "id": "00000000-0000-4000-8000-000000000012",
+        "name": "Notiz",
+        "grund": "„Vertrag“ → Feld „Kündigung“",
+        "noetig": true
+      },
+      {
+        "art": "sicht",
+        "id": "00000000-0000-4000-8000-000000000024",
+        "name": "Nicht gewählt",
+        "grund": "Elternansicht von „Unter Fremd“",
+        "noetig": false
+      },
+      {
+        "art": "typ",
+        "id": "00000000-0000-4000-8000-000000000013",
+        "name": "Sammlung",
+        "grund": "Vorsicht: steckt in der Ansicht „Alles“ – muss beim Empfänger vorhanden sein",
+        "noetig": false
+      }
+    ],
+    "hinweise": [
+      "„Vertrag“ → Feld „Text“: Das Feld berechnet ein anderes Paket. Im eigenen Paket kommt es als gewöhnliches Feld mit – ein Paket ohne Code rechnet nichts.",
+      "„Vertrag“ → Feld „Nummer“: Der Nummernkreis gehört nicht zum Paketformat. Das Feld kommt ohne Nummernkreis ins Paket; richte ihn beim Empfänger unter Werkbank → Nummernkreise ein und trage ihn am Feld ein.",
+      "Der Mappentyp „Organisation“ kommt aus dem Paket „Basis“ – wird als Abhängigkeit eingetragen (basis >=1.6.0), nicht kopiert.",
+      "Änderungen an „Organisation“ (Basis) gehören nicht zu deinem Paket – beim Empfänger gilt der Typ, wie das Paket „Basis“ ihn bringt. Brauchst du die Änderungen, lege dafür einen eigenen Typ an.",
+      "„Vertrag“ → Feld „Wer“: Der Auswahlfilter nennt Mappen dieser Installation und kommt nicht ins Paket.",
+      "„Ablageort“ kommt mit dem Paket Basis: Das Paket verweist auf basis:ablageort und trägt Basis ab 1.6.0 als Abhängigkeit ein.",
+      "„Vertrag“ → Feld „Ort“: Der Standardwert zeigt auf eine Mappe dieser Installation und kommt nicht ins Paket.",
+      "„Vertrag“ → Feld „Kündigung“: Eine Anzeige-Bedingung nennt eine Mappe dieser Installation und kommt nicht ins Paket.",
+      "„Vertrag“ → Feld „Posten“: Die Tabelle zeigt eine andere Trefferliste von „Zahlung“ – ins Paket kommt nur die Standard-Trefferliste, die Tabelle zeigt dort deren Spalten.",
+      "„Vertrag“: Nur die Standard-Trefferliste „Standard“ kommt ins Paket; weitere Trefferlisten kennt das Paketformat nicht.",
+      "„Vertrag“: Berechtigungen, Anlegen/Löschen gesperrt gehören nicht zum Paketformat und kommen nicht mit.",
+      "„Vertrag“: Das Stichtag-Feld des Archivmodus kommt nicht mit – im Paket zählt das Anlagedatum.",
+      "Die Ansicht „Organisationen“ kommt aus dem Paket „Basis“ – wird als Abhängigkeit eingetragen (basis >=1.6.0), nicht kopiert.",
+      "Ansicht „Teure“: Bedingungen auf das Merkmal der Ablage kennt das Paketformat der Ansichten nicht; sie fehlen im Paket.",
+      "Ansicht „Teure“: Bedingungen auf Anzahlen, Favoriten oder Fristen kennt das Paketformat nicht; sie fehlen im Paket.",
+      "Ansicht „Teure“: Eine Bedingung nennt Mappen oder Benutzer dieser Installation und kommt nicht ins Paket.",
+      "Ansicht „Teure“: zeigt im Paket die Standard-Trefferliste.",
+      "Ansicht „Teure“: Berechtigungen an der Ansicht kommen nicht ins Paket.",
+      "Ansicht „Unter Paket“ steht unter „Organisationen“ aus einem Paket – im Paket steht sie auf der obersten Ebene.",
+      "Ansicht „Unter Fremd“ steht unter „Nicht gewählt“, die nicht gewählt ist – im Paket steht sie auf der obersten Ebene.",
+      "Ansicht „Alles“ zeigt Mappen vom Typ „Notiz“. „Notiz“ kommt nicht ins Paket – beim Empfänger muss es „Notiz“ schon geben, sonst bleibt die Ansicht leer oder wird nicht installiert.",
+      "Ansicht „Alles“ zeigt Mappen vom Typ „Sammlung“. „Sammlung“ kommt nicht ins Paket – beim Empfänger muss es „Sammlung“ schon geben, sonst bleibt die Ansicht leer oder wird nicht installiert.",
+      "Beispiel-Mappen gehen nur aus gewählten eigenen Mappentypen; die übrigen sind weggelassen.",
+      "Beispiel-Mappen: 2 Verweise zeigen auf Mappen, die keine gewählten Beispiele sind, und bleiben leer.",
+      "3 Beispiel-Mappen aus deiner Auswahl kommen ins Paket – nimm nur Mappen mit erfundenen Daten. Dokumente, Notizen und Aufgaben kommen nicht mit.",
+      "Die Wortliste „Firma, Unternehmen“ kommt über das Paket „Basis“ als Abhängigkeit mit, nicht kopiert.",
+      "Die Wortliste „a, b“ gehört zum Paket „fremd“ und kommt nicht ins Paket.",
+      "Eine Gruppe gleichbedeutender Wörter kommen ins Paket – beim Empfänger stehen sie unter Werkbank → Suche bei „aus Paketen“."
+    ],
+    "abhaengigkeiten": {
+      "basis": ">=1.6.0"
+    },
+    "inhalt": {
+      "typen": [
+        {
+          "schluessel": "vertrag",
+          "name": "Vertrag"
+        },
+        {
+          "schluessel": "zahlung",
+          "name": "Zahlung"
+        }
+      ],
+      "sichten": [
+        {
+          "schluessel": "vertraege",
+          "name": "Verträge",
+          "eltern": null
+        },
+        {
+          "schluessel": "teure",
+          "name": "Teure",
+          "eltern": "vertraege"
+        },
+        {
+          "schluessel": "unter_paket",
+          "name": "Unter Paket",
+          "eltern": null
+        },
+        {
+          "schluessel": "unter_fremd",
+          "name": "Unter Fremd",
+          "eltern": null
+        },
+        {
+          "schluessel": "alles",
+          "name": "Alles",
+          "eltern": null
+        }
+      ],
+      "beispiele": 3,
+      "wortlisten": 1
+    },
+    "schluessel": {
+      "00000000-0000-4000-8000-000000000010": "vertrag",
+      "00000000-0000-4000-8000-000000000011": "zahlung",
+      "00000000-0000-4000-8000-000000000020": "vertraege",
+      "00000000-0000-4000-8000-000000000021": "teure",
+      "00000000-0000-4000-8000-000000000022": "unter_paket",
+      "00000000-0000-4000-8000-000000000023": "unter_fremd",
+      "00000000-0000-4000-8000-000000000025": "alles"
+    },
+    "dateien": [],
+    "version": {
+      "bekannt": null,
+      "art": null,
+      "artGrund": null,
+      "mindest": "0.239.0",
+      "gruende": [
+        "Feldart Zusammengesetzt (ab 0.239.0)",
+        "Eigene Organisation (Merkmal, Schreibschutz, Anzeige-Bedingung) (ab 0.238.0)",
+        "Archivmodus am Mappentyp (ab 0.237.0)",
+        "„Anzeigen, wenn … zeigt auf die Vorgabe …“ (ab 0.236.0)",
+        "Ist Teil einer anderen Mappe (ab 0.235.0)",
+        "„Beim Auswählen übernehmen“ an Verweisfeldern (ab 0.234.0)",
+        "Feldart Tabelle (ab 0.232.0)",
+        "Feldarten Zeitraum und Prozent, negative Beträge (ab 0.227.0)",
+        "Ansichten mit Mappentypen, die nicht im Paket sind (ab 0.178.0)",
+        "Wortlisten (ab 0.127.0)",
+        "Feldformate und Datumsgrenzen (ab 0.121.0)",
+        "Erkennung an Feldern („Aus Dokument ausfüllen“) (ab 0.113.0)"
+      ],
+      "dmsOptionen": [
+        ">=0.239.0",
+        ">=0.240.0",
+        ">=0.241.0",
+        ">=0.242.0",
+        ">=0.243.0",
+        ">=0.244.0",
+        ">=0.245.0",
+        ">=0.246.0",
+        ">=0.247.0",
+        ">=0.248.0",
+        ">=0.249.0",
+        ">=0.250.0",
+        ">=0.251.0",
+        ">=0.252.0",
+        ">=0.253.0",
+        ">=0.254.0",
+        ">=0.255.0",
+        ">=0.256.0",
+        ">=0.257.0",
+        ">=0.258.0",
+        ">=0.259.0",
+        ">=0.260.0",
+        ">=0.261.0",
+        ">=0.262.0",
+        ">=0.263.0",
+        ">=0.264.0",
+        ">=0.265.0",
+        ">=0.266.0",
+        ">=0.267.0",
+        ">=0.268.0",
+        ">=0.269.0",
+        ">=0.270.0",
+        ">=0.271.0",
+        ">=0.272.0",
+        ">=0.273.0",
+        ">=0.274.0",
+        ">=0.275.0",
+        ">=0.276.0",
+        ">=0.277.0",
+        ">=0.278.0",
+        ">=0.279.0",
+        ">=0.280.0",
+        ">=0.281.0",
+        ">=0.282.0",
+        ">=0.283.0",
+        ">=0.284.0",
+        ">=0.285.0",
+        ">=0.286.0",
+        ">=0.287.0",
+        ">=0.288.0",
+        ">=0.289.0",
+        ">=0.290.0"
+      ]
+    },
+    "felder": {
+      "00000000-0000-4000-8000-000000000010": [
+        "nr",
+        "kennung",
+        "partner",
+        "wer",
+        "ort",
+        "zahlung",
+        "gehoert",
+        "text",
+        "uebernommen",
+        "kuendigung",
+        "kennwort",
+        "betrag",
+        "zeit",
+        "anteil",
+        "teile",
+        "posten",
+        "nichts",
+        "land"
+      ],
+      "00000000-0000-4000-8000-000000000011": ["datum", "vertrag", "betrag"]
+    },
+    "lizenz": "MIT"
+  },
+  "Update mit Entwurf, eigene Lizenz": {
+    "probleme": [
+      "„Vertrag“ → Feld „Ohne Quelle“: verweist auf „Systemtyp“. Darauf kann ein Paket nicht verweisen (erlaubt: Ablageort, Benutzer, Rolle).",
+      "Ansicht „Teure“: Den Ziel-Mappentyp gibt es nicht mehr.",
+      "Es wird auf Mappentypen verwiesen, die nicht gewählt sind: „Notiz“. Nimm sie mit auf oder entferne den Verweis."
+    ],
+    "fehlend": [
+      {
+        "art": "typ",
+        "id": "00000000-0000-4000-8000-000000000012",
+        "name": "Notiz",
+        "grund": "„Vertrag“ → Feld „Kündigung“",
+        "noetig": true
+      },
+      {
+        "art": "sicht",
+        "id": "00000000-0000-4000-8000-000000000024",
+        "name": "Nicht gewählt",
+        "grund": "Elternansicht von „Unter Fremd“",
+        "noetig": false
+      },
+      {
+        "art": "typ",
+        "id": "00000000-0000-4000-8000-000000000013",
+        "name": "Sammlung",
+        "grund": "Vorsicht: steckt in der Ansicht „Alles“ – muss beim Empfänger vorhanden sein",
+        "noetig": false
+      }
+    ],
+    "hinweise": [
+      "Ohne GitHub-Namen lässt sich das Paket installieren, aber nicht in die Registry einreichen (dort ist er Pflicht).",
+      "Mit einer eigenen Lizenz lässt sich das Paket in jeder Ablago-Installation installieren, kommt so aber nicht in den offiziellen Katalog – dort gelten nur freie Lizenzen (MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, MPL-2.0, LGPL-3.0-or-later, GPL-3.0-or-later, AGPL-3.0-or-later, CC0-1.0).",
+      "„Vertrag“ → Feld „Text“: Das Feld berechnet ein anderes Paket. Im eigenen Paket kommt es als gewöhnliches Feld mit – ein Paket ohne Code rechnet nichts.",
+      "„Vertrag“ → Feld „Nummer“: Der Nummernkreis gehört nicht zum Paketformat. Das Feld kommt ohne Nummernkreis ins Paket; richte ihn beim Empfänger unter Werkbank → Nummernkreise ein und trage ihn am Feld ein.",
+      "Der Mappentyp „Organisation“ kommt aus dem Paket „Basis“ – wird als Abhängigkeit eingetragen (basis >=1.6.0), nicht kopiert.",
+      "Änderungen an „Organisation“ (Basis) gehören nicht zu deinem Paket – beim Empfänger gilt der Typ, wie das Paket „Basis“ ihn bringt. Brauchst du die Änderungen, lege dafür einen eigenen Typ an.",
+      "„Vertrag“ → Feld „Wer“: Der Auswahlfilter nennt Mappen dieser Installation und kommt nicht ins Paket.",
+      "„Ablageort“ kommt mit dem Paket Basis: Das Paket verweist auf basis:ablageort und trägt Basis ab 1.6.0 als Abhängigkeit ein.",
+      "„Vertrag“ → Feld „Ort“: Der Standardwert zeigt auf eine Mappe dieser Installation und kommt nicht ins Paket.",
+      "„Vertrag“ → Feld „Kündigung“: Eine Anzeige-Bedingung nennt eine Mappe dieser Installation und kommt nicht ins Paket.",
+      "„Vertrag“ → Feld „Posten“: Die Tabelle zeigt eine andere Trefferliste von „Zahlung“ – ins Paket kommt nur die Standard-Trefferliste, die Tabelle zeigt dort deren Spalten.",
+      "„Vertrag“: Nur die Standard-Trefferliste „Standard“ kommt ins Paket; weitere Trefferlisten kennt das Paketformat nicht.",
+      "„Vertrag“: Berechtigungen, Anlegen/Löschen gesperrt gehören nicht zum Paketformat und kommen nicht mit.",
+      "„Vertrag“: Das Stichtag-Feld des Archivmodus kommt nicht mit – im Paket zählt das Anlagedatum.",
+      "Die Ansicht „Organisationen“ kommt aus dem Paket „Basis“ – wird als Abhängigkeit eingetragen (basis >=1.6.0), nicht kopiert.",
+      "Ansicht „Teure“: Bedingungen auf das Merkmal der Ablage kennt das Paketformat der Ansichten nicht; sie fehlen im Paket.",
+      "Ansicht „Teure“: Bedingungen auf Anzahlen, Favoriten oder Fristen kennt das Paketformat nicht; sie fehlen im Paket.",
+      "Ansicht „Teure“: Eine Bedingung nennt Mappen oder Benutzer dieser Installation und kommt nicht ins Paket.",
+      "Ansicht „Teure“: zeigt im Paket die Standard-Trefferliste.",
+      "Ansicht „Teure“: Berechtigungen an der Ansicht kommen nicht ins Paket.",
+      "Ansicht „Unter Paket“ steht unter „Organisationen“ aus einem Paket – im Paket steht sie auf der obersten Ebene.",
+      "Ansicht „Unter Fremd“ steht unter „Nicht gewählt“, die nicht gewählt ist – im Paket steht sie auf der obersten Ebene.",
+      "Ansicht „Alles“ zeigt Mappen vom Typ „Notiz“. „Notiz“ kommt nicht ins Paket – beim Empfänger muss es „Notiz“ schon geben, sonst bleibt die Ansicht leer oder wird nicht installiert.",
+      "Ansicht „Alles“ zeigt Mappen vom Typ „Sammlung“. „Sammlung“ kommt nicht ins Paket – beim Empfänger muss es „Sammlung“ schon geben, sonst bleibt die Ansicht leer oder wird nicht installiert.",
+      "Beispiel-Mappen gehen nur aus gewählten eigenen Mappentypen; die übrigen sind weggelassen.",
+      "Beispiel-Mappen: 2 Verweise zeigen auf Mappen, die keine gewählten Beispiele sind, und bleiben leer.",
+      "3 Beispiel-Mappen aus deiner Auswahl kommen ins Paket – nimm nur Mappen mit erfundenen Daten. Dokumente, Notizen und Aufgaben kommen nicht mit.",
+      "Die Wortliste „Firma, Unternehmen“ kommt über das Paket „Basis“ als Abhängigkeit mit, nicht kopiert.",
+      "Die Wortliste „a, b“ gehört zum Paket „fremd“ und kommt nicht ins Paket.",
+      "Eine Gruppe gleichbedeutender Wörter kommen ins Paket – beim Empfänger stehen sie unter Werkbank → Suche bei „aus Paketen“."
+    ],
+    "abhaengigkeiten": {
+      "basis": ">=1.6.0"
+    },
+    "inhalt": {
+      "typen": [
+        {
+          "schluessel": "vertrag_alt",
+          "name": "Vertrag"
+        },
+        {
+          "schluessel": "zahlung",
+          "name": "Zahlung"
+        }
+      ],
+      "sichten": [
+        {
+          "schluessel": "vertraege",
+          "name": "Verträge",
+          "eltern": null
+        },
+        {
+          "schluessel": "teuer_alt",
+          "name": "Teure",
+          "eltern": "vertraege"
+        },
+        {
+          "schluessel": "unter_paket",
+          "name": "Unter Paket",
+          "eltern": null
+        },
+        {
+          "schluessel": "unter_fremd",
+          "name": "Unter Fremd",
+          "eltern": null
+        },
+        {
+          "schluessel": "alles",
+          "name": "Alles",
+          "eltern": null
+        }
+      ],
+      "beispiele": 3,
+      "wortlisten": 1
+    },
+    "schluessel": {
+      "00000000-0000-4000-8000-000000000010": "vertrag_alt",
+      "00000000-0000-4000-8000-000000000011": "zahlung",
+      "00000000-0000-4000-8000-000000000021": "teuer_alt",
+      "00000000-0000-4000-8000-000000000020": "vertraege",
+      "00000000-0000-4000-8000-000000000022": "unter_paket",
+      "00000000-0000-4000-8000-000000000023": "unter_fremd",
+      "00000000-0000-4000-8000-000000000025": "alles"
+    },
+    "dateien": [],
+    "version": {
+      "bekannt": "1.2.0",
+      "art": "gross",
+      "artGrund": "Mappentyp „Notiz“ nicht mehr dabei",
+      "mindest": "0.239.0",
+      "gruende": [
+        "Feldart Zusammengesetzt (ab 0.239.0)",
+        "Eigene Organisation (Merkmal, Schreibschutz, Anzeige-Bedingung) (ab 0.238.0)",
+        "Archivmodus am Mappentyp (ab 0.237.0)",
+        "„Anzeigen, wenn … zeigt auf die Vorgabe …“ (ab 0.236.0)",
+        "Ist Teil einer anderen Mappe (ab 0.235.0)",
+        "„Beim Auswählen übernehmen“ an Verweisfeldern (ab 0.234.0)",
+        "Feldart Tabelle (ab 0.232.0)",
+        "Feldarten Zeitraum und Prozent, negative Beträge (ab 0.227.0)",
+        "Ansichten mit Mappentypen, die nicht im Paket sind (ab 0.178.0)",
+        "Wortlisten (ab 0.127.0)",
+        "Feldformate und Datumsgrenzen (ab 0.121.0)",
+        "Erkennung an Feldern („Aus Dokument ausfüllen“) (ab 0.113.0)"
+      ],
+      "dmsOptionen": [
+        ">=0.239.0",
+        ">=0.240.0",
+        ">=0.241.0",
+        ">=0.242.0",
+        ">=0.243.0",
+        ">=0.244.0",
+        ">=0.245.0",
+        ">=0.246.0",
+        ">=0.247.0",
+        ">=0.248.0",
+        ">=0.249.0",
+        ">=0.250.0",
+        ">=0.251.0",
+        ">=0.252.0",
+        ">=0.253.0",
+        ">=0.254.0",
+        ">=0.255.0",
+        ">=0.256.0",
+        ">=0.257.0",
+        ">=0.258.0",
+        ">=0.259.0",
+        ">=0.260.0",
+        ">=0.261.0",
+        ">=0.262.0",
+        ">=0.263.0",
+        ">=0.264.0",
+        ">=0.265.0",
+        ">=0.266.0",
+        ">=0.267.0",
+        ">=0.268.0",
+        ">=0.269.0",
+        ">=0.270.0",
+        ">=0.271.0",
+        ">=0.272.0",
+        ">=0.273.0",
+        ">=0.274.0",
+        ">=0.275.0",
+        ">=0.276.0",
+        ">=0.277.0",
+        ">=0.278.0",
+        ">=0.279.0",
+        ">=0.280.0",
+        ">=0.281.0",
+        ">=0.282.0",
+        ">=0.283.0",
+        ">=0.284.0",
+        ">=0.285.0",
+        ">=0.286.0",
+        ">=0.287.0",
+        ">=0.288.0",
+        ">=0.289.0",
+        ">=0.290.0"
+      ]
+    },
+    "felder": {
+      "00000000-0000-4000-8000-000000000010": [
+        "nr",
+        "kennung",
+        "partner",
+        "wer",
+        "ort",
+        "zahlung",
+        "gehoert",
+        "text",
+        "uebernommen",
+        "kuendigung",
+        "kennwort",
+        "betrag",
+        "zeit",
+        "anteil",
+        "teile",
+        "posten",
+        "nichts",
+        "land"
+      ],
+      "00000000-0000-4000-8000-000000000011": ["datum", "vertrag", "betrag"]
+    },
+    "lizenz": "LicenseRef-Meine-Lizenz"
+  },
+  "keine Lizenz, zu alte Ablago-Version": {
+    "probleme": [
+      "„Vertrag“ → Feld „Ohne Quelle“: verweist auf „Systemtyp“. Darauf kann ein Paket nicht verweisen (erlaubt: Ablageort, Benutzer, Rolle).",
+      "Ansicht „Teure“: Den Ziel-Mappentyp gibt es nicht mehr.",
+      "Ablago-Version: Das Paket nutzt Feldart Zusammengesetzt (ab 0.239.0), Eigene Organisation (Merkmal, Schreibschutz, Anzeige-Bedingung) (ab 0.238.0), Archivmodus am Mappentyp (ab 0.237.0), „Anzeigen, wenn … zeigt auf die Vorgabe …“ (ab 0.236.0), Ist Teil einer anderen Mappe (ab 0.235.0), „Beim Auswählen übernehmen“ an Verweisfeldern (ab 0.234.0), Feldart Tabelle (ab 0.232.0), Feldarten Zeitraum und Prozent, negative Beträge (ab 0.227.0), Ansichten mit Mappentypen, die nicht im Paket sind (ab 0.178.0), Wortlisten (ab 0.127.0), Feldformate und Datumsgrenzen (ab 0.121.0), Erkennung an Feldern („Aus Dokument ausfüllen“) (ab 0.113.0) und braucht mindestens >=0.239.0.",
+      "Es wird auf Mappentypen verwiesen, die nicht gewählt sind: „Notiz“. Nimm sie mit auf oder entferne den Verweis."
+    ],
+    "fehlend": [
+      {
+        "art": "typ",
+        "id": "00000000-0000-4000-8000-000000000012",
+        "name": "Notiz",
+        "grund": "„Vertrag“ → Feld „Kündigung“",
+        "noetig": true
+      },
+      {
+        "art": "sicht",
+        "id": "00000000-0000-4000-8000-000000000024",
+        "name": "Nicht gewählt",
+        "grund": "Elternansicht von „Unter Fremd“",
+        "noetig": false
+      },
+      {
+        "art": "typ",
+        "id": "00000000-0000-4000-8000-000000000013",
+        "name": "Sammlung",
+        "grund": "Vorsicht: steckt in der Ansicht „Alles“ – muss beim Empfänger vorhanden sein",
+        "noetig": false
+      }
+    ],
+    "hinweise": [
+      "Ohne Lizenz lässt sich das Paket in jeder Ablago-Installation installieren, kommt so aber nicht in den offiziellen Katalog – dort gelten nur freie Lizenzen (MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, MPL-2.0, LGPL-3.0-or-later, GPL-3.0-or-later, AGPL-3.0-or-later, CC0-1.0).",
+      "„Vertrag“ → Feld „Text“: Das Feld berechnet ein anderes Paket. Im eigenen Paket kommt es als gewöhnliches Feld mit – ein Paket ohne Code rechnet nichts.",
+      "„Vertrag“ → Feld „Nummer“: Der Nummernkreis gehört nicht zum Paketformat. Das Feld kommt ohne Nummernkreis ins Paket; richte ihn beim Empfänger unter Werkbank → Nummernkreise ein und trage ihn am Feld ein.",
+      "Der Mappentyp „Organisation“ kommt aus dem Paket „Basis“ – wird als Abhängigkeit eingetragen (basis >=1.6.0), nicht kopiert.",
+      "Änderungen an „Organisation“ (Basis) gehören nicht zu deinem Paket – beim Empfänger gilt der Typ, wie das Paket „Basis“ ihn bringt. Brauchst du die Änderungen, lege dafür einen eigenen Typ an.",
+      "„Vertrag“ → Feld „Wer“: Der Auswahlfilter nennt Mappen dieser Installation und kommt nicht ins Paket.",
+      "„Ablageort“ kommt mit dem Paket Basis: Das Paket verweist auf basis:ablageort und trägt Basis ab 1.6.0 als Abhängigkeit ein.",
+      "„Vertrag“ → Feld „Ort“: Der Standardwert zeigt auf eine Mappe dieser Installation und kommt nicht ins Paket.",
+      "„Vertrag“ → Feld „Kündigung“: Eine Anzeige-Bedingung nennt eine Mappe dieser Installation und kommt nicht ins Paket.",
+      "„Vertrag“ → Feld „Posten“: Die Tabelle zeigt eine andere Trefferliste von „Zahlung“ – ins Paket kommt nur die Standard-Trefferliste, die Tabelle zeigt dort deren Spalten.",
+      "„Vertrag“: Nur die Standard-Trefferliste „Standard“ kommt ins Paket; weitere Trefferlisten kennt das Paketformat nicht.",
+      "„Vertrag“: Berechtigungen, Anlegen/Löschen gesperrt gehören nicht zum Paketformat und kommen nicht mit.",
+      "„Vertrag“: Das Stichtag-Feld des Archivmodus kommt nicht mit – im Paket zählt das Anlagedatum.",
+      "Die Ansicht „Organisationen“ kommt aus dem Paket „Basis“ – wird als Abhängigkeit eingetragen (basis >=1.6.0), nicht kopiert.",
+      "Ansicht „Teure“: Bedingungen auf das Merkmal der Ablage kennt das Paketformat der Ansichten nicht; sie fehlen im Paket.",
+      "Ansicht „Teure“: Bedingungen auf Anzahlen, Favoriten oder Fristen kennt das Paketformat nicht; sie fehlen im Paket.",
+      "Ansicht „Teure“: Eine Bedingung nennt Mappen oder Benutzer dieser Installation und kommt nicht ins Paket.",
+      "Ansicht „Teure“: zeigt im Paket die Standard-Trefferliste.",
+      "Ansicht „Teure“: Berechtigungen an der Ansicht kommen nicht ins Paket.",
+      "Ansicht „Unter Paket“ steht unter „Organisationen“ aus einem Paket – im Paket steht sie auf der obersten Ebene.",
+      "Ansicht „Unter Fremd“ steht unter „Nicht gewählt“, die nicht gewählt ist – im Paket steht sie auf der obersten Ebene.",
+      "Ansicht „Alles“ zeigt Mappen vom Typ „Notiz“. „Notiz“ kommt nicht ins Paket – beim Empfänger muss es „Notiz“ schon geben, sonst bleibt die Ansicht leer oder wird nicht installiert.",
+      "Ansicht „Alles“ zeigt Mappen vom Typ „Sammlung“. „Sammlung“ kommt nicht ins Paket – beim Empfänger muss es „Sammlung“ schon geben, sonst bleibt die Ansicht leer oder wird nicht installiert.",
+      "Beispiel-Mappen gehen nur aus gewählten eigenen Mappentypen; die übrigen sind weggelassen.",
+      "Beispiel-Mappen: 2 Verweise zeigen auf Mappen, die keine gewählten Beispiele sind, und bleiben leer.",
+      "3 Beispiel-Mappen aus deiner Auswahl kommen ins Paket – nimm nur Mappen mit erfundenen Daten. Dokumente, Notizen und Aufgaben kommen nicht mit.",
+      "Die Wortliste „Firma, Unternehmen“ kommt über das Paket „Basis“ als Abhängigkeit mit, nicht kopiert.",
+      "Die Wortliste „a, b“ gehört zum Paket „fremd“ und kommt nicht ins Paket.",
+      "Eine Gruppe gleichbedeutender Wörter kommen ins Paket – beim Empfänger stehen sie unter Werkbank → Suche bei „aus Paketen“."
+    ],
+    "abhaengigkeiten": {
+      "basis": ">=1.6.0"
+    },
+    "inhalt": {
+      "typen": [
+        {
+          "schluessel": "vertrag",
+          "name": "Vertrag"
+        },
+        {
+          "schluessel": "zahlung",
+          "name": "Zahlung"
+        }
+      ],
+      "sichten": [
+        {
+          "schluessel": "vertraege",
+          "name": "Verträge",
+          "eltern": null
+        },
+        {
+          "schluessel": "teure",
+          "name": "Teure",
+          "eltern": "vertraege"
+        },
+        {
+          "schluessel": "unter_paket",
+          "name": "Unter Paket",
+          "eltern": null
+        },
+        {
+          "schluessel": "unter_fremd",
+          "name": "Unter Fremd",
+          "eltern": null
+        },
+        {
+          "schluessel": "alles",
+          "name": "Alles",
+          "eltern": null
+        }
+      ],
+      "beispiele": 3,
+      "wortlisten": 1
+    },
+    "schluessel": {
+      "00000000-0000-4000-8000-000000000010": "vertrag",
+      "00000000-0000-4000-8000-000000000011": "zahlung",
+      "00000000-0000-4000-8000-000000000020": "vertraege",
+      "00000000-0000-4000-8000-000000000021": "teure",
+      "00000000-0000-4000-8000-000000000022": "unter_paket",
+      "00000000-0000-4000-8000-000000000023": "unter_fremd",
+      "00000000-0000-4000-8000-000000000025": "alles"
+    },
+    "dateien": [],
+    "version": {
+      "bekannt": null,
+      "art": null,
+      "artGrund": null,
+      "mindest": "0.239.0",
+      "gruende": [
+        "Feldart Zusammengesetzt (ab 0.239.0)",
+        "Eigene Organisation (Merkmal, Schreibschutz, Anzeige-Bedingung) (ab 0.238.0)",
+        "Archivmodus am Mappentyp (ab 0.237.0)",
+        "„Anzeigen, wenn … zeigt auf die Vorgabe …“ (ab 0.236.0)",
+        "Ist Teil einer anderen Mappe (ab 0.235.0)",
+        "„Beim Auswählen übernehmen“ an Verweisfeldern (ab 0.234.0)",
+        "Feldart Tabelle (ab 0.232.0)",
+        "Feldarten Zeitraum und Prozent, negative Beträge (ab 0.227.0)",
+        "Ansichten mit Mappentypen, die nicht im Paket sind (ab 0.178.0)",
+        "Wortlisten (ab 0.127.0)",
+        "Feldformate und Datumsgrenzen (ab 0.121.0)",
+        "Erkennung an Feldern („Aus Dokument ausfüllen“) (ab 0.113.0)"
+      ],
+      "dmsOptionen": [
+        ">=0.239.0",
+        ">=0.240.0",
+        ">=0.241.0",
+        ">=0.242.0",
+        ">=0.243.0",
+        ">=0.244.0",
+        ">=0.245.0",
+        ">=0.246.0",
+        ">=0.247.0",
+        ">=0.248.0",
+        ">=0.249.0",
+        ">=0.250.0",
+        ">=0.251.0",
+        ">=0.252.0",
+        ">=0.253.0",
+        ">=0.254.0",
+        ">=0.255.0",
+        ">=0.256.0",
+        ">=0.257.0",
+        ">=0.258.0",
+        ">=0.259.0",
+        ">=0.260.0",
+        ">=0.261.0",
+        ">=0.262.0",
+        ">=0.263.0",
+        ">=0.264.0",
+        ">=0.265.0",
+        ">=0.266.0",
+        ">=0.267.0",
+        ">=0.268.0",
+        ">=0.269.0",
+        ">=0.270.0",
+        ">=0.271.0",
+        ">=0.272.0",
+        ">=0.273.0",
+        ">=0.274.0",
+        ">=0.275.0",
+        ">=0.276.0",
+        ">=0.277.0",
+        ">=0.278.0",
+        ">=0.279.0",
+        ">=0.280.0",
+        ">=0.281.0",
+        ">=0.282.0",
+        ">=0.283.0",
+        ">=0.284.0",
+        ">=0.285.0",
+        ">=0.286.0",
+        ">=0.287.0",
+        ">=0.288.0",
+        ">=0.289.0",
+        ">=0.290.0"
+      ]
+    },
+    "felder": {
+      "00000000-0000-4000-8000-000000000010": [
+        "nr",
+        "kennung",
+        "partner",
+        "wer",
+        "ort",
+        "zahlung",
+        "gehoert",
+        "text",
+        "uebernommen",
+        "kuendigung",
+        "kennwort",
+        "betrag",
+        "zeit",
+        "anteil",
+        "teile",
+        "posten",
+        "nichts",
+        "land"
+      ],
+      "00000000-0000-4000-8000-000000000011": ["datum", "vertrag", "betrag"]
+    },
+    "lizenz": "NONE"
+  },
+  "Probleme in den Angaben": {
+    "probleme": [
+      "Id: nur Kleinbuchstaben, Ziffern und _, beginnt mit einem Buchstaben, 2 bis 40 Zeichen (z. B. vertraege_familie); eine Ergänzung mit einem Punkt dahinter (z. B. vertraege.familie).",
+      "Name: 2 bis 60 Zeichen.",
+      "Version: drei Zahlen, z. B. 1.0.0.",
+      "Beschreibung: 10 bis 300 Zeichen, ein, zwei Sätze.",
+      "Autor: Bitte deinen Namen angeben (steht auch in LICENSE).",
+      "GitHub: nur Buchstaben, Ziffern und Bindestrich.",
+      "Lizenz: bitte eine freie Lizenz aus der Liste wählen (MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, MPL-2.0, LGPL-3.0-or-later, GPL-3.0-or-later, AGPL-3.0-or-later, CC0-1.0), eine eigene angeben oder „Keine Lizenz“.",
+      "Version: drei Zahlen, z. B. 1.0.0.",
+      "Ein gewählter Mappentyp existiert nicht mehr. Bitte die Auswahl prüfen.",
+      "„Vertrag“ → Feld „Ohne Quelle“: verweist auf „Systemtyp“. Darauf kann ein Paket nicht verweisen (erlaubt: Ablageort, Benutzer, Rolle).",
+      "Eine gewählte Ansicht existiert nicht mehr. Bitte die Auswahl prüfen.",
+      "Ansicht „Teure“: Den Ziel-Mappentyp gibt es nicht mehr.",
+      "Eine gewählte Wortliste gibt es nicht mehr. Bitte die Auswahl prüfen.",
+      "Die Automatisierung fehlt gibt es nicht mehr.",
+      "Ablago-Version: z. B. >=0.121.0.",
+      "Es wird auf Mappentypen verwiesen, die nicht gewählt sind: „Zahlung“, „Notiz“. Nimm sie mit auf oder entferne den Verweis."
+    ],
+    "fehlend": [
+      {
+        "art": "typ",
+        "id": "00000000-0000-4000-8000-000000000011",
+        "name": "Zahlung",
+        "grund": "„Vertrag“ → Feld „Zahlung“",
+        "noetig": true
+      },
+      {
+        "art": "typ",
+        "id": "00000000-0000-4000-8000-000000000012",
+        "name": "Notiz",
+        "grund": "„Vertrag“ → Feld „Kündigung“",
+        "noetig": true
+      },
+      {
+        "art": "sicht",
+        "id": "00000000-0000-4000-8000-000000000020",
+        "name": "Verträge",
+        "grund": "Elternansicht von „Teure“",
+        "noetig": false
+      }
+    ],
+    "hinweise": [
+      "Der Mappentyp „Organisation“ kommt aus dem Paket „Basis“ – wird als Abhängigkeit eingetragen (basis >=1.6.0), nicht kopiert.",
+      "Änderungen an „Organisation“ (Basis) gehören nicht zu deinem Paket – beim Empfänger gilt der Typ, wie das Paket „Basis“ ihn bringt. Brauchst du die Änderungen, lege dafür einen eigenen Typ an.",
+      "„Benutzer“ bringt jede Installation von Ablago selbst mit und kommt nicht ins Paket.",
+      "„Ablageort“ kommt mit dem Paket Basis: Das Paket verweist auf basis:ablageort und trägt Basis ab 1.6.0 als Abhängigkeit ein.",
+      "„Systemtyp“ bringt jede Installation von Ablago selbst mit und kommt nicht ins Paket.",
+      "„Vertrag“ → Feld „Text“: Das Feld berechnet ein anderes Paket. Im eigenen Paket kommt es als gewöhnliches Feld mit – ein Paket ohne Code rechnet nichts.",
+      "„Vertrag“ → Feld „Nummer“: Der Nummernkreis gehört nicht zum Paketformat. Das Feld kommt ohne Nummernkreis ins Paket; richte ihn beim Empfänger unter Werkbank → Nummernkreise ein und trage ihn am Feld ein.",
+      "„Vertrag“ → Feld „Wer“: Der Auswahlfilter nennt Mappen dieser Installation und kommt nicht ins Paket.",
+      "„Vertrag“ → Feld „Ort“: Der Standardwert zeigt auf eine Mappe dieser Installation und kommt nicht ins Paket.",
+      "„Vertrag“ → Feld „Kündigung“: Eine Anzeige-Bedingung nennt eine Mappe dieser Installation und kommt nicht ins Paket.",
+      "„Vertrag“ → Feld „Posten“: Die Tabelle zeigt eine andere Trefferliste von „Zahlung“ – ins Paket kommt nur die Standard-Trefferliste, die Tabelle zeigt dort deren Spalten.",
+      "„Vertrag“: Nur die Standard-Trefferliste „Standard“ kommt ins Paket; weitere Trefferlisten kennt das Paketformat nicht.",
+      "„Vertrag“: Berechtigungen, Anlegen/Löschen gesperrt gehören nicht zum Paketformat und kommen nicht mit.",
+      "„Vertrag“: Das Stichtag-Feld des Archivmodus kommt nicht mit – im Paket zählt das Anlagedatum.",
+      "Ansicht „Teure“ steht unter „Verträge“, die nicht gewählt ist – im Paket steht sie auf der obersten Ebene.",
+      "Ansicht „Teure“: Bedingungen auf das Merkmal der Ablage kennt das Paketformat der Ansichten nicht; sie fehlen im Paket.",
+      "Ansicht „Teure“: Bedingungen auf Anzahlen, Favoriten oder Fristen kennt das Paketformat nicht; sie fehlen im Paket.",
+      "Ansicht „Teure“: Eine Bedingung nennt Mappen oder Benutzer dieser Installation und kommt nicht ins Paket.",
+      "Ansicht „Teure“: zeigt im Paket die Standard-Trefferliste.",
+      "Ansicht „Teure“: Berechtigungen an der Ansicht kommen nicht ins Paket.",
+      "Beispiel-Mappen gehen nur aus gewählten eigenen Mappentypen; die übrigen sind weggelassen.",
+      "Beispiel-Mappen: 4 Verweise zeigen auf Mappen, die keine gewählten Beispiele sind, und bleiben leer.",
+      "2 Beispiel-Mappen aus deiner Auswahl kommen ins Paket – nimm nur Mappen mit erfundenen Daten. Dokumente, Notizen und Aufgaben kommen nicht mit."
+    ],
+    "abhaengigkeiten": {
+      "basis": ">=1.6.0"
+    },
+    "inhalt": {
+      "typen": [
+        {
+          "schluessel": "vertrag",
+          "name": "Vertrag"
+        }
+      ],
+      "sichten": [
+        {
+          "schluessel": "teure",
+          "name": "Teure",
+          "eltern": null
+        }
+      ],
+      "beispiele": 2
+    },
+    "schluessel": {
+      "00000000-0000-4000-8000-000000000010": "vertrag",
+      "00000000-0000-4000-8000-000000000021": "teure"
+    },
+    "dateien": [],
+    "version": {
+      "bekannt": null,
+      "art": null,
+      "artGrund": null,
+      "mindest": "0.239.0",
+      "gruende": [
+        "Feldart Zusammengesetzt (ab 0.239.0)",
+        "Eigene Organisation (Merkmal, Schreibschutz, Anzeige-Bedingung) (ab 0.238.0)",
+        "Archivmodus am Mappentyp (ab 0.237.0)",
+        "„Anzeigen, wenn … zeigt auf die Vorgabe …“ (ab 0.236.0)",
+        "Ist Teil einer anderen Mappe (ab 0.235.0)",
+        "„Beim Auswählen übernehmen“ an Verweisfeldern (ab 0.234.0)",
+        "Feldart Tabelle (ab 0.232.0)",
+        "Feldarten Zeitraum und Prozent, negative Beträge (ab 0.227.0)",
+        "Feldformate und Datumsgrenzen (ab 0.121.0)",
+        "Erkennung an Feldern („Aus Dokument ausfüllen“) (ab 0.113.0)"
+      ],
+      "dmsOptionen": [
+        ">=0.239.0",
+        ">=0.240.0",
+        ">=0.241.0",
+        ">=0.242.0",
+        ">=0.243.0",
+        ">=0.244.0",
+        ">=0.245.0",
+        ">=0.246.0",
+        ">=0.247.0",
+        ">=0.248.0",
+        ">=0.249.0",
+        ">=0.250.0",
+        ">=0.251.0",
+        ">=0.252.0",
+        ">=0.253.0",
+        ">=0.254.0",
+        ">=0.255.0",
+        ">=0.256.0",
+        ">=0.257.0",
+        ">=0.258.0",
+        ">=0.259.0",
+        ">=0.260.0",
+        ">=0.261.0",
+        ">=0.262.0",
+        ">=0.263.0",
+        ">=0.264.0",
+        ">=0.265.0",
+        ">=0.266.0",
+        ">=0.267.0",
+        ">=0.268.0",
+        ">=0.269.0",
+        ">=0.270.0",
+        ">=0.271.0",
+        ">=0.272.0",
+        ">=0.273.0",
+        ">=0.274.0",
+        ">=0.275.0",
+        ">=0.276.0",
+        ">=0.277.0",
+        ">=0.278.0",
+        ">=0.279.0",
+        ">=0.280.0",
+        ">=0.281.0",
+        ">=0.282.0",
+        ">=0.283.0",
+        ">=0.284.0",
+        ">=0.285.0",
+        ">=0.286.0",
+        ">=0.287.0",
+        ">=0.288.0",
+        ">=0.289.0",
+        ">=0.290.0"
+      ]
+    },
+    "felder": {
+      "00000000-0000-4000-8000-000000000010": [
+        "nr",
+        "kennung",
+        "partner",
+        "wer",
+        "ort",
+        "zahlung",
+        "gehoert",
+        "text",
+        "uebernommen",
+        "kuendigung",
+        "kennwort",
+        "betrag",
+        "zeit",
+        "anteil",
+        "teile",
+        "posten",
+        "nichts",
+        "land"
+      ]
+    },
+    "lizenz": ""
+  },
+  "Id dms, eigene Lizenz ohne Text": {
+    "probleme": [
+      "Id: „dms“ ist für Verweise auf Mappentypen von Ablago reserviert.",
+      "Lizenz: Name der eigenen Lizenz mit 2 bis 80 Zeichen.",
+      "Lizenz: Bitte den Text der eigenen Lizenz eingeben oder eine Datei wählen – er kommt als LICENSE ins Paket.",
+      "Version: 2.0.0 hast du schon erstellt. Damit der Empfänger aktualisieren kann, braucht es eine höhere Version (z. B. 2.1.0).",
+      "„Vertrag“ → Feld „Ohne Quelle“: verweist auf „Systemtyp“. Darauf kann ein Paket nicht verweisen (erlaubt: Ablageort, Benutzer, Rolle).",
+      "Ansicht „Teure“: Den Ziel-Mappentyp gibt es nicht mehr.",
+      "Ablago-Version: bitte auswählen, ab welcher Version das Paket läuft.",
+      "Es wird auf Mappentypen verwiesen, die nicht gewählt sind: „Notiz“. Nimm sie mit auf oder entferne den Verweis."
+    ],
+    "fehlend": [
+      {
+        "art": "typ",
+        "id": "00000000-0000-4000-8000-000000000012",
+        "name": "Notiz",
+        "grund": "„Vertrag“ → Feld „Kündigung“",
+        "noetig": true
+      },
+      {
+        "art": "sicht",
+        "id": "00000000-0000-4000-8000-000000000024",
+        "name": "Nicht gewählt",
+        "grund": "Elternansicht von „Unter Fremd“",
+        "noetig": false
+      },
+      {
+        "art": "typ",
+        "id": "00000000-0000-4000-8000-000000000013",
+        "name": "Sammlung",
+        "grund": "Vorsicht: steckt in der Ansicht „Alles“ – muss beim Empfänger vorhanden sein",
+        "noetig": false
+      }
+    ],
+    "hinweise": [
+      "Mit einer eigenen Lizenz lässt sich das Paket in jeder Ablago-Installation installieren, kommt so aber nicht in den offiziellen Katalog – dort gelten nur freie Lizenzen (MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, MPL-2.0, LGPL-3.0-or-later, GPL-3.0-or-later, AGPL-3.0-or-later, CC0-1.0).",
+      "„Vertrag“ → Feld „Text“: Das Feld berechnet ein anderes Paket. Im eigenen Paket kommt es als gewöhnliches Feld mit – ein Paket ohne Code rechnet nichts.",
+      "„Vertrag“ → Feld „Nummer“: Der Nummernkreis gehört nicht zum Paketformat. Das Feld kommt ohne Nummernkreis ins Paket; richte ihn beim Empfänger unter Werkbank → Nummernkreise ein und trage ihn am Feld ein.",
+      "Der Mappentyp „Organisation“ kommt aus dem Paket „Basis“ – wird als Abhängigkeit eingetragen (basis >=1.6.0), nicht kopiert.",
+      "Änderungen an „Organisation“ (Basis) gehören nicht zu deinem Paket – beim Empfänger gilt der Typ, wie das Paket „Basis“ ihn bringt. Brauchst du die Änderungen, lege dafür einen eigenen Typ an.",
+      "„Vertrag“ → Feld „Wer“: Der Auswahlfilter nennt Mappen dieser Installation und kommt nicht ins Paket.",
+      "„Ablageort“ kommt mit dem Paket Basis: Das Paket verweist auf basis:ablageort und trägt Basis ab 1.6.0 als Abhängigkeit ein.",
+      "„Vertrag“ → Feld „Ort“: Der Standardwert zeigt auf eine Mappe dieser Installation und kommt nicht ins Paket.",
+      "„Vertrag“ → Feld „Kündigung“: Eine Anzeige-Bedingung nennt eine Mappe dieser Installation und kommt nicht ins Paket.",
+      "„Vertrag“ → Feld „Posten“: Die Tabelle zeigt eine andere Trefferliste von „Zahlung“ – ins Paket kommt nur die Standard-Trefferliste, die Tabelle zeigt dort deren Spalten.",
+      "„Vertrag“: Nur die Standard-Trefferliste „Standard“ kommt ins Paket; weitere Trefferlisten kennt das Paketformat nicht.",
+      "„Vertrag“: Berechtigungen, Anlegen/Löschen gesperrt gehören nicht zum Paketformat und kommen nicht mit.",
+      "„Vertrag“: Das Stichtag-Feld des Archivmodus kommt nicht mit – im Paket zählt das Anlagedatum.",
+      "Die Ansicht „Organisationen“ kommt aus dem Paket „Basis“ – wird als Abhängigkeit eingetragen (basis >=1.6.0), nicht kopiert.",
+      "Ansicht „Teure“: Bedingungen auf das Merkmal der Ablage kennt das Paketformat der Ansichten nicht; sie fehlen im Paket.",
+      "Ansicht „Teure“: Bedingungen auf Anzahlen, Favoriten oder Fristen kennt das Paketformat nicht; sie fehlen im Paket.",
+      "Ansicht „Teure“: Eine Bedingung nennt Mappen oder Benutzer dieser Installation und kommt nicht ins Paket.",
+      "Ansicht „Teure“: zeigt im Paket die Standard-Trefferliste.",
+      "Ansicht „Teure“: Berechtigungen an der Ansicht kommen nicht ins Paket.",
+      "Ansicht „Unter Paket“ steht unter „Organisationen“ aus einem Paket – im Paket steht sie auf der obersten Ebene.",
+      "Ansicht „Unter Fremd“ steht unter „Nicht gewählt“, die nicht gewählt ist – im Paket steht sie auf der obersten Ebene.",
+      "Ansicht „Alles“ zeigt Mappen vom Typ „Notiz“. „Notiz“ kommt nicht ins Paket – beim Empfänger muss es „Notiz“ schon geben, sonst bleibt die Ansicht leer oder wird nicht installiert.",
+      "Ansicht „Alles“ zeigt Mappen vom Typ „Sammlung“. „Sammlung“ kommt nicht ins Paket – beim Empfänger muss es „Sammlung“ schon geben, sonst bleibt die Ansicht leer oder wird nicht installiert.",
+      "Beispiel-Mappen gehen nur aus gewählten eigenen Mappentypen; die übrigen sind weggelassen.",
+      "Beispiel-Mappen: 2 Verweise zeigen auf Mappen, die keine gewählten Beispiele sind, und bleiben leer.",
+      "3 Beispiel-Mappen aus deiner Auswahl kommen ins Paket – nimm nur Mappen mit erfundenen Daten. Dokumente, Notizen und Aufgaben kommen nicht mit.",
+      "Die Wortliste „Firma, Unternehmen“ kommt über das Paket „Basis“ als Abhängigkeit mit, nicht kopiert.",
+      "Die Wortliste „a, b“ gehört zum Paket „fremd“ und kommt nicht ins Paket.",
+      "Eine Gruppe gleichbedeutender Wörter kommen ins Paket – beim Empfänger stehen sie unter Werkbank → Suche bei „aus Paketen“."
+    ],
+    "abhaengigkeiten": {
+      "basis": ">=1.6.0"
+    },
+    "inhalt": {
+      "typen": [
+        {
+          "schluessel": "vertrag_alt",
+          "name": "Vertrag"
+        },
+        {
+          "schluessel": "zahlung",
+          "name": "Zahlung"
+        }
+      ],
+      "sichten": [
+        {
+          "schluessel": "vertraege",
+          "name": "Verträge",
+          "eltern": null
+        },
+        {
+          "schluessel": "teuer_alt",
+          "name": "Teure",
+          "eltern": "vertraege"
+        },
+        {
+          "schluessel": "unter_paket",
+          "name": "Unter Paket",
+          "eltern": null
+        },
+        {
+          "schluessel": "unter_fremd",
+          "name": "Unter Fremd",
+          "eltern": null
+        },
+        {
+          "schluessel": "alles",
+          "name": "Alles",
+          "eltern": null
+        }
+      ],
+      "beispiele": 3,
+      "wortlisten": 1
+    },
+    "schluessel": {
+      "00000000-0000-4000-8000-000000000010": "vertrag_alt",
+      "00000000-0000-4000-8000-000000000011": "zahlung",
+      "00000000-0000-4000-8000-000000000021": "teuer_alt",
+      "00000000-0000-4000-8000-000000000020": "vertraege",
+      "00000000-0000-4000-8000-000000000022": "unter_paket",
+      "00000000-0000-4000-8000-000000000023": "unter_fremd",
+      "00000000-0000-4000-8000-000000000025": "alles"
+    },
+    "dateien": [],
+    "version": {
+      "bekannt": "2.0.0",
+      "art": "gross",
+      "artGrund": "Mappentyp „Notiz“ nicht mehr dabei",
+      "mindest": "0.239.0",
+      "gruende": [
+        "Feldart Zusammengesetzt (ab 0.239.0)",
+        "Eigene Organisation (Merkmal, Schreibschutz, Anzeige-Bedingung) (ab 0.238.0)",
+        "Archivmodus am Mappentyp (ab 0.237.0)",
+        "„Anzeigen, wenn … zeigt auf die Vorgabe …“ (ab 0.236.0)",
+        "Ist Teil einer anderen Mappe (ab 0.235.0)",
+        "„Beim Auswählen übernehmen“ an Verweisfeldern (ab 0.234.0)",
+        "Feldart Tabelle (ab 0.232.0)",
+        "Feldarten Zeitraum und Prozent, negative Beträge (ab 0.227.0)",
+        "Ansichten mit Mappentypen, die nicht im Paket sind (ab 0.178.0)",
+        "Wortlisten (ab 0.127.0)",
+        "Feldformate und Datumsgrenzen (ab 0.121.0)",
+        "Erkennung an Feldern („Aus Dokument ausfüllen“) (ab 0.113.0)"
+      ],
+      "dmsOptionen": [
+        ">=0.239.0",
+        ">=0.240.0",
+        ">=0.241.0",
+        ">=0.242.0",
+        ">=0.243.0",
+        ">=0.244.0",
+        ">=0.245.0",
+        ">=0.246.0",
+        ">=0.247.0",
+        ">=0.248.0",
+        ">=0.249.0",
+        ">=0.250.0",
+        ">=0.251.0",
+        ">=0.252.0",
+        ">=0.253.0",
+        ">=0.254.0",
+        ">=0.255.0",
+        ">=0.256.0",
+        ">=0.257.0",
+        ">=0.258.0",
+        ">=0.259.0",
+        ">=0.260.0",
+        ">=0.261.0",
+        ">=0.262.0",
+        ">=0.263.0",
+        ">=0.264.0",
+        ">=0.265.0",
+        ">=0.266.0",
+        ">=0.267.0",
+        ">=0.268.0",
+        ">=0.269.0",
+        ">=0.270.0",
+        ">=0.271.0",
+        ">=0.272.0",
+        ">=0.273.0",
+        ">=0.274.0",
+        ">=0.275.0",
+        ">=0.276.0",
+        ">=0.277.0",
+        ">=0.278.0",
+        ">=0.279.0",
+        ">=0.280.0",
+        ">=0.281.0",
+        ">=0.282.0",
+        ">=0.283.0",
+        ">=0.284.0",
+        ">=0.285.0",
+        ">=0.286.0",
+        ">=0.287.0",
+        ">=0.288.0",
+        ">=0.289.0",
+        ">=0.290.0"
+      ]
+    },
+    "felder": {
+      "00000000-0000-4000-8000-000000000010": [
+        "nr",
+        "kennung",
+        "partner",
+        "wer",
+        "ort",
+        "zahlung",
+        "gehoert",
+        "text",
+        "uebernommen",
+        "kuendigung",
+        "kennwort",
+        "betrag",
+        "zeit",
+        "anteil",
+        "teile",
+        "posten",
+        "nichts",
+        "land"
+      ],
+      "00000000-0000-4000-8000-000000000011": ["datum", "vertrag", "betrag"]
+    },
+    "lizenz": "LicenseRef-L"
+  },
+  "Id schon installiert, eigene Lizenz zu lang": {
+    "probleme": [
+      "Id: Das Paket „basis“ ist in dieser Installation installiert. Wähle eine andere Id – ein eigenes Paket darf kein installiertes überdecken.",
+      "Lizenz: Der Lizenztext ist zu lang (höchstens 100.000 Zeichen).",
+      "Version: 1.2.0 hast du schon erstellt. Damit der Empfänger aktualisieren kann, braucht es eine höhere Version (z. B. 1.3.0).",
+      "„Vertrag“ → Feld „Ohne Quelle“: verweist auf „Systemtyp“. Darauf kann ein Paket nicht verweisen (erlaubt: Ablageort, Benutzer, Rolle).",
+      "Ansicht „Teure“: Den Ziel-Mappentyp gibt es nicht mehr.",
+      "Es wird auf Mappentypen verwiesen, die nicht gewählt sind: „Notiz“. Nimm sie mit auf oder entferne den Verweis."
+    ],
+    "fehlend": [
+      {
+        "art": "typ",
+        "id": "00000000-0000-4000-8000-000000000012",
+        "name": "Notiz",
+        "grund": "„Vertrag“ → Feld „Kündigung“",
+        "noetig": true
+      },
+      {
+        "art": "sicht",
+        "id": "00000000-0000-4000-8000-000000000024",
+        "name": "Nicht gewählt",
+        "grund": "Elternansicht von „Unter Fremd“",
+        "noetig": false
+      },
+      {
+        "art": "typ",
+        "id": "00000000-0000-4000-8000-000000000013",
+        "name": "Sammlung",
+        "grund": "Vorsicht: steckt in der Ansicht „Alles“ – muss beim Empfänger vorhanden sein",
+        "noetig": false
+      }
+    ],
+    "hinweise": [
+      "Mit einer eigenen Lizenz lässt sich das Paket in jeder Ablago-Installation installieren, kommt so aber nicht in den offiziellen Katalog – dort gelten nur freie Lizenzen (MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, MPL-2.0, LGPL-3.0-or-later, GPL-3.0-or-later, AGPL-3.0-or-later, CC0-1.0).",
+      "„Vertrag“ → Feld „Text“: Das Feld berechnet ein anderes Paket. Im eigenen Paket kommt es als gewöhnliches Feld mit – ein Paket ohne Code rechnet nichts.",
+      "„Vertrag“ → Feld „Nummer“: Der Nummernkreis gehört nicht zum Paketformat. Das Feld kommt ohne Nummernkreis ins Paket; richte ihn beim Empfänger unter Werkbank → Nummernkreise ein und trage ihn am Feld ein.",
+      "Der Mappentyp „Organisation“ kommt aus dem Paket „Basis“ – wird als Abhängigkeit eingetragen (basis >=1.6.0), nicht kopiert.",
+      "Änderungen an „Organisation“ (Basis) gehören nicht zu deinem Paket – beim Empfänger gilt der Typ, wie das Paket „Basis“ ihn bringt. Brauchst du die Änderungen, lege dafür einen eigenen Typ an.",
+      "„Vertrag“ → Feld „Wer“: Der Auswahlfilter nennt Mappen dieser Installation und kommt nicht ins Paket.",
+      "„Ablageort“ kommt mit dem Paket Basis: Das Paket verweist auf basis:ablageort und trägt Basis ab 1.6.0 als Abhängigkeit ein.",
+      "„Vertrag“ → Feld „Ort“: Der Standardwert zeigt auf eine Mappe dieser Installation und kommt nicht ins Paket.",
+      "„Vertrag“ → Feld „Kündigung“: Eine Anzeige-Bedingung nennt eine Mappe dieser Installation und kommt nicht ins Paket.",
+      "„Vertrag“ → Feld „Posten“: Die Tabelle zeigt eine andere Trefferliste von „Zahlung“ – ins Paket kommt nur die Standard-Trefferliste, die Tabelle zeigt dort deren Spalten.",
+      "„Vertrag“: Nur die Standard-Trefferliste „Standard“ kommt ins Paket; weitere Trefferlisten kennt das Paketformat nicht.",
+      "„Vertrag“: Berechtigungen, Anlegen/Löschen gesperrt gehören nicht zum Paketformat und kommen nicht mit.",
+      "„Vertrag“: Das Stichtag-Feld des Archivmodus kommt nicht mit – im Paket zählt das Anlagedatum.",
+      "Die Ansicht „Organisationen“ kommt aus dem Paket „Basis“ – wird als Abhängigkeit eingetragen (basis >=1.6.0), nicht kopiert.",
+      "Ansicht „Teure“: Bedingungen auf das Merkmal der Ablage kennt das Paketformat der Ansichten nicht; sie fehlen im Paket.",
+      "Ansicht „Teure“: Bedingungen auf Anzahlen, Favoriten oder Fristen kennt das Paketformat nicht; sie fehlen im Paket.",
+      "Ansicht „Teure“: Eine Bedingung nennt Mappen oder Benutzer dieser Installation und kommt nicht ins Paket.",
+      "Ansicht „Teure“: zeigt im Paket die Standard-Trefferliste.",
+      "Ansicht „Teure“: Berechtigungen an der Ansicht kommen nicht ins Paket.",
+      "Ansicht „Unter Paket“ steht unter „Organisationen“ aus einem Paket – im Paket steht sie auf der obersten Ebene.",
+      "Ansicht „Unter Fremd“ steht unter „Nicht gewählt“, die nicht gewählt ist – im Paket steht sie auf der obersten Ebene.",
+      "Ansicht „Alles“ zeigt Mappen vom Typ „Notiz“. „Notiz“ kommt nicht ins Paket – beim Empfänger muss es „Notiz“ schon geben, sonst bleibt die Ansicht leer oder wird nicht installiert.",
+      "Ansicht „Alles“ zeigt Mappen vom Typ „Sammlung“. „Sammlung“ kommt nicht ins Paket – beim Empfänger muss es „Sammlung“ schon geben, sonst bleibt die Ansicht leer oder wird nicht installiert.",
+      "Beispiel-Mappen gehen nur aus gewählten eigenen Mappentypen; die übrigen sind weggelassen.",
+      "Beispiel-Mappen: 2 Verweise zeigen auf Mappen, die keine gewählten Beispiele sind, und bleiben leer.",
+      "3 Beispiel-Mappen aus deiner Auswahl kommen ins Paket – nimm nur Mappen mit erfundenen Daten. Dokumente, Notizen und Aufgaben kommen nicht mit.",
+      "Die Wortliste „Firma, Unternehmen“ kommt über das Paket „Basis“ als Abhängigkeit mit, nicht kopiert.",
+      "Die Wortliste „a, b“ gehört zum Paket „fremd“ und kommt nicht ins Paket.",
+      "Eine Gruppe gleichbedeutender Wörter kommen ins Paket – beim Empfänger stehen sie unter Werkbank → Suche bei „aus Paketen“."
+    ],
+    "abhaengigkeiten": {
+      "basis": ">=1.6.0"
+    },
+    "inhalt": {
+      "typen": [
+        {
+          "schluessel": "vertrag_alt",
+          "name": "Vertrag"
+        },
+        {
+          "schluessel": "zahlung",
+          "name": "Zahlung"
+        }
+      ],
+      "sichten": [
+        {
+          "schluessel": "vertraege",
+          "name": "Verträge",
+          "eltern": null
+        },
+        {
+          "schluessel": "teuer_alt",
+          "name": "Teure",
+          "eltern": "vertraege"
+        },
+        {
+          "schluessel": "unter_paket",
+          "name": "Unter Paket",
+          "eltern": null
+        },
+        {
+          "schluessel": "unter_fremd",
+          "name": "Unter Fremd",
+          "eltern": null
+        },
+        {
+          "schluessel": "alles",
+          "name": "Alles",
+          "eltern": null
+        }
+      ],
+      "beispiele": 3,
+      "wortlisten": 1
+    },
+    "schluessel": {
+      "00000000-0000-4000-8000-000000000010": "vertrag_alt",
+      "00000000-0000-4000-8000-000000000011": "zahlung",
+      "00000000-0000-4000-8000-000000000021": "teuer_alt",
+      "00000000-0000-4000-8000-000000000020": "vertraege",
+      "00000000-0000-4000-8000-000000000022": "unter_paket",
+      "00000000-0000-4000-8000-000000000023": "unter_fremd",
+      "00000000-0000-4000-8000-000000000025": "alles"
+    },
+    "dateien": [],
+    "version": {
+      "bekannt": "1.2.0",
+      "art": "gross",
+      "artGrund": "Mappentyp „Notiz“ nicht mehr dabei",
+      "mindest": "0.239.0",
+      "gruende": [
+        "Feldart Zusammengesetzt (ab 0.239.0)",
+        "Eigene Organisation (Merkmal, Schreibschutz, Anzeige-Bedingung) (ab 0.238.0)",
+        "Archivmodus am Mappentyp (ab 0.237.0)",
+        "„Anzeigen, wenn … zeigt auf die Vorgabe …“ (ab 0.236.0)",
+        "Ist Teil einer anderen Mappe (ab 0.235.0)",
+        "„Beim Auswählen übernehmen“ an Verweisfeldern (ab 0.234.0)",
+        "Feldart Tabelle (ab 0.232.0)",
+        "Feldarten Zeitraum und Prozent, negative Beträge (ab 0.227.0)",
+        "Ansichten mit Mappentypen, die nicht im Paket sind (ab 0.178.0)",
+        "Wortlisten (ab 0.127.0)",
+        "Feldformate und Datumsgrenzen (ab 0.121.0)",
+        "Erkennung an Feldern („Aus Dokument ausfüllen“) (ab 0.113.0)"
+      ],
+      "dmsOptionen": [
+        ">=0.239.0",
+        ">=0.240.0",
+        ">=0.241.0",
+        ">=0.242.0",
+        ">=0.243.0",
+        ">=0.244.0",
+        ">=0.245.0",
+        ">=0.246.0",
+        ">=0.247.0",
+        ">=0.248.0",
+        ">=0.249.0",
+        ">=0.250.0",
+        ">=0.251.0",
+        ">=0.252.0",
+        ">=0.253.0",
+        ">=0.254.0",
+        ">=0.255.0",
+        ">=0.256.0",
+        ">=0.257.0",
+        ">=0.258.0",
+        ">=0.259.0",
+        ">=0.260.0",
+        ">=0.261.0",
+        ">=0.262.0",
+        ">=0.263.0",
+        ">=0.264.0",
+        ">=0.265.0",
+        ">=0.266.0",
+        ">=0.267.0",
+        ">=0.268.0",
+        ">=0.269.0",
+        ">=0.270.0",
+        ">=0.271.0",
+        ">=0.272.0",
+        ">=0.273.0",
+        ">=0.274.0",
+        ">=0.275.0",
+        ">=0.276.0",
+        ">=0.277.0",
+        ">=0.278.0",
+        ">=0.279.0",
+        ">=0.280.0",
+        ">=0.281.0",
+        ">=0.282.0",
+        ">=0.283.0",
+        ">=0.284.0",
+        ">=0.285.0",
+        ">=0.286.0",
+        ">=0.287.0",
+        ">=0.288.0",
+        ">=0.289.0",
+        ">=0.290.0"
+      ]
+    },
+    "felder": {
+      "00000000-0000-4000-8000-000000000010": [
+        "nr",
+        "kennung",
+        "partner",
+        "wer",
+        "ort",
+        "zahlung",
+        "gehoert",
+        "text",
+        "uebernommen",
+        "kuendigung",
+        "kennwort",
+        "betrag",
+        "zeit",
+        "anteil",
+        "teile",
+        "posten",
+        "nichts",
+        "land"
+      ],
+      "00000000-0000-4000-8000-000000000011": ["datum", "vertrag", "betrag"]
+    },
+    "lizenz": "LicenseRef-Lang"
+  },
+  "Version nicht aus der Auswahl": {
+    "probleme": [
+      "Version: bitte eine der Möglichkeiten wählen (1.2.1, 1.3.0, 2.0.0) – andere nur in der Stufe „Alles“ von Hand.",
+      "„Vertrag“ → Feld „Ohne Quelle“: verweist auf „Systemtyp“. Darauf kann ein Paket nicht verweisen (erlaubt: Ablageort, Benutzer, Rolle).",
+      "Ansicht „Teure“: Den Ziel-Mappentyp gibt es nicht mehr.",
+      "Es wird auf Mappentypen verwiesen, die nicht gewählt sind: „Notiz“. Nimm sie mit auf oder entferne den Verweis."
+    ],
+    "fehlend": [
+      {
+        "art": "typ",
+        "id": "00000000-0000-4000-8000-000000000012",
+        "name": "Notiz",
+        "grund": "„Vertrag“ → Feld „Kündigung“",
+        "noetig": true
+      },
+      {
+        "art": "sicht",
+        "id": "00000000-0000-4000-8000-000000000024",
+        "name": "Nicht gewählt",
+        "grund": "Elternansicht von „Unter Fremd“",
+        "noetig": false
+      },
+      {
+        "art": "typ",
+        "id": "00000000-0000-4000-8000-000000000013",
+        "name": "Sammlung",
+        "grund": "Vorsicht: steckt in der Ansicht „Alles“ – muss beim Empfänger vorhanden sein",
+        "noetig": false
+      }
+    ],
+    "hinweise": [
+      "„Vertrag“ → Feld „Text“: Das Feld berechnet ein anderes Paket. Im eigenen Paket kommt es als gewöhnliches Feld mit – ein Paket ohne Code rechnet nichts.",
+      "„Vertrag“ → Feld „Nummer“: Der Nummernkreis gehört nicht zum Paketformat. Das Feld kommt ohne Nummernkreis ins Paket; richte ihn beim Empfänger unter Werkbank → Nummernkreise ein und trage ihn am Feld ein.",
+      "Der Mappentyp „Organisation“ kommt aus dem Paket „Basis“ – wird als Abhängigkeit eingetragen (basis >=1.6.0), nicht kopiert.",
+      "Änderungen an „Organisation“ (Basis) gehören nicht zu deinem Paket – beim Empfänger gilt der Typ, wie das Paket „Basis“ ihn bringt. Brauchst du die Änderungen, lege dafür einen eigenen Typ an.",
+      "„Vertrag“ → Feld „Wer“: Der Auswahlfilter nennt Mappen dieser Installation und kommt nicht ins Paket.",
+      "„Ablageort“ kommt mit dem Paket Basis: Das Paket verweist auf basis:ablageort und trägt Basis ab 1.6.0 als Abhängigkeit ein.",
+      "„Vertrag“ → Feld „Ort“: Der Standardwert zeigt auf eine Mappe dieser Installation und kommt nicht ins Paket.",
+      "„Vertrag“ → Feld „Kündigung“: Eine Anzeige-Bedingung nennt eine Mappe dieser Installation und kommt nicht ins Paket.",
+      "„Vertrag“ → Feld „Posten“: Die Tabelle zeigt eine andere Trefferliste von „Zahlung“ – ins Paket kommt nur die Standard-Trefferliste, die Tabelle zeigt dort deren Spalten.",
+      "„Vertrag“: Nur die Standard-Trefferliste „Standard“ kommt ins Paket; weitere Trefferlisten kennt das Paketformat nicht.",
+      "„Vertrag“: Berechtigungen, Anlegen/Löschen gesperrt gehören nicht zum Paketformat und kommen nicht mit.",
+      "„Vertrag“: Das Stichtag-Feld des Archivmodus kommt nicht mit – im Paket zählt das Anlagedatum.",
+      "Die Ansicht „Organisationen“ kommt aus dem Paket „Basis“ – wird als Abhängigkeit eingetragen (basis >=1.6.0), nicht kopiert.",
+      "Ansicht „Teure“: Bedingungen auf das Merkmal der Ablage kennt das Paketformat der Ansichten nicht; sie fehlen im Paket.",
+      "Ansicht „Teure“: Bedingungen auf Anzahlen, Favoriten oder Fristen kennt das Paketformat nicht; sie fehlen im Paket.",
+      "Ansicht „Teure“: Eine Bedingung nennt Mappen oder Benutzer dieser Installation und kommt nicht ins Paket.",
+      "Ansicht „Teure“: zeigt im Paket die Standard-Trefferliste.",
+      "Ansicht „Teure“: Berechtigungen an der Ansicht kommen nicht ins Paket.",
+      "Ansicht „Unter Paket“ steht unter „Organisationen“ aus einem Paket – im Paket steht sie auf der obersten Ebene.",
+      "Ansicht „Unter Fremd“ steht unter „Nicht gewählt“, die nicht gewählt ist – im Paket steht sie auf der obersten Ebene.",
+      "Ansicht „Alles“ zeigt Mappen vom Typ „Notiz“. „Notiz“ kommt nicht ins Paket – beim Empfänger muss es „Notiz“ schon geben, sonst bleibt die Ansicht leer oder wird nicht installiert.",
+      "Ansicht „Alles“ zeigt Mappen vom Typ „Sammlung“. „Sammlung“ kommt nicht ins Paket – beim Empfänger muss es „Sammlung“ schon geben, sonst bleibt die Ansicht leer oder wird nicht installiert.",
+      "Beispiel-Mappen gehen nur aus gewählten eigenen Mappentypen; die übrigen sind weggelassen.",
+      "Beispiel-Mappen: 2 Verweise zeigen auf Mappen, die keine gewählten Beispiele sind, und bleiben leer.",
+      "3 Beispiel-Mappen aus deiner Auswahl kommen ins Paket – nimm nur Mappen mit erfundenen Daten. Dokumente, Notizen und Aufgaben kommen nicht mit.",
+      "Die Wortliste „Firma, Unternehmen“ kommt über das Paket „Basis“ als Abhängigkeit mit, nicht kopiert.",
+      "Die Wortliste „a, b“ gehört zum Paket „fremd“ und kommt nicht ins Paket.",
+      "Eine Gruppe gleichbedeutender Wörter kommen ins Paket – beim Empfänger stehen sie unter Werkbank → Suche bei „aus Paketen“."
+    ],
+    "abhaengigkeiten": {
+      "basis": ">=1.6.0"
+    },
+    "inhalt": {
+      "typen": [
+        {
+          "schluessel": "vertrag",
+          "name": "Vertrag"
+        },
+        {
+          "schluessel": "zahlung",
+          "name": "Zahlung"
+        }
+      ],
+      "sichten": [
+        {
+          "schluessel": "vertraege",
+          "name": "Verträge",
+          "eltern": null
+        },
+        {
+          "schluessel": "teure",
+          "name": "Teure",
+          "eltern": "vertraege"
+        },
+        {
+          "schluessel": "unter_paket",
+          "name": "Unter Paket",
+          "eltern": null
+        },
+        {
+          "schluessel": "unter_fremd",
+          "name": "Unter Fremd",
+          "eltern": null
+        },
+        {
+          "schluessel": "alles",
+          "name": "Alles",
+          "eltern": null
+        }
+      ],
+      "beispiele": 3,
+      "wortlisten": 1
+    },
+    "schluessel": {
+      "00000000-0000-4000-8000-000000000010": "vertrag",
+      "00000000-0000-4000-8000-000000000011": "zahlung",
+      "00000000-0000-4000-8000-000000000020": "vertraege",
+      "00000000-0000-4000-8000-000000000021": "teure",
+      "00000000-0000-4000-8000-000000000022": "unter_paket",
+      "00000000-0000-4000-8000-000000000023": "unter_fremd",
+      "00000000-0000-4000-8000-000000000025": "alles"
+    },
+    "dateien": [],
+    "version": {
+      "bekannt": "1.2.0",
+      "art": null,
+      "artGrund": null,
+      "mindest": "0.239.0",
+      "gruende": [
+        "Feldart Zusammengesetzt (ab 0.239.0)",
+        "Eigene Organisation (Merkmal, Schreibschutz, Anzeige-Bedingung) (ab 0.238.0)",
+        "Archivmodus am Mappentyp (ab 0.237.0)",
+        "„Anzeigen, wenn … zeigt auf die Vorgabe …“ (ab 0.236.0)",
+        "Ist Teil einer anderen Mappe (ab 0.235.0)",
+        "„Beim Auswählen übernehmen“ an Verweisfeldern (ab 0.234.0)",
+        "Feldart Tabelle (ab 0.232.0)",
+        "Feldarten Zeitraum und Prozent, negative Beträge (ab 0.227.0)",
+        "Ansichten mit Mappentypen, die nicht im Paket sind (ab 0.178.0)",
+        "Wortlisten (ab 0.127.0)",
+        "Feldformate und Datumsgrenzen (ab 0.121.0)",
+        "Erkennung an Feldern („Aus Dokument ausfüllen“) (ab 0.113.0)"
+      ],
+      "dmsOptionen": [
+        ">=0.239.0",
+        ">=0.240.0",
+        ">=0.241.0",
+        ">=0.242.0",
+        ">=0.243.0",
+        ">=0.244.0",
+        ">=0.245.0",
+        ">=0.246.0",
+        ">=0.247.0",
+        ">=0.248.0",
+        ">=0.249.0",
+        ">=0.250.0",
+        ">=0.251.0",
+        ">=0.252.0",
+        ">=0.253.0",
+        ">=0.254.0",
+        ">=0.255.0",
+        ">=0.256.0",
+        ">=0.257.0",
+        ">=0.258.0",
+        ">=0.259.0",
+        ">=0.260.0",
+        ">=0.261.0",
+        ">=0.262.0",
+        ">=0.263.0",
+        ">=0.264.0",
+        ">=0.265.0",
+        ">=0.266.0",
+        ">=0.267.0",
+        ">=0.268.0",
+        ">=0.269.0",
+        ">=0.270.0",
+        ">=0.271.0",
+        ">=0.272.0",
+        ">=0.273.0",
+        ">=0.274.0",
+        ">=0.275.0",
+        ">=0.276.0",
+        ">=0.277.0",
+        ">=0.278.0",
+        ">=0.279.0",
+        ">=0.280.0",
+        ">=0.281.0",
+        ">=0.282.0",
+        ">=0.283.0",
+        ">=0.284.0",
+        ">=0.285.0",
+        ">=0.286.0",
+        ">=0.287.0",
+        ">=0.288.0",
+        ">=0.289.0",
+        ">=0.290.0"
+      ]
+    },
+    "felder": {
+      "00000000-0000-4000-8000-000000000010": [
+        "nr",
+        "kennung",
+        "partner",
+        "wer",
+        "ort",
+        "zahlung",
+        "gehoert",
+        "text",
+        "uebernommen",
+        "kuendigung",
+        "kennwort",
+        "betrag",
+        "zeit",
+        "anteil",
+        "teile",
+        "posten",
+        "nichts",
+        "land"
+      ],
+      "00000000-0000-4000-8000-000000000011": ["datum", "vertrag", "betrag"]
+    },
+    "lizenz": "MIT"
+  },
+  "neues Paket mit freier Version": {
+    "probleme": [
+      "Version: Ein neues Paket beginnt mit 1.0.0 (in der Stufe „Alles“ auch 0.1.0 für „noch nicht fertig“).",
+      "„Vertrag“ → Feld „Ohne Quelle“: verweist auf „Systemtyp“. Darauf kann ein Paket nicht verweisen (erlaubt: Ablageort, Benutzer, Rolle).",
+      "Ansicht „Teure“: Den Ziel-Mappentyp gibt es nicht mehr.",
+      "Ablago-Version: bitte eine Version aus der Auswahl (>=X.Y.0) – andere Schreibweisen nur in der Stufe „Alles“.",
+      "Es wird auf Mappentypen verwiesen, die nicht gewählt sind: „Notiz“. Nimm sie mit auf oder entferne den Verweis."
+    ],
+    "fehlend": [
+      {
+        "art": "typ",
+        "id": "00000000-0000-4000-8000-000000000012",
+        "name": "Notiz",
+        "grund": "„Vertrag“ → Feld „Kündigung“",
+        "noetig": true
+      },
+      {
+        "art": "sicht",
+        "id": "00000000-0000-4000-8000-000000000024",
+        "name": "Nicht gewählt",
+        "grund": "Elternansicht von „Unter Fremd“",
+        "noetig": false
+      },
+      {
+        "art": "typ",
+        "id": "00000000-0000-4000-8000-000000000013",
+        "name": "Sammlung",
+        "grund": "Vorsicht: steckt in der Ansicht „Alles“ – muss beim Empfänger vorhanden sein",
+        "noetig": false
+      }
+    ],
+    "hinweise": [
+      "„Vertrag“ → Feld „Text“: Das Feld berechnet ein anderes Paket. Im eigenen Paket kommt es als gewöhnliches Feld mit – ein Paket ohne Code rechnet nichts.",
+      "„Vertrag“ → Feld „Nummer“: Der Nummernkreis gehört nicht zum Paketformat. Das Feld kommt ohne Nummernkreis ins Paket; richte ihn beim Empfänger unter Werkbank → Nummernkreise ein und trage ihn am Feld ein.",
+      "Der Mappentyp „Organisation“ kommt aus dem Paket „Basis“ – wird als Abhängigkeit eingetragen (basis >=1.6.0), nicht kopiert.",
+      "Änderungen an „Organisation“ (Basis) gehören nicht zu deinem Paket – beim Empfänger gilt der Typ, wie das Paket „Basis“ ihn bringt. Brauchst du die Änderungen, lege dafür einen eigenen Typ an.",
+      "„Vertrag“ → Feld „Wer“: Der Auswahlfilter nennt Mappen dieser Installation und kommt nicht ins Paket.",
+      "„Ablageort“ kommt mit dem Paket Basis: Das Paket verweist auf basis:ablageort und trägt Basis ab 1.6.0 als Abhängigkeit ein.",
+      "„Vertrag“ → Feld „Ort“: Der Standardwert zeigt auf eine Mappe dieser Installation und kommt nicht ins Paket.",
+      "„Vertrag“ → Feld „Kündigung“: Eine Anzeige-Bedingung nennt eine Mappe dieser Installation und kommt nicht ins Paket.",
+      "„Vertrag“ → Feld „Posten“: Die Tabelle zeigt eine andere Trefferliste von „Zahlung“ – ins Paket kommt nur die Standard-Trefferliste, die Tabelle zeigt dort deren Spalten.",
+      "„Vertrag“: Nur die Standard-Trefferliste „Standard“ kommt ins Paket; weitere Trefferlisten kennt das Paketformat nicht.",
+      "„Vertrag“: Berechtigungen, Anlegen/Löschen gesperrt gehören nicht zum Paketformat und kommen nicht mit.",
+      "„Vertrag“: Das Stichtag-Feld des Archivmodus kommt nicht mit – im Paket zählt das Anlagedatum.",
+      "Die Ansicht „Organisationen“ kommt aus dem Paket „Basis“ – wird als Abhängigkeit eingetragen (basis >=1.6.0), nicht kopiert.",
+      "Ansicht „Teure“: Bedingungen auf das Merkmal der Ablage kennt das Paketformat der Ansichten nicht; sie fehlen im Paket.",
+      "Ansicht „Teure“: Bedingungen auf Anzahlen, Favoriten oder Fristen kennt das Paketformat nicht; sie fehlen im Paket.",
+      "Ansicht „Teure“: Eine Bedingung nennt Mappen oder Benutzer dieser Installation und kommt nicht ins Paket.",
+      "Ansicht „Teure“: zeigt im Paket die Standard-Trefferliste.",
+      "Ansicht „Teure“: Berechtigungen an der Ansicht kommen nicht ins Paket.",
+      "Ansicht „Unter Paket“ steht unter „Organisationen“ aus einem Paket – im Paket steht sie auf der obersten Ebene.",
+      "Ansicht „Unter Fremd“ steht unter „Nicht gewählt“, die nicht gewählt ist – im Paket steht sie auf der obersten Ebene.",
+      "Ansicht „Alles“ zeigt Mappen vom Typ „Notiz“. „Notiz“ kommt nicht ins Paket – beim Empfänger muss es „Notiz“ schon geben, sonst bleibt die Ansicht leer oder wird nicht installiert.",
+      "Ansicht „Alles“ zeigt Mappen vom Typ „Sammlung“. „Sammlung“ kommt nicht ins Paket – beim Empfänger muss es „Sammlung“ schon geben, sonst bleibt die Ansicht leer oder wird nicht installiert.",
+      "Beispiel-Mappen gehen nur aus gewählten eigenen Mappentypen; die übrigen sind weggelassen.",
+      "Beispiel-Mappen: 2 Verweise zeigen auf Mappen, die keine gewählten Beispiele sind, und bleiben leer.",
+      "3 Beispiel-Mappen aus deiner Auswahl kommen ins Paket – nimm nur Mappen mit erfundenen Daten. Dokumente, Notizen und Aufgaben kommen nicht mit.",
+      "Die Wortliste „Firma, Unternehmen“ kommt über das Paket „Basis“ als Abhängigkeit mit, nicht kopiert.",
+      "Die Wortliste „a, b“ gehört zum Paket „fremd“ und kommt nicht ins Paket.",
+      "Eine Gruppe gleichbedeutender Wörter kommen ins Paket – beim Empfänger stehen sie unter Werkbank → Suche bei „aus Paketen“."
+    ],
+    "abhaengigkeiten": {
+      "basis": ">=1.6.0"
+    },
+    "inhalt": {
+      "typen": [
+        {
+          "schluessel": "vertrag",
+          "name": "Vertrag"
+        },
+        {
+          "schluessel": "zahlung",
+          "name": "Zahlung"
+        }
+      ],
+      "sichten": [
+        {
+          "schluessel": "vertraege",
+          "name": "Verträge",
+          "eltern": null
+        },
+        {
+          "schluessel": "teure",
+          "name": "Teure",
+          "eltern": "vertraege"
+        },
+        {
+          "schluessel": "unter_paket",
+          "name": "Unter Paket",
+          "eltern": null
+        },
+        {
+          "schluessel": "unter_fremd",
+          "name": "Unter Fremd",
+          "eltern": null
+        },
+        {
+          "schluessel": "alles",
+          "name": "Alles",
+          "eltern": null
+        }
+      ],
+      "beispiele": 3,
+      "wortlisten": 1
+    },
+    "schluessel": {
+      "00000000-0000-4000-8000-000000000010": "vertrag",
+      "00000000-0000-4000-8000-000000000011": "zahlung",
+      "00000000-0000-4000-8000-000000000020": "vertraege",
+      "00000000-0000-4000-8000-000000000021": "teure",
+      "00000000-0000-4000-8000-000000000022": "unter_paket",
+      "00000000-0000-4000-8000-000000000023": "unter_fremd",
+      "00000000-0000-4000-8000-000000000025": "alles"
+    },
+    "dateien": [],
+    "version": {
+      "bekannt": null,
+      "art": null,
+      "artGrund": null,
+      "mindest": "0.239.0",
+      "gruende": [
+        "Feldart Zusammengesetzt (ab 0.239.0)",
+        "Eigene Organisation (Merkmal, Schreibschutz, Anzeige-Bedingung) (ab 0.238.0)",
+        "Archivmodus am Mappentyp (ab 0.237.0)",
+        "„Anzeigen, wenn … zeigt auf die Vorgabe …“ (ab 0.236.0)",
+        "Ist Teil einer anderen Mappe (ab 0.235.0)",
+        "„Beim Auswählen übernehmen“ an Verweisfeldern (ab 0.234.0)",
+        "Feldart Tabelle (ab 0.232.0)",
+        "Feldarten Zeitraum und Prozent, negative Beträge (ab 0.227.0)",
+        "Ansichten mit Mappentypen, die nicht im Paket sind (ab 0.178.0)",
+        "Wortlisten (ab 0.127.0)",
+        "Feldformate und Datumsgrenzen (ab 0.121.0)",
+        "Erkennung an Feldern („Aus Dokument ausfüllen“) (ab 0.113.0)"
+      ],
+      "dmsOptionen": [
+        ">=0.239.0",
+        ">=0.240.0",
+        ">=0.241.0",
+        ">=0.242.0",
+        ">=0.243.0",
+        ">=0.244.0",
+        ">=0.245.0",
+        ">=0.246.0",
+        ">=0.247.0",
+        ">=0.248.0",
+        ">=0.249.0",
+        ">=0.250.0",
+        ">=0.251.0",
+        ">=0.252.0",
+        ">=0.253.0",
+        ">=0.254.0",
+        ">=0.255.0",
+        ">=0.256.0",
+        ">=0.257.0",
+        ">=0.258.0",
+        ">=0.259.0",
+        ">=0.260.0",
+        ">=0.261.0",
+        ">=0.262.0",
+        ">=0.263.0",
+        ">=0.264.0",
+        ">=0.265.0",
+        ">=0.266.0",
+        ">=0.267.0",
+        ">=0.268.0",
+        ">=0.269.0",
+        ">=0.270.0",
+        ">=0.271.0",
+        ">=0.272.0",
+        ">=0.273.0",
+        ">=0.274.0",
+        ">=0.275.0",
+        ">=0.276.0",
+        ">=0.277.0",
+        ">=0.278.0",
+        ">=0.279.0",
+        ">=0.280.0",
+        ">=0.281.0",
+        ">=0.282.0",
+        ">=0.283.0",
+        ">=0.284.0",
+        ">=0.285.0",
+        ">=0.286.0",
+        ">=0.287.0",
+        ">=0.288.0",
+        ">=0.289.0",
+        ">=0.290.0"
+      ]
+    },
+    "felder": {
+      "00000000-0000-4000-8000-000000000010": [
+        "nr",
+        "kennung",
+        "partner",
+        "wer",
+        "ort",
+        "zahlung",
+        "gehoert",
+        "text",
+        "uebernommen",
+        "kuendigung",
+        "kennwort",
+        "betrag",
+        "zeit",
+        "anteil",
+        "teile",
+        "posten",
+        "nichts",
+        "land"
+      ],
+      "00000000-0000-4000-8000-000000000011": ["datum", "vertrag", "betrag"]
+    },
+    "lizenz": "MIT"
+  },
+  "Ablago-Version nicht wählbar": {
+    "probleme": [
+      "„Vertrag“ → Feld „Ohne Quelle“: verweist auf „Systemtyp“. Darauf kann ein Paket nicht verweisen (erlaubt: Ablageort, Benutzer, Rolle).",
+      "Ansicht „Teure“: Den Ziel-Mappentyp gibt es nicht mehr.",
+      "Ablago-Version: Das Paket nutzt Feldart Zusammengesetzt (ab 0.239.0), Eigene Organisation (Merkmal, Schreibschutz, Anzeige-Bedingung) (ab 0.238.0), Archivmodus am Mappentyp (ab 0.237.0), „Anzeigen, wenn … zeigt auf die Vorgabe …“ (ab 0.236.0), Ist Teil einer anderen Mappe (ab 0.235.0), „Beim Auswählen übernehmen“ an Verweisfeldern (ab 0.234.0), Feldart Tabelle (ab 0.232.0), Feldarten Zeitraum und Prozent, negative Beträge (ab 0.227.0), Ansichten mit Mappentypen, die nicht im Paket sind (ab 0.178.0), Wortlisten (ab 0.127.0), Feldformate und Datumsgrenzen (ab 0.121.0), Erkennung an Feldern („Aus Dokument ausfüllen“) (ab 0.113.0) und braucht mindestens >=0.239.0.",
+      "Es wird auf Mappentypen verwiesen, die nicht gewählt sind: „Notiz“. Nimm sie mit auf oder entferne den Verweis."
+    ],
+    "fehlend": [
+      {
+        "art": "typ",
+        "id": "00000000-0000-4000-8000-000000000012",
+        "name": "Notiz",
+        "grund": "„Vertrag“ → Feld „Kündigung“",
+        "noetig": true
+      },
+      {
+        "art": "sicht",
+        "id": "00000000-0000-4000-8000-000000000024",
+        "name": "Nicht gewählt",
+        "grund": "Elternansicht von „Unter Fremd“",
+        "noetig": false
+      },
+      {
+        "art": "typ",
+        "id": "00000000-0000-4000-8000-000000000013",
+        "name": "Sammlung",
+        "grund": "Vorsicht: steckt in der Ansicht „Alles“ – muss beim Empfänger vorhanden sein",
+        "noetig": false
+      }
+    ],
+    "hinweise": [
+      "„Vertrag“ → Feld „Text“: Das Feld berechnet ein anderes Paket. Im eigenen Paket kommt es als gewöhnliches Feld mit – ein Paket ohne Code rechnet nichts.",
+      "„Vertrag“ → Feld „Nummer“: Der Nummernkreis gehört nicht zum Paketformat. Das Feld kommt ohne Nummernkreis ins Paket; richte ihn beim Empfänger unter Werkbank → Nummernkreise ein und trage ihn am Feld ein.",
+      "Der Mappentyp „Organisation“ kommt aus dem Paket „Basis“ – wird als Abhängigkeit eingetragen (basis >=1.6.0), nicht kopiert.",
+      "Änderungen an „Organisation“ (Basis) gehören nicht zu deinem Paket – beim Empfänger gilt der Typ, wie das Paket „Basis“ ihn bringt. Brauchst du die Änderungen, lege dafür einen eigenen Typ an.",
+      "„Vertrag“ → Feld „Wer“: Der Auswahlfilter nennt Mappen dieser Installation und kommt nicht ins Paket.",
+      "„Ablageort“ kommt mit dem Paket Basis: Das Paket verweist auf basis:ablageort und trägt Basis ab 1.6.0 als Abhängigkeit ein.",
+      "„Vertrag“ → Feld „Ort“: Der Standardwert zeigt auf eine Mappe dieser Installation und kommt nicht ins Paket.",
+      "„Vertrag“ → Feld „Kündigung“: Eine Anzeige-Bedingung nennt eine Mappe dieser Installation und kommt nicht ins Paket.",
+      "„Vertrag“ → Feld „Posten“: Die Tabelle zeigt eine andere Trefferliste von „Zahlung“ – ins Paket kommt nur die Standard-Trefferliste, die Tabelle zeigt dort deren Spalten.",
+      "„Vertrag“: Nur die Standard-Trefferliste „Standard“ kommt ins Paket; weitere Trefferlisten kennt das Paketformat nicht.",
+      "„Vertrag“: Berechtigungen, Anlegen/Löschen gesperrt gehören nicht zum Paketformat und kommen nicht mit.",
+      "„Vertrag“: Das Stichtag-Feld des Archivmodus kommt nicht mit – im Paket zählt das Anlagedatum.",
+      "Die Ansicht „Organisationen“ kommt aus dem Paket „Basis“ – wird als Abhängigkeit eingetragen (basis >=1.6.0), nicht kopiert.",
+      "Ansicht „Teure“: Bedingungen auf das Merkmal der Ablage kennt das Paketformat der Ansichten nicht; sie fehlen im Paket.",
+      "Ansicht „Teure“: Bedingungen auf Anzahlen, Favoriten oder Fristen kennt das Paketformat nicht; sie fehlen im Paket.",
+      "Ansicht „Teure“: Eine Bedingung nennt Mappen oder Benutzer dieser Installation und kommt nicht ins Paket.",
+      "Ansicht „Teure“: zeigt im Paket die Standard-Trefferliste.",
+      "Ansicht „Teure“: Berechtigungen an der Ansicht kommen nicht ins Paket.",
+      "Ansicht „Unter Paket“ steht unter „Organisationen“ aus einem Paket – im Paket steht sie auf der obersten Ebene.",
+      "Ansicht „Unter Fremd“ steht unter „Nicht gewählt“, die nicht gewählt ist – im Paket steht sie auf der obersten Ebene.",
+      "Ansicht „Alles“ zeigt Mappen vom Typ „Notiz“. „Notiz“ kommt nicht ins Paket – beim Empfänger muss es „Notiz“ schon geben, sonst bleibt die Ansicht leer oder wird nicht installiert.",
+      "Ansicht „Alles“ zeigt Mappen vom Typ „Sammlung“. „Sammlung“ kommt nicht ins Paket – beim Empfänger muss es „Sammlung“ schon geben, sonst bleibt die Ansicht leer oder wird nicht installiert.",
+      "Beispiel-Mappen gehen nur aus gewählten eigenen Mappentypen; die übrigen sind weggelassen.",
+      "Beispiel-Mappen: 2 Verweise zeigen auf Mappen, die keine gewählten Beispiele sind, und bleiben leer.",
+      "3 Beispiel-Mappen aus deiner Auswahl kommen ins Paket – nimm nur Mappen mit erfundenen Daten. Dokumente, Notizen und Aufgaben kommen nicht mit.",
+      "Die Wortliste „Firma, Unternehmen“ kommt über das Paket „Basis“ als Abhängigkeit mit, nicht kopiert.",
+      "Die Wortliste „a, b“ gehört zum Paket „fremd“ und kommt nicht ins Paket.",
+      "Eine Gruppe gleichbedeutender Wörter kommen ins Paket – beim Empfänger stehen sie unter Werkbank → Suche bei „aus Paketen“."
+    ],
+    "abhaengigkeiten": {
+      "basis": ">=1.6.0"
+    },
+    "inhalt": {
+      "typen": [
+        {
+          "schluessel": "vertrag",
+          "name": "Vertrag"
+        },
+        {
+          "schluessel": "zahlung",
+          "name": "Zahlung"
+        }
+      ],
+      "sichten": [
+        {
+          "schluessel": "vertraege",
+          "name": "Verträge",
+          "eltern": null
+        },
+        {
+          "schluessel": "teure",
+          "name": "Teure",
+          "eltern": "vertraege"
+        },
+        {
+          "schluessel": "unter_paket",
+          "name": "Unter Paket",
+          "eltern": null
+        },
+        {
+          "schluessel": "unter_fremd",
+          "name": "Unter Fremd",
+          "eltern": null
+        },
+        {
+          "schluessel": "alles",
+          "name": "Alles",
+          "eltern": null
+        }
+      ],
+      "beispiele": 3,
+      "wortlisten": 1
+    },
+    "schluessel": {
+      "00000000-0000-4000-8000-000000000010": "vertrag",
+      "00000000-0000-4000-8000-000000000011": "zahlung",
+      "00000000-0000-4000-8000-000000000020": "vertraege",
+      "00000000-0000-4000-8000-000000000021": "teure",
+      "00000000-0000-4000-8000-000000000022": "unter_paket",
+      "00000000-0000-4000-8000-000000000023": "unter_fremd",
+      "00000000-0000-4000-8000-000000000025": "alles"
+    },
+    "dateien": [],
+    "version": {
+      "bekannt": null,
+      "art": null,
+      "artGrund": null,
+      "mindest": "0.239.0",
+      "gruende": [
+        "Feldart Zusammengesetzt (ab 0.239.0)",
+        "Eigene Organisation (Merkmal, Schreibschutz, Anzeige-Bedingung) (ab 0.238.0)",
+        "Archivmodus am Mappentyp (ab 0.237.0)",
+        "„Anzeigen, wenn … zeigt auf die Vorgabe …“ (ab 0.236.0)",
+        "Ist Teil einer anderen Mappe (ab 0.235.0)",
+        "„Beim Auswählen übernehmen“ an Verweisfeldern (ab 0.234.0)",
+        "Feldart Tabelle (ab 0.232.0)",
+        "Feldarten Zeitraum und Prozent, negative Beträge (ab 0.227.0)",
+        "Ansichten mit Mappentypen, die nicht im Paket sind (ab 0.178.0)",
+        "Wortlisten (ab 0.127.0)",
+        "Feldformate und Datumsgrenzen (ab 0.121.0)",
+        "Erkennung an Feldern („Aus Dokument ausfüllen“) (ab 0.113.0)"
+      ],
+      "dmsOptionen": [
+        ">=0.239.0",
+        ">=0.240.0",
+        ">=0.241.0",
+        ">=0.242.0",
+        ">=0.243.0",
+        ">=0.244.0",
+        ">=0.245.0",
+        ">=0.246.0",
+        ">=0.247.0",
+        ">=0.248.0",
+        ">=0.249.0",
+        ">=0.250.0",
+        ">=0.251.0",
+        ">=0.252.0",
+        ">=0.253.0",
+        ">=0.254.0",
+        ">=0.255.0",
+        ">=0.256.0",
+        ">=0.257.0",
+        ">=0.258.0",
+        ">=0.259.0",
+        ">=0.260.0",
+        ">=0.261.0",
+        ">=0.262.0",
+        ">=0.263.0",
+        ">=0.264.0",
+        ">=0.265.0",
+        ">=0.266.0",
+        ">=0.267.0",
+        ">=0.268.0",
+        ">=0.269.0",
+        ">=0.270.0",
+        ">=0.271.0",
+        ">=0.272.0",
+        ">=0.273.0",
+        ">=0.274.0",
+        ">=0.275.0",
+        ">=0.276.0",
+        ">=0.277.0",
+        ">=0.278.0",
+        ">=0.279.0",
+        ">=0.280.0",
+        ">=0.281.0",
+        ">=0.282.0",
+        ">=0.283.0",
+        ">=0.284.0",
+        ">=0.285.0",
+        ">=0.286.0",
+        ">=0.287.0",
+        ">=0.288.0",
+        ">=0.289.0",
+        ">=0.290.0"
+      ]
+    },
+    "felder": {
+      "00000000-0000-4000-8000-000000000010": [
+        "nr",
+        "kennung",
+        "partner",
+        "wer",
+        "ort",
+        "zahlung",
+        "gehoert",
+        "text",
+        "uebernommen",
+        "kuendigung",
+        "kennwort",
+        "betrag",
+        "zeit",
+        "anteil",
+        "teile",
+        "posten",
+        "nichts",
+        "land"
+      ],
+      "00000000-0000-4000-8000-000000000011": ["datum", "vertrag", "betrag"]
+    },
+    "lizenz": "MIT"
+  },
+  "leere Auswahl": {
+    "probleme": [
+      "Wähle mindestens einen eigenen Mappentyp, eine eigene Ansicht oder eine eigene Wortliste – was aus Paketen kommt, kommt nur als Abhängigkeit mit."
+    ],
+    "fehlend": [],
+    "hinweise": ["Beispiel-Mappen gehen nur aus gewählten eigenen Mappentypen; die übrigen sind weggelassen."],
+    "abhaengigkeiten": {},
+    "inhalt": {
+      "typen": [],
+      "sichten": [],
+      "beispiele": 0
+    },
+    "schluessel": {},
+    "dateien": [],
+    "version": {
+      "bekannt": null,
+      "art": null,
+      "artGrund": null,
+      "mindest": "0.86.0",
+      "gruende": [],
+      "dmsOptionen": [
+        ">=0.86.0",
+        ">=0.87.0",
+        ">=0.88.0",
+        ">=0.89.0",
+        ">=0.90.0",
+        ">=0.91.0",
+        ">=0.92.0",
+        ">=0.93.0",
+        ">=0.94.0",
+        ">=0.95.0",
+        ">=0.96.0",
+        ">=0.97.0",
+        ">=0.98.0",
+        ">=0.99.0",
+        ">=0.100.0",
+        ">=0.101.0",
+        ">=0.102.0",
+        ">=0.103.0",
+        ">=0.104.0",
+        ">=0.105.0",
+        ">=0.106.0",
+        ">=0.107.0",
+        ">=0.108.0",
+        ">=0.109.0",
+        ">=0.110.0",
+        ">=0.111.0",
+        ">=0.112.0",
+        ">=0.113.0",
+        ">=0.114.0",
+        ">=0.115.0",
+        ">=0.116.0",
+        ">=0.117.0",
+        ">=0.118.0",
+        ">=0.119.0",
+        ">=0.120.0",
+        ">=0.121.0",
+        ">=0.122.0",
+        ">=0.123.0",
+        ">=0.124.0",
+        ">=0.125.0",
+        ">=0.126.0",
+        ">=0.127.0",
+        ">=0.128.0",
+        ">=0.129.0",
+        ">=0.130.0",
+        ">=0.131.0",
+        ">=0.132.0",
+        ">=0.133.0",
+        ">=0.134.0",
+        ">=0.135.0",
+        ">=0.136.0",
+        ">=0.137.0",
+        ">=0.138.0",
+        ">=0.139.0",
+        ">=0.140.0",
+        ">=0.141.0",
+        ">=0.142.0",
+        ">=0.143.0",
+        ">=0.144.0",
+        ">=0.145.0",
+        ">=0.146.0",
+        ">=0.147.0",
+        ">=0.148.0",
+        ">=0.149.0",
+        ">=0.150.0",
+        ">=0.151.0",
+        ">=0.152.0",
+        ">=0.153.0",
+        ">=0.154.0",
+        ">=0.155.0",
+        ">=0.156.0",
+        ">=0.158.0",
+        ">=0.159.0",
+        ">=0.160.0",
+        ">=0.161.0",
+        ">=0.162.0",
+        ">=0.163.0",
+        ">=0.164.0",
+        ">=0.165.0",
+        ">=0.166.0",
+        ">=0.167.0",
+        ">=0.168.0",
+        ">=0.169.0",
+        ">=0.170.0",
+        ">=0.171.0",
+        ">=0.172.0",
+        ">=0.173.0",
+        ">=0.174.0",
+        ">=0.175.0",
+        ">=0.176.0",
+        ">=0.177.0",
+        ">=0.178.0",
+        ">=0.179.0",
+        ">=0.180.0",
+        ">=0.181.0",
+        ">=0.182.0",
+        ">=0.183.0",
+        ">=0.184.0",
+        ">=0.185.0",
+        ">=0.186.0",
+        ">=0.187.0",
+        ">=0.188.0",
+        ">=0.189.0",
+        ">=0.190.0",
+        ">=0.191.0",
+        ">=0.192.0",
+        ">=0.193.0",
+        ">=0.194.0",
+        ">=0.195.0",
+        ">=0.196.0",
+        ">=0.197.0",
+        ">=0.198.0",
+        ">=0.199.0",
+        ">=0.200.0",
+        ">=0.201.0",
+        ">=0.202.0",
+        ">=0.203.0",
+        ">=0.204.0",
+        ">=0.205.0",
+        ">=0.206.0",
+        ">=0.207.0",
+        ">=0.208.0",
+        ">=0.209.0",
+        ">=0.210.0",
+        ">=0.211.0",
+        ">=0.212.0",
+        ">=0.213.0",
+        ">=0.214.0",
+        ">=0.215.0",
+        ">=0.216.0",
+        ">=0.217.0",
+        ">=0.218.0",
+        ">=0.219.0",
+        ">=0.220.0",
+        ">=0.221.0",
+        ">=0.222.0",
+        ">=0.223.0",
+        ">=0.224.0",
+        ">=0.225.0",
+        ">=0.226.0",
+        ">=0.227.0",
+        ">=0.228.0",
+        ">=0.229.0",
+        ">=0.230.0",
+        ">=0.231.0",
+        ">=0.232.0",
+        ">=0.233.0",
+        ">=0.234.0",
+        ">=0.235.0",
+        ">=0.236.0",
+        ">=0.237.0",
+        ">=0.238.0",
+        ">=0.239.0",
+        ">=0.240.0",
+        ">=0.241.0",
+        ">=0.242.0",
+        ">=0.243.0",
+        ">=0.244.0",
+        ">=0.245.0",
+        ">=0.246.0",
+        ">=0.247.0",
+        ">=0.248.0",
+        ">=0.249.0",
+        ">=0.250.0",
+        ">=0.251.0",
+        ">=0.252.0",
+        ">=0.253.0",
+        ">=0.254.0",
+        ">=0.255.0",
+        ">=0.256.0",
+        ">=0.257.0",
+        ">=0.258.0",
+        ">=0.259.0",
+        ">=0.260.0",
+        ">=0.261.0",
+        ">=0.262.0",
+        ">=0.263.0",
+        ">=0.264.0",
+        ">=0.265.0",
+        ">=0.266.0",
+        ">=0.267.0",
+        ">=0.268.0",
+        ">=0.269.0",
+        ">=0.270.0",
+        ">=0.271.0",
+        ">=0.272.0",
+        ">=0.273.0",
+        ">=0.274.0",
+        ">=0.275.0",
+        ">=0.276.0",
+        ">=0.277.0",
+        ">=0.278.0",
+        ">=0.279.0",
+        ">=0.280.0",
+        ">=0.281.0",
+        ">=0.282.0",
+        ">=0.283.0",
+        ">=0.284.0",
+        ">=0.285.0",
+        ">=0.286.0",
+        ">=0.287.0",
+        ">=0.288.0",
+        ">=0.289.0",
+        ">=0.290.0"
+      ]
+    },
+    "felder": {},
+    "lizenz": "MIT"
+  },
+  "nur Ansichten": {
+    "probleme": [],
+    "fehlend": [
+      {
+        "art": "typ",
+        "id": "00000000-0000-4000-8000-000000000012",
+        "name": "Notiz",
+        "grund": "Vorsicht: steckt in der Ansicht „Alles“ – muss beim Empfänger vorhanden sein",
+        "noetig": false
+      },
+      {
+        "art": "typ",
+        "id": "00000000-0000-4000-8000-000000000013",
+        "name": "Sammlung",
+        "grund": "Vorsicht: steckt in der Ansicht „Alles“ – muss beim Empfänger vorhanden sein",
+        "noetig": false
+      },
+      {
+        "art": "sicht",
+        "id": "00000000-0000-4000-8000-000000000024",
+        "name": "Nicht gewählt",
+        "grund": "Elternansicht von „Unter Fremd“",
+        "noetig": false
+      },
+      {
+        "art": "typ",
+        "id": "00000000-0000-4000-8000-000000000010",
+        "name": "Vertrag",
+        "grund": "Vorsicht: steckt in der Ansicht „Unter Fremd“ – muss beim Empfänger vorhanden sein",
+        "noetig": false
+      }
+    ],
+    "hinweise": [
+      "Ansicht „Alles“ zeigt Mappen vom Typ „Notiz“. „Notiz“ kommt nicht ins Paket – beim Empfänger muss es „Notiz“ schon geben, sonst bleibt die Ansicht leer oder wird nicht installiert.",
+      "Ansicht „Alles“ zeigt Mappen vom Typ „Sammlung“. „Sammlung“ kommt nicht ins Paket – beim Empfänger muss es „Sammlung“ schon geben, sonst bleibt die Ansicht leer oder wird nicht installiert.",
+      "Der Mappentyp „Organisation“ kommt aus dem Paket „Basis“ – wird als Abhängigkeit eingetragen (basis >=1.6.0), nicht kopiert.",
+      "Änderungen an „Organisation“ (Basis) gehören nicht zu deinem Paket – beim Empfänger gilt der Typ, wie das Paket „Basis“ ihn bringt. Brauchst du die Änderungen, lege dafür einen eigenen Typ an.",
+      "„Ablageort“ kommt mit dem Paket Basis: Das Paket verweist auf basis:ablageort und trägt Basis ab 1.6.0 als Abhängigkeit ein.",
+      "Ansicht „Unter Fremd“ steht unter „Nicht gewählt“, die nicht gewählt ist – im Paket steht sie auf der obersten Ebene.",
+      "Ansicht „Unter Fremd“ zeigt Mappen vom Typ „Vertrag“. „Vertrag“ kommt nicht ins Paket – beim Empfänger muss es „Vertrag“ schon geben, sonst bleibt die Ansicht leer oder wird nicht installiert.",
+      "Beispiel-Mappen gehen nur aus gewählten eigenen Mappentypen; die übrigen sind weggelassen."
+    ],
+    "abhaengigkeiten": {
+      "basis": ">=1.6.0"
+    },
+    "inhalt": {
+      "typen": [],
+      "sichten": [
+        {
+          "schluessel": "alles",
+          "name": "Alles",
+          "eltern": null
+        },
+        {
+          "schluessel": "unter_fremd",
+          "name": "Unter Fremd",
+          "eltern": null
+        }
+      ],
+      "beispiele": 0
+    },
+    "schluessel": {
+      "00000000-0000-4000-8000-000000000025": "alles",
+      "00000000-0000-4000-8000-000000000023": "unter_fremd"
+    },
+    "dateien": [
+      {
+        "name": "manifest.yaml",
+        "inhalt": "# Erstellt mit „Paket erstellen“ in Ablago. Format: https://github.com/motom001/dms-registry\nschema: 1\nid: familie_vertraege\nname: Verträge der Familie\nversion: 1.0.0\nbeschreibung: Verträge mit Zahlungen und Kündigungsfristen, wie wir sie zu Hause pflegen.\nautor:\n  name: Thomas Beispiel\n  github: motom001\nlizenz: MIT\ndms: \">=0.290.0\"\nabhaengigkeiten:\n  basis: \">=1.6.0\"\ninhalt:\n  mappentypen: inhalt/mappentypen.yaml\n  sichten: inhalt/sichten.yaml\n"
+      },
+      {
+        "name": "inhalt/mappentypen.yaml",
+        "inhalt": "[]\n"
+      },
+      {
+        "name": "inhalt/sichten.yaml",
+        "inhalt": "- schluessel: alles\n  name: Alles\n  typen:\n    - \"*\"\n    - basis:organisation\n    - dms:rolle\n    - basis:ablageort\n  fremde_typen:\n    - kennung: anderes:notizzettel\n      name: Notiz\n    - kennung: sammlung\n      name: Sammlung\n- schluessel: unter_fremd\n  name: Unter Fremd\n  fremde_typen:\n    - kennung: vertrag\n      name: Vertrag\n"
+      },
+      {
+        "name": "README.md",
+        "inhalt": "# Verträge der Familie\n\nVerträge mit Zahlungen und Kündigungsfristen, wie wir sie zu Hause pflegen.\n\n## Inhalt\n\n**Ansichten:** Alles, Unter Fremd\n\n## Voraussetzungen\n\n- Ablago >=0.290.0\n- Paket `basis` >=1.6.0\n\n## Rechte und Netzwerkzugriff\n\nDieses Paket enthält keinen Code. Es legt nur Mappentypen und Ansichten an.\n\n## Lizenz\n\nMIT – der volle Text steht in LICENSE.\n\n## Herkunft\n\nErstellt mit „Paket erstellen“ in Ablago (Werkbank → Pakete) am 2026-11-16 von Thomas Beispiel.\n"
+      },
+      {
+        "name": "CHANGELOG.md",
+        "inhalt": "# Änderungen\n\n## 1.0.0\n\n- Erste Fassung.\n"
+      },
+      {
+        "name": "LICENSE",
+        "inhalt": "MIT License\n\nCopyright (c) 2026 Thomas Beispiel\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+      },
+      {
+        "name": "tests/erwartung.yaml",
+        "inhalt": "mappentypen: []\nsichten:\n  - alles\n  - unter_fremd\nbeispiele: 0\n"
+      }
+    ],
+    "version": {
+      "bekannt": null,
+      "art": null,
+      "artGrund": null,
+      "mindest": "0.178.0",
+      "gruende": ["Ansichten mit Mappentypen, die nicht im Paket sind (ab 0.178.0)"],
+      "dmsOptionen": [
+        ">=0.178.0",
+        ">=0.179.0",
+        ">=0.180.0",
+        ">=0.181.0",
+        ">=0.182.0",
+        ">=0.183.0",
+        ">=0.184.0",
+        ">=0.185.0",
+        ">=0.186.0",
+        ">=0.187.0",
+        ">=0.188.0",
+        ">=0.189.0",
+        ">=0.190.0",
+        ">=0.191.0",
+        ">=0.192.0",
+        ">=0.193.0",
+        ">=0.194.0",
+        ">=0.195.0",
+        ">=0.196.0",
+        ">=0.197.0",
+        ">=0.198.0",
+        ">=0.199.0",
+        ">=0.200.0",
+        ">=0.201.0",
+        ">=0.202.0",
+        ">=0.203.0",
+        ">=0.204.0",
+        ">=0.205.0",
+        ">=0.206.0",
+        ">=0.207.0",
+        ">=0.208.0",
+        ">=0.209.0",
+        ">=0.210.0",
+        ">=0.211.0",
+        ">=0.212.0",
+        ">=0.213.0",
+        ">=0.214.0",
+        ">=0.215.0",
+        ">=0.216.0",
+        ">=0.217.0",
+        ">=0.218.0",
+        ">=0.219.0",
+        ">=0.220.0",
+        ">=0.221.0",
+        ">=0.222.0",
+        ">=0.223.0",
+        ">=0.224.0",
+        ">=0.225.0",
+        ">=0.226.0",
+        ">=0.227.0",
+        ">=0.228.0",
+        ">=0.229.0",
+        ">=0.230.0",
+        ">=0.231.0",
+        ">=0.232.0",
+        ">=0.233.0",
+        ">=0.234.0",
+        ">=0.235.0",
+        ">=0.236.0",
+        ">=0.237.0",
+        ">=0.238.0",
+        ">=0.239.0",
+        ">=0.240.0",
+        ">=0.241.0",
+        ">=0.242.0",
+        ">=0.243.0",
+        ">=0.244.0",
+        ">=0.245.0",
+        ">=0.246.0",
+        ">=0.247.0",
+        ">=0.248.0",
+        ">=0.249.0",
+        ">=0.250.0",
+        ">=0.251.0",
+        ">=0.252.0",
+        ">=0.253.0",
+        ">=0.254.0",
+        ">=0.255.0",
+        ">=0.256.0",
+        ">=0.257.0",
+        ">=0.258.0",
+        ">=0.259.0",
+        ">=0.260.0",
+        ">=0.261.0",
+        ">=0.262.0",
+        ">=0.263.0",
+        ">=0.264.0",
+        ">=0.265.0",
+        ">=0.266.0",
+        ">=0.267.0",
+        ">=0.268.0",
+        ">=0.269.0",
+        ">=0.270.0",
+        ">=0.271.0",
+        ">=0.272.0",
+        ">=0.273.0",
+        ">=0.274.0",
+        ">=0.275.0",
+        ">=0.276.0",
+        ">=0.277.0",
+        ">=0.278.0",
+        ">=0.279.0",
+        ">=0.280.0",
+        ">=0.281.0",
+        ">=0.282.0",
+        ">=0.283.0",
+        ">=0.284.0",
+        ">=0.285.0",
+        ">=0.286.0",
+        ">=0.287.0",
+        ">=0.288.0",
+        ">=0.289.0",
+        ">=0.290.0"
+      ]
+    },
+    "felder": {},
+    "lizenz": "MIT"
+  },
+  "nur Wortlisten": {
+    "probleme": [],
+    "fehlend": [],
+    "hinweise": [
+      "Beispiel-Mappen gehen nur aus gewählten eigenen Mappentypen; die übrigen sind weggelassen.",
+      "202 Gruppen gleichbedeutender Wörter kommen ins Paket – beim Empfänger stehen sie unter Werkbank → Suche bei „aus Paketen“."
+    ],
+    "abhaengigkeiten": {},
+    "inhalt": {
+      "typen": [],
+      "sichten": [],
+      "beispiele": 0,
+      "wortlisten": 202
+    },
+    "schluessel": {},
+    "dateien": [
+      {
+        "name": "manifest.yaml",
+        "inhalt": "# Erstellt mit „Paket erstellen“ in Ablago. Format: https://github.com/motom001/dms-registry\nschema: 1\nid: familie_vertraege\nname: Verträge der Familie\nversion: 1.0.0\nbeschreibung: Verträge mit Zahlungen und Kündigungsfristen, wie wir sie zu Hause pflegen.\nautor:\n  name: Thomas Beispiel\n  github: motom001\nlizenz: MIT\ndms: \">=0.290.0\"\nabhaengigkeiten: {}\ninhalt:\n  mappentypen: inhalt/mappentypen.yaml\n  sichten: inhalt/sichten.yaml\n  wortlisten: inhalt/wortlisten.yaml\n"
+      },
+      {
+        "name": "inhalt/mappentypen.yaml",
+        "inhalt": "[]\n"
+      },
+      {
+        "name": "inhalt/sichten.yaml",
+        "inhalt": "[]\n"
+      },
+      {
+        "name": "inhalt/wortlisten.yaml",
+        "inhalt": "- woerter:\n    - a0\n    - b0\n- woerter:\n    - a1\n    - b1\n- woerter:\n    - a2\n    - b2\n- woerter:\n    - a3\n    - b3\n- woerter:\n    - a4\n    - b4\n- woerter:\n    - a5\n    - b5\n- woerter:\n    - a6\n    - b6\n- woerter:\n    - a7\n    - b7\n- woerter:\n    - a8\n    - b8\n- woerter:\n    - a9\n    - b9\n- woerter:\n    - a10\n    - b10\n- woerter:\n    - a11\n    - b11\n- woerter:\n    - a12\n    - b12\n- woerter:\n    - a13\n    - b13\n- woerter:\n    - a14\n    - b14\n- woerter:\n    - a15\n    - b15\n- woerter:\n    - a16\n    - b16\n- woerter:\n    - a17\n    - b17\n- woerter:\n    - a18\n    - b18\n- woerter:\n    - a19\n    - b19\n- woerter:\n    - a20\n    - b20\n- woerter:\n    - a21\n    - b21\n- woerter:\n    - a22\n    - b22\n- woerter:\n    - a23\n    - b23\n- woerter:\n    - a24\n    - b24\n- woerter:\n    - a25\n    - b25\n- woerter:\n    - a26\n    - b26\n- woerter:\n    - a27\n    - b27\n- woerter:\n    - a28\n    - b28\n- woerter:\n    - a29\n    - b29\n- woerter:\n    - a30\n    - b30\n- woerter:\n    - a31\n    - b31\n- woerter:\n    - a32\n    - b32\n- woerter:\n    - a33\n    - b33\n- woerter:\n    - a34\n    - b34\n- woerter:\n    - a35\n    - b35\n- woerter:\n    - a36\n    - b36\n- woerter:\n    - a37\n    - b37\n- woerter:\n    - a38\n    - b38\n- woerter:\n    - a39\n    - b39\n- woerter:\n    - a40\n    - b40\n- woerter:\n    - a41\n    - b41\n- woerter:\n    - a42\n    - b42\n- woerter:\n    - a43\n    - b43\n- woerter:\n    - a44\n    - b44\n- woerter:\n    - a45\n    - b45\n- woerter:\n    - a46\n    - b46\n- woerter:\n    - a47\n    - b47\n- woerter:\n    - a48\n    - b48\n- woerter:\n    - a49\n    - b49\n- woerter:\n    - a50\n    - b50\n- woerter:\n    - a51\n    - b51\n- woerter:\n    - a52\n    - b52\n- woerter:\n    - a53\n    - b53\n- woerter:\n    - a54\n    - b54\n- woerter:\n    - a55\n    - b55\n- woerter:\n    - a56\n    - b56\n- woerter:\n    - a57\n    - b57\n- woerter:\n    - a58\n    - b58\n- woerter:\n    - a59\n    - b59\n- woerter:\n    - a60\n    - b60\n- woerter:\n    - a61\n    - b61\n- woerter:\n    - a62\n    - b62\n- woerter:\n    - a63\n    - b63\n- woerter:\n    - a64\n    - b64\n- woerter:\n    - a65\n    - b65\n- woerter:\n    - a66\n    - b66\n- woerter:\n    - a67\n    - b67\n- woerter:\n    - a68\n    - b68\n- woerter:\n    - a69\n    - b69\n- woerter:\n    - a70\n    - b70\n- woerter:\n    - a71\n    - b71\n- woerter:\n    - a72\n    - b72\n- woerter:\n    - a73\n    - b73\n- woerter:\n    - a74\n    - b74\n- woerter:\n    - a75\n    - b75\n- woerter:\n    - a76\n    - b76\n- woerter:\n    - a77\n    - b77\n- woerter:\n    - a78\n    - b78\n- woerter:\n    - a79\n    - b79\n- woerter:\n    - a80\n    - b80\n- woerter:\n    - a81\n    - b81\n- woerter:\n    - a82\n    - b82\n- woerter:\n    - a83\n    - b83\n- woerter:\n    - a84\n    - b84\n- woerter:\n    - a85\n    - b85\n- woerter:\n    - a86\n    - b86\n- woerter:\n    - a87\n    - b87\n- woerter:\n    - a88\n    - b88\n- woerter:\n    - a89\n    - b89\n- woerter:\n    - a90\n    - b90\n- woerter:\n    - a91\n    - b91\n- woerter:\n    - a92\n    - b92\n- woerter:\n    - a93\n    - b93\n- woerter:\n    - a94\n    - b94\n- woerter:\n    - a95\n    - b95\n- woerter:\n    - a96\n    - b96\n- woerter:\n    - a97\n    - b97\n- woerter:\n    - a98\n    - b98\n- woerter:\n    - a99\n    - b99\n- woerter:\n    - a100\n    - b100\n- woerter:\n    - a101\n    - b101\n- woerter:\n    - a102\n    - b102\n- woerter:\n    - a103\n    - b103\n- woerter:\n    - a104\n    - b104\n- woerter:\n    - a105\n    - b105\n- woerter:\n    - a106\n    - b106\n- woerter:\n    - a107\n    - b107\n- woerter:\n    - a108\n    - b108\n- woerter:\n    - a109\n    - b109\n- woerter:\n    - a110\n    - b110\n- woerter:\n    - a111\n    - b111\n- woerter:\n    - a112\n    - b112\n- woerter:\n    - a113\n    - b113\n- woerter:\n    - a114\n    - b114\n- woerter:\n    - a115\n    - b115\n- woerter:\n    - a116\n    - b116\n- woerter:\n    - a117\n    - b117\n- woerter:\n    - a118\n    - b118\n- woerter:\n    - a119\n    - b119\n- woerter:\n    - a120\n    - b120\n- woerter:\n    - a121\n    - b121\n- woerter:\n    - a122\n    - b122\n- woerter:\n    - a123\n    - b123\n- woerter:\n    - a124\n    - b124\n- woerter:\n    - a125\n    - b125\n- woerter:\n    - a126\n    - b126\n- woerter:\n    - a127\n    - b127\n- woerter:\n    - a128\n    - b128\n- woerter:\n    - a129\n    - b129\n- woerter:\n    - a130\n    - b130\n- woerter:\n    - a131\n    - b131\n- woerter:\n    - a132\n    - b132\n- woerter:\n    - a133\n    - b133\n- woerter:\n    - a134\n    - b134\n- woerter:\n    - a135\n    - b135\n- woerter:\n    - a136\n    - b136\n- woerter:\n    - a137\n    - b137\n- woerter:\n    - a138\n    - b138\n- woerter:\n    - a139\n    - b139\n- woerter:\n    - a140\n    - b140\n- woerter:\n    - a141\n    - b141\n- woerter:\n    - a142\n    - b142\n- woerter:\n    - a143\n    - b143\n- woerter:\n    - a144\n    - b144\n- woerter:\n    - a145\n    - b145\n- woerter:\n    - a146\n    - b146\n- woerter:\n    - a147\n    - b147\n- woerter:\n    - a148\n    - b148\n- woerter:\n    - a149\n    - b149\n- woerter:\n    - a150\n    - b150\n- woerter:\n    - a151\n    - b151\n- woerter:\n    - a152\n    - b152\n- woerter:\n    - a153\n    - b153\n- woerter:\n    - a154\n    - b154\n- woerter:\n    - a155\n    - b155\n- woerter:\n    - a156\n    - b156\n- woerter:\n    - a157\n    - b157\n- woerter:\n    - a158\n    - b158\n- woerter:\n    - a159\n    - b159\n- woerter:\n    - a160\n    - b160\n- woerter:\n    - a161\n    - b161\n- woerter:\n    - a162\n    - b162\n- woerter:\n    - a163\n    - b163\n- woerter:\n    - a164\n    - b164\n- woerter:\n    - a165\n    - b165\n- woerter:\n    - a166\n    - b166\n- woerter:\n    - a167\n    - b167\n- woerter:\n    - a168\n    - b168\n- woerter:\n    - a169\n    - b169\n- woerter:\n    - a170\n    - b170\n- woerter:\n    - a171\n    - b171\n- woerter:\n    - a172\n    - b172\n- woerter:\n    - a173\n    - b173\n- woerter:\n    - a174\n    - b174\n- woerter:\n    - a175\n    - b175\n- woerter:\n    - a176\n    - b176\n- woerter:\n    - a177\n    - b177\n- woerter:\n    - a178\n    - b178\n- woerter:\n    - a179\n    - b179\n- woerter:\n    - a180\n    - b180\n- woerter:\n    - a181\n    - b181\n- woerter:\n    - a182\n    - b182\n- woerter:\n    - a183\n    - b183\n- woerter:\n    - a184\n    - b184\n- woerter:\n    - a185\n    - b185\n- woerter:\n    - a186\n    - b186\n- woerter:\n    - a187\n    - b187\n- woerter:\n    - a188\n    - b188\n- woerter:\n    - a189\n    - b189\n- woerter:\n    - a190\n    - b190\n- woerter:\n    - a191\n    - b191\n- woerter:\n    - a192\n    - b192\n- woerter:\n    - a193\n    - b193\n- woerter:\n    - a194\n    - b194\n- woerter:\n    - a195\n    - b195\n- woerter:\n    - a196\n    - b196\n- woerter:\n    - a197\n    - b197\n- woerter:\n    - a198\n    - b198\n- woerter:\n    - a199\n    - b199\n- woerter:\n    - a200\n    - b200\n- woerter:\n    - a201\n    - b201\n"
+      },
+      {
+        "name": "README.md",
+        "inhalt": "# Verträge der Familie\n\nVerträge mit Zahlungen und Kündigungsfristen, wie wir sie zu Hause pflegen.\n\n## Inhalt\n\n**Wortlisten:** 202 Gruppen gleichbedeutender Wörter für die Suche\n\n## Voraussetzungen\n\n- Ablago >=0.290.0\n- keine weiteren Pakete\n\n## Rechte und Netzwerkzugriff\n\nDieses Paket enthält keinen Code. Es legt nur Mappentypen und Ansichten an.\n\n## Lizenz\n\nMIT – der volle Text steht in LICENSE.\n\n## Herkunft\n\nErstellt mit „Paket erstellen“ in Ablago (Werkbank → Pakete) am 2026-11-16 von Thomas Beispiel.\n"
+      },
+      {
+        "name": "CHANGELOG.md",
+        "inhalt": "# Änderungen\n\n## 1.0.0\n\n- Erste Fassung.\n"
+      },
+      {
+        "name": "LICENSE",
+        "inhalt": "MIT License\n\nCopyright (c) 2026 Thomas Beispiel\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+      },
+      {
+        "name": "tests/erwartung.yaml",
+        "inhalt": "mappentypen: []\nsichten: []\nbeispiele: 0\nwortlisten: 202\n"
+      }
+    ],
+    "version": {
+      "bekannt": null,
+      "art": null,
+      "artGrund": null,
+      "mindest": "0.127.0",
+      "gruende": ["Wortlisten (ab 0.127.0)"],
+      "dmsOptionen": [
+        ">=0.127.0",
+        ">=0.128.0",
+        ">=0.129.0",
+        ">=0.130.0",
+        ">=0.131.0",
+        ">=0.132.0",
+        ">=0.133.0",
+        ">=0.134.0",
+        ">=0.135.0",
+        ">=0.136.0",
+        ">=0.137.0",
+        ">=0.138.0",
+        ">=0.139.0",
+        ">=0.140.0",
+        ">=0.141.0",
+        ">=0.142.0",
+        ">=0.143.0",
+        ">=0.144.0",
+        ">=0.145.0",
+        ">=0.146.0",
+        ">=0.147.0",
+        ">=0.148.0",
+        ">=0.149.0",
+        ">=0.150.0",
+        ">=0.151.0",
+        ">=0.152.0",
+        ">=0.153.0",
+        ">=0.154.0",
+        ">=0.155.0",
+        ">=0.156.0",
+        ">=0.158.0",
+        ">=0.159.0",
+        ">=0.160.0",
+        ">=0.161.0",
+        ">=0.162.0",
+        ">=0.163.0",
+        ">=0.164.0",
+        ">=0.165.0",
+        ">=0.166.0",
+        ">=0.167.0",
+        ">=0.168.0",
+        ">=0.169.0",
+        ">=0.170.0",
+        ">=0.171.0",
+        ">=0.172.0",
+        ">=0.173.0",
+        ">=0.174.0",
+        ">=0.175.0",
+        ">=0.176.0",
+        ">=0.177.0",
+        ">=0.178.0",
+        ">=0.179.0",
+        ">=0.180.0",
+        ">=0.181.0",
+        ">=0.182.0",
+        ">=0.183.0",
+        ">=0.184.0",
+        ">=0.185.0",
+        ">=0.186.0",
+        ">=0.187.0",
+        ">=0.188.0",
+        ">=0.189.0",
+        ">=0.190.0",
+        ">=0.191.0",
+        ">=0.192.0",
+        ">=0.193.0",
+        ">=0.194.0",
+        ">=0.195.0",
+        ">=0.196.0",
+        ">=0.197.0",
+        ">=0.198.0",
+        ">=0.199.0",
+        ">=0.200.0",
+        ">=0.201.0",
+        ">=0.202.0",
+        ">=0.203.0",
+        ">=0.204.0",
+        ">=0.205.0",
+        ">=0.206.0",
+        ">=0.207.0",
+        ">=0.208.0",
+        ">=0.209.0",
+        ">=0.210.0",
+        ">=0.211.0",
+        ">=0.212.0",
+        ">=0.213.0",
+        ">=0.214.0",
+        ">=0.215.0",
+        ">=0.216.0",
+        ">=0.217.0",
+        ">=0.218.0",
+        ">=0.219.0",
+        ">=0.220.0",
+        ">=0.221.0",
+        ">=0.222.0",
+        ">=0.223.0",
+        ">=0.224.0",
+        ">=0.225.0",
+        ">=0.226.0",
+        ">=0.227.0",
+        ">=0.228.0",
+        ">=0.229.0",
+        ">=0.230.0",
+        ">=0.231.0",
+        ">=0.232.0",
+        ">=0.233.0",
+        ">=0.234.0",
+        ">=0.235.0",
+        ">=0.236.0",
+        ">=0.237.0",
+        ">=0.238.0",
+        ">=0.239.0",
+        ">=0.240.0",
+        ">=0.241.0",
+        ">=0.242.0",
+        ">=0.243.0",
+        ">=0.244.0",
+        ">=0.245.0",
+        ">=0.246.0",
+        ">=0.247.0",
+        ">=0.248.0",
+        ">=0.249.0",
+        ">=0.250.0",
+        ">=0.251.0",
+        ">=0.252.0",
+        ">=0.253.0",
+        ">=0.254.0",
+        ">=0.255.0",
+        ">=0.256.0",
+        ">=0.257.0",
+        ">=0.258.0",
+        ">=0.259.0",
+        ">=0.260.0",
+        ">=0.261.0",
+        ">=0.262.0",
+        ">=0.263.0",
+        ">=0.264.0",
+        ">=0.265.0",
+        ">=0.266.0",
+        ">=0.267.0",
+        ">=0.268.0",
+        ">=0.269.0",
+        ">=0.270.0",
+        ">=0.271.0",
+        ">=0.272.0",
+        ">=0.273.0",
+        ">=0.274.0",
+        ">=0.275.0",
+        ">=0.276.0",
+        ">=0.277.0",
+        ">=0.278.0",
+        ">=0.279.0",
+        ">=0.280.0",
+        ">=0.281.0",
+        ">=0.282.0",
+        ">=0.283.0",
+        ">=0.284.0",
+        ">=0.285.0",
+        ">=0.286.0",
+        ">=0.287.0",
+        ">=0.288.0",
+        ">=0.289.0",
+        ">=0.290.0"
+      ]
+    },
+    "felder": {},
+    "lizenz": "MIT"
+  },
+  "sauber: freie Lizenz, Beispiele mit Dokumenten": {
+    "probleme": [],
+    "fehlend": [
+      {
+        "art": "typ",
+        "id": "00000000-0000-4000-8000-000000000012",
+        "name": "Notiz",
+        "grund": "Vorsicht: steckt in der Ansicht „Alles“ – muss beim Empfänger vorhanden sein",
+        "noetig": false
+      },
+      {
+        "art": "typ",
+        "id": "00000000-0000-4000-8000-000000000013",
+        "name": "Sammlung",
+        "grund": "Vorsicht: steckt in der Ansicht „Alles“ – muss beim Empfänger vorhanden sein",
+        "noetig": false
+      }
+    ],
+    "hinweise": [
+      "„Vertrag“ → Feld „Text“: Das Feld berechnet ein anderes Paket. Im eigenen Paket kommt es als gewöhnliches Feld mit – ein Paket ohne Code rechnet nichts.",
+      "„Vertrag“ → Feld „Nummer“: Der Nummernkreis gehört nicht zum Paketformat. Das Feld kommt ohne Nummernkreis ins Paket; richte ihn beim Empfänger unter Werkbank → Nummernkreise ein und trage ihn am Feld ein.",
+      "Der Mappentyp „Organisation“ kommt aus dem Paket „Basis“ – wird als Abhängigkeit eingetragen (basis >=1.6.0), nicht kopiert.",
+      "Änderungen an „Organisation“ (Basis) gehören nicht zu deinem Paket – beim Empfänger gilt der Typ, wie das Paket „Basis“ ihn bringt. Brauchst du die Änderungen, lege dafür einen eigenen Typ an.",
+      "„Vertrag“ → Feld „Wer“: Der Auswahlfilter nennt Mappen dieser Installation und kommt nicht ins Paket.",
+      "„Ablageort“ kommt mit dem Paket Basis: Das Paket verweist auf basis:ablageort und trägt Basis ab 1.6.0 als Abhängigkeit ein.",
+      "„Vertrag“ → Feld „Ort“: Der Standardwert zeigt auf eine Mappe dieser Installation und kommt nicht ins Paket.",
+      "„Vertrag“ → Feld „Kündigung“: Eine Anzeige-Bedingung nennt eine Mappe dieser Installation und kommt nicht ins Paket.",
+      "„Vertrag“ → Feld „Posten“: Die Tabelle zeigt eine andere Trefferliste von „Zahlung“ – ins Paket kommt nur die Standard-Trefferliste, die Tabelle zeigt dort deren Spalten.",
+      "„Vertrag“: Nur die Standard-Trefferliste „Standard“ kommt ins Paket; weitere Trefferlisten kennt das Paketformat nicht.",
+      "„Vertrag“: Berechtigungen, Anlegen/Löschen gesperrt gehören nicht zum Paketformat und kommen nicht mit.",
+      "„Vertrag“: Das Stichtag-Feld des Archivmodus kommt nicht mit – im Paket zählt das Anlagedatum.",
+      "Ansicht „Alles“ zeigt Mappen vom Typ „Notiz“. „Notiz“ kommt nicht ins Paket – beim Empfänger muss es „Notiz“ schon geben, sonst bleibt die Ansicht leer oder wird nicht installiert.",
+      "Ansicht „Alles“ zeigt Mappen vom Typ „Sammlung“. „Sammlung“ kommt nicht ins Paket – beim Empfänger muss es „Sammlung“ schon geben, sonst bleibt die Ansicht leer oder wird nicht installiert.",
+      "Ansicht „Unter Paket“ steht unter „Organisationen“ aus einem Paket – im Paket steht sie auf der obersten Ebene.",
+      "Beispiel-Mappen gehen nur aus gewählten eigenen Mappentypen; die übrigen sind weggelassen.",
+      "4 Beispiel-Dokumente kommen mit (unter inhalt/beispiele/).",
+      "Beispiel-Mappen: 2 Verweise zeigen auf Mappen, die keine gewählten Beispiele sind, und bleiben leer.",
+      "3 Beispiel-Mappen aus deiner Auswahl kommen samt ihren Dokumenten ins Paket – nimm nur Mappen und Dokumente mit erfundenen Daten. Notizen und Aufgaben kommen nicht mit.",
+      "Die Wortliste „Firma, Unternehmen“ kommt über das Paket „Basis“ als Abhängigkeit mit, nicht kopiert.",
+      "Die Wortliste „a, b“ gehört zum Paket „fremd“ und kommt nicht ins Paket.",
+      "Eine Gruppe gleichbedeutender Wörter kommen ins Paket – beim Empfänger stehen sie unter Werkbank → Suche bei „aus Paketen“."
+    ],
+    "abhaengigkeiten": {
+      "basis": ">=1.6.0"
+    },
+    "inhalt": {
+      "typen": [
+        {
+          "schluessel": "vertrag",
+          "name": "Vertrag"
+        },
+        {
+          "schluessel": "zahlung",
+          "name": "Zahlung"
+        }
+      ],
+      "sichten": [
+        {
+          "schluessel": "vertraege",
+          "name": "Verträge",
+          "eltern": null
+        },
+        {
+          "schluessel": "alles",
+          "name": "Alles",
+          "eltern": null
+        },
+        {
+          "schluessel": "unter_paket",
+          "name": "Unter Paket",
+          "eltern": null
+        }
+      ],
+      "beispiele": 3,
+      "wortlisten": 1,
+      "beispielDokumente": 4
+    },
+    "schluessel": {
+      "00000000-0000-4000-8000-000000000010": "vertrag",
+      "00000000-0000-4000-8000-000000000011": "zahlung",
+      "00000000-0000-4000-8000-000000000020": "vertraege",
+      "00000000-0000-4000-8000-000000000025": "alles",
+      "00000000-0000-4000-8000-000000000022": "unter_paket"
+    },
+    "dateien": [
+      {
+        "name": "manifest.yaml",
+        "inhalt": "# Erstellt mit „Paket erstellen“ in Ablago. Format: https://github.com/motom001/dms-registry\nschema: 1\nid: familie_vertraege\nname: Verträge der Familie\nversion: 1.0.0\nbeschreibung: Verträge mit Zahlungen und Kündigungsfristen, wie wir sie zu Hause pflegen.\nautor:\n  name: Thomas Beispiel\n  github: motom001\nlizenz: MIT\ndms: \">=0.290.0\"\nabhaengigkeiten:\n  basis: \">=1.6.0\"\ninhalt:\n  mappentypen: inhalt/mappentypen.yaml\n  sichten: inhalt/sichten.yaml\n  beispiele: inhalt/beispiele.yaml\n  wortlisten: inhalt/wortlisten.yaml\n"
+      },
+      {
+        "name": "inhalt/mappentypen.yaml",
+        "inhalt": "- schluessel: vertrag\n  name: Vertrag\n  beschreibung: Ein Vertrag\n  titelVorlage: \"{nr}\"\n  felder:\n    - key: nr\n      label: Nummer\n      typ: text\n      pflicht: true\n      maxLen: 40\n    - key: kennung\n      label: Kennung\n      typ: text\n      erkennung:\n        art: iban\n      standard: fest\n      wiederfinden: false\n    - key: partner\n      label: Partner\n      typ: referenz\n      verweisart: bezug\n      ziel: basis:organisation\n      vorbelegen:\n        - von: name\n          nach: nr\n    - key: wer\n      label: Wer\n      typ: referenz\n      ziel:\n        - dms:benutzer\n        - dms:rolle\n    - key: ort\n      label: Ort\n      typ: referenz\n      ziel: basis:ablageort\n    - key: zahlung\n      label: Zahlung\n      typ: referenz\n      ziel:\n        - zahlung\n        - basis:organisation\n      zielOptional:\n        - fahrzeuge:fahrzeug\n    - key: gehoert\n      label: Gehört zu\n      typ: referenz\n      ziel: zahlung\n      auswahlFilter:\n        - feld: x\n          op: gleich\n          wert: 1\n    - key: text\n      label: Text\n      typ: text\n      format: gross\n    - key: uebernommen\n      label: Übernommen\n      typ: text\n    - key: kuendigung\n      label: Kündigung\n      typ: datum\n      min: \"2020-01-01\"\n      anzeigen:\n        modus: eine\n        bedingungen:\n          - art: verweistyp\n            feld: partner\n            typ: basis:organisation\n          - art: vorgabe\n            feld: partner\n            vorgabe:\n              - basis:stadtwerke\n          - art: feld\n            bedingung:\n              art: feld\n              feld: nr\n              op: gleich\n              wert:\n                art: fest\n                wert: A\n          - art: eigeneOrganisation\n            feld: partner\n      frist:\n        vorlauf: 6\n        einheit: wochen\n        empfaengerFeld: wer\n    - key: kennwort\n      label: Kennwort\n      typ: passwort\n    - key: betrag\n      label: Betrag\n      typ: betrag\n      waehrung: EUR\n      negativ: true\n    - key: zeit\n      label: Zeitraum\n      typ: zeitraum\n    - key: anteil\n      label: Anteil\n      typ: prozent\n      merkmal: x\n    - key: teile\n      label: Teile\n      typ: zusammengesetzt\n    - key: posten\n      label: Posten\n      typ: tabelle\n      quelle:\n        typ: zahlung\n        feld: vertrag\n        neu: ja\n    - key: land\n      label: Land\n      typ: text\n      landFeld: x\n  register:\n    - key: daten\n      name: Daten\n      art: felder\n      felder:\n        - nr\n        - partner\n      abschnitte:\n        - vor: nr\n          titel: Kopf\n          eingeklappt: true\n          anzeigen:\n            modus: alle\n            bedingungen:\n              - art: verweistyp\n                feld: partner\n                typ: basis:organisation\n        - vor: partner\n          beschriftungen:\n            en: Partner\n      ausgeblendet: true\n      volltext: false\n    - key: zahlungen\n      name: Zahlungen\n      art: verknuepfungen\n      quellen:\n        - typ: zahlung\n          feld: vertrag\n        - typ: basis:organisation\n          feld: x\n    - key: verlauf\n      name: Verlauf\n      art: protokoll\n      versionierung: true\n      versionenBehalten: 3\n      zeigt: alles\n    - key: dok\n      name: Dokumente\n      art: dokumente\n  trefferliste:\n    - nr\n    - partner\n  beschriftungen:\n    en:\n      name: Contract\n  ausPost: true\n  erkennbarAn: Vertragsnummer\n  gehoertZu: gehoert\n  inSuche: false\n  archiv:\n    jahre: 10\n- schluessel: zahlung\n  name: Zahlung\n  beschreibung: \"\"\n  felder:\n    - key: datum\n      label: Datum\n      typ: datum\n    - key: vertrag\n      label: Vertrag\n      typ: referenz\n      mehrfach: true\n      ziel: vertrag\n    - key: betrag\n      label: Betrag\n      typ: betrag\n      waehrung: CHF\n  register:\n    - key: daten\n      name: Daten\n      art: felder\n      felder:\n        - datum\n        - vertrag\n        - betrag\n  trefferliste:\n    - datum\n"
+      },
+      {
+        "name": "inhalt/sichten.yaml",
+        "inhalt": "- schluessel: vertraege\n  name: Verträge\n  beschreibung: Alle\n  beschriftungen:\n    en: Contracts\n  typen:\n    - vertrag\n  symbol: signature\n- schluessel: alles\n  name: Alles\n  typen:\n    - \"*\"\n    - basis:organisation\n    - dms:rolle\n    - basis:ablageort\n  fremde_typen:\n    - kennung: anderes:notizzettel\n      name: Notiz\n    - kennung: sammlung\n      name: Sammlung\n- schluessel: unter_paket\n  name: Unter Paket\n  typen:\n    - vertrag\n"
+      },
+      {
+        "name": "inhalt/beispiele.yaml",
+        "inhalt": "- typ: vertrag\n  schluessel: beispiel_1\n  werte:\n    nr: S-1\n    zahlung:\n      beispiel: beispiel_2\n    betrag: 89\n    land: DE\n  dokumente:\n    - datei: beispiele/beispiel_1/Vertrag-Ubersicht.pdf\n      titel: Vertrag Übersicht.pdf\n      datum: \"2026-03-04\"\n      register: dok\n    - datei: beispiele/beispiel_1/Vertrag-Ubersicht-2.pdf\n      titel: Vertrag Übersicht.PDF\n      datum: \"2026-03-05\"\n      register: dok\n    - datei: beispiele/beispiel_1/bild.png\n      titel: bild.pdf\n      datum: \"2026-03-06\"\n      register: dok\n    - datei: beispiele/beispiel_1/dokument.pdf\n      titel: ...\n      datum: \"2026-03-07\"\n      register: dok\n- typ: zahlung\n  schluessel: beispiel_2\n  werte:\n    datum: \"2026-01-31\"\n    vertrag:\n      - beispiel: beispiel_1\n      - beispiel: beispiel_3\n    betrag:\n      betrag: 5\n      waehrung: EUR\n- typ: vertrag\n  schluessel: beispiel_3\n  werte:\n    nr: S-2\n    gehoert:\n      beispiel: beispiel_2\n    betrag:\n      betrag: \"7\"\n      waehrung: EUR\n"
+      },
+      {
+        "name": "inhalt/beispiele/beispiel_1/Vertrag-Ubersicht.pdf",
+        "inhalt": "JVBERi0xLjQKJSBCZWlzcGllbAo="
+      },
+      {
+        "name": "inhalt/beispiele/beispiel_1/Vertrag-Ubersicht-2.pdf",
+        "inhalt": "JVBERi0xLjQKJSBCZWlzcGllbAo="
+      },
+      {
+        "name": "inhalt/beispiele/beispiel_1/bild.png",
+        "inhalt": "iVBORw0KGgoAAA=="
+      },
+      {
+        "name": "inhalt/beispiele/beispiel_1/dokument.pdf",
+        "inhalt": "JVBERi0xLjQKJSBCZWlzcGllbAo="
+      },
+      {
+        "name": "inhalt/wortlisten.yaml",
+        "inhalt": "- woerter:\n    - Auto\n    - PKW\n"
+      },
+      {
+        "name": "README.md",
+        "inhalt": "# Verträge der Familie\n\nVerträge mit Zahlungen und Kündigungsfristen, wie wir sie zu Hause pflegen.\n\n## Inhalt\n\n| Mappentyp | Felder |\n| --- | --- |\n| Vertrag | Nummer, Kennung, Partner, Wer, Ort, Zahlung, Gehört zu, Text, Übernommen, Kündigung, Kennwort, Betrag, Zeitraum, Anteil, Teile, Posten, Land |\n| Zahlung | Datum, Vertrag, Betrag |\n\n**Ansichten:** Verträge, Alles, Unter Paket\n\n**Wortlisten:** eine Gruppe gleichbedeutender Wörter für die Suche\n\n**Beispiele:** 3 Beispiel-Mappen (Vertrag, Zahlung) mit 4 Beispiel-Dokumenten, auf Wunsch bei der Installation.\n\n## Voraussetzungen\n\n- Ablago >=0.290.0\n- Paket `basis` >=1.6.0\n\n## Rechte und Netzwerkzugriff\n\nDieses Paket enthält keinen Code. Es legt nur Mappentypen und Ansichten an.\n\n## Lizenz\n\nMIT – der volle Text steht in LICENSE.\n\n## Herkunft\n\nErstellt mit „Paket erstellen“ in Ablago (Werkbank → Pakete) am 2026-11-16 von Thomas Beispiel.\n"
+      },
+      {
+        "name": "CHANGELOG.md",
+        "inhalt": "# Änderungen\n\n## 1.0.0\n\n- Erste Fassung.\n"
+      },
+      {
+        "name": "LICENSE",
+        "inhalt": "MIT License\n\nCopyright (c) 2026 Thomas Beispiel\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+      },
+      {
+        "name": "tests/erwartung.yaml",
+        "inhalt": "mappentypen:\n  - vertrag\n  - zahlung\nsichten:\n  - vertraege\n  - alles\n  - unter_paket\nbeispiele: 3\nwortlisten: 1\n"
+      }
+    ],
+    "version": {
+      "bekannt": null,
+      "art": null,
+      "artGrund": null,
+      "mindest": "0.239.0",
+      "gruende": [
+        "Feldart Zusammengesetzt (ab 0.239.0)",
+        "Eigene Organisation (Merkmal, Schreibschutz, Anzeige-Bedingung) (ab 0.238.0)",
+        "Archivmodus am Mappentyp (ab 0.237.0)",
+        "„Anzeigen, wenn … zeigt auf die Vorgabe …“ (ab 0.236.0)",
+        "Ist Teil einer anderen Mappe (ab 0.235.0)",
+        "„Beim Auswählen übernehmen“ an Verweisfeldern (ab 0.234.0)",
+        "Feldart Tabelle (ab 0.232.0)",
+        "Feldarten Zeitraum und Prozent, negative Beträge (ab 0.227.0)",
+        "Beispiel-Dokumente (ab 0.223.0)",
+        "Ansichten mit Mappentypen, die nicht im Paket sind (ab 0.178.0)",
+        "Wortlisten (ab 0.127.0)",
+        "Feldformate und Datumsgrenzen (ab 0.121.0)",
+        "Erkennung an Feldern („Aus Dokument ausfüllen“) (ab 0.113.0)"
+      ],
+      "dmsOptionen": [
+        ">=0.239.0",
+        ">=0.240.0",
+        ">=0.241.0",
+        ">=0.242.0",
+        ">=0.243.0",
+        ">=0.244.0",
+        ">=0.245.0",
+        ">=0.246.0",
+        ">=0.247.0",
+        ">=0.248.0",
+        ">=0.249.0",
+        ">=0.250.0",
+        ">=0.251.0",
+        ">=0.252.0",
+        ">=0.253.0",
+        ">=0.254.0",
+        ">=0.255.0",
+        ">=0.256.0",
+        ">=0.257.0",
+        ">=0.258.0",
+        ">=0.259.0",
+        ">=0.260.0",
+        ">=0.261.0",
+        ">=0.262.0",
+        ">=0.263.0",
+        ">=0.264.0",
+        ">=0.265.0",
+        ">=0.266.0",
+        ">=0.267.0",
+        ">=0.268.0",
+        ">=0.269.0",
+        ">=0.270.0",
+        ">=0.271.0",
+        ">=0.272.0",
+        ">=0.273.0",
+        ">=0.274.0",
+        ">=0.275.0",
+        ">=0.276.0",
+        ">=0.277.0",
+        ">=0.278.0",
+        ">=0.279.0",
+        ">=0.280.0",
+        ">=0.281.0",
+        ">=0.282.0",
+        ">=0.283.0",
+        ">=0.284.0",
+        ">=0.285.0",
+        ">=0.286.0",
+        ">=0.287.0",
+        ">=0.288.0",
+        ">=0.289.0",
+        ">=0.290.0"
+      ]
+    },
+    "felder": {
+      "00000000-0000-4000-8000-000000000010": [
+        "nr",
+        "kennung",
+        "partner",
+        "wer",
+        "ort",
+        "zahlung",
+        "gehoert",
+        "text",
+        "uebernommen",
+        "kuendigung",
+        "kennwort",
+        "betrag",
+        "zeit",
+        "anteil",
+        "teile",
+        "posten",
+        "land"
+      ],
+      "00000000-0000-4000-8000-000000000011": ["datum", "vertrag", "betrag"]
+    },
+    "lizenz": "MIT"
+  },
+  "sauber: eigene Lizenz, Update mit Entwurf": {
+    "probleme": [],
+    "fehlend": [],
+    "hinweise": [
+      "Mit einer eigenen Lizenz lässt sich das Paket in jeder Ablago-Installation installieren, kommt so aber nicht in den offiziellen Katalog – dort gelten nur freie Lizenzen (MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, MPL-2.0, LGPL-3.0-or-later, GPL-3.0-or-later, AGPL-3.0-or-later, CC0-1.0).",
+      "„Vertrag“ → Feld „Text“: Das Feld berechnet ein anderes Paket. Im eigenen Paket kommt es als gewöhnliches Feld mit – ein Paket ohne Code rechnet nichts.",
+      "„Vertrag“ → Feld „Nummer“: Der Nummernkreis gehört nicht zum Paketformat. Das Feld kommt ohne Nummernkreis ins Paket; richte ihn beim Empfänger unter Werkbank → Nummernkreise ein und trage ihn am Feld ein.",
+      "Der Mappentyp „Organisation“ kommt aus dem Paket „Basis“ – wird als Abhängigkeit eingetragen (basis >=1.6.0), nicht kopiert.",
+      "Änderungen an „Organisation“ (Basis) gehören nicht zu deinem Paket – beim Empfänger gilt der Typ, wie das Paket „Basis“ ihn bringt. Brauchst du die Änderungen, lege dafür einen eigenen Typ an.",
+      "„Vertrag“ → Feld „Wer“: Der Auswahlfilter nennt Mappen dieser Installation und kommt nicht ins Paket.",
+      "„Ablageort“ kommt mit dem Paket Basis: Das Paket verweist auf basis:ablageort und trägt Basis ab 1.6.0 als Abhängigkeit ein.",
+      "„Vertrag“ → Feld „Ort“: Der Standardwert zeigt auf eine Mappe dieser Installation und kommt nicht ins Paket.",
+      "„Vertrag“ → Feld „Kündigung“: Eine Anzeige-Bedingung nennt eine Mappe dieser Installation und kommt nicht ins Paket.",
+      "„Vertrag“ → Feld „Posten“: Die Tabelle zeigt eine andere Trefferliste von „Zahlung“ – ins Paket kommt nur die Standard-Trefferliste, die Tabelle zeigt dort deren Spalten.",
+      "„Vertrag“: Nur die Standard-Trefferliste „Standard“ kommt ins Paket; weitere Trefferlisten kennt das Paketformat nicht.",
+      "„Vertrag“: Berechtigungen, Anlegen/Löschen gesperrt gehören nicht zum Paketformat und kommen nicht mit.",
+      "„Vertrag“: Das Stichtag-Feld des Archivmodus kommt nicht mit – im Paket zählt das Anlagedatum.",
+      "Die Wortliste „Firma, Unternehmen“ kommt über das Paket „Basis“ als Abhängigkeit mit, nicht kopiert.",
+      "Die Wortliste „a, b“ gehört zum Paket „fremd“ und kommt nicht ins Paket.",
+      "Eine Gruppe gleichbedeutender Wörter kommen ins Paket – beim Empfänger stehen sie unter Werkbank → Suche bei „aus Paketen“."
+    ],
+    "abhaengigkeiten": {
+      "basis": ">=1.6.0"
+    },
+    "inhalt": {
+      "typen": [
+        {
+          "schluessel": "vertrag_alt",
+          "name": "Vertrag"
+        },
+        {
+          "schluessel": "zahlung",
+          "name": "Zahlung"
+        }
+      ],
+      "sichten": [
+        {
+          "schluessel": "vertraege",
+          "name": "Verträge",
+          "eltern": null
+        }
+      ],
+      "beispiele": 0,
+      "wortlisten": 1
+    },
+    "schluessel": {
+      "00000000-0000-4000-8000-000000000010": "vertrag_alt",
+      "00000000-0000-4000-8000-000000000011": "zahlung",
+      "00000000-0000-4000-8000-000000000020": "vertraege"
+    },
+    "dateien": [
+      {
+        "name": "manifest.yaml",
+        "inhalt": "# Erstellt mit „Paket erstellen“ in Ablago. Format: https://github.com/motom001/dms-registry\nschema: 1\nid: familie_vertraege\nname: Verträge der Familie\nversion: 2.0.1\nbeschreibung: Verträge mit Zahlungen und Kündigungsfristen, wie wir sie zu Hause pflegen.\nautor:\n  name: Thomas Beispiel\n  github: motom001\nlizenz: LicenseRef-Meine-Lizenz\ndms: \">=0.290.0\"\nabhaengigkeiten:\n  basis: \">=1.6.0\"\ninhalt:\n  mappentypen: inhalt/mappentypen.yaml\n  sichten: inhalt/sichten.yaml\n  wortlisten: inhalt/wortlisten.yaml\n"
+      },
+      {
+        "name": "inhalt/mappentypen.yaml",
+        "inhalt": "- schluessel: vertrag_alt\n  name: Vertrag\n  beschreibung: Ein Vertrag\n  titelVorlage: \"{nr}\"\n  felder:\n    - key: nr\n      label: Nummer\n      typ: text\n      pflicht: true\n      maxLen: 40\n    - key: kennung\n      label: Kennung\n      typ: text\n      erkennung:\n        art: iban\n      standard: fest\n      wiederfinden: false\n    - key: partner\n      label: Partner\n      typ: referenz\n      verweisart: bezug\n      ziel: basis:organisation\n      vorbelegen:\n        - von: name\n          nach: nr\n    - key: wer\n      label: Wer\n      typ: referenz\n      ziel:\n        - dms:benutzer\n        - dms:rolle\n    - key: ort\n      label: Ort\n      typ: referenz\n      ziel: basis:ablageort\n    - key: zahlung\n      label: Zahlung\n      typ: referenz\n      ziel:\n        - zahlung\n        - basis:organisation\n      zielOptional:\n        - fahrzeuge:fahrzeug\n    - key: gehoert\n      label: Gehört zu\n      typ: referenz\n      ziel: zahlung\n      auswahlFilter:\n        - feld: x\n          op: gleich\n          wert: 1\n    - key: text\n      label: Text\n      typ: text\n      format: gross\n    - key: uebernommen\n      label: Übernommen\n      typ: text\n    - key: kuendigung\n      label: Kündigung\n      typ: datum\n      min: \"2020-01-01\"\n      anzeigen:\n        modus: eine\n        bedingungen:\n          - art: verweistyp\n            feld: partner\n            typ: basis:organisation\n          - art: vorgabe\n            feld: partner\n            vorgabe:\n              - basis:stadtwerke\n          - art: feld\n            bedingung:\n              art: feld\n              feld: nr\n              op: gleich\n              wert:\n                art: fest\n                wert: A\n          - art: eigeneOrganisation\n            feld: partner\n      frist:\n        vorlauf: 6\n        einheit: wochen\n        empfaengerFeld: wer\n    - key: kennwort\n      label: Kennwort\n      typ: passwort\n    - key: betrag\n      label: Betrag\n      typ: betrag\n      waehrung: EUR\n      negativ: true\n    - key: zeit\n      label: Zeitraum\n      typ: zeitraum\n    - key: anteil\n      label: Anteil\n      typ: prozent\n      merkmal: x\n    - key: teile\n      label: Teile\n      typ: zusammengesetzt\n    - key: posten\n      label: Posten\n      typ: tabelle\n      quelle:\n        typ: zahlung\n        feld: vertrag\n        neu: ja\n    - key: land\n      label: Land\n      typ: text\n      landFeld: x\n  register:\n    - key: daten\n      name: Daten\n      art: felder\n      felder:\n        - nr\n        - partner\n      abschnitte:\n        - vor: nr\n          titel: Kopf\n          eingeklappt: true\n          anzeigen:\n            modus: alle\n            bedingungen:\n              - art: verweistyp\n                feld: partner\n                typ: basis:organisation\n        - vor: partner\n          beschriftungen:\n            en: Partner\n      ausgeblendet: true\n      volltext: false\n    - key: zahlungen\n      name: Zahlungen\n      art: verknuepfungen\n      quellen:\n        - typ: zahlung\n          feld: vertrag\n        - typ: basis:organisation\n          feld: x\n    - key: verlauf\n      name: Verlauf\n      art: protokoll\n      versionierung: true\n      versionenBehalten: 3\n      zeigt: alles\n    - key: dok\n      name: Dokumente\n      art: dokumente\n  trefferliste:\n    - nr\n    - partner\n  beschriftungen:\n    en:\n      name: Contract\n  ausPost: true\n  erkennbarAn: Vertragsnummer\n  gehoertZu: gehoert\n  inSuche: false\n  archiv:\n    jahre: 10\n- schluessel: zahlung\n  name: Zahlung\n  beschreibung: \"\"\n  felder:\n    - key: datum\n      label: Datum\n      typ: datum\n    - key: vertrag\n      label: Vertrag\n      typ: referenz\n      mehrfach: true\n      ziel: vertrag_alt\n    - key: betrag\n      label: Betrag\n      typ: betrag\n      waehrung: CHF\n  register:\n    - key: daten\n      name: Daten\n      art: felder\n      felder:\n        - datum\n        - vertrag\n        - betrag\n  trefferliste:\n    - datum\n"
+      },
+      {
+        "name": "inhalt/sichten.yaml",
+        "inhalt": "- schluessel: vertraege\n  name: Verträge\n  beschreibung: Alle\n  beschriftungen:\n    en: Contracts\n  typen:\n    - vertrag_alt\n  symbol: signature\n"
+      },
+      {
+        "name": "inhalt/wortlisten.yaml",
+        "inhalt": "- woerter:\n    - Auto\n    - PKW\n"
+      },
+      {
+        "name": "README.md",
+        "inhalt": "# Verträge der Familie\n\nVerträge mit Zahlungen und Kündigungsfristen, wie wir sie zu Hause pflegen.\n\n## Inhalt\n\n| Mappentyp | Felder |\n| --- | --- |\n| Vertrag | Nummer, Kennung, Partner, Wer, Ort, Zahlung, Gehört zu, Text, Übernommen, Kündigung, Kennwort, Betrag, Zeitraum, Anteil, Teile, Posten, Land |\n| Zahlung | Datum, Vertrag, Betrag |\n\n**Ansichten:** Verträge\n\n**Wortlisten:** eine Gruppe gleichbedeutender Wörter für die Suche\n\n## Voraussetzungen\n\n- Ablago >=0.290.0\n- Paket `basis` >=1.6.0\n\n## Rechte und Netzwerkzugriff\n\nDieses Paket enthält keinen Code. Es legt nur Mappentypen und Ansichten an.\n\n## Lizenz\n\nMeine Lizenz – der volle Text steht in LICENSE. Keine freie Lizenz.\n\n## Herkunft\n\nErstellt mit „Paket erstellen“ in Ablago (Werkbank → Pakete) am 2026-11-16 von Thomas Beispiel.\n"
+      },
+      {
+        "name": "CHANGELOG.md",
+        "inhalt": "# Änderungen\n\n## 2.0.1\n\n- Neu: Zahlungen\n- Mehr\n\n## 1.2.0\n\n- Erste Fassung\n- mit Liste\n\n## 1.1.0\n\n- Zweite\n\n## 2.0.0\n\n- Später\n"
+      },
+      {
+        "name": "LICENSE",
+        "inhalt": "Darf jeder.\nAußer Bob.\n"
+      },
+      {
+        "name": "tests/erwartung.yaml",
+        "inhalt": "mappentypen:\n  - vertrag_alt\n  - zahlung\nsichten:\n  - vertraege\nbeispiele: 0\nwortlisten: 1\n"
+      }
+    ],
+    "version": {
+      "bekannt": "1.2.0",
+      "art": "gross",
+      "artGrund": "Mappentyp „Notiz“ nicht mehr dabei",
+      "mindest": "0.239.0",
+      "gruende": [
+        "Feldart Zusammengesetzt (ab 0.239.0)",
+        "Eigene Organisation (Merkmal, Schreibschutz, Anzeige-Bedingung) (ab 0.238.0)",
+        "Archivmodus am Mappentyp (ab 0.237.0)",
+        "„Anzeigen, wenn … zeigt auf die Vorgabe …“ (ab 0.236.0)",
+        "Ist Teil einer anderen Mappe (ab 0.235.0)",
+        "„Beim Auswählen übernehmen“ an Verweisfeldern (ab 0.234.0)",
+        "Feldart Tabelle (ab 0.232.0)",
+        "Feldarten Zeitraum und Prozent, negative Beträge (ab 0.227.0)",
+        "Wortlisten (ab 0.127.0)",
+        "Feldformate und Datumsgrenzen (ab 0.121.0)",
+        "Erkennung an Feldern („Aus Dokument ausfüllen“) (ab 0.113.0)"
+      ],
+      "dmsOptionen": [
+        ">=0.239.0",
+        ">=0.240.0",
+        ">=0.241.0",
+        ">=0.242.0",
+        ">=0.243.0",
+        ">=0.244.0",
+        ">=0.245.0",
+        ">=0.246.0",
+        ">=0.247.0",
+        ">=0.248.0",
+        ">=0.249.0",
+        ">=0.250.0",
+        ">=0.251.0",
+        ">=0.252.0",
+        ">=0.253.0",
+        ">=0.254.0",
+        ">=0.255.0",
+        ">=0.256.0",
+        ">=0.257.0",
+        ">=0.258.0",
+        ">=0.259.0",
+        ">=0.260.0",
+        ">=0.261.0",
+        ">=0.262.0",
+        ">=0.263.0",
+        ">=0.264.0",
+        ">=0.265.0",
+        ">=0.266.0",
+        ">=0.267.0",
+        ">=0.268.0",
+        ">=0.269.0",
+        ">=0.270.0",
+        ">=0.271.0",
+        ">=0.272.0",
+        ">=0.273.0",
+        ">=0.274.0",
+        ">=0.275.0",
+        ">=0.276.0",
+        ">=0.277.0",
+        ">=0.278.0",
+        ">=0.279.0",
+        ">=0.280.0",
+        ">=0.281.0",
+        ">=0.282.0",
+        ">=0.283.0",
+        ">=0.284.0",
+        ">=0.285.0",
+        ">=0.286.0",
+        ">=0.287.0",
+        ">=0.288.0",
+        ">=0.289.0",
+        ">=0.290.0"
+      ]
+    },
+    "felder": {
+      "00000000-0000-4000-8000-000000000010": [
+        "nr",
+        "kennung",
+        "partner",
+        "wer",
+        "ort",
+        "zahlung",
+        "gehoert",
+        "text",
+        "uebernommen",
+        "kuendigung",
+        "kennwort",
+        "betrag",
+        "zeit",
+        "anteil",
+        "teile",
+        "posten",
+        "land"
+      ],
+      "00000000-0000-4000-8000-000000000011": ["datum", "vertrag", "betrag"]
+    },
+    "lizenz": "LicenseRef-Meine-Lizenz"
+  },
+  "sauber: keine Lizenz, Entwurf ohne Änderungstext": {
+    "probleme": [],
+    "fehlend": [],
+    "hinweise": [
+      "Ohne Lizenz lässt sich das Paket in jeder Ablago-Installation installieren, kommt so aber nicht in den offiziellen Katalog – dort gelten nur freie Lizenzen (MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, MPL-2.0, LGPL-3.0-or-later, GPL-3.0-or-later, AGPL-3.0-or-later, CC0-1.0).",
+      "„Vertrag“ → Feld „Text“: Das Feld berechnet ein anderes Paket. Im eigenen Paket kommt es als gewöhnliches Feld mit – ein Paket ohne Code rechnet nichts.",
+      "„Vertrag“ → Feld „Nummer“: Der Nummernkreis gehört nicht zum Paketformat. Das Feld kommt ohne Nummernkreis ins Paket; richte ihn beim Empfänger unter Werkbank → Nummernkreise ein und trage ihn am Feld ein.",
+      "Der Mappentyp „Organisation“ kommt aus dem Paket „Basis“ – wird als Abhängigkeit eingetragen (basis >=1.6.0), nicht kopiert.",
+      "Änderungen an „Organisation“ (Basis) gehören nicht zu deinem Paket – beim Empfänger gilt der Typ, wie das Paket „Basis“ ihn bringt. Brauchst du die Änderungen, lege dafür einen eigenen Typ an.",
+      "„Vertrag“ → Feld „Wer“: Der Auswahlfilter nennt Mappen dieser Installation und kommt nicht ins Paket.",
+      "„Ablageort“ kommt mit dem Paket Basis: Das Paket verweist auf basis:ablageort und trägt Basis ab 1.6.0 als Abhängigkeit ein.",
+      "„Vertrag“ → Feld „Ort“: Der Standardwert zeigt auf eine Mappe dieser Installation und kommt nicht ins Paket.",
+      "„Vertrag“ → Feld „Kündigung“: Eine Anzeige-Bedingung nennt eine Mappe dieser Installation und kommt nicht ins Paket.",
+      "„Vertrag“ → Feld „Posten“: Die Tabelle zeigt eine andere Trefferliste von „Zahlung“ – ins Paket kommt nur die Standard-Trefferliste, die Tabelle zeigt dort deren Spalten.",
+      "„Vertrag“: Nur die Standard-Trefferliste „Standard“ kommt ins Paket; weitere Trefferlisten kennt das Paketformat nicht.",
+      "„Vertrag“: Berechtigungen, Anlegen/Löschen gesperrt gehören nicht zum Paketformat und kommen nicht mit.",
+      "„Vertrag“: Das Stichtag-Feld des Archivmodus kommt nicht mit – im Paket zählt das Anlagedatum.",
+      "Beispiel-Mappen gehen nur aus gewählten eigenen Mappentypen; die übrigen sind weggelassen.",
+      "Beispiel-Mappen: 2 Verweise zeigen auf Mappen, die keine gewählten Beispiele sind, und bleiben leer.",
+      "3 Beispiel-Mappen aus deiner Auswahl kommen ins Paket – nimm nur Mappen mit erfundenen Daten. Dokumente, Notizen und Aufgaben kommen nicht mit.",
+      "Die Wortliste „Firma, Unternehmen“ kommt über das Paket „Basis“ als Abhängigkeit mit, nicht kopiert.",
+      "Die Wortliste „a, b“ gehört zum Paket „fremd“ und kommt nicht ins Paket.",
+      "Eine Gruppe gleichbedeutender Wörter kommen ins Paket – beim Empfänger stehen sie unter Werkbank → Suche bei „aus Paketen“."
+    ],
+    "abhaengigkeiten": {
+      "basis": ">=1.6.0"
+    },
+    "inhalt": {
+      "typen": [
+        {
+          "schluessel": "vertrag_alt",
+          "name": "Vertrag"
+        },
+        {
+          "schluessel": "zahlung",
+          "name": "Zahlung"
+        }
+      ],
+      "sichten": [],
+      "beispiele": 3,
+      "wortlisten": 1
+    },
+    "schluessel": {
+      "00000000-0000-4000-8000-000000000010": "vertrag_alt",
+      "00000000-0000-4000-8000-000000000011": "zahlung"
+    },
+    "dateien": [
+      {
+        "name": "manifest.yaml",
+        "inhalt": "# Erstellt mit „Paket erstellen“ in Ablago. Format: https://github.com/motom001/dms-registry\nschema: 1\nid: familie_vertraege\nname: Verträge der Familie\nversion: 1.2.1\nbeschreibung: Verträge mit Zahlungen und Kündigungsfristen, wie wir sie zu Hause pflegen.\nautor:\n  name: Thomas Beispiel\n  github: motom001\nlizenz: NONE\ndms: \">=0.290.0\"\nabhaengigkeiten:\n  basis: \">=1.6.0\"\ninhalt:\n  mappentypen: inhalt/mappentypen.yaml\n  sichten: inhalt/sichten.yaml\n  beispiele: inhalt/beispiele.yaml\n  wortlisten: inhalt/wortlisten.yaml\n"
+      },
+      {
+        "name": "inhalt/mappentypen.yaml",
+        "inhalt": "- schluessel: vertrag_alt\n  name: Vertrag\n  beschreibung: Ein Vertrag\n  titelVorlage: \"{nr}\"\n  felder:\n    - key: nr\n      label: Nummer\n      typ: text\n      pflicht: true\n      maxLen: 40\n    - key: kennung\n      label: Kennung\n      typ: text\n      erkennung:\n        art: iban\n      standard: fest\n      wiederfinden: false\n    - key: partner\n      label: Partner\n      typ: referenz\n      verweisart: bezug\n      ziel: basis:organisation\n      vorbelegen:\n        - von: name\n          nach: nr\n    - key: wer\n      label: Wer\n      typ: referenz\n      ziel:\n        - dms:benutzer\n        - dms:rolle\n    - key: ort\n      label: Ort\n      typ: referenz\n      ziel: basis:ablageort\n    - key: zahlung\n      label: Zahlung\n      typ: referenz\n      ziel:\n        - zahlung\n        - basis:organisation\n      zielOptional:\n        - fahrzeuge:fahrzeug\n    - key: gehoert\n      label: Gehört zu\n      typ: referenz\n      ziel: zahlung\n      auswahlFilter:\n        - feld: x\n          op: gleich\n          wert: 1\n    - key: text\n      label: Text\n      typ: text\n      format: gross\n    - key: uebernommen\n      label: Übernommen\n      typ: text\n    - key: kuendigung\n      label: Kündigung\n      typ: datum\n      min: \"2020-01-01\"\n      anzeigen:\n        modus: eine\n        bedingungen:\n          - art: verweistyp\n            feld: partner\n            typ: basis:organisation\n          - art: vorgabe\n            feld: partner\n            vorgabe:\n              - basis:stadtwerke\n          - art: feld\n            bedingung:\n              art: feld\n              feld: nr\n              op: gleich\n              wert:\n                art: fest\n                wert: A\n          - art: eigeneOrganisation\n            feld: partner\n      frist:\n        vorlauf: 6\n        einheit: wochen\n        empfaengerFeld: wer\n    - key: kennwort\n      label: Kennwort\n      typ: passwort\n    - key: betrag\n      label: Betrag\n      typ: betrag\n      waehrung: EUR\n      negativ: true\n    - key: zeit\n      label: Zeitraum\n      typ: zeitraum\n    - key: anteil\n      label: Anteil\n      typ: prozent\n      merkmal: x\n    - key: teile\n      label: Teile\n      typ: zusammengesetzt\n    - key: posten\n      label: Posten\n      typ: tabelle\n      quelle:\n        typ: zahlung\n        feld: vertrag\n        neu: ja\n    - key: land\n      label: Land\n      typ: text\n      landFeld: x\n  register:\n    - key: daten\n      name: Daten\n      art: felder\n      felder:\n        - nr\n        - partner\n      abschnitte:\n        - vor: nr\n          titel: Kopf\n          eingeklappt: true\n          anzeigen:\n            modus: alle\n            bedingungen:\n              - art: verweistyp\n                feld: partner\n                typ: basis:organisation\n        - vor: partner\n          beschriftungen:\n            en: Partner\n      ausgeblendet: true\n      volltext: false\n    - key: zahlungen\n      name: Zahlungen\n      art: verknuepfungen\n      quellen:\n        - typ: zahlung\n          feld: vertrag\n        - typ: basis:organisation\n          feld: x\n    - key: verlauf\n      name: Verlauf\n      art: protokoll\n      versionierung: true\n      versionenBehalten: 3\n      zeigt: alles\n    - key: dok\n      name: Dokumente\n      art: dokumente\n  trefferliste:\n    - nr\n    - partner\n  beschriftungen:\n    en:\n      name: Contract\n  ausPost: true\n  erkennbarAn: Vertragsnummer\n  gehoertZu: gehoert\n  inSuche: false\n  archiv:\n    jahre: 10\n- schluessel: zahlung\n  name: Zahlung\n  beschreibung: \"\"\n  felder:\n    - key: datum\n      label: Datum\n      typ: datum\n    - key: vertrag\n      label: Vertrag\n      typ: referenz\n      mehrfach: true\n      ziel: vertrag_alt\n    - key: betrag\n      label: Betrag\n      typ: betrag\n      waehrung: CHF\n  register:\n    - key: daten\n      name: Daten\n      art: felder\n      felder:\n        - datum\n        - vertrag\n        - betrag\n  trefferliste:\n    - datum\n"
+      },
+      {
+        "name": "inhalt/sichten.yaml",
+        "inhalt": "[]\n"
+      },
+      {
+        "name": "inhalt/beispiele.yaml",
+        "inhalt": "- typ: vertrag_alt\n  schluessel: beispiel_1\n  werte:\n    nr: S-1\n    zahlung:\n      beispiel: beispiel_2\n    betrag: 89\n    land: DE\n- typ: zahlung\n  schluessel: beispiel_2\n  werte:\n    datum: \"2026-01-31\"\n    vertrag:\n      - beispiel: beispiel_1\n      - beispiel: beispiel_3\n    betrag:\n      betrag: 5\n      waehrung: EUR\n- typ: vertrag_alt\n  schluessel: beispiel_3\n  werte:\n    nr: S-2\n    gehoert:\n      beispiel: beispiel_2\n    betrag:\n      betrag: \"7\"\n      waehrung: EUR\n"
+      },
+      {
+        "name": "inhalt/wortlisten.yaml",
+        "inhalt": "- woerter:\n    - Auto\n    - PKW\n"
+      },
+      {
+        "name": "README.md",
+        "inhalt": "# Verträge der Familie\n\nVerträge mit Zahlungen und Kündigungsfristen, wie wir sie zu Hause pflegen.\n\n## Inhalt\n\n| Mappentyp | Felder |\n| --- | --- |\n| Vertrag | Nummer, Kennung, Partner, Wer, Ort, Zahlung, Gehört zu, Text, Übernommen, Kündigung, Kennwort, Betrag, Zeitraum, Anteil, Teile, Posten, Land |\n| Zahlung | Datum, Vertrag, Betrag |\n\n**Wortlisten:** eine Gruppe gleichbedeutender Wörter für die Suche\n\n**Beispiele:** 3 Beispiel-Mappen (Vertrag, Zahlung), auf Wunsch bei der Installation.\n\n## Voraussetzungen\n\n- Ablago >=0.290.0\n- Paket `basis` >=1.6.0\n\n## Rechte und Netzwerkzugriff\n\nDieses Paket enthält keinen Code. Es legt nur Mappentypen und Ansichten an.\n\n## Lizenz\n\nKeine Lizenz angegeben – alle Rechte beim Urheber.\n\n## Herkunft\n\nErstellt mit „Paket erstellen“ in Ablago (Werkbank → Pakete) am 2026-11-16 von Thomas Beispiel.\n"
+      },
+      {
+        "name": "CHANGELOG.md",
+        "inhalt": "# Änderungen\n\n## 1.2.1\n\n- Neue Version aus Ablago exportiert.\n\n## 1.2.0\n\n- Aus Ablago exportiert.\n\n## 1.1.0\n\n- Zweite\n"
+      },
+      {
+        "name": "LICENSE",
+        "inhalt": "Copyright (c) 2026 Thomas Beispiel\n\nFür dieses Paket ist keine Lizenz angegeben. Ohne Lizenz bleiben alle Rechte beim Urheber: Empfänger dürfen das Paket nutzen, wie es ihnen erlaubt wurde, es aber nicht ohne Weiteres weitergeben oder verändern.\n"
+      },
+      {
+        "name": "tests/erwartung.yaml",
+        "inhalt": "mappentypen:\n  - vertrag_alt\n  - zahlung\nsichten: []\nbeispiele: 3\nwortlisten: 1\n"
+      }
+    ],
+    "version": {
+      "bekannt": "1.2.0",
+      "art": "gross",
+      "artGrund": "Mappentyp „Notiz“ nicht mehr dabei",
+      "mindest": "0.239.0",
+      "gruende": [
+        "Feldart Zusammengesetzt (ab 0.239.0)",
+        "Eigene Organisation (Merkmal, Schreibschutz, Anzeige-Bedingung) (ab 0.238.0)",
+        "Archivmodus am Mappentyp (ab 0.237.0)",
+        "„Anzeigen, wenn … zeigt auf die Vorgabe …“ (ab 0.236.0)",
+        "Ist Teil einer anderen Mappe (ab 0.235.0)",
+        "„Beim Auswählen übernehmen“ an Verweisfeldern (ab 0.234.0)",
+        "Feldart Tabelle (ab 0.232.0)",
+        "Feldarten Zeitraum und Prozent, negative Beträge (ab 0.227.0)",
+        "Wortlisten (ab 0.127.0)",
+        "Feldformate und Datumsgrenzen (ab 0.121.0)",
+        "Erkennung an Feldern („Aus Dokument ausfüllen“) (ab 0.113.0)"
+      ],
+      "dmsOptionen": [
+        ">=0.239.0",
+        ">=0.240.0",
+        ">=0.241.0",
+        ">=0.242.0",
+        ">=0.243.0",
+        ">=0.244.0",
+        ">=0.245.0",
+        ">=0.246.0",
+        ">=0.247.0",
+        ">=0.248.0",
+        ">=0.249.0",
+        ">=0.250.0",
+        ">=0.251.0",
+        ">=0.252.0",
+        ">=0.253.0",
+        ">=0.254.0",
+        ">=0.255.0",
+        ">=0.256.0",
+        ">=0.257.0",
+        ">=0.258.0",
+        ">=0.259.0",
+        ">=0.260.0",
+        ">=0.261.0",
+        ">=0.262.0",
+        ">=0.263.0",
+        ">=0.264.0",
+        ">=0.265.0",
+        ">=0.266.0",
+        ">=0.267.0",
+        ">=0.268.0",
+        ">=0.269.0",
+        ">=0.270.0",
+        ">=0.271.0",
+        ">=0.272.0",
+        ">=0.273.0",
+        ">=0.274.0",
+        ">=0.275.0",
+        ">=0.276.0",
+        ">=0.277.0",
+        ">=0.278.0",
+        ">=0.279.0",
+        ">=0.280.0",
+        ">=0.281.0",
+        ">=0.282.0",
+        ">=0.283.0",
+        ">=0.284.0",
+        ">=0.285.0",
+        ">=0.286.0",
+        ">=0.287.0",
+        ">=0.288.0",
+        ">=0.289.0",
+        ">=0.290.0"
+      ]
+    },
+    "felder": {
+      "00000000-0000-4000-8000-000000000010": [
+        "nr",
+        "kennung",
+        "partner",
+        "wer",
+        "ort",
+        "zahlung",
+        "gehoert",
+        "text",
+        "uebernommen",
+        "kuendigung",
+        "kennwort",
+        "betrag",
+        "zeit",
+        "anteil",
+        "teile",
+        "posten",
+        "land"
+      ],
+      "00000000-0000-4000-8000-000000000011": ["datum", "vertrag", "betrag"]
+    },
+    "lizenz": "NONE"
+  },
+  "sauber: gleiche Version wie Entwurf": {
+    "probleme": [
+      "Version: 1.2.0 hast du schon erstellt. Damit der Empfänger aktualisieren kann, braucht es eine höhere Version (z. B. 1.3.0)."
+    ],
+    "fehlend": [],
+    "hinweise": [
+      "„Vertrag“ → Feld „Text“: Das Feld berechnet ein anderes Paket. Im eigenen Paket kommt es als gewöhnliches Feld mit – ein Paket ohne Code rechnet nichts.",
+      "„Vertrag“ → Feld „Nummer“: Der Nummernkreis gehört nicht zum Paketformat. Das Feld kommt ohne Nummernkreis ins Paket; richte ihn beim Empfänger unter Werkbank → Nummernkreise ein und trage ihn am Feld ein.",
+      "Der Mappentyp „Organisation“ kommt aus dem Paket „Basis“ – wird als Abhängigkeit eingetragen (basis >=1.6.0), nicht kopiert.",
+      "Änderungen an „Organisation“ (Basis) gehören nicht zu deinem Paket – beim Empfänger gilt der Typ, wie das Paket „Basis“ ihn bringt. Brauchst du die Änderungen, lege dafür einen eigenen Typ an.",
+      "„Vertrag“ → Feld „Wer“: Der Auswahlfilter nennt Mappen dieser Installation und kommt nicht ins Paket.",
+      "„Ablageort“ kommt mit dem Paket Basis: Das Paket verweist auf basis:ablageort und trägt Basis ab 1.6.0 als Abhängigkeit ein.",
+      "„Vertrag“ → Feld „Ort“: Der Standardwert zeigt auf eine Mappe dieser Installation und kommt nicht ins Paket.",
+      "„Vertrag“ → Feld „Kündigung“: Eine Anzeige-Bedingung nennt eine Mappe dieser Installation und kommt nicht ins Paket.",
+      "„Vertrag“ → Feld „Posten“: Die Tabelle zeigt eine andere Trefferliste von „Zahlung“ – ins Paket kommt nur die Standard-Trefferliste, die Tabelle zeigt dort deren Spalten.",
+      "„Vertrag“: Nur die Standard-Trefferliste „Standard“ kommt ins Paket; weitere Trefferlisten kennt das Paketformat nicht.",
+      "„Vertrag“: Berechtigungen, Anlegen/Löschen gesperrt gehören nicht zum Paketformat und kommen nicht mit.",
+      "„Vertrag“: Das Stichtag-Feld des Archivmodus kommt nicht mit – im Paket zählt das Anlagedatum.",
+      "Beispiel-Mappen gehen nur aus gewählten eigenen Mappentypen; die übrigen sind weggelassen.",
+      "Beispiel-Mappen: 2 Verweise zeigen auf Mappen, die keine gewählten Beispiele sind, und bleiben leer.",
+      "3 Beispiel-Mappen aus deiner Auswahl kommen ins Paket – nimm nur Mappen mit erfundenen Daten. Dokumente, Notizen und Aufgaben kommen nicht mit.",
+      "Die Wortliste „Firma, Unternehmen“ kommt über das Paket „Basis“ als Abhängigkeit mit, nicht kopiert.",
+      "Die Wortliste „a, b“ gehört zum Paket „fremd“ und kommt nicht ins Paket.",
+      "Eine Gruppe gleichbedeutender Wörter kommen ins Paket – beim Empfänger stehen sie unter Werkbank → Suche bei „aus Paketen“."
+    ],
+    "abhaengigkeiten": {
+      "basis": ">=1.6.0"
+    },
+    "inhalt": {
+      "typen": [
+        {
+          "schluessel": "vertrag_alt",
+          "name": "Vertrag"
+        },
+        {
+          "schluessel": "zahlung",
+          "name": "Zahlung"
+        }
+      ],
+      "sichten": [],
+      "beispiele": 3,
+      "wortlisten": 1
+    },
+    "schluessel": {
+      "00000000-0000-4000-8000-000000000010": "vertrag_alt",
+      "00000000-0000-4000-8000-000000000011": "zahlung"
+    },
+    "dateien": [],
+    "version": {
+      "bekannt": "1.2.0",
+      "art": "gross",
+      "artGrund": "Mappentyp „Notiz“ nicht mehr dabei",
+      "mindest": "0.239.0",
+      "gruende": [
+        "Feldart Zusammengesetzt (ab 0.239.0)",
+        "Eigene Organisation (Merkmal, Schreibschutz, Anzeige-Bedingung) (ab 0.238.0)",
+        "Archivmodus am Mappentyp (ab 0.237.0)",
+        "„Anzeigen, wenn … zeigt auf die Vorgabe …“ (ab 0.236.0)",
+        "Ist Teil einer anderen Mappe (ab 0.235.0)",
+        "„Beim Auswählen übernehmen“ an Verweisfeldern (ab 0.234.0)",
+        "Feldart Tabelle (ab 0.232.0)",
+        "Feldarten Zeitraum und Prozent, negative Beträge (ab 0.227.0)",
+        "Wortlisten (ab 0.127.0)",
+        "Feldformate und Datumsgrenzen (ab 0.121.0)",
+        "Erkennung an Feldern („Aus Dokument ausfüllen“) (ab 0.113.0)"
+      ],
+      "dmsOptionen": [
+        ">=0.239.0",
+        ">=0.240.0",
+        ">=0.241.0",
+        ">=0.242.0",
+        ">=0.243.0",
+        ">=0.244.0",
+        ">=0.245.0",
+        ">=0.246.0",
+        ">=0.247.0",
+        ">=0.248.0",
+        ">=0.249.0",
+        ">=0.250.0",
+        ">=0.251.0",
+        ">=0.252.0",
+        ">=0.253.0",
+        ">=0.254.0",
+        ">=0.255.0",
+        ">=0.256.0",
+        ">=0.257.0",
+        ">=0.258.0",
+        ">=0.259.0",
+        ">=0.260.0",
+        ">=0.261.0",
+        ">=0.262.0",
+        ">=0.263.0",
+        ">=0.264.0",
+        ">=0.265.0",
+        ">=0.266.0",
+        ">=0.267.0",
+        ">=0.268.0",
+        ">=0.269.0",
+        ">=0.270.0",
+        ">=0.271.0",
+        ">=0.272.0",
+        ">=0.273.0",
+        ">=0.274.0",
+        ">=0.275.0",
+        ">=0.276.0",
+        ">=0.277.0",
+        ">=0.278.0",
+        ">=0.279.0",
+        ">=0.280.0",
+        ">=0.281.0",
+        ">=0.282.0",
+        ">=0.283.0",
+        ">=0.284.0",
+        ">=0.285.0",
+        ">=0.286.0",
+        ">=0.287.0",
+        ">=0.288.0",
+        ">=0.289.0",
+        ">=0.290.0"
+      ]
+    },
+    "felder": {
+      "00000000-0000-4000-8000-000000000010": [
+        "nr",
+        "kennung",
+        "partner",
+        "wer",
+        "ort",
+        "zahlung",
+        "gehoert",
+        "text",
+        "uebernommen",
+        "kuendigung",
+        "kennwort",
+        "betrag",
+        "zeit",
+        "anteil",
+        "teile",
+        "posten",
+        "land"
+      ],
+      "00000000-0000-4000-8000-000000000011": ["datum", "vertrag", "betrag"]
+    },
+    "lizenz": "MIT"
+  },
+  "hochgeladene Version gibt es schon": {
+    "probleme": ["Version: 1.0.0 gibt es schon. Damit der Empfänger aktualisieren kann, braucht es eine höhere Version (z. B. 1.1.0)."],
+    "fehlend": [],
+    "hinweise": [
+      "„Vertrag“ → Feld „Text“: Das Feld berechnet ein anderes Paket. Im eigenen Paket kommt es als gewöhnliches Feld mit – ein Paket ohne Code rechnet nichts.",
+      "„Vertrag“ → Feld „Nummer“: Der Nummernkreis gehört nicht zum Paketformat. Das Feld kommt ohne Nummernkreis ins Paket; richte ihn beim Empfänger unter Werkbank → Nummernkreise ein und trage ihn am Feld ein.",
+      "Der Mappentyp „Organisation“ kommt aus dem Paket „Basis“ – wird als Abhängigkeit eingetragen (basis >=1.6.0), nicht kopiert.",
+      "Änderungen an „Organisation“ (Basis) gehören nicht zu deinem Paket – beim Empfänger gilt der Typ, wie das Paket „Basis“ ihn bringt. Brauchst du die Änderungen, lege dafür einen eigenen Typ an.",
+      "„Vertrag“ → Feld „Wer“: Der Auswahlfilter nennt Mappen dieser Installation und kommt nicht ins Paket.",
+      "„Ablageort“ kommt mit dem Paket Basis: Das Paket verweist auf basis:ablageort und trägt Basis ab 1.6.0 als Abhängigkeit ein.",
+      "„Vertrag“ → Feld „Ort“: Der Standardwert zeigt auf eine Mappe dieser Installation und kommt nicht ins Paket.",
+      "„Vertrag“ → Feld „Kündigung“: Eine Anzeige-Bedingung nennt eine Mappe dieser Installation und kommt nicht ins Paket.",
+      "„Vertrag“ → Feld „Posten“: Die Tabelle zeigt eine andere Trefferliste von „Zahlung“ – ins Paket kommt nur die Standard-Trefferliste, die Tabelle zeigt dort deren Spalten.",
+      "„Vertrag“: Nur die Standard-Trefferliste „Standard“ kommt ins Paket; weitere Trefferlisten kennt das Paketformat nicht.",
+      "„Vertrag“: Berechtigungen, Anlegen/Löschen gesperrt gehören nicht zum Paketformat und kommen nicht mit.",
+      "„Vertrag“: Das Stichtag-Feld des Archivmodus kommt nicht mit – im Paket zählt das Anlagedatum.",
+      "Beispiel-Mappen gehen nur aus gewählten eigenen Mappentypen; die übrigen sind weggelassen.",
+      "Beispiel-Mappen: 2 Verweise zeigen auf Mappen, die keine gewählten Beispiele sind, und bleiben leer.",
+      "3 Beispiel-Mappen aus deiner Auswahl kommen ins Paket – nimm nur Mappen mit erfundenen Daten. Dokumente, Notizen und Aufgaben kommen nicht mit.",
+      "Die Wortliste „Firma, Unternehmen“ kommt über das Paket „Basis“ als Abhängigkeit mit, nicht kopiert.",
+      "Die Wortliste „a, b“ gehört zum Paket „fremd“ und kommt nicht ins Paket.",
+      "Eine Gruppe gleichbedeutender Wörter kommen ins Paket – beim Empfänger stehen sie unter Werkbank → Suche bei „aus Paketen“."
+    ],
+    "abhaengigkeiten": {
+      "basis": ">=1.6.0"
+    },
+    "inhalt": {
+      "typen": [
+        {
+          "schluessel": "vertrag_alt",
+          "name": "Vertrag"
+        },
+        {
+          "schluessel": "zahlung",
+          "name": "Zahlung"
+        }
+      ],
+      "sichten": [],
+      "beispiele": 3,
+      "wortlisten": 1
+    },
+    "schluessel": {
+      "00000000-0000-4000-8000-000000000010": "vertrag_alt",
+      "00000000-0000-4000-8000-000000000011": "zahlung"
+    },
+    "dateien": [],
+    "version": {
+      "bekannt": "1.0.0",
+      "art": "gross",
+      "artGrund": "Mappentyp „Notiz“ nicht mehr dabei",
+      "mindest": "0.239.0",
+      "gruende": [
+        "Feldart Zusammengesetzt (ab 0.239.0)",
+        "Eigene Organisation (Merkmal, Schreibschutz, Anzeige-Bedingung) (ab 0.238.0)",
+        "Archivmodus am Mappentyp (ab 0.237.0)",
+        "„Anzeigen, wenn … zeigt auf die Vorgabe …“ (ab 0.236.0)",
+        "Ist Teil einer anderen Mappe (ab 0.235.0)",
+        "„Beim Auswählen übernehmen“ an Verweisfeldern (ab 0.234.0)",
+        "Feldart Tabelle (ab 0.232.0)",
+        "Feldarten Zeitraum und Prozent, negative Beträge (ab 0.227.0)",
+        "Wortlisten (ab 0.127.0)",
+        "Feldformate und Datumsgrenzen (ab 0.121.0)",
+        "Erkennung an Feldern („Aus Dokument ausfüllen“) (ab 0.113.0)"
+      ],
+      "dmsOptionen": [
+        ">=0.239.0",
+        ">=0.240.0",
+        ">=0.241.0",
+        ">=0.242.0",
+        ">=0.243.0",
+        ">=0.244.0",
+        ">=0.245.0",
+        ">=0.246.0",
+        ">=0.247.0",
+        ">=0.248.0",
+        ">=0.249.0",
+        ">=0.250.0",
+        ">=0.251.0",
+        ">=0.252.0",
+        ">=0.253.0",
+        ">=0.254.0",
+        ">=0.255.0",
+        ">=0.256.0",
+        ">=0.257.0",
+        ">=0.258.0",
+        ">=0.259.0",
+        ">=0.260.0",
+        ">=0.261.0",
+        ">=0.262.0",
+        ">=0.263.0",
+        ">=0.264.0",
+        ">=0.265.0",
+        ">=0.266.0",
+        ">=0.267.0",
+        ">=0.268.0",
+        ">=0.269.0",
+        ">=0.270.0",
+        ">=0.271.0",
+        ">=0.272.0",
+        ">=0.273.0",
+        ">=0.274.0",
+        ">=0.275.0",
+        ">=0.276.0",
+        ">=0.277.0",
+        ">=0.278.0",
+        ">=0.279.0",
+        ">=0.280.0",
+        ">=0.281.0",
+        ">=0.282.0",
+        ">=0.283.0",
+        ">=0.284.0",
+        ">=0.285.0",
+        ">=0.286.0",
+        ">=0.287.0",
+        ">=0.288.0",
+        ">=0.289.0",
+        ">=0.290.0"
+      ]
+    },
+    "felder": {
+      "00000000-0000-4000-8000-000000000010": [
+        "nr",
+        "kennung",
+        "partner",
+        "wer",
+        "ort",
+        "zahlung",
+        "gehoert",
+        "text",
+        "uebernommen",
+        "kuendigung",
+        "kennwort",
+        "betrag",
+        "zeit",
+        "anteil",
+        "teile",
+        "posten",
+        "land"
+      ],
+      "00000000-0000-4000-8000-000000000011": ["datum", "vertrag", "betrag"]
+    },
+    "lizenz": "MIT"
+  },
+  "Typ verweist auf nicht gewählten": {
+    "probleme": ["Es wird auf Mappentypen verwiesen, die nicht gewählt sind: „Vertrag“. Nimm sie mit auf oder entferne den Verweis."],
+    "fehlend": [
+      {
+        "art": "typ",
+        "id": "00000000-0000-4000-8000-000000000010",
+        "name": "Vertrag",
+        "grund": "„Zahlung“ → Feld „Vertrag“",
+        "noetig": true
+      },
+      {
+        "art": "sicht",
+        "id": "00000000-0000-4000-8000-000000000024",
+        "name": "Nicht gewählt",
+        "grund": "Elternansicht von „Unter Fremd“",
+        "noetig": false
+      }
+    ],
+    "hinweise": [
+      "Ansicht „Unter Fremd“ steht unter „Nicht gewählt“, die nicht gewählt ist – im Paket steht sie auf der obersten Ebene.",
+      "Ansicht „Unter Fremd“ zeigt Mappen vom Typ „Vertrag“. „Vertrag“ kommt nicht ins Paket – beim Empfänger muss es „Vertrag“ schon geben, sonst bleibt die Ansicht leer oder wird nicht installiert.",
+      "Beispiel-Mappen gehen nur aus gewählten eigenen Mappentypen; die übrigen sind weggelassen.",
+      "Beispiel-Mappen: 2 Verweise zeigen auf Mappen, die keine gewählten Beispiele sind, und bleiben leer.",
+      "1 Beispiel-Mappen aus deiner Auswahl kommen ins Paket – nimm nur Mappen mit erfundenen Daten. Dokumente, Notizen und Aufgaben kommen nicht mit.",
+      "Die Wortliste „Firma, Unternehmen“ gehört zum Paket „Basis“ und kommt nicht ins Paket.",
+      "Die Wortliste „a, b“ gehört zum Paket „fremd“ und kommt nicht ins Paket.",
+      "Eine Gruppe gleichbedeutender Wörter kommen ins Paket – beim Empfänger stehen sie unter Werkbank → Suche bei „aus Paketen“."
+    ],
+    "abhaengigkeiten": {},
+    "inhalt": {
+      "typen": [
+        {
+          "schluessel": "zahlung",
+          "name": "Zahlung"
+        },
+        {
+          "schluessel": "notiz",
+          "name": "Notiz"
+        }
+      ],
+      "sichten": [
+        {
+          "schluessel": "unter_fremd",
+          "name": "Unter Fremd",
+          "eltern": null
+        }
+      ],
+      "beispiele": 1,
+      "wortlisten": 1
+    },
+    "schluessel": {
+      "00000000-0000-4000-8000-000000000011": "zahlung",
+      "00000000-0000-4000-8000-000000000012": "notiz",
+      "00000000-0000-4000-8000-000000000023": "unter_fremd"
+    },
+    "dateien": [],
+    "version": {
+      "bekannt": null,
+      "art": null,
+      "artGrund": null,
+      "mindest": "0.178.0",
+      "gruende": ["Ansichten mit Mappentypen, die nicht im Paket sind (ab 0.178.0)", "Wortlisten (ab 0.127.0)"],
+      "dmsOptionen": [
+        ">=0.178.0",
+        ">=0.179.0",
+        ">=0.180.0",
+        ">=0.181.0",
+        ">=0.182.0",
+        ">=0.183.0",
+        ">=0.184.0",
+        ">=0.185.0",
+        ">=0.186.0",
+        ">=0.187.0",
+        ">=0.188.0",
+        ">=0.189.0",
+        ">=0.190.0",
+        ">=0.191.0",
+        ">=0.192.0",
+        ">=0.193.0",
+        ">=0.194.0",
+        ">=0.195.0",
+        ">=0.196.0",
+        ">=0.197.0",
+        ">=0.198.0",
+        ">=0.199.0",
+        ">=0.200.0",
+        ">=0.201.0",
+        ">=0.202.0",
+        ">=0.203.0",
+        ">=0.204.0",
+        ">=0.205.0",
+        ">=0.206.0",
+        ">=0.207.0",
+        ">=0.208.0",
+        ">=0.209.0",
+        ">=0.210.0",
+        ">=0.211.0",
+        ">=0.212.0",
+        ">=0.213.0",
+        ">=0.214.0",
+        ">=0.215.0",
+        ">=0.216.0",
+        ">=0.217.0",
+        ">=0.218.0",
+        ">=0.219.0",
+        ">=0.220.0",
+        ">=0.221.0",
+        ">=0.222.0",
+        ">=0.223.0",
+        ">=0.224.0",
+        ">=0.225.0",
+        ">=0.226.0",
+        ">=0.227.0",
+        ">=0.228.0",
+        ">=0.229.0",
+        ">=0.230.0",
+        ">=0.231.0",
+        ">=0.232.0",
+        ">=0.233.0",
+        ">=0.234.0",
+        ">=0.235.0",
+        ">=0.236.0",
+        ">=0.237.0",
+        ">=0.238.0",
+        ">=0.239.0",
+        ">=0.240.0",
+        ">=0.241.0",
+        ">=0.242.0",
+        ">=0.243.0",
+        ">=0.244.0",
+        ">=0.245.0",
+        ">=0.246.0",
+        ">=0.247.0",
+        ">=0.248.0",
+        ">=0.249.0",
+        ">=0.250.0",
+        ">=0.251.0",
+        ">=0.252.0",
+        ">=0.253.0",
+        ">=0.254.0",
+        ">=0.255.0",
+        ">=0.256.0",
+        ">=0.257.0",
+        ">=0.258.0",
+        ">=0.259.0",
+        ">=0.260.0",
+        ">=0.261.0",
+        ">=0.262.0",
+        ">=0.263.0",
+        ">=0.264.0",
+        ">=0.265.0",
+        ">=0.266.0",
+        ">=0.267.0",
+        ">=0.268.0",
+        ">=0.269.0",
+        ">=0.270.0",
+        ">=0.271.0",
+        ">=0.272.0",
+        ">=0.273.0",
+        ">=0.274.0",
+        ">=0.275.0",
+        ">=0.276.0",
+        ">=0.277.0",
+        ">=0.278.0",
+        ">=0.279.0",
+        ">=0.280.0",
+        ">=0.281.0",
+        ">=0.282.0",
+        ">=0.283.0",
+        ">=0.284.0",
+        ">=0.285.0",
+        ">=0.286.0",
+        ">=0.287.0",
+        ">=0.288.0",
+        ">=0.289.0",
+        ">=0.290.0"
+      ]
+    },
+    "felder": {
+      "00000000-0000-4000-8000-000000000011": ["datum", "vertrag", "betrag"],
+      "00000000-0000-4000-8000-000000000012": ["text"]
+    },
+    "lizenz": "MIT"
+  }
+}
