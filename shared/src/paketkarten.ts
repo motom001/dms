@@ -3,7 +3,6 @@
  * damit automatisierung.ts schlank bleibt.
  */
 import { SCHLUESSEL } from './kennungen';
-import type { KontextPaket } from './automatisierung';
 
 /** Eine Dann-Karte aus einem Paket: Name, Hilfe und Felder; ausgeführt als Ereignis `zeitplan.ausgefuehrt`. */
 export interface PaketKarte {
@@ -11,6 +10,19 @@ export interface PaketKarte {
   name: string;
   hilfe?: string;
   felder?: Array<{ schluessel: string; name: string; typ: 'text' | 'zahl' | 'janein' }>;
+}
+
+/**
+ * Ein installiertes Paket für die Karte „Paket nach Zeitplan ausführen“ (#1082): `zeitplan` = abonniert
+ * `zeitplan.ausgefuehrt`; `aufgaben` = Kennungen, die seine mitgelieferten Automatisierungen benutzen.
+ */
+/** karten: eigene Dann-Karten des Pakets (#680, `code.karten`). Bis #1278 (Schritt 5) in automatisierung.ts. */
+export interface KontextPaket {
+  id: string;
+  name: string;
+  zeitplan: boolean;
+  aufgaben: string[];
+  karten?: PaketKarte[];
 }
 
 /** Werte für Felder einer Paket-Karte: Schlüssel wie im Manifest, einfache Werte, Text höchstens 500 Zeichen. */

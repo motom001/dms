@@ -1,5 +1,5 @@
 /** Sichten (#1278 aus sichten.ts): Trefferlisten und Spalten einer Sicht (#75). */
-import { type Mappentyp, trefferlistenVon, istSystemspalte, GEMISCHTE_SPALTEN } from '../model';
+import { type Mappentyp, trefferlistenVon, istSystemspalte, GEMISCHTE_SPALTEN } from '../model/basis';
 import { t } from '../texte';
 
 /* ---------- Trefferlisten einer Sicht (#75) ---------- */

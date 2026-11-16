@@ -9,7 +9,7 @@
  *   nie Code. Keine Mappe: Bedingungen nur auf Merkmale der Ablage, Empfänger nur Personen und Rollen (wie #677).
  * - Modell, Prüfung, Platzhalter und Kurzform; Adresse, Signatur und Bremse im Server (`server/src/automatisierung/aufruf.ts`).
  */
-import type { Lauf } from './automatisierung';
+import type { Lauf, WennAufruf } from './automatisierung-typen';
 import { t } from './texte';
 
 /** Grenzen des Aufrufs von außen, die auch die Oberfläche kennt (Parameter, Länge, Zeitfenster, angenommene je Adresse). Bytes und die übrige Bremse stehen in server/src/grundlagen/grenzen.ts. */
@@ -38,12 +38,6 @@ export const AUFRUF_GEHEIMNIS_PRAEFIX = 'whsec_';
 export const AUFRUF_PFAD = '/api/aufruf/';
 /** Kennung in der Adresse: 32 Byte base64url, also genau 43 Zeichen (nicht ratbar). */
 export const AUFRUF_KENNUNG = /^[A-Za-z0-9_-]{43}$/;
-
-/** Die Wenn-Karte: Namen der Parameter, die ein Aufruf mitbringen darf. */
-export interface WennAufruf {
-  art: 'aufruf';
-  parameter: string[];
-}
 
 export const istAufruf = (w: { art: string }): w is WennAufruf => w.art === 'aufruf';
 

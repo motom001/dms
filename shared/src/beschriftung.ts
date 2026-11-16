@@ -12,33 +12,9 @@
  *   „strom“ mit „Strom“ und „Electricity“ beschriften.
  */
 import { AUSGANGSSPRACHE, EINGEBAUTE_SPRACHEN, sprache } from './sprache';
-import type { Abschnitt, Feld, MappentypDaten, Register, Trefferliste } from './model';
-import type { SichtDaten } from './sichten';
-
-/** Beschriftungen je Sprache: Sprache → Teile. */
-export type Beschriftungen<T> = Partial<Record<string, T>>;
-/** Name eines Registers, einer Trefferliste. */
-export interface NamensTeile {
-  name?: string;
-}
-/** Überschrift eines Abschnitts im Feldregister (#890). */
-export interface AbschnittTeile {
-  titel?: string;
-}
-/** Name und Beschreibung eines Mappentyps bzw. einer Ansicht; beim Mappentyp auch „Woran man ihn erkennt“ (#937). */
-export interface TypTeile {
-  name?: string;
-  beschreibung?: string;
-  erkennbarAn?: string;
-}
-/** Bezeichnung, Hilfetext und Beschriftung der Optionen (fester Wert → Text) eines Felds. */
-export interface FeldTeile {
-  label?: string;
-  hilfe?: string;
-  optionen?: Record<string, string>;
-  /** Tabelle (#1030): Beschriftung von „+ Neu“, z. B. „+ Item“. */
-  neu?: string;
-}
+import type { Abschnitt, Beschriftungen, Feld, MappentypDaten, Register, Trefferliste, TypTeile } from './model/basis';
+/** Die Form der Beschriftungen steht im Fachmodell (#1278, Schritt 5); hier weiter erreichbar. */
+export type { Beschriftungen, NamensTeile, AbschnittTeile, TypTeile, FeldTeile } from './model/basis';
 
 /**
  * Sprachen, in denen sich Beschriftungen pflegen lassen: die in der Werkbank erlaubten (#729, Werkbank → Sprachen).
@@ -94,11 +70,17 @@ export const registerName = (r: Pick<Register, 'name' | 'key' | 'beschriftungen'
 /** Überschrift eines Abschnitts (#890) in einer Sprache; ohne Überschrift leer. */
 export const abschnittTitel = (a: Pick<Abschnitt, 'titel' | 'beschriftungen'>, spr = sprache()) =>
   a.titel ? inSprache(a.titel, a.beschriftungen, 'titel', spr) : '';
+/** Was eine Ansicht (sichten/baum.ts, `SichtDaten`) zu ihren Texten mitbringt. */
+interface SichtTexte {
+  name: string;
+  beschreibung?: string;
+  beschriftungen?: Beschriftungen<TypTeile> | null;
+}
 export const listenName = (l: Pick<Trefferliste, 'name' | 'beschriftungen'>, spr = sprache()) =>
   inSprache(l.name, l.beschriftungen, 'name', spr);
-export const sichtName = (s: Pick<SichtDaten, 'name' | 'beschriftungen'>, spr = sprache()) =>
-  inSprache(s.name, s.beschriftungen, 'name', spr);
-export const sichtBeschreibung = (s: Pick<SichtDaten, 'beschreibung' | 'beschriftungen'>, spr = sprache()) =>
+/** Name einer Ansicht (#1278, Schritt 5: nur die Teile, die es braucht – ohne Bezug auf sichten/, sonst ein Kreis). */
+export const sichtName = (s: SichtTexte, spr = sprache()) => inSprache(s.name, s.beschriftungen, 'name', spr);
+export const sichtBeschreibung = (s: Pick<SichtTexte, 'beschreibung' | 'beschriftungen'>, spr = sprache()) =>
   s.beschreibung ? inSprache(s.beschreibung, s.beschriftungen, 'beschreibung', spr) : '';
 
 /** Beschriftung einer Option (fester Wert) in einer Sprache; ohne Beschriftung der feste Wert selbst. */

@@ -6,28 +6,15 @@
  * Lauf eine Aufgabe der Art „frist“ an – für den Benutzer im gewählten Benutzerfeld, sonst für den
  * Ersteller der Mappe. Ändert sich das Datum oder wird es leer, erledigt sich die Aufgabe selbst.
  */
-import type { Feld, Mappe, Mappentyp } from './model';
+import { VORLAUF_EINHEITEN, type FristEinstellung, type Feld, type Mappe, type Mappentyp, type VorlaufEinheit } from './model/basis';
+/** Die Form der Erinnerung steht im Fachmodell (#1278, Schritt 5); hier weiter erreichbar. */
+export { VORLAUF_EINHEITEN, type VorlaufEinheit } from './model/basis';
 import { einzigesZiel } from './verweisziele';
 import { verschiebe } from './sichten';
 import { t } from './texte';
 
-export const VORLAUF_EINHEITEN = { tage: 'Tage', wochen: 'Wochen', monate: 'Monate' } as const;
-export type VorlaufEinheit = keyof typeof VORLAUF_EINHEITEN;
-
 /** Wiederkehrend (#130): Abstand in Monaten. */
 export const WIEDERHOLUNGEN: Record<number, string> = { 1: 'monatlich', 3: 'vierteljährlich', 6: 'halbjährlich', 12: 'jährlich' };
-
-export interface FristEinstellung {
-  /** Wie lange vor dem Datum die Erinnerung im Eingang erscheint. */
-  vorlauf: number;
-  einheit: VorlaufEinheit;
-  /** Benutzerfeld (Referenz auf Benutzer) für den Empfänger; null = Ersteller der Mappe. */
-  empfaengerFeld: string | null;
-  /** Text der Aufgabe mit Platzhaltern {feld}, {datum}, {titel}. */
-  text: string;
-  /** Wiederkehrend alle n Monate (#130); null = einmalig. */
-  wiederholung: number | null;
-}
 
 export const FRIST_TEXT = '{feld} {datum}';
 export const FRIST_STANDARD: FristEinstellung = {

@@ -9,32 +9,23 @@
  * können nur weiter einschränken – wirksam ist ein Recht an der Untersicht nur, wenn es an der Elternsicht
  * gilt UND die eigenen Regeln es nicht entziehen. Den Standard (✓/✗ je Recht) hat nur die oberste Sicht.
  */
-import type { RegelBedingung, Wer, Wirkung } from './rechte';
-import type { Sicht } from './sichten';
+import type { Wer, Wirkung } from './rechte';
+import {
+  SICHT_RECHTE,
+  type Sicht,
+  type SichtBedingung,
+  type SichtRecht,
+  type SichtRechte,
+  type SichtRegel,
+  type SichtRegelwerk,
+} from './sichten';
 import { t } from './texte';
+/** Die Form der Rechte an einer Sicht steht seit #1278 (Schritt 5) bei der Sicht (sichten/baum.ts); hier weiter erreichbar. */
+export { SICHT_RECHTE, type SichtBedingung, type SichtRecht, type SichtRechte, type SichtRegel, type SichtRegelwerk } from './sichten';
 
-/** Rechte an einer Sicht: sehen, anlegen und E für alles, was Daten hinausgibt (Export, PDF; #153). */
-export const SICHT_RECHTE = { R: 'Sehen', C: 'Anlegen', E: 'Exportieren' } as const;
-export type SichtRecht = keyof typeof SICHT_RECHTE;
 export const SICHT_RECHTE_LISTE = Object.keys(SICHT_RECHTE) as SichtRecht[];
-export type SichtRechte = Record<SichtRecht, boolean>;
 export const SICHT_ALLES = (): SichtRechte => Object.fromEntries(SICHT_RECHTE_LISTE.map((k) => [k, true])) as SichtRechte;
 export const SICHT_NICHTS = (): SichtRechte => Object.fromEntries(SICHT_RECHTE_LISTE.map((k) => [k, false])) as SichtRechte;
-
-/** Bedingungen nur über den Benutzer: hat Rolle, ist Benutzer – jeweils auch verneint. */
-export type SichtBedingung = Extract<RegelBedingung, { art: 'rolle' | 'benutzer' }>;
-
-export interface SichtRegel {
-  id: string;
-  name: string;
-  wenn: SichtBedingung[];
-  dann: Partial<Record<SichtRecht, Wirkung>>;
-  stopp: boolean;
-}
-export interface SichtRegelwerk {
-  grund: SichtRechte;
-  regeln: SichtRegel[];
-}
 
 export const offeneSicht = (): SichtRegelwerk => ({ grund: SICHT_ALLES(), regeln: [] });
 export const sichtRegelwerkVon = (s: { berechtigungen?: SichtRegelwerk | null } | undefined): SichtRegelwerk =>

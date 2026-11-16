@@ -8,13 +8,18 @@ import {
   DYNAMISCH,
   zeitraumWert,
   FRIST_TAGE_MAX,
-  mitFrist,
 } from './bedingungen';
 import { zieleVon, jedeMappe, gleicheZiele, zielErlaubt } from '../verweisziele';
-import { type Feld, SYSTEMSPALTEN, type Mappentyp } from '../model';
+import { type Feld, SYSTEMSPALTEN, type Mappentyp } from '../model/basis';
 import { t } from '../texte';
 import { feldLabel } from '../beschriftung';
 import { istMerkmal } from '../merkmale';
+
+/**
+ * Datumsfelder mit Erinnerung (#129) – gleich wie fristFelder in fristen.ts, hier ohne Kreisimport. Bis #1278 (Schritt 5)
+ * in bedingungen.ts; die nennt den Mappentyp nicht mehr, weil das Feld ihre Bedingungen trägt.
+ */
+export const mitFrist = (t: Pick<Mappentyp, 'felder'>) => t.felder.filter((f) => f.typ === 'datum' && f.frist);
 
 /** Operatoren für ein Feld: „zeigt auf Mappe vom Typ …“ nur bei Verweisen mit mehreren Zieltypen (#1036). */
 export const operatorenFuer = (f: Pick<Bedingungsfeld, 'art' | 'feld'>): Operator[] =>

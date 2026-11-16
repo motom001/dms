@@ -12,16 +12,12 @@
  *
  * Reine Funktionen für Server, Oberfläche und Tests; ohne Laufzeit-Abhängigkeit auf model/ (das diese Datei nutzt).
  */
-import type { Feld } from './model';
+import type { Feld, Vorbelegung } from './model/basis';
+/** Die Form steht im Fachmodell (#1278, Schritt 5); hier weiter erreichbar. */
+export type { Vorbelegung } from './model/basis';
 import { jedeMappe, zieleVon, zielErlaubt } from './verweisziele';
 import { t } from './texte';
 import { SCHLUESSEL } from './kennungen';
-
-/** Ein Paar: `von` ist ein Feld der Mappe, auf die das Verweisfeld zeigt, `nach` ein Feld dieser Mappe. */
-export interface Vorbelegung {
-  von: string;
-  nach: string;
-}
 
 /**
  * Ab dieser Version kennt Ablago `vorbelegen` (#1037) – ältere übergehen die Angabe (das Feld bleibt ein Verweis ohne

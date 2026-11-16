@@ -4,7 +4,7 @@
  */
 import { ROLLEN } from './konto';
 import type { Mappe, Werte } from './mappe';
-import type { Beschriftungen, FeldTeile } from '../beschriftung';
+import type { Beschriftungen, FeldTeile } from './beschriftungen';
 import { registrierteSprachen, textNur } from '../sprache';
 import type { Systemtyp, Mappentyp } from './mappentyp';
 import type { Feld } from './felder';

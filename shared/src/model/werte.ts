@@ -2,8 +2,8 @@
  * Werte als Text (#1278, vorher `shared/src/model.ts`): leere Werte, Titel und Platzhalter, Register, Grenzen für
  * Dateien und Auswahl, Werte formatieren und lesen, freie Schlüssel.
  */
-import { istPasswortWert, type Betrag, type Mappe, type Werte, type Wert } from './mappe';
-import { hatZeitraumform, istZeitraum, zeitraumText, prozentText } from '../feldarten';
+import { istLeer, istPasswortWert, type Betrag, type Mappe, type Werte, type Wert } from './mappe';
+import { istZeitraum, zeitraumText, prozentText } from '../feldarten';
 import { PLATZHALTER_MIT_FILTERN, wendeFilterAn, liesFilter, LEER, ohneLeereTeile, pruefeFilter } from '../titelfilter';
 import { t } from '../texte';
 import { datumsformat, zahlformat } from '../region';
@@ -13,19 +13,6 @@ import type { Feld } from './felder';
 import { optionText } from '../beschriftung';
 import { alsText } from '../markdown';
 import { ibanGruppen } from '../feldformate';
-
-export function istLeer(v: unknown): boolean {
-  if (v == null || v === '') return true;
-  if (Array.isArray(v)) return v.length === 0;
-  if (istPasswortWert(v)) return !!v.entfernen || (!v.gesetzt && !v.neu);
-  if (typeof v === 'object' && 'betrag' in (v as object)) {
-    const b = (v as Betrag).betrag;
-    return b == null || (b as unknown) === '';
-  }
-  // Zeitraum (#1035): ohne Anzahl leer, auch wenn eine Einheit gewählt ist.
-  if (hatZeitraumform(v)) return v.anzahl == null || v.anzahl === '';
-  return false;
-}
 
 /** Platzhalter `{feld}` bzw. `{feld|filter…}` (#170). */
 const PLATZHALTER = PLATZHALTER_MIT_FILTERN;

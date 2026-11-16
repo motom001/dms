@@ -4,6 +4,8 @@ import type { PaketKatalogArt, VERALTETE_EREIGNISSE } from '../ereignisse';
 import type { Hilfeort } from '../hilfe';
 import type { PaketdatenBereich } from '../paketdaten';
 import type { PaketKarte } from '../automatisierung';
+/** Steht seit #1278 (Schritt 5) in kennungen.ts; hier weiter erreichbar. */
+export { ALLE_TYPEN } from '../kennungen';
 
 /* ---------- Pakete mit Code (#338) ---------- */
 
@@ -171,8 +173,6 @@ export interface KiUebersicht {
   /** Nach dem Update einmal: Mappentypen lassen sich jetzt ausschließen (nur, wenn es KI-Pakete gibt). */
   hinweis: boolean;
 }
-/** Alle Mappentypen (außer Benutzer) – für Pakete wie die Texterkennung, die an jedes Dokument müssen. */
-export const ALLE_TYPEN = '*';
 
 /**
  * Arten von Dokumenten für die Archivfassung (#660): je ein Schlüssel einer Ja/Nein-Einstellung des Pakets. `emails`

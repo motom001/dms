@@ -19,35 +19,30 @@
  * Automatisierung nicht (mehr) passt (Mappentyp gelöscht, Feld fehlt …), meldet `automatisierungsProbleme` –
  * sie wird dann rot und angehalten, die Arbeit im DMS blockiert das nie („Bearbeiten geht vor Automatisierung“).
  */
-import { EREIGNISKATALOG, KATALOG_ARTEN, wennFaehig, type BetriebWenn, type KatalogArt } from './ereignisse';
-import {
-  bereinigeBetrieb,
-  betriebKurz,
-  betriebPlatzhalter,
-  betriebProbleme,
-  istBetrieb,
-  type WennBetrieb,
-} from './automatisierung-werkbank';
-import { aufrufKurz, aufrufPlatzhalter, bereinigeAufruf, istAufruf, type WennAufruf } from './automatisierung-aufruf';
-import {
-  aussenKurz,
-  aussenProbleme,
-  bereinigeAussen,
-  istAussenKarte,
-  type AussenZiel,
-  type DannEmail,
-  type DannUrl,
-} from './automatisierung-aussen';
+import { EREIGNISKATALOG, KATALOG_ARTEN, wennFaehig, type BetriebWenn } from './ereignisse';
+import { bereinigeBetrieb, betriebKurz, betriebPlatzhalter, betriebProbleme, istBetrieb } from './automatisierung-werkbank';
+import { aufrufKurz, aufrufPlatzhalter, bereinigeAufruf, istAufruf } from './automatisierung-aufruf';
+import { aussenKurz, aussenProbleme, bereinigeAussen, istAussenKarte } from './automatisierung-aussen';
+import type {
+  AussenZiel,
+  AutomatisierungDaten,
+  DannKarte,
+  Empfaenger,
+  Lauf,
+  UndKarte,
+  WennEreignis,
+  WennKarte,
+} from './automatisierung-typen';
 import { VORLAUF_EINHEITEN, vorlaufText, type VorlaufEinheit } from './fristen';
 // „Datum erreicht“ (#724): seit #671 in fristen.ts (dort passt es hin, und diese Datei bleibt unter 400 Zeilen).
 export { erreichteDaten, vorlaufText } from './fristen';
-import type { Feld, Mappentyp } from './model';
+import type { Feld, Mappentyp } from './model/basis';
 import { einzigesZiel, jedeMappe, zieleVon } from './verweisziele';
-import { bedingungEingabeFehler, bedingungsProblem, bereinigeBedingungen, type Bedingung, type Sicht } from './sichten';
+import { bedingungEingabeFehler, bedingungsProblem, bereinigeBedingungen, type Sicht } from './sichten';
 import { t } from './texte';
 import { PAKET_ID, SCHLUESSEL } from './kennungen';
-import { aufgabeName, kartenWerteRoh, type PaketKarte } from './paketkarten';
-export type { PaketKarte };
+import { aufgabeName, kartenWerteRoh, type KontextPaket, type PaketKarte } from './paketkarten';
+export type { KontextPaket, PaketKarte };
 
 /** Grenzen (Zahl der Automatisierungen, Karten je Bereich, Länge der Texte, Laufzeit, Bremse). */
 export const AUTOMATISIERUNG_GRENZEN = {
@@ -80,6 +75,7 @@ export const DMS_POST = 'dms:post';
  */
 export const DMS_POST_AUTOMATISIERUNG_AB = '0.257.0';
 
+export * from './automatisierung-typen';
 export * from './automatisierung-werkbank';
 export * from './automatisierung-aufruf';
 export * from './automatisierung-aussen';
@@ -93,55 +89,9 @@ export const REIHENFOLGE = { min: 1, max: 99, eigen: 50, dms: 10, paket: 30 } as
  * „Datum erreicht“ (#724).
  */
 export const WENN_EREIGNISSE = KATALOG_ARTEN.filter((a) => wennFaehig(a) && a !== 'frist.erreicht') as Array<WennEreignis | BetriebWenn>;
-export type WennEreignis = Exclude<
-  { [K in KatalogArt]: (typeof EREIGNISKATALOG)[K]['gruppe'] extends 'zaehler' | 'betrieb' | 'auftrag' ? never : K }[KatalogArt],
-  'frist.erreicht'
->;
-
-export type WennKarte =
-  /**
-   * Ein Ereignis des Katalogs; typ = nur Mappen dieses Typs (leer = alle), felder = nur bei Änderung dieser Felder.
-   * `angelegt` (#1001, nur „Mappe gespeichert“): auch beim Anlegen – „neue Post oder ‚An‘ geändert“ ist dann eine Karte.
-   */
-  | { art: WennEreignis; typ?: string | null; felder?: string[]; angelegt?: boolean }
-  /** Werkbank-Karten (#677): Fehler gemeldet, Protokollmeldung, neue Version – ohne Mappe. */
-  | WennBetrieb
-  /** „Aufruf von außen“ (#679): eigene Adresse mit Geheimnis; Parameter mit diesen Namen als Platzhalter – ohne Mappe. */
-  | WennAufruf
-  /**
-   * „Datum erreicht“ (#724): Das Datumsfeld ist in `vorlauf` Tagen/Wochen/Monaten erreicht (0 = am Tag selbst,
-   * negativ = so lange danach) – Monate sind Kalendermonate. Geprüft täglich zur Uhrzeit. `wiederholung`: Termin
-   * kehrt alle n Monate wieder – eine Aufgabe schlägt nach dem Erledigen den Folgetermin vor.
-   */
-  | { art: 'datum'; typ: string; feld: string; vorlauf: number; einheit: VorlaufEinheit; uhrzeit: string; wiederholung?: number | null }
-  /**
-   * „Zeitplan“ (#678): an den Wochentagen `tage` (1 = Mo … 7 = So) um `uhrzeit`, an Feiertagen nur ohne `feiertage`.
-   * `jeBenutzer`: läuft je aktivem Benutzer (nur der Rolle `rolle`) genau einmal je Tag – Kontext ist dann die
-   * Benutzer-Mappe, Platzhalter {benutzer}. `profilzeit`: Uhrzeit, Wochentage und Feiertage aus dem Profil des
-   * Benutzers (wie die Tägliche Zusammenfassung), sonst die Werte der Karte.
-   */
-  | {
-      art: 'zeitplan';
-      uhrzeit: string;
-      tage: number[];
-      feiertage: boolean;
-      jeBenutzer: boolean;
-      rolle?: string | null;
-      profilzeit?: boolean;
-    };
 
 /** Wochentage 1 = Montag … 7 = Sonntag (wie im Profil). */
 export const WOCHENTAGE = [1, 2, 3, 4, 5, 6, 7] as const;
-
-/** Wer gemeint ist: eine Person, alle aktiven Mitglieder einer Rolle, die Person(en) in einem Feld der Mappe oder wer die Mappe angelegt hat (#724). */
-export type Empfaenger =
-  | { art: 'person'; id: string }
-  | { art: 'rolle'; id: string }
-  /** sonst: ist das Feld leer, geht es an den Ersteller der Mappe (#712, wie die Erinnerung am Feld). */
-  | { art: 'feld'; feld: string; sonst?: 'ersteller' }
-  | { art: 'ersteller' }
-  /** Person aus dem Ereignis (#678/#712), z. B. der Vertreter bei „Abwesenheit gesetzt“. */
-  | { art: 'ereignis'; feld: string };
 
 /** Personen, die ein Ereignis mitbringt und die Empfänger sein können (#678/#712). */
 export const PERSONEN_IM_EREIGNIS: Partial<Record<string, string[]>> = {
@@ -157,53 +107,6 @@ export const PERSONEN_IM_EREIGNIS: Partial<Record<string, string[]>> = {
 /** Beschriftung der Personen aus dem Ereignis (Platzhalter und Empfänger). */
 export const EREIGNIS_PERSON: Record<string, string> = { vertreter: 'Vertreter', benutzer: 'Benutzer' };
 
-export type UndKarte =
-  | { art: 'bedingung'; bedingung: Bedingung; nicht?: boolean }
-  | { art: 'ansicht'; sicht: string; nicht?: boolean }
-  | { art: 'favorit'; von: Empfaenger; nicht?: boolean }
-  | { art: 'gruppe'; modus: 'alle' | 'eine'; karten: UndKarte[]; nicht?: boolean };
-
-export interface UndBereich {
-  modus: 'alle' | 'eine';
-  karten: UndKarte[];
-}
-
-/** Dann-Karten; die Liste wächst mit #676 (Feld, Aufgabe) und Stufe 2 (#677, #671). */
-export type DannKarte =
-  /** „Danach keine weiteren Automatisierungen ausführen“ – nur für dieses eine Ereignis. */
-  | { id: string; art: 'stopp' }
-  /** Felder der Mappe setzen: je Feld ein fester Wert oder Text mit Platzhaltern (#676). */
-  | { id: string; art: 'feld'; werte: Record<string, unknown> }
-  /** Aufgabe (mit Fälligkeit in Tagen) oder Benachrichtigung an Personen, Rollen oder ein Feld (#676). */
-  | { id: string; art: 'aufgabe'; empfaenger: Empfaenger[]; text: string; als: 'aufgabe' | 'benachrichtigung'; faellig?: number | null }
-  /** Tägliche Zusammenfassung der offenen Aufgaben an den Benutzer des Laufs senden (#678; Zeitplan „für jeden Benutzer“). */
-  | { id: string; art: 'zusammenfassung' }
-  /**
-   * Favoriten-Änderungen melden: gebündelte Benachrichtigung „Geändert“ an alle, die die Mappe als Favorit haben (#678, #422).
-   * Seit #1001 hier statt in der Werkbank: `rollen` = nur an Mitglieder dieser Rollen (leer = alle); `vorgabe` false =
-   * neue Benutzer haben die Benachrichtigung zunächst aus (im Profil einschaltbar).
-   */
-  | { id: string; art: 'favoriten'; rollen?: string[]; vorgabe?: boolean }
-  /** Anmeldeschutz (#678, #368): `sammel` = Sammelmeldung über die Sperren vor heute, `konto` = sofort melden, dass ein Konto gesperrt ist. */
-  | { id: string; art: 'anmeldeschutz'; was: 'sammel' | 'konto' }
-  /**
-   * „Paket nach Zeitplan ausführen“ (#1082): stellt dem Paket `paket` das Ereignis `zeitplan.ausgefuehrt` zu – nur mit der
-   * Wenn-Karte „Zeitplan“ (nicht „für jeden Benutzer“). `aufgabe`: Kennung, damit ein Paket mehrere Läufe unterscheidet.
-   * Mitgelieferte Automatisierungen rufen nur ihr eigenes Paket, selbst angelegte nur Pakete, die das Ereignis abonnieren.
-   * Die Karte gibt dem Paket keine Rechte – es arbeitet mit seinen eigenen.
-   */
-  | {
-      id: string;
-      art: 'paket';
-      paket: string;
-      aufgabe?: string | null;
-      /** Werte einer Karte aus dem Paket (#680). */ werte?: Record<string, string | number | boolean>;
-    }
-  /** „Sicherung anstoßen“ (#677): eine neue Sicherung – Ergebnis nur „angestoßen“ oder „läuft schon“. */
-  | { id: string; art: 'sicherung' }
-  /** Nach außen (#671): „URL aufrufen“ (freigegebenes Ziel, Inhaltsstufe, signiert) und „E-Mail senden“ – über den Ausgangskorb. */
-  | DannUrl
-  | DannEmail;
 export type DannArt = DannKarte['art'];
 export const DANN_ARTEN: DannArt[] = [
   'feld',
@@ -228,17 +131,6 @@ export interface Angehalten {
   zeit: string;
 }
 
-export interface AutomatisierungDaten {
-  name: string;
-  beschreibung: string;
-  reihenfolge: number;
-  wenn: WennKarte;
-  und: UndBereich;
-  dann: DannKarte[];
-  /** Sonst (#677): laufen, wenn die Und-Bedingungen nicht zutreffen. */
-  sonst: DannKarte[];
-}
-
 export interface Automatisierung extends AutomatisierungDaten {
   id: string;
   /** Von Hand an/aus. */
@@ -252,36 +144,6 @@ export interface Automatisierung extends AutomatisierungDaten {
   erstelltVon: string | null;
   geaendert: string;
   geaendertVon: string | null;
-}
-
-export type LaufZustand = 'laeuft' | 'abgeschlossen' | 'unzutreffend' | 'fehlgeschlagen' | 'uebersprungen' | 'wiederholt';
-export type SchrittZustand = 'offen' | 'laeuft' | 'ok' | 'nein' | 'fehler' | 'uebersprungen';
-export interface Schritt {
-  teil: 'wenn' | 'und' | 'dann' | 'sonst';
-  karte?: string;
-  zustand: SchrittZustand;
-  text?: string;
-}
-
-export interface Lauf {
-  id: string;
-  automatisierungId: string;
-  ereignisId: string;
-  art: string;
-  /** Angaben des Ereignisses (nur Ids, Schlüssel, Datum) – zum Wiederholen. */
-  daten: Record<string, unknown>;
-  mappeId: string | null;
-  zustand: LaufZustand;
-  /** Trockenlauf: zeigt nur, was passieren würde. Testlauf: von Hand mit einer gewählten Mappe. */
-  trocken: boolean;
-  test: boolean;
-  schritte: Schritt[];
-  fehler: string | null;
-  gestartet: string;
-  beendet: string | null;
-  wiederholtVon?: string | null;
-  /** Fehlgeschlagen, aber bewusst nicht wiederholt (#707): wer und wann. Bleibt im Verlauf, zählt nicht mehr im Hinweis. */
-  nichtWiederholt?: { von: string | null; zeit: string } | null;
 }
 
 /** Ein fehlgeschlagener Lauf für den Hinweis über der Liste (#707). */
@@ -321,20 +183,7 @@ export interface AutomatisierungAnsicht extends Automatisierung {
 
 /* ---------- Kontext ---------- */
 
-/**
- * Ein installiertes Paket für die Karte „Paket nach Zeitplan ausführen“ (#1082): `zeitplan` = abonniert
- * `zeitplan.ausgefuehrt`; `aufgaben` = Kennungen, die seine mitgelieferten Automatisierungen benutzen.
- */
-/** karten: eigene Dann-Karten des Pakets (#680, `code.karten`, paketkarten.ts). */
-export interface KontextPaket {
-  id: string;
-  name: string;
-  zeitplan: boolean;
-  aufgaben: string[];
-  karten?: PaketKarte[];
-}
-
-/** Was eine Prüfung über das DMS wissen muss. */
+/** Was eine Prüfung über das DMS wissen muss (Pakete: `KontextPaket` in paketkarten.ts, #1278). */
 export interface Kontextdaten {
   typen: Mappentyp[];
   sichten: Pick<Sicht, 'id' | 'name' | 'typen'>[];

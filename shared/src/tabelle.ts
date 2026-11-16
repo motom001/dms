@@ -14,16 +14,12 @@
  *
  * Eigene Datei ohne Abhängigkeiten zur Laufzeit außer Texten, damit Modell, Server und Oberfläche sie ohne Kreis nutzen.
  */
-import type { Feld, Mappentyp, Quelle, Trefferliste } from './model';
+import type { Feld, Mappentyp, Trefferliste } from './model/basis';
+/** Die Form der Tabellenquelle steht im Fachmodell (#1278, Schritt 5); hier weiter erreichbar. */
+export type { Tabellenquelle } from './model/basis';
 import { AUSGANGSSPRACHE, sprache } from './sprache';
 import { typName } from './beschriftung';
 import { t } from './texte';
-
-/** Quelle einer Tabelle: wie die eines Verknüpfungsregisters, dazu die Beschriftung von „+ Neu“. */
-export interface Tabellenquelle extends Quelle {
-  /** Beschriftung von „+ Neu“, z. B. „+ Position“ (Ausgangssprache); fehlt = „+ <Name des anderen Typs>“. */
-  neu?: string;
-}
 
 /** Zeilen je Abruf; danach „weitere anzeigen“. */
 export const TABELLE_SEITE = 50;

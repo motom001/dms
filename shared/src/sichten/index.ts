@@ -19,4 +19,4 @@ export * from './auswahlfilter';
  * Platzhalter in `typen` (#725): die Ansicht zeigt Mappen aller Mappentypen, auch künftiger – etwa „Favoriten“
  * mit der Bedingung „ist mein Favorit“. Gespeichert, exportiert und in Paketen steht er so, wie er ist.
  */
-export { ALLE_TYPEN } from '../pakete';
+export { ALLE_TYPEN } from '../kennungen';

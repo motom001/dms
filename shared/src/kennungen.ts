@@ -75,3 +75,8 @@ export function kennungAusDateiname(name: string): string {
   const i = name.lastIndexOf('.');
   return i < 0 ? name : `${name.slice(0, i)}:${name.slice(i + 1)}`;
 }
+/**
+ * Alle Mappentypen (außer Benutzer) – für Pakete wie die Texterkennung, die an jedes Dokument müssen. Bis #1278
+ * (Schritt 5) in pakete/schnittstellen.ts; die Ansichten brauchen den Wert auch, ohne die Paketverwaltung einzubinden.
+ */
+export const ALLE_TYPEN = '*';

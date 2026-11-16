@@ -13,7 +13,7 @@
  *   halten das Speichern nie auf.
  */
 import { t } from './texte';
-import type { Feld, Mappentyp } from './model';
+import type { Berechnung, Feld, Mappentyp } from './model/basis';
 import type { InstalliertesPaket } from './pakete';
 
 /** Ab dieser Version kennt Ablago berechnete Felder und `dms:hinweise` (#1034). */
@@ -34,14 +34,6 @@ export interface PaketHinweis {
   text: string;
   /** Zeitpunkt (ISO) des letzten Setzens. */
   gesetzt: string;
-}
-
-/** Wer ein berechnetes Feld schreibt (je Paket-Id am Mappentyp, nur beim Lesen ergänzt). */
-export interface Berechnung {
-  /** Name des Pakets; bei einem entfernten Paket seine Id. */
-  name: string;
-  /** Rechnet das Paket noch? Sonst „nicht mehr berechnet“ – der letzte Wert bleibt. */
-  aktiv: boolean;
 }
 
 /** Das Paket, das dieses Feld berechnet – oder undefined. */

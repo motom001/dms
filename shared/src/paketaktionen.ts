@@ -13,7 +13,7 @@
  *   Links nach außen, Text nur als Text. Der Paketname steht immer im Kopf („Aktion von Verträge“).
  */
 import { SCHLUESSEL } from './kennungen';
-import type { Anzeigeregel } from './model';
+import type { Anzeigeregel } from './model/basis';
 
 /** Ab dieser Version kennt Ablago `mappenaktionen` im Manifest; ältere übergehen den Abschnitt. */
 export const DMS_MAPPENAKTIONEN_AB = '0.245.0';

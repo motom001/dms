@@ -3,13 +3,14 @@
  * Oberfläche zeigt Fehler früh an, der Server lässt nichts Ungültiges in die Datenbank.
  */
 import { SCHLUESSEL, TYP_KENNUNG } from '../kennungen';
-import { type Feld, FELDTYPEN } from './felder';
+import type { Feld } from './felder';
+import { FELDTYPEN } from './feldtypen';
 import { type Mappentyp, type MappentypDaten, REGISTERARTEN, trefferlistenVon } from './mappentyp';
 import { type TeilKontext, teilProbleme } from '../teile';
-import { type Pruefergebnis, type Werte, type Betrag, istPasswortWert } from './mappe';
+import { type Pruefergebnis, type Werte, type Betrag, istPasswortWert, istLeer } from './mappe';
 import { t } from '../texte';
 import { zielErlaubt, zieleVon, jedeMappe, gemeinsameFelder } from '../verweisziele';
-import { vorlageFelder, istIndexplatzhalter, pruefeTitelFilter, INDEXPLATZHALTER, type Indexplatzhalter, istLeer } from './werte';
+import { vorlageFelder, istIndexplatzhalter, pruefeTitelFilter, INDEXPLATZHALTER, type Indexplatzhalter } from './werte';
 import { folgtAusProbleme, folgtAusKreis } from '../folgtaus';
 import { vorbelegenProbleme } from '../vorbelegen';
 import { tabellenProbleme } from '../tabelle';

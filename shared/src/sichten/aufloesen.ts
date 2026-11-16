@@ -7,15 +7,14 @@ import {
   type Einheit,
   type WertAngabe,
   zeitraumWert,
-  mitFrist,
   istZahlvergleich,
 } from './bedingungen';
-import { type Quelle, type Mappentyp, type Mappe, istLeer } from '../model';
+import { type Quelle, type Mappentyp, type Mappe, istLeer } from '../model/basis';
 import { datumsformat } from '../region';
 
 import { leseProzent, istZeitraum, zeitraumTage } from '../feldarten';
 import { type SichtDaten, type Sicht, typenDerSicht, mitNachkommen } from './baum';
-import { bedingungsfelder, bedingungsProblem } from './felder';
+import { bedingungsfelder, bedingungsProblem, mitFrist } from './felder';
 import { istTeiltyp } from '../teile';
 
 /* ---------- Auflösen: dynamische Werte → feste (zum Zeitpunkt der Abfrage) ---------- */

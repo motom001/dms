@@ -12,7 +12,7 @@ import {
 } from './bedingungen';
 import { istMerkmal, merkmalText } from '../merkmale';
 import { t } from '../texte';
-import type { Mappentyp } from '../model';
+import type { Mappentyp } from '../model/basis';
 import { bedingungsfelder } from './felder';
 import { optionText } from '../beschriftung';
 import { leseZeitraum, zeitraumText } from '../feldarten';
