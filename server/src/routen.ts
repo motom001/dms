@@ -16,7 +16,7 @@ import { bereicheDerRoute, heikleHandlung, JEDER, NUR_GESAMT } from './verwaltun
 import { darfBereich, darfVerwalten, hatGesamt } from '../../shared/src/verwaltungsrecht';
 import type { Messung } from './messung';
 import type { Vorschaubilder } from './vorschau';
-import { Paketverwaltung } from './pakete';
+import { Paketverwaltung } from './pakete/verwaltung/index';
 import type { LaeuferSicht } from './laeufer/fern';
 import { Entdecken } from './entdecken';
 import { eigeneVersion, type SystemQuelle } from './system';

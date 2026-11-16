@@ -16,7 +16,7 @@
  * ```
  *
  * Diese Datei liegt im Fachordner pakete/ und kennt den Dienst nicht (lint:abh): Was sie in Ablago anlegt, geht über
- * `VorgabenDienst`, den die Paketverwaltung (pakete.ts) mit dem Dienst erfüllt.
+ * `VorgabenDienst`, den die Paketverwaltung (verwaltung/) mit dem Dienst erfüllt.
  */
 import { createHash, randomUUID } from 'node:crypto';
 import { SCHLUESSEL, TYPVERWEIS } from '../../../shared/src/kennungen';

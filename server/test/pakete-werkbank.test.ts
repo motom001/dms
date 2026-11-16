@@ -7,7 +7,7 @@ import { automatisierungKlartext, kurzanleitungIn, KURZANLEITUNG_SCHRITTE, liesK
 import { speicherDateien } from '../src/dateispeicher';
 import { Dienst } from '../src/dienst';
 import { speicherEinstellungen } from '../src/einstellungen';
-import { Paketverwaltung } from '../src/pakete';
+import { Paketverwaltung } from '../src/pakete/verwaltung/index';
 import type { Repo } from '../src/repo';
 import { speicherRepo } from '../src/repo/speicher';
 import { zipPuffer } from '../src/zip';

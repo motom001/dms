@@ -10,7 +10,7 @@ import type { Einstellungsbeschreibung } from '../../../shared/src/paketeinstell
 import { hatNetz, type PaketCode } from '../../../shared/src/pakete';
 import type { VorgabePlan } from '../../../shared/src/vorgaben';
 
-/** Was aus dem gelesenen Paket gebraucht wird (Paket in pakete.ts). */
+/** Was aus dem gelesenen Paket gebraucht wird (Paket in verwaltung/format.ts). */
 interface PaketAutomatisierung {
   schluessel: string;
   name: string;
@@ -33,7 +33,7 @@ interface PaketTeile {
   sprache?: unknown;
   entdecken?: { rundgaenge?: unknown[]; tipps?: unknown[] };
 }
-/** Was aus der Vorschau gebraucht wird (Vorschau in pakete.ts). */
+/** Was aus der Vorschau gebraucht wird (Vorschau in verwaltung/plan.ts). */
 interface PlanTeile {
   typen: Array<{ schluessel: string; vorhanden: boolean; uebernimmt?: string }>;
   sichten: Array<{ schluessel: string; vorhanden: boolean }>;

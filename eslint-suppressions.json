@@ -412,35 +412,44 @@
       "count": 3
     }
   },
-  "server/src/pakete.ts": {
+  "server/src/pakete/erstellung/baue.ts": {
     "@typescript-eslint/no-unused-vars": {
-      "count": 6
+      "count": 2
     },
     "complexity": {
-      "count": 15
-    },
-    "max-depth": {
       "count": 1
     },
     "max-lines": {
       "count": 1
     },
     "max-lines-per-function": {
-      "count": 7
-    },
-    "max-params": {
       "count": 2
+    }
+  },
+  "server/src/pakete/erstellung/paketerstellung.ts": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 1
+    }
+  },
+  "server/src/pakete/verwaltung/ablauf.ts": {
+    "complexity": {
+      "count": 1
     },
-    "no-control-regex": {
+    "max-lines-per-function": {
       "count": 1
     },
     "no-useless-assignment": {
       "count": 1
     }
   },
-  "server/src/paketerstellung.ts": {
+  "server/src/pakete/verwaltung/abruf.ts": {
+    "max-depth": {
+      "count": 1
+    }
+  },
+  "server/src/pakete/verwaltung/anlegen.ts": {
     "@typescript-eslint/no-unused-vars": {
-      "count": 4
+      "count": 2
     },
     "complexity": {
       "count": 1
@@ -449,7 +458,91 @@
       "count": 1
     },
     "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "server/src/pakete/verwaltung/beispiel-mappen.ts": {
+    "@typescript-eslint/no-unused-vars": {
       "count": 2
+    }
+  },
+  "server/src/pakete/verwaltung/beispiele.ts": {
+    "complexity": {
+      "count": 1
+    },
+    "no-control-regex": {
+      "count": 1
+    }
+  },
+  "server/src/pakete/verwaltung/einstellungen.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "server/src/pakete/verwaltung/entfernen.ts": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 1
+    },
+    "complexity": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "server/src/pakete/verwaltung/ergaenzen.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "server/src/pakete/verwaltung/hochladen.ts": {
+    "complexity": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "server/src/pakete/verwaltung/installieren.ts": {
+    "max-params": {
+      "count": 1
+    }
+  },
+  "server/src/pakete/verwaltung/lesen.ts": {
+    "complexity": {
+      "count": 2
+    },
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "server/src/pakete/verwaltung/paketverwaltung.ts": {
+    "complexity": {
+      "count": 2
+    },
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "server/src/pakete/verwaltung/planen.ts": {
+    "complexity": {
+      "count": 2
+    },
+    "max-lines-per-function": {
+      "count": 1
+    },
+    "max-params": {
+      "count": 1
+    }
+  },
+  "server/src/pakete/verwaltung/sammeldatei.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "server/src/pakete/verwaltung/zip-lesen.ts": {
+    "complexity": {
+      "count": 1
     }
   },
   "server/src/pdf-bearbeiten/pdf-bearbeiten.dienst.ts": {

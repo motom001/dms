@@ -268,7 +268,7 @@ describe('Lasttest (#1254): Pakete, Tabellenfeld, Anmeldeschutz mit vollem Journ
   const z = lt as unknown as Zusatz;
 
   it('das Lasttest-Paket kommt aus dem Skript (ohne Netz) und ist ein gültiges Paket mit Code', async () => {
-    const { liesPaket, liesZip } = await import('../src/pakete');
+    const { liesPaket, liesZip } = await import('../src/pakete/verwaltung/index');
     const p = liesPaket(liesZip(z.lasttestPaket()));
     assert.equal(p.manifest.id, z.ZUSATZ.paket);
     assert.deepEqual(p.code?.info.ereignisse, ['mappe.geaendert']);

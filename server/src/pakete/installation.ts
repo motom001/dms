@@ -1,6 +1,6 @@
 /**
  * Installieren unabhängig von der Reihenfolge (#1122): Anzeige-Bedingungen, optionale Ziele und Quellen von
- * Verknüpfungsregistern. Die Paketverwaltung (pakete.ts) legt neue Typen in zwei Durchgängen an – erst, was schon geht,
+ * Verknüpfungsregistern. Die Paketverwaltung (verwaltung/) legt neue Typen in zwei Durchgängen an – erst, was schon geht,
  * dann den Rest. Hier steht, was dabei auf den zweiten Durchgang warten muss und wie Typverweise in Bedingungen zu Ids
  * werden. Nichts fällt still weg: Was am Ende nicht angelegt ist, nennt `quellenNachtragen` mit Stelle.
  *

@@ -58,7 +58,7 @@ flowchart LR
   end
   server_src -->|1| server_src_anmeldung
   server_src -->|2| server_src_arbeit
-  server_src -->|3| server_src_aufgaben
+  server_src -->|2| server_src_aufgaben
   server_src -->|2| server_src_ausgang
   server_src -->|3| server_src_automatisierung
   server_src -->|1| server_src_berechtigungen
@@ -67,7 +67,7 @@ flowchart LR
   server_src -->|1| server_src_ereignisse
   server_src -->|2| server_src_fassungen
   server_src -->|3| server_src_http
-  server_src -->|10| server_src_kern
+  server_src -->|9| server_src_kern
   server_src -->|1| server_src_konten
   server_src -->|6| server_src_laeufer
   server_src -->|1| server_src_loeschen
@@ -75,13 +75,13 @@ flowchart LR
   server_src -->|4| server_src_mappentypen
   server_src -->|2| server_src_notfallkontakte
   server_src -->|2| server_src_organisation
-  server_src -->|4| server_src_paketaktionen
+  server_src -->|2| server_src_paketaktionen
   server_src -->|1| server_src_paketdaten
-  server_src -->|7| server_src_pakete
+  server_src -->|12| server_src_pakete
   server_src -->|15| server_src_pdf
   server_src -->|1| server_src_pdf_bearbeiten
   server_src -->|2| server_src_post
-  server_src -->|24| server_src_repo
+  server_src -->|23| server_src_repo
   server_src -->|1| server_src_sicherung
   server_src -->|2| server_src_sichten
   server_src -->|2| server_src_suche
@@ -92,7 +92,7 @@ flowchart LR
   server_src -->|1| server_src_wartung
   server_src -->|2| server_src_werkbank
   server_src -->|2| server_src_zugriff
-  server_src -->|315| shared_src
+  server_src -->|263| shared_src
   server_src -->|19| shared_src_sprachen
   server_src_anmeldung -->|7| server_src
   server_src_anmeldung -->|2| server_src_http
@@ -164,8 +164,9 @@ flowchart LR
   server_src_fassungen -->|1| server_src_kern
   server_src_fassungen -->|3| server_src_repo
   server_src_fassungen -->|13| shared_src
-  server_src_http -->|42| server_src
+  server_src_http -->|40| server_src
   server_src_http -->|1| server_src_arbeit
+  server_src_http -->|2| server_src_pakete
   server_src_http -->|18| shared_src
   server_src_kern -->|8| server_src
   server_src_kern -->|2| server_src_repo
@@ -173,8 +174,9 @@ flowchart LR
   server_src_konten -->|3| server_src
   server_src_konten -->|2| server_src_http
   server_src_konten -->|3| shared_src
-  server_src_laeufer -->|16| server_src
+  server_src_laeufer -->|14| server_src
   server_src_laeufer -->|2| server_src_paketaktionen
+  server_src_laeufer -->|2| server_src_pakete
   server_src_laeufer -->|1| server_src_repo
   server_src_laeufer -->|7| shared_src
   server_src_loeschen -->|15| server_src
@@ -220,10 +222,13 @@ flowchart LR
   server_src_paketdaten -->|17| server_src
   server_src_paketdaten -->|2| server_src_http
   server_src_paketdaten -->|14| shared_src
-  server_src_pakete -->|17| server_src
+  server_src_pakete -->|89| server_src
+  server_src_pakete -->|2| server_src_aufgaben
   server_src_pakete -->|2| server_src_http
-  server_src_pakete -->|2| server_src_kern
-  server_src_pakete -->|34| shared_src
+  server_src_pakete -->|3| server_src_kern
+  server_src_pakete -->|2| server_src_paketaktionen
+  server_src_pakete -->|1| server_src_repo
+  server_src_pakete -->|179| shared_src
   server_src_pdf -->|30| server_src
   server_src_pdf -->|1| server_src_arbeit
   server_src_pdf -->|10| shared_src

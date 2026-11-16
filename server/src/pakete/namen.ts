@@ -4,7 +4,7 @@
  * selben Ablauf oder eine Abhängigkeit, die mitinstalliert wird –, bevor etwas angelegt wird. Konflikte des Pakets selbst
  * lassen sich in der Vorschau durch Umbenennen lösen (`namenskonflikte`); solche einer Abhängigkeit nicht.
  *
- * Ein Umbau (#1041), der einen vorhandenen Typ übernimmt, ist kein Konflikt mit diesem Typ (uebernahmePlan in pakete.ts).
+ * Ein Umbau (#1041), der einen vorhandenen Typ übernimmt, ist kein Konflikt mit diesem Typ (uebernahmePlan in verwaltung/hilfen.ts).
  */
 import { neuestePassende, type Benannt, type InstalliertesPaket, type Katalog } from '../../../shared/src/pakete';
 import { t } from '../sprache';

@@ -7,7 +7,7 @@ import { AUSSEN_ANTWORT_MAX } from '../grenzen';
 
 /**
  * Sicherer Abruf für „URL aufrufen“ (#671) – Schutz gegen SSRF. Eigener Baustein, weil der Abruf für Katalog und Pakete
- * (`holeDaten` in pakete.ts) für einen anderen Zweck gebaut ist: nur GET, folgt Weiterleitungen (auf https), liefert den
+ * (`holeDaten` in pakete/verwaltung/abruf.ts) für einen anderen Zweck gebaut ist: nur GET, folgt Weiterleitungen (auf https), liefert den
  * Inhalt und prüft keine Adressen. Hier dagegen:
  *
  * - **Keine Weiterleitungen:** 3xx ist ein Fehler (dauerhaft) – Ablago folgt nie.

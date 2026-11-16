@@ -17,7 +17,7 @@ import { speicherEinstellungen } from '../src/einstellungen';
 import { Fachfehler } from '../src/fehler';
 import { Konten } from '../src/konten';
 import { speicherKontoRepo } from '../src/konto-repo';
-import { liesPaket, liesZip, Paketverwaltung } from '../src/pakete';
+import { liesPaket, liesZip, Paketverwaltung } from '../src/pakete/verwaltung/index';
 import { speicherRepo } from '../src/repo/speicher';
 import { zeitpunktIn } from '../src/zeitplan';
 import { zipPuffer } from '../src/zip';

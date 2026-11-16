@@ -8,7 +8,7 @@
  *   überlagert, und ein zweites Paket überlagert nicht, was ein anderes schon tut.
  * - Was das Paket nicht mehr mitbringt (auch beim Entfernen): weg. Überlagerungen geben die Kern-Vorgabe zurück; eine
  *   Vorlage mit offenen Abläufen bleibt als eigene stehen, damit niemand etwas verliert.
- * - Die Karten hat `pakete.ts` gegen die erlaubte Liste geprüft; hier noch einmal, bevor etwas gespeichert wird.
+ * - Die Karten hat `liesPaket` (pakete/verwaltung/lesen.ts) gegen die erlaubte Liste geprüft; hier noch einmal, bevor etwas gespeichert wird.
  */
 import { protokoll } from '../protokoll';
 import type { Repo } from '../repo';

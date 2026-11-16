@@ -1,5 +1,5 @@
 /**
- * Umbau (#1041) ausführen – in der Transaktion der Paketverwaltung (pakete.ts, legeMitUmbau), nach dem Anlegen bzw.
+ * Umbau (#1041) ausführen – in der Transaktion der Paketverwaltung (verwaltung/installieren.ts, legeMitUmbau), nach dem Anlegen bzw.
  * Ergänzen der Typen und Vorgaben. Je Schritt: beim Zusammenlegen den Zieltyp vorbereiten (eigene Felder, „Übernommen
  * aus“, Rechte-Regeln des alten Typs), Mappen umziehen (Werte, Notiz, Historie, Dokumente), Verweise umleiten, KI-Sperre
  * und „Paket verwehrt“ mitnehmen, den alten Typ abgeben bzw. entfernen.

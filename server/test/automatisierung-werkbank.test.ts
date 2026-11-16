@@ -31,7 +31,7 @@ import { Fachfehler } from '../src/fehler';
 import { Fehlermeldungen, speicherFehlerRepo } from '../src/fehlermeldungen';
 import { Konten } from '../src/konten';
 import { speicherKontoRepo } from '../src/konto-repo';
-import { liesPaket, liesZip } from '../src/pakete';
+import { liesPaket, liesZip } from '../src/pakete/verwaltung/index';
 import { Protokoll, type Eintrag } from '../src/protokoll';
 import { speicherRepo } from '../src/repo/speicher';
 import { neueStabileVersion } from '../src/system';

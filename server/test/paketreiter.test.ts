@@ -13,7 +13,7 @@ import { speicherDateien } from '../src/dateispeicher';
 import { Dienst } from '../src/dienst';
 import { speicherEinstellungen } from '../src/einstellungen';
 import { Fachfehler } from '../src/fehler';
-import { Paketverwaltung, type PaketLaeufer } from '../src/pakete';
+import { Paketverwaltung, type PaketLaeufer } from '../src/pakete/verwaltung/index';
 import { setzePaketSpeicher } from '../src/pakete/index';
 import { speicherRepo } from '../src/repo/speicher';
 import type { Repo } from '../src/repo';

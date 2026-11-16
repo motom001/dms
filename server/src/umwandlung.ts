@@ -36,7 +36,7 @@ import {
 import type { Dienst } from './dienst';
 import type { Zugriff } from './kern';
 import { Fachfehler } from './fehler';
-import type { Handelnder } from './pakete';
+import type { Handelnder } from './pakete/verwaltung/index';
 import { protokoll } from './protokoll';
 import { t } from './sprache';
 import { paketUmwandlungen, setzePaketUmwandlungen } from './pakete/index';

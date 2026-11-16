@@ -24,7 +24,7 @@ import { raeumeHochladenAuf } from '../src/hochladen';
 import { speicherKurzzustand } from '../src/kurzzustand';
 import { bedieneLaeufer, Fernlaeufer } from '../src/laeufer/fern';
 import type { Paketlaeufer } from '../src/laeufer/verwaltung';
-import { Paketverwaltung } from '../src/pakete';
+import { Paketverwaltung } from '../src/pakete/verwaltung/index';
 import { kontext } from '../src/protokoll';
 import { BEENDEN_MS, einzeln, empfohleneProzesse, haldeJeProzess, haldeLeiter, prozesseAus, type Verbund } from '../src/prozesse';
 import { speicherRepo } from '../src/repo/speicher';

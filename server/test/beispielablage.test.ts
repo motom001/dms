@@ -8,7 +8,7 @@ import { speicherDateien } from '../src/dateispeicher';
 import { Dienst } from '../src/dienst';
 import { speicherEinstellungen } from '../src/einstellungen';
 import { Fachfehler } from '../src/fehler';
-import { liesPaket, liesZip, Paketverwaltung } from '../src/pakete';
+import { liesPaket, liesZip, Paketverwaltung } from '../src/pakete/verwaltung/index';
 import { speicherRepo } from '../src/repo/speicher';
 import { zipPuffer } from '../src/zip';
 

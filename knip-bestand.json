@@ -710,33 +710,10 @@
       "wertText"
     ]
   },
-  "server/src/pakete.ts": {
+  "server/src/pakete/erstellung/mindestversion.ts": {
     "exports": [
-      "AKTION_MS",
-      "SAMMEL_PAKETE_MAX",
-      "SAMMEL_VERZEICHNIS",
-      "beispielDokumenteVon",
-      "beispielVerweise",
-      "einzuschalten",
-      "katalogPaketZu",
-      "ordneBeispiele",
-      "paketZeitplaene",
-      "paketZeitplan",
-      "paketZiele",
-      "zipNamen"
-    ],
-    "types": [
-      "AbhaengigkeitPlan",
-      "PaketCodeTeil",
-      "PaketFeld",
-      "PaketRegister",
-      "PaketSicht",
-      "PaketSprache",
-      "PaketTabellenquelle",
-      "SammelEintrag",
-      "SammelPaket",
-      "SichtPlan",
-      "TypPlan"
+      "MINDEST_FUNKTIONEN",
+      "MINDEST_GRUNDLAGE"
     ]
   },
   "server/src/pakete/index.ts": {
@@ -780,6 +757,14 @@
       "FeldPlan"
     ]
   },
+  "server/src/pakete/verwaltung/format.ts": {
+    "exports": [
+      "katalogPaketZu"
+    ],
+    "types": [
+      "PaketTabellenquelle"
+    ]
+  },
   "server/src/pakete/vorgaben.ts": {
     "exports": [
       "bedingungsVorgaben",
@@ -797,15 +782,6 @@
   "server/src/pakete/vorlagen.ts": {
     "types": [
       "VorlagenFehler"
-    ]
-  },
-  "server/src/paketerstellung.ts": {
-    "exports": [
-      "MINDEST_FUNKTIONEN",
-      "MINDEST_GRUNDLAGE",
-      "bekannteVersion",
-      "erkenneArt",
-      "liesEingabe"
     ]
   },
   "server/src/paketpruefung.ts": {
@@ -1680,6 +1656,7 @@
     ],
     "exports": [
       "ARCHIV_ARTEN",
+      "BEISPIEL_ORDNER",
       "DMS_ANTWORTEN_AB",
       "DMS_ARCHIVFASSUNG_AB",
       "DMS_ERGAENZUNG_AB",
@@ -1724,6 +1701,9 @@
     ]
   },
   "shared/src/paketerstellung.ts": {
+    "exports": [
+      "EIGENE_LIZENZ"
+    ],
     "types": [
       "PaketAngaben",
       "PaketAuswahl"

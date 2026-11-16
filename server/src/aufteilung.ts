@@ -14,7 +14,7 @@
  *   Zeitmessung): Jeder Prozess liest alle 2 Sekunden den Haushaltsstand `lesen` (#741); hat er sich geändert, lädt er
  *   sie neu. Das gilt auch für weitere Server an derselben Datenbank.
  * - **Werkbank-Aufträge, hochgeladene Pakete, eigene Änderungen der Zähler**: im Kurzzustand (#744) bzw. auf der Platte,
- *   siehe `auftrag.ts`, `pakete.ts`, `zaehlerspeicher.ts`.
+ *   siehe `auftrag.ts`, `pakete/verwaltung/uploads.ts`, `zaehlerspeicher.ts`.
  */
 import type postgres from 'postgres';
 import type { Betrieb } from './betrieb';

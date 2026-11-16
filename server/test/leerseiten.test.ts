@@ -28,7 +28,7 @@ import { Fachfehler } from '../src/fehler';
 import { Konten } from '../src/konten';
 import { speicherKontoRepo, type KontoRepo } from '../src/konto-repo';
 import { schluesselRecht } from '../src/laeufer/verwaltung';
-import { Paketverwaltung } from '../src/pakete';
+import { Paketverwaltung } from '../src/pakete/verwaltung/index';
 import type { Repo } from '../src/repo';
 import { speicherRepo } from '../src/repo/speicher';
 import { pruefeZugang, routen, type Anfrage, type Route } from '../src/routen';

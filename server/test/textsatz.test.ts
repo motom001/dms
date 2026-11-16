@@ -22,7 +22,7 @@ import { Fachfehler } from '../src/fehler';
 import { TEXTSATZ_SEITEN } from '../src/grenzen';
 import { Konten } from '../src/konten';
 import { speicherKontoRepo, type KontoRepo } from '../src/konto-repo';
-import { Paketverwaltung } from '../src/pakete';
+import { Paketverwaltung } from '../src/pakete/verwaltung/index';
 import { Tresor } from '../src/tresor';
 import type { Repo } from '../src/repo';
 import { speicherRepo } from '../src/repo/speicher';

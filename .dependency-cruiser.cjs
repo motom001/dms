@@ -70,6 +70,17 @@ const SCHICHTEN = [
  * Werkzeug ohne Kern, Mappen und Dokumente bleibt (pdf-lib nur dort, Vorgänge im Arbeiter).
  */
 const TECHNIK = ['http', 'pdf', 'arbeit', 'laeufer', BASIS_ORDNER];
+/**
+ * Teile eines Fachordners über dem Dienst (#1278): Paketverwaltung und Paketerstellung bekommen den ganzen Dienst (nur
+ * als Typ, `ueber-dem-dienst-typ`), der Dienst selbst bindet `pakete/index.ts` ein. Damit kein Kreis über dienst.ts
+ * entsteht, hat jeder dieser Unterordner eine eigene Tür (seine index.ts). Bis Katalogsignatur, Projektschlüssel,
+ * Entdecken und Lizenztexte selbst in Fachordnern liegen, dürfen diese Teile sie direkt einbinden (`dateien`).
+ */
+const UEBER_DEM_DIENST = {
+  ordner: ['pakete/verwaltung', 'pakete/erstellung'],
+  dateien: 'dienst|katalogsignatur|projektschluessel|entdecken|entdecken-werkbank|lizenztexte',
+};
+const UNTERORDNER = UEBER_DEM_DIENST.ordner.join('|');
 
 /**
  * Die Regel `fachordner` (#1072) – einmal beschrieben, für jeden Fachordner. dependency-cruiser kann Schichten nicht
@@ -84,11 +95,12 @@ function fachordner() {
     {
       name,
       severity: 'error',
-      comment: 'Einen Fachordner nur über seine index.ts einbinden (#1072). Ausnahme: Routen (*.routen.ts), die routen.ts sammelt.',
+      comment:
+        'Einen Fachordner nur über seine index.ts einbinden (#1072) – oder einen Teil über dem Dienst über dessen index.ts (UEBER_DEM_DIENST, #1278). Ausnahme: Routen (*.routen.ts), die routen.ts sammelt.',
       // $1: Ordner der importierenden Datei (für Dateien außerhalb von Ordnern ihr Name, für Tests „server“ usw.).
       from: { path: '^(?:server/src/)?([^/]+)' },
       to: {
-        path: `^server/src/(?!(?:${TECHNIK.join('|')})/)[^/]+/(?!index\\.ts$)`,
+        path: `^server/src/(?!(?:${TECHNIK.join('|')})/)(?!(?:${UNTERORDNER})/index\\.ts$)[^/]+/(?!index\\.ts$)`,
         pathNot: ['^server/src/$1/', '\\.routen\\.ts$'],
       },
     },
@@ -114,10 +126,26 @@ function fachordner() {
         i === 0
           ? 'Der Kern ruft keinen Fachbereich auf (#961): nur sich selbst, shared/ und die Basis – nie dienst.ts, Routen oder Fachordner.'
           : `Schicht ${i} ruft nur nach unten (#1072): Fachordner bis Schicht ${i}, Kern, shared/, Basis und Werkzeuge – nie dienst.ts oder Dateien darüber. Routen (*.routen.ts) sind ausgenommen.`,
-      from: { path: hier, pathNot: '\\.routen\\.ts$' },
+      from: { path: hier, pathNot: ['\\.routen\\.ts$', ...(i === SCHICHTEN.length ? [`^server/src/(?:${UNTERORDNER})/`] : [])] },
       to: { path: '^server/src/', pathNot: erlaubt },
     });
+    if (i === SCHICHTEN.length) {
+      regeln.push({
+        name,
+        severity: 'error',
+        comment: `Teile über dem Dienst (UEBER_DEM_DIENST, #1278) rufen wie Schicht ${i} nur nach unten, dazu dienst.ts und die genannten Dateien.`,
+        from: { path: `^server/src/(?:${UNTERORDNER})/` },
+        to: { path: '^server/src/', pathNot: [...erlaubt, `^server/src/(${UEBER_DEM_DIENST.dateien})\\.ts$`] },
+      });
+    }
   }
+  regeln.push({
+    name: 'ueber-dem-dienst-typ',
+    severity: 'error',
+    comment: 'Teile über dem Dienst (#1278) bekommen den Dienst übergeben und binden dienst.ts nur als Typ ein.',
+    from: { path: `^server/src/(?:${UNTERORDNER})/` },
+    to: { path: '^server/src/dienst\\.ts$', dependencyTypesNot: ['type-only'] },
+  });
   return regeln;
 }
 

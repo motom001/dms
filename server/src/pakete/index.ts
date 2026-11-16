@@ -1,6 +1,7 @@
 /**
- * Paket-Einstellungen (#961) – die einzige Tür für die Fachlogik (Routen: pakete.routen.ts). Neben `pakete.ts` heißt
- * der Import `./pakete/index`, sonst fände Node die Datei `pakete.ts`.
+ * Paket-Einstellungen (#961) – die Tür für die Fachlogik (Routen: pakete.routen.ts); der Import heißt `./pakete/index`.
+ * Paketverwaltung und Paketerstellung stehen über dem Dienst und haben eigene Türen: `verwaltung/index.ts`,
+ * `erstellung/index.ts` (#1278).
  */
 export {
   paketArchive,
