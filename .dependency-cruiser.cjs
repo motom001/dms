@@ -321,8 +321,7 @@ module.exports = {
     {
       name: 'start-nur-aus-ablago',
       severity: 'error',
-      comment:
-        'Die Abschnitte des Starts (start/, #1278) ruft nur ablago.ts auf – sie verdrahten alles und gehören zu keinem Fachbereich.',
+      comment: 'Die Abschnitte des Starts (start/, #1278) ruft nur ablago.ts auf – sie verdrahten alles und gehören zu keinem Fachbereich.',
       from: { path: '^(server|shared|web)/', pathNot: ['^server/src/ablago\\.ts$', '^server/src/start/'] },
       to: { path: '^server/src/start/' },
     },
