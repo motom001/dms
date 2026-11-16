@@ -8,7 +8,9 @@
  * bei den übrigen Grafiken (`mmdc -s 2`); das Handbuch lädt kein Mermaid aus dem Netz (#698).
  */
 import { execFileSync } from 'node:child_process';
-import { writeFileSync } from 'node:fs';
+import { mkdtempSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { createRequire } from 'node:module';
 import { cruise } from 'dependency-cruiser';
 
@@ -16,7 +18,7 @@ const ZIEL = 'docs/handbuch/entwickler/docs/grafiken/abhaengigkeiten';
 const require = createRequire(import.meta.url);
 const einstellungen = require('../../.dependency-cruiser.cjs');
 
-/** server/src/pdf/laden.ts → server/src/pdf; server/src/dienst.ts → server/src */
+/** server/src/pdf/laden.ts → server/src/pdf; server/src/ablago.ts → server/src */
 export function ordnerVon(pfad) {
   const m = /^(server\/src|web\/src|shared\/src)\/(?:([^/]+)\/)?/.exec(pfad);
   if (!m) return null;
@@ -60,7 +62,10 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   writeFileSync(`${ZIEL}.mmd`, mermaid(output.modules));
   console.log(`${ZIEL}.mmd geschrieben`);
   try {
-    execFileSync('mmdc', ['-i', `${ZIEL}.mmd`, '-o', `${ZIEL}.png`, '-s', '2', '-b', 'white'], { stdio: 'inherit' });
+    // Mermaid zeichnet sonst höchstens 500 Kanten; seit #1278 (alle Dateien in Ordnern) sind es mehr.
+    const mmdcEinstellung = join(mkdtempSync(join(tmpdir(), 'abhaengigkeitsbild-')), 'mermaid.json');
+    writeFileSync(mmdcEinstellung, JSON.stringify({ maxEdges: 2000 }));
+    execFileSync('mmdc', ['-i', `${ZIEL}.mmd`, '-o', `${ZIEL}.png`, '-s', '2', '-b', 'white', '-c', mmdcEinstellung], { stdio: 'inherit' });
     console.log(`${ZIEL}.png geschrieben`);
   } catch {
     console.log(

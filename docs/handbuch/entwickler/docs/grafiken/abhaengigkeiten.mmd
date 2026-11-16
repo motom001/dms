@@ -7,19 +7,36 @@ flowchart LR
     server_src_aufgaben["server/src/aufgaben"]
     server_src_ausgang["server/src/ausgang"]
     server_src_automatisierung["server/src/automatisierung"]
+    server_src_beispiele["server/src/beispiele"]
     server_src_berechtigungen["server/src/berechtigungen"]
+    server_src_dateien["server/src/dateien"]
+    server_src_datenbank["server/src/datenbank"]
     server_src_datenschutz["server/src/datenschutz"]
+    server_src_demo["server/src/demo"]
+    server_src_dienst["server/src/dienst"]
     server_src_dokumente["server/src/dokumente"]
+    server_src_einrichtung["server/src/einrichtung"]
+    server_src_einstellungen["server/src/einstellungen"]
+    server_src_entdecken["server/src/entdecken"]
     server_src_ereignisse["server/src/ereignisse"]
+    server_src_erkennung["server/src/erkennung"]
+    server_src_export["server/src/export"]
     server_src_fassungen["server/src/fassungen"]
+    server_src_formate["server/src/formate"]
+    server_src_geheimnisse["server/src/geheimnisse"]
+    server_src_grundlagen["server/src/grundlagen"]
     server_src_http["server/src/http"]
     server_src_kern["server/src/kern"]
     server_src_konten["server/src/konten"]
     server_src_laeufer["server/src/laeufer"]
+    server_src_lasttest["server/src/lasttest"]
     server_src_loeschen["server/src/loeschen"]
+    server_src_mail["server/src/mail"]
     server_src_mappen["server/src/mappen"]
     server_src_mappentypen["server/src/mappentypen"]
+    server_src_notfall["server/src/notfall"]
     server_src_notfallkontakte["server/src/notfallkontakte"]
+    server_src_oberflaeche["server/src/oberflaeche"]
     server_src_organisation["server/src/organisation"]
     server_src_paketaktionen["server/src/paketaktionen"]
     server_src_paketdaten["server/src/paketdaten"]
@@ -27,17 +44,23 @@ flowchart LR
     server_src_pdf["server/src/pdf"]
     server_src_pdf_bearbeiten["server/src/pdf-bearbeiten"]
     server_src_post["server/src/post"]
+    server_src_protokoll["server/src/protokoll"]
+    server_src_prozesse["server/src/prozesse"]
     server_src_repo["server/src/repo"]
     server_src_sicherung["server/src/sicherung"]
     server_src_sichten["server/src/sichten"]
+    server_src_sprache["server/src/sprache"]
     server_src_suche["server/src/suche"]
     server_src_system["server/src/system"]
     server_src_systemausstattung["server/src/systemausstattung"]
     server_src_textsatz["server/src/textsatz"]
     server_src_volltext["server/src/volltext"]
     server_src_wartung["server/src/wartung"]
+    server_src_webdav["server/src/webdav"]
     server_src_werkbank["server/src/werkbank"]
+    server_src_zeitplan["server/src/zeitplan"]
     server_src_zugriff["server/src/zugriff"]
+    server_src_zwischenspeicher["server/src/zwischenspeicher"]
   end
   subgraph web
     web_src["web/src (Wurzel)"]
@@ -57,289 +80,722 @@ flowchart LR
     shared_src_model["shared/src/model"]
     shared_src_sprachen["shared/src/sprachen"]
   end
-  server_src -->|1| server_src_anmeldung
-  server_src -->|2| server_src_arbeit
-  server_src -->|2| server_src_aufgaben
-  server_src -->|2| server_src_ausgang
-  server_src -->|7| server_src_automatisierung
-  server_src -->|1| server_src_berechtigungen
-  server_src -->|2| server_src_datenschutz
-  server_src -->|3| server_src_dokumente
-  server_src -->|1| server_src_ereignisse
-  server_src -->|2| server_src_fassungen
-  server_src -->|3| server_src_http
-  server_src -->|8| server_src_kern
-  server_src -->|7| server_src_konten
-  server_src -->|6| server_src_laeufer
-  server_src -->|1| server_src_loeschen
-  server_src -->|2| server_src_mappen
-  server_src -->|3| server_src_mappentypen
-  server_src -->|2| server_src_notfallkontakte
-  server_src -->|2| server_src_organisation
-  server_src -->|2| server_src_paketaktionen
-  server_src -->|1| server_src_paketdaten
-  server_src -->|11| server_src_pakete
-  server_src -->|15| server_src_pdf
-  server_src -->|1| server_src_pdf_bearbeiten
-  server_src -->|2| server_src_post
-  server_src -->|22| server_src_repo
-  server_src -->|1| server_src_sicherung
-  server_src -->|2| server_src_sichten
-  server_src -->|2| server_src_suche
-  server_src -->|1| server_src_system
-  server_src -->|1| server_src_systemausstattung
-  server_src -->|2| server_src_textsatz
-  server_src -->|2| server_src_volltext
+  server_src -->|5| server_src_anmeldung
+  server_src -->|1| server_src_arbeit
+  server_src -->|1| server_src_aufgaben
+  server_src -->|4| server_src_automatisierung
+  server_src -->|8| server_src_dateien
+  server_src -->|7| server_src_datenbank
+  server_src -->|1| server_src_datenschutz
+  server_src -->|1| server_src_dienst
+  server_src -->|4| server_src_einrichtung
+  server_src -->|3| server_src_einstellungen
+  server_src -->|1| server_src_export
+  server_src -->|1| server_src_geheimnisse
+  server_src -->|3| server_src_grundlagen
+  server_src -->|4| server_src_http
+  server_src -->|2| server_src_konten
+  server_src -->|2| server_src_laeufer
+  server_src -->|5| server_src_lasttest
+  server_src -->|1| server_src_mail
+  server_src -->|1| server_src_mappentypen
+  server_src -->|2| server_src_notfall
+  server_src -->|1| server_src_oberflaeche
+  server_src -->|4| server_src_pakete
+  server_src -->|4| server_src_post
+  server_src -->|3| server_src_protokoll
+  server_src -->|5| server_src_prozesse
+  server_src -->|2| server_src_repo
+  server_src -->|3| server_src_sicherung
+  server_src -->|5| server_src_sprache
+  server_src -->|7| server_src_system
+  server_src -->|1| server_src_volltext
   server_src -->|1| server_src_wartung
-  server_src -->|2| server_src_werkbank
-  server_src -->|2| server_src_zugriff
-  server_src -->|202| shared_src
-  server_src -->|41| shared_src_model
-  server_src -->|16| shared_src_sprachen
-  server_src_anmeldung -->|7| server_src
-  server_src_anmeldung -->|2| server_src_http
-  server_src_anmeldung -->|4| shared_src
-  server_src_arbeit -->|9| server_src
+  server_src -->|1| server_src_webdav
+  server_src -->|1| server_src_werkbank
+  server_src -->|1| server_src_zeitplan
+  server_src -->|3| server_src_zwischenspeicher
+  server_src -->|6| shared_src
+  server_src -->|1| shared_src_model
+  server_src_anmeldung -->|5| server_src_einstellungen
+  server_src_anmeldung -->|7| server_src_grundlagen
+  server_src_anmeldung -->|3| server_src_http
+  server_src_anmeldung -->|1| server_src_mail
+  server_src_anmeldung -->|5| server_src_protokoll
+  server_src_anmeldung -->|1| server_src_repo
+  server_src_anmeldung -->|7| server_src_sprache
+  server_src_anmeldung -->|2| server_src_system
+  server_src_anmeldung -->|4| server_src_zwischenspeicher
+  server_src_anmeldung -->|9| shared_src
+  server_src_anmeldung -->|3| shared_src_model
+  server_src_arbeit -->|1| server_src_demo
+  server_src_arbeit -->|1| server_src_formate
+  server_src_arbeit -->|2| server_src_grundlagen
   server_src_arbeit -->|1| server_src_laeufer
   server_src_arbeit -->|14| server_src_pdf
+  server_src_arbeit -->|1| server_src_protokoll
+  server_src_arbeit -->|1| server_src_prozesse
+  server_src_arbeit -->|2| server_src_sprache
+  server_src_arbeit -->|1| server_src_system
   server_src_arbeit -->|2| shared_src
-  server_src_aufgaben -->|28| server_src
+  server_src_aufgaben -->|1| server_src_datenbank
   server_src_aufgaben -->|1| server_src_ereignisse
-  server_src_aufgaben -->|2| server_src_http
+  server_src_aufgaben -->|9| server_src_grundlagen
+  server_src_aufgaben -->|3| server_src_http
   server_src_aufgaben -->|6| server_src_kern
+  server_src_aufgaben -->|1| server_src_mail
   server_src_aufgaben -->|6| server_src_mappen
   server_src_aufgaben -->|1| server_src_post
+  server_src_aufgaben -->|7| server_src_protokoll
   server_src_aufgaben -->|7| server_src_repo
+  server_src_aufgaben -->|9| server_src_sprache
   server_src_aufgaben -->|5| server_src_zugriff
-  server_src_aufgaben -->|14| shared_src
-  server_src_aufgaben -->|7| shared_src_model
-  server_src_ausgang -->|35| server_src
+  server_src_aufgaben -->|3| server_src_zwischenspeicher
+  server_src_aufgaben -->|16| shared_src
+  server_src_aufgaben -->|8| shared_src_model
   server_src_ausgang -->|1| server_src_arbeit
+  server_src_ausgang -->|5| server_src_dateien
   server_src_ausgang -->|3| server_src_dokumente
-  server_src_ausgang -->|2| server_src_http
+  server_src_ausgang -->|1| server_src_entdecken
+  server_src_ausgang -->|5| server_src_export
+  server_src_ausgang -->|4| server_src_formate
+  server_src_ausgang -->|8| server_src_grundlagen
+  server_src_ausgang -->|3| server_src_http
   server_src_ausgang -->|3| server_src_kern
+  server_src_ausgang -->|1| server_src_mail
   server_src_ausgang -->|2| server_src_mappen
   server_src_ausgang -->|1| server_src_mappentypen
+  server_src_ausgang -->|1| server_src_pdf
   server_src_ausgang -->|3| server_src_pdf_bearbeiten
   server_src_ausgang -->|1| server_src_post
+  server_src_ausgang -->|3| server_src_protokoll
   server_src_ausgang -->|3| server_src_repo
   server_src_ausgang -->|2| server_src_sichten
+  server_src_ausgang -->|6| server_src_sprache
+  server_src_ausgang -->|1| server_src_system
   server_src_ausgang -->|3| server_src_zugriff
-  server_src_ausgang -->|12| shared_src
+  server_src_ausgang -->|13| shared_src
   server_src_ausgang -->|3| shared_src_model
-  server_src_automatisierung -->|34| server_src
-  server_src_automatisierung -->|2| server_src_http
+  server_src_automatisierung -->|1| server_src_aufgaben
+  server_src_automatisierung -->|1| server_src_datenschutz
+  server_src_automatisierung -->|3| server_src_dienst
+  server_src_automatisierung -->|2| server_src_einstellungen
+  server_src_automatisierung -->|2| server_src_geheimnisse
+  server_src_automatisierung -->|15| server_src_grundlagen
+  server_src_automatisierung -->|3| server_src_http
   server_src_automatisierung -->|2| server_src_kern
+  server_src_automatisierung -->|2| server_src_mail
   server_src_automatisierung -->|3| server_src_pakete
-  server_src_automatisierung -->|6| server_src_repo
-  server_src_automatisierung -->|43| shared_src
-  server_src_automatisierung -->|3| shared_src_model
-  server_src_automatisierung -->|3| shared_src_sprachen
-  server_src_berechtigungen -->|4| server_src
+  server_src_automatisierung -->|4| server_src_protokoll
+  server_src_automatisierung -->|7| server_src_repo
+  server_src_automatisierung -->|1| server_src_sicherung
+  server_src_automatisierung -->|6| server_src_sprache
+  server_src_automatisierung -->|3| server_src_system
+  server_src_automatisierung -->|2| server_src_zeitplan
+  server_src_automatisierung -->|2| server_src_zwischenspeicher
+  server_src_automatisierung -->|51| shared_src
+  server_src_automatisierung -->|5| shared_src_model
+  server_src_automatisierung -->|5| shared_src_sprachen
+  server_src_beispiele -->|1| server_src_dienst
+  server_src_beispiele -->|2| server_src_grundlagen
+  server_src_beispiele -->|1| server_src_pakete
+  server_src_beispiele -->|1| server_src_protokoll
+  server_src_beispiele -->|1| server_src_sprache
+  server_src_beispiele -->|2| shared_src
+  server_src_beispiele -->|1| shared_src_model
+  server_src_berechtigungen -->|1| server_src_grundlagen
   server_src_berechtigungen -->|1| server_src_kern
+  server_src_berechtigungen -->|2| server_src_protokoll
   server_src_berechtigungen -->|1| server_src_repo
+  server_src_berechtigungen -->|1| server_src_sprache
   server_src_berechtigungen -->|1| server_src_zugriff
   server_src_berechtigungen -->|2| shared_src
   server_src_berechtigungen -->|1| shared_src_model
-  server_src_datenschutz -->|26| server_src
+  server_src_dateien -->|2| server_src_einstellungen
+  server_src_dateien -->|1| server_src_geheimnisse
+  server_src_dateien -->|19| server_src_grundlagen
+  server_src_dateien -->|1| server_src_mail
+  server_src_dateien -->|7| server_src_pdf
+  server_src_dateien -->|9| server_src_protokoll
+  server_src_dateien -->|6| server_src_prozesse
+  server_src_dateien -->|10| server_src_sprache
+  server_src_dateien -->|1| server_src_wartung
+  server_src_dateien -->|3| server_src_zwischenspeicher
+  server_src_dateien -->|10| shared_src
+  server_src_dateien -->|4| shared_src_model
+  server_src_datenbank -->|1| server_src_geheimnisse
+  server_src_datenbank -->|1| server_src_grundlagen
+  server_src_datenbank -->|1| server_src_lasttest
+  server_src_datenbank -->|5| server_src_protokoll
+  server_src_datenbank -->|5| server_src_sprache
+  server_src_datenbank -->|4| shared_src
+  server_src_datenschutz -->|1| server_src_anmeldung
   server_src_datenschutz -->|1| server_src_aufgaben
   server_src_datenschutz -->|1| server_src_ausgang
+  server_src_datenschutz -->|2| server_src_dateien
   server_src_datenschutz -->|1| server_src_dokumente
   server_src_datenschutz -->|1| server_src_ereignisse
-  server_src_datenschutz -->|2| server_src_http
+  server_src_datenschutz -->|4| server_src_export
+  server_src_datenschutz -->|2| server_src_formate
+  server_src_datenschutz -->|2| server_src_geheimnisse
+  server_src_datenschutz -->|7| server_src_grundlagen
+  server_src_datenschutz -->|3| server_src_http
   server_src_datenschutz -->|3| server_src_kern
   server_src_datenschutz -->|1| server_src_loeschen
+  server_src_datenschutz -->|1| server_src_mail
   server_src_datenschutz -->|2| server_src_mappen
   server_src_datenschutz -->|1| server_src_organisation
-  server_src_datenschutz -->|3| server_src_repo
+  server_src_datenschutz -->|1| server_src_pdf
+  server_src_datenschutz -->|3| server_src_protokoll
+  server_src_datenschutz -->|4| server_src_repo
   server_src_datenschutz -->|1| server_src_sichten
+  server_src_datenschutz -->|3| server_src_sprache
+  server_src_datenschutz -->|1| server_src_system
   server_src_datenschutz -->|1| server_src_volltext
   server_src_datenschutz -->|2| server_src_zugriff
-  server_src_datenschutz -->|10| shared_src
-  server_src_datenschutz -->|3| shared_src_model
-  server_src_dokumente -->|32| server_src
-  server_src_dokumente -->|2| server_src_http
+  server_src_datenschutz -->|2| server_src_zwischenspeicher
+  server_src_datenschutz -->|16| shared_src
+  server_src_datenschutz -->|4| shared_src_model
+  server_src_demo -->|1| server_src_dienst
+  server_src_demo -->|4| server_src_grundlagen
+  server_src_demo -->|1| server_src_pdf
+  server_src_demo -->|1| server_src_prozesse
+  server_src_demo -->|1| server_src_repo
+  server_src_demo -->|5| shared_src
+  server_src_demo -->|1| shared_src_model
+  server_src_dienst -->|1| server_src_aufgaben
+  server_src_dienst -->|1| server_src_ausgang
+  server_src_dienst -->|1| server_src_berechtigungen
+  server_src_dienst -->|1| server_src_dateien
+  server_src_dienst -->|1| server_src_datenschutz
+  server_src_dienst -->|1| server_src_dokumente
+  server_src_dienst -->|1| server_src_einstellungen
+  server_src_dienst -->|2| server_src_ereignisse
+  server_src_dienst -->|1| server_src_erkennung
+  server_src_dienst -->|1| server_src_fassungen
+  server_src_dienst -->|1| server_src_geheimnisse
+  server_src_dienst -->|1| server_src_grundlagen
+  server_src_dienst -->|1| server_src_kern
+  server_src_dienst -->|1| server_src_loeschen
+  server_src_dienst -->|1| server_src_mail
+  server_src_dienst -->|3| server_src_mappen
+  server_src_dienst -->|1| server_src_mappentypen
+  server_src_dienst -->|1| server_src_notfallkontakte
+  server_src_dienst -->|1| server_src_organisation
+  server_src_dienst -->|1| server_src_paketaktionen
+  server_src_dienst -->|1| server_src_pakete
+  server_src_dienst -->|1| server_src_pdf_bearbeiten
+  server_src_dienst -->|1| server_src_post
+  server_src_dienst -->|1| server_src_protokoll
+  server_src_dienst -->|1| server_src_prozesse
+  server_src_dienst -->|1| server_src_repo
+  server_src_dienst -->|1| server_src_sichten
+  server_src_dienst -->|2| server_src_sprache
+  server_src_dienst -->|2| server_src_suche
+  server_src_dienst -->|1| server_src_systemausstattung
+  server_src_dienst -->|1| server_src_textsatz
+  server_src_dienst -->|2| server_src_volltext
+  server_src_dienst -->|1| server_src_werkbank
+  server_src_dienst -->|1| server_src_zugriff
+  server_src_dienst -->|2| server_src_zwischenspeicher
+  server_src_dienst -->|3| shared_src
+  server_src_dienst -->|1| shared_src_model
+  server_src_dokumente -->|9| server_src_dateien
+  server_src_dokumente -->|8| server_src_grundlagen
+  server_src_dokumente -->|3| server_src_http
   server_src_dokumente -->|7| server_src_kern
   server_src_dokumente -->|1| server_src_pdf
+  server_src_dokumente -->|6| server_src_protokoll
   server_src_dokumente -->|7| server_src_repo
+  server_src_dokumente -->|7| server_src_sprache
+  server_src_dokumente -->|1| server_src_volltext
   server_src_dokumente -->|14| shared_src
   server_src_dokumente -->|8| shared_src_model
-  server_src_ereignisse -->|2| server_src
+  server_src_einrichtung -->|2| server_src_datenbank
+  server_src_einrichtung -->|2| server_src_einstellungen
+  server_src_einrichtung -->|7| server_src_grundlagen
+  server_src_einrichtung -->|4| server_src_http
+  server_src_einrichtung -->|1| server_src_konten
+  server_src_einrichtung -->|1| server_src_notfall
+  server_src_einrichtung -->|3| server_src_oberflaeche
+  server_src_einrichtung -->|4| server_src_protokoll
+  server_src_einrichtung -->|5| server_src_sprache
+  server_src_einrichtung -->|2| server_src_system
+  server_src_einrichtung -->|1| server_src_zwischenspeicher
+  server_src_einrichtung -->|11| shared_src
+  server_src_einstellungen -->|1| server_src_geheimnisse
+  server_src_einstellungen -->|2| server_src_grundlagen
+  server_src_einstellungen -->|2| server_src_mail
+  server_src_einstellungen -->|1| server_src_post
+  server_src_einstellungen -->|2| server_src_protokoll
+  server_src_einstellungen -->|2| server_src_sprache
+  server_src_einstellungen -->|1| server_src_system
+  server_src_einstellungen -->|1| server_src_zwischenspeicher
+  server_src_einstellungen -->|3| shared_src
+  server_src_einstellungen -->|1| shared_src_model
+  server_src_entdecken -->|2| server_src_grundlagen
+  server_src_entdecken -->|2| server_src_sprache
+  server_src_entdecken -->|7| shared_src
+  server_src_entdecken -->|1| shared_src_model
   server_src_ereignisse -->|2| server_src_kern
   server_src_ereignisse -->|1| server_src_mappentypen
-  server_src_ereignisse -->|2| server_src_repo
+  server_src_ereignisse -->|2| server_src_protokoll
+  server_src_ereignisse -->|3| server_src_repo
+  server_src_ereignisse -->|2| server_src_sprache
   server_src_ereignisse -->|2| server_src_zugriff
-  server_src_ereignisse -->|4| shared_src
+  server_src_ereignisse -->|5| shared_src
   server_src_ereignisse -->|1| shared_src_model
-  server_src_fassungen -->|5| server_src
-  server_src_fassungen -->|2| server_src_http
+  server_src_erkennung -->|2| server_src_dienst
+  server_src_erkennung -->|1| server_src_einstellungen
+  server_src_erkennung -->|1| server_src_formate
+  server_src_erkennung -->|4| server_src_grundlagen
+  server_src_erkennung -->|2| server_src_kern
+  server_src_erkennung -->|1| server_src_pdf
+  server_src_erkennung -->|2| server_src_protokoll
+  server_src_erkennung -->|2| server_src_repo
+  server_src_erkennung -->|2| server_src_sprache
+  server_src_erkennung -->|15| shared_src
+  server_src_erkennung -->|2| shared_src_model
+  server_src_export -->|1| server_src_arbeit
+  server_src_export -->|1| server_src_dateien
+  server_src_export -->|1| server_src_datenschutz
+  server_src_export -->|1| server_src_einstellungen
+  server_src_export -->|2| server_src_formate
+  server_src_export -->|1| server_src_geheimnisse
+  server_src_export -->|2| server_src_grundlagen
+  server_src_export -->|1| server_src_pdf
+  server_src_export -->|1| server_src_repo
+  server_src_export -->|2| server_src_sprache
+  server_src_export -->|16| shared_src
+  server_src_export -->|2| shared_src_model
+  server_src_fassungen -->|1| server_src_grundlagen
+  server_src_fassungen -->|3| server_src_http
   server_src_fassungen -->|1| server_src_kern
+  server_src_fassungen -->|1| server_src_protokoll
   server_src_fassungen -->|3| server_src_repo
+  server_src_fassungen -->|2| server_src_sprache
   server_src_fassungen -->|12| shared_src
   server_src_fassungen -->|1| shared_src_model
-  server_src_http -->|38| server_src
+  server_src_formate -->|1| server_src_grundlagen
+  server_src_formate -->|1| server_src_pdf
+  server_src_formate -->|2| shared_src
+  server_src_geheimnisse -->|1| server_src_grundlagen
+  server_src_geheimnisse -->|1| server_src_protokoll
+  server_src_geheimnisse -->|2| server_src_sprache
+  server_src_grundlagen -->|5| shared_src
+  server_src_grundlagen -->|1| shared_src_model
+  server_src_http -->|7| server_src_anmeldung
   server_src_http -->|1| server_src_arbeit
-  server_src_http -->|2| server_src_konten
-  server_src_http -->|2| server_src_pakete
-  server_src_http -->|16| shared_src
-  server_src_http -->|2| shared_src_model
-  server_src_kern -->|8| server_src
+  server_src_http -->|4| server_src_aufgaben
+  server_src_http -->|1| server_src_ausgang
+  server_src_http -->|3| server_src_automatisierung
+  server_src_http -->|8| server_src_dateien
+  server_src_http -->|12| server_src_datenbank
+  server_src_http -->|3| server_src_datenschutz
+  server_src_http -->|1| server_src_demo
+  server_src_http -->|3| server_src_dienst
+  server_src_http -->|1| server_src_dokumente
+  server_src_http -->|3| server_src_einrichtung
+  server_src_http -->|5| server_src_einstellungen
+  server_src_http -->|3| server_src_entdecken
+  server_src_http -->|4| server_src_export
+  server_src_http -->|1| server_src_fassungen
+  server_src_http -->|2| server_src_geheimnisse
+  server_src_http -->|8| server_src_grundlagen
+  server_src_http -->|8| server_src_konten
+  server_src_http -->|2| server_src_laeufer
+  server_src_http -->|3| server_src_lasttest
+  server_src_http -->|1| server_src_mappen
+  server_src_http -->|1| server_src_mappentypen
+  server_src_http -->|5| server_src_notfall
+  server_src_http -->|1| server_src_notfallkontakte
+  server_src_http -->|3| server_src_oberflaeche
+  server_src_http -->|1| server_src_organisation
+  server_src_http -->|1| server_src_paketaktionen
+  server_src_http -->|1| server_src_paketdaten
+  server_src_http -->|6| server_src_pakete
+  server_src_http -->|9| server_src_post
+  server_src_http -->|4| server_src_protokoll
+  server_src_http -->|4| server_src_prozesse
+  server_src_http -->|5| server_src_sicherung
+  server_src_http -->|1| server_src_sichten
+  server_src_http -->|10| server_src_sprache
+  server_src_http -->|1| server_src_suche
+  server_src_http -->|11| server_src_system
+  server_src_http -->|1| server_src_textsatz
+  server_src_http -->|2| server_src_volltext
+  server_src_http -->|4| server_src_wartung
+  server_src_http -->|2| server_src_webdav
+  server_src_http -->|5| server_src_werkbank
+  server_src_http -->|28| shared_src
+  server_src_http -->|5| shared_src_model
+  server_src_kern -->|1| server_src_dateien
+  server_src_kern -->|1| server_src_datenbank
+  server_src_kern -->|1| server_src_einstellungen
+  server_src_kern -->|3| server_src_protokoll
   server_src_kern -->|2| server_src_repo
+  server_src_kern -->|1| server_src_sprache
+  server_src_kern -->|1| server_src_zwischenspeicher
   server_src_kern -->|9| shared_src
   server_src_kern -->|4| shared_src_model
-  server_src_konten -->|49| server_src
-  server_src_konten -->|2| server_src_http
+  server_src_konten -->|13| server_src_anmeldung
+  server_src_konten -->|10| server_src_grundlagen
+  server_src_konten -->|3| server_src_http
+  server_src_konten -->|4| server_src_mail
   server_src_konten -->|1| server_src_mappentypen
+  server_src_konten -->|2| server_src_protokoll
+  server_src_konten -->|2| server_src_repo
+  server_src_konten -->|10| server_src_sprache
+  server_src_konten -->|4| server_src_zwischenspeicher
   server_src_konten -->|17| shared_src
-  server_src_konten -->|10| shared_src_model
-  server_src_laeufer -->|13| server_src
+  server_src_konten -->|11| shared_src_model
+  server_src_laeufer -->|1| server_src_anmeldung
+  server_src_laeufer -->|2| server_src_dienst
+  server_src_laeufer -->|3| server_src_grundlagen
   server_src_laeufer -->|1| server_src_konten
   server_src_laeufer -->|2| server_src_paketaktionen
   server_src_laeufer -->|2| server_src_pakete
+  server_src_laeufer -->|1| server_src_protokoll
+  server_src_laeufer -->|2| server_src_prozesse
   server_src_laeufer -->|1| server_src_repo
+  server_src_laeufer -->|2| server_src_sprache
+  server_src_laeufer -->|1| server_src_suche
+  server_src_laeufer -->|1| server_src_system
   server_src_laeufer -->|6| shared_src
   server_src_laeufer -->|1| shared_src_model
-  server_src_loeschen -->|15| server_src
+  server_src_lasttest -->|1| server_src_datenbank
+  server_src_lasttest -->|3| server_src_grundlagen
+  server_src_lasttest -->|2| server_src_http
+  server_src_lasttest -->|1| server_src_oberflaeche
+  server_src_lasttest -->|1| server_src_protokoll
+  server_src_lasttest -->|2| server_src_system
+  server_src_lasttest -->|1| shared_src
   server_src_loeschen -->|1| server_src_ausgang
   server_src_loeschen -->|1| server_src_dokumente
+  server_src_loeschen -->|2| server_src_formate
+  server_src_loeschen -->|5| server_src_grundlagen
   server_src_loeschen -->|5| server_src_kern
   server_src_loeschen -->|3| server_src_mappen
   server_src_loeschen -->|1| server_src_mappentypen
   server_src_loeschen -->|1| server_src_post
-  server_src_loeschen -->|5| server_src_repo
+  server_src_loeschen -->|4| server_src_protokoll
+  server_src_loeschen -->|6| server_src_repo
   server_src_loeschen -->|1| server_src_sichten
+  server_src_loeschen -->|5| server_src_sprache
   server_src_loeschen -->|3| server_src_zugriff
-  server_src_loeschen -->|20| shared_src
-  server_src_loeschen -->|5| shared_src_model
-  server_src_mappen -->|32| server_src
-  server_src_mappen -->|2| server_src_http
-  server_src_mappen -->|10| server_src_kern
+  server_src_loeschen -->|23| shared_src
+  server_src_loeschen -->|6| shared_src_model
+  server_src_mail -->|2| server_src_grundlagen
+  server_src_mail -->|1| server_src_protokoll
+  server_src_mail -->|2| server_src_sprache
+  server_src_mail -->|2| shared_src
+  server_src_mappen -->|1| server_src_aufgaben
+  server_src_mappen -->|1| server_src_datenbank
+  server_src_mappen -->|13| server_src_grundlagen
+  server_src_mappen -->|3| server_src_http
+  server_src_mappen -->|11| server_src_kern
   server_src_mappen -->|2| server_src_mappentypen
-  server_src_mappen -->|8| server_src_repo
-  server_src_mappen -->|4| server_src_zugriff
-  server_src_mappen -->|34| shared_src
-  server_src_mappen -->|10| shared_src_model
-  server_src_mappentypen -->|25| server_src
-  server_src_mappentypen -->|2| server_src_http
+  server_src_mappen -->|1| server_src_pdf
+  server_src_mappen -->|6| server_src_protokoll
+  server_src_mappen -->|9| server_src_repo
+  server_src_mappen -->|14| server_src_sprache
+  server_src_mappen -->|5| server_src_zugriff
+  server_src_mappen -->|37| shared_src
+  server_src_mappen -->|11| shared_src_model
+  server_src_mappentypen -->|1| server_src_beispiele
+  server_src_mappentypen -->|1| server_src_demo
+  server_src_mappentypen -->|1| server_src_einstellungen
+  server_src_mappentypen -->|6| server_src_grundlagen
+  server_src_mappentypen -->|3| server_src_http
   server_src_mappentypen -->|6| server_src_kern
+  server_src_mappentypen -->|6| server_src_protokoll
   server_src_mappentypen -->|7| server_src_repo
+  server_src_mappentypen -->|8| server_src_sprache
   server_src_mappentypen -->|3| server_src_zugriff
+  server_src_mappentypen -->|1| server_src_zwischenspeicher
   server_src_mappentypen -->|34| shared_src
   server_src_mappentypen -->|7| shared_src_model
-  server_src_notfallkontakte -->|8| server_src
-  server_src_notfallkontakte -->|2| server_src_http
+  server_src_notfall -->|1| server_src_datenschutz
+  server_src_notfall -->|2| server_src_einstellungen
+  server_src_notfall -->|1| server_src_grundlagen
+  server_src_notfall -->|1| server_src_http
+  server_src_notfall -->|1| server_src_konten
+  server_src_notfall -->|3| server_src_mail
+  server_src_notfall -->|1| server_src_pdf
+  server_src_notfall -->|2| server_src_protokoll
+  server_src_notfall -->|1| server_src_sicherung
+  server_src_notfall -->|3| server_src_sprache
+  server_src_notfall -->|1| server_src_zwischenspeicher
+  server_src_notfall -->|9| shared_src
+  server_src_notfall -->|2| shared_src_model
+  server_src_notfallkontakte -->|2| server_src_grundlagen
+  server_src_notfallkontakte -->|3| server_src_http
   server_src_notfallkontakte -->|1| server_src_kern
+  server_src_notfallkontakte -->|1| server_src_mail
+  server_src_notfallkontakte -->|1| server_src_protokoll
+  server_src_notfallkontakte -->|2| server_src_sprache
+  server_src_notfallkontakte -->|1| server_src_zwischenspeicher
   server_src_notfallkontakte -->|2| shared_src
   server_src_notfallkontakte -->|1| shared_src_model
-  server_src_organisation -->|5| server_src
-  server_src_organisation -->|2| server_src_http
+  server_src_oberflaeche -->|1| server_src_dateien
+  server_src_oberflaeche -->|2| server_src_grundlagen
+  server_src_oberflaeche -->|3| server_src_sprache
+  server_src_oberflaeche -->|1| shared_src
+  server_src_organisation -->|1| server_src_grundlagen
+  server_src_organisation -->|3| server_src_http
   server_src_organisation -->|1| server_src_kern
+  server_src_organisation -->|1| server_src_mail
   server_src_organisation -->|1| server_src_mappen
+  server_src_organisation -->|1| server_src_protokoll
+  server_src_organisation -->|1| server_src_sprache
   server_src_organisation -->|4| shared_src
   server_src_organisation -->|1| shared_src_model
-  server_src_paketaktionen -->|9| server_src
-  server_src_paketaktionen -->|2| server_src_http
+  server_src_paketaktionen -->|4| server_src_grundlagen
+  server_src_paketaktionen -->|3| server_src_http
   server_src_paketaktionen -->|1| server_src_kern
   server_src_paketaktionen -->|1| server_src_pdf
+  server_src_paketaktionen -->|1| server_src_protokoll
   server_src_paketaktionen -->|1| server_src_repo
+  server_src_paketaktionen -->|2| server_src_sprache
   server_src_paketaktionen -->|1| server_src_zugriff
+  server_src_paketaktionen -->|1| server_src_zwischenspeicher
   server_src_paketaktionen -->|10| shared_src
   server_src_paketaktionen -->|1| shared_src_model
-  server_src_paketdaten -->|17| server_src
-  server_src_paketdaten -->|2| server_src_http
+  server_src_paketdaten -->|1| server_src_einstellungen
+  server_src_paketdaten -->|3| server_src_geheimnisse
+  server_src_paketdaten -->|2| server_src_grundlagen
+  server_src_paketdaten -->|3| server_src_http
+  server_src_paketdaten -->|5| server_src_protokoll
+  server_src_paketdaten -->|4| server_src_sprache
+  server_src_paketdaten -->|1| server_src_system
   server_src_paketdaten -->|11| shared_src
   server_src_paketdaten -->|3| shared_src_model
-  server_src_pakete -->|89| server_src
   server_src_pakete -->|2| server_src_aufgaben
-  server_src_pakete -->|2| server_src_http
-  server_src_pakete -->|3| server_src_kern
+  server_src_pakete -->|1| server_src_dateien
+  server_src_pakete -->|4| server_src_dienst
+  server_src_pakete -->|1| server_src_einstellungen
+  server_src_pakete -->|3| server_src_entdecken
+  server_src_pakete -->|3| server_src_formate
+  server_src_pakete -->|1| server_src_geheimnisse
+  server_src_pakete -->|38| server_src_grundlagen
+  server_src_pakete -->|3| server_src_http
+  server_src_pakete -->|4| server_src_kern
   server_src_pakete -->|2| server_src_paketaktionen
-  server_src_pakete -->|1| server_src_repo
-  server_src_pakete -->|160| shared_src
-  server_src_pakete -->|19| shared_src_model
-  server_src_pdf -->|30| server_src
+  server_src_pakete -->|7| server_src_protokoll
+  server_src_pakete -->|3| server_src_repo
+  server_src_pakete -->|35| server_src_sprache
+  server_src_pakete -->|2| server_src_system
+  server_src_pakete -->|163| shared_src
+  server_src_pakete -->|20| shared_src_model
   server_src_pdf -->|1| server_src_arbeit
+  server_src_pdf -->|3| server_src_demo
+  server_src_pdf -->|13| server_src_grundlagen
+  server_src_pdf -->|1| server_src_notfall
+  server_src_pdf -->|4| server_src_prozesse
+  server_src_pdf -->|9| server_src_sprache
   server_src_pdf -->|10| shared_src
-  server_src_pdf_bearbeiten -->|18| server_src
+  server_src_pdf_bearbeiten -->|5| server_src_dateien
   server_src_pdf_bearbeiten -->|3| server_src_dokumente
+  server_src_pdf_bearbeiten -->|5| server_src_grundlagen
   server_src_pdf_bearbeiten -->|4| server_src_kern
   server_src_pdf_bearbeiten -->|3| server_src_mappen
   server_src_pdf_bearbeiten -->|1| server_src_pdf
+  server_src_pdf_bearbeiten -->|4| server_src_protokoll
   server_src_pdf_bearbeiten -->|4| server_src_repo
+  server_src_pdf_bearbeiten -->|4| server_src_sprache
   server_src_pdf_bearbeiten -->|1| server_src_volltext
   server_src_pdf_bearbeiten -->|1| server_src_zugriff
   server_src_pdf_bearbeiten -->|6| shared_src
   server_src_pdf_bearbeiten -->|3| shared_src_model
-  server_src_post -->|21| server_src
+  server_src_post -->|1| server_src_anmeldung
+  server_src_post -->|3| server_src_dateien
+  server_src_post -->|3| server_src_dienst
   server_src_post -->|5| server_src_dokumente
-  server_src_post -->|2| server_src_http
+  server_src_post -->|3| server_src_einstellungen
+  server_src_post -->|12| server_src_grundlagen
+  server_src_post -->|3| server_src_http
   server_src_post -->|6| server_src_kern
+  server_src_post -->|2| server_src_mail
   server_src_post -->|6| server_src_mappen
   server_src_post -->|2| server_src_mappentypen
   server_src_post -->|1| server_src_pdf_bearbeiten
+  server_src_post -->|8| server_src_protokoll
   server_src_post -->|6| server_src_repo
+  server_src_post -->|12| server_src_sprache
+  server_src_post -->|1| server_src_system
   server_src_post -->|2| server_src_volltext
   server_src_post -->|6| server_src_zugriff
-  server_src_post -->|12| shared_src
-  server_src_post -->|5| shared_src_model
-  server_src_repo -->|11| server_src
+  server_src_post -->|1| server_src_zwischenspeicher
+  server_src_post -->|14| shared_src
+  server_src_post -->|9| shared_src_model
+  server_src_protokoll -->|1| server_src_datenschutz
+  server_src_protokoll -->|1| server_src_einstellungen
+  server_src_protokoll -->|2| server_src_geheimnisse
+  server_src_protokoll -->|1| server_src_sprache
+  server_src_protokoll -->|3| shared_src
+  server_src_prozesse -->|1| server_src_anmeldung
+  server_src_prozesse -->|1| server_src_dateien
+  server_src_prozesse -->|3| server_src_datenbank
+  server_src_prozesse -->|1| server_src_dienst
+  server_src_prozesse -->|1| server_src_einstellungen
+  server_src_prozesse -->|1| server_src_geheimnisse
+  server_src_prozesse -->|4| server_src_grundlagen
+  server_src_prozesse -->|1| server_src_http
+  server_src_prozesse -->|2| server_src_laeufer
+  server_src_prozesse -->|1| server_src_lasttest
+  server_src_prozesse -->|2| server_src_post
+  server_src_prozesse -->|3| server_src_protokoll
+  server_src_prozesse -->|2| server_src_sicherung
+  server_src_prozesse -->|3| server_src_sprache
+  server_src_prozesse -->|1| server_src_system
+  server_src_prozesse -->|1| server_src_volltext
+  server_src_prozesse -->|2| server_src_zwischenspeicher
+  server_src_prozesse -->|2| shared_src
+  server_src_repo -->|1| server_src_datenbank
+  server_src_repo -->|3| server_src_geheimnisse
+  server_src_repo -->|1| server_src_protokoll
+  server_src_repo -->|3| server_src_sprache
+  server_src_repo -->|3| server_src_zwischenspeicher
   server_src_repo -->|81| shared_src
   server_src_repo -->|19| shared_src_model
-  server_src_sicherung -->|4| server_src
-  server_src_sicherung -->|3| server_src_http
-  server_src_sichten -->|13| server_src
-  server_src_sichten -->|2| server_src_http
+  server_src_sicherung -->|5| server_src_dateien
+  server_src_sicherung -->|2| server_src_datenbank
+  server_src_sicherung -->|1| server_src_einstellungen
+  server_src_sicherung -->|2| server_src_geheimnisse
+  server_src_sicherung -->|9| server_src_grundlagen
+  server_src_sicherung -->|5| server_src_http
+  server_src_sicherung -->|2| server_src_mail
+  server_src_sicherung -->|3| server_src_protokoll
+  server_src_sicherung -->|1| server_src_repo
+  server_src_sicherung -->|4| server_src_sprache
+  server_src_sicherung -->|1| server_src_volltext
+  server_src_sicherung -->|2| server_src_zeitplan
+  server_src_sicherung -->|2| shared_src
+  server_src_sichten -->|4| server_src_grundlagen
+  server_src_sichten -->|3| server_src_http
   server_src_sichten -->|4| server_src_kern
   server_src_sichten -->|1| server_src_konten
   server_src_sichten -->|1| server_src_mappen
   server_src_sichten -->|1| server_src_mappentypen
+  server_src_sichten -->|2| server_src_protokoll
   server_src_sichten -->|4| server_src_repo
+  server_src_sichten -->|5| server_src_sprache
   server_src_sichten -->|1| server_src_suche
   server_src_sichten -->|3| server_src_zugriff
+  server_src_sichten -->|1| server_src_zwischenspeicher
   server_src_sichten -->|17| shared_src
   server_src_sichten -->|5| shared_src_model
-  server_src_suche -->|8| server_src
-  server_src_suche -->|2| server_src_http
-  server_src_suche -->|1| server_src_kern
+  server_src_sprache -->|1| server_src_datenbank
+  server_src_sprache -->|1| server_src_dienst
+  server_src_sprache -->|2| server_src_einstellungen
+  server_src_sprache -->|2| server_src_grundlagen
+  server_src_sprache -->|1| server_src_kern
+  server_src_sprache -->|3| server_src_protokoll
+  server_src_sprache -->|2| server_src_repo
+  server_src_sprache -->|1| server_src_zwischenspeicher
+  server_src_sprache -->|15| shared_src
+  server_src_sprache -->|1| shared_src_model
+  server_src_sprache -->|14| shared_src_sprachen
+  server_src_suche -->|1| server_src_dienst
+  server_src_suche -->|1| server_src_einstellungen
+  server_src_suche -->|4| server_src_grundlagen
+  server_src_suche -->|3| server_src_http
+  server_src_suche -->|2| server_src_kern
   server_src_suche -->|1| server_src_mappentypen
-  server_src_suche -->|1| server_src_repo
+  server_src_suche -->|2| server_src_protokoll
+  server_src_suche -->|2| server_src_repo
+  server_src_suche -->|3| server_src_sprache
+  server_src_suche -->|1| server_src_system
   server_src_suche -->|1| server_src_zugriff
-  server_src_suche -->|3| shared_src
-  server_src_suche -->|1| shared_src_model
-  server_src_system -->|10| server_src
+  server_src_suche -->|6| shared_src
+  server_src_suche -->|2| shared_src_model
   server_src_system -->|1| server_src_arbeit
-  server_src_system -->|2| server_src_http
-  server_src_system -->|2| shared_src
+  server_src_system -->|1| server_src_dateien
+  server_src_system -->|1| server_src_dokumente
+  server_src_system -->|1| server_src_einstellungen
+  server_src_system -->|7| server_src_grundlagen
+  server_src_system -->|4| server_src_http
+  server_src_system -->|1| server_src_notfall
+  server_src_system -->|2| server_src_post
+  server_src_system -->|2| server_src_protokoll
+  server_src_system -->|1| server_src_prozesse
+  server_src_system -->|5| server_src_sprache
+  server_src_system -->|1| server_src_zwischenspeicher
+  server_src_system -->|8| shared_src
+  server_src_system -->|1| shared_src_model
   server_src_systemausstattung -->|1| server_src_kern
   server_src_systemausstattung -->|1| shared_src_model
-  server_src_textsatz -->|7| server_src
-  server_src_textsatz -->|2| server_src_http
+  server_src_textsatz -->|3| server_src_grundlagen
+  server_src_textsatz -->|3| server_src_http
   server_src_textsatz -->|1| server_src_kern
   server_src_textsatz -->|1| server_src_pakete
   server_src_textsatz -->|1| server_src_pdf
+  server_src_textsatz -->|1| server_src_protokoll
   server_src_textsatz -->|1| server_src_repo
+  server_src_textsatz -->|2| server_src_sprache
   server_src_textsatz -->|1| server_src_zugriff
   server_src_textsatz -->|5| shared_src
   server_src_textsatz -->|1| shared_src_model
-  server_src_volltext -->|9| server_src
+  server_src_volltext -->|2| server_src_dateien
+  server_src_volltext -->|1| server_src_datenbank
   server_src_volltext -->|2| server_src_dokumente
+  server_src_volltext -->|1| server_src_einstellungen
+  server_src_volltext -->|4| server_src_grundlagen
   server_src_volltext -->|2| server_src_kern
-  server_src_volltext -->|2| server_src_repo
-  server_src_volltext -->|9| shared_src
-  server_src_volltext -->|1| shared_src_model
-  server_src_wartung -->|1| server_src
-  server_src_wartung -->|2| server_src_http
-  server_src_werkbank -->|13| server_src
+  server_src_volltext -->|4| server_src_protokoll
+  server_src_volltext -->|1| server_src_prozesse
+  server_src_volltext -->|3| server_src_repo
+  server_src_volltext -->|3| server_src_sprache
+  server_src_volltext -->|19| shared_src
+  server_src_volltext -->|3| shared_src_model
+  server_src_wartung -->|1| server_src_einstellungen
+  server_src_wartung -->|1| server_src_grundlagen
+  server_src_wartung -->|3| server_src_http
+  server_src_wartung -->|2| server_src_protokoll
+  server_src_wartung -->|1| server_src_sprache
+  server_src_wartung -->|3| shared_src
+  server_src_webdav -->|1| server_src_anmeldung
+  server_src_webdav -->|1| server_src_ausgang
+  server_src_webdav -->|2| server_src_dateien
+  server_src_webdav -->|1| server_src_dienst
+  server_src_webdav -->|1| server_src_einstellungen
+  server_src_webdav -->|2| server_src_grundlagen
+  server_src_webdav -->|1| server_src_http
+  server_src_webdav -->|1| server_src_kern
+  server_src_webdav -->|1| server_src_konten
+  server_src_webdav -->|1| server_src_post
+  server_src_webdav -->|1| server_src_protokoll
+  server_src_webdav -->|2| server_src_sprache
+  server_src_webdav -->|3| server_src_zwischenspeicher
+  server_src_webdav -->|3| shared_src
+  server_src_webdav -->|1| shared_src_model
   server_src_werkbank -->|1| server_src_aufgaben
-  server_src_werkbank -->|2| server_src_http
+  server_src_werkbank -->|1| server_src_beispiele
+  server_src_werkbank -->|2| server_src_einstellungen
+  server_src_werkbank -->|1| server_src_export
+  server_src_werkbank -->|4| server_src_grundlagen
+  server_src_werkbank -->|3| server_src_http
   server_src_werkbank -->|1| server_src_kern
-  server_src_werkbank -->|6| shared_src
+  server_src_werkbank -->|4| server_src_protokoll
+  server_src_werkbank -->|1| server_src_sicherung
+  server_src_werkbank -->|4| server_src_sprache
+  server_src_werkbank -->|1| server_src_system
+  server_src_werkbank -->|1| server_src_zeitplan
+  server_src_werkbank -->|10| shared_src
   server_src_werkbank -->|1| shared_src_model
-  server_src_zugriff -->|4| server_src
+  server_src_zeitplan -->|1| server_src_einstellungen
+  server_src_zeitplan -->|2| shared_src
+  server_src_zugriff -->|1| server_src_datenbank
+  server_src_zugriff -->|1| server_src_grundlagen
   server_src_zugriff -->|1| server_src_kern
   server_src_zugriff -->|1| server_src_repo
+  server_src_zugriff -->|1| server_src_sprache
+  server_src_zugriff -->|1| server_src_zwischenspeicher
   server_src_zugriff -->|5| shared_src
   server_src_zugriff -->|1| shared_src_model
+  server_src_zwischenspeicher -->|1| server_src_datenbank
+  server_src_zwischenspeicher -->|2| server_src_protokoll
+  server_src_zwischenspeicher -->|1| shared_src
   shared_src -->|40| shared_src_model
   shared_src -->|65| shared_src_sprachen
   shared_src_model -->|57| shared_src
