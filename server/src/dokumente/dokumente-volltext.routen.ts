@@ -7,7 +7,7 @@ import { VOLLTEXT_KOERPER_MAX } from '../../../shared/src/paketvolltext';
 import { t } from '../sprache/sprache';
 import { hatSchnittstelle } from '../../../shared/src/pakete';
 import type { RoutenKontext } from '../http/routen-kontext';
-import type { Route } from '../http/routen';
+import type { Route } from '../http/routen-typen';
 
 export function dokumenteVolltextRouten(k: RoutenKontext): Route[] {
   const { dienst, mitnehmen, abgerufen, seitenquelle, zg, darf } = k;

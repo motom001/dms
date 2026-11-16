@@ -20,7 +20,6 @@ export {
   schlankeMetadaten,
   type Eintragsliste,
   type ExternAnbindung,
-  type ExternStand,
   type Lauf,
   type Metadaten,
   type SchlankeMetadaten,

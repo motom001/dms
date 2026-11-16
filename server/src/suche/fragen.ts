@@ -26,7 +26,9 @@ import {
   type FragenGrenzen,
   type FrageZeile,
 } from '../../../shared/src/fragen';
-import type { Dienst } from '../dienst/dienst';
+import type { ZugriffDienst } from '../zugriff';
+import type { SucheDienst } from './suche.dienst';
+import type { KiTypen } from '../mappentypen';
 import type { Zugriff } from '../kern';
 import type { Einstellungen } from '../einstellungen/einstellungen';
 import { Fachfehler } from '../grundlagen/fehler';
@@ -49,13 +51,20 @@ const GLEICHZEITIG = 4;
 /** So lange wartet die Suche höchstens auf den Vektor der Frage (ms); danach ohne Ähnlichkeit. */
 const VEKTOR_MS = 3000;
 
+/** Was die Fragen an die Ablage vom Dienst brauchen (#1278, Schritt 5b: schmaler Anschluss statt der ganzen Klasse `Dienst`). */
+interface FragenDienst {
+  readonly rechtepruefung: Pick<ZugriffDienst, 'lesbare'>;
+  readonly suche: Pick<SucheDienst, 'aehnlicheZuText'>;
+  readonly ki: Pick<KiTypen, 'kiSperreFuer'>;
+}
+
 export class FragenAnDieAblage {
   /** Wird gesetzt, sobald der Paket-Läufer läuft (index.ts). */
   anbieter?: AntwortAnbieter;
   private laufend = new Set<string>();
 
   constructor(
-    private d: Dienst,
+    private d: FragenDienst,
     private repo: () => Repo,
     private einst: () => Einstellungen | undefined,
   ) {}

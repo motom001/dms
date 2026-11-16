@@ -26,7 +26,7 @@
       "vorgabeJeProzess"
     ]
   },
-  "server/src/aufgaben/aufgaben.dienst.ts": {
+  "server/src/aufgaben/anschluss.ts": {
     "types": [
       "AufgabenKonten"
     ]
@@ -542,16 +542,16 @@
       "GruppenWert"
     ]
   },
+  "server/src/loeschen/anschluss.ts": {
+    "types": [
+      "LoeschenKonten"
+    ]
+  },
   "server/src/loeschen/index.ts": {
     "types": [
       "AufgeloestIn",
       "DokumentImKorb",
       "LoeschenAnschluss",
-      "LoeschenKonten"
-    ]
-  },
-  "server/src/loeschen/loeschen.dienst.ts": {
-    "types": [
       "LoeschenKonten"
     ]
   },
@@ -946,8 +946,7 @@
       "Anmeldeart",
       "Nachher",
       "PostfachEreignis",
-      "PostfachOrt",
-      "Verschluesselung"
+      "PostfachOrt"
     ]
   },
   "server/src/protokoll/nachweisjournal.ts": {

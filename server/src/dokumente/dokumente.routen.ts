@@ -10,7 +10,7 @@ import { t } from '../sprache/sprache';
 
 import { L, ok, ich, privatZwischenspeichern } from '../http/routen-hilfen';
 import type { RoutenKontext } from '../http/routen-kontext';
-import type { Antwort, Route } from '../http/routen';
+import type { Antwort, Route } from '../http/routen-typen';
 import { dokumenteFassungenRouten } from './dokumente-fassungen.routen';
 import { dokumenteVolltextRouten } from './dokumente-volltext.routen';
 import { dokumenteVersionenRouten } from './dokumente-versionen.routen';

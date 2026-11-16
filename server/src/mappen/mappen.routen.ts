@@ -10,7 +10,7 @@ import { liesQuelle } from '../sprache/uebersetzung';
 import { VORSCHLAG_DATEI_MAX } from '../grundlagen/grenzen';
 import { L, ok, leer, b, quelle, ich } from '../http/routen-hilfen';
 import type { RoutenKontext } from '../http/routen-kontext';
-import type { Route } from '../http/routen';
+import type { Route } from '../http/routen-typen';
 
 export function mappenRouten(k: RoutenKontext): Route[] {
   const { dienst, x, fotostapel, typName, spracheFuer, modusSpur, zg, darf, zuletztGeoeffnet } = k;

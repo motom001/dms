@@ -3,7 +3,6 @@ import { readdir, stat } from 'node:fs/promises';
 import { join, relative, sep } from 'node:path';
 import { protokoll } from '../protokoll/protokoll';
 import type { Zaehler, Datenquelle } from './datenbankabzug';
-import type { HolAufruf } from './sicherung-entfernt';
 import { t } from '../sprache/sprache';
 import type { Einstellungen } from '../einstellungen/einstellungen';
 import { zeitzone } from '../../../shared/src/region';
@@ -141,6 +140,8 @@ export interface Sicherungsziel {
   adresse: string | null;
   ziel?: string | null;
 }
+/** Aufruf eines Pakets mit dms:sicherung-holen (Läufer); Ergebnis als Text (#1278, Schritt 5b: vorher in sicherung-entfernt.ts). */
+type HolAufruf = (paket: string, eingang: Record<string, unknown>, ms?: number) => Promise<string>;
 /** Verbindung zu den Paketen (index.ts): Pakete mit dms:sicherung-lesen und das Ereignis sicherung.fertig. */
 export interface ExternAnbindung {
   /** holen: Das Paket hat auch dms:sicherung-holen (#976). */

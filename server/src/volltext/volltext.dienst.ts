@@ -29,7 +29,6 @@ import type { PaketVolltext } from './paketvolltext';
 import { protokoll } from '../protokoll/protokoll';
 import type { Repo } from '../repo';
 import { t } from '../sprache/sprache';
-import type { VolltextAusPaketen } from './aus-paketen';
 
 /** Obergrenze für geschriebenen Volltext (Zeichen). */
 export const VOLLTEXT_MAX = VOLLTEXT_ZEICHEN_MAX;
@@ -66,7 +65,17 @@ export interface VolltextTeile {
   dokumente: DokumenteDienst;
   umwandlung: DokumentUmwandlung;
   archiv: DokumentArchivfassung;
-  ausPaketen: VolltextAusPaketen;
+  /**
+   * `VolltextAusPaketen.nachVolltextEreignis` (#614) – beschrieben statt eingebunden (#1278, Schritt 5b): aus-paketen.ts
+   * ruft ihrerseits `VolltextDienst.volltextAn`.
+   */
+  ausPaketen: {
+    nachVolltextEreignis(
+      paket: string,
+      e: { daten: Record<string, unknown> },
+      r: { ok: boolean; text: string; fehler?: string | null; aufgegeben?: boolean },
+    ): Promise<void>;
+  };
 }
 
 /** Was der Volltext außer dem Kern braucht – vom Dienst hereingereicht, bis es eigene Module dafür gibt. */
@@ -139,7 +148,7 @@ export class VolltextDienst {
   private nachUmwandlungsEreignis(...a: Parameters<DokumentUmwandlung['nachUmwandlungsEreignis']>) {
     return this.teile.umwandlung.nachUmwandlungsEreignis(...a);
   }
-  private nachVolltextEreignis(...a: Parameters<VolltextAusPaketen['nachVolltextEreignis']>) {
+  private nachVolltextEreignis(...a: Parameters<VolltextTeile['ausPaketen']['nachVolltextEreignis']>) {
     return this.teile.ausPaketen.nachVolltextEreignis(...a);
   }
 

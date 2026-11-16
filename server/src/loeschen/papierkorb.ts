@@ -1,7 +1,7 @@
 /**
  * Papierkorb (#43, #344, #424, #936, #1078 aus dienst.ts): Aufbewahrung, Einträge und Dokumente im Papierkorb,
  * wiederherstellen, endgültig löschen, leeren und stündlich aufräumen – jeder Schritt im Löschprotokoll. Schicht 3 –
- * Teile und Anschluss wie `LoeschenDienst` (loeschen.dienst.ts).
+ * Anschluss wie `LoeschenDienst` (anschluss.ts), von den Teilen nur, was er braucht.
  */
 import { Fachfehler } from '../grundlagen/fehler';
 import type { Anlass, Kern, Loeschprotokoll, ProtokollMappe, ProtokollTeil, Zugriff } from '../kern';
@@ -14,7 +14,9 @@ import { aufbewahrenBis, datumText, gesperrt, stichtagName } from '../../../shar
 import type { Ausloeser, LoeschDokument, LoeschEintrag, LoeschKontext, Loeschweg } from '../../../shared/src/loeschprotokoll';
 import type { Dokument, Mappentyp } from '../../../shared/src/model';
 import { istTeiltyp, uebergeordneteId } from '../../../shared/src/teile';
-import type { LoeschenAnschluss, LoeschenTeile } from './loeschen.dienst';
+import type { LoeschenAnschluss } from './anschluss';
+import type { Passung } from '../mappentypen';
+import type { DokumenteDienst, DokumentVersionen } from '../dokumente';
 import type { LoeschprotokollVerwaltung } from './loeschprotokoll';
 import type { MitVerknuepften } from './mit-verknuepften';
 import { nachweis } from '../protokoll/nachweisjournal';
@@ -35,10 +37,21 @@ export interface AufgeloestIn {
   da: boolean;
 }
 
+/** Die Teile, die der Papierkorb ruft (#1278, Schritt 5b: Auszug aus `LoeschenTeile`). */
+interface PapierkorbTeile {
+  rechte: ZugriffDienst;
+  passung: Passung;
+  historie: MappenHistorie;
+  dokumente: DokumenteDienst;
+  versionen: DokumentVersionen;
+  protokoll: Pick<LoeschprotokollVerwaltung, 'korbAlsInhalt' | 'loeschprotokollJahre'>;
+  verknuepft: Pick<MitVerknuepften, 'verbindeWieder'>;
+}
+
 export class Papierkorb {
   constructor(
     private readonly kern: Kern,
-    private readonly teile: LoeschenTeile,
+    private readonly teile: PapierkorbTeile,
     private readonly anschluss: LoeschenAnschluss,
   ) {}
 

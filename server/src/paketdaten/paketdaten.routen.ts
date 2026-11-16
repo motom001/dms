@@ -21,7 +21,7 @@ import { t } from '../sprache/sprache';
 import { protokoll } from '../protokoll/protokoll';
 import { ok, ich } from '../http/routen-hilfen';
 import { istPaketdatenBereich, MONAT, type PaketdatenArt, type PaketdatenBereich } from '../../../shared/src/paketdaten';
-import type { Anfrage, Route } from '../http/routen';
+import type { Anfrage, Route } from '../http/routen-typen';
 import { routenKontext, type RoutenKontext } from '../http/routen-kontext';
 
 const sicher = async <T>(f: () => Promise<T>, sonst: T): Promise<T> => {

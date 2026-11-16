@@ -1,11 +1,10 @@
 /**
  * Abhängigkeiten zwischen den Teilen von Ablago (#899), geprüft mit dependency-cruiser: `npm run lint:abh`.
  *
- * - Keine Kreisläufe (`kein-kreislauf`). In shared/src/ und web/src/ zählen seit #1278 (Schritt 5) auch reine
- *   Typ-Importe (`import type`): Auch ein Kreis nur über Typen verklebt die Teile – keiner lässt sich ohne den anderen
- *   verstehen oder verschieben. In server/src/ zählen sie noch nicht, bis der große Kreis über http/routen.ts aufgelöst
- *   ist (#1278, Schritt 5b); Kreise über Importe, die zur Laufzeit zählen, sind überall Fehler. Tests sind ausgenommen:
- *   Sie binden ein, was sie prüfen, und werden selbst nicht eingebunden.
+ * - Keine Kreisläufe (`kein-kreislauf`), auch nicht über reine Typ-Importe (`import type`; shared/src/ und web/src/ seit
+ *   #1278 Schritt 5a, server/src/ seit Schritt 5b): Auch ein Kreis nur über Typen verklebt die Teile – keiner lässt sich
+ *   ohne den anderen verstehen oder verschieben. Tests sind ausgenommen: Sie binden ein, was sie prüfen, und werden
+ *   selbst nicht eingebunden.
  * - shared/ bindet weder server/ noch web/ ein; web/ nie server/, server/ nie web/ (auch server/test/ nicht, #1282).
  *   Ausnahme: shared/test/ prüft Sprachdateien und Gemeinsames über alle Teile hinweg.
  * - Technische Ordner mit index.ts nur über index.ts (pdf/ und arbeit/, je mit eigener Ausnahme; repo/ über seine drei
@@ -62,7 +61,7 @@ const OHNE_TUER = {
   notfall: 'notfall|notfallcode|notfallblatt|notfallqr',
   oberflaeche: 'oberflaeche|designs|hilfe',
   pakete: 'katalogsignatur|projektschluessel|lizenztexte|paketpruefung|umwandlung',
-  post: 'postfach|postfach-anhaenge|postfach-oauth|imap|eingangsordner|fotostapel',
+  post: 'postfach|postfach-typen|postfach-anhaenge|postfach-oauth|imap|eingangsordner|fotostapel',
   protokoll: 'protokoll|nachweisjournal',
   prozesse: 'prozesse|aufteilung|auftrag|beenden|hintergrund',
   sicherung:
@@ -299,16 +298,9 @@ module.exports = {
     {
       name: 'kein-kreislauf',
       severity: 'error',
-      comment: 'Kreisläufe machen die Reihenfolge beim Laden zufällig und verhindern, dass sich Teile getrennt ändern lassen.',
-      from: { pathNot: '^(server|web|shared)/test/' },
-      to: { circular: true, viaOnly: { dependencyTypesNot: ['type-only'] } },
-    },
-    {
-      name: 'kein-kreislauf',
-      severity: 'error',
       comment:
-        'Auch kein Kreis über reine Typ-Importe (#1278, Schritt 5): Gemeinsame Typen in eine eigene Datei, die nichts zurück einbindet (z. B. shared/src/model/basis.ts), oder die Abhängigkeit umdrehen (schmaler Anschluss statt der ganzen Klasse).',
-      from: { path: '^(shared|web)/src/' },
+        'Kreisläufe machen die Reihenfolge beim Laden zufällig und verhindern, dass sich Teile getrennt ändern lassen – auch über reine Typ-Importe (#1278, Schritt 5): Gemeinsame Typen in eine eigene Datei, die nichts zurück einbindet (z. B. shared/src/model/basis.ts, server/src/http/routen-typen.ts), oder die Abhängigkeit umdrehen (schmaler Anschluss statt der ganzen Klasse).',
+      from: { pathNot: '^(server|web|shared)/test/' },
       to: { circular: true },
     },
     {
@@ -381,7 +373,7 @@ module.exports = {
     includeOnly: '^(server|web|shared)/(src|test)/',
     exclude: { path: 'node_modules' },
     doNotFollow: { path: 'node_modules' },
-    // Auch reine Typ-Importe sehen (für die Richtungsregeln und für Kreise in shared/src/ und web/src/, oben).
+    // Auch reine Typ-Importe sehen (für die Richtungsregeln und für Kreise, oben).
     tsPreCompilationDeps: true,
     enhancedResolveOptions: {
       extensions: ['.ts', '.tsx', '.mjs', '.js', '.json'],

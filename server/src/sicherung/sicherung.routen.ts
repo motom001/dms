@@ -5,7 +5,7 @@ import { Fachfehler } from '../grundlagen/fehler';
 import { t } from '../sprache/sprache';
 import { ok, leer, b, ich } from '../http/routen-hilfen';
 import type { RoutenKontext } from '../http/routen-kontext';
-import type { Route } from '../http/routen';
+import type { Route } from '../http/routen-typen';
 import { abruf } from '../http/teilabruf';
 import { STUECK_MAX } from '../grundlagen/grenzen';
 

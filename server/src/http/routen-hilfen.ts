@@ -26,7 +26,8 @@ import { engpaesseAus, VARIABLE, type Grenzwert, type Grenzwerte, type ProzessZe
 /** Cache-Control für eigene Dateien (Vorschaubilder, Fassungen): nur im Browser der Person (#1264: im Code, nicht übersetzbar). */
 export const privatZwischenspeichern = (sekunden: number) => `private, max-age=${sekunden}`;
 import { MB } from '../grundlagen/grenzen';
-import type { Anfrage, Antwort, RoutenExtras } from './routen';
+import type { Anfrage, Antwort } from './routen-typen';
+import type { RoutenExtras } from './routen-extras';
 
 const L = {
   konto: protokoll.modul('konto'),

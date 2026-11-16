@@ -9,7 +9,7 @@ import { Eingang } from '../dateien/hochladen';
 import { type Kern, versionInfo } from '../kern';
 import type { Repo } from '../repo';
 import { t } from '../sprache/sprache';
-import { dateiname, erkenneAnzeigbar, type TexterkennungAnbindung } from './dokumente.dienst';
+import { dateiname, erkenneAnzeigbar, type TexterkennungAnbindung } from './gemeinsam';
 
 /** Was die Versionen außer dem Kern brauchen – vom Dienst hereingereicht, bis es eigene Module dafür gibt. */
 export interface VersionenAnschluss {

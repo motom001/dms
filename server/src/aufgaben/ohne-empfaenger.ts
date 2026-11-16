@@ -6,15 +6,16 @@ import { randomUUID } from 'node:crypto';
 import { Fachfehler } from '../grundlagen/fehler';
 import { ABO_ARTEN, type Kern } from '../kern';
 import { jeAnfrage } from '../zwischenspeicher/lesespeicher';
-import type { MappenHistorie } from '../mappen';
+import type { MappenDienst, MappenHistorie } from '../mappen';
+import type { ZugriffDienst } from '../zugriff';
 import { protokoll } from '../protokoll/protokoll';
 import type { Repo } from '../repo';
 import { t } from '../sprache/sprache';
 import type { Benutzer } from '../../../shared/src/model';
 import { zeitzone } from '../../../shared/src/region';
 import { gebietsschema } from '../../../shared/src/sprache';
-import type { AufgabenAnschluss, AufgabenTeile } from './aufgaben.dienst';
-import type { AufgabenVertretung } from './vertretung';
+import type { AufgabenAnschluss } from './anschluss';
+import type { VertretungTeil } from './vertretung-teil';
 
 /** Wert eines Mehrfachverweises als Liste. */
 const alsListe = (v: unknown): string[] => (Array.isArray(v) ? v.map(String) : typeof v === 'string' && v ? [v] : []);
@@ -24,10 +25,18 @@ const alsListe = (v: unknown): string[] => (Array.isArray(v) ? v.map(String) : t
  */
 export const taugtAlsAufgabenEmpfaenger = (b: Benutzer) => b.aktiv && !b.art;
 
+/** Die Teile, die „ohne Empfänger“ ruft (#1278, Schritt 5b: Auszug aus `AufgabenTeile`, aufgaben-teile.ts). */
+interface OhneEmpfaengerTeile {
+  rechte: ZugriffDienst;
+  historie: MappenHistorie;
+  mappen: MappenDienst;
+  vertretung: VertretungTeil;
+}
+
 export class OhneEmpfaenger {
   constructor(
     private readonly kern: Kern,
-    private readonly teile: AufgabenTeile,
+    private readonly teile: OhneEmpfaengerTeile,
     private readonly anschluss: AufgabenAnschluss,
   ) {}
 
@@ -58,7 +67,7 @@ export class OhneEmpfaenger {
   private empfaengerAufloesen(id: string | null, lies?: (id: string) => Promise<Benutzer | undefined>) {
     return this.teile.vertretung.empfaengerAufloesen(id, lies);
   }
-  private benachrichtigeGebuendelt(...a: Parameters<AufgabenVertretung['benachrichtigeGebuendelt']>) {
+  private benachrichtigeGebuendelt(...a: Parameters<VertretungTeil['benachrichtigeGebuendelt']>) {
     return this.teile.vertretung.benachrichtigeGebuendelt(...a);
   }
   /** Regeln aus den Automatisierungen (#1001); ohne Motor: für alle, Vorgabe an. */

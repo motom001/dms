@@ -5,8 +5,8 @@ mit allen verknüpften Mappen löschen, der Papierkorb, das Löschprotokoll lese
 Paketen. Schicht 3 der Zielaufteilung.
 
 - `loeschen.dienst.ts` – `LoeschenDienst`: `loeschPruefung` (#79, Archivmodus #212), `loescheMappe`, `loescheMappen`
-  (#150), `loescheMappeIntern`, `entferneMappenEndgueltig` (Zurückrollen, #878); dazu `LoeschenTeile` und
-  `LoeschenAnschluss`.
+  (#150), `loescheMappeIntern`, `entferneMappenEndgueltig` (Zurückrollen, #878); dazu `LoeschenTeile`.
+- `anschluss.ts` – `LoeschenAnschluss` und `LoeschenKonten` (#1278, Schritt 5b).
 - `papierkorb.ts` – `Papierkorb` (#43, #344, #936): Aufbewahrung, Einträge, wiederherstellen, endgültig löschen,
   leeren, `raeumePapierkorbAuf` (stündlich).
 - `loeschprotokoll.ts` – `LoeschprotokollVerwaltung` (#470): Inhalt vor dem Löschen sammeln, Aufbewahrung, Ansicht,
@@ -20,7 +20,9 @@ Paketen. Schicht 3 der Zielaufteilung.
 
 - Alle Klassen bekommen den Kern und dieselben `LoeschenTeile`: Rechteprüfung, Passung, Historie, Dokumente,
   Versionen, Ausgang (Dokumente je Mappe), Sichten (Statistik), Systemmappen (`post/`) – und einander
-  (`baueLoeschen()` im Dienst).
+  (`baueLoeschen()` im Dienst). Papierkorb, Löschprotokoll und „mit Verknüpften“ nennen nur die Teile, die sie rufen
+  (#1278, Schritt 5b); „mit Verknüpften“ beschreibt `loeschPruefung` und `leere` selbst, denn Löschen und Papierkorb
+  rufen es ihrerseits.
 - Über den Anschluss: Ereignis (`kern.ereignis`), `aktualisiereTitel` (`mappenTitel`) – Tests ersetzen beide dort –, Konten.
 - Importiert nur sich selbst, Kern, Fachordner (je über `index.ts`), `shared/`, die Basis und die Werkzeuge `baum`
   und `schriftstueck`.

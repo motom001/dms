@@ -1,4 +1,3 @@
-import type { Readable } from 'node:stream';
 import { hoechstens } from '../datenbank/db';
 import type { Benutzer } from '../../../shared/src/model';
 import type { Dienst } from '../dienst/dienst';
@@ -6,44 +5,16 @@ import { Fachfehler } from '../grundlagen/fehler';
 import type { Konten } from '../konten';
 import type { SitzungIntern } from '../konten/konto-repo';
 import { API_VERSION_OHNE_ANMELDUNG, openapi, v1Routen } from './api-v1';
-import { NUR_ZAEHLER, ZAEHLER_PFAD, type ApiSchluessel, type ApiSchluesselDienst } from '../anmeldung/apischluessel';
-import type { Designs } from '../oberflaeche/designs';
-import type { Oidc } from '../anmeldung/oidc';
-import type { ExportOrt } from '../export/exportordner';
+import { NUR_ZAEHLER, ZAEHLER_PFAD, type ApiSchluesselDienst } from '../anmeldung/apischluessel';
 import { t } from '../sprache/sprache';
 import { ALS_KOPF, KONSOLE_KOPF, istLoopback, konsolenBenutzer, type Konsolenzugang } from '../system/konsole';
 import { bereicheDerRoute, heikleHandlung, JEDER, NUR_GESAMT } from '../werkbank/verwaltungsbereiche';
 import { darfBereich, darfVerwalten, hatGesamt } from '../../../shared/src/verwaltungsrecht';
-import type { Messung } from '../datenbank/messung';
-import type { Vorschaubilder } from '../dateien/vorschau';
-import { Paketverwaltung } from '../pakete/verwaltung/index';
-import type { LaeuferSicht } from '../laeufer/fern';
-import { Entdecken } from '../entdecken/entdecken';
-import { eigeneVersion, type SystemQuelle } from '../system/system';
-import type { Fehlermeldungen } from '../system/fehlermeldungen';
-import type { Verwaltung } from '../werkbank/verwaltung';
+import { eigeneVersion } from '../system/system';
 import type { Stufe } from '../protokoll/protokoll';
-import type { Betrieb } from '../einstellungen/betrieb';
-import { maskiere, type Tresor } from '../geheimnisse/tresor';
-import type { Texterkennung } from '../volltext/texterkennung';
-import type { Wartung } from '../wartung/wartung';
-import type { Notfallzugang } from '../notfall/notfall';
-import type { Sicherung } from '../sicherung/sicherung';
-import type { Wiederherstellung } from '../sicherung/wiederherstellung';
-import type { Speicherplatz } from '../dateien/speicherplatz';
-import type { AbfragenStand, Zuruecksetzen } from '../lasttest/abfragestatistik';
-import type { Systemlast } from '../system/systemlast';
-import type { ProzessEinstellung, Verbund } from '../prozesse/prozesse';
-import type { Eingangsordner } from '../post/eingangsordner';
-import type { Webdav } from '../webdav/webdav';
-import type { Postfaecher } from '../post/postfach';
-import type { PostfachOAuth } from '../post/postfach-oauth';
-import type { OrdnerPruefung } from '../dateien/ordner';
-import type { Einrichtung } from '../einrichtung/einrichtung';
-import type { AnbindungVerwaltung } from '../datenbank/anbindung';
-import type { Notfallcode } from '../notfall/notfallcode';
-import { Fotostapel } from '../post/fotostapel';
-import type { Aufgabenmail } from '../aufgaben/aufgabenmail';
+import { maskiere } from '../geheimnisse/tresor';
+import type { Anfrage, Route } from './routen-typen';
+import type { RoutenExtras } from './routen-extras';
 import { SITZUNG_COOKIE, SITZUNG_SEKUNDEN, ok } from './routen-hilfen';
 import { routenKontext, type RoutenKontext } from './routen-kontext';
 import { anmeldungRouten, notfallRouten } from '../anmeldung/anmeldung.routen';
@@ -84,125 +55,12 @@ export {
   nurEigeneBereiche,
   kontaktVorschlaege,
 } from './routen-hilfen';
-
-/** Teuerste Abfragen (#894): nur auf Anfrage gelesen bzw. zurückgesetzt (Lasttest). */
-export interface Abfragestatistik {
-  stand(anzahl: number): Promise<AbfragenStand>;
-  zuruecksetzen(): Promise<Zuruecksetzen>;
-}
-
 /**
- * Alle Schnittstellen an einem Ort, jede mit ihrer Zugriffsstufe:
- *   offen      – ohne Anmeldung (Einrichtung, Anmeldung, Passwort-Links)
- *   angemeldet – jeder angemeldete Benutzer
- *   admin      – Werkbank: nur im Verwaltungsmodus (#819) und nur mit Recht auf den Bereich der Route (#818,
- *                Zuordnung in verwaltungsbereiche.ts); nie mit einem API-Schlüssel
- * Der HTTP-Adapter (http.ts) setzt die Stufen durch.
+ * Form der Routen und Kopfzeilen ausgelieferter Dateien (#1278, Schritt 5b: nach http/routen-typen.ts und
+ * http/datei-koepfe.ts verschoben), für Tests weiter auch von hier erreichbar.
  */
-export type Zugang = 'offen' | 'angemeldet' | 'admin';
-
-export interface Anfrage {
-  body: unknown;
-  params: Record<string, string>;
-  query: Record<string, string | undefined>;
-  benutzer?: Benutzer;
-  sitzung?: string;
-  /** Daten der Sitzung (nach pruefeZugang). */
-  sitzungsDaten?: SitzungIntern;
-  ip: string;
-  /** User-Agent des Browsers. */
-  geraet?: string;
-  /** Angemeldet über einen API-Schlüssel (nur /api/v1). */
-  apiSchluessel?: ApiSchluessel;
-  /** Kopf Cookie, für weitere Cookies als die Sitzung (#241). */
-  cookieKopf?: string;
-  /** Direkte Gegenstelle der Verbindung (ohne Proxy-Köpfe) – für den Konsolenzugang (#244). */
-  peer?: string;
-  /** Über den Befehl `dms` im Container (#244). */
-  konsole?: boolean;
-  /** Kopf X-Einrichtungscode (#119), solange das DMS nicht eingerichtet ist; mit Herkunft aus dem Heimnetz (#1359). */
-  einrichtungscode?: string | import('../einrichtung/einrichtungscode').EinrichtungsAngabe;
-  /** Läuft in dieser Sitzung der Verwaltungsmodus (#819)? Dann ist `benutzer.rolle` = `admin`. */
-  verwaltungsmodus?: boolean;
-  /** Weitere Köpfe der Anfrage (klein geschrieben), z. B. If-None-Match beim Zähler-Endpunkt (#625). */
-  kopf?: (name: string) => string | undefined;
-}
-export interface Datei {
-  inhalt: Readable | Buffer;
-  name: string;
-  /** Nur bei erkannten PDFs und Bildern wird im Browser angezeigt, sonst immer heruntergeladen. */
-  mime: string;
-  anzeigen: boolean;
-  groesse: number;
-  /** Zusätzliche Kopfzeilen, z. B. ausgelassene Mappen beim Export (#294). */
-  koepfe?: Record<string, string>;
-}
-export interface Antwort {
-  status?: number;
-  body?: unknown;
-  sitzungSetzen?: string | null;
-  datei?: Datei;
-  /** Weiterleitung (302), z. B. zum Anbieter (#241). */
-  weiterleiten?: string;
-  /** Weitere Cookies (Set-Cookie). */
-  cookies?: string[];
-  /** Antwort Stück für Stück (#444): NDJSON, eine Zeile je Ereignis, ohne Zwischenspeicher im Proxy. */
-  strom?: Readable;
-  /** Zusätzliche Köpfe einer JSON-Antwort, z. B. ETag (#625); gehen den Standardköpfen vor. */
-  koepfe?: Record<string, string>;
-  /**
-   * Erst nach der Antwort (#741), z. B. „zuletzt geöffnet“ und „gesehen“ beim Öffnen einer Mappe (http.ts, `Nachlauf`).
-   * Nur für Merkposten, die einen Augenblick später ankommen dürfen. Fehler nur im Protokoll.
-   */
-  danach?: Array<() => Promise<unknown>>;
-}
-export interface Route {
-  methode: 'GET' | 'POST' | 'PUT' | 'DELETE';
-  pfad: string;
-  zugang: Zugang;
-  /** Rohdaten statt JSON (Datei-Upload) mit dieser Obergrenze in Bytes. */
-  roh?: number;
-  /**
-   * Körper unverändert als Puffer, gleich welcher Content-Type (auch JSON wird nicht gelesen), höchstens so viele
-   * Bytes – für Signaturen über die Bytes, wie sie ankamen (Aufruf von außen, #679).
-   */
-  rohKoerper?: number;
-  /**
-   * Mit `roh`: Der Körper kommt als Strom in eine temporäre Datei (#746), `body` ist dann ein `Hochgeladen` statt eines
-   * Puffers – für Dokumente bis 100 MB, die nicht ganz im Arbeitsspeicher liegen sollen.
-   */
-  strom?: boolean;
-  /** Teil der öffentlichen API (/api/v1): API-Schlüssel erlaubt. */
-  api?: boolean;
-  /** Nur über den Befehl `dms` im Container (#244). */
-  konsole?: boolean;
-  /**
-   * Liest nur, auch wenn es ein POST ist (Vorschau, Zählen, Testlauf): Die Anfragezeile steht
-   * dann nur auf Stufe „debug“ im Protokoll, wie bei GET (#373).
-   */
-  lesend?: boolean;
-  /** Öffentliche API (#818): Bereich der Werkbank wie bei dieser internen Route. */
-  bereichVon?: { methode: string; pfad: string };
-  /** Keine automatische HEAD-Route (z. B. Einmal-Download: ein HEAD würde das Ticket verbrauchen). */
-  ohneHead?: boolean;
-  /**
-   * Abfrage im Hintergrund (#919, #921): Die Oberfläche fragt sie von selbst nach (alle 10–15 s, nur im sichtbaren Tab).
-   * Sie zählt nie als Aktivität – verlängert den Verwaltungsmodus nicht (auch nicht mit `x-dms-aktiv`) und setzt
-   * „zuletzt aktiv“ der Sitzung nicht.
-   */
-  still?: boolean;
-  /**
-   * Ohne Sitzung (#1198): Die Anfrage schaut gar nicht nach der Anmeldung – nur für die Gesundheitsprüfung, die sonst
-   * mit Sitzungs-Cookie (Browser) an derselben Datenbank hinge, die sie prüfen soll.
-   */
-  ohneSitzung?: boolean;
-  /**
-   * Anmeldung höchstens so lange nachsehen (#1198, nur `offen`): Antwortet die Datenbank nicht rechtzeitig, läuft die
-   * Anfrage ohne angemeldete Person weiter – für `/api/sprache` beim Start der Oberfläche.
-   */
-  anmeldungHoechstensMs?: number;
-  handler(a: Anfrage): Promise<Antwort>;
-}
+export type { Anfrage, Datei, Antwort, Route } from './routen-typen';
+export { dateiKoepfe } from './datei-koepfe';
 
 /** Rückmeldung zur Kopie außer Haus per PUT (#585) – nur noch im Übergang für Pakete vor #636; entfällt mit 1.0.0 (uebergaenge.ts, #902). */
 const SICHERUNG_EXTERN_PFAD = '/api/v1/sicherungen/:name/extern';
@@ -211,107 +69,6 @@ const SICHERUNG_EXTERN_PFAD = '/api/v1/sicherungen/:name/extern';
  * hier die angeforderte Sicherung in Stücken. Die Route prüft Recht, Anforderung, Stelle und Größe.
  */
 const SICHERUNG_HOLEN_PFAD = '/api/v1/sicherungen/:name/holen';
-
-export interface RoutenExtras {
-  /** Rundgänge und Tipps (#831, #832); Standard: aus shared/entdecken. */
-  entdecken?: Entdecken;
-  /** Mehrere Prozesse (#745): Verbund dieses Prozesses und die Einstellung DMS_PROZESSE. */
-  verbund?: Verbund;
-  prozessEinstellung?: ProzessEinstellung;
-  /** Fotos vom Handy bis „Fertig“ (#490); Standard: Arbeitsordner im Temp-Verzeichnis. */
-  fotostapel?: Fotostapel;
-  messung?: Messung;
-  /** Systemzustand → Auslastung (#409). */
-  systemlast?: Systemlast;
-  /** Überlastschutz (#544). */
-  ueberlast?: import('./ueberlast').Ueberlastschutz;
-  /** Warten auf eine freie Verbindung zur Datenbank (#544). */
-  verbindungen?: import('../datenbank/db').Verbindungswarten;
-  /** Gesundheitsprüfung mit Datenbank (#1198): kurze Abfrage mit Zeitgrenze, kurz zwischengespeichert. */
-  datenbank?: { befund(): Promise<import('../datenbank/db').DatenbankBefund> };
-  /** Wartezeit auf Verbindungen für den Lasttest (#874), in diesem Prozess. */
-  poolmessung?: import('../datenbank/poolmessung').Poolmessung;
-  /** Sitzungen der Datenbank mit Sperren (#874). */
-  sitzungen?: () => Promise<import('../datenbank/poolmessung').Sitzungsstand | null>;
-  /** Teuerste Abfragen aus pg_stat_statements für den Lasttest (#894). */
-  abfragen?: Abfragestatistik;
-  /** CPU und Speicher je Prozessgruppe für den Lasttest (#895), gemessen im Leiter. */
-  prozessgruppen?: () => Promise<import('../lasttest/prozessgruppen').GruppenStand | null>;
-  /** Erweiterungen der Suche, pg_trgm und unaccent (#562). */
-  erweiterungen?: () => Promise<import('../datenbank/erweiterungen').ErweiterungStand[]>;
-  /** Datenbankangaben für die Versionsübersicht. */
-  system?: SystemQuelle;
-  /** E-Mail-Versand und Adresse des DMS (#37). */
-  betrieb?: Betrieb;
-  /** Designs der Oberfläche (#21). */
-  designs?: Designs;
-  /** Schlüssel für verschlüsselte Zugangsdaten (#39). */
-  tresor?: Tresor;
-  /** Texterkennung und Volltext (#45). */
-  texterkennung?: Texterkennung;
-  /** Tägliche Zusammenfassung der Aufgaben (#54). */
-  aufgabenmail?: Aufgabenmail;
-  /** Region der Ablage (#726): Land, Bundesland, Zeitzone. */
-  region?: import('../einstellungen/region').RegionDienst;
-  /** Sprachen der Ablage (#729): erlaubte Sprachen und Sprache der Installation. */
-  sprachen?: import('../sprache/sprachwahl').SprachDienst;
-  /** Fehlermeldungen von Benutzern (#70). */
-  fehlermeldungen?: Fehlermeldungen;
-  /** Technische Aufgaben des Admin-Kontos (#719): Hinweis ohne Einzelheiten beim Alltags-Benutzer. */
-  verwaltung?: Verwaltung;
-  /** API-Schlüssel (#20). */
-  apiSchluessel?: ApiSchluesselDienst;
-  /** Befehl `dms` im Container (#244). */
-  konsole?: Konsolenzugang;
-  /** Anmeldung über einen Anbieter (#241). */
-  oidc?: Oidc;
-  /** Name des Mandanten (Vollexport, #254). */
-  mandantName?: () => Promise<string | null>;
-  /** Wartungsmodus (#102). */
-  wartung?: Wartung;
-  /** Notfallzugang über eine RESCUE-Datei (#108). */
-  notfall?: Notfallzugang;
-  /** Notfallzugang mit dem Notfallcode vom Notfallblatt (#815). */
-  notfallcode?: Notfallcode;
-  /** Wem Ablago die Angaben eines Reverse Proxys glaubt (#234) – für „nur aus dem Heimnetz“ (#815). */
-  proxy?: import('./proxy').ProxyVertrauen;
-  /** Sicherungen (#103–#105). */
-  sicherung?: Sicherung;
-  /** Export-Ordner (#797): Vollexport, persönliche Exporte, Auskünfte – nie im Sicherungsordner. */
-  exporte?: ExportOrt;
-  /** Wiederherstellen und Probe (#107, #109). */
-  wiederherstellung?: Wiederherstellung;
-  /** Speicherplatz-Überwachung (#116). */
-  speicherplatz?: Speicherplatz;
-  /** Vorschaubilder der ersten Seite (#332). */
-  vorschau?: Vorschaubilder;
-  /** Eingangsordner (#195). */
-  eingangsordner?: Eingangsordner;
-  /** WebDAV-Laufwerk (#346). */
-  webdav?: Webdav;
-  /** Automatisierungen (#674). */
-  automatisierungen?: import('../automatisierung').Automatisierungen;
-  /** Postfächer (#196). */
-  postfaecher?: Postfaecher;
-  /** Anmeldung der Postfächer per OAuth 2.0 (#358). */
-  postfachOAuth?: PostfachOAuth;
-  /** Feste Ordner und überflüssige frühere Variablen (#115). */
-  ordner?: OrdnerPruefung;
-  /** Paketverwaltung (#188); ohne Angabe: offizieller Katalog über das Netz. */
-  pakete?: Paketverwaltung;
-  /** Paket-Läufer (#338): Stand für die Werkbank. */
-  paketlaeufer?: LaeuferSicht;
-  /** Einrichtungsassistent und Datenbank-Anbindung (#119). */
-  einrichtung?: Einrichtung;
-  anbindung?: AnbindungVerwaltung;
-  /** Hinweis zu HAUSHALT_ID (übernommen oder abweichend). */
-  mandantHinweis?: string | null;
-  /** DMS_LASTTEST gesetzt, aber der Lasttest läuft nicht (echte Ablage, #612): Grund für die Übersicht. */
-  lasttestAbbruch?: () => string | null;
-  /** Für Tests: Abruf fremder Adressen beim Versionsabgleich. */
-  abruf?: (url: string) => Promise<unknown>;
-  log?: (m: string) => void;
-}
 
 /** Routen der Fachbereiche (#960), in der Reihenfolge, in der sie früher hier standen (Registrierreihenfolge). */
 const BEREICHE: Array<(k: RoutenKontext) => Route[]> = [
@@ -436,23 +193,6 @@ export function modulAus(url: string): string {
   if (/^\/api\/(werkbank\/(sicherung|notfallblatt|wiederherstellung)|wiederherstellung|(v1\/)?sicherungen)\b/.test(url)) return 'sicherung';
   if (/^\/api\/(typen|werkbank|beispiele)\b/.test(url)) return 'werkbank';
   return 'http';
-}
-/** Richtlinie für ausgelieferte Dateien außer PDFs: nichts nachladen, nichts ausführen (Sandbox). */
-export const DATEI_CSP = "default-src 'none'; img-src 'self'; style-src 'unsafe-inline'; sandbox";
-/** Kopfzeilen für eine ausgelieferte Datei – so, dass sie nie als Teil der Anwendung ausgeführt wird. */
-export function dateiKoepfe(d: Datei): Record<string, string> {
-  const ascii = d.name.replace(/[^\x20-\x7e]/g, '_').replace(/["\\]/g, '_');
-  const k: Record<string, string> = {
-    'content-type': d.mime,
-    'content-length': String(d.groesse),
-    'content-disposition': `${d.anzeigen ? 'inline' : 'attachment'}; filename="${ascii}"; filename*=UTF-8''${encodeURIComponent(d.name)}`,
-    'x-content-type-options': 'nosniff',
-    'cache-control': 'private, max-age=0, must-revalidate',
-  };
-  // PDFs brauchen den eingebauten Betrachter des Browsers; alles andere läuft in einer Sandbox. Technische Werte stehen
-  // im Code, nie in den Sprachdateien (#1264) – eine Übersetzung darf die Sandbox nicht verlieren.
-  if (d.mime !== 'application/pdf') k['content-security-policy'] = DATEI_CSP;
-  return k;
 }
 
 /** Set-Cookie für die Sitzung; `null` löscht sie. HttpOnly: kein Zugriff aus Skripten. */

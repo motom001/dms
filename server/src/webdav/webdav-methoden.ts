@@ -23,7 +23,7 @@ import {
 import { WEBDAV_XML_MAX as XML_MAX } from '../grundlagen/grenzen';
 import { davFehler, multistatus, istHilfsdatei, sperrAntwort } from './webdav-baum';
 import { t } from '../sprache/sprache';
-import { dateiKoepfe } from '../http/routen';
+import { dateiKoepfe } from '../http/datei-koepfe';
 import { Fachfehler } from '../grundlagen/fehler';
 import { MAX_DATEIGROESSE, POST_KANAL } from '../../../shared/src/model';
 import { nimmAuf, Hochgeladen } from '../dateien/hochladen';

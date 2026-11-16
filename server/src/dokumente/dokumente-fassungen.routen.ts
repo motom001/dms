@@ -7,7 +7,7 @@ import { KOERPER_SPIELRAUM } from '../grundlagen/grenzen';
 import { ok, ich, b, privatZwischenspeichern } from '../http/routen-hilfen';
 import { ARCHIVFASSUNG_MAX_BYTES, archivfassungName, pdfaName } from '../../../shared/src/archivfassung';
 import type { RoutenKontext } from '../http/routen-kontext';
-import type { Route } from '../http/routen';
+import type { Route } from '../http/routen-typen';
 
 export function dokumenteFassungenRouten(k: RoutenKontext): Route[] {
   const { dienst, mitnehmen, abgerufen, herausgeben, zumAbspeichern, fuerAnzeige, ausgabeDatei, zg, darf } = k;

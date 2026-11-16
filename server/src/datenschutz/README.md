@@ -5,7 +5,8 @@ persönlichen Export und die Demo-Daten. Schicht 3 der Zielaufteilung.
 
 - `datenschutz.dienst.ts` – `DatenschutzDienst`: Einstellungen (`datenschutz`, `setzeDatenschutz`), Prüfliste
   (`auskunftVorschau`, #472), `auskunftDaten`, Nachweis, Antwortfrist, Verzeichnis und Notizen der Auskünfte (#396,
-  #668); Demo-Daten zählen, entfernen, Dokumente anlegen (#248, #711). Dazu `DatenschutzTeile`/`DatenschutzAnschluss`.
+  #668); Demo-Daten zählen, entfernen, Dokumente anlegen (#248, #711). Dazu `DatenschutzTeile`; `DatenschutzAnschluss` in
+  `anschluss.ts` (#1278, Schritt 5b).
 - `vollexport.ts` – `VollexportQuellen`: `vollexportQuelle` (#254), `persoenlicheQuelle` (#255, #683). Das Format
   schreibt weiter `export/vollexport.ts`.
 - `zustellen.ts` – `AuskunftZustellen` (#455, #666): per E-Mail, Abruf-Links anlegen und zurückziehen, Abruf prüfen,
@@ -16,7 +17,8 @@ persönlichen Export und die Demo-Daten. Schicht 3 der Zielaufteilung.
 
 - Alle Klassen bekommen den Kern und dieselben `DatenschutzTeile`: Rechteprüfung, Historie, Mappen, Dokumente
   (Umwandlung, Archivfassung), Sichten, Ereignisse, Aufgaben (Vertretung), Löschen (Baum, Löschprotokoll) – und
-  einander (`baueDatenschutz()` im Dienst).
+  einander (`baueDatenschutz()` im Dienst). Die Quellen des Vollexports nennen nur die Teile, die sie rufen (#1278,
+  Schritt 5b).
 - Über den Anschluss: Konten, Kurzzustand (#744), den Tresor (nur `entschluessele`) und den Export der
   Automatisierungen (vom Baustein gesetzt). `istVerschluesselt` kommt als Werkzeug aus `tresor.ts`.
 - Importiert nur sich selbst, Kern, Fachordner (je über `index.ts`), `shared/`, die Basis und die Werkzeuge

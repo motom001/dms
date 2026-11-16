@@ -5,7 +5,7 @@
 import { ok, privatZwischenspeichern, ich, b, quelle, L, leer } from '../http/routen-hilfen';
 import { Fachfehler } from '../grundlagen/fehler';
 import { t } from '../sprache/sprache';
-import type { Antwort, Route } from '../http/routen';
+import type { Antwort, Route } from '../http/routen-typen';
 import { liesAnlass } from '../../../shared/src/loeschprotokoll';
 import type { RoutenKontext } from '../http/routen-kontext';
 

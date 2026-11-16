@@ -1,4 +1,4 @@
-import { notfallblattPdf } from '../pdf';
+import { notfallblattPdf, type NotfallblattPlan } from '../pdf';
 import { ohneZugangsdaten } from '../sicherung/sicherung';
 import { t } from '../sprache/sprache';
 import { NOTFALL_HILFE, NOTFALL_HILFE_EN, NOTFALL_QR } from './notfallqr';
@@ -104,39 +104,6 @@ export function blattAdresse(a: string): { text: string; link?: string } {
   const sauber = ohneZugangsdaten(a.trim());
   if (/^https:\/\//i.test(sauber)) return { text: sauber, link: sauber };
   return { text: sauber.replace(/^[a-z][a-z0-9+.-]*:\/\//i, '') };
-}
-
-export interface NotfallblattPlan {
-  dokumenttitel: string;
-  kopf: { titel: string; name: string; unter: string };
-  einleitung: string;
-  schluessel: {
-    titel: string;
-    gruppen: Array<Array<{ zeichen: string; hilfe: string | null }>>;
-    hinweis: string;
-    fingerabdruckTitel: string;
-    fingerabdruck: string;
-    fingerabdruckHinweis: string;
-  };
-  /** `kurz` (#671): knappere Fassung der Zeile, wenn das Blatt sonst nicht auf eine Seite passt (Aufrufe und Ziele nur gezählt). */
-  ablage: {
-    titel: string;
-    zeilen: Array<{ marke: string; text: string; link?: string; mono?: boolean; kurz?: string }>;
-    warnung: string | null;
-  };
-  /** `seite2`: Verweis, wenn die Kontakte auf eine zweite Seite ausweichen (#812). */
-  fragen: { titel: string; kontakte: Array<{ name: string; erreichbar: string; notiz?: string }>; leer: string | null; seite2: string };
-  hilfe: {
-    titel: string;
-    text: string;
-    links: Array<{ marke: string; url: string }>;
-    qr: readonly string[];
-    qrText: string;
-    handbuch: string;
-  };
-  /** Ausgesperrt? Notfallcode und wo man ihn eingibt (#815); null ohne Code. */
-  notfall: { titel: string; code: string; text: string; adresse: { text: string; link?: string } | null; hinweis: string } | null;
-  fuss: string;
 }
 
 export function notfallblattPlan(d: Notfalldaten): NotfallblattPlan {

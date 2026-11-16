@@ -22,7 +22,7 @@ import type { PaketVolltext } from '../volltext/paketvolltext';
 import { protokoll } from '../protokoll/protokoll';
 import type { Repo } from '../repo';
 import { t } from '../sprache/sprache';
-import type { TexterkennungAnbindung } from './dokumente.dienst';
+import type { TexterkennungAnbindung } from './gemeinsam';
 
 /** Was das Umwandeln außer dem Kern braucht – vom Dienst hereingereicht, bis es eigene Module dafür gibt. */
 export interface UmwandelnAnschluss {

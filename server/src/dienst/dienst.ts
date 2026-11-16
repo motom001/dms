@@ -2,7 +2,7 @@ import type { Benutzer, Systemkonto } from '../../../shared/src/model';
 import { type Tresor, istVerschluesselt } from '../geheimnisse/tresor';
 import type { Einstellungen } from '../einstellungen/einstellungen';
 import { type Kurzzustand, speicherKurzzustand } from '../zwischenspeicher/kurzzustand';
-import { DienstBauteile } from './bauteile';
+import { DienstBauteile, type KontenHaken } from './bauteile';
 import { Auftraege } from '../prozesse/auftrag';
 import { protokoll, kontext } from '../protokoll/protokoll';
 import {
@@ -76,24 +76,6 @@ import { Ereignisverteiler } from '../ereignisse/ereignisse';
 import { Fachfehler } from '../grundlagen/fehler';
 import { t } from '../sprache/sprache';
 import type { InstalliertesPaket } from '../../../shared/src/pakete';
-
-/** Was mit dem Konto geschieht, wenn eine Benutzer-Mappe den Papierkorb verlässt (#43). */
-export interface KontenHaken {
-  /** Endgültig gelöscht: Konto löschen. */
-  endgueltig(id: string): Promise<void>;
-  /** Wiederhergestellt: Konto wieder aktivieren. */
-  wiederda(id: string, von: string | null): Promise<void>;
-  /** Alle Konten mit Abwesenheit und Vertreter – für die Umleitung von Aufgaben (#78). */
-  benutzer?(): Promise<Benutzer[]>;
-  /** Konten, die kein Mensch sind (#673): Systemkonten und Dienstkonten der Pakete – nur für den Testlauf der Rechte (#710). */
-  ohneMensch?(): Promise<Benutzer[]>;
-  /** Dienstkonten der Pakete (#686: Rechte des Paket-Benutzers bei der Zustellung von Ereignissen). */
-  dienstkonten?(): Promise<Benutzer[]>;
-  /** Persönliche Einstellungen eines Benutzers (#422: Favoriten benachrichtigen, Geänderte hervorheben). */
-  einstellungen?(id: string): Promise<Record<string, unknown>>;
-  /** Persönliche Einstellung setzen (#506: Vorgabe für neue Benutzer, „auf alle anwenden“); `null` löscht. */
-  setzeEinstellung?(id: string, schluessel: string, wert: unknown): Promise<void>;
-}
 
 export interface DienstOptionen {
   /** Schlüssel für Passwortfelder (#39, #46). */

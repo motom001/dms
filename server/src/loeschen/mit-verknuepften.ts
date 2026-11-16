@@ -1,7 +1,7 @@
 /**
  * Mappe mit allen verknüpften Mappen löschen (#396, #424, #1078 aus dienst.ts): die Baum-Sammlung über Verweise,
  * Vorschau, Ausführen in einem Vorgang, Erinnerung zum Fristende, Verweise wieder setzen und den ganzen Vorgang
- * wiederherstellen. Schicht 3 – Teile und Anschluss wie `LoeschenDienst` (loeschen.dienst.ts).
+ * wiederherstellen. Schicht 3 – Anschluss wie `LoeschenDienst` (anschluss.ts), von den Teilen nur, was es braucht.
  */
 import { randomUUID } from 'node:crypto';
 import { type BaumQuelle, sammleBaum } from './baum';
@@ -28,8 +28,34 @@ import { type Ausloeser, liesAnlass, type LoeschKontext } from '../../../shared/
 import { darfLoeschen, type Mappe, type Mappentyp, verweiseVon, type Werte } from '../../../shared/src/model';
 import { istTeilVerweis } from '../../../shared/src/teile';
 import { setzeZusammengesetzte } from '../../../shared/src/zusammengesetzt';
-import type { LoeschenAnschluss, LoeschenDienst, LoeschenTeile } from './loeschen.dienst';
-import type { Papierkorb } from './papierkorb';
+import type { LoeschenAnschluss } from './anschluss';
+import type { Passung } from '../mappentypen';
+import type { Rueckverweis } from '../repo';
+import type { LoeschprotokollVerwaltung } from './loeschprotokoll';
+import type { Loeschweg } from '../../../shared/src/loeschprotokoll';
+
+/**
+ * Die Teile, die das Löschen mit Verknüpften ruft (#1278, Schritt 5b: Auszug aus `LoeschenTeile`). Löschen und Papierkorb rufen ihrerseits diese
+ * Klasse; deshalb steht hier nur, was von ihnen gebraucht wird – beschrieben, nicht eingebunden (sonst ein Kreis).
+ */
+interface VerknuepftTeile {
+  rechte: ZugriffDienst;
+  passung: Passung;
+  historie: MappenHistorie;
+  protokoll: Pick<LoeschprotokollVerwaltung, 'lebendInhalt'>;
+  /** `LoeschenDienst.loeschPruefung` (#79), soweit hier gelesen. */
+  loeschen: {
+    loeschPruefung(
+      m: Mappe,
+      typ: Mappentyp | undefined,
+      rueck: Rueckverweis[],
+    ): Promise<{ ok: true } | { ok: false; status: number; grund: string }>;
+  };
+  /** `Papierkorb.leere`. */
+  papierkorb: {
+    leere(ids: string[], von?: string | null, streng?: boolean, wie?: { weg: Loeschweg; kontext?: LoeschKontext }): Promise<number>;
+  };
+}
 
 /** Wert eines Mehrfachverweises als Liste. */
 const alsListe = (v: unknown): string[] => (Array.isArray(v) ? v.map(String) : typeof v === 'string' && v ? [v] : []);
@@ -37,7 +63,7 @@ const alsListe = (v: unknown): string[] => (Array.isArray(v) ? v.map(String) : t
 export class MitVerknuepften {
   constructor(
     private readonly kern: Kern,
-    private readonly teile: LoeschenTeile,
+    private readonly teile: VerknuepftTeile,
     private readonly anschluss: LoeschenAnschluss,
   ) {}
 
@@ -77,10 +103,10 @@ export class MitVerknuepften {
   private passungFuer(typ: Mappentyp, ids: string[]) {
     return this.teile.passung.passungFuer(typ, ids);
   }
-  private leere(...a: Parameters<Papierkorb['leere']>) {
+  private leere(...a: Parameters<VerknuepftTeile['papierkorb']['leere']>) {
     return this.teile.papierkorb.leere(...a);
   }
-  private loeschPruefung(...a: Parameters<LoeschenDienst['loeschPruefung']>) {
+  private loeschPruefung(...a: Parameters<VerknuepftTeile['loeschen']['loeschPruefung']>) {
     return this.teile.loeschen.loeschPruefung(...a);
   }
   private wiederEintrag(e: PapierkorbEintrag, typ: Mappentyp | undefined, vorgang: string | null): ProtokollTeil {

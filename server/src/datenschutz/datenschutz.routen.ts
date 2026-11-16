@@ -13,7 +13,7 @@ import { ipBereich, kuerzeIp } from './abruf';
 import { eigeneVersion } from '../system/system';
 import { L, ok, leer, b, ich } from '../http/routen-hilfen';
 import type { RoutenKontext } from '../http/routen-kontext';
-import type { Route } from '../http/routen';
+import type { Route } from '../http/routen-typen';
 import { nachweis } from '../protokoll/nachweisjournal';
 
 export function datenschutzRouten(k: RoutenKontext): Route[] {

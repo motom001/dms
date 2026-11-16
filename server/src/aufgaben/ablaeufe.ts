@@ -55,22 +55,13 @@ import { AUTOMATISIERUNG_GRENZEN } from '../../../shared/src/automatisierung';
 import { datumDe, ERINNERUNG_TEXT_MAX, istDatum } from '../../../shared/src/fristen';
 import { type Aufgabe, AUFGABE_MAX, type Mappe, type Mappentyp } from '../../../shared/src/model';
 import { heuteIn } from '../../../shared/src/sichten';
-import type { AufgabenAnschluss, AufgabenTeile } from './aufgaben.dienst';
+import type { AufgabenAnschluss } from './anschluss';
+import type { AblaeufeTeile } from './ablaeufe-teile';
 import { type PaketAblaufvorlage, vorlagenAusPaket } from './ablaufvorlagen-paket';
 
 export type { PaketAblaufvorlage } from './ablaufvorlagen-paket';
 
 const log = protokoll.modul('ablage');
-
-/**
- * Platzhalter füllen (#795) – der Motor (automatisierung/motor/) setzt das: mit den Rechten der Person (`z`) und, mit `empf`,
- * zusätzlich mit denen des Empfängers. Ohne Motor (Tests) bleiben Platzhalter der Vorlage stehen.
- */
-export type AblaufPlatzhalter = (
-  text: string,
-  c: { name: string; mappe: Mappe; typ: Mappentyp | null; z: Zugriff; daten: Record<string, unknown> },
-  empf: Zugriff | null,
-) => Promise<{ text: string; verborgen: number; mappe: boolean }>;
 
 /** Feste Platzhalter einer Vorlage – vor dem Motor durch Marken ersetzt, damit Eingaben nie selbst Platzhalter werden. */
 const MARKE = (k: string) => `\u0000${k}\u0000`;
@@ -108,7 +99,7 @@ function kernStandard(k: (typeof KERN_VORLAGEN)[number]): Ablaufvorlage {
 export class MappenAblaeufe {
   constructor(
     private readonly kern: Kern,
-    private readonly teile: AufgabenTeile,
+    private readonly teile: AblaeufeTeile,
     private readonly anschluss: AufgabenAnschluss,
   ) {}
 

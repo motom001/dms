@@ -9,7 +9,7 @@ import { ok } from '../http/routen-hilfen';
 import { extern } from '../system/externmessung';
 import { hatGesamt } from '../../../shared/src/verwaltungsrecht';
 import type { RoutenKontext } from '../http/routen-kontext';
-import type { Anfrage, Route } from '../http/routen';
+import type { Anfrage, Route } from '../http/routen-typen';
 
 export function paketeRouten(k: RoutenKontext): Route[] {
   const { x, pakete, paketerstellung, wer } = k;

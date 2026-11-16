@@ -13,7 +13,6 @@ import type { EreignisseDienst } from '../ereignisse/index';
 import { Fachfehler } from '../grundlagen/fehler';
 import { MB } from '../grundlagen/grenzen';
 import type { Kern, Zugriff } from '../kern';
-import type { Kurzzustand } from '../zwischenspeicher/kurzzustand';
 import type { LoeschprotokollVerwaltung } from '../loeschen';
 import type { MitVerknuepften } from '../loeschen';
 import type { MappenDienst, MappenHistorie } from '../mappen';
@@ -48,7 +47,6 @@ import { alsText } from '../../../shared/src/markdown';
 import {
   type Aufgabe,
   auswahlText,
-  type Benutzer,
   istEmail,
   istLeer,
   type Mappe,
@@ -60,6 +58,7 @@ import {
 import { geschwaerztName, kannSchwaerzen } from '../../../shared/src/schwaerzen';
 import { heuteIn } from '../../../shared/src/sichten';
 import type { VollexportQuellen } from './vollexport';
+import type { DatenschutzAnschluss } from './anschluss';
 import type { OrganisationDienst } from '../organisation';
 
 /** Die Teile, die der Datenschutz ruft – dazu alle Klassen dieses Ordners (zusammengesetzt im Dienst). */
@@ -79,20 +78,6 @@ export interface DatenschutzTeile {
   vollexport: VollexportQuellen;
   /** Eigene Organisation (#995): Verantwortlicher für Auskunft und Löschkonzept. */
   organisation: OrganisationDienst;
-}
-
-/** Was der Datenschutz außer dem Kern braucht – vom Dienst hereingereicht. */
-export interface DatenschutzAnschluss {
-  /** Konten (#43), vom Start angebunden: aktive Personen für Benachrichtigungen. */
-  konten(): { benutzer?(): Promise<Benutzer[]> } | undefined;
-  /** Zustand zwischen Anfragen (#744; Belegung der Code-Prüfung am Abruf-Link). */
-  kurzzustand(): Kurzzustand;
-  /** Der Schlüssel (#39, #46; tresor.ts, beim Start gesetzt) – nur zum Entschlüsseln im Export. */
-  tresor(): { entschluessele(wert: string): string | null } | undefined;
-  /** Automatisierungen mit Änderungsverlauf für den Vollexport (#674 setzt das am Dienst). */
-  automatisierungenExport(): (() => Promise<unknown[]>) | undefined;
-  /** Automatisierungsvorlagen mit Änderungsverlauf für den Vollexport (#1044). */
-  ablaufvorlagenExport?(): Promise<unknown[]>;
 }
 
 export class DatenschutzDienst {

@@ -7,8 +7,9 @@
  * Hauptdokument. Erkennung und KI lassen sie weg (`ohneErkennung`); geteilt wird hier nichts.
  */
 import { type Dokument, MAX_DATEIGROESSE } from '../../../shared/src/model';
-import type { Dienst } from '../dienst/dienst';
-import type { GeleseneMail } from './postfach';
+import type { DokumenteDienst, DokumentAnlagen } from '../dokumente';
+import type { Eingangskanaele } from './eingangskanaele';
+import type { GeleseneMail } from './postfach-typen';
 import { t } from '../sprache/sprache';
 
 /** Die Anhänge, die Dokumente werden: in der Reihenfolge der E-Mail, ohne eingebettete Bilder. */
@@ -27,12 +28,19 @@ export function emlName(betreff: string): string {
   }.eml`;
 }
 
+/** Was die Ablage der Anhänge vom Dienst braucht (#1278, Schritt 5b: schmaler Anschluss statt der ganzen Klasse `Dienst`). */
+export interface AnhaengeDienst {
+  readonly eingangskanaele: Pick<Eingangskanaele, 'postTyp' | 'notiereSystem'>;
+  readonly dokumente: Pick<DokumenteDienst, 'ladeHoch'>;
+  readonly dokumentAnlagen: Pick<DokumentAnlagen, 'alsOriginalEmail'>;
+}
+
 /**
  * Anhänge (und mit `original` die E-Mail selbst) als Dokumente in die Post `postId`; Abgelehntes (zu groß, leer, Fehler)
  * und Doppeltes mit Grund in die Historie (`von` = Systemname). Liefert die Zahl der Dokumente.
  */
 export async function legeAnhaengeAb(
-  dienst: Dienst,
+  dienst: AnhaengeDienst,
   x: { postId: string; mail: GeleseneMail; quelle: Buffer; original: boolean; von: string },
   abgelehnt: string[] = [],
 ): Promise<number> {

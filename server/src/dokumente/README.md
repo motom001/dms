@@ -6,7 +6,9 @@ Rechteprüfung, neben `mappentypen/` und `mappen/`.
 
 - `dokumente.dienst.ts` – `DokumenteDienst`: `ladeHoch` (gleicher Name #194, automatisch verkleinern #393, eine
   Transaktion #404), `loescheDokument` (Papierkorb #344, Löschprotokoll #470), `textAusDatei` (#391),
-  Texterkennung und Vorschaubilder anbinden, `neueDateien`, `raeumeAuf`; `dateiname`, `erkenneAnzeigbar` (Modulebene).
+  Texterkennung und Vorschaubilder anbinden, `neueDateien`, `raeumeAuf`.
+- `gemeinsam.ts` – `dateiname`, `erkenneAnzeigbar` und `TexterkennungAnbindung` für alle Klassen dieses Ordners
+  (#1278, Schritt 5b: vorher in `dokumente.dienst.ts`).
 - `versionen.ts` – `DokumentVersionen` (#194): `ersetzeDokument`, `holeVersionZurueck`, `nachNeuerVersion` (nur die
   letzten N, Löschprotokoll), `versionen`, `versionInhalt`, `beruehre` („zuletzt geändert“, #76).
 - `umwandeln.ts` – `DokumentUmwandlung` (#577): Paket anbinden, `nachFassung`, `umwandelPaketDa`, Fassung und

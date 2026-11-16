@@ -1,6 +1,6 @@
 import { ImapFlow } from 'imapflow';
 import { simpleParser } from 'mailparser';
-import type { GeleseneMail, ImapSitzung, ImapVerbinder, MailLeser } from './postfach';
+import type { GeleseneMail, ImapSitzung, ImapVerbinder, MailLeser } from './postfach-typen';
 import { t } from '../sprache/sprache';
 import { MAIL_INLINE_BILD_MAX } from '../grundlagen/grenzen';
 
