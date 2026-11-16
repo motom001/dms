@@ -66,7 +66,7 @@ Kurz festgehalten, damit spätere Änderungen wissen, warum etwas so ist.
 
 - **Eigener Namensraum `/api/v1`** mit festen Adressen; intern nutzt er dieselben Funktionen wie die Oberfläche. API-Schlüssel gelten nur dort, nicht an den internen Adressen der Oberfläche.
 - **Schlüssel** `dms_…` (240 Bit Zufall), gespeichert nur als SHA-256; sichtbar bleibt der Anfang. Rechte: höchstens die des Benutzers, dazu „nur lesen“ (nur GET). Seit 0.26 (#128) bekommen Administratoren keine Schlüssel mehr: Über die API arbeitet ein normaler Benutzer.
-- **OpenAPI aus derselben Tabelle** wie die Routen (`api-v1.ts`), daher immer passend zur installierten Version; die lesbare Seite rendert sie selbst, ohne fremde Bibliothek.
+- **OpenAPI aus derselben Tabelle** wie die Routen (`http/api-v1/`), daher immer passend zur installierten Version; die lesbare Seite rendert sie selbst, ohne fremde Bibliothek.
 
 ## Betrieb und Fehlersuche
 

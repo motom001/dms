@@ -21,7 +21,9 @@ Rechteprüfung, neben `mappentypen/` und `mappen/`.
   `verschiebeDokument` im Repo, `loescheDokument` (Anlagen mit in den Papierkorb, beim Ersetzen `nimmAnlagenMit`),
   Wiederherstellen im Papierkorb. `alsOriginalEmail` (#999): die abgeholte E-Mail als letzte Anlage am letzten Anhang;
   `eingangNr`/`originalEmail` setzt `ladeHoch` (intern `eingang`) und übernimmt `nimmAnlagenMit` beim Ersetzen.
-- `index.ts` – die einzige Tür. `dokumente.routen.ts` (Routen, #960) holt `routen.ts` direkt.
+- `index.ts` – die einzige Tür. `dokumente.routen.ts` (Routen, #960) holt `routen.ts` direkt; es setzt seit #1278
+  die Routen aus `dokumente-fassungen.routen.ts`, `dokumente-volltext.routen.ts`, `dokumente-versionen.routen.ts` und
+  `dokumente-pdf.routen.ts` in fester Reihenfolge zusammen.
 
 **Abhängigkeiten**
 

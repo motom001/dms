@@ -189,7 +189,7 @@ async function aufbau(o: { mitPaket?: boolean; paket?: InstalliertesPaket } = {}
   t.paket = () => d.volltexte.texterkennungPaket();
   t.volltextPaket = d.paketVolltext;
   t.nachher = (dok, e, k) => {
-    // Wie ablago.ts: Ausgelassen geht an die Archivfassung (E-Mails ohne Volltext-Paket, #946).
+    // Wie beim Start (start/pakete.ts): Ausgelassen geht an die Archivfassung (E-Mails ohne Volltext-Paket, #946).
     if (e.stand === 'ausgelassen') {
       void d.volltexte.volltextAusgelassen(dok.id);
       return;

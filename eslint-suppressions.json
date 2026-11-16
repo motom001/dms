@@ -1,9 +1,4 @@
 {
-  "server/src/ablago.ts": {
-    "max-lines": {
-      "count": 1
-    }
-  },
   "server/src/anmeldung/anmeldung.routen.ts": {
     "complexity": {
       "count": 1
@@ -169,12 +164,14 @@
       "count": 1
     }
   },
-  "server/src/dienst/dienst.ts": {
-    "max-lines": {
-      "count": 1
-    },
+  "server/src/dienst/bauteile.ts": {
     "max-lines-per-function": {
-      "count": 2
+      "count": 1
+    }
+  },
+  "server/src/dienst/dienst.ts": {
+    "max-lines-per-function": {
+      "count": 1
     }
   },
   "server/src/dms.ts": {
@@ -193,11 +190,6 @@
       "count": 1
     },
     "max-lines-per-function": {
-      "count": 1
-    }
-  },
-  "server/src/dokumente/dokumente.routen.ts": {
-    "max-lines": {
       "count": 1
     }
   },
@@ -301,11 +293,8 @@
       "count": 1
     }
   },
-  "server/src/http/api-v1.ts": {
+  "server/src/http/api-v1/openapi.ts": {
     "complexity": {
-      "count": 1
-    },
-    "max-lines": {
       "count": 1
     }
   },
@@ -348,12 +337,14 @@
       "count": 1
     }
   },
-  "server/src/konten/konto-repo.ts": {
-    "max-lines": {
-      "count": 1
-    },
+  "server/src/konten/konto-repo-pg.ts": {
     "max-lines-per-function": {
-      "count": 2
+      "count": 1
+    }
+  },
+  "server/src/konten/konto-repo-speicher.ts": {
+    "max-lines-per-function": {
+      "count": 1
     }
   },
   "server/src/konten/sitzungen.ts": {
@@ -898,19 +889,23 @@
       "count": 1
     }
   },
+  "server/src/webdav/webdav-basis.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
   "server/src/webdav/webdav-baum.ts": {
     "complexity": {
       "count": 1
     }
   },
-  "server/src/webdav/webdav.ts": {
+  "server/src/webdav/webdav-methoden.ts": {
     "@typescript-eslint/no-unused-vars": {
       "count": 1
-    },
+    }
+  },
+  "server/src/webdav/webdav.ts": {
     "complexity": {
-      "count": 2
-    },
-    "max-lines": {
       "count": 1
     }
   },

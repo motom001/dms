@@ -1186,12 +1186,6 @@
       "httpDatum"
     ]
   },
-  "server/src/webdav/webdav.ts": {
-    "exports": [
-      "MAX_EINTRAEGE",
-      "STANDARD_GRENZE"
-    ]
-  },
   "server/src/werkbank/verwaltung.ts": {
     "exports": [
       "UHRZEIT",

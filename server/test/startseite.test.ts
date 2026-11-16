@@ -18,7 +18,7 @@ async function aufbau() {
   const anna = (await konten.legeBenutzerAn({ email: 'anna@example.org', name: 'Anna' }, admin.id)).benutzer;
   await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
   const ich = async (id: string) => (await konten.listeBenutzer()).find((b) => b.id === id)!;
-  // Wie in ablago.ts (#940): Anlegen und Ändern zählen wie Öffnen.
+  // Wie beim Start (start/dienst.ts, #940): Anlegen und Ändern zählen wie Öffnen.
   d.kern.beiEigenerAenderung = (benutzerId, mappeId) => konten.merkeGeoeffnet({ id: benutzerId }, mappeId);
   const tabelle = routen(d, konten, {});
   // Wie nach der Antwort über HTTP (#741): erst danach „zuletzt geöffnet“ merken.

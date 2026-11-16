@@ -15,7 +15,7 @@ import type { Repo } from '../repo';
 import { t } from '../sprache/sprache';
 import type { DokumentUmwandlung } from './umwandeln';
 
-/** Vorschaubilder aus der Archivfassung (#1216) – vorschau.ts, angebunden in ablago.ts. */
+/** Vorschaubilder aus der Archivfassung (#1216) – vorschau.ts, angebunden beim Start (start/dokumente.ts). */
 export interface VorschauAusArchiv {
   ausArchiv(docs: Dokument[]): unknown;
   /** Vorhandene Bilder neu erzeugen (#1329); das alte bleibt, bis das neue da ist. */

@@ -23,6 +23,7 @@
  * darf sie direkt einbinden (`fachordner` prüft für sie nicht „nur über index.ts“), sie selbst binden ein, was sie
  * brauchen (die Schichten prüfen sie nicht), und Fachordner dürfen von ihnen nur, was BASIS, WERKZEUGE, NACHBARN und
  * UEBER_DEM_DIENST nennen – wie vorher. Wer eine Datei hinter die Tür ihres Ordners bringt, nimmt sie hier heraus.
+ * Teile einer solchen Datei, die Schritt 4b aufgeteilt hat (dienst/bauteile, webdav/webdav-*), stehen mit ihr hier.
  */
 const OHNE_TUER = {
   anmeldung: 'anmeldesperre|zweifaktor|passkeys|oidc|apischluessel|passwort',
@@ -35,7 +36,7 @@ const OHNE_TUER = {
   datenbank: 'db|anbindung|mandant|erweiterungen|sperrverbindung|poolmessung|messung',
   datenschutz: 'abruf|auskunft',
   demo: 'demo|demo-dokumente|demo-text|zufall',
-  dienst: 'dienst',
+  dienst: 'dienst|bauteile',
   einrichtung: 'einrichtung|einrichtungscode|einrichtungsdatei|einrichtungsmodus|startmodus',
   einstellungen: 'einstellungen|region|betrieb',
   entdecken: 'entdecken|entdecken-werkbank',
@@ -45,7 +46,7 @@ const OHNE_TUER = {
   formate: 'xlsx|zip|xml|schriftstueck',
   geheimnisse: 'geheimnisse|geheimnis-sperre|tresor',
   grundlagen: 'fehler|grenzen|uebergaenge',
-  http: 'http|routen|api-v1|koepfe|proxy|ueberlast',
+  http: 'http|routen|koepfe|proxy|ueberlast',
   konten: 'konto-repo',
   lasttest: 'lasttestmodus|speicherart|protokollsammlung|abfragestatistik|prozessgruppen',
   loeschen: 'baum',
@@ -63,7 +64,7 @@ const OHNE_TUER = {
   system: 'system|systemlast|externmessung|fehlermeldungen|konsole',
   volltext: 'paketvolltext|texterkennung',
   wartung: 'wartung',
-  webdav: 'webdav|webdav-baum',
+  webdav: 'webdav|webdav-baum|webdav-hilfen|webdav-basis|webdav-ordner|webdav-methoden',
   werkbank: 'verwaltung|verwaltungsbereiche|meldungen|werkbankzahlen',
   zeitplan: 'zeitplan|streuung',
   zwischenspeicher: 'zaehlerspeicher|lesespeicher|kurzzustand|zwischenspeicher',
@@ -130,9 +131,11 @@ const SCHICHTEN = [
 /**
  * Ordner ohne Fachlogik: HTTP-Hilfen, PDF-Stelle, Arbeiter-Pool, Paket-Läufer. Für sie gilt `fachordner` nicht. Die
  * Fachlogik rund um PDFs liegt seit #1077 im Fachordner pdf-bearbeiten/ (Schicht 3) – nicht in pdf/, das so ein
- * Werkzeug ohne Kern, Mappen und Dokumente bleibt (pdf-lib nur dort, Vorgänge im Arbeiter).
+ * Werkzeug ohne Kern, Mappen und Dokumente bleibt (pdf-lib nur dort, Vorgänge im Arbeiter). Dazu der Zusammenbau beim
+ * Start (start/, #1278): die Abschnitte von ablago.ts, die alles verdrahten – sie bindet nur ablago.ts ein
+ * (`start-nur-aus-ablago`).
  */
-const TECHNIK = ['http', 'pdf', 'arbeit', 'laeufer', BASIS_ORDNER];
+const TECHNIK = ['http', 'pdf', 'arbeit', 'laeufer', BASIS_ORDNER, 'start'];
 /**
  * Teile eines Fachordners über dem Dienst (#1278): Paketverwaltung, Paketerstellung und der Motor der Automatisierungen
  * bekommen den ganzen Dienst (nur als Typ, `ueber-dem-dienst-typ`), der Dienst selbst bindet `pakete/index.ts` ein.
@@ -314,6 +317,13 @@ module.exports = {
         pathNot: ['\\.routen\\.ts$', '^server/src/http/routen\\.ts$', '^server/src/http/routen-(hilfen|kontext)\\.ts$'],
       },
       to: { path: '^server/src/http/routen-(hilfen|kontext)\\.ts$' },
+    },
+    {
+      name: 'start-nur-aus-ablago',
+      severity: 'error',
+      comment: 'Die Abschnitte des Starts (start/, #1278) ruft nur ablago.ts auf – sie verdrahten alles und gehören zu keinem Fachbereich.',
+      from: { path: '^(server|shared|web)/', pathNot: ['^server/src/ablago\\.ts$', '^server/src/start/'] },
+      to: { path: '^server/src/start/' },
     },
     ...fachordner(),
   ],
