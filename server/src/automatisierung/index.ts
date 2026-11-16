@@ -1,8 +1,24 @@
 /**
- * Automatisierungen – Fachordner (#960, #679, #671). Der Motor liegt noch in `server/src/automatisierung.ts`; hier die
- * Tür zum „Aufruf von außen“ (Adresse, Geheimnis, Signatur, Bremse) und zu den Karten nach außen (Ausgangskorb, Ziele,
- * Geheimnisse, sicherer Abruf). Die Routen holt routen.ts direkt.
+ * Automatisierungen – Fachordner (#960, #679, #671). Der Motor liegt seit #1278 in `motor/` (vorher
+ * `server/src/automatisierung.ts`) und hat eine eigene Tür, weil er den ganzen Dienst bekommt; seine Namen reicht diese
+ * Datei unverändert weiter. Dazu die Tür zum „Aufruf von außen“ (Adresse, Geheimnis, Signatur, Bremse) und zu den
+ * Karten nach außen (Ausgangskorb, Ziele, Geheimnisse, sicherer Abruf). Die Routen holt routen.ts direkt.
  */
+export {
+  Automatisierungen,
+  BENACHRICHTIGUNGEN_PAKET,
+  DANN_AUSFUEHRER,
+  istPostFuerDich,
+  KarteLeer,
+  pgAutomatisierungRepo,
+  postFuerDichDaten,
+  speicherAutomatisierungRepo,
+  uuidAus,
+  type AutomatisierungDeps,
+  type AutomatisierungRepo,
+  type DannAusfuehrer,
+  type KartenKontext,
+} from './motor/index';
 export {
   Aufrufe,
   aufrufBereich,

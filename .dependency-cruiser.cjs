@@ -6,6 +6,8 @@
  *   Ausnahme: shared/test/ prüft Sprachdateien und Gemeinsames über alle Teile hinweg.
  * - Technische Ordner mit index.ts nur über index.ts (pdf/ und arbeit/, je mit eigener Ausnahme; repo/ über seine drei
  *   index.ts, #1278).
+ * - Teile über dem Dienst (UEBER_DEM_DIENST) und Nachbarn eines Fachordners, die noch in server/src/ liegen (NACHBARN,
+ *   #1278), sind unten beschrieben.
  * - Hilfen der HTTP-Schicht (http/routen-hilfen.ts, http/routen-kontext.ts) nur in Routen (#961, Ergänzung von
  *   Sicherheit): Fachlogik bekommt den Benutzer übergeben und liest ihn nicht selbst aus der Anfrage.
  * - Eine Regel für alle Fachordner (#1072, `fachordner`; vorher je Ordner zwei, #961/#964): von außen nur über ihre
@@ -71,14 +73,17 @@ const SCHICHTEN = [
  */
 const TECHNIK = ['http', 'pdf', 'arbeit', 'laeufer', BASIS_ORDNER];
 /**
- * Teile eines Fachordners über dem Dienst (#1278): Paketverwaltung und Paketerstellung bekommen den ganzen Dienst (nur
- * als Typ, `ueber-dem-dienst-typ`), der Dienst selbst bindet `pakete/index.ts` ein. Damit kein Kreis über dienst.ts
- * entsteht, hat jeder dieser Unterordner eine eigene Tür (seine index.ts). Bis Katalogsignatur, Projektschlüssel,
- * Entdecken und Lizenztexte selbst in Fachordnern liegen, dürfen diese Teile sie direkt einbinden (`dateien`).
+ * Teile eines Fachordners über dem Dienst (#1278): Paketverwaltung, Paketerstellung und der Motor der Automatisierungen
+ * bekommen den ganzen Dienst (nur als Typ, `ueber-dem-dienst-typ`), der Dienst selbst bindet `pakete/index.ts` ein.
+ * Damit kein Kreis über dienst.ts entsteht, hat jeder dieser Unterordner eine eigene Tür (seine index.ts). Bis
+ * Katalogsignatur, Projektschlüssel, Entdecken und Lizenztexte – für den Motor Zeitplan, Systemstand, Aufgaben-Mail
+ * und die Werkbank-Rechte des Systemkontos – selbst in Fachordnern liegen, dürfen diese Teile sie direkt einbinden
+ * (`dateien`).
  */
 const UEBER_DEM_DIENST = {
-  ordner: ['pakete/verwaltung', 'pakete/erstellung'],
-  dateien: 'dienst|katalogsignatur|projektschluessel|entdecken|entdecken-werkbank|lizenztexte',
+  ordner: ['pakete/verwaltung', 'pakete/erstellung', 'automatisierung/motor'],
+  dateien:
+    'dienst|katalogsignatur|projektschluessel|entdecken|entdecken-werkbank|lizenztexte|zeitplan|system|aufgabenmail|automatisierung-werkbank',
 };
 const UNTERORDNER = UEBER_DEM_DIENST.ordner.join('|');
 /**
@@ -136,7 +141,10 @@ function fachordner() {
           : `Schicht ${i} ruft nur nach unten (#1072): Fachordner bis Schicht ${i}, Kern, shared/, Basis und Werkzeuge – nie dienst.ts oder Dateien darüber. Routen (*.routen.ts) sind ausgenommen.`,
       from: {
         path: hier,
-        pathNot: ['\\.routen\\.ts$', ...(i === SCHICHTEN.length ? [`^server/src/(?:${UNTERORDNER})/`, `^server/src/(?:${MIT_NACHBARN})/`] : [])],
+        pathNot: [
+          '\\.routen\\.ts$',
+          ...(i === SCHICHTEN.length ? [`^server/src/(?:${UNTERORDNER})/`, `^server/src/(?:${MIT_NACHBARN})/`] : []),
+        ],
       },
       to: { path: '^server/src/', pathNot: erlaubt },
     });
