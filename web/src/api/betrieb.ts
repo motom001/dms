@@ -2,25 +2,22 @@
 import type { UeberfluessigeVariable } from '../../../shared/src/umgebungsvariablen';
 import type { Akzeptiert, Schwere } from '../../../shared/src/meldungen';
 import type { Auftrag } from '../../../shared/src/auftrag';
-import type { BudgetStand, ExternAufruf, KostenEinstellung } from '../../../shared/src/extern';
+import type { BudgetStand, KostenEinstellung } from '../../../shared/src/extern';
 import type { Notfallkontakt, NotfallkontaktEingabe, NotfallkontakteStand, NotfallMailStand } from '../../../shared/src/notfallkontakte';
 import { anfrage } from './anfrage';
-import type { ExportUmzug, VollexportStand, WartungOeffentlich } from './konto';
-import type { EinrichtungStand, MailSuche, SicherungSchlank, SicherungsMeta, Verbindung, WhSchritt } from './einrichtung';
+import type { ExportUmzug, KontaktZuordnung, VollexportStand, WartungOeffentlich } from './konto';
+import type { EinrichtungStand, MailSuche, SicherungSchlank, SicherungsMeta, Verbindung, WhLauf } from './einrichtung';
 import type { Werkzeuge } from '../../../shared/src/werkzeuge';
-import type { ExternUebersicht } from './pakete';
+import type { ExternUebersicht, ExternZeile } from './pakete';
+/** Seit #1278 (Schritt 5) bei ihrer Schnittstelle; hier weiter erreichbar. */
+export type { ExternZeile } from './pakete';
+export type { WhLauf } from './einrichtung';
+export type { KontaktZuordnung } from './konto';
 
 /** Antwort auf eine Änderung an einem Notfallkontakt (#812). */
 export interface NotfallkontaktErgebnis {
   kontakt: Notfallkontakt | null;
   mail: NotfallMailStand | 'keine' | 'grenze';
-}
-/** Externe Dienste (#565): je Dienst und Paket Kennzahlen, die letzten Aufrufe – nur Metadaten. */
-export interface ExternZeile extends ExternAufruf {
-  id?: number;
-  zeit: string;
-  benutzerId: string | null;
-  kosten: number;
 }
 export type ExterneDiensteStand = ExternUebersicht & { budget: BudgetStand & { waehrung: string }; pakete: Record<string, string> };
 export interface ExternSummeZeile {
@@ -193,18 +190,6 @@ export interface SicherungStand {
     knapp: boolean;
   };
 }
-export interface WhLauf {
-  art: 'wiederherstellung' | 'probe';
-  sicherung: string;
-  von: string;
-  status: 'laeuft' | 'fertig' | 'fehler' | 'neustart';
-  schritte: WhSchritt[];
-  bytes: number;
-  gesamt: number;
-  gestartet: string;
-  beendet?: string;
-  fehler?: string;
-}
 export interface ProbeStand {
   ampel: 'gruen' | 'gelb' | 'rot' | null;
   letzte: { name: string; am: string; ok: boolean; info: string } | null;
@@ -215,14 +200,6 @@ export interface WartungWerkbank extends WartungOeffentlich {
   von: string | null;
   sitzungen: WartungSitzung[];
   /** „Jetzt sofort gesperrt“ (#402) */ sofort?: boolean;
-}
-export interface KontaktZuordnung {
-  name: string;
-  email?: string;
-  telefon?: string;
-  adresse?: string;
-  firma?: string;
-  notiz?: string;
 }
 export type Stufe = 'trace' | 'debug' | 'info' | 'warn' | 'error' | 'fatal';
 export interface Protokolleintrag {

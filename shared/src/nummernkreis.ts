@@ -3,7 +3,7 @@
  * Ein Feld nutzt einen Kreis über den Standardwert `{nummernkreis:<schlüssel>}`; der Wert ist dann
  * schreibgeschützt und wird beim Anlegen der Mappe vergeben.
  */
-import type { Feld } from './model';
+import type { Feld } from './model/basis';
 import { zeitzone } from './region';
 import { t } from './texte';
 

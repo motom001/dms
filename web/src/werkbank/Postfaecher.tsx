@@ -194,7 +194,7 @@ export function PostfaecherListe({ z, offen }: { z: PostfachZustand; offen?: str
 }
 
 /** Bereiche eines Postfachs (#1000): Anmeldung beim Anbieter nur mit OAuth, der Stand erst nach dem Anlegen. */
-export type PostfachBereich = 'grunddaten' | 'verbindung' | 'abholen' | 'anbieter' | 'stand' | 'fassungen';
+type PostfachBereich = 'grunddaten' | 'verbindung' | 'abholen' | 'anbieter' | 'stand' | 'fassungen';
 function postfachBereiche(oauth: boolean, gespeichert: boolean): BereichListe<PostfachBereich> {
   return [
     ['grunddaten', t('werkbank.postfaecher.bereich.grunddaten')],

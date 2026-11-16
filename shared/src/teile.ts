@@ -16,8 +16,7 @@
  *
  * Ohne Abhängigkeiten zur Laufzeit außer Texten und Verweiszielen, damit Modell, Server und Oberfläche sie ohne Kreis nutzen.
  */
-import type { Feld, Mappentyp, MappentypDaten, Werte } from './model';
-import type { Regel, Regelwerk } from './rechte';
+import type { Feld, Mappentyp, MappentypDaten, Regel, Regelwerk, Werte } from './model/basis';
 import { einzigesZiel, jedeMappe, zieleVon } from './verweisziele';
 import { t } from './texte';
 

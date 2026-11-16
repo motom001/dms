@@ -1,44 +1,19 @@
 /** Erkennung (#1278 aus erkennung.ts): Art eines Felds, „Zum Wiederfinden nutzen“ und „Aus Dokument ausfüllen“ am Mappentyp. */
 import { t } from '../texte';
-import type { Feldtyp, Feld, Mappentyp } from '../model';
-import type { Feldformat } from '../feldformate';
+import {
+  ERKENNUNGSARTEN,
+  type AusDokument,
+  type Erkennungsart,
+  type Feld,
+  type FeldErkennung,
+  type Feldformat,
+  type Feldtyp,
+  type Mappentyp,
+} from '../model/basis';
 import { PAKET_ID_TEIL } from '../kennungen';
+/** Die Form der Angaben „Aus Dokument füllen“ steht im Fachmodell (#1278, Schritt 5); hier weiter erreichbar. */
+export { ERKENNUNGSARTEN, type AusDokument, type Erkennungsart, type FeldErkennung } from '../model/basis';
 
-/* ---------- Feld-Eigenschaft ---------- */
-
-export const ERKENNUNGSARTEN = {
-  name: t('gemeinsam.erkennung.name-oder-firma'),
-  vorname: 'Vorname',
-  nachname: 'Nachname',
-  funktion: 'Funktion',
-  nummer: t('gemeinsam.erkennung.nummer-kunden-vertrags'),
-  iban: 'IBAN',
-  ustid: t('gemeinsam.erkennung.umsatzsteuer-id'),
-  email: t('gemeinsam.erkennung.e-mail-adresse'),
-  internet: t('gemeinsam.erkennung.internetseite-oder-domain'),
-  telefon: 'Telefon',
-  mobil: 'Mobil',
-  fax: 'Fax',
-  strasse: 'Straße',
-  hausnummer: 'Hausnummer',
-  plz: 'PLZ',
-  ort: 'Ort',
-  datum: 'Datum',
-  betrag: 'Betrag',
-  zeitraum: 'Zeitraum',
-  prozent: 'Prozent',
-  verweis: t('gemeinsam.erkennung.passende-mappe-verweis'),
-  auswahl: t('gemeinsam.erkennung.auswahlwert-der-im-text'),
-} as const;
-export type Erkennungsart = keyof typeof ERKENNUNGSARTEN;
-
-/** Feld-Eigenschaft „Aus Dokument füllen“ (bis #938 „Für die Erkennung nutzen“): vorhanden = an. */
-export interface FeldErkennung {
-  /** Was im Feld steht; fehlt = aus Feldart, Kennung und Bezeichnung. */
-  art?: Erkennungsart;
-  /** Erkennungshinweis, z. B. „Kundennummer steht oben rechts, Muster 100-####“ (# = Ziffer). */
-  hinweis?: string;
-}
 export const ERKENNUNG_HINWEIS_MAX = 300;
 
 /** Feldarten, die sich für die Erkennung eignen (Passwörter nie, Ja/Nein und formatierter Text nicht). */
@@ -181,18 +156,6 @@ export const istAbsenderTyp = (t: Pick<Mappentyp, 'felder' | 'system'>) =>
 
 /* ---------- Einstellung am Mappentyp (#391) ---------- */
 
-/** „Aus Dokument ausfüllen“ je Mappentyp: eigene Beschriftung oder ausgeblendet. Liegt in den Einstellungen (wie der Stempel). */
-/**
- * „Aus Dokument ausfüllen“ am Mappentyp: ausgeblendet, Beschriftung und (#511) die Erkennung – eingebaut oder
- * ein Paket mit dms:erkennen; ohne Angabe gilt die Wahl aus der Werkbank. abfluss: Für ein Paket mit Netzzugriff
- * hat der Administrator den Hinweis auf den Datenabfluss ausdrücklich bestätigt.
- */
-export interface AusDokument {
-  aus?: boolean;
-  beschriftung?: string;
-  engine?: string;
-  abfluss?: boolean;
-}
 export const AUS_DOKUMENT_STANDARD = t('gemeinsam.erkennung.aus-dokument-ausfuellen');
 export const BESCHRIFTUNG_MAX = 40;
 /** Die eingebaute Erkennung (Muster, #336/#391) – Standard. */

@@ -3,21 +3,11 @@
  * Kalenderjahres des Stichtags plus N Jahre; vorher lässt sich nichts löschen.
  * Unterstützt eine GoBD-gerechte Aufbewahrung – ersetzt keine Verfahrensdokumentation.
  */
-import type { Mappe } from './model';
+import type { Archiv, Mappe } from './model/basis';
+/** Die Form der Aufbewahrung steht im Fachmodell (#1278, Schritt 5); hier weiter erreichbar. */
+export type { Archiv } from './model/basis';
 import { datumsformat } from './region';
 import { t } from './texte';
-
-export interface Archiv {
-  /** Aufbewahrungsfrist in Jahren. */
-  jahre: number;
-  /** Datumsfeld, das zählt (z. B. Rechnungsdatum); null = Anlagedatum der Mappe. */
-  stichtag: string | null;
-  /**
-   * Ist der Stichtag leer (#1051): „laeuftNicht“ = die Frist läuft noch nicht, die Mappe bleibt gesperrt, bis das Feld
-   * gefüllt ist (laufender Vertrag, aktueller Stand). Fehlt = ab Anlagedatum (wie bisher). Nur mit `stichtag`.
-   */
-  leererStichtag?: 'laeuftNicht';
-}
 
 /** Ist der Stichtag leer (#1051) – Schreibweise im Paketformat und in der Schnittstelle; „anlage“ ist die Vorgabe. */
 export const LEERER_STICHTAG = ['anlage', 'laeuftNicht'] as const;

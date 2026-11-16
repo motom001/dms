@@ -17,7 +17,7 @@
  *
  * Eigene Datei ohne Abhängigkeit zur Laufzeit auf model/, damit Modell, Server und Oberfläche sie ohne Kreis nutzen.
  */
-import type { Betrag, Feld, Feldtyp, Mappentyp, Wert, Werte } from './model';
+import type { Betrag, Feld, Feldtyp, Mappentyp, Wert, Werte } from './model/basis';
 import { istZeitraum, zeitraumIso } from './feldarten';
 import { kreisVon } from './nummernkreis';
 import { LEER, liesFilter, ohneLeereTeile, PLATZHALTER_MIT_FILTERN, pruefeFilter, wendeFilterAn } from './titelfilter';

@@ -23,11 +23,18 @@ import type {
   SelbstErstelltDetail,
 } from '../../../shared/src/paketerstellung';
 import type { Entscheidung, UmwandlungsFeld, Umwandlungsvorgang, UmwandlungsVorschau } from '../../../shared/src/umwandlung';
-import type { ExternerDienst, ExternKennzahlen } from '../../../shared/src/extern';
+import type { ExternAufruf, ExternerDienst, ExternKennzahlen } from '../../../shared/src/extern';
 import type { Abdeckung, Sprachangabe } from '../../../shared/src/sprachpaket';
 import type { PaketdatenAnsicht } from '../../../shared/src/paketdaten';
 import { anfrage, sendeDatei, speichereDatei } from './anfrage';
-import type { ExternZeile } from './betrieb';
+
+/** Externe Dienste (#565): ein Aufruf mit Zeit und Kosten – nur Metadaten (#1278, Schritt 5: vorher in betrieb.ts). */
+export interface ExternZeile extends ExternAufruf {
+  id?: number;
+  zeit: string;
+  benutzerId: string | null;
+  kosten: number;
+}
 
 export interface ExternUebersicht {
   stunden: number;

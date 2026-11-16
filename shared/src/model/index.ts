@@ -7,12 +7,10 @@
  * Fehler früh an, der Server lässt nichts Ungültiges in die Datenbank.
  *
  * Seit #1278 nach Fachgebieten aufgeteilt (vorher eine Datei `shared/src/model.ts`); diese Datei reicht alles weiter,
- * damit Importe von `…/shared/src/model` gleich bleiben.
+ * damit Importe von `…/shared/src/model` gleich bleiben. Die Form von Feld, Mappentyp und Mappe kommt aus basis.ts, der
+ * zweiten Tür für Teile, die das Fachmodell selbst einbindet (#1278, Schritt 5).
  */
-export * from './felder';
-export * from './historienarten';
-export * from './mappentyp';
-export * from './mappe';
+export * from './basis';
 export * from './konto';
 export * from './systemtypen';
 export * from './werte';

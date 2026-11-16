@@ -1,5 +1,5 @@
 /** Erkennung (#1278 aus erkennung.ts): Angaben aus dem Volltext lesen – Datum, Betrag, Nummern, Briefkopf, Person. */
-import type { Betrag } from '../model';
+import type { Betrag } from '../model/basis';
 
 import { klein } from './arten';
 

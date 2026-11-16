@@ -6,7 +6,7 @@ import { Hilfe } from '../Hilfe';
 import { Link } from '../ort';
 import { rueckfrage } from '../rueckfrage';
 import { t } from '../sprache';
-import { alsMeldung, MeldungBox, type Meldung } from './Pakete';
+import { alsMeldung, MeldungBox, type Meldung } from './PaketVorschau';
 import { gebietsschema } from '../../../shared/src/sprache';
 import { Feld, Knopf } from '../bausteine';
 

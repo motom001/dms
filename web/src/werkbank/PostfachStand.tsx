@@ -4,7 +4,6 @@ import { t } from '../sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
 import { Bereich, Knopf, type Klappe, type KnopfErgebnis } from '../bausteine';
 import { Symbol } from '../Symbol';
-import type { PostfachBereich } from './Postfaecher';
 
 /**
  * Werkbank → Postfach → Stand (#196, #1186): oben der Zustand in einem Satz – „Läuft – zuletzt abgerufen …, nächster
@@ -15,11 +14,17 @@ import type { PostfachBereich } from './Postfaecher';
 
 const zeit = (iso: string) => new Date(iso).toLocaleString(gebietsschema(), { dateStyle: 'short', timeStyle: 'short' });
 
+/**
+ * Bereiche des Postfachs, die der Stand öffnen kann, um eine Störung zu beheben (#1278, Schritt 5: nur diese zwei statt
+ * aller Bereiche aus Postfaecher.tsx – so bindet der Stand das Postfach nicht ein).
+ */
+type Beheben = 'anbieter' | 'verbindung';
+
 /** Aktuelle Störung: rot, mit Seit-Zeit, Zahl der Versuche, letztem Fehler, nächstem Versuch und dem Weg zur Abhilfe. */
-function Gestoert({ p, aktuell, oeffne }: { p: PostfachAnsicht; aktuell: PostfachEreignis[]; oeffne: (b: PostfachBereich) => void }) {
+function Gestoert({ p, aktuell, oeffne }: { p: PostfachAnsicht; aktuell: PostfachEreignis[]; oeffne: (b: Beheben) => void }) {
   const s = p.stand;
   // Wo man es behebt: abgelaufene oder fehlende OAuth-Anmeldung beim Anbieter, sonst die Verbindung.
-  const beheben: PostfachBereich = p.anmeldung === 'oauth' && p.oauth?.zustand !== 'ok' ? 'anbieter' : 'verbindung';
+  const beheben: Beheben = p.anmeldung === 'oauth' && p.oauth?.zustand !== 'ok' ? 'anbieter' : 'verbindung';
   const seit = aktuell[aktuell.length - 1]?.zeit;
   const laenger = s.fehlerFolge > 1 ? t('werkbank.postfaecher.nach-fehlern-mit-laengerem', { fehlerFolge: s.fehlerFolge }) : '';
   return (
@@ -88,7 +93,7 @@ export function PostfachStand({
   klappe: Klappe;
   geaendert: boolean;
   abrufen: () => Promise<KnopfErgebnis | undefined>;
-  oeffne: (b: PostfachBereich) => void;
+  oeffne: (b: Beheben) => void;
 }) {
   const s = p.stand;
   const aktuell = s.fehler.slice(0, s.fehlerFolge);

@@ -8,7 +8,7 @@ import { geheZu, Link } from '../ort';
 import { t } from '../sprache';
 import { Kopf } from './Kopf';
 import { alsMeldung, sicherungVorher, VorschauBlock, type Meldung, type VorschauAntwort } from './PaketVorschau';
-import type { PaketeZustand } from './Pakete';
+import type { PaketeZustand } from './paketeZustand';
 
 /**
  * „Alle aktualisieren“ (#1168): alle Pakete mit neuerer Version in einem Rutsch – eine gemeinsame Vorschau, Reihenfolge

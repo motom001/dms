@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useState, type FormEvent } from 'react';
-import { betriebApi, type BetriebAnsicht } from '../api/betrieb';
+import { useEffect, useState, type FormEvent } from 'react';
+import { betriebApi } from '../api/betrieb';
 import { kontoApi } from '../api/konto';
 import { MailVersand } from './MailVersand';
+import type { BetriebZustand } from './betriebZustand';
 import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 import { t, tn } from '../sprache';
 import { abfangen, Feld, Knopf } from '../bausteine';
@@ -11,21 +12,6 @@ import { Kopf } from './Kopf';
  * E-Mail-Versand und Adresse des DMS (#37) – früher Umgebungsvariablen (SMTP_*, APP_URL),
  * jetzt hier gepflegt, sofort wirksam und testbar.
  */
-export function useBetrieb() {
-  const [stand, setStand] = useState<BetriebAnsicht | null>(null);
-  const [fehler, setFehler] = useState<string>();
-  const laden = useCallback(async () => {
-    try {
-      setStand(await betriebApi.betrieb());
-      setFehler(undefined);
-    } catch (e) {
-      setFehler((e as Error).message);
-    }
-  }, []);
-  return { stand, setStand, fehler, laden };
-}
-export type BetriebZustand = ReturnType<typeof useBetrieb>;
-
 export function BetriebPanel({ b }: { b: BetriebZustand }) {
   useEffect(() => {
     void b.laden();

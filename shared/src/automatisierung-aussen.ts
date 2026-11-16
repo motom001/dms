@@ -13,12 +13,23 @@
  * Hier Modell, Bereinigen, Prüfen, Kurzform und die Ziele. Zustellung (Ausgangskorb, Signatur, sicherer Abruf, Bremse)
  * im Server (`server/src/automatisierung/ausleitung.ts`, `sicherer-abruf.ts`, `server/src/automatisierung/automatisierung-aussen.ts`).
  */
-import type { DannKarte, Empfaenger, WennKarte } from './automatisierung';
 import { istBetriebWenn } from './ereignisse';
 import { istEmail } from './feldformate';
 import { heimnetzName, rechnername } from './heimnetz';
-import type { Feld, Mappentyp } from './model';
+import type { Feld, Mappentyp } from './model/basis';
 import { t } from './texte';
+import {
+  INHALTSSTUFEN,
+  type AussenMethode,
+  type AussenZiel,
+  type DannEmail,
+  type DannKarte,
+  type DannUrl,
+  type Empfaenger,
+  type Inhaltsstufe,
+  type MailEmpfaenger,
+  type WennKarte,
+} from './automatisierung-typen';
 
 /** Grenzen der Karten nach außen. Bytes (Antwort, Rumpf) stehen in server/src/grundlagen/grenzen.ts. */
 export const AUSSEN_GRENZEN = {
@@ -43,53 +54,6 @@ export const AUSSEN_GRENZEN = {
   /** Zustellungen im Verlauf je Automatisierung (und Tage, wie der Verlauf der Läufe). */
   verlauf: 50,
 } as const;
-
-/** Wie viel eine Karte „URL aufrufen“ mitschickt (#671). */
-export const INHALTSSTUFEN = ['meldung', 'kennungen', 'werte'] as const;
-export type Inhaltsstufe = (typeof INHALTSSTUFEN)[number];
-export const AUSSEN_METHODEN = ['POST', 'GET'] as const;
-export type AussenMethode = (typeof AUSSEN_METHODEN)[number];
-
-/** Ein Parameter: Name (wie ein Platzhalter) und Wert (Text mit Platzhaltern). */
-export interface AussenParameter {
-  name: string;
-  wert: string;
-}
-
-/** Dann-Karte „URL aufrufen“. `bestaetigt`: „Daten verlassen Ablago“ bestätigt (nur bei Inhalt „Mit Werten“ nötig). */
-export interface DannUrl {
-  id: string;
-  art: 'url';
-  adresse: string;
-  methode: AussenMethode;
-  parameter: AussenParameter[];
-  inhalt: Inhaltsstufe;
-  bestaetigt?: boolean;
-}
-
-/** „An“ der E-Mail: wie bei Aufgaben, dazu beliebige Adressen; `feld` auch ein Textfeld mit Format E-Mail. */
-export type MailEmpfaenger = Empfaenger | { art: 'adresse'; adresse: string };
-/** Dann-Karte „E-Mail senden“ (nur Text). */
-export interface DannEmail {
-  id: string;
-  art: 'email';
-  an: MailEmpfaenger[];
-  betreff: string;
-  text: string;
-}
-
-/**
- * Ein freigegebenes Ziel (Werkbank → Automatisierungen → Ziele nach außen): Adresse als Präfix (Schema, Rechner, Port,
- * Pfad – ohne `?` und `#`). `heimnetz`: ausdrücklich ein Ziel im Heimnetz – dann auch `http://` und Adressen, die
- * Ablago sonst nie anspricht (privat, Loopback, Link-Local). Metadaten-Adressen von Cloud-Anbietern nie.
- */
-export interface AussenZiel {
-  adresse: string;
-  heimnetz: boolean;
-  notiz?: string;
-  erstellt?: string;
-  von?: string | null;
-}
 
 /** Name eines Parameters: klein, wie ein Platzhalter. */
 export const AUSSEN_PARAMETER_NAME = /^[a-z][a-z0-9_]*$/;

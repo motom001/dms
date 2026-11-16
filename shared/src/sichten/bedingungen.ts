@@ -1,6 +1,6 @@
 /** Sichten (#1278 aus sichten.ts): Bedingungen – Arten, Operatoren, Wertangaben. */
 import { leseZeitraum, zeitraumTage } from '../feldarten';
-import type { Feldtyp, Mappentyp } from '../model';
+import type { Feldtyp } from '../model/feldtypen';
 import { t } from '../texte';
 import type { Merkmal } from '../merkmale';
 
@@ -115,8 +115,6 @@ export type Bedingung =
    */
   | { art: 'merkmal'; merkmal: Merkmal; nicht?: boolean };
 
-/** Datumsfelder mit Erinnerung (#129) – gleich wie fristFelder in fristen.ts, hier ohne Kreisimport. */
-export const mitFrist = (t: Pick<Mappentyp, 'felder'>) => t.felder.filter((f) => f.typ === 'datum' && f.frist);
 export const FRIST_TAGE_MAX = 3650;
 
 /** Nur Bedingungen auf Felder und Systemwerte des Zieltyps; mehrere gelten zusammen. */

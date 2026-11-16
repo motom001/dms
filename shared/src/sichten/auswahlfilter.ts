@@ -1,7 +1,7 @@
 /** Sichten (#1278 aus sichten.ts): Auswahlfilter am Referenzfeld (#172). */
 import { type Feldbedingung, type Operator, OPERATOREN } from './bedingungen';
 import { bereinigeBedingungen } from './bereinigen';
-import { type Mappentyp, type Feld, istLeer } from '../model';
+import { type Mappentyp, type Feld, istLeer } from '../model/basis';
 import { bedingungsfelder, bedingungsProblem } from './felder';
 import { gleicheZiele } from '../verweisziele';
 import { t } from '../texte';

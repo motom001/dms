@@ -3,7 +3,7 @@
  * Abhängigkeiten, damit model/, folgtaus.ts, erkennung/ und andere sie ohne Kreis nutzen können; model/index.ts gibt
  * alles weiter.
  */
-import type { Feld } from './model';
+import type { Feld } from './model/basis';
 
 /** Ziel eines Referenzfelds, das auf Mappen jedes Typs zeigen darf – nur für Systemfelder (Post → Zugeordnet zu, #58, #192). */
 export const BELIEBIGER_TYP = '*';

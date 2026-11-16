@@ -9,16 +9,10 @@
  *
  * Reine Funktionen für Server, Oberfläche und Tests; Texte über `t()`.
  */
-import type { Feld } from './model';
+import type { Feld, FolgtAus } from './model/basis';
 import { einzigesZiel } from './verweisziele';
 import { t } from './texte';
 import { SCHLUESSEL } from './kennungen';
-
-/** Am Verweisfeld: `feld` ist ein anderes Verweisfeld dieser Mappe, `zielFeld` ein Verweisfeld der Mappe, auf die es zeigt. */
-export interface FolgtAus {
-  feld: string;
-  zielFeld: string;
-}
 
 /** Eingabe (Editor, Paket, Schnittstelle) bereinigen; ungültig = keine Angabe. */
 export function bereinigeFolgtAus(e: unknown): FolgtAus | undefined {

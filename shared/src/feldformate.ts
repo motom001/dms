@@ -11,7 +11,9 @@
  * Texte stehen in `sprachen/de/felder.json`.
  */
 import { IBAN_LAENGEN, istIban } from './erkennung/angaben';
-import type { Feld, Mappentyp, Wert, Werte } from './model';
+import { FELDFORMATE, type Feld, type Feldformat, type Mappentyp, type Wert, type Werte } from './model/basis';
+/** Die Formate stehen im Fachmodell (#1278, Schritt 5); hier weiter erreichbar. */
+export { FELDFORMATE, type Feldformat } from './model/basis';
 import { sprache, uebersetzer } from './sprache';
 import felder from './sprachen/de/felder.json';
 import { datumsformat } from './region';
@@ -20,8 +22,6 @@ const t = uebersetzer({ felder });
 /** Heute in der Zeitzone des Haushalts (Region, #726). */
 const heuteIn = (jetzt = new Date()) => datumsformat('sv-SE').format(jetzt);
 
-export const FELDFORMATE = ['email', 'telefon', 'internetseite', 'iban', 'plz'] as const;
-export type Feldformat = (typeof FELDFORMATE)[number];
 export const istFeldformat = (v: unknown): v is Feldformat => typeof v === 'string' && (FELDFORMATE as readonly string[]).includes(v);
 /** Anzeigename eines Formats, z. B. „Telefon“. */
 export const formatName = (f: Feldformat) => t.frei(`felder.format.${f}`);

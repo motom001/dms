@@ -1,51 +1,9 @@
 /**
- * Felder (#1278, vorher `shared/src/model.ts`): Feldtypen, Verweisarten, das Feld selbst und seine Anzeigeregeln.
+ * Felder (#1278, vorher `shared/src/model.ts`): das Feld selbst und seine Anzeigeregeln. Feldarten und Verweisarten
+ * stehen in feldtypen.ts, die Angaben, die ein Fachbereich am Feld auswertet, in angaben.ts (#1278, Schritt 5).
  */
-import { t } from '../texte';
-import type { Beschriftungen, FeldTeile } from '../beschriftung';
-
-export const FELDTYPEN = {
-  text: 'Text',
-  langtext: 'Langtext',
-  /** Markdown (#53): fett, kursiv, Listen, Links, Überschriften, Zitate; nie als HTML ausgeführt. */
-  formatiert: 'Formatierter Text',
-  zahl: 'Zahl',
-  betrag: 'Betrag',
-  datum: 'Datum',
-  janein: 'Ja/Nein',
-  auswahl: 'Auswahlliste',
-  referenz: 'Verweis',
-  /** Verschlüsselt gespeichert (#46); nie in Titel, Trefferliste, Suche, Protokoll oder Demo-Daten. */
-  passwort: 'Passwort',
-  /** Zahl und Einheit (#1035): „3 Monate“, gespeichert als `{ anzahl, einheit }` (feldarten.ts). */
-  zeitraum: 'Zeitraum',
-  /** Prozentsatz (#1035): „19 %“, gespeichert als Zahl 19 (feldarten.ts). */
-  prozent: 'Prozent',
-  /**
-   * Tabelle (#1030): die Mappen eines anderen Typs, die über ein Verweisfeld hierher verweisen, als Tabelle zwischen den
-   * Feldern. Kein eigener Wert – reine Darstellung wie ein Abschnitt (tabelle.ts).
-   */
-  tabelle: 'Tabelle',
-  /**
-   * Zusammengesetzt (#1050): schreibgeschützt aus anderen Feldern dieser Mappe nach der Vorlage `vorlage` (Platzhalter
-   * und Filter wie die Titel-Vorlage), auf Wunsch eindeutig als Kombination. Gespeichert der Schlüssel mit den Kennungen
-   * verwiesener Mappen, angezeigt der Text mit ihren Titeln (zusammengesetzt.ts).
-   */
-  zusammengesetzt: 'Zusammengesetzt',
-} as const;
-export type Feldtyp = keyof typeof FELDTYPEN;
-/**
- * Name einer Feldart in der Sprache des Lesers (#1094), aus `gemeinsam.model.feldart.<kennung>`. Die Werte in
- * `FELDTYPEN` sind nur die deutschen Ausgangsnamen; der Test sprachdateien-feldarten prüft, dass jede Feldart in
- * de und en einen Namen hat. Die Kennung (`text`, `betrag` …) bleibt in API, Paketen und Daten immer gleich.
- */
-export const feldtypName = (typ: Feldtyp) => t.frei(`gemeinsam.model.feldart.${typ}`);
-
-export const VERWEISARTEN = {
-  zugehoerigkeit: 'Zugehörigkeit',
-  bezug: 'Bezug',
-} as const;
-export type Verweisart = keyof typeof VERWEISARTEN;
+import type { Beschriftungen, FeldTeile } from './beschriftungen';
+import type { Feldtyp, Verweisart } from './feldtypen';
 
 export interface Feld {
   /** Fester Schlüssel, unter dem Werte gespeichert werden. */
@@ -96,25 +54,25 @@ export interface Feld {
   /** Systemfeld eines Systemmappentyps: nicht entfernbar, Datentyp und Eigenschaften fest (vom Server gesetzt). */
   system?: boolean;
   /** Datumsfeld (#129): Erinnerung als Aufgabe „Frist“ im Eingang; fehlt/null = keine. */
-  frist?: import('../fristen').FristEinstellung | null;
+  frist?: import('./angaben').FristEinstellung | null;
   /** Referenzfeld (#172): nur Mappen des Zieltyps, die alle Bedingungen erfüllen. */
   auswahlFilter?: import('../sichten/bedingungen').Feldbedingung[];
   /**
    * Referenzfeld (#886): „folgt aus“ einem anderen Verweisfeld dieser Mappe über ein Verweisfeld von dessen Ziel, z. B.
    * Organisation aus Niederlassung → Organisation. Füllt nur ein leeres Feld (Vorbelegung, keine Sperre).
    */
-  folgtAus?: import('../folgtaus').FolgtAus;
+  folgtAus?: import('./angaben').FolgtAus;
   /**
    * Referenzfeld (#1037): „beim Auswählen übernehmen“ – Paare „Feld der verwiesenen Mappe (`von`) → Feld dieser Mappe
    * (`nach`)“. Wählt man eine Mappe, schlägt Ablago deren Werte in leeren Feldern vor (vorbelegen.ts); nie überschreiben,
    * nie Passwörter, nie berechnete Felder, nur Werte, die die Person lesen darf. Gleiche Schreibweise im Paketformat.
    */
-  vorbelegen?: import('../vorbelegen').Vorbelegung[];
+  vorbelegen?: import('./angaben').Vorbelegung[];
   /**
    * „Aus Dokument füllen“ (#336, #391; bis #938 „Für die Erkennung nutzen“): vorhanden = an, mit Art und
    * Erkennungshinweis. Der Name im Code bleibt `erkennung` – gespeicherte Daten und Pakete ändern sich nicht.
    */
-  erkennung?: import('../erkennung').FeldErkennung | null;
+  erkennung?: import('./angaben').FeldErkennung | null;
   /**
    * „Zum Wiederfinden nutzen“ (#938): Über diesen Wert findet Ablago vorhandene Mappen wieder (Kundennummer,
    * Vertragsnummer, Rechnungsnummer, Kennzeichen …) – für Vorschläge, Belege und die Warnung vor Doppelten.
@@ -127,7 +85,7 @@ export interface Feld {
    */
   ausText?: string;
   /** Textfeld (#535): Format E-Mail, Telefon, Internetseite, IBAN oder PLZ; fehlt = frei. */
-  format?: import('../feldformate').Feldformat | null;
+  format?: import('./angaben').Feldformat | null;
   /** Format PLZ (#535): Kennung des Felds mit dem Land; Deutschland (oder leer) heißt genau 5 Ziffern. */
   landFeld?: string | null;
   /** Bezeichnung, Hilfetext und Optionen in weiteren Sprachen (#728); fehlt etwas, gilt der Ausgangstext. */
@@ -153,7 +111,7 @@ export interface Feld {
    * Tabelle (#1030): Mappen vom Typ `typId`, die über `feldKey` hierher verweisen, mit den Spalten der Trefferliste
    * `trefferliste` (fehlt = Standard) und der Beschriftung `neu` für „+ Neu“. Nur bei `typ: 'tabelle'`.
    */
-  quelle?: import('../tabelle').Tabellenquelle;
+  quelle?: import('./angaben').Tabellenquelle;
   /**
    * Merkmal am Ja/Nein-Feld (#995): `eigeneOrganisation` – „ja“ heißt, diese Mappe ist eine eigene Organisation
    * (organisation.ts). Kommt aus dem Paket (Basis); die Werkbank lässt es, wie es ist.

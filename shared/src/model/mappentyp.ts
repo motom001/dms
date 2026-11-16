@@ -1,8 +1,9 @@
 /**
- * Mappentypen (#1278, vorher `shared/src/model.ts`): Abschnitte, Register, Quellen, der Mappentyp selbst, die
+ * Mappentypen (#1278, vorher `shared/src/model.ts`): Abschnitte, Register, der Mappentyp selbst, die
  * Systemmappentypen und die Trefferlisten eines Typs.
  */
-import type { Beschriftungen, AbschnittTeile, NamensTeile, TypTeile } from '../beschriftung';
+import type { Beschriftungen, AbschnittTeile, NamensTeile, TypTeile } from './beschriftungen';
+import type { Quelle } from './angaben';
 import type { Anzeigeregel, Feld } from './felder';
 import { type Historiengruppe, HISTORIE_VORAUSWAHL } from './historienarten';
 import { t, t as tx } from '../texte';
@@ -38,14 +39,6 @@ export const REGISTERARTEN = {
   protokoll: 'Historie',
 } as const;
 export type Registerart = keyof typeof REGISTERARTEN;
-
-/** Quelle eines Verknüpfungsregisters: Mappen vom Typ `typId`, die über `feldKey` hierher verweisen. */
-export interface Quelle {
-  typId: string;
-  feldKey: string;
-  /** Trefferliste des Quelltyps, mit der das Register die Mappen als Tabelle zeigt (#75); leer = einfache Liste. */
-  trefferliste?: string;
-}
 
 /** Ein Trennblatt an der Mappe. */
 export interface Register {
@@ -100,14 +93,14 @@ export interface MappentypDaten {
   /** In der Ablage dürfen Mappen dieses Typs gelöscht werden (Standard: ja). */
   loeschenErlaubt?: boolean;
   /** Archivmodus (#212): Aufbewahrungsfrist und Stichtag; fehlt/null = aus. */
-  archiv?: import('../archiv').Archiv | null;
+  archiv?: import('./angaben').Archiv | null;
   /**
    * Stempel beim Weitergeben (#394): vorschlagen oder Pflicht, mit Vorlage. Gespeichert in den
    * Einstellungen (nicht in der Tabelle der Mappentypen); beim Lesen und Speichern hier mitgeliefert.
    */
   stempel?: import('../stempel').StempelTyp | null;
   /** „Aus Dokument ausfüllen“ (#391): eigene Beschriftung oder ausgeblendet; wie der Stempel in den Einstellungen. */
-  ausDokument?: import('../erkennung').AusDokument | null;
+  ausDokument?: import('./angaben').AusDokument | null;
   /** Erkannte Post automatisch zuordnen (#337), Standard aus; wie der Stempel in den Einstellungen. */
   autoZuordnen?: boolean;
   /**
@@ -160,14 +153,14 @@ export interface Mappentyp extends MappentypDaten {
   /** Systemmappentyp (Benutzer, Rolle): lässt sich erweitern, aber nicht löschen. */
   system?: Systemtyp | null;
   /** Berechtigungen (#123): Grundeinstellung und Regeln; fehlt = alles erteilt. Nur für Administratoren geliefert. */
-  berechtigungen?: import('../rechte').Regelwerk | null;
+  berechtigungen?: import('./regelwerk').Regelwerk | null;
   /** Nur für Nicht-Administratoren (#126): Darf man nach den Berechtigungen überhaupt Mappen dieses Typs anlegen? */
   darfAnlegen?: boolean;
   /**
    * Berechnete Felder (#1034), nur beim Lesen ergänzt: je Paket-Id an `berechnetVon` sein Name und ob es noch rechnet.
    * Fehlt, wenn der Typ keine berechneten Felder hat.
    */
-  berechnung?: Record<string, import('../berechnet').Berechnung>;
+  berechnung?: Record<string, import('./angaben').Berechnung>;
 }
 
 /* ---------- Systemmappentypen: Benutzer und Rollen (#26, #27) ---------- */

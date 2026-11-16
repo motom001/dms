@@ -3,7 +3,7 @@
  * (ohne Mappe) und Dann „Sicherung anstoßen“ – dazu die festen Werkbank-Rechte des Systemkontos „Automatisierung“.
  * Modell, Prüfung, Platzhalter und Kurzform; ausgeführt wird im Server (`server/src/automatisierung/automatisierung-werkbank.ts`).
  */
-import type { AutomatisierungDaten, Lauf } from './automatisierung';
+import type { AutomatisierungDaten, Lauf, WennBetrieb } from './automatisierung-typen';
 import { aufrufLaufFuer } from './automatisierung-aufruf';
 import { istBetriebWenn, type BetriebWenn } from './ereignisse';
 import { MODULE } from './protokollmodule';
@@ -27,9 +27,6 @@ export const SYSTEMKONTO_WERKBANK = {
 } as const;
 export type SystemkontoHandlung = keyof typeof SYSTEMKONTO_WERKBANK;
 
-/** Stufen der Wenn-Karte „Protokollmeldung“ (#677): ab Warnung oder ab Fehler – Hinweise kämen zu oft. */
-export const PROTOKOLL_STUFEN = ['warn', 'error'] as const;
-export type ProtokollStufe = (typeof PROTOKOLL_STUFEN)[number];
 /** Textfilter der Wenn-Karte „Protokollmeldung“: so viele Zeichen. Der Meldungstext im Ereignis: so viele. */
 export const PROTOKOLL_FILTER_MAX = 100;
 export const PROTOKOLL_TEXT_MAX = 500;
@@ -38,11 +35,6 @@ export const PROTOKOLL_TEXT_MAX = 500;
  * Meldungen in der Zeit lösen sie nicht aus (sonst ginge bei einer Störung eine Flut los).
  */
 export const PROTOKOLL_ABSTAND_MIN = 15;
-
-/** Wenn-Karten aus dem Betrieb (#677): ohne Mappe; „Protokollmeldung“ mit Stufe, Modul und Text als Filter. */
-export type WennBetrieb =
-  | { art: 'fehler.gemeldet' | 'version.neu' }
-  | { art: 'protokoll.meldung'; stufe: ProtokollStufe; modul?: string | null; enthaelt?: string | null };
 
 /** Ist das eine Wenn-Karte ohne Mappe aus dem Betrieb? */
 export const istBetrieb = (w: { art: string }): w is WennBetrieb => istBetriebWenn(w.art);

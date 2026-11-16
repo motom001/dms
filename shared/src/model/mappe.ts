@@ -1,7 +1,7 @@
 /**
  * Mappen und ihre Werte (#1278, vorher `shared/src/model.ts`): Werte, Mappe, Bezug und das Ergebnis einer Prüfung.
  */
-import type { Zeitraum } from '../feldarten';
+import { hatZeitraumform, type Zeitraum } from '../feldarten';
 import type { Mappentyp } from './mappentyp';
 
 export interface Betrag {
@@ -74,3 +74,16 @@ export interface Pruefergebnis {
   orte?: string[];
 }
 export const istOk = (p: Pruefergebnis) => p.allgemein.length === 0 && Object.keys(p.felder).length === 0;
+/** Leerer Wert (#1278, Schritt 5: aus werte.ts hierher, damit Teile unter dem Modell ihn ohne Kreis nutzen). */
+export function istLeer(v: unknown): boolean {
+  if (v == null || v === '') return true;
+  if (Array.isArray(v)) return v.length === 0;
+  if (istPasswortWert(v)) return !!v.entfernen || (!v.gesetzt && !v.neu);
+  if (typeof v === 'object' && 'betrag' in (v as object)) {
+    const b = (v as Betrag).betrag;
+    return b == null || (b as unknown) === '';
+  }
+  // Zeitraum (#1035): ohne Anzahl leer, auch wenn eine Einheit gewählt ist.
+  if (hatZeitraumform(v)) return v.anzahl == null || v.anzahl === '';
+  return false;
+}

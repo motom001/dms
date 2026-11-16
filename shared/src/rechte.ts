@@ -8,7 +8,20 @@
  * setzt ihre ✓/✗, „–“ bleibt; Stopp beendet die Prüfung. Ohne R wirkt nichts außer C.
  * Für Administratoren gelten die Regeln nicht (#128).
  */
-import { istLeer, type Mappe, type Mappentyp } from './model';
+import {
+  istLeer,
+  RECHTE,
+  type Mappe,
+  type Mappentyp,
+  type Recht,
+  type RegelBedingung,
+  type Regel,
+  type Rechte,
+  type Regelwerk,
+  type Wirkung,
+} from './model/basis';
+/** Die Form des Regelwerks steht im Fachmodell (#1278, Schritt 5); hier weiter erreichbar. */
+export { RECHTE, type Recht, type Rechte, type Wirkung, type RegelBedingung, type Regel, type Regelwerk } from './model/basis';
 import {
   bedingungsProblem,
   bereinigeBedingungen,
@@ -20,48 +33,14 @@ import {
   type Filter,
   type Zaehlquelle,
 } from './sichten';
-import { istMerkmal, merkmalText, type Merkmal } from './merkmale';
+import { istMerkmal, merkmalText } from './merkmale';
 import { t } from './texte';
 import { gebietsschema } from './sprache';
 
-export const RECHTE = { C: 'Anlegen', R: 'Lesen', U: 'Bearbeiten', D: 'Löschen', P: t('gemeinsam.rechte.passwoerter-sehen') } as const;
-export type Recht = keyof typeof RECHTE;
 export const RECHTE_LISTE = Object.keys(RECHTE) as Recht[];
-export type Rechte = Record<Recht, boolean>;
-export type Wirkung = 'erteilen' | 'entziehen';
 export const ALLES: Rechte = { C: true, R: true, U: true, D: true, P: true };
 export const NICHTS: Rechte = { C: false, R: false, U: false, D: false, P: false };
 
-/** Eine Bedingung im „Wenn“ einer Regel; nicht = verneint („ist nicht“). */
-export type RegelBedingung = { nicht?: boolean } &
-  /** Der aktuelle Benutzer ist einer von … (Benutzer-Ids). */
-  (
-    | { art: 'benutzer'; benutzer: string[] }
-    /** Der aktuelle Benutzer hat eine dieser Rollen (Rollen-Mappen, auch Administrator/Mitglied). */
-    | { art: 'rolle'; rollen: string[] }
-    /** Ein Feld der Mappe – wie in Sichten, auch „zeigt auf aktuellen Benutzer / seine Rollen“ und „Erstellt von“. */
-    | { art: 'feld'; bedingung: Extract<Bedingung, { art: 'feld' }> }
-    /** Die Mappe hat eine offene Aufgabe für den aktuellen Benutzer. */
-    | { art: 'aufgabe' }
-    /** Die Mappe ist die Benutzer-Mappe des aktuellen Benutzers (Typ Benutzer). */
-    | { art: 'eigeneMappe' }
-    /** Merkmal der Ablage (#1032), z. B. „Ablage wird beruflich genutzt“ – gilt für alle Mappen gleich. */
-    | { art: 'merkmal'; merkmal: Merkmal }
-  );
-
-export interface Regel {
-  id: string;
-  name: string;
-  wenn: RegelBedingung[];
-  dann: Partial<Record<Recht, Wirkung>>;
-  stopp: boolean;
-}
-
-/** grund: Standard je Recht (#146), gilt, solange keine Regel etwas anderes sagt. */
-export interface Regelwerk {
-  grund: Rechte;
-  regeln: Regel[];
-}
 export const OFFENES_REGELWERK: Regelwerk = { grund: { C: true, R: true, U: true, D: true, P: true }, regeln: [] };
 export const regelwerkVon = (t: Pick<Mappentyp, 'berechtigungen'> | undefined): Regelwerk => t?.berechtigungen ?? OFFENES_REGELWERK;
 export const istOffen = (r: Regelwerk) => RECHTE_LISTE.every((k) => r.grund[k]) && !r.regeln.length;

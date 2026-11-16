@@ -7,9 +7,18 @@ import type { Recht } from '../../../shared/src/rechte';
 import type { EntdeckenStand } from '../../../shared/src/entdecken';
 import type { Verwaltungsstand } from '../../../shared/src/verwaltungsrecht';
 import { anfrage, stilleAnfrage } from './anfrage';
-import type { KontaktZuordnung } from './betrieb';
 
 /** Anmeldung über einen Anbieter, OpenID Connect (#241). */
+/** Kontakt einer Mappe beim Umzug (#1278, Schritt 5: vorher in betrieb.ts). */
+export interface KontaktZuordnung {
+  name: string;
+  email?: string;
+  telefon?: string;
+  adresse?: string;
+  firma?: string;
+  notiz?: string;
+}
+
 export interface AnbieterEingabe {
   aktiv: boolean;
   aussteller: string;

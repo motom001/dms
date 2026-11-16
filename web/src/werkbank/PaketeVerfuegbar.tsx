@@ -6,7 +6,7 @@ import { useDaten } from '../daten';
 import { Link } from '../ort';
 import { t } from '../sprache';
 import { Herausgeber } from './PaketVorschau';
-import type { PaketeZustand } from './Pakete';
+import type { PaketeZustand } from './paketeZustand';
 
 /**
  * Werkbank → Pakete, „Verfügbar“ (#1048) nach den Regeln der Katalog-Übersicht (dms-registry #165): oben „Für dich

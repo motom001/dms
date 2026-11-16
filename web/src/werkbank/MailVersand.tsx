@@ -11,14 +11,14 @@ import {
 import { PLAN_VERBINDUNGEN } from '../../../shared/src/einrichtungsplan';
 import { betriebApi, type BetriebAnsicht, type MailEingabe, type Probe } from '../api/betrieb';
 import { einrichtungApi, type MailSuche, type Verbindung } from '../api/einrichtung';
-import { useKonto } from '../konto';
+import { useKonto } from '../konto-kontext';
 import { Link } from '../ort';
 import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 import { Hilfe } from '../Hilfe';
 import { Symbol } from '../Symbol';
 import { t } from '../sprache';
 import { OAuthBereich, useRueckkehr, type Meldung } from './Postfaecher';
-import type { BetriebZustand } from './Betrieb';
+import type { BetriebZustand } from './betriebZustand';
 
 /**
  * E-Mail-Versand einrichten (#813) – derselbe Aufbau im Einrichtungsassistenten und in Werkbank → E-Mail und Adresse:

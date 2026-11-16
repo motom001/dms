@@ -3,7 +3,7 @@
  * Statt „irgendwann nach der Installation gespeichert“ zählt nur, was sich wirklich unterscheidet:
  * Felder (hinzugefügt, entfernt, geändert), Register, Beschreibung, Titel.
  */
-import type { Anzeigeregel, Feld, Mappentyp } from './model';
+import type { Anzeigeregel, Feld, Mappentyp } from './model/basis';
 import { t } from './texte';
 
 /** Was vom Mappentyp verglichen wird – ohne Ids anderer Typen (Verweisziele bleiben als Id, die bleibt im selben DMS gleich). */

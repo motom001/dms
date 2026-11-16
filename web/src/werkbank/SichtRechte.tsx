@@ -23,7 +23,7 @@ import { useDaten } from '../daten';
 import { Hilfe } from '../Hilfe';
 import { Link } from '../ort';
 import { Ansage, umgestellt, useZiehen, Ziehgriff } from '../ziehen';
-import { MappenSuche } from './Sichten';
+import { MappenSuche } from './MappenSuche';
 import { testlaufSchluessel } from '../../../shared/src/testlauf';
 import { TestBenutzerWahl, useTestlauf } from './TestlaufWahl';
 

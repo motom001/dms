@@ -1,7 +1,27 @@
 /** Sichten (#1278 aus sichten.ts): Sichten als Baum und ihre Mappentypen. */
 import type { Bedingung } from './bedingungen';
-import type { SichtRegelwerk, SichtRechte } from '../sichtrechte';
-import { ALLE_TYPEN } from '../pakete';
+import type { RegelBedingung, Wirkung } from '../model/basis';
+import { ALLE_TYPEN } from '../kennungen';
+
+/* ---------- Berechtigungen an einer Sicht (#148) – nur die Form; ausgewertet in sichtrechte.ts ---------- */
+
+/** Rechte an einer Sicht: sehen, anlegen und E für alles, was Daten hinausgibt (Export, PDF; #153). */
+export const SICHT_RECHTE = { R: 'Sehen', C: 'Anlegen', E: 'Exportieren' } as const;
+export type SichtRecht = keyof typeof SICHT_RECHTE;
+export type SichtRechte = Record<SichtRecht, boolean>;
+/** Bedingungen nur über den Benutzer: hat Rolle, ist Benutzer – jeweils auch verneint. */
+export type SichtBedingung = Extract<RegelBedingung, { art: 'rolle' | 'benutzer' }>;
+export interface SichtRegel {
+  id: string;
+  name: string;
+  wenn: SichtBedingung[];
+  dann: Partial<Record<SichtRecht, Wirkung>>;
+  stopp: boolean;
+}
+export interface SichtRegelwerk {
+  grund: SichtRechte;
+  regeln: SichtRegel[];
+}
 
 /* ---------- Sichten ---------- */
 
@@ -23,7 +43,7 @@ export interface SichtDaten {
   /** Symbol (#428): Lucide-Name aus `ANSICHT_SYMBOLE` (ansichtsymbole.ts); null/fehlt = ohne Symbol. */
   symbol?: string | null;
   /** Name und Beschreibung in weiteren Sprachen (#728); fehlt etwas, gilt der Ausgangstext. */
-  beschriftungen?: import('../beschriftung').Beschriftungen<import('../beschriftung').TypTeile> | null;
+  beschriftungen?: import('../model/basis').Beschriftungen<import('../model/basis').TypTeile> | null;
 }
 export interface Sicht extends SichtDaten {
   id: string;
