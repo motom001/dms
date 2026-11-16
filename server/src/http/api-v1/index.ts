@@ -8,5 +8,5 @@
  * - `openapi.ts`: die OpenAPI-Beschreibung aus Tabelle und Schemas
  */
 export { V1_TABELLE } from './tabelle';
-export { mitAltenPostNamen, v1Routen, wer, type V1Uebergang } from './routen';
+export { mitAltenPostNamen, v1Routen, wer } from './routen';
 export { API_VERSION_OHNE_ANMELDUNG, openapi } from './openapi';
