@@ -1,6 +1,6 @@
 import fastifyStatic from '@fastify/static';
 import type { ProxyVertrauen } from '../http/proxy';
-import Fastify from 'fastify';
+import Fastify, { type FastifyInstance } from 'fastify';
 import { existsSync } from 'node:fs';
 import {
   ansicht,
@@ -55,16 +55,59 @@ export interface EinrichtungsmodusOptionen {
 
 export async function einrichtungsmodus(o: EinrichtungsmodusOptionen): Promise<Anbindung> {
   const pruefe = o.pruefe ?? ((a: Anbindung) => pruefeAnbindung(a));
-  const anlegen = o.anlegen ?? legeDatenbankAn;
-  let fehler = o.fehler;
-  let vorbelegt = o.vorbelegt;
+  const z: Zustand = { fehler: o.fehler, vorbelegt: o.vorbelegt, beendet: false };
   let fertig!: (a: Anbindung) => void;
   const ergebnis = new Promise<Anbindung>((r) => {
     fertig = r;
   });
-  let beendet = false;
 
   const app = Fastify({ trustProxy: o.proxy ?? false, bodyLimit: EINRICHTUNG_KOERPER_MAX });
+  richteGrundlagenEin(app, o);
+
+  const uebernehmen = async (a: Anbindung, wer: string) => {
+    await schreibeAnbindung(o.geheim, a);
+    log.info(`Datenbank-Anbindung gespeichert (${wer}) – Ablago startet`, {
+      host: a.host,
+      port: a.port,
+      datenbank: a.datenbank,
+      benutzer: a.benutzer,
+    });
+    z.beendet = true;
+    // Erst antworten, dann den Port für das eigentliche DMS freigeben.
+    setTimeout(() => {
+      void app.close().then(() => fertig(a));
+    }, 300).unref?.();
+  };
+  richteRoutenEin(app, o, z, pruefe, uebernehmen);
+
+  if (o.webDir && existsSync(o.webDir)) {
+    await app.register(fastifyStatic, { root: o.webDir, wildcard: false, ...statischeDateien(o.webDir) });
+    app.setNotFoundHandler((req, reply) => oberflaecheSenden(req.url, reply, o.webDir));
+  }
+
+  const zeitgeber = wiederholeVorhandene(o, z, pruefe, uebernehmen);
+
+  await o.code.bereitstellen();
+  await app.listen({ port: o.port, host: o.host });
+  log.warn(`Einrichtungsmodus: ${z.fehler ?? 'keine Datenbank-Anbindung eingerichtet'} – weiter im Browser (Port ${o.port}).`);
+  const a = await ergebnis;
+  if (zeitgeber) clearInterval(zeitgeber);
+  return a;
+}
+
+/* ---------- Schritte (#1278, Schritt 6b-1: aus einrichtungsmodus verschoben, Reihenfolge unverändert) ---------- */
+
+/** Was die Routen und das Wiederholen gemeinsam ändern: letzter Fehler, Vorbelegung, ob die Einrichtung endet. */
+interface Zustand {
+  fehler: string | null;
+  vorbelegt: Anbindung | null;
+  beendet: boolean;
+}
+type Pruefe = (a: Anbindung) => Promise<Pruefung>;
+type Uebernehmen = (a: Anbindung, wer: string) => Promise<void>;
+
+/** Fehlerbehandlung, kein Zwischenspeichern, Sprache und Sicherheits-Header. */
+function richteGrundlagenEin(app: FastifyInstance, o: EinrichtungsmodusOptionen) {
   app.setErrorHandler((e: unknown, _req, reply) => {
     if (e instanceof Fachfehler) return reply.code(e.status).send({ fehler: e.message, details: e.details });
     const err = e as Error & { statusCode?: number };
@@ -104,9 +147,14 @@ export async function einrichtungsmodus(o: EinrichtungsmodusOptionen): Promise<A
     }
     return nutzlast;
   });
+}
 
-  const kopf = (req: { headers: Record<string, unknown> }, n: string) =>
-    typeof req.headers[n] === 'string' ? (req.headers[n] as string) : undefined;
+const kopf = (req: { headers: Record<string, unknown> }, n: string) =>
+  typeof req.headers[n] === 'string' ? (req.headers[n] as string) : undefined;
+
+/** Die Schnittstelle des Assistenten: Stand, Gesundheit, Code, Datenbank prüfen, anlegen, übernehmen, Datei lesen. */
+function richteRoutenEin(app: FastifyInstance, o: EinrichtungsmodusOptionen, z: Zustand, pruefe: Pruefe, uebernehmen: Uebernehmen) {
+  const anlegen = o.anlegen ?? legeDatenbankAn;
   /** Einrichtungscode und Herkunft (#1359): ohne Code nur aus dem Heimnetz, wie beim Notfallzugang mit TRUST_PROXY. */
   const angabe = (req: { ip: string; headers: Record<string, unknown> }): EinrichtungsAngabe => ({
     ...(kopf(req, 'x-einrichtungscode') !== undefined ? { code: kopf(req, 'x-einrichtungscode') } : {}),
@@ -117,22 +165,7 @@ export async function einrichtungsmodus(o: EinrichtungsmodusOptionen): Promise<A
     if (kopf(req, 'x-dms') !== '1') throw new Fachfehler(403, t('meldungen.einrichtungsmodus.anfrage-ohne-kennung-der'));
     o.code.pruefe(angabe(req));
   };
-  const eingabe = (body: unknown) => anbindungAus((body as { anbindung?: unknown } | null)?.anbindung, vorbelegt);
-
-  const uebernehmen = async (a: Anbindung, wer: string) => {
-    await schreibeAnbindung(o.geheim, a);
-    log.info(`Datenbank-Anbindung gespeichert (${wer}) – Ablago startet`, {
-      host: a.host,
-      port: a.port,
-      datenbank: a.datenbank,
-      benutzer: a.benutzer,
-    });
-    beendet = true;
-    // Erst antworten, dann den Port für das eigentliche DMS freigeben.
-    setTimeout(() => {
-      void app.close().then(() => fertig(a));
-    }, 300).unref?.();
-  };
+  const eingabe = (body: unknown) => anbindungAus((body as { anbindung?: unknown } | null)?.anbindung, z.vorbelegt);
 
   // Angaben zur bisherigen Anbindung (Server, Benutzer, Fehler) nur mit Code.
   app.get('/api/konto/status', async (req) => {
@@ -144,9 +177,9 @@ export async function einrichtungsmodus(o: EinrichtungsmodusOptionen): Promise<A
       marke: null,
       wartung: null,
       einrichtung: {
-        phase: beendet ? 'startet' : 'datenbank',
+        phase: z.beendet ? 'startet' : 'datenbank',
         code: o.code.noetig,
-        ...(mitCode ? { anbindung: ansicht(vorbelegt), quelle: o.quelle, fehler } : {}),
+        ...(mitCode ? { anbindung: ansicht(z.vorbelegt), quelle: o.quelle, fehler: z.fehler } : {}),
       },
     };
   });
@@ -178,11 +211,11 @@ export async function einrichtungsmodus(o: EinrichtungsmodusOptionen): Promise<A
     const a = eingabe(req.body);
     const p = await pruefe(a);
     if (!p.ok) {
-      fehler = p.text;
-      vorbelegt = { ...a, passwort: a.passwort };
+      z.fehler = p.text;
+      z.vorbelegt = { ...a, passwort: a.passwort };
       throw new Fachfehler(422, p.text, { pruefung: p });
     }
-    await uebernehmen({ ...a, ...(vorbelegt?.mandant ? { mandant: vorbelegt.mandant } : {}) }, 'Assistent');
+    await uebernehmen({ ...a, ...(z.vorbelegt?.mandant ? { mandant: z.vorbelegt.mandant } : {}) }, 'Assistent');
     return { ok: true, pruefung: p };
   });
   // Konfigurationsdatei (#806) schon vor der Datenbank: füllt die Anbindung vor, angelegt wird nichts.
@@ -197,21 +230,18 @@ export async function einrichtungsmodus(o: EinrichtungsmodusOptionen): Promise<A
       .header('retry-after', '30')
       .send({ fehler: t('meldungen.einrichtungsmodus.ablago-ist-noch-nicht') }),
   );
+}
 
-  if (o.webDir && existsSync(o.webDir)) {
-    await app.register(fastifyStatic, { root: o.webDir, wildcard: false, ...statischeDateien(o.webDir) });
-    app.setNotFoundHandler((req, reply) => oberflaecheSenden(req.url, reply, o.webDir));
-  }
-
-  // Eine Anbindung, die nur noch nicht erreichbar war (Datenbank-Container startet noch): weiter versuchen.
+/** Eine Anbindung, die nur noch nicht erreichbar war (Datenbank-Container startet noch): weiter versuchen. */
+function wiederholeVorhandene(o: EinrichtungsmodusOptionen, z: Zustand, pruefe: Pruefe, uebernehmen: Uebernehmen) {
   let zeitgeber: NodeJS.Timeout | undefined;
   if (o.vorbelegt && o.quelle && o.wiederholenMs) {
     const kandidat = o.vorbelegt;
     zeitgeber = setInterval(() => {
-      if (beendet) return;
+      if (z.beendet) return;
       void pruefe(kandidat)
         .then(async (p) => {
-          if (!p.ok || beendet) return;
+          if (!p.ok || z.beendet) return;
           clearInterval(zeitgeber);
           log.info('Datenbank jetzt erreichbar');
           await uebernehmen(kandidat, o.quelle === 'umgebung' ? 'aus DATABASE_URL' : 'wieder erreichbar');
@@ -220,11 +250,5 @@ export async function einrichtungsmodus(o: EinrichtungsmodusOptionen): Promise<A
     }, o.wiederholenMs);
     zeitgeber.unref?.();
   }
-
-  await o.code.bereitstellen();
-  await app.listen({ port: o.port, host: o.host });
-  log.warn(`Einrichtungsmodus: ${fehler ?? 'keine Datenbank-Anbindung eingerichtet'} – weiter im Browser (Port ${o.port}).`);
-  const a = await ergebnis;
-  if (zeitgeber) clearInterval(zeitgeber);
-  return a;
+  return zeitgeber;
 }
