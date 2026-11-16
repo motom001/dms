@@ -2,11 +2,11 @@
  * Paket-Update baut um (#1041): Umbau-Schritte im Manifest lesen und die Vorschau rechnen. Format, Begriffe und
  * Sicherheit stehen in shared/src/umbau.ts; Werte umwandeln in umbau-werte.ts, ausführen in umbau-ausfuehren.ts.
  *
- * Ablauf in der Paketverwaltung (pakete.ts):
+ * Ablauf in der Paketverwaltung (verwaltung/):
  * 1. `liesUmbau` beim Lesen des Pakets – Form, Verweise auf Typen und Felder des Pakets.
  * 2. `planeUmbau` in der Vorschau und noch einmal beim Installieren – je Schritt die Art (übernehmen oder
  *    zusammenlegen), Mappen, Werte, Rückfragen, Rechte und alles, was den Umbau verhindert.
- * 3. Beim Installieren läuft alles in einer Transaktion (pakete.ts, legeMitUmbau): Ein übernommener Typ wird im ersten
+ * 3. Beim Installieren läuft alles in einer Transaktion (verwaltung/installieren.ts, legeMitUmbau): Ein übernommener Typ wird im ersten
  *    Durchgang der neuen Typen mit seiner Id zum Typ des Pakets, danach zieht `fuehreUmbauAus` die Werte um.
  *
  * Den Dienst bekommt das Modul als `UmbauDienst` – Schicht 3 bindet dienst.ts nicht ein.
