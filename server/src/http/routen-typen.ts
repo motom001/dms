@@ -17,7 +17,7 @@ import type { ApiSchluessel } from '../anmeldung/apischluessel';
  *                Zuordnung in verwaltungsbereiche.ts); nie mit einem API-Schlüssel
  * Der HTTP-Adapter (http.ts) setzt die Stufen durch.
  */
-export type Zugang = 'offen' | 'angemeldet' | 'admin';
+type Zugang = 'offen' | 'angemeldet' | 'admin';
 
 export interface Anfrage {
   body: unknown;

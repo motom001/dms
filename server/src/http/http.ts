@@ -43,6 +43,7 @@ import { mitSprache, setzeAnfrageSprache, t, tDe } from '../sprache/sprache';
 import { erlaubteSprachen } from '../../../shared/src/beschriftung';
 import { spracheAusKopf } from '../../../shared/src/sprachwahl';
 import { JSON_KOERPER_MAX, MB } from '../grundlagen/grenzen';
+import type { Abfragestatistik } from './routen-extras';
 
 /** zeit (#477): Zeitpunkte der Anfrage (performance.now()) für Server-Timing. */
 type MitKontext = FastifyRequest & {
@@ -174,7 +175,7 @@ interface Optionen {
   /** Sitzungen der Datenbank mit Sperren (#874). */
   sitzungen?: () => Promise<import('../datenbank/poolmessung').Sitzungsstand | null>;
   /** Teuerste Abfragen für den Lasttest (#894). */
-  abfragen?: import('./routen-extras').Abfragestatistik;
+  abfragen?: Abfragestatistik;
   /** CPU und Speicher je Prozessgruppe für den Lasttest (#895), gemessen im Leiter. */
   prozessgruppen?: () => Promise<import('../lasttest/prozessgruppen').GruppenStand | null>;
   /** Erweiterungen der Suche (#562). */

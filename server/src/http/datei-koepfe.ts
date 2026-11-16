@@ -6,7 +6,7 @@ import type { Datei } from './routen-typen';
  */
 
 /** Richtlinie für ausgelieferte Dateien außer PDFs: nichts nachladen, nichts ausführen (Sandbox). */
-export const DATEI_CSP = "default-src 'none'; img-src 'self'; style-src 'unsafe-inline'; sandbox";
+const DATEI_CSP = "default-src 'none'; img-src 'self'; style-src 'unsafe-inline'; sandbox";
 /** Kopfzeilen für eine ausgelieferte Datei – so, dass sie nie als Teil der Anwendung ausgeführt wird. */
 export function dateiKoepfe(d: Datei): Record<string, string> {
   const ascii = d.name.replace(/[^\x20-\x7e]/g, '_').replace(/["\\]/g, '_');
