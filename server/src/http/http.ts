@@ -520,7 +520,7 @@ export async function baueApp(dienst: Dienst, konten: Konten, opt: Optionen = {}
           : reply.send(antwort.body);
       };
       // Der Parser reicht den Körper als Strom durch – dafür wirkt `bodyLimit` nicht (Fastify zählt nur, was es
-      // selbst liest). Begrenzt wird in webdav.ts beim Lesen (`lies()`/`leere()`, 100 MB); die Angabe hier
+      // selbst liest). Begrenzt wird in webdav/webdav-hilfen.ts beim Lesen (`lies()`/`leere()`, 100 MB); die Angabe hier
       // ist nur eine Obergrenze, falls ein Parser den Körper doch einmal selbst liest.
       for (const url of ['/webdav', '/webdav/*'])
         bereich.route({ method: [...WEBDAV_METHODEN], url, exposeHeadRoute: false, bodyLimit: MAX_DATEIGROESSE + MB, handler });

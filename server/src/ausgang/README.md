@@ -21,7 +21,7 @@ Export (Tabelle, ZIP, PDF) und das WebDAV-Laufwerk. Schicht 3 der Zielaufteilung
   Stempel-Vorlagen (`pdf-bearbeiten/`); E-Mail und Export dazu den `AusgangDienst`, E-Mail die Systemmappen (`post/`).
 - Über den Anschluss: `entsperrtZu` (geschützte PDFs) und – wichtig – die Prüfstelle selbst: E-Mail ruft
   `pruefeAusgang`, Export `mitnehmbar` über den **Anschluss** am `AusgangDienst` (`dienst.ausgang`), wie Routen,
-  `routen-kontext.ts` und `webdav.ts`. So fragt jeder Weg dieselbe Stelle (Test: `ausgang.test.ts` ersetzt sie dort).
+  `routen-kontext.ts` und `webdav/webdav-basis.ts`. So fragt jeder Weg dieselbe Stelle (Test: `ausgang.test.ts` ersetzt sie dort).
 - Importiert nur sich selbst, Kern, tiefere Fachordner, `sichten/`, `post/`, `pdf-bearbeiten/` (je über `index.ts`),
   `shared/`, die Basis, `arbeit/` und Werkzeuge (`ausgabe.ts`, `export.ts`, `zip.ts`, `xlsx.ts`, `mail.ts`) – Regel
   `fachordner`, Schicht 3.

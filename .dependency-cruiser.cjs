@@ -63,7 +63,7 @@ const OHNE_TUER = {
   system: 'system|systemlast|externmessung|fehlermeldungen|konsole',
   volltext: 'paketvolltext|texterkennung',
   wartung: 'wartung',
-  webdav: 'webdav|webdav-baum',
+  webdav: 'webdav|webdav-baum|webdav-hilfen|webdav-basis|webdav-ordner|webdav-methoden',
   werkbank: 'verwaltung|verwaltungsbereiche|meldungen|werkbankzahlen',
   zeitplan: 'zeitplan|streuung',
   zwischenspeicher: 'zaehlerspeicher|lesespeicher|kurzzustand|zwischenspeicher',
