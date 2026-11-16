@@ -527,14 +527,6 @@
       "count": 1
     }
   },
-  "server/src/pakete/verwaltung/lesen.ts": {
-    "complexity": {
-      "count": 2
-    },
-    "max-lines-per-function": {
-      "count": 1
-    }
-  },
   "server/src/pakete/verwaltung/paketverwaltung.ts": {
     "complexity": {
       "count": 2
@@ -544,12 +536,6 @@
     }
   },
   "server/src/pakete/verwaltung/planen.ts": {
-    "complexity": {
-      "count": 2
-    },
-    "max-lines-per-function": {
-      "count": 1
-    },
     "max-params": {
       "count": 1
     }
