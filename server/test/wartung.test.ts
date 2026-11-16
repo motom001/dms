@@ -1,16 +1,16 @@
 /** Wartungsmodus (#102): Stufen, Sitzungen, Anmeldung, API und Protokoll. */
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
-import { speicherEinstellungen } from '../src/einstellungen';
-import { Fachfehler } from '../src/fehler';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
+import { Fachfehler } from '../src/grundlagen/fehler';
 import { Konten } from '../src/konten';
-import { speicherKontoRepo } from '../src/konto-repo';
-import { protokoll } from '../src/protokoll';
+import { speicherKontoRepo } from '../src/konten/konto-repo';
+import { protokoll } from '../src/protokoll/protokoll';
 import { speicherRepo } from '../src/repo/speicher';
-import { routen, type Anfrage } from '../src/routen';
-import { Wartung, WartungFehler } from '../src/wartung';
+import { routen, type Anfrage } from '../src/http/routen';
+import { Wartung, WartungFehler } from '../src/wartung/wartung';
 
 async function aufbau() {
   let jetzt = new Date('2026-10-29T10:00:00Z');
@@ -25,7 +25,7 @@ async function aufbau() {
   await konten.legeBenutzerAn({ email: 'admin2@example.org', name: 'Admin 2', verwaltung: ['*'] });
   // Mitglied hat ein Passwort und zwei Geräte.
   const repo = (konten as unknown as { repo: ReturnType<typeof speicherKontoRepo> }).repo;
-  const { hashePasswort } = await import('../src/passwort');
+  const { hashePasswort } = await import('../src/anmeldung/passwort');
   await repo.setzeHash(mitglied.id, await hashePasswort('noch-ein-langes-passwort'));
   const m1 = await konten.anmelden({ email: 'mitglied@example.org', passwort: 'noch-ein-langes-passwort' }, '1.1.1.1', 'Handy');
   await konten.anmelden({ email: 'mitglied@example.org', passwort: 'noch-ein-langes-passwort' }, '1.1.1.2', 'Laptop');

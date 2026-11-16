@@ -38,3 +38,6 @@ Aufgaben ohne Empfänger. Schicht 3 der Zielaufteilung – über Mappen, Ereigni
 - Umgetragen aus `dienst.ts`: vier `complexity`, ein `max-depth`, ein `no-useless-assignment`, ein `no-unused-vars`.
 
 Mehr im Entwicklerhandbuch unter *Aufbau → Aufgaben*.
+
+**Ohne Tür** (#1278, Schritt 4a): `aufgabenmail.ts` lagen bis dahin direkt in `server/src/` und werden noch direkt
+eingebunden (`OHNE_TUER` in `.dependency-cruiser.cjs`); hinter die Tür kommen sie in einem eigenen Schritt.

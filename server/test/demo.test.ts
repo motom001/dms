@@ -1,15 +1,15 @@
 /** Demo-Daten für Wachstumstests (#248): Dokumente, Startwert, Pakete, Abschätzung. */
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { ladeBeispiele } from '../src/beispiele';
-import { speicherDateien } from '../src/dateispeicher';
-import { erzeugeDemo, MAX_DEMO, pruefeDemoOptionen, schaetzeDemo } from '../src/demo';
+import { ladeBeispiele } from '../src/beispiele/beispiele';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { erzeugeDemo, MAX_DEMO, pruefeDemoOptionen, schaetzeDemo } from '../src/demo/demo';
 import { meldeFortschritt, neuerStand, phasenText } from '../../shared/src/auftrag';
-import { DOKUMENTARTEN, erzeugeDokument, kannRastern, MISCHUNGEN, png, pruefeDokumentOptionen, schaetze } from '../src/demo-dokumente';
-import { Dienst } from '../src/dienst';
-import { Fachfehler } from '../src/fehler';
+import { DOKUMENTARTEN, erzeugeDokument, kannRastern, MISCHUNGEN, png, pruefeDokumentOptionen, schaetze } from '../src/demo/demo-dokumente';
+import { Dienst } from '../src/dienst/dienst';
+import { Fachfehler } from '../src/grundlagen/fehler';
 import { speicherRepo } from '../src/repo/speicher';
-import { Zufall } from '../src/zufall';
+import { Zufall } from '../src/demo/zufall';
 
 const rastern = await kannRastern();
 const status = (s: number) => (e: unknown) => e instanceof Fachfehler && e.status === s;

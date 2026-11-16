@@ -22,16 +22,16 @@ import { abfrageAus } from '../../shared/src/erweitertesuche';
 import { formatiere, POST_STAND, systemfelder, type Feld, type Mappentyp } from '../../shared/src/model';
 import { beschreibeBedingung } from '../../shared/src/sichten';
 import { typBild, typUnterschiede } from '../../shared/src/typvergleich';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
 import { behalteBeschriftungen, bereinigeTyp } from '../src/mappentypen';
-import { speicherEinstellungen } from '../src/einstellungen';
-import { spaltenKopf, zeile } from '../src/export';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
+import { spaltenKopf, zeile } from '../src/export/export';
 import { beschriftungenNeu, liesPaket, liesZip, Paketverwaltung } from '../src/pakete/verwaltung/index';
 import { Paketerstellung } from '../src/pakete/erstellung/index';
 import type { Repo } from '../src/repo';
 import { speicherRepo } from '../src/repo/speicher';
-import { zipPuffer } from '../src/zip';
+import { zipPuffer } from '../src/formate/zip';
 
 const HAUSHALT = '00000000-0000-4000-8000-000000000001';
 const ICH = { id: '00000000-0000-4000-8000-0000000000aa', rolle: 'admin', email: 'lena@example.org' };
@@ -41,8 +41,8 @@ after(async () => {
 });
 
 async function datenbank(): Promise<postgres.Sql> {
-  const { ausUrl, alsUrl, legeDatenbankAn } = await import('../src/anbindung');
-  const { verbinde, migriere } = await import('../src/db');
+  const { ausUrl, alsUrl, legeDatenbankAn } = await import('../src/datenbank/anbindung');
+  const { verbinde, migriere } = await import('../src/datenbank/db');
   const a = {
     ...ausUrl(process.env.TEST_DATABASE_URL)!,
     datenbank: `dms_besch_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
@@ -400,8 +400,8 @@ describe('Vollexport (#728)', () => {
     const { mkdtemp, readFile, rm } = await import('node:fs/promises');
     const { join } = await import('node:path');
     const { Konten } = await import('../src/konten');
-    const { speicherKontoRepo } = await import('../src/konto-repo');
-    const { vollexport } = await import('../src/vollexport');
+    const { speicherKontoRepo } = await import('../src/konten/konto-repo');
+    const { vollexport } = await import('../src/export/vollexport');
     const { d, typ } = await aufbau();
     await d.mappentypen.aendereTyp(typ.id, beschriftet(typ));
     await d.sichtenVerwaltung.legeSichtAn({ name: 'Alle Zähler', beschriftungen: { en: { name: 'Meters' } }, typen: [typ.id] });

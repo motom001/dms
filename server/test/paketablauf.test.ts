@@ -10,14 +10,14 @@ import { join } from 'node:path';
 import { after, describe, it } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { auswahlMitAbhaengigkeiten, ergaenzungenVon, liesErgaenzt, liesKatalog, type Katalog } from '../../shared/src/pakete';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
-import { speicherEinstellungen } from '../src/einstellungen';
-import { Fachfehler } from '../src/fehler';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
+import { Fachfehler } from '../src/grundlagen/fehler';
 import { liesPaket, Paketverwaltung, type Sammeldatei } from '../src/pakete/verwaltung/index';
 import type { Repo } from '../src/repo';
 import { speicherRepo } from '../src/repo/speicher';
-import { zipPuffer } from '../src/zip';
+import { zipPuffer } from '../src/formate/zip';
 import { TEST_PROJEKT, testSigniert } from './katalogschluessel';
 
 const ICH = { id: '00000000-0000-4000-8000-0000000000aa', email: 'admin@example.org' };
@@ -32,8 +32,8 @@ after(async () => {
 });
 async function repo(pg: boolean): Promise<Repo> {
   if (!pg) return speicherRepo();
-  const { ausUrl, alsUrl, legeDatenbankAn } = await import('../src/anbindung');
-  const { verbinde, migriere } = await import('../src/db');
+  const { ausUrl, alsUrl, legeDatenbankAn } = await import('../src/datenbank/anbindung');
+  const { verbinde, migriere } = await import('../src/datenbank/db');
   const { pgRepo } = await import('../src/repo/pg');
   const a = {
     ...ausUrl(process.env.TEST_DATABASE_URL)!,

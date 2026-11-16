@@ -33,14 +33,14 @@ import {
   type VorlagenListe,
 } from '../../../shared/src/textsatz';
 import { VORLAGE_MIME } from '../../../shared/src/vorgaben';
-import { Fachfehler } from '../fehler';
-import { TEXTSATZ_PDF_MAX, TEXTSATZ_SEITEN, TEXTSATZ_TEXT_MAX, VORLAGE_MAX } from '../grenzen';
+import { Fachfehler } from '../grundlagen/fehler';
+import { TEXTSATZ_PDF_MAX, TEXTSATZ_SEITEN, TEXTSATZ_TEXT_MAX, VORLAGE_MAX } from '../grundlagen/grenzen';
 import type { Kern, Zugriff } from '../kern';
 import { passwortFelder, pruefeVorlage, vorlagenFehlerText } from '../pakete/index';
 import { briefPdf, groesseText } from '../pdf';
-import { protokoll } from '../protokoll';
+import { protokoll } from '../protokoll/protokoll';
 import { istUuid } from '../repo';
-import { t } from '../sprache';
+import { t } from '../sprache/sprache';
 import type { ZugriffDienst } from '../zugriff';
 
 const log = protokoll.modul('dokumente');

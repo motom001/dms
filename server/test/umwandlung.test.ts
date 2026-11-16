@@ -16,15 +16,15 @@ import {
   wieEinName,
 } from '../../shared/src/umwandlung';
 import { titelAus, type Feld } from '../../shared/src/model';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
-import { speicherEinstellungen } from '../src/einstellungen';
-import { Fachfehler } from '../src/fehler';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
+import { Fachfehler } from '../src/grundlagen/fehler';
 import { liesPaket, liesZip, Paketverwaltung } from '../src/pakete/verwaltung/index';
 import type { Repo } from '../src/repo';
 import { speicherRepo } from '../src/repo/speicher';
-import { Umwandlung } from '../src/umwandlung';
-import { zipPuffer } from '../src/zip';
+import { Umwandlung } from '../src/pakete/umwandlung';
+import { zipPuffer } from '../src/formate/zip';
 import { eigeneDatenbank } from './hilfe-db';
 import { TEST_PROJEKT, testSigniert } from './katalogschluessel';
 
@@ -35,7 +35,7 @@ const KATALOG = 'https://katalog.test/katalog.json';
 const offen: Array<{ end(): Promise<void> }> = [];
 async function repo(pg: boolean): Promise<Repo> {
   if (!pg) return speicherRepo();
-  const { migriere } = await import('../src/db');
+  const { migriere } = await import('../src/datenbank/db');
   const { pgRepo } = await import('../src/repo/pg');
   // Eigene Datenbank (#900), nach dem letzten Test der Datei gelöscht.
   const sql = (await eigeneDatenbank('g14_umw', { migrieren: false })).sql;

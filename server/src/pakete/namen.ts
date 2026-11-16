@@ -7,7 +7,7 @@
  * Ein Umbau (#1041), der einen vorhandenen Typ übernimmt, ist kein Konflikt mit diesem Typ (uebernahmePlan in verwaltung/hilfen.ts).
  */
 import { neuestePassende, type Benannt, type InstalliertesPaket, type Katalog } from '../../../shared/src/pakete';
-import { t } from '../sprache';
+import { t } from '../sprache/sprache';
 
 /** Mappentypen einer Abhängigkeit, die mit dem Paket installiert würde (laut Katalog). */
 export interface AbhaengigeTypen {

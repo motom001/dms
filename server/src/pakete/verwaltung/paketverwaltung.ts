@@ -26,10 +26,10 @@ import {
   type EinstellungFeld,
   type Einstellungsbeschreibung,
 } from '../../../../shared/src/paketeinstellungen';
-import { Fachfehler } from '../../fehler';
-import { type Schluessel } from '../../katalogsignatur';
-import { t } from '../../sprache';
-import { nachweis } from '../../nachweisjournal';
+import { Fachfehler } from '../../grundlagen/fehler';
+import { type Schluessel } from '../katalogsignatur';
+import { t } from '../../sprache/sprache';
+import { nachweis } from '../../protokoll/nachweisjournal';
 import { paketQuellen, setzePaketQuellen } from '../index';
 import { einzuschalten } from './automatisierungen';
 import { ersetzenAus, herkunftFehler, installierteErsetzt, meldungen, sammelKennungen } from './hilfen';

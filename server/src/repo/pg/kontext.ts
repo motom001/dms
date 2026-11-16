@@ -3,7 +3,7 @@ import type postgres from 'postgres';
 import { datumIn, ziehe } from '../../../../shared/src/nummernkreis';
 import type { Varianten } from '../../../../shared/src/suche';
 import { suchkonfig } from '../../../../shared/src/textsprache';
-import { lesespeicherFuer } from '../../lesespeicher';
+import { lesespeicherFuer } from '../../zwischenspeicher/lesespeicher';
 import { istUuid, type Verweis } from '..';
 import { DOKUMENT_SPALTEN, MAPPEN_SPALTEN, SUCHINDEX_TEXT, VERSION_SPALTEN } from './spalten';
 import { type Sql, type SqlTeil, suchanfrage } from './sql';

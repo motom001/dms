@@ -25,8 +25,8 @@ interface App {
 
 describe('WebDAV über HTTP (#346)', { skip: echtesFastify ? false : 'Fastify nicht installiert' }, () => {
   let app: App;
-  let wd: import('../src/webdav').Webdav;
-  let dienst: import('../src/dienst').Dienst;
+  let wd: import('../src/webdav/webdav').Webdav;
+  let dienst: import('../src/dienst/dienst').Dienst;
   let annaId = '';
   let mappeId = '';
   let basic = '';
@@ -37,15 +37,15 @@ describe('WebDAV über HTTP (#346)', { skip: echtesFastify ? false : 'Fastify ni
   };
 
   before(async () => {
-    const { baueApp } = await import('../src/http');
-    const { Dienst } = await import('../src/dienst');
+    const { baueApp } = await import('../src/http/http');
+    const { Dienst } = await import('../src/dienst/dienst');
     const { speicherRepo } = await import('../src/repo/speicher');
-    const { speicherDateien } = await import('../src/dateispeicher');
-    const { speicherEinstellungen } = await import('../src/einstellungen');
+    const { speicherDateien } = await import('../src/dateien/dateispeicher');
+    const { speicherEinstellungen } = await import('../src/einstellungen/einstellungen');
     const { Konten } = await import('../src/konten');
-    const { speicherKontoRepo } = await import('../src/konto-repo');
-    const { ApiSchluesselDienst, speicherApiSchluesselRepo } = await import('../src/apischluessel');
-    const { Webdav } = await import('../src/webdav');
+    const { speicherKontoRepo } = await import('../src/konten/konto-repo');
+    const { ApiSchluesselDienst, speicherApiSchluesselRepo } = await import('../src/anmeldung/apischluessel');
+    const { Webdav } = await import('../src/webdav/webdav');
     dienst = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
     const konten = new Konten(speicherKontoRepo(), null, 'http://nas', dienst.systemtypen.benutzerspiegel());
     dienst.verbindeKonten(konten.papierkorbHaken());

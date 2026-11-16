@@ -19,19 +19,19 @@ import {
   verwaltungsbaum,
 } from '../../shared/src/verwaltungsrecht';
 import { NICHTS } from '../../shared/src/rechte';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
-import { speicherEinstellungen } from '../src/einstellungen';
-import { Fachfehler } from '../src/fehler';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
+import { Fachfehler } from '../src/grundlagen/fehler';
 import { Konten, schutzGesamt } from '../src/konten';
-import { speicherKontoRepo } from '../src/konto-repo';
-import { kontext, protokoll } from '../src/protokoll';
+import { speicherKontoRepo } from '../src/konten/konto-repo';
+import { kontext, protokoll } from '../src/protokoll/protokoll';
 import { speicherRepo } from '../src/repo/speicher';
-import { pruefeVerwaltung, routen, type Anfrage } from '../src/routen';
-import { bereicheDerRoute, heikleHandlung, JEDER, NUR_GESAMT } from '../src/verwaltungsbereiche';
-import { speicherFassungen } from '../src/dateiumwandlung';
-import { PdfEntsperren } from '../src/entsperren';
-import { ausBase32, totp, Zweifaktor } from '../src/zweifaktor';
+import { pruefeVerwaltung, routen, type Anfrage } from '../src/http/routen';
+import { bereicheDerRoute, heikleHandlung, JEDER, NUR_GESAMT } from '../src/werkbank/verwaltungsbereiche';
+import { speicherFassungen } from '../src/dateien/dateiumwandlung';
+import { PdfEntsperren } from '../src/dateien/entsperren';
+import { ausBase32, totp, Zweifaktor } from '../src/anmeldung/zweifaktor';
 import { imModus } from './hilfen';
 import { eigeneDatenbank } from './hilfe-db';
 
@@ -67,8 +67,8 @@ async function aufbau() {
   const petra = await mitPasswort('petra@example.org', 'Petra');
   await konten.setzeVerwaltung(imModus(lena), jonas.id, ['benutzer']);
   await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
-  const { baueApp } = await import('../src/http');
-  const { ApiSchluesselDienst, speicherApiSchluesselRepo } = await import('../src/apischluessel');
+  const { baueApp } = await import('../src/http/http');
+  const { ApiSchluesselDienst, speicherApiSchluesselRepo } = await import('../src/anmeldung/apischluessel');
   const app = await baueApp(d, konten, { apiSchluessel: new ApiSchluesselDienst(speicherApiSchluesselRepo()) });
   const anmelden = async (email: string) => {
     const r = await app.inject({ method: 'POST', url: '/api/konto/anmelden', payload: { email, passwort: PW }, headers: { 'x-dms': '1' } });
@@ -607,8 +607,8 @@ describe('Historie: fremde Mappen im Verwaltungsmodus (#820)', () => {
 const url = process.env.TEST_DATABASE_URL;
 describe('PostgreSQL: Umstellung und Sperre (#818)', { skip: url ? false : 'TEST_DATABASE_URL nicht gesetzt' }, () => {
   it('Migration: Admin-Konten werden Personen mit „Gesamte Verwaltung“; gleichzeitiges Entziehen landet nie bei null', async () => {
-    const { migriere } = await import('../src/db');
-    const { pgKontoRepo } = await import('../src/konto-repo');
+    const { migriere } = await import('../src/datenbank/db');
+    const { pgKontoRepo } = await import('../src/konten/konto-repo');
     const db = await eigeneDatenbank('verwaltungsmodus', { migrieren: false });
     const sql = db.sql;
     try {

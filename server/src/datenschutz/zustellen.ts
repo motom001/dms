@@ -6,17 +6,17 @@
  */
 import { randomUUID } from 'node:crypto';
 import type { Readable } from 'node:stream';
-import { neuerAbrufcode, SCHLUESSEL_MUSTER } from '../abruf';
+import { neuerAbrufcode, SCHLUESSEL_MUSTER } from './abruf';
 import { AusgangEmail } from '../ausgang';
-import { Fachfehler } from '../fehler';
-import { EMAIL_MAX_ANHAENGE, KB, MB } from '../grenzen';
+import { Fachfehler } from '../grundlagen/fehler';
+import { EMAIL_MAX_ANHAENGE, KB, MB } from '../grundlagen/grenzen';
 import type { Kern } from '../kern';
-import type { Mailer } from '../mail';
+import type { Mailer } from '../mail/mail';
 import type { MappenHistorie } from '../mappen';
-import { hashePasswort, hasheSchluessel, neuerSchluessel, pruefePasswort } from '../passwort';
-import { protokoll } from '../protokoll';
+import { hashePasswort, hasheSchluessel, neuerSchluessel, pruefePasswort } from '../anmeldung/passwort';
+import { protokoll } from '../protokoll/protokoll';
 import { type AuskunftLinkIntern, istUuid, type Repo } from '../repo';
-import { t } from '../sprache';
+import { t } from '../sprache/sprache';
 import { datumText } from '../../../shared/src/archiv';
 import {
   type AuskunftLink,

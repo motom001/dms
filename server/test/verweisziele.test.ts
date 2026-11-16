@@ -11,18 +11,18 @@ import { normalisiereZiele, pruefeMappe, zielErlaubt, zieleVon, type Feld, type 
 import { ALLES, NICHTS, rechteAn, type Regel, type Regelwerk } from '../../shared/src/rechte';
 import { bedingungsProblem, erfuellt, filterFuer } from '../../shared/src/sichten';
 import { typBild, typUnterschiede } from '../../shared/src/typvergleich';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
-import { speicherEinstellungen } from '../src/einstellungen';
-import { Fachfehler } from '../src/fehler';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
+import { Fachfehler } from '../src/grundlagen/fehler';
 import { Konten } from '../src/konten';
-import { speicherKontoRepo, type KontoRepo } from '../src/konto-repo';
+import { speicherKontoRepo, type KontoRepo } from '../src/konten/konto-repo';
 import { liesPaket, liesZip, Paketverwaltung } from '../src/pakete/verwaltung/index';
 import { aenderung } from '../src/pakete/erstellung/index';
 import type { Repo } from '../src/repo';
 import { speicherRepo } from '../src/repo/speicher';
-import { routen, type Anfrage } from '../src/routen';
-import { zipPuffer } from '../src/zip';
+import { routen, type Anfrage } from '../src/http/routen';
+import { zipPuffer } from '../src/formate/zip';
 import { imModus, wieImModus } from './hilfen';
 import { eigeneDatenbank } from './hilfe-db';
 
@@ -40,7 +40,7 @@ after(async () => {
 
 async function pgRepos(name: string): Promise<{ repo: Repo; konto: KontoRepo }> {
   const { pgRepo } = await import('../src/repo/pg');
-  const { pgKontoRepo } = await import('../src/konto-repo');
+  const { pgKontoRepo } = await import('../src/konten/konto-repo');
   const { sql } = await eigeneDatenbank(name);
   offen.push(sql);
   await sql`INSERT INTO haushalte (id, name) VALUES (${HAUSHALT}, 'Test') ON CONFLICT DO NOTHING`;

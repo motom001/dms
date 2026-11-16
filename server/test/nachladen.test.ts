@@ -4,17 +4,17 @@
  */
 import assert from 'node:assert/strict';
 import { after, describe, it } from 'node:test';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
-import { speicherEinstellungen } from '../src/einstellungen';
-import { Fachfehler } from '../src/fehler';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
+import { Fachfehler } from '../src/grundlagen/fehler';
 import { Konten } from '../src/konten';
-import { hasheSchluessel } from '../src/passwort';
-import { speicherKontoRepo, type KontoRepo } from '../src/konto-repo';
-import { protokoll } from '../src/protokoll';
+import { hasheSchluessel } from '../src/anmeldung/passwort';
+import { speicherKontoRepo, type KontoRepo } from '../src/konten/konto-repo';
+import { protokoll } from '../src/protokoll/protokoll';
 import { speicherRepo } from '../src/repo/speicher';
-import { pruefeVerwaltung, type Anfrage } from '../src/routen';
-import { bereicheDerRoute, JEDER } from '../src/verwaltungsbereiche';
+import { pruefeVerwaltung, type Anfrage } from '../src/http/routen';
+import { bereicheDerRoute, JEDER } from '../src/werkbank/verwaltungsbereiche';
 import { imModus } from './hilfen';
 import { eigeneDatenbank } from './hilfe-db';
 
@@ -54,8 +54,8 @@ async function aufbau() {
   const petra = await mitPasswort('petra@example.org', 'Petra');
   await konten.setzeVerwaltung(imModus(lena), markus.id, ['benutzer']);
   await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
-  const { baueApp } = await import('../src/http');
-  const { ApiSchluesselDienst, speicherApiSchluesselRepo } = await import('../src/apischluessel');
+  const { baueApp } = await import('../src/http/http');
+  const { ApiSchluesselDienst, speicherApiSchluesselRepo } = await import('../src/anmeldung/apischluessel');
   const app = await baueApp(d, konten, { apiSchluessel: new ApiSchluesselDienst(speicherApiSchluesselRepo()) });
   const anmelden = async (email: string) => {
     const r = await app.inject({ method: 'POST', url: '/api/konto/anmelden', payload: { email, passwort: PW }, headers: { 'x-dms': '1' } });
@@ -252,7 +252,7 @@ describe('Gerade auch im Verwaltungsmodus (#921, GET /api/werkbank/gerade-im-mod
 const url = process.env.TEST_DATABASE_URL;
 describe('PostgreSQL: Sitzungen im Verwaltungsmodus (#921)', { skip: url ? false : 'TEST_DATABASE_URL nicht gesetzt' }, () => {
   it('nur aktive Personen des Haushalts mit Modus, ohne Vertretung, gültige Sitzung; keine Dienst- und Systemkonten', async () => {
-    const { pgKontoRepo } = await import('../src/konto-repo');
+    const { pgKontoRepo } = await import('../src/konten/konto-repo');
     // Eigene Datenbank (#900), nicht das Schema der gemeinsamen leeren.
     const db = await eigeneDatenbank('nachladen');
     const sql = db.sql;

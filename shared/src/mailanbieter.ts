@@ -4,7 +4,7 @@
  * freischalten, App-Passwort, Anmeldung über OAuth), mit Link zur Hilfe des Anbieters.
  *
  * Eigene Domains (z. B. bei IONOS, Strato, Microsoft 365, Google Workspace) erkennt der Server über den
- * MX-Eintrag der Domain (siehe server/src/mailsuche.ts); dafür steht hier `mx`.
+ * MX-Eintrag der Domain (siehe server/src/mail/mailsuche.ts); dafür steht hier `mx`.
  * Die Texte der Hinweise stehen in shared/src/sprachen/de/werkbank.json.
  */
 

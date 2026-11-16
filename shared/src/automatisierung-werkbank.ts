@@ -1,7 +1,7 @@
 /**
  * Werkbank-Karten der Automatisierungen (#677): Wenn „Fehler gemeldet“, „Protokollmeldung“, „Neue Version verfügbar“
  * (ohne Mappe) und Dann „Sicherung anstoßen“ – dazu die festen Werkbank-Rechte des Systemkontos „Automatisierung“.
- * Modell, Prüfung, Platzhalter und Kurzform; ausgeführt wird im Server (`server/src/automatisierung-werkbank.ts`).
+ * Modell, Prüfung, Platzhalter und Kurzform; ausgeführt wird im Server (`server/src/automatisierung/automatisierung-werkbank.ts`).
  */
 import type { AutomatisierungDaten, Lauf } from './automatisierung';
 import { aufrufLaufFuer } from './automatisierung-aufruf';
@@ -11,7 +11,7 @@ import { t } from './texte';
 
 /**
  * Werkbank-Rechte des Systemkontos „Automatisierung“ (#677, Entscheidung Thomas 03.11.2026): nur diese, alle übrigen
- * Bereiche keine. Der Server reicht den Karten genau diese Handlungen durch (`server/src/automatisierung-werkbank.ts`) –
+ * Bereiche keine. Der Server reicht den Karten genau diese Handlungen durch (`server/src/automatisierung/automatisierung-werkbank.ts`) –
  * ein Test prüft, dass es nicht mehr werden. Was das Konto nicht darf, steht im Handbuch (Tabelle der Werkbank-Rechte).
  * Der Wert ist der Werkbank-Bereich: Wer eine Karte damit einrichtet, muss ihn selbst verwalten dürfen.
  */

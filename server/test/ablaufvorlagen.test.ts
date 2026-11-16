@@ -29,14 +29,14 @@ import { datumDe } from '../../shared/src/fristen';
 import { NICHTS, type Regelwerk } from '../../shared/src/rechte';
 import { heuteIn, verschiebe } from '../../shared/src/sichten';
 import { Automatisierungen, speicherAutomatisierungRepo } from '../src/automatisierung';
-import '../src/automatisierung-karten';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
-import { speicherEinstellungen } from '../src/einstellungen';
-import { Fachfehler } from '../src/fehler';
-import { ABLAEUFE_JE_PERSON_UND_MAPPE } from '../src/grenzen';
+import '../src/automatisierung/automatisierung-karten';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
+import { Fachfehler } from '../src/grundlagen/fehler';
+import { ABLAEUFE_JE_PERSON_UND_MAPPE } from '../src/grundlagen/grenzen';
 import { Konten } from '../src/konten';
-import { speicherKontoRepo, type KontoRepo } from '../src/konto-repo';
+import { speicherKontoRepo, type KontoRepo } from '../src/konten/konto-repo';
 import { liesPaket } from '../src/pakete/verwaltung/index';
 import type { Repo } from '../src/repo';
 import type { Mappentyp } from '../../shared/src/model';
@@ -56,7 +56,7 @@ after(async () => {
 
 async function pgRepos(kurz: string): Promise<{ repo: Repo; konto: KontoRepo }> {
   const { pgRepo } = await import('../src/repo/pg');
-  const { pgKontoRepo } = await import('../src/konto-repo');
+  const { pgKontoRepo } = await import('../src/konten/konto-repo');
   const sql = (await eigeneDatenbank(kurz)).sql;
   return { repo: pgRepo(sql, HAUSHALT), konto: pgKontoRepo(sql, HAUSHALT) };
 }
@@ -531,9 +531,9 @@ describe('Automatisierungsvorlagen: Prüfen (#1044, Sicherheit)', () => {
 if (url) {
   describe('Umstellung beim Update (#1044, Migration 105)', () => {
     it('Erinnerungen werden Abläufe von „Erinnern“: heutiger Ersteller, sonst der Empfänger, nie das Systemkonto', async () => {
-      const { migriere } = await import('../src/db');
+      const { migriere } = await import('../src/datenbank/db');
       const { pgRepo } = await import('../src/repo/pg');
-      const { pgKontoRepo } = await import('../src/konto-repo');
+      const { pgKontoRepo } = await import('../src/konten/konto-repo');
       const db = await eigeneDatenbank('ablaufvorlagen_umstellung', { migrieren: false });
       // Stand vor 105. Die Tabelle der Fassungen (#1006) und die Spalte in_suche (#1220) kommen dazu, weil der heutige Code
       // beim Anlegen von Typ und Mappe Fassungen und in_suche schreibt.
@@ -583,7 +583,7 @@ if (url) {
       assert.equal(a.get(e2)!.erstelltVon, jonas.id, 'ohne Ersteller: der Empfänger');
       assert.equal(a.get(e3)!.erstelltVon, lena.id, 'nie das Systemkonto: der Empfänger');
       // Gleiches Verhalten: am Datum dieselbe Aufgabe „Erinnerung“.
-      const { Dienst: D } = await import('../src/dienst');
+      const { Dienst: D } = await import('../src/dienst/dienst');
       const d = new D(repo, speicherDateien(), { einstellungen: speicherEinstellungen() });
       const konten = new Konten(pgKontoRepo(sql, HAUSHALT), null, 'http://nas', d.systemtypen.benutzerspiegel());
       d.verbindeKonten(konten.papierkorbHaken());
@@ -603,7 +603,7 @@ if (url) {
 
   describe('Fassungen in die gemeinsame Tabelle (#1006, Migration 109)', () => {
     it('Änderungsverlauf aus ablaufvorlage_fassungen: Nummer, Zeit, Stand und Person bleiben; ohne Person Paket bzw. Ablago', async () => {
-      const { migriere } = await import('../src/db');
+      const { migriere } = await import('../src/datenbank/db');
       const { pgRepo } = await import('../src/repo/pg');
       const db = await eigeneDatenbank('ablaufvorlagen_fassungen', { migrieren: false });
       const vorher = mkdtempSync(join(tmpdir(), 'migrationen-'));

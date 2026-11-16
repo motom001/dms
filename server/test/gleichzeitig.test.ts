@@ -8,11 +8,11 @@ import { randomUUID } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { after, before, describe, it } from 'node:test';
 import type { Benutzer, Mappenkonflikt } from '../../shared/src/model';
-import { openapi } from '../src/api-v1';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
-import { speicherEinstellungen } from '../src/einstellungen';
-import { Fachfehler } from '../src/fehler';
+import { openapi } from '../src/http/api-v1';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
+import { Fachfehler } from '../src/grundlagen/fehler';
 import { feldweise, StandVeraltet, type Repo } from '../src/repo';
 import { speicherRepo } from '../src/repo/speicher';
 
@@ -265,7 +265,7 @@ describe('Gleichzeitig bearbeiten (#609) in PostgreSQL', { skip: url ? false : '
   /* eslint-enable @typescript-eslint/no-explicit-any */
   const db = `dms_gleichzeitig_${process.pid}`;
   before(async () => {
-    const { verbinde, migriere } = await import('../src/db');
+    const { verbinde, migriere } = await import('../src/datenbank/db');
     haupt = verbinde(url!);
     await haupt.unsafe(`DROP DATABASE IF EXISTS ${db}`);
     await haupt.unsafe(`CREATE DATABASE ${db}`);

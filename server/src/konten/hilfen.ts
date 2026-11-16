@@ -2,13 +2,13 @@
  * Regeln, Konstanten und Typen der Konten (#1278, vorher oben in `server/src/konten.ts`): Passwort- und E-Mail-Regeln,
  * Schutzregel „Gesamte Verwaltung“, Dauer von Sitzungen und Links, zweiter Anmeldeschritt.
  */
-import { protokoll } from '../protokoll';
+import { protokoll } from '../protokoll/protokoll';
 import { type Benutzer, istPerson, PASSWORT_MINDESTLAENGE, istEmail } from '../../../shared/src/model';
 import { hatGesamt } from '../../../shared/src/verwaltungsrecht';
-import type { Schutzpruefung, SitzungsInfo } from '../konto-repo';
-import { t } from '../sprache';
+import type { Schutzpruefung, SitzungsInfo } from './konto-repo';
+import { t } from '../sprache/sprache';
 import { heuteIn } from '../../../shared/src/sichten';
-import { Fachfehler } from '../fehler';
+import { Fachfehler } from '../grundlagen/fehler';
 
 export const log = protokoll.modul('konto');
 

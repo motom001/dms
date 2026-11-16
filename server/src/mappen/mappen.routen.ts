@@ -3,14 +3,14 @@
  * Historie, Anlegen und Ändern, Export einer Sicht, Auswahl, Löschen und Papierkorb.
  */
 import { MAX_DATEIGROESSE, POST_KANAL } from '../../../shared/src/model';
-import { Fachfehler } from '../fehler';
-import { t } from '../sprache';
+import { Fachfehler } from '../grundlagen/fehler';
+import { t } from '../sprache/sprache';
 import { liesAnlass } from '../../../shared/src/loeschprotokoll';
-import { liesQuelle } from '../uebersetzung';
-import { VORSCHLAG_DATEI_MAX } from '../grenzen';
+import { liesQuelle } from '../sprache/uebersetzung';
+import { VORSCHLAG_DATEI_MAX } from '../grundlagen/grenzen';
 import { L, ok, leer, b, quelle, ich } from '../http/routen-hilfen';
 import type { RoutenKontext } from '../http/routen-kontext';
-import type { Route } from '../routen';
+import type { Route } from '../http/routen';
 
 export function mappenRouten(k: RoutenKontext): Route[] {
   const { dienst, x, fotostapel, typName, spracheFuer, modusSpur, zg, darf, zuletztGeoeffnet } = k;

@@ -4,11 +4,11 @@
  * entscheidet der Ausgang (`ausgang/`).
  */
 import { randomUUID } from 'node:crypto';
-import { Fachfehler } from '../fehler';
+import { Fachfehler } from '../grundlagen/fehler';
 import type { Kern } from '../kern';
-import { protokoll } from '../protokoll';
+import { protokoll } from '../protokoll/protokoll';
 import type { Repo } from '../repo';
-import { t } from '../sprache';
+import { t } from '../sprache/sprache';
 import {
   liesStempelTyp,
   liesVorlagen,

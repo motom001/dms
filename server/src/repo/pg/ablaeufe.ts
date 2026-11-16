@@ -1,5 +1,5 @@
 /** Abläufe an Mappen und Automatisierungsvorlagen (PostgreSQL, #131, #1044). */
-import { merkeAenderung } from '../../lesespeicher';
+import { merkeAenderung } from '../../zwischenspeicher/lesespeicher';
 import { istUuid, type RepoTeil } from '..';
 import type { PgKontext } from './kontext';
 import { json } from './sql';

@@ -3,7 +3,7 @@
  * (structured clone): Ein Buffer kommt als Uint8Array an und wird auf beiden Seiten wieder zum Buffer,
  * ein Fehler als einfaches Objekt und wird wieder zum Fachfehler.
  */
-import { Fachfehler } from '../fehler';
+import { Fachfehler } from '../grundlagen/fehler';
 
 export interface Auftrag {
   id: number;

@@ -4,12 +4,18 @@
  */
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { ankerListe, Entdecken } from '../src/entdecken';
-import { insPaket, pruefeRundgangDatei, RundgaengeWerkbank, rundgangAlsYaml, WERKBANK_EINSTELLUNG } from '../src/entdecken-werkbank';
-import { speicherEinstellungen } from '../src/einstellungen';
-import { Fachfehler } from '../src/fehler';
+import { ankerListe, Entdecken } from '../src/entdecken/entdecken';
+import {
+  insPaket,
+  pruefeRundgangDatei,
+  RundgaengeWerkbank,
+  rundgangAlsYaml,
+  WERKBANK_EINSTELLUNG,
+} from '../src/entdecken/entdecken-werkbank';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
+import { Fachfehler } from '../src/grundlagen/fehler';
 import { Konten } from '../src/konten';
-import { speicherKontoRepo } from '../src/konto-repo';
+import { speicherKontoRepo } from '../src/konten/konto-repo';
 
 const TYPEN = new Map([['urlaubsantrag', { kennung: 'urlaubsantrag', felder: ['zeitraum'], register: ['dokumente'] }]]);
 const pruefung = async () => ({ anker: ankerListe(), typ: (k: string) => TYPEN.get(k) ?? null });

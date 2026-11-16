@@ -25,14 +25,14 @@ import type { InstalliertesPaket } from '../../../shared/src/pakete';
 import type { SprachBeschriftung, Sprachtexte } from '../../../shared/src/sprachpaket';
 import type { AuskunftLink } from '../../../shared/src/auskunft';
 import type { PaketHinweis } from '../../../shared/src/berechnet';
-import type { Fundstelle } from '../geheimnisse';
+import type { Fundstelle } from '../geheimnisse/geheimnisse';
 import type { LoeschDokument, LoeschEintrag, LoeschFilter } from '../../../shared/src/loeschprotokoll';
 import type { Varianten } from '../../../shared/src/suche';
 import type { Seitensprache } from '../../../shared/src/seitensprachen';
 import type { FassungArt, GespeicherteFassung, Loeschvermerk } from '../../../shared/src/fassungen';
 import type { Leerseiten } from '../../../shared/src/leerseiten';
 import type { Notfallkontakt } from '../../../shared/src/notfallkontakte';
-import { t } from '../sprache';
+import { t } from '../sprache/sprache';
 import type { Auslastung, VerlaufEintrag, VerlaufNeu } from '../../../shared/src/paketreiter';
 
 /** Seitenweises Lesen der Historie (#800). */

@@ -3,10 +3,10 @@
  */
 import { inflateRawSync } from 'node:zlib';
 import { CODE_MAX, PAKET_MAX, inMB } from '../../../../shared/src/pakete';
-import { Fachfehler } from '../../fehler';
-import { t } from '../../sprache';
-import { crc32 } from '../../zip';
-import { ARCHIV_MAX, ENTPACKT_MAX, MB } from '../../grenzen';
+import { Fachfehler } from '../../grundlagen/fehler';
+import { t } from '../../sprache/sprache';
+import { crc32 } from '../../formate/zip';
+import { ARCHIV_MAX, ENTPACKT_MAX, MB } from '../../grundlagen/grenzen';
 
 export { ARCHIV_MAX };
 

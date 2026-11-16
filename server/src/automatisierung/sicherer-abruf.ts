@@ -3,7 +3,7 @@ import http from 'node:http';
 import https from 'node:https';
 import { BlockList, isIP } from 'node:net';
 import { AUSSEN_GRENZEN } from '../../../shared/src/automatisierung';
-import { AUSSEN_ANTWORT_MAX } from '../grenzen';
+import { AUSSEN_ANTWORT_MAX } from '../grundlagen/grenzen';
 
 /**
  * Sicherer Abruf für „URL aufrufen“ (#671) – Schutz gegen SSRF. Eigener Baustein, weil der Abruf für Katalog und Pakete

@@ -6,12 +6,12 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { erkenneSprache, schriftVon, spracheAusInfo, spracheZuInfo, sprachvorschlaege } from '../../shared/src/textsprache';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
-import { speicherEinstellungen } from '../src/einstellungen';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
 import { speicherRepo } from '../src/repo/speicher';
-import { Texterkennung, type Engine } from '../src/texterkennung';
-import { dreheGraubild, lesePgm, schreibePgm } from '../src/graubild';
+import { Texterkennung, type Engine } from '../src/volltext/texterkennung';
+import { dreheGraubild, lesePgm, schreibePgm } from '../src/dateien/graubild';
 import { pdfMitText } from './hilfen';
 import { PAKET_TEXT } from '../../shared/src/pakete';
 

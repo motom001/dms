@@ -6,16 +6,16 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { gleicheRechte, liesCode, rechtePunkte, rechteZeilen, type InstalliertesPaket, type PaketCode } from '../../shared/src/pakete';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
-import { speicherEinstellungen } from '../src/einstellungen';
-import type { Fachfehler } from '../src/fehler';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
+import type { Fachfehler } from '../src/grundlagen/fehler';
 import { Konten } from '../src/konten';
-import { speicherKontoRepo } from '../src/konto-repo';
+import { speicherKontoRepo } from '../src/konten/konto-repo';
 import { speicherRepo } from '../src/repo/speicher';
-import { routen, type Anfrage } from '../src/routen';
-import { heikleHandlung } from '../src/verwaltungsbereiche';
-import { Nachweisjournal, setzeNachweisjournal, speicherJournal } from '../src/nachweisjournal';
+import { routen, type Anfrage } from '../src/http/routen';
+import { heikleHandlung } from '../src/werkbank/verwaltungsbereiche';
+import { Nachweisjournal, setzeNachweisjournal, speicherJournal } from '../src/protokoll/nachweisjournal';
 import type { Benutzer } from '../../shared/src/model';
 import type { PaketdatenAnsicht } from '../../shared/src/paketdaten';
 

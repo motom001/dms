@@ -8,15 +8,15 @@ import { erlaubteSprachen, setzeErlaubteSprachen } from '../../shared/src/beschr
 import { formatiere, systemfelder, type Feld } from '../../shared/src/model';
 import { inSprache, setzeSprache, sprache, uebersetzer } from '../../shared/src/sprache';
 import { liesSpracheinstellung, spracheAusKopf, wirksameSprache } from '../../shared/src/sprachwahl';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
-import { speicherEinstellungen } from '../src/einstellungen';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
 import { Konten } from '../src/konten';
-import { speicherKontoRepo } from '../src/konto-repo';
-import type { Mailer } from '../src/mail';
+import { speicherKontoRepo } from '../src/konten/konto-repo';
+import type { Mailer } from '../src/mail/mail';
 import { speicherRepo } from '../src/repo/speicher';
-import { mitSprache, mitSpracheVon, t, tDe } from '../src/sprache';
-import { SprachDienst } from '../src/sprachwahl';
+import { mitSprache, mitSpracheVon, t, tDe } from '../src/sprache/sprache';
+import { SprachDienst } from '../src/sprache/sprachwahl';
 
 const PW = 'ein-langes-passwort';
 
@@ -121,8 +121,8 @@ describe('Einstellung „sprachen“ und Sprache der Person (#729)', () => {
     const link = r.link ?? /\/passwort\/(\S+)/.exec(mails.at(-1)!.text)![0];
     await konten.passwortSetzen({ schluessel: link.split('/passwort/')[1], passwort: PW });
     await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
-    const { baueApp } = await import('../src/http');
-    const { ApiSchluesselDienst, speicherApiSchluesselRepo } = await import('../src/apischluessel');
+    const { baueApp } = await import('../src/http/http');
+    const { ApiSchluesselDienst, speicherApiSchluesselRepo } = await import('../src/anmeldung/apischluessel');
     const app = await baueApp(d, konten, { apiSchluessel: new ApiSchluesselDienst(speicherApiSchluesselRepo()), sprachen });
     const anmelden = async (email: string) => {
       const a = await app.inject({

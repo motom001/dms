@@ -3,7 +3,7 @@
  */
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { Fachfehler } from '../fehler';
+import { Fachfehler } from '../grundlagen/fehler';
 import {
   exportDateien,
   exporteIn,
@@ -14,20 +14,20 @@ import {
   vollexport,
   VOLLEXPORT_PHASEN,
   type ExportOptionen,
-} from '../vollexport';
-import { oeffneStrom } from '../dateispeicher';
-import { alsHeruntergeladen, mitPruefsumme, PRUEFSUMMEN } from '../vollexport-pruefsummen';
+} from '../export/vollexport';
+import { oeffneStrom } from '../dateien/dateispeicher';
+import { alsHeruntergeladen, mitPruefsumme, PRUEFSUMMEN } from '../export/vollexport-pruefsummen';
 import { EXPORT_TAGE } from '../../../shared/src/auskunft';
-import { persoenlicherOrdner, umzugGesehen, umzugHinweis } from '../exportordner';
-import { t } from '../sprache';
-import { zipGroesse, zipStrom, ZIP_MAX, type ZipEintrag } from '../zip';
-import { eigeneVersion } from '../system';
-import { protokoll } from '../protokoll';
-import { MB, PLATZ_RESERVE } from '../grenzen';
+import { persoenlicherOrdner, umzugGesehen, umzugHinweis } from '../export/exportordner';
+import { t } from '../sprache/sprache';
+import { zipGroesse, zipStrom, ZIP_MAX, type ZipEintrag } from '../formate/zip';
+import { eigeneVersion } from '../system/system';
+import { protokoll } from '../protokoll/protokoll';
+import { MB, PLATZ_RESERVE } from '../grundlagen/grenzen';
 import { L, ok, leer, ich, kontaktVorschlaege } from '../http/routen-hilfen';
 import type { RoutenKontext } from '../http/routen-kontext';
-import type { Route } from '../routen';
-import { WERKBANK_EINSTELLUNG } from '../entdecken-werkbank';
+import type { Route } from '../http/routen';
+import { WERKBANK_EINSTELLUNG } from '../entdecken/entdecken-werkbank';
 
 export function exportRouten(k: RoutenKontext): Route[] {
   const { dienst, konten, x, zg, EXPORT_LAEUFT, EXPORT_FEHLER, eigenerExport, exportZiel, danachLoeschen } = k;

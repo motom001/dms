@@ -23,13 +23,13 @@ import { after, before, describe, it } from 'node:test';
 import { fristFelder, folgetermine, istDatum, kannTerminHaben } from '../../shared/src/fristen';
 import type { Mappe, Mappentyp } from '../../shared/src/model';
 import { heuteIn, verschiebe } from '../../shared/src/sichten';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
-import { speicherEinstellungen, type Einstellungen } from '../src/einstellungen';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherEinstellungen, type Einstellungen } from '../src/einstellungen/einstellungen';
 import { Konten } from '../src/konten';
-import { speicherKontoRepo } from '../src/konto-repo';
-import { speicherKurzzustand } from '../src/kurzzustand';
-import { kontext, type Kontext } from '../src/protokoll';
+import { speicherKontoRepo } from '../src/konten/konto-repo';
+import { speicherKurzzustand } from '../src/zwischenspeicher/kurzzustand';
+import { kontext, type Kontext } from '../src/protokoll/protokoll';
 import type { Repo, SeitenAnfrage } from '../src/repo';
 import { speicherRepo } from '../src/repo/speicher';
 import {
@@ -41,7 +41,7 @@ import {
   richteZwischenspeicherEin,
   Zaehlerspeicher,
   zwischenspeicherAus,
-} from '../src/zaehlerspeicher';
+} from '../src/zwischenspeicher/zaehlerspeicher';
 import { wieImModus } from './hilfen';
 
 const PW = 'ein-langes-passwort';
@@ -570,8 +570,12 @@ describe('PostgreSQL: Vorfilter, Pflege und Migration (#918)', { skip: url ? fal
   };
 
   before(async () => {
-    const { verbinde, migriere } = await import('../src/db');
-    mod = { ...(await import('../src/repo/pg')), ...(await import('../src/konto-repo')), ...(await import('../src/einstellungen')) };
+    const { verbinde, migriere } = await import('../src/datenbank/db');
+    mod = {
+      ...(await import('../src/repo/pg')),
+      ...(await import('../src/konten/konto-repo')),
+      ...(await import('../src/einstellungen/einstellungen')),
+    };
     // Eigene Datenbank: die Testdateien laufen parallel auf derselben Test-Datenbank; das Schema dort zu leeren
     // würde anderen Dateien mitten im Lauf die Tabellen wegnehmen.
     haupt = verbinde(url!);

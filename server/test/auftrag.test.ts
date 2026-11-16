@@ -2,11 +2,11 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { fortschrittText, meldeFortschritt, neuerStand } from '../../shared/src/auftrag';
-import { Auftraege } from '../src/auftrag';
-import { ladeBeispiele } from '../src/beispiele';
-import { speicherDateien } from '../src/dateispeicher';
-import { demoPhasen, erzeugeDemo } from '../src/demo';
-import { Dienst } from '../src/dienst';
+import { Auftraege } from '../src/prozesse/auftrag';
+import { ladeBeispiele } from '../src/beispiele/beispiele';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { demoPhasen, erzeugeDemo } from '../src/demo/demo';
+import { Dienst } from '../src/dienst/dienst';
 import { speicherRepo } from '../src/repo/speicher';
 
 describe('Auftragsstatus mit Phasen (#364)', () => {

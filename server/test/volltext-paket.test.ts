@@ -11,12 +11,12 @@ import { PDFDocument, rgb } from 'pdf-lib';
 import type { InstalliertesPaket } from '../../shared/src/pakete';
 import { kenntVolltextOhneText, liesCode } from '../../shared/src/pakete';
 import { infoWartet, volltextHerkunft } from '../../shared/src/volltext';
-import { Auftraege } from '../src/auftrag';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
-import { speicherEinstellungen } from '../src/einstellungen';
+import { Auftraege } from '../src/prozesse/auftrag';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
 import { speicherRepo } from '../src/repo/speicher';
-import { Texterkennung, type Engine } from '../src/texterkennung';
+import { Texterkennung, type Engine } from '../src/volltext/texterkennung';
 import { pdfMitText } from './hilfen';
 
 const warte = async (bis: () => Promise<boolean>, ms = 20_000) => {
@@ -477,8 +477,8 @@ describe('Volltext-Ablauf (#458) mit PostgreSQL', () => {
     'Stand paket, Kandidaten für „neu erzeugen“, offene Ereignisse verwerfen, Daten einer Fortsetzung',
     { skip: !process.env.TEST_DATABASE_URL && 'ohne TEST_DATABASE_URL' },
     async () => {
-      const { ausUrl, alsUrl, legeDatenbankAn } = await import('../src/anbindung');
-      const { verbinde, migriere } = await import('../src/db');
+      const { ausUrl, alsUrl, legeDatenbankAn } = await import('../src/datenbank/anbindung');
+      const { verbinde, migriere } = await import('../src/datenbank/db');
       const { pgRepo } = await import('../src/repo/pg');
       const H = '00000000-0000-4000-8000-000000000001';
       const basis = ausUrl(process.env.TEST_DATABASE_URL)!;

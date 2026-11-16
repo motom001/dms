@@ -2,16 +2,16 @@
 import assert from 'node:assert/strict';
 import { createHash, generateKeyPairSync, sign, type KeyObject } from 'node:crypto';
 import { describe, it } from 'node:test';
-import { Dienst } from '../src/dienst';
-import { speicherDateien } from '../src/dateispeicher';
-import { speicherEinstellungen } from '../src/einstellungen';
-import { Fachfehler } from '../src/fehler';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
+import { Fachfehler } from '../src/grundlagen/fehler';
 import { Konten } from '../src/konten';
-import { speicherKontoRepo } from '../src/konto-repo';
-import { anbieterMeldung, identitaetAus, Oidc, pruefeAussteller, pruefeIdToken, type Abruf, type JsonWebKey } from '../src/oidc';
+import { speicherKontoRepo } from '../src/konten/konto-repo';
+import { anbieterMeldung, identitaetAus, Oidc, pruefeAussteller, pruefeIdToken, type Abruf, type JsonWebKey } from '../src/anmeldung/oidc';
 import { speicherRepo } from '../src/repo/speicher';
 import { anbieterFehlerCode } from '../src/anmeldung/anmeldung.routen';
-import { routen, type Anfrage } from '../src/routen';
+import { routen, type Anfrage } from '../src/http/routen';
 import { ANMELDEFEHLER, anmeldefehlerCode } from '../../shared/src/anmeldefehler';
 
 const ISS = 'https://login.example.org/tenant/v2.0';

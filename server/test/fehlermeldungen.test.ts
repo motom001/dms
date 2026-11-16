@@ -1,9 +1,9 @@
 /** Fehler melden (#70). */
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { speicherDateien } from '../src/dateispeicher';
-import { Fachfehler } from '../src/fehler';
-import { Fehlermeldungen, speicherFehlerRepo } from '../src/fehlermeldungen';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Fachfehler } from '../src/grundlagen/fehler';
+import { Fehlermeldungen, speicherFehlerRepo } from '../src/system/fehlermeldungen';
 
 const status = (s: number) => (e: unknown) => e instanceof Fachfehler && e.status === s;
 // 1×1-PNG

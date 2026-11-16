@@ -9,11 +9,11 @@
  * Abgelegt in der Einstellung `paketdaten:<id>` samt Zeitpunkt der Installation: Wird das Paket entfernt und neu
  * installiert, gilt die alte Freigabe nicht mehr (sonst bekäme es heimlich wieder Daten).
  */
-import { Fachfehler } from '../fehler';
-import { protokoll } from '../protokoll';
-import { t } from '../sprache';
-import type { Einstellungen } from '../einstellungen';
-import { nachweis } from '../nachweisjournal';
+import { Fachfehler } from '../grundlagen/fehler';
+import { protokoll } from '../protokoll/protokoll';
+import { t } from '../sprache/sprache';
+import type { Einstellungen } from '../einstellungen/einstellungen';
+import { nachweis } from '../protokoll/nachweisjournal';
 import {
   bereichName,
   brauchtFrisch,

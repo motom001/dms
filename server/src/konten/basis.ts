@@ -5,13 +5,13 @@
  * ruft nur, was unter ihr steht. Die Rümpfe sind aus konten.ts unverändert übernommen, `this` ist überall dasselbe
  * Konten-Objekt.
  */
-import { Anmeldesperre } from '../anmeldesperre';
-import type { Zweifaktor } from '../zweifaktor';
-import type { Passkeys } from '../passkeys';
-import type { OidcEinstellung } from '../oidc';
-import { type Kurzzustand, speicherKurzzustand } from '../kurzzustand';
-import type { KontoRepo } from '../konto-repo';
-import type { Mailer } from '../mail';
+import { Anmeldesperre } from '../anmeldung/anmeldesperre';
+import type { Zweifaktor } from '../anmeldung/zweifaktor';
+import type { Passkeys } from '../anmeldung/passkeys';
+import type { OidcEinstellung } from '../anmeldung/oidc';
+import { type Kurzzustand, speicherKurzzustand } from '../zwischenspeicher/kurzzustand';
+import type { KontoRepo } from './konto-repo';
+import type { Mailer } from '../mail/mail';
 import type { Benutzerspiegel } from '../mappentypen';
 import type { Benutzer, Abwesenheit } from '../../../shared/src/model';
 

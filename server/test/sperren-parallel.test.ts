@@ -6,10 +6,10 @@
  */
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { AbrufBremse } from '../src/abruf';
-import { Einrichtungscode } from '../src/einrichtungscode';
-import { PdfEntsperren } from '../src/entsperren';
-import { speicherKurzzustand } from '../src/kurzzustand';
+import { AbrufBremse } from '../src/datenschutz/abruf';
+import { Einrichtungscode } from '../src/einrichtung/einrichtungscode';
+import { PdfEntsperren } from '../src/dateien/entsperren';
+import { speicherKurzzustand } from '../src/zwischenspeicher/kurzzustand';
 import { VERSUCHE_MAX } from '../../shared/src/entsperren';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';

@@ -28,14 +28,21 @@ import {
   wirksameTypen,
 } from '../../../shared/src/sichten';
 import { suchbegriffe, type Varianten, vorschlagAus } from '../../../shared/src/suche';
-import { Fachfehler } from '../fehler';
+import { Fachfehler } from '../grundlagen/fehler';
 import { ABO_ARTEN, type Kern, type Zugriff } from '../kern';
 import type { MappenDienst } from '../mappen';
-import { kontext, protokoll } from '../protokoll';
+import { kontext, protokoll } from '../protokoll/protokoll';
 import type { Repo, SeitenAnfrage, SortierungIntern } from '../repo';
-import { t } from '../sprache';
+import { t } from '../sprache/sprache';
 import type { SucheDienst } from '../suche';
-import { fingerabdruck, type Gueltigkeit, type Haushaltsstand, mitFavoriten, Zaehlerspeicher, zeitabhaengig } from '../zaehlerspeicher';
+import {
+  fingerabdruck,
+  type Gueltigkeit,
+  type Haushaltsstand,
+  mitFavoriten,
+  Zaehlerspeicher,
+  zeitabhaengig,
+} from '../zwischenspeicher/zaehlerspeicher';
 import { NICHT_SICHTBAR, type ZugriffDienst } from '../zugriff';
 import type { Systemsichten } from './systemsichten';
 import type { SichtenVerwaltung } from './verwalten';

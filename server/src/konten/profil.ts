@@ -4,11 +4,11 @@
 import { KontenSitzungen } from './sitzungen';
 import type { Benutzer } from '../../../shared/src/model';
 import { ZULETZT_MERKEN, text, pruefeEmail, type Geraet, OHNE_GERAET, pruefePasswortRegeln } from './hilfen';
-import { Fachfehler } from '../fehler';
-import { t } from '../sprache';
-import { pruefePasswort, hashePasswort } from '../passwort';
+import { Fachfehler } from '../grundlagen/fehler';
+import { t } from '../sprache/sprache';
+import { pruefePasswort, hashePasswort } from '../anmeldung/passwort';
 import { erlaubteSprachen } from '../../../shared/src/beschriftung';
-import { mailtexte } from '../mail';
+import { mailtexte } from '../mail/mail';
 
 /** Persönliche Einstellungen, Hinweise und eigenes Profil. */
 export abstract class KontenProfil extends KontenSitzungen {

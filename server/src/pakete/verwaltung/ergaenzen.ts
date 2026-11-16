@@ -5,8 +5,8 @@
 import { zieleVon, type Mappentyp } from '../../../../shared/src/model';
 import { ergaenzeBeschriftungen } from '../../../../shared/src/beschriftung';
 import { type InstalliertesPaket } from '../../../../shared/src/pakete';
-import { Fachfehler } from '../../fehler';
-import { t } from '../../sprache';
+import { Fachfehler } from '../../grundlagen/fehler';
+import { t } from '../../sprache/sprache';
 import { optionaleInTyp, quellenNachtragen, type SollQuelle } from '../index';
 import { type Paket, type PaketTyp, str } from './format';
 import { meldungen } from './hilfen';

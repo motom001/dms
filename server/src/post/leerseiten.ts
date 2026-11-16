@@ -21,13 +21,13 @@ import {
 } from '../../../shared/src/leerseiten';
 import { type Dokument, istVersendet, type Mappe } from '../../../shared/src/model';
 import type { DokumentVersionen } from '../dokumente';
-import { Fachfehler } from '../fehler';
+import { Fachfehler } from '../grundlagen/fehler';
 import type { Kern, Zugriff } from '../kern';
 import type { MappenHistorie } from '../mappen';
-import { seitenInfo, teile } from '../pdfseiten';
-import { protokoll } from '../protokoll';
+import { seitenInfo, teile } from '../dateien/pdfseiten';
+import { protokoll } from '../protokoll/protokoll';
 import type { Repo } from '../repo';
-import { t } from '../sprache';
+import { t } from '../sprache/sprache';
 import type { ZugriffDienst } from '../zugriff';
 
 const log = protokoll.modul('ablage');

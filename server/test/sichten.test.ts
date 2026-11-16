@@ -20,11 +20,11 @@ import {
   type Sicht,
 } from '../../shared/src/sichten';
 import type { Mappentyp } from '../../shared/src/model';
-import { ladeBeispiele } from '../src/beispiele';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
-import { speicherEinstellungen } from '../src/einstellungen';
-import { Fachfehler } from '../src/fehler';
+import { ladeBeispiele } from '../src/beispiele/beispiele';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
+import { Fachfehler } from '../src/grundlagen/fehler';
 import type { Repo } from '../src/repo';
 import { speicherRepo } from '../src/repo/speicher';
 
@@ -475,7 +475,7 @@ describe('Sichten in PostgreSQL', { skip: url ? false : 'TEST_DATABASE_URL nicht
   /* eslint-enable @typescript-eslint/no-explicit-any */
   const db = `dms_sichten_${process.pid}`;
   before(async () => {
-    const { verbinde, migriere } = await import('../src/db');
+    const { verbinde, migriere } = await import('../src/datenbank/db');
     haupt = verbinde(url!);
     await haupt.unsafe(`DROP DATABASE IF EXISTS ${db}`);
     await haupt.unsafe(`CREATE DATABASE ${db}`);

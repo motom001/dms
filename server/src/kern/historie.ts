@@ -1,6 +1,6 @@
 import type { Feldaenderung, Historienart, Historieneintrag } from '../../../shared/src/model';
 import type { KatalogArt } from '../../../shared/src/ereignisse';
-import { protokoll } from '../protokoll';
+import { protokoll } from '../protokoll/protokoll';
 import type { Kern } from './kern';
 
 /** Historie → Ereignis des Katalogs (#670); Löschen meldet die Stelle selbst (die Mappe ist danach weg). */

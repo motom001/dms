@@ -10,14 +10,14 @@ import { EREIGNISSE } from '../../shared/src/pakete';
 import { PAKET_KATALOG, VERALTETE_EREIGNISSE, wiederholungNach } from '../../shared/src/ereignisse';
 import { heuteIn, verschiebe } from '../../shared/src/sichten';
 import { Automatisierungen, speicherAutomatisierungRepo } from '../src/automatisierung';
-import '../src/automatisierung-karten';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
-import { speicherEinstellungen } from '../src/einstellungen';
+import '../src/automatisierung/automatisierung-karten';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
 import { Konten } from '../src/konten';
-import { speicherKontoRepo } from '../src/konto-repo';
+import { speicherKontoRepo } from '../src/konten/konto-repo';
 import { speicherRepo } from '../src/repo/speicher';
-import { einstellungsMerker, faelligeTage, laufeFaellige, wochentagVon } from '../src/zeitplan';
+import { einstellungsMerker, faelligeTage, laufeFaellige, wochentagVon } from '../src/zeitplan/zeitplan';
 
 async function aufbau() {
   const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });

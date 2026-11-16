@@ -18,11 +18,11 @@ import {
   verbinde,
   Verbindungswarten,
   type DatenbankBefund,
-} from '../src/db';
-import { lebenszeichen, pgKurzzustand } from '../src/kurzzustand';
-import { protokoll } from '../src/protokoll';
-import { eigeneSperrquelle, Sperrverbindung } from '../src/sperrverbindung';
-import { versatzMs, wiederkehrend, type Uhren } from '../src/streuung';
+} from '../src/datenbank/db';
+import { lebenszeichen, pgKurzzustand } from '../src/zwischenspeicher/kurzzustand';
+import { protokoll } from '../src/protokoll/protokoll';
+import { eigeneSperrquelle, Sperrverbindung } from '../src/datenbank/sperrverbindung';
+import { versatzMs, wiederkehrend, type Uhren } from '../src/zeitplan/streuung';
 import {
   schonNeuGeladen,
   NEU_GELADEN_MS,
@@ -322,12 +322,12 @@ describe('Ohne Datenbank (#1198)', () => {
   });
 
   it('Gesundheit mit Datenbank (503 „datenbank“, ohne Sitzung), Sprache mit Zeitgrenze, Warten auf Verbindung → 503', async () => {
-    const { baueApp } = await import('../src/http');
-    const { Dienst } = await import('../src/dienst');
+    const { baueApp } = await import('../src/http/http');
+    const { Dienst } = await import('../src/dienst/dienst');
     const { speicherRepo } = await import('../src/repo/speicher');
-    const { speicherDateien } = await import('../src/dateispeicher');
+    const { speicherDateien } = await import('../src/dateien/dateispeicher');
     const { Konten } = await import('../src/konten');
-    const { speicherKontoRepo } = await import('../src/konto-repo');
+    const { speicherKontoRepo } = await import('../src/konten/konto-repo');
     const dienst = new Dienst(speicherRepo(), speicherDateien());
     const konten = new Konten(speicherKontoRepo(), null, 'http://nas', dienst.systemtypen.benutzerspiegel());
     let dbOk = true;

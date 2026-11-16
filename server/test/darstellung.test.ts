@@ -20,19 +20,19 @@ import { abschnittTitel, beschriftungsstand } from '../../shared/src/beschriftun
 import { fuellfelder } from '../../shared/src/erkennung';
 import { pruefeMappentyp, type Mappentyp } from '../../shared/src/model';
 import { typBild, typUnterschiede } from '../../shared/src/typvergleich';
-import { openapi } from '../src/api-v1';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
+import { openapi } from '../src/http/api-v1';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
 import { bereinigeTyp } from '../src/mappentypen';
-import { speicherEinstellungen } from '../src/einstellungen';
-import { Fachfehler } from '../src/fehler';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
+import { Fachfehler } from '../src/grundlagen/fehler';
 import { Konten } from '../src/konten';
-import { speicherKontoRepo } from '../src/konto-repo';
+import { speicherKontoRepo } from '../src/konten/konto-repo';
 import { liesPaket, Paketverwaltung } from '../src/pakete/verwaltung/index';
 import { aenderung, baue } from '../src/pakete/erstellung/index';
 import type { Repo } from '../src/repo';
 import { speicherRepo } from '../src/repo/speicher';
-import { zipPuffer } from '../src/zip';
+import { zipPuffer } from '../src/formate/zip';
 import { eigeneDatenbank } from './hilfe-db';
 import { TEST_PROJEKT, testSigniert } from './katalogschluessel';
 

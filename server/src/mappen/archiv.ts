@@ -7,15 +7,15 @@ import { aufbewahrenBis, datumText, gesperrt, inFrist, JAHRE_MAX, laeuftNochNich
 import type { Auftrag, Fortschritt, PhasenPlan } from '../../../shared/src/auftrag';
 import type { Dokument } from '../../../shared/src/model';
 import type { Nummernkreis } from '../../../shared/src/nummernkreis';
-import { Fachfehler } from '../fehler';
+import { Fachfehler } from '../grundlagen/fehler';
 import type { Kern, Zugriff } from '../kern';
 import { ARCHIV_KREIS, bereinigeTyp } from '../mappentypen';
-import { protokoll } from '../protokoll';
+import { protokoll } from '../protokoll/protokoll';
 import { istUuid, type Repo } from '../repo';
-import { t } from '../sprache';
+import { t } from '../sprache/sprache';
 import type { ZugriffDienst } from '../zugriff';
 import type { MappenHistorie } from './historie';
-import { nachweis } from '../nachweisjournal';
+import { nachweis } from '../protokoll/nachweisjournal';
 
 /** Barcode-Präfix der Archivnummern (#345); der Kreis: ARCHIV_KREIS (mappentypen/nummernkreise.ts). */
 export const ARCHIV_PRAEFIX = 'DMS-ASN:';

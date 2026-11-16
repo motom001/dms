@@ -7,7 +7,7 @@ persönlichen Export und die Demo-Daten. Schicht 3 der Zielaufteilung.
   (`auskunftVorschau`, #472), `auskunftDaten`, Nachweis, Antwortfrist, Verzeichnis und Notizen der Auskünfte (#396,
   #668); Demo-Daten zählen, entfernen, Dokumente anlegen (#248, #711). Dazu `DatenschutzTeile`/`DatenschutzAnschluss`.
 - `vollexport.ts` – `VollexportQuellen`: `vollexportQuelle` (#254), `persoenlicheQuelle` (#255, #683). Das Format
-  schreibt weiter `vollexport.ts` unter `server/src/`.
+  schreibt weiter `export/vollexport.ts`.
 - `zustellen.ts` – `AuskunftZustellen` (#455, #666): per E-Mail, Abruf-Links anlegen und zurückziehen, Abruf prüfen,
   zählen und melden; „Meine Daten exportieren“ (#884), `exportAbschaetzung`.
 - `index.ts` – die einzige Tür. `datenschutz.routen.ts` (Routen, #960) holt `routen.ts` direkt.
@@ -31,3 +31,6 @@ persönlichen Export und die Demo-Daten. Schicht 3 der Zielaufteilung.
   `max-lines-per-function`, ein `max-params`.
 
 Mehr im Entwicklerhandbuch unter *Aufbau → Datenschutz*.
+
+**Ohne Tür** (#1278, Schritt 4a): `abruf.ts`, `auskunft.ts` lagen bis dahin direkt in `server/src/` und werden noch direkt
+eingebunden (`OHNE_TUER` in `.dependency-cruiser.cjs`); hinter die Tür kommen sie in einem eigenen Schritt.

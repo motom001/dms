@@ -15,7 +15,7 @@ import {
   installierenUrl,
 } from '../../shared/src/hilfe';
 import { setzeSprache } from '../../shared/src/sprache';
-import { hilfeAntwort, hilfeSenden } from '../src/hilfe';
+import { hilfeAntwort, hilfeSenden } from '../src/oberflaeche/hilfe';
 
 describe('Offline-Hilfe (#219)', () => {
   it('verweist aus der Oberfläche auf die lokale Fassung', () => {

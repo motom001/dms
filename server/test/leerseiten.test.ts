@@ -19,20 +19,20 @@ import {
 } from '../../shared/src/leerseiten';
 import { POST_STAND } from '../../shared/src/model';
 import { liesCode, rechtePunkte, rechteZeilen } from '../../shared/src/pakete';
-import { openapi } from '../src/api-v1';
-import { ApiSchluesselDienst, speicherApiSchluesselRepo } from '../src/apischluessel';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
-import { speicherEinstellungen } from '../src/einstellungen';
-import { Fachfehler } from '../src/fehler';
+import { openapi } from '../src/http/api-v1';
+import { ApiSchluesselDienst, speicherApiSchluesselRepo } from '../src/anmeldung/apischluessel';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
+import { Fachfehler } from '../src/grundlagen/fehler';
 import { Konten } from '../src/konten';
-import { speicherKontoRepo, type KontoRepo } from '../src/konto-repo';
+import { speicherKontoRepo, type KontoRepo } from '../src/konten/konto-repo';
 import { schluesselRecht } from '../src/laeufer/verwaltung';
 import { Paketverwaltung } from '../src/pakete/verwaltung/index';
 import type { Repo } from '../src/repo';
 import { speicherRepo } from '../src/repo/speicher';
-import { pruefeZugang, routen, type Anfrage, type Route } from '../src/routen';
-import { zipPuffer } from '../src/zip';
+import { pruefeZugang, routen, type Anfrage, type Route } from '../src/http/routen';
+import { zipPuffer } from '../src/formate/zip';
 import { eigeneDatenbank } from './hilfe-db';
 
 const url = process.env.TEST_DATABASE_URL;
@@ -45,7 +45,7 @@ after(async () => {
 
 async function pgRepos(name: string): Promise<{ repo: Repo; konto: KontoRepo }> {
   const { pgRepo } = await import('../src/repo/pg');
-  const { pgKontoRepo } = await import('../src/konto-repo');
+  const { pgKontoRepo } = await import('../src/konten/konto-repo');
   const { sql } = await eigeneDatenbank(name);
   offen.push(sql);
   await sql`INSERT INTO haushalte (id, name) VALUES (${HAUSHALT}, 'Test') ON CONFLICT DO NOTHING`;

@@ -5,17 +5,17 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { parse } from 'yaml';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
-import { speicherEinstellungen } from '../src/einstellungen';
-import { Fachfehler } from '../src/fehler';
-import { VORLAGE_MAX } from '../src/grenzen';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
+import { Fachfehler } from '../src/grundlagen/fehler';
+import { VORLAGE_MAX } from '../src/grundlagen/grenzen';
 import { liesPaket, liesZip, Paketverwaltung } from '../src/pakete/verwaltung/index';
 import { pruefeVorlage, vorlagenPlatzhalter } from '../src/pakete/index';
 import { Paketerstellung } from '../src/pakete/erstellung/index';
 import type { Repo } from '../src/repo';
 import { speicherRepo } from '../src/repo/speicher';
-import { zipPuffer } from '../src/zip';
+import { zipPuffer } from '../src/formate/zip';
 import { fremdeVorgabe, teileVorgabe, vorgabeKennung } from '../../shared/src/vorgaben';
 import { eigeneDatenbank } from './hilfe-db';
 

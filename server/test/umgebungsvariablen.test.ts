@@ -5,7 +5,7 @@ import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { ueberfluessigeVariablen, variablenHinweis, VARIABLEN_GRUND } from '../../shared/src/umgebungsvariablen';
-import { AnbindungVerwaltung, ausUrl, datenbankVomImage, umgebungAusCompose } from '../src/anbindung';
+import { AnbindungVerwaltung, ausUrl, datenbankVomImage, umgebungAusCompose } from '../src/datenbank/anbindung';
 
 describe('Überflüssige Umgebungsvariablen (#478)', () => {
   it('nichts zu tun: kein Hinweis', () => {

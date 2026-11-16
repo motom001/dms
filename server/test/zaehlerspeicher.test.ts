@@ -3,15 +3,15 @@ import assert from 'node:assert/strict';
 import { wieImModus } from './hilfen';
 import { describe, it } from 'node:test';
 import { ALLES, type Regelwerk } from '../../shared/src/rechte';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
-import { speicherEinstellungen } from '../src/einstellungen';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
 import { Konten } from '../src/konten';
-import { speicherKontoRepo } from '../src/konto-repo';
-import { serverTiming } from '../src/messung';
-import { kontext, type Kontext } from '../src/protokoll';
+import { speicherKontoRepo } from '../src/konten/konto-repo';
+import { serverTiming } from '../src/datenbank/messung';
+import { kontext, type Kontext } from '../src/protokoll/protokoll';
 import { speicherRepo } from '../src/repo/speicher';
-import { Haushaltsstand, HOECHSTENS_MS, ZEITABHAENGIG_MS, Zaehlerspeicher, zeitabhaengig } from '../src/zaehlerspeicher';
+import { Haushaltsstand, HOECHSTENS_MS, ZEITABHAENGIG_MS, Zaehlerspeicher, zeitabhaengig } from '../src/zwischenspeicher/zaehlerspeicher';
 
 describe('Zwischenspeicher der Zahlen (#512)', () => {
   it('Treffer bei gleichem Stand; neu nach einer Änderung, nach Ablauf und um Mitternacht', async () => {

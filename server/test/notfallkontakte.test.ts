@@ -7,19 +7,19 @@
  */
 import assert from 'node:assert/strict';
 import { after, describe, it } from 'node:test';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
-import { speicherEinstellungen } from '../src/einstellungen';
-import { Fachfehler } from '../src/fehler';
-import { speicherKurzzustand, type Kurzzustand } from '../src/kurzzustand';
-import type { Mailer, MailOptionen } from '../src/mail';
-import { notfallblatt, notfallblattPlan } from '../src/notfallblatt';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
+import { Fachfehler } from '../src/grundlagen/fehler';
+import { speicherKurzzustand, type Kurzzustand } from '../src/zwischenspeicher/kurzzustand';
+import type { Mailer, MailOptionen } from '../src/mail/mail';
+import { notfallblatt, notfallblattPlan } from '../src/notfall/notfallblatt';
 import { notfallMail } from '../src/notfallkontakte';
-import { protokoll } from '../src/protokoll';
+import { protokoll } from '../src/protokoll/protokoll';
 import type { Repo } from '../src/repo';
 import { speicherRepo } from '../src/repo/speicher';
-import type { Anfrage } from '../src/routen';
-import { bereicheDerRoute } from '../src/verwaltungsbereiche';
+import type { Anfrage } from '../src/http/routen';
+import { bereicheDerRoute } from '../src/werkbank/verwaltungsbereiche';
 import { ladePdf } from '../src/pdf/laden';
 import {
   blattFingerabdruck,
@@ -226,9 +226,9 @@ describe('Notfallkontakte (#812): Zugang', () => {
 
   it('nicht in einer Vertretung (#43)', async () => {
     const { d } = await umgebung();
-    const { routen } = await import('../src/routen');
+    const { routen } = await import('../src/http/routen');
     const { Konten } = await import('../src/konten');
-    const { speicherKontoRepo } = await import('../src/konto-repo');
+    const { speicherKontoRepo } = await import('../src/konten/konto-repo');
     const tabelle = routen(
       d,
       new Konten(
@@ -402,7 +402,7 @@ describe('Notfallkontakte (#812): Grenzen', () => {
     await sql`INSERT INTO haushalte (id, name) VALUES (${HAUSHALT}, 'Test') ON CONFLICT DO NOTHING`;
     await sql`INSERT INTO benutzer (id, haushalt_id, email, name, rolle, verwaltung) VALUES (${LENA.id}, ${HAUSHALT}, ${LENA.email}, 'Lena', 'mitglied', '{verschluesselung}'), (${MARKUS.id}, ${HAUSHALT}, ${MARKUS.email}, 'Markus', 'mitglied', '{}')`;
     const { pgRepo } = await import('../src/repo/pg');
-    const { pgKurzzustand } = await import('../src/kurzzustand');
+    const { pgKurzzustand } = await import('../src/zwischenspeicher/kurzzustand');
     let n = 0;
     await pruefeGrenzen(
       async () => {

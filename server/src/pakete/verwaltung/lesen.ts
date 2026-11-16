@@ -31,14 +31,14 @@ import type { PaketAblaufvorlage } from '../../aufgaben';
 import { istHerausgeber, SCHLUESSEL, TYP_KENNUNG, TYPVERWEIS } from '../../../../shared/src/kennungen';
 import { liesReiterAngaben } from '../../../../shared/src/paketreiter';
 import { liesBeschreibung } from '../../../../shared/src/paketeinstellungen';
-import { Fachfehler } from '../../fehler';
-import { t } from '../../sprache';
-import { KB, VORLAGE_MAX } from '../../grenzen';
+import { Fachfehler } from '../../grundlagen/fehler';
+import { t } from '../../sprache/sprache';
+import { KB, VORLAGE_MAX } from '../../grundlagen/grenzen';
 import { anzeigeVorgaben, liesVorgaben, vorgabeVerweisFehler } from '../index';
 import { liesUmbau } from '../index';
 import { liesKurzanleitung } from '../../../../shared/src/mitkommt';
 import { pruefeRundgaenge, pruefeTipps } from '../../../../shared/src/entdecken';
-import { ankerListe, paketTyp } from '../../entdecken';
+import { ankerListe, paketTyp } from '../../entdecken/entdecken';
 import { vorgabeWerte } from '../../../../shared/src/vorgaben';
 import { beispielVerweise, eigeneVerweise, liesBeispielDokumente, ordneBeispiele } from './beispiele';
 import {

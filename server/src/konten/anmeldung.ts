@@ -18,13 +18,13 @@ import {
   SITZUNG_TAGE,
   TAG,
 } from './hilfen';
-import { Fachfehler } from '../fehler';
-import { t } from '../sprache';
+import { Fachfehler } from '../grundlagen/fehler';
+import { t } from '../sprache/sprache';
 import { GESAMT, darfVerwalten, verwaltungText, hatGesamt } from '../../../shared/src/verwaltungsrecht';
-import { hashePasswort, hasheSchluessel, pruefePasswort, neuerSchluessel } from '../passwort';
+import { hashePasswort, hasheSchluessel, pruefePasswort, neuerSchluessel } from '../anmeldung/passwort';
 import type { Benutzer } from '../../../shared/src/model';
-import type { AnbieterIdentitaet, OidcEinstellung } from '../oidc';
-import { hashe } from '../kurzzustand';
+import type { AnbieterIdentitaet, OidcEinstellung } from '../anmeldung/oidc';
+import { hashe } from '../zwischenspeicher/kurzzustand';
 
 /** Einrichten, Anmelden und neue Sitzungen. */
 export abstract class KontenAnmeldung extends KontenBasis {

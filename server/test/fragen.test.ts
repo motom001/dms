@@ -22,19 +22,19 @@ import { liesBeschreibung, pruefeWerte } from '../../shared/src/paketeinstellung
 import { gleicheRechte, liesCode, rechtePunkte } from '../../shared/src/pakete';
 import { NICHTS } from '../../shared/src/rechte';
 import { HILFE } from '../../shared/src/hilfe';
-import { ApiSchluesselDienst, speicherApiSchluesselRepo } from '../src/apischluessel';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
-import { speicherEinstellungen } from '../src/einstellungen';
-import { Fachfehler } from '../src/fehler';
+import { ApiSchluesselDienst, speicherApiSchluesselRepo } from '../src/anmeldung/apischluessel';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
+import { Fachfehler } from '../src/grundlagen/fehler';
 import { Konten } from '../src/konten';
-import { speicherKontoRepo, type KontoRepo } from '../src/konto-repo';
+import { speicherKontoRepo, type KontoRepo } from '../src/konten/konto-repo';
 import { netzErlaubt } from '../src/laeufer/prozess';
 import { Paketlaeufer } from '../src/laeufer/verwaltung';
 import { liesPaket, Paketverwaltung } from '../src/pakete/verwaltung/index';
 import type { Repo } from '../src/repo';
 import { speicherRepo } from '../src/repo/speicher';
-import { routen } from '../src/routen';
+import { routen } from '../src/http/routen';
 
 describe('Frag deine Ablage (#444): Bausteine', () => {
   it('Suchwörter ohne Füllwörter; Ausschnitt um die meisten Treffer; Höchstmenge und Verlauf geprüft', () => {
@@ -154,10 +154,10 @@ describe('Frag deine Ablage (#444): Bausteine', () => {
 
 /** Eigene PostgreSQL-Datenbank (TEST_DATABASE_URL); `ende` räumt sie ab. */
 async function pgDatenbank() {
-  const { ausUrl, alsUrl, legeDatenbankAn } = await import('../src/anbindung');
-  const { verbinde, migriere } = await import('../src/db');
+  const { ausUrl, alsUrl, legeDatenbankAn } = await import('../src/datenbank/anbindung');
+  const { verbinde, migriere } = await import('../src/datenbank/db');
   const { pgRepo } = await import('../src/repo/pg');
-  const { pgKontoRepo } = await import('../src/konto-repo');
+  const { pgKontoRepo } = await import('../src/konten/konto-repo');
   const H = '00000000-0000-4000-8000-000000000001';
   const basis = ausUrl(process.env.TEST_DATABASE_URL)!;
   const a = { ...basis, datenbank: `dms_fr_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}` };

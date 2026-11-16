@@ -4,13 +4,13 @@
 import assert from 'node:assert/strict';
 import { after, describe, it } from 'node:test';
 import { automatisierungKlartext, kurzanleitungIn, KURZANLEITUNG_SCHRITTE, liesKurzanleitung } from '../../shared/src/mitkommt';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
-import { speicherEinstellungen } from '../src/einstellungen';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
 import { Paketverwaltung } from '../src/pakete/verwaltung/index';
 import type { Repo } from '../src/repo';
 import { speicherRepo } from '../src/repo/speicher';
-import { zipPuffer } from '../src/zip';
+import { zipPuffer } from '../src/formate/zip';
 import { eigeneDatenbank } from './hilfe-db';
 import {
   aktualisierungsRunde,

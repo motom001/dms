@@ -21,14 +21,14 @@ import {
 } from '../../../shared/src/seitensprachen';
 import { erkenneSprache, istTextsprache, SPRACHE_MARKE, spracheZuInfo, sprachname, TEXTSPRACHEN } from '../../../shared/src/textsprache';
 import { INFO_TEXTEBENE, infoWartet, NICHT_GESPEICHERT } from '../../../shared/src/volltext';
-import { istVerklemmung } from '../db';
+import { istVerklemmung } from '../datenbank/db';
 import type { DokumentArchivfassung, DokumenteDienst, DokumentUmwandlung } from '../dokumente';
-import { Fachfehler } from '../fehler';
+import { Fachfehler } from '../grundlagen/fehler';
 import type { Kern } from '../kern';
-import type { PaketVolltext } from '../paketvolltext';
-import { protokoll } from '../protokoll';
+import type { PaketVolltext } from './paketvolltext';
+import { protokoll } from '../protokoll/protokoll';
 import type { Repo } from '../repo';
-import { t } from '../sprache';
+import { t } from '../sprache/sprache';
 import type { VolltextAusPaketen } from './aus-paketen';
 
 /** Obergrenze für geschriebenen Volltext (Zeichen). */

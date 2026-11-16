@@ -10,11 +10,11 @@
  */
 import { availableParallelism } from 'node:os';
 import { ladeArgumente } from '../laeufer/modul';
-import { dateiLeser, liesCgroup } from '../systemlast';
+import { dateiLeser, liesCgroup } from '../system/systemlast';
 import { Arbeiterpool, type PoolStand } from './pool';
 import type { Vorgaenge, Vorgang } from './vorgaenge';
-import { t, tDe } from '../sprache';
-import { protokoll } from '../protokoll';
+import { t, tDe } from '../sprache/sprache';
+import { protokoll } from '../protokoll/protokoll';
 
 export const ARBEITER_MAX = 16;
 /** Zeitgrenze je Auftrag. */

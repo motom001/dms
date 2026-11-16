@@ -4,11 +4,11 @@
  * Schriften bleiben, wie sie sind.
  */
 import { degrees, PDFDocument } from 'pdf-lib';
-import { Fachfehler } from '../fehler';
+import { Fachfehler } from '../grundlagen/fehler';
 import { bildArt, exifAusrichtung } from './bild';
 import { eigenerPuffer } from './puffer';
 import { ladePdf } from './laden';
-import { t } from '../sprache';
+import { t } from '../sprache/sprache';
 
 /** Eine Seite im Ergebnis: Nummer im Original (ab 1) und zusätzliche Drehung im Uhrzeigersinn. */
 export interface SeitenWahl {

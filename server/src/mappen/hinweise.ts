@@ -7,11 +7,11 @@
  */
 import { HINWEISE_JE_PAKET, HINWEIS_MAX, pruefeHinweistext, type PaketHinweis } from '../../../shared/src/berechnet';
 import { SCHLUESSEL } from '../../../shared/src/kennungen';
-import { Fachfehler } from '../fehler';
+import { Fachfehler } from '../grundlagen/fehler';
 import type { Kern, Zugriff } from '../kern';
-import { protokoll } from '../protokoll';
+import { protokoll } from '../protokoll/protokoll';
 import type { Repo } from '../repo';
-import { t } from '../sprache';
+import { t } from '../sprache/sprache';
 import type { ZugriffDienst } from '../zugriff';
 
 const log = protokoll.modul('werkbank');

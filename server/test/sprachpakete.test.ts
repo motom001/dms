@@ -15,17 +15,17 @@ import { liesKatalog, PAKET_MAX } from '../../shared/src/pakete';
 import { gebietsschema, inSprache, registrierteSprachen, setzeSprache, sprachangaben } from '../../shared/src/sprache';
 import { abdeckung, liesSprachangabe, pruefeSprachtexte, SPRACHTEXTE_MAX } from '../../shared/src/sprachpaket';
 import { istMaschinell } from '../../shared/src/sprachwahl';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
-import { speicherEinstellungen } from '../src/einstellungen';
-import { Fachfehler } from '../src/fehler';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
+import { Fachfehler } from '../src/grundlagen/fehler';
 import { ARCHIV_MAX, liesPaket, Paketverwaltung, type SprachpaketHaken } from '../src/pakete/verwaltung/index';
 import type { Repo } from '../src/repo';
 import { speicherRepo } from '../src/repo/speicher';
-import { t } from '../src/sprache';
-import { Sprachpakete } from '../src/sprachpakete';
-import { SprachDienst } from '../src/sprachwahl';
-import { zipPuffer } from '../src/zip';
+import { t } from '../src/sprache/sprache';
+import { Sprachpakete } from '../src/sprache/sprachpakete';
+import { SprachDienst } from '../src/sprache/sprachwahl';
+import { zipPuffer } from '../src/formate/zip';
 import { eigeneDatenbank } from './hilfe-db';
 
 const ICH = { id: '00000000-0000-4000-8000-0000000000aa', email: 'admin@example.org' };
@@ -479,7 +479,7 @@ describe('Sprachpakete in PostgreSQL (#731)', { skip: !process.env.TEST_DATABASE
     for (const s of offen) await s.end();
   });
   it('Texte und Beschriftungen speichern, lesen, ersetzen, löschen (Migration 082)', async () => {
-    const { migriere } = await import('../src/db');
+    const { migriere } = await import('../src/datenbank/db');
     const { pgRepo } = await import('../src/repo/pg');
     // Eigene Datenbank (#900), nach dem letzten Test der Datei gelöscht.
     const sql = (await eigeneDatenbank('sp', { migrieren: false })).sql;

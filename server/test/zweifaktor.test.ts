@@ -1,15 +1,15 @@
 /** Zwei-Faktor-Anmeldung (#242): TOTP, Einrichten, Wiederverwendung, Wiederherstellungscodes, Pflicht, Anmeldung. */
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { Dienst } from '../src/dienst';
-import { speicherDateien } from '../src/dateispeicher';
-import { speicherEinstellungen } from '../src/einstellungen';
-import { Fachfehler } from '../src/fehler';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
+import { Fachfehler } from '../src/grundlagen/fehler';
 import { Konten } from '../src/konten';
-import { speicherKontoRepo } from '../src/konto-repo';
+import { speicherKontoRepo } from '../src/konten/konto-repo';
 import { speicherRepo } from '../src/repo/speicher';
-import { pflichtZuruecknehmen, pruefeZugang, routen, type Anfrage, type Route } from '../src/routen';
-import { ausBase32, base32, totp, Zweifaktor } from '../src/zweifaktor';
+import { pflichtZuruecknehmen, pruefeZugang, routen, type Anfrage, type Route } from '../src/http/routen';
+import { ausBase32, base32, totp, Zweifaktor } from '../src/anmeldung/zweifaktor';
 
 const status = (s: number) => (e: unknown) => e instanceof Fachfehler && e.status === s;
 // Ohne Tresor: „verschlüsseln“ als erkennbares Präfix.

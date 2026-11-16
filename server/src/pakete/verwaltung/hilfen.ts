@@ -7,9 +7,9 @@ import { ALLE_TYPEN, type HerkunftPruefung, type InstalliertesPaket } from '../.
 import { type Archiv } from '../../../../shared/src/archiv';
 import { typKennung } from '../../../../shared/src/kennungen';
 import { type Bedingung } from '../../../../shared/src/sichten';
-import { Fachfehler } from '../../fehler';
-import { istVerschluesselt } from '../../tresor';
-import { t } from '../../sprache';
+import { Fachfehler } from '../../grundlagen/fehler';
+import { istVerschluesselt } from '../../geheimnisse/tresor';
+import { t } from '../../sprache/sprache';
 import { gebietsschema } from '../../../../shared/src/sprache';
 import { type UmbauLage } from '../index';
 import { type Manifest, type Paket, type PaketCodeTeil, type PaketSicht, type PaketTyp } from './format';

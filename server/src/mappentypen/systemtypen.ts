@@ -30,12 +30,12 @@ import {
 } from '../../../shared/src/model';
 import { ergaenzeBeschriftungen, type NamensTeile, type TypTeile } from '../../../shared/src/beschriftung';
 import { inSprache } from '../../../shared/src/sprache';
-import { Fachfehler } from '../fehler';
+import { Fachfehler } from '../grundlagen/fehler';
 import type { BenutzerGespiegelt, Kern, Zugreifender, Zugriff } from '../kern';
-import type { Kurzzustand } from '../kurzzustand';
-import { protokoll } from '../protokoll';
+import type { Kurzzustand } from '../zwischenspeicher/kurzzustand';
+import { protokoll } from '../protokoll/protokoll';
 import type { Repo, Rueckverweis } from '../repo';
-import { t } from '../sprache';
+import { t } from '../sprache/sprache';
 import type { ZugriffDienst } from '../zugriff';
 import { mitBeschriftungen, mitSystemBeschriftung } from './eingabe';
 

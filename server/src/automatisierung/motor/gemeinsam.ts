@@ -2,7 +2,7 @@
  * Was alle Teile des Motors brauchen (#1278, vorher oben in `server/src/automatisierung.ts`): Protokoll, Texte, Takt des
  * Zeitplans. Ohne Abhängigkeit auf andere Dateien des Motors.
  */
-import { protokoll } from '../../protokoll';
+import { protokoll } from '../../protokoll/protokoll';
 import { uebersetzer } from '../../../../shared/src/sprache';
 import texte from '../../../../shared/src/sprachen/de/automatisierung.json';
 import ereignisTexte from '../../../../shared/src/sprachen/de/ereignisse.json';

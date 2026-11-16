@@ -9,8 +9,8 @@
  * mit Benutzer, Passwort oder Query (nur der Rechner), Ausnahmen des Anmeldeschutzes (nur die Anzahl – es sind
  * Adressen des Heimnetzes), Namen von API-Schlüsseln und Personen (nur Anzahlen), Zeitstempel (Rauschen im Vergleich).
  */
-import { ohneGeheimnisse } from '../geheimnis-sperre';
-import { t } from '../sprache';
+import { ohneGeheimnisse } from '../geheimnisse/geheimnis-sperre';
+import { t } from '../sprache/sprache';
 import { BEREICHE as WERKBANK_BEREICHE, bereichName as werkbankName } from '../../../shared/src/werkbankansicht';
 import { GESAMT } from '../../../shared/src/verwaltungsrecht';
 import { RECHTE_LISTE, regelwerkVon, type Regelwerk } from '../../../shared/src/rechte';

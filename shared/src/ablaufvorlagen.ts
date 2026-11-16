@@ -38,7 +38,7 @@ export type Frage = (typeof FRAGEN)[number];
 /** Erlaubte Karten (Sicherheit): nur Aufgabe bzw. Benachrichtigung – auch für Vorlagen aus Paketen. */
 export const VORLAGEN_KARTEN = ['aufgabe'] as const;
 
-/** Grenzen der Vorlagen (Länge der Texte, Karten); die Bremse je Person und Mappe steht in server/src/grenzen.ts. */
+/** Grenzen der Vorlagen (Länge der Texte, Karten); die Bremse je Person und Mappe steht in server/src/grundlagen/grenzen.ts. */
 export const VORLAGEN_GRENZEN = {
   vorlagen: 100,
   name: 120,

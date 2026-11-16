@@ -29,9 +29,9 @@ import {
   type GeheimStand,
 } from '../../../../shared/src/paketeinstellungen';
 import type { Zugriff } from '../../kern/index';
-import { Fachfehler } from '../../fehler';
-import { t } from '../../sprache';
-import { MB, PROBE_DATEI_MAX } from '../../grenzen';
+import { Fachfehler } from '../../grundlagen/fehler';
+import { t } from '../../sprache/sprache';
+import { MB, PROBE_DATEI_MAX } from '../../grundlagen/grenzen';
 import { paketEinstellungen, paketSpeicher, setzePaketEinstellungen } from '../index';
 import { ohneGeheimnisse } from './hilfen';
 import { AKTION_MS, type Handelnder, log } from './optionen';

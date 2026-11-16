@@ -23,7 +23,7 @@ import {
   type Lauf,
   laufFuer,
 } from '../../../../shared/src/automatisierung';
-import { Fachfehler } from '../../fehler';
+import { Fachfehler } from '../../grundlagen/fehler';
 import { t, log } from './gemeinsam';
 import { DANN_AUSFUEHRER } from './karten';
 import { gleicherStand } from './hilfen';

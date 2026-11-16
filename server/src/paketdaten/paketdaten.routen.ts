@@ -12,16 +12,16 @@
 import { rechteZeilen, rechtePunkte } from '../../../shared/src/pakete';
 import { istPerson } from '../../../shared/src/model';
 import { AUSKUNFT_TAGE } from '../../../shared/src/auskunft';
-import { eigeneVersion } from '../system';
-import { nachweisjournal } from '../nachweisjournal';
+import { eigeneVersion } from '../system/system';
+import { nachweisjournal } from '../protokoll/nachweisjournal';
 import { einrichtung, liesEintraege, nachweise, vergleiche, type EinrichtungQuellen, type NachweisQuellen } from './index';
 import { freigabeAnsicht, pruefeAbruf, setzeFreigabe } from './freigabe';
-import { Fachfehler } from '../fehler';
-import { t } from '../sprache';
-import { protokoll } from '../protokoll';
+import { Fachfehler } from '../grundlagen/fehler';
+import { t } from '../sprache/sprache';
+import { protokoll } from '../protokoll/protokoll';
 import { ok, ich } from '../http/routen-hilfen';
 import { istPaketdatenBereich, MONAT, type PaketdatenArt, type PaketdatenBereich } from '../../../shared/src/paketdaten';
-import type { Anfrage, Route } from '../routen';
+import type { Anfrage, Route } from '../http/routen';
 import { routenKontext, type RoutenKontext } from '../http/routen-kontext';
 
 const sicher = async <T>(f: () => Promise<T>, sonst: T): Promise<T> => {

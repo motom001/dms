@@ -1,16 +1,16 @@
 /** Tägliche Zusammenfassung je Benutzer: Uhrzeit, Wochentage (#92) und Feiertage (#94) – über die Automatisierung (#678, #1001). */
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { Aufgabenmail, pruefeZeit, wirksameZeit, MAIL_STANDARD } from '../src/aufgabenmail';
+import { Aufgabenmail, pruefeZeit, wirksameZeit, MAIL_STANDARD } from '../src/aufgaben/aufgabenmail';
 import { Automatisierungen, speicherAutomatisierungRepo } from '../src/automatisierung';
-import '../src/automatisierung-karten';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
-import { speicherEinstellungen } from '../src/einstellungen';
-import { Fachfehler } from '../src/fehler';
+import '../src/automatisierung/automatisierung-karten';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
+import { Fachfehler } from '../src/grundlagen/fehler';
 import { Konten } from '../src/konten';
-import { RegionDienst } from '../src/region';
-import { speicherKontoRepo } from '../src/konto-repo';
+import { RegionDienst } from '../src/einstellungen/region';
+import { speicherKontoRepo } from '../src/konten/konto-repo';
 import { speicherRepo } from '../src/repo/speicher';
 
 const status = (s: number) => (e: unknown) => e instanceof Fachfehler && e.status === s;

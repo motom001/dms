@@ -5,12 +5,12 @@ import { mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, it } from 'node:test';
-import { speicherEinstellungen } from '../src/einstellungen';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
 import { Konten } from '../src/konten';
-import { speicherKontoRepo } from '../src/konto-repo';
-import { anVerwaltende } from '../src/mail';
-import { Notfallzugang } from '../src/notfall';
-import { protokoll } from '../src/protokoll';
+import { speicherKontoRepo } from '../src/konten/konto-repo';
+import { anVerwaltende } from '../src/mail/mail';
+import { Notfallzugang } from '../src/notfall/notfall';
+import { protokoll } from '../src/protokoll/protokoll';
 
 async function aufbau() {
   // Nahe an der echten Zeit: der Einmal-Link läuft nach der echten Uhr ab (linkPruefen).

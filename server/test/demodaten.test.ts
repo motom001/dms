@@ -17,12 +17,12 @@ import {
   verteilung,
   type Mischung,
 } from '../../shared/src/demodaten';
-import { ladeBeispiele } from '../src/beispiele';
-import { speicherDateien } from '../src/dateispeicher';
-import { erzeugeDemo, schaetzeDemo } from '../src/demo';
-import { pruefeDokumentOptionen } from '../src/demo-dokumente';
-import { Dienst } from '../src/dienst';
-import { Fachfehler } from '../src/fehler';
+import { ladeBeispiele } from '../src/beispiele/beispiele';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { erzeugeDemo, schaetzeDemo } from '../src/demo/demo';
+import { pruefeDokumentOptionen } from '../src/demo/demo-dokumente';
+import { Dienst } from '../src/dienst/dienst';
+import { Fachfehler } from '../src/grundlagen/fehler';
 import { speicherRepo } from '../src/repo/speicher';
 
 const summe = (m: Mischung) => DOKUMENTARTEN.reduce((a, k) => a + m[k], 0);

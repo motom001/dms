@@ -18,15 +18,15 @@ import {
   type InstalliertesPaket,
   type PaketCode,
 } from '../../shared/src/pakete';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
-import { pgEinstellungen, speicherEinstellungen } from '../src/einstellungen';
-import type { Fachfehler } from '../src/fehler';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
+import { pgEinstellungen, speicherEinstellungen } from '../src/einstellungen/einstellungen';
+import type { Fachfehler } from '../src/grundlagen/fehler';
 import { Konten } from '../src/konten';
-import { speicherKontoRepo } from '../src/konto-repo';
+import { speicherKontoRepo } from '../src/konten/konto-repo';
 import type { Repo } from '../src/repo';
 import { speicherRepo } from '../src/repo/speicher';
-import { routen } from '../src/routen';
+import { routen } from '../src/http/routen';
 import { eigeneDatenbank, MIGRATIONEN } from './hilfe-db';
 
 /** Uhr vorstellen (Bündelung der Ereignisse), danach zurück. */

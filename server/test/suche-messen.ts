@@ -9,11 +9,11 @@
  * 1–2 Dokumenten (2–8 KB Volltext). `--migrieren` führt fehlende Migrationen aus und misst ihre Dauer (Neuaufbau
  * des Suchindex). Ausgabe: Markdown-Tabelle (Median aus `--laeufe` Läufen, nach einem Aufwärmlauf) mit der Trefferzahl.
  */
-import { ausUrl, alsUrl, legeDatenbankAn } from '../src/anbindung';
-import { speicherDateien } from '../src/dateispeicher';
-import { verbinde, migriere } from '../src/db';
-import { Dienst } from '../src/dienst';
-import { speicherEinstellungen } from '../src/einstellungen';
+import { ausUrl, alsUrl, legeDatenbankAn } from '../src/datenbank/anbindung';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { verbinde, migriere } from '../src/datenbank/db';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
 import { pgRepo } from '../src/repo/pg';
 import { baueLeistungsdaten, BENUTZER, HAUSHALT } from './leistung-daten';
 

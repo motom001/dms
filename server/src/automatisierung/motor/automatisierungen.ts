@@ -7,7 +7,7 @@ import { Aufrufe, speicherAufrufRepo } from '../aufruf';
 import { Ausleitung, speicherAusgangRepo, speicherAussenGeheimnisRepo } from '../ausleitung';
 import { type AutomatisierungDeps, fassungsStand } from './hilfen';
 import { mitFassungen } from './repo';
-import { speicherEinstellungen } from '../../einstellungen';
+import { speicherEinstellungen } from '../../einstellungen/einstellungen';
 import type { PaketAutomatisierung } from '../../pakete/verwaltung/index';
 import { bereinigeAutomatisierung } from '../../../../shared/src/automatisierung';
 import { log, ZEITPLAN_MS } from './gemeinsam';

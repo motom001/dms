@@ -13,24 +13,30 @@ import { join } from 'node:path';
 import { after, describe, it } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { arbeiterAus } from '../src/arbeit';
-import { teileArbeit } from '../src/aufteilung';
-import { Auftraege } from '../src/auftrag';
-import { speicherDateien } from '../src/dateispeicher';
-import { VERBINDUNGEN_LEITER_MIN, verbindungenAus, verbindungenFuer, verbindungenVorgabe, verbindungsaufteilung } from '../src/db';
-import { Dienst } from '../src/dienst';
-import { speicherEinstellungen } from '../src/einstellungen';
-import { Fachfehler } from '../src/fehler';
-import { raeumeHochladenAuf } from '../src/hochladen';
-import { speicherKurzzustand } from '../src/kurzzustand';
+import { teileArbeit } from '../src/prozesse/aufteilung';
+import { Auftraege } from '../src/prozesse/auftrag';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import {
+  VERBINDUNGEN_LEITER_MIN,
+  verbindungenAus,
+  verbindungenFuer,
+  verbindungenVorgabe,
+  verbindungsaufteilung,
+} from '../src/datenbank/db';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
+import { Fachfehler } from '../src/grundlagen/fehler';
+import { raeumeHochladenAuf } from '../src/dateien/hochladen';
+import { speicherKurzzustand } from '../src/zwischenspeicher/kurzzustand';
 import { bedieneLaeufer, Fernlaeufer } from '../src/laeufer/fern';
 import type { Paketlaeufer } from '../src/laeufer/verwaltung';
 import { Paketverwaltung } from '../src/pakete/verwaltung/index';
-import { kontext } from '../src/protokoll';
-import { BEENDEN_MS, einzeln, empfohleneProzesse, haldeJeProzess, haldeLeiter, prozesseAus, type Verbund } from '../src/prozesse';
+import { kontext } from '../src/protokoll/protokoll';
+import { BEENDEN_MS, einzeln, empfohleneProzesse, haldeJeProzess, haldeLeiter, prozesseAus, type Verbund } from '../src/prozesse/prozesse';
 import { speicherRepo } from '../src/repo/speicher';
-import { Tresor } from '../src/tresor';
-import { Haushaltsstand, MINDESTENS_MS, Zaehlerspeicher } from '../src/zaehlerspeicher';
-import { zipPuffer } from '../src/zip';
+import { Tresor } from '../src/geheimnisse/tresor';
+import { Haushaltsstand, MINDESTENS_MS, Zaehlerspeicher } from '../src/zwischenspeicher/zaehlerspeicher';
+import { zipPuffer } from '../src/formate/zip';
 
 const SERVER = fileURLToPath(new URL('..', import.meta.url));
 /** Leser für /sys und /proc: ohne cgroup, Werte aus dem Test. */

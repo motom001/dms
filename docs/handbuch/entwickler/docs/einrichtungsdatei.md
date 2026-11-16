@@ -8,7 +8,7 @@ Die Konfigurationsdatei des Einrichtungsassistenten (#806) beschreibt eine Einri
 - Schema: [ablago-einrichtung-1.schema.json](einrichtungsdatei/ablago-einrichtung-1.schema.json) (dieselbe Datei wie im Administratorhandbuch, `$id` zeigt dorthin).
 - Unbekannte Felder sind Fehler (`additionalProperties: false`), damit Tippfehler nicht still verloren gehen.
 - **Dein Konto (#821):** Abschnitt `konto` – die Person, die einrichtet, mit „Gesamte Verwaltung“. Ältere Dateien (0.191, 0.192) mit `administrator` liest Ablago als `konto`; `erster-benutzer` fällt mit einem Hinweis weg (`hinweise`). Beides steht nicht im Schema – die Umstellung geschieht vor der Prüfung, Zeile und Feld eines Fehlers nennen trotzdem den Namen aus der Datei.
-- **Nutzung (#1045):** `nutzung` (`privat`, `beruflich`, `beides`) bestimmt das Merkmal „beruflich genutzt“ (#1032) im Plan (`optional.beruflich`); `organisation` (Name Pflicht, Anschrift, E-Mail, Telefon) gibt es nur bei beruflicher Nutzung. Ältere Dateien ohne `nutzung` setzen das Merkmal mit `optionales.beruflich` direkt; steht beides da, muss es zusammenpassen. Diese Widersprüche prüft `server/src/einrichtungsdatei.ts` nach dem Schema, mit Zeile und Feld.
+- **Nutzung (#1045):** `nutzung` (`privat`, `beruflich`, `beides`) bestimmt das Merkmal „beruflich genutzt“ (#1032) im Plan (`optional.beruflich`); `organisation` (Name Pflicht, Anschrift, E-Mail, Telefon) gibt es nur bei beruflicher Nutzung. Ältere Dateien ohne `nutzung` setzen das Merkmal mit `optionales.beruflich` direkt; steht beides da, muss es zusammenpassen. Diese Widersprüche prüft `server/src/einrichtung/einrichtungsdatei.ts` nach dem Schema, mit Zeile und Feld.
 - **Keine Geheimnisse:** Felder `passwort` nehmen nur einen Verweis auf eine Umgebungsvariable an (`${NAME}`, Großbuchstaben, Ziffern, Unterstrich). Einen Schlüssel kennt das Format nicht – Ablago erzeugt ihn immer neu.
 
 ## Im Code
@@ -16,13 +16,13 @@ Die Konfigurationsdatei des Einrichtungsassistenten (#806) beschreibt eine Einri
 | Wo | Was |
 | --- | --- |
 | `shared/src/einrichtungsplan.ts` | Der Plan, wie Oberfläche und Server ihn austauschen (`Einrichtungsplan`), Verweis-Muster, Schritte |
-| `server/src/einrichtungsdatei.ts` | Schema (`SCHEMA`), Prüfung mit Zeile und Feld, Lesen und Schreiben (YAML mit Kommentaren, Bibliothek `yaml`) |
-| `server/src/einrichtung.ts` | Prüfen eines Plans je Schritt, Datei lesen und schreiben – nur mit Einrichtungscode bzw. mit „Gesamte Verwaltung“ bei offenem Assistenten |
+| `server/src/einrichtung/einrichtungsdatei.ts` | Schema (`SCHEMA`), Prüfung mit Zeile und Feld, Lesen und Schreiben (YAML mit Kommentaren, Bibliothek `yaml`) |
+| `server/src/einrichtung/einrichtung.ts` | Prüfen eines Plans je Schritt, Datei lesen und schreiben – nur mit Einrichtungscode bzw. mit „Gesamte Verwaltung“ bei offenem Assistenten |
 | `web/src/assistent/` | Sammeln, Zusammenfassung, „Jetzt einrichten“ mit Fortschritt (#804), Laden und Speichern der Datei |
 
 Schnittstellen (alle `POST`, Kopf `x-einrichtungscode`, nur solange Ablago nicht eingerichtet ist): `/api/einrichtung/datei/lesen` (`{ text }` → `{ plan, fehler: [{ zeile, feld, text }], hinweise }`), `/api/einrichtung/datei/schreiben` (`{ plan }` → `{ text, name }`), `/api/einrichtung/pruefen` (`{ plan, passwort? }` → `{ probleme }` je Schritt). Ohne Datenbank (Einrichtungsmodus) gibt es nur `datei/lesen`. Angelegt wird über diese Schnittstellen nichts.
 
-Schema und Beispiel in beiden Handbüchern erzeugt der Code; `server/test/einrichtungsdatei.test.ts` schlägt fehl, wenn sie veraltet sind. Neu erzeugen: `schemaText()` und `schreibeEinrichtungsdatei()` aus `server/src/einrichtungsdatei.ts` mit dem Beispiel aus dem Test.
+Schema und Beispiel in beiden Handbüchern erzeugt der Code; `server/test/einrichtungsdatei.test.ts` schlägt fehl, wenn sie veraltet sind. Neu erzeugen: `schemaText()` und `schreibeEinrichtungsdatei()` aus `server/src/einrichtung/einrichtungsdatei.ts` mit dem Beispiel aus dem Test.
 
 ## Beispiel
 

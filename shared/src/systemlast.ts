@@ -1,5 +1,5 @@
 /**
- * Systemzustand → Auslastung (#409): Typen und Schwellen, gemeinsam für Server (`server/src/systemlast.ts`)
+ * Systemzustand → Auslastung (#409): Typen und Schwellen, gemeinsam für Server (`server/src/system/systemlast.ts`)
  * und Oberfläche (Werkbank → Wartung und Fehlersuche → Systemzustand).
  */
 

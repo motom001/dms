@@ -17,11 +17,11 @@ import {
   type SichtRegelwerk,
   sichtTestlauf,
 } from '../../../shared/src/sichtrechte';
-import { Fachfehler } from '../fehler';
+import { Fachfehler } from '../grundlagen/fehler';
 import type { Kern, Zugriff } from '../kern';
 import { liesStand, TYP_TEILE } from '../mappentypen';
 import { istUuid, KonfigurationVeraltet, type Repo } from '../repo';
-import { t } from '../sprache';
+import { t } from '../sprache/sprache';
 import type { ZugriffDienst } from '../zugriff';
 
 const text = (v: unknown) => (v == null ? '' : String(v)).trim();

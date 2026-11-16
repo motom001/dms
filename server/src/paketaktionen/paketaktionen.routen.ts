@@ -3,11 +3,11 @@
  * für Menschen (Sitzung mit `x-dms` bzw. API-Schlüssel), nie für Pakete selbst. Dazu die Schalter der Werkbank
  * (eingebaute Aktionen ausblenden, Aktionen eines Pakets ausschalten).
  */
-import { Fachfehler } from '../fehler';
+import { Fachfehler } from '../grundlagen/fehler';
 import { L, ok, ich } from '../http/routen-hilfen';
 import type { RoutenKontext } from '../http/routen-kontext';
-import type { Anfrage, Route } from '../routen';
-import { t } from '../sprache';
+import type { Anfrage, Route } from '../http/routen';
+import { t } from '../sprache/sprache';
 
 export function paketaktionenRouten(k: RoutenKontext): Route[] {
   const { dienst, zg, mitnehmen } = k;

@@ -7,8 +7,8 @@ import assert from 'node:assert/strict';
 import { after, before, describe, it } from 'node:test';
 import type { AddressInfo } from 'node:net';
 import type postgres from 'postgres';
-import { ABFRAGE_ZEICHEN, abfragenZuruecksetzen, EINSCHALTEN, kuerzeAbfrage, teuersteAbfragen } from '../src/abfragestatistik';
-import { bereicheDerRoute } from '../src/verwaltungsbereiche';
+import { ABFRAGE_ZEICHEN, abfragenZuruecksetzen, EINSCHALTEN, kuerzeAbfrage, teuersteAbfragen } from '../src/lasttest/abfragestatistik';
+import { bereicheDerRoute } from '../src/werkbank/verwaltungsbereiche';
 import { eigeneDatenbank } from './hilfe-db';
 
 describe('Teuerste Abfragen: Text (#894)', () => {
@@ -101,7 +101,7 @@ describe('Teuerste Abfragen: Datenbank (#894)', { skip: !url && 'TEST_DATABASE_U
 });
 
 describe('Teuerste Abfragen: Route und Lasttest (#894)', () => {
-  let app: Awaited<ReturnType<(typeof import('../src/http'))['baueApp']>>;
+  let app: Awaited<ReturnType<(typeof import('../src/http/http'))['baueApp']>>;
   type Stand = { verfuegbar: boolean; [k: string]: unknown };
   let stand: Stand = {
     verfuegbar: false,
@@ -124,12 +124,12 @@ describe('Teuerste Abfragen: Route und Lasttest (#894)', () => {
   const PETRA: [string, string] = ['petra@example.org', 'lasttest-passwort-3'];
 
   before(async () => {
-    const { Dienst } = await import('../src/dienst');
+    const { Dienst } = await import('../src/dienst/dienst');
     const { speicherRepo } = await import('../src/repo/speicher');
-    const { speicherDateien } = await import('../src/dateispeicher');
-    const { speicherEinstellungen } = await import('../src/einstellungen');
+    const { speicherDateien } = await import('../src/dateien/dateispeicher');
+    const { speicherEinstellungen } = await import('../src/einstellungen/einstellungen');
     const { Konten } = await import('../src/konten');
-    const { speicherKontoRepo } = await import('../src/konto-repo');
+    const { speicherKontoRepo } = await import('../src/konten/konto-repo');
     const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
     const konten = new Konten(speicherKontoRepo(), null, 'http://nas.example.org', d.systemtypen.benutzerspiegel());
     d.verbindeKonten(konten.papierkorbHaken());
@@ -137,8 +137,8 @@ describe('Teuerste Abfragen: Route und Lasttest (#894)', () => {
     const r = await konten.legeBenutzerAn({ email: PETRA[0], name: 'Petra (Lasttest)' }, lena.id);
     await konten.passwortSetzen({ schluessel: r.link!.split('/passwort/')[1], passwort: PETRA[1] });
     await d.postSystemmappen.gleicheBenutzerAb(await konten.listeBenutzer());
-    const { baueApp } = await import('../src/http');
-    const { Systemlast } = await import('../src/systemlast');
+    const { baueApp } = await import('../src/http/http');
+    const { Systemlast } = await import('../src/system/systemlast');
     app = await baueApp(d, konten, {
       systemlast: new Systemlast(),
       abfragen: {

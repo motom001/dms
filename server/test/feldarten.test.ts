@@ -24,18 +24,18 @@ import { formatiere, istLeer, leseZahl, pruefeMappe, pruefeMappentyp, type Feld,
 import { beschreibeBedingung, bedingungsProblem, erfuellt, filterFuer, type Bedingung } from '../../shared/src/sichten';
 import { inSprache } from '../../shared/src/sprache';
 import { textformen, wertAusText } from '../../shared/src/uebernehmen';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
-import { speicherEinstellungen } from '../src/einstellungen';
-import { zeile } from '../src/export';
-import { Fachfehler } from '../src/fehler';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
+import { zeile } from '../src/export/export';
+import { Fachfehler } from '../src/grundlagen/fehler';
 import { liesPaket, liesZip, Paketverwaltung } from '../src/pakete/verwaltung/index';
 import { FELDARTEN_AB, mindestversion, Paketerstellung } from '../src/pakete/erstellung/index';
 import type { Repo } from '../src/repo';
 import { speicherRepo } from '../src/repo/speicher';
-import { xlsxAus } from '../src/xlsx';
+import { xlsxAus } from '../src/formate/xlsx';
 import { eigeneDatenbank, MIGRATIONEN } from './hilfe-db';
-import '../src/sprache';
+import '../src/sprache/sprache';
 
 const SCHMAL = '\u202f';
 const ICH = { id: '00000000-0000-4000-8000-0000000000aa', email: 'admin@example.org' };

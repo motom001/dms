@@ -4,15 +4,15 @@
 import assert from 'node:assert/strict';
 import { createServer, type AddressInfo, type Server } from 'node:net';
 import { after, before, describe, it } from 'node:test';
-import { Betrieb, pruefeAdresse, speicherBetrieb } from '../src/betrieb';
-import { Fachfehler } from '../src/fehler';
+import { Betrieb, pruefeAdresse, speicherBetrieb } from '../src/einstellungen/betrieb';
+import { Fachfehler } from '../src/grundlagen/fehler';
 import { Konten } from '../src/konten';
-import { speicherKontoRepo } from '../src/konto-repo';
-import { kontext } from '../src/protokoll';
+import { speicherKontoRepo } from '../src/konten/konto-repo';
+import { kontext } from '../src/protokoll/protokoll';
 import { mkdtemp } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { Tresor } from '../src/tresor';
+import { Tresor } from '../src/geheimnisse/tresor';
 
 /** Tresor mit eigener Schlüsseldatei in einem frischen Ordner. */
 async function tresorMit(schluessel: boolean, speicher = speicherBetrieb()) {

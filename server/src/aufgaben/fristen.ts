@@ -3,13 +3,13 @@
  * erreicht“ melden, freie Erinnerungen, die Termine für „Zu erledigen“ mit ihrem Zwischenspeicher, Folgetermine.
  * Schicht 3 – Teile und Anschluss wie `AufgabenDienst` (aufgaben.dienst.ts); dazu die beiden Stände des Haushalts.
  */
-import { Fachfehler } from '../fehler';
+import { Fachfehler } from '../grundlagen/fehler';
 import type { Kern, Zugriff } from '../kern';
 import type { MappenDienst, MappenHistorie } from '../mappen';
-import { kontext, protokoll } from '../protokoll';
+import { kontext, protokoll } from '../protokoll/protokoll';
 import type { FristKandidat, Repo } from '../repo';
-import { t } from '../sprache';
-import { fingerabdruck, type Haushaltsstand, mitFavoriten, Zaehlerspeicher } from '../zaehlerspeicher';
+import { t } from '../sprache/sprache';
+import { fingerabdruck, type Haushaltsstand, mitFavoriten, Zaehlerspeicher } from '../zwischenspeicher/zaehlerspeicher';
 import type { ZugriffDienst } from '../zugriff';
 import { type Bundesland, feiertageZwischen } from '../../../shared/src/feiertage';
 import {

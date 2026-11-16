@@ -1,7 +1,7 @@
 import { t } from './texte';
 /**
  * Lasttest-Modus (#612): Stand der Seite im Browser und der Ergebnisblock mit Gerät und Speicher. Server
- * (server/src/lasttestmodus.ts) und Oberfläche (web/src/lasttest.tsx) nutzen dieselben Typen und dieselbe Füllung,
+ * (server/src/lasttest/lasttestmodus.ts) und Oberfläche (web/src/lasttest.tsx) nutzen dieselben Typen und dieselbe Füllung,
  * damit die Datei unter /data/ergebnis genau das enthält, was man auf der Seite kopiert.
  */
 

@@ -9,13 +9,19 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, it } from 'node:test';
 import { POST_KANAL } from '../../shared/src/model';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
-import { Eingangsordner, eingangWarnungen, pruefeEingangEinstellung, EINGANG_STANDARD, type EingangKnoten } from '../src/eingangsordner';
-import { speicherEinstellungen } from '../src/einstellungen';
-import { Fachfehler } from '../src/fehler';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
+import {
+  Eingangsordner,
+  eingangWarnungen,
+  pruefeEingangEinstellung,
+  EINGANG_STANDARD,
+  type EingangKnoten,
+} from '../src/post/eingangsordner';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
+import { Fachfehler } from '../src/grundlagen/fehler';
 import { Konten } from '../src/konten';
-import { speicherKontoRepo } from '../src/konto-repo';
+import { speicherKontoRepo } from '../src/konten/konto-repo';
 import { speicherRepo } from '../src/repo/speicher';
 
 async function aufbau(pause: () => string | null = () => null) {

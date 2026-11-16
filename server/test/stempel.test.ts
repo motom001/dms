@@ -12,14 +12,14 @@ import {
   wunschAus,
   type Stempel,
 } from '../../shared/src/stempel';
-import { bildAlsPdf, fuerAusgabe } from '../src/ausgabe';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
-import { speicherEinstellungen } from '../src/einstellungen';
-import { Fachfehler } from '../src/fehler';
-import type { Mailer, MailOptionen } from '../src/mail';
+import { bildAlsPdf, fuerAusgabe } from '../src/ausgang/ausgabe';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
+import { Fachfehler } from '../src/grundlagen/fehler';
+import type { Mailer, MailOptionen } from '../src/mail/mail';
 import { speicherRepo } from '../src/repo/speicher';
-import { crc32 } from '../src/zip';
+import { crc32 } from '../src/formate/zip';
 import { pdfMitText } from './hilfen';
 import { inhaltsstrom } from './hilfen-schriften';
 

@@ -8,7 +8,7 @@
 import type { AutomatisierungDeps } from './hilfen';
 import { Aufrufe, type AufrufStand } from '../aufruf';
 import { Ausleitung } from '../ausleitung';
-import { Fachfehler } from '../../fehler';
+import { Fachfehler } from '../../grundlagen/fehler';
 import { t } from './gemeinsam';
 import {
   type Kontextdaten,

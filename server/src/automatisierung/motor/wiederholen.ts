@@ -5,9 +5,9 @@ import { randomUUID } from 'node:crypto';
 import { AutomatisierungAusloesen } from './ausloesen';
 import { type Lauf, istBetrieb, istAufruf, kontextTyp } from '../../../../shared/src/automatisierung';
 import { t } from './gemeinsam';
-import { eigeneVersion } from '../../system';
+import { eigeneVersion } from '../../system/system';
 import { istUuid } from '../../repo';
-import { Fachfehler } from '../../fehler';
+import { Fachfehler } from '../../grundlagen/fehler';
 import { tageBis } from './hilfen';
 
 /** Testlauf und Wiederholen fehlgeschlagener Läufe. */

@@ -6,14 +6,14 @@
  */
 import type { AusgangDienst } from '../ausgang';
 import type { DokumenteDienst, DokumentVersionen } from '../dokumente';
-import { Fachfehler } from '../fehler';
+import { Fachfehler } from '../grundlagen/fehler';
 import type { Anlass, Kern, Loeschprotokoll, ProtokollMappe, ProtokollTeil, Zugriff } from '../kern';
 import type { MappenHistorie } from '../mappen';
 import type { Passung } from '../mappentypen';
 import type { PostSystemmappen } from '../post';
 import { istUuid, type Repo, type Rueckverweis } from '../repo';
 import type { SichtenDienst } from '../sichten';
-import { t } from '../sprache';
+import { t } from '../sprache/sprache';
 import { NICHT_SICHTBAR, type ZugriffDienst } from '../zugriff';
 import { aufbewahrenBis, datumText, inFrist, laeuftNochNicht, stichtagName } from '../../../shared/src/archiv';
 import { type Ausloeser, liesAnlass, type LoeschKontext } from '../../../shared/src/loeschprotokoll';

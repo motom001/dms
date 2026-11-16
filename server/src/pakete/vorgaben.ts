@@ -40,8 +40,8 @@ import {
   type VorgabeZustand,
   type VorlageStand,
 } from '../../../shared/src/vorgaben';
-import { Fachfehler } from '../fehler';
-import { t } from '../sprache';
+import { Fachfehler } from '../grundlagen/fehler';
+import { t } from '../sprache/sprache';
 import { pruefeVorlage, type Vorlagenpruefung } from './vorlagen';
 
 /* ---------- Paketformat ---------- */

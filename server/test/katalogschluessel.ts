@@ -1,13 +1,13 @@
 /**
  * NUR FÜR TESTS: private Testschlüssel für den offiziellen Katalog (#594) und für einen „eigenen Katalog“.
- * Die echten Projektschlüssel in server/src/projektschluessel.ts gehören nicht dazu; Tests geben stattdessen
+ * Die echten Projektschlüssel in server/src/pakete/projektschluessel.ts gehören nicht dazu; Tests geben stattdessen
  * TEST_PROJEKT als `projektSchluessel` an die Paketverwaltung bzw. an projektSchluessel() mit. Ein DMS im
  * Betrieb kennt diese Schlüssel nicht – der Test „Projektschlüssel“ prüft das.
  *
  * Gespeichert ist nur der 32-Byte-Kern (Seed) als Hex, kein PEM.
  */
 import { createHash, createPrivateKey, createPublicKey, sign, type KeyObject } from 'node:crypto';
-import type { Projektschluessel } from '../src/projektschluessel';
+import type { Projektschluessel } from '../src/pakete/projektschluessel';
 
 /** PKCS#8-Kopf für einen Ed25519-Schlüssel; dahinter kommt der Seed. */
 const PKCS8_KOPF = '302e020100300506032b657004220420';
@@ -31,7 +31,7 @@ export function signatur(daten: Buffer, seed: string, erstellt = ''): Buffer {
   return Buffer.from(JSON.stringify({ format: 1, verfahren: 'ed25519', schluessel: kennung(seed), signatur: sign(null, daten, privat(seed)).toString('base64'), erstellt }));
 }
 
-/** Projektschlüssel für Tests (unabhängig davon, was in server/src/projektschluessel.ts steht). */
+/** Projektschlüssel für Tests (unabhängig davon, was in server/src/pakete/projektschluessel.ts steht). */
 export const TEST_PROJEKT: Projektschluessel[] = [
   { rolle: 'signier', test: true, pem: oeffentlichPem(TEST_SEED.signier) },
   { rolle: 'reserve', test: true, pem: oeffentlichPem(TEST_SEED.reserve) },

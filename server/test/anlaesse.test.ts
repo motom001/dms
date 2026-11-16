@@ -7,8 +7,8 @@ import assert from 'node:assert/strict';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { describe, it } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { Dienst } from '../src/dienst';
-import { speicherDateien } from '../src/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherDateien } from '../src/dateien/dateispeicher';
 import { speicherRepo } from '../src/repo/speicher';
 import { Anlaesse, Anschlusspunkt } from '../src/kern';
 

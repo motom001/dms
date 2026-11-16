@@ -1,9 +1,9 @@
 /** Logo und Schriftzug je Design (#72). */
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { speicherDateien } from '../src/dateispeicher';
-import { Designs, pruefeLogo, speicherDesignRepo } from '../src/designs';
-import { Fachfehler } from '../src/fehler';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Designs, pruefeLogo, speicherDesignRepo } from '../src/oberflaeche/designs';
+import { Fachfehler } from '../src/grundlagen/fehler';
 
 const status = (s: number) => (e: unknown) => e instanceof Fachfehler && e.status === s;
 const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64');

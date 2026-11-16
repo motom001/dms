@@ -2,10 +2,10 @@
  * Postfächer (#960: aus routen.ts): Postfächer und ihre Anmeldung per OAuth 2.0.
  */
 import { darfBereich } from '../../../shared/src/verwaltungsrecht';
-import { RueckrufFehler, VERSAND_OAUTH_ID } from '../postfach-oauth';
+import { RueckrufFehler, VERSAND_OAUTH_ID } from './postfach-oauth';
 import { L, ok, leer, b, ich, leseCookie, POSTFACH_BINDUNG_COOKIE, kurzCookie } from '../http/routen-hilfen';
 import type { RoutenKontext } from '../http/routen-kontext';
-import type { Route } from '../routen';
+import type { Route } from '../http/routen';
 
 export function postfaecherRouten(k: RoutenKontext): Route[] {
   const { x, postfaecher, pfOAuth, pfRueckruf, oauthPostfach } = k;

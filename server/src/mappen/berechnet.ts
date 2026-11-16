@@ -8,9 +8,9 @@
  */
 import { berechneteFelder } from '../../../shared/src/berechnet';
 import { istLeer, type Feld, type Mappentyp, type Werte } from '../../../shared/src/model';
-import { Fachfehler } from '../fehler';
+import { Fachfehler } from '../grundlagen/fehler';
 import type { Kern, Zugriff } from '../kern';
-import { t } from '../sprache';
+import { t } from '../sprache/sprache';
 
 /** Was die 400-Antwort je Feld nennt (`details.berechnet`). */
 export interface BerechnetAbgelehnt {

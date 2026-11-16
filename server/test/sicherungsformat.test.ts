@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, it } from 'node:test';
 import { gzipSync } from 'node:zlib';
-import { ABLEITUNG, FORMAT, liesKopf, liesSicherung, MAGIE, sammle, schreibeSicherung, sha256Von, type Eintrag } from '../src/sicherungsformat';
+import { ABLEITUNG, FORMAT, liesKopf, liesSicherung, MAGIE, sammle, schreibeSicherung, sha256Von, type Eintrag } from '../src/sicherung/sicherungsformat';
 
 async function* beispiel(gross: Buffer): AsyncGenerator<Eintrag> {
   yield { art: 'M', kopf: { format: 1, tabellen: ['a'] } };

@@ -12,8 +12,8 @@ import { join } from 'node:path';
 import type { ChildProcess } from 'node:child_process';
 import { after, describe, it } from 'node:test';
 import { bereinigeGeraet, fuelleErgebnis, PLATZHALTER, restMinuten, stufenVon, type LasttestStand } from '../../shared/src/lasttest';
-import { Lasttestmodus, lasttestAus } from '../src/lasttestmodus';
-import { erkenneSpeicherart, geraeteNummer } from '../src/speicherart';
+import { Lasttestmodus, lasttestAus } from '../src/lasttest/lasttestmodus';
+import { erkenneSpeicherart, geraeteNummer } from '../src/lasttest/speicherart';
 
 const WURZEL = new URL('../..', import.meta.url).pathname;
 const tmp = mkdtempSync(join(tmpdir(), 'dms-lasttest-'));

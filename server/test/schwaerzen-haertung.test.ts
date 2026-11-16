@@ -9,7 +9,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, it } from 'node:test';
 import { bereicheVon, findeBegriff, type SchwaerzSeite, type Wort } from '../../shared/src/schwaerzen';
-import { Fachfehler } from '../src/fehler';
+import { Fachfehler } from '../src/grundlagen/fehler';
 import { analysiere, lagePasst, pnmKopf, schwaerze } from '../src/pdf/schwaerzen';
 
 const lauf = (cmd: string, args: string[]) => new Promise<void>((ok, f) => execFile(cmd, args, (e) => (e ? f(e) : ok())));

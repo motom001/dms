@@ -13,8 +13,8 @@
  * (`dienst.ausgang.mitnehmbar`, `dienst.ausgang.pruefeAusgang`) – auch E-Mail und Export in diesem Ordner. So können die einzelnen
  * Wege nicht auseinanderlaufen.
  */
-import { Fachfehler } from '../fehler';
-import { t } from '../sprache';
+import { Fachfehler } from '../grundlagen/fehler';
+import { t } from '../sprache/sprache';
 
 export const AUSGAENGE = ['herunterladen', 'email', 'export', 'webdav'] as const;
 export type Ausgang = (typeof AUSGAENGE)[number];

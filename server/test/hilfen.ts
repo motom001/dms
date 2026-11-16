@@ -1,5 +1,5 @@
 /** Hilfen für Tests (keine eigenen Tests). */
-import type { Dienst } from '../src/dienst';
+import type { Dienst } from '../src/dienst/dienst';
 
 /** Ein einfaches PDF mit Textebene (Helvetica), Text je Zeile. */
 /** Einseitiges PDF mit Textebene; drehung (z. B. 90) setzt /Rotate der Seite (#395). */
@@ -105,7 +105,7 @@ export async function postFuerDich(
   konten: { systemkonto(k: 'automatisierung'): Promise<import('../../shared/src/model').Benutzer> },
 ) {
   const { Automatisierungen, speicherAutomatisierungRepo, postFuerDichDaten } = await import('../src/automatisierung');
-  await import('../src/automatisierung-karten');
+  await import('../src/automatisierung/automatisierung-karten');
   await konten.systemkonto('automatisierung');
   d.systemkonten = (k) => konten.systemkonto(k as 'automatisierung');
   const motor = new Automatisierungen({ dienst: d, repo: speicherAutomatisierungRepo() });

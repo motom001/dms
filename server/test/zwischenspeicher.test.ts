@@ -13,9 +13,9 @@ import { join } from 'node:path';
 import { after, before, describe, it } from 'node:test';
 import postgres from 'postgres';
 import { NICHTS, type Regelwerk } from '../../shared/src/rechte';
-import { Haushaltsstand, Zaehlerspeicher } from '../src/zaehlerspeicher';
-import { jeAnfrage, Lesespeicher, lesespeicherFuer, merkeAenderung } from '../src/lesespeicher';
-import { kontext, type Kontext } from '../src/protokoll';
+import { Haushaltsstand, Zaehlerspeicher } from '../src/zwischenspeicher/zaehlerspeicher';
+import { jeAnfrage, Lesespeicher, lesespeicherFuer, merkeAenderung } from '../src/zwischenspeicher/lesespeicher';
+import { kontext, type Kontext } from '../src/protokoll/protokoll';
 import { eigeneDatenbank } from './hilfe-db';
 
 const url = process.env.TEST_DATABASE_URL;
@@ -117,14 +117,14 @@ describe('Zwei Prozesse auf einer Datenbank (#741, #742)', { skip: url ? false :
   let dbUrl = '';
 
   async function prozess(): Promise<Prozess> {
-    const { baueApp } = await import('../src/http');
-    const { Dienst } = await import('../src/dienst');
+    const { baueApp } = await import('../src/http/http');
+    const { Dienst } = await import('../src/dienst/dienst');
     const { pgRepo } = await import('../src/repo/pg');
     const { Konten } = await import('../src/konten');
-    const { pgKontoRepo } = await import('../src/konto-repo');
-    const { ordnerSpeicher } = await import('../src/dateispeicher');
-    const { pgEinstellungen } = await import('../src/einstellungen');
-    const { Zweifaktor } = await import('../src/zweifaktor');
+    const { pgKontoRepo } = await import('../src/konten/konto-repo');
+    const { ordnerSpeicher } = await import('../src/dateien/dateispeicher');
+    const { pgEinstellungen } = await import('../src/einstellungen/einstellungen');
+    const { Zweifaktor } = await import('../src/anmeldung/zweifaktor');
     let n = 0;
     // Wie verbinde() in db.ts, zusätzlich zählt jede SQL-Anweisung (Abfragen je Anfrage).
     const sql = postgres(dbUrl, {
@@ -146,7 +146,7 @@ describe('Zwei Prozesse auf einer Datenbank (#741, #742)', { skip: url ? false :
       (w: string) => (w.startsWith('v:') ? w.slice(2) : null),
     );
     konten.verbindeZweifaktor(zweifaktor);
-    const { Nachlauf } = await import('../src/http');
+    const { Nachlauf } = await import('../src/http/http');
     const nachlauf = new Nachlauf();
     const app = (await baueApp(dienst, konten, { nachlauf })) as unknown as App;
     const p = { sql, app, dienst, konten, zweifaktor, nachlauf, abfragen: () => n };
@@ -255,7 +255,7 @@ describe('Zwei Prozesse auf einer Datenbank (#741, #742)', { skip: url ? false :
   });
 
   it('Sperren und Abmelden im einen Prozess wirken mit der nächsten Anfrage im anderen', async () => {
-    const { pgKontoRepo } = await import('../src/konto-repo');
+    const { pgKontoRepo } = await import('../src/konten/konto-repo');
     const c = await anmelden(B, 'petra@example.org');
     assert.equal((await rufe(B, c, 'GET', '/api/typen')).status, 200);
     await pgKontoRepo(A.sql, HAUSHALT).aendereBenutzer(ids.petra, { aktiv: false });

@@ -15,23 +15,23 @@ import {
 import type { KatalogEreignis } from '../../shared/src/ereignisse';
 import { NICHTS, type Regelwerk } from '../../shared/src/rechte';
 import { Automatisierungen, speicherAutomatisierungRepo } from '../src/automatisierung';
-import '../src/automatisierung-karten';
+import '../src/automatisierung/automatisierung-karten';
 import {
   adressArt, adresseErlaubt, aussenSignatur, sichererAbruf, signierterInhalt, speicherAusgangRepo, speicherAussenGeheimnisRepo, type AbrufAuftrag, type AbrufErgebnis,
 } from '../src/automatisierung/index';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
-import { speicherEinstellungen } from '../src/einstellungen';
-import { Fachfehler } from '../src/fehler';
-import { artVon, bestandAus } from '../src/geheimnisse';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
+import { Fachfehler } from '../src/grundlagen/fehler';
+import { artVon, bestandAus } from '../src/geheimnisse/geheimnisse';
 import { Konten } from '../src/konten';
-import { speicherKontoRepo } from '../src/konto-repo';
-import type { Mailer } from '../src/mail';
-import { notfallblattPlan, zieleZeile } from '../src/notfallblatt';
+import { speicherKontoRepo } from '../src/konten/konto-repo';
+import type { Mailer } from '../src/mail/mail';
+import { notfallblattPlan, zieleZeile } from '../src/notfall/notfallblatt';
 import { liesPaket, liesZip } from '../src/pakete/verwaltung/index';
 import { speicherRepo } from '../src/repo/speicher';
-import { heikleHandlung } from '../src/verwaltungsbereiche';
-import { zipPuffer } from '../src/zip';
+import { heikleHandlung } from '../src/werkbank/verwaltungsbereiche';
+import { zipPuffer } from '../src/formate/zip';
 
 const verschluessele = (k: string) => `dms1$${Buffer.from(k).toString('base64url')}`;
 const entschluessele = (w: string) => (w.startsWith('dms1$') ? Buffer.from(w.slice(5), 'base64url').toString() : null);

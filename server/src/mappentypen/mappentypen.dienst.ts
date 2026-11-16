@@ -37,11 +37,11 @@ import { leserechteAus, uebergeordneterTyp } from '../../../shared/src/teile';
 import { liesAusDokument, type AusDokument } from '../../../shared/src/erkennung';
 import type { StempelTyp } from '../../../shared/src/stempel';
 import { teileKennung } from '../../../shared/src/kennungen';
-import { Fachfehler } from '../fehler';
+import { Fachfehler } from '../grundlagen/fehler';
 import type { Kern, Zugriff } from '../kern';
-import { protokoll } from '../protokoll';
+import { protokoll } from '../protokoll/protokoll';
 import { istUuid, KonfigurationVeraltet, type Repo } from '../repo';
-import { t } from '../sprache';
+import { t } from '../sprache/sprache';
 import { doppelteNachher, neuBerechnen } from './zusammengesetzt';
 import {
   behalteBerechnet,

@@ -6,19 +6,19 @@
  */
 import { createHash } from 'node:crypto';
 import type { Readable } from 'node:stream';
-import { type Ausgabe, fuerAusgabe, weitergabeWas } from '../ausgabe';
+import { type Ausgabe, fuerAusgabe, weitergabeWas } from './ausgabe';
 import type { DokumentArchivfassung, DokumentUmwandlung, DokumentVersionen } from '../dokumente';
-import { Fachfehler } from '../fehler';
+import { Fachfehler } from '../grundlagen/fehler';
 import type { Kern, Zugriff } from '../kern';
 import type { MappenHistorie } from '../mappen';
 import type { MappentypenDienst } from '../mappentypen';
 import type { Stempelvorlagen } from '../pdf-bearbeiten';
-import { protokoll } from '../protokoll';
+import { protokoll } from '../protokoll/protokoll';
 import type { Repo } from '../repo';
 import type { SichtenVerwaltung } from '../sichten';
-import { t } from '../sprache';
-import { stufeAus } from '../verkleinern';
-import { zipGroesse, zipStrom, type ZipEintrag } from '../zip';
+import { t } from '../sprache/sprache';
+import { stufeAus } from '../dateien/verkleinern';
+import { zipGroesse, zipStrom, type ZipEintrag } from '../formate/zip';
 import type { ZugriffDienst } from '../zugriff';
 import { mitAnlagen, stammUndEndung } from '../../../shared/src/anlagen';
 import { archivfassungName } from '../../../shared/src/archivfassung';

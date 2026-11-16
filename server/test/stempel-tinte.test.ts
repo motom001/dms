@@ -20,11 +20,11 @@ import {
   wunschAus,
   type Stempel,
 } from '../../shared/src/stempel';
-import { fuerAusgabe } from '../src/ausgabe';
+import { fuerAusgabe } from '../src/ausgang/ausgabe';
 import { beendeArbeiter } from '../src/arbeit';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
-import { speicherEinstellungen } from '../src/einstellungen';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
 import { speicherRepo } from '../src/repo/speicher';
 import { inhaltsstrom } from './hilfen-schriften';
 

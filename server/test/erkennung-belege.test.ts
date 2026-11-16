@@ -9,19 +9,19 @@ import { PDFDocument, PDFName } from 'pdf-lib';
 import { eigenerAussteller, findeAngaben, vorschlaegeAus, wendeGutschriftAn, type EigeneAngaben } from '../../shared/src/erkennung';
 import { erechnungText, vorschlaegeAusERechnung } from '../../shared/src/erechnung';
 import type { Feld, Mappentyp } from '../../shared/src/model';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
 import { type Zugriff } from '../src/kern';
-import { liesERechnung } from '../src/erechnung';
-import { speicherEinstellungen } from '../src/einstellungen';
+import { liesERechnung } from '../src/erkennung/erechnung';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
 import { MERKMALE_EINSTELLUNG } from '../../shared/src/merkmale';
-import { ERECHNUNG_XML_MAX } from '../src/grenzen';
+import { ERECHNUNG_XML_MAX } from '../src/grundlagen/grenzen';
 import { Konten } from '../src/konten';
-import { speicherKontoRepo } from '../src/konto-repo';
+import { speicherKontoRepo } from '../src/konten/konto-repo';
 import { eingebetteteERechnung } from '../src/pdf/erechnung';
 import { speicherRepo } from '../src/repo/speicher';
-import { routen, type Anfrage } from '../src/routen';
-import { liesXml, XmlFehler } from '../src/xml';
+import { routen, type Anfrage } from '../src/http/routen';
+import { liesXml, XmlFehler } from '../src/formate/xml';
 import { wieImModus } from './hilfen';
 
 const G = { zeichen: 100_000, tiefe: 16, elemente: 1000 };
@@ -526,7 +526,7 @@ Gesamtbetrag 1.190,00 €`;
     assert.ok(!e.absender.some((t) => t.mappeId === x.eigen.id));
     assert.equal(e.ausgehend?.mappeId, x.eigen.id);
     assert.equal(e.briefkopf, null);
-    const { sichereZuordnung } = await import('../src/erkennung');
+    const { sichereZuordnung } = await import('../src/erkennung/erkennung');
     assert.equal(
       sichereZuordnung(
         {

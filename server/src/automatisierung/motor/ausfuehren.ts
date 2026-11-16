@@ -18,7 +18,7 @@ import {
 import { type Anlass, mappeVon } from './hilfen';
 import { t, log, alsListe } from './gemeinsam';
 import type { Mappe } from '../../../../shared/src/model';
-import { Fachfehler } from '../../fehler';
+import { Fachfehler } from '../../grundlagen/fehler';
 import { istUuid } from '../../repo';
 import { type KartenKontext, DANN_AUSFUEHRER, KarteLeer } from './karten';
 

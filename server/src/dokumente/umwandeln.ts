@@ -14,14 +14,14 @@ import {
 } from '../../../shared/src/dateiumwandlung';
 import type { Dokument } from '../../../shared/src/model';
 import { katalogVolltext } from '../../../shared/src/paketvolltext';
-import type { Dateiumwandlung, FassungsAblage, UmwandlungsAnbindung } from '../dateiumwandlung';
-import type { PdfEntsperren } from '../entsperren';
-import { Fachfehler } from '../fehler';
+import type { Dateiumwandlung, FassungsAblage, UmwandlungsAnbindung } from '../dateien/dateiumwandlung';
+import type { PdfEntsperren } from '../dateien/entsperren';
+import { Fachfehler } from '../grundlagen/fehler';
 import type { Kern, Zugriff } from '../kern';
-import type { PaketVolltext } from '../paketvolltext';
-import { protokoll } from '../protokoll';
+import type { PaketVolltext } from '../volltext/paketvolltext';
+import { protokoll } from '../protokoll/protokoll';
 import type { Repo } from '../repo';
-import { t } from '../sprache';
+import { t } from '../sprache/sprache';
 import type { TexterkennungAnbindung } from './dokumente.dienst';
 
 /** Was das Umwandeln außer dem Kern braucht – vom Dienst hereingereicht, bis es eigene Module dafür gibt. */

@@ -4,12 +4,12 @@
  * die Rechteprüfung und Mappen; Ereignis, Passung, Aufgaben-Empfänger, Konten und Systemausstattung kommen über den
  * Anschluss (noch im Dienst).
  */
-import { Fachfehler } from '../fehler';
+import { Fachfehler } from '../grundlagen/fehler';
 import type { BenutzerGespiegelt, Kern, SystemIds, Zugreifender, Zugriff } from '../kern';
 import { bereinigeWerte, type MappenHistorie, type MappenTitel } from '../mappen';
 import type { Passung } from '../mappentypen';
 import { istUuid, type Repo } from '../repo';
-import { t } from '../sprache';
+import { t } from '../sprache/sprache';
 import type { ZugriffDienst } from '../zugriff';
 import {
   abwesenheitWirkt,
@@ -23,7 +23,7 @@ import {
 } from '../../../shared/src/model';
 import { heuteIn } from '../../../shared/src/sichten';
 import { systemkontoAuffaellig, type SystemkontoFehler } from '../../../shared/src/systemkonten';
-import { nachweis } from '../nachweisjournal';
+import { nachweis } from '../protokoll/nachweisjournal';
 
 /** Was mit dem Konto geschieht (Auszug aus `KontenHaken` in dienst.ts): Einstellungen und Konten der Menschen. */
 export interface KontenAnschluss {

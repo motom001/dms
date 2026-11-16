@@ -5,8 +5,8 @@
  * Bewusst so eng wie möglich: keine Titel, Feldwerte oder Dateinamen; Fehlanmeldungen nur mit Konto (falls es das
  * Konto gibt), gekürzter Adresse und „Heimnetz/außen“; unbekannte Konten nur als Anzahl (Ergänzung Sicherheit).
  */
-import { ohneGeheimnisse } from '../geheimnis-sperre';
-import type { JournalArt, JournalMonat } from '../nachweisjournal';
+import { ohneGeheimnisse } from '../geheimnisse/geheimnis-sperre';
+import type { JournalArt, JournalMonat } from '../protokoll/nachweisjournal';
 import type { NachweisEintrag, NachweiseStand, PaketdatenBereich, PaketdatenWert } from '../../../shared/src/paketdaten';
 
 export interface NachweisQuellen {

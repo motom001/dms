@@ -3,30 +3,30 @@
  * Aus routen.ts hierher verschoben, unverändert; routen.ts gibt die öffentlichen davon weiter.
  */
 import type { Benutzer, Mappentyp } from '../../../shared/src/model';
-import { Fachfehler } from '../fehler';
+import { Fachfehler } from '../grundlagen/fehler';
 import { SITZUNG_TAGE } from '../konten';
-import type { SitzungIntern } from '../konto-repo';
-import type { Zweifaktor } from '../zweifaktor';
-import type { Passkeys } from '../passkeys';
-import type { KontaktZuordnung } from '../vollexport';
-import { t } from '../sprache';
+import type { SitzungIntern } from '../konten/konto-repo';
+import type { Zweifaktor } from '../anmeldung/zweifaktor';
+import type { Passkeys } from '../anmeldung/passkeys';
+import type { KontaktZuordnung } from '../export/vollexport';
+import { t } from '../sprache/sprache';
 import type { Ausloeser } from '../../../shared/src/loeschprotokoll';
-import { NUR_GESAMT } from '../verwaltungsbereiche';
+import { NUR_GESAMT } from '../werkbank/verwaltungsbereiche';
 import { darfBereich, hatGesamt } from '../../../shared/src/verwaltungsrecht';
-import { protokoll } from '../protokoll';
-import { KLASSEN_MS, poolZusammen, type PoolStand } from '../poolmessung';
-import { dateiLeser, liesPss, liesRss } from '../systemlast';
-import { PROZESSE_MAX } from '../prozesse';
-import type { Prozessstand } from '../aufteilung';
+import { protokoll } from '../protokoll/protokoll';
+import { KLASSEN_MS, poolZusammen, type PoolStand } from '../datenbank/poolmessung';
+import { dateiLeser, liesPss, liesRss } from '../system/systemlast';
+import { PROZESSE_MAX } from '../prozesse/prozesse';
+import type { Prozessstand } from '../prozesse/aufteilung';
 import { ARBEITER_MAX, arbeiterStand } from '../arbeit';
-import { VERBINDUNGEN_MAX, VERBINDUNGEN_MIN } from '../db';
-import { MAX_ANFRAGEN_MAX, MAX_ANFRAGEN_MIN } from '../ueberlast';
+import { VERBINDUNGEN_MAX, VERBINDUNGEN_MIN } from '../datenbank/db';
+import { MAX_ANFRAGEN_MAX, MAX_ANFRAGEN_MIN } from './ueberlast';
 import { engpaesseAus, VARIABLE, type Grenzwert, type Grenzwerte, type ProzessZeile } from '../../../shared/src/systemlast';
 
 /** Cache-Control für eigene Dateien (Vorschaubilder, Fassungen): nur im Browser der Person (#1264: im Code, nicht übersetzbar). */
 export const privatZwischenspeichern = (sekunden: number) => `private, max-age=${sekunden}`;
-import { MB } from '../grenzen';
-import type { Anfrage, Antwort, RoutenExtras } from '../routen';
+import { MB } from '../grundlagen/grenzen';
+import type { Anfrage, Antwort, RoutenExtras } from './routen';
 
 const L = {
   konto: protokoll.modul('konto'),

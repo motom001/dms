@@ -3,7 +3,7 @@
  */
 import { type HerkunftPruefung, type InstalliertesPaket } from '../../../../shared/src/pakete';
 import { istOffiziellerHerausgeber, OFFIZIELLER_HERAUSGEBER } from '../../../../shared/src/kennungen';
-import { t } from '../../sprache';
+import { t } from '../../sprache/sprache';
 import { type Manifest } from './format';
 import { type Handelnder, log } from './optionen';
 import { type PlanQuelle } from './plan';

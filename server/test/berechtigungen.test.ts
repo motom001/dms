@@ -6,15 +6,15 @@ import { erwaehnung } from '../../shared/src/markdown';
 import type { Mappentyp } from '../../shared/src/model';
 import { ALLES, kurz, lesefilter, NICHTS, rechteAn, type Regelwerk } from '../../shared/src/rechte';
 import { heuteIn } from '../../shared/src/sichten';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
-import { speicherEinstellungen } from '../src/einstellungen';
-import { Fachfehler } from '../src/fehler';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
+import { Fachfehler } from '../src/grundlagen/fehler';
 import { Konten } from '../src/konten';
-import { speicherKontoRepo } from '../src/konto-repo';
+import { speicherKontoRepo } from '../src/konten/konto-repo';
 import { speicherRepo } from '../src/repo/speicher';
-import { routen, type Anfrage } from '../src/routen';
-import { Tresor } from '../src/tresor';
+import { routen, type Anfrage } from '../src/http/routen';
+import { Tresor } from '../src/geheimnisse/tresor';
 import { mkdtemp } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -565,10 +565,10 @@ describe('Berechtigungen am Mappentyp (#142)', () => {
 
 describe('Berechtigungen in PostgreSQL (#124)', { skip: !process.env.TEST_DATABASE_URL && 'ohne TEST_DATABASE_URL' }, () => {
   it('Lesefilter als SQL: Listen, Zähler, Suche, Eingang wie im Arbeitsspeicher', async () => {
-    const { ausUrl, alsUrl, legeDatenbankAn } = await import('../src/anbindung');
-    const { verbinde, migriere } = await import('../src/db');
+    const { ausUrl, alsUrl, legeDatenbankAn } = await import('../src/datenbank/anbindung');
+    const { verbinde, migriere } = await import('../src/datenbank/db');
     const { pgRepo } = await import('../src/repo/pg');
-    const { pgKontoRepo } = await import('../src/konto-repo');
+    const { pgKontoRepo } = await import('../src/konten/konto-repo');
     const basis = ausUrl(process.env.TEST_DATABASE_URL)!;
     const a = { ...basis, datenbank: `dms_recht_${Date.now().toString(36)}` };
     await legeDatenbankAn(a);

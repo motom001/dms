@@ -7,16 +7,16 @@
 import assert from 'node:assert/strict';
 import { createServer, type Server } from 'node:http';
 import { after, describe, it } from 'node:test';
-import { ApiSchluesselDienst, speicherApiSchluesselRepo } from '../src/apischluessel';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
-import { speicherEinstellungen } from '../src/einstellungen';
+import { ApiSchluesselDienst, speicherApiSchluesselRepo } from '../src/anmeldung/apischluessel';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
 import { Konten } from '../src/konten';
-import { speicherKontoRepo } from '../src/konto-repo';
+import { speicherKontoRepo } from '../src/konten/konto-repo';
 import { netzHost, netzMethode, netzSammler, type NetzEintrag } from '../src/laeufer/prozess';
 import { bytesText, merkeNetz, NETZ_ZUSAMMEN_MS, netzText, Paketlaeufer } from '../src/laeufer/verwaltung';
 import { liesPaket } from '../src/pakete/verwaltung/index';
-import { protokoll } from '../src/protokoll';
+import { protokoll } from '../src/protokoll/protokoll';
 import { speicherRepo } from '../src/repo/speicher';
 
 describe('Netzaufrufe im Protokoll (#807): Sammeln und Zusammenfassen', () => {

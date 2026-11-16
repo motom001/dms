@@ -4,7 +4,7 @@
  */
 import { PDFDocument, rgb } from 'pdf-lib';
 import { pdfText, schriften } from './schrift';
-import { t } from '../sprache';
+import { t } from '../sprache/sprache';
 
 export interface Aufkleberbogen {
   /** Etikett in mm: Breite × Höhe, Spalten × Zeilen je A4-Bogen (Ränder ergeben sich zentriert). */

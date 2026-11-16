@@ -19,32 +19,32 @@ import { mkdtemp, readdir, readFile, rm, stat } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { after, before, describe, it } from 'node:test';
-import { ApiSchluesselDienst, speicherApiSchluesselRepo } from '../src/apischluessel';
-import { Betrieb, speicherBetrieb } from '../src/betrieb';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
-import { Einrichtung } from '../src/einrichtung';
-import { speicherEinstellungen } from '../src/einstellungen';
-import { findeGeheimnisse, GEHEIM_MUSTER, ohneGeheimnisse } from '../src/geheimnis-sperre';
-import { GB } from '../src/grenzen';
+import { ApiSchluesselDienst, speicherApiSchluesselRepo } from '../src/anmeldung/apischluessel';
+import { Betrieb, speicherBetrieb } from '../src/einstellungen/betrieb';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
+import { Einrichtung } from '../src/einrichtung/einrichtung';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
+import { findeGeheimnisse, GEHEIM_MUSTER, ohneGeheimnisse } from '../src/geheimnisse/geheimnis-sperre';
+import { GB } from '../src/grundlagen/grenzen';
 import { Konten } from '../src/konten';
 import { liesZip } from '../src/pakete/verwaltung/index';
-import { Protokoll } from '../src/protokoll';
-import { Postfaecher } from '../src/postfach';
-import { PostfachOAuth } from '../src/postfach-oauth';
-import { speicherKontoRepo } from '../src/konto-repo';
+import { Protokoll } from '../src/protokoll/protokoll';
+import { Postfaecher } from '../src/post/postfach';
+import { PostfachOAuth } from '../src/post/postfach-oauth';
+import { speicherKontoRepo } from '../src/konten/konto-repo';
 import { speicherRepo } from '../src/repo/speicher';
-import { routen, type Anfrage } from '../src/routen';
-import { Tresor } from '../src/tresor';
-import { vollexport } from '../src/vollexport';
-import { Zweifaktor } from '../src/zweifaktor';
-import { Passkeys } from '../src/passkeys';
+import { routen, type Anfrage } from '../src/http/routen';
+import { Tresor } from '../src/geheimnisse/tresor';
+import { vollexport } from '../src/export/vollexport';
+import { Zweifaktor } from '../src/anmeldung/zweifaktor';
+import { Passkeys } from '../src/anmeldung/passkeys';
 import { Authenticator } from './hilfen-authenticator';
 import { Automatisierungen, speicherAutomatisierungRepo } from '../src/automatisierung';
-import '../src/automatisierung-karten';
+import '../src/automatisierung/automatisierung-karten';
 import { einrichtung as paketEinrichtung, nachweise as paketNachweise, vergleiche } from '../src/paketdaten';
 import { paketdatenQuellen } from '../src/paketdaten/paketdaten.routen';
-import { fehlanmeldung, Nachweisjournal, setzeNachweisjournal, speicherJournal } from '../src/nachweisjournal';
+import { fehlanmeldung, Nachweisjournal, setzeNachweisjournal, speicherJournal } from '../src/protokoll/nachweisjournal';
 import { NACHWEIS_BEREICHE, PAKETDATEN_BEREICHE } from '../../shared/src/paketdaten';
 
 type App = {
@@ -241,7 +241,7 @@ describe('Geheimnisse gibt Ablago nie heraus (#1055)', () => {
     G.aufrufGeheimnis = (await automatisierungen.aufrufAnlegen(auto.id, 'adresse', lena.id)).geheimnis;
     ids.automatisierung = auto.id;
 
-    const { baueApp } = await import('../src/http');
+    const { baueApp } = await import('../src/http/http');
     app = (await baueApp(d, konten, {
       tresor,
       betrieb,

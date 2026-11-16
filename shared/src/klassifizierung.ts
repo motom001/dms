@@ -12,7 +12,7 @@
  *
  * Ergebnis ist **ein** Vorschlag mit den Belegen aller Wege. Hier stehen die reinen Teile: das feste Antwortformat
  * (JSON Schema), die strenge Prüfung einer Antwort und das Verbinden der Wege. Den Ablauf macht der Server
- * (`server/src/klassifizierung.ts`).
+ * (`server/src/erkennung/klassifizierung.ts`).
  */
 import { t } from './texte';
 

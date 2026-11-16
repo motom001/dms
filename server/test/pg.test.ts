@@ -25,24 +25,24 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
   /* eslint-enable @typescript-eslint/no-explicit-any */
 
   before(async () => {
-    const { verbinde, migriere } = await import('../src/db');
-    const { baueApp } = await import('../src/http');
-    const { Dienst } = await import('../src/dienst');
+    const { verbinde, migriere } = await import('../src/datenbank/db');
+    const { baueApp } = await import('../src/http/http');
+    const { Dienst } = await import('../src/dienst/dienst');
     const { pgRepo } = await import('../src/repo/pg');
     const { Konten } = await import('../src/konten');
-    const { pgKontoRepo } = await import('../src/konto-repo');
-    const { ordnerSpeicher } = await import('../src/dateispeicher');
+    const { pgKontoRepo } = await import('../src/konten/konto-repo');
+    const { ordnerSpeicher } = await import('../src/dateien/dateispeicher');
     const ordner = await mkdtemp(join(tmpdir(), 'dms-test-'));
     sql = verbinde(await dbUrl());
     const dir = fileURLToPath(new URL('../migrations', import.meta.url));
     await migriere(sql, dir, () => {});
     await migriere(sql, dir, () => {}); // zweiter Lauf darf nichts tun
-    const { Messung, pgMessSpeicher } = await import('../src/messung');
+    const { Messung, pgMessSpeicher } = await import('../src/datenbank/messung');
     const messung = new Messung(pgMessSpeicher(sql, HAUSHALT));
     await messung.start();
-    const { Betrieb, pgBetriebSpeicher } = await import('../src/betrieb');
+    const { Betrieb, pgBetriebSpeicher } = await import('../src/einstellungen/betrieb');
     // Schlüssel für Passwörter (#39): eigene Datei, erst im Test erzeugt.
-    const { Tresor } = await import('../src/tresor');
+    const { Tresor } = await import('../src/geheimnisse/tresor');
     const tresor = new Tresor(pgBetriebSpeicher(sql, HAUSHALT), join(ordner, 'geheim', 'dms.schluessel'), () => null);
     await tresor.laden();
     // Papierkorb (#43) zunächst aus, damit Löschen wie bisher sofort endgültig ist; der Test dazu schaltet ihn ein.
@@ -63,7 +63,7 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     );
     dienst.verbindeKonten(konten.papierkorbHaken());
     // Texterkennung wie im Betrieb (#45); in GitHub Actions sind tesseract und poppler installiert.
-    const { Texterkennung } = await import('../src/texterkennung');
+    const { Texterkennung } = await import('../src/volltext/texterkennung');
     texterkennung = new Texterkennung(pgRepo(sql, HAUSHALT), ordnerSpeicher(ordner, HAUSHALT), pgBetriebSpeicher(sql, HAUSHALT));
     dienst.dokumente.verbindeTexterkennung(texterkennung);
     await texterkennung.start();
@@ -74,10 +74,12 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
       texterkennung,
       sicher: () => betrieb.cookieNurHttps(),
       messung,
-      system: (await import('../src/system')).pgSystemQuelle(sql, HAUSHALT),
-      designs: new (await import('../src/designs')).Designs((await import('../src/designs')).pgDesignRepo(sql, HAUSHALT)),
-      apiSchluessel: (schluesselDienst = new (await import('../src/apischluessel')).ApiSchluesselDienst(
-        (await import('../src/apischluessel')).pgApiSchluesselRepo(sql),
+      system: (await import('../src/system/system')).pgSystemQuelle(sql, HAUSHALT),
+      designs: new (await import('../src/oberflaeche/designs')).Designs(
+        (await import('../src/oberflaeche/designs')).pgDesignRepo(sql, HAUSHALT),
+      ),
+      apiSchluessel: (schluesselDienst = new (await import('../src/anmeldung/apischluessel')).ApiSchluesselDienst(
+        (await import('../src/anmeldung/apischluessel')).pgApiSchluesselRepo(sql),
       )),
       // Kein Internet im Test: Abgleich mit festen Antworten.
       abruf: async (url: string) => {
@@ -92,7 +94,7 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     await sql?.end();
   });
 
-  let schluesselDienst!: import('../src/apischluessel').ApiSchluesselDienst;
+  let schluesselDienst!: import('../src/anmeldung/apischluessel').ApiSchluesselDienst;
   let cookie = '';
   const anfrage = async (method: string, pfad: string, payload?: unknown, mitCookie = true) => {
     const headers: Record<string, string> = { 'x-dms': '1' };
@@ -1378,7 +1380,7 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
   });
 
   it('Paket-Läufer (#338): Dienstkonten, Paket-Code und Ereignisse in PostgreSQL', async () => {
-    const { pgKontoRepo, dienstEmail } = await import('../src/konto-repo');
+    const { pgKontoRepo, dienstEmail } = await import('../src/konten/konto-repo');
     const { pgRepo } = await import('../src/repo/pg');
     const kr = pgKontoRepo(sql, HAUSHALT);
     const vorher = await kr.anzahlBenutzer();
@@ -1452,8 +1454,8 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
   });
 
   it('Vollexport kennt jede Tabelle der Datenbank (#254)', async () => {
-    const { tabellenIn } = await import('../src/datenbankabzug');
-    const { EXPORT_TABELLEN } = await import('../src/vollexport');
+    const { tabellenIn } = await import('../src/sicherung/datenbankabzug');
+    const { EXPORT_TABELLEN } = await import('../src/export/vollexport');
     const fehlt = (await tabellenIn(sql)).map((t: { name: string }) => t.name).filter((n: string) => !(n in EXPORT_TABELLEN));
     assert.deepEqual(fehlt, [], `Diese Tabellen fehlen im Vollexport (vollexport.ts, EXPORT_TABELLEN): ${fehlt.join(', ')}`);
   });
@@ -1468,11 +1470,11 @@ describe('PostgreSQL: Ereignis in derselben Transaktion (#404)', { skip: url ? f
   });
 
   it('scheitert das Ereignis, bleibt auch die Änderung aus; sonst stehen beide in der Datenbank', async () => {
-    const { verbinde, migriere } = await import('../src/db');
-    const { Dienst } = await import('../src/dienst');
+    const { verbinde, migriere } = await import('../src/datenbank/db');
+    const { Dienst } = await import('../src/dienst/dienst');
     const { pgRepo } = await import('../src/repo/pg');
-    const { speicherDateien } = await import('../src/dateispeicher');
-    const { speicherEinstellungen } = await import('../src/einstellungen');
+    const { speicherDateien } = await import('../src/dateien/dateispeicher');
+    const { speicherEinstellungen } = await import('../src/einstellungen/einstellungen');
     sql = verbinde(await dbUrl());
     await migriere(sql, fileURLToPath(new URL('../migrations', import.meta.url)), () => {});
     const basis = pgRepo(sql, HAUSHALT);
@@ -1561,7 +1563,7 @@ describe('PostgreSQL: Ereigniskatalog (#670)', { skip: url ? false : 'TEST_DATAB
   });
 
   it('Bündeln, Sperre für zwei Server, Wiederholung, Aufräumen und Frist genau einmal', async () => {
-    const { verbinde, migriere } = await import('../src/db');
+    const { verbinde, migriere } = await import('../src/datenbank/db');
     const { pgRepo } = await import('../src/repo/pg');
     const { mischeFelder } = await import('../../shared/src/ereignisse');
     sql = verbinde(await dbUrl());

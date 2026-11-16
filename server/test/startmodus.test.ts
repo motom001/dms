@@ -13,8 +13,8 @@ import { join } from 'node:path';
 import { Readable } from 'node:stream';
 import { after, describe, it } from 'node:test';
 import { istAusfall } from '../../shared/src/erreichbarkeit';
-import { NeuereDatenbankFehler } from '../src/db';
-import { startfehlerAus, Startmodus } from '../src/startmodus';
+import { NeuereDatenbankFehler } from '../src/datenbank/db';
+import { startfehlerAus, Startmodus } from '../src/einrichtung/startmodus';
 
 const URL_DB = process.env.TEST_DATABASE_URL;
 const SERVER = new URL('..', import.meta.url).pathname;
@@ -25,7 +25,7 @@ const prozesse: ChildProcess[] = [];
 after(async () => {
   for (const p of prozesse) if (p.exitCode === null) p.kill('SIGKILL');
   if (URL_DB && datenbanken.length) {
-    const { ausUrl, alsUrl } = await import('../src/anbindung');
+    const { ausUrl, alsUrl } = await import('../src/datenbank/anbindung');
     const { default: postgres } = await import('postgres');
     const sql = postgres(alsUrl({ ...ausUrl(URL_DB)!, datenbank: 'postgres' }), { onnotice: () => {} });
     for (const d of datenbanken) await sql.unsafe(`DROP DATABASE IF EXISTS "${d}" WITH (FORCE)`).catch(() => {});
@@ -231,8 +231,8 @@ async function freierPort(): Promise<number> {
 
 describe('Start mit Datenbank (#802)', { skip: !URL_DB && 'TEST_DATABASE_URL fehlt', timeout: 300_000 }, () => {
   it('migriere meldet Schritt x von y nur für offene Migrationen', async () => {
-    const { ausUrl, alsUrl, legeDatenbankAn } = await import('../src/anbindung');
-    const { migriere, verbinde } = await import('../src/db');
+    const { ausUrl, alsUrl, legeDatenbankAn } = await import('../src/datenbank/anbindung');
+    const { migriere, verbinde } = await import('../src/datenbank/db');
     const a = { ...ausUrl(URL_DB)!, datenbank: `dmstest_a746_m_${Date.now().toString(36)}` };
     await legeDatenbankAn(a);
     datenbanken.push(a.datenbank);
@@ -263,7 +263,7 @@ describe('Start mit Datenbank (#802)', { skip: !URL_DB && 'TEST_DATABASE_URL feh
   });
 
   it('ganzes Ablago: Port offen während der Migrationen, Gesundheit erst danach 200; Downgrade zeigt den Grund', async () => {
-    const { ausUrl, alsUrl, legeDatenbankAn } = await import('../src/anbindung');
+    const { ausUrl, alsUrl, legeDatenbankAn } = await import('../src/datenbank/anbindung');
     const a = { ...ausUrl(URL_DB)!, datenbank: `dmstest_a746_e_${Date.now().toString(36)}` };
     await legeDatenbankAn(a);
     datenbanken.push(a.datenbank);

@@ -22,20 +22,25 @@ import { EREIGNISKATALOG, PAKET_KATALOG, type KatalogEreignis } from '../../shar
 import { darfBereich, darfVerwalten } from '../../shared/src/verwaltungsrecht';
 import { BEREICHE } from '../../shared/src/werkbankansicht';
 import { Automatisierungen, speicherAutomatisierungRepo } from '../src/automatisierung';
-import '../src/automatisierung-karten';
-import { Betriebsmelder, systemWerkbank, type SystemWerkbank, type SystemWerkbankQuellen } from '../src/automatisierung-werkbank';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
-import { speicherEinstellungen } from '../src/einstellungen';
-import { Fachfehler } from '../src/fehler';
-import { Fehlermeldungen, speicherFehlerRepo } from '../src/fehlermeldungen';
+import '../src/automatisierung/automatisierung-karten';
+import {
+  Betriebsmelder,
+  systemWerkbank,
+  type SystemWerkbank,
+  type SystemWerkbankQuellen,
+} from '../src/automatisierung/automatisierung-werkbank';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
+import { Fachfehler } from '../src/grundlagen/fehler';
+import { Fehlermeldungen, speicherFehlerRepo } from '../src/system/fehlermeldungen';
 import { Konten } from '../src/konten';
-import { speicherKontoRepo } from '../src/konto-repo';
+import { speicherKontoRepo } from '../src/konten/konto-repo';
 import { liesPaket, liesZip } from '../src/pakete/verwaltung/index';
-import { Protokoll, type Eintrag } from '../src/protokoll';
+import { Protokoll, type Eintrag } from '../src/protokoll/protokoll';
 import { speicherRepo } from '../src/repo/speicher';
-import { neueStabileVersion } from '../src/system';
-import { zipPuffer } from '../src/zip';
+import { neueStabileVersion } from '../src/system/system';
+import { zipPuffer } from '../src/formate/zip';
 
 /** Sicherung zum Zuschauen: zählt Starts, kann „läuft“, „kein Platz“ oder „Wiederherstellung“. */
 function testSicherung(o: { laeuft?: boolean; fehler?: string } = {}) {

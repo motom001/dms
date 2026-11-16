@@ -1,7 +1,7 @@
 /** Mappen (PostgreSQL): lesen, anlegen, ändern, Titel, Systemmappen, Stände und Verweise. */
 import { fristMonat } from '../../../../shared/src/fristen';
 import type { Werte } from '../../../../shared/src/model';
-import { erhoeheMappenstand, erhoeheZahlenstand, liesStand } from '../../lesespeicher';
+import { erhoeheMappenstand, erhoeheZahlenstand, liesStand } from '../../zwischenspeicher/lesespeicher';
 import { feldweise, istUuid, type RepoTeil, StandVeraltet } from '..';
 import type { PgKontext } from './kontext';
 import { STATISTIK_SPALTEN } from './spalten';

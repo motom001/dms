@@ -4,14 +4,14 @@
  * Teile dieses Ordners; das Löschen einer Mappe kommt über den Anschluss (noch im Dienst).
  */
 import { dateiname, type DokumenteDienst, type DokumentVersionen } from '../dokumente';
-import { Fachfehler } from '../fehler';
+import { Fachfehler } from '../grundlagen/fehler';
 import type { Anlass, Kern, Zugriff } from '../kern';
 import type { MappenArchiv, MappenHistorie, MappenTitel } from '../mappen';
 import type { PdfBearbeiten } from '../pdf-bearbeiten';
-import { bilderZuPdf, fuegeZusammen, seitenInfo } from '../pdfseiten';
-import { protokoll } from '../protokoll';
+import { bilderZuPdf, fuegeZusammen, seitenInfo } from '../dateien/pdfseiten';
+import { protokoll } from '../protokoll/protokoll';
 import { istUuid, type Repo } from '../repo';
-import { t } from '../sprache';
+import { t } from '../sprache/sprache';
 import type { ZugriffDienst } from '../zugriff';
 import { auswahlText, type Dokument, fotoBetreff, istVersendet, type Mappe, MAX_DATEIGROESSE, POST_KANAL } from '../../../shared/src/model';
 import { postWerteNeu } from '../../../shared/src/postfelder';

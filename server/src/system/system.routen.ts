@@ -2,15 +2,15 @@
  * System (#960: aus routen.ts): E-Mail-Versand und Adresse, Fehlermeldungen; Einrichtungsstand, Datenbank-Anbindung,
  * Anmeldeschutz; WebDAV, Eingangsordner, Speicherplatz, Auslastung, Datenbank und Lasttest.
  */
-import { Fachfehler } from '../fehler';
-import { t } from '../sprache';
-import { eigeneVersion, uebersicht, versionsabgleich } from '../system';
-import { zwischenspeicherAus } from '../zaehlerspeicher';
-import type { Prozessstand } from '../aufteilung';
+import { Fachfehler } from '../grundlagen/fehler';
+import { t } from '../sprache/sprache';
+import { eigeneVersion, uebersicht, versionsabgleich } from './system';
+import { zwischenspeicherAus } from '../zwischenspeicher/zaehlerspeicher';
+import type { Prozessstand } from '../prozesse/aufteilung';
 import { arbeiterStand } from '../arbeit';
-import { VERSAND_OAUTH_ID } from '../postfach-oauth';
-import { heimnetzStand } from '../notfallcode';
-import { FEHLERMELDUNG_KOERPER_MAX, MB } from '../grenzen';
+import { VERSAND_OAUTH_ID } from '../post/postfach-oauth';
+import { heimnetzStand } from '../notfall/notfallcode';
+import { FEHLERMELDUNG_KOERPER_MAX, MB } from '../grundlagen/grenzen';
 import {
   L,
   ok,
@@ -24,8 +24,8 @@ import {
   kurzCookie,
 } from '../http/routen-hilfen';
 import type { RoutenKontext } from '../http/routen-kontext';
-import type { Route } from '../routen';
-import { extern } from '../externmessung';
+import type { Route } from '../http/routen';
+import { extern } from './externmessung';
 import { monatAus } from '../../../shared/src/extern';
 import { istKiPaket } from '../../../shared/src/pakete';
 

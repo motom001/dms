@@ -6,9 +6,9 @@
 import assert from 'node:assert/strict';
 import { describe, it, mock } from 'node:test';
 import type { InstalliertesPaket } from '../../shared/src/pakete';
-import { Dienst } from '../src/dienst';
-import { speicherDateien } from '../src/dateispeicher';
-import { speicherEinstellungen } from '../src/einstellungen';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
 import { speicherRepo } from '../src/repo/speicher';
 import { paketSpeicher, setzePaketSpeicher } from '../src/pakete/index';
 import { eigeneDatenbank } from './hilfe-db';

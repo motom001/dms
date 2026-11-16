@@ -30,7 +30,7 @@ Briefly recorded so that later changes know why something is the way it is.
 - **Passwords** with scrypt from Node (no native library). **Sessions** as an HttpOnly cookie, in the database only as a SHA-256 hash. The same applies to invitation and password links (invitation 7 days, reset 1 hour, each usable only once).
 - **Protection against outside pages:** changing requests need the header `X-DMS`, which only Ablago's own interface sets; plus `SameSite=Lax`.
 - **Email optional:** without SMTP, user management shows the links to copy.
-- **Routes per subject area** in `server/src/<fach>/<fach>.routen.ts`, brought together in one place in `server/src/routen.ts` (#960), each with an access level (open, signed in, admin).
+- **Routes per subject area** in `server/src/<fach>/<fach>.routen.ts`, brought together in one place in `server/src/http/routen.ts` (#960), each with an access level (open, signed in, admin).
 
 ## Library {#ablage}
 
@@ -70,7 +70,7 @@ Briefly recorded so that later changes know why something is the way it is.
 
 ## Operation and troubleshooting {#betrieb-und-fehlersuche}
 
-- **Own log** (`server/src/protokoll.ts`) instead of Fastify/pino directly: every message with module, user and request id (via AsyncLocalStorage), readable in the container logs, plus a ring buffer (24 h, 10,000 entries) for the Workbench. Fastify writes into it via a pino-compatible adapter.
+- **Own log** (`server/src/protokoll/protokoll.ts`) instead of Fastify/pino directly: every message with module, user and request id (via AsyncLocalStorage), readable in the container logs, plus a ring buffer (24 h, 10,000 entries) for the Workbench. Fastify writes into it via a pino-compatible adapter.
 - **Live display by polling every two seconds** instead of server-sent events: works behind every reverse proxy without special configuration (nginx otherwise buffers SSE).
 - **Measurement per database access:** every method of the repos is counted and timed via a proxy (one access can comprise several SQL statements). The sum per request goes to the interface in the header `Server-Timing`; the browser measures the remaining steps (Resource Timing). "Network" is an approximation here.
 - **Long-running accesses** are in the database (table `langlaeufer`), threshold and retention in `einstellungen`. Writing is collected, at most once per second (#615): under load, many accesses take longer than the threshold, and a write of its own per long-running access then slowed things down additionally. A crash loses at most the long-running accesses of the last second; they are in the log anyway.
@@ -104,7 +104,7 @@ Briefly recorded so that later changes know why something is the way it is.
 
 ## Email and address in the Workbench (#37) {#e-mail-und-adresse-in-der-werkbank-37}
 
-- **No more environment variables** for email sending and address: maintained in the Workbench, stored in `einstellungen` (`mail`, `adresse`), effective without a restart – accounts fetch the mailer and the address every time they use them (`Betrieb` in `server/src/betrieb.ts`).
+- **No more environment variables** for email sending and address: maintained in the Workbench, stored in `einstellungen` (`mail`, `adresse`), effective without a restart – accounts fetch the mailer and the address every time they use them (`Betrieb` in `server/src/einstellungen/betrieb.ts`).
 - **One-off takeover** of the former variables `SMTP_*` and `APP_URL` at the first start, only as long as nothing is stored; ignored afterwards, with a notice in the log. That way sending doesn't fail on the update.
 - **Without a maintained address**, the address of the current request applies (`req.protocol` and `req.host`, behind a proxy via `X-Forwarded-*`, see below). It is in the request context so that accounts find it without an additional parameter.
 - **Password encrypted** (since #39), never returned to the interface; an empty field keeps it.

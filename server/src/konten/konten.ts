@@ -5,9 +5,9 @@
 import { KontenBenutzer } from './benutzer';
 import { text, type Geraet, OHNE_GERAET, pruefePasswortRegeln } from './hilfen';
 import { istEmail } from '../../../shared/src/model';
-import { t } from '../sprache';
-import { hasheSchluessel, hashePasswort } from '../passwort';
-import { Fachfehler } from '../fehler';
+import { t } from '../sprache/sprache';
+import { hasheSchluessel, hashePasswort } from '../anmeldung/passwort';
+import { Fachfehler } from '../grundlagen/fehler';
 import { darfVerwalten } from '../../../shared/src/verwaltungsrecht';
 
 /**

@@ -6,8 +6,8 @@ import { mkdtemp, readFile, stat, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, it } from 'node:test';
-import { Fachfehler } from '../src/fehler';
-import { istPruefwort, istVerschluesselt, punktFuer, PRUEFWORT, Tresor } from '../src/tresor';
+import { Fachfehler } from '../src/grundlagen/fehler';
+import { istPruefwort, istVerschluesselt, punktFuer, PRUEFWORT, Tresor } from '../src/geheimnisse/tresor';
 
 /** Einstellungen im Arbeitsspeicher (wie speicherBetrieb, ohne den Mailversand zu laden). */
 function speicherBetrieb() {
@@ -109,10 +109,10 @@ describe('Tresor (#39)', () => {
 
 describe('Schlüssel wechseln (#47)', () => {
   async function aufbau() {
-    const { Dienst } = await import('../src/dienst');
+    const { Dienst } = await import('../src/dienst/dienst');
     const { speicherRepo } = await import('../src/repo/speicher');
-    const { speicherDateien } = await import('../src/dateispeicher');
-    const { Betrieb } = await import('../src/betrieb');
+    const { speicherDateien } = await import('../src/dateien/dateispeicher');
+    const { Betrieb } = await import('../src/einstellungen/betrieb');
     const einst = speicherBetrieb();
     const datei = join(await ordner(), 'dms.schluessel');
     const t = new Tresor(einst, datei, () => null);
@@ -201,7 +201,7 @@ describe('Schlüssel wechseln (#47)', () => {
     const { t, einst, datei } = await aufbau();
     // Zustand wie nach einem Absturz: Datenbank kennt den neuen Fingerabdruck, die Datei ist noch die alte.
     const { randomBytes } = await import('node:crypto');
-    const { fingerabdruck } = await import('../src/tresor');
+    const { fingerabdruck } = await import('../src/geheimnisse/tresor');
     const k = randomBytes(32);
     await writeFile(`${datei}.neu`, k.toString('base64url'));
     await einst.schreibe('tresor', { fingerabdruck: fingerabdruck(k), erstellt: new Date().toISOString() });

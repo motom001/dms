@@ -223,7 +223,7 @@ The format is described by the JSON schemas in the registry: [`schema/manifest.s
     - **`werte`:** as for examples (amounts as numbers, periods as `{ anzahl, einheit }`); no password fields, no links to examples. Links to presets use `{ vorgabe: miete }` or `{ vorgabe: "vertraege:miete" }` – also in `beispiele.yaml` (instead of a fixed ID there).
     - **`beschriftungen`:** language → field → text. Ablago creates the preset in the **installation's language** (fields without a translation stay German); values are data and don't change with the person's language.
     - **`vorlagen`:** text templates under `inhalt/vorlagen/` (lower-case letters, digits, `-`, `_`, at most two folders, extension `.md`), each entry with `datei` (required), `titel` (document name) and `register` (documents tab; without: `vorlagen`, otherwise the first). At most 20 per preset. Placeholders as in automations (`{vertragsnummer}`, `{von.name}`); they are filled in with "Set text" (dms #1040, see [Writing text templates](#text-vorlagen-schreiben)).
-    - **What a template may be** (`server/src/pakete/vorlagen.ts`, the same rules in `pruefen.py`): UTF-8 text without control characters, at most `VORLAGE_MAX` (256 KB, `server/src/grenzen.ts`); **no HTML** – no comments `<!-- -->` either –, **no images** (`![…]`), links only `https://` (in `[text](…)`, `[x]: …` and `<https://…>`; `http:`, `mailto:`, `javascript:`, `data:` appear nowhere in the text); no placeholder names a **password field**. Ablago checks this when reading and again when installing (then against the password fields of all folder types).
+    - **What a template may be** (`server/src/pakete/vorlagen.ts`, the same rules in `pruefen.py`): UTF-8 text without control characters, at most `VORLAGE_MAX` (256 KB, `server/src/grundlagen/grenzen.ts`); **no HTML** – no comments `<!-- -->` either –, **no images** (`![…]`), links only `https://` (in `[text](…)`, `[x]: …` and `<https://…>`; `http:`, `mailto:`, `javascript:`, `data:` appear nowhere in the text); no placeholder names a **password field**. Ablago checks this when reading and again when installing (then against the password fields of all folder types).
     - **`ergaenzt: paket:kennung`:** a package may **only attach templates** to the preset of a package under `abhaengigkeiten` – Ablago rejects any other entry (`werte`, `beschriftungen`, permissions …). If the preset doesn't exist (deleted), the templates are left out; the preview says so.
     - **Installing:** without events (question 71); the creator is the package's service account (history: "Package …"). The preview (`vorgaben`, `ergaenzungen`) shows each preset's state; presets in other packages' types and additions also appear in the box "Adds to folders of other packages".
     - **Update:** the installed package keeps per key (`vorgaben`) the folder, the checksum of the values after the last write (`stand`) and that of the values in the package (`fassung`). If the folder matches `stand`, it gets the new version; otherwise the administrator changed it and it stays (preview: new version in the package). If the folder is missing, it was deleted and stays deleted (`geloescht`). An update replaces templates only while preset and document are unchanged; new ones are added.
@@ -439,7 +439,7 @@ Sample without guarantee, not legal advice – have it checked by an expert if i
 - **Values are text:** Ablago first parses the template and then inserts the values – in one pass. A field value such as `**bold**`, `[link](…)` or `{other_field}` appears as it is. In the filled-in text (`.md` next to the PDF) such characters are escaped with `\`.
 - **Gaps:** If a value is missing, the person may not read it (folder or referenced folder; when downloading also without export right E) or the placeholder names a field that does not exist, the letter shows **[Label]**, e.g. "[Contract number]". Password fields are forbidden as placeholders – checked when installing and before every typesetting.
 - **Language:** that of the template's full text if Ablago knows it, otherwise that of the installation – never that of the interface. It is written as `/Lang` into the PDF.
-- **Limits** (`server/src/grenzen.ts`): filled-in text at most 512 KB (`TEXTSATZ_TEXT_MAX`), PDF at most 30 pages and 4 MB (`TEXTSATZ_SEITEN`, `TEXTSATZ_PDF_MAX`), typesetting at most 30 seconds in the worker (`TEXTSATZ_ZEIT_MS`). Beyond that: 413.
+- **Limits** (`server/src/grundlagen/grenzen.ts`): filled-in text at most 512 KB (`TEXTSATZ_TEXT_MAX`), PDF at most 30 pages and 4 MB (`TEXTSATZ_SEITEN`, `TEXTSATZ_PDF_MAX`), typesetting at most 30 seconds in the worker (`TEXTSATZ_ZEIT_MS`). Beyond that: 413.
 
 **For packages (API):** `GET /api/v1/mappen/{id}/vorlagen` lists a folder's templates (on the folder itself and on folders it refers to) with the state of their placeholders; `POST /api/v1/mappen/{id}/vorlagen/{dokument}/setzen` with `{ "ziel": "ablegen", "register": "dokumente" }` files the PDF and the filled-in text as new documents (response: both documents and the gaps); with `{ "ziel": "herunterladen" }` the PDF is the response. The service account needs read access to the folder, `dokumente: lesen` for the list, `dokumente: schreiben` and edit rights on the folder for setting. The PDF names package and template in its metadata (subject). Minimum version: `dms: ">=0.242.0"` (`DMS_TEXTSATZ_AB` in `shared/src/textsatz.ts`).
 
@@ -490,7 +490,7 @@ Without Docker, in Ablago's repository: `npm ci && npm run build`, then `node se
 
 From Ablago 0.141.0, Ablago checks **where** a catalogue comes from (#594, registry: motom001/dms-registry#74). The checksum per archive only proves that a package didn't break on the way; the signature over `katalog.json` proves that the whole catalogue – and with it every checksum in it – comes from the Ablago project.
 
-- **Method:** Ed25519 over the **exact bytes** of `katalog.json`. Ablago checks with `crypto.verify` from Node, without a further dependency (`server/src/katalogsignatur.ts`).
+- **Method:** Ed25519 over the **exact bytes** of `katalog.json`. Ablago checks with `crypto.verify` from Node, without a further dependency (`server/src/pakete/katalogsignatur.ts`).
 - **`katalog.sig`** is next to `katalog.json`, separately, so that older Ablago versions read the catalogue unchanged:
 
     ```json
@@ -505,7 +505,7 @@ From Ablago 0.141.0, Ablago checks **where** a catalogue comes from (#594, regis
 
 ### Replacing the project keys { #projektschluessel-austauschen }
 
-The public keys are in **one** place: `server/src/projektschluessel.ts`. There are the maintainer's real keys (`signier.pub` and `reserve.pub` from motom001/dms-registry#74, `test: false`); their fingerprints are in `SECURITY.md`. Ablago 0.141.0 to 0.144.1 still had test keys in this place.
+The public keys are in **one** place: `server/src/pakete/projektschluessel.ts`. There are the maintainer's real keys (`signier.pub` and `reserve.pub` from motom001/dms-registry#74, `test: false`); their fingerprints are in `SECURITY.md`. Ablago 0.141.0 to 0.144.1 still had test keys in this place.
 
 | Key | Identifier | Fingerprint |
 | --- | --- | --- |
@@ -519,7 +519,7 @@ The fingerprint is SHA-256 over the **32 bytes** of the key, not over the whole 
 This is how the keys are replaced (new pair, e.g. after losing the signing key):
 
 1. The maintainer creates the key pair on their own computer (instructions in the registry's README, section "Katalog signieren") and publishes the public key.
-2. Replace the PEM text in `server/src/projektschluessel.ts` (`test` stays `false`).
+2. Replace the PEM text in `server/src/pakete/projektschluessel.ts` (`test` stays `false`).
 3. Calculate the fingerprints (`python3 werkzeuge/signieren.py fingerabdruck signier.pub` in the registry) and enter them in `SECURITY.md`, `SECURITY.en.md`, in the test "Projektschlüssel" and in the table above; in the registry put the public key under `schluessel/` and enter the fingerprints in `README.md` and `README.en.md`.
 
 If the signing key fails (lost or compromised), the registry continues to sign with the reserve key; Ablago accepts that without an update. Afterwards a new pair (new reserve key) comes with an Ablago release.

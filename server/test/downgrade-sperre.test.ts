@@ -18,8 +18,8 @@ describe('Sperre gegen Downgrade der Datenbank', { skip: !mitPg && 'ohne TEST_DA
   });
 
   it('bricht ab, wenn die Datenbank eine unbekannte Migration hat, und läuft mit allen bekannten', async () => {
-    const { ausUrl, alsUrl, legeDatenbankAn } = await import('../src/anbindung');
-    const { verbinde, migriere, NeuereDatenbankFehler } = await import('../src/db');
+    const { ausUrl, alsUrl, legeDatenbankAn } = await import('../src/datenbank/anbindung');
+    const { verbinde, migriere, NeuereDatenbankFehler } = await import('../src/datenbank/db');
     const name = `dms_downgrade_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
     const a = { ...ausUrl(process.env.TEST_DATABASE_URL)!, datenbank: name };
     await legeDatenbankAn(a);

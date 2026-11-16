@@ -12,7 +12,7 @@ import {
   type Loeschweg,
 } from '../../../shared/src/loeschprotokoll';
 import type { PapierkorbEintrag } from '../repo';
-import { protokoll } from '../protokoll';
+import { protokoll } from '../protokoll/protokoll';
 import type { Kern } from './kern';
 
 /* Löschprotokoll (#470) */

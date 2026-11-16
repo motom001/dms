@@ -12,20 +12,20 @@ import { kannAusPost, pruefeMappentyp, type Mappe, type Mappentyp, type Mappenty
 import { ALLE_TYPEN } from '../../shared/src/pakete';
 import { ALLES, type Regelwerk } from '../../shared/src/rechte';
 import { DMS_TEILE_AB, istTeiltyp, leserechteAus, teilProbleme, uebergeordneteId } from '../../shared/src/teile';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
-import { speicherEinstellungen } from '../src/einstellungen';
-import { Fachfehler } from '../src/fehler';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
+import { Fachfehler } from '../src/grundlagen/fehler';
 import { Konten } from '../src/konten';
-import { speicherKontoRepo } from '../src/konto-repo';
+import { speicherKontoRepo } from '../src/konten/konto-repo';
 import { liesPaket, liesZip, Paketverwaltung } from '../src/pakete/verwaltung/index';
 import { mindestversion, Paketerstellung } from '../src/pakete/erstellung/index';
 import { speicherRepo } from '../src/repo/speicher';
-import { routen, type Anfrage } from '../src/routen';
+import { routen, type Anfrage } from '../src/http/routen';
 import { imModus } from './hilfen';
 import { eigeneDatenbank } from './hilfe-db';
 import type { Repo } from '../src/repo';
-import '../src/sprache';
+import '../src/sprache/sprache';
 
 const status = (s: number, muster?: RegExp) => (e: unknown) =>
   e instanceof Fachfehler && e.status === s && (!muster || muster.test(`${e.message} ${JSON.stringify(e.details ?? {})}`));
@@ -594,7 +594,7 @@ ${gehoert}
         e: new Paketerstellung(d, { version: () => DMS_TEILE_AB }),
       };
     };
-    const { zipPuffer } = await import('../src/zip');
+    const { zipPuffer } = await import('../src/formate/zip');
     const zip = (g: string, version = '1.0.0') =>
       zipPuffer([
         {
@@ -652,7 +652,7 @@ describe('Teile – PostgreSQL (#1031)', { skip: !process.env.TEST_DATABASE_URL 
   it('Suche über Teile mit Lesefilter, Löschen und Wiederherstellen samt Teilen in der Datenbank', async () => {
     const db = await eigeneDatenbank('teile');
     const { pgRepo } = await import('../src/repo/pg');
-    const { pgKontoRepo } = await import('../src/konto-repo');
+    const { pgKontoRepo } = await import('../src/konten/konto-repo');
     const haushalt = '00000000-0000-4000-8000-000000000001';
     try {
       const { d, admin, lena, suche, zg, rechnung, position } = await aufbau(

@@ -18,7 +18,7 @@ import {
 } from '../../../../shared/src/pakete';
 import { fehlendePflicht } from '../../../../shared/src/paketeinstellungen';
 import type { PaketQuelleEintrag } from '../index';
-import { Fachfehler } from '../../fehler';
+import { Fachfehler } from '../../grundlagen/fehler';
 import {
   liesSchluessel,
   nurTestschluessel,
@@ -30,9 +30,9 @@ import {
   WECHSEL_DATEI,
   zeitVon,
   type Schluessel,
-} from '../../katalogsignatur';
-import { t } from '../../sprache';
-import { ARCHIV_MAX, KLEIN_MAX } from '../../grenzen';
+} from '../katalogsignatur';
+import { t } from '../../sprache/sprache';
+import { ARCHIV_MAX, KLEIN_MAX } from '../../grundlagen/grenzen';
 import { paketEinstellungen, paketKatalogStaende, paketQuellen, setzePaketKatalogStand, setzePaketQuellen } from '../index';
 import { daneben, holeDaten } from './abruf';
 import { type Paket } from './format';

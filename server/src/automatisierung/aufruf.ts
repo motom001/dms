@@ -11,13 +11,18 @@ import {
   type Automatisierung,
   type WennAufruf,
 } from '../../../shared/src/automatisierung';
-import { ipBereich, kuerzeIp } from '../abruf';
-import { Fachfehler } from '../fehler';
-import { AUFRUF_ANGENOMMEN_JE_ADRESSE, AUFRUF_FEHLVERSUCHE_GESAMT, AUFRUF_FEHLVERSUCHE_JE_ADRESSE, AUFRUF_JE_BEREICH } from '../grenzen';
-import { hashe, speicherKurzzustand, type Kurzzustand } from '../kurzzustand';
-import { protokoll } from '../protokoll';
+import { ipBereich, kuerzeIp } from '../datenschutz/abruf';
+import { Fachfehler } from '../grundlagen/fehler';
+import {
+  AUFRUF_ANGENOMMEN_JE_ADRESSE,
+  AUFRUF_FEHLVERSUCHE_GESAMT,
+  AUFRUF_FEHLVERSUCHE_JE_ADRESSE,
+  AUFRUF_JE_BEREICH,
+} from '../grundlagen/grenzen';
+import { hashe, speicherKurzzustand, type Kurzzustand } from '../zwischenspeicher/kurzzustand';
+import { protokoll } from '../protokoll/protokoll';
 import { istUuid } from '../repo';
-import { t } from '../sprache';
+import { t } from '../sprache/sprache';
 
 /**
  * „Aufruf von außen“ (#679): eigene Adresse mit Geheimnis je Automatisierung. Die Adresse ist ohne Anmeldung erreichbar

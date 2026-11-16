@@ -2,11 +2,11 @@
  * Datenquellen für Vollexport (#254) und persönlichen Export (#255, #683; #1078 aus dienst.ts). Das Format schreibt
  * vollexport.ts. Schicht 3 – Teile und Anschluss wie `DatenschutzDienst` (datenschutz.dienst.ts).
  */
-import { exportSpalten, mappenPdf } from '../export';
+import { exportSpalten, mappenPdf } from '../export/export';
 import type { Kern, Zugriff } from '../kern';
 import type { Repo } from '../repo';
-import { istVerschluesselt } from '../tresor';
-import type { ExportQuelle } from '../vollexport';
+import { istVerschluesselt } from '../geheimnisse/tresor';
+import type { ExportQuelle } from '../export/vollexport';
 import type { ZugriffDienst } from '../zugriff';
 import { type Mappe, type MappenBezug, type Vertretung, verweiseVon } from '../../../shared/src/model';
 import type { DatenschutzAnschluss, DatenschutzTeile } from './datenschutz.dienst';

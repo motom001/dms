@@ -3,10 +3,10 @@
  * Navigation, keine Funktion wird abgeschaltet. Dazu die Merkmale der Ablage (#1032, Werkbank → Nutzung).
  * Schicht 3 – bekommt nur den Kern (Einstellungen).
  */
-import { Fachfehler } from '../fehler';
+import { Fachfehler } from '../grundlagen/fehler';
 import type { Kern } from '../kern';
-import { protokoll } from '../protokoll';
-import { t } from '../sprache';
+import { protokoll } from '../protokoll/protokoll';
+import { t } from '../sprache/sprache';
 import { liesAnsicht, liesEigene, OHNE_EINSTELLUNG, vorlageFuer } from '../../../shared/src/werkbankansicht';
 import { liesMerkmale, MERKMALE, MERKMALE_EINSTELLUNG, type Merkmale } from '../../../shared/src/merkmale';
 

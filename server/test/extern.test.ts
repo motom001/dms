@@ -27,11 +27,11 @@ import {
   type ExternAufruf,
 } from '../../shared/src/extern';
 import { liesServerTiming } from '../../shared/src/zeitmessung';
-import { ApiSchluesselDienst, speicherApiSchluesselRepo } from '../src/apischluessel';
-import { Betrieb, speicherBetrieb, type transport } from '../src/betrieb';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
-import { pgEinstellungen, speicherEinstellungen } from '../src/einstellungen';
+import { ApiSchluesselDienst, speicherApiSchluesselRepo } from '../src/anmeldung/apischluessel';
+import { Betrieb, speicherBetrieb, type transport } from '../src/einstellungen/betrieb';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
+import { pgEinstellungen, speicherEinstellungen } from '../src/einstellungen/einstellungen';
 import {
   Externmessung,
   extern,
@@ -41,17 +41,17 @@ import {
   pgExternSpeicher,
   speicherExternSpeicher,
   type ExternSpeicher,
-} from '../src/externmessung';
-import { Fachfehler } from '../src/fehler';
+} from '../src/system/externmessung';
+import { Fachfehler } from '../src/grundlagen/fehler';
 import { Konten } from '../src/konten';
-import { speicherKontoRepo } from '../src/konto-repo';
+import { speicherKontoRepo } from '../src/konten/konto-repo';
 import { netzMesser } from '../src/laeufer/prozess';
 import { Paketlaeufer } from '../src/laeufer/verwaltung';
-import { serverTiming, zeitaufteilung } from '../src/messung';
-import { Oidc, type Abruf } from '../src/oidc';
+import { serverTiming, zeitaufteilung } from '../src/datenbank/messung';
+import { Oidc, type Abruf } from '../src/anmeldung/oidc';
 import { liesPaket } from '../src/pakete/verwaltung/index';
-import type { ImapSitzung } from '../src/postfach';
-import { kontext, protokoll, type Kontext } from '../src/protokoll';
+import type { ImapSitzung } from '../src/post/postfach';
+import { kontext, protokoll, type Kontext } from '../src/protokoll/protokoll';
 import { speicherRepo } from '../src/repo/speicher';
 import { eigeneDatenbank } from './hilfe-db';
 

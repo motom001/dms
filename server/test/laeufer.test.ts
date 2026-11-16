@@ -4,22 +4,22 @@ import { imModus } from './hilfen';
 import assert from 'node:assert/strict';
 import { after, describe, it } from 'node:test';
 import { getPriority } from 'node:os';
-import { faedenVon, hintergrundNice } from '../src/hintergrund';
+import { faedenVon, hintergrundNice } from '../src/prozesse/hintergrund';
 import { PDFDocument } from 'pdf-lib';
-import { speicherApiSchluesselRepo, ApiSchluesselDienst } from '../src/apischluessel';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
-import { speicherEinstellungen } from '../src/einstellungen';
+import { speicherApiSchluesselRepo, ApiSchluesselDienst } from '../src/anmeldung/apischluessel';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
 import { Konten } from '../src/konten';
-import { speicherKontoRepo, type KontoRepo } from '../src/konto-repo';
+import { speicherKontoRepo, type KontoRepo } from '../src/konten/konto-repo';
 import type { Repo } from '../src/repo';
 import { liesWeiter, Paketlaeufer, type ApiAufruf } from '../src/laeufer/verwaltung';
 import { ladeArgumente, pruefeModul } from '../src/laeufer/modul';
 import { liesBegrenzt, netzErlaubt } from '../src/laeufer/prozess';
 import { liesPaket, liesZip, Paketverwaltung } from '../src/pakete/verwaltung/index';
-import { zipPuffer } from '../src/zip';
+import { zipPuffer } from '../src/formate/zip';
 import { speicherRepo } from '../src/repo/speicher';
-import { pruefeZugang, routen, type Anfrage, type Route } from '../src/routen';
+import { pruefeZugang, routen, type Anfrage, type Route } from '../src/http/routen';
 import { CODE_MAX, gleicheRechte, laeuferZustandText, liesCode, netzText, rechtePunkte, rechteText } from '../../shared/src/pakete';
 import { HILFE } from '../../shared/src/hilfe';
 
@@ -127,10 +127,10 @@ async function pdf(seiten: number): Promise<Buffer> {
 
 /** Eigene PostgreSQL-Datenbank (TEST_DATABASE_URL) mit Repo und Konto-Repo; `ende` räumt sie ab. */
 async function pgDatenbank() {
-  const { ausUrl, alsUrl, legeDatenbankAn } = await import('../src/anbindung');
-  const { verbinde, migriere } = await import('../src/db');
+  const { ausUrl, alsUrl, legeDatenbankAn } = await import('../src/datenbank/anbindung');
+  const { verbinde, migriere } = await import('../src/datenbank/db');
   const { pgRepo } = await import('../src/repo/pg');
-  const { pgKontoRepo } = await import('../src/konto-repo');
+  const { pgKontoRepo } = await import('../src/konten/konto-repo');
   const H = '00000000-0000-4000-8000-000000000001';
   const basis = ausUrl(process.env.TEST_DATABASE_URL)!;
   const a = { ...basis, datenbank: `dms_lf_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}` };

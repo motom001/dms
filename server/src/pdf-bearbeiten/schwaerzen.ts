@@ -4,13 +4,18 @@
  * ablegen), Mappen und Dokumente; den Volltext über den Anschluss.
  */
 import type { DokumentArchivfassung, DokumenteDienst, DokumentVersionen } from '../dokumente';
-import { Fachfehler } from '../fehler';
+import { Fachfehler } from '../grundlagen/fehler';
 import type { Kern } from '../kern';
 import type { MappenHistorie } from '../mappen';
-import { protokoll } from '../protokoll';
+import { protokoll } from '../protokoll/protokoll';
 import type { Repo } from '../repo';
-import { type Analyse as SchwaerzAnalyse, analysiere as schwaerzAnalyse, schwaerze, seitenbild as schwaerzSeitenbild } from '../schwaerzen';
-import { t } from '../sprache';
+import {
+  type Analyse as SchwaerzAnalyse,
+  analysiere as schwaerzAnalyse,
+  schwaerze,
+  seitenbild as schwaerzSeitenbild,
+} from '../dateien/schwaerzen';
+import { t } from '../sprache/sprache';
 import type { VolltextMeldung } from '../volltext';
 import type { Dokument } from '../../../shared/src/model';
 import {

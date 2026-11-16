@@ -4,14 +4,14 @@
  * Kern, PDF bearbeiten, Mappen und Dokumente; die Hintergrundaufträge über den Anschluss.
  */
 import { type DokumenteDienst, type DokumentVersionen, erkenneAnzeigbar } from '../dokumente';
-import { Fachfehler } from '../fehler';
-import { MB } from '../grenzen';
-import { type Eingang, shaVon } from '../hochladen';
+import { Fachfehler } from '../grundlagen/fehler';
+import { MB } from '../grundlagen/grenzen';
+import { type Eingang, shaVon } from '../dateien/hochladen';
 import { type Anlass, type Kern, type Loeschprotokoll, type ProtokollTeil, versionInfo } from '../kern';
 import type { MappenArchiv, MappenHistorie } from '../mappen';
-import { protokoll } from '../protokoll';
+import { protokoll } from '../protokoll/protokoll';
 import { istUuid, type Repo } from '../repo';
-import { t } from '../sprache';
+import { t } from '../sprache/sprache';
 import {
   type Analyse,
   analysiere,
@@ -23,7 +23,7 @@ import {
   stufeAus,
   STUFEN,
   verkleinere,
-} from '../verkleinern';
+} from '../dateien/verkleinern';
 import type { Auftrag, Fortschritt, PhasenPlan } from '../../../shared/src/auftrag';
 import type { LoeschDokument, LoeschEintrag, LoeschKontext } from '../../../shared/src/loeschprotokoll';
 import type { Dokument } from '../../../shared/src/model';

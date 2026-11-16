@@ -15,11 +15,11 @@
  */
 import { ANLAGEN_MAX, anlageName, anlageText } from '../../../shared/src/anlagen';
 import type { Dokument } from '../../../shared/src/model';
-import { Fachfehler } from '../fehler';
+import { Fachfehler } from '../grundlagen/fehler';
 import type { Kern } from '../kern';
-import { protokoll } from '../protokoll';
+import { protokoll } from '../protokoll/protokoll';
 import { istUuid, type Repo } from '../repo';
-import { t } from '../sprache';
+import { t } from '../sprache/sprache';
 import { dateiname } from './dokumente.dienst';
 import type { DokumentVersionen } from './versionen';
 

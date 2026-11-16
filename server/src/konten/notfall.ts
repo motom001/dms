@@ -4,15 +4,15 @@
 import { randomInt, randomUUID } from 'node:crypto';
 import { KontenProfil } from './profil';
 import { NOTFALLCODE_LAENGE, NOTFALLCODE_ZEICHEN, normiereNotfallcode } from '../../../shared/src/notfallcode';
-import { hashePasswort, pruefePasswort, neuerSchluessel, hasheSchluessel } from '../passwort';
+import { hashePasswort, pruefePasswort, neuerSchluessel, hasheSchluessel } from '../anmeldung/passwort';
 import { type Benutzer, istPerson } from '../../../shared/src/model';
 import { darfVerwalten, GESAMT } from '../../../shared/src/verwaltungsrecht';
 import { pruefePasswortRegeln, type Ergebnis, EINLADUNG_TAGE, TAG, ZURUECKSETZEN_STUNDEN } from './hilfen';
-import { Fachfehler } from '../fehler';
-import { t, mitSpracheVon } from '../sprache';
+import { Fachfehler } from '../grundlagen/fehler';
+import { t, mitSpracheVon } from '../sprache/sprache';
 import { zeitzone } from '../../../shared/src/region';
-import type { Zweck } from '../konto-repo';
-import { mailtexte } from '../mail';
+import type { Zweck } from './konto-repo';
+import { mailtexte } from '../mail/mail';
 
 /** Notfallcode und Links per Mail. */
 export abstract class KontenNotfall extends KontenProfil {

@@ -18,7 +18,7 @@ import {
 import { archivAusPaket } from '../../../../shared/src/archiv';
 import { hauptpaket, istOffiziellerHerausgeber, typKennung } from '../../../../shared/src/kennungen';
 import { einstellungsAenderung } from '../../../../shared/src/paketeinstellungen';
-import { t } from '../../sprache';
+import { t } from '../../sprache/sprache';
 import { DEUTSCH } from '../../../../shared/src/deutsch';
 import { abdeckung } from '../../../../shared/src/sprachpaket';
 import { planeUmbau } from '../index';

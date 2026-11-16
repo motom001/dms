@@ -23,3 +23,6 @@ Funktion wird abgeschaltet – und die Merkmale der Ablage (#1032, „beruflich 
 - Neuer Code ohne neue Einträge in `eslint-suppressions.json`.
 
 Mehr im Entwicklerhandbuch unter *Aufbau → Werkbank*.
+
+**Ohne Tür** (#1278, Schritt 4a): `verwaltung.ts`, `verwaltungsbereiche.ts`, `meldungen.ts`, `werkbankzahlen.ts` lagen bis dahin direkt in `server/src/` und werden noch direkt
+eingebunden (`OHNE_TUER` in `.dependency-cruiser.cjs`); hinter die Tür kommen sie in einem eigenen Schritt.

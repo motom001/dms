@@ -2,9 +2,9 @@
  * Daten über HTTP holen (Kataloge, Pakete) mit Grenzen für Größe und Weiterleitungen.
  */
 import { inMB } from '../../../../shared/src/pakete';
-import { Fachfehler } from '../../fehler';
-import { t } from '../../sprache';
-import { ARCHIV_MAX } from '../../grenzen';
+import { Fachfehler } from '../../grundlagen/fehler';
+import { t } from '../../sprache/sprache';
+import { ARCHIV_MAX } from '../../grundlagen/grenzen';
 
 /** Höchstens so viele Weiterleitungen folgt holeDaten. */
 const WEITERLEITUNGEN_MAX = 5;

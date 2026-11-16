@@ -8,15 +8,15 @@ import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promis
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { after, describe, it } from 'node:test';
-import type { Datenquelle } from '../src/datenbankabzug';
-import { speicherEinstellungen } from '../src/einstellungen';
-import { notfallblatt, notfallblattPlan } from '../src/notfallblatt';
+import type { Datenquelle } from '../src/sicherung/datenbankabzug';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
+import { notfallblatt, notfallblattPlan } from '../src/notfall/notfallblatt';
 import { schluesselRecht } from '../src/laeufer/verwaltung';
-import { ohneZugangsdaten, Sicherung, schlankeMetadaten, type ExternAnbindung, type SchlankeMetadaten } from '../src/sicherung';
-import { Tresor } from '../src/tresor';
+import { ohneZugangsdaten, Sicherung, schlankeMetadaten, type ExternAnbindung, type SchlankeMetadaten } from '../src/sicherung/sicherung';
+import { Tresor } from '../src/geheimnisse/tresor';
 import { EREIGNISSE, liesCode, rechteText, SCHNITTSTELLEN } from '../../shared/src/pakete';
 import { HILFE } from '../../shared/src/hilfe';
-import { mailText } from '../src/mail';
+import { mailText } from '../src/mail/mail';
 
 const HAUSHALT = '00000000-0000-4000-8000-000000000001';
 const TAG = 24 * 3600_000;

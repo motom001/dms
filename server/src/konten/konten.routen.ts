@@ -2,8 +2,8 @@
  * Konten und Benutzer (#960: aus routen.ts): eigenes Profil, Abwesenheit, Einstellungen, Ablago entdecken, Benutzer,
  * Dokument-Passwörter, Sitzungen, Vertretung und API-Schlüssel im eigenen Profil.
  */
-import { Fachfehler } from '../fehler';
-import { t } from '../sprache';
+import { Fachfehler } from '../grundlagen/fehler';
+import { t } from '../sprache/sprache';
 import { GEMERKT_MAX } from '../../../shared/src/entsperren';
 import {
   EIGEN,
@@ -14,7 +14,7 @@ import {
 import { BEREICHE } from '../../../shared/src/werkbankansicht';
 import { L, ok, leer, b, info, ich } from '../http/routen-hilfen';
 import type { RoutenKontext } from '../http/routen-kontext';
-import type { Route } from '../routen';
+import type { Route } from '../http/routen';
 
 export function kontenRouten(k: RoutenKontext): Route[] {
   const { dienst, konten, log, entdecken, rundgaengeWerkbank, nurSelbst, zg, empfaengerSichtbar, mitRollen, zf } = k;

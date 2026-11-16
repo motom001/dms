@@ -4,11 +4,11 @@
  * Texterkennung. Schicht 3 – bekommt den Kern, die Rechteprüfung, Historie und Dokumente.
  */
 import type { DokumenteDienst } from '../dokumente';
-import { Fachfehler } from '../fehler';
+import { Fachfehler } from '../grundlagen/fehler';
 import type { Kern, Zugriff } from '../kern';
 import type { MappenHistorie } from '../mappen';
 import type { Repo } from '../repo';
-import { t } from '../sprache';
+import { t } from '../sprache/sprache';
 import type { ZugriffDienst } from '../zugriff';
 
 /** Wo eine gleiche Datei schon liegt (#333) – nur lesbare Mappen. */

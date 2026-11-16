@@ -31,8 +31,8 @@ import {
 } from '../../../shared/src/umbau';
 import { istVorgabeWert } from '../../../shared/src/vorgaben';
 import type { Kern } from '../kern';
-import { Fachfehler } from '../fehler';
-import { t } from '../sprache';
+import { Fachfehler } from '../grundlagen/fehler';
+import { t } from '../sprache/sprache';
 import { ohneZiel, umziehbar, wandle, type Aktion, type FeldAktion, type TitelSuche } from './umbau-werte';
 
 const istObjekt = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v);

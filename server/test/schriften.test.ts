@@ -16,7 +16,7 @@ import { PDFArray, PDFDict, PDFDocument, PDFName, PDFRawStream, rgb } from 'pdf-
 import { beendeArbeiter } from '../src/arbeit';
 import { analysiereSchwaerzen, aufkleberbogenPdf, briefPdf, mappenPdfZeichnen, schwaerze, stempelePdf, textdokumentPdf } from '../src/pdf';
 import { ERSATZZEICHEN, fehlendeZeichen, pdfText, schriften, type Schnitt } from '../src/pdf/schrift';
-import { protokoll } from '../src/protokoll';
+import { protokoll } from '../src/protokoll/protokoll';
 import { NEUER_STEMPEL } from '../../shared/src/stempel';
 import { BEISPIELE, beispielBrief, inhaltsstrom, NFD } from './hilfen-schriften';
 

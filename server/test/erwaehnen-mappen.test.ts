@@ -8,12 +8,12 @@ import { describe, it } from 'node:test';
 import { alsText, erwaehnung, erwaehnungen, inline } from '../../shared/src/markdown';
 import { FAVORIT_ERWAEHNT, FAVORIT_ERWAEHNT_OFFEN } from '../../shared/src/erwaehnen';
 import { aufgabenBeschriftung } from '../../shared/src/mappenansicht';
-import { Aufgabenmail } from '../src/aufgabenmail';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
-import { speicherEinstellungen } from '../src/einstellungen';
+import { Aufgabenmail } from '../src/aufgaben/aufgabenmail';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
 import { Konten } from '../src/konten';
-import { speicherKontoRepo } from '../src/konto-repo';
+import { speicherKontoRepo } from '../src/konten/konto-repo';
 import { speicherRepo } from '../src/repo/speicher';
 
 async function aufbau() {

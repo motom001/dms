@@ -10,10 +10,10 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, it } from 'node:test';
 import { EXPORT_TAGE } from '../../shared/src/auskunft';
-import { auskunftOrdner } from '../src/auskunft';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
-import { speicherEinstellungen } from '../src/einstellungen';
+import { auskunftOrdner } from '../src/datenschutz/auskunft';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
 import {
   alterExportOrdner,
   exportOrdnerVon,
@@ -25,13 +25,13 @@ import {
   raeumeExporteAuf,
   umzugHinweis,
   zieheExporteUm,
-} from '../src/exportordner';
+} from '../src/export/exportordner';
 import { Konten } from '../src/konten';
-import { speicherKontoRepo } from '../src/konto-repo';
-import { ordnerUnter, pruefeOrdner } from '../src/ordner';
+import { speicherKontoRepo } from '../src/konten/konto-repo';
+import { ordnerUnter, pruefeOrdner } from '../src/dateien/ordner';
 import { speicherRepo } from '../src/repo/speicher';
-import { routen, type Anfrage } from '../src/routen';
-import { exporteIn } from '../src/vollexport';
+import { routen, type Anfrage } from '../src/http/routen';
+import { exporteIn } from '../src/export/vollexport';
 
 const TAG = 24 * 3600 * 1000;
 const name = (d: Date) => `dms-export-${d.toISOString().slice(0, 19).replace(/[T:]/g, '-')}`;

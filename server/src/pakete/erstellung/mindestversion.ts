@@ -3,7 +3,7 @@
  */
 import { BEISPIEL_DOKUMENTE_AB, DMS_WORTLISTEN_AB, VERSION, vergleicheVersion } from '../../../../shared/src/pakete';
 import { type PaketEntwurf, type PaketErstellenEingabe } from '../../../../shared/src/paketerstellung';
-import { t } from '../../sprache';
+import { t } from '../../sprache/sprache';
 import { DMS_VERWEISE_AB, FREMDE_TYPEN_AB } from '../verwaltung/format';
 import { DMS_TABELLE_AB } from '../../../../shared/src/tabelle';
 import { DMS_VORBELEGEN_AB } from '../../../../shared/src/vorbelegen';

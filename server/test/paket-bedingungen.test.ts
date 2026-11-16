@@ -7,7 +7,7 @@ import { describe, it } from 'node:test';
 import { anzeigeEingabeFehler, bereinigeAnzeige } from '../../shared/src/anzeige';
 import { undEingabeFehler } from '../../shared/src/automatisierung';
 import { bedingungEingabeFehler } from '../../shared/src/sichten';
-import { Fachfehler } from '../src/fehler';
+import { Fachfehler } from '../src/grundlagen/fehler';
 import { liesPaket } from '../src/pakete/verwaltung/index';
 
 const MANIFEST =

@@ -15,17 +15,17 @@
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { ausUrl, alsUrl, legeDatenbankAn } from '../src/anbindung';
-import { ordnerSpeicher } from '../src/dateispeicher';
-import { verbinde, migriere } from '../src/db';
-import { Dienst } from '../src/dienst';
-import { speicherEinstellungen } from '../src/einstellungen';
-import { pgKontoRepo } from '../src/konto-repo';
+import { ausUrl, alsUrl, legeDatenbankAn } from '../src/datenbank/anbindung';
+import { ordnerSpeicher } from '../src/dateien/dateispeicher';
+import { verbinde, migriere } from '../src/datenbank/db';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
+import { pgKontoRepo } from '../src/konten/konto-repo';
 import { pgRepo } from '../src/repo/pg';
-import { vollexport } from '../src/vollexport';
+import { vollexport } from '../src/export/vollexport';
 import { monitorEventLoopDelay } from 'node:perf_hooks';
-import { erzeugeDemo } from '../src/demo';
-import { Texterkennung } from '../src/texterkennung';
+import { erzeugeDemo } from '../src/demo/demo';
+import { Texterkennung } from '../src/volltext/texterkennung';
 import { baueLeistungsdaten, BENUTZER, HAUSHALT } from './leistung-daten';
 import { messeAbfragen, zaehlend, type Zeit } from './leistung-messen';
 

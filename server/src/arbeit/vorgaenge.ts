@@ -17,9 +17,9 @@ import { baueSeiten, bilderZuPdf, bildSeitePdf, fuegeZusammen, seitenInfo, teile
 import { bildAlsA4Pdf, stempelePdf } from '../pdf/stempel';
 import { fehlendeZeichen } from '../pdf/schrift';
 import { analysiere as analysiereVerkleinern, verkleinere as verkleinerePdf } from '../pdf/verkleinern';
-import { csvAus, xlsxAus, type Zelle } from '../xlsx';
+import { csvAus, xlsxAus, type Zelle } from '../formate/xlsx';
 import { readFile } from 'node:fs/promises';
-import { Zufall } from '../zufall';
+import { Zufall } from '../demo/zufall';
 import { setzeZeitzone } from '../../../shared/src/region';
 import type { Dokumentart } from '../../../shared/src/demodaten';
 

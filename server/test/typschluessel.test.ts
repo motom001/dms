@@ -2,9 +2,9 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { liesDirektlink, linkZuMappe } from '../../shared/src/direktlink';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
-import { Fachfehler } from '../src/fehler';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
+import { Fachfehler } from '../src/grundlagen/fehler';
 import { speicherRepo } from '../src/repo/speicher';
 
 const status = (s: number) => (e: unknown) => e instanceof Fachfehler && e.status === s;

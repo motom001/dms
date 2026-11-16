@@ -13,7 +13,7 @@ import { get } from 'node:http';
 import { brotliCompressSync, brotliDecompressSync, gunzipSync, gzipSync } from 'node:zlib';
 import type { ChildProcess } from 'node:child_process';
 import { after, before, describe, it } from 'node:test';
-import { istDateipfad } from '../src/oberflaeche';
+import { istDateipfad } from '../src/oberflaeche/oberflaeche';
 
 const echtesFastify = await import('fastify').then(
   (m) => typeof m.default === 'function',
@@ -175,12 +175,12 @@ describe('Fehlende Dateien der Oberfläche (#932)', () => {
   });
 
   it('normaler Betrieb: 404 für fehlende Dateien, index.html für Seiten', { skip: ohneFastify }, async () => {
-    const { baueApp } = await import('../src/http');
-    const { Dienst } = await import('../src/dienst');
+    const { baueApp } = await import('../src/http/http');
+    const { Dienst } = await import('../src/dienst/dienst');
     const { speicherRepo } = await import('../src/repo/speicher');
-    const { speicherDateien } = await import('../src/dateispeicher');
+    const { speicherDateien } = await import('../src/dateien/dateispeicher');
     const { Konten } = await import('../src/konten');
-    const { speicherKontoRepo } = await import('../src/konto-repo');
+    const { speicherKontoRepo } = await import('../src/konten/konto-repo');
     const dienst = new Dienst(speicherRepo(), speicherDateien());
     const konten = new Konten(speicherKontoRepo(), null, 'http://nas', dienst.systemtypen.benutzerspiegel());
     const app = (await baueApp(dienst, konten, { webDir: web })) as unknown as {
@@ -211,8 +211,8 @@ describe('Fehlende Dateien der Oberfläche (#932)', () => {
   });
 
   it('Einrichtungsmodus: dieselbe Regel', { skip: ohneFastify }, async () => {
-    const { einrichtungsmodus } = await import('../src/einrichtungsmodus');
-    const { Einrichtungscode } = await import('../src/einrichtungscode');
+    const { einrichtungsmodus } = await import('../src/einrichtung/einrichtungsmodus');
+    const { Einrichtungscode } = await import('../src/einrichtung/einrichtungscode');
     const geheim = await mkdtemp(join(wurzel, 'geheim-'));
     const code = new Einrichtungscode(geheim);
     const port = await freierPort();
@@ -252,7 +252,7 @@ describe('Fehlende Dateien der Oberfläche (#932)', () => {
   });
 
   it('Lasttestmodus: dieselbe Regel', { skip: ohneFastify }, async () => {
-    const { Lasttestmodus } = await import('../src/lasttestmodus');
+    const { Lasttestmodus } = await import('../src/lasttest/lasttestmodus');
     class FalschesKind extends EventEmitter {
       kill() {
         setImmediate(() => this.emit('exit', null));

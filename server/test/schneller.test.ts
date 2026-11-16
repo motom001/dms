@@ -7,16 +7,16 @@ import { imModus } from './hilfen';
 import assert from 'node:assert/strict';
 import { after, describe, it } from 'node:test';
 import type postgres from 'postgres';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
-import { speicherEinstellungen } from '../src/einstellungen';
-import { Ereignisverteiler } from '../src/ereignisse';
-import { Fachfehler } from '../src/fehler';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
+import { Ereignisverteiler } from '../src/ereignisse/ereignisse';
+import { Fachfehler } from '../src/grundlagen/fehler';
 import { Konten } from '../src/konten';
-import { speicherKontoRepo } from '../src/konto-repo';
+import { speicherKontoRepo } from '../src/konten/konto-repo';
 import type { Repo } from '../src/repo';
 import { speicherRepo } from '../src/repo/speicher';
-import { routen, type Anfrage } from '../src/routen';
+import { routen, type Anfrage } from '../src/http/routen';
 
 const HAUSHALT = '00000000-0000-4000-8000-000000000001';
 const ICH = { id: '00000000-0000-4000-8000-0000000000aa', rolle: 'admin', email: 'lena@example.org' };
@@ -26,8 +26,8 @@ after(async () => {
 });
 
 async function datenbank(): Promise<postgres.Sql> {
-  const { ausUrl, alsUrl, legeDatenbankAn } = await import('../src/anbindung');
-  const { verbinde, migriere } = await import('../src/db');
+  const { ausUrl, alsUrl, legeDatenbankAn } = await import('../src/datenbank/anbindung');
+  const { verbinde, migriere } = await import('../src/datenbank/db');
   const a = {
     ...ausUrl(process.env.TEST_DATABASE_URL)!,
     datenbank: `dms_schneller_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,

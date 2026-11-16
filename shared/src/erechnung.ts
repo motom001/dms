@@ -2,7 +2,7 @@
  * E-Rechnung (#1043): XRechnung (UBL oder CII) und ZUGFeRD/Factur-X (CII im PDF-Anhang) als Vorschläge für die Felder
  * eines Mappentyps – Angaben und Positionen „exakt aus den Daten“ statt aus dem gelesenen Text.
  *
- * Das XML liest der Server (server/src/erechnung.ts, sicher und mit Grenzen); hier stehen nur die gelesenen Angaben und
+ * Das XML liest der Server (server/src/erkennung/erechnung.ts, sicher und mit Grenzen); hier stehen nur die gelesenen Angaben und
  * reine Funktionen, die sie auf Felder legen. Die Daten sind **nicht vertrauenswürdig** (Ergänzung Sicherheit): Jeder
  * Wert ist ein Vorschlag wie aus jeder anderen Erkennung und läuft danach durch `pruefeVorschlaege` – dieselbe Prüfung
  * wie Eingaben (Feldart, Format, Grenzen, berechnete Felder nie).

@@ -1,4 +1,4 @@
-import { KB, MB } from '../grenzen';
+import { KB, MB } from '../grundlagen/grenzen';
 
 /** Dateigröße lesbar: „512 B“, „48 KB“, „2,4 MB“. */
 export const groesseText = (n: number) =>

@@ -14,22 +14,22 @@ import { ALLES, type Regelwerk } from '../../shared/src/rechte';
 import { bedingungsfelder } from '../../shared/src/sichten';
 import { inSprache } from '../../shared/src/sprache';
 import { DMS_TABELLE_AB, hatWertfeld, TABELLE_SEITE, tabelleNeuText, tabellenSpalten } from '../../shared/src/tabelle';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
-import { speicherEinstellungen } from '../src/einstellungen';
-import { exportSpalten } from '../src/export';
-import { Fachfehler } from '../src/fehler';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
+import { exportSpalten } from '../src/export/export';
+import { Fachfehler } from '../src/grundlagen/fehler';
 import { Konten } from '../src/konten';
-import { speicherKontoRepo } from '../src/konto-repo';
+import { speicherKontoRepo } from '../src/konten/konto-repo';
 import { liesPaket, liesZip, Paketverwaltung } from '../src/pakete/verwaltung/index';
 import { mindestversion, Paketerstellung } from '../src/pakete/erstellung/index';
 import { speicherRepo } from '../src/repo/speicher';
-import { routen, type Anfrage } from '../src/routen';
-import { Tresor } from '../src/tresor';
+import { routen, type Anfrage } from '../src/http/routen';
+import { Tresor } from '../src/geheimnisse/tresor';
 import { imModus } from './hilfen';
 import { eigeneDatenbank } from './hilfe-db';
 import type { Repo } from '../src/repo';
-import '../src/sprache';
+import '../src/sprache/sprache';
 
 const status = (s: number) => (e: unknown) => e instanceof Fachfehler && e.status === s;
 const ICH = { id: '00000000-0000-4000-8000-0000000000aa', email: 'admin@example.org' };
@@ -515,7 +515,7 @@ ${quelle}
         throw new Error('ohne Netz');
       },
     });
-    const { zipPuffer } = await import('../src/zip');
+    const { zipPuffer } = await import('../src/formate/zip');
     const zip = zipPuffer([
       { name: 'rechnungen_test/manifest.yaml', daten: Buffer.from(manifest.replace('mappentypen.yaml', 'inhalt/mappentypen.yaml')) },
       { name: 'rechnungen_test/inhalt/mappentypen.yaml', daten: Buffer.from(typen(gut)) },

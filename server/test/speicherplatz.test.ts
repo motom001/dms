@@ -1,13 +1,13 @@
 /** Feste Ordner (#115) und Speicherplatz-Überwachung (#116). */
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { mitPruefung, speicherDateien } from '../src/dateispeicher';
-import { speicherEinstellungen } from '../src/einstellungen';
-import { Fachfehler } from '../src/fehler';
-import { ordnerUnter, pruefeOrdner } from '../src/ordner';
-import { inBytes, LIMIT_TEXT, Speicherplatz } from '../src/speicherplatz';
-import { Wartung } from '../src/wartung';
-import { mailText } from '../src/mail';
+import { mitPruefung, speicherDateien } from '../src/dateien/dateispeicher';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
+import { Fachfehler } from '../src/grundlagen/fehler';
+import { ordnerUnter, pruefeOrdner } from '../src/dateien/ordner';
+import { inBytes, LIMIT_TEXT, Speicherplatz } from '../src/dateien/speicherplatz';
+import { Wartung } from '../src/wartung/wartung';
+import { mailText } from '../src/mail/mail';
 
 const GB = 1024 ** 3;
 

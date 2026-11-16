@@ -24,11 +24,11 @@ import {
   type PDFPage,
 } from 'pdf-lib';
 import { ersetzePlatzhalter, STEMPEL_FARBEN, stempelLayout, type Stempel } from '../../../shared/src/stempel';
-import { Fachfehler } from '../fehler';
+import { Fachfehler } from '../grundlagen/fehler';
 import { eigenerPuffer } from './puffer';
 import { pdfText, schriften } from './schrift';
 import { ladePdf } from './laden';
-import { t } from '../sprache';
+import { t } from '../sprache/sprache';
 
 export interface StempelAuftrag {
   /** Name (nur für Meldungen), Art und Inhalt der Datei: PDF, JPEG oder PNG. */

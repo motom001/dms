@@ -3,10 +3,10 @@
  */
 import { createHash, randomUUID } from 'node:crypto';
 import { inMB, type HerkunftPruefung, nachAbhaengigkeiten, vergleicheVersion, type Katalog } from '../../../../shared/src/pakete';
-import { Fachfehler } from '../../fehler';
-import { SIGNATUR_DATEI } from '../../katalogsignatur';
-import { t } from '../../sprache';
-import { ARCHIV_MAX, SAMMEL_ENTPACKT_MAX, SAMMEL_MAX } from '../../grenzen';
+import { Fachfehler } from '../../grundlagen/fehler';
+import { SIGNATUR_DATEI } from '../katalogsignatur';
+import { t } from '../../sprache/sprache';
+import { ARCHIV_MAX, SAMMEL_ENTPACKT_MAX, SAMMEL_MAX } from '../../grundlagen/grenzen';
 import { type Paket } from './format';
 import { sammelKennungen } from './hilfen';
 import { liesPaket } from './lesen';

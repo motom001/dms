@@ -5,21 +5,21 @@
 import { istPerson } from '../../../shared/src/model';
 import { hatMerkmalBedingung } from '../../../shared/src/anzeige';
 import { taugtAlsAufgabenEmpfaenger } from '../aufgaben';
-import { Fachfehler } from '../fehler';
-import { umzugHinweis } from '../exportordner';
-import { t } from '../sprache';
+import { Fachfehler } from '../grundlagen/fehler';
+import { umzugHinweis } from '../export/exportordner';
+import { t } from '../sprache/sprache';
 import { darfBereich, darfVerwalten, hatGesamt } from '../../../shared/src/verwaltungsrecht';
-import { uebersicht } from '../system';
-import { MODULE, protokoll, STUFEN, type Stufe } from '../protokoll';
-import { werkbankZahlen } from '../werkbankzahlen';
-import { BeispielAblage } from '../beispielablage';
-import { akzeptanzAufheben, akzeptierteMeldungen, meldungAkzeptieren } from '../meldungen';
+import { uebersicht } from '../system/system';
+import { MODULE, protokoll, STUFEN, type Stufe } from '../protokoll/protokoll';
+import { werkbankZahlen } from './werkbankzahlen';
+import { BeispielAblage } from '../beispiele/beispielablage';
+import { akzeptanzAufheben, akzeptierteMeldungen, meldungAkzeptieren } from './meldungen';
 import { ueberfluessigeVariablen } from '../../../shared/src/umgebungsvariablen';
 import { zeitzone } from '../../../shared/src/region';
-import { KOERPER_SPIELRAUM, LOGO_MAX } from '../grenzen';
+import { KOERPER_SPIELRAUM, LOGO_MAX } from '../grundlagen/grenzen';
 import { L, ok, leer, b, ich, grenzenUndEngpaesse, ZWEITE_ABGELEHNT, nurEigeneBereiche } from '../http/routen-hilfen';
 import type { RoutenKontext } from '../http/routen-kontext';
-import type { Route } from '../routen';
+import type { Route } from '../http/routen';
 
 export function werkbankRouten(k: RoutenKontext): Route[] {
   const { dienst, x, designs, ocr } = k;

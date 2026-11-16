@@ -221,7 +221,7 @@ Das Format beschreiben die JSON-Schemas in der Registry: [`schema/manifest.schem
     - **`werte`:** wie bei Beispielen (Beträge als Zahl, Zeiträume als `{ anzahl, einheit }`); keine Passwortfelder, keine Verweise auf Beispiele. Verweise auf Vorgaben gehen mit `{ vorgabe: miete }` bzw. `{ vorgabe: "vertraege:miete" }` – auch in `beispiele.yaml` (dort statt einer festen Id).
     - **`beschriftungen`:** Sprache → Feld → Text. Ablago legt die Vorgabe in der **Sprache der Installation** an (Felder ohne Übersetzung bleiben Deutsch); Werte sind Daten, sie wechseln nicht mit der Sprache der Person.
     - **`vorlagen`:** Text-Vorlagen unter `inhalt/vorlagen/` (Kleinbuchstaben, Ziffern, `-`, `_`, höchstens zwei Ordner, Endung `.md`), je Eintrag `datei` (Pflicht), `titel` (Name des Dokuments) und `register` (Dokumentenregister; ohne: `vorlagen`, sonst das erste). Höchstens 20 je Vorgabe. Platzhalter wie bei Automatisierungen (`{vertragsnummer}`, `{von.name}`); ausgefüllt werden sie mit „Text setzen“ (dms #1040, siehe [Text-Vorlagen schreiben](#text-vorlagen-schreiben)).
-    - **Was eine Vorlage sein darf** (`server/src/pakete/vorlagen.ts`, dieselben Regeln in `pruefen.py`): UTF-8-Text ohne Steuerzeichen, höchstens `VORLAGE_MAX` (256 KB, `server/src/grenzen.ts`); **kein HTML** – auch keine Kommentare `<!-- -->` –, **keine Bilder** (`![…]`), Links nur `https://` (in `[Text](…)`, `[x]: …` und `<https://…>`; `http:`, `mailto:`, `javascript:`, `data:` stehen nirgends im Text); kein Platzhalter nennt ein **Passwortfeld**. Ablago prüft das beim Lesen und beim Installieren noch einmal (dann gegen die Passwortfelder aller Mappentypen).
+    - **Was eine Vorlage sein darf** (`server/src/pakete/vorlagen.ts`, dieselben Regeln in `pruefen.py`): UTF-8-Text ohne Steuerzeichen, höchstens `VORLAGE_MAX` (256 KB, `server/src/grundlagen/grenzen.ts`); **kein HTML** – auch keine Kommentare `<!-- -->` –, **keine Bilder** (`![…]`), Links nur `https://` (in `[Text](…)`, `[x]: …` und `<https://…>`; `http:`, `mailto:`, `javascript:`, `data:` stehen nirgends im Text); kein Platzhalter nennt ein **Passwortfeld**. Ablago prüft das beim Lesen und beim Installieren noch einmal (dann gegen die Passwortfelder aller Mappentypen).
     - **`ergaenzt: paket:kennung`:** An die Vorgabe eines Pakets unter `abhaengigkeiten` darf ein Paket **nur Vorlagen anhängen** – jede andere Angabe (`werte`, `beschriftungen`, Rechte …) lehnt Ablago ab. Gibt es die Vorgabe nicht (gelöscht), kommen die Vorlagen nicht; die Vorschau sagt es.
     - **Installieren:** ohne Ereignisse (Frage 71), Ersteller ist das Dienstkonto des Pakets (Historie: „Paket …“). Die Vorschau (`vorgaben`, `ergaenzungen`) zeigt je Vorgabe den Zustand; Vorgaben in fremden Typen und Ergänzungen stehen zusätzlich im Kasten „Ergänzt Mappen anderer Pakete“.
     - **Update:** Am installierten Paket steht je Kennung (`vorgaben`) die Mappe, der Prüfwert der Werte nach dem letzten Schreiben (`stand`) und der der Werte im Paket (`fassung`). Gleicht die Mappe `stand`, bekommt sie eine neue Fassung; sonst hat der Administrator sie geändert und sie bleibt (Vorschau: neue Fassung im Paket). Fehlt die Mappe, war sie gelöscht und bleibt es (`geloescht`). Vorlagen ersetzt ein Update nur, solange Vorgabe und Dokument unverändert sind; neue kommen dazu.
@@ -436,7 +436,7 @@ Muster ohne Gewähr, keine Rechtsberatung – im Zweifel fachlich prüfen lassen
 - **Werte sind Text:** Ablago zerlegt erst die Vorlage und setzt dann die Werte ein – in einem Durchgang. Ein Feldwert wie `**fett**`, `[Link](…)` oder `{anderes_feld}` erscheint so, wie er ist. Im ausgefüllten Text (`.md` neben dem PDF) sind solche Zeichen mit `\` maskiert.
 - **Lücken:** Fehlt ein Wert, darf die Person ihn nicht lesen (Mappe oder verwiesene Mappe; beim Herunterladen zusätzlich ohne Exportrecht E) oder nennt der Platzhalter ein Feld, das es nicht gibt, steht **[Beschriftung]** im Brief, z. B. „[Vertragsnummer]“. Passwortfelder sind als Platzhalter verboten – beim Installieren und vor jedem Satz geprüft.
 - **Sprache:** die des Volltexts der Vorlage, wenn Ablago sie kennt, sonst die der Installation – nie die der Oberfläche. Sie steht als `/Lang` im PDF.
-- **Grenzen** (`server/src/grenzen.ts`): ausgefüllter Text höchstens 512 KB (`TEXTSATZ_TEXT_MAX`), PDF höchstens 30 Seiten und 4 MB (`TEXTSATZ_SEITEN`, `TEXTSATZ_PDF_MAX`), Satz höchstens 30 Sekunden im Arbeiter (`TEXTSATZ_ZEIT_MS`). Darüber: 413.
+- **Grenzen** (`server/src/grundlagen/grenzen.ts`): ausgefüllter Text höchstens 512 KB (`TEXTSATZ_TEXT_MAX`), PDF höchstens 30 Seiten und 4 MB (`TEXTSATZ_SEITEN`, `TEXTSATZ_PDF_MAX`), Satz höchstens 30 Sekunden im Arbeiter (`TEXTSATZ_ZEIT_MS`). Darüber: 413.
 
 **Für Pakete (API):** `GET /api/v1/mappen/{id}/vorlagen` nennt die Vorlagen einer Mappe (an ihr selbst und an Mappen, auf die sie verweist) mit dem Stand ihrer Platzhalter; `POST /api/v1/mappen/{id}/vorlagen/{dokument}/setzen` mit `{ "ziel": "ablegen", "register": "dokumente" }` legt PDF und ausgefüllten Text als neue Dokumente ab (Antwort: beide Dokumente und die Lücken), mit `{ "ziel": "herunterladen" }` kommt das PDF als Antwort. Das Dienstkonto braucht Lesen an der Mappe, für die Liste `dokumente: lesen`, zum Setzen `dokumente: schreiben` und Bearbeiten an der Mappe. Das PDF nennt in den Metadaten (Betreff) Paket und Vorlage. Mindestversion: `dms: ">=0.242.0"` (`DMS_TEXTSATZ_AB` in `shared/src/textsatz.ts`).
 
@@ -496,7 +496,7 @@ sichten:
 
 Ablago übernimmt sie beim Installieren des Sprachpakets für alle installierten Pakete und später beim Installieren oder Aktualisieren eines Pakets – nur, was dort in dieser Sprache noch fehlt (wie beim [Update eines Pakets](#paketformat-verbindlich), #728). Was der Administrator selbst beschriftet hat, bleibt. Ein Paket darf seine Beschriftungen auch selbst mitbringen (`beschriftungen` an Typ, Feld, Register und Ansicht); dann ergänzt das Sprachpaket nur, was fehlt.
 
-**Im Kern:** `liesPaket()` liest den Abschnitt `sprache` (`server/src/pakete/verwaltung/lesen.ts`), die Regeln stehen in `shared/src/sprachpaket.ts`. Texte und Beschriftungen stehen in der Tabelle `paket_sprachen` (Migration 082, Spalten `texte` und `paketbeschriftungen`), der Paketeintrag in `pakete` mit `daten.sprache`. `server/src/sprachpakete.ts` trägt sie in jedem Prozess ein (beim Start, nach dem Installieren sofort, sonst mit der Einstellung `sprachen` jede Minute); die Oberfläche holt sie mit `GET /api/sprache/texte/<sprache>` (nur erlaubte Sprachen, auch vor der Anmeldung). **Entfernen** fragt nach, wenn jemand die Sprache gewählt hat oder sie die Sprache der Installation ist: Die Betroffenen sehen danach die Sprache der Installation (Deutsch, wenn es deren Sprache war); ihre Wahl bleibt gespeichert, Mein Konto weist sie darauf hin.
+**Im Kern:** `liesPaket()` liest den Abschnitt `sprache` (`server/src/pakete/verwaltung/lesen.ts`), die Regeln stehen in `shared/src/sprachpaket.ts`. Texte und Beschriftungen stehen in der Tabelle `paket_sprachen` (Migration 082, Spalten `texte` und `paketbeschriftungen`), der Paketeintrag in `pakete` mit `daten.sprache`. `server/src/sprache/sprachpakete.ts` trägt sie in jedem Prozess ein (beim Start, nach dem Installieren sofort, sonst mit der Einstellung `sprachen` jede Minute); die Oberfläche holt sie mit `GET /api/sprache/texte/<sprache>` (nur erlaubte Sprachen, auch vor der Anmeldung). **Entfernen** fragt nach, wenn jemand die Sprache gewählt hat oder sie die Sprache der Installation ist: Die Betroffenen sehen danach die Sprache der Installation (Deutsch, wenn es deren Sprache war); ihre Wahl bleibt gespeichert, Mein Konto weist sie darauf hin.
 
 ### Eine Sprache beitragen { #eine-sprache-beitragen }
 
@@ -555,7 +555,7 @@ Ohne Docker, im Repo von Ablago: `npm ci && npm run build`, dann `node server/di
 
 Ab Ablago 0.141.0 prüft Ablago, **woher** ein Katalog stammt (#594, Registry: motom001/dms-registry#74). Die Prüfsumme je Archiv belegt nur, dass ein Paket unterwegs nicht kaputtging; die Signatur über `katalog.json` belegt, dass der ganze Katalog – und damit jede Prüfsumme darin – vom Ablago-Projekt kommt.
 
-- **Verfahren:** Ed25519 über die **exakten Bytes** von `katalog.json`. Ablago prüft mit `crypto.verify` aus Node, ohne weitere Abhängigkeit (`server/src/katalogsignatur.ts`).
+- **Verfahren:** Ed25519 über die **exakten Bytes** von `katalog.json`. Ablago prüft mit `crypto.verify` aus Node, ohne weitere Abhängigkeit (`server/src/pakete/katalogsignatur.ts`).
 - **`katalog.sig`** liegt neben `katalog.json`, getrennt, damit ältere Ablago-Versionen den Katalog unverändert lesen:
 
     ```json
@@ -570,7 +570,7 @@ Ab Ablago 0.141.0 prüft Ablago, **woher** ein Katalog stammt (#594, Registry: m
 
 ### Projektschlüssel austauschen { #projektschluessel-austauschen }
 
-Die öffentlichen Schlüssel stehen an **einer** Stelle: `server/src/projektschluessel.ts`. Dort stehen die echten Schlüssel des Maintainers (`signier.pub` und `reserve.pub` aus motom001/dms-registry#74, `test: false`); ihre Fingerabdrücke stehen in `SECURITY.md`. Ablago 0.141.0 bis 0.144.1 hatten an dieser Stelle noch Testschlüssel.
+Die öffentlichen Schlüssel stehen an **einer** Stelle: `server/src/pakete/projektschluessel.ts`. Dort stehen die echten Schlüssel des Maintainers (`signier.pub` und `reserve.pub` aus motom001/dms-registry#74, `test: false`); ihre Fingerabdrücke stehen in `SECURITY.md`. Ablago 0.141.0 bis 0.144.1 hatten an dieser Stelle noch Testschlüssel.
 
 | Schlüssel | Kennung | Fingerabdruck |
 | --- | --- | --- |
@@ -584,7 +584,7 @@ Der Fingerabdruck ist SHA-256 über die **32 Bytes** des Schlüssels, nicht übe
 So werden die Schlüssel ausgetauscht (neues Paar, z. B. nach Verlust des Signierschlüssels):
 
 1. Der Maintainer erzeugt das Schlüsselpaar auf seinem eigenen Rechner (Anleitung in der README der Registry, Abschnitt „Katalog signieren“) und veröffentlicht den öffentlichen Schlüssel.
-2. In `server/src/projektschluessel.ts` den PEM-Text ersetzen (`test` bleibt `false`).
+2. In `server/src/pakete/projektschluessel.ts` den PEM-Text ersetzen (`test` bleibt `false`).
 3. Fingerabdrücke ausrechnen (`python3 werkzeuge/signieren.py fingerabdruck signier.pub` in der Registry) und in `SECURITY.md`, `SECURITY.en.md`, im Test „Projektschlüssel“ und in der Tabelle oben eintragen; in der Registry den öffentlichen Schlüssel unter `schluessel/` ablegen und die Fingerabdrücke in `README.md` und `README.en.md` eintragen.
 
 Fällt der Signierschlüssel aus (verloren oder bekannt geworden), signiert die Registry mit dem Reserveschlüssel weiter; Ablago nimmt das ohne Update an. Danach kommt ein neues Paar (neuer Reserveschlüssel) mit einem Release von Ablago.

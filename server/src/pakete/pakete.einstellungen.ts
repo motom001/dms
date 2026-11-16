@@ -1,5 +1,5 @@
-import { Fachfehler } from '../fehler';
-import { t } from '../sprache';
+import { Fachfehler } from '../grundlagen/fehler';
+import { t } from '../sprache/sprache';
 import type { PaketEntwurf } from '../../../shared/src/paketerstellung';
 import type { Kern } from '../kern';
 

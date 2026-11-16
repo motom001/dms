@@ -3,13 +3,13 @@
  */
 import { randomUUID } from 'node:crypto';
 import { KontenVerwaltungsmodus } from './verwaltungsmodus';
-import { Fachfehler } from '../fehler';
-import { t } from '../sprache';
+import { Fachfehler } from '../grundlagen/fehler';
+import { t } from '../sprache/sprache';
 import { darfVerwalten, hatGesamt } from '../../../shared/src/verwaltungsrecht';
 import type { Benutzer } from '../../../shared/src/model';
 import type { Geraet } from './hilfen';
-import { hasheSchluessel } from '../passwort';
-import type { SitzungIntern } from '../konto-repo';
+import { hasheSchluessel } from '../anmeldung/passwort';
+import type { SitzungIntern } from './konto-repo';
 
 /** Sitzungen (Verwaltung) und Vertretung. */
 export abstract class KontenSitzungen extends KontenVerwaltungsmodus {

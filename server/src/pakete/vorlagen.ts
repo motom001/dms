@@ -13,7 +13,7 @@
  *   `javascript:`, `data:`, `vbscript:`, `file:` und `mailto:` gibt es nirgends im Text;
  * - Platzhalter wie bei Automatisierungen (`{vertragsnummer}`, `{von.name}`), aber nie ein Passwortfeld.
  */
-import { VORLAGE_MAX } from '../grenzen';
+import { VORLAGE_MAX } from '../grundlagen/grenzen';
 
 export type VorlagenFehler = 'leer' | 'gross' | 'utf8' | 'steuerzeichen' | 'html' | 'bild' | 'link' | 'passwort';
 

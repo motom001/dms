@@ -18,10 +18,10 @@ import {
 } from '../../shared/src/feldformate';
 import { artVon, istIban, pruefeVorschlaege, vorschlaegeAus } from '../../shared/src/erkennung';
 import { formatiere, type Feld } from '../../shared/src/model';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
-import { speicherEinstellungen } from '../src/einstellungen';
-import { Fachfehler } from '../src/fehler';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
+import { Fachfehler } from '../src/grundlagen/fehler';
 import { speicherRepo } from '../src/repo/speicher';
 
 const felder: Feld[] = [

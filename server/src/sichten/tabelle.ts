@@ -14,9 +14,9 @@ import { trefferlistenVon, verweiseVon, type Mappe, type MappenBezug, type Mappe
 import type { Klausel } from '../../../shared/src/sichten';
 import { TABELLE_SEITE, tabellenSpalten } from '../../../shared/src/tabelle';
 import { teileVon } from '../../../shared/src/zusammengesetzt';
-import { Fachfehler } from '../fehler';
+import { Fachfehler } from '../grundlagen/fehler';
 import type { Repo, SortierungIntern } from '../repo';
-import { t } from '../sprache';
+import { t } from '../sprache/sprache';
 import type { Zugriff } from '../kern';
 import type { ZugriffDienst } from '../zugriff';
 

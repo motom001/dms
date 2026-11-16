@@ -4,7 +4,7 @@
  */
 import assert from 'node:assert/strict';
 import { after, before, describe, it } from 'node:test';
-import { speicherEinstellungen, type Einstellungen } from '../src/einstellungen';
+import { speicherEinstellungen, type Einstellungen } from '../src/einstellungen/einstellungen';
 
 async function nullLoescht(e: Einstellungen) {
   await e.schreibe('wartung', { stufe: 'aktiv' });
@@ -32,7 +32,7 @@ describe('Einstellungen mit PostgreSQL', { skip: url ? false : 'TEST_DATABASE_UR
   /* eslint-enable @typescript-eslint/no-explicit-any */
   const db = `dms_einstellungen_${process.pid}`;
   before(async () => {
-    const { verbinde, migriere } = await import('../src/db');
+    const { verbinde, migriere } = await import('../src/datenbank/db');
     const { fileURLToPath } = await import('node:url');
     haupt = verbinde(url!);
     await haupt.unsafe(`DROP DATABASE IF EXISTS ${db}`);
@@ -50,15 +50,15 @@ describe('Einstellungen mit PostgreSQL', { skip: url ? false : 'TEST_DATABASE_UR
   });
 
   it('pgEinstellungen und pgBetriebSpeicher: null löscht den Eintrag', async () => {
-    const { pgEinstellungen } = await import('../src/einstellungen');
+    const { pgEinstellungen } = await import('../src/einstellungen/einstellungen');
     await nullLoescht(pgEinstellungen(sql, HAUSHALT));
     const [{ n }] = await sql`SELECT count(*)::int AS n FROM einstellungen WHERE schluessel = 'wartung'`;
     assert.equal(n, 0);
   });
 
   it('Wartung beenden und nach Neustart aus', async () => {
-    const { pgEinstellungen } = await import('../src/einstellungen');
-    const { Wartung } = await import('../src/wartung');
+    const { pgEinstellungen } = await import('../src/einstellungen/einstellungen');
+    const { Wartung } = await import('../src/wartung/wartung');
     const konten = { beendeAlleSitzungenAusser: async () => 0 };
     const w = new Wartung(pgEinstellungen(sql, HAUSHALT), konten);
     await w.laden();

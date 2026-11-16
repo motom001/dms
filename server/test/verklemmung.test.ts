@@ -7,13 +7,13 @@ import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { after, describe, it } from 'node:test';
 import type postgres from 'postgres';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
-import { speicherEinstellungen } from '../src/einstellungen';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
 import { NICHT_GESPEICHERT } from '../../shared/src/volltext';
-import { protokoll } from '../src/protokoll';
+import { protokoll } from '../src/protokoll/protokoll';
 import type { Repo } from '../src/repo';
-import { Texterkennung } from '../src/texterkennung';
+import { Texterkennung } from '../src/volltext/texterkennung';
 import { pdfMitText } from './hilfen';
 
 const HAUSHALT = '00000000-0000-4000-8000-000000000001';
@@ -23,8 +23,8 @@ after(async () => {
 });
 
 async function aufbau() {
-  const { ausUrl, alsUrl, legeDatenbankAn } = await import('../src/anbindung');
-  const { verbinde, migriere } = await import('../src/db');
+  const { ausUrl, alsUrl, legeDatenbankAn } = await import('../src/datenbank/anbindung');
+  const { verbinde, migriere } = await import('../src/datenbank/db');
   const { pgRepo } = await import('../src/repo/pg');
   const a = {
     ...ausUrl(process.env.TEST_DATABASE_URL)!,

@@ -9,16 +9,16 @@ import { HILFE } from '../../shared/src/hilfe';
 import { gleicheRechte, liesCode, rechtePunkte, type InstalliertesPaket } from '../../shared/src/pakete';
 import { INFO_VOLLTEXT_PAKET, VOLLTEXT_KOERPER_MAX, VOLLTEXT_ZEICHEN_MAX } from '../../shared/src/paketvolltext';
 import { volltextHerkunft } from '../../shared/src/volltext';
-import { speicherApiSchluesselRepo, ApiSchluesselDienst } from '../src/apischluessel';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
-import { speicherEinstellungen } from '../src/einstellungen';
+import { speicherApiSchluesselRepo, ApiSchluesselDienst } from '../src/anmeldung/apischluessel';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
 import { Konten } from '../src/konten';
-import { speicherKontoRepo } from '../src/konto-repo';
+import { speicherKontoRepo } from '../src/konten/konto-repo';
 import { speicherRepo } from '../src/repo/speicher';
-import { pruefeZugang, routen, type Anfrage, type Route } from '../src/routen';
+import { pruefeZugang, routen, type Anfrage, type Route } from '../src/http/routen';
 import { schluesselRecht } from '../src/laeufer/verwaltung';
-import { Texterkennung, type Engine } from '../src/texterkennung';
+import { Texterkennung, type Engine } from '../src/volltext/texterkennung';
 import { pdfMitText } from './hilfen';
 
 const warte = async (bis: () => Promise<boolean>, ms = 20_000) => {
@@ -409,7 +409,7 @@ describe('Volltext aus Paketen (#614): Grenze der Textmenge über HTTP', () => {
   let id = '';
   let x: Awaited<ReturnType<typeof aufbau>>;
   before(async () => {
-    const { baueApp } = await import('../src/http');
+    const { baueApp } = await import('../src/http/http');
     x = await aufbau({ mitPaket: false });
     const konten = new Konten(speicherKontoRepo(), null, 'http://nas', x.d.systemtypen.benutzerspiegel());
     app = await baueApp(x.d, konten, {});

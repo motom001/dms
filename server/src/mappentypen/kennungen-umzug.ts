@@ -4,8 +4,8 @@
  * Zeile alt → neu und eine Zusammenfassung ins Systemprotokoll und vergisst die Liste – so lässt sich nachvollziehen,
  * was die Migration getan hat.
  */
-import type { Einstellungen } from '../einstellungen';
-import { protokoll } from '../protokoll';
+import type { Einstellungen } from '../einstellungen/einstellungen';
+import { protokoll } from '../protokoll/protokoll';
 
 export const UMZUG_SCHLUESSEL = 'kennungen_umzug';
 

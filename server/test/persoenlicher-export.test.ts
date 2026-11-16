@@ -5,14 +5,14 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, it } from 'node:test';
 import { ALLES } from '../../shared/src/rechte';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
-import { speicherEinstellungen } from '../src/einstellungen';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
 import { Konten } from '../src/konten';
-import { speicherKontoRepo } from '../src/konto-repo';
+import { speicherKontoRepo } from '../src/konten/konto-repo';
 import { speicherRepo } from '../src/repo/speicher';
-import { Tresor } from '../src/tresor';
-import { vollexport } from '../src/vollexport';
+import { Tresor } from '../src/geheimnisse/tresor';
+import { vollexport } from '../src/export/vollexport';
 
 describe('Persönlicher Export (#255)', () => {
   it('enthält nur, was der Benutzer lesen darf, und seine eigenen Daten', async () => {

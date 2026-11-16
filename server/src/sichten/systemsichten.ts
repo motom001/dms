@@ -7,9 +7,9 @@ import { type Mappentyp, POST_RICHTUNG, POST_STAND } from '../../../shared/src/m
 import { ALLE_TYPEN } from '../../../shared/src/pakete';
 import { kinderVon, zeigtAlleTypen } from '../../../shared/src/sichten';
 import type { Kern } from '../kern';
-import { protokoll } from '../protokoll';
+import { protokoll } from '../protokoll/protokoll';
 import type { Repo } from '../repo';
-import { t } from '../sprache';
+import { t } from '../sprache/sprache';
 
 export class Systemsichten {
   constructor(private readonly kern: Kern) {}

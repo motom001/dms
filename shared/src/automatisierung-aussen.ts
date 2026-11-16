@@ -11,7 +11,7 @@
  *   Felder der Mappe (Verweis auf Benutzer oder Text mit Format E-Mail) und beliebige Adressen. Nur Text, mit Hinweissatz.
  *
  * Hier Modell, Bereinigen, Prüfen, Kurzform und die Ziele. Zustellung (Ausgangskorb, Signatur, sicherer Abruf, Bremse)
- * im Server (`server/src/automatisierung/ausleitung.ts`, `sicherer-abruf.ts`, `server/src/automatisierung-aussen.ts`).
+ * im Server (`server/src/automatisierung/ausleitung.ts`, `sicherer-abruf.ts`, `server/src/automatisierung/automatisierung-aussen.ts`).
  */
 import type { DannKarte, Empfaenger, WennKarte } from './automatisierung';
 import { istBetriebWenn } from './ereignisse';
@@ -20,7 +20,7 @@ import { heimnetzName, rechnername } from './heimnetz';
 import type { Feld, Mappentyp } from './model';
 import { t } from './texte';
 
-/** Grenzen der Karten nach außen. Bytes (Antwort, Rumpf) stehen in server/src/grenzen.ts. */
+/** Grenzen der Karten nach außen. Bytes (Antwort, Rumpf) stehen in server/src/grundlagen/grenzen.ts. */
 export const AUSSEN_GRENZEN = {
   /** Länge einer Adresse (Ziel und Karte). */
   adresse: 2000,

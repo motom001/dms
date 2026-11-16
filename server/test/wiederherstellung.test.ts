@@ -25,7 +25,7 @@ describe('Wiederherstellen mit PostgreSQL', { skip: url ? false : 'TEST_DATABASE
   const urlVon = (db: string) => { const u = new URL(url!); u.pathname = `/${db}`; return u.toString(); };
 
   before(async () => {
-    const { verbinde } = await import('../src/db');
+    const { verbinde } = await import('../src/datenbank/db');
     haupt = verbinde(url!);
     for (const db of dbs) { await haupt.unsafe(`DROP DATABASE IF EXISTS ${db}`); await haupt.unsafe(`CREATE DATABASE ${db}`); }
   });
@@ -37,16 +37,16 @@ describe('Wiederherstellen mit PostgreSQL', { skip: url ? false : 'TEST_DATABASE
 
   /** Ein DMS wie im Betrieb: Datenbank, Dateien, Schlüssel, Sicherung, Wiederherstellung. */
   async function system(db: string, opt: { mitDaten?: boolean; mitSchluessel?: boolean; migrationen?: string } = {}) {
-    const { verbinde, migriere } = await import('../src/db');
+    const { verbinde, migriere } = await import('../src/datenbank/db');
     const { pgRepo } = await import('../src/repo/pg');
-    const { Dienst } = await import('../src/dienst');
-    const { ordnerSpeicher } = await import('../src/dateispeicher');
-    const { ladeBeispiele } = await import('../src/beispiele');
-    const { pgEinstellungen } = await import('../src/einstellungen');
-    const { pgDatenquelle } = await import('../src/datenbankabzug');
-    const { Tresor } = await import('../src/tresor');
-    const { Sicherung } = await import('../src/sicherung');
-    const { Wiederherstellung } = await import('../src/wiederherstellung');
+    const { Dienst } = await import('../src/dienst/dienst');
+    const { ordnerSpeicher } = await import('../src/dateien/dateispeicher');
+    const { ladeBeispiele } = await import('../src/beispiele/beispiele');
+    const { pgEinstellungen } = await import('../src/einstellungen/einstellungen');
+    const { pgDatenquelle } = await import('../src/sicherung/datenbankabzug');
+    const { Tresor } = await import('../src/geheimnisse/tresor');
+    const { Sicherung } = await import('../src/sicherung/sicherung');
+    const { Wiederherstellung } = await import('../src/sicherung/wiederherstellung');
     const sql = verbinde(urlVon(db));
     offen.push(sql);
     await migriere(sql, opt.migrationen ?? MIGRATIONEN, () => {});
@@ -89,7 +89,7 @@ describe('Wiederherstellen mit PostgreSQL', { skip: url ? false : 'TEST_DATABASE
   };
   /** Frische Verbindung (nach dem Umschalten der Schemas). */
   async function frisch(db: string) {
-    const { verbinde } = await import('../src/db');
+    const { verbinde } = await import('../src/datenbank/db');
     const s = verbinde(urlVon(db)); offen.push(s); return s;
   }
   const zaehle = async (s: Sql) => ({
@@ -133,7 +133,7 @@ describe('Wiederherstellen mit PostgreSQL', { skip: url ? false : 'TEST_DATABASE
     const [dok] = await neu`SELECT sha256 FROM dokumente`;
     assert.equal(await readFile(join(ziel.wurzel, 'files', HAUSHALT, dok.sha256.slice(0, 2), dok.sha256), 'utf8'), 'Hallo aus der Sicherung');
     assert.equal((await readFile(ziel.tresor.datei, 'utf8')).trim(), quelle.tresor.alsText(), 'Schlüsseldatei angelegt');
-    const { entschluesseleMit, PRUEFWORT } = await import('../src/tresor');
+    const { entschluesseleMit, PRUEFWORT } = await import('../src/geheimnisse/tresor');
     const [pw] = await neu`SELECT wert FROM einstellungen WHERE schluessel = 'pruefwort'`;
     assert.equal(entschluesseleMit(Buffer.from(quelle.tresor.alsText()!, 'base64url'), pw.wert), PRUEFWORT, 'Prüfwort');
     const [ab] = await neu`SELECT wert FROM einstellungen WHERE schluessel = 'wiederherstellung_abschluss'`;
@@ -142,14 +142,14 @@ describe('Wiederherstellen mit PostgreSQL', { skip: url ? false : 'TEST_DATABASE
     const schemas = (await neu`SELECT nspname FROM pg_namespace WHERE nspname LIKE 'dms_%'`).map((r: { nspname?: unknown }) => String(r.nspname));
     assert.ok(schemas.some((s: string) => s.startsWith('dms_alt_')), 'der alte Stand liegt bis zum Neustart daneben');
     // Neustart: Aufräumen.
-    const { Wiederherstellung } = await import('../src/wiederherstellung');
+    const { Wiederherstellung } = await import('../src/sicherung/wiederherstellung');
     await new Wiederherstellung({ ...(ziel.w as unknown as { q: ConstructorParameters<typeof Wiederherstellung>[0] }).q, sql: neu }).raeumeAuf();
     assert.equal((await neu`SELECT nspname FROM pg_namespace WHERE nspname LIKE 'dms_%'`).length, 0);
 
     // #562: Nach Wiederherstellung und Aufräumen sind pg_trgm und unaccent noch da (eigenes Schema), die
     // Trigramm-Indizes stehen im neuen public, und die Tippfehler-Suche liefert weiter Vorschläge.
     assert.equal(lauf.schritte.find((x) => x.name === 'Erweiterungen der Datenbank')?.status, 'ok', JSON.stringify(lauf.schritte));
-    const { liesErweiterungen, trigrammIndizes } = await import('../src/erweiterungen');
+    const { liesErweiterungen, trigrammIndizes } = await import('../src/datenbank/erweiterungen');
     assert.deepEqual((await liesErweiterungen(neu)).map((e: { name: string; schema: string | null; zustand: string }) => [e.name, e.schema, e.zustand]),
       [['pg_trgm', 'erweiterungen_dms', 'ok'], ['unaccent', 'erweiterungen_dms', 'ok']]);
     assert.deepEqual((await trigrammIndizes(neu, 'public')).sort(), ['dokumente_volltext_trgm_idx', 'suchwoerter_trgm']);
@@ -165,7 +165,7 @@ describe('Wiederherstellen mit PostgreSQL', { skip: url ? false : 'TEST_DATABASE
 
   it('stellt eine Kopie außer Haus mit nur der schlanken Metadaten-Datei wieder her (#585)', async () => {
     const meta = JSON.parse(await readFile(join(quelle.sicherung.ordner, `${sicherungsName}.json`), 'utf8'));
-    const { schlankeMetadaten } = await import('../src/sicherung');
+    const { schlankeMetadaten } = await import('../src/sicherung/sicherung');
     const ziel = await system(dbs[5]);
     const { cp } = await import('node:fs/promises');
     await cp(join(quelle.sicherung.ordner, `${sicherungsName}.dms-sicherung`), join(ziel.sicherung.ordner, `${sicherungsName}.dms-sicherung`));
@@ -275,7 +275,7 @@ describe('Wiederherstellen mit PostgreSQL', { skip: url ? false : 'TEST_DATABASE
   });
 
   it('bricht der Leser einer Tabelle ab, endet der Schnappschuss trotzdem', async () => {
-    const { pgDatenquelle } = await import('../src/datenbankabzug');
+    const { pgDatenquelle } = await import('../src/sicherung/datenbankabzug');
     const s = await frisch(dbs[0]);
     const r = await Promise.race([
       pgDatenquelle(s).imSchnappschuss(async (x) => {
@@ -311,11 +311,11 @@ describe('Wiederherstellen mit PostgreSQL', { skip: url ? false : 'TEST_DATABASE
   });
 
   it('umgewandelte Fassungen (#577) und Archivfassungen (#631) kommen mit: nach der Wiederherstellung ohne Paket sind Fassung, Archivfassung, Volltext und Vorschau da', async () => {
-    const { Dateiumwandlung, fassungsOrdner, ordnerFassungen } = await import('../src/dateiumwandlung');
-    const { Dienst } = await import('../src/dienst');
+    const { Dateiumwandlung, fassungsOrdner, ordnerFassungen } = await import('../src/dateien/dateiumwandlung');
+    const { Dienst } = await import('../src/dienst/dienst');
     const { pgRepo } = await import('../src/repo/pg');
-    const { ordnerSpeicher } = await import('../src/dateispeicher');
-    const { speicherAblage, Vorschaubilder } = await import('../src/vorschau');
+    const { ordnerSpeicher } = await import('../src/dateien/dateispeicher');
+    const { speicherAblage, Vorschaubilder } = await import('../src/dateien/vorschau');
     const { pdfMitText } = await import('./hilfen');
     const { createHash } = await import('node:crypto');
     const { cp, mkdir } = await import('node:fs/promises');
@@ -349,7 +349,7 @@ describe('Wiederherstellen mit PostgreSQL', { skip: url ? false : 'TEST_DATABASE
     await writeFile(join(q.wurzel, 'files', HAUSHALT, 'fassungen', 'ee', `${'e'.repeat(64)}.fassung`), 'halb');
     assert.equal((await quelleU.u.pakete()).length, 0, 'kein Paket installiert');
     // Archivfassung (PDF/A, #631) zu einem PDF, wie das Paket PDF/A sie abgelegt hätte, mit Stand und Wortpositionen.
-    const { archivOrdner, ordnerArchiv, woerterOrdner } = await import('../src/archivfassung');
+    const { archivOrdner, ordnerArchiv, woerterOrdner } = await import('../src/dateien/archivfassung');
     const archivAblage = (w: string) => ordnerArchiv(archivOrdner(join(w, 'files'), HAUSHALT), woerterOrdner(join(w, 'files'), HAUSHALT));
     const brief = (await q.dienst.dokumente.ladeHoch(m.id, { register: 'dokumente', name: 'brief.pdf', typ: 'application/pdf' }, pdfMitText(['Brief von Petra']), null)).dokument;
     const pdfa = pdfMitText(['Brief von Petra als PDF/A']);
@@ -384,7 +384,7 @@ describe('Wiederherstellen mit PostgreSQL', { skip: url ? false : 'TEST_DATABASE
     const zielU = verbinde(neu, z.wurzel);
     assert.equal((await zielU.u.pakete()).length, 0, 'auch hier kein Paket');
     // Archivfassung und Wortpositionen sind da – ohne Paket.
-    const { Archivfassung } = await import('../src/archivfassung');
+    const { Archivfassung } = await import('../src/dateien/archivfassung');
     const za = new Archivfassung(zielU.d.dokumentArchiv.archivAnbindung(archivAblage(z.wurzel)));
     zielU.d.dokumentArchiv.verbindeArchivfassung(za);
     assert.deepEqual((await zielU.d.dokumentArchiv.archivfassungVon(brief.id)).inhalt, pdfa, 'Archivfassung ansehen');
@@ -403,7 +403,7 @@ describe('Wiederherstellen mit PostgreSQL', { skip: url ? false : 'TEST_DATABASE
     assert.equal(bild?.toString(), `vorschau:application/pdf:${pdf.length}`);
 
     // Vollexport: die Fassung steht neben dem Original und in dokumente.csv.
-    const { vollexport } = await import('../src/vollexport');
+    const { vollexport } = await import('../src/export/vollexport');
     const ex = await vollexport(zielU.d.vollexport.vollexportQuelle({ mandant: 'Test', version: '0', benutzer: async () => ({ benutzer: [], vertretungen: [] }), designs: async () => [], protokoll: () => [] }), join(z.wurzel, 'export'), {});
     const rel = ex.pfade.dokumente.get(dok.id)!;
     assert.deepEqual(await readFile(join(ex.ordner, ...`${rel}.fassung.pdf`.split('/'))), pdf);
@@ -516,7 +516,7 @@ describe('Wiederherstellen mit PostgreSQL', { skip: url ? false : 'TEST_DATABASE
     assert.equal(Number((await neu`SELECT count(*)::int AS n FROM benutzer WHERE id = ${benutzer}`)[0].n), 1, 'der Benutzer bleibt');
     assert.ok((await neu`SELECT name FROM schema_migrationen`).some((r: Record<string, unknown>) => r.name === '106_webhooks_ausbau.sql'), 'Migration 102 nachgeholt');
     // Update der Quelle selbst (alle offenen Migrationen in einer Transaktion): ebenso still entfernt.
-    const { migriere } = await import('../src/db');
+    const { migriere } = await import('../src/datenbank/db');
     await migriere(q.sql, MIGRATIONEN, () => {});
     assert.equal((await q.sql`SELECT tablename FROM pg_tables WHERE schemaname = current_schema() AND tablename LIKE 'webhook%'`).length, 0);
     assert.equal((await q.sql`SELECT schluessel FROM einstellungen WHERE schluessel = 'webhook_ziele'`).length, 0);

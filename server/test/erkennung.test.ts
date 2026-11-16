@@ -16,14 +16,14 @@ import {
   vorschlaegeAus,
 } from '../../shared/src/erkennung';
 import { NICHTS, type Regelwerk } from '../../shared/src/rechte';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
 import { bereinigeFeld } from '../src/mappentypen';
-import { speicherEinstellungen } from '../src/einstellungen';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
 import { Konten } from '../src/konten';
-import { speicherKontoRepo } from '../src/konto-repo';
+import { speicherKontoRepo } from '../src/konten/konto-repo';
 import { speicherRepo } from '../src/repo/speicher';
-import { routen, type Anfrage } from '../src/routen';
+import { routen, type Anfrage } from '../src/http/routen';
 import { eigeneDatenbank } from './hilfe-db';
 
 export const BRIEF = `Stadtwerke Musterstadt GmbH · Hauptstraße 1 · 01067 Musterstadt
@@ -358,7 +358,7 @@ describe('Erkennung: Vorschläge beim Zuordnen (#336)', () => {
 
 describe('Erkennung: Ablage in PostgreSQL (#336, #337)', { skip: !process.env.TEST_DATABASE_URL && 'ohne TEST_DATABASE_URL' }, () => {
   it('speichert je Post, ersetzt, findet frühere Post des Absenders und fällt mit der Post weg', async () => {
-    const { migriere } = await import('../src/db');
+    const { migriere } = await import('../src/datenbank/db');
     const { pgRepo } = await import('../src/repo/pg');
     // Eigene Datenbank (#900), nach dem letzten Test der Datei gelöscht.
     const sql = (await eigeneDatenbank('g11_erk', { migrieren: false })).sql;
@@ -556,7 +556,7 @@ describe('Aus Dokument ausfüllen (#391, Stufe 1)', () => {
 
 describe('Aus Dokument ausfüllen: Texterkennung sofort (#391)', () => {
   it('liest die Textebene eines PDFs ohne Warteschlange (nur mit pdftotext)', async (t) => {
-    const { pruefeWerkzeuge, Texterkennung } = await import('../src/texterkennung');
+    const { pruefeWerkzeuge, Texterkennung } = await import('../src/volltext/texterkennung');
     if (!(await pruefeWerkzeuge()).pdftotext) {
       t.skip('pdftotext fehlt');
       return;

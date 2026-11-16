@@ -2,7 +2,7 @@ import { t } from './texte';
 import { gebietsschema } from './sprache';
 /**
  * PDF verkleinern (#393): Stufen und Texte – gemeinsam für Server und Oberfläche.
- * Das Rechnen selbst steht in server/src/verkleinern.ts.
+ * Das Rechnen selbst steht in server/src/dateien/verkleinern.ts.
  */
 export const STUFEN = {
   bildschirm: { name: 'Bildschirm', dpi: 100, qualitaet: 55, text: t('gemeinsam.verkleinern.zum-lesen-am-bildschirm') },

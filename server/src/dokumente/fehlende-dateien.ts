@@ -3,9 +3,9 @@
  * alle Dateien auf Vorhandensein prüfen, vor einem Strom sauber abbrechen. Schicht 2.
  */
 import type { Dokument } from '../../../shared/src/model';
-import { DateiFehlt } from '../dateispeicher';
+import { DateiFehlt } from '../dateien/dateispeicher';
 import type { Kern } from '../kern';
-import { protokoll } from '../protokoll';
+import { protokoll } from '../protokoll/protokoll';
 import type { Repo } from '../repo';
 
 /** Fehlende Dateien (#877), die beim Lesen auffielen: für den Hinweis der Werkbank-Übersicht (höchstens so viele). */

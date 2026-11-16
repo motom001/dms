@@ -4,9 +4,9 @@
 import { type Feld, type Mappe, type Mappentyp } from '../../../../shared/src/model';
 import { hatSchnittstelle, type InstalliertesPaket } from '../../../../shared/src/pakete';
 import { type Sicht } from '../../../../shared/src/sichten';
-import { Fachfehler } from '../../fehler';
-import { t } from '../../sprache';
-import { nachweis } from '../../nachweisjournal';
+import { Fachfehler } from '../../grundlagen/fehler';
+import { t } from '../../sprache/sprache';
+import { nachweis } from '../../protokoll/nachweisjournal';
 import { setzePaketEinstellungen, setzePaketSpeicher, vorgabeMappen } from '../index';
 import { type VorgabeFrage } from '../../../../shared/src/vorgaben';
 import { meldungen, ohneZiele } from './hilfen';

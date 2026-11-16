@@ -6,8 +6,8 @@ import assert from 'node:assert/strict';
 import dc from 'node:diagnostics_channel';
 import { describe, it } from 'node:test';
 import type postgres from 'postgres';
-import { AN_MS, KLASSEN_MS, klasseVon, Poolmessung, poolZusammen, quantilAusKlassen } from '../src/poolmessung';
-import { liesCpuJeArt, liesCpuSekunden } from '../src/systemlast';
+import { AN_MS, KLASSEN_MS, klasseVon, Poolmessung, poolZusammen, quantilAusKlassen } from '../src/datenbank/poolmessung';
+import { liesCpuJeArt, liesCpuSekunden } from '../src/system/systemlast';
 
 const stats = { connections: 6, opening: 0, idle: 2, leased: 1, waiting: 3 };
 const sql = { stats } as unknown as postgres.Sql;

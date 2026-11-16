@@ -3,16 +3,16 @@ import assert from 'node:assert/strict';
 import { after, describe, it } from 'node:test';
 import { PDFDocument, PDFName, PDFString, StandardFonts } from 'pdf-lib';
 import { beendeArbeiter } from '../src/arbeit';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
-import { speicherEinstellungen } from '../src/einstellungen';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
 import { Konten } from '../src/konten';
-import { speicherKontoRepo } from '../src/konto-repo';
+import { speicherKontoRepo } from '../src/konten/konto-repo';
 import { bereinigePdf } from '../src/pdf/anzeige';
 import { liesPdfA } from '../src/pdf/archiv';
-import { leereAnzeigeCache } from '../src/pdfanzeige';
+import { leereAnzeigeCache } from '../src/dateien/pdfanzeige';
 import { speicherRepo } from '../src/repo/speicher';
-import { dateiKoepfe, routen, type Anfrage, type Datei } from '../src/routen';
+import { dateiKoepfe, routen, type Anfrage, type Datei } from '../src/http/routen';
 
 after(() => beendeArbeiter());
 

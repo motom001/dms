@@ -3,11 +3,11 @@
  * lesbar, Klartext zum Anzeigen und für die API (je Abruf im Protokoll und in der Historie). Schicht 2.
  */
 import { istPasswortWert, type Mappe, type Werte } from '../../../shared/src/model';
-import { Fachfehler } from '../fehler';
+import { Fachfehler } from '../grundlagen/fehler';
 import type { Kern } from '../kern';
-import { protokoll } from '../protokoll';
+import { protokoll } from '../protokoll/protokoll';
 import type { Repo } from '../repo';
-import { t } from '../sprache';
+import { t } from '../sprache/sprache';
 import type { MappenHistorie } from './historie';
 
 /**

@@ -21,16 +21,16 @@ import {
   type Urheber,
 } from '../../shared/src/fassungen';
 import { darfBereich } from '../../shared/src/verwaltungsrecht';
-import { bereicheDerRoute } from '../src/verwaltungsbereiche';
+import { bereicheDerRoute } from '../src/werkbank/verwaltungsbereiche';
 import type { Mappentyp } from '../../shared/src/model';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
-import { speicherEinstellungen } from '../src/einstellungen';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
 import { Konten } from '../src/konten';
-import { speicherKontoRepo } from '../src/konto-repo';
+import { speicherKontoRepo } from '../src/konten/konto-repo';
 import { pgRepo } from '../src/repo/pg';
 import { speicherRepo } from '../src/repo/speicher';
-import { migriere } from '../src/db';
+import { migriere } from '../src/datenbank/db';
 import { eigeneDatenbank, MIGRATIONEN } from './hilfe-db';
 
 const MARKUS: Urheber = { art: 'person', id: 'markus' };

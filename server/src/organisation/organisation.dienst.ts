@@ -33,12 +33,12 @@ import { hatEigeneOrganisationBedingung } from '../../../shared/src/anzeige';
 import { liesDatenschutz } from '../../../shared/src/auskunft';
 import { istLeer, type Mappe, type Mappentyp } from '../../../shared/src/model';
 import { liesPlanOrganisation, ORGANISATION_ANGABEN } from '../../../shared/src/einrichtungsplan';
-import { Fachfehler } from '../fehler';
+import { Fachfehler } from '../grundlagen/fehler';
 import type { Kern, Zugriff } from '../kern';
 import type { MappenDienst } from '../mappen';
-import type { MailText } from '../mail';
-import { protokoll } from '../protokoll';
-import { t } from '../sprache';
+import type { MailText } from '../mail/mail';
+import { protokoll } from '../protokoll/protokoll';
+import { t } from '../sprache/sprache';
 
 const log = protokoll.modul('datenschutz');
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;

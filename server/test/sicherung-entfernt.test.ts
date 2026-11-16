@@ -9,12 +9,12 @@ import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promis
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { after, describe, it } from 'node:test';
-import type { Datenquelle } from '../src/datenbankabzug';
-import { speicherEinstellungen } from '../src/einstellungen';
-import { Sicherung, type Lauf, type SchlankeMetadaten } from '../src/sicherung';
-import { liesZielListe, schlankGueltig } from '../src/sicherung-entfernt';
-import { Tresor } from '../src/tresor';
-import { heikleHandlung } from '../src/verwaltungsbereiche';
+import type { Datenquelle } from '../src/sicherung/datenbankabzug';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
+import { Sicherung, type Lauf, type SchlankeMetadaten } from '../src/sicherung/sicherung';
+import { liesZielListe, schlankGueltig } from '../src/sicherung/sicherung-entfernt';
+import { Tresor } from '../src/geheimnisse/tresor';
+import { heikleHandlung } from '../src/werkbank/verwaltungsbereiche';
 import { liesCode } from '../../shared/src/pakete';
 
 const HAUSHALT = '00000000-0000-4000-8000-000000000001';

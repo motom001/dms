@@ -9,7 +9,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { after, describe, it } from 'node:test';
-import { bewerteErweiterung, beschreibe, problemeAus } from '../src/erweiterungen';
+import { bewerteErweiterung, beschreibe, problemeAus } from '../src/datenbank/erweiterungen';
 
 const url = process.env.TEST_DATABASE_URL;
 const MIGRATIONEN = fileURLToPath(new URL('../migrations', import.meta.url));
@@ -56,7 +56,7 @@ describe('Erweiterungen der Suche (#562) mit PostgreSQL', { skip: url ? false : 
   const stumm = { info: () => {}, warn: () => {} };
 
   it('Datenbank im alten Stand: Migration 050 zieht pg_trgm und unaccent aus public um, die Suche läuft weiter', async () => {
-    const { verbinde, migriere } = await import('../src/db');
+    const { verbinde, migriere } = await import('../src/datenbank/db');
     const haupt = verbinde(url!);
     await haupt.unsafe(`DROP DATABASE IF EXISTS ${db}`);
     await haupt.unsafe(`CREATE DATABASE ${db}`);
@@ -88,13 +88,13 @@ describe('Erweiterungen der Suche (#562) mit PostgreSQL', { skip: url ? false : 
     const [abh] =
       await sql`SELECT count(*)::int AS n FROM pg_depend d JOIN pg_extension e ON e.oid = d.objid WHERE d.classid = 'pg_extension'::regclass AND d.refclassid = 'pg_namespace'::regclass AND d.refobjid = 'public'::regnamespace`;
     assert.equal(abh.n, 0);
-    const { liesErweiterungen } = await import('../src/erweiterungen');
+    const { liesErweiterungen } = await import('../src/datenbank/erweiterungen');
     assert.deepEqual(problemeAus(await liesErweiterungen(sql)), []);
   });
 
   it('beim Start: fehlende pg_trgm neu mit Indizes, unaccent von Hand umgezogen – Faltung passt sich an', async () => {
-    const { verbinde } = await import('../src/db');
-    const { sichereErweiterungen } = await import('../src/erweiterungen');
+    const { verbinde } = await import('../src/datenbank/db');
+    const { sichereErweiterungen } = await import('../src/datenbank/erweiterungen');
     const sql = verbinde(urlVon(db));
     offen.push(() => sql.end());
     // Wie nach einer Wiederherstellung mit 0.131.0: pg_trgm samt Indizes weg.

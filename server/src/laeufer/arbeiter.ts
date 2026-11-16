@@ -8,7 +8,7 @@
 import { parentPort, receiveMessageOnPort, workerData, type MessagePort } from 'node:worker_threads';
 import { SEITE, type Modulpruefung } from './modul';
 import { WasiEnde, wasiImporte } from './wasi';
-import { MB } from '../grenzen';
+import { MB } from '../grundlagen/grenzen';
 
 export interface ArbeiterDaten {
   modul: WebAssembly.Module;

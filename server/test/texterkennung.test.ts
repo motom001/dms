@@ -7,11 +7,18 @@ import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { describe, it } from 'node:test';
 import { TREFFER_ANFANG, TREFFER_ENDE } from '../../shared/src/model';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
-import { speicherEinstellungen } from '../src/einstellungen';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
 import { speicherRepo } from '../src/repo/speicher';
-import { bereinigeOcr, ocrAusGespeichert, pruefeWerkzeuge, textebeneEngine, Texterkennung, type Engine } from '../src/texterkennung';
+import {
+  bereinigeOcr,
+  ocrAusGespeichert,
+  pruefeWerkzeuge,
+  textebeneEngine,
+  Texterkennung,
+  type Engine,
+} from '../src/volltext/texterkennung';
 import { pdfMitText } from './hilfen';
 
 const warte = async (bis: () => Promise<boolean>, ms = 60_000) => {

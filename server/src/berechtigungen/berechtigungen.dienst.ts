@@ -25,12 +25,12 @@ import {
   regelwerkVon,
   type Wer,
 } from '../../../shared/src/rechte';
-import { Fachfehler } from '../fehler';
+import { Fachfehler } from '../grundlagen/fehler';
 import type { Kern, Zugreifender, Zugriff } from '../kern';
-import { protokoll } from '../protokoll';
+import { protokoll } from '../protokoll/protokoll';
 import { istUuid, type Repo } from '../repo';
-import { t } from '../sprache';
-import { nachweis } from '../nachweisjournal';
+import { t } from '../sprache/sprache';
+import { nachweis } from '../protokoll/nachweisjournal';
 import type { ZugriffDienst } from '../zugriff';
 
 /** Was die Berechtigungen außer Kern und Rechteprüfung brauchen – vom Dienst hereingereicht. */

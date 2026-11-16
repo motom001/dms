@@ -11,12 +11,12 @@ import {
 } from '../../../shared/src/automatisierung';
 import { wiederholungNach } from '../../../shared/src/ereignisse';
 import { gekuerzteAdresse } from '../../../shared/src/notfallkontakte';
-import type { Einstellungen } from '../einstellungen';
-import { Fachfehler } from '../fehler';
-import type { Mailer } from '../mail';
-import { protokoll } from '../protokoll';
+import type { Einstellungen } from '../einstellungen/einstellungen';
+import { Fachfehler } from '../grundlagen/fehler';
+import type { Mailer } from '../mail/mail';
+import { protokoll } from '../protokoll/protokoll';
 import { istUuid } from '../repo';
-import { t } from '../sprache';
+import { t } from '../sprache/sprache';
 import { sichererAbruf, type SichererAbruf } from './sicherer-abruf';
 
 /**

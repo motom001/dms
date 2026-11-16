@@ -10,19 +10,19 @@ import { erkenneBildtyp, fassungAusInfo, FASSUNG_MAX_BYTES, INFO_UMWANDLUNG, UMW
 import { HILFE } from '../../shared/src/hilfe';
 import { liesCode, rechtePunkte, type InstalliertesPaket } from '../../shared/src/pakete';
 import { volltextHerkunft } from '../../shared/src/volltext';
-import { speicherApiSchluesselRepo, ApiSchluesselDienst } from '../src/apischluessel';
-import { bildGroesse, Dateiumwandlung, fassungsTyp, speicherFassungen } from '../src/dateiumwandlung';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
+import { speicherApiSchluesselRepo, ApiSchluesselDienst } from '../src/anmeldung/apischluessel';
+import { bildGroesse, Dateiumwandlung, fassungsTyp, speicherFassungen } from '../src/dateien/dateiumwandlung';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
 import { type Zugriff } from '../src/kern';
-import { speicherEinstellungen } from '../src/einstellungen';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
 import { Konten } from '../src/konten';
-import { speicherKontoRepo } from '../src/konto-repo';
+import { speicherKontoRepo } from '../src/konten/konto-repo';
 import { speicherRepo } from '../src/repo/speicher';
-import { pruefeZugang, routen, type Anfrage, type Route } from '../src/routen';
+import { pruefeZugang, routen, type Anfrage, type Route } from '../src/http/routen';
 import { schluesselRecht } from '../src/laeufer/verwaltung';
-import { Texterkennung, type Engine } from '../src/texterkennung';
-import { speicherAblage, Vorschaubilder } from '../src/vorschau';
+import { Texterkennung, type Engine } from '../src/volltext/texterkennung';
+import { speicherAblage, Vorschaubilder } from '../src/dateien/vorschau';
 import { pdfMitText } from './hilfen';
 
 const warte = async (bis: () => Promise<boolean>, ms = 20_000) => {
@@ -506,7 +506,7 @@ describe('Dateien umwandeln (#577): Ablage im Haushaltsordner (seit 0.140.1, in 
     const { existsSync } = await import('node:fs');
     const { tmpdir } = await import('node:os');
     const { join } = await import('node:path');
-    const { FASSUNG_PFAD, fassungsOrdner, ordnerFassungen, zieheFassungenUm } = await import('../src/dateiumwandlung');
+    const { FASSUNG_PFAD, fassungsOrdner, ordnerFassungen, zieheFassungenUm } = await import('../src/dateien/dateiumwandlung');
     const wurzel = await mkdtemp(join(tmpdir(), 'dms-fassung-umzug-'));
     try {
       const haushalt = '00000000-0000-4000-8000-000000000001';

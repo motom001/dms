@@ -1,8 +1,8 @@
 /** Zwischenspeicher mit mehreren Prozessen (#874): jeder bekommt seinen Anteil, zusammen wie mit einem Prozess. */
 import assert from 'node:assert/strict';
 import { after, describe, it } from 'node:test';
-import { Seitenbilder } from '../src/pdfseiten';
-import { anteilVon, teileZwischenspeicher, zwischenspeicherAnteil } from '../src/zwischenspeicher';
+import { Seitenbilder } from '../src/dateien/pdfseiten';
+import { anteilVon, teileZwischenspeicher, zwischenspeicherAnteil } from '../src/zwischenspeicher/zwischenspeicher';
 
 describe('Zwischenspeicher je Prozess (#874)', () => {
   after(() => teileZwischenspeicher(1));

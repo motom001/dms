@@ -3,13 +3,13 @@
  * auf Zeit, Übersichten der Werkbank. Schicht 3 – Teile und Anschluss wie `AufgabenDienst` (aufgaben.dienst.ts).
  */
 import { randomUUID } from 'node:crypto';
-import { Fachfehler } from '../fehler';
+import { Fachfehler } from '../grundlagen/fehler';
 import type { Kern, Zugreifender, Zugriff } from '../kern';
 import type { MappenHistorie } from '../mappen';
-import { rechteMessen } from '../messung';
-import { protokoll } from '../protokoll';
+import { rechteMessen } from '../datenbank/messung';
+import { protokoll } from '../protokoll/protokoll';
 import { istUuid, type Repo } from '../repo';
-import { t } from '../sprache';
+import { t } from '../sprache/sprache';
 import type { ZugriffDienst } from '../zugriff';
 import type { Aufgabe, FallEnde, FallOhneLeserecht } from '../../../shared/src/model';
 import type { AufgabenAnschluss, AufgabenTeile } from './aufgaben.dienst';

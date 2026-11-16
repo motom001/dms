@@ -14,10 +14,10 @@
  *   eine Fassung „Update auf Ablago …“; Einträge ohne Fassung bekommen ihre erste.
  */
 import type { FassungsAnschluss, Kern } from '../kern';
-import { Fachfehler } from '../fehler';
-import { protokoll } from '../protokoll';
+import { Fachfehler } from '../grundlagen/fehler';
+import { protokoll } from '../protokoll/protokoll';
 import type { Repo } from '../repo';
-import { t } from '../sprache';
+import { t } from '../sprache/sprache';
 import {
   FASSUNG_ARTEN,
   FASSUNGEN_JE_SEITE,

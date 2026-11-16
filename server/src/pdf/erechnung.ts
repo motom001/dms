@@ -10,7 +10,7 @@
 import { inflateSync } from 'node:zlib';
 import { PDFArray, PDFDict, PDFHexString, PDFName, PDFRawStream, PDFString, type PDFObject } from 'pdf-lib';
 import { ERECHNUNG_DATEINAME } from '../../../shared/src/erechnung';
-import { ERECHNUNG_XML_MAX } from '../grenzen';
+import { ERECHNUNG_XML_MAX } from '../grundlagen/grenzen';
 import { ladePdf } from './laden';
 
 const name = (o: PDFObject | undefined): string | null =>

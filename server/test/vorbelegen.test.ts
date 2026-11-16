@@ -17,19 +17,19 @@ import { bereinigeVorbelegen, moeglicheVon, passtZusammen, vorbelegenProbleme } 
 import { typBild, typUnterschiede } from '../../shared/src/typvergleich';
 import { NICHTS, type Regelwerk } from '../../shared/src/rechte';
 import type { Feld, Mappentyp } from '../../shared/src/model';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
-import { speicherEinstellungen } from '../src/einstellungen';
-import { Fachfehler } from '../src/fehler';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
+import { Fachfehler } from '../src/grundlagen/fehler';
 import { Konten } from '../src/konten';
-import { speicherKontoRepo } from '../src/konto-repo';
+import { speicherKontoRepo } from '../src/konten/konto-repo';
 import { speicherRepo } from '../src/repo/speicher';
-import { routen } from '../src/routen';
-import { openapi } from '../src/api-v1';
+import { routen } from '../src/http/routen';
+import { openapi } from '../src/http/api-v1';
 import { liesPaket, liesZip, Paketverwaltung } from '../src/pakete/verwaltung/index';
 import { baue, mindestversion } from '../src/pakete/erstellung/index';
-import { zipPuffer } from '../src/zip';
-import { Tresor } from '../src/tresor';
+import { zipPuffer } from '../src/formate/zip';
+import { Tresor } from '../src/geheimnisse/tresor';
 import { liesCode, type InstalliertesPaket } from '../../shared/src/pakete';
 
 const meldet = (re: RegExp) => (e: unknown) => e instanceof Fachfehler && re.test(JSON.stringify(e.details ?? {}) + e.message);

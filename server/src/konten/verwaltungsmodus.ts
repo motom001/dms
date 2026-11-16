@@ -5,12 +5,12 @@
 import { randomUUID } from 'node:crypto';
 import { KontenPasskeys } from './passkeys';
 import { type Benutzer, type Systemkonto, SYSTEMKONTEN, istPerson } from '../../../shared/src/model';
-import type { SitzungIntern } from '../konto-repo';
+import type { SitzungIntern } from './konto-repo';
 import { darfVerwalten, MODUS_MINUTEN, FRISCH_MINUTEN, type Verwaltungsstand, hatGesamt } from '../../../shared/src/verwaltungsrecht';
 import { MINUTE, tagVon, log, type Bestaetigung, BERUEHREN_MS } from './hilfen';
-import { hasheSchluessel, pruefePasswort } from '../passwort';
-import { Fachfehler } from '../fehler';
-import { t } from '../sprache';
+import { hasheSchluessel, pruefePasswort } from '../anmeldung/passwort';
+import { Fachfehler } from '../grundlagen/fehler';
+import { t } from '../sprache/sprache';
 
 /** Verwaltungsmodus, Abmelden und Nachschlagen von Konten. */
 export abstract class KontenVerwaltungsmodus extends KontenPasskeys {

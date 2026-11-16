@@ -3,13 +3,13 @@
  * Fassungsstand, mitgelieferte Automatisierungen und Platzhalter der Werkbank-Karten.
  */
 import { createHash } from 'node:crypto';
-import type { Dienst } from '../../dienst';
+import type { Dienst } from '../../dienst/dienst';
 import type { AutomatisierungRepo } from './repo';
-import type { SystemWerkbank } from '../../automatisierung-werkbank';
+import type { SystemWerkbank } from '../automatisierung-werkbank';
 import type { AufrufRepo } from '../aufruf';
-import type { Kurzzustand } from '../../kurzzustand';
+import type { Kurzzustand } from '../../zwischenspeicher/kurzzustand';
 import type { AusgangRepo, AussenGeheimnisRepo } from '../ausleitung';
-import type { Mailer } from '../../mail';
+import type { Mailer } from '../../mail/mail';
 import type { SichererAbruf } from '../sicherer-abruf';
 import { type KatalogEreignis, istBetriebWenn } from '../../../../shared/src/ereignisse';
 import { datumsformat } from '../../../../shared/src/region';

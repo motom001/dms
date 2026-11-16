@@ -1,5 +1,5 @@
 import type postgres from 'postgres';
-import { umschluesseleTief } from '../../tresor';
+import { umschluesseleTief } from '../../geheimnisse/tresor';
 import type { RepoTeil } from '..';
 import type { PgKontext } from './kontext';
 

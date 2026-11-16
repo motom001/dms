@@ -11,11 +11,11 @@ import {
 } from '../../shared/src/ereignisse';
 import { EREIGNISSE, liesCode, MAPPEN_EREIGNISSE, type InstalliertesPaket } from '../../shared/src/pakete';
 import de from '../../shared/src/sprachen/de/ereignisse.json';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
-import { speicherEinstellungen } from '../src/einstellungen';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
 import { Konten } from '../src/konten';
-import { speicherKontoRepo, type KontoRepo } from '../src/konto-repo';
+import { speicherKontoRepo, type KontoRepo } from '../src/konten/konto-repo';
 import type { Repo } from '../src/repo';
 import { speicherRepo } from '../src/repo/speicher';
 import { eigeneDatenbank } from './hilfe-db';
@@ -37,7 +37,7 @@ async function spaeter<T>(ms: number, f: () => Promise<T>): Promise<T> {
 /** Mit TEST_DATABASE_URL zusätzlich gegen PostgreSQL (eigene Datenbank je Aufruf, #900). */
 async function pgRepos(): Promise<{ repo: Repo; konto: KontoRepo }> {
   const { pgRepo } = await import('../src/repo/pg');
-  const { pgKontoRepo } = await import('../src/konto-repo');
+  const { pgKontoRepo } = await import('../src/konten/konto-repo');
   const sql = (await eigeneDatenbank('ereignisse')).sql;
   return { repo: pgRepo(sql, HAUSHALT), konto: pgKontoRepo(sql, HAUSHALT) };
 }

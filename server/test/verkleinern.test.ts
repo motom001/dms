@@ -9,16 +9,16 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { after, before, describe, it } from 'node:test';
 import { PDFDocument, PDFName, PDFRawStream } from 'pdf-lib';
-import { fuerAusgabe, weitergabeWas } from '../src/ausgabe';
-import { speicherDateien } from '../src/dateispeicher';
-import { Dienst } from '../src/dienst';
+import { fuerAusgabe, weitergabeWas } from '../src/ausgang/ausgabe';
+import { speicherDateien } from '../src/dateien/dateispeicher';
+import { Dienst } from '../src/dienst/dienst';
 import { verkleinernEinstellungAus, VERKLEINERN_STANDARD } from '../src/pdf-bearbeiten';
-import { speicherEinstellungen } from '../src/einstellungen';
-import { Fachfehler } from '../src/fehler';
-import type { Mailer, MailOptionen } from '../src/mail';
+import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
+import { Fachfehler } from '../src/grundlagen/fehler';
+import type { Mailer, MailOptionen } from '../src/mail/mail';
 import type { Repo } from '../src/repo';
 import { speicherRepo } from '../src/repo/speicher';
-import { analysiere, ergebnisText, jpegMasse, mb, operatoren, stufeAus, verkleinere } from '../src/verkleinern';
+import { analysiere, ergebnisText, jpegMasse, mb, operatoren, stufeAus, verkleinere } from '../src/dateien/verkleinern';
 import { grossesJpeg, grossesPdf, TEXT, textPdf } from './hilfen-grossespdf';
 import { eigeneDatenbank } from './hilfe-db';
 
@@ -376,7 +376,7 @@ it('Testdaten enthalten den unsichtbaren Text', () => assert.ok(TEXT.length > 10
 const HAUSHALT = '00000000-0000-4000-8000-000000000001';
 const offen: Array<{ end(): Promise<void> }> = [];
 async function pgRepo(): Promise<Repo> {
-  const { migriere } = await import('../src/db');
+  const { migriere } = await import('../src/datenbank/db');
   const { pgRepo: repo } = await import('../src/repo/pg');
   // Eigene Datenbank (#900), nach dem letzten Test der Datei gelöscht.
   const sql = (await eigeneDatenbank('vk', { migrieren: false })).sql;

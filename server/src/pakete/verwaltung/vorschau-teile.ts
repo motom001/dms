@@ -5,7 +5,7 @@ import { zieleVon, type Mappe, type Mappentyp } from '../../../../shared/src/mod
 import { DMS_RECHTE_TYPEN, type InstalliertesPaket } from '../../../../shared/src/pakete';
 import { bereinigeVorlage, karteText } from '../../../../shared/src/ablaufvorlagen';
 import { typKennung } from '../../../../shared/src/kennungen';
-import { t } from '../../sprache';
+import { t } from '../../sprache/sprache';
 import { planeErgaenzungen, planeVorgaben } from '../index';
 import { titelKennung, type TitelSuche } from '../index';
 import { type MitkommtNamen } from '../index';

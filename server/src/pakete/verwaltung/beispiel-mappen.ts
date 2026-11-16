@@ -2,8 +2,8 @@
  * Beispiel-Mappen und -Dokumente (#347, #878) anlegen und entfernen.
  */
 import { type InstalliertesPaket } from '../../../../shared/src/pakete';
-import { Fachfehler } from '../../fehler';
-import { t } from '../../sprache';
+import { Fachfehler } from '../../grundlagen/fehler';
+import { t } from '../../sprache/sprache';
 import { istVorgabeWert, vorgabeVerweis } from '../../../../shared/src/vorgaben';
 import { beispielDateiart, beispielName, beispielWerte, eigeneVerweise, istBeispielVerweis, ordneBeispiele } from './beispiele';
 import { type Paket, type PaketBeispiel } from './format';
