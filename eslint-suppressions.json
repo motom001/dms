@@ -269,14 +269,6 @@
       "count": 1
     }
   },
-  "server/src/http/http.ts": {
-    "complexity": {
-      "count": 1
-    },
-    "max-lines-per-function": {
-      "count": 1
-    }
-  },
   "server/src/http/routen-hilfen.ts": {
     "complexity": {
       "count": 2
