@@ -60,6 +60,226 @@ async function setInPaketen(ids: string[], f: (teil: string[]) => Promise<Set<st
 const kantenSchluessel = (k: Kante) => `${k.quelleId}|${k.feldKey}|${k.zielId}`;
 const NICHT_SICHTBAR = t('meldungen.baum.nicht-sichtbare-mappe');
 
+/** `bezug`: nur über Bezug verbunden (mit nurZugehoerigkeit) – Blatt, wird nicht weiterverfolgt. */
+interface Eintrag {
+  mappe: Mappe;
+  ebene: number;
+  ueber: BaumKante | null;
+  auchUeber: BaumKante[];
+  richtung: BaumRichtung | null;
+  reihe: number;
+  bezug: boolean;
+}
+
+/** Ein Nachbar eines Rand-Knotens über eine Kante. */
+type Nachbar = { id: string; kante: Kante; richtung: BaumRichtung };
+/** Ein Kandidat einer Ebene: Nachbar, sein Rand-Knoten und die Kante im Baum. */
+type Kandidat = Nachbar & { von: Eintrag; baumKante: BaumKante };
+
+/** Stand der Sammlung (#1278, Schritt 6b-2; vorher Teil von `sammleBaum`). */
+interface BaumLauf {
+  q: BaumQuelle;
+  opt: BaumOptionen;
+  ohne: Set<string>;
+  gesammelt: Map<string, Eintrag>;
+  reihenfolge: string[];
+  benutzt: Set<string>;
+  verborgen: Set<string>;
+  ausgeschlossen: Set<string>;
+  kreise: number;
+  abgeschnitten: boolean;
+  rand: Eintrag[];
+  /** Alle Kanten je Knoten – für die Verweise nach außen am Ende (die letzte Ebene wird nachgeladen). */
+  kantenJe: Map<string, Kante[]>;
+}
+
+const feldName = (q: BaumQuelle, typId: string | undefined, key: string) =>
+  (typId ? q.typen.get(typId)?.felder.find((f) => f.key === key)?.label : undefined) ?? key;
+
+/** Nachbarn eines Rand-Knotens über die Kanten, in den erlaubten Richtungen. */
+function nachbarn(l: BaumLauf, e: Eintrag, kanten: Kante[]): Nachbar[] {
+  const { opt } = l;
+  if (e.bezug) return [];
+  const erlaubt = e.richtung === null || opt.seitwaerts ? opt.richtungen : [e.richtung];
+  const r: Nachbar[] = [];
+  for (const k of kanten) {
+    if (k.quelleId === k.zielId) continue;
+    if (k.zielId === e.mappe.id && erlaubt.includes('verwiesenVon')) r.push({ id: k.quelleId, kante: k, richtung: 'verwiesenVon' });
+    if (k.quelleId === e.mappe.id && erlaubt.includes('verweistAuf')) r.push({ id: k.zielId, kante: k, richtung: 'verweistAuf' });
+  }
+  return r;
+}
+
+function kanteVon(q: BaumQuelle, e: Eintrag, n: { kante: Kante; richtung: BaumRichtung }, typVonQuelle: string | undefined): BaumKante {
+  return {
+    vonId: e.mappe.id,
+    richtung: n.richtung,
+    feldKey: n.kante.feldKey,
+    feld: feldName(q, typVonQuelle, n.kante.feldKey),
+    verweisart: verweisartVon(typVonQuelle ? q.typen.get(typVonQuelle) : undefined, n.kante.feldKey),
+  };
+}
+
+/** Kanten der Knoten laden, die noch keine haben. */
+async function ladeKanten(l: BaumLauf, ids: string[]) {
+  const { kantenJe } = l;
+  const fehlt = ids.filter((id) => !kantenJe.has(id));
+  for (const id of fehlt) kantenJe.set(id, []);
+  for (const k of await inPaketen(fehlt, (t) => l.q.kanten(t))) {
+    kantenJe.get(k.quelleId)?.push(k);
+    if (k.zielId !== k.quelleId) kantenJe.get(k.zielId)?.push(k);
+  }
+}
+
+/** Neue Mappen einer Ebene laden; nicht lesbare merken (verborgen), ausgeschlossene Typen ebenso. */
+async function ladeNeue(l: BaumLauf, neueIds: string[]): Promise<Map<string, Mappe>> {
+  const { q } = l;
+  const mappen = new Map((await inPaketen(neueIds, (t) => q.mappen(t))).map((m) => [m.id, m] as const));
+  const lesbar = await setInPaketen([...mappen.keys()], (t) => q.lesbare(t));
+  for (const id of neueIds) {
+    const m = mappen.get(id);
+    if (!m || !lesbar.has(id) || !q.typen.has(m.typId)) l.verborgen.add(id);
+    else if (l.ohne.has(m.typId)) l.ausgeschlossen.add(id);
+  }
+  return mappen;
+}
+
+/** Die Kandidaten einer Ebene einhängen; liefert die neuen (und hochgestuften) Einträge. */
+function haengeEin(l: BaumLauf, mitKante: Kandidat[], mappen: Map<string, Mappe>, ebene: number): Eintrag[] {
+  const { opt, gesammelt, reihenfolge } = l;
+  const neu: Eintrag[] = [];
+  const hochgestuft = new Set<string>();
+  for (const k of mitKante) {
+    const s = kantenSchluessel(k.kante);
+    if (l.benutzt.has(s)) continue;
+    if (l.verborgen.has(k.id) || l.ausgeschlossen.has(k.id)) continue;
+    l.benutzt.add(s);
+    const kante = k.baumKante;
+    const bezug = opt.nurZugehoerigkeit && kante.verweisart !== 'zugehoerigkeit';
+    const da = gesammelt.get(k.id);
+    if (da) {
+      l.kreise++;
+      // Bisher nur über Bezug dran, jetzt über Zugehörigkeit erreicht: dort einhängen und weiterverfolgen.
+      const pos = reihenfolge.indexOf(da.mappe.id);
+      if (da.bezug && !bezug && pos >= 0 && !hochgestuft.has(da.mappe.id)) {
+        if (da.ueber) da.auchUeber.push(da.ueber);
+        Object.assign(da, { ueber: kante, ebene, richtung: k.richtung, bezug: false });
+        reihenfolge.splice(pos, 1);
+        hochgestuft.add(da.mappe.id);
+        neu.push(da);
+      } else da.auchUeber.push(kante);
+      continue;
+    }
+    if (gesammelt.size >= opt.max) {
+      l.abgeschnitten = true;
+      continue;
+    }
+    const m = mappen.get(k.id)!;
+    const x: Eintrag = { mappe: m, ebene, ueber: kante, auchUeber: [], richtung: k.richtung, reihe: 0, bezug };
+    gesammelt.set(m.id, x);
+    neu.push(x);
+  }
+  return neu;
+}
+
+/** Eine Ebene der Breitensuche: Kanten des Rands, neue Mappen, einhängen, ordnen; der neue Rand. */
+async function sammleEbene(l: BaumLauf, ebene: number) {
+  const { q, opt, gesammelt, reihenfolge } = l;
+  await ladeKanten(
+    l,
+    l.rand.map((e) => e.mappe.id),
+  );
+  const kandidaten: Array<{ von: Eintrag; id: string; kante: Kante; richtung: BaumRichtung }> = [];
+  for (const e of l.rand) for (const n of nachbarn(l, e, l.kantenJe.get(e.mappe.id) ?? [])) kandidaten.push({ von: e, ...n });
+  const neueIds = [
+    ...new Set(kandidaten.map((k) => k.id).filter((id) => !gesammelt.has(id) && !l.verborgen.has(id) && !l.ausgeschlossen.has(id))),
+  ];
+  const mappen = await ladeNeue(l, neueIds);
+  const mitKante = kandidaten.map((k) => {
+    const quelleTyp = (k.kante.quelleId === k.von.mappe.id ? k.von.mappe : (gesammelt.get(k.id)?.mappe ?? mappen.get(k.id)))?.typId;
+    return { ...k, baumKante: kanteVon(q, k.von, k, quelleTyp) };
+  });
+  // Wege über Zugehörigkeit zuerst (stabil sortiert): Wer auch zugehört, wird nicht nur als Bezug-Blatt aufgenommen.
+  if (opt.nurZugehoerigkeit)
+    mitKante.sort((a, b) => Number(a.baumKante.verweisart !== 'zugehoerigkeit') - Number(b.baumKante.verweisart !== 'zugehoerigkeit'));
+  const neu = haengeEin(l, mitKante, mappen, ebene);
+  // Innerhalb einer Ebene: nach Eltern (in deren Reihenfolge), dann Typ und Titel.
+  const reihe = new Map(reihenfolge.map((id, i) => [id, i] as const));
+  const typName = (m: Mappe) => q.typen.get(m.typId)?.name ?? '';
+  neu.sort(
+    (a, b) =>
+      reihe.get(a.ueber!.vonId)! - reihe.get(b.ueber!.vonId)! ||
+      typName(a.mappe).localeCompare(typName(b.mappe), 'de') ||
+      (a.mappe.titel ?? '').localeCompare(b.mappe.titel ?? '', 'de'),
+  );
+  for (const x of neu) {
+    x.reihe = reihenfolge.length;
+    reihenfolge.push(x.mappe.id);
+  }
+  l.rand = neu;
+}
+
+/** Was die Knoten am Ende brauchen: Bezüge und Lesbarkeit der Nachbarn außerhalb, Dokumente, Rechte, Zeitpunkt. */
+interface Aussen {
+  bez: Map<string, MappenBezug>;
+  aussenLesbar: Set<string>;
+  doks: Map<string, number>;
+  rechte: Map<string, Rechte>;
+  jetzt: Date;
+}
+
+/** Verweise eines Knotens nach außerhalb des Baums – je Richtung höchstens AUSSEN_MAX, die Anzahl vollständig. */
+function aussenVon(l: BaumLauf, id: string, e: Eintrag, x: Aussen): BaumKnoten['aussen'] {
+  const { q, gesammelt } = l;
+  const aussen: BaumKnoten['aussen'] = { verweistAuf: [], verwiesenVon: [], anzahl: { verweistAuf: 0, verwiesenVon: 0 } };
+  for (const k of l.kantenJe.get(id) ?? []) {
+    const richtung: BaumRichtung | null =
+      k.quelleId === id && !gesammelt.has(k.zielId) ? 'verweistAuf' : k.zielId === id && !gesammelt.has(k.quelleId) ? 'verwiesenVon' : null;
+    if (!richtung) continue;
+    const anderer = richtung === 'verweistAuf' ? k.zielId : k.quelleId;
+    aussen.anzahl[richtung]++;
+    if (aussen[richtung].length >= AUSSEN_MAX) continue;
+    const b = x.bez.get(anderer);
+    const sichtbar = !!b && x.aussenLesbar.has(anderer) && q.typen.has(b.typId);
+    const quelleTyp = richtung === 'verweistAuf' ? e.mappe.typId : b?.typId;
+    const v: AussenVerweis = sichtbar
+      ? { mappeId: anderer, typId: b!.typId, titel: b!.titel, feldKey: k.feldKey, feld: feldName(q, quelleTyp, k.feldKey) }
+      : {
+          mappeId: null,
+          typId: null,
+          titel: NICHT_SICHTBAR,
+          feldKey: k.feldKey,
+          feld: sichtbar || richtung === 'verweistAuf' ? feldName(q, quelleTyp, k.feldKey) : '',
+          verborgen: true,
+        };
+    aussen[richtung].push(v);
+  }
+  return aussen;
+}
+
+/** Ein Knoten des Ergebnisses. */
+function knotenVon(l: BaumLauf, id: string, x: Aussen): BaumKnoten {
+  const e = l.gesammelt.get(id)!;
+  const typ = l.q.typen.get(e.mappe.typId);
+  const aussen = aussenVon(l, id, e, x);
+  const bis = aufbewahrenBis(typ?.archiv, e.mappe);
+  return {
+    id,
+    typId: e.mappe.typId,
+    typ: typ?.name ?? '',
+    titel: e.mappe.titel ?? '',
+    ebene: e.ebene,
+    ueber: e.ueber,
+    auchUeber: e.auchUeber,
+    ...(e.bezug ? { nurBezug: true } : {}),
+    dokumente: x.doks.get(id) ?? 0,
+    aussen,
+    aufbewahrenBis: bis,
+    gesperrt: gesperrt(typ?.archiv, e.mappe, x.jetzt),
+    rechte: x.rechte.get(id) ?? { ...NICHTS },
+  };
+}
+
 /**
  * Sammelt den Baum ab `startId`. 404, wenn es die Start-Mappe nicht gibt oder der Aufrufer sie nicht
  * lesen darf.
@@ -69,191 +289,47 @@ export async function sammleBaum(q: BaumQuelle, startId: string, opt: BaumOption
   if (!start || !q.typen.has(start.typId) || !(await q.lesbare([start.id])).has(start.id)) {
     throw new Fachfehler(404, t('meldungen.baum.diese-mappe-gibt-es'), { verborgen: true });
   }
-  const ohne = new Set(opt.ohneTypen);
-  const feldName = (typId: string | undefined, key: string) =>
-    (typId ? q.typen.get(typId)?.felder.find((f) => f.key === key)?.label : undefined) ?? key;
-
-  /** `bezug`: nur über Bezug verbunden (mit nurZugehoerigkeit) – Blatt, wird nicht weiterverfolgt. */
-  interface Eintrag {
-    mappe: Mappe;
-    ebene: number;
-    ueber: BaumKante | null;
-    auchUeber: BaumKante[];
-    richtung: BaumRichtung | null;
-    reihe: number;
-    bezug: boolean;
-  }
-  const gesammelt = new Map<string, Eintrag>([
-    [start.id, { mappe: start, ebene: 0, ueber: null, auchUeber: [], richtung: null, reihe: 0, bezug: false }],
-  ]);
-  const reihenfolge: string[] = [start.id];
-  const benutzt = new Set<string>();
-  const verborgen = new Set<string>();
-  const ausgeschlossen = new Set<string>();
-  let kreise = 0;
-  let abgeschnitten = false;
-  let rand: Eintrag[] = [gesammelt.get(start.id)!];
-
-  /** Nachbarn eines Rand-Knotens über die Kanten, in den erlaubten Richtungen. */
-  const nachbarn = (e: Eintrag, kanten: Kante[]) => {
-    if (e.bezug) return [];
-    const erlaubt = e.richtung === null || opt.seitwaerts ? opt.richtungen : [e.richtung];
-    const r: Array<{ id: string; kante: Kante; richtung: BaumRichtung }> = [];
-    for (const k of kanten) {
-      if (k.quelleId === k.zielId) continue;
-      if (k.zielId === e.mappe.id && erlaubt.includes('verwiesenVon')) r.push({ id: k.quelleId, kante: k, richtung: 'verwiesenVon' });
-      if (k.quelleId === e.mappe.id && erlaubt.includes('verweistAuf')) r.push({ id: k.zielId, kante: k, richtung: 'verweistAuf' });
-    }
-    return r;
+  const erster: Eintrag = { mappe: start, ebene: 0, ueber: null, auchUeber: [], richtung: null, reihe: 0, bezug: false };
+  const l: BaumLauf = {
+    q,
+    opt,
+    ohne: new Set(opt.ohneTypen),
+    gesammelt: new Map<string, Eintrag>([[start.id, erster]]),
+    reihenfolge: [start.id],
+    benutzt: new Set<string>(),
+    verborgen: new Set<string>(),
+    ausgeschlossen: new Set<string>(),
+    kreise: 0,
+    abgeschnitten: false,
+    rand: [erster],
+    kantenJe: new Map<string, Kante[]>(),
   };
-  const kanteVon = (e: Eintrag, n: { kante: Kante; richtung: BaumRichtung }, typVonQuelle: string | undefined): BaumKante => ({
-    vonId: e.mappe.id,
-    richtung: n.richtung,
-    feldKey: n.kante.feldKey,
-    feld: feldName(typVonQuelle, n.kante.feldKey),
-    verweisart: verweisartVon(typVonQuelle ? q.typen.get(typVonQuelle) : undefined, n.kante.feldKey),
-  });
+  const { gesammelt } = l;
 
-  // Alle Kanten je Knoten merken – für die Verweise nach außen am Ende (die letzte Ebene wird nachgeladen).
-  const kantenJe = new Map<string, Kante[]>();
-  const ladeKanten = async (ids: string[]) => {
-    const fehlt = ids.filter((id) => !kantenJe.has(id));
-    for (const id of fehlt) kantenJe.set(id, []);
-    for (const k of await inPaketen(fehlt, (t) => q.kanten(t))) {
-      kantenJe.get(k.quelleId)?.push(k);
-      if (k.zielId !== k.quelleId) kantenJe.get(k.zielId)?.push(k);
-    }
-  };
-
-  for (let ebene = 1; ebene <= opt.tiefe && rand.length && !abgeschnitten && opt.richtungen.length; ebene++) {
-    await ladeKanten(rand.map((e) => e.mappe.id));
-    const kandidaten: Array<{ von: Eintrag; id: string; kante: Kante; richtung: BaumRichtung }> = [];
-    for (const e of rand) for (const n of nachbarn(e, kantenJe.get(e.mappe.id) ?? [])) kandidaten.push({ von: e, ...n });
-    const neueIds = [
-      ...new Set(kandidaten.map((k) => k.id).filter((id) => !gesammelt.has(id) && !verborgen.has(id) && !ausgeschlossen.has(id))),
-    ];
-    const mappen = new Map((await inPaketen(neueIds, (t) => q.mappen(t))).map((m) => [m.id, m] as const));
-    const lesbar = await setInPaketen([...mappen.keys()], (t) => q.lesbare(t));
-    for (const id of neueIds) {
-      const m = mappen.get(id);
-      if (!m || !lesbar.has(id) || !q.typen.has(m.typId)) verborgen.add(id);
-      else if (ohne.has(m.typId)) ausgeschlossen.add(id);
-    }
-    const neu: Eintrag[] = [];
-    const hochgestuft = new Set<string>();
-    const mitKante = kandidaten.map((k) => {
-      const quelleTyp = (k.kante.quelleId === k.von.mappe.id ? k.von.mappe : (gesammelt.get(k.id)?.mappe ?? mappen.get(k.id)))?.typId;
-      return { ...k, baumKante: kanteVon(k.von, k, quelleTyp) };
-    });
-    // Wege über Zugehörigkeit zuerst (stabil sortiert): Wer auch zugehört, wird nicht nur als Bezug-Blatt aufgenommen.
-    if (opt.nurZugehoerigkeit)
-      mitKante.sort((a, b) => Number(a.baumKante.verweisart !== 'zugehoerigkeit') - Number(b.baumKante.verweisart !== 'zugehoerigkeit'));
-    for (const k of mitKante) {
-      const s = kantenSchluessel(k.kante);
-      if (benutzt.has(s)) continue;
-      if (verborgen.has(k.id) || ausgeschlossen.has(k.id)) continue;
-      benutzt.add(s);
-      const kante = k.baumKante;
-      const bezug = opt.nurZugehoerigkeit && kante.verweisart !== 'zugehoerigkeit';
-      const da = gesammelt.get(k.id);
-      if (da) {
-        kreise++;
-        // Bisher nur über Bezug dran, jetzt über Zugehörigkeit erreicht: dort einhängen und weiterverfolgen.
-        const pos = reihenfolge.indexOf(da.mappe.id);
-        if (da.bezug && !bezug && pos >= 0 && !hochgestuft.has(da.mappe.id)) {
-          if (da.ueber) da.auchUeber.push(da.ueber);
-          Object.assign(da, { ueber: kante, ebene, richtung: k.richtung, bezug: false });
-          reihenfolge.splice(pos, 1);
-          hochgestuft.add(da.mappe.id);
-          neu.push(da);
-        } else da.auchUeber.push(kante);
-        continue;
-      }
-      if (gesammelt.size >= opt.max) {
-        abgeschnitten = true;
-        continue;
-      }
-      const m = mappen.get(k.id)!;
-      const x: Eintrag = { mappe: m, ebene, ueber: kante, auchUeber: [], richtung: k.richtung, reihe: 0, bezug };
-      gesammelt.set(m.id, x);
-      neu.push(x);
-    }
-    // Innerhalb einer Ebene: nach Eltern (in deren Reihenfolge), dann Typ und Titel.
-    const reihe = new Map(reihenfolge.map((id, i) => [id, i] as const));
-    const typName = (m: Mappe) => q.typen.get(m.typId)?.name ?? '';
-    neu.sort(
-      (a, b) =>
-        reihe.get(a.ueber!.vonId)! - reihe.get(b.ueber!.vonId)! ||
-        typName(a.mappe).localeCompare(typName(b.mappe), 'de') ||
-        (a.mappe.titel ?? '').localeCompare(b.mappe.titel ?? '', 'de'),
-    );
-    for (const x of neu) {
-      x.reihe = reihenfolge.length;
-      reihenfolge.push(x.mappe.id);
-    }
-    rand = neu;
-  }
+  for (let ebene = 1; ebene <= opt.tiefe && l.rand.length && !l.abgeschnitten && opt.richtungen.length; ebene++)
+    await sammleEbene(l, ebene);
 
   // Letzte Ebene: Kanten nachladen (für „tiefer möglich“ und die Verweise nach außen).
-  const ids = [...reihenfolge];
-  await ladeKanten(ids);
+  const ids = [...l.reihenfolge];
+  await ladeKanten(l, ids);
   let tieferMoeglich = false;
-  for (const e of rand) for (const n of nachbarn(e, kantenJe.get(e.mappe.id) ?? [])) if (!gesammelt.has(n.id)) tieferMoeglich = true;
+  for (const e of l.rand) for (const n of nachbarn(l, e, l.kantenJe.get(e.mappe.id) ?? [])) if (!gesammelt.has(n.id)) tieferMoeglich = true;
   // Unbekannte Nachbarn (außerhalb des Baums): Titel und Typ, Lesbarkeit.
   const aussenIds = new Set<string>();
   for (const id of ids)
-    for (const k of kantenJe.get(id) ?? []) for (const x of [k.quelleId, k.zielId]) if (!gesammelt.has(x)) aussenIds.add(x);
+    for (const k of l.kantenJe.get(id) ?? []) for (const x of [k.quelleId, k.zielId]) if (!gesammelt.has(x)) aussenIds.add(x);
   const bez = await mapInPaketen([...aussenIds], (t) => q.bezuege(t));
   const aussenLesbar = await setInPaketen([...aussenIds], (t) => q.lesbare(t));
   const [doks, rechte] = await Promise.all([mapInPaketen(ids, (t) => q.dokumente(t)), q.rechte(ids.map((id) => gesammelt.get(id)!.mappe))]);
-  const jetzt = q.jetzt ?? new Date();
-
-  const knoten: BaumKnoten[] = ids.map((id) => {
-    const e = gesammelt.get(id)!;
-    const typ = q.typen.get(e.mappe.typId);
-    const aussen: BaumKnoten['aussen'] = { verweistAuf: [], verwiesenVon: [], anzahl: { verweistAuf: 0, verwiesenVon: 0 } };
-    for (const k of kantenJe.get(id) ?? []) {
-      const richtung: BaumRichtung | null =
-        k.quelleId === id && !gesammelt.has(k.zielId)
-          ? 'verweistAuf'
-          : k.zielId === id && !gesammelt.has(k.quelleId)
-            ? 'verwiesenVon'
-            : null;
-      if (!richtung) continue;
-      const anderer = richtung === 'verweistAuf' ? k.zielId : k.quelleId;
-      aussen.anzahl[richtung]++;
-      if (aussen[richtung].length >= AUSSEN_MAX) continue;
-      const b = bez.get(anderer);
-      const sichtbar = !!b && aussenLesbar.has(anderer) && q.typen.has(b.typId);
-      const quelleTyp = richtung === 'verweistAuf' ? e.mappe.typId : b?.typId;
-      const v: AussenVerweis = sichtbar
-        ? { mappeId: anderer, typId: b!.typId, titel: b!.titel, feldKey: k.feldKey, feld: feldName(quelleTyp, k.feldKey) }
-        : {
-            mappeId: null,
-            typId: null,
-            titel: NICHT_SICHTBAR,
-            feldKey: k.feldKey,
-            feld: sichtbar || richtung === 'verweistAuf' ? feldName(quelleTyp, k.feldKey) : '',
-            verborgen: true,
-          };
-      aussen[richtung].push(v);
-    }
-    const bis = aufbewahrenBis(typ?.archiv, e.mappe);
-    return {
-      id,
-      typId: e.mappe.typId,
-      typ: typ?.name ?? '',
-      titel: e.mappe.titel ?? '',
-      ebene: e.ebene,
-      ueber: e.ueber,
-      auchUeber: e.auchUeber,
-      ...(e.bezug ? { nurBezug: true } : {}),
-      dokumente: doks.get(id) ?? 0,
-      aussen,
-      aufbewahrenBis: bis,
-      gesperrt: gesperrt(typ?.archiv, e.mappe, jetzt),
-      rechte: rechte.get(id) ?? { ...NICHTS },
-    };
-  });
-  return { startId: start.id, optionen: opt, knoten, abgeschnitten, kreise, verborgen: verborgen.size, tieferMoeglich };
+  const x: Aussen = { bez, aussenLesbar, doks, rechte, jetzt: q.jetzt ?? new Date() };
+  const knoten = ids.map((id) => knotenVon(l, id, x));
+  return {
+    startId: start.id,
+    optionen: opt,
+    knoten,
+    abgeschnitten: l.abgeschnitten,
+    kreise: l.kreise,
+    verborgen: l.verborgen.size,
+    tieferMoeglich,
+  };
 }
