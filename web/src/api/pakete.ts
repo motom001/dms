@@ -155,7 +155,7 @@ export interface PaketVorschau {
   umbau?: import('../../../shared/src/umbau').UmbauPlan[];
   ergaenzungen?: import('../../../shared/src/vorgaben').ErgaenzungPlan[];
   /** Mitgelieferte Automatisierungen (#712); neu = steht beim Installieren zur Wahl. */
-  /** eingeschaltet (#1082): wie im Paket angegeben; fehlt = nicht angegeben (siehe vorausgewaehlt in shared/src/pakete.ts). */
+  /** eingeschaltet (#1082): wie im Paket angegeben; fehlt = nicht angegeben (siehe vorausgewaehlt in shared/src/pakete/rechtepunkte.ts). */
   automatisierungen?: Array<{
     schluessel: string;
     name: string;

@@ -2,7 +2,7 @@
  * Anzeige-Bedingungen an Feldern und Abschnitten (#1033): „Anzeigen, wenn …“ – z. B. Abschnitt „Miete“ nur bei
  * Vertragsart Miete, Abschnitt „Abschluss“ nur, wenn die Ablage beruflich genutzt wird (#1032).
  *
- * Bedingungen kommen aus dem Baukasten der Ansichten (`sichten.ts`): Feldwert der Mappe (gleich, einer von, leer,
+ * Bedingungen kommen aus dem Baukasten der Ansichten (`sichten/`): Feldwert der Mappe (gleich, einer von, leer,
  * nicht leer, „Verweis zeigt auf eine bestimmte Mappe“ …), dazu das Merkmal der Ablage und „Verweis zeigt auf eine
  * Mappe vom Typ …“. Jede Bedingung ist umkehrbar, die Regel gilt bei „alle“ oder „eine davon“.
  *

@@ -229,7 +229,7 @@ export function auswahlMitAbhaengigkeiten(
 
 /* ---------- Katalog lesen ---------- */
 
-export const text = (v: unknown) => (typeof v === 'string' ? v : '');
+const text = (v: unknown) => (typeof v === 'string' ? v : '');
 
 /** Prüft und vereinheitlicht einen geladenen Katalog; wirft mit verständlicher Meldung. */
 /** Symbol, Kürzel und Kategorien eines Katalogeintrags (#645) – nur gültige Werte, sonst weggelassen. */

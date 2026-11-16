@@ -41,7 +41,10 @@ export const UEBERGAENGE: Uebergang[] = [
     seit: '#883, 0.212',
     entfaelltMit: '1.0.0',
     fundstellen: [
-      { datei: 'shared/src/pakete.ts', text: "export const DMS_ALIAS: Record<string, string> = { ablageort: 'basis:ablageort' };" },
+      {
+        datei: 'shared/src/pakete/schnittstellen.ts',
+        text: "export const DMS_ALIAS: Record<string, string> = { ablageort: 'basis:ablageort' };",
+      },
     ],
   },
   {

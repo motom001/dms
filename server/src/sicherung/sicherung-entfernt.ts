@@ -91,7 +91,7 @@ const NAME = /^[\w.-]{1,120}$/;
 const gueltigerName = (n: unknown): n is string => typeof n === 'string' && NAME.test(n) && !n.startsWith('.');
 const zahl = (v: unknown): number | null => (typeof v === 'number' && Number.isSafeInteger(v) && v >= 0 ? v : null);
 const text = (v: unknown, max: number) => (typeof v === 'string' && v.trim() ? v.trim().replace(/\s+/g, ' ').slice(0, max) : null);
-/** Zugangsdaten aus einer Adresse im Text entfernen (wie in sicherung.ts). */
+/** Zugangsdaten aus einer Adresse im Text entfernen (wie in sicherung-hilfen.ts). */
 const ohneZugangsdaten = (s: string) => s.replace(/(\w+:\/\/)[^/@\s]*@/g, '$1');
 
 /** Schlanke Metadaten vom Ziel, streng geprüft: passen sie zu Name und Größe, und ist alles da, was die Wiederherstellung braucht? */

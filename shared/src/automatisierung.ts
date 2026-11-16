@@ -4,7 +4,7 @@
  * - **Genau eine Wenn-Karte** – ein Ereignis aus dem Katalog (#670) oder „Datum erreicht“ (#724: Vorlauf in Tagen,
  *   Wochen oder Monaten, auch wiederkehrend; ersetzt „Datum in N Tagen“ und die Wenn-Karte „Frist erreicht“). Sie legt den Kontext
  *   fest: die Mappe und ihren Mappentyp. Dessen Felder stehen in Und und Dann als Bedingungen und Platzhalter bereit.
- * - **Und** – Bedingungen aus dem Baukasten der Ansichten (`sichten.ts`), dazu „Mappe ist in Ansicht …“ und
+ * - **Und** – Bedingungen aus dem Baukasten der Ansichten (`sichten/`), dazu „Mappe ist in Ansicht …“ und
  *   „Mappe ist in den Favoriten von …“; jede umkehrbar, Gruppen „alle“ / „eine davon“ (eine Ebene tief).
  * - **Dann** – Karten in ihrer Reihenfolge. Die Karten selbst führt der Server aus (`automatisierung-karten.ts`).
  * - **Sonst** (#677) – Karten, die laufen, wenn die Und-Bedingungen nicht zutreffen (dieselben Karten wie Dann).

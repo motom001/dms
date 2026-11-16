@@ -237,15 +237,25 @@
       "count": 2
     }
   },
-  "server/src/erkennung/erkennung.ts": {
+  "server/src/erkennung/erkennung-abgleich.ts": {
     "complexity": {
-      "count": 3
-    },
-    "max-lines": {
       "count": 1
     },
     "max-lines-per-function": {
-      "count": 2
+      "count": 1
+    }
+  },
+  "server/src/erkennung/erkennung-post.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "server/src/erkennung/erkennung.ts": {
+    "complexity": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 1
     }
   },
   "server/src/erkennung/klassifizierung.ts": {
@@ -258,15 +268,12 @@
       "count": 1
     }
   },
-  "server/src/export/vollexport.ts": {
+  "server/src/export/vollexport-schreiben.ts": {
     "complexity": {
       "count": 1
     },
     "max-depth": {
       "count": 6
-    },
-    "max-lines": {
-      "count": 1
     },
     "max-lines-per-function": {
       "count": 1
@@ -364,11 +371,6 @@
   },
   "server/src/laeufer/prozess.ts": {
     "max-lines-per-function": {
-      "count": 1
-    }
-  },
-  "server/src/laeufer/verwaltung.ts": {
-    "max-lines": {
       "count": 1
     }
   },
@@ -772,16 +774,17 @@
       "count": 1
     }
   },
-  "server/src/sicherung/sicherung.ts": {
-    "complexity": {
-      "count": 1
-    },
-    "max-lines": {
-      "count": 1
-    },
+  "server/src/sicherung/sicherung-anlegen.ts": {
     "max-lines-per-function": {
       "count": 1
-    },
+    }
+  },
+  "server/src/sicherung/sicherung-extern.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "server/src/sicherung/sicherung.ts": {
     "no-useless-assignment": {
       "count": 1
     }
@@ -794,21 +797,26 @@
       "count": 1
     }
   },
-  "server/src/sicherung/wiederherstellung.ts": {
+  "server/src/sicherung/wiederherstellung-ausfuehren.ts": {
     "@typescript-eslint/no-unused-vars": {
       "count": 1
     },
     "complexity": {
-      "count": 3
+      "count": 1
     },
     "max-depth": {
       "count": 7
     },
-    "max-lines": {
+    "max-lines-per-function": {
       "count": 1
+    }
+  },
+  "server/src/sicherung/wiederherstellung-basis.ts": {
+    "complexity": {
+      "count": 2
     },
     "max-lines-per-function": {
-      "count": 2
+      "count": 1
     }
   },
   "server/src/sichten/sichten.dienst.ts": {
@@ -1145,23 +1153,46 @@
       "count": 1
     }
   },
-  "shared/src/erkennung.ts": {
+  "shared/src/erkennung/abgleich.ts": {
     "complexity": {
-      "count": 7
-    },
-    "max-lines": {
       "count": 1
     },
-    "max-lines-per-function": {
-      "count": 2
+    "no-irregular-whitespace": {
+      "count": 1
+    }
+  },
+  "shared/src/erkennung/angaben.ts": {
+    "complexity": {
+      "count": 3
     },
     "no-irregular-whitespace": {
-      "count": 2
+      "count": 1
     },
     "no-useless-assignment": {
       "count": 1
     },
     "no-useless-escape": {
+      "count": 1
+    }
+  },
+  "shared/src/erkennung/arten.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "shared/src/erkennung/schema.ts": {
+    "complexity": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "shared/src/erkennung/vorschlaege.ts": {
+    "complexity": {
+      "count": 1
+    },
+    "max-lines-per-function": {
       "count": 1
     }
   },
@@ -1227,17 +1258,19 @@
       "count": 1
     }
   },
-  "shared/src/pakete.ts": {
+  "shared/src/pakete/code.ts": {
     "complexity": {
-      "count": 2
+      "count": 1
     },
     "max-depth": {
       "count": 5
     },
-    "max-lines": {
-      "count": 1
-    },
     "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "shared/src/pakete/katalog.ts": {
+    "complexity": {
       "count": 1
     }
   },
@@ -1259,14 +1292,26 @@
       "count": 1
     }
   },
-  "shared/src/sichten.ts": {
+  "shared/src/sichten/aufloesen.ts": {
     "complexity": {
-      "count": 7
+      "count": 2
     },
     "max-depth": {
       "count": 1
-    },
-    "max-lines": {
+    }
+  },
+  "shared/src/sichten/auswahlfilter.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "shared/src/sichten/bereinigen.ts": {
+    "complexity": {
+      "count": 3
+    }
+  },
+  "shared/src/sichten/felder.ts": {
+    "complexity": {
       "count": 1
     }
   },

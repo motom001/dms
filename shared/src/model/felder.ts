@@ -118,7 +118,7 @@ export interface Feld {
   /**
    * „Zum Wiederfinden nutzen“ (#938): Über diesen Wert findet Ablago vorhandene Mappen wieder (Kundennummer,
    * Vertragsnummer, Rechnungsnummer, Kennzeichen …) – für Vorschläge, Belege und die Warnung vor Doppelten.
-   * Unabhängig von „eindeutig“. Nur bei Text, Zahl und Verweis (WIEDERFINDEN_FELDTYPEN in erkennung.ts).
+   * Unabhängig von „eindeutig“. Nur bei Text, Zahl und Verweis (WIEDERFINDEN_FELDTYPEN in erkennung/arten.ts).
    */
   wiederfinden?: boolean;
   /**

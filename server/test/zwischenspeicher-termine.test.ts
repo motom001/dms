@@ -682,7 +682,7 @@ describe('PostgreSQL: Vorfilter, Pflege und Migration (#918)', { skip: url ? fal
       })),
     );
     await abgleich('viele auf einmal');
-    // Einspielen per COPY wie beim Wiederherstellen einer Sicherung (wiederherstellung.ts): Der Trigger füllt neu.
+    // Einspielen per COPY wie beim Wiederherstellen einer Sicherung (wiederherstellung-ausfuehren.ts): Der Trigger füllt neu.
     const spalten = ['id', 'haushalt_id', 'typ_id', 'werte', 'erstellt', 'geaendert'];
     const zeilen: string[] = [];
     for await (const c of await sql

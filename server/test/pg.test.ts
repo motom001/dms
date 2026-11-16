@@ -1457,7 +1457,7 @@ describe('PostgreSQL und HTTP', { skip: url ? false : 'TEST_DATABASE_URL nicht g
     const { tabellenIn } = await import('../src/sicherung/datenbankabzug');
     const { EXPORT_TABELLEN } = await import('../src/export/vollexport');
     const fehlt = (await tabellenIn(sql)).map((t: { name: string }) => t.name).filter((n: string) => !(n in EXPORT_TABELLEN));
-    assert.deepEqual(fehlt, [], `Diese Tabellen fehlen im Vollexport (vollexport.ts, EXPORT_TABELLEN): ${fehlt.join(', ')}`);
+    assert.deepEqual(fehlt, [], `Diese Tabellen fehlen im Vollexport (export/vollexport-quelle.ts, EXPORT_TABELLEN): ${fehlt.join(', ')}`);
   });
 });
 
