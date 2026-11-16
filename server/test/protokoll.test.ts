@@ -54,7 +54,46 @@ describe('Protokoll', () => {
     assert.equal(e.modul, 'http');
     assert.equal(e.daten?.anfrage, 'GET /api/x');
     assert.match(String(e.daten?.fehler), /kaputt/);
-    assert.match(zeile(e), /ERROR \[http\] fehlgeschlagen anfrage="GET \/api\/x"\n.*kaputt/);
+    assert.match(zeile(e), /ERROR \[http\] fehlgeschlagen anfrage="GET \/api\/x"\n {2}\| .*kaputt/);
+  });
+
+  it('Container-Protokoll: Fehlertext und Text können keine eigene Zeile vortäuschen (#1353)', () => {
+    const falsch = '2026-11-16T08:00:00.000Z INFO  [zugang] Anmeldung benutzer=lena@example.org';
+    const e = {
+      nr: 1,
+      zeit: '2026-11-16T08:00:00.000Z',
+      stufe: 'error' as const,
+      modul: 'pakete',
+      text: `Abruf gescheitert\r\n${falsch}`,
+      daten: { fehler: `Fehler: https://example.org/x\n${falsch}\u001b[2K\tweiter` },
+    };
+    const z = zeile(e);
+    const zeilen = z.split('\n');
+    // Jede Folgezeile beginnt mit „  | “ – keine sieht aus wie eine Zeile des Protokolls.
+    for (const l of zeilen.slice(1)) assert.match(l, /^ {2}\| /, l);
+    assert.ok(!zeilen.slice(1).some((l) => l.startsWith('2026-')));
+    assert.match(zeilen[0], /Abruf gescheitert\\u000d$/);
+    assert.ok(z.includes('\\u001b[2K\\u0009weiter'));
+    // eslint-disable-next-line no-control-regex -- geprüft wird gerade, dass keine Steuerzeichen bleiben
+    assert.ok(!/[\u0000-\u0009\u000b-\u001f]/.test(z), 'keine Steuerzeichen außer dem Zeilenumbruch');
+  });
+
+  it('Container-Protokoll: Datenwerte ohne Leerraum mit Steuerzeichen werden ersetzt (#1353)', () => {
+    const z = zeile({
+      nr: 1,
+      zeit: '2026-11-16T08:00:00.000Z',
+      stufe: 'info' as const,
+      modul: 'ablage',
+      text: 'Hochgeladen',
+      daten: { datei: 'a\u001b[31mb\u0005.pdf', name: 'x\u0085y\u2028z', liste: ['q\u009br'], einfach: 'rechnung.pdf' },
+    });
+    assert.ok(!z.includes('\n'), z);
+    // eslint-disable-next-line no-control-regex -- geprüft wird gerade, dass keine Steuerzeichen bleiben
+    assert.ok(!/[\u0000-\u001f\u007f-\u009f\u2028\u2029]/.test(z), 'keine Steuerzeichen im Datenwert');
+    assert.ok(z.includes('datei="a\\u001b[31mb\\u0005.pdf"'), z);
+    assert.ok(z.includes('name="x\\u0085y\\u2028z"'), z);
+    assert.ok(z.includes('liste=["q\\u009br"]'), z);
+    assert.ok(z.includes('einfach=rechnung.pdf'), z);
   });
 });
 

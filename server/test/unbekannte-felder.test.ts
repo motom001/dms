@@ -17,7 +17,7 @@ import { speicherEinstellungen } from '../src/einstellungen';
 import { liesPaket, liesSammelVerzeichnis, Paketverwaltung, type Sammeldatei } from '../src/pakete';
 import { speicherRepo } from '../src/repo-speicher';
 import { zipPuffer } from '../src/zip';
-import { signatur, TEST_PROJEKT, TEST_SEED } from './katalogschluessel';
+import { signatur, TEST_PROJEKT, TEST_SEED, testSigniert } from './katalogschluessel';
 
 const ICH = { id: '00000000-0000-4000-8000-0000000000aa', email: 'admin@example.org' };
 const KATALOG = 'https://katalog.test/katalog.json';
@@ -151,7 +151,12 @@ async function aufbau(abrufbar = new Map<string, Buffer>()) {
     if (!b) throw new Error(`404 ${url}`);
     return b;
   };
-  const p = new Paketverwaltung(d, { version: () => '0.149.1', abruf, katalogUrl: KATALOG, projektSchluessel: TEST_PROJEKT });
+  const p = new Paketverwaltung(d, {
+    version: () => '0.149.1',
+    abruf: testSigniert(KATALOG, abruf),
+    katalogUrl: KATALOG,
+    projektSchluessel: TEST_PROJEKT,
+  });
   return { d, p };
 }
 const alsSammel = (r: unknown): Sammeldatei => {

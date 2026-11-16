@@ -165,7 +165,14 @@ export function VorschauBlock({
   const probleme = v.probleme.filter((p) => !v.namenskonflikte?.includes(p) && !ohne.includes(p));
   // Herkunft bestätigen (#189, #594): außerhalb des offiziellen Katalogs bzw. ohne gültige Signatur.
   const pruefWarnung =
-    warnung ?? (v.pruefung?.bestaetigen ? (v.pruefung.art === 'ungueltig' ? tx('pakete.herkunft.warnung.ungueltig') : '') : null);
+    warnung ??
+    (v.pruefung?.bestaetigen
+      ? v.pruefung.art === 'ungueltig'
+        ? tx('pakete.herkunft.warnung.ungueltig')
+        : v.pruefung.art === 'nichtgeprueft'
+          ? tx('pakete.herkunft.warnung.nichtgeprueft')
+          : ''
+      : null);
   const bestaetigen = pruefWarnung !== null && !herkunftBestaetigt;
   const gesperrt = probleme.length > 0 || konflikt || leer || (bestaetigen && !ok) || rechteFehlen || herausgeberFehlt || umbauFehlt;
   const antwort: VorschauAntwort = {

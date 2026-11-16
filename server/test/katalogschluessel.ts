@@ -36,3 +36,10 @@ export const TEST_PROJEKT: Projektschluessel[] = [
   { rolle: 'signier', test: true, pem: oeffentlichPem(TEST_SEED.signier) },
   { rolle: 'reserve', test: true, pem: oeffentlichPem(TEST_SEED.reserve) },
 ];
+
+/**
+ * Abruf mit signiertem offiziellem Katalog (#1351): `katalog.sig` neben `katalogUrl` ist die Testsignatur über das,
+ * was der Abruf dort liefert. Dazu `projektSchluessel: TEST_PROJEKT` an die Paketverwaltung; der Katalog braucht `erstellt`.
+ */
+export const testSigniert = (katalogUrl: string, abruf: (url: string) => Promise<Buffer>) => async (url: string): Promise<Buffer> =>
+  (url === new URL('katalog.sig', katalogUrl).href ? signatur(await abruf(katalogUrl), TEST_SEED.signier) : abruf(url));

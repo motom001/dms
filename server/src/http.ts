@@ -19,6 +19,7 @@ import type { ApiSchluesselDienst } from './apischluessel';
 import { wer } from './api-v1';
 import { oberflaecheSenden, statischeDateien } from './oberflaeche';
 import { einbettenAus, sicherheitsKoepfe, type Einbetten } from './koepfe';
+import { istHeimnetz } from './notfallcode';
 import { kontext, protokoll, type Kontext } from './protokoll';
 import type { Betrieb } from './betrieb';
 import type { Tresor } from './tresor';
@@ -191,6 +192,18 @@ interface Optionen {
   nachlauf?: Nachlauf;
 }
 
+/**
+ * Person einer Anfrage im Protokoll (#819): im Verwaltungsmodus mit „im Verwaltungsmodus“, an der Konsole mit
+ * „(Konsole)“; in einer Vertretung (#1357) auch, wer vertritt – ebenso in fachlichen Zeilen mit `von`.
+ */
+async function personImProtokoll(k: Kontext, a: Anfrage, konten: Konten) {
+  const vertreter = a.benutzer && !a.konsole && a.sitzungsDaten?.vertretungId ? await konten.vertretenVon(a.sitzungsDaten) : null;
+  if (vertreter && a.benutzer) k.vertretung = { person: a.benutzer.email, von: vertreter };
+  k.benutzer = a.konsole
+    ? `${a.benutzer?.email ?? tDe('meldungen.http.ohne-verwaltungsrecht')} (Konsole)`
+    : `${wer(a.benutzer, a.apiSchluessel)}${a.verwaltungsmodus ? tDe('meldungen.http.im-verwaltungsmodus') : ''}${vertreter ? tDe('meldungen.http.vertreten-von', { wer: vertreter }) : ''}`;
+}
+
 export async function baueApp(dienst: Dienst, konten: Konten, opt: Optionen = {}) {
   const app = Fastify({
     loggerInstance: protokoll.fuerFastify() as unknown as FastifyBaseLogger,
@@ -325,7 +338,20 @@ export async function baueApp(dienst: Dienst, konten: Konten, opt: Optionen = {}
     ip: req.ip,
     peer: req.socket.remoteAddress,
     geraet: String(req.headers['user-agent'] ?? ''),
-    einrichtungscode: typeof req.headers['x-einrichtungscode'] === 'string' ? req.headers['x-einrichtungscode'] : undefined,
+    // Einrichtung ohne Code nur aus dem Heimnetz (#1359): dieselbe Prüfung wie beim Notfallzugang.
+    einrichtungscode: {
+      ...(typeof req.headers['x-einrichtungscode'] === 'string' ? { code: req.headers['x-einrichtungscode'] } : {}),
+      heimnetz: istHeimnetz(
+        {
+          ip: req.ip,
+          kopf: (n) => {
+            const v = req.headers[n];
+            return Array.isArray(v) ? v.join(', ') : v;
+          },
+        },
+        opt.proxy,
+      ),
+    },
     kopf: (n) => {
       const v = req.headers[n];
       return Array.isArray(v) ? v.join(', ') : v;
@@ -377,10 +403,7 @@ export async function baueApp(dienst: Dienst, konten: Konten, opt: Optionen = {}
             if (a.benutzer?.sprache && erlaubteSprachen().includes(a.benutzer.sprache)) setzeAnfrageSprache(a.benutzer.sprache);
             // Eigene Änderungen zeigen die Zahlen sofort (#742).
             k.benutzerId = a.benutzer?.id;
-            // Protokoll (#819): jede Anfrage im Verwaltungsmodus mit Person und „im Verwaltungsmodus“.
-            k.benutzer = a.konsole
-              ? `${a.benutzer?.email ?? tDe('meldungen.http.ohne-verwaltungsrecht')} (Konsole)`
-              : `${wer(a.benutzer, a.apiSchluessel)}${a.verwaltungsmodus ? tDe('meldungen.http.im-verwaltungsmodus') : ''}`;
+            await personImProtokoll(k, a, konten);
             // Wartungsmodus (#102): API 503, in der aktiven Stufe nur Administratoren.
             // Die Konsole (#244) arbeitet auch im Wartungsmodus – etwa um ihn zu beenden.
             if (!a.konsole) opt.wartung?.pruefeAnfrage(r, a.benutzer);

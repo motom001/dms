@@ -27,6 +27,7 @@ import { speicherRepo } from '../src/repo-speicher';
 import { zipPuffer } from '../src/zip';
 import { basisMitAblageort, frueherAblageort } from './hilfen';
 import { eigeneDatenbank } from './hilfe-db';
+import { TEST_PROJEKT, testSigniert } from './katalogschluessel';
 
 const ICH = { id: '00000000-0000-4000-8000-0000000000aa', email: 'admin@example.org' };
 const BASIS = fileURLToPath(new URL('./pakete/basis', import.meta.url));
@@ -143,7 +144,7 @@ function katalog(
     if (vergleicheVersion(version, p.aktuell) > 0) p.aktuell = version;
     pakete.set(m, p);
   }
-  daten.set(url, Buffer.from(JSON.stringify({ format: 1, erstellt: '', quelle: '', pakete: [...pakete.values()] })));
+  daten.set(url, Buffer.from(JSON.stringify({ format: 1, erstellt: '2026-11-01T00:00:00Z', quelle: '', pakete: [...pakete.values()] })));
   return async (url: string) => {
     const b = daten.get(url);
     if (!b) throw new Error(`404 ${url}`);
@@ -279,7 +280,12 @@ function faelle(pg: boolean) {
       async function aufbau(eintraege: Parameters<typeof katalog>[0], version = '0.63.0') {
         const einstellungen = speicherEinstellungen();
         const d = new Dienst(await repo(pg), speicherDateien(), { einstellungen });
-        const p = new Paketverwaltung(d, { version: () => version, abruf: katalog(eintraege), katalogUrl: KATALOG });
+        const p = new Paketverwaltung(d, {
+          version: () => version,
+          abruf: testSigniert(KATALOG, katalog(eintraege)),
+          katalogUrl: KATALOG,
+          projektSchluessel: TEST_PROJEKT,
+        });
         return { d, p, einstellungen };
       }
 
@@ -463,7 +469,12 @@ function faelle(pg: boolean) {
           return b;
         };
         const d = new Dienst(await repo(pg), speicherDateien(), { einstellungen: speicherEinstellungen() });
-        const p = new Paketverwaltung(d, { version: () => '0.63.0', abruf, katalogUrl: KATALOG });
+        const p = new Paketverwaltung(d, {
+          version: () => '0.63.0',
+          abruf: testSigniert(KATALOG, abruf),
+          katalogUrl: KATALOG,
+          projektSchluessel: TEST_PROJEKT,
+        });
         await assert.rejects(p.quelleHinzufuegen({ url: 'http://eigen.test/k.json' }, ICH), /nur über HTTPS/);
         await assert.rejects(p.vorschau({ id: 'basis', quelle: EIGEN }), /nicht \(mehr\) eingerichtet/);
         assert.deepEqual(

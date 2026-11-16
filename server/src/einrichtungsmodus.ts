@@ -3,7 +3,8 @@ import type { ProxyVertrauen } from './proxy';
 import Fastify from 'fastify';
 import { existsSync } from 'node:fs';
 import { ansicht, anbindungAus, legeDatenbankAn, pruefeAnbindung, schreibeAnbindung, type Anbindung, type Pruefung } from './anbindung';
-import type { Einrichtungscode } from './einrichtungscode';
+import type { EinrichtungsAngabe, Einrichtungscode } from './einrichtungscode';
+import { istHeimnetz } from './notfallcode';
 import { liesEinrichtungsdatei } from './einrichtungsdatei';
 import { Fachfehler } from './fehler';
 import { protokoll } from './protokoll';
@@ -98,10 +99,15 @@ export async function einrichtungsmodus(o: EinrichtungsmodusOptionen): Promise<A
 
   const kopf = (req: { headers: Record<string, unknown> }, n: string) =>
     typeof req.headers[n] === 'string' ? (req.headers[n] as string) : undefined;
+  /** Einrichtungscode und Herkunft (#1359): ohne Code nur aus dem Heimnetz, wie beim Notfallzugang mit TRUST_PROXY. */
+  const angabe = (req: { ip: string; headers: Record<string, unknown> }): EinrichtungsAngabe => ({
+    ...(kopf(req, 'x-einrichtungscode') !== undefined ? { code: kopf(req, 'x-einrichtungscode') } : {}),
+    heimnetz: istHeimnetz({ ip: req.ip, kopf: (n) => kopf(req, n) }, o.proxy),
+  });
   /** Jede Änderung: Kennung der Oberfläche und Einrichtungscode. */
-  const schutz = (req: { headers: Record<string, unknown> }) => {
+  const schutz = (req: { ip: string; headers: Record<string, unknown> }) => {
     if (kopf(req, 'x-dms') !== '1') throw new Fachfehler(403, t('meldungen.einrichtungsmodus.anfrage-ohne-kennung-der'));
-    o.code.pruefe(kopf(req, 'x-einrichtungscode'));
+    o.code.pruefe(angabe(req));
   };
   const eingabe = (body: unknown) => anbindungAus((body as { anbindung?: unknown } | null)?.anbindung, vorbelegt);
 
@@ -122,7 +128,7 @@ export async function einrichtungsmodus(o: EinrichtungsmodusOptionen): Promise<A
 
   // Angaben zur bisherigen Anbindung (Server, Benutzer, Fehler) nur mit Code.
   app.get('/api/konto/status', async (req) => {
-    const mitCode = o.code.stimmt(kopf(req, 'x-einrichtungscode'));
+    const mitCode = o.code.stimmt(angabe(req));
     return {
       einrichtungNoetig: true,
       mail: false,

@@ -22,6 +22,8 @@ export function herkunftPruefungText(p: HerkunftPruefung, sammel = false): strin
       return t('pakete.herkunft.anbieter', { fingerabdruck: p.fingerabdruck ?? '–' });
     case 'ungueltig':
       return t('pakete.herkunft.ungueltig');
+    case 'nichtgeprueft':
+      return t('pakete.herkunft.nichtgeprueft');
     case 'datei':
       return p.katalogversion ? t('pakete.herkunft.katalogversion', { version: p.katalogversion }) : t('pakete.herkunft.datei');
     default:
@@ -29,12 +31,11 @@ export function herkunftPruefungText(p: HerkunftPruefung, sammel = false): strin
   }
 }
 
-/** Hinweise zur Herkunft, die nicht in die Zeile passen: alter Stand, Testschlüssel, Schlüsselwechsel, Übergang. */
+/** Hinweise zur Herkunft, die nicht in die Zeile passen: alter Stand, Testschlüssel, Schlüsselwechsel. */
 export function herkunftHinweise(p: HerkunftPruefung): string[] {
   return [
     p.alt ? t('pakete.herkunft.alt', { tage: KATALOG_ALT_TAGE }) : '',
     p.wechsel ? t('pakete.herkunft.wechsel') : '',
-    p.art === 'unsigniert' && p.offiziell ? t('pakete.herkunft.uebergang') : '',
     p.test ? t('pakete.herkunft.test') : '',
   ].filter(Boolean);
 }

@@ -23,6 +23,7 @@ import type { Repo } from '../src/repo';
 import { speicherRepo } from '../src/repo-speicher';
 import { zipPuffer } from '../src/zip';
 import { eigeneDatenbank } from './hilfe-db';
+import { TEST_PROJEKT, testSigniert } from './katalogschluessel';
 
 const DOK = { key: 'dokumente', name: 'Dokumente', art: 'dokumente' };
 const FELDREG = { key: 'allgemein', name: 'Allgemein', art: 'felder' };
@@ -417,7 +418,10 @@ function katalog(pakete: Array<Record<string, string>>) {
     e.aktuell = version;
     eintraege.set(id, e);
   }
-  daten.set(KATALOG, Buffer.from(JSON.stringify({ format: 1, erstellt: '', quelle: '', pakete: [...eintraege.values()] })));
+  daten.set(
+    KATALOG,
+    Buffer.from(JSON.stringify({ format: 1, erstellt: '2026-11-01T00:00:00Z', quelle: '', pakete: [...eintraege.values()] })),
+  );
   return async (url: string) => {
     const b = daten.get(url);
     if (!b) throw new Error(`404 ${url}`);
@@ -486,8 +490,9 @@ function paketFaelle(pg: boolean) {
         const d = new Dienst(await repo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
         const p = new Paketverwaltung(d, {
           version: () => '0.216.2',
-          abruf: katalog([paket('1.0.0', RECHNUNG_10), paket('1.1.0', update)]),
+          abruf: testSigniert(KATALOG, katalog([paket('1.0.0', RECHNUNG_10), paket('1.1.0', update)])),
           katalogUrl: KATALOG,
+          projektSchluessel: TEST_PROJEKT,
         });
         const inst = await p.installiere({ id: 'haushalt_test', version: '1.0.0' }, ICH);
         const holen = async (s: string) => (await d.mappentypen.listeTypen()).find((t) => t.id === inst.typen[s])!;

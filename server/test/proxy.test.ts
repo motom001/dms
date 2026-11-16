@@ -11,10 +11,19 @@ test('TRUST_PROXY: auto als Standard, true/false, Listen, Fehler', () => {
   assert.equal(proxyVertrauen('TRUE').trust, true);
   assert.deepEqual(proxyVertrauen('172.18.0.0/16, 10.0.0.5').trust, ['172.18.0.0/16', '10.0.0.5']);
   assert.deepEqual(proxyVertrauen('fd00::/8').trust, ['fd00::/8']);
-  const f = proxyVertrauen('ja bitte');
-  assert.deepEqual(f.trust, PRIVATE_NETZE);
-  assert.match(f.fehler ?? '', /ja bitte/);
-  assert.ok(proxyVertrauen('10.0.0.0/33').fehler);
+  // „aus“ in üblichen Schreibweisen (#1350).
+  for (const w of ['0', 'no', 'OFF', 'nein', ' False ']) {
+    const r = proxyVertrauen(w);
+    assert.equal(r.trust, false, w);
+    assert.equal(r.fehler, undefined, w);
+  }
+  // Ungültiger Wert (#1350): niemandem glauben statt „auto“, mit Meldung.
+  for (const w of ['ja bitte', 'flase', '10.0.0.0/33', '172.18.0.0/16, quatsch']) {
+    const f = proxyVertrauen(w);
+    assert.equal(f.trust, false, w);
+    assert.ok(f.fehler, w);
+  }
+  assert.match(proxyVertrauen('ja bitte').fehler ?? '', /ja bitte/);
 });
 
 async function frage(trust: ReturnType<typeof proxyVertrauen>['trust'], remoteAddress: string) {

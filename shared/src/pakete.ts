@@ -267,10 +267,11 @@ export interface HerkunftPruefung {
    * projekt: gültig signiert vom DMS-Projekt (offizieller Katalog bzw. Sammeldatei daraus);
    * anbieter: gültig signiert mit dem bestätigten Schlüssel eines eigenen Katalogs;
    * unsigniert: keine Signatur; ungueltig: Signatur da, aber ungültig (steht im Protokoll);
+   * nichtgeprueft: Signatur des offiziellen Katalogs ließ sich nicht abrufen (#1351);
    * datei: hochgeladenes Paket ohne signierten Katalog.
    */
-  art: 'projekt' | 'anbieter' | 'unsigniert' | 'ungueltig' | 'datei';
-  /** Aus dem offiziellen Katalog bzw. einer Sammeldatei mit dem offiziellen Katalog. */
+  art: 'projekt' | 'anbieter' | 'unsigniert' | 'ungueltig' | 'nichtgeprueft' | 'datei';
+  /** Belegt aus dem offiziellen Katalog bzw. einer Sammeldatei damit – nur mit gültiger Signatur (#1351). */
   offiziell: boolean;
   /** Stand (`erstellt`) des signierten Katalogs. */
   stand?: string;

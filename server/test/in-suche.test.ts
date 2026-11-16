@@ -20,6 +20,7 @@ import type { Repo } from '../src/repo';
 import { speicherRepo } from '../src/repo-speicher';
 import { zipPuffer } from '../src/zip';
 import { eigeneDatenbank } from './hilfe-db';
+import { TEST_PROJEKT, testSigniert } from './katalogschluessel';
 
 describe('In der allgemeinen Suche zeigen (#1220): Einstellung', () => {
   it('Vorgabe ja; nur true/false werden gemerkt; Änderungsprotokoll nennt die Änderung', () => {
@@ -106,7 +107,7 @@ function katalog(pakete: Array<Record<string, string>>) {
     Buffer.from(
       JSON.stringify({
         format: 1,
-        erstellt: '',
+        erstellt: '2026-11-01T00:00:00Z',
         quelle: '',
         pakete: [
           {
@@ -179,8 +180,9 @@ function paketFaelle(pg: boolean) {
         const d = new Dienst(await repo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
         const p = new Paketverwaltung(d, {
           version: () => '0.274.0',
-          abruf: katalog([paket('1.0.0', ''), paket('1.1.0', 'false')]),
+          abruf: testSigniert(KATALOG, katalog([paket('1.0.0', ''), paket('1.1.0', 'false')])),
           katalogUrl: KATALOG,
+          projektSchluessel: TEST_PROJEKT,
         });
         const inst = await p.installiere({ id: 'vertraege_test', version: '1.0.0' }, ICH);
         const holen = async (s: string) => (await d.kern.repo.holeTyp(inst.typen[s]))!;
@@ -198,8 +200,9 @@ function paketFaelle(pg: boolean) {
         const d2 = new Dienst(await repo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
         const p2 = new Paketverwaltung(d2, {
           version: () => '0.274.0',
-          abruf: katalog([paket('1.0.0', ''), paket('1.1.0', 'false')]),
+          abruf: testSigniert(KATALOG, katalog([paket('1.0.0', ''), paket('1.1.0', 'false')])),
           katalogUrl: KATALOG,
+          projektSchluessel: TEST_PROJEKT,
         });
         const inst2 = await p2.installiere({ id: 'vertraege_test', version: '1.0.0' }, ICH);
         const v2 = (await d2.kern.repo.holeTyp(inst2.typen.vertragsart))!;
@@ -209,7 +212,12 @@ function paketFaelle(pg: boolean) {
 
         // Neu installiert mit 1.1.0: gleich „nein“.
         const d3 = new Dienst(await repo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
-        const p3 = new Paketverwaltung(d3, { version: () => '0.274.0', abruf: katalog([paket('1.1.0', 'false')]), katalogUrl: KATALOG });
+        const p3 = new Paketverwaltung(d3, {
+          version: () => '0.274.0',
+          abruf: testSigniert(KATALOG, katalog([paket('1.1.0', 'false')])),
+          katalogUrl: KATALOG,
+          projektSchluessel: TEST_PROJEKT,
+        });
         const inst3 = await p3.installiere({ id: 'vertraege_test', version: '1.1.0' }, ICH);
         assert.equal((await d3.kern.repo.holeTyp(inst3.typen.vertragsart))!.inSuche, false);
 

@@ -935,6 +935,14 @@ export class Konten {
     return v ? { adminName: v.adminName, beginn: v.beginn } : null;
   }
 
+  /** Wer vertritt in dieser Sitzung (#1357, Systemprotokoll)? E-Mail der vertretenden Person, sonst ihr Name; null ohne Vertretung. */
+  async vertretenVon(sitzung?: SitzungIntern): Promise<string | null> {
+    if (!sitzung?.vertretungId) return null;
+    const v = await this.repo.holeVertretung(sitzung.vertretungId);
+    if (!v) return null;
+    return (v.adminId ? (await this.repo.holeBenutzer(v.adminId))?.email : undefined) ?? v.adminName;
+  }
+
   /* ---------- Persönliche Einstellungen ---------- */
 
   einstellungen(ich: Benutzer) {

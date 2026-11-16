@@ -22,6 +22,7 @@ import type { Repo } from '../src/repo';
 import { speicherRepo } from '../src/repo-speicher';
 import { zipPuffer } from '../src/zip';
 import { eigeneDatenbank } from './hilfe-db';
+import { TEST_PROJEKT, testSigniert } from './katalogschluessel';
 
 const url = process.env.TEST_DATABASE_URL;
 const ICH = { id: '00000000-0000-4000-8000-0000000000aa', email: 'markus@example.org' };
@@ -140,7 +141,12 @@ async function aufbau(pg: boolean, katalog?: Katalog, archive: Record<string, Bu
     if (a) return a[1];
     throw new Error(`404 ${u}`);
   };
-  const p = new Paketverwaltung(d, { version: () => '0.245.0', abruf, katalogUrl: KATALOG });
+  const p = new Paketverwaltung(d, {
+    version: () => '0.245.0',
+    abruf: testSigniert(KATALOG, abruf),
+    katalogUrl: KATALOG,
+    projektSchluessel: TEST_PROJEKT,
+  });
   const hoch = async (dateien: Record<string, string>) => p.hochladen(archiv(dateien), ICH);
   const installiere = async (dateien: Record<string, string>, mehr: Record<string, unknown> = {}) =>
     p.installiere({ upload: (await hoch(dateien)).upload, bestaetigt: true, ...mehr }, ICH);
@@ -356,7 +362,7 @@ for (const pg of [false, true]) {
         const zip = archiv(VERTRAEGE);
         const katalog: Katalog = {
           format: 1,
-          erstellt: '',
+          erstellt: '2026-11-01T00:00:00Z',
           quelle: '',
           pakete: [
             {

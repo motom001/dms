@@ -45,6 +45,8 @@ export interface Kontext {
   /** Methode und Routenmuster ohne Ids, z. B. „GET /api/mappen/:id“ (#909, für die Sammlung im Lasttest). */
   muster?: string;
   benutzer?: string;
+  /** Vertretung (#1357): E-Mail der vertretenen Person und wer vertritt – fachliche Zeilen mit `von` nennen beide. */
+  vertretung?: { person: string; von: string };
   db: { anzahl: number; ms: number };
   /**
    * Rechte-Auswertung (#477): Wandzeit, in der mindestens eine Auswertung lief (überlappende zählen
@@ -144,7 +146,12 @@ export class Protokoll {
     if (k?.benutzer) e.benutzer = k.benutzer;
     if (k?.anfrage) e.anfrage = k.anfrage;
     // Geheimnisse nie ins Protokoll (#1055): nur „eingerichtet: ja/nein“.
-    if (daten && Object.keys(daten).length) e.daten = ohneGeheimnisse(daten);
+    if (daten && Object.keys(daten).length)
+      e.daten = ohneGeheimnisse(
+        k?.vertretung && daten.von === k.vertretung.person
+          ? { ...daten, von: `${k.vertretung.person}${tDe('meldungen.http.vertreten-von', { wer: k.vertretung.von })}` }
+          : daten,
+      );
     this.puffer.push(e);
     this.aufraeumen();
     try {
@@ -303,18 +310,32 @@ function serialisiere(o: Record<string, unknown>): Record<string, unknown> {
   return r;
 }
 
+// Steuerzeichen außer dem Zeilenumbruch (auch CR, Tab, Escape, U+2028/2029) – im Container-Protokoll als \uXXXX.
+// eslint-disable-next-line no-control-regex -- genau diese Zeichen sollen ersetzt werden
+const STEUERZEICHEN = /[\u0000-\u0009\u000b-\u001f\u007f-\u009f\u2028\u2029]/g;
+// Datenwerte, die in Anführungszeichen und durch sicher() müssen: Leerraum oder irgendein Steuerzeichen (ohne g: kein lastIndex).
+// eslint-disable-next-line no-control-regex -- genau diese Zeichen sollen erkannt werden
+const UNRUHIG = /[\s\u0000-\u001f\u007f-\u009f\u2028\u2029]/;
+/**
+ * Text für das Container-Protokoll (#1353): Steuerzeichen sichtbar ersetzt, Folgezeilen eingerückt und mit „|“
+ * gekennzeichnet – so kann ein Text mit Zeilenumbrüchen aus einer Eingabe keine eigene Protokollzeile vortäuschen.
+ */
+const sicher = (s: string) =>
+  s.replace(STEUERZEICHEN, (z) => `\\u${z.charCodeAt(0).toString(16).padStart(4, '0')}`).replace(/\n/g, '\n  | ');
+
 /** Lesbare Zeile für die Container-Logs. */
 export function zeile(e: Eintrag): string {
-  const teile = [e.zeit, e.stufe.toUpperCase().padEnd(5), `[${e.modul}]`, e.text];
-  if (e.benutzer) teile.push(`benutzer=${e.benutzer}`);
+  const teile = [e.zeit, e.stufe.toUpperCase().padEnd(5), `[${e.modul}]`, sicher(e.text)];
+  if (e.benutzer) teile.push(`benutzer=${sicher(e.benutzer)}`);
   if (e.daten) {
     for (const [k, v] of Object.entries(e.daten)) {
       if (k === 'fehler') continue;
-      teile.push(`${k}=${typeof v === 'string' ? (/\s/.test(v) ? JSON.stringify(v) : v) : JSON.stringify(v)}`);
+      const roh = typeof v === 'string' && !UNRUHIG.test(v);
+      teile.push(`${k}=${roh ? v : sicher(String(JSON.stringify(v)))}`);
     }
   }
   const text = teile.join(' ');
-  return e.daten?.fehler ? `${text}\n${String(e.daten.fehler)}` : text;
+  return e.daten?.fehler ? `${text}\n  | ${sicher(String(e.daten.fehler))}` : text;
 }
 
 /** Das Protokoll der laufenden Anwendung. Stufe aus LOG_LEVEL (Standard: info). */
