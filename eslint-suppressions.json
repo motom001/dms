@@ -269,15 +269,6 @@
     }
   },
   "server/src/export/vollexport-schreiben.ts": {
-    "complexity": {
-      "count": 1
-    },
-    "max-depth": {
-      "count": 6
-    },
-    "max-lines-per-function": {
-      "count": 1
-    },
     "max-params": {
       "count": 1
     }
