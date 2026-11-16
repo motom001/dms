@@ -301,11 +301,8 @@
       "count": 1
     }
   },
-  "server/src/http/api-v1.ts": {
+  "server/src/http/api-v1/openapi.ts": {
     "complexity": {
-      "count": 1
-    },
-    "max-lines": {
       "count": 1
     }
   },

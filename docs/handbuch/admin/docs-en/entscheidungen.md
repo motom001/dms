@@ -66,7 +66,7 @@ Briefly recorded so that later changes know why something is the way it is.
 
 - **Own namespace `/api/v1`** with fixed addresses; internally it uses the same functions as the user interface. API keys only apply there, not at the interface's internal addresses.
 - **Keys** `dms_…` (240 bits of randomness), stored only as SHA-256; the beginning stays visible. Permissions: at most those of the user, plus "read only" (only GET). Since 0.26 (#128), administrators no longer get keys: a normal user works via the API.
-- **OpenAPI from the same table** as the routes (`api-v1.ts`), therefore always matching the installed version; the readable page renders it itself, without an outside library.
+- **OpenAPI from the same table** as the routes (`http/api-v1/`), therefore always matching the installed version; the readable page renders it itself, without an outside library.
 
 ## Operation and troubleshooting {#betrieb-und-fehlersuche}
 

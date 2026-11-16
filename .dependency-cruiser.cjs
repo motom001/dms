@@ -45,7 +45,7 @@ const OHNE_TUER = {
   formate: 'xlsx|zip|xml|schriftstueck',
   geheimnisse: 'geheimnisse|geheimnis-sperre|tresor',
   grundlagen: 'fehler|grenzen|uebergaenge',
-  http: 'http|routen|api-v1|koepfe|proxy|ueberlast',
+  http: 'http|routen|koepfe|proxy|ueberlast',
   konten: 'konto-repo',
   lasttest: 'lasttestmodus|speicherart|protokollsammlung|abfragestatistik|prozessgruppen',
   loeschen: 'baum',
