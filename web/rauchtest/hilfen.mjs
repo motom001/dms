@@ -213,6 +213,10 @@ export function rauchtest(name, optionen, ablauf) {
       await s.screenshot({ path: datei, fullPage: true }).catch(() => {});
       throw new Error(`${e.message}\n(Bild: ${datei}${fehler.length ? `; außerdem: ${fehler.join(' | ')}` : ''})`, { cause: e });
     } finally {
+      // Umgeschriebene Antworten (page.route) können beim Schließen noch laufen; ihr „Response has been disposed“
+      // käme sonst nach dem Test als unbehandelter Fehler an und machte den ganzen Lauf rot.
+      await k.unrouteAll({ behavior: 'ignoreErrors' }).catch(() => {});
+      for (const p of k.pages()) await p.unrouteAll({ behavior: 'ignoreErrors' }).catch(() => {});
       await k.close();
     }
     assert.deepEqual(fehler, [], `Fehler im Browser bei „${name}“`);
