@@ -4,7 +4,7 @@ import type { Meintest, Wortgruppe } from '../../../shared/src/suche';
 import type { Dokument, OcrStandArt } from '../../../shared/src/model';
 import type { KiUebersicht } from '../../../shared/src/pakete';
 import type { FrageZeile, FragenGrenzen, VerlaufEintrag } from '../../../shared/src/fragen';
-import { erreichbarkeit, NICHT_ERREICHBAR } from '../erreichbar';
+import { erreichbarkeit, NICHT_ERREICHBAR } from '../erreichbarkeit';
 import { t } from '../sprache';
 import { sprache } from '../../../shared/src/sprache';
 import type { Werkzeuge } from '../../../shared/src/werkzeuge';

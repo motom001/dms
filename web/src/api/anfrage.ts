@@ -2,7 +2,7 @@
 import { messung } from '../messung';
 import type { Pruefergebnis } from '../../../shared/src/model';
 import { merkeAnfrage } from '../diagnose';
-import { erreichbarkeit, NICHT_ERREICHBAR } from '../erreichbar';
+import { erreichbarkeit, NICHT_ERREICHBAR } from '../erreichbarkeit';
 import { istAusfall, istDatenbankAusfall } from '../../../shared/src/erreichbarkeit';
 import { t } from '../sprache';
 import { sprache } from '../../../shared/src/sprache';

@@ -24,6 +24,9 @@ import { Feld, FeldGruppe, HakenFeld, Knopf, KnopfLink, PaketChip, Suchfeld } fr
 import { gebietsschema } from '../../../shared/src/sprache';
 import { Kopf } from './Kopf';
 
+/** Assistent „Paket erstellen“ (#374): Kennung in der Adresse der Paketseite (#1278, Schritt 5: vorher in Pakete.tsx). */
+export const ERSTELLEN = t('werkbank.pakete.erstellen');
+
 /**
  * Werkbank → Pakete → Paket erstellen (#374): eigene Mappentypen und Ansichten als Paket im Format der
  * Registry, zum Mitnehmen in ein anderes DMS („Paket hochladen“ im Expertenmodus).

@@ -6,7 +6,6 @@ import type { Auftrag } from '../../../shared/src/auftrag';
 import type { Dokumentart } from '../../../shared/src/demodaten';
 import { anfrage } from './anfrage';
 import type { AnbindungAnsicht } from './konto';
-import type { WhLauf } from './betrieb';
 import type { PaketVorschau } from './pakete';
 
 export interface AnbindungEingabe {
@@ -68,6 +67,20 @@ export interface SicherungSchlank {
   verschluesselung: { verfahren: string; fingerabdruck: string };
 }
 /** Wiederherstellen (#107) und Probe (#109). */
+/** Lauf einer Wiederherstellung oder Probe (#1278, Schritt 5: vorher in betrieb.ts, das ihn für die Probe nutzt). */
+export interface WhLauf {
+  art: 'wiederherstellung' | 'probe';
+  sicherung: string;
+  von: string;
+  status: 'laeuft' | 'fertig' | 'fehler' | 'neustart';
+  schritte: WhSchritt[];
+  bytes: number;
+  gesamt: number;
+  gestartet: string;
+  beendet?: string;
+  fehler?: string;
+}
+
 export interface WhSchritt {
   name: string;
   status: 'offen' | 'laeuft' | 'ok' | 'fehler' | 'hinweis' | 'ausgelassen';

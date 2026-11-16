@@ -4,7 +4,7 @@ import { paketeApi } from '../api/pakete';
 import { geheZu } from '../ort';
 import { Knopf, KnopfLink } from '../bausteine';
 import { t } from '../sprache';
-import { ERSTELLEN } from './Pakete';
+import { ERSTELLEN } from './PaketErstellen';
 import { gebietsschema } from '../../../shared/src/sprache';
 
 /**

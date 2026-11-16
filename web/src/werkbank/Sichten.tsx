@@ -3,15 +3,7 @@ import { SprachText } from '../einrichtung/Beschriftung';
 import { optionText, typName } from '../../../shared/src/beschriftung';
 import { useEffect, useMemo, useState } from 'react';
 import { Ansage, useZiehen, Ziehgriff, type Ort } from '../ziehen';
-import {
-  einzigesZiel,
-  SYSTEMSPALTEN,
-  istSystemspalte,
-  zieleVon,
-  type Feld as FeldDef,
-  type Mappe,
-  type Mappentyp,
-} from '../../../shared/src/model';
+import { einzigesZiel, SYSTEMSPALTEN, istSystemspalte, zieleVon, type Feld as FeldDef, type Mappentyp } from '../../../shared/src/model';
 import {
   bedingungsfelder,
   bedingungsProblem,
@@ -46,15 +38,14 @@ import {
 } from '../../../shared/src/sichten';
 import { ausgeblendeteFelder } from '../../../shared/src/darstellung';
 import { merkmalText } from '../../../shared/src/merkmale';
-import { mappenApi } from '../api/mappen';
 import { werkbankApi } from '../api/werkbank';
 import { useDaten } from '../daten';
 import { geheZu, Link, loeseWache } from '../ort';
 import { Speicherleiste, useEntwurf } from '../Speicherleiste';
-import { titelOder } from '../seiten';
 import { Hilfe } from '../Hilfe';
 import { Listenkopf } from '../Listenkopf';
 import { elternkette, SichtBerechtigungen, SichtTestlauf } from './SichtRechte';
+import { MappenSuche } from './MappenSuche';
 import { sichtRegelProblem, sichtRegelwerkVon } from '../../../shared/src/sichtrechte';
 import { ANSICHT_SYMBOLE } from '../../../shared/src/ansichtsymbole';
 import { AnsichtSymbol, Symbol } from '../Symbol';
@@ -1429,89 +1420,6 @@ function Verweisziel({
       {art === 'fest' && zielTypen.length > 0 && (
         <MappenSuche typId={zielTypen} gewaehlt={gewaehlt} titel={titel} merke={merke} setze={(ids) => setze({ art: 'fest', wert: ids })} />
       )}
-    </span>
-  );
-}
-
-export function MappenSuche({
-  typId,
-  gewaehlt,
-  titel,
-  merke,
-  setze,
-}: {
-  /** Ein Typ oder mehrere (#1036). */ typId: string | string[];
-  gewaehlt: string[];
-  titel: Record<string, string>;
-  merke: (id: string, text: string) => void;
-  setze: (ids: string[]) => void;
-}) {
-  const [eingabe, setEingabe] = useState('');
-  const [treffer, setTreffer] = useState<Mappe[]>([]);
-  const fehlend = gewaehlt.filter((x) => !titel[x]).join(',');
-  useEffect(() => {
-    for (const x of fehlend ? fehlend.split(',') : [])
-      mappenApi
-        .mappe(x)
-        .then((r) => merke(x, titelOder(r.mappe.titel)))
-        .catch(() => merke(x, '(gelöscht)'));
-  }, [fehlend]); // eslint-disable-line react-hooks/exhaustive-deps -- Namen nur nachladen, wenn sich die Liste der fehlenden Mappen ändert
-  useEffect(() => {
-    if (!eingabe.trim()) {
-      setTreffer([]);
-      return;
-    }
-    let aktuell = true;
-    const ids = Array.isArray(typId) ? typId : [typId];
-    const timer = setTimeout(() => {
-      void Promise.all(ids.map((x) => mappenApi.seite(`typ:${x}`, 0, 8, eingabe.trim())))
-        .then((l) => aktuell && setTreffer(l.flatMap((x) => x.mappen)))
-        .catch(() => {});
-    }, 200);
-    return () => {
-      aktuell = false;
-      clearTimeout(timer);
-    };
-  }, [eingabe, Array.isArray(typId) ? typId.join(',') : typId]); // eslint-disable-line react-hooks/exhaustive-deps -- die Liste der Typen als Text
-  return (
-    <span className="mappensuche">
-      {gewaehlt.map((x) => (
-        <span key={x} className="chip">
-          {titel[x] ?? '…'}{' '}
-          <Knopf
-            art="link"
-            groesse="klein"
-            nurSymbol={t('werkbank.sichten.entfernen-2')}
-            onClick={() => setze(gewaehlt.filter((y) => y !== x))}>
-            <Symbol name="schliessen" />
-          </Knopf>
-        </span>
-      ))}
-      <Feld beschriftung={t('werkbank.sichten.mappe-suchen')} beschriftungVerbergen className="wahl">
-        {(v) => (
-          <>
-            <input {...v} placeholder={t('werkbank.sichten.suchen')} value={eingabe} onChange={(x) => setEingabe(x.target.value)} />
-            {treffer.length > 0 && (
-              <span className="wahlliste" role="listbox">
-                {treffer
-                  .filter((m) => !gewaehlt.includes(m.id))
-                  .map((m) => (
-                    <Knopf
-                      key={m.id}
-                      art="link"
-                      onClick={() => {
-                        merke(m.id, titelOder(m.titel));
-                        setze([...gewaehlt, m.id]);
-                        setEingabe('');
-                      }}>
-                      {titelOder(m.titel)}
-                    </Knopf>
-                  ))}
-              </span>
-            )}
-          </>
-        )}
-      </Feld>
     </span>
   );
 }

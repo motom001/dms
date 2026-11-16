@@ -4,7 +4,7 @@ import { ApiFehler, hatEinrichtungscode, setzeEinrichtungscode } from './api/anf
 import { einrichtungApi, type AnbindungEingabe, type AnbindungPruefung } from './api/einrichtung';
 import { kontoApi, type KontoStatus } from './api/konto';
 import { WiederherstellungsAssistent } from './wiederherstellen';
-import { useKonto } from './konto';
+import { useKonto } from './konto-kontext';
 import { t, tn } from './sprache';
 import { nachDemLaden, nimmDatei, ladeDatei } from './assistent/datei';
 import { Rahmen, Sammelassistent, SprachSchritt, unterbrochenerLauf, VOR, zurSprache, type Leiste } from './assistent/Schritte';

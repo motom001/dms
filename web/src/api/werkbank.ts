@@ -13,7 +13,7 @@ import type { Merkmale } from '../../../shared/src/merkmale';
 import type { SichtRechte, SichtRegelwerk, SichtSchritt } from '../../../shared/src/sichtrechte';
 import type { Sicherheit, Vorschlag } from '../../../shared/src/erkennung';
 import type { OrganisationStand } from '../../../shared/src/organisation';
-import { erreichbarkeit, NICHT_ERREICHBAR } from '../erreichbar';
+import { erreichbarkeit, NICHT_ERREICHBAR } from '../erreichbarkeit';
 import { istAusfall } from '../../../shared/src/erreichbarkeit';
 import { t } from '../sprache';
 import { sprache } from '../../../shared/src/sprache';

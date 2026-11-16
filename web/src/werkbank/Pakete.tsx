@@ -1,5 +1,5 @@
 import { Feld, HakenFeld, Knopf, KnopfLink, Reiter, ReiterFlaeche, Schalter, type KnopfErgebnis } from '../bausteine';
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Symbol } from '../Symbol';
 import {
   ergaenzungenVon,
@@ -10,21 +10,18 @@ import {
   KATALOG_LINK_REL,
   katalogSeiteMitVersion,
   sammelSeiteMitVersion,
-  neueVersionen,
   vergleicheVersion,
   type AblaufErgebnis,
-  type HerkunftPruefung,
   type NeueVersion,
   type InstalliertesPaket,
   type Katalog,
-  type KatalogPaket,
   type KatalogVersion,
   rechtePunkte,
   rechteZeilen,
 } from '../../../shared/src/pakete';
 import { PAKET_ID } from '../../../shared/src/kennungen';
 import { ApiFehler } from '../api/anfrage';
-import { paketeApi, type BeispielBehalten, type PaketQuelle, type PaketVorschau, type Sammeldatei } from '../api/pakete';
+import { paketeApi, type BeispielBehalten, type PaketQuelle, type PaketVorschau } from '../api/pakete';
 import { useDaten } from '../daten';
 import { Hilfe } from '../Hilfe';
 import { Listenkopf } from '../Listenkopf';
@@ -40,7 +37,7 @@ import { MappenMenueBlock } from './PaketAktionen';
 import { PaketAnzeigen } from './PaketAnzeigen';
 import { LaeuferUebersicht, PaketVerlauf } from './PaketVerlauf';
 import { hatEinstellungen } from '../../../shared/src/paketkern';
-import { PaketErstellen, SELBST } from './PaketErstellen';
+import { ERSTELLEN, PaketErstellen, SELBST } from './PaketErstellen';
 import { SelbstErstelltAnsicht } from './SelbstErstellt';
 import { rueckfrage } from '../rueckfrage';
 import { useKonto } from '../konto';
@@ -48,7 +45,7 @@ import { SammeldateiAnsicht, SammeldateiWahl } from './PaketeDazuholen';
 import { PaketAblauf } from './PaketAblauf';
 import { PaketUmwandeln } from './PaketUmwandeln';
 import { t as tx, t, tn } from '../sprache';
-import { KEINE_LIZENZ, lizenzArtVon, type SelbstErstellt } from '../../../shared/src/paketerstellung';
+import { KEINE_LIZENZ, lizenzArtVon } from '../../../shared/src/paketerstellung';
 import { HerkunftZeile } from './Herkunft';
 import { gebietsschema } from '../../../shared/src/sprache';
 import { sprachname } from '../../../shared/src/beschriftung';
@@ -57,10 +54,9 @@ import { Kurzanleitung, MitkommtInhalt } from './PaketMitkommt';
 import { mitkommtAusKatalog } from '../../../shared/src/mitkommt';
 import { AlleAktualisieren } from './PaketeAlle';
 import { PaketeVerfuegbar } from './PaketeVerfuegbar';
+import type { PaketeZustand } from './paketeZustand';
 import { alsMeldung, Herausgeber, MeldungBox, SprachHerkunft, VorschauBlock, type Meldung } from './PaketVorschau';
 
-/** Meldungen (#1168: jetzt in PaketVorschau.tsx) – hier weiter für bestehende Aufrufer. */
-export { alsMeldung, MeldungBox, type Meldung };
 import type { VorgabeFrage } from '../../../shared/src/vorgaben';
 
 /**
@@ -81,8 +77,6 @@ const host = (url: string) => {
 };
 /** Kennung des hochgeladenen Pakets in der Adresse. */
 export const UPLOAD = t('werkbank.pakete.hochgeladen');
-/** Assistent „Paket erstellen“ (#374). */
-export const ERSTELLEN = t('werkbank.pakete.erstellen');
 /** Hochgeladene Sammeldatei mit mehreren Paketen (#461). */
 export const SAMMEL = t('werkbank.pakete.sammeldatei');
 /** Alle aktualisieren (#1168). */
@@ -114,78 +108,6 @@ function useExperteOffen(): [boolean, (offen: boolean) => void] {
   };
   return [offen, setzen];
 }
-
-type Abruf = { url: string; offiziell: boolean; katalog: Katalog | null; fehler: string | null; pruefung?: HerkunftPruefung | null };
-
-export function usePakete(offen: boolean) {
-  const [stand, setStand] = useState<{ installiert: InstalliertesPaket[]; katalogUrl: string; quellen: PaketQuelle[]; dms: string } | null>(
-    null,
-  );
-  const [kataloge, setKataloge] = useState<{ liste: Abruf[]; abgerufen: string } | null>(null);
-  const [upload, setUpload] = useState<{ upload: string; vorschau: PaketVorschau; datei: string } | null>(null);
-  const [sammel, setSammel] = useState<{ sammeldatei: Sammeldatei; datei: string } | null>(null);
-  const [fehler, setFehler] = useState<string>();
-  const [laedt, setLaedt] = useState(false);
-  // Selbst erstellte Pakete (#652) stehen unter „Installiert“ mit dem Zeichen „selbst erstellt“.
-  const [selbst, setSelbst] = useState<SelbstErstellt[] | null>(null);
-  const laden = useCallback(async () => {
-    try {
-      const [st, se] = await Promise.all([paketeApi.pakete(), paketeApi.selbstErstellt()]);
-      setStand(st);
-      setSelbst(se);
-      setFehler(undefined);
-    } catch (e) {
-      setFehler((e as Error).message);
-    }
-  }, []);
-  useEffect(() => {
-    if (offen) void laden();
-  }, [offen, laden]);
-  // Abgefragt werden der offizielle Katalog und die eingeschalteten weiteren Quellen (#369);
-  // der Link aus der Katalog-Webseite (#191) fragt nur den offiziellen ab (alle = false).
-  const abrufen = useCallback(async (alle = true) => {
-    setLaedt(true);
-    setFehler(undefined);
-    try {
-      const k = await paketeApi.paketKatalog(alle);
-      setKataloge({ liste: k.kataloge, abgerufen: k.abgerufen });
-    } catch (e) {
-      setFehler((e as Error).message);
-    } finally {
-      setLaedt(false);
-    }
-  }, []);
-  // Neuere Versionen (#1167): aus den abgerufenen Katalogen und dem Stand der Installation abgeleitet, nicht gemerkt –
-  // nach einem Update stimmt der Merker sofort, ohne erneut zu prüfen.
-  const updates = neueVersionen(stand?.installiert ?? [], kataloge?.liste ?? []);
-  /** Katalogpaket aus einer Quelle (ohne Angabe: offizieller Katalog). */
-  const paketAus = (id: string, quelle?: string): { kp: KatalogPaket; url: string; offiziell: boolean } | undefined => {
-    const k = kataloge?.liste.find((x) => (quelle ? x.url === quelle : x.offiziell));
-    // Umgezogen (#1084): unter der neuen Id, die die installierte unter `ersetzt` nennt.
-    const kp = k?.katalog?.pakete.find((p) => p.id === id) ?? k?.katalog?.pakete.find((p) => p.ersetzt?.includes(id));
-    return kp && k ? { kp, url: k.url, offiziell: k.offiziell } : undefined;
-  };
-  /** Hat ein Katalog ein Paket mit derselben Id wie ein selbst erstelltes (#652)? */
-  const konflikt = (id: string) => !!kataloge?.liste.some((k) => k.katalog?.pakete.some((p) => p.id === id));
-  return {
-    stand,
-    selbst,
-    kataloge,
-    updates,
-    upload,
-    setUpload,
-    sammel,
-    setSammel,
-    fehler,
-    laedt,
-    laden,
-    abrufen,
-    paketAus,
-    setStand,
-    konflikt,
-  };
-}
-export type PaketeZustand = ReturnType<typeof usePakete>;
 
 export function PaketeListe({ z, offen }: { z: PaketeZustand; offen?: string }) {
   const [experte, setExperte] = useExperteOffen();

@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
-import { Erreichbarkeit, type Gesundheit } from '../../shared/src/erreichbarkeit';
 import { t, tn } from './sprache';
 import { sprache } from '../../shared/src/sprache';
 import { automatischNeuLaden } from '../../shared/src/veraltet';
@@ -12,39 +11,17 @@ import {
   zuletztNeuGeladen,
 } from './veraltet';
 import { Knopf } from './bausteine/knopf/Knopf';
-import { antwortGekommen, neuLadenOhneAntwort, schonOhneAntwortNeuGeladen } from './startbild';
+import { neuLadenOhneAntwort, schonOhneAntwortNeuGeladen } from './startbild';
 import { laedtNichtUrl } from '../../shared/src/startbild';
+import { erreichbarkeit, NICHT_ERREICHBAR, WIEDER_ERREICHBAR } from './erreichbarkeit';
 
 /**
  * Erreichbarkeit (#122): Leiste, wenn das DMS weg ist (Update, Neustart), wenn es wieder da ist
  * und wenn danach eine neue Version läuft. Erkannt wird zentral in api/anfrage.ts.
  */
 
-/** Wird ausgelöst, sobald das DMS nach einem Ausfall wieder antwortet. */
-export const WIEDER_ERREICHBAR = 'dms:wieder-erreichbar';
-export const NICHT_ERREICHBAR = t('oberflaeche.erreichbar.ablago-ist-gerade-nicht');
-
-export const erreichbarkeit = new Erreichbarkeit(
-  {
-    gesundheit: async () => {
-      const r = await fetch('/api/gesundheit', {
-        cache: 'no-store',
-        credentials: 'same-origin',
-        headers: { 'x-dms': '1', 'x-sprache': sprache() },
-      });
-      const g = (await r.json().catch(() => null)) as Gesundheit | null;
-      // 503 mit „datenbank“ (#1198): Ablago antwortet, die Datenbank nicht – die Leiste sagt „beschäftigt“.
-      return r.ok || g?.zustand === 'datenbank' ? g : null;
-    },
-    jetzt: () => Date.now(),
-    spaeter: (f, ms) => setTimeout(f, ms),
-    abbrechen: (eintrag) => clearTimeout(eintrag as ReturnType<typeof setTimeout>),
-  },
-  () => {
-    antwortGekommen();
-    dispatchEvent(new Event(WIEDER_ERREICHBAR));
-  },
-);
+/** Zustand und Meldung stehen seit #1278 (Schritt 5) in erreichbarkeit.ts; hier weiter erreichbar. */
+export { erreichbarkeit, WIEDER_ERREICHBAR } from './erreichbarkeit';
 
 /** Beim Start: Stand merken, beim Zurückkehren ins Fenster nachsehen. */
 export function starteErreichbarkeit() {
