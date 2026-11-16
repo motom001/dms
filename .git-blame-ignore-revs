@@ -60,3 +60,9 @@ f62933a99bc270a4fac221cdc8a280eca97b0478
 e63622561c0ebb37212bd88fac8db72e49546230
 1d9f457caa6e2c70fafa0be9bc633df6679abc99
 cead3fdfd4360bcc04f61f398314e7b9139abe01
+
+# Formatierer (#1280): nur die Ausgabe von Prettier. Nachprüfen mit
+# `bash .github/werkzeuge/formatierung-nachpruefen.sh <commit>`; die CI prüft jeden neuen Eintrag dieses Abschnitts
+# (bis zur nächsten Leerzeile) im Pull Request nach.
+# Formatierer
+981588358e57f5454a144afaedb94c2c668adbf0
