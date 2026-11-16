@@ -2459,11 +2459,20 @@ const zeitText = (iso: string) => {
   const d = new Date(iso);
   return Number.isNaN(d.getTime()) ? iso : d.toLocaleString(gebietsschema(), { dateStyle: 'medium', timeStyle: 'short' });
 };
-/** Herkunft nicht bestätigt (#189, #594). */
-const herkunftFehler = (p: HerkunftPruefung) =>
-  new Fachfehler(409, p.art === 'ungueltig' ? t('pakete.herkunft.fehler.ungueltig') : t('meldungen.pakete.dieses-paket-kommt-nicht'), {
-    warnung: true,
-  });
+/**
+ * Herkunft nicht bestätigt (#189, #594). Aus dem offiziellen Katalog ohne bzw. mit nicht abrufbarer Signatur (#1351)
+ * eine eigene Meldung – „kommt nicht aus dem offiziellen Katalog“ träfe dort nicht zu.
+ */
+const herkunftFehler = (p: HerkunftPruefung, offiziellerKatalog = false) =>
+  new Fachfehler(
+    409,
+    p.art === 'ungueltig'
+      ? t('pakete.herkunft.fehler.ungueltig')
+      : offiziellerKatalog && (p.art === 'unsigniert' || p.art === 'nichtgeprueft')
+        ? t('pakete.herkunft.fehler.offiziell')
+        : t('meldungen.pakete.dieses-paket-kommt-nicht'),
+    { warnung: true },
+  );
 
 /** Fassungen (#1006): Geheimnisse (verschlüsselt gespeichert) nur als „gesetzt“ – nie der Wert, auch nicht verschlüsselt. */
 function ohneGeheimnisse(w: unknown): Record<string, unknown> {
@@ -4118,7 +4127,7 @@ export class Paketverwaltung {
       ? { paket: hoch.paket, v: undefined, katalog: await this.offiziell(), pruefung: hoch.pruefung }
       : await this.lade(String(e.id ?? ''), e.version ? String(e.version) : undefined, quelle!);
     // Herkunft (#189, #594): bestätigen, wenn keine gültige Signatur sie belegt.
-    if (geladen.pruefung.bestaetigen && e.bestaetigt !== true) throw herkunftFehler(geladen.pruefung);
+    if (geladen.pruefung.bestaetigen && e.bestaetigt !== true) throw herkunftFehler(geladen.pruefung, quelle === this.katalogUrl);
     const { paket, v } = geladen;
     const id = paket.manifest.id;
     const installiertJetzt = await this.d.kern.repo.listePakete();
@@ -5367,7 +5376,7 @@ export class Paketverwaltung {
     if (alt.herkunft.art !== 'katalog') throw new Fachfehler(409, t('meldungen.pakete.ein-hochgeladenes-paket'));
     const quelle = await this.erlaubt(alt.herkunft.url);
     const { paket, v, katalog, pruefung } = await this.lade(id, e.version ? String(e.version) : undefined, quelle, true);
-    if (pruefung.bestaetigen && e.bestaetigt !== true) throw herkunftFehler(pruefung);
+    if (pruefung.bestaetigen && e.bestaetigt !== true) throw herkunftFehler(pruefung, quelle === this.katalogUrl);
     const plan = await this.plane(paket, v, katalog, {}, {}, { quelle: { herkunft: alt.herkunft, pruefung } });
     const fehlen = plan.abhaengigkeiten.filter((a) => !a.installiert);
     if (fehlen.length)
@@ -5708,8 +5717,13 @@ export class Paketverwaltung {
     if (konflikte.length) throw new Fachfehler(409, t('meldungen.pakete.einige-namen-gibt-es'), { gruende: konflikte, konflikte: true });
     const pp = plan.pakete.flatMap((p) => p.vorschau.probleme.map((x) => `${p.name}: ${x}`));
     if (pp.length) throw new Fachfehler(409, pp[0], { gruende: pp });
-    if (plan.herkunftBestaetigen && e.bestaetigt !== true)
-      throw herkunftFehler(plan.herkunft ?? { art: 'unsigniert', offiziell: false, bestaetigen: true });
+    if (plan.herkunftBestaetigen && e.bestaetigt !== true) {
+      const offen = teile.find((x) => x.pruefung.bestaetigen);
+      throw herkunftFehler(
+        plan.herkunft ?? { art: 'unsigniert', offiziell: false, bestaetigen: true },
+        offen?.herkunft.art === 'katalog' && offen.herkunft.url === this.katalogUrl,
+      );
+    }
     // Erstmals ein Herausgeber an einem Bestandspaket (Sicherheit C): ein Haken, sonst nichts.
     const erstmals = plan.pakete.filter((p) => p.vorschau.herausgeberBestaetigen);
     if (erstmals.length && e.herausgeberBestaetigt !== true) {

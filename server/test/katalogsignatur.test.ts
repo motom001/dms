@@ -184,7 +184,7 @@ describe('Offizieller Katalog mit Signatur (#594)', () => {
     const v = await p.vorschau({ id: 'basis' });
     assert.equal(v.pruefung?.bestaetigen, true);
     assert.equal(v.paket.herausgeber, null);
-    await assert.rejects(p.installiere({ id: 'basis' }, ICH), warnung);
+    await assert.rejects(p.installiere({ id: 'basis' }, ICH), (e) => warnung(e) && /Signatur des offiziellen Katalogs fehlt oder lässt sich nicht prüfen/.test((e as Error).message));
     assert.equal((await p.installiere({ id: 'basis', bestaetigt: true }, ICH)).version, '1.0.0');
     const inst = (await d.kern.repo.listePakete()).find((x) => x.id === 'basis')!;
     assert.equal(inst.herausgeber, undefined);
@@ -208,7 +208,8 @@ describe('Offizieller Katalog mit Signatur (#594)', () => {
     offiziell([basis], iso(1));
     gestoert.add(neben(OFFIZIELL, 'katalog.sig'));
     assert.deepEqual((await p.katalog()).pruefung, { art: 'nichtgeprueft', offiziell: false, bestaetigen: true });
-    await assert.rejects(p.installiere({ id: 'basis' }, ICH), warnung);
+    await assert.rejects(p.installiere({ id: 'basis' }, ICH), (e) => warnung(e) && /Signatur des offiziellen Katalogs fehlt oder lässt sich nicht prüfen/.test((e as Error).message));
+    await assert.rejects(p.ablaufInstallieren({ pakete: ['basis'] }, ICH), (e) => warnung(e) && /Signatur des offiziellen Katalogs/.test((e as Error).message));
     gestoert.clear();
     assert.equal((await p.katalog()).pruefung.art, 'projekt');
   });

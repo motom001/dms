@@ -92,6 +92,7 @@
   "herkunft.fehler.weiterleitung": "{url} leitet weiter auf {ziel}. Ablago folgt Weiterleitungen nur auf https://-Adressen.",
   "herkunft.fehler.weiterleitungen": "{url} leitet zu oft weiter. Ablago hat aufgegeben.",
   "herkunft.fehler.ungueltig": "Die Signatur des Katalogs ist ungültig. Das steht im Protokoll. Installiere nur, wenn du sicher weißt, woher das Paket stammt, und bestätige dann die Herkunft.",
+  "herkunft.fehler.offiziell": "Die Signatur des offiziellen Katalogs fehlt oder lässt sich nicht prüfen. Installiere nur, wenn du sicher weißt, woher das Paket stammt, und bestätige dann die Herkunft.",
   "herkunft.fehler.zurueck": "Der Katalog {url} hat einen älteren Stand ({stand}) als der zuletzt gesehene ({gesehen}). Ein älterer Katalog könnte untergeschoben sein, deshalb nimmt Ablago ihn nicht.",
   "herkunft.fehler.gesperrt": "Der Katalog {url} ist gesperrt: Sein Schlüssel hat sich geändert (neuer Fingerabdruck {fingerabdruck}). Vergleiche den Fingerabdruck mit der Webseite des Anbieters und bestätige ihn unter Werkbank → Pakete → Expertenmodus.",
   "herkunft.fehler.signatur": "Der Katalog {url} hat keine gültige Signatur ({grund}), obwohl du seinen Schlüssel bestätigt hast. Ablago nimmt ihn nicht.",

@@ -92,6 +92,7 @@
   "herkunft.fehler.weiterleitung": "{url} redirects to {ziel}. Ablago only follows redirects to https:// addresses.",
   "herkunft.fehler.weiterleitungen": "{url} redirects too often. Ablago gave up.",
   "herkunft.fehler.ungueltig": "The catalogue’s signature is invalid. This is recorded in the log. Only install if you know for sure where the package comes from, and then confirm the origin.",
+  "herkunft.fehler.offiziell": "The official catalogue’s signature is missing or can’t be checked. Only install if you know for sure where the package comes from, and then confirm the origin.",
   "herkunft.fehler.zurueck": "The catalogue {url} has an older state ({stand}) than the one last seen ({gesehen}). An older catalogue could have been slipped in, so Ablago doesn’t accept it.",
   "herkunft.fehler.gesperrt": "The catalogue {url} is locked: its key has changed (new fingerprint {fingerabdruck}). Compare the fingerprint with the provider’s website and confirm it under Workbench → Packages → Expert mode.",
   "herkunft.fehler.signatur": "The catalogue {url} has no valid signature ({grund}), although you confirmed its key. Ablago doesn’t accept it.",
