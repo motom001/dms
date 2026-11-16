@@ -1,7 +1,7 @@
 # Architecture {#aufbau}
 
 ```
-shared/           domain model, validation rules, help table – used by server and interface
+shared/           domain model (src/model/), validation rules, help table – used by server and interface
 server/           Fastify API, PostgreSQL (postgres.js), SQL migrations, tests
 web/              React interface (Vite)
 deploy/           Compose templates for NAS and server, start script and test for dms-komplett
@@ -18,7 +18,7 @@ Ablago is a **modular monolith**: one process, one database. Server and interfac
 | Folder in `server/src/` | Routes for |
 |---|---|
 | `anmeldung/` | sign-in, two-factor, passkeys, password, setup, emergency access |
-| `konten/` | users, roles, deputies, API keys |
+| `konten/` | users, roles, deputies, API keys; since #1278 the class `Konten` itself (sign-in, sessions, administration mode, user management) as a chain of partial classes, one file per task |
 | `mappentypen/` | folder types, their archive, permissions |
 | `werkbank/` | Workbench overview, designs, region, languages, log, admin mode |
 | `ausgang/` | export (Workbench and My account); since #1077 the [routes to the outside](#ausgang) |
@@ -29,7 +29,7 @@ Ablago is a **modular monolith**: one process, one database. Server and interfac
 | `sicherung/` | backup, restore, emergency sheet, keys |
 | `system/` | operation, system status, connection, sign-in protection, inbox folder, WebDAV, error reports |
 | `post/` | mailboxes and other inbound channels; since #1077 [post](#post) |
-| `automatisierung/` | automations |
+| `automatisierung/` | automations; the engine in `motor/` (#1278, chain of partial classes, its own door `motor/index.ts` because it receives the whole service – `automatisierung/index.ts` passes its names on) |
 | `sichten/` | views, folder lists, start page |
 | `aufgaben/` | tasks; since #1078 the [tasks](#aufgaben) |
 | `mappen/` | folders, history, recycle bin |
@@ -686,7 +686,7 @@ In addition there are domain areas from earlier issues (`anmeldung`, `automatisi
 - `shared/test/sprachdateien-fest.test.ts`: **fixed texts in the interface** – text between tags, in visible attributes (`title`, `aria-label`, `placeholder`, `titel` …) and as a value in curly braces. What stays the same in every language (product names, commands in `<code>`, example addresses) is allowed; further exceptions are listed with a reason in `AUSNAHMEN` in the test file.
 - `web/test/symbole.test.ts`: no coloured emoji and no text characters used as symbols – in the language files too.
 
-**Deliberately still in the code** (#727): log lines (`log.*`, Workbench → Log) stay German so that error messages remain comparable and searchable; the description of the interface (OpenAPI in `server/src/api-v1.ts`) is developer documentation like this handbook; licence texts; sample data and demo content; the titles of the handbook sections in `shared/src/hilfe.ts` (they follow the headings in the handbook and come with its translation, #730); the fixed values of the post choice fields (`POST_STAND`, `POST_KANAL`, `POST_RICHTUNG` in `shared/src/model.ts`) – they are stored like that in every folder; what is shown is their label (see below). Names, fields and help texts of the system folder types have come from `gemeinsam.json` since #728 (`model.systemtyp.*`, `model.systemfeld.*`, `model.systemhilfe.*`).
+**Deliberately still in the code** (#727): log lines (`log.*`, Workbench → Log) stay German so that error messages remain comparable and searchable; the description of the interface (OpenAPI in `server/src/api-v1.ts`) is developer documentation like this handbook; licence texts (since #1278 as files in `server/lizenzen/`); sample data and demo content; the titles of the handbook sections in `shared/src/hilfe.ts` (they follow the headings in the handbook and come with its translation, #730); the fixed values of the post choice fields (`POST_STAND`, `POST_KANAL`, `POST_RICHTUNG` in `shared/src/model/systemtypen.ts`) – they are stored like that in every folder; what is shown is their label (see below). Names, fields and help texts of the system folder types have come from `gemeinsam.json` since #728 (`model.systemtyp.*`, `model.systemfeld.*`, `model.systemhilfe.*`).
 
 **Labels per language** (#728, `shared/src/beschriftung.ts`): what administrators create themselves – names of folder types, fields, tabs, result lists and views, help texts and the options of a choice field – is not in language files but on the entry under `beschriftungen`: language → texts, e.g. `{ en: { label: 'Kind', optionen: { Strom: 'Electricity' } } }`. The source text (`label`, `name` …) is German; if a label is missing, it applies. An option is its **fixed value** (`optionen`), and exactly that is stored in the folder; its label comes from `beschriftungen.<language>.optionen`, otherwise from `beschriftungen.de.optionen`, otherwise it is the value itself. It follows that:
 
@@ -747,7 +747,7 @@ Whoever saves last must not reset fields they didn't touch. So for **every** wri
 
 - **Write only what changed.** `Repo.aendereMappe(id, werte, [], von, { basis, verweise })` only sets the fields that differ from `basis` (the values read) to the current state – with the row locked (`SELECT … FOR UPDATE`), and the same in memory (`feldweise` in `server/src/repo/index.ts`). `verweise(w)` computes the links from the result. Internal writers (`schreibeSystemMappe`, `schreibeVerweisWerte`, `absenderBereinigen`, renaming fields) use this; `schreibeSystemMappe` also only gets the fields to change, never `{ ...mappe.werte, … }` from an older read.
 - **Version.** `mappen.geaendert` is accurate to the millisecond and increases with every write (`greatest(clock_timestamp(), geaendert + 1 ms)`) so it works as a version counter; no migration needed. With `stand` the repo only writes if the row still has that version, otherwise `StandVeraltet` – `MappenDienst.aendereMappe` then reads again and retries up to five times.
-- **Conflict.** `MappenDienst.aendereMappe(id, { werte, stand })`: if `stand` differs from the current one, `feldkonflikte` looks in the history for `geaendert` entries with `daten.stand` > `stand` (each entry remembers the version its write produced). A submitted field that appears there and should now have a different value results in 409 with `Mappenkonflikt` (`shared/src/model.ts`). Without `stand` there is no check, only field-by-field writing – so old API calls stay valid.
+- **Conflict.** `MappenDienst.aendereMappe(id, { werte, stand })`: if `stand` differs from the current one, `feldkonflikte` looks in the history for `geaendert` entries with `daten.stand` > `stand` (each entry remembers the version its write produced). A submitted field that appears there and should now have a different value results in 409 with `Mappenkonflikt` (`shared/src/model/historie.ts`). Without `stand` there is no check, only field-by-field writing – so old API calls stay valid.
 - **Form.** `MappeFormular` only sends the fields whose raw value differs from `basis`, and `stand` = `mappe.geaendert` when `basis` was loaded. On 409, `Konfliktfrage` shows the choice per field; "Mine" goes along again with the new version from the response, "Theirs" takes over the value and is left out.
 
 Tests: `server/test/gleichzeitig.test.ts` (memory and PostgreSQL), in the browser `docs/handbuch/screenshots/gleichzeitig-pruefen.mjs` (two windows, workflow "Handbuch").
@@ -1004,7 +1004,7 @@ That way it recognises its own changes and can limit chains. A package isn't not
 
 ## Automations (#674) { #automatisierungen }
 
-Small routines without code: **When · And · Then · Otherwise** (Otherwise since #677). Model and checks in `shared/src/automatisierung.ts`, engine and storage in `server/src/automatisierung.ts` (tables `automatisierungen` and `automatisierung_laeufe`, migration 061; versions since #1006 in `fassungen`, migration 108), texts in `shared/src/sprachen/de/automatisierung.json`.
+Small routines without code: **When · And · Then · Otherwise** (Otherwise since #677). Model and checks in `shared/src/automatisierung.ts`, engine and storage in `server/src/automatisierung/motor/` (tables `automatisierungen` and `automatisierung_laeufe`, migration 061; versions since #1006 in `fassungen`, migration 108), texts in `shared/src/sprachen/de/automatisierung.json`.
 
 **Model**
 

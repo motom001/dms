@@ -1,8 +1,21 @@
 /**
- * Automatisierungen – Fachordner (#960, #679, #671). Der Motor liegt noch in `server/src/automatisierung.ts`; hier die
- * Tür zum „Aufruf von außen“ (Adresse, Geheimnis, Signatur, Bremse) und zu den Karten nach außen (Ausgangskorb, Ziele,
- * Geheimnisse, sicherer Abruf). Die Routen holt routen.ts direkt.
+ * Automatisierungen – Fachordner (#960, #679, #671). Der Motor liegt seit #1278 in `motor/` (vorher
+ * `server/src/automatisierung.ts`) und hat eine eigene Tür, weil er den ganzen Dienst bekommt; die Namen, die von außen
+ * gebraucht werden, reicht diese Datei weiter (Importe von `./automatisierung` bleiben gleich). Dazu die Tür zum „Aufruf von außen“ (Adresse, Geheimnis, Signatur, Bremse) und zu den
+ * Karten nach außen (Ausgangskorb, Ziele, Geheimnisse, sicherer Abruf). Die Routen holt routen.ts direkt.
  */
+export {
+  Automatisierungen,
+  BENACHRICHTIGUNGEN_PAKET,
+  DANN_AUSFUEHRER,
+  istPostFuerDich,
+  KarteLeer,
+  pgAutomatisierungRepo,
+  postFuerDichDaten,
+  speicherAutomatisierungRepo,
+  uuidAus,
+  type KartenKontext,
+} from './motor/index';
 export {
   Aufrufe,
   aufrufBereich,
@@ -14,11 +27,8 @@ export {
   type AufrufDeps,
   type AufrufEintrag,
   type AufrufErgebnis,
-  type AufrufRepo,
-  type AufrufStand,
 } from './aufruf';
 export {
-  Ausleitung,
   aussenSignatur,
   pgAusgangRepo,
   pgAussenGeheimnisRepo,
@@ -28,18 +38,7 @@ export {
   ZIELE_SCHLUESSEL,
   type AusgangAuftrag,
   type AusgangEintrag,
-  type AusgangRepo,
-  type AusgangVerlauf,
   type AusleitungDeps,
   type AussenGeheimnis,
-  type AussenGeheimnisRepo,
 } from './ausleitung';
-export {
-  adressArt,
-  adresseErlaubt,
-  alsIpv4,
-  sichererAbruf,
-  type AbrufAuftrag,
-  type AbrufErgebnis,
-  type SichererAbruf,
-} from './sicherer-abruf';
+export { adressArt, adresseErlaubt, alsIpv4, sichererAbruf, type AbrufAuftrag, type AbrufErgebnis } from './sicherer-abruf';

@@ -5,7 +5,7 @@
  * alle, nur für bestimmte Rollen oder für niemanden und setzte die Vorgabe für neue Benutzer (Einstellung
  * `favoriten_freigabe`). Seit #1001 steht das in der Automatisierung „Favoriten-Änderungen melden“ (Dann-Karte
  * `favoriten` mit `rollen` und `vorgabe`); beim Update liest der Motor die alte Einstellung einmal mit
- * {@link liesFavoritenFreigabe} und übernimmt sie (server/src/automatisierung.ts, `favoritenFreigabeUebernehmen`).
+ * {@link liesFavoritenFreigabe} und übernimmt sie (server/src/automatisierung/motor/uebernehmen.ts, `favoritenFreigabeUebernehmen`).
  */
 
 export type Freigabe = 'alle' | 'rollen' | 'aus';

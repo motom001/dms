@@ -92,8 +92,6 @@ export default defineConfig([
     files: ['server/src/**/*.routen.ts'],
     rules: { 'max-lines-per-function': 'off', 'ablago/handler-laenge': ['error', { max: 105, ...ZEILEN }] },
   },
-  // Reine Daten (Lizenztexte, #374): die Länge der Datei ist kein Maß für ihre Verständlichkeit.
-  { files: ['server/src/lizenztexte.ts'], rules: { 'max-lines': 'off' } },
   // Tests: keine Größenregeln (lange Testdateien und Fälle sind gewollt), sonst dieselben Regeln. test(), describe()
   // und it() aus node:test geben ein Promise zurück, auf das der Testläufer selbst wartet – kein Fehler.
   {

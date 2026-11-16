@@ -1,7 +1,7 @@
 # Aufbau
 
 ```
-shared/           Fachmodell, Prüfregeln, Hilfe-Tabelle – von Server und Oberfläche genutzt
+shared/           Fachmodell (src/model/), Prüfregeln, Hilfe-Tabelle – von Server und Oberfläche genutzt
 server/           Fastify-API, PostgreSQL (postgres.js), SQL-Migrationen, Tests
 web/              React-Oberfläche (Vite)
 deploy/           Compose-Vorlagen für NAS und Server, Start-Skript und Probe für dms-komplett
@@ -18,7 +18,7 @@ Ablago ist ein **modularer Monolith**: ein Prozess, eine Datenbank. Server und O
 | Ordner in `server/src/` | Routen für |
 |---|---|
 | `anmeldung/` | Anmelden, Zwei-Faktor, Passkeys, Passwort, Einrichtung, Notfallzugang |
-| `konten/` | Benutzer, Rollen, Vertretung, API-Schlüssel |
+| `konten/` | Benutzer, Rollen, Vertretung, API-Schlüssel; seit #1278 die Klasse `Konten` selbst (Anmeldung, Sitzungen, Verwaltungsmodus, Benutzerverwaltung) als Kette von Teil-Klassen, je Aufgabe eine Datei |
 | `mappentypen/` | Mappentypen, ihr Archiv, Berechtigungen |
 | `werkbank/` | Werkbank-Übersicht, Designs, Region, Sprachen, Protokoll, Verwaltungsmodus |
 | `ausgang/` | Export (Werkbank und Mein Konto); seit #1077 die [Wege nach draußen](#ausgang) |
@@ -29,7 +29,7 @@ Ablago ist ein **modularer Monolith**: ein Prozess, eine Datenbank. Server und O
 | `sicherung/` | Sicherung, Wiederherstellen, Notfallblatt, Schlüssel |
 | `system/` | Betrieb, Systemzustand, Anbindung, Anmeldeschutz, Eingangsordner, WebDAV, Fehlermeldungen |
 | `post/` | Postfächer und andere Eingangskanäle; seit #1077 die [Post](#post) |
-| `automatisierung/` | Automatisierungen |
+| `automatisierung/` | Automatisierungen; der Motor in `motor/` (#1278, Kette von Teil-Klassen, eigene Tür `motor/index.ts`, weil er den ganzen Dienst bekommt – `automatisierung/index.ts` reicht seine Namen weiter) |
 | `sichten/` | Ansichten, Mappenlisten, Startseite |
 | `aufgaben/` | Aufgaben; seit #1078 die [Aufgaben](#aufgaben) |
 | `mappen/` | Mappen, Historie, Papierkorb |
@@ -685,7 +685,7 @@ Daneben gibt es Fachbereiche aus früheren Issues (`anmeldung`, `automatisierung
 - `shared/test/sprachdateien-fest.test.ts`: **feste Texte in der Oberfläche** – Text zwischen Tags, in sichtbaren Attributen (`title`, `aria-label`, `placeholder`, `titel` …) und als Wert in geschweiften Klammern. Was in jeder Sprache gleich bleibt (Produktnamen, Befehle in `<code>`, Beispieladressen), ist erlaubt; weitere Ausnahmen stehen mit Grund in `AUSNAHMEN` in der Testdatei.
 - `web/test/symbole.test.ts`: keine bunten Emoji und keine Textzeichen als Symbol – auch in den Sprachdateien.
 
-**Bewusst noch im Code** (#727): Protokollzeilen (`log.*`, Werkbank → Protokoll) bleiben Deutsch, damit Fehlermeldungen vergleichbar und durchsuchbar sind; die Beschreibung der Schnittstelle (OpenAPI in `server/src/api-v1.ts`) ist Entwicklerdoku wie dieses Handbuch; Lizenztexte; Beispieldaten und Demo-Inhalte; die Titel der Handbuch-Abschnitte in `shared/src/hilfe.ts` (sie folgen den Überschriften im Handbuch und kommen mit dessen Übersetzung, #730); die festen Werte der Auswahlfelder von Post (`POST_STAND`, `POST_KANAL`, `POST_RICHTUNG` in `shared/src/model.ts`) – sie stehen so in jeder Mappe; gezeigt wird ihre Beschriftung (siehe unten). Namen, Felder und Hilfetexte der Systemmappentypen kommen seit #728 aus `gemeinsam.json` (`model.systemtyp.*`, `model.systemfeld.*`, `model.systemhilfe.*`).
+**Bewusst noch im Code** (#727): Protokollzeilen (`log.*`, Werkbank → Protokoll) bleiben Deutsch, damit Fehlermeldungen vergleichbar und durchsuchbar sind; die Beschreibung der Schnittstelle (OpenAPI in `server/src/api-v1.ts`) ist Entwicklerdoku wie dieses Handbuch; Lizenztexte (seit #1278 als Dateien in `server/lizenzen/`); Beispieldaten und Demo-Inhalte; die Titel der Handbuch-Abschnitte in `shared/src/hilfe.ts` (sie folgen den Überschriften im Handbuch und kommen mit dessen Übersetzung, #730); die festen Werte der Auswahlfelder von Post (`POST_STAND`, `POST_KANAL`, `POST_RICHTUNG` in `shared/src/model/systemtypen.ts`) – sie stehen so in jeder Mappe; gezeigt wird ihre Beschriftung (siehe unten). Namen, Felder und Hilfetexte der Systemmappentypen kommen seit #728 aus `gemeinsam.json` (`model.systemtyp.*`, `model.systemfeld.*`, `model.systemhilfe.*`).
 
 **Beschriftungen je Sprache** (#728, `shared/src/beschriftung.ts`): Was Administratoren selbst anlegen – Namen von Mappentypen, Feldern, Registern, Trefferlisten und Ansichten, Hilfetexte und die Optionen eines Auswahlfelds –, steht nicht in Sprachdateien, sondern am Eintrag unter `beschriftungen`: Sprache → Texte, z. B. `{ en: { label: 'Kind', optionen: { Strom: 'Electricity' } } }`. Der Ausgangstext (`label`, `name` …) ist Deutsch; fehlt eine Beschriftung, gilt er. Eine Option ist ihr **fester Wert** (`optionen`), und genau der steht in der Mappe; ihre Beschriftung kommt aus `beschriftungen.<sprache>.optionen`, sonst aus `beschriftungen.de.optionen`, sonst ist es der Wert selbst. Daraus folgt:
 
@@ -747,7 +747,7 @@ Wer zuletzt speichert, darf keine Felder zurücksetzen, die er nicht angefasst h
 
 - **Nur Geändertes schreiben.** `Repo.aendereMappe(id, werte, [], von, { basis, verweise })` legt nur die Felder auf den aktuellen Stand, die sich gegenüber `basis` (den gelesenen Werten) ändern – unter Sperre der Zeile (`SELECT … FOR UPDATE`) bzw. im Arbeitsspeicher genauso (`feldweise` in `server/src/repo/index.ts`). `verweise(w)` berechnet die Verweise aus dem Ergebnis. Interne Schreiber (`schreibeSystemMappe`, `schreibeVerweisWerte`, `absenderBereinigen`, Umbenennen von Feldern) nutzen das; `schreibeSystemMappe` bekommt außerdem nur die zu ändernden Felder, nie `{ ...mappe.werte, … }` aus einem älteren Lesen.
 - **Stand.** `mappen.geaendert` ist auf die Millisekunde genau und steigt bei jedem Schreiben (`greatest(clock_timestamp(), geaendert + 1 ms)`), damit er als Versionszähler taugt; keine Migration nötig. Mit `stand` schreibt das Repo nur, wenn die Zeile noch diesen Stand hat, sonst `StandVeraltet` – `MappenDienst.aendereMappe` liest dann neu und versucht es bis zu fünfmal.
-- **Konflikt.** `MappenDienst.aendereMappe(id, { werte, stand })`: Weicht `stand` vom aktuellen ab, sucht `feldkonflikte` in der Historie die Einträge `geaendert` mit `daten.stand` > `stand` (jeder Eintrag merkt sich den Stand, den sein Schreiben erzeugt hat). Ein übergebenes Feld, das dort vorkommt und jetzt anders lauten soll, ergibt 409 mit `Mappenkonflikt` (`shared/src/model.ts`). Ohne `stand` keine Prüfung, nur feldweises Schreiben – so bleiben alte API-Aufrufe gültig.
+- **Konflikt.** `MappenDienst.aendereMappe(id, { werte, stand })`: Weicht `stand` vom aktuellen ab, sucht `feldkonflikte` in der Historie die Einträge `geaendert` mit `daten.stand` > `stand` (jeder Eintrag merkt sich den Stand, den sein Schreiben erzeugt hat). Ein übergebenes Feld, das dort vorkommt und jetzt anders lauten soll, ergibt 409 mit `Mappenkonflikt` (`shared/src/model/historie.ts`). Ohne `stand` keine Prüfung, nur feldweises Schreiben – so bleiben alte API-Aufrufe gültig.
 - **Formular.** `MappeFormular` schickt nur die Felder, deren Rohwert von `basis` abweicht, und `stand` = `mappe.geaendert` beim Laden von `basis`. Bei 409 zeigt `Konfliktfrage` je Feld die Wahl; „Meins“ geht mit dem neuen Stand aus der Antwort noch einmal mit, „Seins“ übernimmt den Wert und bleibt weg.
 
 Tests: `server/test/gleichzeitig.test.ts` (Arbeitsspeicher und PostgreSQL), im Browser `docs/handbuch/screenshots/gleichzeitig-pruefen.mjs` (zwei Fenster, Workflow „Handbuch“).
@@ -1004,7 +1004,7 @@ Damit erkennt sie ihre eigenen Änderungen und kann Ketten begrenzen. Ein Paket 
 
 ## Automatisierungen (#674) { #automatisierungen }
 
-Kleine Abläufe ohne Code: **Wenn · Und · Dann · Sonst** (Sonst seit #677). Modell und Prüfungen in `shared/src/automatisierung.ts`, Motor und Speicher in `server/src/automatisierung.ts` (Tabellen `automatisierungen` und `automatisierung_laeufe`, Migration 061; die Fassungen seit #1006 in `fassungen`, Migration 108), Texte in `shared/src/sprachen/de/automatisierung.json`.
+Kleine Abläufe ohne Code: **Wenn · Und · Dann · Sonst** (Sonst seit #677). Modell und Prüfungen in `shared/src/automatisierung.ts`, Motor und Speicher in `server/src/automatisierung/motor/` (Tabellen `automatisierungen` und `automatisierung_laeufe`, Migration 061; die Fassungen seit #1006 in `fassungen`, Migration 108), Texte in `shared/src/sprachen/de/automatisierung.json`.
 
 **Modell**
 

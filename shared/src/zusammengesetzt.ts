@@ -8,14 +8,14 @@
  *   JJJJ-MM-TT, Zahlen mit Punkt, Auswahl mit ihrem festen Wert) und bei Verweisen mit der **Kennung des Ziels**, nie mit
  *   dessen Titel (Ergänzung Sicherheit). Zwei Organisationen gleichen Namens kollidieren so nicht, und der Wert verrät
  *   niemandem den Titel einer Mappe, die er nicht lesen darf. „Eindeutig“ vergleicht diesen Schlüssel.
- * - **Angezeigt wird der Text** ({@link zusammengesetztText} in model.ts): für jede Person neu aus den Werten, mit den
+ * - **Angezeigt wird der Text** ({@link zusammengesetztText} in model/werte.ts): für jede Person neu aus den Werten, mit den
  *   Titeln der verwiesenen Mappen, die sie sehen darf – sonst „(nicht sichtbar)“, wie bei jedem Verweis.
  * - **Platzhalter:** Text, Zahl, Betrag, Prozent, Datum, Zeitraum, Ja/Nein, Auswahl und Verweis ({@link TEIL_ARTEN}).
  *   Nicht: Passwörter (wie in der Titel-Vorlage), Langtext und formatierter Text (kein Schlüssel), Tabellen (kein Wert),
  *   andere zusammengesetzte Felder (keine Ketten) und Felder mit Nummernkreis (die Nummer vergibt Ablago erst beim
  *   Anlegen – und sie ist ohnehin eindeutig).
  *
- * Eigene Datei ohne Abhängigkeit zur Laufzeit auf model.ts, damit Modell, Server und Oberfläche sie ohne Kreis nutzen.
+ * Eigene Datei ohne Abhängigkeit zur Laufzeit auf model/, damit Modell, Server und Oberfläche sie ohne Kreis nutzen.
  */
 import type { Betrag, Feld, Feldtyp, Mappentyp, Wert, Werte } from './model';
 import { istZeitraum, zeitraumIso } from './feldarten';

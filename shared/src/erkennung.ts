@@ -1164,7 +1164,7 @@ export function wendeGutschriftAn(
 export function fuellfelder(
   t: Pick<Mappentyp, 'felder'> & { register?: Mappentyp['register'] },
 ): Array<{ feld: Feld; art: Erkennungsart }> {
-  // Wie ausgeblendeteFelder (darstellung.ts) – hier ohne den Import, der einen Kreis über model.ts schlösse.
+  // Wie ausgeblendeteFelder (darstellung.ts) – hier ohne den Import, der einen Kreis über model/ schlösse.
   const aus = new Set([
     ...t.felder.filter((f) => f.ausgeblendet).map((f) => f.key),
     ...(t.register ?? []).filter((r) => r.ausgeblendet && r.art === 'felder').flatMap((r) => r.felder ?? []),

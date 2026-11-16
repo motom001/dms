@@ -52,7 +52,7 @@ import {
 } from './sichten';
 import { t } from './texte';
 
-/** Die Typen stehen im Modell (model.ts), die Auswertung hier. */
+/** Die Typen stehen im Modell (model/), die Auswertung hier. */
 export type { Anzeigebedingung, Anzeigeregel };
 type Feldbedingung = Extract<Anzeigebedingung, { art: 'feld' }>['bedingung'];
 

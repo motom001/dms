@@ -381,6 +381,9 @@ jobs:
           docker run --rm --entrypoint node dms:probe -e "console.log('Node.js', process.version, process.arch)"
           groesse=$(docker image inspect dms:probe --format '{{.Size}}')
           echo "::notice title=Image ${{ matrix.plattform }}::$((groesse / 1048576)) MB"
+      # Lizenztexte im Image (#1278): Datendateien in server/lizenzen/, die server/src/lizenztexte.ts beim Start liest.
+      - name: Lizenztexte im Image
+        run: docker run --rm --entrypoint sh dms:probe -c 'for s in MIT Apache-2.0 BSD-2-Clause BSD-3-Clause MPL-2.0 LGPL-3.0-or-later GPL-3.0-or-later AGPL-3.0-or-later CC0-1.0; do test -s "/app/server/lizenzen/$s.txt" || { echo "::error::Lizenztext $s fehlt im Image"; exit 1; }; done'
       # Schriften im Image (#1329): Ein PDF mit nicht eingebetteter Helvetica und Arial muss sichtbaren Text haben
       # (dunkle Bildpunkte gezählt). Gegenprobe mit leerer fontconfig: Dann muss die Prüfung scheitern.
       - name: Ersatzschriften für nicht eingebettete Schriften

@@ -12,7 +12,7 @@ Paket-Einstellungen, Automatisierungen (bis #1006 eigene Tabelle `automatisierun
   `abgleich` (beim Start einmal je Version: was Migrationen geändert haben, wird „Update auf Ablago …“).
 - `gegenstaende.ts` – Mappentyp, Ansicht, Nummernkreis, Stempel-Vorlage (Stand lesen, alle Einträge, wiederherstellen,
   Hinweise vorher). Postfächer (`postfach.ts`), Paket-Einstellungen (`pakete/verwaltung/einstellungen.ts`) und Automatisierungen
-  (`automatisierung.ts`) melden sich selbst mit `registriere` an; Automatisierungsvorlagen über
+  (`automatisierung/motor/automatisierungen.ts`) melden sich selbst mit `registriere` an; Automatisierungsvorlagen über
   `MappenAblaeufe.fassungsGegenstand()` (`aufgaben/ablaeufe.ts`), angemeldet im Dienst.
 - `huelle.ts` – Repo-Hülle: nach jeder schreibenden Methode für Typen, Ansichten, Nummernkreise und
   Automatisierungsvorlagen die Fassung festhalten, in derselben Transaktion – so sind Pakete, Umbau, Umzüge beim Start

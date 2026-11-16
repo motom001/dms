@@ -76,6 +76,8 @@ COPY server/migrations server/migrations
 # Schriften für Ablagos eigene PDFs (#826): Noto Sans und Noto Sans Mono, schon aufbereitet (server/werkzeuge/schriften/),
 # zusammen 1,4 MB, mit der Lizenz (OFL.txt). Der Bau braucht dafür kein Python.
 COPY server/schriften server/schriften
+# Lizenztexte für selbst erstellte Pakete (#374, als Datendateien seit #1278): liest server/src/lizenztexte.ts beim Start.
+COPY server/lizenzen server/lizenzen
 # Ablagos eigene Rundgänge, Tipps und die Ankerliste (#831, #832): YAML, liest der Server beim Start.
 COPY shared/entdecken shared/entdecken
 COPY --from=bau /app/web/dist web/dist

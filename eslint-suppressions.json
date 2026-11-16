@@ -104,18 +104,32 @@
       "count": 1
     }
   },
-  "server/src/automatisierung.ts": {
+  "server/src/automatisierung/motor/ausfuehren.ts": {
     "complexity": {
-      "count": 2
-    },
-    "max-depth": {
-      "count": 1
-    },
-    "max-lines": {
       "count": 1
     },
     "max-lines-per-function": {
-      "count": 3
+      "count": 1
+    }
+  },
+  "server/src/automatisierung/motor/fuellen.ts": {
+    "complexity": {
+      "count": 1
+    }
+  },
+  "server/src/automatisierung/motor/repo.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "server/src/automatisierung/motor/uebernehmen.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "server/src/automatisierung/motor/zeitplan.ts": {
+    "max-depth": {
+      "count": 1
     }
   },
   "server/src/baum.ts": {
@@ -312,14 +326,13 @@
       "count": 1
     }
   },
-  "server/src/konten.ts": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    },
+  "server/src/konten/benutzer.ts": {
     "complexity": {
       "count": 1
-    },
-    "max-lines": {
+    }
+  },
+  "server/src/konten/sitzungen.ts": {
+    "@typescript-eslint/no-unused-vars": {
       "count": 1
     }
   },
@@ -1203,18 +1216,20 @@
       "count": 1
     }
   },
-  "shared/src/model.ts": {
+  "shared/src/model/pruefen.ts": {
     "complexity": {
-      "count": 4
+      "count": 3
     },
     "max-depth": {
       "count": 1
     },
-    "max-lines": {
-      "count": 1
-    },
     "max-lines-per-function": {
       "count": 2
+    }
+  },
+  "shared/src/model/werte.ts": {
+    "complexity": {
+      "count": 1
     }
   },
   "shared/src/pakete.ts": {
