@@ -1,0 +1,4599 @@
+{
+  "voll": {
+    "manifest": {
+      "id": "probe",
+      "name": "Probe",
+      "version": "1.0.0",
+      "beschreibung": "Probepaket für die Charakterisierung.",
+      "autor": {
+        "name": "Test",
+        "github": "test"
+      },
+      "lizenz": "MIT",
+      "dms": ">=0.231.0",
+      "abhaengigkeiten": {
+        "basis": ">=1.0.0"
+      },
+      "code": {
+        "sprache": "c",
+        "quelle": "code/",
+        "ereignisse": ["mappe.geaendert", "zeitplan.ausgefuehrt"],
+        "mappentypen": ["akte"],
+        "rechte": {
+          "lesen": ["akte", "probe:vorgang"],
+          "schreiben": ["akte"]
+        }
+      },
+      "herausgeber": "org.example"
+    },
+    "typen": [
+      {
+        "schluessel": "art",
+        "name": "Aktenart",
+        "beschreibung": "",
+        "titelVorlage": "{name}",
+        "felder": [
+          {
+            "key": "name",
+            "label": "Name",
+            "typ": "text",
+            "pflicht": true
+          }
+        ],
+        "register": [
+          {
+            "key": "daten",
+            "name": "Daten",
+            "art": "felder",
+            "felder": ["name"]
+          }
+        ]
+      },
+      {
+        "schluessel": "akte",
+        "name": "Akte",
+        "beschreibung": "Eine Akte",
+        "titelVorlage": "{name}",
+        "felder": [
+          {
+            "key": "name",
+            "label": "Name",
+            "typ": "text",
+            "pflicht": true,
+            "beschriftungen": {
+              "en": {
+                "label": "Name"
+              }
+            }
+          },
+          {
+            "key": "altname",
+            "label": "Alte Stelle",
+            "typ": "text"
+          },
+          {
+            "key": "stelle",
+            "label": "Stelle",
+            "typ": "referenz",
+            "ziel": "basis:organisation",
+            "ausText": "altname"
+          },
+          {
+            "key": "art",
+            "label": "Art",
+            "typ": "referenz",
+            "ziel": "art"
+          },
+          {
+            "key": "wer",
+            "label": "Wer",
+            "typ": "referenz",
+            "ziel": "dms:benutzer"
+          },
+          {
+            "key": "summe",
+            "label": "Summe",
+            "typ": "betrag",
+            "negativ": true,
+            "berechnet": true
+          },
+          {
+            "key": "eigen",
+            "label": "Eigene",
+            "typ": "janein",
+            "merkmal": "eigeneOrganisation",
+            "schreibschutz": "verwaltung"
+          },
+          {
+            "key": "ende",
+            "label": "Ende",
+            "typ": "datum"
+          },
+          {
+            "key": "posten",
+            "label": "Posten",
+            "typ": "tabelle",
+            "quelle": {
+              "typ": "vorgang",
+              "feld": "akte"
+            }
+          },
+          {
+            "key": "fremd",
+            "label": "Fremd",
+            "typ": "tabelle",
+            "quelle": {
+              "typ": "basis:organisation",
+              "feld": "x"
+            }
+          },
+          {
+            "key": "kosten",
+            "label": "Kosten",
+            "typ": "betrag"
+          }
+        ],
+        "register": [
+          {
+            "key": "daten",
+            "name": "Daten",
+            "art": "felder",
+            "felder": ["name", "altname", "stelle", "art", "wer", "summe", "eigen", "ende", "posten", "fremd", "kosten"],
+            "abschnitte": [
+              {
+                "vor": "kosten",
+                "titel": "Kosten",
+                "anzeigen": {
+                  "bedingungen": [
+                    {
+                      "art": "vorgabe",
+                      "feld": "art",
+                      "vorgabe": ["privat"]
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "key": "dok",
+            "name": "Dokumente",
+            "art": "dokumente"
+          }
+        ],
+        "trefferliste": ["name", "stelle"],
+        "beschriftungen": {
+          "en": {
+            "name": "File"
+          }
+        },
+        "ausPost": true,
+        "erkennbarAn": "Aktenzeichen",
+        "inSuche": false,
+        "archiv": {
+          "jahre": 6,
+          "stichtag": "ende"
+        }
+      },
+      {
+        "schluessel": "vorgang",
+        "name": "Vorgang",
+        "beschreibung": "",
+        "titelVorlage": "{titel}",
+        "felder": [
+          {
+            "key": "titel",
+            "label": "Titel",
+            "typ": "text",
+            "pflicht": true
+          },
+          {
+            "key": "akte",
+            "label": "Akte",
+            "typ": "referenz",
+            "ziel": "akte",
+            "pflicht": true,
+            "verweisart": "zugehoerigkeit"
+          }
+        ],
+        "register": [
+          {
+            "key": "daten",
+            "name": "Daten",
+            "art": "felder",
+            "felder": ["titel", "akte"]
+          }
+        ],
+        "gehoertZu": "akte"
+      }
+    ],
+    "sichten": [
+      {
+        "schluessel": "akten",
+        "name": "Akten",
+        "beschreibung": "Alle Akten",
+        "beschriftungen": {
+          "en": {
+            "name": "Files"
+          }
+        },
+        "typen": ["akte"],
+        "trefferliste": "standard",
+        "symbol": "folder",
+        "bedingungen": []
+      },
+      {
+        "schluessel": "offene",
+        "name": "Offene",
+        "eltern": "akten",
+        "typen": ["vorgang"],
+        "bedingungen": [
+          {
+            "feld": "titel",
+            "operator": "leer"
+          }
+        ]
+      },
+      {
+        "schluessel": "fremd",
+        "name": "Fremde",
+        "typen": [],
+        "fremdeTypen": [
+          {
+            "kennung": "anderes:typ",
+            "name": "Anderer Typ"
+          },
+          {
+            "kennung": "basis:organisation",
+            "name": "basis:organisation"
+          }
+        ],
+        "bedingungen": []
+      }
+    ],
+    "beispiele": [
+      {
+        "typ": "art",
+        "werte": {
+          "name": "Beruflich"
+        },
+        "schluessel": "a0"
+      },
+      {
+        "typ": "akte",
+        "werte": {
+          "name": "Musterakte",
+          "art": {
+            "vorgabe": "privat"
+          },
+          "stelle": {
+            "beispiel": "basis:stadtwerke"
+          }
+        },
+        "schluessel": "a1",
+        "dokumente": [
+          {
+            "datei": "beispiele/brief.pdf",
+            "titel": "Brief",
+            "register": "dok"
+          }
+        ]
+      },
+      {
+        "typ": "vorgang",
+        "werte": {
+          "titel": "Erster",
+          "akte": {
+            "beispiel": "a1"
+          }
+        },
+        "schluessel": "v1"
+      },
+      {
+        "typ": "basis:organisation",
+        "werte": {}
+      }
+    ],
+    "wortlisten": [["Akte", "Ordner"]],
+    "automatisierungen": [
+      {
+        "schluessel": "erinnern",
+        "name": "Erinnern",
+        "beschreibung": "Erinnert an das Ende.",
+        "wenn": {
+          "art": "datum",
+          "typ": "akte",
+          "feld": "ende",
+          "vorlauf": 30,
+          "einheit": "tage",
+          "uhrzeit": "07:00"
+        },
+        "dann": [
+          {
+            "art": "aufgabe",
+            "als": "aufgabe",
+            "empfaenger": [
+              {
+                "art": "ersteller"
+              }
+            ],
+            "text": "Ende {datum}"
+          }
+        ]
+      },
+      {
+        "schluessel": "taeglich",
+        "name": "Täglich",
+        "beschreibung": "",
+        "wenn": {
+          "art": "zeitplan",
+          "uhrzeit": "05:00",
+          "tage": [1, 2, 3, 4, 5, 6, 7]
+        },
+        "dann": [
+          {
+            "art": "paket",
+            "aufgabe": "taeglich"
+          }
+        ],
+        "eingeschaltet": true
+      }
+    ],
+    "readme": "# Probe\n",
+    "einstellungen": null,
+    "code": {
+      "info": {
+        "sprache": "c",
+        "ereignisse": ["mappe.geaendert", "zeitplan.ausgefuehrt"],
+        "rechte": {
+          "lesen": ["akte", "probe:vorgang"],
+          "schreiben": ["akte"],
+          "dokumente": "keine"
+        },
+        "netz": [],
+        "mappentypen": ["akte"]
+      },
+      "dateien": [
+        {
+          "name": "modul.wasm",
+          "inhalt": "puffer:9"
+        },
+        {
+          "name": "daten/liste.json",
+          "inhalt": "puffer:2"
+        }
+      ]
+    },
+    "sprache": null,
+    "beispielDateien": [["beispiele/brief.pdf", "puffer:56"]],
+    "vorgaben": [
+      {
+        "schluessel": "privat",
+        "typ": "art",
+        "werte": {
+          "name": "Privat"
+        }
+      }
+    ],
+    "umbau": [
+      {
+        "von": "basis:organisation",
+        "nach": "probe:akte",
+        "felder": {
+          "name": "name"
+        },
+        "setzen": {},
+        "register": {}
+      }
+    ],
+    "mappenaktionen": [
+      {
+        "schluessel": "notiz",
+        "name": "Notiz",
+        "mappentypen": ["akte", "probe:vorgang"],
+        "rechte": ["lesen"]
+      },
+      {
+        "schluessel": "neu",
+        "name": "Neuer Vorgang",
+        "mappentypen": ["akte"],
+        "rechte": ["mappen_anlegen"],
+        "anlegen": ["vorgang"]
+      },
+      {
+        "schluessel": "vorlage",
+        "name": "Vorlage",
+        "mappentypen": ["basis:organisation"],
+        "rechte": ["dokument_hinzufuegen"],
+        "dialog": "dms:vorlage"
+      }
+    ],
+    "ablaufvorlagen": [
+      {
+        "schluessel": "wiedervorlage",
+        "ersetzt": null,
+        "daten": {
+          "schluessel": "wiedervorlage",
+          "name": "Wiedervorlage",
+          "typen": ["akte", "basis:organisation"],
+          "wann": {
+            "art": "in",
+            "anzahl": 6,
+            "einheit": "monate"
+          },
+          "fragen": [],
+          "karten": [
+            {
+              "art": "aufgabe",
+              "als": "aufgabe",
+              "empfaenger": [
+                {
+                  "art": "selbst"
+                }
+              ],
+              "text": "Wiedervorlage: {titel}"
+            }
+          ]
+        }
+      },
+      {
+        "schluessel": "erinnern_neu",
+        "ersetzt": "erinnern",
+        "daten": {
+          "schluessel": "erinnern_neu",
+          "name": "Erinnern",
+          "ersetzt": "erinnern",
+          "wann": {
+            "art": "in",
+            "anzahl": 1,
+            "einheit": "wochen"
+          },
+          "fragen": [],
+          "karten": [
+            {
+              "art": "aufgabe",
+              "als": "aufgabe",
+              "empfaenger": [
+                {
+                  "art": "selbst"
+                }
+              ],
+              "text": "Erinnerung"
+            }
+          ]
+        }
+      }
+    ],
+    "kurzanleitung": {
+      "de": ["Erst eine Akte anlegen."]
+    },
+    "entdecken": {
+      "rundgaenge": [
+        {
+          "schluessel": "kennenlernen",
+          "titel": "Akten im Überblick",
+          "beschreibung": "Wo das Ende einer Akte steht.",
+          "start": "nach_installation",
+          "oeffne": {
+            "mappe": {
+              "typ": "akte"
+            }
+          },
+          "ersatz": "Sobald du eine Akte angelegt hast, zeigt dir Ablago hier, wie es geht.",
+          "schritte": [
+            {
+              "schluessel": "ende",
+              "ziel": "mappe.feld:ende",
+              "ort": "Rechts in der Mappe",
+              "titel": "Ende",
+              "text": "Hier steht das Ende."
+            },
+            {
+              "schluessel": "dokumente",
+              "ziel": "mappe.register:dok",
+              "ort": "Register oben in der Mappe",
+              "titel": "Dokumente",
+              "text": "Hier liegen die Briefe."
+            }
+          ]
+        }
+      ],
+      "tipps": [
+        {
+          "schluessel": "ende",
+          "text": "Wusstest du schon? Ablago erinnert dich an jedes Ende.",
+          "typ": "akte",
+          "rundgang": "kennenlernen"
+        }
+      ]
+    }
+  },
+  "ordnerDavor": {
+    "manifest": {
+      "id": "probe",
+      "name": "Probe",
+      "version": "1.0.0",
+      "beschreibung": "Probepaket für die Charakterisierung.",
+      "autor": {
+        "name": "Test",
+        "github": "test"
+      },
+      "lizenz": "MIT",
+      "dms": ">=0.231.0",
+      "abhaengigkeiten": {
+        "basis": ">=1.0.0"
+      },
+      "code": {
+        "sprache": "c",
+        "quelle": "code/",
+        "ereignisse": ["mappe.geaendert", "zeitplan.ausgefuehrt"],
+        "mappentypen": ["akte"],
+        "rechte": {
+          "lesen": ["akte", "probe:vorgang"],
+          "schreiben": ["akte"]
+        }
+      },
+      "herausgeber": "org.example"
+    },
+    "typen": [
+      {
+        "schluessel": "art",
+        "name": "Aktenart",
+        "beschreibung": "",
+        "titelVorlage": "{name}",
+        "felder": [
+          {
+            "key": "name",
+            "label": "Name",
+            "typ": "text",
+            "pflicht": true
+          }
+        ],
+        "register": [
+          {
+            "key": "daten",
+            "name": "Daten",
+            "art": "felder",
+            "felder": ["name"]
+          }
+        ]
+      },
+      {
+        "schluessel": "akte",
+        "name": "Akte",
+        "beschreibung": "Eine Akte",
+        "titelVorlage": "{name}",
+        "felder": [
+          {
+            "key": "name",
+            "label": "Name",
+            "typ": "text",
+            "pflicht": true,
+            "beschriftungen": {
+              "en": {
+                "label": "Name"
+              }
+            }
+          },
+          {
+            "key": "altname",
+            "label": "Alte Stelle",
+            "typ": "text"
+          },
+          {
+            "key": "stelle",
+            "label": "Stelle",
+            "typ": "referenz",
+            "ziel": "basis:organisation",
+            "ausText": "altname"
+          },
+          {
+            "key": "art",
+            "label": "Art",
+            "typ": "referenz",
+            "ziel": "art"
+          },
+          {
+            "key": "wer",
+            "label": "Wer",
+            "typ": "referenz",
+            "ziel": "dms:benutzer"
+          },
+          {
+            "key": "summe",
+            "label": "Summe",
+            "typ": "betrag",
+            "negativ": true,
+            "berechnet": true
+          },
+          {
+            "key": "eigen",
+            "label": "Eigene",
+            "typ": "janein",
+            "merkmal": "eigeneOrganisation",
+            "schreibschutz": "verwaltung"
+          },
+          {
+            "key": "ende",
+            "label": "Ende",
+            "typ": "datum"
+          },
+          {
+            "key": "posten",
+            "label": "Posten",
+            "typ": "tabelle",
+            "quelle": {
+              "typ": "vorgang",
+              "feld": "akte"
+            }
+          },
+          {
+            "key": "fremd",
+            "label": "Fremd",
+            "typ": "tabelle",
+            "quelle": {
+              "typ": "basis:organisation",
+              "feld": "x"
+            }
+          },
+          {
+            "key": "kosten",
+            "label": "Kosten",
+            "typ": "betrag"
+          }
+        ],
+        "register": [
+          {
+            "key": "daten",
+            "name": "Daten",
+            "art": "felder",
+            "felder": ["name", "altname", "stelle", "art", "wer", "summe", "eigen", "ende", "posten", "fremd", "kosten"],
+            "abschnitte": [
+              {
+                "vor": "kosten",
+                "titel": "Kosten",
+                "anzeigen": {
+                  "bedingungen": [
+                    {
+                      "art": "vorgabe",
+                      "feld": "art",
+                      "vorgabe": ["privat"]
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "key": "dok",
+            "name": "Dokumente",
+            "art": "dokumente"
+          }
+        ],
+        "trefferliste": ["name", "stelle"],
+        "beschriftungen": {
+          "en": {
+            "name": "File"
+          }
+        },
+        "ausPost": true,
+        "erkennbarAn": "Aktenzeichen",
+        "inSuche": false,
+        "archiv": {
+          "jahre": 6,
+          "stichtag": "ende"
+        }
+      },
+      {
+        "schluessel": "vorgang",
+        "name": "Vorgang",
+        "beschreibung": "",
+        "titelVorlage": "{titel}",
+        "felder": [
+          {
+            "key": "titel",
+            "label": "Titel",
+            "typ": "text",
+            "pflicht": true
+          },
+          {
+            "key": "akte",
+            "label": "Akte",
+            "typ": "referenz",
+            "ziel": "akte",
+            "pflicht": true,
+            "verweisart": "zugehoerigkeit"
+          }
+        ],
+        "register": [
+          {
+            "key": "daten",
+            "name": "Daten",
+            "art": "felder",
+            "felder": ["titel", "akte"]
+          }
+        ],
+        "gehoertZu": "akte"
+      }
+    ],
+    "sichten": [
+      {
+        "schluessel": "akten",
+        "name": "Akten",
+        "beschreibung": "Alle Akten",
+        "beschriftungen": {
+          "en": {
+            "name": "Files"
+          }
+        },
+        "typen": ["akte"],
+        "trefferliste": "standard",
+        "symbol": "folder",
+        "bedingungen": []
+      },
+      {
+        "schluessel": "offene",
+        "name": "Offene",
+        "eltern": "akten",
+        "typen": ["vorgang"],
+        "bedingungen": [
+          {
+            "feld": "titel",
+            "operator": "leer"
+          }
+        ]
+      },
+      {
+        "schluessel": "fremd",
+        "name": "Fremde",
+        "typen": [],
+        "fremdeTypen": [
+          {
+            "kennung": "anderes:typ",
+            "name": "Anderer Typ"
+          },
+          {
+            "kennung": "basis:organisation",
+            "name": "basis:organisation"
+          }
+        ],
+        "bedingungen": []
+      }
+    ],
+    "beispiele": [
+      {
+        "typ": "art",
+        "werte": {
+          "name": "Beruflich"
+        },
+        "schluessel": "a0"
+      },
+      {
+        "typ": "akte",
+        "werte": {
+          "name": "Musterakte",
+          "art": {
+            "vorgabe": "privat"
+          },
+          "stelle": {
+            "beispiel": "basis:stadtwerke"
+          }
+        },
+        "schluessel": "a1",
+        "dokumente": [
+          {
+            "datei": "beispiele/brief.pdf",
+            "titel": "Brief",
+            "register": "dok"
+          }
+        ]
+      },
+      {
+        "typ": "vorgang",
+        "werte": {
+          "titel": "Erster",
+          "akte": {
+            "beispiel": "a1"
+          }
+        },
+        "schluessel": "v1"
+      },
+      {
+        "typ": "basis:organisation",
+        "werte": {}
+      }
+    ],
+    "wortlisten": [["Akte", "Ordner"]],
+    "automatisierungen": [
+      {
+        "schluessel": "erinnern",
+        "name": "Erinnern",
+        "beschreibung": "Erinnert an das Ende.",
+        "wenn": {
+          "art": "datum",
+          "typ": "akte",
+          "feld": "ende",
+          "vorlauf": 30,
+          "einheit": "tage",
+          "uhrzeit": "07:00"
+        },
+        "dann": [
+          {
+            "art": "aufgabe",
+            "als": "aufgabe",
+            "empfaenger": [
+              {
+                "art": "ersteller"
+              }
+            ],
+            "text": "Ende {datum}"
+          }
+        ]
+      },
+      {
+        "schluessel": "taeglich",
+        "name": "Täglich",
+        "beschreibung": "",
+        "wenn": {
+          "art": "zeitplan",
+          "uhrzeit": "05:00",
+          "tage": [1, 2, 3, 4, 5, 6, 7]
+        },
+        "dann": [
+          {
+            "art": "paket",
+            "aufgabe": "taeglich"
+          }
+        ],
+        "eingeschaltet": true
+      }
+    ],
+    "readme": "# Probe\n",
+    "einstellungen": null,
+    "code": {
+      "info": {
+        "sprache": "c",
+        "ereignisse": ["mappe.geaendert", "zeitplan.ausgefuehrt"],
+        "rechte": {
+          "lesen": ["akte", "probe:vorgang"],
+          "schreiben": ["akte"],
+          "dokumente": "keine"
+        },
+        "netz": [],
+        "mappentypen": ["akte"]
+      },
+      "dateien": [
+        {
+          "name": "modul.wasm",
+          "inhalt": "puffer:9"
+        },
+        {
+          "name": "daten/liste.json",
+          "inhalt": "puffer:2"
+        }
+      ]
+    },
+    "sprache": null,
+    "beispielDateien": [["beispiele/brief.pdf", "puffer:56"]],
+    "vorgaben": [
+      {
+        "schluessel": "privat",
+        "typ": "art",
+        "werte": {
+          "name": "Privat"
+        }
+      }
+    ],
+    "umbau": [
+      {
+        "von": "basis:organisation",
+        "nach": "probe:akte",
+        "felder": {
+          "name": "name"
+        },
+        "setzen": {},
+        "register": {}
+      }
+    ],
+    "mappenaktionen": [
+      {
+        "schluessel": "notiz",
+        "name": "Notiz",
+        "mappentypen": ["akte", "probe:vorgang"],
+        "rechte": ["lesen"]
+      },
+      {
+        "schluessel": "neu",
+        "name": "Neuer Vorgang",
+        "mappentypen": ["akte"],
+        "rechte": ["mappen_anlegen"],
+        "anlegen": ["vorgang"]
+      },
+      {
+        "schluessel": "vorlage",
+        "name": "Vorlage",
+        "mappentypen": ["basis:organisation"],
+        "rechte": ["dokument_hinzufuegen"],
+        "dialog": "dms:vorlage"
+      }
+    ],
+    "ablaufvorlagen": [
+      {
+        "schluessel": "wiedervorlage",
+        "ersetzt": null,
+        "daten": {
+          "schluessel": "wiedervorlage",
+          "name": "Wiedervorlage",
+          "typen": ["akte", "basis:organisation"],
+          "wann": {
+            "art": "in",
+            "anzahl": 6,
+            "einheit": "monate"
+          },
+          "fragen": [],
+          "karten": [
+            {
+              "art": "aufgabe",
+              "als": "aufgabe",
+              "empfaenger": [
+                {
+                  "art": "selbst"
+                }
+              ],
+              "text": "Wiedervorlage: {titel}"
+            }
+          ]
+        }
+      },
+      {
+        "schluessel": "erinnern_neu",
+        "ersetzt": "erinnern",
+        "daten": {
+          "schluessel": "erinnern_neu",
+          "name": "Erinnern",
+          "ersetzt": "erinnern",
+          "wann": {
+            "art": "in",
+            "anzahl": 1,
+            "einheit": "wochen"
+          },
+          "fragen": [],
+          "karten": [
+            {
+              "art": "aufgabe",
+              "als": "aufgabe",
+              "empfaenger": [
+                {
+                  "art": "selbst"
+                }
+              ],
+              "text": "Erinnerung"
+            }
+          ]
+        }
+      }
+    ],
+    "kurzanleitung": {
+      "de": ["Erst eine Akte anlegen."]
+    },
+    "entdecken": {
+      "rundgaenge": [
+        {
+          "schluessel": "kennenlernen",
+          "titel": "Akten im Überblick",
+          "beschreibung": "Wo das Ende einer Akte steht.",
+          "start": "nach_installation",
+          "oeffne": {
+            "mappe": {
+              "typ": "akte"
+            }
+          },
+          "ersatz": "Sobald du eine Akte angelegt hast, zeigt dir Ablago hier, wie es geht.",
+          "schritte": [
+            {
+              "schluessel": "ende",
+              "ziel": "mappe.feld:ende",
+              "ort": "Rechts in der Mappe",
+              "titel": "Ende",
+              "text": "Hier steht das Ende."
+            },
+            {
+              "schluessel": "dokumente",
+              "ziel": "mappe.register:dok",
+              "ort": "Register oben in der Mappe",
+              "titel": "Dokumente",
+              "text": "Hier liegen die Briefe."
+            }
+          ]
+        }
+      ],
+      "tipps": [
+        {
+          "schluessel": "ende",
+          "text": "Wusstest du schon? Ablago erinnert dich an jedes Ende.",
+          "typ": "akte",
+          "rundgang": "kennenlernen"
+        }
+      ]
+    }
+  },
+  "ordnerOhneManifest": {
+    "status": 422,
+    "meldung": "Das Paket ist ungültig.",
+    "details": {
+      "gruende": ["manifest.yaml fehlt im Paket."]
+    }
+  },
+  "ohneManifest": {
+    "status": 422,
+    "meldung": "Das Paket ist ungültig.",
+    "details": {
+      "gruende": ["manifest.yaml fehlt im Paket."]
+    }
+  },
+  "manifestLeer": {
+    "status": 422,
+    "meldung": "Das Paket ist ungültig.",
+    "details": {
+      "gruende": ["manifest.yaml ist leer."]
+    }
+  },
+  "manifestKaputt": {
+    "status": 422,
+    "meldung": "Das Paket ist ungültig.",
+    "details": {
+      "gruende": [
+        "manifest.yaml: kein gültiges YAML (Flow sequence in block collection must be sufficiently indented and end with a ] at line 2, column 1:)."
+      ]
+    }
+  },
+  "manifestListe": {
+    "status": 422,
+    "meldung": "Das Paket ist ungültig.",
+    "details": {
+      "gruende": ["manifest.yaml ist leer."]
+    }
+  },
+  "manifestFalsch": {
+    "status": 422,
+    "meldung": "Das Paket ist ungültig.",
+    "details": {
+      "gruende": [
+        "manifest.yaml: Format 2 kennt diese Ablago-Version nicht.",
+        "manifest.yaml: ungültige Id.",
+        "manifest.yaml: ungültige Version (z. B. 1.0.0).",
+        "manifest.yaml: Name fehlt.",
+        "manifest.yaml: ungültige Ablago-Version (z. B. >=0.63.0).",
+        "manifest.yaml: Abhängigkeit „Böse: >=1“ ist ungültig.",
+        "manifest.yaml: Abhängigkeit „gut: 1“ ist ungültig.",
+        "manifest.yaml: ergaenzt: der Name eines Pakets oder { paket, gruppe }.",
+        "manifest.yaml: ersetzt: eine Paket-Id oder eine Liste davon (höchstens 5, nicht die eigene).",
+        "manifest.yaml: herausgeber „nicht gut“ ist keine umgedrehte Domain – z. B. org.example (Kleinbuchstaben, Ziffern und Bindestriche, mindestens zwei Teile mit Punkt, höchstens 64 Zeichen, kein xn--).",
+        "inhalt/fehlt.yaml fehlt im Paket.",
+        "inhalt/kaputt.yaml: kein gültiges YAML (Flow sequence in block collection must be sufficiently indented and end with a ] at line 2, column 1:).",
+        "inhalt/objekt.yaml: erwartet eine Liste."
+      ]
+    }
+  },
+  "idDms": {
+    "status": 422,
+    "meldung": "Das Paket ist ungültig.",
+    "details": {
+      "gruende": ["manifest.yaml: Die Id „dms“ ist für Verweise auf Mappentypen von Ablago reserviert."]
+    }
+  },
+  "punktOhneErgaenzt": {
+    "status": 422,
+    "meldung": "Das Paket ist ungültig.",
+    "details": {
+      "gruende": [
+        "manifest.yaml: Die Id „basis.extra“ hat einen Punkt und ergänzt damit das Paket „basis“ – dann muss das Manifest ergaenzt: basis angeben."
+      ]
+    }
+  },
+  "punktMitErgaenzt": {
+    "manifest": {
+      "id": "basis.extra",
+      "name": "Klein",
+      "version": "1.0.0",
+      "beschreibung": "Klein.",
+      "autor": {
+        "name": "Test",
+        "github": "test"
+      },
+      "lizenz": "MIT",
+      "dms": ">=0.231.0",
+      "abhaengigkeiten": {
+        "basis": ">=1.0.0"
+      },
+      "ergaenzt": {
+        "paket": "basis"
+      },
+      "herausgeber": "org.example",
+      "ersetzt": ["alt_extra"]
+    },
+    "typen": [],
+    "sichten": [],
+    "beispiele": [],
+    "wortlisten": [],
+    "automatisierungen": [],
+    "readme": "",
+    "einstellungen": null,
+    "code": null,
+    "sprache": null
+  },
+  "ergaenztOhneAbhaengigkeit": {
+    "status": 422,
+    "meldung": "Das Paket ist ungültig.",
+    "details": {
+      "gruende": ["manifest.yaml: ergaenzt: „basis“ muss auch unter abhaengigkeiten stehen."]
+    }
+  },
+  "sprachpaket": {
+    "manifest": {
+      "id": "sprache_fr",
+      "name": "Français",
+      "version": "1.0.0",
+      "beschreibung": "Texte.",
+      "autor": {
+        "name": "Test",
+        "github": "test"
+      },
+      "lizenz": "CC0-1.0",
+      "dms": ">=0.203.0",
+      "abhaengigkeiten": {}
+    },
+    "typen": [],
+    "sichten": [],
+    "beispiele": [],
+    "wortlisten": [],
+    "automatisierungen": [],
+    "readme": "# Français\n",
+    "einstellungen": null,
+    "code": null,
+    "sprache": {
+      "angabe": {
+        "kennung": "fr",
+        "gebietsschema": "fr-FR",
+        "ablago": "0.203.0",
+        "maschinell": true
+      },
+      "texte": {
+        "meldungen": {
+          "sprachen.unbekannt": "Cette langue n’existe pas dans Ablago."
+        }
+      },
+      "uebergangen": [],
+      "beschriftungen": {
+        "basis": {
+          "mappentypen": {
+            "organisation": {
+              "name": "Organisme"
+            }
+          }
+        }
+      }
+    }
+  },
+  "sprachpaketFalsch": {
+    "status": 422,
+    "meldung": "Das Paket ist ungültig.",
+    "details": {
+      "gruende": [
+        "manifest.yaml: sprache.ablago: die Ablago-Version, für die die Texte gemacht sind (z. B. 0.203.0).",
+        "manifest.yaml: sprache.maschinell: true oder false – ist die Übersetzung maschinell?",
+        "Ein Sprachpaket enthält nur Texte – manifest.yaml: code gibt es darin nicht.",
+        "Ein Sprachpaket enthält nur Texte – manifest.yaml: inhalt bleibt leer (keine Mappentypen, Ansichten, Beispiele, Wortlisten oder Automatisierungen).",
+        "inhalt/mappentypen.yaml: gehört nicht in ein Sprachpaket – erlaubt sind texte/<bereich>.json, beschriftungen/<paket>.yaml, README, LICENSE, CHANGELOG und tests/.",
+        "Das Sprachpaket enthält keine Texte und keine Beschriftungen, die zu dieser Ablago-Version passen."
+      ]
+    }
+  },
+  "typenFalsch": {
+    "status": 422,
+    "meldung": "Das Paket ist ungültig.",
+    "details": {
+      "gruende": [
+        "mappentypen[1]: ungültige Kennung.",
+        "mappentypen[1]: Name fehlt.",
+        "mappentypen[1]: Feld mit ungültiger Kennung „Name“.",
+        "mappentypen[1]: Feld „Name“ hat die unbekannte Feldart „gibtsnicht“ (möglich: text, langtext, formatiert, zahl, betrag, datum, janein, auswahl, referenz, passwort, zeitraum, prozent, tabelle, zusammengesetzt).",
+        "mappentypen[1]: Feld „Name“: negativ gibt es nur bei Beträgen (typ: betrag), als true oder false.",
+        "mappentypen[1]: mindestens ein Register nötig.",
+        "mappentypen[1]: beschriftungen muss ein Objekt „Sprache → Texte“ sein.",
+        "mappentypen[1]: „Name“: beschriftungen muss ein Objekt „Sprache → Texte“ sein.",
+        "mappentypen[2]: Feld „summe“: negativ gibt es nur bei Beträgen (typ: betrag), als true oder false.",
+        "mappentypen[2]: Feld „summe“: berechnet ist true oder false.",
+        "mappentypen[2]: Feld „ende“: Ein berechnetes Feld ist nie Pflicht – den Wert schreibt das Paket, nicht wer die Mappe anlegt.",
+        "mappentypen[2]: Feld „pw“: Passwortfelder lassen sich nicht berechnen.",
+        "mappentypen[2]: Feld „pw“: schreibschutz ist verwaltung – nicht an Passwort und Tabelle.",
+        "mappentypen[2]: Feld „drei“: merkmal gibt es nur am Ja/Nein-Feld (typ: janein), möglich: eigeneOrganisation.",
+        "mappentypen[2]: Feld „drei“: schreibschutz ist verwaltung – nicht an Passwort und Tabelle.",
+        "mappentypen[2]: höchstens ein Feld mit merkmal je Mappentyp.",
+        "mappentypen[2]: archiv.jahre muss eine ganze Zahl von 1 bis 30 sein.",
+        "mappentypen[2]: archiv.stichtag „gibtsnicht“ muss ein Datumsfeld dieses Typs sein.",
+        "vorgaben[1]: Mappentyp „art“ – nur eigene Typen oder Typen eines Pakets, von dem dieses abhängt."
+      ]
+    }
+  },
+  "ausText": {
+    "status": 422,
+    "meldung": "Das Paket ist ungültig.",
+    "details": {
+      "gruende": [
+        "mappentypen[1]: Feld „c“: aus_text gibt es nur bei Verweisfeldern (typ: referenz).",
+        "mappentypen[1]: Feld „d“: aus_text muss die Kennung eines anderen Felds sein.",
+        "mappentypen[1]: Feld „e“: aus_text muss die Kennung eines anderen Felds sein.",
+        "mappentypen[1]: Feld „f“: aus_text „b“ ist kein Textfeld.",
+        "mappentypen[1]: Feld „g“: Ein Verweisfeld mit aus_text darf keine Pflicht sein – sonst passen vorhandene Mappen nach dem Update nicht mehr.",
+        "mappentypen[1]: Feld „h“: aus_text geht nur mit genau einem Zieltyp (ziel) – neue Mappen entstehen in diesem Typ.",
+        "mappentypen[1]: Feld „i“: zielOptional „ding“ muss ein Mappentyp eines anderen Pakets sein (paket:schluessel).",
+        "mappentypen[1]: Feld „i“: aus_text geht nur mit genau einem Zieltyp (ziel) – neue Mappen entstehen in diesem Typ."
+      ]
+    }
+  },
+  "gehoertZuFalsch": {
+    "status": 422,
+    "meldung": "Das Paket ist ungültig.",
+    "details": {
+      "gruende": [
+        "mappentypen[1]: gehoertZu „gibtsnicht“ nennt kein Feld dieses Typs – angegeben wird die Kennung des Verweisfelds, über das die Mappe dazugehört."
+      ]
+    }
+  },
+  "gehoertZuNull": {
+    "manifest": {
+      "id": "klein",
+      "name": "Klein",
+      "version": "1.0.0",
+      "beschreibung": "Klein.",
+      "autor": {
+        "name": "Test",
+        "github": "test"
+      },
+      "lizenz": "MIT",
+      "dms": ">=0.231.0",
+      "abhaengigkeiten": {}
+    },
+    "typen": [
+      {
+        "schluessel": "ding",
+        "name": "Ding",
+        "beschreibung": "",
+        "felder": [
+          {
+            "key": "a",
+            "label": "A",
+            "typ": "text"
+          },
+          {
+            "key": "b",
+            "label": "B",
+            "typ": "text"
+          }
+        ],
+        "register": [
+          {
+            "key": "daten",
+            "name": "Daten",
+            "art": "felder",
+            "felder": ["a", "b"]
+          }
+        ]
+      }
+    ],
+    "sichten": [],
+    "beispiele": [],
+    "wortlisten": [],
+    "automatisierungen": [],
+    "readme": "",
+    "einstellungen": null,
+    "code": null,
+    "sprache": null
+  },
+  "felderKeineListe": {
+    "status": 422,
+    "meldung": "Das Paket ist ungültig.",
+    "details": {
+      "gruende": ["mappentypen[1]: mindestens ein Register nötig."]
+    }
+  },
+  "sichtenFalsch": {
+    "status": 422,
+    "meldung": "Das Paket ist ungültig.",
+    "details": {
+      "gruende": [
+        "sichten[1]: ungültige Kennung.",
+        "sichten[1]: Name fehlt.",
+        "sichten[2] „offene“, bedingungen[2]: Die Bedingung ist kein Objekt.",
+        "sichten[3] „fremd“: bedingungen muss eine Liste sein.",
+        "sichten[3]: fremde_typen[2]: ungültige Kennung „“.",
+        "sichten[3]: fremde_typen[3]: ungültige Kennung „Böse Kennung“."
+      ]
+    }
+  },
+  "sichtenDoppelt": {
+    "status": 422,
+    "meldung": "Das Paket ist ungültig.",
+    "details": {
+      "gruende": [
+        "mappentypen: „Akte“ → Feld „posten“: Die Tabelle zeigt Mappen vom Typ „vorgang“, den das Paket nicht mitbringt.",
+        "mappentypen: Kennung „akte“ doppelt.",
+        "sichten: Kennung „akten“ doppelt.",
+        "mappenaktionen „Notiz“: Den Mappentyp „probe:vorgang“ bringt weder dieses Paket noch eine seiner Abhängigkeiten.",
+        "mappenaktionen „Neuer Vorgang“: Den Mappentyp „vorgang“ bringt weder dieses Paket noch eine seiner Abhängigkeiten."
+      ]
+    }
+  },
+  "beispieleFalsch": {
+    "status": 422,
+    "meldung": "Das Paket ist ungültig.",
+    "details": {
+      "gruende": [
+        "beispiele[1]: ungültiger Schlüssel „A0“.",
+        "beispiele[2]: Für „beispiele/brief.pdf“ hat der Mappentyp kein passendes Dokumentenregister (register: daten).",
+        "beispiele: Schlüssel „a1“ doppelt.",
+        "beispiele[3]: Verweis auf das Beispiel „gibtsnicht“, das es im Paket nicht gibt.",
+        "beispiele[3]: Verweis „Böse Kennung“ ist kein gültiger Schlüssel.",
+        "beispiele[3]: Verweis „fremd:y“ – das Paket „fremd“ steht nicht unter abhaengigkeiten.",
+        "beispiele[3]: Verweis „dms:z“ – das Paket „dms“ steht nicht unter abhaengigkeiten."
+      ]
+    }
+  },
+  "beispieleDokumenteOhneRegister": {
+    "status": 422,
+    "meldung": "Das Paket ist ungültig.",
+    "details": {
+      "gruende": [
+        "beispiele[2]: Für „beispiele/brief.pdf“ hat der Mappentyp kein passendes Dokumentenregister (register: dok).",
+        "beispiele[2]: Für „beispiele/brief.pdf“ hat der Mappentyp kein passendes Dokumentenregister (register: –).",
+        "inhalt/rundgaenge.yaml: Rundgang „kennenlernen“, Schritt 2: Das Register „dok“ gibt es im Mappentyp „probe:akte“ nicht."
+      ]
+    }
+  },
+  "beispieleKreis": {
+    "manifest": {
+      "id": "probe",
+      "name": "Probe",
+      "version": "1.0.0",
+      "beschreibung": "Probepaket für die Charakterisierung.",
+      "autor": {
+        "name": "Test",
+        "github": "test"
+      },
+      "lizenz": "MIT",
+      "dms": ">=0.231.0",
+      "abhaengigkeiten": {
+        "basis": ">=1.0.0"
+      },
+      "code": {
+        "sprache": "c",
+        "quelle": "code/",
+        "ereignisse": ["mappe.geaendert", "zeitplan.ausgefuehrt"],
+        "mappentypen": ["akte"],
+        "rechte": {
+          "lesen": ["akte", "probe:vorgang"],
+          "schreiben": ["akte"]
+        }
+      },
+      "herausgeber": "org.example"
+    },
+    "typen": [
+      {
+        "schluessel": "art",
+        "name": "Aktenart",
+        "beschreibung": "",
+        "titelVorlage": "{name}",
+        "felder": [
+          {
+            "key": "name",
+            "label": "Name",
+            "typ": "text",
+            "pflicht": true
+          },
+          {
+            "key": "x",
+            "label": "X",
+            "typ": "referenz",
+            "ziel": "vorgang"
+          }
+        ],
+        "register": [
+          {
+            "key": "daten",
+            "name": "Daten",
+            "art": "felder",
+            "felder": ["name", "x"]
+          }
+        ]
+      },
+      {
+        "schluessel": "akte",
+        "name": "Akte",
+        "beschreibung": "Eine Akte",
+        "titelVorlage": "{name}",
+        "felder": [
+          {
+            "key": "name",
+            "label": "Name",
+            "typ": "text",
+            "pflicht": true,
+            "beschriftungen": {
+              "en": {
+                "label": "Name"
+              }
+            }
+          },
+          {
+            "key": "altname",
+            "label": "Alte Stelle",
+            "typ": "text"
+          },
+          {
+            "key": "stelle",
+            "label": "Stelle",
+            "typ": "referenz",
+            "ziel": "basis:organisation",
+            "ausText": "altname"
+          },
+          {
+            "key": "art",
+            "label": "Art",
+            "typ": "referenz",
+            "ziel": "art"
+          },
+          {
+            "key": "wer",
+            "label": "Wer",
+            "typ": "referenz",
+            "ziel": "dms:benutzer"
+          },
+          {
+            "key": "summe",
+            "label": "Summe",
+            "typ": "betrag",
+            "negativ": true,
+            "berechnet": true
+          },
+          {
+            "key": "eigen",
+            "label": "Eigene",
+            "typ": "janein",
+            "merkmal": "eigeneOrganisation",
+            "schreibschutz": "verwaltung"
+          },
+          {
+            "key": "ende",
+            "label": "Ende",
+            "typ": "datum"
+          },
+          {
+            "key": "posten",
+            "label": "Posten",
+            "typ": "tabelle",
+            "quelle": {
+              "typ": "vorgang",
+              "feld": "akte"
+            }
+          },
+          {
+            "key": "fremd",
+            "label": "Fremd",
+            "typ": "tabelle",
+            "quelle": {
+              "typ": "basis:organisation",
+              "feld": "x"
+            }
+          },
+          {
+            "key": "kosten",
+            "label": "Kosten",
+            "typ": "betrag"
+          }
+        ],
+        "register": [
+          {
+            "key": "daten",
+            "name": "Daten",
+            "art": "felder",
+            "felder": ["name", "altname", "stelle", "art", "wer", "summe", "eigen", "ende", "posten", "fremd", "kosten"],
+            "abschnitte": [
+              {
+                "vor": "kosten",
+                "titel": "Kosten",
+                "anzeigen": {
+                  "bedingungen": [
+                    {
+                      "art": "vorgabe",
+                      "feld": "art",
+                      "vorgabe": ["privat"]
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "key": "dok",
+            "name": "Dokumente",
+            "art": "dokumente"
+          }
+        ],
+        "trefferliste": ["name", "stelle"],
+        "beschriftungen": {
+          "en": {
+            "name": "File"
+          }
+        },
+        "ausPost": true,
+        "erkennbarAn": "Aktenzeichen",
+        "inSuche": false,
+        "archiv": {
+          "jahre": 6,
+          "stichtag": "ende"
+        }
+      },
+      {
+        "schluessel": "vorgang",
+        "name": "Vorgang",
+        "beschreibung": "",
+        "titelVorlage": "{titel}",
+        "felder": [
+          {
+            "key": "titel",
+            "label": "Titel",
+            "typ": "text",
+            "pflicht": true
+          },
+          {
+            "key": "akte",
+            "label": "Akte",
+            "typ": "referenz",
+            "ziel": "akte",
+            "pflicht": true,
+            "verweisart": "zugehoerigkeit"
+          }
+        ],
+        "register": [
+          {
+            "key": "daten",
+            "name": "Daten",
+            "art": "felder",
+            "felder": ["titel", "akte"]
+          }
+        ],
+        "gehoertZu": "akte"
+      }
+    ],
+    "sichten": [
+      {
+        "schluessel": "akten",
+        "name": "Akten",
+        "beschreibung": "Alle Akten",
+        "beschriftungen": {
+          "en": {
+            "name": "Files"
+          }
+        },
+        "typen": ["akte"],
+        "trefferliste": "standard",
+        "symbol": "folder",
+        "bedingungen": []
+      },
+      {
+        "schluessel": "offene",
+        "name": "Offene",
+        "eltern": "akten",
+        "typen": ["vorgang"],
+        "bedingungen": [
+          {
+            "feld": "titel",
+            "operator": "leer"
+          }
+        ]
+      },
+      {
+        "schluessel": "fremd",
+        "name": "Fremde",
+        "typen": [],
+        "fremdeTypen": [
+          {
+            "kennung": "anderes:typ",
+            "name": "Anderer Typ"
+          },
+          {
+            "kennung": "basis:organisation",
+            "name": "basis:organisation"
+          }
+        ],
+        "bedingungen": []
+      }
+    ],
+    "beispiele": [
+      {
+        "typ": "art",
+        "werte": {
+          "name": "Beruflich",
+          "x": {
+            "beispiel": "v1"
+          }
+        },
+        "schluessel": "a0"
+      },
+      {
+        "typ": "akte",
+        "werte": {
+          "name": "Musterakte",
+          "art": {
+            "vorgabe": "privat"
+          },
+          "stelle": {
+            "beispiel": "basis:stadtwerke"
+          }
+        },
+        "schluessel": "a1",
+        "dokumente": [
+          {
+            "datei": "beispiele/brief.pdf",
+            "titel": "Brief",
+            "register": "dok"
+          }
+        ]
+      },
+      {
+        "typ": "vorgang",
+        "werte": {
+          "titel": "Erster",
+          "akte": {
+            "beispiel": "a1"
+          }
+        },
+        "schluessel": "v1"
+      },
+      {
+        "typ": "akte",
+        "werte": {
+          "name": "Zwei",
+          "art": {
+            "beispiel": "a0"
+          }
+        },
+        "schluessel": "a2"
+      },
+      {
+        "typ": "basis:organisation",
+        "werte": {}
+      }
+    ],
+    "wortlisten": [["Akte", "Ordner"]],
+    "automatisierungen": [
+      {
+        "schluessel": "erinnern",
+        "name": "Erinnern",
+        "beschreibung": "Erinnert an das Ende.",
+        "wenn": {
+          "art": "datum",
+          "typ": "akte",
+          "feld": "ende",
+          "vorlauf": 30,
+          "einheit": "tage",
+          "uhrzeit": "07:00"
+        },
+        "dann": [
+          {
+            "art": "aufgabe",
+            "als": "aufgabe",
+            "empfaenger": [
+              {
+                "art": "ersteller"
+              }
+            ],
+            "text": "Ende {datum}"
+          }
+        ]
+      },
+      {
+        "schluessel": "taeglich",
+        "name": "Täglich",
+        "beschreibung": "",
+        "wenn": {
+          "art": "zeitplan",
+          "uhrzeit": "05:00",
+          "tage": [1, 2, 3, 4, 5, 6, 7]
+        },
+        "dann": [
+          {
+            "art": "paket",
+            "aufgabe": "taeglich"
+          }
+        ],
+        "eingeschaltet": true
+      }
+    ],
+    "readme": "# Probe\n",
+    "einstellungen": null,
+    "code": {
+      "info": {
+        "sprache": "c",
+        "ereignisse": ["mappe.geaendert", "zeitplan.ausgefuehrt"],
+        "rechte": {
+          "lesen": ["akte", "probe:vorgang"],
+          "schreiben": ["akte"],
+          "dokumente": "keine"
+        },
+        "netz": [],
+        "mappentypen": ["akte"]
+      },
+      "dateien": [
+        {
+          "name": "modul.wasm",
+          "inhalt": "puffer:9"
+        },
+        {
+          "name": "daten/liste.json",
+          "inhalt": "puffer:2"
+        }
+      ]
+    },
+    "sprache": null,
+    "beispielDateien": [["beispiele/brief.pdf", "puffer:56"]],
+    "vorgaben": [
+      {
+        "schluessel": "privat",
+        "typ": "art",
+        "werte": {
+          "name": "Privat"
+        }
+      }
+    ],
+    "umbau": [
+      {
+        "von": "basis:organisation",
+        "nach": "probe:akte",
+        "felder": {
+          "name": "name"
+        },
+        "setzen": {},
+        "register": {}
+      }
+    ],
+    "mappenaktionen": [
+      {
+        "schluessel": "notiz",
+        "name": "Notiz",
+        "mappentypen": ["akte", "probe:vorgang"],
+        "rechte": ["lesen"]
+      },
+      {
+        "schluessel": "neu",
+        "name": "Neuer Vorgang",
+        "mappentypen": ["akte"],
+        "rechte": ["mappen_anlegen"],
+        "anlegen": ["vorgang"]
+      },
+      {
+        "schluessel": "vorlage",
+        "name": "Vorlage",
+        "mappentypen": ["basis:organisation"],
+        "rechte": ["dokument_hinzufuegen"],
+        "dialog": "dms:vorlage"
+      }
+    ],
+    "ablaufvorlagen": [
+      {
+        "schluessel": "wiedervorlage",
+        "ersetzt": null,
+        "daten": {
+          "schluessel": "wiedervorlage",
+          "name": "Wiedervorlage",
+          "typen": ["akte", "basis:organisation"],
+          "wann": {
+            "art": "in",
+            "anzahl": 6,
+            "einheit": "monate"
+          },
+          "fragen": [],
+          "karten": [
+            {
+              "art": "aufgabe",
+              "als": "aufgabe",
+              "empfaenger": [
+                {
+                  "art": "selbst"
+                }
+              ],
+              "text": "Wiedervorlage: {titel}"
+            }
+          ]
+        }
+      },
+      {
+        "schluessel": "erinnern_neu",
+        "ersetzt": "erinnern",
+        "daten": {
+          "schluessel": "erinnern_neu",
+          "name": "Erinnern",
+          "ersetzt": "erinnern",
+          "wann": {
+            "art": "in",
+            "anzahl": 1,
+            "einheit": "wochen"
+          },
+          "fragen": [],
+          "karten": [
+            {
+              "art": "aufgabe",
+              "als": "aufgabe",
+              "empfaenger": [
+                {
+                  "art": "selbst"
+                }
+              ],
+              "text": "Erinnerung"
+            }
+          ]
+        }
+      }
+    ],
+    "kurzanleitung": {
+      "de": ["Erst eine Akte anlegen."]
+    },
+    "entdecken": {
+      "rundgaenge": [
+        {
+          "schluessel": "kennenlernen",
+          "titel": "Akten im Überblick",
+          "beschreibung": "Wo das Ende einer Akte steht.",
+          "start": "nach_installation",
+          "oeffne": {
+            "mappe": {
+              "typ": "akte"
+            }
+          },
+          "ersatz": "Sobald du eine Akte angelegt hast, zeigt dir Ablago hier, wie es geht.",
+          "schritte": [
+            {
+              "schluessel": "ende",
+              "ziel": "mappe.feld:ende",
+              "ort": "Rechts in der Mappe",
+              "titel": "Ende",
+              "text": "Hier steht das Ende."
+            },
+            {
+              "schluessel": "dokumente",
+              "ziel": "mappe.register:dok",
+              "ort": "Register oben in der Mappe",
+              "titel": "Dokumente",
+              "text": "Hier liegen die Briefe."
+            }
+          ]
+        }
+      ],
+      "tipps": [
+        {
+          "schluessel": "ende",
+          "text": "Wusstest du schon? Ablago erinnert dich an jedes Ende.",
+          "typ": "akte",
+          "rundgang": "kennenlernen"
+        }
+      ]
+    }
+  },
+  "beispieleZyklus": {
+    "status": 422,
+    "meldung": "Das Paket ist ungültig.",
+    "details": {
+      "gruende": ["beispiele: Die Verweise zwischen den Beispielen bilden einen Kreis (A zeigt auf B, B auf A). Ein Verweis muss weg."]
+    }
+  },
+  "vorgabenFalsch": {
+    "status": 422,
+    "meldung": "Das Paket ist ungültig.",
+    "details": {
+      "gruende": [
+        "beispiele[2]: Die Vorgabe „weg“ gibt es im Paket nicht.",
+        "mappentypen „akte“, anzeigen: „zeigt auf die Vorgabe“ geht nur an einem Verweisfeld – „name“ ist keins.",
+        "mappentypen „akte“, anzeigen: „zeigt auf die Vorgabe“ an „name“ nennt keine Vorgabe.",
+        "mappentypen „akte“, anzeigen: Die Vorgabe „gibtsnicht“ gibt es im Paket nicht."
+      ]
+    }
+  },
+  "automatisierungenFalsch": {
+    "status": 422,
+    "meldung": "Das Paket ist ungültig.",
+    "details": {
+      "gruende": [
+        "automatisierungen[3]: ungültiger Schlüssel „Falsch“.",
+        "automatisierungen[3]: Name fehlt.",
+        "automatisierungen[3]: dann braucht mindestens eine Karte.",
+        "automatisierungen[3]: wenn.typ „Böse Typ“ ist kein gültiger Mappentyp-Verweis.",
+        "automatisierungen[3]: wenn.rolle – feste Rollen gibt es in Paketen nicht; „für jeden Benutzer“ gilt für alle aktiven Benutzer.",
+        "automatisierungen[4]: wenn fehlt (genau eine Karte).",
+        "automatisierungen[4]: feste Personen und Rollen gibt es in Paketen nicht – Empfänger aus einem Feld oder der Ersteller der Mappe.",
+        "automatisierungen[4] „erinnern“: und muss ein Objekt mit modus und karten (Liste) sein.",
+        "automatisierungen[5]: dann braucht mindestens eine Karte.",
+        "automatisierungen[6] „mit_und“: und muss ein Objekt mit modus und karten (Liste) sein.",
+        "automatisierungen: Schlüssel „erinnern“ doppelt."
+      ]
+    }
+  },
+  "zeitplanOhneEreignis": {
+    "status": 422,
+    "meldung": "Das Paket ist ungültig.",
+    "details": {
+      "gruende": ["automatisierungen[2]: Die Karte „paket“ braucht zeitplan.ausgefuehrt in code.ereignisse."]
+    }
+  },
+  "ablaufvorlagenFalsch": {
+    "status": 422,
+    "meldung": "Das Paket ist ungültig.",
+    "details": {
+      "gruende": [
+        "ablaufvorlagen[3]: ungültiger Schlüssel „Falsch“.",
+        "ablaufvorlagen[3]: Name fehlt.",
+        "ablaufvorlagen[3]: ersetzt „gibtsnicht“ – ersetzen lassen sich nur die Vorlagen von Ablago (aufgabe_vergeben, erinnern).",
+        "ablaufvorlagen[3]: Karte 1: „email“ gibt es in Automatisierungsvorlagen nicht – erlaubt ist nur „Aufgabe / Benachrichtigung“.",
+        "ablaufvorlagen[3]: Mappentyp „gibtsnicht“ gibt es weder im Paket noch in seinen Abhängigkeiten.",
+        "ablaufvorlagen[3]: Mappentyp „fremd:typ“ gibt es weder im Paket noch in seinen Abhängigkeiten.",
+        "ablaufvorlagen[3]: Mappentyp „Böse Typ“ gibt es weder im Paket noch in seinen Abhängigkeiten.",
+        "ablaufvorlagen[3]: Bitte einen Namen angeben.",
+        "ablaufvorlagen[3]: Bitte mindestens eine Karte „Aufgabe / Benachrichtigung“ hinzufügen.",
+        "ablaufvorlagen[4]: Ein Feld als Empfänger geht nur mit Mappentypen (typen).",
+        "ablaufvorlagen: Schlüssel „wiedervorlage“ doppelt.",
+        "ablaufvorlagen: „erinnern“ wird mehrmals ersetzt."
+      ]
+    }
+  },
+  "wortlistenFalsch": {
+    "status": 422,
+    "meldung": "Das Paket ist ungültig.",
+    "details": {
+      "gruende": [
+        "wortlisten[1]: erwartet woerter: [Wort, Wort, …].",
+        "wortlisten[2]: Eine Gruppe braucht mindestens zwei verschiedene Wörter.",
+        "wortlisten[3]: erwartet woerter: [Wort, Wort, …].",
+        "wortlisten[4]: Eine Gruppe braucht mindestens zwei verschiedene Wörter."
+      ]
+    }
+  },
+  "wortlistenZuViele": {
+    "status": 422,
+    "meldung": "Das Paket ist ungültig.",
+    "details": {
+      "gruende": ["wortlisten: höchstens 1000 Gruppen."]
+    }
+  },
+  "tabellenFalsch": {
+    "status": 422,
+    "meldung": "Das Paket ist ungültig.",
+    "details": {
+      "gruende": [
+        "mappentypen[2]: Feld „t4“: quelle.typ „Böse Typ“ ist kein gültiger Mappentyp-Verweis.",
+        "mappentypen: „Akte“ → Feld „posten“: Die Tabelle zeigt Mappen vom Typ „probe:gibtsnicht“, den das Paket nicht mitbringt.",
+        "mappentypen: „Akte“ → Feld „t2“: Das Feld „titel“ von „vorgang“ ist kein Verweisfeld auf diesen Typ – die Tabelle zeigt nur Mappen, die über ein solches Feld hierher verweisen.",
+        "mappentypen: „Akte“ → Feld „t3“: Das Feld „name“ von „art“ ist kein Verweisfeld auf diesen Typ – die Tabelle zeigt nur Mappen, die über ein solches Feld hierher verweisen."
+      ]
+    }
+  },
+  "entdeckenFalsch": {
+    "status": 422,
+    "meldung": "Das Paket ist ungültig.",
+    "details": {
+      "gruende": [
+        "inhalt/rundgaenge.yaml: Rundgang „kennenlernen“, Schritt 1: Das Feld „gibtsnicht“ gibt es im Mappentyp „probe:akte“ nicht.",
+        "inhalt/tipps.yaml: Tipp „ende“: unbekannter Rundgang „gibtsnicht“."
+      ]
+    }
+  },
+  "entdeckenLeer": {
+    "manifest": {
+      "id": "probe",
+      "name": "Probe",
+      "version": "1.0.0",
+      "beschreibung": "Probepaket für die Charakterisierung.",
+      "autor": {
+        "name": "Test",
+        "github": "test"
+      },
+      "lizenz": "MIT",
+      "dms": ">=0.231.0",
+      "abhaengigkeiten": {
+        "basis": ">=1.0.0"
+      },
+      "code": {
+        "sprache": "c",
+        "quelle": "code/",
+        "ereignisse": ["mappe.geaendert", "zeitplan.ausgefuehrt"],
+        "mappentypen": ["akte"],
+        "rechte": {
+          "lesen": ["akte", "probe:vorgang"],
+          "schreiben": ["akte"]
+        }
+      },
+      "herausgeber": "org.example"
+    },
+    "typen": [
+      {
+        "schluessel": "art",
+        "name": "Aktenart",
+        "beschreibung": "",
+        "titelVorlage": "{name}",
+        "felder": [
+          {
+            "key": "name",
+            "label": "Name",
+            "typ": "text",
+            "pflicht": true
+          }
+        ],
+        "register": [
+          {
+            "key": "daten",
+            "name": "Daten",
+            "art": "felder",
+            "felder": ["name"]
+          }
+        ]
+      },
+      {
+        "schluessel": "akte",
+        "name": "Akte",
+        "beschreibung": "Eine Akte",
+        "titelVorlage": "{name}",
+        "felder": [
+          {
+            "key": "name",
+            "label": "Name",
+            "typ": "text",
+            "pflicht": true,
+            "beschriftungen": {
+              "en": {
+                "label": "Name"
+              }
+            }
+          },
+          {
+            "key": "altname",
+            "label": "Alte Stelle",
+            "typ": "text"
+          },
+          {
+            "key": "stelle",
+            "label": "Stelle",
+            "typ": "referenz",
+            "ziel": "basis:organisation",
+            "ausText": "altname"
+          },
+          {
+            "key": "art",
+            "label": "Art",
+            "typ": "referenz",
+            "ziel": "art"
+          },
+          {
+            "key": "wer",
+            "label": "Wer",
+            "typ": "referenz",
+            "ziel": "dms:benutzer"
+          },
+          {
+            "key": "summe",
+            "label": "Summe",
+            "typ": "betrag",
+            "negativ": true,
+            "berechnet": true
+          },
+          {
+            "key": "eigen",
+            "label": "Eigene",
+            "typ": "janein",
+            "merkmal": "eigeneOrganisation",
+            "schreibschutz": "verwaltung"
+          },
+          {
+            "key": "ende",
+            "label": "Ende",
+            "typ": "datum"
+          },
+          {
+            "key": "posten",
+            "label": "Posten",
+            "typ": "tabelle",
+            "quelle": {
+              "typ": "vorgang",
+              "feld": "akte"
+            }
+          },
+          {
+            "key": "fremd",
+            "label": "Fremd",
+            "typ": "tabelle",
+            "quelle": {
+              "typ": "basis:organisation",
+              "feld": "x"
+            }
+          },
+          {
+            "key": "kosten",
+            "label": "Kosten",
+            "typ": "betrag"
+          }
+        ],
+        "register": [
+          {
+            "key": "daten",
+            "name": "Daten",
+            "art": "felder",
+            "felder": ["name", "altname", "stelle", "art", "wer", "summe", "eigen", "ende", "posten", "fremd", "kosten"],
+            "abschnitte": [
+              {
+                "vor": "kosten",
+                "titel": "Kosten",
+                "anzeigen": {
+                  "bedingungen": [
+                    {
+                      "art": "vorgabe",
+                      "feld": "art",
+                      "vorgabe": ["privat"]
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "key": "dok",
+            "name": "Dokumente",
+            "art": "dokumente"
+          }
+        ],
+        "trefferliste": ["name", "stelle"],
+        "beschriftungen": {
+          "en": {
+            "name": "File"
+          }
+        },
+        "ausPost": true,
+        "erkennbarAn": "Aktenzeichen",
+        "inSuche": false,
+        "archiv": {
+          "jahre": 6,
+          "stichtag": "ende"
+        }
+      },
+      {
+        "schluessel": "vorgang",
+        "name": "Vorgang",
+        "beschreibung": "",
+        "titelVorlage": "{titel}",
+        "felder": [
+          {
+            "key": "titel",
+            "label": "Titel",
+            "typ": "text",
+            "pflicht": true
+          },
+          {
+            "key": "akte",
+            "label": "Akte",
+            "typ": "referenz",
+            "ziel": "akte",
+            "pflicht": true,
+            "verweisart": "zugehoerigkeit"
+          }
+        ],
+        "register": [
+          {
+            "key": "daten",
+            "name": "Daten",
+            "art": "felder",
+            "felder": ["titel", "akte"]
+          }
+        ],
+        "gehoertZu": "akte"
+      }
+    ],
+    "sichten": [
+      {
+        "schluessel": "akten",
+        "name": "Akten",
+        "beschreibung": "Alle Akten",
+        "beschriftungen": {
+          "en": {
+            "name": "Files"
+          }
+        },
+        "typen": ["akte"],
+        "trefferliste": "standard",
+        "symbol": "folder",
+        "bedingungen": []
+      },
+      {
+        "schluessel": "offene",
+        "name": "Offene",
+        "eltern": "akten",
+        "typen": ["vorgang"],
+        "bedingungen": [
+          {
+            "feld": "titel",
+            "operator": "leer"
+          }
+        ]
+      },
+      {
+        "schluessel": "fremd",
+        "name": "Fremde",
+        "typen": [],
+        "fremdeTypen": [
+          {
+            "kennung": "anderes:typ",
+            "name": "Anderer Typ"
+          },
+          {
+            "kennung": "basis:organisation",
+            "name": "basis:organisation"
+          }
+        ],
+        "bedingungen": []
+      }
+    ],
+    "beispiele": [
+      {
+        "typ": "art",
+        "werte": {
+          "name": "Beruflich"
+        },
+        "schluessel": "a0"
+      },
+      {
+        "typ": "akte",
+        "werte": {
+          "name": "Musterakte",
+          "art": {
+            "vorgabe": "privat"
+          },
+          "stelle": {
+            "beispiel": "basis:stadtwerke"
+          }
+        },
+        "schluessel": "a1",
+        "dokumente": [
+          {
+            "datei": "beispiele/brief.pdf",
+            "titel": "Brief",
+            "register": "dok"
+          }
+        ]
+      },
+      {
+        "typ": "vorgang",
+        "werte": {
+          "titel": "Erster",
+          "akte": {
+            "beispiel": "a1"
+          }
+        },
+        "schluessel": "v1"
+      },
+      {
+        "typ": "basis:organisation",
+        "werte": {}
+      }
+    ],
+    "wortlisten": [["Akte", "Ordner"]],
+    "automatisierungen": [
+      {
+        "schluessel": "erinnern",
+        "name": "Erinnern",
+        "beschreibung": "Erinnert an das Ende.",
+        "wenn": {
+          "art": "datum",
+          "typ": "akte",
+          "feld": "ende",
+          "vorlauf": 30,
+          "einheit": "tage",
+          "uhrzeit": "07:00"
+        },
+        "dann": [
+          {
+            "art": "aufgabe",
+            "als": "aufgabe",
+            "empfaenger": [
+              {
+                "art": "ersteller"
+              }
+            ],
+            "text": "Ende {datum}"
+          }
+        ]
+      },
+      {
+        "schluessel": "taeglich",
+        "name": "Täglich",
+        "beschreibung": "",
+        "wenn": {
+          "art": "zeitplan",
+          "uhrzeit": "05:00",
+          "tage": [1, 2, 3, 4, 5, 6, 7]
+        },
+        "dann": [
+          {
+            "art": "paket",
+            "aufgabe": "taeglich"
+          }
+        ],
+        "eingeschaltet": true
+      }
+    ],
+    "readme": "# Probe\n",
+    "einstellungen": null,
+    "code": {
+      "info": {
+        "sprache": "c",
+        "ereignisse": ["mappe.geaendert", "zeitplan.ausgefuehrt"],
+        "rechte": {
+          "lesen": ["akte", "probe:vorgang"],
+          "schreiben": ["akte"],
+          "dokumente": "keine"
+        },
+        "netz": [],
+        "mappentypen": ["akte"]
+      },
+      "dateien": [
+        {
+          "name": "modul.wasm",
+          "inhalt": "puffer:9"
+        },
+        {
+          "name": "daten/liste.json",
+          "inhalt": "puffer:2"
+        }
+      ]
+    },
+    "sprache": null,
+    "beispielDateien": [["beispiele/brief.pdf", "puffer:56"]],
+    "vorgaben": [
+      {
+        "schluessel": "privat",
+        "typ": "art",
+        "werte": {
+          "name": "Privat"
+        }
+      }
+    ],
+    "umbau": [
+      {
+        "von": "basis:organisation",
+        "nach": "probe:akte",
+        "felder": {
+          "name": "name"
+        },
+        "setzen": {},
+        "register": {}
+      }
+    ],
+    "mappenaktionen": [
+      {
+        "schluessel": "notiz",
+        "name": "Notiz",
+        "mappentypen": ["akte", "probe:vorgang"],
+        "rechte": ["lesen"]
+      },
+      {
+        "schluessel": "neu",
+        "name": "Neuer Vorgang",
+        "mappentypen": ["akte"],
+        "rechte": ["mappen_anlegen"],
+        "anlegen": ["vorgang"]
+      },
+      {
+        "schluessel": "vorlage",
+        "name": "Vorlage",
+        "mappentypen": ["basis:organisation"],
+        "rechte": ["dokument_hinzufuegen"],
+        "dialog": "dms:vorlage"
+      }
+    ],
+    "ablaufvorlagen": [
+      {
+        "schluessel": "wiedervorlage",
+        "ersetzt": null,
+        "daten": {
+          "schluessel": "wiedervorlage",
+          "name": "Wiedervorlage",
+          "typen": ["akte", "basis:organisation"],
+          "wann": {
+            "art": "in",
+            "anzahl": 6,
+            "einheit": "monate"
+          },
+          "fragen": [],
+          "karten": [
+            {
+              "art": "aufgabe",
+              "als": "aufgabe",
+              "empfaenger": [
+                {
+                  "art": "selbst"
+                }
+              ],
+              "text": "Wiedervorlage: {titel}"
+            }
+          ]
+        }
+      },
+      {
+        "schluessel": "erinnern_neu",
+        "ersetzt": "erinnern",
+        "daten": {
+          "schluessel": "erinnern_neu",
+          "name": "Erinnern",
+          "ersetzt": "erinnern",
+          "wann": {
+            "art": "in",
+            "anzahl": 1,
+            "einheit": "wochen"
+          },
+          "fragen": [],
+          "karten": [
+            {
+              "art": "aufgabe",
+              "als": "aufgabe",
+              "empfaenger": [
+                {
+                  "art": "selbst"
+                }
+              ],
+              "text": "Erinnerung"
+            }
+          ]
+        }
+      }
+    ],
+    "kurzanleitung": {
+      "de": ["Erst eine Akte anlegen."]
+    }
+  },
+  "tippsOhneRundgaenge": {
+    "status": 422,
+    "meldung": "Das Paket ist ungültig.",
+    "details": {
+      "gruende": ["inhalt/tipps.yaml: Tipp „ende“: unbekannter Rundgang „kennenlernen“."]
+    }
+  },
+  "dmsVerweisUnbekannt": {
+    "status": 422,
+    "meldung": "Das Paket ist ungültig.",
+    "details": {
+      "gruende": [
+        "Verweis „dms:gibtsnicht“: Diesen Mappentyp bringt Ablago nicht mit. Erlaubt sind dms:ablageort, dms:benutzer, dms:rolle.",
+        "Verweis „dms:auch_nicht“: Diesen Mappentyp bringt Ablago nicht mit. Erlaubt sind dms:ablageort, dms:benutzer, dms:rolle."
+      ]
+    }
+  },
+  "codeFalsch": {
+    "status": 422,
+    "meldung": "Das Paket ist ungültig.",
+    "details": {
+      "gruende": [
+        "manifest.yaml: code.netz: Liste von Texten erwartet.",
+        "manifest.yaml: code.mappentypen: „gibtsnicht“ – das Paket muss diesen Mappentyp auch lesen dürfen (code.rechte.lesen).",
+        "manifest.yaml: code.mappentypen: „*“ (alle Mappentypen) geht nur mit code.rechte.lesen: [\"*\"].",
+        "manifest.yaml: code.mappentypen: „basis:organisation“ – das Paket muss diesen Mappentyp auch lesen dürfen (code.rechte.lesen).",
+        "automatisierungen[2]: Die Karte „paket“ braucht zeitplan.ausgefuehrt in code.ereignisse.",
+        "Mappentyp „Akte“: „Summe“ sind berechnet – dafür braucht das Paket Code mit code.rechte.schreiben auf diesen Mappentyp.",
+        "manifest.yaml: mappenaktionen[1]: Ohne Code (code:) geht nur eine Aktion mit dialog (dms:vorlage).",
+        "manifest.yaml: mappenaktionen[2]: ungültiger Schlüssel „Falsch“.",
+        "manifest.yaml: mappenaktionen[2]: Name fehlt.",
+        "manifest.yaml: mappenaktionen[2]: mappentypen nennt mindestens einen Mappentyp.",
+        "manifest.yaml: mappenaktionen[2]: rechte nennt, was die Aktion am Ende braucht (lesen, dokument_hinzufuegen, aendern, mappen_anlegen, herausgeben).",
+        "manifest.yaml: mappenaktionen[2]: Ohne Code (code:) geht nur eine Aktion mit dialog (dms:vorlage).",
+        "manifest.yaml: mappenaktionen[3]: Ohne Code (code:) geht nur eine Aktion mit dialog (dms:vorlage).",
+        "mappenaktionen „Notiz“: Den Mappentyp „gibtsnicht“ bringt weder dieses Paket noch eine seiner Abhängigkeiten.",
+        "mappenaktionen „Notiz“: Den Mappentyp „fremd:typ“ bringt weder dieses Paket noch eine seiner Abhängigkeiten."
+      ]
+    }
+  },
+  "codeLesenStern": {
+    "manifest": {
+      "id": "probe",
+      "name": "Probe",
+      "version": "1.0.0",
+      "beschreibung": "Probepaket für die Charakterisierung.",
+      "autor": {
+        "name": "Test",
+        "github": "test"
+      },
+      "lizenz": "MIT",
+      "dms": ">=0.231.0",
+      "abhaengigkeiten": {
+        "basis": ">=1.0.0"
+      },
+      "code": {
+        "sprache": "c",
+        "quelle": "code/",
+        "ereignisse": ["mappe.geaendert", "zeitplan.ausgefuehrt"],
+        "mappentypen": ["akte"],
+        "rechte": {
+          "lesen": ["*"],
+          "schreiben": ["*"]
+        }
+      },
+      "herausgeber": "org.example"
+    },
+    "typen": [
+      {
+        "schluessel": "art",
+        "name": "Aktenart",
+        "beschreibung": "",
+        "titelVorlage": "{name}",
+        "felder": [
+          {
+            "key": "name",
+            "label": "Name",
+            "typ": "text",
+            "pflicht": true
+          }
+        ],
+        "register": [
+          {
+            "key": "daten",
+            "name": "Daten",
+            "art": "felder",
+            "felder": ["name"]
+          }
+        ]
+      },
+      {
+        "schluessel": "akte",
+        "name": "Akte",
+        "beschreibung": "Eine Akte",
+        "titelVorlage": "{name}",
+        "felder": [
+          {
+            "key": "name",
+            "label": "Name",
+            "typ": "text",
+            "pflicht": true,
+            "beschriftungen": {
+              "en": {
+                "label": "Name"
+              }
+            }
+          },
+          {
+            "key": "altname",
+            "label": "Alte Stelle",
+            "typ": "text"
+          },
+          {
+            "key": "stelle",
+            "label": "Stelle",
+            "typ": "referenz",
+            "ziel": "basis:organisation",
+            "ausText": "altname"
+          },
+          {
+            "key": "art",
+            "label": "Art",
+            "typ": "referenz",
+            "ziel": "art"
+          },
+          {
+            "key": "wer",
+            "label": "Wer",
+            "typ": "referenz",
+            "ziel": "dms:benutzer"
+          },
+          {
+            "key": "summe",
+            "label": "Summe",
+            "typ": "betrag",
+            "negativ": true,
+            "berechnet": true
+          },
+          {
+            "key": "eigen",
+            "label": "Eigene",
+            "typ": "janein",
+            "merkmal": "eigeneOrganisation",
+            "schreibschutz": "verwaltung"
+          },
+          {
+            "key": "ende",
+            "label": "Ende",
+            "typ": "datum"
+          },
+          {
+            "key": "posten",
+            "label": "Posten",
+            "typ": "tabelle",
+            "quelle": {
+              "typ": "vorgang",
+              "feld": "akte"
+            }
+          },
+          {
+            "key": "fremd",
+            "label": "Fremd",
+            "typ": "tabelle",
+            "quelle": {
+              "typ": "basis:organisation",
+              "feld": "x"
+            }
+          },
+          {
+            "key": "kosten",
+            "label": "Kosten",
+            "typ": "betrag"
+          }
+        ],
+        "register": [
+          {
+            "key": "daten",
+            "name": "Daten",
+            "art": "felder",
+            "felder": ["name", "altname", "stelle", "art", "wer", "summe", "eigen", "ende", "posten", "fremd", "kosten"],
+            "abschnitte": [
+              {
+                "vor": "kosten",
+                "titel": "Kosten",
+                "anzeigen": {
+                  "bedingungen": [
+                    {
+                      "art": "vorgabe",
+                      "feld": "art",
+                      "vorgabe": ["privat"]
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "key": "dok",
+            "name": "Dokumente",
+            "art": "dokumente"
+          }
+        ],
+        "trefferliste": ["name", "stelle"],
+        "beschriftungen": {
+          "en": {
+            "name": "File"
+          }
+        },
+        "ausPost": true,
+        "erkennbarAn": "Aktenzeichen",
+        "inSuche": false,
+        "archiv": {
+          "jahre": 6,
+          "stichtag": "ende"
+        }
+      },
+      {
+        "schluessel": "vorgang",
+        "name": "Vorgang",
+        "beschreibung": "",
+        "titelVorlage": "{titel}",
+        "felder": [
+          {
+            "key": "titel",
+            "label": "Titel",
+            "typ": "text",
+            "pflicht": true
+          },
+          {
+            "key": "akte",
+            "label": "Akte",
+            "typ": "referenz",
+            "ziel": "akte",
+            "pflicht": true,
+            "verweisart": "zugehoerigkeit"
+          }
+        ],
+        "register": [
+          {
+            "key": "daten",
+            "name": "Daten",
+            "art": "felder",
+            "felder": ["titel", "akte"]
+          }
+        ],
+        "gehoertZu": "akte"
+      }
+    ],
+    "sichten": [
+      {
+        "schluessel": "akten",
+        "name": "Akten",
+        "beschreibung": "Alle Akten",
+        "beschriftungen": {
+          "en": {
+            "name": "Files"
+          }
+        },
+        "typen": ["akte"],
+        "trefferliste": "standard",
+        "symbol": "folder",
+        "bedingungen": []
+      },
+      {
+        "schluessel": "offene",
+        "name": "Offene",
+        "eltern": "akten",
+        "typen": ["vorgang"],
+        "bedingungen": [
+          {
+            "feld": "titel",
+            "operator": "leer"
+          }
+        ]
+      },
+      {
+        "schluessel": "fremd",
+        "name": "Fremde",
+        "typen": [],
+        "fremdeTypen": [
+          {
+            "kennung": "anderes:typ",
+            "name": "Anderer Typ"
+          },
+          {
+            "kennung": "basis:organisation",
+            "name": "basis:organisation"
+          }
+        ],
+        "bedingungen": []
+      }
+    ],
+    "beispiele": [
+      {
+        "typ": "art",
+        "werte": {
+          "name": "Beruflich"
+        },
+        "schluessel": "a0"
+      },
+      {
+        "typ": "akte",
+        "werte": {
+          "name": "Musterakte",
+          "art": {
+            "vorgabe": "privat"
+          },
+          "stelle": {
+            "beispiel": "basis:stadtwerke"
+          }
+        },
+        "schluessel": "a1",
+        "dokumente": [
+          {
+            "datei": "beispiele/brief.pdf",
+            "titel": "Brief",
+            "register": "dok"
+          }
+        ]
+      },
+      {
+        "typ": "vorgang",
+        "werte": {
+          "titel": "Erster",
+          "akte": {
+            "beispiel": "a1"
+          }
+        },
+        "schluessel": "v1"
+      },
+      {
+        "typ": "basis:organisation",
+        "werte": {}
+      }
+    ],
+    "wortlisten": [["Akte", "Ordner"]],
+    "automatisierungen": [
+      {
+        "schluessel": "erinnern",
+        "name": "Erinnern",
+        "beschreibung": "Erinnert an das Ende.",
+        "wenn": {
+          "art": "datum",
+          "typ": "akte",
+          "feld": "ende",
+          "vorlauf": 30,
+          "einheit": "tage",
+          "uhrzeit": "07:00"
+        },
+        "dann": [
+          {
+            "art": "aufgabe",
+            "als": "aufgabe",
+            "empfaenger": [
+              {
+                "art": "ersteller"
+              }
+            ],
+            "text": "Ende {datum}"
+          }
+        ]
+      },
+      {
+        "schluessel": "taeglich",
+        "name": "Täglich",
+        "beschreibung": "",
+        "wenn": {
+          "art": "zeitplan",
+          "uhrzeit": "05:00",
+          "tage": [1, 2, 3, 4, 5, 6, 7]
+        },
+        "dann": [
+          {
+            "art": "paket",
+            "aufgabe": "taeglich"
+          }
+        ],
+        "eingeschaltet": true
+      }
+    ],
+    "readme": "# Probe\n",
+    "einstellungen": null,
+    "code": {
+      "info": {
+        "sprache": "c",
+        "ereignisse": ["mappe.geaendert", "zeitplan.ausgefuehrt"],
+        "rechte": {
+          "lesen": ["*"],
+          "schreiben": ["*"],
+          "dokumente": "keine"
+        },
+        "netz": [],
+        "mappentypen": ["akte"]
+      },
+      "dateien": [
+        {
+          "name": "modul.wasm",
+          "inhalt": "puffer:9"
+        },
+        {
+          "name": "daten/liste.json",
+          "inhalt": "puffer:2"
+        }
+      ]
+    },
+    "sprache": null,
+    "beispielDateien": [["beispiele/brief.pdf", "puffer:56"]],
+    "vorgaben": [
+      {
+        "schluessel": "privat",
+        "typ": "art",
+        "werte": {
+          "name": "Privat"
+        }
+      }
+    ],
+    "umbau": [
+      {
+        "von": "basis:organisation",
+        "nach": "probe:akte",
+        "felder": {
+          "name": "name"
+        },
+        "setzen": {},
+        "register": {}
+      }
+    ],
+    "mappenaktionen": [
+      {
+        "schluessel": "notiz",
+        "name": "Notiz",
+        "mappentypen": ["akte", "probe:vorgang"],
+        "rechte": ["lesen"]
+      },
+      {
+        "schluessel": "neu",
+        "name": "Neuer Vorgang",
+        "mappentypen": ["akte"],
+        "rechte": ["mappen_anlegen"],
+        "anlegen": ["vorgang"]
+      },
+      {
+        "schluessel": "vorlage",
+        "name": "Vorlage",
+        "mappentypen": ["basis:organisation"],
+        "rechte": ["dokument_hinzufuegen"],
+        "dialog": "dms:vorlage"
+      }
+    ],
+    "ablaufvorlagen": [
+      {
+        "schluessel": "wiedervorlage",
+        "ersetzt": null,
+        "daten": {
+          "schluessel": "wiedervorlage",
+          "name": "Wiedervorlage",
+          "typen": ["akte", "basis:organisation"],
+          "wann": {
+            "art": "in",
+            "anzahl": 6,
+            "einheit": "monate"
+          },
+          "fragen": [],
+          "karten": [
+            {
+              "art": "aufgabe",
+              "als": "aufgabe",
+              "empfaenger": [
+                {
+                  "art": "selbst"
+                }
+              ],
+              "text": "Wiedervorlage: {titel}"
+            }
+          ]
+        }
+      },
+      {
+        "schluessel": "erinnern_neu",
+        "ersetzt": "erinnern",
+        "daten": {
+          "schluessel": "erinnern_neu",
+          "name": "Erinnern",
+          "ersetzt": "erinnern",
+          "wann": {
+            "art": "in",
+            "anzahl": 1,
+            "einheit": "wochen"
+          },
+          "fragen": [],
+          "karten": [
+            {
+              "art": "aufgabe",
+              "als": "aufgabe",
+              "empfaenger": [
+                {
+                  "art": "selbst"
+                }
+              ],
+              "text": "Erinnerung"
+            }
+          ]
+        }
+      }
+    ],
+    "kurzanleitung": {
+      "de": ["Erst eine Akte anlegen."]
+    },
+    "entdecken": {
+      "rundgaenge": [
+        {
+          "schluessel": "kennenlernen",
+          "titel": "Akten im Überblick",
+          "beschreibung": "Wo das Ende einer Akte steht.",
+          "start": "nach_installation",
+          "oeffne": {
+            "mappe": {
+              "typ": "akte"
+            }
+          },
+          "ersatz": "Sobald du eine Akte angelegt hast, zeigt dir Ablago hier, wie es geht.",
+          "schritte": [
+            {
+              "schluessel": "ende",
+              "ziel": "mappe.feld:ende",
+              "ort": "Rechts in der Mappe",
+              "titel": "Ende",
+              "text": "Hier steht das Ende."
+            },
+            {
+              "schluessel": "dokumente",
+              "ziel": "mappe.register:dok",
+              "ort": "Register oben in der Mappe",
+              "titel": "Dokumente",
+              "text": "Hier liegen die Briefe."
+            }
+          ]
+        }
+      ],
+      "tipps": [
+        {
+          "schluessel": "ende",
+          "text": "Wusstest du schon? Ablago erinnert dich an jedes Ende.",
+          "typ": "akte",
+          "rundgang": "kennenlernen"
+        }
+      ]
+    }
+  },
+  "codeLesenMitPaket": {
+    "manifest": {
+      "id": "probe",
+      "name": "Probe",
+      "version": "1.0.0",
+      "beschreibung": "Probepaket für die Charakterisierung.",
+      "autor": {
+        "name": "Test",
+        "github": "test"
+      },
+      "lizenz": "MIT",
+      "dms": ">=0.231.0",
+      "abhaengigkeiten": {
+        "basis": ">=1.0.0"
+      },
+      "code": {
+        "sprache": "c",
+        "quelle": "code/",
+        "ereignisse": ["mappe.geaendert", "zeitplan.ausgefuehrt"],
+        "mappentypen": ["probe:akte"],
+        "rechte": {
+          "lesen": ["probe:akte", "vorgang"],
+          "schreiben": ["probe:akte"]
+        }
+      },
+      "herausgeber": "org.example"
+    },
+    "typen": [
+      {
+        "schluessel": "art",
+        "name": "Aktenart",
+        "beschreibung": "",
+        "titelVorlage": "{name}",
+        "felder": [
+          {
+            "key": "name",
+            "label": "Name",
+            "typ": "text",
+            "pflicht": true
+          }
+        ],
+        "register": [
+          {
+            "key": "daten",
+            "name": "Daten",
+            "art": "felder",
+            "felder": ["name"]
+          }
+        ]
+      },
+      {
+        "schluessel": "akte",
+        "name": "Akte",
+        "beschreibung": "Eine Akte",
+        "titelVorlage": "{name}",
+        "felder": [
+          {
+            "key": "name",
+            "label": "Name",
+            "typ": "text",
+            "pflicht": true,
+            "beschriftungen": {
+              "en": {
+                "label": "Name"
+              }
+            }
+          },
+          {
+            "key": "altname",
+            "label": "Alte Stelle",
+            "typ": "text"
+          },
+          {
+            "key": "stelle",
+            "label": "Stelle",
+            "typ": "referenz",
+            "ziel": "basis:organisation",
+            "ausText": "altname"
+          },
+          {
+            "key": "art",
+            "label": "Art",
+            "typ": "referenz",
+            "ziel": "art"
+          },
+          {
+            "key": "wer",
+            "label": "Wer",
+            "typ": "referenz",
+            "ziel": "dms:benutzer"
+          },
+          {
+            "key": "summe",
+            "label": "Summe",
+            "typ": "betrag",
+            "negativ": true,
+            "berechnet": true
+          },
+          {
+            "key": "eigen",
+            "label": "Eigene",
+            "typ": "janein",
+            "merkmal": "eigeneOrganisation",
+            "schreibschutz": "verwaltung"
+          },
+          {
+            "key": "ende",
+            "label": "Ende",
+            "typ": "datum"
+          },
+          {
+            "key": "posten",
+            "label": "Posten",
+            "typ": "tabelle",
+            "quelle": {
+              "typ": "vorgang",
+              "feld": "akte"
+            }
+          },
+          {
+            "key": "fremd",
+            "label": "Fremd",
+            "typ": "tabelle",
+            "quelle": {
+              "typ": "basis:organisation",
+              "feld": "x"
+            }
+          },
+          {
+            "key": "kosten",
+            "label": "Kosten",
+            "typ": "betrag"
+          }
+        ],
+        "register": [
+          {
+            "key": "daten",
+            "name": "Daten",
+            "art": "felder",
+            "felder": ["name", "altname", "stelle", "art", "wer", "summe", "eigen", "ende", "posten", "fremd", "kosten"],
+            "abschnitte": [
+              {
+                "vor": "kosten",
+                "titel": "Kosten",
+                "anzeigen": {
+                  "bedingungen": [
+                    {
+                      "art": "vorgabe",
+                      "feld": "art",
+                      "vorgabe": ["privat"]
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "key": "dok",
+            "name": "Dokumente",
+            "art": "dokumente"
+          }
+        ],
+        "trefferliste": ["name", "stelle"],
+        "beschriftungen": {
+          "en": {
+            "name": "File"
+          }
+        },
+        "ausPost": true,
+        "erkennbarAn": "Aktenzeichen",
+        "inSuche": false,
+        "archiv": {
+          "jahre": 6,
+          "stichtag": "ende"
+        }
+      },
+      {
+        "schluessel": "vorgang",
+        "name": "Vorgang",
+        "beschreibung": "",
+        "titelVorlage": "{titel}",
+        "felder": [
+          {
+            "key": "titel",
+            "label": "Titel",
+            "typ": "text",
+            "pflicht": true
+          },
+          {
+            "key": "akte",
+            "label": "Akte",
+            "typ": "referenz",
+            "ziel": "akte",
+            "pflicht": true,
+            "verweisart": "zugehoerigkeit"
+          }
+        ],
+        "register": [
+          {
+            "key": "daten",
+            "name": "Daten",
+            "art": "felder",
+            "felder": ["titel", "akte"]
+          }
+        ],
+        "gehoertZu": "akte"
+      }
+    ],
+    "sichten": [
+      {
+        "schluessel": "akten",
+        "name": "Akten",
+        "beschreibung": "Alle Akten",
+        "beschriftungen": {
+          "en": {
+            "name": "Files"
+          }
+        },
+        "typen": ["akte"],
+        "trefferliste": "standard",
+        "symbol": "folder",
+        "bedingungen": []
+      },
+      {
+        "schluessel": "offene",
+        "name": "Offene",
+        "eltern": "akten",
+        "typen": ["vorgang"],
+        "bedingungen": [
+          {
+            "feld": "titel",
+            "operator": "leer"
+          }
+        ]
+      },
+      {
+        "schluessel": "fremd",
+        "name": "Fremde",
+        "typen": [],
+        "fremdeTypen": [
+          {
+            "kennung": "anderes:typ",
+            "name": "Anderer Typ"
+          },
+          {
+            "kennung": "basis:organisation",
+            "name": "basis:organisation"
+          }
+        ],
+        "bedingungen": []
+      }
+    ],
+    "beispiele": [
+      {
+        "typ": "art",
+        "werte": {
+          "name": "Beruflich"
+        },
+        "schluessel": "a0"
+      },
+      {
+        "typ": "akte",
+        "werte": {
+          "name": "Musterakte",
+          "art": {
+            "vorgabe": "privat"
+          },
+          "stelle": {
+            "beispiel": "basis:stadtwerke"
+          }
+        },
+        "schluessel": "a1",
+        "dokumente": [
+          {
+            "datei": "beispiele/brief.pdf",
+            "titel": "Brief",
+            "register": "dok"
+          }
+        ]
+      },
+      {
+        "typ": "vorgang",
+        "werte": {
+          "titel": "Erster",
+          "akte": {
+            "beispiel": "a1"
+          }
+        },
+        "schluessel": "v1"
+      },
+      {
+        "typ": "basis:organisation",
+        "werte": {}
+      }
+    ],
+    "wortlisten": [["Akte", "Ordner"]],
+    "automatisierungen": [
+      {
+        "schluessel": "erinnern",
+        "name": "Erinnern",
+        "beschreibung": "Erinnert an das Ende.",
+        "wenn": {
+          "art": "datum",
+          "typ": "akte",
+          "feld": "ende",
+          "vorlauf": 30,
+          "einheit": "tage",
+          "uhrzeit": "07:00"
+        },
+        "dann": [
+          {
+            "art": "aufgabe",
+            "als": "aufgabe",
+            "empfaenger": [
+              {
+                "art": "ersteller"
+              }
+            ],
+            "text": "Ende {datum}"
+          }
+        ]
+      },
+      {
+        "schluessel": "taeglich",
+        "name": "Täglich",
+        "beschreibung": "",
+        "wenn": {
+          "art": "zeitplan",
+          "uhrzeit": "05:00",
+          "tage": [1, 2, 3, 4, 5, 6, 7]
+        },
+        "dann": [
+          {
+            "art": "paket",
+            "aufgabe": "taeglich"
+          }
+        ],
+        "eingeschaltet": true
+      }
+    ],
+    "readme": "# Probe\n",
+    "einstellungen": null,
+    "code": {
+      "info": {
+        "sprache": "c",
+        "ereignisse": ["mappe.geaendert", "zeitplan.ausgefuehrt"],
+        "rechte": {
+          "lesen": ["probe:akte", "vorgang"],
+          "schreiben": ["probe:akte"],
+          "dokumente": "keine"
+        },
+        "netz": [],
+        "mappentypen": ["probe:akte"]
+      },
+      "dateien": [
+        {
+          "name": "modul.wasm",
+          "inhalt": "puffer:9"
+        },
+        {
+          "name": "daten/liste.json",
+          "inhalt": "puffer:2"
+        }
+      ]
+    },
+    "sprache": null,
+    "beispielDateien": [["beispiele/brief.pdf", "puffer:56"]],
+    "vorgaben": [
+      {
+        "schluessel": "privat",
+        "typ": "art",
+        "werte": {
+          "name": "Privat"
+        }
+      }
+    ],
+    "umbau": [
+      {
+        "von": "basis:organisation",
+        "nach": "probe:akte",
+        "felder": {
+          "name": "name"
+        },
+        "setzen": {},
+        "register": {}
+      }
+    ],
+    "mappenaktionen": [
+      {
+        "schluessel": "notiz",
+        "name": "Notiz",
+        "mappentypen": ["akte", "probe:vorgang"],
+        "rechte": ["lesen"]
+      },
+      {
+        "schluessel": "neu",
+        "name": "Neuer Vorgang",
+        "mappentypen": ["akte"],
+        "rechte": ["mappen_anlegen"],
+        "anlegen": ["vorgang"]
+      },
+      {
+        "schluessel": "vorlage",
+        "name": "Vorlage",
+        "mappentypen": ["basis:organisation"],
+        "rechte": ["dokument_hinzufuegen"],
+        "dialog": "dms:vorlage"
+      }
+    ],
+    "ablaufvorlagen": [
+      {
+        "schluessel": "wiedervorlage",
+        "ersetzt": null,
+        "daten": {
+          "schluessel": "wiedervorlage",
+          "name": "Wiedervorlage",
+          "typen": ["akte", "basis:organisation"],
+          "wann": {
+            "art": "in",
+            "anzahl": 6,
+            "einheit": "monate"
+          },
+          "fragen": [],
+          "karten": [
+            {
+              "art": "aufgabe",
+              "als": "aufgabe",
+              "empfaenger": [
+                {
+                  "art": "selbst"
+                }
+              ],
+              "text": "Wiedervorlage: {titel}"
+            }
+          ]
+        }
+      },
+      {
+        "schluessel": "erinnern_neu",
+        "ersetzt": "erinnern",
+        "daten": {
+          "schluessel": "erinnern_neu",
+          "name": "Erinnern",
+          "ersetzt": "erinnern",
+          "wann": {
+            "art": "in",
+            "anzahl": 1,
+            "einheit": "wochen"
+          },
+          "fragen": [],
+          "karten": [
+            {
+              "art": "aufgabe",
+              "als": "aufgabe",
+              "empfaenger": [
+                {
+                  "art": "selbst"
+                }
+              ],
+              "text": "Erinnerung"
+            }
+          ]
+        }
+      }
+    ],
+    "kurzanleitung": {
+      "de": ["Erst eine Akte anlegen."]
+    },
+    "entdecken": {
+      "rundgaenge": [
+        {
+          "schluessel": "kennenlernen",
+          "titel": "Akten im Überblick",
+          "beschreibung": "Wo das Ende einer Akte steht.",
+          "start": "nach_installation",
+          "oeffne": {
+            "mappe": {
+              "typ": "akte"
+            }
+          },
+          "ersatz": "Sobald du eine Akte angelegt hast, zeigt dir Ablago hier, wie es geht.",
+          "schritte": [
+            {
+              "schluessel": "ende",
+              "ziel": "mappe.feld:ende",
+              "ort": "Rechts in der Mappe",
+              "titel": "Ende",
+              "text": "Hier steht das Ende."
+            },
+            {
+              "schluessel": "dokumente",
+              "ziel": "mappe.register:dok",
+              "ort": "Register oben in der Mappe",
+              "titel": "Dokumente",
+              "text": "Hier liegen die Briefe."
+            }
+          ]
+        }
+      ],
+      "tipps": [
+        {
+          "schluessel": "ende",
+          "text": "Wusstest du schon? Ablago erinnert dich an jedes Ende.",
+          "typ": "akte",
+          "rundgang": "kennenlernen"
+        }
+      ]
+    }
+  },
+  "codeOhneLesen": {
+    "status": 422,
+    "meldung": "Das Paket ist ungültig.",
+    "details": {
+      "gruende": [
+        "manifest.yaml: code.mappentypen: „gibtsnicht“ ist kein Mappentyp dieses Pakets (inhalt) – fremde Mappentypen bitte mit Präfix, z. B. basis:vertrag.",
+        "Mappentyp „Akte“: „Summe“ sind berechnet – dafür braucht das Paket Code mit code.rechte.schreiben auf diesen Mappentyp.",
+        "mappenaktionen „Notiz“: Der Code muss den Mappentyp „art“ lesen dürfen (code.rechte.lesen) – er bekommt die Werte der Mappe.",
+        "mappenaktionen „Notiz“: Der Code muss den Mappentyp „basis:organisation“ lesen dürfen (code.rechte.lesen) – er bekommt die Werte der Mappe."
+      ]
+    }
+  },
+  "codeKurz": {
+    "status": 422,
+    "meldung": "Das Paket ist ungültig.",
+    "details": {
+      "gruende": ["code/modul.wasm ist kein WebAssembly-Modul."]
+    }
+  },
+  "ohneModul": {
+    "manifest": {
+      "id": "probe",
+      "name": "Probe",
+      "version": "1.0.0",
+      "beschreibung": "Probepaket für die Charakterisierung.",
+      "autor": {
+        "name": "Test",
+        "github": "test"
+      },
+      "lizenz": "MIT",
+      "dms": ">=0.231.0",
+      "abhaengigkeiten": {
+        "basis": ">=1.0.0"
+      },
+      "code": {
+        "sprache": "c",
+        "quelle": "code/",
+        "ereignisse": ["mappe.geaendert", "zeitplan.ausgefuehrt"],
+        "mappentypen": ["akte"],
+        "rechte": {
+          "lesen": ["akte", "probe:vorgang"],
+          "schreiben": ["akte"]
+        }
+      },
+      "herausgeber": "org.example"
+    },
+    "typen": [
+      {
+        "schluessel": "art",
+        "name": "Aktenart",
+        "beschreibung": "",
+        "titelVorlage": "{name}",
+        "felder": [
+          {
+            "key": "name",
+            "label": "Name",
+            "typ": "text",
+            "pflicht": true
+          }
+        ],
+        "register": [
+          {
+            "key": "daten",
+            "name": "Daten",
+            "art": "felder",
+            "felder": ["name"]
+          }
+        ]
+      },
+      {
+        "schluessel": "akte",
+        "name": "Akte",
+        "beschreibung": "Eine Akte",
+        "titelVorlage": "{name}",
+        "felder": [
+          {
+            "key": "name",
+            "label": "Name",
+            "typ": "text",
+            "pflicht": true,
+            "beschriftungen": {
+              "en": {
+                "label": "Name"
+              }
+            }
+          },
+          {
+            "key": "altname",
+            "label": "Alte Stelle",
+            "typ": "text"
+          },
+          {
+            "key": "stelle",
+            "label": "Stelle",
+            "typ": "referenz",
+            "ziel": "basis:organisation",
+            "ausText": "altname"
+          },
+          {
+            "key": "art",
+            "label": "Art",
+            "typ": "referenz",
+            "ziel": "art"
+          },
+          {
+            "key": "wer",
+            "label": "Wer",
+            "typ": "referenz",
+            "ziel": "dms:benutzer"
+          },
+          {
+            "key": "summe",
+            "label": "Summe",
+            "typ": "betrag",
+            "negativ": true,
+            "berechnet": true
+          },
+          {
+            "key": "eigen",
+            "label": "Eigene",
+            "typ": "janein",
+            "merkmal": "eigeneOrganisation",
+            "schreibschutz": "verwaltung"
+          },
+          {
+            "key": "ende",
+            "label": "Ende",
+            "typ": "datum"
+          },
+          {
+            "key": "posten",
+            "label": "Posten",
+            "typ": "tabelle",
+            "quelle": {
+              "typ": "vorgang",
+              "feld": "akte"
+            }
+          },
+          {
+            "key": "fremd",
+            "label": "Fremd",
+            "typ": "tabelle",
+            "quelle": {
+              "typ": "basis:organisation",
+              "feld": "x"
+            }
+          },
+          {
+            "key": "kosten",
+            "label": "Kosten",
+            "typ": "betrag"
+          }
+        ],
+        "register": [
+          {
+            "key": "daten",
+            "name": "Daten",
+            "art": "felder",
+            "felder": ["name", "altname", "stelle", "art", "wer", "summe", "eigen", "ende", "posten", "fremd", "kosten"],
+            "abschnitte": [
+              {
+                "vor": "kosten",
+                "titel": "Kosten",
+                "anzeigen": {
+                  "bedingungen": [
+                    {
+                      "art": "vorgabe",
+                      "feld": "art",
+                      "vorgabe": ["privat"]
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "key": "dok",
+            "name": "Dokumente",
+            "art": "dokumente"
+          }
+        ],
+        "trefferliste": ["name", "stelle"],
+        "beschriftungen": {
+          "en": {
+            "name": "File"
+          }
+        },
+        "ausPost": true,
+        "erkennbarAn": "Aktenzeichen",
+        "inSuche": false,
+        "archiv": {
+          "jahre": 6,
+          "stichtag": "ende"
+        }
+      },
+      {
+        "schluessel": "vorgang",
+        "name": "Vorgang",
+        "beschreibung": "",
+        "titelVorlage": "{titel}",
+        "felder": [
+          {
+            "key": "titel",
+            "label": "Titel",
+            "typ": "text",
+            "pflicht": true
+          },
+          {
+            "key": "akte",
+            "label": "Akte",
+            "typ": "referenz",
+            "ziel": "akte",
+            "pflicht": true,
+            "verweisart": "zugehoerigkeit"
+          }
+        ],
+        "register": [
+          {
+            "key": "daten",
+            "name": "Daten",
+            "art": "felder",
+            "felder": ["titel", "akte"]
+          }
+        ],
+        "gehoertZu": "akte"
+      }
+    ],
+    "sichten": [
+      {
+        "schluessel": "akten",
+        "name": "Akten",
+        "beschreibung": "Alle Akten",
+        "beschriftungen": {
+          "en": {
+            "name": "Files"
+          }
+        },
+        "typen": ["akte"],
+        "trefferliste": "standard",
+        "symbol": "folder",
+        "bedingungen": []
+      },
+      {
+        "schluessel": "offene",
+        "name": "Offene",
+        "eltern": "akten",
+        "typen": ["vorgang"],
+        "bedingungen": [
+          {
+            "feld": "titel",
+            "operator": "leer"
+          }
+        ]
+      },
+      {
+        "schluessel": "fremd",
+        "name": "Fremde",
+        "typen": [],
+        "fremdeTypen": [
+          {
+            "kennung": "anderes:typ",
+            "name": "Anderer Typ"
+          },
+          {
+            "kennung": "basis:organisation",
+            "name": "basis:organisation"
+          }
+        ],
+        "bedingungen": []
+      }
+    ],
+    "beispiele": [
+      {
+        "typ": "art",
+        "werte": {
+          "name": "Beruflich"
+        },
+        "schluessel": "a0"
+      },
+      {
+        "typ": "akte",
+        "werte": {
+          "name": "Musterakte",
+          "art": {
+            "vorgabe": "privat"
+          },
+          "stelle": {
+            "beispiel": "basis:stadtwerke"
+          }
+        },
+        "schluessel": "a1",
+        "dokumente": [
+          {
+            "datei": "beispiele/brief.pdf",
+            "titel": "Brief",
+            "register": "dok"
+          }
+        ]
+      },
+      {
+        "typ": "vorgang",
+        "werte": {
+          "titel": "Erster",
+          "akte": {
+            "beispiel": "a1"
+          }
+        },
+        "schluessel": "v1"
+      },
+      {
+        "typ": "basis:organisation",
+        "werte": {}
+      }
+    ],
+    "wortlisten": [["Akte", "Ordner"]],
+    "automatisierungen": [
+      {
+        "schluessel": "erinnern",
+        "name": "Erinnern",
+        "beschreibung": "Erinnert an das Ende.",
+        "wenn": {
+          "art": "datum",
+          "typ": "akte",
+          "feld": "ende",
+          "vorlauf": 30,
+          "einheit": "tage",
+          "uhrzeit": "07:00"
+        },
+        "dann": [
+          {
+            "art": "aufgabe",
+            "als": "aufgabe",
+            "empfaenger": [
+              {
+                "art": "ersteller"
+              }
+            ],
+            "text": "Ende {datum}"
+          }
+        ]
+      },
+      {
+        "schluessel": "taeglich",
+        "name": "Täglich",
+        "beschreibung": "",
+        "wenn": {
+          "art": "zeitplan",
+          "uhrzeit": "05:00",
+          "tage": [1, 2, 3, 4, 5, 6, 7]
+        },
+        "dann": [
+          {
+            "art": "paket",
+            "aufgabe": "taeglich"
+          }
+        ],
+        "eingeschaltet": true
+      }
+    ],
+    "readme": "# Probe\n",
+    "einstellungen": null,
+    "code": null,
+    "sprache": null,
+    "beispielDateien": [["beispiele/brief.pdf", "puffer:56"]],
+    "vorgaben": [
+      {
+        "schluessel": "privat",
+        "typ": "art",
+        "werte": {
+          "name": "Privat"
+        }
+      }
+    ],
+    "umbau": [
+      {
+        "von": "basis:organisation",
+        "nach": "probe:akte",
+        "felder": {
+          "name": "name"
+        },
+        "setzen": {},
+        "register": {}
+      }
+    ],
+    "mappenaktionen": [
+      {
+        "schluessel": "notiz",
+        "name": "Notiz",
+        "mappentypen": ["akte", "probe:vorgang"],
+        "rechte": ["lesen"]
+      },
+      {
+        "schluessel": "neu",
+        "name": "Neuer Vorgang",
+        "mappentypen": ["akte"],
+        "rechte": ["mappen_anlegen"],
+        "anlegen": ["vorgang"]
+      },
+      {
+        "schluessel": "vorlage",
+        "name": "Vorlage",
+        "mappentypen": ["basis:organisation"],
+        "rechte": ["dokument_hinzufuegen"],
+        "dialog": "dms:vorlage"
+      }
+    ],
+    "ablaufvorlagen": [
+      {
+        "schluessel": "wiedervorlage",
+        "ersetzt": null,
+        "daten": {
+          "schluessel": "wiedervorlage",
+          "name": "Wiedervorlage",
+          "typen": ["akte", "basis:organisation"],
+          "wann": {
+            "art": "in",
+            "anzahl": 6,
+            "einheit": "monate"
+          },
+          "fragen": [],
+          "karten": [
+            {
+              "art": "aufgabe",
+              "als": "aufgabe",
+              "empfaenger": [
+                {
+                  "art": "selbst"
+                }
+              ],
+              "text": "Wiedervorlage: {titel}"
+            }
+          ]
+        }
+      },
+      {
+        "schluessel": "erinnern_neu",
+        "ersetzt": "erinnern",
+        "daten": {
+          "schluessel": "erinnern_neu",
+          "name": "Erinnern",
+          "ersetzt": "erinnern",
+          "wann": {
+            "art": "in",
+            "anzahl": 1,
+            "einheit": "wochen"
+          },
+          "fragen": [],
+          "karten": [
+            {
+              "art": "aufgabe",
+              "als": "aufgabe",
+              "empfaenger": [
+                {
+                  "art": "selbst"
+                }
+              ],
+              "text": "Erinnerung"
+            }
+          ]
+        }
+      }
+    ],
+    "kurzanleitung": {
+      "de": ["Erst eine Akte anlegen."]
+    },
+    "entdecken": {
+      "rundgaenge": [
+        {
+          "schluessel": "kennenlernen",
+          "titel": "Akten im Überblick",
+          "beschreibung": "Wo das Ende einer Akte steht.",
+          "start": "nach_installation",
+          "oeffne": {
+            "mappe": {
+              "typ": "akte"
+            }
+          },
+          "ersatz": "Sobald du eine Akte angelegt hast, zeigt dir Ablago hier, wie es geht.",
+          "schritte": [
+            {
+              "schluessel": "ende",
+              "ziel": "mappe.feld:ende",
+              "ort": "Rechts in der Mappe",
+              "titel": "Ende",
+              "text": "Hier steht das Ende."
+            },
+            {
+              "schluessel": "dokumente",
+              "ziel": "mappe.register:dok",
+              "ort": "Register oben in der Mappe",
+              "titel": "Dokumente",
+              "text": "Hier liegen die Briefe."
+            }
+          ]
+        }
+      ],
+      "tipps": [
+        {
+          "schluessel": "ende",
+          "text": "Wusstest du schon? Ablago erinnert dich an jedes Ende.",
+          "typ": "akte",
+          "rundgang": "kennenlernen"
+        }
+      ]
+    }
+  },
+  "ohneCode": {
+    "status": 422,
+    "meldung": "Das Paket ist ungültig.",
+    "details": {
+      "gruende": [
+        "manifest.yaml: mappenaktionen[1]: Ohne Code (code:) geht nur eine Aktion mit dialog (dms:vorlage).",
+        "manifest.yaml: mappenaktionen[2]: Ohne Code (code:) geht nur eine Aktion mit dialog (dms:vorlage)."
+      ]
+    }
+  },
+  "ohneCodeMitBerechnet": {
+    "status": 422,
+    "meldung": "Das Paket ist ungültig.",
+    "details": {
+      "gruende": [
+        "automatisierungen[2]: Die Karte „paket“ braucht zeitplan.ausgefuehrt in code.ereignisse.",
+        "Mappentyp „Akte“: „Summe“ sind berechnet – dafür braucht das Paket Code mit code.rechte.schreiben auf diesen Mappentyp.",
+        "manifest.yaml: mappenaktionen[1]: Ohne Code (code:) geht nur eine Aktion mit dialog (dms:vorlage).",
+        "manifest.yaml: mappenaktionen[2]: Ohne Code (code:) geht nur eine Aktion mit dialog (dms:vorlage)."
+      ]
+    }
+  },
+  "einstellungen": {
+    "manifest": {
+      "id": "probe",
+      "name": "Probe",
+      "version": "1.0.0",
+      "beschreibung": "Probepaket für die Charakterisierung.",
+      "autor": {
+        "name": "Test",
+        "github": "test"
+      },
+      "lizenz": "MIT",
+      "dms": ">=0.231.0",
+      "abhaengigkeiten": {
+        "basis": ">=1.0.0"
+      },
+      "code": {
+        "sprache": "c",
+        "quelle": "code/",
+        "ereignisse": ["mappe.geaendert", "zeitplan.ausgefuehrt"],
+        "mappentypen": ["akte"],
+        "einstellungen": [
+          {
+            "schluessel": "limit",
+            "typ": "zahl",
+            "name": "Limit"
+          }
+        ],
+        "rechte": {
+          "lesen": ["akte", "probe:vorgang"],
+          "schreiben": ["akte"]
+        }
+      },
+      "herausgeber": "org.example"
+    },
+    "typen": [
+      {
+        "schluessel": "art",
+        "name": "Aktenart",
+        "beschreibung": "",
+        "titelVorlage": "{name}",
+        "felder": [
+          {
+            "key": "name",
+            "label": "Name",
+            "typ": "text",
+            "pflicht": true
+          }
+        ],
+        "register": [
+          {
+            "key": "daten",
+            "name": "Daten",
+            "art": "felder",
+            "felder": ["name"]
+          }
+        ]
+      },
+      {
+        "schluessel": "akte",
+        "name": "Akte",
+        "beschreibung": "Eine Akte",
+        "titelVorlage": "{name}",
+        "felder": [
+          {
+            "key": "name",
+            "label": "Name",
+            "typ": "text",
+            "pflicht": true,
+            "beschriftungen": {
+              "en": {
+                "label": "Name"
+              }
+            }
+          },
+          {
+            "key": "altname",
+            "label": "Alte Stelle",
+            "typ": "text"
+          },
+          {
+            "key": "stelle",
+            "label": "Stelle",
+            "typ": "referenz",
+            "ziel": "basis:organisation",
+            "ausText": "altname"
+          },
+          {
+            "key": "art",
+            "label": "Art",
+            "typ": "referenz",
+            "ziel": "art"
+          },
+          {
+            "key": "wer",
+            "label": "Wer",
+            "typ": "referenz",
+            "ziel": "dms:benutzer"
+          },
+          {
+            "key": "summe",
+            "label": "Summe",
+            "typ": "betrag",
+            "negativ": true,
+            "berechnet": true
+          },
+          {
+            "key": "eigen",
+            "label": "Eigene",
+            "typ": "janein",
+            "merkmal": "eigeneOrganisation",
+            "schreibschutz": "verwaltung"
+          },
+          {
+            "key": "ende",
+            "label": "Ende",
+            "typ": "datum"
+          },
+          {
+            "key": "posten",
+            "label": "Posten",
+            "typ": "tabelle",
+            "quelle": {
+              "typ": "vorgang",
+              "feld": "akte"
+            }
+          },
+          {
+            "key": "fremd",
+            "label": "Fremd",
+            "typ": "tabelle",
+            "quelle": {
+              "typ": "basis:organisation",
+              "feld": "x"
+            }
+          },
+          {
+            "key": "kosten",
+            "label": "Kosten",
+            "typ": "betrag"
+          }
+        ],
+        "register": [
+          {
+            "key": "daten",
+            "name": "Daten",
+            "art": "felder",
+            "felder": ["name", "altname", "stelle", "art", "wer", "summe", "eigen", "ende", "posten", "fremd", "kosten"],
+            "abschnitte": [
+              {
+                "vor": "kosten",
+                "titel": "Kosten",
+                "anzeigen": {
+                  "bedingungen": [
+                    {
+                      "art": "vorgabe",
+                      "feld": "art",
+                      "vorgabe": ["privat"]
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "key": "dok",
+            "name": "Dokumente",
+            "art": "dokumente"
+          }
+        ],
+        "trefferliste": ["name", "stelle"],
+        "beschriftungen": {
+          "en": {
+            "name": "File"
+          }
+        },
+        "ausPost": true,
+        "erkennbarAn": "Aktenzeichen",
+        "inSuche": false,
+        "archiv": {
+          "jahre": 6,
+          "stichtag": "ende"
+        }
+      },
+      {
+        "schluessel": "vorgang",
+        "name": "Vorgang",
+        "beschreibung": "",
+        "titelVorlage": "{titel}",
+        "felder": [
+          {
+            "key": "titel",
+            "label": "Titel",
+            "typ": "text",
+            "pflicht": true
+          },
+          {
+            "key": "akte",
+            "label": "Akte",
+            "typ": "referenz",
+            "ziel": "akte",
+            "pflicht": true,
+            "verweisart": "zugehoerigkeit"
+          }
+        ],
+        "register": [
+          {
+            "key": "daten",
+            "name": "Daten",
+            "art": "felder",
+            "felder": ["titel", "akte"]
+          }
+        ],
+        "gehoertZu": "akte"
+      }
+    ],
+    "sichten": [
+      {
+        "schluessel": "akten",
+        "name": "Akten",
+        "beschreibung": "Alle Akten",
+        "beschriftungen": {
+          "en": {
+            "name": "Files"
+          }
+        },
+        "typen": ["akte"],
+        "trefferliste": "standard",
+        "symbol": "folder",
+        "bedingungen": []
+      },
+      {
+        "schluessel": "offene",
+        "name": "Offene",
+        "eltern": "akten",
+        "typen": ["vorgang"],
+        "bedingungen": [
+          {
+            "feld": "titel",
+            "operator": "leer"
+          }
+        ]
+      },
+      {
+        "schluessel": "fremd",
+        "name": "Fremde",
+        "typen": [],
+        "fremdeTypen": [
+          {
+            "kennung": "anderes:typ",
+            "name": "Anderer Typ"
+          },
+          {
+            "kennung": "basis:organisation",
+            "name": "basis:organisation"
+          }
+        ],
+        "bedingungen": []
+      }
+    ],
+    "beispiele": [
+      {
+        "typ": "art",
+        "werte": {
+          "name": "Beruflich"
+        },
+        "schluessel": "a0"
+      },
+      {
+        "typ": "akte",
+        "werte": {
+          "name": "Musterakte",
+          "art": {
+            "vorgabe": "privat"
+          },
+          "stelle": {
+            "beispiel": "basis:stadtwerke"
+          }
+        },
+        "schluessel": "a1",
+        "dokumente": [
+          {
+            "datei": "beispiele/brief.pdf",
+            "titel": "Brief",
+            "register": "dok"
+          }
+        ]
+      },
+      {
+        "typ": "vorgang",
+        "werte": {
+          "titel": "Erster",
+          "akte": {
+            "beispiel": "a1"
+          }
+        },
+        "schluessel": "v1"
+      },
+      {
+        "typ": "basis:organisation",
+        "werte": {}
+      }
+    ],
+    "wortlisten": [["Akte", "Ordner"]],
+    "automatisierungen": [
+      {
+        "schluessel": "erinnern",
+        "name": "Erinnern",
+        "beschreibung": "Erinnert an das Ende.",
+        "wenn": {
+          "art": "datum",
+          "typ": "akte",
+          "feld": "ende",
+          "vorlauf": 30,
+          "einheit": "tage",
+          "uhrzeit": "07:00"
+        },
+        "dann": [
+          {
+            "art": "aufgabe",
+            "als": "aufgabe",
+            "empfaenger": [
+              {
+                "art": "ersteller"
+              }
+            ],
+            "text": "Ende {datum}"
+          }
+        ]
+      },
+      {
+        "schluessel": "taeglich",
+        "name": "Täglich",
+        "beschreibung": "",
+        "wenn": {
+          "art": "zeitplan",
+          "uhrzeit": "05:00",
+          "tage": [1, 2, 3, 4, 5, 6, 7]
+        },
+        "dann": [
+          {
+            "art": "paket",
+            "aufgabe": "taeglich"
+          }
+        ],
+        "eingeschaltet": true
+      }
+    ],
+    "readme": "# Probe\n",
+    "einstellungen": {
+      "bloecke": [
+        {
+          "art": "abschnitt",
+          "titel": "",
+          "felder": []
+        }
+      ],
+      "aktionen": []
+    },
+    "code": {
+      "info": {
+        "sprache": "c",
+        "ereignisse": ["mappe.geaendert", "zeitplan.ausgefuehrt"],
+        "rechte": {
+          "lesen": ["akte", "probe:vorgang"],
+          "schreiben": ["akte"],
+          "dokumente": "keine"
+        },
+        "netz": [],
+        "mappentypen": ["akte"]
+      },
+      "dateien": [
+        {
+          "name": "modul.wasm",
+          "inhalt": "puffer:9"
+        },
+        {
+          "name": "daten/liste.json",
+          "inhalt": "puffer:2"
+        }
+      ]
+    },
+    "sprache": null,
+    "beispielDateien": [["beispiele/brief.pdf", "puffer:56"]],
+    "vorgaben": [
+      {
+        "schluessel": "privat",
+        "typ": "art",
+        "werte": {
+          "name": "Privat"
+        }
+      }
+    ],
+    "umbau": [
+      {
+        "von": "basis:organisation",
+        "nach": "probe:akte",
+        "felder": {
+          "name": "name"
+        },
+        "setzen": {},
+        "register": {}
+      }
+    ],
+    "mappenaktionen": [
+      {
+        "schluessel": "notiz",
+        "name": "Notiz",
+        "mappentypen": ["akte", "probe:vorgang"],
+        "rechte": ["lesen"]
+      },
+      {
+        "schluessel": "neu",
+        "name": "Neuer Vorgang",
+        "mappentypen": ["akte"],
+        "rechte": ["mappen_anlegen"],
+        "anlegen": ["vorgang"]
+      },
+      {
+        "schluessel": "vorlage",
+        "name": "Vorlage",
+        "mappentypen": ["basis:organisation"],
+        "rechte": ["dokument_hinzufuegen"],
+        "dialog": "dms:vorlage"
+      }
+    ],
+    "ablaufvorlagen": [
+      {
+        "schluessel": "wiedervorlage",
+        "ersetzt": null,
+        "daten": {
+          "schluessel": "wiedervorlage",
+          "name": "Wiedervorlage",
+          "typen": ["akte", "basis:organisation"],
+          "wann": {
+            "art": "in",
+            "anzahl": 6,
+            "einheit": "monate"
+          },
+          "fragen": [],
+          "karten": [
+            {
+              "art": "aufgabe",
+              "als": "aufgabe",
+              "empfaenger": [
+                {
+                  "art": "selbst"
+                }
+              ],
+              "text": "Wiedervorlage: {titel}"
+            }
+          ]
+        }
+      },
+      {
+        "schluessel": "erinnern_neu",
+        "ersetzt": "erinnern",
+        "daten": {
+          "schluessel": "erinnern_neu",
+          "name": "Erinnern",
+          "ersetzt": "erinnern",
+          "wann": {
+            "art": "in",
+            "anzahl": 1,
+            "einheit": "wochen"
+          },
+          "fragen": [],
+          "karten": [
+            {
+              "art": "aufgabe",
+              "als": "aufgabe",
+              "empfaenger": [
+                {
+                  "art": "selbst"
+                }
+              ],
+              "text": "Erinnerung"
+            }
+          ]
+        }
+      }
+    ],
+    "kurzanleitung": {
+      "de": ["Erst eine Akte anlegen."]
+    },
+    "entdecken": {
+      "rundgaenge": [
+        {
+          "schluessel": "kennenlernen",
+          "titel": "Akten im Überblick",
+          "beschreibung": "Wo das Ende einer Akte steht.",
+          "start": "nach_installation",
+          "oeffne": {
+            "mappe": {
+              "typ": "akte"
+            }
+          },
+          "ersatz": "Sobald du eine Akte angelegt hast, zeigt dir Ablago hier, wie es geht.",
+          "schritte": [
+            {
+              "schluessel": "ende",
+              "ziel": "mappe.feld:ende",
+              "ort": "Rechts in der Mappe",
+              "titel": "Ende",
+              "text": "Hier steht das Ende."
+            },
+            {
+              "schluessel": "dokumente",
+              "ziel": "mappe.register:dok",
+              "ort": "Register oben in der Mappe",
+              "titel": "Dokumente",
+              "text": "Hier liegen die Briefe."
+            }
+          ]
+        }
+      ],
+      "tipps": [
+        {
+          "schluessel": "ende",
+          "text": "Wusstest du schon? Ablago erinnert dich an jedes Ende.",
+          "typ": "akte",
+          "rundgang": "kennenlernen"
+        }
+      ]
+    }
+  },
+  "inhaltKeinObjekt": {
+    "manifest": {
+      "id": "klein",
+      "name": "Klein",
+      "version": "1.0.0",
+      "beschreibung": "Klein.",
+      "autor": {
+        "name": "",
+        "github": ""
+      },
+      "lizenz": "MIT",
+      "dms": ">=0.231.0",
+      "abhaengigkeiten": {}
+    },
+    "typen": [],
+    "sichten": [],
+    "beispiele": [],
+    "wortlisten": [],
+    "automatisierungen": [],
+    "readme": "",
+    "einstellungen": null,
+    "code": null,
+    "sprache": null
+  },
+  "umbauFalsch": {
+    "status": 422,
+    "meldung": "Das Paket ist ungültig.",
+    "details": {
+      "gruende": ["manifest.yaml: umbau[1]: Den Zieltyp „gibtsnicht“ bringt das Paket nicht mit."]
+    }
+  }
+}
